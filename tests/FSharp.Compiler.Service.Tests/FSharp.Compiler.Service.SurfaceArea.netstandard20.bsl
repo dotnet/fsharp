@@ -2011,12 +2011,7 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
-FSharp.Compiler.Cancellable: Boolean HasCancellationToken
-FSharp.Compiler.Cancellable: Boolean get_HasCancellationToken()
-FSharp.Compiler.Cancellable: System.Threading.CancellationToken Token
-FSharp.Compiler.Cancellable: System.Threading.CancellationToken get_Token()
 FSharp.Compiler.Cancellable: Void CheckAndThrow()
-FSharp.Compiler.Cancellable: Void TryCheckAndThrow()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String get_OutputFile()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
@@ -12451,10 +12446,170 @@ FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
+Internal.Utilities.Library.Async2: Internal.Utilities.Library.Async2`1[Internal.Utilities.Library.Async2`1[T]] StartChild[T](Internal.Utilities.Library.Async2`1[T])
+Internal.Utilities.Library.Async2: Internal.Utilities.Library.Async2`1[Microsoft.FSharp.Core.FSharpChoice`2[T,System.Exception]] Catch[T](Internal.Utilities.Library.Async2`1[T])
+Internal.Utilities.Library.Async2: Internal.Utilities.Library.Async2`1[Microsoft.FSharp.Core.Unit] Ignore[a](Internal.Utilities.Library.Async2`1[a])
+Internal.Utilities.Library.Async2: Internal.Utilities.Library.Async2`1[System.Boolean] AwaitWaitHandle(System.Threading.WaitHandle)
+Internal.Utilities.Library.Async2: Internal.Utilities.Library.Async2`1[System.Threading.Tasks.Task`1[T]] StartChildAsTask[T](Internal.Utilities.Library.Async2`1[T])
+Internal.Utilities.Library.Async2: Internal.Utilities.Library.Async2`1[T] TryCancelled[T](Internal.Utilities.Library.Async2`1[T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
+Internal.Utilities.Library.Async2: Internal.Utilities.Library.Async2`1[a[]] Parallel[a](System.Collections.Generic.IEnumerable`1[Internal.Utilities.Library.Async2`1[a]])
+Internal.Utilities.Library.Async2: Internal.Utilities.Library.Async2`1[a[]] Sequential[a](System.Collections.Generic.IEnumerable`1[Internal.Utilities.Library.Async2`1[a]])
+Internal.Utilities.Library.Async2: System.Threading.Tasks.Task`1[a] StartAsTask[a](Internal.Utilities.Library.Async2`1[a], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Internal.Utilities.Library.Async2: T RunImmediate[T](Internal.Utilities.Library.Async2`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Internal.Utilities.Library.Async2: T RunSynchronously[T](Internal.Utilities.Library.Async2`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Internal.Utilities.Library.Async2: Void Start[a](Internal.Utilities.Library.Async2`1[a], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Internal.Utilities.Library.Async2AutoOpens: Async2Builder async2
+Internal.Utilities.Library.Async2AutoOpens: Async2Builder get_async2()
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Internal.Utilities.Library.Async2`1[T] RunDynamic[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[T],T])
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Internal.Utilities.Library.Async2`1[T] Run[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[T],T])
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],Microsoft.FSharp.Core.Unit] For[T,TOverall](System.Collections.Generic.IEnumerable`1[T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],Microsoft.FSharp.Core.Unit]])
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],Microsoft.FSharp.Core.Unit] While[TOverall](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Boolean], Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],Microsoft.FSharp.Core.Unit])
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],Microsoft.FSharp.Core.Unit] Zero[TOverall]()
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T] Combine[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T])
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T] Delay[TOverall,T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T]])
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T] TryFinally[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T] TryWith[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T]])
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T] Using[Resource,TOverall,T](Resource, Microsoft.FSharp.Core.FSharpFunc`2[Resource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[TOverall],T]])
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[T],a] Return[T,a](T)
+Internal.Utilities.Library.Async2Implementation+Async2Builder: Void .ctor()
+Internal.Utilities.Library.Async2Implementation+Async2Code: Boolean bindDynamic$W[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[b,c], Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean], Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a]] ByRef, b, Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],d]])
+Internal.Utilities.Library.Async2Implementation+Async2Code: Boolean bindDynamic[a,b,c,d](Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a]] ByRef, b, Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],d]])
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T] bindAwaiter$W[a,U,Data,T](Microsoft.FSharp.Core.FSharpFunc`2[a,U], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a, Microsoft.FSharp.Core.FSharpFunc`2[U,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T]])
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T] bindAwaiter[a,U,Data,T](a, Microsoft.FSharp.Core.FSharpFunc`2[U,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T]])
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T] bindCancellable$W[a,b,U,Data,T](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[b,U], Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean], Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,a], Microsoft.FSharp.Core.FSharpFunc`2[U,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T]])
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T] bindCancellableAwaiter$W[a,b,Data,c,T](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,a], Microsoft.FSharp.Core.FSharpFunc`2[b,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],c]])
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T] bindCancellableAwaiter[a,b,Data,c,T](Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,a], Microsoft.FSharp.Core.FSharpFunc`2[b,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],c]])
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T] bindCancellable[a,b,U,Data,T](Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,a], Microsoft.FSharp.Core.FSharpFunc`2[U,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T]])
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],b] maybeBounce[a,b]()
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],c] filterCancellation[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],b]], System.Exception)
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],c] throwIfCancellationRequested[a,b,c](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],b])
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e] bindAwaitable$W[a,b,c,d,e](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[b,c], Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean], a, Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e]])
+Internal.Utilities.Library.Async2Implementation+Async2Code: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e] bindAwaitable[a,b,c,d,e](a, Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e]])
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Boolean Awaited
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Boolean Equals(Async2Data`1)
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Boolean Equals(Async2Data`1, System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Boolean Equals(System.Object)
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Int32 GetHashCode()
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Int32 GetHashCode(System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Microsoft.FSharp.Core.FSharpOption`1[System.Threading.Tasks.TaskCompletionSource`1[t]] TailCallSource
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[t] MethodBuilder
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: System.Threading.CancellationToken CancellationToken
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: t Result
+Internal.Utilities.Library.Async2Implementation+Async2Dynamic`2[t,m]: Internal.Utilities.Library.Async2`1[t] GetCopy(Boolean)
+Internal.Utilities.Library.Async2Implementation+Async2Dynamic`2[t,m]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[System.Boolean,m])
+Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Boolean Equals(Async2`2)
+Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Boolean Equals(Async2`2, System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Boolean Equals(System.Object)
+Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Int32 GetHashCode()
+Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Int32 GetHashCode(System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Internal.Utilities.Library.IAsync2Invocation`1[t] Start(System.Threading.CancellationToken, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.Tasks.TaskCompletionSource`1[t]])
+Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: m StateMachine
+Internal.Utilities.Library.Async2Implementation+Awaitable: b getAwaiter$W[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[b,c], Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean], a)
+Internal.Utilities.Library.Async2Implementation+Awaitable: b getAwaiter[a,b,c](a)
+Internal.Utilities.Library.Async2Implementation+Awaiter: Boolean isCompleted$W[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a)
+Internal.Utilities.Library.Async2Implementation+Awaiter: Boolean isCompleted[a,b](a)
+Internal.Utilities.Library.Async2Implementation+Awaiter: Void onCompleted$W[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a, System.Action)
+Internal.Utilities.Library.Async2Implementation+Awaiter: Void onCompleted[a,b](a, System.Action)
+Internal.Utilities.Library.Async2Implementation+Awaiter: Void unsafeOnCompleted$W[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a, System.Action)
+Internal.Utilities.Library.Async2Implementation+Awaiter: Void unsafeOnCompleted[a,b](a, System.Action)
+Internal.Utilities.Library.Async2Implementation+Awaiter: b getResult$W[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a)
+Internal.Utilities.Library.Async2Implementation+Awaiter: b getResult[a,b](a)
+Internal.Utilities.Library.Async2Implementation+DynamicState+Awaiting: System.Runtime.CompilerServices.ICriticalNotifyCompletion Item
+Internal.Utilities.Library.Async2Implementation+DynamicState+Awaiting: System.Runtime.CompilerServices.ICriticalNotifyCompletion get_Item()
+Internal.Utilities.Library.Async2Implementation+DynamicState+Bounce: DynamicState Item
+Internal.Utilities.Library.Async2Implementation+DynamicState+Bounce: DynamicState get_Item()
+Internal.Utilities.Library.Async2Implementation+DynamicState+Immediate: DynamicState Item
+Internal.Utilities.Library.Async2Implementation+DynamicState+Immediate: DynamicState get_Item()
+Internal.Utilities.Library.Async2Implementation+DynamicState+SetException: System.Runtime.ExceptionServices.ExceptionDispatchInfo Item
+Internal.Utilities.Library.Async2Implementation+DynamicState+SetException: System.Runtime.ExceptionServices.ExceptionDispatchInfo get_Item()
+Internal.Utilities.Library.Async2Implementation+DynamicState+Tags: Int32 Awaiting
+Internal.Utilities.Library.Async2Implementation+DynamicState+Tags: Int32 Bounce
+Internal.Utilities.Library.Async2Implementation+DynamicState+Tags: Int32 Immediate
+Internal.Utilities.Library.Async2Implementation+DynamicState+Tags: Int32 Running
+Internal.Utilities.Library.Async2Implementation+DynamicState+Tags: Int32 SetException
+Internal.Utilities.Library.Async2Implementation+DynamicState+Tags: Int32 SetResult
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean Equals(DynamicState)
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean Equals(DynamicState, System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean Equals(System.Object)
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean IsAwaiting
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean IsBounce
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean IsImmediate
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean IsRunning
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean IsSetException
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean IsSetResult
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean get_IsAwaiting()
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean get_IsBounce()
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean get_IsImmediate()
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean get_IsRunning()
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean get_IsSetException()
+Internal.Utilities.Library.Async2Implementation+DynamicState: Boolean get_IsSetResult()
+Internal.Utilities.Library.Async2Implementation+DynamicState: DynamicState NewAwaiting(System.Runtime.CompilerServices.ICriticalNotifyCompletion)
+Internal.Utilities.Library.Async2Implementation+DynamicState: DynamicState NewBounce(DynamicState)
+Internal.Utilities.Library.Async2Implementation+DynamicState: DynamicState NewImmediate(DynamicState)
+Internal.Utilities.Library.Async2Implementation+DynamicState: DynamicState NewSetException(System.Runtime.ExceptionServices.ExceptionDispatchInfo)
+Internal.Utilities.Library.Async2Implementation+DynamicState: DynamicState Running
+Internal.Utilities.Library.Async2Implementation+DynamicState: DynamicState SetResult
+Internal.Utilities.Library.Async2Implementation+DynamicState: DynamicState get_Running()
+Internal.Utilities.Library.Async2Implementation+DynamicState: DynamicState get_SetResult()
+Internal.Utilities.Library.Async2Implementation+DynamicState: Int32 GetHashCode()
+Internal.Utilities.Library.Async2Implementation+DynamicState: Int32 GetHashCode(System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Async2Implementation+DynamicState: Int32 Tag
+Internal.Utilities.Library.Async2Implementation+DynamicState: Int32 get_Tag()
+Internal.Utilities.Library.Async2Implementation+DynamicState: Internal.Utilities.Library.Async2Implementation+DynamicState+Awaiting
+Internal.Utilities.Library.Async2Implementation+DynamicState: Internal.Utilities.Library.Async2Implementation+DynamicState+Bounce
+Internal.Utilities.Library.Async2Implementation+DynamicState: Internal.Utilities.Library.Async2Implementation+DynamicState+Immediate
+Internal.Utilities.Library.Async2Implementation+DynamicState: Internal.Utilities.Library.Async2Implementation+DynamicState+SetException
+Internal.Utilities.Library.Async2Implementation+DynamicState: Internal.Utilities.Library.Async2Implementation+DynamicState+Tags
+Internal.Utilities.Library.Async2Implementation+DynamicState: System.String ToString()
+Internal.Utilities.Library.Async2Implementation+ExceptionCache: System.Runtime.CompilerServices.ConditionalWeakTable`2[System.Exception,System.Runtime.ExceptionServices.ExceptionDispatchInfo] get_store()
+Internal.Utilities.Library.Async2Implementation+ExceptionCache: System.Runtime.CompilerServices.ConditionalWeakTable`2[System.Exception,System.Runtime.ExceptionServices.ExceptionDispatchInfo] store
+Internal.Utilities.Library.Async2Implementation+ExceptionCache: System.Runtime.ExceptionServices.ExceptionDispatchInfo CaptureOrRetrieve(System.Exception)
+Internal.Utilities.Library.Async2Implementation+ExceptionCache: a Throw[a](System.Exception)
+Internal.Utilities.Library.Async2Implementation+ExceptionCache: b GetResultOrThrow$W[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a)
+Internal.Utilities.Library.Async2Implementation+ExceptionCache: b GetResultOrThrow[a,b](a)
+Internal.Utilities.Library.Async2Implementation+Trampoline: Boolean ShouldBounce
+Internal.Utilities.Library.Async2Implementation+Trampoline: Boolean get_ShouldBounce()
+Internal.Utilities.Library.Async2Implementation+Trampoline: Microsoft.FSharp.Core.FSharpRef`1[System.Runtime.CompilerServices.ICriticalNotifyCompletion] Ref
+Internal.Utilities.Library.Async2Implementation+Trampoline: Microsoft.FSharp.Core.FSharpRef`1[System.Runtime.CompilerServices.ICriticalNotifyCompletion] get_Ref()
+Internal.Utilities.Library.Async2Implementation+Trampoline: Trampoline Current
+Internal.Utilities.Library.Async2Implementation+Trampoline: Trampoline get_Current()
+Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Async2Builder
+Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Async2Code
+Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]
+Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Async2Dynamic`2[t,m]
+Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]
+Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Awaitable
+Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Awaiter
+Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+DynamicState
+Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+ExceptionCache
+Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Trampoline
+Internal.Utilities.Library.Async2Module: Internal.Utilities.Library.Async2`1[System.Threading.CancellationToken] CancellationToken
+Internal.Utilities.Library.Async2Module: Internal.Utilities.Library.Async2`1[System.Threading.CancellationToken] get_CancellationToken()
+Internal.Utilities.Library.Async2Module: Internal.Utilities.Library.Async2`1[t] fromValue[t](t)
+Internal.Utilities.Library.Async2Module: Microsoft.FSharp.Control.FSharpAsync`1[t] toAsync[t](Internal.Utilities.Library.Async2`1[t])
+Internal.Utilities.Library.Async2Module: System.Threading.AsyncLocal`1[System.Threading.CancellationToken] CheckAndThrowToken
+Internal.Utilities.Library.Async2Module: System.Threading.AsyncLocal`1[System.Threading.CancellationToken] get_CheckAndThrowToken()
+Internal.Utilities.Library.Async2Module: System.Threading.Tasks.Task`1[a] startAsTaskWithoutCancellation[a](Internal.Utilities.Library.Async2`1[a])
+Internal.Utilities.Library.Async2Module: System.Threading.Tasks.Task`1[a] startImmediate[a](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[a])
+Internal.Utilities.Library.Async2Module: System.Threading.Tasks.Task`1[t] startInThreadPool[t](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[t])
+Internal.Utilities.Library.Async2Module: a runWithoutCancellation[a](Internal.Utilities.Library.Async2`1[a])
+Internal.Utilities.Library.Async2Module: t run[t](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[t])
+Internal.Utilities.Library.Async2`1[t]: Internal.Utilities.Library.IAsync2Invocation`1[t] Await(System.Threading.CancellationToken)
+Internal.Utilities.Library.Async2`1[t]: Internal.Utilities.Library.IAsync2Invocation`1[t] Start(System.Threading.CancellationToken)
+Internal.Utilities.Library.Async2`1[t]: Void TailCall(System.Threading.CancellationToken, System.Threading.Tasks.TaskCompletionSource`1[t])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] CreateDictionary(T[])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T[]])
+Internal.Utilities.Library.HighPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T] Async2Builder.Bind[U,Data,T](Async2Builder, Internal.Utilities.Library.Async2`1[U], Microsoft.FSharp.Core.FSharpFunc`2[U,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Data],T]])
+Internal.Utilities.Library.HighPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[T],T] Async2Builder.ReturnFrom[T](Async2Builder, Internal.Utilities.Library.Async2`1[T])
+Internal.Utilities.Library.HighPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[T],a] Async2Builder.ReturnFromFinal[T,a](Async2Builder, Internal.Utilities.Library.Async2`1[T])
+Internal.Utilities.Library.IAsync2Invocation`1[t]: System.Runtime.CompilerServices.TaskAwaiter`1[t] GetAwaiter()
+Internal.Utilities.Library.IAsync2Invocation`1[t]: System.Threading.Tasks.Task`1[t] Task
+Internal.Utilities.Library.IAsync2Invocation`1[t]: System.Threading.Tasks.Task`1[t] get_Task()
 Internal.Utilities.Library.InterruptibleLazy: T force[T](Internal.Utilities.Library.InterruptibleLazy`1[T])
 Internal.Utilities.Library.InterruptibleLazy`1[T]: Boolean IsValueCreated
 Internal.Utilities.Library.InterruptibleLazy`1[T]: Boolean get_IsValueCreated()
@@ -12463,3 +12618,18 @@ Internal.Utilities.Library.InterruptibleLazy`1[T]: T Force()
 Internal.Utilities.Library.InterruptibleLazy`1[T]: T Value
 Internal.Utilities.Library.InterruptibleLazy`1[T]: T get_Value()
 Internal.Utilities.Library.InterruptibleLazy`1[T]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+Internal.Utilities.Library.LowPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[c],d] Async2Builder.ReturnFrom$W[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[b,c], Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean], Async2Builder, a)
+Internal.Utilities.Library.LowPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[c],d] Async2Builder.ReturnFromFinal$W[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[b,c], Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean], Async2Builder, a)
+Internal.Utilities.Library.LowPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[c],d] Async2Builder.ReturnFromFinal[a,b,c,d](Async2Builder, a)
+Internal.Utilities.Library.LowPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[c],d] Async2Builder.ReturnFrom[a,b,c,d](Async2Builder, a)
+Internal.Utilities.Library.LowPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e] Async2Builder.Bind$W[a,b,c,d,e](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[b,c], Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean], Async2Builder, a, Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e]])
+Internal.Utilities.Library.LowPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e] Async2Builder.Bind[a,b,c,d,e](Async2Builder, a, Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e]])
+Internal.Utilities.Library.MediumPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Microsoft.FSharp.Core.Unit],a] Async2Builder.ReturnFromFinal[a](Async2Builder, System.Threading.Tasks.Task)
+Internal.Utilities.Library.MediumPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[Microsoft.FSharp.Core.Unit],a] Async2Builder.ReturnFrom[a](Async2Builder, System.Threading.Tasks.Task)
+Internal.Utilities.Library.MediumPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],b] Async2Builder.Bind[a,b](Async2Builder, System.Threading.Tasks.Task, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],b]])
+Internal.Utilities.Library.MediumPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],b] Async2Builder.ReturnFromFinal[a,b](Async2Builder, Microsoft.FSharp.Control.FSharpAsync`1[a])
+Internal.Utilities.Library.MediumPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],b] Async2Builder.ReturnFromFinal[a,b](Async2Builder, System.Threading.Tasks.Task`1[a])
+Internal.Utilities.Library.MediumPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],b] Async2Builder.ReturnFrom[a,b](Async2Builder, Microsoft.FSharp.Control.FSharpAsync`1[a])
+Internal.Utilities.Library.MediumPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[a],b] Async2Builder.ReturnFrom[a,b](Async2Builder, System.Threading.Tasks.Task`1[a])
+Internal.Utilities.Library.MediumPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[b],c] Async2Builder.Bind[a,b,c](Async2Builder, System.Threading.Tasks.Task`1[a], Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[b],c]])
+Internal.Utilities.Library.MediumPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[b],d] Async2Builder.Bind[a,b,c,d](Async2Builder, Microsoft.FSharp.Control.FSharpAsync`1[a], Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[b],c]])

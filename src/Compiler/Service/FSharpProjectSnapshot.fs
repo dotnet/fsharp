@@ -655,33 +655,32 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         ProjectSnapshotBase(projectConfig, referencedProjects, sourceFiles)
         |> FSharpProjectSnapshot
 
-    static member FromOptions(options: FSharpProjectOptions, getFileSnapshot, ?snapshotAccumulator) =
+    static member FromOptions(options: FSharpProjectOptions, getFileSnapshot: _ -> _ -> Async<_>, ?snapshotAccumulator) : Async<_> =
         let snapshotAccumulator = defaultArg snapshotAccumulator (Dictionary())
 
-        async {
+        async2 {
 
             // TODO: check if options is a good key here
             if not (snapshotAccumulator.ContainsKey options) then
 
                 let! sourceFiles =
                     options.SourceFiles
-                    |> Seq.map (getFileSnapshot options)
+                    |> Seq.map (fun name -> async2 { return! getFileSnapshot options name })
                     |> MultipleDiagnosticsLoggers.Parallel
 
                 let! referencedProjects =
                     options.ReferencedProjects
                     |> Seq.map (function
                         | FSharpReferencedProject.FSharpReference(outputName, options) ->
-                            async {
+                            async2 {
                                 let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, snapshotAccumulator)
 
                                 return FSharpReferencedProjectSnapshot.FSharpReference(outputName, snapshot)
                             }
                         | FSharpReferencedProject.PEReference(getStamp, reader) ->
-                            async.Return <| FSharpReferencedProjectSnapshot.PEReference(getStamp, reader)
+                            async2 { return FSharpReferencedProjectSnapshot.PEReference(getStamp, reader) }
                         | FSharpReferencedProject.ILModuleReference(outputName, getStamp, getReader) ->
-                            async.Return
-                            <| FSharpReferencedProjectSnapshot.ILModuleReference(outputName, getStamp, getReader))
+                            async2 { return FSharpReferencedProjectSnapshot.ILModuleReference(outputName, getStamp, getReader) })
 
                     |> MultipleDiagnosticsLoggers.Sequential
 
@@ -719,6 +718,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
             return snapshotAccumulator[options]
         }
+        |> Async2.toAsync
 
     static member FromOptions(options: FSharpProjectOptions, documentSource: DocumentSource) =
         FSharpProjectSnapshot.FromOptions(

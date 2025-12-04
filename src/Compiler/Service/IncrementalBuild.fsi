@@ -20,6 +20,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
+open Internal.Utilities.Library
 open Internal.Utilities.Collections
 
 type internal FrameworkImportsCacheKey =
@@ -295,7 +296,7 @@ type internal IncrementalBuilder =
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
         useChangeNotifications: bool ->
-            Async<IncrementalBuilder option * FSharpDiagnostic[]>
+            Async2<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =
