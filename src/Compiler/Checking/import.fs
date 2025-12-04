@@ -702,7 +702,7 @@ let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILT
         )
 
     let nullableFallback =
-        let amapValue = amap()
+        let amapValue : ImportMap = amap()
         if amapValue.g.langFeatureNullness && amapValue.g.checkNullness then
             // Immediately read the attrs to avoid keeping a reference to tdef.CustomAttrsStored
             let attrs = tdef.CustomAttrsStored.GetCustomAttrs(tdef.MetadataIndex)
