@@ -90,3 +90,63 @@ Trace file: `fsc-trace` (44,537 bytes)
 Converted to speedscope format: `fsc-trace.speedscope.speedscope.json` (92,797 bytes)
 
 Note: Trace shows high proportion of unmanaged code time, indicating native code execution or JIT compilation overhead.
+
+## Experiment Reproduction Steps
+
+### Using Compiler Timing Output
+
+The F# compiler supports detailed timing output via project properties:
+
+1. **Add to project file** (or pass via command line):
+```xml
+<PropertyGroup>
+  <OtherFlags>--times --times:compilationTiming.csv</OtherFlags>
+</PropertyGroup>
+```
+
+Or via command line:
+```bash
+dotnet build -c Release -p:OtherFlags="--times --times:compilationTiming.csv"
+```
+
+2. **Collect traces and dumps**:
+```bash
+# Start build with tracing
+dotnet-trace collect --output build-trace.nettrace -- dotnet build -c Release -p:OtherFlags="--times --times:compilationTiming.csv"
+
+# Or attach to running fsc.dll process
+FSC_PID=$(pgrep -f fsc.dll)
+dotnet-trace collect -p $FSC_PID --output fsc-trace.nettrace --duration 00:05:00 &
+dotnet-gcdump collect -p $FSC_PID --output heap.gcdump
+
+# For memory dump at specific time (e.g., 15 min mark)
+sleep 900 && dotnet-dump collect -p $FSC_PID --output memory.dmp
+```
+
+3. **Analyze results**:
+```bash
+# Convert trace to speedscope format
+dotnet-trace convert fsc-trace.nettrace --format speedscope
+
+# Report on GC dump
+dotnet-gcdump report heap.gcdump
+
+# Analyze timing CSV
+python3 -c "
+import csv
+with open('compilationTiming.csv') as f:
+    reader = csv.DictReader(f)
+    for row in sorted(reader, key=lambda x: float(x.get('Duration', 0)), reverse=True)[:20]:
+        print(row)
+"
+```
+
+### Validation After Memory Leak Fix
+
+After CI builds the fixed compiler, repeat the 5000-module experiment with:
+
+1. Same build configuration (Release, ParallelCompilation=true)
+2. Same measurement methodology (memory/CPU every minute)
+3. Enable `--times` output for detailed phase breakdown
+4. Collect GC dumps at 1, 5, and 10 minute marks
+5. Compare `ImportILTypeDef@*` closure counts with previous run
