@@ -176,7 +176,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <GenerateILLinkSubstitutions
       AssemblyName="$(AssemblyName)"
       IntermediateOutputPath="$(IntermediateOutputPath)">
-      <Output TaskParameter="GeneratedItems" ItemName="Embed" />
+      <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
     </GenerateILLinkSubstitutions>
   </Target>
 
