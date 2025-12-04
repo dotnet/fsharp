@@ -694,7 +694,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
     tips @ nodes
 
 /// Import an IL type definition as a new F# TAST Entity node.
-let rec ImportILTypeDef (amap: ImportMap) m scoref (cpath: CompilationPath) enc nm (tdef: ILTypeDef)  =
+let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILTypeDef)  =
     let lazyModuleOrNamespaceTypeForNestedTypes =
         InterruptibleLazy(fun _ ->
             let cpath = cpath.NestedCompPath nm ModuleOrType
@@ -702,7 +702,8 @@ let rec ImportILTypeDef (amap: ImportMap) m scoref (cpath: CompilationPath) enc 
         )
 
     let nullableFallback =
-        if amap.g.langFeatureNullness && amap.g.checkNullness then
+        let amapValue = amap()
+        if amapValue.g.langFeatureNullness && amapValue.g.checkNullness then
             // Immediately read the attrs to avoid keeping a reference to tdef.CustomAttrsStored
             let attrs = tdef.CustomAttrsStored.GetCustomAttrs(tdef.MetadataIndex)
             Nullness.FromClass(Nullness.AttributesFromIL(tdef.MetadataIndex, Given attrs))
