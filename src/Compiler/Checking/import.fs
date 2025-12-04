@@ -701,7 +701,13 @@ let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILT
             ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
         )
 
-    let nullableFallback = Nullness.FromClass(Nullness.AttributesFromIL(tdef.MetadataIndex,tdef.CustomAttrsStored))
+    let nullableFallback =
+        if amap.g.langFeatureNullness && amap.g.checkNullness then
+            // Immediately read the attrs to avoid keeping a reference to tdef.CustomAttrsStored
+            let attrs = tdef.CustomAttrsStored.GetCustomAttrs(tdef.MetadataIndex)
+            Nullness.FromClass(Nullness.AttributesFromIL(tdef.MetadataIndex, Given attrs))
+        else
+            Nullness.FromClass(Nullness.AttributesFromIL(0, Given ILAttributes.Empty))
 
     // Add the type itself.
     Construct.NewILTycon

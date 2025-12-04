@@ -109,26 +109,29 @@ Comparing object counts between Dump 2 (4 min) and Dump 3 (10 min):
 | SynBinding | 729 | 1,144 | +415 |
 | ImportILTypeDef@712 | 674 | 983 | +309 |
 
+## Memory Leak Identified
+
+**ImportILTypeDef@712** (closures from ImportILTypeDef function) showing growth indicates a potential memory leak.
+
+### Root Cause
+In `src/Compiler/Checking/import.fs`, the `ImportILTypeDef` function was storing `tdef.CustomAttrsStored` reference in `AttributesFromIL`, which kept entire `ILTypeDef` objects alive via closure.
+
+### Fix Applied
+Modified `ImportILTypeDef` to:
+1. Check if nullness features are enabled (`amap.g.langFeatureNullness && amap.g.checkNullness`)
+2. If enabled: immediately read attrs with `tdef.CustomAttrsStored.GetCustomAttrs(tdef.MetadataIndex)` and wrap in `Given`
+3. If disabled: use empty attributes to avoid any reference
+
+This prevents the closure from keeping large `ILTypeDef` objects alive.
+
 ## Key Findings
 
 1. **GC Heap is stable at ~300 MB** despite RSS growing to 10+ GB
-2. **10 million GC objects** maintained throughout the build
+2. **ImportILTypeDef closures growing** - memory leak via CustomAttrsStored references
 3. **RSS growth not reflected in GC heap** - indicates native/unmanaged memory consumption
 4. **Val type has 27-28k instances** - F# value definitions
 5. **Entity and ILTypeDef counts grow** - IL metadata accumulation
 6. **TcEnv and NameResolutionEnv** - type checking environments (~700 instances)
-
-## Memory Distribution
-
-Based on the data, the 10 GB RSS memory is distributed as:
-- ~300 MB: Managed GC Heap
-- ~9.7 GB: Native/unmanaged memory (not visible in GC dump)
-
-This suggests the memory pressure comes from:
-- Memory-mapped files (assembly loading)
-- Native code buffers
-- JIT compiled code caches
-- Unmanaged allocations in the runtime
 
 ## Build Environment
 
