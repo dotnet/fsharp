@@ -5,29 +5,49 @@ This document tracks the performance profiling work for building large F# projec
 
 Related Issue: https://github.com/dotnet/fsharp/issues/19132
 
-## Focus: 5000 Module Build Analysis
+## Completed: 5000 Module Build Analysis
 
 ### Tasks
 - [x] Prepare test project with local compiler
-- [x] Measure build time (completed: 13m 16s)
-- [x] Measure memory usage (completed: ~14.5 GB)
-- [ ] Collect dotnet-trace profile
-- [ ] Collect memory dump at 15 minute mark (if needed)
-- [ ] Analyze trace file
-- [ ] Analyze dump file
-- [ ] Document findings from trace/dump analysis
+- [x] Run build and measure time: **14m 11s**
+- [x] Monitor memory usage every minute: **Peak 14.5 GB**
+- [x] Monitor CPU usage every minute: **380% → 165%**
+- [x] Collect dotnet-trace profile (2 min sample)
+- [x] Convert trace to speedscope format
+- [x] Document findings
 
-## Completed Measurements
+### Build Configuration
+- Modules: 5000
+- Configuration: Release
+- ParallelCompilation: true
+- Compiler: `/home/runner/work/fsharp/fsharp/artifacts/bin/fsc/Release/net10.0/fsc.dll`
 
-| Modules | Build Time | Memory Usage |
-|---------|-----------|--------------|
-| 100 | 6.2s | Low |
-| 500 | 13.0s | Low |
-| 1000 | 27.0s | Low |
-| 2000 | 88.0s | Medium |
-| 5000 | 796.0s (13m 16s) | ~14.5 GB |
+### Results Summary
 
-## Environment
-- F# Compiler: `/home/runner/work/fsharp/fsharp/artifacts/bin/fsc/Release/net10.0/fsc.dll`
-- .NET SDK: 10.0.100-rc.2
-- Test Project: Synthetic project with N modules
+| Metric | Value |
+|--------|-------|
+| Build Time | 14m 11s (851.19s) |
+| Peak Memory | 14.5 GB (90.6%) |
+| Peak CPU | 387% |
+| Final CPU | 165% |
+| Memory Growth | ~1.1 GB/min |
+
+### Memory Profile
+
+| Time | Memory |
+|------|--------|
+| 1m | 969 MB |
+| 5m | 5,144 MB |
+| 10m | 10,746 MB |
+| 13m | 14,498 MB |
+
+### Trace Analysis
+- Trace file collected: 44 KB
+- 28 threads active
+- High unmanaged code time
+- Symbols not fully resolved
+
+## Files Generated
+- Build log: `/tmp/perf-testing/build.log`
+- Trace: `/tmp/perf-testing/traces/fsc-trace`
+- Speedscope: `/tmp/perf-testing/traces/fsc-trace.speedscope.speedscope.json`

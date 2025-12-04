@@ -6,63 +6,94 @@ This document catalogs problems identified during performance analysis of large 
 
 Related Issue: https://github.com/dotnet/fsharp/issues/19132
 
-## Problem 1: Super-linear Build Time Scaling
+## Problem 1: Linear Memory Growth During Compilation
 
-### Measured Data
+### Measured Data (5000 modules, Release, ParallelCompilation=true)
 
-| Modules | Build Time | Command |
-|---------|-----------|---------|
-| 100 | 6.2s | `dotnet build -c Release` |
-| 500 | 13.0s | `dotnet build -c Release` |
-| 1000 | 27.0s | `dotnet build -c Release` |
-| 2000 | 88.0s | `dotnet build -c Release` |
-| 5000 | 796.0s (13m 16s) | `dotnet build -c Release` |
+| Elapsed Time | Memory (MB) | Memory Growth Rate |
+|--------------|-------------|-------------------|
+| 1 min | 969 | baseline |
+| 2 min | 1,050 | +81 MB/min |
+| 3 min | 2,287 | +1,237 MB/min |
+| 4 min | 3,805 | +1,518 MB/min |
+| 5 min | 5,144 | +1,339 MB/min |
+| 6 min | 6,331 | +1,187 MB/min |
+| 7 min | 7,513 | +1,182 MB/min |
+| 8 min | 8,561 | +1,048 MB/min |
+| 9 min | 9,664 | +1,103 MB/min |
+| 10 min | 10,746 | +1,082 MB/min |
+| 11 min | 12,748 | +2,002 MB/min |
+| 12 min | 14,473 | +1,725 MB/min |
+| 13 min | 14,498 | +25 MB/min (plateau) |
 
 ### Evidence
-- Compiler used: `/home/runner/work/fsharp/fsharp/artifacts/bin/fsc/Release/net10.0/fsc.dll`
-- Build output confirmed successful completion for all module counts up to 5000
+- Average memory growth: ~1.1 GB per minute
+- Peak memory: 14.5 GB (90.6% of 16 GB system)
+- Memory plateaus at ~90% system RAM
+- Process command: `/usr/share/dotnet/dotnet /home/runner/work/fsharp/fsharp/artifacts/bin/fsc/Release/net10.0/fsc.dll`
 
 ---
 
-## Problem 2: High Memory Consumption
+## Problem 2: Decreasing CPU Utilization Over Time
 
-### Measured Data (5000 modules)
-- Process: `fsc.dll`
-- Memory: 88.8% of system RAM (~14.5 GB)
-- CPU: 153%
+### Measured Data
+
+| Elapsed Time | CPU % |
+|--------------|-------|
+| 1 min | 380% |
+| 2 min | 387% |
+| 3 min | 336% |
+| 4 min | 286% |
+| 5 min | 255% |
+| 6 min | 234% |
+| 7 min | 218% |
+| 8 min | 207% |
+| 9 min | 197% |
+| 10 min | 189% |
+| 11 min | 183% |
+| 12 min | 175% |
+| 13 min | 165% |
 
 ### Evidence
-Process stats captured during build:
-```
-runner 39804 153 88.8 275370660 14552872 pts/46 Sl+ ... /usr/share/dotnet/dotnet /home/runner/work/fsharp/fsharp/artifacts/bin/fsc/Release/net10.0/fsc.dll @/tmp/MSBuildTempIAGVdP/tmp41a211215a374f7ab85347f3eaaaa88b.rsp
-```
+- CPU utilization drops from 380% to 165% over 13 minutes
+- This suggests reduced parallelism as compilation progresses
+- Possible single-threaded bottleneck in later compilation phases
 
 ---
 
 ## Problem 3: No Build Progress Indication
 
 ### Observed Behavior
-- Build output only shows: "Determining projects to restore..." then "Restored ... (in 76 ms)"
-- No further output until build completes or times out
-- Users cannot distinguish between slow build and hung build
-
-### Evidence
-Build log excerpt:
+Build output during 14-minute compilation:
 ```
 Determining projects to restore...
-  Restored /tmp/perf-testing/fsharp-10k/ConsoleApp1/ConsoleApp1.fsproj (in 76 ms).
+  Restored /tmp/perf-testing/fsharp-5000/src/TestProject.fsproj (in 78 ms).
 ```
-(No additional output during 13+ minute compilation phase)
+(No additional output until build completes)
+
+### Evidence
+- No per-file progress reporting
+- No phase transition messages
+- Users cannot determine if build is progressing or stuck
 
 ---
 
-## Next Steps
+## Trace Analysis
 
-1. Collect dotnet-trace profile for 5000 module build
-2. Collect memory dump at 15 minute mark if build does not complete
-3. Analyze trace and dump for concrete insights
+### Trace Collection
+- Tool: `dotnet-trace collect --process-id <PID> --duration 00:02:00`
+- Trace file size: 44,537 bytes
+- Converted speedscope file: 92,797 bytes
+
+### Trace Content
+The trace shows:
+- 28 active threads during capture
+- High proportion of "UNMANAGED_CODE_TIME" 
+- Stack frames show "?!?" (unresolved symbols)
+
+Note: The trace symbols were not fully resolved, limiting detailed function-level analysis.
 
 ## References
 
 - Issue: https://github.com/dotnet/fsharp/issues/19132
-- Test Project: https://github.com/ners/fsharp-10k
+- Test Project: Synthetic 5000-module F# project

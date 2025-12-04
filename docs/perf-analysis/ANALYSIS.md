@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-Building a synthetic F# project with 10,000 modules (`fsharp-10k`) takes an excessive amount of time. 
+Building a synthetic F# project with 5,000+ modules takes excessive time and memory.
 
 Related Issue: https://github.com/dotnet/fsharp/issues/19132
 
@@ -18,7 +18,7 @@ Related Issue: https://github.com/dotnet/fsharp/issues/19132
 
 Each module (`FooN.fs`) contains:
 ```fsharp
-namespace ConsoleApp1
+namespace TestProject
 
 [<RequireQualifiedAccess>]
 type FooN = Foo of int | Bar
@@ -28,30 +28,65 @@ module FooN =
     let foo: FooN = FooN.Bar
 ```
 
-## Measured Build Times
+## 5000 Module Build - Detailed Analysis
 
-| Modules | Build Time | Configuration |
-|---------|-----------|---------------|
-| 100 | 6.2s | Release |
-| 500 | 13.0s | Release |
-| 1000 | 27.0s | Release |
-| 2000 | 88.0s | Release |
-| 5000 | 796.0s (13m 16s) | Release |
+### Build Result
+- **Total Time**: 14 minutes 11 seconds (851.19s)
+- **Configuration**: Release, ParallelCompilation=true
+- **Result**: Build succeeded
 
-## Evidence
+### Memory Growth Over Time (Measured Every Minute)
 
-### Compiler Invocation (5000 modules)
+| Elapsed Time | CPU % | Memory % | RSS (MB) |
+|--------------|-------|----------|----------|
+| 1 min | 380% | 6.0% | 969 |
+| 2 min | 387% | 6.5% | 1,050 |
+| 3 min | 336% | 14.2% | 2,287 |
+| 4 min | 286% | 23.7% | 3,805 |
+| 5 min | 255% | 32.1% | 5,144 |
+| 6 min | 234% | 39.5% | 6,331 |
+| 7 min | 218% | 46.9% | 7,513 |
+| 8 min | 207% | 53.5% | 8,561 |
+| 9 min | 197% | 60.4% | 9,664 |
+| 10 min | 189% | 67.1% | 10,746 |
+| 11 min | 183% | 79.6% | 12,748 |
+| 12 min | 175% | 90.4% | 14,473 |
+| 13 min | 165% | 90.6% | 14,498 |
+| 14 min | - | - | Build completed |
+
+### Key Observations From Measured Data
+
+1. **Memory growth is linear**: ~1.1 GB per minute for first 12 minutes
+2. **Peak memory**: 14.5 GB (90.6% of system RAM)
+3. **CPU utilization decreases over time**: 380% → 165%
+4. **Memory plateaus at ~90%**: Possible GC pressure at 12-13 min mark
+
+### Build Log Evidence
 ```
-/usr/share/dotnet/dotnet /home/runner/work/fsharp/fsharp/artifacts/bin/fsc/Release/net10.0/fsc.dll @/tmp/MSBuildTempIAGVdP/tmp41a211215a374f7ab85347f3eaaaa88b.rsp
+Determining projects to restore...
+  Restored /tmp/perf-testing/fsharp-5000/src/TestProject.fsproj (in 78 ms).
+  TestProject -> /tmp/perf-testing/fsharp-5000/src/bin/Release/net8.0/TestProject.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:14:11.19
 ```
 
-### Process Stats During 5000 Module Build
-- CPU: 153%
-- Memory: 88.8% of system RAM (~14.5 GB)
-- Time: 13 minutes 16 seconds
+### Compiler Process Evidence
+```
+runner 35321 ... /usr/share/dotnet/dotnet /home/runner/work/fsharp/fsharp/artifacts/bin/fsc/Release/net10.0/fsc.dll @/tmp/MSBuildTempQZbd6p/tmp24fcc0624ca6474f8fc7ddd8ab0874ef.rsp
+```
 
-## Next Steps
+## Trace Collection
 
-1. Run 5000 module build with dotnet-trace to collect performance trace
-2. Collect memory dump at 15 minute mark if build exceeds that time
-3. Analyze trace and dump for concrete bottleneck identification
+A 2-minute trace was collected during the build using:
+```bash
+dotnet-trace collect --process-id <FSC_PID> --format speedscope --output fsc-trace --duration 00:02:00
+```
+
+Trace file: `fsc-trace` (44,537 bytes)
+Converted to speedscope format: `fsc-trace.speedscope.speedscope.json` (92,797 bytes)
+
+Note: Trace shows high proportion of unmanaged code time, indicating native code execution or JIT compilation overhead.
