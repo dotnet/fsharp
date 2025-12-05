@@ -1716,6 +1716,8 @@ module Seq =
 
     /// <summary>Returns the greatest of all elements of the sequence, compared via Operators.max on the function result.</summary>
     ///
+    /// <remarks>Returns the first maximal element of the sequence if there are multiple equal maximum elements.</remarks>
+    /// 
     /// <param name="projection">A function to transform items from the input sequence into comparable keys.</param>
     /// <param name="source">The input sequence.</param>
     ///
@@ -1779,6 +1781,8 @@ module Seq =
     /// <param name="source">The input sequence.</param>
     ///
     /// <returns>The smallest element of the sequence.</returns>
+    ///
+    /// <remarks>Returns the first minimal element of the sequence if there are multiple equal minimal elements.</remarks> 
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
