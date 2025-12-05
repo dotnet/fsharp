@@ -5,6 +5,23 @@ Building a project with 10,000 F# modules is indeterminately slow due to super-l
 
 ## Key Findings
 
+### File Count vs Module Count Experiment
+
+To isolate whether the issue is with file count or module count, we tested the same 3000 modules organized differently:
+
+| Experiment | Files | Modules/File | Typecheck Time | Total Time | Memory (MB) |
+|------------|-------|--------------|----------------|------------|-------------|
+| Exp1       | 3000  | 1            | 142.07s        | 163.15s    | 5202 MB     |
+| Exp2       | 1000  | 3            | 30.59s         | 46.36s     | 2037 MB     |
+| Exp3       | 3     | 1000         | 10.41s         | 28.00s     | 1421 MB     |
+| Exp4       | 1     | 3000         | 18.08s         | 36.57s     | 1441 MB     |
+
+**Key observations:**
+- Same 3000 modules: 3000 files takes 142s, 1 file takes 18s = **7.9x slower with more files**
+- Memory: 5202 MB vs 1441 MB = **3.6x more memory with more files**
+- **The issue is clearly correlated with NUMBER OF FILES, not number of modules**
+- Typecheck phase dominates in all cases
+
 ### Timing Comparison (Stock vs Optimized Compiler)
 
 | File Count | Stock Compiler | Optimized Compiler | Difference |
