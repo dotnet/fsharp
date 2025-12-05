@@ -22,6 +22,29 @@ To isolate whether the issue is with file count or module count, we tested the s
 - **The issue is clearly correlated with NUMBER OF FILES, not number of modules**
 - Typecheck phase dominates in all cases
 
+### CombineModuleOrNamespaceTypes Instrumentation
+
+Added instrumentation to track the growth of entities processed in `CombineModuleOrNamespaceTypes`:
+
+| Iteration | Path | mty1.entities | mty2.entities | Total Entities Processed | Elapsed (ms) |
+|-----------|------|---------------|---------------|-------------------------|--------------|
+| 1         | root | 0             | 1             | 1                       | 35,000       |
+| 500       | root | 0             | 1             | 28,221                  | 36,400       |
+| 1000      | ConsoleApp1 | 2       | 664           | 112,221                 | 37,600       |
+| 2000      | root | 0             | 1             | 446,221                 | 41,200       |
+| 3000      | root | 1             | 1             | 1,004,000               | 47,300       |
+| 5000      | root | 0             | 1             | 2,782,221               | 69,900       |
+| 7000      | ConsoleApp1 | 2       | 4,664         | 5,452,221               | 109,500      |
+| 9000      | root | 1             | 1             | 8,008,000               | 155,000      |
+| 12000     | ConsoleApp1 | 2       | 3,000         | 11,263,500              | 175,500      |
+| 14500     | ConsoleApp1 | 2       | 5,500         | 16,582,250              | 180,500      |
+
+**Key observations from instrumentation:**
+- 14,500+ total iterations of `CombineModuleOrNamespaceTypes` for 3000 files
+- Total entities processed grows quadratically: ~16.6 million entity operations for 3000 files
+- The `ConsoleApp1` namespace merge handles increasingly large entity counts (up to 5,500 entities per merge)
+- Each file adds 2 new entities (type + module), but the accumulated namespace grows linearly
+
 ### Timing Comparison (Stock vs Optimized Compiler)
 
 | File Count | Stock Compiler | Optimized Compiler | Difference |
