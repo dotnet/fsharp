@@ -2758,6 +2758,8 @@ val (|InnerExprPat|): Expr -> Expr
 
 val allValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 
+val allTopLevelValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
+
 val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
 
 val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
