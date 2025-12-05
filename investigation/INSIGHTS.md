@@ -8,9 +8,9 @@ Building a project with 10,000 F# modules is indeterminately slow due to super-l
 ### Timing Measurements
 | File Count | Build Time | Ratio vs 1000 |
 |------------|-----------|---------------|
-| 1000       | 20s       | 1x            |
-| 2000       | 63s       | 3.15x         |
-| 3000       | 154s      | 7.7x          |
+| 1000       | 22s       | 1x            |
+| 2000       | 68s       | 3.1x          |
+| 3000       | 161s      | 7.3x          |
 
 This clearly demonstrates O(n²) behavior (if linear, ratios would be 2x and 3x).
 
@@ -31,29 +31,39 @@ Later files take ~2-3x longer to type-check than earlier files, demonstrating O(
 - Optimizations: 1.35s
 - Parse inputs: 0.32s
 
-## Hypothesis
+## Root Cause Analysis
 
-### H1: TcEnv/NameResolutionEnv Growth (MOST LIKELY)
-The `TcEnv` and `NameResolutionEnv` structures use layered maps (`LayeredMap`, `LayeredMultiMap`) that grow with each file. Each file lookup/operation on these maps becomes slower as more entries accumulate.
+### Primary Bottleneck: CombineCcuContentFragments
+The function `CombineCcuContentFragments` in `TypedTreeOps.fs` is called for each file to merge the file's signature into the accumulated CCU signature. 
 
-Key data structures:
-- `eUnqualifiedItems: LayeredMap<string, Item>` - grows with each type/value
-- `eTyconsByAccessNames: LayeredMultiMap<string, TyconRef>` - grows with each type
-- `eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>` - grows with each module
+The algorithm in `CombineModuleOrNamespaceTypes`:
+1. Builds a lookup table from ALL accumulated entities - O(n)
+2. Iterates ALL accumulated entities to check for conflicts - O(n)
+3. Creates a new list of combined entities - O(n)
 
-### H2: CombineCcuContentFragments Quadratic Behavior
-The `CombineCcuContentFragments` function called for each file combines the signature with accumulated CCU content. This has O(n) complexity per call, leading to O(n²) total.
+This is O(n) per file, giving O(n²) total for n files.
 
-### H3: Memory Pressure / GC
-With 10,000 modules, memory usage reaches 15GB (per T-Gro's comment). This causes GC pressure, but is likely a symptom rather than root cause.
+### Why This Affects fsharp-10k
+All 10,000 files use `namespace ConsoleApp1`, so:
+- At the TOP level, there's always a conflict (the `ConsoleApp1` namespace entity)
+- The `CombineEntities` function recursively combines the namespace contents
+- INSIDE the namespace, each file adds unique types (Foo1, Foo2, etc.) - no conflicts
+- But the full iteration still happens to check for conflicts
+
+### Attempted Optimization
+Added a fast path in `CombineModuleOrNamespaceTypes`:
+- When no entity name conflicts exist, use `QueueList.append` instead of rebuilding
+- This helps for deeper nesting but not for the top-level namespace conflict
+
+### Required Fix (Future Work)
+A proper fix would require:
+1. Restructuring the CCU accumulator to support O(1) entity appends
+2. Using incremental updates instead of full merges
+3. Potentially caching the `AllEntitiesByLogicalMangledName` map across merges
+4. Or using a different data structure that supports efficient union operations
 
 ## Reproduction
 Test project: https://github.com/ners/fsharp-10k
 - Each file declares a type `FooN` that depends on `Foo(N-1)`
 - Creates 10,001 source files (including Program.fs)
-
-## Next Steps
-1. Profile AddLocalRootModuleOrNamespace and AddTyconRefsToNameEnv
-2. Investigate LayeredMap/LayeredMultiMap implementation efficiency
-3. Consider whether batching or caching strategies could help
-4. Analyze memory allocation patterns in CombineCcuContentFragments
+- All in same namespace `ConsoleApp1`
