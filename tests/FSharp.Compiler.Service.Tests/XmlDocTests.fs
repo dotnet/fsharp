@@ -404,7 +404,10 @@ and ///B1
         (checkXml "B" [|"B1"; "B2"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Information 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|
+                Warning 3879, Line 5, Col 4, Line 5, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+                Information 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."
+            |]
 
             match parseResults.ParseTree with
             | Types(range, [_; TypeRange(typeRange2, synComponentRange2)])
@@ -428,7 +431,10 @@ and ///B2
         (checkXml "B" [|"B1"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|
+                Warning 3879, Line 6, Col 4, Line 6, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+                Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."
+            |]
 
             match parseResults.ParseTree with
             | Types(range, [_; TypeRange(typeRange2, synComponentRange2)])
@@ -451,7 +457,10 @@ type ///A2
         (checkXml "A" [|"A1"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Information 3520, Line 5, Col 5, Line 5, Col 10, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|
+                Warning 3879, Line 5, Col 5, Line 5, Col 8, "XML documentation comments should be the first non-whitespace text on a line."
+                Information 3520, Line 5, Col 5, Line 5, Col 10, "XML comment is not placed on a valid language element."
+            |]
 
             match parseResults.ParseTree with
             | Types(range, [TypeRange(typeRange, synComponentRange)])
@@ -523,6 +532,9 @@ let ///f2
 
     parseResults
     |> checkParsingErrors [|
+        Warning 3879, Line 3, Col 4, Line 3, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Warning 3879, Line 4, Col 8, Line 4, Col 11, "XML documentation comments should be the first non-whitespace text on a line."
+        Warning 3879, Line 5, Col 15, Line 5, Col 18, "XML documentation comments should be the first non-whitespace text on a line."
         Information 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."
         Information 3520, Line 4, Col 8, Line 4, Col 13, "XML comment is not placed on a valid language element."
         Information 3520, Line 5, Col 15, Line 5, Col 20, "XML comment is not placed on a valid language element."
@@ -604,7 +616,10 @@ let ///X
     |> checkXml "x" [||]
 
     parseResults
-    |> checkParsingErrors [|Information 3520, Line 2, Col 4, Line 2, Col 8, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|
+        Warning 3879, Line 2, Col 4, Line 2, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Information 3520, Line 2, Col 4, Line 2, Col 8, "XML comment is not placed on a valid language element."
+    |]
 
     match parseResults.ParseTree with
     | LetBindings(range, [binding]) ->
@@ -688,7 +703,10 @@ let ///X2
     |> checkXml "x" [|"X1"|]
 
     parseResults
-    |> checkParsingErrors [|Information 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|
+        Warning 3879, Line 3, Col 4, Line 3, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Information 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."
+    |]
 
     match parseResults.ParseTree with
     | LetBindings(range, [binding]) ->
@@ -733,7 +751,10 @@ and ///G1
     |> checkXml "g" [|"G1"; "G2"|]
 
     parseResults
-    |> checkParsingErrors [|Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|
+        Warning 3879, Line 3, Col 4, Line 3, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."
+    |]
 
     match parseResults.ParseTree with
     | LetBindings(range, [binding1; binding2]) ->
@@ -755,7 +776,10 @@ and ///G2
     |> checkXml "g" [|"G1"|]
 
     parseResults
-    |> checkParsingErrors [|Information 3520, Line 4, Col 4, Line 4, Col 9, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|
+        Warning 3879, Line 4, Col 4, Line 4, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Information 3520, Line 4, Col 4, Line 4, Col 9, "XML comment is not placed on a valid language element."
+    |]
 
     match parseResults.ParseTree with
     | LetBindings(range, [binding1; binding2]) ->
@@ -823,6 +847,7 @@ type A =
 
     parseResults
     |> checkParsingErrors [|
+        Warning 3879, Line 3, Col 19, Line 3, Col 22, "XML documentation comments should be the first non-whitespace text on a line."
         Information 3520, Line 3, Col 19, Line 3, Col 24, "XML comment is not placed on a valid language element."
         Information 3520, Line 9, Col 4, Line 9, Col 9, "XML comment is not placed on a valid language element."
     |]
@@ -883,6 +908,7 @@ type B =
 
     parseResults
     |> checkParsingErrors [|
+        Warning 3879, Line 5, Col 11, Line 5, Col 14, "XML documentation comments should be the first non-whitespace text on a line."
         Information 3520, Line 5, Col 11, Line 5, Col 16, "XML comment is not placed on a valid language element."
         Information 3520, Line 7, Col 16, Line 7, Col 22, "XML comment is not placed on a valid language element."
         Information 3520, Line 9, Col 16, Line 9, Col 22, "XML comment is not placed on a valid language element."
@@ -935,7 +961,10 @@ type A ///CTOR1
        ]
 
     parseResults
-    |> checkParsingErrors [|Information 3520, Line 5, Col 7, Line 5, Col 15, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|
+        Warning 3879, Line 2, Col 7, Line 2, Col 10, "XML documentation comments should be the first non-whitespace text on a line."
+        Information 3520, Line 5, Col 7, Line 5, Col 15, "XML comment is not placed on a valid language element."
+    |]
 
     match parseResults.ParseTree with
     | Members([SynMemberDefn.ImplicitCtor(range = range)]) ->
@@ -1051,6 +1080,7 @@ module ///M2
         (fun parseResults ->
             parseResults |>
             checkParsingErrors [|
+                Warning 3879, Line 3, Col 7, Line 3, Col 10, "XML documentation comments should be the first non-whitespace text on a line."
                 Information 3520, Line 3, Col 7, Line 3, Col 12, "XML comment is not placed on a valid language element."
             |]
 
@@ -1225,6 +1255,7 @@ exception ///E4
         (fun parseResults ->
             parseResults |>
             checkParsingErrors [|
+                Warning 3879, Line 8, Col 10, Line 8, Col 13, "XML documentation comments should be the first non-whitespace text on a line."
                 Information 3520, Line 7, Col 0, Line 7, Col 5, "XML comment is not placed on a valid language element."
                 Information 3520, Line 8, Col 10, Line 8, Col 15, "XML comment is not placed on a valid language element."
             |]
@@ -1247,7 +1278,10 @@ exception ///E
         (checkXml "E" [||])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Information 3520, Line 4, Col 10, Line 4, Col 14, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|
+                Warning 3879, Line 4, Col 10, Line 4, Col 13, "XML documentation comments should be the first non-whitespace text on a line."
+                Information 3520, Line 4, Col 10, Line 4, Col 14, "XML comment is not placed on a valid language element."
+            |]
 
             match parseResults.ParseTree with
             | Exception(exnRange, exnDefnRange, exnDefnReprRange) ->
