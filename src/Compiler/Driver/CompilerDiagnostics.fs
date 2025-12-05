@@ -2251,6 +2251,76 @@ type PhasedDiagnostic with
         // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
         let diagnostics = CollectFormattedDiagnostics(tcConfig, severity, diagnostic, true)
 
+        let renderRich (details: FormattedDiagnosticDetailedInfo) =
+            let severityText =
+                match severity with
+                | FSharpDiagnosticSeverity.Error -> "Error"
+                | FSharpDiagnosticSeverity.Warning -> "Warning"
+                | FSharpDiagnosticSeverity.Info
+                | FSharpDiagnosticSeverity.Hidden -> "Info"
+
+            let codeText = sprintf "FS%04d" details.Canonical.ErrorNumber
+            let lines = ResizeArray<string>()
+
+            // For multi-line messages, the first line with number and severity, the rest are indented
+            let messageLines = details.Message.Split([| '\n' |], StringSplitOptions.None)
+            if messageLines.Length > 0 then
+                lines.Add(sprintf "[%s] %s: %s" codeText severityText messageLines[0])
+                for i in 1 .. messageLines.Length - 1 do
+                    lines.Add(sprintf "│ %s" messageLines[i])
+            else
+                lines.Add(sprintf "[%s] %s" codeText details.Message)
+
+            let addLocationAndSnippet (l: FormattedDiagnosticLocation) =
+                let range = l.Range
+                let fileDisplay = if String.IsNullOrWhiteSpace l.File then "unknown" else l.File
+                lines.Add(sprintf "└─ [%s:(%d,%d)]" fileDisplay range.StartLine range.StartColumn)
+                lines.Add("")
+
+                let tryRenderSnippet () =
+                    try
+                        let fullPath =
+                            l.File
+                            |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
+
+                        if FileSystem.FileExistsShim fullPath then
+                            let content = File.ReadAllLines fullPath
+
+                            if content.Length > 0 then
+                                let startLine = max 1 (range.StartLine - 1)
+                                let endLine = min content.Length (range.StartLine)
+                                let snippetLines =
+                                    [ for ln in startLine .. min content.Length (endLine + 1) do
+                                        yield ln, content[ln - 1] ]
+
+                                let lineNoWidth =
+                                    snippetLines
+                                    |> List.map fst
+                                    |> List.map string
+                                    |> List.map String.length
+                                    |> List.max
+
+                                let caretStart = max 0 (range.StartColumn - 1)
+                                let caretWidth = max 1 (max 0 (range.EndColumn - range.StartColumn))
+                                let caretLine = String.make caretStart ' ' + String.make caretWidth '^'
+
+                                for (ln, text) in snippetLines do
+                                    lines.Add(sprintf "  %*d | %s" lineNoWidth ln text)
+
+                                lines.Add(sprintf "  %s | %s" (String.make lineNoWidth ' ') caretLine)
+                    with _ ->
+                        ()
+
+                tryRenderSnippet ()
+
+            match details.Location with
+            | Some l when not l.IsEmpty -> addLocationAndSnippet l
+            | _ -> ()
+
+            for i = 0 to lines.Count - 1 do
+                buf.AppendString lines[i]
+                if i < lines.Count - 1 then buf.AppendString "\n"
+
         for e in diagnostics do
             Printf.bprintf buf "\n"
 
@@ -2273,17 +2343,7 @@ type PhasedDiagnostic with
 
                     buf.AppendString details.Canonical.TextRepresentation
                     buf.AppendString details.Message
-                | DiagnosticStyle.Rich ->
-                    buf.AppendString details.Canonical.TextRepresentation
-                    buf.AppendString details.Message
-
-                    match details.Location with
-                    | Some l when not l.IsEmpty ->
-                        buf.AppendString l.TextRepresentation
-
-                        if details.Context.IsSome then
-                            buf.AppendString details.Context.Value
-                    | _ -> ()
+                | DiagnosticStyle.Rich -> renderRich details
 
     member diagnostic.OutputContext(buf, prefix, fileLineFunction) =
         match diagnostic.Range with
