@@ -5,31 +5,38 @@ Building a project with 10,000 F# modules is indeterminately slow due to super-l
 
 ## Key Findings
 
-### Timing Measurements
-| File Count | Build Time | Ratio vs 1000 |
-|------------|-----------|---------------|
-| 1000       | 22s       | 1x            |
-| 2000       | 68s       | 3.1x          |
-| 3000       | 161s      | 7.3x          |
+### Timing Comparison (Stock vs Optimized Compiler)
 
-This clearly demonstrates O(n²) behavior (if linear, ratios would be 2x and 3x).
+| File Count | Stock Compiler | Optimized Compiler | Difference |
+|------------|---------------|-------------------|------------|
+| 1000       | 24.0s         | 26.9s             | +12%       |
+| 2000       | 65.0s         | 79.5s             | +22%       |
+| 3000       | 159.8s        | 187.6s            | +17%       |
 
-### Per-File Type Check Duration (from timing.csv with 1000 files)
-| File # | Type Check Time |
-|--------|-----------------|
-| 50     | 0.0083s         |
-| 100    | 0.0067s         |
-| 500    | 0.0087s         |
-| 1000   | 0.0181s         |
+**Scaling Analysis:**
+| Files | Stock Ratio | Optimized Ratio | Expected (linear) |
+|-------|------------|-----------------|-------------------|
+| 1000  | 1x         | 1x              | 1x                |
+| 2000  | 2.7x       | 2.96x           | 2x                |
+| 3000  | 6.7x       | 6.98x           | 3x                |
 
-Later files take ~2-3x longer to type-check than earlier files, demonstrating O(n) per-file work.
+Both compilers exhibit O(n²) scaling. The optimization adds overhead without fixing the fundamental issue.
 
-### Phase Breakdown (1000 files, 18.9s total)
-- **Typecheck: 12.81s (68%)** - Main bottleneck
-- TAST -> IL: 1.88s
-- Write .NET Binary: 1.71s
-- Optimizations: 1.35s
-- Parse inputs: 0.32s
+### Phase Breakdown from --times (1000/2000/3000 files)
+
+| Phase              | 1000 files | 2000 files | 3000 files | Growth Rate |
+|--------------------|------------|------------|------------|-------------|
+| **Typecheck**      | 16.75s     | 67.69s     | 171.45s    | O(n²)       |
+| Optimizations      | 2.80s      | 4.96s      | 6.14s      | ~O(n)       |
+| TAST -> IL         | 1.50s      | 2.25s      | 3.16s      | ~O(n)       |
+| Write .NET Binary  | 0.87s      | 1.50s      | 2.35s      | ~O(n)       |
+| Parse inputs       | 0.51s      | 0.61s      | 0.91s      | ~O(n)       |
+
+**The Typecheck phase dominates and exhibits clear O(n²) growth.**
+
+### dotnet-trace Analysis
+Trace file captured at `/tmp/trace1000.nettrace` (25.8MB) and converted to speedscope format.
+Key hot paths in the trace are in type checking and CCU signature combination.
 
 ## Root Cause Analysis
 
@@ -50,17 +57,20 @@ All 10,000 files use `namespace ConsoleApp1`, so:
 - INSIDE the namespace, each file adds unique types (Foo1, Foo2, etc.) - no conflicts
 - But the full iteration still happens to check for conflicts
 
-### Attempted Optimization
-Added a fast path in `CombineModuleOrNamespaceTypes`:
+### Attempted Optimization (Reverted)
+Attempted a fast path in `CombineModuleOrNamespaceTypes`:
 - When no entity name conflicts exist, use `QueueList.append` instead of rebuilding
-- This helps for deeper nesting but not for the top-level namespace conflict
+- **Result: Made performance WORSE** (+12-22% overhead)
+- The overhead from conflict detection exceeded savings from fast path
+- Reverted this change as it was not beneficial
 
 ### Required Fix (Future Work)
-A proper fix would require:
+A proper fix would require architectural changes:
 1. Restructuring the CCU accumulator to support O(1) entity appends
-2. Using incremental updates instead of full merges
+2. Using incremental updates instead of full merges  
 3. Potentially caching the `AllEntitiesByLogicalMangledName` map across merges
 4. Or using a different data structure that supports efficient union operations
+5. Consider lazy evaluation of entity lookups
 
 ## Reproduction
 Test project: https://github.com/ners/fsharp-10k
