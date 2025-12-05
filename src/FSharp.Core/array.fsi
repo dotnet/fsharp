@@ -24,6 +24,11 @@ module Array =
     ///
     /// <returns>The resulting array of pairs.</returns>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n*m) where n is the length of array1 and m is the length of array2.
+    /// Space Complexity: O(n*m) for the resulting array.
+    /// </remarks>
+    ///
     /// <example id="all-pairs-1">
     /// <code lang="fsharp">
     /// ([| 1; 2 |], [| 3; 4 |]) ||> Array.allPairs
@@ -45,6 +50,11 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n+m) where n is the length of array1 and m is the length of array2.
+    /// Space Complexity: O(n+m) for the resulting array.
+    /// </remarks>
+    ///
     /// <example id="append-1">
     /// <code lang="fsharp">
     /// Array.append [| 1; 2 |] [| 3; 4 |]
@@ -62,6 +72,11 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
     /// <returns>The average of the elements in the array.</returns>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <example id="average-1">
     /// <code lang="fsharp">
@@ -93,6 +108,11 @@ module Array =
     /// <returns>The computed average.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <example id="average-by-1">
     /// <code lang="fsharp">
@@ -137,6 +157,8 @@ module Array =
     /// let target = [| 0; 1; 2; 3; 4; 5 |]
     /// target[3..4] &lt;- source[1..2]
     /// </code>
+    /// Time Complexity: O(count) where count is the number of elements to copy.
+    /// Space Complexity: O(1).
     /// </remarks>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
@@ -163,6 +185,11 @@ module Array =
     /// <returns>The concatenation of the sub-arrays.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n*k) where n is the length of the input array and k is the average length of the arrays returned by the mapping function.
+    /// Space Complexity: O(n*k) for the resulting array.
+    /// </remarks>
     ///
     /// <example id="collect-1">
     /// <code lang="fsharp">
@@ -201,6 +228,11 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays
     /// is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(min(n,m)) where n and m are the lengths of the arrays, as comparison stops at the first non-zero result.
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <example id="compare-with-1">
     /// <code lang="fsharp">
@@ -277,6 +309,11 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(∑|arrays[i]|) where ∑|arrays[i]| is the sum of lengths of all input arrays.
+    /// Space Complexity: O(∑|arrays[i]|) for the resulting array.
+    /// </remarks>
+    ///
     /// <example id="concat-1">
     /// <code lang="fsharp">
     /// let inputs = [ [| 1; 2 |]; [| 3 |]; [| 4; 5 |] ]
@@ -297,6 +334,11 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(1).
+    /// </remarks>
+    ///
     /// <example id="contains-1">
     /// <code lang="fsharp">
     /// [| 1; 2 |] |> Array.contains 2 // evaluates to true
@@ -313,6 +355,11 @@ module Array =
     /// <returns>A copy of the input array.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(n) for the new array.
+    /// </remarks>
     ///
     /// <example id="copy-1">
     /// <code lang="fsharp">
@@ -336,6 +383,11 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(k) where k is the number of unique keys.
+    /// </remarks>
+    ///
     /// <example id="count-by-1">
     /// <code lang="fsharp">
     /// type Foo = { Bar: string }
@@ -357,6 +409,11 @@ module Array =
     /// <returns>The created array.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the count.
+    /// Space Complexity: O(n) for the new array.
+    /// </remarks>
     ///
     /// <example id="create-1">
     /// <code lang="fsharp">
@@ -387,6 +444,11 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
     /// <returns>The first element of the array or None.</returns>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(1).
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <example id="tryhead-1">
     /// <code lang="fsharp">
@@ -419,6 +481,11 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(1).
+    /// </remarks>
+    ///
     /// <example id="trypick-1">
     /// <code lang="fsharp">
     /// let input = [| 1; 2; 3 |]
@@ -450,6 +517,11 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when either targetIndex or count is negative.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(count) where count is the number of elements to fill.
+    /// Space Complexity: O(1).
+    /// </remarks>
+    ///
     /// <example id="fill-1">
     /// <code lang="fsharp">
     /// let target = [| 0; 1; 2; 3; 4; 5 |]
@@ -473,6 +545,11 @@ module Array =
     /// <c>chooser</c> is <c>None</c>.</exception>
     ///
     /// <returns>The first result.</returns>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <example id="pick-1">
     /// <code lang="fsharp">
@@ -505,6 +582,11 @@ module Array =
     /// <returns>The array of results.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(k) where k is the number of elements for which the chooser returns Some.
+    /// </remarks>
     ///
     /// <example id="choose-1">
     /// <code lang="fsharp">
@@ -632,6 +714,11 @@ module Array =
     /// <summary>Returns an empty array of the given type.</summary>
     /// <returns>The empty array.</returns>
     ///
+    /// <remarks>
+    /// Time Complexity: O(1).
+    /// Space Complexity: O(1).
+    /// </remarks>
+    ///
     /// <example id="empty">
     /// <code lang="fsharp">
     /// Array.empty // Evaluates to [| |]
@@ -743,7 +830,10 @@ module Array =
     ///
     /// <remarks>The predicate is applied to the elements of the input array. If any application
     /// returns true then the overall result is true and no further elements are tested.
-    /// Otherwise, false is returned.</remarks>
+    /// Otherwise, false is returned.
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="array">The input array.</param>
@@ -820,6 +910,11 @@ module Array =
     /// <returns>An array containing the elements for which the given predicate returns true.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(k) where k is the number of elements that satisfy the predicate.
+    /// </remarks>
     ///
     /// <example id="filter-1">
     /// <code lang="fsharp">
@@ -1046,6 +1141,11 @@ module Array =
     /// <returns>The final state.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <example id="fold-1">
     /// <code lang="fsharp">
@@ -1529,7 +1629,10 @@ module Array =
     ///
     /// <returns>The length of the array.</returns>
     ///
-    /// <remarks>The notation <c>array.Length</c> is preferred.</remarks>
+    /// <remarks>The notation <c>array.Length</c> is preferred.
+    /// Time Complexity: O(1).
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <exception cref="T:System.NullReferenceException">Thrown when the input array is null.</exception>
     ///
@@ -1578,6 +1681,11 @@ module Array =
     /// <returns>The array of transformed elements.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(n) for the new array.
+    /// </remarks>
     ///
     /// <example id="map-1">
     /// <code lang="fsharp">
@@ -2267,7 +2375,10 @@ module Array =
     /// <summary>Sorts the elements of an array, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
     ///
     /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-    /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
+    /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.
+    /// Time Complexity: O(n log n) where n is the length of the array.
+    /// Space Complexity: O(n) for the new array.
+    /// </remarks>
     ///
     /// <param name="array">The input array.</param>
     ///
