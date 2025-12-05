@@ -10,7 +10,6 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 
 /// DiagnosticLoggers can be sensitive to the TcConfig flags. During the checking

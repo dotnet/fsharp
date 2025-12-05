@@ -309,7 +309,7 @@ let AddRootModuleOrNamespaceRefs g amap m env modrefs =
 
 /// Adjust the TcEnv to make more things 'InternalsVisibleTo'
 let addInternalsAccessibility env (ccu: CcuThunk) =
-    let compPath = CompPath (ccu.ILScopeRef, TypedTree.SyntaxAccess.Unknown, [])    
+    let compPath = CompPath (ccu.ILScopeRef, SyntaxAccess.Unknown, [])    
     let eInternalsVisibleCompPaths = compPath :: env.eInternalsVisibleCompPaths
     { env with 
         eAccessRights = ComputeAccessRights env.eAccessPath eInternalsVisibleCompPaths env.eFamilyType // update this computed field
@@ -415,8 +415,6 @@ let private CheckDuplicatesAbstractMethodParamsSig (typeSpecs:  SynTypeDefnSig l
         | _ -> ()
         
 module TcRecdUnionAndEnumDeclarations =
-    open CheckExpressionsOps
-
     let CombineReprAccess parent vis = 
         match parent with 
         | ParentNone -> vis 
@@ -1110,7 +1108,7 @@ module MutRecBindingChecking =
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
                             [Phase2AInherit (ty, arg, baseValOpt, m); Phase2AIncrClassCtorJustAfterSuperInit], innerState
 
-                        | Some (SynMemberDefn.LetBindings (letBinds, isStatic, isRec, m)), _ ->
+                        | Some (SynMemberDefn.LetBindings (bindings = letBinds; isStatic = isStatic; isRecursive = isRec; range = m)), _ ->
                             match tcref.TypeOrMeasureKind, isStatic with 
                             | TyparKind.Measure, false -> errorR(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) 
                             | _ -> ()
@@ -1180,7 +1178,7 @@ module MutRecBindingChecking =
                           TyconBindingPhase2A.Phase2AMember {
                             SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = Get_OrSet_Ident & setIdent)))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vSet)
-                          } when Range.equals getIdent.idRange setIdent.idRange ->
+                          } when equals getIdent.idRange setIdent.idRange ->
                             match  vGet.ApparentEnclosingEntity with
                             | ParentNone -> ()
                             | Parent parentRef ->
@@ -3961,8 +3959,12 @@ module EstablishTypeDefinitionCores =
 
             // collect edges from the fields of a given struct type.
             and accStructFields includeStaticFields ty (structTycon: Tycon) tinst (doneTypes, acc) =
-                if List.exists (typeEquiv g ty) doneTypes then
+                if
                     // This type (type instance) has been seen before, so no need to collect the same edges again (and avoid loops!)
+                    List.exists (typeEquiv g ty) doneTypes
+                    // This tycon is the outer tycon with a lifted generic argument, e.g., `'a list`.
+                    || not (isNil doneTypes) && tryTcrefOfAppTy g ty |> ValueOption.bind _.TryDeref |> ValueOption.exists ((===) tycon)
+                then
                     doneTypes, acc 
                 else
                     // Only collect once from each type instance.
@@ -4176,7 +4178,7 @@ module EstablishTypeDefinitionCores =
         // Generate the union augmentation values for all tycons.
         let withBaseValsAndSafeInitInfosAndUnionValues =
             (envMutRecPrelim, withBaseValsAndSafeInitInfos) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt, fixupFinalAttrs, info) -> 
-                let (tyconCore, _, _) = origInfo
+                let tyconCore, _, _ = origInfo
                 let (MutRecDefnsPhase1DataForTycon (isAtOriginalTyconDefn=isAtOriginalTyconDefn)) = tyconCore
                 let vspecs =
                     match tyconOpt with 
@@ -4215,18 +4217,7 @@ module TcDeclarations =
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
             let tcref =
                 match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
-                | Result res ->
-                    // Update resolved type parameters with the names from the source.
-                    let _, tcref, _ = res
-                    if tcref.TyparsNoRange.Length = synTypars.Length then
-                        (tcref.TyparsNoRange, synTypars)
-                        ||> List.zip
-                        |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl (typar = tp)) ->
-                            let (SynTypar(ident = untypedIdent; staticReq = sr)) = tp
-                            if typar.StaticReq = sr then
-                                typar.SetIdent(untypedIdent)
-                        )
-
+                | Result (_, tcref, _) ->
                     tcref
 
                 | Exception exn ->
@@ -4421,7 +4412,7 @@ module TcDeclarations =
                 let attribs = mkAttributeList attribs mWholeAutoProp
                 let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, synExpr, synExpr.Range, [], attribs, None, SynBindingTrivia.Zero)
 
-                [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
+                [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp, SynMemberDefnLetBindingsTrivia.Zero))]
 
             | SynMemberDefn.Interface (members=Some membs) -> membs |> List.collect preAutoProps
             | SynMemberDefn.LetBindings _
@@ -5122,7 +5113,7 @@ let ElimSynModuleDeclExpr bind =
     match bind with 
     | SynModuleDecl.Expr (expr, m) -> 
         let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, DebugPointAtBinding.NoneAtDo, SynBindingTrivia.Zero)
-        SynModuleDecl.Let(false, [bind2], m)
+        SynModuleDecl.Let(false, [bind2], m, SynModuleDeclLetTrivia.Zero)
     | _ -> bind
 
 let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _>) env = 
@@ -5196,12 +5187,12 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                   let decls = typeDefs |> List.map MutRecShape.Tycon
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Let (letrec, binds, m) -> 
+              | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) -> 
                   let binds = 
                       if isNamespace then 
                           CheckLetOrDoInNamespace binds m; []
                       else
-                          if letrec then [MutRecShape.Lets binds]
+                          if isRecursive then [MutRecShape.Lets binds]
                           else List.map (List.singleton >> MutRecShape.Lets) binds
                   binds, (false, false, attrs)
 
@@ -5281,7 +5272,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               return ([defn], [], []), env, env
 
       | SynModuleDecl.Types (typeDefs, m) ->
-          let typeDefs = typeDefs |> List.filter (function (SynTypeDefn(typeInfo = SynComponentInfo(longId = []))) -> false | _ -> true)
+          let typeDefs = typeDefs |> List.filter (function SynTypeDefn(typeInfo = SynComponentInfo(longId = [])) -> false | _ -> true)
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon
           let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns false
@@ -5301,7 +5292,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               | _ -> [ TMDefOpens openDecls ]
           return (defns, [], []), env, env
 
-      | SynModuleDecl.Let (letrec, binds, m) -> 
+      | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) -> 
 
           match parent with
           | ParentNone ->
@@ -5310,7 +5301,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
           | Parent parentModule -> 
               let containerInfo = ModuleOrNamespaceContainerInfo parentModule
-              if letrec then 
+              if isRecursive then 
                 let scopem = unionRanges m scopem
                 let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(containerInfo, NoNewSlots, ModuleOrMemberBinding, bind))
                 let binds, env, _ = TcLetrecBindings WarnOnOverrides cenv env tpenv (binds, m, scopem)

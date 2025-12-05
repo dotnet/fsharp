@@ -90,19 +90,12 @@ type SynExprDotLambdaTrivia =
     }
 
 [<NoEquality; NoComparison>]
-type SynExprLetOrUseTrivia =
+type SynLetOrUseTrivia =
     {
-        LetOrUseKeyword: range
         InKeyword: range option
-        EqualsRange: range option
     }
 
-    static member Zero: SynExprLetOrUseTrivia =
-        {
-            InKeyword = None
-            LetOrUseKeyword = range0
-            EqualsRange = None
-        }
+    static member Zero: SynLetOrUseTrivia = { InKeyword = None }
 
 [<NoEquality; NoComparison>]
 type SynExprMatchTrivia =
@@ -184,7 +177,7 @@ type SynTypeDefnLeadingKeyword =
         match this with
         | SynTypeDefnLeadingKeyword.Type range
         | SynTypeDefnLeadingKeyword.And range -> range
-        | SynTypeDefnLeadingKeyword.StaticType(staticRange, typeRange) -> Range.unionRanges staticRange typeRange
+        | SynTypeDefnLeadingKeyword.StaticType(staticRange, typeRange) -> unionRanges staticRange typeRange
         | SynTypeDefnLeadingKeyword.Synthetic -> failwith "Getting range from synthetic keyword"
 
 [<NoEquality; NoComparison>]
@@ -220,9 +213,12 @@ type SynTypeDefnSigTrivia =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynLeadingKeyword =
     | Let of letRange: range
+    | LetBang of letBangRange: range
     | LetRec of letRange: range * recRange: range
     | And of andRange: range
+    | AndBang of andBangRange: range
     | Use of useRange: range
+    | UseBang of useBangRange: range
     | UseRec of useRange: range * recRange: range
     | Extern of externRange: range
     | Member of memberRange: range
@@ -250,8 +246,11 @@ type SynLeadingKeyword =
     member this.Range =
         match this with
         | Let m
+        | LetBang m
         | And m
+        | AndBang m
         | Use m
+        | UseBang m
         | Extern m
         | Member m
         | Override m
@@ -274,7 +273,7 @@ type SynLeadingKeyword =
         | DefaultVal(m1, m2)
         | MemberVal(m1, m2)
         | OverrideVal(m1, m2)
-        | StaticMemberVal(m1, _, m2) -> Range.unionRanges m1 m2
+        | StaticMemberVal(m1, _, m2) -> unionRanges m1 m2
         | Synthetic -> range0
 
 [<NoEquality; NoComparison>]
@@ -317,6 +316,15 @@ type SynModuleSigDeclNestedModuleTrivia =
             ModuleKeyword = None
             EqualsRange = None
         }
+
+[<NoEquality; NoComparison>]
+type SynModuleDeclLetTrivia =
+    {
+        // The syntax range of the `in` keyword.
+        InKeyword: range option
+    }
+
+    static member Zero: SynModuleDeclLetTrivia = { InKeyword = None }
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynModuleOrNamespaceLeadingKeyword =
@@ -383,10 +391,10 @@ type GetSetKeywords =
         | Get m
         | Set m -> m
         | GetSet(mG, mS) ->
-            if Range.rangeBeforePos mG mS.Start then
-                Range.unionRanges mG mS
+            if rangeBeforePos mG mS.Start then
+                unionRanges mG mS
             else
-                Range.unionRanges mS mG
+                unionRanges mS mG
 
 [<NoEquality; NoComparison>]
 type SynMemberDefnAutoPropertyTrivia =
@@ -396,6 +404,14 @@ type SynMemberDefnAutoPropertyTrivia =
         EqualsRange: range option
         GetSetKeywords: GetSetKeywords option
     }
+
+[<NoEquality; NoComparison>]
+type SynMemberDefnLetBindingsTrivia =
+    {
+        InKeyword: range option
+    }
+
+    static member Zero: SynMemberDefnLetBindingsTrivia = { InKeyword = None }
 
 [<NoEquality; NoComparison>]
 type SynMemberDefnAbstractSlotTrivia =

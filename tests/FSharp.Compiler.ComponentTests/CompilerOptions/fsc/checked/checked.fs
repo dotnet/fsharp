@@ -23,7 +23,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFs
-        |> withOptions["--checked"]
+        |> withOptions ["--checked"]
         |> compile
         |> shouldSucceed
 
@@ -33,7 +33,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFs
-        |> withOptions["--checked+"]
+        |> withOptions ["--checked+"]
         |> compile
         |> shouldSucceed
 
@@ -43,7 +43,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFs
-        |> withOptions["--checked-"]
+        |> withOptions ["--checked-"]
         |> compile
         |> shouldSucceed
 
@@ -53,7 +53,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFsx
-        |> withOptions["--checked-"]
+        |> withOptions ["--checked-"]
         |> compile
         |> shouldSucceed
 
@@ -63,7 +63,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFsx
-        |> withOptions["--checked"]
+        |> withOptions ["--checked"]
         |> compile
         |> shouldSucceed
 
@@ -73,7 +73,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFsx
-        |> withOptions["--checked+"]
+        |> withOptions ["--checked+"]
         |> compile
         |> shouldSucceed
 
@@ -83,7 +83,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFsx
-        |> withOptions["--checked-"]
+        |> withOptions ["--checked-"]
         |> compile
         |> shouldSucceed
 
@@ -96,7 +96,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFs
-        |> withOptions["--checked"; "--checked+"]
+        |> withOptions ["--checked"; "--checked+"]
         |> compile
         |> shouldSucceed
 
@@ -106,7 +106,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFs
-        |> withOptions["--checked-"; "--checked+"]
+        |> withOptions ["--checked-"; "--checked+"]
         |> compile
         |> shouldSucceed
 
@@ -116,7 +116,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFs
-        |> withOptions["--checked+"; "--checked-"]
+        |> withOptions ["--checked+"; "--checked-"]
         |> compile
         |> shouldSucceed
 
@@ -126,7 +126,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFsx
-        |> withOptions["--checked"; "--checked+"]
+        |> withOptions ["--checked"; "--checked+"]
         |> compile
         |> shouldSucceed
 
@@ -136,7 +136,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFsx
-        |> withOptions["--checked-"; "--checked+"]
+        |> withOptions ["--checked-"; "--checked+"]
         |> compile
         |> shouldSucceed
 
@@ -146,7 +146,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFsx
-        |> withOptions["--checked+"; "--checked-"]
+        |> withOptions ["--checked+"; "--checked-"]
         |> compile
         |> shouldSucceed
 
@@ -157,7 +157,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFs
-        |> withOptions["--Checked"]
+        |> withOptions ["--Checked"]
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -170,7 +170,7 @@ module Checked =
        compilation
         |> getCompilation 
         |> asFs
-        |> withOptions["--checked*"]
+        |> withOptions ["--checked*"]
         |> compile
         |> shouldFail
         |> withDiagnostics [

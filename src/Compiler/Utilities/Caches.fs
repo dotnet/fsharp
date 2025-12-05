@@ -7,7 +7,6 @@ open System.Collections.Concurrent
 open System.Threading
 open System.Diagnostics
 open System.Diagnostics.Metrics
-open System.IO
 
 module CacheMetrics =
     let Meter = FSharp.Compiler.Diagnostics.Metrics.Meter

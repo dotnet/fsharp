@@ -15,7 +15,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text
 
 type TypeProviderDesignation = TypeProviderDesignation of string
-type 'a ProvidedArray = ('a[]) MaybeNull
+type 'a ProvidedArray = 'a[] MaybeNull
 
 /// Raised when a type provider has thrown an exception.
 exception ProvidedTypeResolution of range * exn

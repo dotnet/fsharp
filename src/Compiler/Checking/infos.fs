@@ -17,14 +17,11 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.Xml
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
-open FSharp.Compiler.AbstractIL
-
 #endif
 
 //-------------------------------------------------------------------------
@@ -471,7 +468,7 @@ type ILTypeInfo =
             let tref = mkRefForNestedILTypeDef scoref (enc, tdef)
             ILTypeInfo(g, ty, tref, tdef)
         else
-            failwith ("ILTypeInfo.FromType - no IL metadata for type" + System.Environment.StackTrace)
+            failwith ("ILTypeInfo.FromType - no IL metadata for type" + Environment.StackTrace)
 
 [<NoComparison; NoEquality>]
 type ILMethParentTypeInfo =
@@ -1326,7 +1323,7 @@ type MethInfo =
         match x with
         | FSMeth(g, _, vref, _) ->
             match vref.RecursiveValInfo with
-            | ValInRecScope false -> error(Error((FSComp.SR.InvalidRecursiveReferenceToAbstractSlot()), m))
+            | ValInRecScope false -> error(Error(FSComp.SR.InvalidRecursiveReferenceToAbstractSlot(), m))
             | _ -> ()
 
             let allTyparsFromMethod, _, _, retTy, _ = GetTypeOfMemberInMemberForm g vref
@@ -2272,7 +2269,7 @@ let private tyConformsToIDelegateEvent g ty =
 
 /// Create an error object to raise should an event not have the shape expected by the .NET idiom described further below
 let nonStandardEventError nm m =
-    Error ((FSComp.SR.eventHasNonStandardType(nm, ("add_"+nm), ("remove_"+nm))), m)
+    Error (FSComp.SR.eventHasNonStandardType(nm, ("add_"+nm), ("remove_"+nm)), m)
 
 /// Find the delegate type that an F# event property implements by looking through the type hierarchy of the type of the property
 /// for the first instantiation of IDelegateEvent.

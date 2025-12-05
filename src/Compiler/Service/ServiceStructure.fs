@@ -263,7 +263,7 @@ module Structure =
                 rcheck Scope.For Collapse.Below r r
                 parseExpr e
 
-            | SynExpr.LetOrUse(bindings = bindings; body = body) ->
+            | SynExpr.LetOrUse({ Bindings = bindings; Body = body }) ->
                 parseBindings bindings
                 parseExpr body
 
@@ -571,7 +571,7 @@ module Structure =
                 |> Option.map (fun b -> SynMemberDefn.Member(b, m))
                 |> Option.iter (parseSynMemberDefn objectModelRange)
 
-            | SynMemberDefn.LetBindings(bindings, _, _, _) -> parseBindings bindings
+            | SynMemberDefn.LetBindings(bindings = bindings) -> parseBindings bindings
 
             | SynMemberDefn.Interface(interfaceType = tp; members = iMembers; range = r) ->
                 rcheck Scope.Interface Collapse.Below d.Range (Range.endToEnd tp.Range d.Range)
@@ -772,7 +772,7 @@ module Structure =
 
         let rec parseDeclaration (decl: SynModuleDecl) =
             match decl with
-            | SynModuleDecl.Let(_, bindings, r) ->
+            | SynModuleDecl.Let(bindings = bindings; range = r) ->
                 for binding in bindings do
                     let collapse = Range.endToEnd binding.RangeOfBindingWithoutRhs r
                     rcheck Scope.LetOrUse Collapse.Below r collapse
@@ -843,7 +843,7 @@ module Structure =
                     | _ -> loop (lineNum, None, result) rest (lineNum + 1)
 
             let comments =
-                let (_, lastComment, comments) = loop (-1, None, []) (List.ofArray lines) 0
+                let _, lastComment, comments = loop (-1, None, []) (List.ofArray lines) 0
 
                 match lastComment with
                 | Some comment -> comment :: comments

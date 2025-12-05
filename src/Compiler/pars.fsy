@@ -140,7 +140,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 
 /* LexFilter #light inserts these tokens when closing offside contexts */
 %token OEND                                    // CtxtFun, CtxtMatchClauses, CtxtWithAsLet _
-%token <range> ODECLEND                        // CtxtDo and CtxtLetDecl(block)
+%token <range * bool> ODECLEND                  // CtxtDo and CtxtLetDecl(block), bool indicates if it came from an actual IN keyword
 %token <range> ORIGHT_BLOCK_END                // CtxtSeqBlock(_, _, AddOneSidedBlockEnd)
 %token <range> OBLOCKEND                       // CtxtSeqBlock(_, _, AddBlockEnd)
 %token OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE // CtxtSeqBlock(_, _, AddBlockEnd)
@@ -1308,20 +1308,20 @@ moduleDefn:
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         (getSynArgNameGenerator parseState.LexBuffer).Reset()
         let (BindingSetPreAttrs(_, _, _, _, mWhole)) = $3
-        mkDefnBindings (mWhole, $3, $1, $2, mWhole) }
+        mkDefnBindings (mWhole, $3, $1, $2, mWhole, None) }
 
   /* 'let' or 'do' definitions in #light */
   | opt_attributes opt_access hardwhiteLetBindings %prec decl_let
-      { let hwlb, m, _ = $3
+      { let hwlb, m, mIn = $3
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         (getSynArgNameGenerator parseState.LexBuffer).Reset()
-        mkDefnBindings (m, hwlb, $1, $2, m) }
+        mkDefnBindings (m, hwlb, $1, $2, m, mIn) }
 
   /* 'do' definitions in non-#light*/
   | opt_attributes opt_access doBinding %prec decl_let
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let mWhole = rhs parseState 3
-        mkDefnBindings (mWhole, $3, $1, $2, mWhole) }
+        mkDefnBindings (mWhole, $3, $1, $2, mWhole, None) }
 
   /* 'type' definitions */
   | opt_attributes opt_access typeKeyword tyconDefn tyconDefnList
@@ -2002,11 +2002,13 @@ abstractMemberFlags:
 classDefnMember:
   | opt_attributes opt_access classDefnBindings
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       [mkClassMemberLocalBindings(false, None, $1, $2, $3)] }
+       let bindingSet, mIn = $3
+       [mkClassMemberLocalBindings(false, None, $1, $2, bindingSet, mIn)] }
 
   | opt_attributes opt_access STATIC classDefnBindings
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       [mkClassMemberLocalBindings(true, Some(rhs parseState 3), $1, $2, $4)] }
+       let bindingSet, mIn = $4
+       [mkClassMemberLocalBindings(true, Some(rhs parseState 3), $1, $2, bindingSet, mIn)] }
 
   | opt_attributes opt_access memberFlags memberCore opt_ODECLEND
      { let rangeStart = rhs parseState 1
@@ -3139,7 +3141,8 @@ hardwhiteDoBinding:
 
   | ODO ODECLEND
       { let mDo = rhs parseState 1
-        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        let mDeclEnd, _ = $2
+        reportParseErrorAt mDeclEnd (FSComp.SR.parsExpectingExpression ())
         let seqPt = DebugPointAtBinding.NoneAtDo
         let expr = arbExpr ("hardwhiteDoBinding1", mDo.EndRange)
         BindingSetPreAttrs(mDo, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDo, expr, mDo)]), mDo), expr }
@@ -3147,26 +3150,27 @@ hardwhiteDoBinding:
 /* The bindings in a class type definition */
 classDefnBindings:
   | defnBindings
-     { $1 }
+     { $1, None }
 
   | doBinding
-     { $1 }
+     { $1, None }
 
   | hardwhiteLetBindings
-     { let b, m, _ = $1
-       b }
+     { let b, m, mIn = $1
+       b, mIn }
 
   | hardwhiteDoBinding
-     { fst $1 }
+     { fst $1, None }
 
 
 /* The terminator for a 'let ....' binding in the #light syntax */
 hardwhiteDefnBindingsTerminator:
   | ODECLEND
-     { let mToken = rhs parseState 1
+     { let mToken, isFromInKeyword = $1
        // In LexFilter.fs the IN token could have been transformed to an ODECLEND one.
-       let mIn = if (mToken.EndColumn - mToken.StartColumn) = 2 then Some mToken else None
-       (fun _ m -> ()), mIn, Some $1 }
+       // The boolean flag indicates if it came from an actual IN keyword.
+       let mIn = if isFromInKeyword then Some mToken else None
+       (fun _ m -> ()), mIn, Some mToken }
 
   | recover
      { (fun kwd m ->
@@ -3523,32 +3527,23 @@ bindingPattern:
   | headBindingPattern
     { $1, $1.Range }
 
-// This rule unifies the pattern parsing for both regular 'let' bindings and (let!, use!, and!)
-bindingPatternWithOptType:
-  | headBindingPattern opt_topReturnTypeWithTypeConstraints
-    { // Pattern with optional type annotation
-      match $2 with
-      | None -> 
-          // No type annotation
-          $1, $1.Range, None
-      | Some(colonRangeOpt, SynReturnInfo((ty, _), _)) ->
-          // Pattern with type annotation (e.g., x: int)
-          let mWhole = unionRanges $1.Range ty.Range
-          let typedPat = SynPat.Typed($1, ty, mWhole)
-          typedPat, mWhole, Some ty }
-
-// Handles the pattern part of let!, use!, and! bindings
+// Handles pattern and return type part of let!, use!, and! bindings
 ceBindingCore:
-  | opt_inline opt_mutable bindingPatternWithOptType
-    { let pat, mPat, tyOpt = $3
+  | opt_inline opt_mutable bindingPattern opt_topReturnTypeWithTypeConstraints
+    { let pat, mPat = $3
+      let tyOpt = $4
       let isInline = Option.isSome $1
       let isMutable = Option.isSome $2
-      match tyOpt with
-      | Some ty -> 
-          parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
-      | None -> ()
-      
-      pat, mPat, isInline, isMutable, tyOpt }
+
+      let returnInfo =
+          match tyOpt with
+          | Some(colonRangeOpt, SynReturnInfo((ty, _), tym)) ->
+              parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
+              Some (SynBindingReturnInfo(ty, tym, [], { ColonRange = colonRangeOpt }))
+          | None ->
+              None
+
+      pat, mPat, isInline, isMutable, returnInfo }
 
 opt_simplePatterns:
   | simplePatterns
@@ -4129,7 +4124,7 @@ sequentialExpr:
        let usedKeyword = if isUse then "use" else "let"
        reportParseErrorAt mLetKwd (FSComp.SR.parsExpectedExpressionAfterLet(usedKeyword, usedKeyword))
        let fauxRange = m.EndRange // zero width range at end of m
-       mkLetExpression(false, mIn, m, arbExpr ("seqExpr", fauxRange), Some bindingSet, None) }
+       mkLetExpression(mIn, m, arbExpr ("seqExpr", fauxRange), bindingSet) }
 
 /* Use this as the last terminal when performing error recovery */
 /* The contract for using this is that (a) if EOF occurs then the */
@@ -4144,7 +4139,7 @@ recover:
 
 moreBinders:
   | AND_BANG ceBindingCore EQUALS typedSequentialExprBlock IN moreBinders %prec expr_let
-     { let pat, mPat, isInline, isMutable, tyOpt = $2
+     { let pat, mPat, isInline, isMutable, returnInfo = $2
        
        // and! bindings don't support inline or mutable modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
@@ -4153,25 +4148,24 @@ moreBinders:
        let mKeyword = rhs parseState 1
        let mEquals = rhs parseState 3
        let m = unionRanges mKeyword $4.Range
-       let mIn = Some(rhs parseState 5)
        
-       mkAndBang(mKeyword, pat, $4, m, mEquals, mIn) :: $6 }
+       mkAndBang(mKeyword, pat, returnInfo, $4, m, mEquals) :: $6 }
 
   | OAND_BANG ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders %prec expr_let
      { // Offside-sensitive version of and! binding
-       let pat, mPat, isInline, isMutable, tyOpt = $2
+       let pat, mPat, isInline, isMutable, returnInfo = $2
        
        // and! bindings don't support inline or mutable modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
        if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
        
-       let report, mIn, _ = $5
+       let report, _mIn, _ = $5
        report "and!" (rhs parseState 1)  // report unterminated error
        let mKeyword = rhs parseState 1
        let mEquals = rhs parseState 3
        let m = unionRanges mKeyword $4.Range
        
-       mkAndBang(mKeyword, pat, $4, m, mEquals, mIn) :: $7 }
+       mkAndBang(mKeyword, pat, returnInfo, $4, m, mEquals) :: $7 }
 
   | %prec prec_no_more_attr_bindings
       { [] }
@@ -4181,13 +4175,13 @@ declExpr:
      { let mIn = rhs parseState 2 |> Some
        let mWhole = unionRanges (rhs2 parseState 1 2) $3.Range
        let bindingSet = $1
-       mkLetExpression(false, mIn, mWhole, $3, Some bindingSet, None) }
+       mkLetExpression(mIn, mWhole, $3, bindingSet) }
 
   | defnBindings IN error %prec expr_let
      { let mIn = rhs parseState 2 |> Some
        let mWhole = rhs2 parseState 1 2
        let bindingSet = $1
-       mkLetExpression(false, mIn, mWhole, arbExpr ("declExpr1", (rhs parseState 3)), Some bindingSet, None) }
+       mkLetExpression(mIn, mWhole, arbExpr ("declExpr1", (rhs parseState 3)), bindingSet) }
 /*
     FSComp.SR.parsNoMatchingInForLet() -- leave this in for now - it's an unused error string
 */
@@ -4195,23 +4189,23 @@ declExpr:
   | hardwhiteLetBindings typedSequentialExprBlock %prec expr_let
      { let bindingSet, m, mIn = $1
        let mWhole = unionRanges m $2.Range
-       mkLetExpression(false, mIn, mWhole, $2, Some bindingSet, None) }
+       mkLetExpression(mIn, mWhole, $2, bindingSet) }
 
   | hardwhiteLetBindings error %prec expr_let
      { let bindingSet, m, mIn = $1
        reportParseErrorAt (match bindingSet with (BindingSetPreAttrs(m, _, _, _, _)) -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
-       mkLetExpression(false, mIn, m, arbExpr ("declExpr2", (rhs parseState 2)), Some bindingSet, None) }
+       mkLetExpression(mIn, m, arbExpr ("declExpr2", (rhs parseState 2)), bindingSet) }
 
   | hardwhiteLetBindings OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let bindingSet, m, mIn = $1
        let mWhole = unionRanges m $3.Range
-       mkLetExpression(false, mIn, mWhole, $3, Some bindingSet, None) }
+       mkLetExpression(mIn, mWhole, $3, bindingSet) }
 
   | hardwhiteLetBindings OBLOCKSEP error %prec expr_let
      { let bindingSet, m, mIn = $1
        //reportParseErrorAt (match bindingSet with (BindingSetPreAttrs(m, _, _, _, _)) -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
        let mWhole = unionRanges m (rhs parseState 3)
-       mkLetExpression(false, mIn, mWhole, arbExpr ("declExpr3", (rhs parseState 3)), Some bindingSet, None) }
+       mkLetExpression(mIn, mWhole, arbExpr ("declExpr3", (rhs parseState 3)), bindingSet) }
 
   | hardwhiteDoBinding %prec expr_let
      { let (BindingSetPreAttrs(_, _, _, _, m)), e = $1
@@ -4536,24 +4530,26 @@ declExpr:
 
   | BINDER ceBindingCore EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { // Handle let! and use! bindings with unified pattern parsing
-       let pat, mPat, isInline, isMutable, tyOpt = $2
+       let pat, mPat, isInline, isMutable, returnInfo = $2
        
        // let! and use! bindings don't support inline or mutable modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
        if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
        
        let mKeyword = rhs parseState 1
+       let keyword = if $1 = "let" then SynLeadingKeyword.LetBang mKeyword else SynLeadingKeyword.UseBang mKeyword
        let mEquals = Some(rhs parseState 3)
+       let mIn = rhs parseState 5
        let m = unionRanges mKeyword $8.Range
        
        // $1 contains the actual keyword ("let" or "use")
        let isUse = ($1 = "use")
-       
-       mkLetExpression(true, None, m, $8, None, Some(pat, $4, $7, mKeyword, mEquals, isUse)) }
+
+       mkLetBangExpression(Some mIn, m, $8, (pat, returnInfo, $4, $7, keyword, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { // Offside-sensitive version of let!/use! binding
-       let pat, mPat, isInline, isMutable, tyOpt = $2
+       let pat, mPat, isInline, isMutable, returnInfo = $2
        
        // let! and use! bindings don't support inline or mutable modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
@@ -4562,31 +4558,34 @@ declExpr:
        let report, mIn, _ = $5
        report (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
        let mKeyword = rhs parseState 1
+       let keyword = if $1 = "let" then SynLeadingKeyword.LetBang mKeyword else SynLeadingKeyword.UseBang mKeyword
        let mEquals = Some(rhs parseState 3)
        let m = unionRanges mKeyword $8.Range
        
        let isUse = ($1 = "use")
        
-       mkLetExpression(true, None, m, $8, None, Some(pat, $4, $7, mKeyword, mEquals, isUse)) }
+       mkLetBangExpression(mIn, m, $8, (pat, returnInfo, $4, $7, keyword, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
      { // Error recovery for incomplete let!/use! bindings
        // Allows intellisense to work when writing incomplete computation expressions
-       let pat, mPat, isInline, isMutable, tyOpt = $2
+       let pat, mPat, isInline, isMutable, returnInfo = $2
        
        // Error checking for invalid modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
        if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
        
        let mKeyword = rhs parseState 1
+       let keyword = if $1 = "let" then SynLeadingKeyword.LetBang mKeyword else SynLeadingKeyword.UseBang mKeyword
        let mEquals = Some(rhs parseState 3)
        let mAll = unionRanges mKeyword (rhs parseState 7)
        let m = $4.Range.EndRange // zero-width range
+       let _, mIn, _ = $5
        
        let isUse = ($1 = "use")
        
        // Use ImplicitZero as the continuation expression for error recovery
-       mkLetExpression(true, None, mAll, SynExpr.ImplicitZero m, None, Some(pat, $4, [], mKeyword, mEquals, isUse)) }
+       mkLetBangExpression(mIn, mAll, SynExpr.ImplicitZero m, (pat, returnInfo, $4, [], keyword, mEquals, isUse)) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo
@@ -7061,7 +7060,7 @@ doneDeclEnd:
   | DONE
       { rhs parseState 1 }
   | ODECLEND
-      { $1 }
+      { let m, _ = $1 in m }
 
 structOrBegin:
   | STRUCT
