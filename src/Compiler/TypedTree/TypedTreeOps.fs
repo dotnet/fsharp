@@ -11384,24 +11384,51 @@ let CombineCcuContentFragments l =
     /// same namespace, making new module specs as we go.
     let rec CombineModuleOrNamespaceTypes path (mty1: ModuleOrNamespaceType) (mty2: ModuleOrNamespaceType) = 
         let kind = mty1.ModuleOrNamespaceKind
-        let tab1 = mty1.AllEntitiesByLogicalMangledName
+        
+        // Build lookup table for mty2 entities (typically small)
         let tab2 = mty2.AllEntitiesByLogicalMangledName
-        let entities = 
-            [
-                for e1 in mty1.AllEntities do 
-                    match tab2.TryGetValue e1.LogicalName with
-                    | true, e2 -> yield CombineEntities path e1 e2
-                    | _ -> yield e1
+        
+        // If mty2 has no entities, just return mty1 with appended vals
+        if tab2.IsEmpty then
+            let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
+            if vals = mty1.AllValsAndMembers then mty1 
+            else ModuleOrNamespaceType(kind, vals, mty1.AllEntities)
+        else
+            // Build lookup table for mty1 (this is the expensive operation for large accumulators)
+            let tab1 = mty1.AllEntitiesByLogicalMangledName
+            
+            // Check if there are any conflicts - iterate the smaller collection (mty2)
+            let conflictingNames = 
+                mty2.AllEntities 
+                |> Seq.choose (fun e2 -> 
+                    if tab1.ContainsKey e2.LogicalName then Some e2.LogicalName else None)
+                |> Set.ofSeq
+            
+            let entities =
+                if conflictingNames.IsEmpty then
+                    // Fast path: no conflicts, just append new entities from mty2
+                    QueueList.append mty1.AllEntities mty2.AllEntities
+                else
+                    // Full merge needed - some entities need to be combined
+                    let combinedEntities = 
+                        [
+                            for e1 in mty1.AllEntities do 
+                                if conflictingNames.Contains e1.LogicalName then
+                                    match tab2.TryGetValue e1.LogicalName with
+                                    | true, e2 -> yield CombineEntities path e1 e2
+                                    | _ -> yield e1
+                                else
+                                    yield e1
 
-                for e2 in mty2.AllEntities do 
-                    match tab1.TryGetValue e2.LogicalName with
-                    | true, _ -> ()
-                    | _ -> yield e2
-            ]
+                            for e2 in mty2.AllEntities do 
+                                if not (conflictingNames.Contains e2.LogicalName) then
+                                    yield e2
+                        ]
+                    QueueList.ofList combinedEntities
 
-        let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
+            let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
 
-        ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
+            ModuleOrNamespaceType(kind, vals, entities)
 
     and CombineEntities path (entity1: Entity) (entity2: Entity) = 
 
