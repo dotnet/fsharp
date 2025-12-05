@@ -969,6 +969,10 @@ type SeqModule2() =
         let nullSeq:seq<'a> = null 
         CheckThrowsArgumentNullException (fun () ->Seq.maxBy funcInt nullSeq |> ignore)
         
+        // returns first maximal element
+        let max = Seq.maxBy fst (seq { 1, "a"; 2, "b"; 3, "c"; 2, "d"; 3, "e"; 1, "f" })
+        if snd max <> "c" then Assert.Fail()
+        
         ()
         
     [<Fact>]
@@ -990,6 +994,10 @@ type SeqModule2() =
         // null Seq
         let nullSeq:seq<'a> = null 
         CheckThrowsArgumentNullException (fun () ->Seq.minBy funcInt nullSeq |> ignore)
+        
+        // returns first minimal element
+        let max = Seq.minBy fst (seq { 3, "a"; 2, "b"; 1, "c"; 2, "d"; 1, "e"; 3, "f" })
+        if snd max <> "c" then Assert.Fail()
         
         ()
         
