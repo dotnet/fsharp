@@ -4,7 +4,7 @@
     <TargetFramework>net472</TargetFramework>
 	<LangVersion>preview</LangVersion>
 	<Nullable>enable</Nullable>
-	<UnitTestType>xunit</UnitTestType>
+	<OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
