@@ -55,6 +55,8 @@ variables:
     value: Release
   - name: _PublishUsingPipelines
     value: true
+  - name: _WindowsMachineQueueName
+    value: windows.vs2026preview.scout.amd64.open
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
@@ -101,7 +103,7 @@ stages:
             value: Test
           pool:
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 90
           strategy:
             maxParallel: 2
@@ -216,12 +218,8 @@ stages:
 
         - job: WindowsLangVersionPreview
           pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
           steps:
           - checkout: self
@@ -256,12 +254,8 @@ stages:
 
         - job: WindowsNoRealsig_testCoreclr
           pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
           steps:
           - checkout: self
@@ -306,12 +300,8 @@ stages:
 
         - job: WindowsNoRealsig_testDesktop
           pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
             parallel: 4
@@ -359,12 +349,8 @@ stages:
 
         - job: WindowsStrictIndentation
           pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
           steps:
           - checkout: self
@@ -400,7 +386,7 @@ stages:
         - job: WindowsNoStrictIndentation
           pool:
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
           steps:
           - checkout: self
@@ -441,12 +427,8 @@ stages:
           - name: __VSNeverShowWhatsNew
             value: 1
           pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
             matrix:
@@ -546,12 +528,8 @@ stages:
           - name: __VSNeverShowWhatsNew
             value: 1
           pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
             parallel: 4
@@ -622,7 +600,7 @@ stages:
         - job: MockOfficial
           pool:
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           steps:
           - checkout: self
             clean: true
@@ -721,36 +699,40 @@ stages:
         - job: EndToEndBuildTests
           pool:
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          strategy:
-            maxParallel: 2
-            matrix:
-              regular:
-                _experimental_flag: ''
-              experimental_features:
-                _experimental_flag: ''
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           steps:
           - checkout: self
             clean: true
-          # We first download a publicly available .NET SDK. That one has support for `path` in global.json. dotnet.cmd script can then download a version which is not yet shipped, but matches global.json.
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              version: '10.x'
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\Build.cmd -c Release -pack
             env:
               NativeToolsOnMachine: true
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
-            env:
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: End to end build tests
-          - script: .\eng\common\dotnet.cmd fsi .\tests\FSharp.Compiler.ComponentTests\CompilerCompatibilityTests.fsx
-            displayName: Compiler compatibility tests
+          
+          # Publish artifacts for regression testing
+          - task: PublishPipelineArtifact@1
+            displayName: Publish F# Compiler FSC Artifacts for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/bin/fsc'
+              artifactName: 'FSharpCompilerFscArtifacts'
+              publishLocation: pipeline
+            condition: succeeded()
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish F# Core Artifacts for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/bin/FSharp.Core'
+              artifactName: 'FSharpCoreArtifacts'
+              publishLocation: pipeline
+            condition: succeeded()
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish UseLocalCompiler props file for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/UseLocalCompiler.Directory.Build.props'
+              artifactName: 'UseLocalCompilerProps'
+              publishLocation: pipeline
+            condition: succeeded()
 
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
@@ -772,7 +754,7 @@ stages:
         - job: Plain_Build_Windows
           pool:
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
@@ -827,7 +809,7 @@ stages:
         - job: Benchmarks
           pool:
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Release
@@ -843,7 +825,7 @@ stages:
         - job: Build_And_Test_AOT_Windows
           pool:
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           strategy:
             maxParallel: 2
             matrix:
@@ -884,7 +866,7 @@ stages:
         - job: ILVerify
           pool:
             name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
           steps:
           - checkout: self
             clean: true
@@ -903,3 +885,20 @@ stages:
           - pwsh: .\tests\ILVerify\ilverify.ps1
             displayName: Run ILVerify
             workingDirectory: $(Build.SourcesDirectory)
+
+  #-------------------------------------------------------------------------------------------------------------------#
+  #                              F# Compiler Regression Tests                                                         #
+  #-------------------------------------------------------------------------------------------------------------------#
+  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
+    - template: /eng/templates/regression-test-jobs.yml
+      parameters:
+        testMatrix:
+        - repo: fsprojects/FSharpPlus
+          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          buildScript: build.cmd
+          displayName: FSharpPlus_Windows
+        - repo: fsprojects/FSharpPlus
+          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          buildScript: build.sh
+          displayName: FSharpPlus_Linux
+          useVmImage: $(UbuntuMachineQueueName)

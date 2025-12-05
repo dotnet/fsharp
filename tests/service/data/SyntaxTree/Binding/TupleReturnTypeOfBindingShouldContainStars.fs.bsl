@@ -36,7 +36,8 @@ ImplFile
                         (2,8--2,20)), (2,23--2,38)), (2,4--2,5), Yes (2,0--2,38),
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
-                    EqualsRange = Some (2,21--2,22) })], (2,0--2,38));
+                    EqualsRange = Some (2,21--2,22) })], (2,0--2,38),
+              { InKeyword = None });
            Let
              (false,
               [SynBinding
@@ -75,8 +76,9 @@ ImplFile
                         (3,8--3,27)), (3,30--3,42)), (3,4--3,5), Yes (3,0--3,42),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
-                    EqualsRange = Some (3,28--3,29) })], (3,0--3,42))],
-          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                    EqualsRange = Some (3,28--3,29) })], (3,0--3,42),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (2,0--4,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))
