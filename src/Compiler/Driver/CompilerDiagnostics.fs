@@ -2260,6 +2260,7 @@ type PhasedDiagnostic with
                 | FSharpDiagnosticSeverity.Hidden -> "Info"
 
             let codeText = sprintf "FS%04d" details.Canonical.ErrorNumber
+
             let messageSentences =
                 details.Message.Split([| '\n' |], StringSplitOptions.None)
                 |> Seq.collect (fun line ->
@@ -2291,12 +2292,19 @@ type PhasedDiagnostic with
                 | Some l when not l.IsEmpty ->
                     seq {
                         let range = l.Range
-                        let fileDisplay = if String.IsNullOrWhiteSpace l.File then "unknown" else l.File
+
+                        let fileDisplay =
+                            if String.IsNullOrWhiteSpace l.File then
+                                "unknown"
+                            else
+                                l.File
+
                         yield sprintf "└─ [%s:(%d,%d)]" fileDisplay range.StartLine range.StartColumn
                         yield ""
 
                         try
-                            let fullPath = l.File |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
+                            let fullPath =
+                                l.File |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
 
                             if FileSystem.FileExistsShim fullPath then
                                 let content = File.ReadAllLines fullPath
@@ -2304,8 +2312,11 @@ type PhasedDiagnostic with
                                 if content.Length > 0 then
                                     let startLine = max 1 (range.StartLine - 1)
                                     let endLine = min content.Length range.StartLine
+
                                     let snippetLines =
-                                        [ for ln in startLine .. min content.Length (endLine + 1) -> ln, content[ln - 1] ]
+                                        [
+                                            for ln in startLine .. min content.Length (endLine + 1) -> ln, content[ln - 1]
+                                        ]
 
                                     let lineNoWidth =
                                         snippetLines
@@ -2320,9 +2331,11 @@ type PhasedDiagnostic with
 
                                     for (ln, text) in snippetLines do
                                         yield sprintf "  %*d | %s" lineNoWidth ln text
+
                                         if ln = range.StartLine then
                                             yield sprintf "  %s | %s" (String.make lineNoWidth ' ') caretLine
-                        with _ -> ()
+                        with _ ->
+                            ()
                     }
                 | _ -> Seq.empty
 
