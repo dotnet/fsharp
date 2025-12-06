@@ -2246,7 +2246,7 @@ type PhasedDiagnostic with
 
     /// used by fsc.exe and fsi.exe, but not by VS
     /// prints error and related errors to the specified StringBuilder
-    member diagnostic.Output(buf, tcConfig: TcConfig, severity) =
+    member diagnostic.Output(buf: StringBuilder, tcConfig: TcConfig, severity: FSharpDiagnosticSeverity) =
 
         // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
         let diagnostics = CollectFormattedDiagnostics(tcConfig, severity, diagnostic, true)
@@ -2260,66 +2260,75 @@ type PhasedDiagnostic with
                 | FSharpDiagnosticSeverity.Hidden -> "Info"
 
             let codeText = sprintf "FS%04d" details.Canonical.ErrorNumber
-            let lines = ResizeArray<string>()
+            let messageSentences =
+                details.Message.Split([| '\n' |], StringSplitOptions.None)
+                |> Seq.collect (fun line ->
+                    let parts = line.Split([| '.' |], StringSplitOptions.None)
 
-            // For multi-line messages, the first line with number and severity, the rest are indented
-            let messageLines = details.Message.Split([| '\n' |], StringSplitOptions.None)
-            if messageLines.Length > 0 then
-                lines.Add(sprintf "[%s] %s: %s" codeText severityText messageLines[0])
-                for i in 1 .. messageLines.Length - 1 do
-                    lines.Add(sprintf "│ %s" messageLines[i])
-            else
-                lines.Add(sprintf "[%s] %s" codeText details.Message)
+                    parts
+                    |> Seq.mapi (fun idx part ->
+                        let trimmed = part.Trim()
 
-            let addLocationAndSnippet (l: FormattedDiagnosticLocation) =
-                let range = l.Range
-                let fileDisplay = if String.IsNullOrWhiteSpace l.File then "unknown" else l.File
-                lines.Add(sprintf "└─ [%s:(%d,%d)]" fileDisplay range.StartLine range.StartColumn)
-                lines.Add("")
+                        if trimmed = "" then
+                            None
+                        else
+                            let hasDot = idx < parts.Length - 1 || line.EndsWith(".")
+                            Some(if hasDot then trimmed + "." else trimmed)))
+                |> Seq.choose id
+                |> Seq.toList
 
-                let tryRenderSnippet () =
-                    try
-                        let fullPath =
-                            l.File
-                            |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
+            let messageLines =
+                match messageSentences with
+                | head :: tail ->
+                    seq {
+                        yield sprintf "[%s] %s: %s" codeText severityText head
+                        yield! tail |> Seq.map (fun s -> sprintf "│ %s" s)
+                    }
+                | [] -> seq { yield sprintf "[%s] %s" codeText details.Message }
 
-                        if FileSystem.FileExistsShim fullPath then
-                            let content = File.ReadAllLines fullPath
+            let locationAndSnippet =
+                match details.Location with
+                | Some l when not l.IsEmpty ->
+                    seq {
+                        let range = l.Range
+                        let fileDisplay = if String.IsNullOrWhiteSpace l.File then "unknown" else l.File
+                        yield sprintf "└─ [%s:(%d,%d)]" fileDisplay range.StartLine range.StartColumn
+                        yield ""
 
-                            if content.Length > 0 then
-                                let startLine = max 1 (range.StartLine - 1)
-                                let endLine = min content.Length (range.StartLine)
-                                let snippetLines =
-                                    [ for ln in startLine .. min content.Length (endLine + 1) do
-                                        yield ln, content[ln - 1] ]
+                        try
+                            let fullPath = l.File |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
 
-                                let lineNoWidth =
-                                    snippetLines
-                                    |> List.map fst
-                                    |> List.map string
-                                    |> List.map String.length
-                                    |> List.max
+                            if FileSystem.FileExistsShim fullPath then
+                                let content = File.ReadAllLines fullPath
 
-                                let caretStart = max 0 (range.StartColumn - 1)
-                                let caretWidth = max 1 (max 0 (range.EndColumn - range.StartColumn))
-                                let caretLine = String.make caretStart ' ' + String.make caretWidth '^'
+                                if content.Length > 0 then
+                                    let startLine = max 1 (range.StartLine - 1)
+                                    let endLine = min content.Length range.StartLine
+                                    let snippetLines =
+                                        [ for ln in startLine .. min content.Length (endLine + 1) -> ln, content[ln - 1] ]
 
-                                for (ln, text) in snippetLines do
-                                    lines.Add(sprintf "  %*d | %s" lineNoWidth ln text)
+                                    let lineNoWidth =
+                                        snippetLines
+                                        |> List.map fst
+                                        |> List.map string
+                                        |> List.map String.length
+                                        |> List.max
 
-                                lines.Add(sprintf "  %s | %s" (String.make lineNoWidth ' ') caretLine)
-                    with _ ->
-                        ()
+                                    let caretStart = max 0 (range.StartColumn - 1)
+                                    let caretWidth = max 1 (max 0 (range.EndColumn - range.StartColumn))
+                                    let caretLine = String.make caretStart ' ' + String.make caretWidth '^'
 
-                tryRenderSnippet ()
+                                    for (ln, text) in snippetLines do
+                                        yield sprintf "  %*d | %s" lineNoWidth ln text
+                                        if ln = range.StartLine then
+                                            yield sprintf "  %s | %s" (String.make lineNoWidth ' ') caretLine
+                        with _ -> ()
+                    }
+                | _ -> Seq.empty
 
-            match details.Location with
-            | Some l when not l.IsEmpty -> addLocationAndSnippet l
-            | _ -> ()
-
-            for i = 0 to lines.Count - 1 do
-                buf.AppendString lines[i]
-                if i < lines.Count - 1 then buf.AppendString "\n"
+            Seq.append messageLines locationAndSnippet
+            |> String.concat "\n"
+            |> fun rendered -> buf.Append(rendered) |> ignore
 
         for e in diagnostics do
             Printf.bprintf buf "\n"
