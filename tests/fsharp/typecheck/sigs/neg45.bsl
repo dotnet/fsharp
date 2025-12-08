@@ -1,3 +1,4 @@
+
 neg45.fs(12,5,12,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
 
 neg45.fs(14,5,14,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
