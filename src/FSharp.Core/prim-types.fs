@@ -4558,6 +4558,8 @@ namespace Microsoft.FSharp.Core
 
         let inline (<<) func2 func1 x = func2 (func1 x)
 
+        let (^) (s1: string) (s2: string) = String.Concat(s1, s2)
+
         [<CompiledName("DefaultArg")>]
         let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
         

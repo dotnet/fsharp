@@ -3271,6 +3271,11 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultValueArg")>]
         val defaultValueArg: arg: 'T voption -> defaultValue: 'T -> 'T 
 
+        /// <summary>Concatenate two strings. Use the '+' operator instead.</summary>
+        [<Obsolete("This construct is deprecated. Use the '+' operator instead.", true)>]
+        [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
+        val (^): s1:string -> s2:string -> string
+
         /// <summary>Raises an exception</summary>
         ///
         /// <param name="exn">The exception to raise.</param>
