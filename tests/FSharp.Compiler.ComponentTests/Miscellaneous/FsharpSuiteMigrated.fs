@@ -92,7 +92,6 @@ module TestFrameworkAdapter =
         | LangVersion.V90 -> "9.0",bonusArgs
         | LangVersion.Preview -> "preview",bonusArgs
         | LangVersion.Latest  -> "latest", bonusArgs
-        | LangVersion.SupportsMl -> "5.0",  "--mlcompatibility" :: bonusArgs       
 
 
     let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion sessionIsolation = 

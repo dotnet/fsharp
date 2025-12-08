@@ -3271,10 +3271,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultValueArg")>]
         val defaultValueArg: arg: 'T voption -> defaultValue: 'T -> 'T 
 
-        /// <summary>Concatenate two strings. The operator '+' may also be used.</summary>
-        [<CompilerMessage("This construct is for ML compatibility. Consider using the '+' operator instead. This may require a type annotation to indicate it acts on strings. This message can be disabled using '--nowarn:62' or '#nowarn \"62\"'.", 62, IsHidden=true)>]
-        val (^): s1:string -> s2:string -> string
-
         /// <summary>Raises an exception</summary>
         ///
         /// <param name="exn">The exception to raise.</param>

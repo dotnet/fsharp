@@ -187,7 +187,6 @@ type TcGlobals(
     ilg: ILGlobals,
     fslibCcu: CcuThunk,
     directoryToResolveRelativePaths,
-    mlCompatibility: bool,
     isInteractive: bool,
     checkNullness: bool,
     useReflectionFreeCodeGen: bool,
@@ -1139,8 +1138,6 @@ type TcGlobals(
   member _.compilingFSharpCore = compilingFSharpCore
 
   member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
-
-  member _.mlCompatibility = mlCompatibility
 
   member _.emitDebugInfoInQuotations = emitDebugInfoInQuotations
 

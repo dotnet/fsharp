@@ -530,7 +530,6 @@ namespace Microsoft.FSharp.Core
         let inline (+..)   (x:uint64) (y:uint64) = (# "add" x y : uint64 #)
         let inline ( *. )  (x:int64)  (y:int64)  = (# "mul" x y : int64 #)
         let inline ( *.. ) (x:uint64) (y:uint64) = (# "mul" x y : uint64 #)
-        let inline (^)     (x:string) (y:string) = String.Concat(x,y)
         let inline (<<<)   (x:int)    (y:int)    = (# "shl" x y : int #)
         let inline ( * )   (x:int)    (y:int)    = (# "mul" x y : int #)
         let inline (-)     (x:int)    (y:int)    = (# "sub" x y : int #)
@@ -4047,7 +4046,7 @@ namespace Microsoft.FSharp.Core
 
         override x.ToString() = 
            // x is non-null, hence Some
-           "Some("^anyToStringShowingNull x.Value^")"
+           String.Concat("Some(", anyToStringShowingNull x.Value, ")")
 
     and 'T option = Option<'T> 
 
@@ -4558,8 +4557,6 @@ namespace Microsoft.FSharp.Core
         let inline (>>) func1 func2 x = func2 (func1 x)
 
         let inline (<<) func2 func1 x = func2 (func1 x)
-
-        let (^) (s1: string) (s2: string) = String.Concat(s1, s2)
 
         [<CompiledName("DefaultArg")>]
         let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v

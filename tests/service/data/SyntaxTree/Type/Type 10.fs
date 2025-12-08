@@ -1,5 +1,4 @@
 // #NoMT #CompilerOptions
-#light
 
 namespace N
 

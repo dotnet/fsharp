@@ -269,13 +269,7 @@ let IsUnencodedOpName (name: string) =
 
 let IsUnencodedLegacyOpName (name: string) =
     match name with
-    | "or"
-    | "land"
-    | "lor"
-    | "lsl"
-    | "lsr"
-    | "asr"
-    | "lxor" -> true
+    | "or" -> true
     | _ -> false
 
 let IsIdentifierName (name: string) =

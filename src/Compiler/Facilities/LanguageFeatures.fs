@@ -47,7 +47,6 @@ type LanguageFeature =
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
-    | MLCompatRevisions
     | BetterExceptionPrinting
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
@@ -176,7 +175,6 @@ type LanguageVersion(versionText) =
                 LanguageFeature.DelegateTypeNameResolutionFix, languageVersion60
 
                 // F# 7.0
-                LanguageFeature.MLCompatRevisions, languageVersion70
                 LanguageFeature.BetterExceptionPrinting, languageVersion70
                 LanguageFeature.ReallyLongLists, languageVersion70
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
@@ -349,7 +347,6 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
-        | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions ()
         | LanguageFeature.BetterExceptionPrinting -> FSComp.SR.featureBetterExceptionPrinting ()
         | LanguageFeature.DelegateTypeNameResolutionFix -> FSComp.SR.featureDelegateTypeNameResolutionFix ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()

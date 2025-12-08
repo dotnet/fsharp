@@ -224,8 +224,6 @@ type public FSharpParsingOptions =
 
         IsInteractive: bool
 
-        IndentationAwareSyntax: bool option
-
         StrictIndentation: bool option
 
         CompilingFSharpCore: bool

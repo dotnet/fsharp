@@ -358,7 +358,6 @@ module FSharpKeywords =
 [<Flags; Experimental("This FCS API is experimental and subject to change.")>]
 type public FSharpLexerFlags =
     | Default = 0x11011
-    | LightSyntaxOn = 0x00001
     | Compiling = 0x00010
     | CompilingFSharpCore = 0x00110
     | SkipTrivia = 0x01000
@@ -374,7 +373,6 @@ type public FSharpTokenKind =
     | CommentTrivia
     | WhitespaceTrivia
     | HashLine
-    | HashLight
     | InactiveCode
     | LineCommentTrivia
     | StringText
@@ -552,13 +550,6 @@ type public FSharpTokenKind =
     | KeywordString
     | String
     | ByteArray
-    | Asr
-    | InfixAsr
-    | InfixLand
-    | InfixLor
-    | InfixLsl
-    | InfixLsr
-    | InfixLxor
     | InfixMod
 
 [<Struct; NoComparison; NoEquality; Experimental("This FCS API is experimental and subject to change.")>]

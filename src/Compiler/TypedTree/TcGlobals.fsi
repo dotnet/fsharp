@@ -142,7 +142,6 @@ type internal TcGlobals =
         ilg: FSharp.Compiler.AbstractIL.IL.ILGlobals *
         fslibCcu: TypedTree.CcuThunk *
         directoryToResolveRelativePaths: string *
-        mlCompatibility: bool *
         isInteractive: bool *
         checkNullness: bool *
         useReflectionFreeCodeGen: bool *
@@ -881,8 +880,6 @@ type internal TcGlobals =
     member mk_IStructuralComparable_ty: TypedTree.TType
 
     member mk_IStructuralEquatable_ty: TypedTree.TType
-
-    member mlCompatibility: bool
 
     member nameof_vref: TypedTree.ValRef
 

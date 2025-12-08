@@ -37,7 +37,6 @@ type LanguageFeature =
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
-    | MLCompatRevisions
     | BetterExceptionPrinting
     | DelegateTypeNameResolutionFix
     | ReallyLongLists

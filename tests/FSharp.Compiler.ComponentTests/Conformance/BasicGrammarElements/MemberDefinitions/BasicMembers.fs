@@ -1,4 +1,4 @@
-#light
+
 
 // Test basic class member syntax
 
