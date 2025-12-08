@@ -1733,9 +1733,10 @@ namespace Microsoft.FSharp.Core
         module IntrinsicOperators = 
 
             /// <summary>Binary 'and'. When used as a binary operator the right hand value is evaluated only on demand.</summary>
+            [<CompiledName("op_Amp")>]
             [<Obsolete("This construct is deprecated. Use 'e1 && e2' instead.", true)>]
             [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
-            val (&): e1: bool -> e2: bool -> bool
+            val __obsoleteAnd: e1: bool -> e2: bool -> bool
 
             /// <summary>Binary 'and'. When used as a binary operator the right hand value is evaluated only on demand</summary>
             ///
@@ -1749,7 +1750,7 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("Or")>]
             [<Obsolete("This construct is deprecated. Use 'e1 || e2' instead.", true)>]
             [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
-            val (or): e1: bool -> e2: bool -> bool
+            val __obsoleteOr: e1: bool -> e2: bool -> bool
 
             /// <summary>Binary 'or'. When used as a binary operator the right hand value is evaluated only on demand</summary>
             ///
