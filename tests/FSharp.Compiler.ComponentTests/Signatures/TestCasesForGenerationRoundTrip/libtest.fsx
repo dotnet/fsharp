@@ -8,7 +8,6 @@ let (:=) (r: 'T ref) (v: 'T)  = r.Value <- v
 let incr (r: int ref)  = r.Value <- r.Value + 1
 let decr (r: int ref)  = r.Value <- r.Value - 1
 
-#nowarn "62"
 #nowarn "44"
 
 let failures = ref []
@@ -2021,7 +2020,7 @@ let _ = sort_test (fun x y -> -(compare x y)) [5;4;3;2;1;0]
 *)
 module StrangeOperatorTest = 
     let (&&&) x y = x+y
-    let (<<<) (x:string) (y:string) = x +y+x
+    let (<<<) (x:string) (y:string) = x + y + x
 
     let e1 = ("0" &&& ("1" <<< "2"))
     let e2= (("0" &&& "1") <<< "2") 

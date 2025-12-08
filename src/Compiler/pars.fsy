@@ -348,7 +348,8 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %nonassoc interpolation_fill /* "...{3,N4}..." .NET style fill has higher precedence than "e COMMA e" */
 %nonassoc paren_pat_colon
 %nonassoc paren_pat_attribs
-%left BAR_BAR JOIN_IN
+%left OR BAR_BAR JOIN_IN
+%left AND
 %left AND_BANG
 %left AMP AMP_AMP
 %nonassoc pat_conj
