@@ -373,10 +373,10 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
 
     # {assembly} and {framework} will expand respectively. See https://github.com/spekt/testlogger/wiki/Logger-Configuration#logfilepath
     # This is useful to deconflict log filenames when there are many test assemblies, e.g. when testing a whole solution.
-    $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}_{framework}$testBatchSuffix.xml"
+    $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}_{framework}$testBatchSuffix.trx"
 
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework$testBatch.binlog"
-    $args = "test $testProject -c $configuration -f $targetFramework --logger ""xunit;LogFilePath=$testLogPath"" --logger ""console;verbosity=normal"" /bl:$testBinLogPath"
+    $args = "test $testProject -c $configuration -f $targetFramework --logger ""trx;LogFilePath=$testLogPath"" --logger ""console;verbosity=normal"" /bl:$testBinLogPath"
     $args += " --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration"
 
     if (-not $noVisualStudio -or $norestore) {

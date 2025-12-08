@@ -238,8 +238,8 @@ function Test() {
     if [[ "$testbatch" != "" ]]; then
     testbatchsuffix="_batch$testbatch"
   fi
-  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework$testbatchsuffix.xml"
-  args="test \"$testproject\" --no-build -c $configuration -f $targetframework --logger \"console;verbosity=normal\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration"
+  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework$testbatchsuffix.trx"
+  args="test \"$testproject\" --no-build -c $configuration -f $targetframework --logger \"trx;LogFileName=$testlogpath\" --logger \"console;verbosity=normal\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration"
 
   if [[ "$testbatch" != "" ]]; then
     args="$args --filter batch=$testbatch"

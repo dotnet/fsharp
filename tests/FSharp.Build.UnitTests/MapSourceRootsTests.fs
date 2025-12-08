@@ -83,6 +83,10 @@ type MapSourceRootsTests() =
             |> Array.iteri checkExpectations
 
     [<Fact>]
+    member _.``failing test for CI`` () =
+        Assert.True(false, "This test is to verify that the test suite fails when expected. Remove it once confirmed.")
+
+    [<Fact>]
     member _.``basic deterministic scenarios`` () =
         let items =
             [|
