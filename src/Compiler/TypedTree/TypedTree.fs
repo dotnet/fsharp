@@ -2010,6 +2010,8 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 
     let mutable allEntitiesByMangledNameCache: NameMap<Entity> option = None
 
+    let mutable allEntitiesByLogicalMangledNameCache: NameMap<Entity> option = None
+
     let mutable allValsAndMembersByPartialLinkageKeyCache: MultiMap<ValLinkagePartialKey, Val> option = None
 
     let mutable allValsByLogicalNameCache: NameMap<Val> option = None
@@ -2030,7 +2032,8 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     member _.AddModuleOrNamespaceByMutation(modul: ModuleOrNamespace) =
         entities <- QueueList.appendOne entities modul
         modulesByDemangledNameCache <- None          
-        allEntitiesByMangledNameCache <- None       
+        allEntitiesByMangledNameCache <- None
+        allEntitiesByLogicalMangledNameCache <- None
 
 #if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
@@ -2039,7 +2042,8 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
         tyconsByMangledNameCache <- None          
         tyconsByDemangledNameAndArityCache <- None
         tyconsByAccessNamesCache <- None
-        allEntitiesByMangledNameCache <- None             
+        allEntitiesByMangledNameCache <- None
+        allEntitiesByLogicalMangledNameCache <- None
 #endif 
           
     /// Return a new module or namespace type with an entity added.
@@ -2096,10 +2100,11 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
         cacheOptByref &allEntitiesByMangledNameCache (fun () -> 
              QueueList.foldBack addEntityByMangledName entities Map.empty)
 
-    /// Get a table of entities indexed by both logical name
+    /// Get a table of entities indexed by logical name
     member _.AllEntitiesByLogicalMangledName: NameMap<Entity> = 
         let addEntityByMangledName (x: Entity) tab = NameMap.add x.LogicalName x tab 
-        QueueList.foldBack addEntityByMangledName entities Map.empty
+        cacheOptByref &allEntitiesByLogicalMangledNameCache (fun () ->
+            QueueList.foldBack addEntityByMangledName entities Map.empty)
 
     /// Get a table of values and members indexed by partial linkage key, which includes name, the mangled name of the parent type (if any),
     /// and the method argument count (if any).

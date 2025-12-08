@@ -16,7 +16,6 @@ open Internal.Utilities.Rational
 open FSharp.Compiler.IO
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
@@ -11377,12 +11376,6 @@ let (|IfUseResumableStateMachinesExpr|_|) g expr =
     | IfThenElseExpr(UseResumableStateMachinesExpr g (), thenExpr, elseExpr) -> ValueSome (thenExpr, elseExpr)
     | _ -> ValueNone
 
-// Global counters for CombineModuleOrNamespaceTypes instrumentation
-let mutable private globalCombineMNSIterations = 0
-let mutable private globalCombineMNSTotalEntities = 0L
-let mutable private globalCombineMNSTotalVals = 0L
-let private globalStopwatch = System.Diagnostics.Stopwatch.StartNew()
-
 /// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
 /// duplicate modules etc.
 let CombineCcuContentFragments l = 
@@ -11390,19 +11383,7 @@ let CombineCcuContentFragments l =
     /// Combine module types when multiple namespace fragments contribute to the
     /// same namespace, making new module specs as we go.
     let rec CombineModuleOrNamespaceTypes path (mty1: ModuleOrNamespaceType) (mty2: ModuleOrNamespaceType) = 
-        globalCombineMNSIterations <- globalCombineMNSIterations + 1
-        let iterStart = globalStopwatch.ElapsedMilliseconds
-        let iterNum = globalCombineMNSIterations
-        
         let kind = mty1.ModuleOrNamespaceKind
-        let mty1EntitiesCount = Seq.length mty1.AllEntities
-        let mty2EntitiesCount = Seq.length mty2.AllEntities
-        let mty1ValsCount = Seq.length mty1.AllValsAndMembers
-        let mty2ValsCount = Seq.length mty2.AllValsAndMembers
-        
-        globalCombineMNSTotalEntities <- globalCombineMNSTotalEntities + int64 mty1EntitiesCount + int64 mty2EntitiesCount
-        globalCombineMNSTotalVals <- globalCombineMNSTotalVals + int64 mty1ValsCount + int64 mty2ValsCount
-        
         let tab1 = mty1.AllEntitiesByLogicalMangledName
         let tab2 = mty2.AllEntitiesByLogicalMangledName
         let entities = 
@@ -11419,15 +11400,8 @@ let CombineCcuContentFragments l =
             ]
 
         let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
-        let result = ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
-        
-        // Log every 500 iterations or at early milestones
-        if iterNum % 500 = 0 || iterNum <= 5 then
-            let iterEnd = globalStopwatch.ElapsedMilliseconds
-            let pathStr = if List.isEmpty path then "<root>" else String.concat "." path
-            System.Console.Error.WriteLine($"[CombineMNS] iter={iterNum} path={pathStr} mty1.ent={mty1EntitiesCount} mty2.ent={mty2EntitiesCount} mty1.vals={mty1ValsCount} mty2.vals={mty2ValsCount} result.ent={Seq.length result.AllEntities} durationMs={iterEnd - iterStart} totalMs={iterEnd} totalEntProcessed={globalCombineMNSTotalEntities}")
-        
-        result
+
+        ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
 
     and CombineEntities path (entity1: Entity) (entity2: Entity) = 
 
