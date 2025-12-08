@@ -1,9 +1,3 @@
-neg45.fs(89,42,89,45): parse error FS3879: XML documentation comments should be the first non-whitespace text on a line.
-
-neg45.fs(97,55,97,58): parse error FS3879: XML documentation comments should be the first non-whitespace text on a line.
-
-neg45.fs(102,30,102,33): parse error FS3879: XML documentation comments should be the first non-whitespace text on a line.
-
 neg45.fs(12,5,12,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
 
 neg45.fs(14,5,14,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
