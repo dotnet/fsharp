@@ -3637,11 +3637,6 @@
         <target state="translated">文件尾在此处或之前开始的注释中嵌入的原义字符串中</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEofInIfOcaml">
-        <source>End of file in IF-OCAML section begun at or before here</source>
-        <target state="translated">文件尾在此处或之前开始的 IF-OCAML 节中</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsEofInDirective">
         <source>End of file in directive begun at or before here</source>
         <target state="translated">文件尾在此处或之前开始的指令中</target>
@@ -8463,8 +8458,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
-        <source>Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.</source>
-        <target state="translated">与布尔条件配合使用，作为布尔值或运算符。相当于 ||。另外，也用于成员约束。</target>
+        <source>Used in member constraints.</source>
+        <target state="needs-review-translation">与布尔条件配合使用，作为布尔值或运算符。相当于 ||。另外，也用于成员约束。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

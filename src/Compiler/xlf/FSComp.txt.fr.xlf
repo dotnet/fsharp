@@ -3637,11 +3637,6 @@
         <target state="translated">Fin de fichier dans la chaîne textuelle incorporée dans le commentaire ayant débuté à cet emplacement ou avant</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEofInIfOcaml">
-        <source>End of file in IF-OCAML section begun at or before here</source>
-        <target state="translated">Fin de fichier dans la section IF-OCAML ayant débuté à cet emplacement ou avant</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsEofInDirective">
         <source>End of file in directive begun at or before here</source>
         <target state="translated">Fin de fichier dans la directive ayant débuté à cet emplacement ou avant</target>
@@ -8463,8 +8458,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
-        <source>Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.</source>
-        <target state="translated">Utilisé avec les conditions booléennes en tant qu'opérateur or booléen. Équivaut à ||. Utilisé également dans les contraintes de membre.</target>
+        <source>Used in member constraints.</source>
+        <target state="needs-review-translation">Utilisé avec les conditions booléennes en tant qu'opérateur or booléen. Équivaut à ||. Utilisé également dans les contraintes de membre.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

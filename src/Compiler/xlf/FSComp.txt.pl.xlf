@@ -3637,11 +3637,6 @@
         <target state="translated">Koniec pliku w ciągu dosłownego wyrażenia osadzonym w komentarzu rozpoczętym w tym miejscu lub przed nim</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEofInIfOcaml">
-        <source>End of file in IF-OCAML section begun at or before here</source>
-        <target state="translated">Koniec pliku w sekcji IF-OCAML rozpoczętej w tym miejscu lub przed nim</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsEofInDirective">
         <source>End of file in directive begun at or before here</source>
         <target state="translated">Koniec pliku w dyrektywie rozpoczętej w tym miejscu lub przed nim</target>
@@ -8463,8 +8458,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
-        <source>Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.</source>
-        <target state="translated">Używane z warunkami wartości logicznej jako wartość logiczna lub operator. Odpowiednik symbolu ||. Używane również w ograniczeniach elementu członkowskiego.</target>
+        <source>Used in member constraints.</source>
+        <target state="needs-review-translation">Używane z warunkami wartości logicznej jako wartość logiczna lub operator. Odpowiednik symbolu ||. Używane również w ograniczeniach elementu członkowskiego.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

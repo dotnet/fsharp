@@ -600,11 +600,6 @@ rule token (args: LexArgs) (skip: bool) = parse
        if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, 1, m))
        else comment (1,m,args) skip lexbuf }
 
- | "(*IF-CAML*)" |  "(*IF-OCAML*)"
-     { let m = lexbuf.LexemeRange
-       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
-       else mlOnly m args skip lexbuf }
-
  | '"'
      { let buf, fin, m = startString args lexbuf
 
@@ -1869,37 +1864,3 @@ and tripleQuoteStringInComment (n: int) (m: range) (args: LexArgs) (skip: bool) 
  | _
      { if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, n, m))
        else tripleQuoteStringInComment n m args skip lexbuf }
-
-
-and mlOnly (m: range) (args: LexArgs) (skip: bool) = parse
- | "\""
-     { let buf = ByteBuffer.Create StringCapacity
-       let m2 = lexbuf.LexemeRange
-       let _ = singleQuoteString (buf, LexerStringFinisher.Default, m2, LexerStringKind.String, args) skip lexbuf
-       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
-       else mlOnly m args skip lexbuf }
-
- | newline
-     { incrLine lexbuf
-       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
-       else mlOnly m args skip lexbuf }
-
- | "(*ENDIF-CAML*)"
-     { if not skip then COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
-       else token args skip lexbuf }
-
- | "(*ENDIF-OCAML*)"
-     { if not skip then COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
-       else token args skip lexbuf }
-
- | [^ '(' '"' '\n' '\r' ]+
-     { if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
-       else mlOnly m args skip lexbuf }
-
- | eof
-     { EOF (LexCont.MLOnly(args.ifdefStack, args.stringNest, m)) }
-
- | surrogateChar surrogateChar
- | _
-     { if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
-       else mlOnly m args skip lexbuf }

@@ -278,8 +278,6 @@ type internal TcGlobals =
 
     member and2_vref: TypedTree.ValRef
 
-    member and_vref: TypedTree.ValRef
-
     member array2D_get_info: IntrinsicValRef
 
     member array2D_get_vref: TypedTree.ValRef
@@ -930,8 +928,6 @@ type internal TcGlobals =
     member option_toNullable_info: IntrinsicValRef
 
     member or2_vref: TypedTree.ValRef
-
-    member or_vref: TypedTree.ValRef
 
     member outref_tcr: TypedTree.EntityRef
 

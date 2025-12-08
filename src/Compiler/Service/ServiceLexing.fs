@@ -466,7 +466,6 @@ type FSharpTokenizerColorState =
     | Comment = 5
     | StringInComment = 6
     | VerbatimStringInComment = 7
-    | CamlOnly = 8
     | VerbatimString = 9
     | SingleLineComment = 10
     | EndLineThenSkip = 11
@@ -719,8 +718,6 @@ module internal LexerStateEncoding =
                 | LexerStringStyle.ExtendedInterpolated -> FSharpTokenizerColorState.TripleQuoteStringInComment
 
             encodeLexCont (state, int64 n, m.Start, ifdefs, LexerStringKind.String, stringNest, 0)
-        | LexCont.MLOnly(ifdefs, stringNest, m) ->
-            encodeLexCont (FSharpTokenizerColorState.CamlOnly, 0L, m.Start, ifdefs, LexerStringKind.String, stringNest, 0)
 
     let decodeLexInt (state: FSharpTokenizerLexState) =
         let tag, n1, p1, ifdefs, stringKind, stringNest, delimLen = decodeLexCont state
@@ -738,7 +735,6 @@ module internal LexerStateEncoding =
             LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.Verbatim, n1, mkRange "file" p1 p1)
         | FSharpTokenizerColorState.TripleQuoteStringInComment ->
             LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.TripleQuote, n1, mkRange "file" p1 p1)
-        | FSharpTokenizerColorState.CamlOnly -> LexCont.MLOnly(ifdefs, stringNest, mkRange "file" p1 p1)
         | FSharpTokenizerColorState.VerbatimString ->
             LexCont.String(ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, delimLen, mkRange "file" p1 p1)
         | FSharpTokenizerColorState.TripleQuoteString ->
@@ -918,11 +914,6 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
             | LexerStringStyle.Verbatim -> Lexer.verbatimStringInComment n m lexargs skip lexbuf
             | LexerStringStyle.TripleQuote
             | LexerStringStyle.ExtendedInterpolated -> Lexer.tripleQuoteStringInComment n m lexargs skip lexbuf
-
-        | LexCont.MLOnly(ifdefs, stringNest, m) ->
-            lexargs.ifdefStack <- ifdefs
-            lexargs.stringNest <- stringNest
-            Lexer.mlOnly m lexargs skip lexbuf
 
     let columnsOfCurrentToken () =
         let leftp = lexbuf.StartPos

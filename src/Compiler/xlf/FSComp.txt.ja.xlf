@@ -3637,11 +3637,6 @@
         <target state="translated">この位置以前に始まったコメントに埋め込まれた verbatim 文字列の途中でファイルの終わりが見つかりました</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEofInIfOcaml">
-        <source>End of file in IF-OCAML section begun at or before here</source>
-        <target state="translated">この位置以前に始まった IF-OCAML セクションの途中でファイルの終わりが見つかりました</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsEofInDirective">
         <source>End of file in directive begun at or before here</source>
         <target state="translated">この位置以前に始まったディレクティブの途中でファイルの終わりが見つかりました</target>
@@ -8463,8 +8458,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
-        <source>Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.</source>
-        <target state="translated">ブール値の or 演算子としてブール条件で使用します。|| に相当します。メンバー制約でも使用します。</target>
+        <source>Used in member constraints.</source>
+        <target state="needs-review-translation">ブール値の or 演算子としてブール条件で使用します。|| に相当します。メンバー制約でも使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

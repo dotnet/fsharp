@@ -3637,11 +3637,6 @@
         <target state="translated">Açıklamaya gömülü tam dizede dosya sonu burada veya daha önce başlatıldı</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEofInIfOcaml">
-        <source>End of file in IF-OCAML section begun at or before here</source>
-        <target state="translated">IF-OCAML bölümünde dosya sonu burada veya daha önce başlatıldı</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsEofInDirective">
         <source>End of file in directive begun at or before here</source>
         <target state="translated">Yönergede dosya sonu burada veya daha önce başlatıldı</target>
@@ -8463,8 +8458,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
-        <source>Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.</source>
-        <target state="translated">Bir Boolean değeri veya işleci olarak Boolean koşullarıyla birlikte kullanılır. Eşdeğeri || simgesidir. Ayrıca üye kısıtlamalarında kullanılır.</target>
+        <source>Used in member constraints.</source>
+        <target state="needs-review-translation">Bir Boolean değeri veya işleci olarak Boolean koşullarıyla birlikte kullanılır. Eşdeğeri || simgesidir. Ayrıca üye kısıtlamalarında kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

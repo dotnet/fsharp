@@ -3637,11 +3637,6 @@
         <target state="translated">Konec souboru začal v doslovném řetězci vloženém do komentáře na této pozici nebo před ní.</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEofInIfOcaml">
-        <source>End of file in IF-OCAML section begun at or before here</source>
-        <target state="translated">Konec souboru začal v oddílu IF-OCAML na této pozici nebo před ní.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsEofInDirective">
         <source>End of file in directive begun at or before here</source>
         <target state="translated">Konec souboru začal v direktivě na této pozici nebo před ní.</target>
@@ -8463,8 +8458,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
-        <source>Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.</source>
-        <target state="translated">Používá se v logických podmínkách jako logický operátor or. Ekvivalent ||. Používá se také v omezeních členů.</target>
+        <source>Used in member constraints.</source>
+        <target state="needs-review-translation">Používá se v logických podmínkách jako logický operátor or. Ekvivalent ||. Používá se také v omezeních členů.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">
