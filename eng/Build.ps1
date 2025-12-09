@@ -376,7 +376,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}_{framework}$testBatchSuffix.trx"
 
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework$testBatch.binlog"
-    $args = "test $testProject -c $configuration -f $targetFramework --logger ""trx;LogFilePath=$testLogPath"" --logger ""console;verbosity=normal"" /bl:$testBinLogPath"
+    $args = "test $testProject -c $configuration -f $targetFramework --logger ""trx;LogFileName=$testLogPath"" --logger ""console;verbosity=normal"" /bl:$testBinLogPath"
     $args += " --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration"
 
     if (-not $noVisualStudio -or $norestore) {
