@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #TypeInference 
-#light
+
 // Verify inference based on type members
 module TypeInference 
 

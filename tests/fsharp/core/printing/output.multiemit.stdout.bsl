@@ -6233,14 +6233,14 @@ type System.Int32 with
 > val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int
 
 > val functionWhichTakesAParameterCalled_land:
-  ``land`` : (int -> int -> int) -> int
+  land : (int -> int -> int) -> int
 
 > type RecordWithStrangeNames =
   {
     ``funky name`` : obj
     op_Addition: obj
     ``+`` : obj
-    ``land`` : obj
+    land : obj
     ``base`` : obj
   }
 
@@ -6256,7 +6256,7 @@ type System.Int32 with
   | A
   | B
 
-> type ``land`` =
+> type land =
   | A
   | B
 
@@ -6266,7 +6266,7 @@ type System.Int32 with
 > module op_Addition =
   val x: int = 1
 
-> module ``land`` =
+> module land =
   val x: int = 1
 
 > val ``+`` : x: 'a -> y: 'b -> int
@@ -6279,7 +6279,7 @@ type System.Int32 with
 
 > val ``or`` : int = 2
 
-> val ``land`` : int = 2
+> val land : int = 2
 
 > val ``.ctor`` : int = 2
 

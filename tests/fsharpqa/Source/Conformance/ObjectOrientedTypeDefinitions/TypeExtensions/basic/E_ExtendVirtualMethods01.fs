@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
-#light
+
 
 // It's error if the augmentation is of a type from a different assembly
 // The is regression test for FSHARP1.0:3272

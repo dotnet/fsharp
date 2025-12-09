@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #Structs 
-#light
+
 // Regression test for FSHARP1.0:1452, Complete checks for structs
 // Also, 
 //<Expects id="FS0954" span="(11,10-11,20)" status="error">This type definition involves an immediate cyclic reference through a struct field or inheritance relation</Expects>
