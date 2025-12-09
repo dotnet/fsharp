@@ -987,7 +987,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = classificationType
         )
 
-    /// FEATURE: Preprocessor keywords #light\#if\#else\#endif are colored with the PreprocessorKeyword color.
+    /// FEATURE: Preprocessor keywords #if\#else\#endif are colored with the PreprocessorKeyword color.
     /// FEATURE: All code in the inactive side of #if\#else\#endif is colored with the InactiveCode color.
     [<Theory>]
     [<InlineData("(*Inactive*)", ClassificationTypeNames.ExcludedCode)>]
@@ -1052,7 +1052,7 @@ type SyntacticClassificationServiceTests() =
     member public this.Preprocessor_DirectivesInString() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
-                "#light
+                "
                 
                 #if DEFINED
                 let s = \"
@@ -1073,7 +1073,7 @@ type SyntacticClassificationServiceTests() =
     member public this.Preprocessor_KeywordsWithStrings(marker: string, classificationType: string) =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
-                "#light (*Light*)
+                "
                 let x1 = \"string1\"
                 #if UNDEFINED //(*If*)
                 let x2 = \"string2\"
@@ -1090,7 +1090,7 @@ type SyntacticClassificationServiceTests() =
     member public this.Comment_VerbatimStringInComment_Bug1778() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
-                "#light
+                "
                 (* @\"\\\" *) let a = 0",
             marker = "le",
             defines = [],

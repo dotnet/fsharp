@@ -78,7 +78,7 @@ type SemanticClassificationServiceTests() =
     [<InlineData("(*7*)", ClassificationTypeNames.ClassName)>]
     member _.Measured_Types(marker: string, classificationType: string) =
         verifyClassificationAtEndOfMarker (
-            """#light (*Light*)
+            """
                 open System
                 
                 [<MeasureAnnotatedAbbreviation>] type (*1*)Guid<[<Measure>] 'm> = Guid
