@@ -12,7 +12,7 @@ open FSharp.Test.ScriptHelpers
 
 
 module Configuration = 
-    let supportedNames = set ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
+    let supportedNames = set ["testlib.fsi";"testlib.fs";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
 
 [<RequireQualifiedAccess>]
 type ScriptSessionIsolation = Shared | Isolated
@@ -111,7 +111,6 @@ module TestFrameworkAdapter =
      
         let mainFile,otherFiles = 
             match files.Length with
-            | 0 -> Directory.GetFiles(absFolder,"*.ml") |> Array.exactlyOne, [||]
             | 1 -> files |> Array.exactlyOne, [||]
             | _ -> 
                 let mainFile,dependencies = 
