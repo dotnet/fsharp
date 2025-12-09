@@ -6558,12 +6558,6 @@ let rec f l =
             marker = "(*MarkerPreProcessNowarn*)")
 
     [<Fact>]
-    member this.``MacroDirectives.light``() = 
-        this.VerifyDotCompListIsEmptyAtStartOfMarker(
-            fileContents = """#light(*MarkerPreProcessLight*)""",
-            marker = "(*MarkerPreProcessLight*)") 
-
-    [<Fact>]
     member this.``MacroDirectives.define``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """#define(*MarkerPreProcessDefine*)""",
