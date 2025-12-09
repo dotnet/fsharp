@@ -1617,3 +1617,22 @@ type Class2() =
     parseResults |> checkParsingErrors [||]
     checkResults |> checkXmlSymbols [ Parameter "MyRather.MyDeep.MyNamespace.Class1.X", [|"x"|] ]
     checkResults |> checkXmlSymbols [ Parameter "MyRather.MyDeep.MyNamespace.Class1", [|"class1"|] ]
+
+[<Fact>]
+let ``Discriminated Union - triple slash after case definition should warn``(): unit =
+    checkSignatureAndImplementation """
+module Test
+
+type MyDU =
+    | CaseA of int /// This should trigger FS3879
+    | CaseB /// This should also trigger FS3879
+    /// This is correct
+    | CaseC
+"""
+        (fun _ _ -> ())
+        (fun parseResults ->
+            parseResults |>
+            checkParsingErrors [|
+                Warning 3879, Line 5, Col 19, Line 5, Col 22, "XML documentation comments should be the first non-whitespace text on a line."
+                Warning 3879, Line 6, Col 11, Line 6, Col 14, "XML documentation comments should be the first non-whitespace text on a line."
+            |])
