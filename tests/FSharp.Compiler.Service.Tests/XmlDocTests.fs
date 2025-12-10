@@ -1634,5 +1634,5 @@ type MyDU =
             parseResults |>
             checkParsingErrors [|
                 Warning 3879, Line 5, Col 19, Line 5, Col 22, "XML documentation comments should be the first non-whitespace text on a line."
-                Warning 3879, Line 6, Col 11, Line 6, Col 14, "XML documentation comments should be the first non-whitespace text on a line."
+                Warning 3879, Line 6, Col 12, Line 6, Col 15, "XML documentation comments should be the first non-whitespace text on a line."
             |])
