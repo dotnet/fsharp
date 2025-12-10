@@ -371,9 +371,9 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
       $testBatchSuffix = "_batch$testBatch"
     }
 
-    # {assembly} and {framework} will expand respectively. See https://github.com/spekt/testlogger/wiki/Logger-Configuration#logfilepath
-    # This is useful to deconflict log filenames when there are many test assemblies, e.g. when testing a whole solution.
-    $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}_{framework}$testBatchSuffix.trx"
+    # Manually expand assembly and framework placeholders since TRX logger doesn't support them
+    # See https://github.com/spekt/testlogger/wiki/Logger-Configuration#logfilepath
+    $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_${targetFramework}$testBatchSuffix.trx"
 
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework$testBatch.binlog"
     $args = "test $testProject -c $configuration -f $targetFramework --logger ""trx;LogFileName=$testLogPath"" --logger ""console;verbosity=normal"" /bl:$testBinLogPath"
