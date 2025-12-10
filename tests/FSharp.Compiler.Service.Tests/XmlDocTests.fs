@@ -1629,7 +1629,7 @@ type MyDU =
     /// This is correct
     | CaseC
 """
-        (fun _ _ -> ())
+        (fun _ -> ())
         (fun parseResults ->
             parseResults |>
             checkParsingErrors [|
