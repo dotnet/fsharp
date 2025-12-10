@@ -6,6 +6,7 @@
     <TargetFramework>net472</TargetFramework>
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
     <NoWarn>$(NoWarn);44;58;75;3005</NoWarn>
     <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
