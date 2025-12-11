@@ -1068,27 +1068,30 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                             (fun args ->
                                 let scriptFile = args[0]
                                 let scriptArgs = List.tail args
-                                
+
                                 // Filter out and process preferreduilang from script args
                                 let rec filterScriptArgs (args: string list) =
                                     match args with
                                     | [] -> []
-                                    | (arg: string) :: rest when 
-                                        arg.StartsWith("--preferreduilang:", StringComparison.OrdinalIgnoreCase) ||
-                                        arg.StartsWith("/preferreduilang:", StringComparison.OrdinalIgnoreCase) ->
+                                    | (arg: string) :: rest when
+                                        arg.StartsWith("--preferreduilang:", StringComparison.OrdinalIgnoreCase)
+                                        || arg.StartsWith("/preferreduilang:", StringComparison.OrdinalIgnoreCase)
+                                        ->
                                         // Extract culture and set it
                                         let culture = arg.Substring(arg.IndexOf(':') + 1)
+
                                         try
                                             tcConfigB.preferredUiLang <- Some culture
                                             Thread.CurrentThread.CurrentUICulture <- CultureInfo(culture)
                                         with _ ->
                                             // Ignore invalid culture, just don't set it
                                             ()
+
                                         filterScriptArgs rest
                                     | arg :: rest -> arg :: filterScriptArgs rest
-                                
+
                                 let filteredScriptArgs = filterScriptArgs scriptArgs
-                                
+
                                 inputFilesAcc <- inputFilesAcc @ [ (scriptFile, true) ] (* record script.fsx for evaluation *)
                                 List.iter recordExplicitArg filteredScriptArgs (* record rest of line as explicit arguments *)
                                 tcConfigB.noFeedback <- true (* "quiet", no banners responses etc *)
