@@ -999,7 +999,10 @@ rule token (args: LexArgs) (skip: bool) = parse
        let tok = shouldStartFile args lexbuf m (0,FSComp.SR.lexHashBangMustBeFirstInFile()) tok
        if not skip then tok else singleLineComment (None,1,m,m,args) skip lexbuf }
 
-| "#light" anywhite*
+| "#light" anywhite* newline
+   { incrLine lexbuf
+     token args skip lexbuf }
+
 | ("#indent" | "#light") anywhite+ "\"on\""
    { token args skip lexbuf }
 
