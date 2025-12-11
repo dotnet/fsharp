@@ -15,6 +15,8 @@ type internal DList<'T> = DList of ('T list -> 'T list)
 [<Sealed>]
 type internal CachedDList<'T> internal (dlist: DList<'T>, lazyList: Lazy<'T list>) =
     
+    static let empty = CachedDList<'T>(DList id, lazy [])
+    
     /// Create from a DList and a lazy materialized list
     internal new (dlist: DList<'T>) =
         let lazyList = lazy (
@@ -28,8 +30,6 @@ type internal CachedDList<'T> internal (dlist: DList<'T>, lazyList: Lazy<'T list
         let dlist = DList (fun tail -> xs @ tail)
         let lazyList = lazy xs
         CachedDList(dlist, lazyList)
-    
-    static let empty = CachedDList<'T>(DList id, lazy [])
     
     static member Empty = empty
     
@@ -53,10 +53,10 @@ type internal CachedDList<'T> internal (dlist: DList<'T>, lazyList: Lazy<'T list
     member _.ToList() = lazyList.Value
     
     /// For QueueList compatibility - returns materialized list
-    member x.FirstElements = x.ToList()
+    member x.FirstElements : 'T list = x.ToList()
     
     /// For QueueList compatibility - returns empty list (no "last" concept in DList)
-    member _.LastElements = []
+    member _.LastElements : 'T list = []
     
     /// Internal access to the DList for efficient append operations
     member internal _.InternalDList = dlist
@@ -84,12 +84,12 @@ module internal CachedDList =
     let appendOne (x: CachedDList<'T>) (y: 'T) = x.AppendOne(y)
     
     /// Append two DLists - O(1) operation via function composition
-    let append (x: CachedDList<'T>) (y: CachedDList<'T>) =
-        if x.Length = 0 then y
-        elif y.Length = 0 then x
+    let append (x: CachedDList<'T>) (ys: CachedDList<'T>) =
+        if x.Length = 0 then ys
+        elif ys.Length = 0 then x
         else
             let (DList f) = x.InternalDList
-            let (DList g) = y.InternalDList
+            let (DList g) = ys.InternalDList
             // Compose the two functions: first apply g, then apply f
             let newDList = DList (f >> g)
             CachedDList(newDList)

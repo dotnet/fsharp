@@ -7,6 +7,9 @@
 - [x] Identify V5 (DList with cached iteration) as best performer (4.1x faster, 1.6x memory)
 - [x] Document all benchmark results
 - [x] Find all QueueList usage sites (49 files)
+- [x] Create DList.fsi and DList.fs implementation
+- [x] Add DList to build system (FSharp.Compiler.Service.fsproj)
+- [x] Verify DList compiles successfully
 
 ## QueueList Usage Sites (Priority Hot Paths)
 1. **TypedTree.fs** - Core type definition (ModuleOrNamespaceType)
