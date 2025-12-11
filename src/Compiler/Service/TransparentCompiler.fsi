@@ -37,7 +37,7 @@ type internal TcInfo =
         latestCcuSigForFile: ModuleOrNamespaceType option
 
         /// Accumulated diagnostics, last file first
-        tcDiagnosticsRev: PhasedDiagnosticWithSeverity[] list
+        tcDiagnosticsRev: PhasedDiagnostic[] list
 
         tcDependencyFiles: string list
 
@@ -59,7 +59,7 @@ type internal TcIntermediate =
         moduleNamesDict: ModuleNamesDict
 
         /// Accumulated diagnostics, last file first
-        tcDiagnosticsRev: PhasedDiagnosticWithSeverity array list
+        tcDiagnosticsRev: PhasedDiagnostic array list
         tcDependencyFiles: string list
         sink: TcResultsSinkImpl
     }

@@ -2871,50 +2871,41 @@ module internal ParseAndCheckFile =
         let mutable errorCount = 0
 
         let collectOne diagnostic =
-            let { PhasedDiagnostic = phasedDiagnostic } = diagnostic
             // 1. Extended diagnostic data should be created after typechecking because it requires a valid SymbolEnv
             // 2. Diagnostic message should be created during the diagnostic sink, because after typechecking
             //    the formatting of types in it may change (for example, 'a to obj)
             //
             // So we'll create a diagnostic later, but cache the FormatCore message now
-            phasedDiagnostic.Exception.Data["CachedFormatCore"] <- phasedDiagnostic.FormatCore(flatErrors, suggestNamesForErrors)
+            diagnostic.Exception.Data["CachedFormatCore"] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
             diagnosticsCollector.Add(diagnostic)
 
             if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
                 errorCount <- errorCount + 1
 
         // This function gets called whenever an error happens during parsing or checking
-        let diagnosticSink (diagnostic: PhasedDiagnosticWithSeverity) =
+        let diagnosticSink (diagnostic: PhasedDiagnostic) =
             // Sanity check here. The phase of an error should be in a phase known to the language service.
             let diagnostic =
-                if not (diagnostic.PhasedDiagnostic.IsPhaseInCompile()) then
+                if not (diagnostic.IsPhaseInCompile()) then
                     // Reaching this point means that the error would be sticky if we let it prop up to the language service.
                     // Assert and recover by replacing phase with one known to the language service.
                     Trace.TraceInformation(
                         sprintf
                             "The subcategory '%s' seen in an error should not be seen by the language service"
-                            (diagnostic.PhasedDiagnostic.Subcategory())
+                            (diagnostic.Subcategory())
                     )
 
-                    { diagnostic with
-                        PhasedDiagnosticWithSeverity.PhasedDiagnostic.Phase = BuildPhase.TypeCheck
-                    }
+                    { diagnostic with Phase = BuildPhase.TypeCheck }
                 else
                     diagnostic
 
             if reportErrors then
                 match diagnostic with
 #if !NO_TYPEPROVIDERS
-                | {
-                      PhasedDiagnostic = {
-                                             Exception = :? TypeProviderError as tpe
-                                         }
-                  } ->
+                | { Exception = :? TypeProviderError as tpe } ->
                     tpe.Iter(fun exn ->
                         collectOne
-                            { diagnostic with
-                                PhasedDiagnosticWithSeverity.PhasedDiagnostic.Exception = exn
-                            })
+                            { diagnostic with Exception = exn })
 #endif
                 | _ -> collectOne diagnostic
 
@@ -3199,13 +3190,13 @@ module internal ParseAndCheckFile =
                 backgroundDiagnostics
                 |> Array.partition (fun backgroundError ->
                     hashLoadsInFile
-                    |> List.exists (fst >> sameFile (fileOfBackgroundError backgroundError.PhasedDiagnostic)))
+                    |> List.exists (fst >> sameFile (fileOfBackgroundError backgroundError)))
 
             // Create single errors for the #load-ed files.
             // Group errors and warnings by file name.
             let hashLoadBackgroundDiagnosticsGroupedByFileName =
                 hashLoadBackgroundDiagnostics
-                |> Array.map (fun err -> fileOfBackgroundError err.PhasedDiagnostic, err)
+                |> Array.map (fun err -> fileOfBackgroundError err, err)
                 |> Array.groupBy fst // fileWithErrors, error list
 
             //  Join the sets and report errors.
@@ -3220,31 +3211,22 @@ module internal ParseAndCheckFile =
 
                             let errors =
                                 [
-                                    for {
-                                            PhasedDiagnostic = err
-                                            Severity = severity
-                                        } in diagnostics do
-                                        if severity = FSharpDiagnosticSeverity.Error then
+                                    for err in diagnostics do
+                                        if err.Severity = FSharpDiagnosticSeverity.Error then
                                             err.Exception
                                 ]
 
                             let warnings =
                                 [
-                                    for {
-                                            PhasedDiagnostic = err
-                                            Severity = severity
-                                        } in diagnostics do
-                                        if severity = FSharpDiagnosticSeverity.Warning then
+                                    for err in diagnostics do
+                                        if err.Severity = FSharpDiagnosticSeverity.Warning then
                                             err.Exception
                                 ]
 
                             let infos =
                                 [
-                                    for {
-                                            PhasedDiagnostic = err
-                                            Severity = severity
-                                        } in diagnostics do
-                                        if severity = FSharpDiagnosticSeverity.Info then
+                                    for err in diagnostics do
+                                        if err.Severity = FSharpDiagnosticSeverity.Info then
                                             err.Exception
                                 ]
 
@@ -3255,11 +3237,8 @@ module internal ParseAndCheckFile =
                             else errorR message
 
             // Replay other background errors.
-            for {
-                    PhasedDiagnostic = diagnostic
-                    Severity = severity
-                } in otherBackgroundDiagnostics do
-                match severity with
+            for diagnostic in otherBackgroundDiagnostics do
+                match diagnostic.Severity with
                 | FSharpDiagnosticSeverity.Info -> informationalWarning diagnostic.Exception
                 | FSharpDiagnosticSeverity.Warning -> warning diagnostic.Exception
                 | FSharpDiagnosticSeverity.Error -> errorR diagnostic.Exception
@@ -3289,7 +3268,7 @@ module internal ParseAndCheckFile =
             tcState: TcState,
             moduleNamesDict: ModuleNamesDict,
             loadClosure: LoadClosure option,
-            backgroundDiagnostics: PhasedDiagnosticWithSeverity[],
+            backgroundDiagnostics: PhasedDiagnostic[],
             suggestNamesForErrors: bool
         ) =
 
@@ -3761,7 +3740,7 @@ type FSharpCheckFileResults
             tcState: TcState,
             moduleNamesDict: ModuleNamesDict,
             loadClosure: LoadClosure option,
-            backgroundDiagnostics: PhasedDiagnosticWithSeverity[],
+            backgroundDiagnostics: PhasedDiagnostic[],
             isIncompleteTypeCheckEnvironment: bool,
             projectOptions: FSharpProjectOptions,
             builder: IncrementalBuilder option,

@@ -260,7 +260,7 @@ module BuildGraphTests =
                 use _ = new CompilationGlobalsScope(logger, phase)
                 let! _ = Seq.init n (job phase) |> MultipleDiagnosticsLoggers.Parallel
 
-                let diags = logger.Diagnostics |> List.map _.PhasedDiagnostic
+                let diags = logger.Diagnostics
 
                 diags |> List.map _.Phase |> List.distinct |> Assert.shouldBe [ phase ]
                 diags |> List.map _.Exception.Message
@@ -343,7 +343,7 @@ module BuildGraphTests =
         inherit CapturingDiagnosticsLogger("test")
         override _.DiagnosticSink(e) =
             base.DiagnosticSink(e)
-            callback e.PhasedDiagnostic.Exception.Message |> ignore
+            callback e.Exception.Message |> ignore
 
     [<Fact>]
     let ``MultipleDiagnosticsLoggers capture diagnostics in correct order`` () =

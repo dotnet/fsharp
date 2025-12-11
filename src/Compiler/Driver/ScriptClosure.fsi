@@ -26,9 +26,9 @@ type LoadClosureInput =
 
       SyntaxTree: ParsedInput option
 
-      ParseDiagnostics: PhasedDiagnosticWithSeverity list
+      ParseDiagnostics: PhasedDiagnostic list
 
-      MetaCommandDiagnostics: PhasedDiagnosticWithSeverity list }
+      MetaCommandDiagnostics: PhasedDiagnostic list }
 
 [<RequireQualifiedAccess>]
 type LoadClosure =
@@ -61,13 +61,13 @@ type LoadClosure =
         OriginalLoadReferences: (range * string * string) list
 
         /// Diagnostics seen while processing resolutions
-        ResolutionDiagnostics: PhasedDiagnosticWithSeverity list
+        ResolutionDiagnostics: PhasedDiagnostic list
 
         /// Diagnostics to show for root of closure (used by fsc.fs)
-        AllRootFileDiagnostics: PhasedDiagnosticWithSeverity list
+        AllRootFileDiagnostics: PhasedDiagnostic list
 
         /// Diagnostics seen while processing the compiler options implied root of closure
-        LoadClosureRootFileDiagnostics: PhasedDiagnosticWithSeverity list
+        LoadClosureRootFileDiagnostics: PhasedDiagnostic list
     }
 
     /// Analyze a script text and find the closure of its references.

@@ -286,10 +286,12 @@ type PhasedDiagnostic =
     {
         Exception: exn
         Phase: BuildPhase
+        Severity: FSharpDiagnosticSeverity
+        DefaultSeverity: FSharpDiagnosticSeverity
     }
 
     /// Construct a phased error
-    static member Create(exn: exn, phase: BuildPhase) : PhasedDiagnostic = { Exception = exn; Phase = phase }
+    static member Create(exn: exn, phase: BuildPhase, severity: FSharpDiagnosticSeverity) : PhasedDiagnostic = { Exception = exn; Phase = phase; Severity = severity; DefaultSeverity = severity }
 
     member this.DebugDisplay() =
         sprintf "%s: %s" (this.Subcategory()) this.Exception.Message
@@ -348,20 +350,6 @@ type PhasedDiagnostic =
         | BuildPhase.TypeCheck -> true
         | _ -> false
 
-type PhasedDiagnosticWithSeverity =
-    {
-        PhasedDiagnostic: PhasedDiagnostic
-        Severity: FSharpDiagnosticSeverity
-        DefaultSeverity: FSharpDiagnosticSeverity
-    }
-
-    static member Create(phasedDiagnostic, severity) =
-        {
-            PhasedDiagnostic = phasedDiagnostic
-            Severity = severity
-            DefaultSeverity = severity
-        }
-
 [<AbstractClass>]
 [<DebuggerDisplay("{DebugDisplay()}")>]
 type DiagnosticsLogger(nameForDebugging: string) =
@@ -369,7 +357,7 @@ type DiagnosticsLogger(nameForDebugging: string) =
 
     // The 'Impl' factoring enables a developer to place a breakpoint at the non-Impl
     // code just below and get a breakpoint for all error logger implementations.
-    abstract DiagnosticSink: diagnostic: PhasedDiagnosticWithSeverity -> unit
+    abstract DiagnosticSink: diagnostic: PhasedDiagnostic -> unit
 
     member x.CheckForErrors() = (x.ErrorCount > 0)
 
@@ -401,10 +389,7 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
         let diagnostic =
             match eagerFormat with
             | None -> diagnostic
-            | Some f ->
-                { diagnostic with
-                    PhasedDiagnostic = f diagnostic.PhasedDiagnostic
-                }
+            | Some f -> f diagnostic
 
         if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
             errorCount <- errorCount + 1
@@ -475,13 +460,8 @@ module DiagnosticsLoggerExtensions =
                 PreserveStackTrace exn
                 raise exn
             | _ ->
-                let phasedDiagnostic =
-                    PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase)
-
-                let diagnosticWithSeverity =
-                    PhasedDiagnosticWithSeverity.Create(phasedDiagnostic, severity)
-
-                x.DiagnosticSink(diagnosticWithSeverity)
+                let diagnostic =PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase, severity)
+                x.DiagnosticSink(diagnostic)
 
         member x.ErrorR exn =
             x.EmitDiagnostic(exn, FSharpDiagnosticSeverity.Error)
@@ -497,10 +477,7 @@ module DiagnosticsLoggerExtensions =
             raise (ReportedError(Some exn))
 
         member x.SimulateError(diagnostic) =
-            let diagnosticWithSeverity =
-                PhasedDiagnosticWithSeverity.Create(diagnostic, FSharpDiagnosticSeverity.Error)
-
-            x.DiagnosticSink(diagnosticWithSeverity)
+            x.DiagnosticSink(diagnostic)
             raise (ReportedError(Some diagnostic.Exception))
 
         member x.ErrorRecovery (exn: exn) (m: range) =
@@ -612,12 +589,6 @@ let simulateError diagnostic =
 
 let diagnosticSink diagnostic =
     DiagnosticsThreadStatics.DiagnosticsLogger.DiagnosticSink(diagnostic)
-
-let errorSink diagnostic =
-    diagnosticSink (PhasedDiagnosticWithSeverity.Create(diagnostic, FSharpDiagnosticSeverity.Error))
-
-let warnSink diagnostic =
-    diagnosticSink (PhasedDiagnosticWithSeverity.Create(diagnostic, FSharpDiagnosticSeverity.Warning))
 
 let errorRecovery exn m =
     DiagnosticsThreadStatics.DiagnosticsLogger.ErrorRecovery exn m

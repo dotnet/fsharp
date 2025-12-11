@@ -53,7 +53,7 @@ type public HashIfExpression() =
         let diagnosticsLogger =
             {
                 new DiagnosticsLogger("TestDiagnosticsLogger") with
-                    member _.DiagnosticSink({ PhasedDiagnostic = e; Severity = severity }) = if severity = FSharpDiagnosticSeverity.Error then errors.Add e else warnings.Add e
+                    member _.DiagnosticSink(e) = if e.Severity = FSharpDiagnosticSeverity.Error then errors.Add e else warnings.Add e
                     member _.ErrorCount = errors.Count
             }
 

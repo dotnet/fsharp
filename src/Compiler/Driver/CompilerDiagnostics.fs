@@ -405,14 +405,8 @@ type PhasedDiagnostic with
                 (severity = FSharpDiagnosticSeverity.Info && level > 0)
                 || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
-type PhasedDiagnosticWithSeverity with
     member x.AdjustSeverity(options) =
-        let {
-                PhasedDiagnostic = x
-                Severity = severity
-            } =
-            x
-
+        let severity = x.Severity
         let n = x.Number
 
         let localWarnon () = WarnScopes.IsWarnon options n x.Range
@@ -2014,7 +2008,7 @@ type PhasedDiagnostic with
             x.Exception.Output(buf, suggestNames)
             let message = buf.ToString()
             let exn = DiagnosticWithText(x.Number, message, m)
-            { Exception = exn; Phase = x.Phase }
+            { x with Exception = exn }
         | None -> x
 
 let SanitizeFileName fileName implicitIncludeDir =
@@ -2320,7 +2314,7 @@ type DiagnosticsLoggerFilteringByScopedNowarn(diagnosticOptions: FSharpDiagnosti
 
     let mutable realErrorPresent = false
 
-    override _.DiagnosticSink(diagnostic: PhasedDiagnosticWithSeverity) =
+    override _.DiagnosticSink(diagnostic: PhasedDiagnostic) =
 
         if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
             realErrorPresent <- true

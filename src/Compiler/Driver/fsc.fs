@@ -76,7 +76,6 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
 
     override x.DiagnosticSink(diagnostic) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
-        let phasedDiagnostic = diagnostic.PhasedDiagnostic
 
         match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions) with
         | FSharpDiagnosticSeverity.Error ->
@@ -84,18 +83,18 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
                 exiter.Exit 1
 
-            x.HandleIssue(tcConfig, phasedDiagnostic, FSharpDiagnosticSeverity.Error)
+            x.HandleIssue(tcConfig, diagnostic, FSharpDiagnosticSeverity.Error)
 
             errors <- errors + 1
 
-            match phasedDiagnostic.Exception, tcConfigB.simulateException with
+            match diagnostic.Exception, tcConfigB.simulateException with
             | InternalError(msg, _), None
-            | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (phasedDiagnostic.ToString()))
-            | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (phasedDiagnostic.ToString()))
+            | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (diagnostic.ToString()))
+            | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (diagnostic.ToString()))
             | _ -> ()
 
         | FSharpDiagnosticSeverity.Hidden -> ()
-        | s -> x.HandleIssue(tcConfig, phasedDiagnostic, s)
+        | s -> x.HandleIssue(tcConfig, diagnostic, s)
 
 /// Create an error logger that counts and prints errors
 let ConsoleDiagnosticsLogger (tcConfigB: TcConfigBuilder, exiter: Exiter) =
