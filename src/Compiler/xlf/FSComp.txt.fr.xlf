@@ -932,6 +932,11 @@
         <target state="translated">L’abandon de modèle n’est pas autorisé pour un cas d’union qui n’accepte aucune donnée.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Le flux ne commence pas par une ressource null et n'est pas au format '.RES'.</target>
@@ -6703,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">Les tabulations ne sont pas autorisées dans le code F# sauf si l'option #indent \"off\" est utilisée</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">Les tabulations ne sont pas autorisées dans le code F# sauf si l'option #indent \"off\" est utilisée</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">

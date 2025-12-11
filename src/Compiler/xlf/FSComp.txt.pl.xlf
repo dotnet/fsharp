@@ -932,6 +932,11 @@
         <target state="translated">Odrzucanie wzorca jest niedozwolone w przypadku unii, która nie przyjmuje żadnych danych.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Strumień nie zaczyna się od zasobu o wartości null i nie jest w formacie „.RES”.</target>
@@ -6703,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">Znaki TAB są niedozwolone w kodzie języka F#, chyba że użyto opcji #indent \"off\"</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">Znaki TAB są niedozwolone w kodzie języka F#, chyba że użyto opcji #indent \"off\"</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">

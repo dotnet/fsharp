@@ -932,6 +932,11 @@
         <target state="translated">L'eliminazione del criterio non è consentita per case di unione che non accetta dati.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Il flusso non inizia con una risorsa Null e non è in formato '.RES'.</target>
@@ -6703,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">I caratteri di tabulazione non sono consentiti nel codice F# a meno che non si utilizzi l'opzione #indent \"off\"</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">I caratteri di tabulazione non sono consentiti nel codice F# a meno che non si utilizzi l'opzione #indent \"off\"</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">

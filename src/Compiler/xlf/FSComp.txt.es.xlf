@@ -932,6 +932,11 @@
         <target state="translated">No se permite el descarte de patrón para un caso de unión que no tome datos.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">El flujo no comienza con un recurso nulo ni está en formato ".RES".</target>
@@ -6703,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">No se permiten tabulaciones en código de F# a menos que se use la opción #indent \"off\".</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">No se permiten tabulaciones en código de F# a menos que se use la opción #indent \"off\".</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">

@@ -932,6 +932,11 @@
         <target state="translated">데이터를 사용하지 않는 공용 구조체 사례에는 패턴 삭제가 허용되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">스트림은 null 리소스로 시작되지 않으며 '.RES' 형식이 아닙니다.</target>
@@ -6703,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">#indent \"off\" 옵션을 사용하지 않는 한 TAB은 F# 코드에서 허용되지 않습니다.</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">#indent \"off\" 옵션을 사용하지 않는 한 TAB은 F# 코드에서 허용되지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">

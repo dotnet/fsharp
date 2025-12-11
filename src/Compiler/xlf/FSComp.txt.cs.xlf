@@ -932,6 +932,11 @@
         <target state="translated">Pro případ sjednocení, který nepřijímá žádná data, se zahození vzoru nepovoluje.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Stream nezačíná zdrojem s hodnotou null a není ve formátu .RES.</target>
@@ -6703,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">Výraz tabulátoru není v kódu F# povolený, pokud se nepoužije možnost #indent \"off\".</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">Výraz tabulátoru není v kódu F# povolený, pokud se nepoužije možnost #indent \"off\".</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">

@@ -932,6 +932,11 @@
         <target state="translated">Das Verwerfen von Mustern ist für Union-Fall, der keine Daten akzeptiert, nicht zulässig.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Der Stream beginnt nicht mit einer NULL-Ressource und ist nicht im RES-Format.</target>
@@ -6703,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">Tabulatorzeichen sind in F#-Code nur zulässig, wenn die Option "#indent \"off\"" verwendet wird.</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">Tabulatorzeichen sind in F#-Code nur zulässig, wenn die Option "#indent \"off\"" verwendet wird.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">

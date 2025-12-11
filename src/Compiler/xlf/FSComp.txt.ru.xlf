@@ -932,6 +932,11 @@
         <target state="translated">Отмена шаблона не разрешена для случая объединения, не принимающего данные.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Поток не начинается с нулевого ресурса и не соответствует формату ".RES".</target>
@@ -6703,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">В коде F# табуляция может использоваться только при использовании параметра #indent \"off\"</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">В коде F# табуляция может использоваться только при использовании параметра #indent \"off\"</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">

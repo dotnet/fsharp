@@ -932,6 +932,11 @@
         <target state="translated">不允许将模式丢弃用于不采用数据的联合事例。</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">流应以空资源开头并且应采用 .RES 格式。</target>
@@ -6703,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">F# 代码中不允许使用制表符，除非使用了 #indent \"off\" 选项</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">F# 代码中不允许使用制表符，除非使用了 #indent \"off\" 选项</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">

@@ -932,6 +932,11 @@
         <target state="translated">データを受け取らない共用体ケースでは、パターンの破棄は許可されません。</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">ストリームは null リソースでは始まらず、'RES' 形式でもありません。</target>
@@ -6703,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">F# コードにタブを使用するには、#indent \"off\" オプションを使用する必要があります</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">F# コードにタブを使用するには、#indent \"off\" オプションを使用する必要があります</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">
