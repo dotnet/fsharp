@@ -1092,7 +1092,7 @@ parsNonAtomicType,"The use of the type syntax 'int C' and 'C  <int>' is not perm
 1202,typrelCannotResolveAmbiguityInUnmanaged,"Could not resolve the ambiguity in the use of a generic construct with an 'unmanaged' constraint at or near this position"
 #1203 - used for error in FSharp.Core CompilerMessage message
 #1204 - used for error in FSharp.Core CompilerMessage message
-mlCompatLightOffNoLongerSupported,"The use of '#light \"off\"' or '#indent \"off\"' is no longer supported"
+1205,mlCompatLightOffNoLongerSupported,"The use of '#light \"off\"' or '#indent \"off\"' is no longer supported"
 1206,ilFieldDoesNotHaveValidOffsetForStructureLayout,"The type '%s' has been marked as having an Explicit layout, but the field '%s' has not been marked with the 'FieldOffset' attribute"
 1207,tcInterfacesShouldUseInheritNotInterface,"Interfaces inherited by other interfaces should be declared using 'inherit ...' instead of 'interface ...'"
 1208,parsInvalidPrefixOperator,"Invalid prefix operator"
