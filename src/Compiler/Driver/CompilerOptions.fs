@@ -1874,15 +1874,6 @@ let compilingFsLibNoBigIntFlag =
         None
     )
 
-let mlKeywordsFlag =
-    CompilerOption(
-        "ml-keywords",
-        tagNone,
-        OptionUnit(fun () -> ()),
-        Some(DeprecatedCommandLineOptionNoDescription("--ml-keywords", rangeCmdArgs)),
-        None
-    )
-
 let gnuStyleErrorsFlag tcConfigB =
     CompilerOption(
         "gnu-style-errors",
@@ -2082,7 +2073,6 @@ let deprecatedFlagsFsc tcConfigB =
             None
         )
 
-        mlKeywordsFlag
         gnuStyleErrorsFlag tcConfigB
     ]
 

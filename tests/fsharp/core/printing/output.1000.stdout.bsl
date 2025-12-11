@@ -2685,14 +2685,14 @@ type System.Int32 with
 
 > val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int
 
-> val functionWhichTakesAParameterCalled_land: land : (int -> int -> int) -> int
+> val functionWhichTakesAParameterCalled_land: land: (int -> int -> int) -> int
 
 > type RecordWithStrangeNames =
   {
     ``funky name`` : obj
     op_Addition: obj
     ``+`` : obj
-    land : obj
+    land: obj
     ``base`` : obj
   }
 
@@ -2731,7 +2731,7 @@ type System.Int32 with
 
 > val ``or`` : int = 2
 
-> val land : int = 2
+> val land: int = 2
 
 > val ``.ctor`` : int = 2
 
