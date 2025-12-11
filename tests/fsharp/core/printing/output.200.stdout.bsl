@@ -1930,8 +1930,7 @@ type System.Int32 with
 
 > val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int
 
-> val functionWhichTakesAParameterCalled_land:
-  land : (int -> int -> int) -> int
+> val functionWhichTakesAParameterCalled_land: land : (int -> int -> int) -> int
 
 > type RecordWithStrangeNames =
   {

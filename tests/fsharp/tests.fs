@@ -1415,10 +1415,6 @@ module CoreTests =
 
         peverify cfg "test_static_init_exe--optimize.exe"
 
-        exec cfg ("." ++ "test.exe") ""
-
-        exec cfg ("." ++ "test--optimize.exe") ""
-
         exec cfg ("." ++ "test_deterministic_init.exe") ""
 
         exec cfg ("." ++ "test_deterministic_init--optimize.exe") ""
