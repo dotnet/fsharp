@@ -291,7 +291,13 @@ type PhasedDiagnostic =
     }
 
     /// Construct a phased error
-    static member Create(exn: exn, phase: BuildPhase, severity: FSharpDiagnosticSeverity) : PhasedDiagnostic = { Exception = exn; Phase = phase; Severity = severity; DefaultSeverity = severity }
+    static member Create(exn: exn, phase: BuildPhase, severity: FSharpDiagnosticSeverity) : PhasedDiagnostic =
+        {
+            Exception = exn
+            Phase = phase
+            Severity = severity
+            DefaultSeverity = severity
+        }
 
     member this.DebugDisplay() =
         sprintf "%s: %s" (this.Subcategory()) this.Exception.Message
@@ -460,7 +466,9 @@ module DiagnosticsLoggerExtensions =
                 PreserveStackTrace exn
                 raise exn
             | _ ->
-                let diagnostic =PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase, severity)
+                let diagnostic =
+                    PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase, severity)
+
                 x.DiagnosticSink(diagnostic)
 
         member x.ErrorR exn =

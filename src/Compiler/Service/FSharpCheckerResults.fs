@@ -2895,17 +2895,18 @@ module internal ParseAndCheckFile =
                             (diagnostic.Subcategory())
                     )
 
-                    { diagnostic with Phase = BuildPhase.TypeCheck }
+                    { diagnostic with
+                        Phase = BuildPhase.TypeCheck
+                    }
                 else
                     diagnostic
 
             if reportErrors then
                 match diagnostic with
 #if !NO_TYPEPROVIDERS
-                | { Exception = :? TypeProviderError as tpe } ->
-                    tpe.Iter(fun exn ->
-                        collectOne
-                            { diagnostic with Exception = exn })
+                | {
+                      Exception = :? TypeProviderError as tpe
+                  } -> tpe.Iter(fun exn -> collectOne { diagnostic with Exception = exn })
 #endif
                 | _ -> collectOne diagnostic
 
