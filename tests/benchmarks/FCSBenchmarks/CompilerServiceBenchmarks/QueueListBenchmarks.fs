@@ -265,6 +265,137 @@ module QueueListVariants =
                 result <- f x.Items.[i] result
             result
 
+    /// Variant 5: DList with lazy materialized list (cached iteration)
+    type DList<'T> = DList of ('T list -> 'T list)
+    
+    module DList =
+        let empty<'T> : DList<'T> = DList id
+        let singleton x = DList (fun xs -> x::xs)
+        let append (DList f) (DList g) = DList (f >> g)
+        let appendMany xs (DList f) = DList (List.foldBack (fun x acc -> (fun ys -> x :: acc ys)) xs f)
+        let cons x (DList f) = DList (fun xs -> x :: f xs)
+        let toList (DList f) = f []
+    
+    type QueueListV5<'T> private (dlist: DList<'T>, cachedList: Lazy<'T list>, count: int) =
+        
+        static let empty = 
+            let dl = DList.empty
+            QueueListV5(dl, lazy (DList.toList dl), 0)
+        
+        static member Empty: QueueListV5<'T> = empty
+        
+        new(xs: 'T list) = 
+            let dl = DList.appendMany xs DList.empty
+            QueueListV5(dl, lazy xs, List.length xs)
+        
+        member x.Length = count
+        member internal x.DList = dlist
+        
+        member x.AppendOne(y) =
+            let newDList = DList.cons y dlist
+            QueueListV5(newDList, lazy (DList.toList newDList), count + 1)
+        
+        member x.AppendOptimized(y: QueueListV5<'T>) =
+            if y.Length = 0 then x
+            elif x.Length = 0 then y
+            else
+                let newDList = DList.append dlist y.DList
+                QueueListV5(newDList, lazy (DList.toList newDList), count + y.Length)
+        
+        interface IEnumerable<'T> with
+            member x.GetEnumerator() : IEnumerator<'T> =
+                (cachedList.Value :> IEnumerable<_>).GetEnumerator()
+        
+        interface IEnumerable with
+            member x.GetEnumerator() : IEnumerator =
+                ((x :> IEnumerable<'T>).GetEnumerator() :> IEnumerator)
+
+    module QueueListV5 =
+        let rec foldBack f (x: QueueListV5<_>) acc =
+            // Use cached list for foldBack
+            List.foldBack f (x :> IEnumerable<_> |> Seq.toList) acc
+
+    /// Variant 6: DList with native iteration (no caching)
+    type QueueListV6<'T> private (dlist: DList<'T>, count: int) =
+        
+        static let empty = QueueListV6(DList.empty, 0)
+        
+        static member Empty: QueueListV6<'T> = empty
+        
+        new(xs: 'T list) = 
+            let dl = DList.appendMany xs DList.empty
+            QueueListV6(dl, List.length xs)
+        
+        member x.Length = count
+        member x.DList = dlist
+        
+        member x.AppendOne(y) =
+            let newDList = DList.cons y dlist
+            QueueListV6(newDList, count + 1)
+        
+        member x.AppendOptimized(y: QueueListV6<'T>) =
+            if y.Length = 0 then x
+            elif x.Length = 0 then y
+            else
+                let newDList = DList.append dlist y.DList
+                QueueListV6(newDList, count + y.Length)
+        
+        interface IEnumerable<'T> with
+            member x.GetEnumerator() : IEnumerator<'T> =
+                (DList.toList dlist :> IEnumerable<_>).GetEnumerator()
+        
+        interface IEnumerable with
+            member x.GetEnumerator() : IEnumerator =
+                ((x :> IEnumerable<'T>).GetEnumerator() :> IEnumerator)
+
+    module QueueListV6 =
+        let rec foldBack f (x: QueueListV6<_>) acc =
+            // Use DList directly for foldBack
+            List.foldBack f (DList.toList x.DList) acc
+
+    /// Variant 7: ImmutableArray-backed implementation
+    open System.Collections.Immutable
+    
+    type QueueListV7<'T> private (items: ImmutableArray<'T>) =
+        
+        static let empty = QueueListV7(ImmutableArray.Empty)
+        
+        static member Empty: QueueListV7<'T> = empty
+        
+        new(xs: 'T list) = 
+            let builder = ImmutableArray.CreateBuilder<'T>()
+            builder.AddRange(xs)
+            QueueListV7(builder.ToImmutable())
+        
+        member x.Length = items.Length
+        member x.Items = items
+        
+        member x.AppendOne(y) =
+            QueueListV7(items.Add(y))
+        
+        member x.AppendOptimized(y: QueueListV7<'T>) =
+            if y.Length = 0 then x
+            elif x.Length = 0 then y
+            else
+                QueueListV7(items.AddRange(y.Items))
+        
+        interface IEnumerable<'T> with
+            member x.GetEnumerator() : IEnumerator<'T> =
+                (items :> IEnumerable<_>).GetEnumerator()
+        
+        interface IEnumerable with
+            member x.GetEnumerator() : IEnumerator =
+                ((x :> IEnumerable<'T>).GetEnumerator() :> IEnumerator)
+
+    module QueueListV7 =
+        let rec foldBack f (x: QueueListV7<_>) acc =
+            // Mimic Array.foldBack implementation
+            let arr = x.Items
+            let mutable state = acc
+            for i = arr.Length - 1 downto 0 do
+                state <- f arr.[i] state
+            state
+
 open QueueListVariants
 
 [<MemoryDiagnoser>]
@@ -312,6 +443,30 @@ type QueueListBenchmarks() =
     [<BenchmarkCategory("AppendOne")>]
     member _.V4_AppendOne_5000() =
         let mutable q = QueueListV4<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendOne")>]
+    member _.V5_DListCached_AppendOne_5000() =
+        let mutable q = QueueListV5<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendOne")>]
+    member _.V6_DListNative_AppendOne_5000() =
+        let mutable q = QueueListV6<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendOne")>]
+    member _.V7_ImmutableArray_AppendOne_5000() =
+        let mutable q = QueueListV7<int>.Empty
         for i = 1 to iterations do
             q <- q.AppendOne(i)
         q.Length
@@ -377,6 +532,42 @@ type QueueListBenchmarks() =
             sum |> ignore
         q.Length
     
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendWithIteration")>]
+    member _.V5_DListCached_AppendWithForLoop() =
+        let mutable q = QueueListV5<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+            let mutable sum = 0
+            for x in q do
+                sum <- sum + x
+            sum |> ignore
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendWithIteration")>]
+    member _.V6_DListNative_AppendWithForLoop() =
+        let mutable q = QueueListV6<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+            let mutable sum = 0
+            for x in q do
+                sum <- sum + x
+            sum |> ignore
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendWithIteration")>]
+    member _.V7_ImmutableArray_AppendWithForLoop() =
+        let mutable q = QueueListV7<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+            let mutable sum = 0
+            for x in q do
+                sum <- sum + x
+            sum |> ignore
+        q.Length
+    
     [<Benchmark(Baseline = true)>]
     [<BenchmarkCategory("AppendWithFoldBack")>]
     member _.Original_AppendWithFoldBack() =
@@ -425,6 +616,36 @@ type QueueListBenchmarks() =
         for i = 1 to iterations do
             q <- q.AppendOne(i)
             let sum = QueueListV4.foldBack (+) q 0
+            sum |> ignore
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendWithFoldBack")>]
+    member _.V5_DListCached_AppendWithFoldBack() =
+        let mutable q = QueueListV5<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+            let sum = QueueListV5.foldBack (+) q 0
+            sum |> ignore
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendWithFoldBack")>]
+    member _.V6_DListNative_AppendWithFoldBack() =
+        let mutable q = QueueListV6<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+            let sum = QueueListV6.foldBack (+) q 0
+            sum |> ignore
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendWithFoldBack")>]
+    member _.V7_ImmutableArray_AppendWithFoldBack() =
+        let mutable q = QueueListV7<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+            let sum = QueueListV7.foldBack (+) q 0
             sum |> ignore
         q.Length
     
@@ -499,6 +720,48 @@ type QueueListBenchmarks() =
                 (sum1 + sum2) |> ignore
         q.Length
     
+    [<Benchmark>]
+    [<BenchmarkCategory("Combined")>]
+    member _.V5_DListCached_CombinedScenario() =
+        let mutable q = QueueListV5<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+            if i % 100 = 0 then
+                let mutable sum1 = 0
+                for x in q do
+                    sum1 <- sum1 + x
+                let sum2 = QueueListV5.foldBack (+) q 0
+                (sum1 + sum2) |> ignore
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("Combined")>]
+    member _.V6_DListNative_CombinedScenario() =
+        let mutable q = QueueListV6<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+            if i % 100 = 0 then
+                let mutable sum1 = 0
+                for x in q do
+                    sum1 <- sum1 + x
+                let sum2 = QueueListV6.foldBack (+) q 0
+                (sum1 + sum2) |> ignore
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("Combined")>]
+    member _.V7_ImmutableArray_CombinedScenario() =
+        let mutable q = QueueListV7<int>.Empty
+        for i = 1 to iterations do
+            q <- q.AppendOne(i)
+            if i % 100 = 0 then
+                let mutable sum1 = 0
+                for x in q do
+                    sum1 <- sum1 + x
+                let sum2 = QueueListV7.foldBack (+) q 0
+                (sum1 + sum2) |> ignore
+        q.Length
+    
     [<Benchmark(Baseline = true)>]
     [<BenchmarkCategory("AppendQueueList")>]
     member _.Original_AppendQueueList() =
@@ -541,5 +804,32 @@ type QueueListBenchmarks() =
         let mutable q = QueueListV4<int>.Empty
         for i = 1 to iterations do
             let single = QueueListV4([i])
+            q <- q.AppendOptimized(single)
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendQueueList")>]
+    member _.V5_DListCached_AppendOptimized() =
+        let mutable q = QueueListV5<int>.Empty
+        for i = 1 to iterations do
+            let single = QueueListV5([i])
+            q <- q.AppendOptimized(single)
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendQueueList")>]
+    member _.V6_DListNative_AppendOptimized() =
+        let mutable q = QueueListV6<int>.Empty
+        for i = 1 to iterations do
+            let single = QueueListV6([i])
+            q <- q.AppendOptimized(single)
+        q.Length
+    
+    [<Benchmark>]
+    [<BenchmarkCategory("AppendQueueList")>]
+    member _.V7_ImmutableArray_AppendOptimized() =
+        let mutable q = QueueListV7<int>.Empty
+        for i = 1 to iterations do
+            let single = QueueListV7([i])
             q <- q.AppendOptimized(single)
         q.Length
