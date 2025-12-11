@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -130,9 +120,7 @@
       IL_000c:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj,
-                                      class [runtime]System.Collections.IComparer comp) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -182,11 +170,10 @@
       IL_0036:  ldloc.2
       IL_0037:  ldloc.3
       IL_0038:  ldloc.s    V_4
-      IL_003a:  tail.
-      IL_003c:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [runtime]System.Collections.IComparer,
+      IL_003a:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [runtime]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
-      IL_0041:  ret
+      IL_003f:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -228,9 +215,7 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool 
-            Equals(valuetype floatsanddoubles/Float obj,
-                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool Equals(valuetype floatsanddoubles/Float obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -249,9 +234,7 @@
       IL_0013:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
-                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -451,9 +434,7 @@
       IL_000c:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj,
-                                      class [runtime]System.Collections.IComparer comp) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -503,11 +484,10 @@
       IL_0036:  ldloc.2
       IL_0037:  ldloc.3
       IL_0038:  ldloc.s    V_4
-      IL_003a:  tail.
-      IL_003c:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [runtime]System.Collections.IComparer,
+      IL_003a:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [runtime]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
-      IL_0041:  ret
+      IL_003f:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -549,9 +529,7 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool 
-            Equals(valuetype floatsanddoubles/Double obj,
-                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool Equals(valuetype floatsanddoubles/Double obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -570,9 +548,7 @@
       IL_0013:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
-                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -1395,7 +1371,6 @@
   } 
 
 } 
-
 
 
 
