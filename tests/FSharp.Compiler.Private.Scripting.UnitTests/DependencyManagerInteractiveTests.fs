@@ -69,7 +69,7 @@ type DependencyManagerInteractiveTests() =
 *)
     static member SdkDirOverrideTestData = [|
         [| None |]
-        [| Path.Combine(__SOURCE_DIRECTORY__, "..", "..", ".dotnet", "sdk")
+        [| Path.Combine(Environment.GetEnvironmentVariable("DOTNET_ROOT"), "sdk")
         |> Directory.GetDirectories
         |> Seq.head
         |> Some |]
