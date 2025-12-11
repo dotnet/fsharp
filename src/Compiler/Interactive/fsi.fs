@@ -1070,22 +1070,28 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                                 let scriptArgs = List.tail args
 
                                 // Filter out and process preferreduilang from script args
+                                let isPreferredUiLangArg (arg: string) =
+                                    arg.StartsWith("--preferreduilang:", StringComparison.OrdinalIgnoreCase)
+                                    || arg.StartsWith("/preferreduilang:", StringComparison.OrdinalIgnoreCase)
+
                                 let rec filterScriptArgs (args: string list) =
                                     match args with
                                     | [] -> []
-                                    | (arg: string) :: rest when
-                                        arg.StartsWith("--preferreduilang:", StringComparison.OrdinalIgnoreCase)
-                                        || arg.StartsWith("/preferreduilang:", StringComparison.OrdinalIgnoreCase)
-                                        ->
+                                    | (arg: string) :: rest when isPreferredUiLangArg arg ->
                                         // Extract culture and set it
-                                        let culture = arg.Substring(arg.IndexOf(':') + 1)
+                                        let colonIndex = arg.IndexOf(':')
 
-                                        try
-                                            tcConfigB.preferredUiLang <- Some culture
-                                            Thread.CurrentThread.CurrentUICulture <- CultureInfo(culture)
-                                        with _ ->
-                                            // Ignore invalid culture, just don't set it
-                                            ()
+                                        if colonIndex >= 0 && colonIndex < arg.Length - 1 then
+                                            let culture = arg.Substring(colonIndex + 1)
+
+                                            try
+                                                tcConfigB.preferredUiLang <- Some culture
+                                                Thread.CurrentThread.CurrentUICulture <- CultureInfo(culture)
+                                            with
+                                            | :? CultureNotFoundException
+                                            | :? ArgumentException ->
+                                                // Ignore invalid culture, just don't set it
+                                                ()
 
                                         filterScriptArgs rest
                                     | arg :: rest -> arg :: filterScriptArgs rest
