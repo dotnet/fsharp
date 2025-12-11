@@ -199,6 +199,14 @@ type PhasedDiagnostic =
     ///
     member Subcategory: unit -> string
 
+type PhasedDiagnosticWithSeverity =
+    { PhasedDiagnostic: PhasedDiagnostic
+      Severity: FSharpDiagnosticSeverity
+      DefaultSeverity: FSharpDiagnosticSeverity }
+
+    static member Create:
+        phasedDiagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> PhasedDiagnosticWithSeverity
+
 /// Represents a capability to log diagnostics
 [<AbstractClass>]
 type DiagnosticsLogger =
@@ -208,7 +216,7 @@ type DiagnosticsLogger =
     member DebugDisplay: unit -> string
 
     /// Emit a diagnostic to the logger
-    abstract DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    abstract DiagnosticSink: diagnostic: PhasedDiagnosticWithSeverity -> unit
 
     /// Get the number of error diagnostics reported
     abstract ErrorCount: int
@@ -235,9 +243,9 @@ type CapturingDiagnosticsLogger =
 
     member CommitDelayedDiagnostics: diagnosticsLogger: DiagnosticsLogger -> unit
 
-    override DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    override DiagnosticSink: diagnostic: PhasedDiagnosticWithSeverity -> unit
 
-    member Diagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+    member Diagnostics: PhasedDiagnosticWithSeverity list
 
     override ErrorCount: int
 
@@ -313,7 +321,7 @@ val informationalWarning: exn: exn -> unit
 
 val simulateError: diagnostic: PhasedDiagnostic -> 'T
 
-val diagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+val diagnosticSink: diagnostic: PhasedDiagnosticWithSeverity -> unit
 
 val errorSink: diagnostic: PhasedDiagnostic -> unit
 

@@ -2870,33 +2870,34 @@ module internal ParseAndCheckFile =
         let diagnosticsCollector = ResizeArray<_>()
         let mutable errorCount = 0
 
-        let collectOne severity diagnostic =
+        let collectOne diagnostic =
+            let { PhasedDiagnostic = phasedDiagnostic } = diagnostic
             // 1. Extended diagnostic data should be created after typechecking because it requires a valid SymbolEnv
             // 2. Diagnostic message should be created during the diagnostic sink, because after typechecking
             //    the formatting of types in it may change (for example, 'a to obj)
             //
             // So we'll create a diagnostic later, but cache the FormatCore message now
-            diagnostic.Exception.Data["CachedFormatCore"] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
-            diagnosticsCollector.Add(struct (diagnostic, severity))
+            phasedDiagnostic.Exception.Data["CachedFormatCore"] <- phasedDiagnostic.FormatCore(flatErrors, suggestNamesForErrors)
+            diagnosticsCollector.Add(diagnostic)
 
-            if severity = FSharpDiagnosticSeverity.Error then
+            if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
                 errorCount <- errorCount + 1
 
         // This function gets called whenever an error happens during parsing or checking
-        let diagnosticSink severity (diagnostic: PhasedDiagnostic) =
+        let diagnosticSink (diagnostic: PhasedDiagnosticWithSeverity) =
             // Sanity check here. The phase of an error should be in a phase known to the language service.
             let diagnostic =
-                if not (diagnostic.IsPhaseInCompile()) then
+                if not (diagnostic.PhasedDiagnostic.IsPhaseInCompile()) then
                     // Reaching this point means that the error would be sticky if we let it prop up to the language service.
                     // Assert and recover by replacing phase with one known to the language service.
                     Trace.TraceInformation(
                         sprintf
                             "The subcategory '%s' seen in an error should not be seen by the language service"
-                            (diagnostic.Subcategory())
+                            (diagnostic.PhasedDiagnostic.Subcategory())
                     )
 
                     { diagnostic with
-                        Phase = BuildPhase.TypeCheck
+                        PhasedDiagnosticWithSeverity.PhasedDiagnostic.Phase = BuildPhase.TypeCheck
                     }
                 else
                     diagnostic
@@ -2905,14 +2906,21 @@ module internal ParseAndCheckFile =
                 match diagnostic with
 #if !NO_TYPEPROVIDERS
                 | {
-                      Exception = :? TypeProviderError as tpe
-                  } -> tpe.Iter(fun exn -> collectOne severity { diagnostic with Exception = exn })
+                      PhasedDiagnostic = {
+                                             Exception = :? TypeProviderError as tpe
+                                         }
+                  } ->
+                    tpe.Iter(fun exn ->
+                        collectOne
+                            { diagnostic with
+                                PhasedDiagnosticWithSeverity.PhasedDiagnostic.Exception = exn
+                            })
 #endif
-                | _ -> collectOne severity diagnostic
+                | _ -> collectOne diagnostic
 
         let diagnosticsLogger =
             { new DiagnosticsLogger("DiagnosticsHandler") with
-                member _.DiagnosticSink(exn, severity) = diagnosticSink severity exn
+                member _.DiagnosticSink(diagnostic) = diagnosticSink diagnostic
                 member _.ErrorCount = errorCount
             }
 
@@ -2926,21 +2934,17 @@ module internal ParseAndCheckFile =
 
         member _.AnyErrors = errorCount > 0
 
-        member _.CollectedPhasedDiagnostics =
-            [|
-                for struct (diagnostic, severity) in diagnosticsCollector -> diagnostic, severity
-            |]
+        member _.CollectedPhasedDiagnostics = diagnosticsCollector.ToArray()
 
         member _.CollectedDiagnostics(symbolEnv: SymbolEnv option) =
             [|
-                for struct (diagnostic, severity) in diagnosticsCollector do
+                for diagnostic in diagnosticsCollector do
                     yield!
                         DiagnosticHelpers.ReportDiagnostic(
                             options,
                             false,
                             mainInputFileName,
                             diagnostic,
-                            severity,
                             suggestNamesForErrors,
                             flatErrors,
                             symbolEnv
@@ -3177,7 +3181,7 @@ module internal ParseAndCheckFile =
             // If there was a loadClosure, replay the errors and warnings from resolution, excluding parsing
             loadClosure.LoadClosureRootFileDiagnostics |> List.iter diagnosticSink
 
-            let fileOfBackgroundError (diagnostic: PhasedDiagnostic, _) =
+            let fileOfBackgroundError (diagnostic: PhasedDiagnostic) =
                 match diagnostic.Range with
                 | Some m -> Some m.FileName
                 | None -> None
@@ -3195,13 +3199,13 @@ module internal ParseAndCheckFile =
                 backgroundDiagnostics
                 |> Array.partition (fun backgroundError ->
                     hashLoadsInFile
-                    |> List.exists (fst >> sameFile (fileOfBackgroundError backgroundError)))
+                    |> List.exists (fst >> sameFile (fileOfBackgroundError backgroundError.PhasedDiagnostic)))
 
             // Create single errors for the #load-ed files.
             // Group errors and warnings by file name.
             let hashLoadBackgroundDiagnosticsGroupedByFileName =
                 hashLoadBackgroundDiagnostics
-                |> Array.map (fun err -> fileOfBackgroundError err, err)
+                |> Array.map (fun err -> fileOfBackgroundError err.PhasedDiagnostic, err)
                 |> Array.groupBy fst // fileWithErrors, error list
 
             //  Join the sets and report errors.
@@ -3211,28 +3215,37 @@ module internal ParseAndCheckFile =
                 for file, errorGroupedByFileName in hashLoadBackgroundDiagnosticsGroupedByFileName do
                     if sameFile file fileOfHashLoad then
                         for rangeOfHashLoad in rangesOfHashLoad do // Handle the case of two #loads of the same file
-                            let diagnostics =
-                                errorGroupedByFileName |> Array.map (fun (_, (pe, f)) -> pe.Exception, f) // Strip the build phase here. It will be replaced, in total, with TypeCheck
+                            let diagnostics = errorGroupedByFileName |> Array.map snd
+                            // Strip the build phase here. It will be replaced, in total, with TypeCheck
 
                             let errors =
                                 [
-                                    for err, severity in diagnostics do
+                                    for {
+                                            PhasedDiagnostic = err
+                                            Severity = severity
+                                        } in diagnostics do
                                         if severity = FSharpDiagnosticSeverity.Error then
-                                            err
+                                            err.Exception
                                 ]
 
                             let warnings =
                                 [
-                                    for err, severity in diagnostics do
+                                    for {
+                                            PhasedDiagnostic = err
+                                            Severity = severity
+                                        } in diagnostics do
                                         if severity = FSharpDiagnosticSeverity.Warning then
-                                            err
+                                            err.Exception
                                 ]
 
                             let infos =
                                 [
-                                    for err, severity in diagnostics do
+                                    for {
+                                            PhasedDiagnostic = err
+                                            Severity = severity
+                                        } in diagnostics do
                                         if severity = FSharpDiagnosticSeverity.Info then
-                                            err
+                                            err.Exception
                                 ]
 
                             let message = HashLoadedSourceHasIssues(infos, warnings, errors, rangeOfHashLoad)
@@ -3242,7 +3255,10 @@ module internal ParseAndCheckFile =
                             else errorR message
 
             // Replay other background errors.
-            for diagnostic, severity in otherBackgroundDiagnostics do
+            for {
+                    PhasedDiagnostic = diagnostic
+                    Severity = severity
+                } in otherBackgroundDiagnostics do
                 match severity with
                 | FSharpDiagnosticSeverity.Info -> informationalWarning diagnostic.Exception
                 | FSharpDiagnosticSeverity.Warning -> warning diagnostic.Exception
@@ -3273,7 +3289,7 @@ module internal ParseAndCheckFile =
             tcState: TcState,
             moduleNamesDict: ModuleNamesDict,
             loadClosure: LoadClosure option,
-            backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],
+            backgroundDiagnostics: PhasedDiagnosticWithSeverity[],
             suggestNamesForErrors: bool
         ) =
 
@@ -3341,10 +3357,10 @@ module internal ParseAndCheckFile =
 
             // Play background errors and warnings for this file.
             do
-                for err, severity in backgroundDiagnostics do
-                    match err.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+                for diagnostic in backgroundDiagnostics do
+                    match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions) with
                     | FSharpDiagnosticSeverity.Hidden -> ()
-                    | s -> diagnosticSink (err, s)
+                    | s -> diagnosticSink { diagnostic with Severity = s }
 
             let (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState = resOpt
 
@@ -3745,7 +3761,7 @@ type FSharpCheckFileResults
             tcState: TcState,
             moduleNamesDict: ModuleNamesDict,
             loadClosure: LoadClosure option,
-            backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],
+            backgroundDiagnostics: PhasedDiagnosticWithSeverity[],
             isIncompleteTypeCheckEnvironment: bool,
             projectOptions: FSharpProjectOptions,
             builder: IncrementalBuilder option,

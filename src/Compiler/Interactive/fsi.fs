@@ -897,12 +897,18 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
 
     member _.ResetErrorCount() = errorCount <- 0
 
-    override _.DiagnosticSink(diagnostic, severity) =
+    override _.DiagnosticSink(diagnostic) =
+        let {
+                PhasedDiagnostic = phasedDiagnostic
+                Severity = severity
+            } =
+            diagnostic
+
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions) with
         | FSharpDiagnosticSeverity.Error ->
-            fsiStdinSyphon.PrintDiagnostic(tcConfig, diagnostic)
+            fsiStdinSyphon.PrintDiagnostic(tcConfig, phasedDiagnostic)
             errorCount <- errorCount + 1
 
             if tcConfigB.abortOnError then
@@ -913,7 +919,7 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
         | FSharpDiagnosticSeverity.Info as adjustedSeverity ->
             DoWithDiagnosticColor adjustedSeverity (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
-                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
+                phasedDiagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())

@@ -156,7 +156,7 @@ type internal FSharpParsedFile
         SyntaxTreeHash: byte array,
         SourceText: ISourceText,
         ParsedInput: ParsedInput,
-        ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+        ParseDiagnostics: PhasedDiagnosticWithSeverity[]
     ) =
 
     member _.FileName = FileName
