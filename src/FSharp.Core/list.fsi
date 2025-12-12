@@ -22,6 +22,8 @@ module List =
     ///
     /// <returns>The resulting list of pairs.</returns>
     /// 
+    /// <remarks>This is an O(n * m) operation, where n and m are the lengths of the input lists.</remarks>
+    /// 
     /// <example id="allPairs-1">
     /// <code lang="fsharp">
     /// let people = [ "Kirk"; "Spock"; "McCoy" ]
@@ -45,6 +47,8 @@ module List =
     ///
     /// <returns>The resulting list.</returns>
     /// 
+    /// <remarks>Lists are represented as linked lists so this is an O(n) operation, where n is the length of the first list.</remarks>
+    /// 
     /// <example id="append-1">
     /// <code lang="fsharp">
     /// List.append [ 1..3 ] [ 4..7 ]
@@ -66,6 +70,8 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
     ///
     /// <returns>The resulting average.</returns>
+    /// 
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     /// 
     /// <example id="average-1">
     /// <code lang="fsharp">
@@ -91,6 +97,8 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The resulting average.</returns>
+    /// 
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     /// 
     /// <example id="averageBy-1"> Calculate average age of persons by extracting their age from a record type.
     /// <code lang="fsharp">
@@ -202,6 +210,8 @@ module List =
     /// </code>
     /// </example>
     ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Choose")>]
     val choose: chooser:('T -> 'U option) -> list:'T list -> 'U list
 
@@ -255,6 +265,9 @@ module List =
     /// </code>
     /// The sample evaluates to <c>[1;   1; 2;   1; 2; 3;   1; 2; 3; 4]</c> (added extra spaces for easy reading)
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Collect")>]
     val collect: mapping:('T -> 'U list) -> list:'T list -> 'U list
 
@@ -352,6 +365,9 @@ module List =
     /// input |> List.concat  // evaluates [1; 2; 3; 4; 5; 6; 7; 8; 9]
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the total number of elements in all the lists.</remarks>
+    ///
     [<CompiledName("Concat")>]
     val concat: lists:seq<'T list> -> 'T list
     
@@ -587,6 +603,9 @@ module List =
     /// input |> List.exists (fun (n, name) -> n > 5)      // evaluates false
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Exists")>]
     val exists: predicate:('T -> bool) -> list:'T list -> bool
 
@@ -643,6 +662,9 @@ module List =
     /// input |> List.find (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Find")>]
     val find: predicate:('T -> bool) -> list:'T list -> 'T
 
@@ -746,6 +768,9 @@ module List =
     /// </code>
     /// Evaluates to <c>[(2, "Kirk"); (4, "Spock")]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Filter")>]
     val filter: predicate:('T -> bool) -> list:'T list -> 'T list
 
@@ -792,6 +817,9 @@ module List =
     ///   { fruit = Apple; quantity = 1 }]
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Fold")>]
     val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State
 
@@ -934,6 +962,9 @@ module List =
     /// [1; 2] |> List.forall isEven // evaluates to false
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("ForAll")>]
     val forall: predicate:('T -> bool) -> list:'T list -> bool
 
@@ -1027,6 +1058,9 @@ module List =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
+    ///
     [<CompiledName("Head")>]
     val head: list:'T list -> 'T
 
@@ -1092,6 +1126,9 @@ module List =
     /// </code>
     /// Evaluates to <c>false</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
+    ///
     [<CompiledName("IsEmpty")>]
     val isEmpty: list:'T list -> bool
 
@@ -1121,6 +1158,9 @@ module List =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(n) operation, where n is the index.</remarks>
+    ///
     [<CompiledName("Item")>]
     val item: index:int -> list:'T list -> 'T
 
@@ -1260,6 +1300,9 @@ module List =
     /// </code>
     /// Evaluates to <c>3</c>
     /// </example>
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(n) operation, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Length")>]
     val length: list:'T list -> int
 
@@ -1302,6 +1345,9 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 1; 3; 2 ]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Map")>]
     val map: mapping:('T -> 'U) -> list:'T list -> 'U list
 
@@ -1784,6 +1830,9 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 2; 1; 0 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Reverse")>]
     val rev: list:'T list -> 'T list
 
@@ -2096,6 +2145,8 @@ module List =
     /// Evaluates to <c>["bb"; "ccc"]</c>
     /// </example>
     ///
+    /// <remarks>This is an O(1) operation.</remarks>
+    ///
     [<CompiledName("Tail")>]
     val tail: list:'T list -> 'T list
 
@@ -2336,6 +2387,9 @@ module List =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("TryFind")>]
     val tryFind: predicate:('T -> bool) -> list:'T list -> 'T option
 
