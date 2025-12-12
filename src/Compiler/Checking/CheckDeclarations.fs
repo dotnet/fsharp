@@ -5650,7 +5650,7 @@ let rec IterTyconsOfModuleOrNamespaceType f (mty: ModuleOrNamespaceType) =
 // Defaults get applied in priority order. Defaults listed last get priority 0 (lowest), 2nd last priority 1 etc. 
 let ApplyDefaults (cenv: cenv) g denvAtEnd m moduleContents extraAttribs = 
     try
-        let unsolved = FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd moduleContents extraAttribs
+        let unsolved = FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd moduleContents extraAttribs |> List.rev
 
         CanonicalizePartialInferenceProblem cenv.css denvAtEnd m unsolved
 
