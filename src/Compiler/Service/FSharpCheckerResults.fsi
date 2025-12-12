@@ -620,11 +620,16 @@ module internal ParseAndCheckFile =
 // Used internally to provide intellisense over F# Interactive.
 type internal FsiInteractiveChecker =
     internal new:
-        LegacyReferenceResolver * tcConfig: TcConfig * tcGlobals: TcGlobals * tcImports: TcImports * tcState: TcState ->
+        LegacyReferenceResolver *
+        tcConfig: TcConfig *
+        tcGlobals: TcGlobals *
+        tcImports: TcImports *
+        tcState: TcState *
+        ?keepAssemblyContents: bool ->
             FsiInteractiveChecker
 
     member internal ParseAndCheckInteraction:
-        sourceText: ISourceText * ?userOpName: string ->
+        sourceText: ISourceText * ?userOpName: string * ?asmName: string ->
             Cancellable<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
 
 module internal FSharpCheckerResultsSettings =

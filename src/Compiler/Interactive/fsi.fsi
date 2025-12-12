@@ -282,7 +282,8 @@ type FsiEvaluationSession =
     ///
     /// Operations may be run concurrently with other requests to the InteractiveChecker.
     member ParseAndCheckInteraction:
-        code: string -> FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults
+        code: string * ?keepAssemblyContents: bool ->
+            FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults
 
     /// The single, global interactive checker to use in conjunction with other operations
     /// on the FsiEvaluationSession.
