@@ -585,9 +585,6 @@ module rec Compiler =
     let withNoDebug (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--debug-" ] "debug- is only supported on F#" cUnit
 
-    let withOcamlCompat (cUnit: CompilationUnit) : CompilationUnit =
-        withOptionsHelper [ "--mlcompatibility" ] "withOcamlCompat is only supported on F#" cUnit
-
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper options "withOptions is only supported for F#" cUnit
 

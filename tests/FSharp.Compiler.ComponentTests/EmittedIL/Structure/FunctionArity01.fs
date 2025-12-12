@@ -1,5 +1,5 @@
 // #NoMT #CodeGen #Interop 
-#light
+
 
 // Verify that suples are dropped when parameters to a function
 // So x (y, z) / (x, y) z / (x, y, z) all produce a function taking three

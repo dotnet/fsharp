@@ -13,8 +13,8 @@ let reportFailure s =
   stdout.WriteLine "\n................TEST FAILED...............\n"; failures <- failures @ [s]
 
 let check s e r = 
-  if r = e then  stdout.WriteLine (s^": YES") 
-  else (stdout.WriteLine ("\n***** "^s^": FAIL\n"); reportFailure s)
+  if r = e then  stdout.WriteLine (s + ": YES") 
+  else (stdout.WriteLine ("\n***** " + s + ": FAIL\n"); reportFailure s)
 
 let test s b = 
   if b then ( (* stdout.WriteLine ("passed: " + s) *) ) 

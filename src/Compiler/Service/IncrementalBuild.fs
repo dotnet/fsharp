@@ -563,7 +563,6 @@ type FrameworkImportsCache(size) =
                         tcGlobals.ilg,
                         tcGlobals.fslibCcu,
                         tcGlobals.directoryToResolveRelativePaths,
-                        tcGlobals.mlCompatibility,
                         tcGlobals.isInteractive,
                         tcGlobals.checkNullness,
                         tcGlobals.useReflectionFreeCodeGen,

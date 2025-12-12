@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis 
-#light
+
 
 // Test the backslash functionality when defining strings (continues on next line)
 

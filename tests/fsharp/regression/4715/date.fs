@@ -1,4 +1,4 @@
-#light
+
 [<RequireQualifiedAccess>]
 module app.date
 

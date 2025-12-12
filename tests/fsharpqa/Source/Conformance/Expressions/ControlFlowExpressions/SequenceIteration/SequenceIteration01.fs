@@ -1,5 +1,5 @@
 // #Conformance #ControlFlow #Sequences 
-#light
+
 
 // Test Sequence iteration expressions (for loops).
 

@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeInference #TypeConstraints 
-#light
+
 
 // Verify error message if delegate type doesn't have first parameter of type 'object'.
 // That is, the delegate constraint requires the first parameter be the 'sender'

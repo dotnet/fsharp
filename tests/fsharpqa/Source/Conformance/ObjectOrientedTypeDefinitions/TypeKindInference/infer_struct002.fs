@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #TypeInference 
-#light
+
 // Verify the use of Type Kind Attributes
 module TypeInference 
 

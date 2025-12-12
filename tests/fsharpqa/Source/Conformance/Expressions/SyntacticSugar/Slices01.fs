@@ -1,5 +1,5 @@
 // #Conformance #SyntacticSugar 
-#light
+
 
 // Sanity check slices
 let letters = [| 'a' .. 'z' |]

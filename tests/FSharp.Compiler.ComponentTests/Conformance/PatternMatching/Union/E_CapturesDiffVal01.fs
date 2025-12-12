@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #Unions 
-#light
+
 
 // Verify error if two pattern match clauses match
 // different values

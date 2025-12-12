@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #TypeInference 
-#light
+
 // Verify type kind inference based on type members
 module TypeInference 
 

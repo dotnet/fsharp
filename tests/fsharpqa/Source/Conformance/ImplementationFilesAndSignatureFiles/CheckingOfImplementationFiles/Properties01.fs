@@ -1,5 +1,5 @@
 // #Conformance #SignatureFiles 
-#light
+
 
 // Check FSI signature files for properties
 

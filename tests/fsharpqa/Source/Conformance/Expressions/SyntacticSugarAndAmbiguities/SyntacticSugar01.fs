@@ -1,5 +1,5 @@
 // #Conformance #SyntacticSugar 
-#light
+
 
 // Verify e1.[e2] is just syntactic sugar for calling the 'item' property.
 

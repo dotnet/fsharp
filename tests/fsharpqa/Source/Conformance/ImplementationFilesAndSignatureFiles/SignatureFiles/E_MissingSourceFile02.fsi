@@ -1,5 +1,5 @@
 // #Regression #Conformance #SignatureFiles 
-#light
+
 
 
 // Same as E-MissingSourceFile01.fsi, but only testing the deprecation message

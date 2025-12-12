@@ -1,5 +1,5 @@
 // #Conformance #TypeInference #TypeConstraints 
-#light
+
 
 // Verify happy case with an enum constraint
 

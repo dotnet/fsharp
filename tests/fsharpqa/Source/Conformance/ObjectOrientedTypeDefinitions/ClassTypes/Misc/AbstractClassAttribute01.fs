@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Classes 
-#light
+
 
 // Verify that the AbstractClass attribute works as expected.
 

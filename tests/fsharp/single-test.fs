@@ -113,7 +113,6 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
 
     let langver, options =
         match languageVersion with
-        | "supports-ml" -> "5.0", "--mlcompatibility"
         | v -> v, ""
 
     let computeSourceItems addDirectory addCondition (compileItem:CompileItem) sources =
@@ -217,7 +216,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     let sources = []
     let loadSources = []
     let useSources = []
-    let extraSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
+    let extraSources = ["testlib.fsi";"testlib.fs";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
     let utilitySources = []
     let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
     let framework = "net10.0"
@@ -334,8 +333,6 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
 
     let options =
         match version with
-        | "supports-ml" -> "--langversion:5.0 --mlcompatibility"
-        | "supports-ml*" -> "--mlcompatibility"
         | v when not (String.IsNullOrEmpty(v)) -> $"--langversion:{v}"
         | _ -> ""
 
@@ -352,9 +349,9 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
         else sprintf "%s.bsl" testname
 
     let sources = [
-        let src = [ testname + ".mli"; testname + ".fsi"; testname + ".ml"; testname + ".fs"; testname +  ".fsx";
-                    testname + "a.mli"; testname + "a.fsi"; testname + "a.ml"; testname + "a.fs";
-                    testname + "b.mli"; testname + "b.fsi"; testname + "b.ml"; testname + "b.fs"; ]
+        let src = [ testname + ".fsi"; testname + ".fs"; testname +  ".fsx";
+                    testname + "a.fsi"; testname + "a.fs";
+                    testname + "b.fsi"; testname + "b.fs"; ]
 
         yield! src |> List.filter (fileExists cfg)
 

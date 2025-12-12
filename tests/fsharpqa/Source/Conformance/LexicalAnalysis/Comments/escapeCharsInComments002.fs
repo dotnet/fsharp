@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:946
 // comment lexing does not handle "" and \ inside @" strings
 //<Expects status="success"></Expects>
-#light
+
 (* @"\" *)
 
 (** @"\\" *)

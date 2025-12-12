@@ -2,7 +2,7 @@
 #if TESTS_AS_APP
 module Core_measures
 #endif
-#light
+
 
 let failures = ref []
 

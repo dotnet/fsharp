@@ -1,6 +1,6 @@
 // #Conformance #ObjectOrientedTypes #InterfacesAndImplementations #ReqNOMT 
 // <Expects id="FS3350" status="error" span="(8,6-8,7)">Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 5.0 or greater.</Expects>
-#light
+
 
 let mutable res = true
 

@@ -8,7 +8,7 @@
 //
 //<Expects id="FS0502" status="error" span="(22,1)">The member or object constructor 'Random' takes 0 type argument\(s\) but is here given 1\. The required signature is 'static member Variable\.Random: y: Variable<'a> -> Variable<'a>'</Expects>
 
-#light
+
 
 type Variable() =
     member x.Name with set(v:string) = ()

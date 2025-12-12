@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeConstraints 
-#light
+
 // FSB 1742, Wrong ctor signature (in ctor constraint) is not reported as an error
 //<Expects id="FS0001" span="(18,11-18,15)" status="error">'C'.+default.+constructor</Expects>
 // DefaultConstructorConstraint02.fs(17,11-17,15): error FS0001: A generic construct requires that the type 'C' have a public default constructor

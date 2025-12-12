@@ -2,7 +2,7 @@
 #if TESTS_AS_APP
 module Core_comprehensions
 #endif
-#light
+
 let failures = ref []
 
 let report_failure (s : string) = 

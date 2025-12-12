@@ -1,5 +1,5 @@
 // #Conformance #TypeInference #Attributes #ReqNOMT 
-#light
+
 
 namespace XX.YY.ZZ
    type T3 = decimal []

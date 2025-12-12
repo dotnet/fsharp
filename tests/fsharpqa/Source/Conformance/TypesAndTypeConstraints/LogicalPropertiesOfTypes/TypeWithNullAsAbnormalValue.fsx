@@ -1,5 +1,5 @@
 // #Conformance #TypeConstraints 
-#light
+
 
 let x1 : int list = Unchecked.defaultof<int list>
 let x2 : int[] = Unchecked.defaultof<int[]>

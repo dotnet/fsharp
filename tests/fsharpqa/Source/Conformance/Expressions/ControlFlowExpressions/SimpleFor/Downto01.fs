@@ -1,5 +1,5 @@
 // #Conformance #ControlFlow 
-#light
+
 
 // Sanity check the 'downto' keyword
 

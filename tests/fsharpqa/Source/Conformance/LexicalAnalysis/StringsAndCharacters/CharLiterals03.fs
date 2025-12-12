@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis 
-#light
+
 
 // Test two-byte Unicode Character literals
 let spade, club, heart, diamond = '\u2660', '\u2663', '\u2665', '\u2666'

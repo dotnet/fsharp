@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #InterfacesAndImplementations #ReqNOMT 
-#light
+
 
 let mutable res = true
 

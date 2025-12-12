@@ -1,5 +1,5 @@
 // #Conformance #SignatureFiles 
-#light
+
 
 // Verify ability to use FSI files in conjunction with internal types
 

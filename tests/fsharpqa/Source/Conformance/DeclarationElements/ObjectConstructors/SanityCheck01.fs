@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #ObjectConstructors 
-#light
+
 
 type Foo(arg1:string, arg2:int) =
     let m_value = arg2

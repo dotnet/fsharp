@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:3248
 // Verify we can use Units of Measure in a quotation
 // All these functions have hidden unit of measure variables
-#light
+
 
 let _ = <@ sqrt 1.0 @>
 let _ = <@ atan2 1.0 2.0 @>

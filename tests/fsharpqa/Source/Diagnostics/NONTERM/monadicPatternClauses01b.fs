@@ -3,7 +3,7 @@
 //<Expects status="notin">NONTERM</Expects>
 //<Expects id="FS0010" status="error"></Expects>
 
-#light 
+
 
 open Microsoft.FSharp.Control
 

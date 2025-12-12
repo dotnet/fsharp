@@ -5,7 +5,7 @@
 //<Expects id="FS0717" span="(13,18-13,26)" status="error">Unexpected type arguments</Expects>
 //<Expects id="FS0717" span="(14,19-14,28)" status="error">Unexpected type arguments</Expects>
 //<Expects id="FS0717" span="(15,19-15,27)" status="error">Unexpected type arguments</Expects>
-#light
+
 
 [<Measure>] type kg
 

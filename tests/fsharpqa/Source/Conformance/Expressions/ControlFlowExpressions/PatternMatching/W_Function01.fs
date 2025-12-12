@@ -3,7 +3,7 @@
 // FS0025: Incomplete pattern matches on this expression... - wording could be improved a bit
 //<Expects id="FS0025" span="(8,14-8,24)" status="warning">'0.0'</Expects>
 
-#light
+
 
 let x = fun (4.1 | 1.26) -> 33    (* warning FS0025: Incomplete pattern matches on this expression. For example, the value '0.0' will not be matched *)
 

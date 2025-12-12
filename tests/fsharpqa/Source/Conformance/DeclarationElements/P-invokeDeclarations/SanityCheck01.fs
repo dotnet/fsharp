@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #PInvoke 
-#light
+
 
 // Sanity check PInvoke from F#
 open System.Runtime.InteropServices

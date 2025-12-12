@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #TypeExtensions 
-#light
+
 
 // Verify type extensions extend the full hierarchy of a type
 // Verify that if you extend a base class, derived classes are extended

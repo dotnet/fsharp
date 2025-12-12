@@ -1,5 +1,5 @@
 // #Conformance #SignatureFiles 
-#light
+
 
 namespace Properties01
   type AbstractPropertiesTest =

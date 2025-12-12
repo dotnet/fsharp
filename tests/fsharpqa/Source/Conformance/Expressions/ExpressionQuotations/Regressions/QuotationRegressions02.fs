@@ -1,5 +1,5 @@
 // #Regression #Conformance #Quotations 
-#light  
+
 
 // FSB 1075, TOp_asm in pattern match
 

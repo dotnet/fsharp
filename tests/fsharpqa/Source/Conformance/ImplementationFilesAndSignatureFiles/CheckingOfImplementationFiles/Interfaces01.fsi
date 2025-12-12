@@ -1,5 +1,5 @@
 // #Conformance #SignatureFiles 
-#light
+
 
 module Interfaces01
 [<CustomComparisonAttribute (); CustomEqualityAttribute ()>]

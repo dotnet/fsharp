@@ -1,6 +1,6 @@
 // #Conformance #ObjectOrientedTypes #TypeExtensions  
 // verify that hiding an interface implementation is allowed 
-#light
+
 namespace NS
   module M = 
     type Lib with

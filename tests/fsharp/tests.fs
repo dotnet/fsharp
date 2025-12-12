@@ -497,8 +497,6 @@ module CoreTests =
     let ``fsi-reload`` () =
         let cfg = testConfig "core/fsi-reload"
         
-        fsiStdinCheckPassed cfg "test1.ml"  " --langversion:5.0 --mlcompatibility --maxerrors:1" []
-            
         fsiCheckPassed cfg "%s  --maxerrors:1" cfg.fsi_flags ["load1.fsx"]
 
            
@@ -520,23 +518,6 @@ module CoreTests =
 
     [<Fact>]
     let ``genericmeasures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
-
-
-    [<Fact>]
-    let hiding () =
-        let cfg = testConfig "core/hiding"
-
-        fsc cfg "%s -a --optimize --langversion:5.0 --mlcompatibility -o:lib.dll" cfg.fsc_flags ["lib.mli";"lib.ml";"libv.ml"]
-
-        peverify cfg "lib.dll"
-
-        fsc cfg "%s -a --optimize --langversion:5.0 --mlcompatibility -r:lib.dll -o:lib2.dll" cfg.fsc_flags ["lib2.mli";"lib2.ml";"lib3.ml"]
-
-        peverify cfg "lib2.dll"
-
-        fsc cfg "%s --optimize --langversion:5.0 --mlcompatibility -r:lib.dll -r:lib2.dll -o:client.exe" cfg.fsc_flags ["client.ml"]
-
-        peverify cfg "client.exe"
 
     [<Fact>]
     let ``innerpoly-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"  FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
@@ -830,16 +811,6 @@ module CoreTests =
 
         singleTestBuildAndRunAux cfg FSI
 
-    [<Fact; Trait("Category", "parsing")>]
-    let parsing () =
-        let cfg = testConfig "core/parsing"
-
-        fsc cfg "%s -a --langversion:5.0 --mlcompatibility -o:crlf.dll -g" cfg.fsc_flags ["crlf.ml"]
-
-        fsc cfg "%s --langversion:5.0 --mlcompatibility -o:toplet.exe -g" cfg.fsc_flags ["toplet.ml"]
-
-        peverify cfg "toplet.exe"
-
     [<Fact>]
     let unicode () =
         let cfg = testConfig "core/unicode"
@@ -863,30 +834,6 @@ module CoreTests =
         fsi cfg "%s --utf8output --codepage:65000" cfg.fsi_flags ["kanji-unicode-utf7-codepage-65000.fs"]
 
         fsi cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf16.fs"]
-
-
-    [<Fact>]
-    let internalsvisible () =
-        let cfg = testConfig "core/internalsvisible"
-
-        // Compiling F# Library
-        fsc cfg "%s --version:1.2.3 --keyfile:key.snk --langversion:5.0 --mlcompatibility -a --optimize -o:library.dll" cfg.fsc_flags ["library.fsi"; "library.fs"]
-
-        peverify cfg "library.dll"
-
-        // Compiling C# Library
-        csc cfg "/target:library /keyfile:key.snk /out:librarycs.dll" ["librarycs.cs"]
-
-        peverify cfg "librarycs.dll"
-
-        // Compiling F# main referencing C# and F# libraries
-        fsc cfg "%s --version:1.2.3 --keyfile:key.snk --optimize --langversion:5.0 --mlcompatibility -r:library.dll -r:librarycs.dll -o:main.exe" cfg.fsc_flags ["main.fs"]
-
-        peverify cfg "main.exe"
-
-        // Run F# main. Quick test!
-        exec cfg ("." ++ "main.exe") ""
-
 
     // Repro for https://github.com/dotnet/fsharp/issues/1298
     [<Fact>]
@@ -1372,35 +1319,6 @@ module CoreTests =
         fsc cfg @"%s -o:test3.exe -r:version1\DependentAssembly.dll -r:version2\DependentAssembly.dll -r:version1\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
         execAndCheckPassed cfg ("." ++ "test3.exe") "DependentAssembly-1.0.0.0 AscendentAssembly-1.0.0.0"
 
-
-    [<Fact>]
-    let testResources () =
-        let cfg = testConfig "core/resources"
-
-        fsc cfg "%s --langversion:5.0 --mlcompatibility --resource:Resources.resources -o:test-embed.exe -g" cfg.fsc_flags ["test.fs"]
-
-        peverify cfg "test-embed.exe"
-
-        fsc cfg "%s --langversion:5.0 --mlcompatibility --linkresource:Resources.resources -o:test-link.exe -g" cfg.fsc_flags ["test.fs"]
-
-        peverify cfg "test-link.exe"
-
-        fsc cfg "%s --langversion:5.0 --mlcompatibility --resource:Resources.resources,ResourceName.resources -o:test-embed-named.exe -g" cfg.fsc_flags ["test.fs"]
-
-        peverify cfg "test-embed-named.exe"
-
-        fsc cfg "%s --langversion:5.0 --mlcompatibility --linkresource:Resources.resources,ResourceName.resources -o:test-link-named.exe -g" cfg.fsc_flags ["test.fs"]
-
-        peverify cfg "test-link-named.exe"
-
-        exec cfg ("." ++ "test-embed.exe") ""
-
-        exec cfg ("." ++ "test-link.exe") ""
-
-        exec cfg ("." ++ "test-link-named.exe") "ResourceName"
-
-        exec cfg ("." ++ "test-embed-named.exe") "ResourceName"
-
     [<Fact>]
     let topinit () =
         let cfg = testConfig "core/topinit"
@@ -1444,18 +1362,6 @@ module CoreTests =
         fsc cfg "%s -r:lib69514-withsig.dll --realsig- -o:app69514-withsig.exe -g" cfg.fsc_flags ["app69514.fs"]
 
         peverify cfg "app69514-withsig.exe"
-
-        fsc cfg "%s -o:lib.dll --realsig- -a --langversion:5.0 --mlcompatibility -g" cfg.fsc_flags ["lib.ml"]
-
-        peverify cfg "lib.dll"
-
-        csc cfg """/nologo /r:"%s" /r:lib.dll /out:test.exe """ cfg.FSCOREDLLPATH ["test.cs"]
-
-        fsc cfg "%s --optimize -o:lib--optimize.dll --realsig- -a  --langversion:5.0 --mlcompatibility -g" cfg.fsc_flags ["lib.ml"]
-
-        peverify cfg "lib--optimize.dll"
-
-        csc cfg """/nologo /r:"%s" /r:lib--optimize.dll /out:test--optimize.exe""" cfg.FSCOREDLLPATH ["test.cs"]
 
         let dicases = ["flag_deterministic_init1.fs"; "lib_deterministic_init1.fs"; "flag_deterministic_init2.fs"; "lib_deterministic_init2.fs"; "flag_deterministic_init3.fs"; "lib_deterministic_init3.fs"; "flag_deterministic_init4.fs"; "lib_deterministic_init4.fs"; "flag_deterministic_init5.fs"; "lib_deterministic_init5.fs"; "flag_deterministic_init6.fs"; "lib_deterministic_init6.fs"; "flag_deterministic_init7.fs"; "lib_deterministic_init7.fs"; "flag_deterministic_init8.fs"; "lib_deterministic_init8.fs"; "flag_deterministic_init9.fs"; "lib_deterministic_init9.fs"; "flag_deterministic_init10.fs"; "lib_deterministic_init10.fs"; "flag_deterministic_init11.fs"; "lib_deterministic_init11.fs"; "flag_deterministic_init12.fs"; "lib_deterministic_init12.fs"; "flag_deterministic_init13.fs"; "lib_deterministic_init13.fs"; "flag_deterministic_init14.fs"; "lib_deterministic_init14.fs"; "flag_deterministic_init15.fs"; "lib_deterministic_init15.fs"; "flag_deterministic_init16.fs"; "lib_deterministic_init16.fs"; "flag_deterministic_init17.fs"; "lib_deterministic_init17.fs"; "flag_deterministic_init18.fs"; "lib_deterministic_init18.fs"; "flag_deterministic_init19.fs"; "lib_deterministic_init19.fs"; "flag_deterministic_init20.fs"; "lib_deterministic_init20.fs"; "flag_deterministic_init21.fs"; "lib_deterministic_init21.fs"; "flag_deterministic_init22.fs"; "lib_deterministic_init22.fs"; "flag_deterministic_init23.fs"; "lib_deterministic_init23.fs"; "flag_deterministic_init24.fs"; "lib_deterministic_init24.fs"; "flag_deterministic_init25.fs"; "lib_deterministic_init25.fs"; "flag_deterministic_init26.fs"; "lib_deterministic_init26.fs"; "flag_deterministic_init27.fs"; "lib_deterministic_init27.fs"; "flag_deterministic_init28.fs"; "lib_deterministic_init28.fs"; "flag_deterministic_init29.fs"; "lib_deterministic_init29.fs"; "flag_deterministic_init30.fs"; "lib_deterministic_init30.fs"; "flag_deterministic_init31.fs"; "lib_deterministic_init31.fs"; "flag_deterministic_init32.fs"; "lib_deterministic_init32.fs"; "flag_deterministic_init33.fs"; "lib_deterministic_init33.fs"; "flag_deterministic_init34.fs"; "lib_deterministic_init34.fs"; "flag_deterministic_init35.fs"; "lib_deterministic_init35.fs"; "flag_deterministic_init36.fs"; "lib_deterministic_init36.fs"; "flag_deterministic_init37.fs"; "lib_deterministic_init37.fs"; "flag_deterministic_init38.fs"; "lib_deterministic_init38.fs"; "flag_deterministic_init39.fs"; "lib_deterministic_init39.fs"; "flag_deterministic_init40.fs"; "lib_deterministic_init40.fs"; "flag_deterministic_init41.fs"; "lib_deterministic_init41.fs"; "flag_deterministic_init42.fs"; "lib_deterministic_init42.fs"; "flag_deterministic_init43.fs"; "lib_deterministic_init43.fs"; "flag_deterministic_init44.fs"; "lib_deterministic_init44.fs"; "flag_deterministic_init45.fs"; "lib_deterministic_init45.fs"; "flag_deterministic_init46.fs"; "lib_deterministic_init46.fs"; "flag_deterministic_init47.fs"; "lib_deterministic_init47.fs"; "flag_deterministic_init48.fs"; "lib_deterministic_init48.fs"; "flag_deterministic_init49.fs"; "lib_deterministic_init49.fs"; "flag_deterministic_init50.fs"; "lib_deterministic_init50.fs"; "flag_deterministic_init51.fs"; "lib_deterministic_init51.fs"; "flag_deterministic_init52.fs"; "lib_deterministic_init52.fs"; "flag_deterministic_init53.fs"; "lib_deterministic_init53.fs"; "flag_deterministic_init54.fs"; "lib_deterministic_init54.fs"; "flag_deterministic_init55.fs"; "lib_deterministic_init55.fs"; "flag_deterministic_init56.fs"; "lib_deterministic_init56.fs"; "flag_deterministic_init57.fs"; "lib_deterministic_init57.fs"; "flag_deterministic_init58.fs"; "lib_deterministic_init58.fs"; "flag_deterministic_init59.fs"; "lib_deterministic_init59.fs"; "flag_deterministic_init60.fs"; "lib_deterministic_init60.fs"; "flag_deterministic_init61.fs"; "lib_deterministic_init61.fs"; "flag_deterministic_init62.fs"; "lib_deterministic_init62.fs"; "flag_deterministic_init63.fs"; "lib_deterministic_init63.fs"; "flag_deterministic_init64.fs"; "lib_deterministic_init64.fs"; "flag_deterministic_init65.fs"; "lib_deterministic_init65.fs"; "flag_deterministic_init66.fs"; "lib_deterministic_init66.fs"; "flag_deterministic_init67.fs"; "lib_deterministic_init67.fs"; "flag_deterministic_init68.fs"; "lib_deterministic_init68.fs"; "flag_deterministic_init69.fs"; "lib_deterministic_init69.fs"; "flag_deterministic_init70.fs"; "lib_deterministic_init70.fs"; "flag_deterministic_init71.fs"; "lib_deterministic_init71.fs"; "flag_deterministic_init72.fs"; "lib_deterministic_init72.fs"; "flag_deterministic_init73.fs"; "lib_deterministic_init73.fs"; "flag_deterministic_init74.fs"; "lib_deterministic_init74.fs"; "flag_deterministic_init75.fs"; "lib_deterministic_init75.fs"; "flag_deterministic_init76.fs"; "lib_deterministic_init76.fs"; "flag_deterministic_init77.fs"; "lib_deterministic_init77.fs"; "flag_deterministic_init78.fs"; "lib_deterministic_init78.fs"; "flag_deterministic_init79.fs"; "lib_deterministic_init79.fs"; "flag_deterministic_init80.fs"; "lib_deterministic_init80.fs"; "flag_deterministic_init81.fs"; "lib_deterministic_init81.fs"; "flag_deterministic_init82.fs"; "lib_deterministic_init82.fs"; "flag_deterministic_init83.fs"; "lib_deterministic_init83.fs"; "flag_deterministic_init84.fs"; "lib_deterministic_init84.fs"; "flag_deterministic_init85.fs"; "lib_deterministic_init85.fs"]
 
@@ -1508,10 +1414,6 @@ module CoreTests =
         fsc cfg "%s --realsig- --optimize -r test_static_init_lib--optimize.dll --realsig- -o test_static_init_exe--optimize.exe" cfg.fsc_flags ["static-main.fs"]
 
         peverify cfg "test_static_init_exe--optimize.exe"
-
-        exec cfg ("." ++ "test.exe") ""
-
-        exec cfg ("." ++ "test--optimize.exe") ""
 
         exec cfg ("." ++ "test_deterministic_init.exe") ""
 
@@ -1591,32 +1493,6 @@ module VersionTests =
     [<Fact>]
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI "preview"
 
-#if !NETCOREAPP
-module ToolsTests =
-
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
-    [<Fact>]
-    let bundle () =
-        let cfg = 
-            testConfig "tools/bundle" 
-
-        fsc cfg "%s --progress --langversion:5.0 --mlcompatibility --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
-
-        peverify cfg "test-one-fsharp-module.exe"
-
-        fsc cfg "%s -a --langversion:5.0 --mlcompatibility -o:test_two_fsharp_modules_module_1.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_1.fs"]
-
-        peverify cfg "test_two_fsharp_modules_module_1.dll"
-
-        fsc cfg "%s --langversion:5.0 --mlcompatibility --standalone -r:test_two_fsharp_modules_module_1.dll -o:test_two_fsharp_modules_module_2.exe -g" cfg.fsc_flags ["test_two_fsharp_modules_module_2.fs"]
-
-        peverify cfg "test_two_fsharp_modules_module_2.exe"
-
-        fsc cfg "%s -a --langversion:5.0 --mlcompatibility --standalone -r:test_two_fsharp_modules_module_1.dll -o:test_two_fsharp_modules_module_2_as_dll.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_2.fs"]
-
-        peverify cfg "test_two_fsharp_modules_module_2_as_dll.dll"
-#endif
-
     [<Fact>]
     let ``eval-FSC_OPTIMIZED`` () = singleTestBuildAndRun "tools/eval" FSC_OPTIMIZED
     [<Fact>]
@@ -1638,9 +1514,6 @@ module RegressionTests =
 
     [<Fact>]
     let ``struct-tuple-bug-1-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_OPTIMIZED
-
-    [<Fact>]
-    let ``tuple-bug-1-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "regression/tuple-bug-1" FSC_OPTIMIZED "supports-ml"
 
     [<Fact>]
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
@@ -1754,61 +1627,6 @@ module RegressionTests =
         | _ ->
             failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile2) (getfullpath cfg expectedFile2) diff2
 #endif
-
-    [<Fact>]
-    let ``26`` () = singleTestBuildAndRunVersion "regression/26" FSC_OPTIMIZED "supports-ml"
-
-    [<Fact>]
-    let ``321`` () = singleTestBuildAndRunVersion "regression/321" FSC_OPTIMIZED "supports-ml"
-
-#if !NETCOREAPP
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
-    [<Fact>]
-    let ``655`` () =
-        let cfg = testConfig "regression/655"
-
-        fsc cfg "%s --langversion:5.0 --mlcompatibility -a -o:pack.dll" cfg.fsc_flags ["xlibC.ml"]
-
-        peverify cfg "pack.dll"
-
-        fsc cfg "%s --langversion:5.0 --mlcompatibility -o:test.exe -r:pack.dll" cfg.fsc_flags ["main.fs"]
-
-        peverify cfg "test.exe"
-
-        
-
-        execAndCheckPassed cfg ("." ++ "test.exe") ""
-
-
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
-    [<Fact>]
-    let ``656`` () =
-        let cfg = testConfig "regression/656"
-
-        fsc cfg "%s --langversion:5.0 --mlcompatibility -o:pack.exe" cfg.fsc_flags ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
-
-        peverify cfg  "pack.exe"
-#endif
-
-#if !NETCOREAPP
-    // Requires WinForms
-    [<Fact>]
-    let ``83`` () = singleTestBuildAndRunVersion "regression/83" FSC_OPTIMIZED "supports-ml"
-
-    [<Fact>]
-    let ``84`` () = singleTestBuildAndRunVersion "regression/84" FSC_OPTIMIZED "supports-ml"
-
-    [<Fact>]
-    let ``85`` () =
-        let cfg = testConfig "regression/85"
-
-        fsc cfg "%s --langversion:5.0 --mlcompatibility -r:Category.dll -a -o:petshop.dll" cfg.fsc_flags ["Category.ml"]
-
-        peverify cfg "petshop.dll"
-#endif
-
-    [<Fact>]
-    let ``86`` () = singleTestBuildAndRunVersion "regression/86" FSC_OPTIMIZED "supports-ml"
 
     [<Fact>]
     let ``struct-tuple-bug-1-FSI`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI
@@ -2204,12 +2022,6 @@ module TypecheckTests =
         peverify cfg "pos03a.dll"
 
     [<Fact>]
-    let ``sigs pos01a`` () =
-        let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s -a --langversion:5.0 --mlcompatibility -o:pos01a.dll" cfg.fsc_flags ["pos01a.fsi"; "pos01a.fs"]
-        peverify cfg "pos01a.dll"
-
-    [<Fact>]
     let ``sigs pos02`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos02.dll" cfg.fsc_flags ["pos02.fs"]
@@ -2222,9 +2034,6 @@ module TypecheckTests =
 
     [<Fact>]
     let ``type check neg01`` () = singleNegTest (testConfig "typecheck/sigs") "neg01"  
-
-    [<Fact>]
-    let ``type check neg03`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "supports-ml*" "neg03"   
 
     [<Fact>]
     let ``type check neg08`` () = singleNegTest (testConfig "typecheck/sigs") "neg08"

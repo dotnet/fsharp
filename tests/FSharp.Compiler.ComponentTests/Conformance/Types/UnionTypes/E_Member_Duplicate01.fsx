@@ -3,7 +3,7 @@
 // Verify that duplicate methods are not allowed
 
 
-#light
+
 type T = | C of int * int
          | D of (int * int)
          member x.IsC(a) = match a with

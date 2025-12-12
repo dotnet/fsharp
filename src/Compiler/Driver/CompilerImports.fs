@@ -2593,7 +2593,6 @@ and [<Sealed>] TcImports
                     ilGlobals,
                     fslibCcu,
                     tcConfig.implicitIncludeDir,
-                    tcConfig.mlCompatibility,
                     tcConfig.isInteractive,
                     tcConfig.checkNullness,
                     tcConfig.useReflectionFreeCodeGen,

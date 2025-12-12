@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis 
-#light
+
 
 // Verify the backslash in string literals chomps all whitespace
 

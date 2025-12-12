@@ -6,7 +6,7 @@
 // we would not be able to run (e.g. if we compile for x64 and
 // we are on IA64).
 
-#light
+
 
 let SCFLAGS = 
                let tmp = System.Environment.GetEnvironmentVariable("SCFLAGS")

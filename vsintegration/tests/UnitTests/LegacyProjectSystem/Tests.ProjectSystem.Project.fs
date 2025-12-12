@@ -292,7 +292,7 @@ type Project() =
             TheTests.AssertSameTree(expect, project.FirstChild)
         ))
 
-    member this.SampleEntities = [CompileItem @"foo.fs"; FolderItem @"AnEmptyFolder\"; LinkedCompileItem(@"..\blah.fs", @"link.fs"); OtherItem(@"Content", @"foo.txt"); OtherItem(@"FsLex", @"lex.mll")]
+    member this.SampleEntities = [CompileItem @"foo.fs"; FolderItem @"AnEmptyFolder\"; LinkedCompileItem(@"..\blah.fs", @"link.fs"); OtherItem(@"Content", @"foo.txt")]
 
     member private this.SampleFileEntity = ([CompileItem "bar.fs"], fun t -> Tree("bar.fs", Nil, t))
     
@@ -595,7 +595,7 @@ type Project() =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
             try
-                File.AppendAllText(absFilePath, "#light")
+                File.AppendAllText(absFilePath, "//")
                 let orig1 = TheTests.FindNodeWithCaption(project, "orig1.fs")
                 VsMocks.vsRunningDocumentTableNextRenameDocumentCallThrows <- true
                 VsMocks.vsRunningDocumentTableFindAndLockDocumentVsHierarchyMock <- project
@@ -622,7 +622,7 @@ type Project() =
         this.MakeProjectAndDo(["a.fs";"b.fs";"orig1.fs";"c.fs";"d.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
             try
-                File.AppendAllText(absFilePath, "#light")
+                File.AppendAllText(absFilePath, "//")
                 let orig1 = TheTests.FindNodeWithCaption(project, "orig1.fs")
                 VsMocks.vsRunningDocumentTableNextRenameDocumentCallThrows <- true
                 VsMocks.vsRunningDocumentTableFindAndLockDocumentVsHierarchyMock <- project
@@ -655,7 +655,7 @@ type Project() =
         this.MakeProjectAndDo([name1], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, name1)
             try
-                File.AppendAllText(absFilePath, "#light")
+                File.AppendAllText(absFilePath, "//")
                 let orig1 = TheTests.FindNodeWithCaption(project, name1)
                 VsMocks.vsRunningDocumentTableFindAndLockDocumentVsHierarchyMock <- project
                 try
@@ -675,7 +675,7 @@ type Project() =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
             try
-                File.AppendAllText(absFilePath, "#light")
+                File.AppendAllText(absFilePath, "//")
                 let orig1 = TheTests.FindNodeWithCaption(project, "orig1.fs")
                 VsMocks.vsRunningDocumentTableFindAndLockDocumentVsHierarchyMock <- project
                 try
@@ -702,7 +702,7 @@ type Project() =
             let absFilePath = Path.Combine(project.ProjectFolder, "Folder1", "nested1.fs")
             try
                 Directory.CreateDirectory(Path.GetDirectoryName(absFilePath)) |> ignore;
-                File.AppendAllText(absFilePath, "#light")
+                File.AppendAllText(absFilePath, "//")
                 let orig1 = TheTests.FindNodeWithCaption(project, "nested1.fs")
                 let folder1 = TheTests.FindNodeWithCaption(project, "Folder1")
                 VsMocks.vsRunningDocumentTableFindAndLockDocumentVsHierarchyMock <- project

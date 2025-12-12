@@ -2,7 +2,7 @@
 // The Expects here is an artifact to make our automation happy.
 // It actually refers to E_Module02.fs
 //<Expects id="FS0039" span="(10,22-10,24)" status="error">The type 'C2' is not defined</Expects>
-#light
+
 
 namespace XX.YY.ZZ
    type T3 = decimal []

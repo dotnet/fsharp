@@ -2,7 +2,7 @@
 // Scoping:
 // identifier introduced by let is local
 //<Expects status="success"></Expects>
-#light    
+
 type C() = class
              static let mutable m = [1;2;3]
              static let n = [1;2]

@@ -1,5 +1,5 @@
 // #NoMT #CompilerOptions #RequiresENU   
-#light
+
 
 let arg0 = System.Environment.GetCommandLineArgs().[0]
 let path = System.Environment.GetEnvironmentVariable("PATH")

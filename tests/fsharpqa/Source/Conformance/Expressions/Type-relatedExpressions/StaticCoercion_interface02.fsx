@@ -2,7 +2,7 @@
 // Upcast with 1-level class hierarchy - cast to interface
 // Interface is defined in the base class -> can still upcast to I
 //<Expects status="success"></Expects>
-#light
+
 
 type I    = interface
                abstract member M : int -> int

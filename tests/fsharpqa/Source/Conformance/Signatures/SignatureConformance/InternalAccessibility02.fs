@@ -1,5 +1,5 @@
 // #Regression #Conformance #SignatureFiles 
-#light
+
 
 // Regression test for FSHARP1.0:4155 - combined accessibilities internal --> internal give "private"
 

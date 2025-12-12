@@ -3,7 +3,7 @@
 module Core_math_numbersVS2008
 #endif
 
-#light
+
 #nowarn "49";;
 #nowarn "44";;
 #nowarn "62";;

@@ -1,5 +1,5 @@
 // #Conformance #TypeInference 
-#light
+
 
 // Verify the difference between 'unit' and 'no args'
 

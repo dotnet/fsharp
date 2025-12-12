@@ -166,7 +166,6 @@ type LexerContinuation =
         style: LexerStringStyle *
         int *
         range: range
-    | MLOnly of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * range: range
     | EndLine of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * LexerEndlineContinuation
 
     static member Default = LexCont.Token([], [])
@@ -179,8 +178,7 @@ type LexerContinuation =
         | LexCont.Comment(ifdef = ifd)
         | LexCont.SingleLineComment(ifdef = ifd)
         | LexCont.StringInComment(ifdef = ifd)
-        | LexCont.EndLine(ifdef = ifd)
-        | LexCont.MLOnly(ifdef = ifd) -> ifd
+        | LexCont.EndLine(ifdef = ifd) -> ifd
 
     member x.LexerInterpStringNesting =
         match x with
@@ -190,8 +188,7 @@ type LexerContinuation =
         | LexCont.Comment(nesting = nesting)
         | LexCont.SingleLineComment(nesting = nesting)
         | LexCont.StringInComment(nesting = nesting)
-        | LexCont.EndLine(nesting = nesting)
-        | LexCont.MLOnly(nesting = nesting) -> nesting
+        | LexCont.EndLine(nesting = nesting) -> nesting
 
 and LexCont = LexerContinuation
 
@@ -806,8 +803,6 @@ let checkEndOfFileError t =
     | LexCont.StringInComment(_, _, LexerStringStyle.ExtendedInterpolated, _, m)
     | LexCont.StringInComment(_, _, LexerStringStyle.TripleQuote, _, m) ->
         reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment ())
-
-    | LexCont.MLOnly(_, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml ())
 
     | LexCont.EndLine(_, _, LexerEndlineContinuation.IfdefSkip(_, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective ())
 

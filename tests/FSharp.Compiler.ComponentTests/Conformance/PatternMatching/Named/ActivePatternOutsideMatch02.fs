@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #ActivePatterns 
-#light
+
 
 // Verify active patterns outside of match statement
 // where active pattern defines a function. (Regression.)

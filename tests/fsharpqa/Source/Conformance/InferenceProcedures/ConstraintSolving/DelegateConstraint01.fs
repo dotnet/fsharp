@@ -1,5 +1,5 @@
 // #Conformance #TypeInference #TypeConstraints 
-#light
+
 
 // Sanity check delegate constraints
 

@@ -2,7 +2,7 @@
 // On type
 
 
-#light
+
 
 module M =
             private type Foo() = class 

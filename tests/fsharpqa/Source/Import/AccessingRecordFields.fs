@@ -1,5 +1,5 @@
 // #Regression #NoMT #Import 
-#light
+
 
 // Regression test for FSharp1.0:4136 - CTP: FieldAccessException is thrown when accessing record fields from other assemblies
 

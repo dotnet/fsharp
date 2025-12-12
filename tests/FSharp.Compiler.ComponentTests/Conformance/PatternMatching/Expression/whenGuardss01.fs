@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Test that when guards only execute once the match value has 
 // matched the pattern associated with the rule.

@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Classes 
-#light
+
 
 // Verify the use of 'as' in classes with implicit constructors to 
 // access the 'this' pointer
