@@ -730,7 +730,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
     member _.NestedEntities = 
         if isUnresolved() then makeReadOnlyCollection [] else
         entity.ModuleOrNamespaceType.AllEntities 
-        |> QueueList.toList
+        |> CachedDList.toList
         |> List.map (fun x -> FSharpEntity(cenv, entity.NestedTyconRef x, tyargs))
         |> makeReadOnlyCollection
 

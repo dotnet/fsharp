@@ -1,0 +1,1 @@
+Name,StartTime,EndTime,Duration(s),Id,ParentId,RootId,fileName,project,qualifiedNameOfFile,userOpName,length,cache,cpuDelta(s),realDelta(s),gc0,gc1,gc2,outputDllFile,buildPhase,stackGuardName,stackGuardCurrentDepth,stackGuardMaxDepth,callerMemberName,callerFilePath,callerLineNumber

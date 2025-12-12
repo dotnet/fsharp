@@ -4269,7 +4269,7 @@ and OptimizeModuleExprWithSig cenv env mty def  =
             let rec elimModTy (mtyp: ModuleOrNamespaceType) =                  
                 let mty = 
                     ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
-                                              vals= (mtyp.AllValsAndMembers |> QueueList.filter (Zset.memberOf deadSet >> not)), 
+                                              vals= (mtyp.AllValsAndMembers |> CachedDList.filter (Zset.memberOf deadSet >> not)), 
                                               entities= mtyp.AllEntities)
                 mtyp.ModuleAndNamespaceDefinitions |> List.iter elimModSpec
                 mty

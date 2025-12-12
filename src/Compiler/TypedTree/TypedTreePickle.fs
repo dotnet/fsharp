@@ -1868,7 +1868,7 @@ let p_Map pk pv x st =
     p_int (Map.count x) st
     p_Map_core pk pv x st
 
-let p_qlist pv = p_wrap QueueList.toList (p_list pv)
+let p_cached_dlist pv = p_wrap CachedDList.toList (p_list pv)
 let p_namemap p = p_Map p_string p
 
 let u_Map_core uk uv n st =
@@ -1878,7 +1878,7 @@ let u_Map uk uv st =
     let n = u_int st
     u_Map_core uk uv n st
 
-let u_qlist uv = u_wrap QueueList.ofList (u_list uv)
+let u_cached_dlist uv = u_wrap CachedDList.ofList (u_list uv)
 let u_namemap u = u_Map u_string u
 
 let p_pos (x: pos) st =
@@ -2952,7 +2952,7 @@ and p_ValData x st =
 and p_Val x st = p_osgn_decl st.ovals p_ValData x st
 
 and p_modul_typ (x: ModuleOrNamespaceType) st =
-    p_tup3 p_istype (p_qlist p_Val) (p_qlist p_entity_spec) (x.ModuleOrNamespaceKind, x.AllValsAndMembers, x.AllEntities) st
+    p_tup3 p_istype (p_cached_dlist p_Val) (p_cached_dlist p_entity_spec) (x.ModuleOrNamespaceKind, x.AllValsAndMembers, x.AllEntities) st
 
 and u_tycon_repr st =
     let tag1 = u_byte st
@@ -3327,7 +3327,7 @@ and u_ValData st =
 and u_Val st = u_osgn_decl st.ivals u_ValData st
 
 and u_modul_typ st =
-    let x1, x3, x5 = u_tup3 u_istype (u_qlist u_Val) (u_qlist u_entity_spec) st
+    let x1, x3, x5 = u_tup3 u_istype (u_cached_dlist u_Val) (u_cached_dlist u_entity_spec) st
     ModuleOrNamespaceType(x1, x3, x5)
 
 //---------------------------------------------------------------------------
