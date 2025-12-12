@@ -260,7 +260,7 @@ module BuildGraphTests =
                 use _ = new CompilationGlobalsScope(logger, phase)
                 let! _ = Seq.init n (job phase) |> MultipleDiagnosticsLoggers.Parallel
 
-                let diags = logger.Diagnostics |> List.map fst
+                let diags = logger.Diagnostics
 
                 diags |> List.map _.Phase |> List.distinct |> Assert.shouldBe [ phase ]
                 diags |> List.map _.Exception.Message
@@ -296,8 +296,8 @@ module BuildGraphTests =
 
         let mutable errorCount = 0
 
-        override _.DiagnosticSink(d, s) =
-            if s = FSharpDiagnosticSeverity.Error then Interlocked.Increment(&errorCount) |> ignore
+        override _.DiagnosticSink(e) =
+            if e.Severity = FSharpDiagnosticSeverity.Error then Interlocked.Increment(&errorCount) |> ignore
 
         override this.ErrorCount = errorCount
 
@@ -341,8 +341,8 @@ module BuildGraphTests =
 
     type internal DiagnosticsLoggerWithCallback(callback) =
         inherit CapturingDiagnosticsLogger("test")
-        override _.DiagnosticSink(e, s) =
-            base.DiagnosticSink(e, s)
+        override _.DiagnosticSink(e) =
+            base.DiagnosticSink(e)
             callback e.Exception.Message |> ignore
 
     [<Fact>]

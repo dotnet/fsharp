@@ -151,13 +151,8 @@ type internal FSharpFileSnapshotWithSource
 
 /// A source file snapshot with parsed syntax tree
 type internal FSharpParsedFile
-    (
-        FileName: string,
-        SyntaxTreeHash: byte array,
-        SourceText: ISourceText,
-        ParsedInput: ParsedInput,
-        ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
-    ) =
+    (FileName: string, SyntaxTreeHash: byte array, SourceText: ISourceText, ParsedInput: ParsedInput, ParseDiagnostics: PhasedDiagnostic[])
+    =
 
     member _.FileName = FileName
     member _.SourceText = SourceText

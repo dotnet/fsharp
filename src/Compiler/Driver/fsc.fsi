@@ -39,7 +39,7 @@ type DiagnosticsLoggerUpToMaxErrors =
 
     override ErrorCount: int
 
-    override DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    override DiagnosticSink: diagnostic: PhasedDiagnostic -> unit
 
 /// The main (non-incremental) compilation entry point used by fsc.exe
 val CompileFromCommandLineArguments:

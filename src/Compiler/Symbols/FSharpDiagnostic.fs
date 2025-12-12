@@ -129,10 +129,10 @@ module ExtendedData =
 
 open ExtendedData
 
-type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int,
-        numberPrefix: string, extendedData: IFSharpDiagnosticExtendedData option) =
+type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSeverity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int, numberPrefix: string, extendedData: IFSharpDiagnosticExtendedData option) =
     member _.Range = m
     member _.Severity = severity
+    member _.DefaultSeverity = defaultSeverity
     member _.Message = message
     member _.Subcategory = subcategory
     member _.ErrorNumber = errorNum
@@ -150,11 +150,11 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 
     member _.WithStart newStart =
         let m = mkFileIndexRange m.FileIndex newStart m.End
-        FSharpDiagnostic(m, severity, message, subcategory, errorNum, numberPrefix, extendedData)
+        FSharpDiagnostic(m, severity, defaultSeverity, message, subcategory, errorNum, numberPrefix, extendedData)
 
     member _.WithEnd newEnd =
         let m = mkFileIndexRange m.FileIndex m.Start newEnd
-        FSharpDiagnostic(m, severity, message, subcategory, errorNum, numberPrefix, extendedData)
+        FSharpDiagnostic(m, severity, defaultSeverity, message, subcategory, errorNum, numberPrefix, extendedData)
 
     override _.ToString() =
         let fileName = m.FileName
@@ -169,7 +169,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromException(diagnostic: PhasedDiagnostic, severity, suggestNames: bool, flatErrors: bool, symbolEnv: SymbolEnv option) =
+    static member CreateFromException(diagnostic: PhasedDiagnostic, suggestNames: bool, flatErrors: bool, symbolEnv: SymbolEnv option) =
         let extendedData: IFSharpDiagnosticExtendedData option =
             match symbolEnv with
             | None -> None
@@ -231,7 +231,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 
         let errorNum = diagnostic.Number
         let m = match diagnostic.Range with Some m -> m.ApplyLineDirectives() | None -> range0
-        FSharpDiagnostic(m, severity, msg, diagnostic.Subcategory(), errorNum, "FS", extendedData)
+        FSharpDiagnostic(m, diagnostic.Severity, diagnostic.DefaultSeverity, msg, diagnostic.Subcategory(), errorNum, "FS", extendedData)
 
     static member NewlineifyErrorString(message) = NewlineifyErrorString(message)
 
@@ -240,7 +240,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
     static member Create(severity, message, number, range, ?numberPrefix, ?subcategory) =
         let subcategory = defaultArg subcategory BuildPhaseSubcategory.TypeCheck
         let numberPrefix = defaultArg numberPrefix "FS"
-        FSharpDiagnostic(range, severity, message, subcategory, number, numberPrefix, None)
+        FSharpDiagnostic(range, severity, severity, message, subcategory, number, numberPrefix, None)
 
 /// Use to reset error and warning handlers            
 [<Sealed>]
@@ -251,8 +251,8 @@ type DiagnosticsScope(flatErrors: bool)  =
         UseDiagnosticsLogger 
             { new DiagnosticsLogger("DiagnosticsScope") with 
 
-                member _.DiagnosticSink(diagnostic, severity) = 
-                    let diagnostic = FSharpDiagnostic.CreateFromException(diagnostic, severity, false, flatErrors, None)
+                member _.DiagnosticSink(diagnostic) = 
+                    let diagnostic = FSharpDiagnostic.CreateFromException(diagnostic, false, flatErrors, None)
                     diags <- diagnostic :: diags
 
                 member _.ErrorCount = diags.Length }
@@ -307,18 +307,18 @@ type internal CompilationDiagnosticLogger(debugName: string, options: FSharpDiag
     let mutable errorCount = 0
     let diagnostics = ResizeArray<_>()
 
-    override _.DiagnosticSink(diagnostic, severity) = 
+    override _.DiagnosticSink(diagnostic) = 
         let diagnostic =
             match preprocess with
             | Some f -> f diagnostic
             | None -> diagnostic
 
-        match diagnostic.AdjustSeverity(options, severity) with
+        match diagnostic.AdjustSeverity(options) with
         | FSharpDiagnosticSeverity.Error ->
-            diagnostics.Add(diagnostic, FSharpDiagnosticSeverity.Error)
+            diagnostics.Add({ diagnostic with Severity = FSharpDiagnosticSeverity.Error })
             errorCount <- errorCount + 1
         | FSharpDiagnosticSeverity.Hidden -> ()
-        | sev -> diagnostics.Add(diagnostic, sev)
+        | sev -> diagnostics.Add({ diagnostic with Severity = sev })
 
     override _.ErrorCount = errorCount
 
@@ -326,20 +326,20 @@ type internal CompilationDiagnosticLogger(debugName: string, options: FSharpDiag
 
 module DiagnosticHelpers =                            
 
-    let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, diagnostic: PhasedDiagnostic, severity, suggestNames, flatErrors, symbolEnv) =
-        match diagnostic.AdjustSeverity(options, severity) with
+    let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, diagnostic: PhasedDiagnostic, suggestNames, flatErrors, symbolEnv) =
+        match diagnostic.AdjustSeverity(options) with
         | FSharpDiagnosticSeverity.Hidden -> []
         | adjustedSeverity ->
-
+            let diagnostic = { diagnostic with Severity = adjustedSeverity }
             let fileName = 
                 match diagnostic.Range with
                 | Some r -> r.FileName
                 | None -> TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
-            let fDiagnostic = FSharpDiagnostic.CreateFromException (diagnostic, adjustedSeverity, suggestNames, flatErrors, symbolEnv)
+            let fDiagnostic = FSharpDiagnostic.CreateFromException (diagnostic, suggestNames, flatErrors, symbolEnv)
             if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
                 [fDiagnostic]
             else []
 
     let CreateDiagnostics (options, allErrors, mainInputFileName, diagnostics, suggestNames, flatErrors, symbolEnv) =
-        [| for diagnostic, severity in diagnostics do 
-              yield! ReportDiagnostic (options, allErrors, mainInputFileName, diagnostic, severity, suggestNames, flatErrors, symbolEnv) |]
+        [| for diagnostic in diagnostics do 
+              yield! ReportDiagnostic (options, allErrors, mainInputFileName, diagnostic, suggestNames, flatErrors, symbolEnv) |]
