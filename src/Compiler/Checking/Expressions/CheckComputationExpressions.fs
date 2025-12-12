@@ -862,34 +862,34 @@ let private mkTypedHeadPat (SynBinding(headPat = headPattern; returnInfo = retur
 [<return: Struct>]
 let (|ExprAsUseBang|_|) expr =
     match expr with
-    | SynExpr.LetOrUse(
-        isUse = true
-        isFromSource = isFromSource
-        isBang = true
-        bindings = bindings
-        body = innerComp
-        trivia = { LetOrUseKeyword = mBind }) ->
+    | LetOrUse({
+                   IsFromSource = isFromSource
+                   Bindings = bindings
+                   Body = innerComp
+               },
+               true,
+               true) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; expr = rhsExpr) as binding :: andBangs ->
+        | SynBinding(debugPoint = spBind; expr = rhsExpr; trivia = { LeadingKeyword = leadingKeyword }) as binding :: andBangs ->
             let pat = mkTypedHeadPat binding
-            ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind)
+            ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, leadingKeyword.Range)
         | _ -> ValueNone
     | _ -> ValueNone
 
 [<return: Struct>]
 let (|ExprAsLetBang|_|) expr =
     match expr with
-    | SynExpr.LetOrUse(
-        isUse = false
-        isFromSource = isFromSource
-        isBang = true
-        bindings = bindings
-        body = innerComp
-        trivia = { LetOrUseKeyword = mBind }) ->
+    | LetOrUse({
+                   IsFromSource = isFromSource
+                   Bindings = bindings
+                   Body = innerComp
+               },
+               true,
+               false) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; expr = letRhsExpr) as binding :: andBangBindings ->
+        | SynBinding(debugPoint = spBind; expr = letRhsExpr; trivia = { LeadingKeyword = leadingKeyword }) as binding :: andBangBindings ->
             let letPat = mkTypedHeadPat binding
-            ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind)
+            ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, leadingKeyword.Range)
         | _ -> ValueNone
     | _ -> ValueNone
 
@@ -1418,20 +1418,24 @@ let rec TryTranslateComputationExpression
                             expr = guardExpr,
                             range = guardExpr.Range,
                             debugPoint = DebugPointAtBinding.NoneAtSticky,
-                            trivia = SynBindingTrivia.Zero
+                            trivia =
+                                { SynBindingTrivia.Zero with
+                                    LeadingKeyword = SynLeadingKeyword.LetBang mGuard
+                                }
                         )
 
                     let bindCondExpr =
-                        SynExpr.LetOrUse(
-                            isRecursive = false,
-                            isUse = false,
-                            isFromSource = true, // compiler generated during desugaring
-                            isBang = true,
-                            bindings = [ binding ],
-                            body = setCondExpr,
-                            range = mGuard,
-                            trivia = SynExprLetOrUseTrivia.Zero
-                        )
+                        SynExpr.LetOrUse
+                            {
+                                IsRecursive = false
+                                // isUse = false,
+                                IsFromSource = true // compiler generated during desugaring
+                                // isBang = true,
+                                Bindings = [ binding ]
+                                Body = setCondExpr
+                                Range = mGuard
+                                Trivia = SynLetOrUseTrivia.Zero
+                            }
 
                     let whileExpr =
                         SynExpr.While(
@@ -1448,16 +1452,17 @@ let rec TryTranslateComputationExpression
                             mOrig
                         )
 
-                    SynExpr.LetOrUse(
-                        isRecursive = false,
-                        isUse = false,
-                        isFromSource = false, // compiler generated during desugaring
-                        isBang = false,
-                        bindings = [ condBinding ],
-                        body = whileExpr,
-                        range = mGuard,
-                        trivia = SynExprLetOrUseTrivia.Zero
-                    )
+                    SynExpr.LetOrUse
+                        {
+                            IsRecursive = false
+                            // isUse = false,
+                            IsFromSource = false // compiler generated during desugaring
+                            // isBang = false,
+                            Bindings = [ condBinding ]
+                            Body = whileExpr
+                            Range = mGuard
+                            Trivia = SynLetOrUseTrivia.Zero
+                        }
 
                 let binding =
                     SynBinding(
@@ -1473,19 +1478,23 @@ let rec TryTranslateComputationExpression
                         expr = guardExpr,
                         range = guardExpr.Range,
                         debugPoint = DebugPointAtBinding.NoneAtSticky,
-                        trivia = SynBindingTrivia.Zero
+                        trivia =
+                            { SynBindingTrivia.Zero with
+                                LeadingKeyword = SynLeadingKeyword.LetBang mGuard
+                            }
                     )
 
-                SynExpr.LetOrUse(
-                    isRecursive = false,
-                    isUse = false,
-                    isFromSource = true, // compiler generated during desugaring
-                    isBang = true,
-                    bindings = [ binding ],
-                    body = body,
-                    range = mGuard,
-                    trivia = SynExprLetOrUseTrivia.Zero
-                )
+                SynExpr.LetOrUse
+                    {
+                        IsRecursive = false
+                        // isUse = false,
+                        IsFromSource = true // compiler generated during desugaring
+                        // isBang = true,
+                        Bindings = [ binding ]
+                        Body = body
+                        Range = mGuard
+                        Trivia = SynLetOrUseTrivia.Zero
+                    }
 
             TryTranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
 
@@ -1665,13 +1674,13 @@ let rec TryTranslateComputationExpression
                 | None ->
                     // "do! expr; cexpr" is treated as { let! () = expr in cexpr }
                     match innerComp1 with
-                    | SynExpr.DoBang(expr = rhsExpr; range = m) ->
+                    | SynExpr.DoBang(expr = rhsExpr; trivia = { DoBangKeyword = mKeyword }; range = m) ->
                         let sp =
                             match sp with
                             | DebugPointAtSequential.SuppressExpr -> DebugPointAtBinding.NoneAtDo
                             | DebugPointAtSequential.SuppressBoth -> DebugPointAtBinding.NoneAtDo
-                            | DebugPointAtSequential.SuppressStmt -> DebugPointAtBinding.Yes m
-                            | DebugPointAtSequential.SuppressNeither -> DebugPointAtBinding.Yes m
+                            | DebugPointAtSequential.SuppressStmt -> DebugPointAtBinding.Yes mKeyword
+                            | DebugPointAtSequential.SuppressNeither -> DebugPointAtBinding.Yes mKeyword
 
                         let binding =
                             SynBinding(
@@ -1687,7 +1696,10 @@ let rec TryTranslateComputationExpression
                                 expr = rhsExpr,
                                 range = rhsExpr.Range,
                                 debugPoint = sp,
-                                trivia = SynBindingTrivia.Zero
+                                trivia =
+                                    { SynBindingTrivia.Zero with
+                                        LeadingKeyword = SynLeadingKeyword.LetBang mKeyword
+                                    }
                             )
 
                         Some(
@@ -1696,16 +1708,17 @@ let rec TryTranslateComputationExpression
                                 CompExprTranslationPass.Initial
                                 q
                                 varSpace
-                                (SynExpr.LetOrUse(
-                                    isRecursive = false,
-                                    isUse = false,
-                                    isFromSource = true, // compiler generated during desugaring
-                                    isBang = true,
-                                    bindings = [ binding ],
-                                    body = innerComp2,
-                                    range = m,
-                                    trivia = SynExprLetOrUseTrivia.Zero
-                                ))
+                                (SynExpr.LetOrUse
+                                    {
+                                        IsRecursive = false
+                                        // isUse = false,
+                                        IsFromSource = true // compiler generated during desugaring
+                                        // isBang = true,
+                                        Bindings = [ binding ]
+                                        Body = innerComp2
+                                        Range = m
+                                        Trivia = SynLetOrUseTrivia.Zero
+                                    })
                                 translatedCtxt
                         )
 
@@ -1773,15 +1786,16 @@ let rec TryTranslateComputationExpression
                 )
 
         // 'let binds in expr'
-        | SynExpr.LetOrUse(
-            isRecursive = isRec
-            isUse = false
-            isFromSource = isFromSource
-            isBang = false
-            bindings = binds
-            body = innerComp
-            range = m
-            trivia = trivia) ->
+        | LetOrUse({
+                       IsRecursive = isRec
+                       Bindings = binds
+                       Body = innerComp
+                       IsFromSource = isFromSource
+                       Range = m
+                       Trivia = trivia
+                   },
+                   false,
+                   false) ->
 
             // For 'query' check immediately
             if ceenv.isQuery then
@@ -1815,29 +1829,35 @@ let rec TryTranslateComputationExpression
             Some(
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
                     translatedCtxt (
-                        SynExpr.LetOrUse(
-                            isRecursive = isRec,
-                            isUse = false,
-                            isFromSource = isFromSource,
-                            isBang = false,
-                            bindings = binds,
-                            body = holeFill,
-                            range = m,
-                            trivia = trivia
-                        )
+                        SynExpr.LetOrUse
+                            {
+                                IsRecursive = isRec
+                                //isUse = false,
+                                IsFromSource = isFromSource
+                                //isBang = false,
+                                Bindings = binds
+                                Body = holeFill
+                                Range = m
+                                Trivia = trivia
+                            }
                     ))
             )
 
         // 'use x = expr in expr'
-        | SynExpr.LetOrUse(
-            isUse = true
-            isBang = false
-            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind) ]
-            body = innerComp
-            trivia = { LetOrUseKeyword = mBind }) ->
+        | LetOrUse({
+                       Bindings = [ SynBinding(
+                                        kind = SynBindingKind.Normal
+                                        headPat = pat
+                                        expr = rhsExpr
+                                        debugPoint = spBind
+                                        trivia = { LeadingKeyword = leadingKeyword }) ]
+                       Body = innerComp
+                   },
+                   false,
+                   true) ->
 
             if ceenv.isQuery then
-                error (Error(FSComp.SR.tcUseMayNotBeUsedInQueries (), mBind))
+                error (Error(FSComp.SR.tcUseMayNotBeUsedInQueries (), leadingKeyword.Range))
 
             let innerCompRange = innerComp.Range
 
@@ -1859,10 +1879,10 @@ let rec TryTranslateComputationExpression
                     innerCompRange
                 )
 
-            requireBuilderMethod "Using" ceenv mBind mBind
+            requireBuilderMethod "Using" ceenv leadingKeyword.Range leadingKeyword.Range
 
             Some(
-                translatedCtxt (mkSynCall "Using" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName)
+                translatedCtxt (mkSynCall "Using" leadingKeyword.Range [ rhsExpr; consumeExpr ] ceenv.builderValName)
                 |> addBindDebugPoint spBind
             )
 
@@ -2469,19 +2489,23 @@ and ConsumeCustomOpClauses
                                     expr = dataCompAfterOp,
                                     range = dataCompAfterOp.Range,
                                     debugPoint = DebugPointAtBinding.NoneAtLet,
-                                    trivia = SynBindingTrivia.Zero
+                                    trivia =
+                                        { SynBindingTrivia.Zero with
+                                            LeadingKeyword = SynLeadingKeyword.LetBang intoPat.Range
+                                        }
                                 )
 
-                            SynExpr.LetOrUse(
-                                isRecursive = false,
-                                isUse = false,
-                                isFromSource = false, // compiler generated during desugaring
-                                isBang = true,
-                                bindings = [ binding ],
-                                body = contExpr,
-                                range = intoPat.Range,
-                                trivia = SynExprLetOrUseTrivia.Zero
-                            )
+                            SynExpr.LetOrUse
+                                {
+                                    IsRecursive = false
+                                    // isUse = false,
+                                    IsFromSource = false // compiler generated during desugaring
+                                    // isBang = true,
+                                    Bindings = [ binding ]
+                                    Body = contExpr
+                                    Range = intoPat.Range
+                                    Trivia = SynLetOrUseTrivia.Zero
+                                }
                         else
                             SynExpr.ForEach(
                                 DebugPointAtFor.No,
@@ -2526,19 +2550,23 @@ and ConsumeCustomOpClauses
                         expr = dataCompPrior,
                         range = dataCompPrior.Range,
                         debugPoint = DebugPointAtBinding.NoneAtLet,
-                        trivia = SynBindingTrivia.Zero
+                        trivia =
+                            { SynBindingTrivia.Zero with
+                                LeadingKeyword = SynLeadingKeyword.LetBang dataCompPrior.Range
+                            }
                     )
 
-                SynExpr.LetOrUse(
-                    isRecursive = false,
-                    isUse = false,
-                    isFromSource = false, // compiler generated during desugaring
-                    isBang = true,
-                    bindings = [ binding ],
-                    body = compClausesExpr,
-                    range = compClausesExpr.Range,
-                    trivia = SynExprLetOrUseTrivia.Zero
-                )
+                SynExpr.LetOrUse
+                    {
+                        IsRecursive = false
+                        // isUse = false,
+                        IsFromSource = false // compiler generated during desugaring
+                        // isBang = true,
+                        Bindings = [ binding ]
+                        Body = compClausesExpr
+                        Range = compClausesExpr.Range
+                        Trivia = SynLetOrUseTrivia.Zero
+                    }
             else
                 SynExpr.ForEach(
                     DebugPointAtFor.No,
@@ -2668,30 +2696,33 @@ and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp var
             | Some elseExprOpt ->
                 Some(SynExpr.IfThenElse(guardExpr, thenExpr, elseExprOpt, spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia), None)
 
-    | SynExpr.LetOrUse(
-        isRecursive = isRec
-        isUse = false
-        isFromSource = isFromSource
-        isBang = false
-        bindings = binds
-        body = innerComp
-        range = m
-        trivia = trivia) ->
+    | LetOrUse({
+                   IsRecursive = isRec
+                   Bindings = binds
+                   Body = innerComp
+                   IsFromSource = isFromSource
+                   Range = m
+                   Trivia = trivia
+               },
+               false,
+               false) ->
+
         match convertSimpleReturnToExpr ceenv comp varSpace innerComp with
         | None -> None
         | Some(_, Some _) -> None
         | Some(innerExpr, None) ->
             Some(
-                SynExpr.LetOrUse(
-                    isRecursive = isRec,
-                    isUse = false,
-                    isFromSource = isFromSource,
-                    isBang = false,
-                    bindings = binds,
-                    body = innerExpr,
-                    range = m,
-                    trivia = trivia
-                ),
+                SynExpr.LetOrUse
+                    {
+                        IsRecursive = isRec
+                        //IsUse = false,
+                        IsFromSource = isFromSource
+                        // IsBang = false,
+                        Bindings = binds
+                        Body = innerExpr
+                        Range = m
+                        Trivia = trivia
+                    },
                 None
             )
 
@@ -2734,8 +2765,8 @@ and isSimpleExpr ceenv comp =
         && (match elseCompOpt with
             | None -> true
             | Some c -> isSimpleExpr ceenv c)
-    | SynExpr.LetOrUse(isBang = false; body = innerComp) -> isSimpleExpr ceenv innerComp
-    | SynExpr.LetOrUse(isBang = true) -> false
+    | LetOrUse({ Body = innerComp }, false, _) -> isSimpleExpr ceenv innerComp
+    | LetOrUse(_, true, _) -> false
     | SynExpr.Match(clauses = clauses) ->
         clauses
         |> List.forall (fun (SynMatchClause(resultExpr = innerComp)) -> isSimpleExpr ceenv innerComp)
@@ -2806,19 +2837,23 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                             expr = rhsExpr,
                             range = rhsExpr.Range,
                             debugPoint = DebugPointAtBinding.NoneAtDo,
-                            trivia = SynBindingTrivia.Zero
+                            trivia =
+                                { SynBindingTrivia.Zero with
+                                    LeadingKeyword = SynLeadingKeyword.LetBang m
+                                }
                         )
 
-                    SynExpr.LetOrUse(
-                        isRecursive = false,
-                        isUse = false,
-                        isFromSource = false, // compiler generated during desugaring
-                        isBang = true,
-                        bindings = [ binding ],
-                        body = bodyExpr,
-                        range = m,
-                        trivia = SynExprLetOrUseTrivia.Zero
-                    )
+                    SynExpr.LetOrUse
+                        {
+                            IsRecursive = false
+                            // isUse = false,
+                            IsFromSource = false // compiler generated during desugaring
+                            // isBang = true,
+                            Bindings = [ binding ]
+                            Body = bodyExpr
+                            Range = m
+                            Trivia = SynLetOrUseTrivia.Zero
+                        }
 
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt
 

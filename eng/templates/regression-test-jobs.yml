@@ -1,0 +1,260 @@
+# Template for F# Compiler Regression Tests
+# Tests third-party F# projects with the freshly built compiler
+
+parameters:
+- name: testMatrix
+  type: object
+- name: dependsOn
+  type: string
+  default: 'EndToEndBuildTests'
+
+jobs:
+- ${{ each item in parameters.testMatrix }}:
+  - job: RegressionTest_${{ replace(item.displayName, '-', '_') }}_${{ replace(replace(item.repo, '/', '_'), '-', '_') }}
+    displayName: '${{ item.displayName }} Regression Test'
+    dependsOn: ${{ parameters.dependsOn }}
+    ${{ if item.useVmImage }}:
+      pool:
+        vmImage: ${{ item.useVmImage }}
+    ${{ else }}:
+      pool:
+        name: $(DncEngPublicBuildPool)
+        demands: ImageOverride -equals $(_WindowsMachineQueueName)
+    timeoutInMinutes: 60
+    steps:
+    - checkout: self
+      displayName: Checkout F# compiler repo (for scripts)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download F# Compiler FSC Artifacts
+      inputs:
+        artifactName: 'FSharpCompilerFscArtifacts'
+        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/fsc'
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download F# Core Artifacts
+      inputs:
+        artifactName: 'FSharpCoreArtifacts'
+        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/FSharp.Core'
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download UseLocalCompiler props
+      inputs:
+        artifactName: 'UseLocalCompilerProps'
+        downloadPath: '$(Pipeline.Workspace)/Props'
+
+    - pwsh: |
+        Write-Host "Cloning repository: ${{ item.repo }}"
+        git clone --recursive https://github.com/${{ item.repo }}.git $(Pipeline.Workspace)/TestRepo
+        Set-Location $(Pipeline.Workspace)/TestRepo
+        
+        Write-Host "Checking out commit: ${{ item.commit }}"
+        git checkout ${{ item.commit }}
+        
+        Write-Host "Initializing submodules (if any)..."
+        git submodule update --init --recursive
+        
+        Write-Host "Successfully checked out ${{ item.repo }} at commit ${{ item.commit }}"
+        git log -1 --oneline
+        
+        Write-Host "Repository structure:"
+        Get-ChildItem -Name
+        
+        Write-Host "Verifying build script exists: ${{ item.buildScript }}"
+        if (Test-Path "${{ item.buildScript }}") {
+          Write-Host "Build script found: ${{ item.buildScript }}"
+        } else {
+          Write-Host "Build script not found: ${{ item.buildScript }}"
+          Write-Host "Available files in root:"
+          Get-ChildItem
+          exit 1
+        }
+      displayName: Checkout ${{ item.displayName }} at specific commit
+
+    - pwsh: |
+        Set-Location $(Pipeline.Workspace)/TestRepo
+        Write-Host "Removing global.json to use latest SDK..."
+        if (Test-Path "global.json") {
+          Remove-Item "global.json" -Force
+          Write-Host "global.json removed"
+        } else {
+          Write-Host "No global.json found"
+        }
+      displayName: Remove global.json to use latest SDK
+
+    - task: UseDotNet@2
+      displayName: Install .NET SDK 8.0.x for ${{ item.displayName }}
+      inputs:
+        packageType: sdk
+        version: '8.0.x'
+        installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
+
+    - task: UseDotNet@2
+      displayName: Install .NET SDK 10.0.100 for ${{ item.displayName }}
+      inputs:
+        packageType: sdk
+        version: '10.0.100'
+        installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
+
+    - pwsh: |
+        Set-Location $(Pipeline.Workspace)/TestRepo
+        
+        Write-Host "Running PrepareRepoForRegressionTesting.fsx..."
+        dotnet fsi $(Build.SourcesDirectory)/eng/scripts/PrepareRepoForRegressionTesting.fsx "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props"
+        
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "Failed to prepare repository for regression testing"
+          exit 1
+        }
+      displayName: Setup local compiler configuration for ${{ item.displayName }}
+
+    - pwsh: |
+        Set-Location $(Pipeline.Workspace)/TestRepo
+        Write-Host "==========================================="
+        Write-Host "Environment Information for ${{ item.displayName }}"
+        Write-Host "==========================================="
+        dotnet --info
+        Write-Host ""
+        Write-Host "MSBuild version:"
+        dotnet msbuild -version
+        Write-Host ""
+        Write-Host "F# Compiler artifacts available:"
+        Get-ChildItem "$(Pipeline.Workspace)/FSharpCompiler/bin/fsc/Release/net10.0" -Name -ErrorAction SilentlyContinue
+        Write-Host ""
+        Write-Host "F# Core available:"
+        if (Test-Path "$(Pipeline.Workspace)/FSharpCompiler/bin/FSharp.Core/Release/netstandard2.0/FSharp.Core.dll") {
+          Write-Host "FSharp.Core.dll found"
+        } else {
+          Write-Host "FSharp.Core.dll not found"
+        }
+        Write-Host ""
+        Write-Host "Directory.Build.props content:"
+        Get-Content "Directory.Build.props"
+        Write-Host ""
+        Write-Host "==========================================="
+      displayName: Report build environment for ${{ item.displayName }}
+
+    - pwsh: |
+        Set-Location $(Pipeline.Workspace)/TestRepo
+        Write-Host "============================================"
+        Write-Host "Starting build for ${{ item.displayName }}"
+        Write-Host "Repository: ${{ item.repo }}"
+        Write-Host "Commit: ${{ item.commit }}"
+        Write-Host "Build Script: ${{ item.buildScript }}"
+        Write-Host "============================================"
+        Write-Host ""
+        
+        # Use dotnet pack with binary logging on Windows to generate binlog files
+        # On Linux, execute the build script directly
+        if ($IsWindows) {
+          Write-Host "Running: dotnet pack build.proj -bl:build.binlog"
+          dotnet pack build.proj -bl:build.binlog
+        } else {
+          Write-Host "Executing: ${{ item.buildScript }}"
+          chmod +x "${{ item.buildScript }}"
+          bash -c "./${{ item.buildScript }}"
+        }
+        $exitCode = $LASTEXITCODE
+        
+        Write-Host ""
+        Write-Host "============================================"
+        Write-Host "Build completed for ${{ item.displayName }}"
+        Write-Host "Exit code: $exitCode"
+        Write-Host "============================================"
+        
+        if ($exitCode -ne 0) {
+          exit $exitCode
+        }
+      displayName: Build ${{ item.displayName }} with local F# compiler
+      env:
+        LocalFSharpCompilerPath: $(Pipeline.Workspace)/FSharpCompiler
+        LoadLocalFSharpBuild: 'True'
+        LocalFSharpCompilerConfiguration: Release
+      timeoutInMinutes: 45
+
+    - pwsh: |
+        Set-Location $(Pipeline.Workspace)/TestRepo
+        $binlogDir = "$(Pipeline.Workspace)/BinaryLogs"
+        New-Item -ItemType Directory -Force -Path $binlogDir | Out-Null
+
+        Write-Host "Collecting .binlog files..."
+        $binlogs = Get-ChildItem -Path "." -Filter "*.binlog" -Recurse -ErrorAction SilentlyContinue
+        if ($binlogs.Count -eq 0) {
+          Write-Host "No .binlog files found"
+        } else {
+          foreach ($binlog in $binlogs) {
+            Write-Host "Copying: $($binlog.FullName)"
+            Copy-Item $binlog.FullName -Destination $binlogDir
+          }
+          Write-Host "Collected $($binlogs.Count) .binlog files"
+        }
+      displayName: Collect Binary Logs
+      condition: always()
+      continueOnError: true
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish ${{ item.displayName }} Binary Logs
+      inputs:
+        targetPath: '$(Pipeline.Workspace)/BinaryLogs'
+        artifactName: '${{ item.displayName }}_BinaryLogs'
+        publishLocation: pipeline
+      condition: always()
+      continueOnError: true
+
+    - pwsh: |
+        Set-Location $(Pipeline.Workspace)/TestRepo
+        Write-Host ""
+        Write-Host "============================================"
+        Write-Host "Regression test completed for ${{ item.displayName }}"
+        Write-Host "Repository: ${{ item.repo }}"
+        Write-Host "Commit: ${{ item.commit }}"
+        Write-Host "Build Script: ${{ item.buildScript }}"
+        if ($env:AGENT_JOBSTATUS -eq "Succeeded") {
+          Write-Host "Status: SUCCESS"
+          Write-Host "The ${{ item.displayName }} library builds successfully with the new F# compiler"
+        } else {
+          Write-Host "Status: FAILED"
+          Write-Host "The ${{ item.displayName }} library failed to build with the new F# compiler"
+          
+          # Build multiline error message with reproduction steps
+          $lines = @(
+            "Regression test FAILED for ${{ item.displayName }} (${{ item.repo }}@${{ item.commit }})",
+            "",
+            "LOCAL REPRODUCTION STEPS (from fsharp repo root):",
+            "==========================================",
+            "# 1. Build the F# compiler",
+            "./build.sh -c Release",
+            "",
+            "# 2. Clone and checkout the failing library",
+            "cd ..",
+            "git clone --recursive https://github.com/${{ item.repo }}.git TestRepo",
+            "cd TestRepo",
+            "git checkout ${{ item.commit }}",
+            "git submodule update --init --recursive",
+            "rm -f global.json",
+            "",
+            "# 3. Prepare the repo for local compiler",
+            "dotnet fsi ../fsharp/eng/scripts/PrepareRepoForRegressionTesting.fsx `"../fsharp/UseLocalCompiler.Directory.Build.props`"",
+            "",
+            "# 4. Build with local compiler",
+            "export LocalFSharpCompilerPath=`$PWD/../fsharp",
+            "export LoadLocalFSharpBuild=True",
+            "export LocalFSharpCompilerConfiguration=Release",
+            "./${{ item.buildScript }}",
+            "=========================================="
+          )
+          
+          # Report using VSO error format - each line separately
+          foreach ($line in $lines) {
+            Write-Host "##[error]$line"
+          }
+          
+          # Also log as VSO issue for Azure DevOps integration
+          Write-Host "##vso[task.logissue type=error;sourcepath=azure-pipelines-PR.yml]Regression test failed: ${{ item.displayName }}"
+        }
+        Write-Host "============================================"
+        
+        Write-Host "Binary logs found:"
+        Get-ChildItem "*.binlog" -Recurse -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+      displayName: Report ${{ item.displayName }} test result
+      condition: always()

@@ -168,7 +168,7 @@ stacktype.Name = "Stack"
         | Error(ex) -> Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
 
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Script using System.Configuration succeeds``() =
         use script = new FSharpScript()
         let result, errors = script.Eval("""
@@ -246,7 +246,7 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
 
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``ML - use assembly with native dependencies``() =
         // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
@@ -304,7 +304,7 @@ printfn "{@"%A"}" result
         | Ok(_) -> Assert.False(true, "expected a failure")
         | Error(ex) -> Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Eval script with invalid PackageName should fail immediately``() =
         use capture = new TestConsole.ExecutionCapture()
         use script = new FSharpScript(additionalArgs=[| |])
@@ -316,7 +316,7 @@ printfn "{@"%A"}" result
         Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("error NU1101:")), "Expect to error containing 'error NU1101:'")
         Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")), "Expect to error containing 'FSharp.Really.Not.A.Package'")
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
         use capture = new TestConsole.ExecutionCapture()
         use script = new FSharpScript(additionalArgs=[| |])
@@ -330,7 +330,7 @@ printfn "{@"%A"}" result
         Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")) |> Seq.length))
         Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.Another.Package")) |> Seq.length))
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``FsharpPlus - report errors``() =
         let code = """
 #i "nuget:https://api.nuget.org/v3/index.json"
@@ -366,7 +366,7 @@ printTable [{|Age = 15; Weight = 88; Name = "Blahboolahboogaloo"|}]
         let value = opt.Value
         Assert.Equal(1, downcast value.ReflectionValue)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``ML - use assembly with ref dependencies``() =
         let code = """
 #r "nuget:Microsoft.ML.OnnxTransformer,1.4.0"
@@ -383,7 +383,7 @@ tInput.Length
         let value = opt.Value
         Assert.Equal(4L, downcast value.ReflectionValue)
 
-    [<FSharp.Test.FactForNETCOREAPP>] // usessdkrefs is not a valid option for desktop compiler
+    [<FSharp.Test.FactForNETCOREAPPSkipOnSignedBuild>] // usessdkrefs is not a valid option for desktop compiler
     member _.``ML - use assembly with ref dependencies and without refing SMemory``() =
         let code = """
 #r "nuget:Microsoft.ML.OnnxTransformer,1.4.0"
@@ -399,7 +399,7 @@ tInput.Length
         let value = opt.Value
         Assert.Equal(4L, downcast value.ReflectionValue)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``System.Device.Gpio - Ensure we reference the runtime version of the assembly``() =
         let code = """
 #r "nuget:System.Device.Gpio, 1.0.0"
@@ -512,7 +512,7 @@ let x =
         Assert.False(foundInner)
 
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Script with nuget package that yields out of order dependencies works correctly``() =
         // regression test for: https://github.com/dotnet/fsharp/issues/9217
         let code = """
@@ -535,7 +535,7 @@ test pfloat "1.234"
         let value = opt.Value
         Assert.True(true = downcast value.ReflectionValue)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Nuget package with method duplicates differing only in generic arity``() =
         // regression test for: https://github.com/dotnet/fsharp/issues/17796
         // Was an internal error
@@ -549,7 +549,7 @@ let add (col:IServiceCollection) =
         let _value,diag = script.Eval(code)
         Assert.Empty(diag)
 
-    [<Theory>]
+    [<FSharp.Test.TheorySkipOnSignedBuild>]
     [<InlineData("""#r "nuget:envdte,usepackagetargets=true" """, true, "")>]
     [<InlineData("""#r "nuget:envdte,usepackagetargets=false" """, true, "")>]
     [<InlineData("""#r "nuget:envdte,usepackagetargets=invalidvalue" """, false, "input.fsx (1,1)-(1,49) interactive error Invalid value for boolean 'usepackagetargets', valid values: true or false")>]

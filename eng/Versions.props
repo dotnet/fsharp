@@ -1,13 +1,15 @@
 <Project>
-  <Import Project="Version.Details.props" Condition="Exists('Version.Details.props')" />
+
+  <Import Project="Version.Details.props" />
+
+  <!-- Arcade features-->
   <PropertyGroup>
-    <!-- opt-out properties -->
     <UsingToolXUnit>false</UsingToolXUnit>
-    <!-- opt-in properties -->
     <UsingToolNuGetRepack>true</UsingToolNuGetRepack>
     <UsingToolSymbolUploader>true</UsingToolSymbolUploader>
     <UsingToolVSSDK>true</UsingToolVSSDK>
   </PropertyGroup>
+
   <!-- Version number computation -->
   <PropertyGroup>
     <!-- Don't use the built in support for pre-release iteration. The nuget repack task doesn't support
@@ -53,6 +55,7 @@
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion).$(FSToolsRevisionVersion)</FSProductVersion>
   </PropertyGroup>
+
   <PropertyGroup>
     <!-- These have to be in sync with latest release branch -->
     <VSMajorVersion>18</VSMajorVersion>
@@ -61,11 +64,13 @@
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
   </PropertyGroup>
+
   <!-- version number assignment -->
   <PropertyGroup Condition="'$(UseFSharpPackageVersion)' == 'true'">
     <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
     <AssemblyVersion>$(FSCoreVersion)</AssemblyVersion>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(UseFSharpPackageVersion)' != 'true'">
     <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersionPrefix)</VersionPrefix>
@@ -74,6 +79,7 @@
     <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
+
   <!-- Dependencies from maintenance-packages, source-build specific -->
   <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
@@ -86,6 +92,7 @@
     <SystemMemoryVersion>4.6.0</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.0</SystemRuntimeCompilerServicesUnsafeVersion>
   </PropertyGroup>
+
   <PropertyGroup>
     <!-- System.* packages -->
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
@@ -161,4 +168,5 @@
     <XunitXmlTestLoggerVersion>3.1.17</XunitXmlTestLoggerVersion>
     <!-- -->
   </PropertyGroup>
+
 </Project>

@@ -604,9 +604,41 @@ val reduceTyconRefMeasureableOrProvided: TcGlobals -> TyconRef -> TypeInst -> TT
 
 val reduceTyconRefAbbrevMeasureable: TyconRef -> Measure
 
-/// set bool to 'true' to allow shortcutting of type parameter equation chains during stripping
-val stripTyEqnsA: TcGlobals -> bool -> TType -> TType
+/// <summary>
+/// Normalizes types.
+/// </summary>
+/// <remarks>
+/// Normalizes a type by:
+/// <list>
+///   <item>replacing type variables with their solutions found by unification</item>
+///   <item>expanding type abbreviations</item>
+/// </list>
+/// as well as a couple of special-case normalizations:
+/// <list>
+///   <item>identifying <c>int&lt;1&gt;</c> with <c>int</c> (for any measurable type)</item>
+///   <item>identifying <c>byref&lt;'T&gt;</c> with <c>byref&lt;'T, ByRefKinds.InOut&gt;</c></item>
+/// </list>
+/// </remarks>
+/// <param name="canShortcut">
+/// <c>true</c> to allow shortcutting of type parameter equation chains during stripping
+/// </param>
+val stripTyEqnsA: TcGlobals -> canShortcut: bool -> TType -> TType
 
+/// <summary>
+/// Normalizes types.
+/// </summary>
+/// <remarks>
+/// Normalizes a type by:
+/// <list>
+///   <item>replacing type variables with their solutions found by unification</item>
+///   <item>expanding type abbreviations</item>
+/// </list>
+/// as well as a couple of special-case normalizations:
+/// <list>
+///   <item>identifying <c>int&lt;1&gt;</c> with <c>int</c> (for any measurable type)</item>
+///   <item>identifying <c>byref&lt;'T&gt;</c> with <c>byref&lt;'T, ByRefKinds.InOut&gt;</c></item>
+/// </list>
+/// </remarks>
 val stripTyEqns: TcGlobals -> TType -> TType
 
 val stripTyEqnsAndMeasureEqns: TcGlobals -> TType -> TType
@@ -707,6 +739,8 @@ val tcrefOfAppTy: TcGlobals -> TType -> TyconRef
 
 val tryTcrefOfAppTy: TcGlobals -> TType -> TyconRef voption
 
+/// Returns ValueSome if this type is a type variable, even after abbreviations are expanded and
+/// variables have been solved through unification.
 val tryDestTyparTy: TcGlobals -> TType -> Typar voption
 
 val tryDestFunTy: TcGlobals -> TType -> (TType * TType) voption

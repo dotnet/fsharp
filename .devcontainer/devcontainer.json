@@ -1,12 +1,12 @@
 // For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
 {
     "name": "F#",
-    "image": "mcr.microsoft.com/dotnet/sdk:9.0.304",
+    "image": "mcr.microsoft.com/dotnet/sdk:10.0.100",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2.5.4": {},
         "ghcr.io/devcontainers/features/git:1.3.4": {},
         "ghcr.io/devcontainers/features/github-cli:1.0.14": {},
-        "ghcr.io/devcontainers/features/dotnet:2.3.0": {}
+        "ghcr.io/devcontainers/features/dotnet:2.4.0": {}
     },
     "hostRequirements": {
         "cpus": 2,
