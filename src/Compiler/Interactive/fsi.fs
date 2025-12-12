@@ -1085,8 +1085,11 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                                             let culture = arg.Substring(colonIndex + 1)
 
                                             try
+                                                // Validate culture first by creating CultureInfo
+                                                let cultureInfo = CultureInfo(culture)
+                                                // Only set if valid
                                                 tcConfigB.preferredUiLang <- Some culture
-                                                Thread.CurrentThread.CurrentUICulture <- CultureInfo(culture)
+                                                Thread.CurrentThread.CurrentUICulture <- cultureInfo
                                             with
                                             | :? CultureNotFoundException
                                             | :? ArgumentException ->
