@@ -13,6 +13,8 @@
     <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
+    <!-- Enable Microsoft.Testing.Platform runner (MTP Migration - Phase 3) -->
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <NoWarn>$(NoWarn);FS0988</NoWarn> <!-- "program does nothing" warning -->
     <DefineConstants Condition="'$(Configuration)'=='release'">$(DefineConstants);RELEASE</DefineConstants>
     <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);DEBUG</DefineConstants>

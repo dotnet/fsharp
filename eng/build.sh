@@ -238,9 +238,17 @@ function Test() {
     if [[ "$testbatch" != "" ]]; then
     testbatchsuffix="_batch$testbatch"
   fi
-  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework$testbatchsuffix.trx"
+  # MTP uses --report-xunit-trx with filename only (no path)
+  testlogfilename="${projectname}_${targetframework}${testbatchsuffix}.trx"
+  testresultsdir="$artifacts_dir/TestResults/$configuration"
   
-  args=(test "$testproject" --no-build -c "$configuration" -f "$targetframework" --logger "trx;LogFileName=$testlogpath" --logger "console;verbosity=normal" --blame-hang-timeout 5minutes --results-directory "$artifacts_dir/TestResults/$configuration")
+  # MTP requires --solution flag for .sln files
+  # MTP HangDump extension replaces VSTest --blame-hang-timeout
+  if [[ "$testproject" == *.sln ]]; then
+    args=(test --solution "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+  else
+    args=(test --project "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+  fi
 
   if [[ "$testbatch" != "" ]]; then
     args+=(--filter "batch=$testbatch")

@@ -9,6 +9,8 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
+    <!-- Enable Microsoft.Testing.Platform runner (MTP Migration - Phase 3) -->
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
 
   <ItemGroup>

@@ -8,6 +8,9 @@
     ],
     "errorMessage": "The .NET SDK could not be found, please run ./eng/common/dotnet.sh."
   },
+  "test": {
+    "runner": "Microsoft.Testing.Platform"
+  },
   "tools": {
     "dotnet": "10.0.100-rc.2.25502.107",
     "vs": {

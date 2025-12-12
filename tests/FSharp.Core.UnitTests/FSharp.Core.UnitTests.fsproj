@@ -8,6 +8,8 @@
     <!-- xUnit3 requires test projects to be executable -->
     <OutputType>Exe</OutputType>
     <IsTestProject>true</IsTestProject>
+    <!-- Enable Microsoft.Testing.Platform runner (MTP Migration - Phase 3) -->
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
 
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
     <PackageId>Microsoft.FSharp.Core.UnitTests</PackageId>

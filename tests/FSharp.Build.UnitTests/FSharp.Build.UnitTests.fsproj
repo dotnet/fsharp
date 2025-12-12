@@ -8,6 +8,8 @@
     <!-- xUnit3 requires test projects to be executable -->
     <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <!-- Enable Microsoft.Testing.Platform runner (MTP Migration - Phase 2 Pilot) -->
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
 
   <ItemGroup>

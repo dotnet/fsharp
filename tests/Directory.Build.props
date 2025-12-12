@@ -18,6 +18,8 @@
     <PackageReference Include="xunit.v3.runner.console" Version="$(XunitRunnerConsoleVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)" />
     <PackageReference Include="Microsoft.TestPlatform" Version="$(MicrosoftTestPlatformVersion)" />
+    <!-- MTP HangDump extension for hang detection (replaces VSTest blame-hang-timeout) -->
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -371,13 +371,19 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
       $testBatchSuffix = "_batch$testBatch"
     }
 
-    # Manually expand assembly and framework placeholders since TRX logger doesn't support them
-    # See https://github.com/spekt/testlogger/wiki/Logger-Configuration#logfilepath
-    $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_${targetFramework}$testBatchSuffix.trx"
+    # MTP uses --report-xunit-trx with filename only (no path)
+    # Results go to TestResults directory under project output by default
+    $testLogFileName = "${projectName}_${targetFramework}$testBatchSuffix.trx"
+    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
 
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework$testBatch.binlog"
-    $args = "test $testProject -c $configuration -f $targetFramework --logger ""trx;LogFileName=$testLogPath"" --logger ""console;verbosity=normal"" /bl:$testBinLogPath"
-    $args += " --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration"
+    
+    # MTP requires --solution flag for .sln files
+    $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
+    
+    $args = "test $testTarget -c $configuration -f $targetFramework --report-xunit-trx --report-xunit-trx-filename ""$testLogFileName"" --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
+    # MTP HangDump extension replaces VSTest --blame-hang-timeout
+    $args += " --hangdump --hangdump-timeout 5m --hangdump-type Full"
 
     if (-not $noVisualStudio -or $norestore) {
         $args += " --no-restore"
