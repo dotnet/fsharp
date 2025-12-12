@@ -1,15 +1,18 @@
 # DList Migration TODO
 
-## Status: IN PROGRESS
+## Status: MIGRATION COMPLETE - TESTING IN PROGRESS
 
 ## Completed Tasks
 - [x] Create comprehensive QueueList benchmarks
 - [x] Identify V5 (DList with cached iteration) as best performer (4.1x faster, 1.6x memory)
 - [x] Document all benchmark results
-- [x] Find all QueueList usage sites (49 files)
+- [x] Find all QueueList usage sites (89 instances across 11 files)
 - [x] Create DList.fsi and DList.fs implementation
 - [x] Add DList to build system (FSharp.Compiler.Service.fsproj)
 - [x] Verify DList compiles successfully
+- [x] **COMPLETE MIGRATION**: Replace all 89 QueueList usages with CachedDList
+- [x] **BUILD SUCCESS**: 0 errors, 0 warnings
+- [x] Create DECISIONS.md documenting migration strategy
 
 ## QueueList Usage Sites (Priority Hot Paths)
 1. **TypedTree.fs** - Core type definition (ModuleOrNamespaceType)
@@ -21,39 +24,48 @@
 
 ## Current Tasks
 
-### 1. Create DList Implementation ✅ NEXT
-- [ ] Create `src/Compiler/Utilities/DList.fsi` (interface file)
-- [ ] Create `src/Compiler/Utilities/DList.fs` (implementation)
+### 1. Create DList Implementation ✅ DONE
+- [x] Create `src/Compiler/Utilities/DList.fsi` (interface file)
+- [x] Create `src/Compiler/Utilities/DList.fs` (implementation)
   - Core DList type: `type DList<'T> = DList of ('T list -> 'T list)`
   - Wrapper type `CachedDList<'T>` with lazy materialized list
   - Functions: empty, singleton, cons, append, appendMany, toList
   - QueueList-compatible API: AppendOne, ofList, map, filter, foldBack, etc.
   - Fast O(1) "DList Append DList" operation
   
-### 2. Add DList to Build System
-- [ ] Add DList.fsi and DList.fs to FSharp.Compiler.Service.fsproj
-- [ ] Ensure proper ordering in compilation
+### 2. Add DList to Build System ✅ DONE
+- [x] Add DList.fsi and DList.fs to FSharp.Compiler.Service.fsproj
+- [x] Ensure proper ordering in compilation
 
-### 3. Migrate Hot Paths
-- [ ] TypedTree.fs: Change ModuleOrNamespaceType to use CachedDList
-- [ ] TypedTree.fsi: Update interface
-- [ ] TypedTreeOps.fs: Update CombineModuleOrNamespaceTypes (KEY OPTIMIZATION)
-- [ ] TypedTreePickle.fs: Add p_dlist/u_dlist functions
-- [ ] Other usage sites as needed for compilation
+### 3. Migrate All Usage Sites ✅ DONE
+- [x] TypedTree.fs: Change ModuleOrNamespaceType to use CachedDList
+- [x] TypedTree.fsi: Update interface
+- [x] TypedTreeOps.fs: Update CombineModuleOrNamespaceTypes (KEY OPTIMIZATION - now O(1) append!)
+- [x] TypedTreePickle.fs: Add p_cached_dlist/u_cached_dlist functions
+- [x] CheckDeclarations.fs: Replace QueueList with CachedDList
+- [x] NameResolution.fs: Replace QueueList with CachedDList
+- [x] NicePrint.fs: Replace QueueList with CachedDList
+- [x] fsi.fs: Replace QueueList with CachedDList
+- [x] Optimizer.fs: Replace QueueList with CachedDList
+- [x] Symbols.fs: Replace QueueList with CachedDList
+- [x] TOTAL: 89 instances replaced across 11 files
 
-### 4. Build and Test
-- [ ] Ensure all code builds successfully (`./build.sh -c Release`)
-- [ ] Run targeted tests for TypedTree/TypedTreeOps
-- [ ] Run full test suite
+### 4. Build and Test ⚠️ IN PROGRESS
+- [x] Ensure all code builds successfully (`./build.sh -c Release`) - ✅ 0 errors, 0 warnings
+- [x] Run full test suite - ⚠️ 2775 passed, 2221 failed
+- [ ] Fix pickle format compatibility issue (FSharp.Core metadata reading)
+  - Issue: FSharp.Core compiled with old QueueList, tests use new CachedDList
+  - Solution: Clean rebuild of all artifacts
+- [ ] Verify all tests pass
 
-### 5. Performance Validation
-- [ ] Rebuild compiler with DList changes
+### 5. Performance Validation 📊 NEXT
+- [ ] Clean rebuild compiler with DList changes
 - [ ] Generate 5000 files/5000 modules test project
 - [ ] Run compilation with --times flag
 - [ ] Capture memory usage with /usr/bin/time -v
 - [ ] Compare with baseline:
   - Baseline: 8:43 total, 11.69 GB, 171s typecheck
-  - Target: ~2-3 min total (4x improvement in typecheck)
+  - Target: ~2-3 min total (4x improvement in typecheck based on benchmarks)
 - [ ] Document results in investigation/dlist_results/
 
 ## Expected Outcome
