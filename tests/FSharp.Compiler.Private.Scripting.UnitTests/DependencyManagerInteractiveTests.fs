@@ -67,13 +67,16 @@ type DependencyManagerInteractiveTests() =
         let errors = script.Eval(code) |> getErrors
         Assert.Contains(message, errors |> Array.map(fun e -> e.Message))
 *)
-    static member SdkDirOverrideTestData = [|
-        [| None |]
-        [| Path.Combine(__SOURCE_DIRECTORY__, "..", "..", ".dotnet", "sdk")
-        |> Directory.GetDirectories
-        |> Seq.head
-        |> Some |]
-    |]
+    static member SdkDirOverrideTestData =
+        [|
+            yield [| None |]
+            let dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT")
+            if not (isNull dotnetRoot) then
+                yield [| Path.Combine(dotnetRoot, "sdk")
+                      |> Directory.GetDirectories
+                      |> Seq.head
+                      |> Some |]
+        |]
 
     [<Theory>]
     [<MemberData(nameof DependencyManagerInteractiveTests.SdkDirOverrideTestData)>]
