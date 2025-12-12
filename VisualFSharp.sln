@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.1.32113.165
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11210.18 main
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}"
 EndProject
@@ -9,7 +9,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VisualFSharp.UnitTests Supp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VisualFSharp", "VisualFSharp", "{4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}"
 	ProjectSection(SolutionItems) = preProject
+		vsintegration\Directory.Build.props = vsintegration\Directory.Build.props
+		vsintegration\Directory.Build.targets = vsintegration\Directory.Build.targets
 		vsintegration\readme.md = vsintegration\readme.md
+		vsintegration\Templates.Directory.Build.props = vsintegration\Templates.Directory.Build.props
+		vsintegration\Templates.Directory.Build.targets = vsintegration\Templates.Directory.Build.targets
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compiler", "Compiler", "{3881429D-A97A-49EB-B7AE-A82BA5FE9C77}"
