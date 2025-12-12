@@ -610,6 +610,9 @@ let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
         output_string os "native "
     elif md.ImplAttributes &&& MethodImplAttributes.IL <> enum 0 then
         output_string os "cil "
+        if md.IsAsync then
+            output_string os "async "
+
     else
         output_string os "runtime "
 
@@ -727,6 +730,7 @@ let goutput_mdef env os (md: ILMethodDef) =
 
     if md.IsAggressiveInline then
         output_string os "aggressiveinlining "
+
 
     (goutput_mbody is_entrypoint menv) os md
     output_string os "\n"
