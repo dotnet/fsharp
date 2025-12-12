@@ -584,14 +584,6 @@ rule token (args: LexArgs) (skip: bool) = parse
                 UINT8 (byte(x))
        | _ -> fail args lexbuf  (FSComp.SR.lexInvalidAsciiByteLiteral()) (UINT8(byte 0)) }
 
- | "(*F#"
-     { if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
-       else token args skip lexbuf }
-
- | "F#*)"
-     { if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
-       else token args skip lexbuf }
-
  | "(*)"
      { LPAREN_STAR_RPAREN }
 

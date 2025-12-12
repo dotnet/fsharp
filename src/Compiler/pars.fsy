@@ -5339,6 +5339,7 @@ atomicExprQualification:
             | SynExpr.IndexRange(None, mOperator, None, _m1, _m2, _) ->
                 mkSynDot mDot mLhs e (SynIdent(ident(CompileOpName "*", mOperator), Some(IdentTrivia.OriginalNotationWithParen(lpr, "*", rpr))))
             | _ ->
+                errorR(Deprecated(FSComp.SR.astDeprecatedIndexerNotation(), lhs parseState))
                 exprFromParseError $2) }
 
   | LBRACK typedSequentialExpr RBRACK

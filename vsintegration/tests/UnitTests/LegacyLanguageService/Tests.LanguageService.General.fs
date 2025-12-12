@@ -202,7 +202,7 @@ type UsingMSBuild() =
         
         // Sanity check
         MoveCursorToStartOfMarker(file,"//")
-        AssertEqual(TokenType.PreprocessorKeyword, GetTokenTypeAtCursor(file))
+        AssertEqual(TokenType.Comment, GetTokenTypeAtCursor(file))
         MoveCursorToEndOfMarker(file,"let x = ")
         AssertEqual(TokenType.String, GetTokenTypeAtCursor(file))
         
