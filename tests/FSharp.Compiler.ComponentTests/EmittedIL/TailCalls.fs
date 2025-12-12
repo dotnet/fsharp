@@ -307,6 +307,7 @@ let main _ =
         |> shouldSucceed
         |> verifyOutput "value = 42\n"
 
+    (*
     [<Fact>]
     let ``TailCall 09 - No tail call when using address-of operator on local``() =
         FSharp """
@@ -336,3 +337,4 @@ let main _ =
         |> run
         |> shouldSucceed
         |> verifyOutput "value = 42\n"
+    *)

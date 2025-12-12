@@ -2505,7 +2505,6 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     let mutable stack: ILType list = []
     let mutable nstack = 0
     let mutable maxStack = 0
-    let mutable hasAddressTakenLocals = false
     let mutable hasDebugPoints = false
     let mutable anyDocument = None // we collect an arbitrary document in order to emit the header FeeFee if needed
 
@@ -2567,21 +2566,11 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     member cgbuf.EmitInstr(pops, pushes, i) =
         cgbuf.DoPops pops
         cgbuf.DoPushes pushes
-        if not hasAddressTakenLocals then
-            match i with
-            | I_ldloca _ -> hasAddressTakenLocals <- true
-            | _ -> ()
         codebuf.Add i
 
     member cgbuf.EmitInstrs(pops, pushes, is) =
         cgbuf.DoPops pops
         cgbuf.DoPushes pushes
-        if not hasAddressTakenLocals then
-            hasAddressTakenLocals <-
-                is
-                |> List.exists (function
-                    | I_ldloca _ -> true
-                    | _ -> false)
         is |> List.iter codebuf.Add
 
     member private _.EnsureNopBetweenDebugPoints() =
@@ -2713,9 +2702,6 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     /// Check if any locals have been allocated as pinned/fixed
     member _.HasPinnedLocals() =
         locals |> Seq.exists (fun (_, _, isFixed, _) -> isFixed)
-
-    /// Check if any locals have had their address taken
-    member _.HasLocalsWithAddressTaken() = hasAddressTakenLocals
 
     member _.Close() =
 
@@ -4522,9 +4508,7 @@ and CanTailcall
     // Can't tailcall with a struct object arg since it involves a byref
     // Can't tailcall with a .NET 2.0 generic constrained call since it involves a byref
     // Can't tailcall when there are pinned locals since the stack frame must remain alive
-    // Can't tailcall when local addresses are taken since the stack frame must remain alive
     let hasPinnedLocals = cgbuf.HasPinnedLocals()
-    let hasLocalsWithAddressTaken = cgbuf.HasLocalsWithAddressTaken()
 
     if
         not hasStructObjArg
@@ -4535,7 +4519,6 @@ and CanTailcall
         && not isSelfInit
         && not makesNoCriticalTailcalls
         && not hasPinnedLocals
-        && not hasLocalsWithAddressTaken
         &&
 
         // We can tailcall even if we need to generate "unit", as long as we're about to throw the value away anyway as par of the return.
