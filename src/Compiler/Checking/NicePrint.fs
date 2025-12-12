@@ -2479,14 +2479,14 @@ module TastDefinitionPrinting =
             if mspec.IsNamespace then []
             else
                 mspec.ModuleOrNamespaceType.AllEntities
-                |> QueueList.toList
+                |> CachedDList.toList
                 |> List.map (fun entity -> layoutEntityDefn denv infoReader ad m (mkLocalEntityRef entity))
             
         let valLs =
             if mspec.IsNamespace then []
             else
                 mspec.ModuleOrNamespaceType.AllValsAndMembers
-                |> QueueList.toList
+                |> CachedDList.toList
                 |> List.filter shouldShow
                 |> List.sortBy (fun v -> v.DisplayNameCore)
                 |> List.map (mkLocalValRef >> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader)

@@ -76,12 +76,12 @@ let UnionCaseRefsInModuleOrNamespace (modref: ModuleOrNamespaceRef) =
 /// Try to find a type with a union case of the given name
 let TryFindTypeWithUnionCase (modref: ModuleOrNamespaceRef) (id: Ident) =
     modref.ModuleOrNamespaceType.AllEntities
-    |> QueueList.tryFind (fun tycon -> tycon.GetUnionCaseByName id.idText |> Option.isSome)
+    |> CachedDList.tryFind (fun tycon -> tycon.GetUnionCaseByName id.idText |> Option.isSome)
 
 /// Try to find a type with a record field of the given name
 let TryFindTypeWithRecdField (modref: ModuleOrNamespaceRef) (id: Ident) =
     modref.ModuleOrNamespaceType.AllEntities
-    |> QueueList.tryFind (fun tycon -> tycon.GetFieldByName id.idText |> Option.isSome)
+    |> CachedDList.tryFind (fun tycon -> tycon.GetFieldByName id.idText |> Option.isSome)
 
 /// Get the active pattern elements defined by a given value, if any
 let ActivePatternElemsOfValRef g (vref: ValRef) =
@@ -4666,7 +4666,7 @@ let rec private EntityRefContainsSomethingAccessible (ncenv: NameResolver) m ad 
 
     // Search the types in the namespace/module for an accessible tycon
     (mty.AllEntities
-     |> QueueList.exists (fun tc ->
+     |> CachedDList.exists (fun tc ->
           not tc.IsModuleOrNamespace &&
           not (IsTyconUnseen ad g ncenv.amap m allowObsolete (modref.NestedTyconRef tc)))) ||
 

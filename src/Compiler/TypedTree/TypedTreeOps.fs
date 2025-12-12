@@ -2464,8 +2464,8 @@ let freeInTyparConstraints opts v = accFreeInTyparConstraints opts v emptyFreeTy
 let accFreeInTypars opts tps acc = List.foldBack (accFreeTyparRef opts) tps acc
         
 let rec addFreeInModuleTy (mtyp: ModuleOrNamespaceType) acc =
-    QueueList.foldBack (typeOfVal >> accFreeInType CollectAllNoCaching) mtyp.AllValsAndMembers
-      (QueueList.foldBack (fun (mspec: ModuleOrNamespace) acc -> addFreeInModuleTy mspec.ModuleOrNamespaceType acc) mtyp.AllEntities acc)
+    CachedDList.foldBack (typeOfVal >> accFreeInType CollectAllNoCaching) mtyp.AllValsAndMembers
+      (CachedDList.foldBack (fun (mspec: ModuleOrNamespace) acc -> addFreeInModuleTy mspec.ModuleOrNamespaceType acc) mtyp.AllEntities acc)
 
 let freeInModuleTy mtyp = addFreeInModuleTy mtyp emptyFreeTyvars
 
@@ -4075,7 +4075,7 @@ module DebugPrint =
 
     let intL (n: int) = wordL (tagNumericLiteral (string n))
 
-    let qlistL f xmap = QueueList.foldBack (fun x z -> z @@ f x) xmap emptyL
+    let qlistL f xmap = CachedDList.foldBack (fun x z -> z @@ f x) xmap emptyL
 
     let bracketIfL b lyt = if b then bracketL lyt else lyt
 
@@ -4976,13 +4976,13 @@ let getCorrespondingSigTy nm (msigty: ModuleOrNamespaceType) =
     | Some sigsubmodul -> sigsubmodul.ModuleOrNamespaceType
 
 let rec accEntityRemapFromModuleOrNamespaceType (mty: ModuleOrNamespaceType) (msigty: ModuleOrNamespaceType) acc = 
-    let acc = (mty.AllEntities, acc) ||> QueueList.foldBack (fun e acc -> accEntityRemapFromModuleOrNamespaceType e.ModuleOrNamespaceType (getCorrespondingSigTy e.LogicalName msigty) acc) 
-    let acc = (mty.AllEntities, acc) ||> QueueList.foldBack (accEntityRemap msigty) 
+    let acc = (mty.AllEntities, acc) ||> CachedDList.foldBack (fun e acc -> accEntityRemapFromModuleOrNamespaceType e.ModuleOrNamespaceType (getCorrespondingSigTy e.LogicalName msigty) acc) 
+    let acc = (mty.AllEntities, acc) ||> CachedDList.foldBack (accEntityRemap msigty) 
     acc 
 
 let rec accValRemapFromModuleOrNamespaceType g aenv (mty: ModuleOrNamespaceType) msigty acc = 
-    let acc = (mty.AllEntities, acc) ||> QueueList.foldBack (fun e acc -> accValRemapFromModuleOrNamespaceType g aenv e.ModuleOrNamespaceType (getCorrespondingSigTy e.LogicalName msigty) acc) 
-    let acc = (mty.AllValsAndMembers, acc) ||> QueueList.foldBack (accValRemap g aenv msigty) 
+    let acc = (mty.AllEntities, acc) ||> CachedDList.foldBack (fun e acc -> accValRemapFromModuleOrNamespaceType g aenv e.ModuleOrNamespaceType (getCorrespondingSigTy e.LogicalName msigty) acc) 
+    let acc = (mty.AllValsAndMembers, acc) ||> CachedDList.foldBack (accValRemap g aenv msigty) 
     acc 
 
 let ComputeRemappingFromInferredSignatureToExplicitSignature g mty msigty = 
@@ -5098,9 +5098,9 @@ let accValHidingInfoAtAssemblyBoundary (vspec: Val) mhi =
         mhi
 
 let rec accModuleOrNamespaceHidingInfoAtAssemblyBoundary mty acc = 
-    let acc = QueueList.foldBack (fun (e: Entity) acc -> accModuleOrNamespaceHidingInfoAtAssemblyBoundary e.ModuleOrNamespaceType acc) mty.AllEntities acc
-    let acc = QueueList.foldBack accTyconHidingInfoAtAssemblyBoundary mty.AllEntities acc
-    let acc = QueueList.foldBack accValHidingInfoAtAssemblyBoundary mty.AllValsAndMembers acc
+    let acc = CachedDList.foldBack (fun (e: Entity) acc -> accModuleOrNamespaceHidingInfoAtAssemblyBoundary e.ModuleOrNamespaceType acc) mty.AllEntities acc
+    let acc = CachedDList.foldBack accTyconHidingInfoAtAssemblyBoundary mty.AllEntities acc
+    let acc = CachedDList.foldBack accValHidingInfoAtAssemblyBoundary mty.AllValsAndMembers acc
     acc 
 
 let ComputeSignatureHidingInfoAtAssemblyBoundary mty acc = 
@@ -5177,9 +5177,9 @@ let IsHiddenRecdField mrmi x = IsHidden (fun mhi -> mhi.HiddenRecdFields) (fun r
 
 let foldModuleOrNamespaceTy ft fv mty acc = 
     let rec go mty acc = 
-        let acc = QueueList.foldBack (fun (e: Entity) acc -> go e.ModuleOrNamespaceType acc) mty.AllEntities acc
-        let acc = QueueList.foldBack ft mty.AllEntities acc
-        let acc = QueueList.foldBack fv mty.AllValsAndMembers acc
+        let acc = CachedDList.foldBack (fun (e: Entity) acc -> go e.ModuleOrNamespaceType acc) mty.AllEntities acc
+        let acc = CachedDList.foldBack ft mty.AllEntities acc
+        let acc = CachedDList.foldBack fv mty.AllValsAndMembers acc
         acc
     go mty acc
 
@@ -5969,8 +5969,8 @@ and remapParentRef tyenv p =
     | Parent x -> Parent (x |> remapTyconRef tyenv.tyconRefRemap)
 
 and mapImmediateValsAndTycons ft fv (x: ModuleOrNamespaceType) = 
-    let vals = x.AllValsAndMembers |> QueueList.map fv
-    let tycons = x.AllEntities |> QueueList.map ft
+    let vals = x.AllValsAndMembers |> CachedDList.map fv
+    let tycons = x.AllEntities |> CachedDList.map ft
     ModuleOrNamespaceType(x.ModuleOrNamespaceKind, vals, tycons)
 
 and copyVal compgen (v: Val) = 
@@ -11399,9 +11399,9 @@ let CombineCcuContentFragments l =
                     | _ -> yield e2
             ]
 
-        let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
+        let vals = CachedDList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
 
-        ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
+        ModuleOrNamespaceType(kind, vals, CachedDList.ofList entities)
 
     and CombineEntities path (entity1: Entity) (entity2: Entity) = 
 

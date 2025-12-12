@@ -1984,7 +1984,7 @@ type ExceptionInfo =
 
 /// Represents the contents of a module or namespace
 [<Sealed; StructuredFormatDisplay("{DebugText}")>]
-type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
+type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: CachedDList<Val>, entities: CachedDList<Entity>) = 
 
     /// Mutation used during compilation of FSharp.Core.dll
     let mutable entities = entities 
@@ -2030,7 +2030,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 
     /// Mutation used during compilation of FSharp.Core.dll
     member _.AddModuleOrNamespaceByMutation(modul: ModuleOrNamespace) =
-        entities <- QueueList.appendOne entities modul
+        entities <- CachedDList.appendOne entities modul
         modulesByDemangledNameCache <- None          
         allEntitiesByMangledNameCache <- None
         allEntitiesByLogicalMangledNameCache <- None
@@ -2038,7 +2038,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 #if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member mtyp.AddProvidedTypeEntity(entity: Entity) = 
-        entities <- QueueList.appendOne entities entity
+        entities <- CachedDList.appendOne entities entity
         tyconsByMangledNameCache <- None          
         tyconsByDemangledNameAndArityCache <- None
         tyconsByAccessNamesCache <- None
@@ -2098,13 +2098,13 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
             else NameMap.add name2 x tab 
           
         cacheOptByref &allEntitiesByMangledNameCache (fun () -> 
-             QueueList.foldBack addEntityByMangledName entities Map.empty)
+             CachedDList.foldBack addEntityByMangledName entities Map.empty)
 
     /// Get a table of entities indexed by logical name
     member _.AllEntitiesByLogicalMangledName: NameMap<Entity> = 
         let addEntityByMangledName (x: Entity) tab = NameMap.add x.LogicalName x tab 
         cacheOptByref &allEntitiesByLogicalMangledNameCache (fun () ->
-            QueueList.foldBack addEntityByMangledName entities Map.empty)
+            CachedDList.foldBack addEntityByMangledName entities Map.empty)
 
     /// Get a table of values and members indexed by partial linkage key, which includes name, the mangled name of the parent type (if any),
     /// and the method argument count (if any).
@@ -2116,7 +2116,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
            else
                tab
         cacheOptByref &allValsAndMembersByPartialLinkageKeyCache (fun () -> 
-             QueueList.foldBack addValByMangledName vals MultiMap.empty)
+             CachedDList.foldBack addValByMangledName vals MultiMap.empty)
 
     /// Try to find the member with the given linkage key in the given module.
     member mtyp.TryLinkVal(ccu: CcuThunk, key: ValLinkageFullKey) = 
@@ -2137,7 +2137,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
            else
                tab
         cacheOptByref &allValsByLogicalNameCache (fun () -> 
-           QueueList.foldBack addValByName vals Map.empty)
+           CachedDList.foldBack addValByName vals Map.empty)
 
     /// Compute a table of values and members indexed by logical name.
     member _.AllValsAndMembersByLogicalNameUncached = 
@@ -2146,7 +2146,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
                 MultiMap.add x.LogicalName x tab 
             else
                 tab
-        QueueList.foldBack addValByName vals MultiMap.empty
+        CachedDList.foldBack addValByName vals MultiMap.empty
 
     /// Get a table of F# exception definitions indexed by demangled name, so 'FailureException' is indexed by 'Failure'
     member mtyp.ExceptionDefinitionsByDemangledName = 
@@ -2161,7 +2161,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
                 NameMap.add entity.DemangledModuleOrNamespaceName entity acc
             else acc
         cacheOptByref &modulesByDemangledNameCache (fun () -> 
-            QueueList.foldBack add entities Map.empty)
+            CachedDList.foldBack add entities Map.empty)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member mtyp.DebugText = mtyp.ToString()
@@ -6041,7 +6041,7 @@ type Construct() =
 
     /// Create a new node for the contents of a module or namespace
     static member NewModuleOrNamespaceType mkind tycons vals = 
-        ModuleOrNamespaceType(mkind, QueueList.ofList vals, QueueList.ofList tycons)
+        ModuleOrNamespaceType(mkind, CachedDList.ofList vals, CachedDList.ofList tycons)
 
     /// Create a new node for an empty module or namespace contents
     static member NewEmptyModuleOrNamespaceType mkind = 
@@ -6129,7 +6129,7 @@ type Construct() =
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_type = MaybeLazy.Lazy(InterruptibleLazy(fun _ -> ModuleOrNamespaceType(Namespace true, QueueList.ofList [], QueueList.ofList [])))
+            entity_modul_type = MaybeLazy.Lazy(InterruptibleLazy(fun _ -> ModuleOrNamespaceType(Namespace true, CachedDList.ofList [], CachedDList.ofList [])))
             // Generated types get internal accessibility
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
