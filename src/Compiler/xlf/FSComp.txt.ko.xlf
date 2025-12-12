@@ -997,6 +997,11 @@
         <target state="translated">잘못된 참조 어셈블리 경로'</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsLangVersionOutOfSupport">
+        <source>Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</source>
+        <target state="new">Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
         <target state="translated">포함된 최적화 정보를 지정합니다. 기본값은 파일입니다. 분산 라이브러리에 중요합니다.</target>

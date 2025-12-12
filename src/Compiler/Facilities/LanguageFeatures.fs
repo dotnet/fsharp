@@ -291,10 +291,17 @@ type LanguageVersion(versionText) =
     /// Has preview been explicitly specified
     member _.IsPreviewEnabled = specified = previewVersion
 
-    /// Does the languageVersion support this version string
+    /// Is the selected LanguageVersion valid
     static member ContainsVersion version =
         let langVersion = getVersionFromString version
         langVersion <> 0m && languageVersions.Contains langVersion
+
+    /// Is the selected LanguageVersion currently supported
+    static member IsVersionSupported version =
+        let langVersion = getVersionFromString version
+
+        langVersion >= languageVersion80
+        || System.Environment.GetEnvironmentVariable("SKIP_VERSION_SUPPORTED_CHECK") = "1"
 
     /// Get a list of valid strings for help text
     static member ValidOptions = validOptions

@@ -1142,6 +1142,8 @@ let setLanguageVersion (specifiedVersion: string) =
         ()
     elif not (LanguageVersion.ContainsVersion specifiedVersion) then
         error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+    elif not (LanguageVersion.IsVersionSupported specifiedVersion) then
+        error (Error(FSComp.SR.optsLangVersionOutOfSupport (specifiedVersion, "10.0"), rangeCmdArgs))
 
     LanguageVersion(specifiedVersion)
 

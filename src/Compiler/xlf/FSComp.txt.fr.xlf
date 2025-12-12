@@ -997,6 +997,11 @@
         <target state="translated">Chemin d'assemblage de référence non valide'</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsLangVersionOutOfSupport">
+        <source>Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</source>
+        <target state="new">Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
         <target state="translated">Spécifiez les informations d’optimisation incluses, la valeur par défaut est le fichier. Important pour les bibliothèques distribuées.</target>
