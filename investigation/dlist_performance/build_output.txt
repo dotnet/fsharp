@@ -1,0 +1,29 @@
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:22.32
+	Command being timed: "dotnet build -c Release -v quiet --property:FSharpCompilerToolsDir=/home/runner/work/fsharp/fsharp/artifacts/bin/fsc/Release/net10.0"
+	User time (seconds): 25.89
+	System time (seconds): 2.29
+	Percent of CPU this job got: 123%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:22.75
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1468760
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 646
+	Minor (reclaiming a frame) page faults: 632297
+	Voluntary context switches: 10321
+	Involuntary context switches: 2228
+	Swaps: 0
+	File system inputs: 154984
+	File system outputs: 43856
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
