@@ -267,6 +267,7 @@ stages:
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
+              SKIP_VERSION_SUPPORTED_CHECK: 1
             displayName: Build
 
           - task: PublishTestResults@2
