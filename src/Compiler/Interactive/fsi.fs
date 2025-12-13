@@ -2131,7 +2131,8 @@ type internal FsiDynamicCompiler
         if tcConfig.printAst then
             for input in declaredImpls do
                 fprintfn fsiConsoleOutput.Out "AST:"
-                fprintfn fsiConsoleOutput.Out "%+A" input
+                let layout = DebugPrint.implFileL input
+                fprintfn fsiConsoleOutput.Out "%s" (LayoutRender.showL layout)
 #endif
 
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
