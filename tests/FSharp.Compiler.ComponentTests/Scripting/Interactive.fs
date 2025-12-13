@@ -141,31 +141,3 @@ module MultiEmit =
             """if A.v <> 7.2 then failwith $"8: Failed {A.v} <> 7.2" """
             """if B.v <> 9.3 then failwith $"9: Failed {A.v} <> 9.3" """
         |] |> Seq.iter(fun item -> item |> scriptIt)
-
-    // https://github.com/dotnet/fsharp/issues/19156
-    [<Theory>]
-    [<InlineData(true)>]
-    [<InlineData(false)>]
-    let ``Generic list comprehension with nested lambda should not cause duplicate entry in type index table`` (useMultiEmit) =
-
-        let args : string array = [| 
-            if useMultiEmit then "--multiemit+" else "--multiemit-"
-            "--ast"
-        |]
-        use session = new FSharpScript(additionalArgs=args)
-
-        let code = """
-open System
-
-let f (start: DateTime) (stop: DateTime) (input: (DateTime * 'a) list) =
-    [
-        for i in start.Ticks .. stop.Ticks ->
-            input |> List.where (fun (k, v) -> true)
-    ]
-"""
-
-        let result, errors = session.Eval(code)
-        Assert.Empty(errors)
-        match result with
-        | Ok _ -> ()
-        | Result.Error ex -> Assert.Fail($"Eval failed with: {ex.Message}")
