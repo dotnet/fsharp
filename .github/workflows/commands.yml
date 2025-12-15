@@ -5,7 +5,37 @@ on:
     types: [created]
 
 jobs:
+  authorize_commenter:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
+    steps:
+      - name: Check commenter write access
+        id: check
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const actor = context.payload.comment.user.login;
+            const repo_owner = context.payload.repository.owner.login;
+            const repo_name = context.payload.repository.name;
+            try {
+              const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: repo_owner,
+                repo: repo_name,
+                username: actor
+              });
+              const allowed = ['admin', 'write'].includes(permission.permission);
+              core.setOutput('allowed', allowed ? 'true' : 'false');
+            } catch (e) {
+              core.setOutput('allowed', 'false');
+            }
+
   parsing_job:
+    needs: authorize_commenter
     runs-on: ubuntu-latest
     permissions:
       issues: write  # Allow adding a reaction via the comment-pipeline
@@ -13,7 +43,7 @@ jobs:
     outputs:
       command: ${{ steps.parse.outputs.command }}
       arg: ${{ steps.parse.outputs.arguments }}
-    if: github.event.issue.pull_request
+    if: needs.authorize_commenter.outputs.allowed == 'true' && github.event.issue.pull_request
     steps:
       - name: Parse comment
         id: parse
@@ -27,13 +57,13 @@ jobs:
             /run test-baseline
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-  # This second job by definiton runs user-supplied code - you must NOT elevate its permissions to `write`
-  # Malicious code could change nuget source URL, build targets or even compiler itself to pass a GH token
-  # And use it to create branches, spam issues etc. Any write-actions happen in the second job, which does not allow
-  # user extension points (i.e. plain scripts, must NOT run scripts from within checked-out code)
+  # This second job by definition runs user-supplied code - you must NOT elevate its permissions to `write`
   run-parsed-command:
     needs: parsing_job
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     if: needs.parsing_job.outputs.command != ''
     steps:
 
@@ -130,6 +160,19 @@ jobs:
           echo "run_step_outcome=$run_step_outcome" >> $GITHUB_OUTPUT
           echo "hasPatch=$hasPatch" >> $GITHUB_OUTPUT
 
+      - name: Validate patch paths
+        if: ${{ steps.read-meta.outputs.run_step_outcome == 'success' && steps.read-meta.outputs.hasPatch == 'true' }}
+        run: |
+          # Forbid any .git* paths anywhere
+          if grep -E '^(\+\+\+|---) ' repo.patch | grep -E '(^|/)\.git(/|$)|(^|/)\.git'; then
+            echo "Patch touches .git paths; aborting"; exit 1
+          fi
+
+          # Allow only top-level src/, tests/, vsintegration/ changes
+          if grep -E '^(\+\+\+|---) ' repo.patch | grep -Ev '^(---|\+\+\+) (a|b)/(src|tests|vsintegration)/' | grep -E '^(---|\+\+\+) '; then
+            echo "Patch touches files outside allowed directories (src/tests/vsintegration); aborting"; exit 1
+          fi
+
       - name: Apply and push patch
         if: ${{ steps.read-meta.outputs.run_step_outcome == 'success' && steps.read-meta.outputs.hasPatch == 'true' }}
         run: |
@@ -141,7 +184,6 @@ jobs:
           branch=$(git rev-parse --abbrev-ref HEAD)
           echo "Pushing to origin $branch"
           git push origin HEAD:"$branch"
-
 
       - name: Count stats
         id: stats
@@ -189,8 +231,6 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ env.PR_NUMBER }}
         run: |
-          # Use gh CLI to comment with multi-line markdown
           gh pr comment ${{ github.event.issue.number }} \
             --body-file pr_report.md
