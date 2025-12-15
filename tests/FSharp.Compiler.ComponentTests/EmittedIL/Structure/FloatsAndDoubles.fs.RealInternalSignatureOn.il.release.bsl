@@ -170,10 +170,11 @@
       IL_0036:  ldloc.2
       IL_0037:  ldloc.3
       IL_0038:  ldloc.s    V_4
-      IL_003a:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [runtime]System.Collections.IComparer,
+      IL_003a:  tail.
+      IL_003c:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [runtime]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
-      IL_003f:  ret
+      IL_0041:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -484,10 +485,11 @@
       IL_0036:  ldloc.2
       IL_0037:  ldloc.3
       IL_0038:  ldloc.s    V_4
-      IL_003a:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [runtime]System.Collections.IComparer,
+      IL_003a:  tail.
+      IL_003c:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [runtime]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
-      IL_003f:  ret
+      IL_0041:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
