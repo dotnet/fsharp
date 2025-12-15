@@ -2,9 +2,6 @@
 
 module FsLexYacc.FsYacc.AST
 
-#nowarn "62" // This construct is for ML compatibility.
-
-
 open System
 open System.Collections.Generic
 open Printf
