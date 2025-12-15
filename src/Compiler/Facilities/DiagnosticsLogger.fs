@@ -465,11 +465,7 @@ module DiagnosticsLoggerExtensions =
             | ReportedError _ ->
                 PreserveStackTrace exn
                 raise exn
-            | _ ->
-                let diagnostic =
-                    PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase, severity)
-
-                x.DiagnosticSink(diagnostic)
+            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase, severity))
 
         member x.ErrorR exn =
             x.EmitDiagnostic(exn, FSharpDiagnosticSeverity.Error)
@@ -629,7 +625,7 @@ let suppressErrorReporting f =
     try
         let diagnosticsLogger =
             { new DiagnosticsLogger("suppressErrorReporting") with
-                member _.DiagnosticSink(_diagnosticWithSeverity) = ()
+                member _.DiagnosticSink(_diagnostic) = ()
                 member _.ErrorCount = 0
             }
 
