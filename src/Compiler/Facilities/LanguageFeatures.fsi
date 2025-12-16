@@ -115,6 +115,9 @@ type LanguageVersion =
     /// Does the selected LanguageVersion support the specified feature
     member SupportsFeature: LanguageFeature -> bool
 
+    /// Set the disabled features for this language version
+    member SetDisabledFeatures: Set<LanguageFeature> -> unit
+
     /// Get the list of valid versions
     static member ValidVersions: string[]
 

@@ -279,11 +279,19 @@ type LanguageVersion(versionText) =
 
     let specifiedString = versionToString specified
 
+    let mutable disabledFeatures: Set<LanguageFeature> = Set.empty
+
     /// Check if this feature is supported by the selected langversion
     member _.SupportsFeature featureId =
-        match features.TryGetValue featureId with
-        | true, v -> v <= specified
-        | false, _ -> false
+        if disabledFeatures.Contains featureId then
+            false
+        else
+            match features.TryGetValue featureId with
+            | true, v -> v <= specified
+            | false, _ -> false
+
+    /// Set the disabled features for this language version
+    member _.SetDisabledFeatures(disabled: Set<LanguageFeature>) = disabledFeatures <- disabled
 
     /// Has preview been explicitly specified
     member _.IsExplicitlySpecifiedAs50OrBefore() =
