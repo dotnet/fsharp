@@ -11225,13 +11225,16 @@ let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, 
         | RangeCount.PossiblyOversize calc ->
             calc (fun count wouldOvf ->
                 buildLoop count (fun mkBody ->
+                    // mkBody creates expressions that may contain lambdas with unique stamps.
+                    // We need to copy the expression for the second branch to avoid duplicate type names.
+                    let mkBodyCopied idxVar loopVar = copyExpr g CloneAll (mkBody idxVar loopVar)
                     mkCond
                         DebugPointAtBinding.NoneAtInvisible
                         mIn
                         g.unit_ty
                         wouldOvf
                         (mkCountUpInclusive mkBody (tyOfExpr g count))
-                        (mkCompGenLetIn mIn (nameof count) (tyOfExpr g count) count (fun (_, count) -> mkCountUpExclusive mkBody count))))
+                        (mkCompGenLetIn mIn (nameof count) (tyOfExpr g count) count (fun (_, count) -> mkCountUpExclusive mkBodyCopied count))))
     )
 
 let mkDebugPoint m expr = 
