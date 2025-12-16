@@ -19,3 +19,37 @@ type TestItemSeq =
         |> compile
         |> withErrorCodes [39]
         |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19156
+    [<Fact>]
+    let ``Generic list comprehension with nested lambda should not cause duplicate entry in type index table``() =
+        FSharp """
+module Test
+open System
+
+let f (start: DateTime) (stop: DateTime) (input: (DateTime * 'a) list) =
+    [
+        for i in start.Ticks .. stop.Ticks ->
+            input |> List.where (fun (k, v) -> true)
+    ]
+        """
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19156
+    [<Fact>]
+    let ``Generic array comprehension with nested lambda should not cause duplicate entry in type index table``() =
+        FSharp """
+module Test
+open System
+
+let f (start: DateTime) (stop: DateTime) (input: (DateTime * 'a) list) =
+    [|
+        for i in start.Ticks .. stop.Ticks ->
+            input |> List.where (fun (k, v) -> true)
+    |]
+        """
+        |> compile
+        |> shouldSucceed
+        |> ignore
