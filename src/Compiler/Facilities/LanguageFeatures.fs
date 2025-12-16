@@ -425,7 +425,7 @@ type LanguageVersion(versionText) =
     /// Try to parse a feature name string to a LanguageFeature option
     static member TryParseFeature(featureName: string) =
         let normalized = featureName.Trim().ToLowerInvariant()
-        
+
         match normalized with
         | "singleunderscorepattern" -> Some LanguageFeature.SingleUnderscorePattern
         | "wildcardinforloop" -> Some LanguageFeature.WildCardInForLoop
@@ -496,11 +496,13 @@ type LanguageVersion(versionText) =
         | "preferextensionmethodoverplainproperty" -> Some LanguageFeature.PreferExtensionMethodOverPlainProperty
         | "warningindexedpropertiesgetsetsametype" -> Some LanguageFeature.WarningIndexedPropertiesGetSetSameType
         | "warningwhentailcallattrononrec" -> Some LanguageFeature.WarningWhenTailCallAttrOnNonRec
-        | "booleanreturningandreturntypedirectedpartialactivepattern" -> Some LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern
+        | "booleanreturningandreturntypedirectedpartialactivepattern" ->
+            Some LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern
         | "enforceattributetargets" -> Some LanguageFeature.EnforceAttributeTargets
         | "lowerinterpolatedstringtoconcat" -> Some LanguageFeature.LowerInterpolatedStringToConcat
         | "lowerintegralrangestofastloops" -> Some LanguageFeature.LowerIntegralRangesToFastLoops
-        | "allowaccessmodifierstautopropertiesgettersandsetters" -> Some LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
+        | "allowaccessmodifierstautopropertiesgettersandsetters" ->
+            Some LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
         | "lowersimplemappingsincomprehensionstofastloops" -> Some LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops
         | "parsedhashdirectiveargumentnonquotes" -> Some LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
         | "emptybodiedcomputationexpressions" -> Some LanguageFeature.EmptyBodiedComputationExpressions

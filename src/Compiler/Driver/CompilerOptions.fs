@@ -1188,11 +1188,8 @@ let languageFlags tcConfigB =
             tagString,
             OptionStringList(fun featureName ->
                 match LanguageVersion.TryParseFeature(featureName) with
-                | Some feature ->
-                    tcConfigB.disabledLanguageFeatures <- tcConfigB.disabledLanguageFeatures.Add(feature)
-                | None ->
-                    error (Error(FSComp.SR.optsUnrecognizedLanguageFeature featureName, rangeCmdArgs))
-            ),
+                | Some feature -> tcConfigB.disabledLanguageFeatures <- tcConfigB.disabledLanguageFeatures.Add(feature)
+                | None -> error (Error(FSComp.SR.optsUnrecognizedLanguageFeature featureName, rangeCmdArgs))),
             None,
             Some(FSComp.SR.optsDisableLanguageFeature ())
         )

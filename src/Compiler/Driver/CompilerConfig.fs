@@ -988,7 +988,7 @@ type TcConfigBuilder =
                 }
 
     member tcConfigB.SupportsFeature(feature: LanguageFeature) =
-        tcConfigB.langVersion.SupportsFeature(feature) 
+        tcConfigB.langVersion.SupportsFeature(feature)
         && not (tcConfigB.disabledLanguageFeatures.Contains(feature))
 
     member tcConfigB.AddIncludePath(m, path, pathIncludedFrom) =
