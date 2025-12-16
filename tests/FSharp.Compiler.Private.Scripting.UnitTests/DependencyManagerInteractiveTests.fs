@@ -39,7 +39,7 @@ type DependencyManagerInteractiveTests() =
     let getErrors ((_value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
         errors
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``SmokeTest - #r nuget``() =
         let text = """
 #r @"nuget:Newtonsoft.Json, Version=9.0.1"
@@ -50,7 +50,7 @@ type DependencyManagerInteractiveTests() =
         Assert.Equal(typeof<int>, value.ReflectionType)
         Assert.Equal(0, value.ReflectionValue :?> int)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``SmokeTest - #r nuget package not found``() =
         let text = """
 #r @"nuget:System.Collections.Immutable.DoesNotExist, version=1.5.0"
@@ -259,7 +259,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
         ()
 
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
         // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
@@ -358,7 +358,7 @@ printfn ""%A"" result
         let value = opt.Value
         Assert.Equal(123, value.ReflectionValue :?> int32)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Use NativeResolver to resolve native dlls.``() =
         // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
@@ -442,7 +442,7 @@ printfn ""%A"" result
         let value = opt.Value
         Assert.Equal(123, value.ReflectionValue :?> int32)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Use AssemblyResolver to resolve assemblies``() =
         // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then

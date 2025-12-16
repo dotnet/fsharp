@@ -32,6 +32,7 @@
     <Compile Include="TestFramework.fs" />
     <Compile Include="ILChecker.fs" />
     <Compile Include="Utilities.fs" />
+    <Compile Include="VSInstallDiscovery.fs" />
     <Compile Include="CompilerAssert.fs" />
     <Compile Include="ProjectGeneration.fs" />
     <Compile Include="Assert.fs" />
@@ -93,6 +94,7 @@
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
+    <InternalsVisibleTo Include="FSharp.Editor.Tests" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != '$(FSharpNetCoreProductTargetFramework)'">
@@ -100,7 +102,8 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
   </ItemGroup>
 <PropertyGroup>
- <NoWarn>$(NoWarn);NU1510</NoWarn> <!-- NU1510: Project is explicitly referencing the runtime assembly 'System.Collections.Immutable', however, if we remove it, it tries to find it on the wrong path. Also, local NoWarn does not help - This is just me trying to enforce it -->
+ <NoWarn>$(NoWarn);NU1510;44</NoWarn> <!-- NU1510: Project is explicitly referencing the runtime assembly 'System.Collections.Immutable', however, if we remove it, it tries to find it on the wrong path. Also, local NoWarn does not help - This is just me trying to enforce it -->
+ <!-- 44: AssemblyName.CodeBase is deprecated but needed for assembly resolution in VS integration tests -->
 </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" GeneratePathProperty="true"  />
