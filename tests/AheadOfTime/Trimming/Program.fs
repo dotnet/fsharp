@@ -8262,7 +8262,7 @@ let func7000()=
     test "test7935" (lazy(sprintf "%+0G" -10.0M)) "-10"
     test "test7936" (lazy(sprintf "%+05G" -10.0M)) "-0010"//  "00-10"
     test "test7937" (lazy(sprintf "%+01G" -10.0M)) "-10"
-    test "test7938" (lazy(sprintf "%+0*G" 7 -10.0M)) "-000010"/// "0000-10"
+    test "test7938" (lazy(sprintf "%+0*G" 7 -10.0M)) "-000010"// "0000-10"
     test "test7939" (lazy(sprintf "%+0.5G" -10.0M)) "-10"
     test "test7940" (lazy(sprintf "%+0.*G" 4 -10.0M)) "-10"
     test "test7941" (lazy(sprintf "%+0*.*G" 5 4 -10.0M)) "-0010"// "00-10"
