@@ -512,7 +512,7 @@ type TcConfigBuilder =
 
         mutable langVersion: LanguageVersion
 
-        mutable disabledLanguageFeatures: Set<LanguageFeature>
+        mutable disabledLanguageFeatures: LanguageFeature array
 
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 

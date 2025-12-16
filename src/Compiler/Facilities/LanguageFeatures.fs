@@ -107,7 +107,7 @@ type LanguageFeature =
     | ReturnFromFinal
 
 /// LanguageVersion management
-type LanguageVersion(versionText) =
+type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
 
     // When we increment language versions here preview is higher than current RTM version
     static let languageVersion46 = 4.6m
@@ -279,19 +279,19 @@ type LanguageVersion(versionText) =
 
     let specifiedString = versionToString specified
 
-    let mutable disabledFeatures: Set<LanguageFeature> = Set.empty
+    let disabledFeatures: LanguageFeature array = defaultArg disabledFeaturesArray [||]
 
     /// Check if this feature is supported by the selected langversion
     member _.SupportsFeature featureId =
-        if disabledFeatures.Contains featureId then
+        if Array.contains featureId disabledFeatures then
             false
         else
             match features.TryGetValue featureId with
             | true, v -> v <= specified
             | false, _ -> false
 
-    /// Set the disabled features for this language version
-    member _.SetDisabledFeatures(disabled: Set<LanguageFeature>) = disabledFeatures <- disabled
+    /// Create a new LanguageVersion with updated disabled features
+    member _.WithDisabledFeatures(disabled: LanguageFeature array) = LanguageVersion(versionText, disabled)
 
     /// Has preview been explicitly specified
     member _.IsExplicitlySpecifiedAs50OrBefore() =
@@ -430,103 +430,17 @@ type LanguageVersion(versionText) =
         | true, v -> versionToString v
         | _ -> invalidArg "feature" "Internal error: Unable to find feature."
 
-    /// Try to parse a feature name string to a LanguageFeature option
+    /// Try to parse a feature name string to a LanguageFeature option using reflection
     static member TryParseFeature(featureName: string) =
-        let normalized = featureName.Trim().ToLowerInvariant()
+        let normalized = featureName.Trim()
 
-        match normalized with
-        | "singleunderscorepattern" -> Some LanguageFeature.SingleUnderscorePattern
-        | "wildcardinforloop" -> Some LanguageFeature.WildCardInForLoop
-        | "relaxwhitespace" -> Some LanguageFeature.RelaxWhitespace
-        | "relaxwhitespace2" -> Some LanguageFeature.RelaxWhitespace2
-        | "strictindentation" -> Some LanguageFeature.StrictIndentation
-        | "nameof" -> Some LanguageFeature.NameOf
-        | "implicityield" -> Some LanguageFeature.ImplicitYield
-        | "opentypedeclaration" -> Some LanguageFeature.OpenTypeDeclaration
-        | "dotlessfloat32literal" -> Some LanguageFeature.DotlessFloat32Literal
-        | "packagemanagement" -> Some LanguageFeature.PackageManagement
-        | "fromendslicing" -> Some LanguageFeature.FromEndSlicing
-        | "fixedindexslice3d4d" -> Some LanguageFeature.FixedIndexSlice3d4d
-        | "andbang" -> Some LanguageFeature.AndBang
-        | "resumablestatemachines" -> Some LanguageFeature.ResumableStateMachines
-        | "nullableoptionalinterop" -> Some LanguageFeature.NullableOptionalInterop
-        | "defaultinterfacememberconsumption" -> Some LanguageFeature.DefaultInterfaceMemberConsumption
-        | "witnesspassing" -> Some LanguageFeature.WitnessPassing
-        | "additionaltypedirectedconversions" -> Some LanguageFeature.AdditionalTypeDirectedConversions
-        | "interfaceswithmultiplegenericinstantiation" -> Some LanguageFeature.InterfacesWithMultipleGenericInstantiation
-        | "stringinterpolation" -> Some LanguageFeature.StringInterpolation
-        | "overloadsforcustomoperations" -> Some LanguageFeature.OverloadsForCustomOperations
-        | "expandedmeasurables" -> Some LanguageFeature.ExpandedMeasurables
-        | "nullnesschecking" -> Some LanguageFeature.NullnessChecking
-        | "structactivepattern" -> Some LanguageFeature.StructActivePattern
-        | "printfbinaryformat" -> Some LanguageFeature.PrintfBinaryFormat
-        | "indexernotationwithoutdot" -> Some LanguageFeature.IndexerNotationWithoutDot
-        | "refcellnotationinformationals" -> Some LanguageFeature.RefCellNotationInformationals
-        | "usebindingvaluediscard" -> Some LanguageFeature.UseBindingValueDiscard
-        | "unionispropertiesvisible" -> Some LanguageFeature.UnionIsPropertiesVisible
-        | "nonvariablepatternstorightofaspatterns" -> Some LanguageFeature.NonVariablePatternsToRightOfAsPatterns
-        | "attributestorightofmodulekeyword" -> Some LanguageFeature.AttributesToRightOfModuleKeyword
-        | "mlcompatrevisions" -> Some LanguageFeature.MLCompatRevisions
-        | "betterexceptionprinting" -> Some LanguageFeature.BetterExceptionPrinting
-        | "delegatetypenameresolutionfix" -> Some LanguageFeature.DelegateTypeNameResolutionFix
-        | "reallylonglists" -> Some LanguageFeature.ReallyLongLists
-        | "errorondeprecatedrequirequalifiedaccess" -> Some LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess
-        | "requiredpropertiessupport" -> Some LanguageFeature.RequiredPropertiesSupport
-        | "initpropertiessupport" -> Some LanguageFeature.InitPropertiesSupport
-        | "lowercaseduwhenrequirequalifiedaccess" -> Some LanguageFeature.LowercaseDUWhenRequireQualifiedAccess
-        | "interfaceswithabstractstaticmembers" -> Some LanguageFeature.InterfacesWithAbstractStaticMembers
-        | "selftypeconstraints" -> Some LanguageFeature.SelfTypeConstraints
-        | "accessorfunctionshorthand" -> Some LanguageFeature.AccessorFunctionShorthand
-        | "matchnotallowedforunioncasewithnodata" -> Some LanguageFeature.MatchNotAllowedForUnionCaseWithNoData
-        | "csharpextensionattributenotrequired" -> Some LanguageFeature.CSharpExtensionAttributeNotRequired
-        | "errorfornonvirtualmembersoverrides" -> Some LanguageFeature.ErrorForNonVirtualMembersOverrides
-        | "warningwheninliningmethodimplnoinlinemarkedfunction" -> Some LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction
-        | "escapedotnetformattablestrings" -> Some LanguageFeature.EscapeDotnetFormattableStrings
-        | "arithmeticinliterals" -> Some LanguageFeature.ArithmeticInLiterals
-        | "errorreportingonstaticclasses" -> Some LanguageFeature.ErrorReportingOnStaticClasses
-        | "trywithinseqexpression" -> Some LanguageFeature.TryWithInSeqExpression
-        | "warningwhencopyandupdaterecordchangesallfields" -> Some LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields
-        | "staticmembersininterfaces" -> Some LanguageFeature.StaticMembersInInterfaces
-        | "noninlineliteralsasprintfformat" -> Some LanguageFeature.NonInlineLiteralsAsPrintfFormat
-        | "nestedcopyandupdate" -> Some LanguageFeature.NestedCopyAndUpdate
-        | "extendedstringinterpolation" -> Some LanguageFeature.ExtendedStringInterpolation
-        | "warningwhenmultiplerecdtypechoice" -> Some LanguageFeature.WarningWhenMultipleRecdTypeChoice
-        | "improvedimpliedargumentnames" -> Some LanguageFeature.ImprovedImpliedArgumentNames
-        | "diagnosticforobjinference" -> Some LanguageFeature.DiagnosticForObjInference
-        | "constraintintersectiononflexibletypes" -> Some LanguageFeature.ConstraintIntersectionOnFlexibleTypes
-        | "staticletinrecordsdustemptypes" -> Some LanguageFeature.StaticLetInRecordsDusEmptyTypes
-        | "warningwhentailrecattributebutnontailrecusage" -> Some LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage
-        | "unmanagedconstraintcsharpinterop" -> Some LanguageFeature.UnmanagedConstraintCsharpInterop
-        | "whilebang" -> Some LanguageFeature.WhileBang
-        | "reusesamefieldssinstructunions" -> Some LanguageFeature.ReuseSameFieldsInStructUnions
-        | "extendedfixedbindings" -> Some LanguageFeature.ExtendedFixedBindings
-        | "preferstringgetpinnablereference" -> Some LanguageFeature.PreferStringGetPinnableReference
-        | "preferextensionmethodoverplainproperty" -> Some LanguageFeature.PreferExtensionMethodOverPlainProperty
-        | "warningindexedpropertiesgetsetsametype" -> Some LanguageFeature.WarningIndexedPropertiesGetSetSameType
-        | "warningwhentailcallattrononrec" -> Some LanguageFeature.WarningWhenTailCallAttrOnNonRec
-        | "booleanreturningandreturntypedirectedpartialactivepattern" ->
-            Some LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern
-        | "enforceattributetargets" -> Some LanguageFeature.EnforceAttributeTargets
-        | "lowerinterpolatedstringtoconcat" -> Some LanguageFeature.LowerInterpolatedStringToConcat
-        | "lowerintegralrangestofastloops" -> Some LanguageFeature.LowerIntegralRangesToFastLoops
-        | "allowaccessmodifierstautopropertiesgettersandsetters" ->
-            Some LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
-        | "lowersimplemappingsincomprehensionstofastloops" -> Some LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops
-        | "parsedhashdirectiveargumentnonquotes" -> Some LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
-        | "emptybodiedcomputationexpressions" -> Some LanguageFeature.EmptyBodiedComputationExpressions
-        | "allowobjectexpressionwithoutoverrides" -> Some LanguageFeature.AllowObjectExpressionWithoutOverrides
-        | "dontwarnunuppercaseidentifiersinbindingpatterns" -> Some LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns
-        | "usetypesubsumptioncache" -> Some LanguageFeature.UseTypeSubsumptionCache
-        | "deprecateplaceswheresecanbemitted" -> Some LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted
-        | "supportvalueoptionsasoptionalparameters" -> Some LanguageFeature.SupportValueOptionsAsOptionalParameters
-        | "warnwhenunitpassedtoobjarg" -> Some LanguageFeature.WarnWhenUnitPassedToObjArg
-        | "usebangbindingvaluediscard" -> Some LanguageFeature.UseBangBindingValueDiscard
-        | "betteranonymousrecordparsing" -> Some LanguageFeature.BetterAnonymousRecordParsing
-        | "scopednowarn" -> Some LanguageFeature.ScopedNowarn
-        | "erroroninvaliddeclsintypedefinitions" -> Some LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions
-        | "allowtypedletuseandbang" -> Some LanguageFeature.AllowTypedLetUseAndBang
-        | "returnfromfinal" -> Some LanguageFeature.ReturnFromFinal
-        | _ -> None
+        Microsoft.FSharp.Reflection.FSharpType.GetUnionCases(
+            typeof<LanguageFeature>,
+            System.Reflection.BindingFlags.Public
+            ||| System.Reflection.BindingFlags.NonPublic
+        )
+        |> Array.tryFind (fun case -> System.String.Equals(case.Name, normalized, System.StringComparison.OrdinalIgnoreCase))
+        |> Option.map (fun case -> Microsoft.FSharp.Reflection.FSharpValue.MakeUnion(case, [||]) :?> LanguageFeature)
 
     override x.Equals(yobj: obj) =
         match yobj with

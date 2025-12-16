@@ -644,7 +644,7 @@ type TcConfigBuilder =
 
         mutable langVersion: LanguageVersion
 
-        mutable disabledLanguageFeatures: Set<LanguageFeature>
+        mutable disabledLanguageFeatures: LanguageFeature array
 
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
@@ -838,7 +838,7 @@ type TcConfigBuilder =
             pathMap = PathMap.empty
             applyLineDirectives = true
             langVersion = LanguageVersion.Default
-            disabledLanguageFeatures = Set.empty
+            disabledLanguageFeatures = [||]
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
             reduceMemoryUsage = reduceMemoryUsage

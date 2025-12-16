@@ -9,13 +9,12 @@ open FSharp.Test.Compiler
 module disableLanguageFeature =
 
     [<Fact>]
-    let ``disableLanguageFeature with valid feature name should compile successfully``() =
+    let ``disableLanguageFeature with valid feature name should typecheck successfully``() =
         FSharp """
 printfn "Hello, World"
         """
-        |> asExe
         |> withOptions ["--disableLanguageFeature:NameOf"]
-        |> compile
+        |> typecheck
         |> shouldSucceed
         |> ignore
 
@@ -25,10 +24,11 @@ printfn "Hello, World"
 let x = 5
 let name = nameof(x)
         """
-        |> asExe
         |> withOptions ["--langversion:latest"; "--disableLanguageFeature:NameOf"]
-        |> compile
+        |> typecheck
         |> shouldFail
+        |> withErrorCode 39
+        |> withDiagnosticMessageMatches "The value or constructor 'nameof' is not defined"
         |> ignore
 
     [<Fact>]
@@ -36,9 +36,8 @@ let name = nameof(x)
         FSharp """
 printfn "Hello, World"
         """
-        |> asExe
         |> withOptions ["--disableLanguageFeature:InvalidFeatureName"]
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withErrorCode 3879
         |> withDiagnosticMessageMatches "Unrecognized language feature name"
@@ -50,10 +49,10 @@ printfn "Hello, World"
 let x = 5
 let name = nameof(x)
         """
-        |> asExe
         |> withOptions ["--langversion:latest"; "--disableLanguageFeature:NameOf"; "--disableLanguageFeature:StringInterpolation"]
-        |> compile
+        |> typecheck
         |> shouldFail
+        |> withErrorCode 39
         |> ignore
 
     [<Fact>]
@@ -62,8 +61,8 @@ let name = nameof(x)
 let x = 5
 let name = nameof(x)
         """
-        |> asExe
         |> withOptions ["--langversion:latest"; "--disableLanguageFeature:nameof"]
-        |> compile
+        |> typecheck
         |> shouldFail
+        |> withErrorCode 39
         |> ignore
