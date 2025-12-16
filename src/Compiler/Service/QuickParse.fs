@@ -97,7 +97,7 @@ module QuickParse =
                     && (index + 1 < lineStr.Length)
                     && IsIdentifierPartCharacter lineStr[index + 1]
                     ->
-                    Some (index + 1)
+                    Some(index + 1)
                 | _ -> None // not on a word or '.'
 
             let (|Char|_|) p =
