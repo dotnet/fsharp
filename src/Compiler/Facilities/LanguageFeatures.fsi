@@ -136,4 +136,7 @@ type LanguageVersion =
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString: feature: LanguageFeature -> string
 
+    /// Try to parse a feature name string to a LanguageFeature option
+    static member TryParseFeature: featureName: string -> LanguageFeature option
+
     static member Default: LanguageVersion

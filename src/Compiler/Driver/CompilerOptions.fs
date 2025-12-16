@@ -1182,6 +1182,21 @@ let languageFlags tcConfigB =
             Some(FSComp.SR.optsSetLangVersion ())
         )
 
+        // -disableLanguageFeature:<string>  Disable a specific language feature by name (repeatable)
+        CompilerOption(
+            "disableLanguageFeature",
+            tagString,
+            OptionStringList(fun featureName ->
+                match LanguageVersion.TryParseFeature(featureName) with
+                | Some feature ->
+                    tcConfigB.disabledLanguageFeatures <- tcConfigB.disabledLanguageFeatures.Add(feature)
+                | None ->
+                    error (Error(FSComp.SR.optsUnrecognizedLanguageFeature featureName, rangeCmdArgs))
+            ),
+            None,
+            Some(FSComp.SR.optsDisableLanguageFeature ())
+        )
+
         CompilerOption(
             "checked",
             tagNone,

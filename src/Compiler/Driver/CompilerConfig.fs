@@ -644,6 +644,8 @@ type TcConfigBuilder =
 
         mutable langVersion: LanguageVersion
 
+        mutable disabledLanguageFeatures: Set<LanguageFeature>
+
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
@@ -836,6 +838,7 @@ type TcConfigBuilder =
             pathMap = PathMap.empty
             applyLineDirectives = true
             langVersion = LanguageVersion.Default
+            disabledLanguageFeatures = Set.empty
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
             reduceMemoryUsage = reduceMemoryUsage
@@ -983,6 +986,10 @@ type TcConfigBuilder =
                 { tcConfigB.diagnosticsOptions with
                     WarnOn = ListSet.insert (=) n tcConfigB.diagnosticsOptions.WarnOn
                 }
+
+    member tcConfigB.SupportsFeature(feature: LanguageFeature) =
+        tcConfigB.langVersion.SupportsFeature(feature) 
+        && not (tcConfigB.disabledLanguageFeatures.Contains(feature))
 
     member tcConfigB.AddIncludePath(m, path, pathIncludedFrom) =
         let absolutePath = ComputeMakePathAbsolute pathIncludedFrom path

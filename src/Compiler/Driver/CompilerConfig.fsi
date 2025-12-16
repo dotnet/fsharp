@@ -512,6 +512,8 @@ type TcConfigBuilder =
 
         mutable langVersion: LanguageVersion
 
+        mutable disabledLanguageFeatures: Set<LanguageFeature>
+
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
@@ -547,6 +549,8 @@ type TcConfigBuilder =
     member TurnWarningOff: range * string -> unit
 
     member TurnWarningOn: range * string -> unit
+
+    member SupportsFeature: LanguageFeature -> bool
 
     member AddIncludePath: range * string * string -> unit
 
