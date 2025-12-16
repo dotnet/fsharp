@@ -12,9 +12,6 @@
 
   <ItemGroup>
     <Compile Include="BasicProvider.Tests.fs" />
-    <None Include="xunit.runner.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <Content Include="$(MSBuildProjectDirectory)\**\*.*"
              Exclude="$(MSBuildProjectDirectory)\bin\**\*.*;$(MSBuildProjectDirectory)\obj\**\*.*;$(MSBuildProjectDirectory)\FSharp.Core\SampleTuples\**\*.*;$(MSBuildProjectDirectory)\Directory.Build.props;$(MSBuildProjectDirectory)\Directory.Build.targets;">
         <Pack>true</Pack>

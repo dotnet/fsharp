@@ -7,16 +7,10 @@
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
-  <!-- Do it the same way .NET Interactive does it, when skipping arcade, we should include test SDK explicitly -->
-  <ItemGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.Test.Utilities')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(DISABLE_ARCADE)' == 'true'">
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkVersion)" />
-  </ItemGroup>
-
   <!-- xUnit3 and Microsoft.TestPlatform packages for all test projects (except Test.Utilities which is a library) -->
   <ItemGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(ExcludeFromTestPackageReferences)' != 'true'">
     <PackageReference Include="xunit.v3" Version="$(XunitVersion)" />
     <PackageReference Include="xunit.v3.runner.console" Version="$(XunitRunnerConsoleVersion)" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)" />
     <PackageReference Include="Microsoft.TestPlatform" Version="$(MicrosoftTestPlatformVersion)" />
     <!-- MTP HangDump extension for hang detection (replaces VSTest blame-hang-timeout) -->
     <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />

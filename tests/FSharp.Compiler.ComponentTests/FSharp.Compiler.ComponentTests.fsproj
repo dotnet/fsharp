@@ -372,7 +372,6 @@
     <EmbeddedResource Remove="Properties\**" />
     <None Remove="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <None Remove="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

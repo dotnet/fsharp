@@ -19,7 +19,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="expected-help-output.bsl">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>

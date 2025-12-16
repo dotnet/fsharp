@@ -16,7 +16,6 @@
 
   <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
     <PackageReference Include="xunit.v3" Version="$(XunitVersion)" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)" />
     <PackageReference Include="XunitXml.TestLogger" Version="$(XunitXmlTestLoggerVersion)" />
   </ItemGroup>
 

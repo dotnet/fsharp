@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <None Include="housing.csv" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
