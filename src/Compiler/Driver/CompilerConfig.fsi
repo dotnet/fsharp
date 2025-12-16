@@ -550,8 +550,6 @@ type TcConfigBuilder =
 
     member TurnWarningOn: range * string -> unit
 
-    member SupportsFeature: LanguageFeature -> bool
-
     member AddIncludePath: range * string * string -> unit
 
     member AddCompilerToolsByPath: string -> unit

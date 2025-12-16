@@ -987,9 +987,6 @@ type TcConfigBuilder =
                     WarnOn = ListSet.insert (=) n tcConfigB.diagnosticsOptions.WarnOn
                 }
 
-    member tcConfigB.SupportsFeature(feature: LanguageFeature) =
-        tcConfigB.langVersion.SupportsFeature(feature)
-
     member tcConfigB.AddIncludePath(m, path, pathIncludedFrom) =
         let absolutePath = ComputeMakePathAbsolute pathIncludedFrom path
 
