@@ -240,3 +240,32 @@ module ``It should still show up as a keyword even if the type parameter is inva
 """
 
         verifyClassificationAtEndOfMarker (sourceText, marker, classificationType)
+
+    [<Fact>]
+    member _.``Optional parameters should be classified correctly``() =
+        let sourceText =
+            """
+type TestType() =
+    member _.memb(?optional:string) = optional
+    member _.anotherMember(?opt1:int, ?opt2:string) = (opt1, opt2)
+"""
+        let ranges = getRanges sourceText
+        
+        // The parameter name "optional" should be classified as a parameter/local value, not as a type
+        // After the fix, QuickParse correctly handles the ? prefix and doesn't confuse semantic classification
+        let optionalParamRanges = 
+            ranges 
+            |> List.filter (fun item -> 
+                let text = sourceText.Substring(item.Range.StartColumn, item.Range.EndColumn - item.Range.StartColumn)
+                text = "optional")
+        
+        // Verify that we have classification data for "optional"
+        Assert.True(optionalParamRanges.Length > 0, "Should have classification data for 'optional' parameter")
+        
+        // The first occurrence should be the parameter (not incorrectly classified as a type/namespace)
+        let firstOptional = optionalParamRanges.[0]
+        let classificationType = FSharpClassificationTypes.getClassificationTypeName firstOptional.Type
+        
+        // Should NOT be classified as a type or namespace
+        Assert.NotEqual(ClassificationTypeNames.ClassName, classificationType)
+        Assert.NotEqual(ClassificationTypeNames.NamespaceName, classificationType)

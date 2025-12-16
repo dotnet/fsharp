@@ -3,6 +3,12 @@ module FSharp.Compiler.Service.Tests.QuickParseTests
 open Xunit
 open FSharp.Compiler.EditorServices
 
+// QuickParse.GetCompleteIdentifierIsland is used by language service features
+// to extract identifier context from source text at cursor positions.
+// When it returns None (as it did for '?' before the fix), downstream services
+// like semantic classification, completion, and hover can misinterpret the context.
+// This impacts Visual Studio's syntax highlighting - see issue #11008753
+
 [<Fact>]
 let ``QuickParse handles optional parameter identifier extraction when cursor is on question mark``() =
     let lineStr = "member _.memb(?optional:string) = optional"
