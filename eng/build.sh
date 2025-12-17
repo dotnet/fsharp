@@ -251,7 +251,7 @@ function Test() {
   fi
 
   if [[ "$testbatch" != "" ]]; then
-    args+=(--filter "batch=$testbatch")
+    args+=(--filter-query "/[batch=$testbatch]")
   fi
 
   "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?

@@ -381,25 +381,25 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     # MTP requires --solution flag for .sln files
     $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
     
-    $args = "test $testTarget -c $configuration -f $targetFramework --report-xunit-trx --report-xunit-trx-filename ""$testLogFileName"" --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
+    $test_args = "test $testTarget -c $configuration -f $targetFramework --report-xunit-trx --report-xunit-trx-filename ""$testLogFileName"" --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
     # MTP HangDump extension replaces VSTest --blame-hang-timeout
-    $args += " --hangdump --hangdump-timeout 5m --hangdump-type Full"
+    $test_args += " --hangdump --hangdump-timeout 5m --hangdump-type Full"
 
     if (-not $noVisualStudio -or $norestore) {
-        $args += " --no-restore"
+        $test_args += " --no-restore"
     }
 
     if (-not $noVisualStudio) {
-        $args += " --no-build"
+        $test_args += " --no-build"
     }
 
-    $args += " $settings"
+    $test_args += " $settings"
     if ($testBatch) {
-        $args += " --filter batch=$testBatch"
+        $test_args += " --filter-query /[batch=$testBatch]"
     }
 
-    Write-Host("$args")
-    Exec-Console $dotnetExe $args
+    Write-Host("$test_args")
+    Exec-Console $dotnetExe $test_args
 }
 
 function Prepare-TempDir() {
