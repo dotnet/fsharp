@@ -104,7 +104,7 @@ type internal FSharpFile = {
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
 
-    type ParseResult = ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+    type ParseResult = ParsedInput * range * string * PhasedDiagnostic array
 
     /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
     [<Sealed>]
@@ -198,7 +198,7 @@ type TcInfo =
         latestCcuSigForFile: ModuleOrNamespaceType option
 
         /// Accumulated diagnostics, last file first
-        tcDiagnosticsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+        tcDiagnosticsRev:PhasedDiagnostic[] list
 
         tcDependencyFiles: string list
 
@@ -229,7 +229,7 @@ type TcInfoExtras =
     member x.TcSymbolUses =
         x.tcSymbolUses
 
-type private SingleFileDiagnostics = (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+type private SingleFileDiagnostics = PhasedDiagnostic array
 type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
 
 /// Bound model of an underlying syntax and typed tree.
@@ -1665,8 +1665,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 | _ ->
                     Array.ofList delayedLogger.Diagnostics, false
             diagnostics
-            |> Array.map (fun (diagnostic, severity) ->
-                FSharpDiagnostic.CreateFromException(diagnostic, severity, suggestNamesForErrors, flatErrors, None))
+            |> Array.map (fun (diagnostic) ->
+                FSharpDiagnostic.CreateFromException(diagnostic, suggestNamesForErrors, flatErrors, None))
 
         return builderOpt, diagnostics
       }
