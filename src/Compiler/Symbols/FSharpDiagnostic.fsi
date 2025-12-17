@@ -196,7 +196,7 @@ type FSharpDiagnostic =
     /// Gets the severity for the diagnostic
     member Severity: FSharpDiagnosticSeverity
 
-    /// Gets the default severity, does not take into account diagnostics options
+    /// Gets the original severity prior to adjustments via compiler flags, #nowarn and other features
     member DefaultSeverity: FSharpDiagnosticSeverity
 
     /// Gets the message for the diagnostic
