@@ -440,7 +440,13 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
             ||| System.Reflection.BindingFlags.NonPublic
         )
         |> Array.tryFind (fun case -> System.String.Equals(case.Name, normalized, System.StringComparison.OrdinalIgnoreCase))
-        |> Option.map (fun case -> Microsoft.FSharp.Reflection.FSharpValue.MakeUnion(case, [||]) :?> LanguageFeature)
+        |> Option.bind (fun case ->
+            let union = Microsoft.FSharp.Reflection.FSharpValue.MakeUnion(case, [||])
+
+            if isNull union then
+                None
+            else
+                Some(union :?> LanguageFeature))
 
     override x.Equals(yobj: obj) =
         match yobj with
