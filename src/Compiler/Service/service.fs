@@ -30,8 +30,8 @@ module CompileHelpers =
         let diagnosticsLogger =
             { new DiagnosticsLogger("CompileAPI") with
 
-                member _.DiagnosticSink(diag, isError) =
-                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, true, flatErrors, None)) // Suggest names for errors
+                member _.DiagnosticSink(diagnostic) =
+                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diagnostic, true, flatErrors, None)) // Suggest names for errors
 
                 member _.ErrorCount =
                     diagnostics
