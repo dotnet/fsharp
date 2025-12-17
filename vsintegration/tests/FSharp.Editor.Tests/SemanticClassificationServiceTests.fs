@@ -272,5 +272,5 @@ type TestType() =
             FSharpClassificationTypes.getClassificationTypeName firstOptional.Type
 
         // Should NOT be classified as a type or namespace
-        Assert.NotEqual(ClassificationTypeNames.ClassName, classificationType)
-        Assert.NotEqual(ClassificationTypeNames.NamespaceName, classificationType)
+        Assert.NotEqual<string>(ClassificationTypeNames.ClassName, classificationType)
+        Assert.NotEqual<string>(ClassificationTypeNames.NamespaceName, classificationType)
