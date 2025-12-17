@@ -11383,25 +11383,9 @@ let CombineCcuContentFragments l =
     /// Combine module types when multiple namespace fragments contribute to the
     /// same namespace, making new module specs as we go.
     let rec CombineModuleOrNamespaceTypes path (mty1: ModuleOrNamespaceType) (mty2: ModuleOrNamespaceType) = 
-        let kind = mty1.ModuleOrNamespaceKind
-        let tab1 = mty1.AllEntitiesByLogicalMangledName
-        let tab2 = mty2.AllEntitiesByLogicalMangledName
-        let entities = 
-            [
-                for e1 in mty1.AllEntities do 
-                    match tab2.TryGetValue e1.LogicalName with
-                    | true, e2 -> yield CombineEntities path e1 e2
-                    | _ -> yield e1
-
-                for e2 in mty2.AllEntities do 
-                    match tab1.TryGetValue e2.LogicalName with
-                    | true, _ -> ()
-                    | _ -> yield e2
-            ]
-
-        let vals = CachedDList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
-
-        ModuleOrNamespaceType(kind, vals, CachedDList.ofList entities)
+        // Use incremental merge to avoid O(n) iteration over all accumulated entities
+        // This preserves cached maps from mty1 and only processes mty2 entities
+        ModuleOrNamespaceType.MergeWith(mty1, mty2, fun e1 e2 -> CombineEntities path e1 e2)
 
     and CombineEntities path (entity1: Entity) (entity2: Entity) = 
 

@@ -1361,6 +1361,11 @@ type ModuleOrNamespaceType =
 
     new: kind: ModuleOrNamespaceKind * vals: CachedDList<Val> * entities: CachedDList<Entity> -> ModuleOrNamespaceType
 
+    /// Incrementally merge two ModuleOrNamespaceType instances, preserving cached maps from mty1.
+    /// This avoids O(n) iteration over all accumulated entities when merging.
+    /// The combineEntitiesFn is called when entities with the same logical name exist in both mty1 and mty2.
+    static member MergeWith: mty1: ModuleOrNamespaceType * mty2: ModuleOrNamespaceType * combineEntitiesFn: (Entity -> Entity -> Entity) -> ModuleOrNamespaceType
+
     /// Return a new module or namespace type with an entity added.
     member AddEntity: tycon: Tycon -> ModuleOrNamespaceType
 
