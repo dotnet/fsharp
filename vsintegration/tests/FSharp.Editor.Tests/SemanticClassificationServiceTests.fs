@@ -252,21 +252,62 @@ type TestType() =
 
         let ranges = getRanges sourceText
 
-        // The parameter name "optional" should be classified as a parameter/local value, not as a type
-        // After the fix, QuickParse correctly handles the ? prefix and doesn't confuse semantic classification
-        let optionalParamRanges =
+        // Debug: print all ranges to understand what we're getting
+        let allClassifications =
+            ranges
+            |> List.map (fun item ->
+                let startLine = item.Range.StartLine
+                let startCol = item.Range.StartColumn
+                let endLine = item.Range.EndLine
+                let endCol = item.Range.EndColumn
+                let lines = sourceText.Split('\n')
+
+                let text =
+                    if startLine = endLine && startLine < lines.Length then
+                        let line = lines.[startLine]
+
+                        if startCol < line.Length && endCol <= line.Length then
+                            line.Substring(startCol, endCol - startCol)
+                        else
+                            sprintf "[out of bounds: %d-%d in line length %d]" startCol endCol line.Length
+                    else
+                        "[multi-line]"
+
+                sprintf "Line %d, Col %d-%d: '%s' (%A)" startLine startCol endCol text item.Type)
+            |> String.concat "\n"
+
+        // The test should verify that optional parameter usage (the return value) is classified
+        // We check for "optional" identifier in the body (after =)
+        let optionalUsageRanges =
             ranges
             |> List.filter (fun item ->
-                let text =
-                    sourceText.Substring(item.Range.StartColumn, item.Range.EndColumn - item.Range.StartColumn)
+                let startLine = item.Range.StartLine
+                let startCol = item.Range.StartColumn
+                let endCol = item.Range.EndColumn
+                let lines = sourceText.Split('\n')
 
-                text = "optional")
+                if startLine < lines.Length then
+                    let line = lines.[startLine]
 
-        // Verify that we have classification data for "optional"
-        Assert.True(optionalParamRanges.Length > 0, "Should have classification data for 'optional' parameter")
+                    if startCol < line.Length && endCol <= line.Length then
+                        let text = line.Substring(startCol, endCol - startCol)
+                        text = "optional"
+                    else
+                        false
+                else
+                    false)
 
-        // The first occurrence should be the parameter (not incorrectly classified as a type/namespace)
-        let firstOptional = optionalParamRanges.[0]
+        // Provide detailed error message if test fails
+        let errorMessage =
+            sprintf
+                "Should have classification data for 'optional' identifier.\nFound %d ranges total.\nAll classifications:\n%s"
+                ranges.Length
+                allClassifications
+
+        Assert.True(optionalUsageRanges.Length > 0, errorMessage)
+
+        // If we found "optional", verify it's not classified as a type or namespace
+        let firstOptional = optionalUsageRanges.[0]
 
         let classificationType =
             FSharpClassificationTypes.getClassificationTypeName firstOptional.Type
