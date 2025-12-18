@@ -2015,6 +2015,19 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: CachedDList<Val>, 
     let mutable allValsAndMembersByPartialLinkageKeyCache: MultiMap<ValLinkagePartialKey, Val> option = None
 
     let mutable allValsByLogicalNameCache: NameMap<Val> option = None
+    
+    /// Internal constructor that allows injecting precomputed cache values for incremental merge optimization
+    internal new(kind: ModuleOrNamespaceKind, vals: CachedDList<Val>, entities: CachedDList<Entity>, 
+                 precomputedLogicalNameCache: NameMap<Entity> option) as this = 
+        ModuleOrNamespaceType(kind, vals, entities)
+        then
+            match precomputedLogicalNameCache with
+            | Some cache -> this.SetLogicalMangledNameCache(cache)
+            | None -> ()
+    
+    /// Internal method to inject precomputed cache (used by incremental merge)
+    member private this.SetLogicalMangledNameCache(cache: NameMap<Entity>) =
+        allEntitiesByLogicalMangledNameCache <- Some cache
   
     /// Namespace or module-compiled-as-type? 
     member _.ModuleOrNamespaceKind = kind 
@@ -2223,14 +2236,9 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: CachedDList<Val>, 
         // Merge vals (simple append, already O(1) with CachedDList)
         let mergedVals = CachedDList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
         
-        // Create new ModuleOrNamespaceType
-        let result = ModuleOrNamespaceType(kind, mergedVals, mergedEntities)
-        
-        // Note: The merged entity map cache (if computed in fast path) will be rebuilt
-        // on first access via the normal caching mechanism. Future optimization could
-        // inject the precomputed map to avoid recomputation.
-        // For now: mergedEntityMap is computed but not used - cache will be lazy
-        ignore mergedEntityMap
+        // Create new ModuleOrNamespaceType with precomputed cache injection
+        // This avoids O(n) rebuild of AllEntitiesByLogicalMangledName on first access
+        let result = ModuleOrNamespaceType(kind, mergedVals, mergedEntities, mergedEntityMap)
         
         result
 
