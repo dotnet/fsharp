@@ -13,8 +13,6 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
     <NoWarn>3186</NoWarn>
-    <!-- Enable Microsoft.Testing.Platform runner (MTP Migration - Phase 3) -->
-    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
 
   <ItemGroup>

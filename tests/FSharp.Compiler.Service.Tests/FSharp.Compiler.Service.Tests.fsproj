@@ -9,8 +9,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <!-- Enable Microsoft.Testing.Platform runner (MTP Migration - Phase 3) -->
-    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
