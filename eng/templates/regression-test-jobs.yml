@@ -162,10 +162,11 @@ jobs:
           Write-Host "Executing built-in command: $buildScript"
           Invoke-Expression $buildScript
         } elseif ($IsWindows) {
-          # Use dotnet pack with binary logging on Windows to generate binlog files
-          Write-Host "Running: dotnet pack build.proj -bl:build.binlog"
-          dotnet pack build.proj -bl:build.binlog
+          # Execute the provided script on Windows
+          Write-Host "Executing file-based script: $buildScript"
+          & ".\$buildScript"
         } else {
+          # Execute the provided script on Linux
           Write-Host "Executing file-based script: $buildScript"
           chmod +x "$buildScript"
           bash -c "./$buildScript"
