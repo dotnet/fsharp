@@ -247,71 +247,62 @@ module ``It should still show up as a keyword even if the type parameter is inva
             """
 type TestType() =
     member _.memb(?optional:string) = optional
-    member _.anotherMember(?opt1:int, ?opt2:string) = (opt1, opt2)
 """
 
         let ranges = getRanges sourceText
 
-        // Debug: print all ranges to understand what we're getting
+        // The issue was that QuickParse returning None for '?' caused misclassification
+        // This test verifies that we get semantic classification data and nothing is
+        // incorrectly classified as a type or namespace due to the ? prefix
+
+        // Look for any identifier "optional" in the classifications
+        let text = SourceText.From(sourceText)
+
+        let optionalRanges =
+            ranges
+            |> List.filter (fun item ->
+                try
+                    // Get the actual text from the source using SourceText
+                    let span = RoslynHelpers.TryFSharpRangeToTextSpan(text, item.Range)
+
+                    match span with
+                    | ValueSome textSpan ->
+                        let actualText = text.GetSubText(textSpan).ToString()
+                        actualText = "optional"
+                    | ValueNone -> false
+                with _ ->
+                    false)
+
+        // Provide detailed diagnostics if test fails
         let allClassifications =
             ranges
             |> List.map (fun item ->
-                let startLine = item.Range.StartLine
-                let startCol = item.Range.StartColumn
-                let endLine = item.Range.EndLine
-                let endCol = item.Range.EndColumn
-                let lines = sourceText.Split('\n')
+                try
+                    let span = RoslynHelpers.TryFSharpRangeToTextSpan(text, item.Range)
 
-                let text =
-                    if startLine = endLine && startLine < lines.Length then
-                        let line = lines.[startLine]
+                    let textStr =
+                        match span with
+                        | ValueSome ts -> text.GetSubText(ts).ToString()
+                        | ValueNone -> "[no span]"
 
-                        if startCol < line.Length && endCol <= line.Length then
-                            line.Substring(startCol, endCol - startCol)
-                        else
-                            sprintf "[out of bounds: %d-%d in line length %d]" startCol endCol line.Length
-                    else
-                        "[multi-line]"
-
-                sprintf "Line %d, Col %d-%d: '%s' (%A)" startLine startCol endCol text item.Type)
+                    sprintf "Range %A: '%s' (%A)" item.Range textStr item.Type
+                with ex ->
+                    sprintf "Range %A: [error: %s] (%A)" item.Range ex.Message item.Type)
             |> String.concat "\n"
 
-        // The test should verify that optional parameter usage (the return value) is classified
-        // We check for "optional" identifier in the body (after =)
-        let optionalUsageRanges =
-            ranges
-            |> List.filter (fun item ->
-                let startLine = item.Range.StartLine
-                let startCol = item.Range.StartColumn
-                let endCol = item.Range.EndColumn
-                let lines = sourceText.Split('\n')
-
-                if startLine < lines.Length then
-                    let line = lines.[startLine]
-
-                    if startCol < line.Length && endCol <= line.Length then
-                        let text = line.Substring(startCol, endCol - startCol)
-                        text = "optional"
-                    else
-                        false
-                else
-                    false)
-
-        // Provide detailed error message if test fails
         let errorMessage =
             sprintf
                 "Should have classification data for 'optional' identifier.\nFound %d ranges total.\nAll classifications:\n%s"
                 ranges.Length
                 allClassifications
 
-        Assert.True(optionalUsageRanges.Length > 0, errorMessage)
+        Assert.True(optionalRanges.Length > 0, errorMessage)
 
-        // If we found "optional", verify it's not classified as a type or namespace
-        let firstOptional = optionalUsageRanges.[0]
+        // Verify that none of the "optional" occurrences are classified as type/namespace
+        // (which would indicate the bug is present)
+        for optionalRange in optionalRanges do
+            let classificationType =
+                FSharpClassificationTypes.getClassificationTypeName optionalRange.Type
 
-        let classificationType =
-            FSharpClassificationTypes.getClassificationTypeName firstOptional.Type
-
-        // Should NOT be classified as a type or namespace
-        Assert.NotEqual<string>(ClassificationTypeNames.ClassName, classificationType)
-        Assert.NotEqual<string>(ClassificationTypeNames.NamespaceName, classificationType)
+            Assert.NotEqual<string>(ClassificationTypeNames.ClassName, classificationType)
+            Assert.NotEqual<string>(ClassificationTypeNames.NamespaceName, classificationType)
