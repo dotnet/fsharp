@@ -443,10 +443,9 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         |> Option.bind (fun case ->
             let union = Microsoft.FSharp.Reflection.FSharpValue.MakeUnion(case, [||])
 
-            if isNull union then
-                None
-            else
-                Some(union :?> LanguageFeature))
+            match box union with
+            | null -> None
+            | obj -> Some(obj :?> LanguageFeature))
 
     override x.Equals(yobj: obj) =
         match yobj with
