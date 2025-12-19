@@ -72,7 +72,6 @@
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>
     </NoneSubstituteText>
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscProject\fsc.fsproj" />
