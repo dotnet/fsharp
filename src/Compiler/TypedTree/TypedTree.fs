@@ -2015,19 +2015,6 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: CachedDList<Val>, 
     let mutable allValsAndMembersByPartialLinkageKeyCache: MultiMap<ValLinkagePartialKey, Val> option = None
 
     let mutable allValsByLogicalNameCache: NameMap<Val> option = None
-    
-    /// Internal constructor that allows injecting precomputed cache values for incremental merge optimization
-    internal new(kind: ModuleOrNamespaceKind, vals: CachedDList<Val>, entities: CachedDList<Entity>, 
-                 precomputedLogicalNameCache: NameMap<Entity> option) as this = 
-        ModuleOrNamespaceType(kind, vals, entities)
-        then
-            match precomputedLogicalNameCache with
-            | Some cache -> this.SetLogicalMangledNameCache(cache)
-            | None -> ()
-    
-    /// Internal method to inject precomputed cache (used by incremental merge)
-    member private this.SetLogicalMangledNameCache(cache: NameMap<Entity>) =
-        allEntitiesByLogicalMangledNameCache <- Some cache
   
     /// Namespace or module-compiled-as-type? 
     member _.ModuleOrNamespaceKind = kind 
@@ -2181,66 +2168,105 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: CachedDList<Val>, 
 
     override _.ToString() = "ModuleOrNamespaceType(...)"
 
-    /// Incrementally merge two ModuleOrNamespaceType instances, preserving cached maps from mty1
-    /// This avoids O(n) iteration over all accumulated entities when merging.
+    /// Incrementally merge two ModuleOrNamespaceType instances, preserving and merging cached maps
+    /// This uses a more comprehensive approach that merges multiple cache types when possible,
+    /// treating mapping functions as first-class values and maintaining foldBack semantics.
     /// The combineEntitiesFn is called when entities with the same logical name exist in both mty1 and mty2.
     static member MergeWith(mty1: ModuleOrNamespaceType, mty2: ModuleOrNamespaceType, combineEntitiesFn: Entity -> Entity -> Entity) =
         let kind = mty1.ModuleOrNamespaceKind
         
-        // Reuse mty1's cached entity map if it exists (avoids O(n) rebuild)
+        // Access both cached maps (leveraging already-computed values from mty1 and mty2)
         let tab1 = mty1.AllEntitiesByLogicalMangledName
-        
-        // Build map for mty2 entities only (typically small - O(m) where m = new entities)
         let tab2 = mty2.AllEntitiesByLogicalMangledName
         
-        // Check if any conflicts exist (fast check on mty2 entities only)
-        let hasConflicts = 
+        let hasEntityConflicts = 
             mty2.AllEntities |> Seq.exists (fun e2 -> tab1.ContainsKey(e2.LogicalName))
         
-        let mergedEntities, mergedEntityMap =
-            if not hasConflicts then
-                // Fast path: no conflicts, simple append preserves both caches
+        let mergedEntities, mergedEntityLogicalMap, mergedEntityCompiledMap =
+            if not hasEntityConflicts then
+                // Fast path: no conflicts
+                // Simple O(1) append for entities
                 let merged = CachedDList.append mty1.AllEntities mty2.AllEntities
-                // Merge the maps (both are cached, so this is O(m) where m = mty2 entity count)
-                let mergedMap = 
+                
+                // Merge the logical name map (O(m) where m = mty2 entity count)
+                // Both maps are already cached, so no iteration over mty1 entities
+                let mergedLogicalMap = 
                     mty2.AllEntities 
                     |> Seq.fold (fun (map: NameMap<Entity>) e2 -> NameMap.add e2.LogicalName e2 map) tab1
-                merged, Some mergedMap
+                
+                // Also merge the compiled+logical name map
+                let tab1c = mty1.AllEntitiesByCompiledAndLogicalMangledNames
+                let mergedCompiledMap =
+                    mty2.AllEntities
+                    |> Seq.fold (fun (map: NameMap<Entity>) e2 ->
+                        let name1 = e2.LogicalName
+                        let name2 = e2.CompiledName
+                        let map = NameMap.add name1 e2 map
+                        if name1 = name2 then map else NameMap.add name2 e2 map) tab1c
+                
+                merged, Some mergedLogicalMap, Some mergedCompiledMap
             else
                 // Conflict path: need to combine entities with same names
-                // Build merged entity list respecting F# shadowing (earlier takes precedence)
                 let processedNames = System.Collections.Generic.HashSet<string>()
                 let mergedList = System.Collections.Generic.List<Entity>()
                 
-                // Process mty1 entities first (they have precedence)
                 for e1 in mty1.AllEntities do
                     match tab2.TryGetValue(e1.LogicalName) with
                     | true, e2 -> 
-                        // Conflict: combine them
-                        let combined = combineEntitiesFn e1 e2
-                        mergedList.Add(combined)
+                        mergedList.Add(combineEntitiesFn e1 e2)
                         processedNames.Add(e1.LogicalName) |> ignore
                     | false, _ -> 
                         mergedList.Add(e1)
                         processedNames.Add(e1.LogicalName) |> ignore
                 
-                // Add mty2 entities that weren't already processed
                 for e2 in mty2.AllEntities do
                     if not (processedNames.Contains(e2.LogicalName)) then
                         mergedList.Add(e2)
                 
                 let merged = CachedDList.ofSeq mergedList
-                // Map will be rebuilt on first access (deferred cost)
-                merged, None
+                // Maps will rebuild on first access (deferred cost)
+                merged, None, None
         
-        // Merge vals (simple append, already O(1) with CachedDList)
+        // Merge vals (simple O(1) append - vals accumulate, no conflicts)
         let mergedVals = CachedDList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
         
-        // Create new ModuleOrNamespaceType with precomputed cache injection
-        // This avoids O(n) rebuild of AllEntitiesByLogicalMangledName on first access
-        let result = ModuleOrNamespaceType(kind, mergedVals, mergedEntities, mergedEntityMap)
+        // Merge val-based caches since vals are always appended without conflicts
+        // This leverages the already-cached maps from mty1 and mty2
+        let mergedValsByPartialLinkage =
+            let map1 = mty1.AllValsAndMembersByPartialLinkageKey
+            let map2 = mty2.AllValsAndMembersByPartialLinkageKey
+            // MultiMap merge: accumulate all values
+            map2 |> Map.fold (fun acc k vList -> 
+                match Map.tryFind k acc with
+                | Some existing -> Map.add k (existing @ vList) acc
+                | None -> Map.add k vList acc) map1
+        
+        let mergedValsByLogicalName =
+            let map1 = mty1.AllValsByLogicalName
+            let map2 = mty2.AllValsByLogicalName
+            // NameMap merge: vals don't conflict, but earlier ones take precedence
+            map2 |> Map.fold (fun acc k v ->
+                if Map.containsKey k acc then acc // Keep mty1 entry (shadowing)
+                else Map.add k v acc) map1
+        
+        // Create result with merged data and inject precomputed caches
+        let result = ModuleOrNamespaceType(kind, mergedVals, mergedEntities)
+        
+        // Inject precomputed caches to avoid O(n) rebuilds
+        result.InjectMergedCaches(mergedEntityLogicalMap, mergedEntityCompiledMap, 
+                                 Some mergedValsByPartialLinkage, Some mergedValsByLogicalName)
         
         result
+    
+    /// Internal method to inject precomputed merged caches (used by MergeWith)
+    member private this.InjectMergedCaches(logicalEntityMap: NameMap<Entity> option,
+                                          compiledEntityMap: NameMap<Entity> option,
+                                          valsByLinkageKey: MultiMap<ValLinkagePartialKey, Val> option,
+                                          valsByLogicalName: NameMap<Val> option) =
+        allEntitiesByLogicalMangledNameCache <- logicalEntityMap
+        allEntitiesByMangledNameCache <- compiledEntityMap
+        allValsAndMembersByPartialLinkageKeyCache <- valsByLinkageKey
+        allValsByLogicalNameCache <- valsByLogicalName
 
 /// Represents a module or namespace definition in the typed AST
 type ModuleOrNamespace = Entity 
