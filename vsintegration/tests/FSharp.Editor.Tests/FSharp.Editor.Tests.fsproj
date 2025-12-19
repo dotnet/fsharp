@@ -12,11 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-   
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\XunitSetup.fs">
       <Link>XunitSetup.fs</Link>
     </Compile>
