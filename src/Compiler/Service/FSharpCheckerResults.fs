@@ -3986,14 +3986,16 @@ type FSharpCheckProjectResults
     override _.ToString() =
         "FSharpCheckProjectResults(" + projectFileName + ")"
 
-type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, tcState) =
+type FsiInteractiveChecker
+    (legacyReferenceResolver, tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, tcState, ?keepAssemblyContents: bool) =
 
-    let keepAssemblyContents = false
+    let keepAssemblyContents = defaultArg keepAssemblyContents false
 
-    member _.ParseAndCheckInteraction(sourceText: ISourceText, ?userOpName: string) =
+    member _.ParseAndCheckInteraction(sourceText: ISourceText, ?userOpName: string, ?asmName: string) =
         cancellable {
             let userOpName = defaultArg userOpName "Unknown"
-            let fileName = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
+            let asmName = defaultArg asmName "stdin"
+            let fileName = Path.Combine(tcConfig.implicitIncludeDir, asmName + ".fsx")
             let suggestNamesForErrors = true // Will always be true, this is just for readability
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
             let parsingOptions =
@@ -4083,6 +4085,12 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
             let typeCheckResults =
                 FSharpCheckFileResults(fileName, errors, Some tcFileInfo, dependencyFiles, None, false)
 
+            let checkedImplFiles =
+                if keepAssemblyContents then
+                    tcFileInfo.ImplementationFile |> Option.map List.singleton
+                else
+                    None
+
             let details =
                 (tcGlobals,
                  tcImports,
@@ -4091,9 +4099,9 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                  Choice2Of2(tcFileInfo.ScopeSymbolUses |> Seq.singleton |> async.Return),
                  None,
                  (fun () -> None),
-                 mkSimpleAssemblyRef "stdin",
+                 mkSimpleAssemblyRef asmName,
                  tcState.TcEnvFromImpls.AccessRights,
-                 None,
+                 checkedImplFiles,
                  dependencyFiles,
                  Some projectOptions)
 
