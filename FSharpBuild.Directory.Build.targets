@@ -26,9 +26,9 @@
     </NoneSubstituteText>
   </ItemDefinitionGroup>
 
-  <Target Name="NoneSubstituteTextFiles"
-          Inputs="@(NoneSubstituteText)"
-          Outputs="@(NoneSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
+    <Target Name="NoneSubstituteTextFiles"
+      Inputs="@(NoneSubstituteText)"
+          Outputs="@(NoneSubstituteText->'$(IntermediateOutputPath)%(SubDir)%(Filename)%(Extension)')"
           BeforeTargets="AssignTargetPaths;BeforeBuild;GenerateFSharpTextResources">
 
     <ItemGroup>
