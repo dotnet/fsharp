@@ -291,6 +291,10 @@ type ListModule02() =
         // empty List    
         CheckThrowsArgumentException ( fun() -> List.maxBy (fun () -> 1) List.empty )
 
+        // returns first maximal element
+        let max = List.maxBy fst [1, "a"; 2, "b"; 3, "c"; 2, "d"; 3, "e"; 1, "f" ]
+        if snd max <> "c" then Assert.Fail()
+        
         ()
 
     [<Fact>]
@@ -324,6 +328,10 @@ type ListModule02() =
         let funcEpt () = 1
         CheckThrowsArgumentException ( fun() -> List.minBy funcEpt List.empty)
        
+        // returns first minimal element
+        let max = List.minBy fst [ 3, "a"; 2, "b"; 1, "c"; 2, "d"; 1, "e"; 3, "f" ]
+        if snd max <> "c" then Assert.Fail()
+        
         ()
 
     [<Fact>]
