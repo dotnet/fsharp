@@ -371,29 +371,35 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
       $testBatchSuffix = "_batch$testBatch"
     }
 
-    # {assembly} and {framework} will expand respectively. See https://github.com/spekt/testlogger/wiki/Logger-Configuration#logfilepath
-    # This is useful to deconflict log filenames when there are many test assemblies, e.g. when testing a whole solution.
-    $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}_{framework}$testBatchSuffix.xml"
+    # MTP uses --report-xunit-trx with filename only (no path)
+    # Results go to TestResults directory under project output by default
+    $testLogFileName = "${projectName}_${targetFramework}$testBatchSuffix.trx"
+    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
 
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework$testBatch.binlog"
-    $args = "test $testProject -c $configuration -f $targetFramework --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
-    $args += " --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration"
+    
+    # MTP requires --solution flag for .sln files
+    $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
+    
+    $test_args = "test $testTarget -c $configuration -f $targetFramework --report-xunit-trx --report-xunit-trx-filename ""$testLogFileName"" --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
+    # MTP HangDump extension replaces VSTest --blame-hang-timeout
+    $test_args += " --hangdump --hangdump-timeout 5m --hangdump-type Full"
 
     if (-not $noVisualStudio -or $norestore) {
-        $args += " --no-restore"
+        $test_args += " --no-restore"
     }
 
     if (-not $noVisualStudio) {
-        $args += " --no-build"
+        $test_args += " --no-build"
     }
 
-    $args += " $settings"
+    $test_args += " $settings"
     if ($testBatch) {
-        $args += " --filter batch=$testBatch"
+        $test_args += " --filter-query /[batch=$testBatch]"
     }
 
-    Write-Host("$args")
-    Exec-Console $dotnetExe $args
+    Write-Host("$test_args")
+    Exec-Console $dotnetExe $test_args
 }
 
 function Prepare-TempDir() {

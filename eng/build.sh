@@ -238,14 +238,23 @@ function Test() {
     if [[ "$testbatch" != "" ]]; then
     testbatchsuffix="_batch$testbatch"
   fi
-  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework$testbatchsuffix.xml"
-  args="test \"$testproject\" --no-build -c $configuration -f $targetframework --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration"
-
-  if [[ "$testbatch" != "" ]]; then
-    args="$args --filter batch=$testbatch"
+  # MTP uses --report-xunit-trx with filename only (no path)
+  testlogfilename="${projectname}_${targetframework}${testbatchsuffix}.trx"
+  testresultsdir="$artifacts_dir/TestResults/$configuration"
+  
+  # MTP requires --solution flag for .sln files
+  # MTP HangDump extension replaces VSTest --blame-hang-timeout
+  if [[ "$testproject" == *.sln ]]; then
+    args=(test --solution "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+  else
+    args=(test --project "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
   fi
 
-  "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
+  if [[ "$testbatch" != "" ]]; then
+    args+=(--filter-query "/[batch=$testbatch]")
+  fi
+
+  "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
 }
 
 function BuildSolution {

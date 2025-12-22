@@ -2,11 +2,13 @@
 
 	<PropertyGroup>
 		<TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
-		<IsPackable>false</IsPackable>
-		<GenerateProgramFile>false</GenerateProgramFile>
+		<!-- xUnit3 requires test projects to be executable -->
+		<OutputType>Exe</OutputType>
 		<IsTestProject>true</IsTestProject>
+		<IsPackable>false</IsPackable>
+		<!-- Let xUnit3 generate the entry point -->
+		<GenerateProgramFile>false</GenerateProgramFile>
 		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-		<UnitTestType>xunit</UnitTestType>
 		<ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
 		<Optimize>false</Optimize>
 		<Tailcalls>false</Tailcalls>
@@ -16,7 +18,6 @@
 
 	<ItemGroup>
 		<Compile Include="Protocol.fs" />
-		<Compile Include="Program.fs" />
 	</ItemGroup>
 
 	<!--<ItemGroup>
