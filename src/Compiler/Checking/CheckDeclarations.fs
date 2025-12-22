@@ -5641,7 +5641,7 @@ let CombineTopAttrs topAttrs1 topAttrs2 =
       assemblyAttrs = topAttrs1.assemblyAttrs @ topAttrs2.assemblyAttrs } 
 
 let rec IterTyconsOfModuleOrNamespaceType f (mty: ModuleOrNamespaceType) = 
-    mty.AllEntities |> QueueList.iter f
+    mty.AllEntities |> CachedDList.iter f
     mty.ModuleAndNamespaceDefinitions |> List.iter (fun v -> 
         IterTyconsOfModuleOrNamespaceType f v.ModuleOrNamespaceType)
 

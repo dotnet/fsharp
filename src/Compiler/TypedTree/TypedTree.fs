@@ -1984,7 +1984,7 @@ type ExceptionInfo =
 
 /// Represents the contents of a module or namespace
 [<Sealed; StructuredFormatDisplay("{DebugText}")>]
-type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
+type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: CachedDList<Val>, entities: CachedDList<Entity>) = 
 
     /// Mutation used during compilation of FSharp.Core.dll
     let mutable entities = entities 
@@ -2010,6 +2010,8 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 
     let mutable allEntitiesByMangledNameCache: NameMap<Entity> option = None
 
+    let mutable allEntitiesByLogicalMangledNameCache: NameMap<Entity> option = None
+
     let mutable allValsAndMembersByPartialLinkageKeyCache: MultiMap<ValLinkagePartialKey, Val> option = None
 
     let mutable allValsByLogicalNameCache: NameMap<Val> option = None
@@ -2028,18 +2030,20 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 
     /// Mutation used during compilation of FSharp.Core.dll
     member _.AddModuleOrNamespaceByMutation(modul: ModuleOrNamespace) =
-        entities <- QueueList.appendOne entities modul
+        entities <- CachedDList.appendOne entities modul
         modulesByDemangledNameCache <- None          
-        allEntitiesByMangledNameCache <- None       
+        allEntitiesByMangledNameCache <- None
+        allEntitiesByLogicalMangledNameCache <- None
 
 #if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member mtyp.AddProvidedTypeEntity(entity: Entity) = 
-        entities <- QueueList.appendOne entities entity
+        entities <- CachedDList.appendOne entities entity
         tyconsByMangledNameCache <- None          
         tyconsByDemangledNameAndArityCache <- None
         tyconsByAccessNamesCache <- None
-        allEntitiesByMangledNameCache <- None             
+        allEntitiesByMangledNameCache <- None
+        allEntitiesByLogicalMangledNameCache <- None
 #endif 
           
     /// Return a new module or namespace type with an entity added.
@@ -2094,12 +2098,13 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
             else NameMap.add name2 x tab 
           
         cacheOptByref &allEntitiesByMangledNameCache (fun () -> 
-             QueueList.foldBack addEntityByMangledName entities Map.empty)
+             CachedDList.foldBack addEntityByMangledName entities Map.empty)
 
-    /// Get a table of entities indexed by both logical name
+    /// Get a table of entities indexed by logical name
     member _.AllEntitiesByLogicalMangledName: NameMap<Entity> = 
         let addEntityByMangledName (x: Entity) tab = NameMap.add x.LogicalName x tab 
-        QueueList.foldBack addEntityByMangledName entities Map.empty
+        cacheOptByref &allEntitiesByLogicalMangledNameCache (fun () ->
+            CachedDList.foldBack addEntityByMangledName entities Map.empty)
 
     /// Get a table of values and members indexed by partial linkage key, which includes name, the mangled name of the parent type (if any),
     /// and the method argument count (if any).
@@ -2111,7 +2116,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
            else
                tab
         cacheOptByref &allValsAndMembersByPartialLinkageKeyCache (fun () -> 
-             QueueList.foldBack addValByMangledName vals MultiMap.empty)
+             CachedDList.foldBack addValByMangledName vals MultiMap.empty)
 
     /// Try to find the member with the given linkage key in the given module.
     member mtyp.TryLinkVal(ccu: CcuThunk, key: ValLinkageFullKey) = 
@@ -2132,7 +2137,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
            else
                tab
         cacheOptByref &allValsByLogicalNameCache (fun () -> 
-           QueueList.foldBack addValByName vals Map.empty)
+           CachedDList.foldBack addValByName vals Map.empty)
 
     /// Compute a table of values and members indexed by logical name.
     member _.AllValsAndMembersByLogicalNameUncached = 
@@ -2141,7 +2146,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
                 MultiMap.add x.LogicalName x tab 
             else
                 tab
-        QueueList.foldBack addValByName vals MultiMap.empty
+        CachedDList.foldBack addValByName vals MultiMap.empty
 
     /// Get a table of F# exception definitions indexed by demangled name, so 'FailureException' is indexed by 'Failure'
     member mtyp.ExceptionDefinitionsByDemangledName = 
@@ -2156,12 +2161,112 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
                 NameMap.add entity.DemangledModuleOrNamespaceName entity acc
             else acc
         cacheOptByref &modulesByDemangledNameCache (fun () -> 
-            QueueList.foldBack add entities Map.empty)
+            CachedDList.foldBack add entities Map.empty)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member mtyp.DebugText = mtyp.ToString()
 
     override _.ToString() = "ModuleOrNamespaceType(...)"
+
+    /// Incrementally merge two ModuleOrNamespaceType instances, preserving and merging cached maps
+    /// This uses a more comprehensive approach that merges multiple cache types when possible,
+    /// treating mapping functions as first-class values and maintaining foldBack semantics.
+    /// The combineEntitiesFn is called when entities with the same logical name exist in both mty1 and mty2.
+    static member MergeWith(mty1: ModuleOrNamespaceType, mty2: ModuleOrNamespaceType, combineEntitiesFn: Entity -> Entity -> Entity) =
+        let kind = mty1.ModuleOrNamespaceKind
+        
+        // Access both cached maps (leveraging already-computed values from mty1 and mty2)
+        let tab1 = mty1.AllEntitiesByLogicalMangledName
+        let tab2 = mty2.AllEntitiesByLogicalMangledName
+        
+        let hasEntityConflicts = 
+            mty2.AllEntities |> Seq.exists (fun e2 -> tab1.ContainsKey(e2.LogicalName))
+        
+        let mergedEntities, mergedEntityLogicalMap, mergedEntityCompiledMap =
+            if not hasEntityConflicts then
+                // Fast path: no conflicts
+                // Simple O(1) append for entities
+                let merged = CachedDList.append mty1.AllEntities mty2.AllEntities
+                
+                // Merge the logical name map (O(m) where m = mty2 entity count)
+                // Both maps are already cached, so no iteration over mty1 entities
+                let mergedLogicalMap = 
+                    mty2.AllEntities 
+                    |> Seq.fold (fun (map: NameMap<Entity>) e2 -> NameMap.add e2.LogicalName e2 map) tab1
+                
+                // Also merge the compiled+logical name map
+                let tab1c = mty1.AllEntitiesByCompiledAndLogicalMangledNames
+                let mergedCompiledMap =
+                    mty2.AllEntities
+                    |> Seq.fold (fun (map: NameMap<Entity>) e2 ->
+                        let name1 = e2.LogicalName
+                        let name2 = e2.CompiledName
+                        let map = NameMap.add name1 e2 map
+                        if name1 = name2 then map else NameMap.add name2 e2 map) tab1c
+                
+                merged, Some mergedLogicalMap, Some mergedCompiledMap
+            else
+                // Conflict path: need to combine entities with same names
+                let processedNames = System.Collections.Generic.HashSet<string>()
+                let mergedList = System.Collections.Generic.List<Entity>()
+                
+                for e1 in mty1.AllEntities do
+                    match tab2.TryGetValue(e1.LogicalName) with
+                    | true, e2 -> 
+                        mergedList.Add(combineEntitiesFn e1 e2)
+                        processedNames.Add(e1.LogicalName) |> ignore
+                    | false, _ -> 
+                        mergedList.Add(e1)
+                        processedNames.Add(e1.LogicalName) |> ignore
+                
+                for e2 in mty2.AllEntities do
+                    if not (processedNames.Contains(e2.LogicalName)) then
+                        mergedList.Add(e2)
+                
+                let merged = CachedDList.ofSeq mergedList
+                // Maps will rebuild on first access (deferred cost)
+                merged, None, None
+        
+        // Merge vals (simple O(1) append - vals accumulate, no conflicts)
+        let mergedVals = CachedDList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
+        
+        // Merge val-based caches since vals are always appended without conflicts
+        // This leverages the already-cached maps from mty1 and mty2
+        let mergedValsByPartialLinkage =
+            let map1 = mty1.AllValsAndMembersByPartialLinkageKey
+            let map2 = mty2.AllValsAndMembersByPartialLinkageKey
+            // MultiMap merge: accumulate all values
+            map2 |> Map.fold (fun acc k vList -> 
+                match Map.tryFind k acc with
+                | Some existing -> Map.add k (existing @ vList) acc
+                | None -> Map.add k vList acc) map1
+        
+        let mergedValsByLogicalName =
+            let map1 = mty1.AllValsByLogicalName
+            let map2 = mty2.AllValsByLogicalName
+            // NameMap merge: vals don't conflict, but earlier ones take precedence
+            map2 |> Map.fold (fun acc k v ->
+                if Map.containsKey k acc then acc // Keep mty1 entry (shadowing)
+                else Map.add k v acc) map1
+        
+        // Create result with merged data and inject precomputed caches
+        let result = ModuleOrNamespaceType(kind, mergedVals, mergedEntities)
+        
+        // Inject precomputed caches to avoid O(n) rebuilds
+        result.InjectMergedCaches(mergedEntityLogicalMap, mergedEntityCompiledMap, 
+                                 Some mergedValsByPartialLinkage, Some mergedValsByLogicalName)
+        
+        result
+    
+    /// Internal method to inject precomputed merged caches (used by MergeWith)
+    member private this.InjectMergedCaches(logicalEntityMap: NameMap<Entity> option,
+                                          compiledEntityMap: NameMap<Entity> option,
+                                          valsByLinkageKey: MultiMap<ValLinkagePartialKey, Val> option,
+                                          valsByLogicalName: NameMap<Val> option) =
+        allEntitiesByLogicalMangledNameCache <- logicalEntityMap
+        allEntitiesByMangledNameCache <- compiledEntityMap
+        allValsAndMembersByPartialLinkageKeyCache <- valsByLinkageKey
+        allValsByLogicalNameCache <- valsByLogicalName
 
 /// Represents a module or namespace definition in the typed AST
 type ModuleOrNamespace = Entity 
@@ -6036,7 +6141,7 @@ type Construct() =
 
     /// Create a new node for the contents of a module or namespace
     static member NewModuleOrNamespaceType mkind tycons vals = 
-        ModuleOrNamespaceType(mkind, QueueList.ofList vals, QueueList.ofList tycons)
+        ModuleOrNamespaceType(mkind, CachedDList.ofList vals, CachedDList.ofList tycons)
 
     /// Create a new node for an empty module or namespace contents
     static member NewEmptyModuleOrNamespaceType mkind = 
@@ -6124,7 +6229,7 @@ type Construct() =
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_type = MaybeLazy.Lazy(InterruptibleLazy(fun _ -> ModuleOrNamespaceType(Namespace true, QueueList.ofList [], QueueList.ofList [])))
+            entity_modul_type = MaybeLazy.Lazy(InterruptibleLazy(fun _ -> ModuleOrNamespaceType(Namespace true, CachedDList.ofList [], CachedDList.ofList [])))
             // Generated types get internal accessibility
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath

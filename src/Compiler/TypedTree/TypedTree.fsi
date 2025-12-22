@@ -1359,7 +1359,12 @@ type ExceptionInfo =
 [<Sealed; StructuredFormatDisplay("{DebugText}")>]
 type ModuleOrNamespaceType =
 
-    new: kind: ModuleOrNamespaceKind * vals: QueueList<Val> * entities: QueueList<Entity> -> ModuleOrNamespaceType
+    new: kind: ModuleOrNamespaceKind * vals: CachedDList<Val> * entities: CachedDList<Entity> -> ModuleOrNamespaceType
+
+    /// Incrementally merge two ModuleOrNamespaceType instances, preserving cached maps from mty1.
+    /// This avoids O(n) iteration over all accumulated entities when merging.
+    /// The combineEntitiesFn is called when entities with the same logical name exist in both mty1 and mty2.
+    static member MergeWith: mty1: ModuleOrNamespaceType * mty2: ModuleOrNamespaceType * combineEntitiesFn: (Entity -> Entity -> Entity) -> ModuleOrNamespaceType
 
     /// Return a new module or namespace type with an entity added.
     member AddEntity: tycon: Tycon -> ModuleOrNamespaceType
@@ -1384,7 +1389,7 @@ type ModuleOrNamespaceType =
     member ActivePatternElemRefLookupTable: NameMap<ActivePatternElemRef> option ref
 
     /// Type, mapping mangled name to Tycon, e.g.
-    member AllEntities: QueueList<Entity>
+    member AllEntities: CachedDList<Entity>
 
     /// Get a table of entities indexed by both logical type compiled names
     member AllEntitiesByCompiledAndLogicalMangledNames: NameMap<Entity>
@@ -1393,7 +1398,7 @@ type ModuleOrNamespaceType =
     member AllEntitiesByLogicalMangledName: NameMap<Entity>
 
     /// Values, including members in F# types in this module-or-namespace-fragment.
-    member AllValsAndMembers: QueueList<Val>
+    member AllValsAndMembers: CachedDList<Val>
 
     /// Compute a table of values type members indexed by logical name.
     member AllValsAndMembersByLogicalNameUncached: MultiMap<string, Val>
