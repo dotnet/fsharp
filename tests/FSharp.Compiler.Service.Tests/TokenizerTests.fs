@@ -223,3 +223,26 @@ let ``Unfinished idents``() =
          ["IDENT", "```"]]
 
     actual |> Assert.shouldBe expected
+
+[<Fact>]
+let ``Tokenizer test - optional parameters with question mark``() =
+    let tokenizedLines =
+      tokenizeLines
+        [| "member _.memb(?optional:string) = optional" |]
+
+    let actual =
+        [ for lineNo, lineToks in tokenizedLines do
+            yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
+    
+    let expected =
+        [(0,
+          [("MEMBER", "member"); ("WHITESPACE", " "); ("UNDERSCORE", "_"); ("DOT", ".");
+           ("IDENT", "memb"); ("LPAREN", "("); ("QMARK", "?");
+           ("IDENT", "optional"); ("COLON", ":"); ("IDENT", "string");
+           ("RPAREN", ")"); ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("IDENT", "optional")])]
+    
+    if actual <> expected then
+        printfn "actual   = %A" actual
+        printfn "expected = %A" expected
+        actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)

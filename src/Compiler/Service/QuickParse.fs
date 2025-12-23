@@ -90,6 +90,14 @@ module QuickParse =
                     && (lineStr[index] = '|' || IsIdentifierPartCharacter lineStr[index])
                     ->
                     Some index
+                // Handle optional parameter syntax: if we're on '?' and the next char is an identifier, use the next position
+                | _ when
+                    (index < lineStr.Length)
+                    && lineStr[index] = '?'
+                    && (index + 1 < lineStr.Length)
+                    && IsIdentifierPartCharacter lineStr[index + 1]
+                    ->
+                    Some(index + 1)
                 | _ -> None // not on a word or '.'
 
             let (|Char|_|) p =
