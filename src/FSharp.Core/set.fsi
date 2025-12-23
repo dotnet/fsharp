@@ -25,6 +25,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     ///
     /// <returns>The result set.</returns>
     ///
+    /// <remarks>Time complexity: O(n log n). Space complexity: O(n).</remarks>
+    ///
     /// <example id="set-new">
     /// <code lang="fsharp">
     /// let sequenceOfNumbers = seq { 1 .. 3 }
@@ -43,6 +45,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     ///
     /// <returns>The result set.</returns>
     ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
+    ///
     /// <example>
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
@@ -60,6 +64,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     ///
     /// <returns>The result set.</returns>
     ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-remove">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
@@ -70,6 +76,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     member Remove: value: 'T -> Set<'T>
 
     /// <summary>The number of elements in the set</summary>
+    ///
+    /// <remarks>Time complexity: O(n). Space complexity: O(log n).</remarks>
     ///
     /// <example id="set-count">
     /// <code lang="fsharp">
@@ -86,6 +94,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     ///
     /// <returns>True if the set contains <c>value</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-contains">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(2).Add(3)
@@ -96,6 +106,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     member Contains: value: 'T -> bool
 
     /// <summary>A useful shortcut for Set.isEmpty. See the Set module for further operations on sets.</summary>
+    ///
+    /// <remarks>Time complexity: O(1). Space complexity: O(1).</remarks>
     ///
     /// <example id="set-isempty">
     /// <code lang="fsharp">
@@ -262,6 +274,8 @@ module Set =
 
     /// <summary>The empty set for the type 'T.</summary>
     ///
+    /// <remarks>Time complexity: O(1). Space complexity: O(1).</remarks>
+    ///
     /// <example id="empty-1">
     /// <code lang="fsharp">
     /// Set.empty&lt;int&gt;
@@ -277,6 +291,8 @@ module Set =
     /// <param name="value">The value for the set to contain.</param>
     ///
     /// <returns>The set containing <c>value</c>.</returns>
+    ///
+    /// <remarks>Time complexity: O(1). Space complexity: O(1).</remarks>
     ///
     /// <example id="singleton-1">
     /// <code lang="fsharp">
@@ -295,6 +311,8 @@ module Set =
     ///
     /// <returns>A new set containing <c>value</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-add">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
@@ -312,6 +330,8 @@ module Set =
     ///
     /// <returns>True if <c>element</c> is in <c>set</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-contains">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(2).Add(3)
@@ -328,6 +348,8 @@ module Set =
     /// <param name="set2">The set to test against.</param>
     ///
     /// <returns>True if <c>set1</c> is a subset of <c>set2</c>.</returns>
+    ///
+    /// <remarks>Time complexity: O(m log n) where m and n are the sizes of <c>set1</c> and <c>set2</c> respectively. Space complexity: O(log n).</remarks>
     ///
     /// <example id="set-issubset">
     /// <code lang="fsharp">
@@ -348,6 +370,8 @@ module Set =
     ///
     /// <returns>True if <c>set1</c> is a proper subset of <c>set2</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(m log n) where m and n are the sizes of <c>set1</c> and <c>set2</c> respectively. Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-ispropersubset">
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
@@ -365,6 +389,8 @@ module Set =
     /// <param name="set2">The set to test against.</param>
     ///
     /// <returns>True if <c>set1</c> is a superset of <c>set2</c>.</returns>
+    ///
+    /// <remarks>Time complexity: O(m log n) where m and n are the sizes of <c>set2</c> and <c>set1</c> respectively. Space complexity: O(log n).</remarks>
     ///
     /// <example id="set-issuperset">
     /// <code lang="fsharp">
@@ -385,6 +411,8 @@ module Set =
     ///
     /// <returns>True if <c>set1</c> is a proper superset of <c>set2</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(m log n) where m and n are the sizes of <c>set2</c> and <c>set1</c> respectively. Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-ispropersuperset">
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
@@ -401,6 +429,8 @@ module Set =
     /// <param name="set">The input set.</param>
     ///
     /// <returns>The number of elements in the set.</returns>
+    ///
+    /// <remarks>Time complexity: O(n). Space complexity: O(log n).</remarks>
     ///
     /// <example id="set-count">
     /// <code lang="fsharp">
@@ -421,6 +451,8 @@ module Set =
     ///
     /// <returns>True if any element of <c>set</c> satisfies <c>predicate</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(n) worst case. Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-exists">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
@@ -438,6 +470,8 @@ module Set =
     /// <param name="set">The input set.</param>
     ///
     /// <returns>The set containing only the elements for which <c>predicate</c> returns true.</returns>
+    ///
+    /// <remarks>Time complexity: O(n log n). Space complexity: O(n).</remarks>
     ///
     /// <example id="set-filter">
     /// <code lang="fsharp">
@@ -457,6 +491,8 @@ module Set =
     ///
     /// <returns>A set containing the transformed elements.</returns>
     ///
+    /// <remarks>Time complexity: O(n log n). Space complexity: O(n).</remarks>
+    ///
     /// <example id="set-map">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
@@ -474,6 +510,8 @@ module Set =
     /// <param name="set">The input set.</param>
     ///
     /// <returns>The final state.</returns>
+    ///
+    /// <remarks>Time complexity: O(n). Space complexity: O(log n).</remarks>
     ///
     /// <example id="set-fold">
     /// <code lang="fsharp">
@@ -498,6 +536,8 @@ module Set =
     ///
     /// <returns>The final state.</returns>
     ///
+    /// <remarks>Time complexity: O(n). Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-foldback">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
@@ -520,6 +560,8 @@ module Set =
     ///
     /// <returns>True if all elements of <c>set</c> satisfy <c>predicate</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(n) worst case. Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-forall">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
@@ -537,6 +579,8 @@ module Set =
     ///
     /// <returns>The intersection of <c>set1</c> and <c>set2</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(m log n) where m and n are the sizes of <c>set1</c> and <c>set2</c> respectively. Space complexity: O(min(m, n)).</remarks>
+    ///
     /// <example id="set-intersect">
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
@@ -553,6 +597,8 @@ module Set =
     /// <param name="sets">The sequence of sets to intersect.</param>
     ///
     /// <returns>The intersection of the input sets.</returns>
+    ///
+    /// <remarks>Time complexity: O(k * m log n) where k is the number of sets, m is the average size of sets, and n is the size of the largest set. Space complexity: O(n).</remarks>
     ///
     /// <example id="set-intersectmany">
     /// <code lang="fsharp">
@@ -580,6 +626,8 @@ module Set =
     ///
     /// <returns>The union of <c>set1</c> and <c>set2</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(m log n) where m and n are the sizes of <c>set1</c> and <c>set2</c> respectively. Space complexity: O(m + n).</remarks>
+    ///
     /// <example id="set-union">
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
@@ -596,6 +644,8 @@ module Set =
     /// <param name="sets">The sequence of sets to union.</param>
     ///
     /// <returns>The union of the input sets.</returns>
+    ///
+    /// <remarks>Time complexity: O(k * m log n) where k is the number of sets, m is the average size of sets, and n is the size of the result set. Space complexity: O(total elements).</remarks>
     ///
     /// <example id="set-unionmany">
     /// <code lang="fsharp">
@@ -622,6 +672,8 @@ module Set =
     ///
     /// <returns>True if <c>set</c> is empty.</returns>
     ///
+    /// <remarks>Time complexity: O(1). Space complexity: O(1).</remarks>
+    ///
     /// <example id="set-isempty">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(2).Add(3)
@@ -637,6 +689,8 @@ module Set =
     ///
     /// <param name="action">The function to apply to each element.</param>
     /// <param name="set">The input set.</param>
+    ///
+    /// <remarks>Time complexity: O(n). Space complexity: O(log n).</remarks>
     ///
     /// <example id="set-iter">
     /// <code lang="fsharp">
@@ -660,6 +714,8 @@ module Set =
     /// <returns>A pair of sets with the first containing the elements for which <c>predicate</c> returns
     /// true and the second containing the elements for which <c>predicate</c> returns false.</returns>
     ///
+    /// <remarks>Time complexity: O(n log n). Space complexity: O(n).</remarks>
+    ///
     /// <example id="set-partition">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3).Add(4)
@@ -678,6 +734,8 @@ module Set =
     ///
     /// <returns>The input set with <c>value</c> removed.</returns>
     ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-remove">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
@@ -693,6 +751,8 @@ module Set =
     /// <param name="set">The input set.</param>
     ///
     /// <returns>The min value from the set.</returns>
+    ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
     ///
     /// <example id="set-minelement">
     /// <code lang="fsharp">
@@ -710,6 +770,8 @@ module Set =
     ///
     /// <returns>The max value from the set.</returns>
     ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-maxelement">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
@@ -726,6 +788,8 @@ module Set =
     ///
     /// <returns>A set containing the elements form the input list.</returns>
     ///
+    /// <remarks>Time complexity: O(n log n). Space complexity: O(n).</remarks>
+    ///
     /// <example id="set-oflist">
     /// <code lang="fsharp">
     /// let set = Set.ofList [1, 2, 3]
@@ -741,6 +805,8 @@ module Set =
     /// <param name="set">The input set.</param>
     ///
     /// <returns>An ordered list of the elements of <c>set</c>.</returns>
+    ///
+    /// <remarks>Time complexity: O(n). Space complexity: O(n).</remarks>
     ///
     /// <example id="set-tolist">
     /// <code lang="fsharp">
@@ -759,6 +825,8 @@ module Set =
     ///
     /// <returns>A set containing the elements of <c>array</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(n log n). Space complexity: O(n).</remarks>
+    ///
     /// <example id="set-remove">
     /// <code lang="fsharp">
     /// let set = Set.ofArray [|1, 2, 3|]
@@ -774,6 +842,8 @@ module Set =
     /// <param name="set">The input set.</param>
     ///
     /// <returns>An ordered array of the elements of <c>set</c>.</returns>
+    ///
+    /// <remarks>Time complexity: O(n). Space complexity: O(n).</remarks>
     ///
     /// <example id="set-toarray">
     /// <code lang="fsharp">
@@ -792,6 +862,8 @@ module Set =
     ///
     /// <returns>An ordered sequence of the elements of <c>set</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(1) for sequence creation, O(n) for full enumeration. Space complexity: O(log n) during enumeration.</remarks>
+    ///
     /// <example id="set-toseq">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
@@ -809,6 +881,8 @@ module Set =
     ///
     /// <returns>The set containing <c>elements</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(n log n). Space complexity: O(n).</remarks>
+    ///
     /// <example id="set-ofseq">
     /// <code lang="fsharp">
     /// let set = Set.ofSeq [1, 2, 3]
@@ -825,6 +899,8 @@ module Set =
     /// <param name="set2">The set whose elements will be removed from <c>set1</c>.</param>
     ///
     /// <returns>The set with the elements of <c>set2</c> removed from <c>set1</c>.</returns>
+    ///
+    /// <remarks>Time complexity: O(m log n) where m and n are the sizes of <c>set2</c> and <c>set1</c> respectively. Space complexity: O(n).</remarks>
     ///
     /// <example id="set-difference">
     /// <code lang="fsharp">
