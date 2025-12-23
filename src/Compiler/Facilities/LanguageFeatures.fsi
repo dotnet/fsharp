@@ -101,7 +101,7 @@ type LanguageFeature =
 type LanguageVersion =
 
     /// Create a LanguageVersion management object
-    new: string -> LanguageVersion
+    new: string * ?disabledFeaturesArray: LanguageFeature array -> LanguageVersion
 
     /// Get the list of valid versions
     static member ContainsVersion: string -> bool
@@ -114,6 +114,9 @@ type LanguageVersion =
 
     /// Does the selected LanguageVersion support the specified feature
     member SupportsFeature: LanguageFeature -> bool
+
+    /// Create a new LanguageVersion with updated disabled features
+    member WithDisabledFeatures: LanguageFeature array -> LanguageVersion
 
     /// Get the list of valid versions
     static member ValidVersions: string[]
@@ -135,5 +138,8 @@ type LanguageVersion =
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString: feature: LanguageFeature -> string
+
+    /// Try to parse a feature name string to a LanguageFeature option
+    static member TryParseFeature: featureName: string -> LanguageFeature option
 
     static member Default: LanguageVersion

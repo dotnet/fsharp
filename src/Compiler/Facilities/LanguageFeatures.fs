@@ -107,7 +107,7 @@ type LanguageFeature =
     | ReturnFromFinal
 
 /// LanguageVersion management
-type LanguageVersion(versionText) =
+type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
 
     // When we increment language versions here preview is higher than current RTM version
     static let languageVersion46 = 4.6m
@@ -279,11 +279,19 @@ type LanguageVersion(versionText) =
 
     let specifiedString = versionToString specified
 
+    let disabledFeatures: LanguageFeature array = defaultArg disabledFeaturesArray [||]
+
     /// Check if this feature is supported by the selected langversion
     member _.SupportsFeature featureId =
-        match features.TryGetValue featureId with
-        | true, v -> v <= specified
-        | false, _ -> false
+        if Array.contains featureId disabledFeatures then
+            false
+        else
+            match features.TryGetValue featureId with
+            | true, v -> v <= specified
+            | false, _ -> false
+
+    /// Create a new LanguageVersion with updated disabled features
+    member _.WithDisabledFeatures(disabled: LanguageFeature array) = LanguageVersion(versionText, disabled)
 
     /// Has preview been explicitly specified
     member _.IsExplicitlySpecifiedAs50OrBefore() =
@@ -421,6 +429,23 @@ type LanguageVersion(versionText) =
         match features.TryGetValue feature with
         | true, v -> versionToString v
         | _ -> invalidArg "feature" "Internal error: Unable to find feature."
+
+    /// Try to parse a feature name string to a LanguageFeature option using reflection
+    static member TryParseFeature(featureName: string) =
+        let normalized = featureName.Trim()
+
+        Microsoft.FSharp.Reflection.FSharpType.GetUnionCases(
+            typeof<LanguageFeature>,
+            System.Reflection.BindingFlags.Public
+            ||| System.Reflection.BindingFlags.NonPublic
+        )
+        |> Array.tryFind (fun case -> System.String.Equals(case.Name, normalized, System.StringComparison.OrdinalIgnoreCase))
+        |> Option.bind (fun case ->
+            let union = Microsoft.FSharp.Reflection.FSharpValue.MakeUnion(case, [||])
+
+            match box union with
+            | null -> None
+            | obj -> Some(obj :?> LanguageFeature))
 
     override x.Equals(yobj: obj) =
         match yobj with

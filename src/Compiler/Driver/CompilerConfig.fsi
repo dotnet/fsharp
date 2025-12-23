@@ -512,6 +512,8 @@ type TcConfigBuilder =
 
         mutable langVersion: LanguageVersion
 
+        mutable disabledLanguageFeatures: Set<LanguageFeature>
+
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
