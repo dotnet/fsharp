@@ -16,7 +16,7 @@
 //<Expects id="FS0771" span="(30,25)" status="error">The types System\.ValueType, System\.Enum, System\.Delegate, System\.MulticastDelegate and System\.Array cannot be used as super types in an object expression or class</Expects>
 //<Expects id="FS0771" span="(30,25)" status="error">The types System\.ValueType, System\.Enum, System\.Delegate, System\.MulticastDelegate and System\.Array cannot be used as super types in an object expression or class</Expects>
 
-#light
+
 let o1 = { new System.ValueType with member x.ToString() = "" }
 let o2 = { new System.Array with member x.ToString() = "" }
 let o3 = { new System.Enum with member x.ToString() = "" }

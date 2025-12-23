@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis 
-#light
+
 
 // Test conditional compilation flags. 
 // To run this test please define "THIS_IS_DEFINED"

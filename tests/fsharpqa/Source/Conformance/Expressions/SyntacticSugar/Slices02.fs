@@ -1,5 +1,5 @@
 // #Conformance #SyntacticSugar 
-#light
+
 
 // Verify slices syntax on types with a get slice method
 

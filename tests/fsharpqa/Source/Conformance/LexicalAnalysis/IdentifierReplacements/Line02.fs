@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis
-#light                                                                          // 2
+                                                                                // 2
                                                                                 // 3
 // Test ability for a function to 'return' the current source line directive.   // 4
                                                                                 // 5

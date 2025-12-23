@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexicalAnalysis #Constants 
-#light
+
 
 // Verify numeric literals work as expected
 

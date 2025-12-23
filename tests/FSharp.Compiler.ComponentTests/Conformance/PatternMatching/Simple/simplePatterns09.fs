@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 let sumArray array =
     match array with

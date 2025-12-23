@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis #Operators 
-#light
+
 
 let mutable m : string = ""
 

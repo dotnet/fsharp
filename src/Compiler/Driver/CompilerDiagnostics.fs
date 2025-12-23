@@ -1280,7 +1280,6 @@ type Exception with
                 | Parser.TOKEN_HIGH_PRECEDENCE_BRACK_APP -> SR.GetString("Parser.TOKEN.HIGH.PRECEDENCE.BRACK.APP")
                 | Parser.TOKEN_BEGIN -> SR.GetString("Parser.TOKEN.BEGIN")
                 | Parser.TOKEN_END -> SR.GetString("Parser.TOKEN.END")
-                | Parser.TOKEN_HASH_LIGHT
                 | Parser.TOKEN_HASH_LINE
                 | Parser.TOKEN_HASH_IF
                 | Parser.TOKEN_HASH_ELSE

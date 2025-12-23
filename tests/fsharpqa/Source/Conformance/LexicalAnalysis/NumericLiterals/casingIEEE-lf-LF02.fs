@@ -3,7 +3,7 @@
 // IEEE32/IEEE64 - lf vs LF
 // verify that xint can be specified either with '0x' or '0X'
 //<Expects status="success"></Expects>
-#light
+
 
 let x = 0X5LF
 let y = 0X5lf

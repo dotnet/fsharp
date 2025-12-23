@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
-#light
+
 
 // Regression test for FSharp1.0:4973
 // Title: extension methods and overloading

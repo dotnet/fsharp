@@ -3,7 +3,7 @@
 // Title: spurious warning with slot inference?
 // Desc: Not expecting to get a 'less generic than indicated by the annotation' message at the point pointed by marked
 
-#light
+
 
 type IParameterUser<'t> =
   abstract Use<'b> : list<'b> -> 't

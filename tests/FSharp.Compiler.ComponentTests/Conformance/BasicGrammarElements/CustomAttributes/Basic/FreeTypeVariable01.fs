@@ -4,7 +4,7 @@
 //<Expects status="notin">internal error</Expects>
 //<Expects status="success"></Expects>
 
-#light
+
 
 open System
 open System.Diagnostics

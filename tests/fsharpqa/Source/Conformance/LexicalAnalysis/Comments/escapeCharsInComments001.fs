@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:945
 // comment lexing does not handle \" inside quoted strings
 //<Expects status="success"></Expects>
-#light
+
 
 (* simple escape chars (escape-char in the grammar) *)
 

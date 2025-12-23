@@ -1,5 +1,5 @@
 // #Regression #Conformance #DataExpressions 
-#light
+
 
 // FSB 1005, float comprehensions of form "x0 .. dx .. x1" suffer rounding errors
 // After changes in BigInt, this is no longer a warning.

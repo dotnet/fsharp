@@ -151,7 +151,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 
 /* These are artificial */
 %token <string> LEX_FAILURE
-%token <ParseHelpers.LexerContinuation> COMMENT WHITESPACE HASH_LINE HASH_LIGHT INACTIVECODE LINE_COMMENT STRING_TEXT EOF
+%token <ParseHelpers.LexerContinuation> COMMENT WHITESPACE HASH_LINE INACTIVECODE LINE_COMMENT STRING_TEXT EOF
 %token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF WARN_DIRECTIVE
 
 %start signatureFile implementationFile interaction typedSequentialExprEOF typEOF
@@ -172,7 +172,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %type <SynExpr> declExprBlock
 %type <SynPat> headBindingPattern
 %type <SynType> appTypeNullableInParens
-%type <SynType> atomTypeNonAtomicDeprecated
+%type <SynType> atomType
 %type <SynType> atomTypeOrAnonRecdType
 %type <SynExpr> atomicExprAfterType
 %type <SynExpr> typedSequentialExprBlock
@@ -674,7 +674,7 @@ moduleSpfn:
   | valSpfn
       { $1 }
 
-  | opt_attributes opt_access moduleIntro colonOrEquals namedModuleAbbrevBlock
+  | opt_attributes opt_access moduleIntro EQUALS namedModuleAbbrevBlock
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let mModule, isRec, path, vis, attribs2 = $3
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
@@ -688,7 +688,7 @@ moduleSpfn:
             let m = unionRanges mModule lid.Range
             SynModuleSigDecl.ModuleAbbrev(List.head path, lid.LongIdent, m) }
 
-  | opt_attributes opt_access moduleIntro colonOrEquals moduleSpecBlock
+  | opt_attributes opt_access moduleIntro EQUALS moduleSpecBlock
       { let mModule, isRec, path, vis, attribs2 = $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
@@ -700,7 +700,7 @@ moduleSpfn:
                 ||> unionRangeWithListBy (fun (d: SynModuleSigDecl) -> d.Range)
                 |> unionRangeWithXmlDoc xmlDoc
         let m = match mOptEnd with | None -> m | Some mEnd -> unionRanges m mEnd
-        let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = $4 }
+        let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = Some(rhs parseState 4) }
         SynModuleSigDecl.NestedModule(info, isRec, decls, m, trivia) }
 
   | opt_attributes opt_access moduleIntro error
@@ -777,17 +777,17 @@ optLiteralValueSpfn:
 /* A block of definitions in a module in a signature file */
 moduleSpecBlock:
 
-  /* #light-syntax, with no sig/end or begin/end */
+  /* #light-syntax, with no begin/end */
   | OBLOCKBEGIN moduleSpfns oblockend
       { $2, None }
 
-  /* #light-syntax, with sig/end or begin/end */
-  | OBLOCKBEGIN sigOrBegin moduleSpfnsPossiblyEmpty END oblockend
+  /* #light-syntax, with begin/end */
+  | OBLOCKBEGIN BEGIN moduleSpfnsPossiblyEmpty END oblockend
       { let mEnd = rhs parseState 4
         $3, Some mEnd }
 
-  /* non-#light-syntax, with sig/end or begin/end */
-  | sigOrBegin moduleSpfnsPossiblyEmpty END
+  /* non-#light-syntax, with begin/end */
+  | BEGIN moduleSpfnsPossiblyEmpty END
       { let mEnd = rhs parseState 3
         $2, Some mEnd }
 
@@ -1475,15 +1475,15 @@ namedModuleDefnBlock:
 
 /* A module definition that includes a 'begin'...'end' (rarely used in F# with #light syntax) */
 wrappedNamedModuleDefn:
-  | structOrBegin moduleDefnsOrExprPossiblyEmpty END
+  | BEGIN moduleDefnsOrExprPossiblyEmpty END
      { let mEnd = rhs parseState 3
        $2, Some mEnd }
 
-  | structOrBegin moduleDefnsOrExprPossiblyEmpty recover
+  | BEGIN moduleDefnsOrExprPossiblyEmpty recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBeginOrStruct())
        $2, None }
 
-  | structOrBegin error END
+  | BEGIN error END
      { let mEnd = rhs parseState 3
        [], Some mEnd }
 
@@ -2327,12 +2327,12 @@ opt_classDefn:
 
 /* An 'inherits' definition in an object type definition */
 inheritsDefn:
-  | INHERIT atomTypeNonAtomicDeprecated optBaseSpec
+  | INHERIT atomType optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) $2.Range
        let trivia = { InheritKeyword = rhs parseState 1 }
        SynMemberDefn.Inherit(Some $2, $3, mDecl, trivia) }
 
-  | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
+  | INHERIT atomType opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) $4.Range
        let trivia = { InheritKeyword = rhs parseState 1 }
        SynMemberDefn.ImplicitInherit($2, $4, $5, mDecl, trivia) }
@@ -4667,21 +4667,6 @@ declExpr:
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
        mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixBarOp", mOp.EndRange)) }
 
-  | declExpr OR declExpr
-     { mkSynInfix (rhs parseState 2) $1 "or" $3 }
-
-  | declExpr OR ends_coming_soon_or_recover
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression "or")
-       mkSynInfix (rhs parseState 2) $1 "or" (arbExpr ("declExprInfixOr", (rhs parseState 3).StartRange)) }
-
-  | declExpr AMP declExpr
-     { mkSynInfix (rhs parseState 2) $1 "&" $3 }
-
-  | declExpr AMP ends_coming_soon_or_recover
-     { let mOp = rhs parseState 2
-       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "&")
-       mkSynInfix mOp $1 "&" (arbExpr ("declExprInfixAmp", mOp.EndRange)) }
-
   | declExpr AMP_AMP declExpr
      { mkSynInfix (rhs parseState 2) $1 "&&" $3 }
 
@@ -5157,15 +5142,15 @@ minusExpr:
   | AMP_AMP minusExpr
       { SynExpr.AddressOf(false, $2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range) }
 
-  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType DOT atomicExprQualification
+  | NEW atomType opt_HIGH_PRECEDENCE_APP atomicExprAfterType DOT atomicExprQualification
       { errorR (Error (FSComp.SR.parsNewExprMemberAccess (), rhs parseState 6))
         let newExpr = SynExpr.New(false, $2, $4, unionRanges (rhs parseState 1) $4.Range)
         $6 newExpr (lhs parseState) (rhs parseState 5) }
 
-  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType
+  | NEW atomType opt_HIGH_PRECEDENCE_APP atomicExprAfterType
       { SynExpr.New(false, $2, $4, unionRanges (rhs parseState 1) $4.Range) }
 
-  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP error
+  | NEW atomType opt_HIGH_PRECEDENCE_APP error
       { SynExpr.New(false, $2, arbExpr ("minusExpr", (rhs parseState 4)), unionRanges (rhs parseState 1) ($2).Range) }
 
   | NEW error
@@ -5354,11 +5339,8 @@ atomicExprQualification:
             | SynExpr.IndexRange(None, mOperator, None, _m1, _m2, _) ->
                 mkSynDot mDot mLhs e (SynIdent(ident(CompileOpName "*", mOperator), Some(IdentTrivia.OriginalNotationWithParen(lpr, "*", rpr))))
             | _ ->
-                if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
-                    mlCompatError (FSComp.SR.mlCompatMultiPrefixTyparsNoLongerSupported()) (lhs parseState)
-                else
-                    mlCompatWarning (FSComp.SR.parsParenFormIsForML()) (lhs parseState)
-                mkSynDotParenGet mLhs mDot e $2) }
+                errorR(Deprecated(FSComp.SR.astDeprecatedIndexerNotation(), lhs parseState))
+                exprFromParseError $2) }
 
   | LBRACK typedSequentialExpr RBRACK
       { (fun e mLhs mDot -> mkSynDotBrackGet mLhs mDot e $2) }
@@ -5672,7 +5654,7 @@ optInlineAssemblyReturnTypes:
      { [] }
 
 recdExpr:
-  | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType recdExprBindings opt_seps_block
+  | INHERIT atomType opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType recdExprBindings opt_seps_block
      { let arg = match $4 with None -> mkSynUnit (lhs parseState) | Some e -> e
        let l = List.rev $5
        let dummyField = mkRecdField (SynLongIdent([], [], [])) // dummy identifier, it will be discarded
@@ -5832,18 +5814,18 @@ objExpr:
        let fullRange = match $3 with [] -> (rhs parseState 1) | _ -> (rhs2 parseState 1 3)
        fullRange, (fun m -> let (a, b) = $1 in SynExpr.ObjExpr(a, b, None, [], [], $3, mNewExpr, m)) }
 
-  | NEW atomTypeNonAtomicDeprecated
+  | NEW atomType
      { let mNewExpr = rhs parseState 1
        (rhs2 parseState 1 2), (fun m -> let (a, b) = $2, None in SynExpr.ObjExpr(a, b, None, [], [], [], mNewExpr, m)) }
 
 objExprBaseCall:
-  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType baseSpec
+  | NEW atomType opt_HIGH_PRECEDENCE_APP atomicExprAfterType baseSpec
      { ($2, Some($4, Some($5))) }
 
-  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType
+  | NEW atomType opt_HIGH_PRECEDENCE_APP atomicExprAfterType
      { ($2, Some($4, None)) }
 
-  | NEW atomTypeNonAtomicDeprecated
+  | NEW atomType
      { $2, None }
 
 
@@ -6369,14 +6351,6 @@ appTypeWithoutNull:
       /* note: use "rhs parseState 1" to deal with parens in "(int) list" */
       { SynType.App($2, None, [$1], [], None, true, unionRanges (rhs parseState 1) $2.Range) }
 
-  | LPAREN appTypePrefixArguments rparen appTypeConPower
-      { let args, commas = $2
-        if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
-            mlCompatError (FSComp.SR.mlCompatMultiPrefixTyparsNoLongerSupported()) (unionRanges (rhs parseState 1) $4.Range)
-        else
-            mlCompatWarning (FSComp.SR.parsMultiArgumentGenericTypeFormDeprecated()) (unionRanges (rhs parseState 1) $4.Range)
-        SynType.App($4, None, args, commas, None, true, unionRanges (rhs parseState 1) $4.Range) }
-
   | powerType
       { $1 }
 
@@ -6489,11 +6463,6 @@ arrayTypeSuffix:
   | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
       { 32 }
 
-appTypePrefixArguments:
-  | typeArgActual COMMA typeArgActual typeArgListElements
-      { let typeArgs, commas = $4
-        $1 :: $3 :: List.rev typeArgs, (rhs parseState 2) :: (List.rev commas) }
-
 typeArgListElements:
   | typeArgListElements COMMA typeArgActual
       { let typeArgs, commas = $1
@@ -6519,21 +6488,6 @@ powerType:
            let m = unionRanges beforeMinus (rhs parseState 3)  // include MINUS in Negate range
            SynType.MeasurePower($1, SynRationalConst.Negate($3, m), lhs parseState)
        else SynType.MeasurePower($1, $3, lhs parseState) }
-
-
-/* Like appType but gives a deprecation error when a non-atomic type is used */
-/* Also, doesn't start with '{|'  */
-atomTypeNonAtomicDeprecated:
-  | LPAREN appTypePrefixArguments rparen appTypeConPower
-      { let args, commas = $2
-        if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
-            mlCompatError (FSComp.SR.mlCompatMultiPrefixTyparsNoLongerSupported()) (unionRanges (rhs parseState 1) $4.Range)
-        else
-            mlCompatWarning (FSComp.SR.parsMultiArgumentGenericTypeFormDeprecated()) (unionRanges (rhs parseState 1) $4.Range)
-        SynType.App($4, None, args, commas, None, true, unionRanges (rhs parseState 1) $4.Range) }
-
-  | atomType
-      { $1 }
 
 atomTypeOrAnonRecdType:
   | atomType
@@ -6883,9 +6837,6 @@ operatorName:
   | EQUALS
      { "=" }
 
-  | OR
-     { "or" }
-
   | LESS
      { "<" }
 
@@ -6894,9 +6845,6 @@ operatorName:
 
   | QMARK
      { "?" }
-
-  | AMP
-     { "&" }
 
   | AMP_AMP
      { "&&" }
@@ -7061,36 +7009,6 @@ doneDeclEnd:
       { rhs parseState 1 }
   | ODECLEND
       { let m, _ = $1 in m }
-
-structOrBegin:
-  | STRUCT
-    { if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
-          mlCompatError (FSComp.SR.mlCompatStructEndNoLongerSupported()) (lhs parseState)
-      else
-          mlCompatWarning (FSComp.SR.parsSyntaxModuleStructEndDeprecated()) (lhs parseState)
-    }
-  | BEGIN { }
-
-sigOrBegin:
-  | SIG
-    { if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
-          mlCompatError (FSComp.SR.mlCompatSigEndNoLongerSupported())(lhs parseState)
-      else
-          mlCompatWarning (FSComp.SR.parsSyntaxModuleSigEndDeprecated()) (lhs parseState)
-    }
-  | BEGIN { }
-
-colonOrEquals:
-  | COLON
-    { if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
-          mlCompatError (FSComp.SR.mlCompatSigColonNoLongerSupported())(lhs parseState)
-      else
-          mlCompatWarning (FSComp.SR.parsSyntaxModuleSigEndDeprecated()) (lhs parseState)
-      None
-    }
-  | EQUALS
-      { let mEquals = rhs parseState 1
-        Some mEquals }
 
 /* A literal string or a string from a keyword like __SOURCE_FILE__ */
 string:

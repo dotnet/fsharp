@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments 
-#light
+
 
 type Ballad() =
     static member MethWithOptParams (?param1:int, ?param2:string list, ?param3:int list option) =

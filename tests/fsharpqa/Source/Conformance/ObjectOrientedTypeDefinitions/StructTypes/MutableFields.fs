@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Structs 
-#light
+
 namespace NS
   module M = 
     type S1 (i : int) =

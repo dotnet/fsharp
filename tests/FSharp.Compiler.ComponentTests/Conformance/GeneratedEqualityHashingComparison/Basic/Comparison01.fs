@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
-#light
+
 
 // Test generated comparison on tuples.
 

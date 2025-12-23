@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #TypeExtensions 
-#light
+
 
 // Verify type extensions on non-fully qualified names
 

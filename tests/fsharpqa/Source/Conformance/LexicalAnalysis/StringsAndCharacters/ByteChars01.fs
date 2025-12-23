@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexicalAnalysis 
-#light
+
 
 // Verify byte chars return the expected value
 

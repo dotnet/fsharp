@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexicalAnalysis 
-#light
+
 
 //<Expects id="FS0516" status="error">End of file in comment begun at or before here</Expects>
 

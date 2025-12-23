@@ -1,7 +1,7 @@
 // #Regression #Conformance #Quotations 
 // Regression test for FSHARP1.0:5339
 // Make sure nested quotations are printing correctly. Nested quotation here used to print x in + expression as UnitVar0
-#light
+
 
 open Microsoft.FSharp.Quotations
 

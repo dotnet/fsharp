@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #ObjectConstructors 
-#light
+
 
 // Verify the ability to define mutually recursive types.
 

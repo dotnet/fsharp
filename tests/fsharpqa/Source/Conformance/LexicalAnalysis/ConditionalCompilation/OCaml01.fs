@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis 
-#light
+
 
 let x = 0 (*IF-OCAML*) + 1 (*ENDIF-OCAML*)
 

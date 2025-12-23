@@ -3789,14 +3789,12 @@ let buildApp (cenv: cenv) expr resultTy arg m =
 
     // Special rule for building applications of the 'x && y' operator
     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [x0], _)), _
-         when valRefEq g vref g.and_vref
-           || valRefEq g vref g.and2_vref ->
+         when valRefEq g vref g.and2_vref ->
         MakeApplicableExprNoFlex cenv (mkLazyAnd g m x0 arg), resultTy
 
     // Special rule for building applications of the 'x || y' operator
     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [x0], _)), _
-         when valRefEq g vref g.or_vref
-           || valRefEq g vref g.or2_vref ->
+         when valRefEq g vref g.or2_vref ->
         MakeApplicableExprNoFlex cenv (mkLazyOr g m x0 arg ), resultTy
 
     // Special rule for building applications of the 'reraise' operator
@@ -8608,9 +8606,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                     match leftExpr with
                     | ApplicableExpr(expr=Expr.Val (vref, _, _))
                     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [_], _))
-                         when valRefEq g vref g.and_vref
-                           || valRefEq g vref g.and2_vref
-                           || valRefEq g vref g.or_vref
+                         when valRefEq g vref g.and2_vref
                            || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
                     | _ -> env
 

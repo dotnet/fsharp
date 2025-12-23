@@ -1,5 +1,5 @@
 // #Conformance #TypeConstraints 
-#light
+
 
 // Test the base types of F# types: AbstractClass
 [<AbstractClass>]

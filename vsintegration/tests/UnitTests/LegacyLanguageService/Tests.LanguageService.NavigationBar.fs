@@ -17,7 +17,7 @@ type UsingMSBuild() =
         (* Files for testing and tests --------------------------------------------------------- *)
                 
     let NavigationFile1 = 
-      [ "#light"
+      [
         "module Example.Module"
         ""
         "module SomeModule = "
@@ -39,7 +39,7 @@ type UsingMSBuild() =
         "    type EnumOneLine = (*5s*)| OUAaa = 0 | OUBbb = 3(*5e*)" ]
 
     let NavigationFile2 = 
-      [ "#light"
+      [
         "module A =   "
         ""
         "    type RecWith = (*7s*){ "

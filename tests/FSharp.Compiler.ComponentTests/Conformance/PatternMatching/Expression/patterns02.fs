@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Verify ability to match just a single identifier
 

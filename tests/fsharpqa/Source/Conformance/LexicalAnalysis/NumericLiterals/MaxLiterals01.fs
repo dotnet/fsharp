@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis #Constants 
-#light
+
 
 // Verify ability to specify min and max for literals
 

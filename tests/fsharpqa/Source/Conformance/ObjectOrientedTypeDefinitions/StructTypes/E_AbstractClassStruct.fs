@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #Structs 
-#light
+
 
 // Verify error when both AbstractClassAttribute and StructAttribute are on the same type.
 //<Expects id="FS0926" span="(8,6)" status="error">The attributes of this type specify multiple kinds for the type</Expects>

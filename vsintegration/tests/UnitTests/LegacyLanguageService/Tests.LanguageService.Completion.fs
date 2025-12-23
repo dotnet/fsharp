@@ -2821,24 +2821,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
         t.Start()
         System.Threading.Thread.Sleep(1000)
 
-    [<Fact>]
-    member public this.``DotBetweenParens.Bug175360.Case1``() =
-        AssertAutoCompleteContains 
-            [
-                "let a = 10."
-                "(a :> System.IConvertible).(null) |> ignore" ]
-            "ible)."
-            [ "ToDecimal" ] // should contain
-            [] // should not contain
-
-    [<Fact>]
-    member public this.``DotBetweenParens.Bug175360.Case2``() =
-        AssertAutoCompleteContains 
-            [ "[| 1 |].(0)" ]
-            "|]."
-            [ "Clone" ] // should contain
-            [] // should not contain
-
     [<Fact(Skip = "Not worth fixing right now")>]
     member public this.``GenericType.Self.Bug69673_1.01``() =    
         AssertCtrlSpaceCompleteContains
@@ -2997,16 +2979,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "abs" ] // should contain (top level)
           [ "CompareTo" ] // should not contain (from Int32)
 
-    // Verify the auto completion after the close-parentheses,
-    // there should be auto completion
-    [<Fact>]
-    member public this.``Array.AfterParentheses.Bug175360``() =        
-        AssertAutoCompleteContainsNoCoffeeBreak 
-          [ "let a = 10."
-            "let r = (a :> System.IConvertible).(null)" ]
-          "IConvertible)."       // marker
-          [ "ToDecimal" ] // should contain (top level)
-          [ ] // should not contain 
 
     [<Fact>]
     member public this.``Identifier.FuzzyDefined.Bug67133``() =  
@@ -6556,12 +6528,6 @@ let rec f l =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """#nowarn(*MarkerPreProcessNowarn*)""",
             marker = "(*MarkerPreProcessNowarn*)")
-
-    [<Fact>]
-    member this.``MacroDirectives.light``() = 
-        this.VerifyDotCompListIsEmptyAtStartOfMarker(
-            fileContents = """#light(*MarkerPreProcessLight*)""",
-            marker = "(*MarkerPreProcessLight*)") 
 
     [<Fact>]
     member this.``MacroDirectives.define``() =

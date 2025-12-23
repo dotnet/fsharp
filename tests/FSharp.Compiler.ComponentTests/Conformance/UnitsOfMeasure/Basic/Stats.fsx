@@ -1,5 +1,5 @@
 // #Conformance #UnitsOfMeasure 
-#light
+
 
 let rec sum xs = match xs with [] -> 0.0<_> | (x::xs) -> x + sum xs
 

@@ -5,7 +5,7 @@
 // using both fsc and fsi
 // Note: the code here has nothing to do with the
 // test itself. Any F# code would pretty much do.
-#light
+
 
 namespace Name.Space
 

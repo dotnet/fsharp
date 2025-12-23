@@ -3,7 +3,7 @@
 // Verify that (**) does not leave the lexer in a comment state
 //<Expects status="success"></Expects>
 
-#light 
+
 
 let x (**) = (**) 1
 

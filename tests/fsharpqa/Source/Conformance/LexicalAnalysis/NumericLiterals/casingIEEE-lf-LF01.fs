@@ -2,7 +2,7 @@
 // Number type specifier LF/lf are case-sensitive
 // IEEE32/IEEE64 - lf vs LF
 //<Expects status="success"></Expects>
-#light
+
 
 let x = 0x5lf
 let y = 0x5LF

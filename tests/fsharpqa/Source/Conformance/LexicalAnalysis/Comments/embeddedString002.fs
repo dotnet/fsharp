@@ -3,7 +3,7 @@
 // block-comment-end token
 //<Expects status="success"></Expects>
 
-#light
+
 
 (* Remove the "*)" which is mandatory in OCaml regex. *)
 exit 0

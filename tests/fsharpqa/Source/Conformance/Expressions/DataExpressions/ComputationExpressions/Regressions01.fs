@@ -1,5 +1,5 @@
 // #Regression #Conformance #DataExpressions #ComputationExpressions 
-#light
+
 
 // Regression test for FSB, 1831
 // Finally block called twice for nested sequence comprehensions

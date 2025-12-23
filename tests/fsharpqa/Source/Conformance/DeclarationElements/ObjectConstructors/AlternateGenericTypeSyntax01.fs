@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #ObjectConstructors 
-#light
+
 
 // Test for alternate syntax for declaring generic types
 // This notation comes from OCaml and issues an OCaml-compat warning

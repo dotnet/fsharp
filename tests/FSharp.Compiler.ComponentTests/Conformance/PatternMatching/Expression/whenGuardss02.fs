@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Verify that if the when guard fails, that pattern is not matched.
 

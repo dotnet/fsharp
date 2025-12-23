@@ -24,7 +24,6 @@ open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.LexerStore
 open FSharp.Compiler.Lexhelp
@@ -54,9 +53,6 @@ let CanonicalizeFilename fileName =
 
 let IsScript fileName =
     FSharpScriptFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
-
-let IsMLCompatFile fileName =
-    FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
 
 // Give a unique name to the different kinds of inputs. Used to correlate signature and implementation files
 //   QualFileNameOfModuleName - files with a single module declaration or an anonymous module
@@ -123,7 +119,7 @@ let ComputeAnonModuleName check defaultNamespace fileName (m: range) =
     pathToSynLid anonymousModuleNameRange (splitNamespace combined)
 
 let FileRequiresModuleOrNamespaceDecl isLast isExe fileName =
-    not (isLast && isExe) && not (IsScript fileName || IsMLCompatFile fileName)
+    not (isLast && isExe) && not (IsScript fileName)
 
 let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) =
     match impl with
@@ -461,12 +457,6 @@ let ParseInput
             else
                 lexer
 
-        if FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-            if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-                errorR (Error(FSComp.SR.buildInvalidSourceFileExtensionML fileName, rangeStartup))
-            else
-                mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML ()) rangeStartup
-
         // Call the appropriate parser - for signature files or implementation files
         if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
             let impl = implementationFile lexer lexbuf
@@ -474,10 +464,8 @@ let ParseInput
         elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
             let intfs = signatureFile lexer lexbuf
             PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, diagnosticOptions, Set identStore)
-        else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-            error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
         else
-            error (Error(FSComp.SR.buildInvalidSourceFileExtension fileName, rangeStartup))
+            error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
     finally
         // OK, now commit the errors, since the ScopedPragmas will (hopefully) have been scraped
         let filteringDiagnosticsLogger =
@@ -569,15 +557,10 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
         // Don't report whitespace from lexer
         let skipWhitespaceTokens = true
 
-        // Set up the initial status for indentation-aware processing
-        let indentationSyntaxStatus =
-            IndentationAwareSyntaxStatus(tcConfig.ComputeIndentationAwareSyntaxInitialStatus fileName, true)
-
         // Set up the initial lexer arguments
         let lexargs =
             mkLexargs (
                 tcConfig.conditionalDefines,
-                indentationSyntaxStatus,
                 lexResourceManager,
                 [],
                 diagnosticsLogger,
@@ -595,7 +578,6 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                     | TokenizeOption.Only ->
                         LexFilter
                             .LexFilter(
-                                indentationSyntaxStatus,
                                 tcConfig.compilingFSharpCore,
                                 Lexer.token lexargs skipWhitespaceTokens,
                                 lexbuf,
@@ -606,7 +588,6 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                     | _ ->
                         LexFilter
                             .LexFilter(
-                                indentationSyntaxStatus,
                                 tcConfig.compilingFSharpCore,
                                 Lexer.token lexargs skipWhitespaceTokens,
                                 lexbuf,
@@ -656,7 +637,9 @@ let checkInputFile (tcConfig: TcConfig) fileName =
         if not (FileSystem.FileExistsShim fileName) then
             error (Error(FSComp.SR.buildCouldNotFindSourceFile fileName, rangeStartup))
     else
-        error (Error(FSComp.SR.buildInvalidSourceFileExtension (SanitizeFileName fileName tcConfig.implicitIncludeDir), rangeStartup))
+        error (
+            Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated (SanitizeFileName fileName tcConfig.implicitIncludeDir), rangeStartup)
+        )
 
 let parseInputStreamAux
     (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream: Stream)

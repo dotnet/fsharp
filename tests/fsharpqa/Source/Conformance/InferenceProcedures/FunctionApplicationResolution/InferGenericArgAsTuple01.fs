@@ -1,5 +1,5 @@
 // #Conformance #TypeInference #ApplicationExpressions 
-#light
+
 
 // Verify we can infer generic type args to be a tuple without adding
 // additional parens.

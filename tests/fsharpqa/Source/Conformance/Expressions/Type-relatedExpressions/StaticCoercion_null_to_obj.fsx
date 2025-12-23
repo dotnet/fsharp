@@ -1,7 +1,7 @@
 // #Conformance #TypeRelatedExpressions #TypeAnnotations 
 // Upcast to object - null
 //<Expects status="success"></Expects>
-#light
+
 let a = ( upcast null ) : obj
 let b = ( null :> _ ) : obj
 let c = null :> obj

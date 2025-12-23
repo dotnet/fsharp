@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
-#light
+
 // Regression for FSharp 1.0:1794
 
 //Define a new abstract type (interface)

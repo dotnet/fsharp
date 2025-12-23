@@ -1,5 +1,5 @@
 // #Conformance #TypeConstraints 
-#light
+
 
 // Verify the ability to state type parameters in modules
 

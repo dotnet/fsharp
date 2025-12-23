@@ -1,5 +1,5 @@
 // #Conformance #LexFilter #Precedence 
-#light
+
 
 // Verify high precedence applications. That is, if no space is between the function
 // and its first method, then verify a different precedence.

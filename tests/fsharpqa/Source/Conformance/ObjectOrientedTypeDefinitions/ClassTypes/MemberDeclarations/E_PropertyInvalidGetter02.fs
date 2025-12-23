@@ -4,7 +4,7 @@
 //<Expects id="FS0555" span="(11,27-11,39)" status="error">'get' and/or 'set' required</Expects>
 //<Expects id="FS0555" span="(16,27-16,39)" status="error">'get' and/or 'set' required</Expects>
 
-#light
+
 
 type A() = 
     member this.Item with get (x: int, y: int) = 6 

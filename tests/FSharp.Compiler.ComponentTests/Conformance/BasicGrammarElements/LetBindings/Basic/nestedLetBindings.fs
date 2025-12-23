@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #LetBindings 
-#light
+
 
 type Foo() =
     let mutable m_x = 0

@@ -3,7 +3,7 @@
 
 //<Expects id="FS0359" status="error" span="(16,11-19,12)">More than one override implements 'Next: StrongToWeakEntry<'a> array -> int when 'a: not struct'</Expects>
 
-#light
+
 
 [<AbstractClass>]
 type BaseHashtable<'Entry, 'Key>(initialCapacity) =

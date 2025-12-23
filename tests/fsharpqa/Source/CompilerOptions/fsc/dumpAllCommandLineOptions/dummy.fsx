@@ -24,7 +24,6 @@
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=consolecolors                  kind=OptionSwitch</Expects>
 //<Expects status="success">section='- LANGUAGE -             ' ! option=checked                        kind=OptionSwitch</Expects>
 //<Expects status="success">section='- LANGUAGE -             ' ! option=define                         kind=OptionString</Expects>
-//<Expects status="success">section='- LANGUAGE -             ' ! option=mlcompatibility                kind=OptionUnit</Expects>
 //<Expects status="success">section='- MISCELLANEOUS -        ' ! option=nologo                         kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=codepage                       kind=OptionInt</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=utf8output                     kind=OptionUnit</Expects>
@@ -82,9 +81,6 @@
 //<Expects status="success">section='NoSection                ' ! option=i                              kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=r                              kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=I                              kind=OptionStringList</Expects>
-//<Expects status="success">section='NoSection                ' ! option=light                          kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=indentation-syntax             kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=no-indentation-syntax          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=dumpAllCommandLineOptions      kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='- INPUT FILES -          ' ! option=--                             kind=OptionRest</Expects>
 //<Expects status="success">section='- MISCELLANEOUS -        ' ! option=help                           kind=OptionConsoleOnly</Expects>
@@ -155,7 +151,6 @@
 //<Expects status="notin">section='NoSection                ' ! option=debug-file                     kind=OptionString</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=no-debug-file                  kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=Ooff                           kind=OptionUnit</Expects>
-//<Expects status="notin">section='NoSection                ' ! option=ml-keywords                    kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=gnu-style-errors               kind=OptionUnit</Expects>
 
 

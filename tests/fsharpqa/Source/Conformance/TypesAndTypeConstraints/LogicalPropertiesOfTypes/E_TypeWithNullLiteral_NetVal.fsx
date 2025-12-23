@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeConstraints 
-#light
+
 
 // Odd type: System.Void
 let x1 : System.Void = null

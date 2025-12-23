@@ -4,7 +4,7 @@ This testcase is designed to exercise uncommonly used grammar productions in the
 language.
 ***)
 
-#light
+
 
 /// RULE: 255     explicitValTyparDeclsCore -> 
 let f<'a> (x:'a) = x

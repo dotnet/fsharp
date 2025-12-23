@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexicalAnalysis #Constants 
-#light
+
 
 // Verify compile error for unsigned literals which are MaxSize + 1, MaxSize - 1
 // All of these should cause compiler errors

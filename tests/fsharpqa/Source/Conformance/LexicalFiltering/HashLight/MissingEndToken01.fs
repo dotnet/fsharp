@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexFilter 
-#light
+
 
 // FSB 1431, 'end' token ambiguity for interface/class: Incorrect and unactionable error messages when defining class which just implements an interface
 

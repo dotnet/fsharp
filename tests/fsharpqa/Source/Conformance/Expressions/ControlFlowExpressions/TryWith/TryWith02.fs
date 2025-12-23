@@ -1,5 +1,5 @@
 // #Conformance #ControlFlow #Exceptions 
-#light
+
 
 // Verify simple try finally blogs work
 

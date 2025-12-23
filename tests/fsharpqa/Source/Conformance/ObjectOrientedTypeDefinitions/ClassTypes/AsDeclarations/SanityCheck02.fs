@@ -1,6 +1,6 @@
 // #Regression #Conformance #ObjectOrientedTypes #Classes 
 
-#light
+
 
 // Verify error when using 'as' to get a thisPointer when you don't have an
 // implicit constructor.

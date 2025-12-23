@@ -1,5 +1,5 @@
 // #Conformance #TypeInference #ApplicationExpressions #ReqNOMT 
-#light
+
 
 // Infer multiple parameters as a tuple when expecting a single generic arg
 

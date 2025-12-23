@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexicalAnalysis 
-#light
+
 
 // Regression test for FSharp1.0:4854
 // Title: Unable to introduce types with certain invalid symbols, like '[' or '+'

@@ -1,5 +1,5 @@
 ﻿// #Globalization 
-#light
+
 
 module بةتثجحخدذر
     type Foo =

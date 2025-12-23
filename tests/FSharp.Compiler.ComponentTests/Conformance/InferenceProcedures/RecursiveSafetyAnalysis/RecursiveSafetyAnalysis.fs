@@ -14,21 +14,6 @@ module RecursiveSafetyAnalysis =
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
 
-    // SOURCE=E_CyclicReference01.fs SCFLAGS="--mlcompatibility --test:ErrorRanges --flaterrors"  # E_CyclicReference01.fs
-    [<Theory; FileInlineData("E_CyclicReference01.fs")>]
-    let ``E_CyclicReference01_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> withOptions ["--mlcompatibility"; "--flaterrors"]
-        |> withLangVersion50
-        |> asExe
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 953, Line 6, Col 6, Line 6, Col 15, "This type definition involves an immediate cyclic reference through an abbreviation")
-            (Error 1, Line 8, Col 25, Line 8, Col 34, "This expression was expected to have type    'bogusType'    but here has type    'Map<'a,'b>'")
-        ]
-
     // SOURCE=E_DuplicateRecursiveRecords.fs SCFLAGS="--test:ErrorRanges"          # E_DuplicateRecursiveRecords.fs
     [<Theory; FileInlineData("E_DuplicateRecursiveRecords.fs")>]
     let``E_DuplicateRecursiveRecords_fs`` compilation =

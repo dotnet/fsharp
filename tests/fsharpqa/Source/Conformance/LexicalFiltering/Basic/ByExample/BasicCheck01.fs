@@ -1,5 +1,5 @@
 // #Conformance #LexFilter 
-#light
+
 
 // Sanity check #light functionality
 

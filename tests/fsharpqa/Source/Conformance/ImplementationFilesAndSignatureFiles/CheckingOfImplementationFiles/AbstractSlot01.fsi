@@ -1,5 +1,5 @@
 // #Conformance #SignatureFiles 
-#light
+
 
 module AbstractSlot01
 

@@ -1,7 +1,7 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #Overloading 
 // Regression test for FSHARP1.0:4730 - Overly restrictive - functions not allowed as operator overloads
 
-#light
+
 
 type public TestType() =
     member public s.Value with get() = 17

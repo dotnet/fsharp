@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis
-#light                                  // 2
+                                        // 2
                                         // 3
 // Test __LINE__ directive              // 4
 if __LINE__ <> "5" then exit 1          // 5

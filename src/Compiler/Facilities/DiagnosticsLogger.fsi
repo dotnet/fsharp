@@ -331,10 +331,6 @@ val libraryOnlyWarning: m: range -> unit
 
 val deprecatedOperator: m: range -> unit
 
-val mlCompatWarning: s: string -> m: range -> unit
-
-val mlCompatError: s: string -> m: range -> unit
-
 val suppressErrorReporting: f: (unit -> 'T) -> 'T
 
 val conditionallySuppressErrorReporting: cond: bool -> f: (unit -> 'T) -> 'T

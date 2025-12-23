@@ -3,7 +3,7 @@
 // Verify we can use the & operator to invoke .Net method (byref)
 // In this case we call into a C# method (ref)
 //<Expects status="success"></Expects>
-#light
+
 
 #r @"addressof001dll.dll"
 

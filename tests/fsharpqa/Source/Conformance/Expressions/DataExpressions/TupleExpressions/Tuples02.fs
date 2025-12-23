@@ -1,5 +1,5 @@
 // #Conformance #DataExpressions #Tuples 
-#light
+
 
 // Verify tuples work right when crossing the '6' boundary
 

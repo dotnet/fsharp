@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #Classes #Inheritance 
-#light
+
 
 // Verify error when trying to inherit from interface type.
 

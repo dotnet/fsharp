@@ -142,7 +142,6 @@ type internal TcGlobals =
         ilg: FSharp.Compiler.AbstractIL.IL.ILGlobals *
         fslibCcu: TypedTree.CcuThunk *
         directoryToResolveRelativePaths: string *
-        mlCompatibility: bool *
         isInteractive: bool *
         checkNullness: bool *
         useReflectionFreeCodeGen: bool *
@@ -278,8 +277,6 @@ type internal TcGlobals =
     member addrof_vref: TypedTree.ValRef
 
     member and2_vref: TypedTree.ValRef
-
-    member and_vref: TypedTree.ValRef
 
     member array2D_get_info: IntrinsicValRef
 
@@ -882,8 +879,6 @@ type internal TcGlobals =
 
     member mk_IStructuralEquatable_ty: TypedTree.TType
 
-    member mlCompatibility: bool
-
     member nameof_vref: TypedTree.ValRef
 
     member nativeint_checked_info: IntrinsicValRef
@@ -933,8 +928,6 @@ type internal TcGlobals =
     member option_toNullable_info: IntrinsicValRef
 
     member or2_vref: TypedTree.ValRef
-
-    member or_vref: TypedTree.ValRef
 
     member outref_tcr: TypedTree.EntityRef
 

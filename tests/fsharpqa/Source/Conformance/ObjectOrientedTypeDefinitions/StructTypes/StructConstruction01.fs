@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #Structs 
-#light
+
 
 // FS1 1337: "new" is still required for the default struct constructor
 

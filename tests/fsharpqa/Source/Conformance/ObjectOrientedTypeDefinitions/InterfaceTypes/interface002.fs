@@ -1,6 +1,6 @@
 // #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
 // Verify properties
-#light
+
 
  
 //Interface with properties

@@ -92,7 +92,6 @@ type LexerContinuation =
         style: LexerStringStyle *
         int *
         range: range
-    | MLOnly of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * range: range
     | EndLine of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * LexerEndlineContinuation
 
     member LexerIfdefStack: LexerIfdefStackEntries

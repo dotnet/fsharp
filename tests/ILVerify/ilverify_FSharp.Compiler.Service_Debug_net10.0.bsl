@@ -39,8 +39,8 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions+attempt::Invoke([FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<FSharp.Compiler.CompilerOptions+CompilerOption>)][offset 0x00000E9F][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+::Invoke(int32)][offset 0x00000030][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+::Invoke(int32)][offset 0x00000039][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x0000062B][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x00000634][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x0000061D][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x00000626][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.PatternMatchCompilation::isProblematicClause([FSharp.Compiler.Service]FSharp.Compiler.PatternMatchCompilation+MatchClause)][offset 0x00000065][found Byte] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$FSharp.Compiler.PatternMatchCompilation::.cctor()][offset 0x00000015][found Boolean] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.TypeProviders::ValidateExpectedName([FSharp.Compiler.Service]FSharp.Compiler.Text.Range, string[], string, [FSharp.Compiler.Service]FSharp.Compiler.Tainted`1<FSharp.Compiler.TypeProviders+ProvidedType>)][offset 0x000000AD][found Char] Unexpected type on the stack.

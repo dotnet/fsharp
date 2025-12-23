@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #PInvoke 
-#light
+
 
 // copy of MarshalStruct01 test, but with struct records instead of standard structs
 // Sanity check marshalling struct records via PInvoke

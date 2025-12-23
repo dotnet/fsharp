@@ -200,9 +200,7 @@ module internal TokenClassifications =
             // (this isn't entirely correct, but it'll work for now - see bug 3727)
             (FSharpTokenColorKind.Number, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
 
-        | INFIX_STAR_DIV_MOD_OP("mod" | "land" | "lor" | "lxor")
-        | INFIX_STAR_STAR_OP("lsl" | "lsr" | "asr") ->
-            (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
+        | INFIX_STAR_DIV_MOD_OP("mod") -> (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
         | LPAREN_STAR_RPAREN
         | DOLLAR
@@ -404,7 +402,6 @@ module internal TokenClassifications =
 
         | END -> (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
-        | HASH_LIGHT _
         | HASH_LINE _
         | WARN_DIRECTIVE _
         | HASH_IF _
@@ -469,7 +466,6 @@ type FSharpTokenizerColorState =
     | Comment = 5
     | StringInComment = 6
     | VerbatimStringInComment = 7
-    | CamlOnly = 8
     | VerbatimString = 9
     | SingleLineComment = 10
     | EndLineThenSkip = 11
@@ -484,7 +480,6 @@ module internal LexerStateEncoding =
     let computeNextLexState token (prevLexcont: LexerContinuation) =
         match token with
         | HASH_LINE cont
-        | HASH_LIGHT cont
         | HASH_IF(_, _, cont)
         | HASH_ELSE(_, _, cont)
         | HASH_ENDIF(_, _, cont)
@@ -509,7 +504,6 @@ module internal LexerStateEncoding =
 
     let lexstateNumBits = 4
     let ncommentsNumBits = 4
-    let hardwhiteNumBits = 1
     let ifdefstackCountNumBits = 8
     let ifdefstackNumBits = 24 // 0 means if, 1 means else
     let stringKindBits = 3
@@ -520,7 +514,6 @@ module internal LexerStateEncoding =
         assert
             (lexstateNumBits
              + ncommentsNumBits
-             + hardwhiteNumBits
              + ifdefstackCountNumBits
              + ifdefstackNumBits
              + stringKindBits
@@ -530,23 +523,16 @@ module internal LexerStateEncoding =
 
     let lexstateStart = 0
     let ncommentsStart = lexstateNumBits
-    let hardwhitePosStart = lexstateNumBits + ncommentsNumBits
-    let ifdefstackCountStart = lexstateNumBits + ncommentsNumBits + hardwhiteNumBits
+    let ifdefstackCountStart = lexstateNumBits + ncommentsNumBits
 
-    let ifdefstackStart =
-        lexstateNumBits + ncommentsNumBits + hardwhiteNumBits + ifdefstackCountNumBits
+    let ifdefstackStart = lexstateNumBits + ncommentsNumBits + ifdefstackCountNumBits
 
     let stringKindStart =
-        lexstateNumBits
-        + ncommentsNumBits
-        + hardwhiteNumBits
-        + ifdefstackCountNumBits
-        + ifdefstackNumBits
+        lexstateNumBits + ncommentsNumBits + ifdefstackCountNumBits + ifdefstackNumBits
 
     let nestingStart =
         lexstateNumBits
         + ncommentsNumBits
-        + hardwhiteNumBits
         + ifdefstackCountNumBits
         + ifdefstackNumBits
         + stringKindBits
@@ -554,7 +540,6 @@ module internal LexerStateEncoding =
     let delimLenStart =
         lexstateNumBits
         + ncommentsNumBits
-        + hardwhiteNumBits
         + ifdefstackCountNumBits
         + ifdefstackNumBits
         + stringKindBits
@@ -562,7 +547,6 @@ module internal LexerStateEncoding =
 
     let lexstateMask = Bits.mask64 lexstateStart lexstateNumBits
     let ncommentsMask = Bits.mask64 ncommentsStart ncommentsNumBits
-    let hardwhitePosMask = Bits.mask64 hardwhitePosStart hardwhiteNumBits
     let ifdefstackCountMask = Bits.mask64 ifdefstackCountStart ifdefstackCountNumBits
     let ifdefstackMask = Bits.mask64 ifdefstackStart ifdefstackNumBits
     let stringKindMask = Bits.mask64 stringKindStart stringKindBits
@@ -596,16 +580,8 @@ module internal LexerStateEncoding =
             LexerStringStyle.SingleQuote
 
     let encodeLexCont
-        (
-            colorState: FSharpTokenizerColorState,
-            numComments,
-            b: pos,
-            ifdefStack,
-            light,
-            stringKind: LexerStringKind,
-            stringNest,
-            delimLen: int
-        ) =
+        (colorState: FSharpTokenizerColorState, numComments, b: pos, ifdefStack, stringKind: LexerStringKind, stringNest, delimLen: int)
+        =
         let mutable ifdefStackCount = 0
         let mutable ifdefStackBits = 0
 
@@ -644,7 +620,6 @@ module internal LexerStateEncoding =
         let bits =
             lexStateOfColorState colorState
             ||| ((numComments <<< ncommentsStart) &&& ncommentsMask)
-            ||| ((int64 (bitOfBool light) <<< hardwhitePosStart) &&& hardwhitePosMask)
             ||| ((int64 ifdefStackCount <<< ifdefstackCountStart) &&& ifdefstackCountMask)
             ||| ((int64 ifdefStackBits <<< ifdefstackStart) &&& ifdefstackMask)
             ||| ((int64 stringKindValue <<< stringKindStart) &&& stringKindMask)
@@ -685,8 +660,6 @@ module internal LexerStateEncoding =
                 IsInterpolatedFirst = ((stringKindValue &&& 0b001) = 0b001)
             }
 
-        let hardwhite = boolOfBit ((bits &&& hardwhitePosMask) >>> hardwhitePosStart)
-
         let nestingValue = int32 ((bits &&& nestingMask) >>> nestingStart)
 
         let stringNest: LexerInterpolatedStringNesting =
@@ -709,56 +682,20 @@ module internal LexerStateEncoding =
 
         let delimLen = int32 ((bits &&& delimLenMask) >>> delimLenStart)
 
-        (colorState, ncomments, pos, ifDefs, hardwhite, stringKind, stringNest, delimLen)
+        (colorState, ncomments, pos, ifDefs, stringKind, stringNest, delimLen)
 
-    let encodeLexInt indentationSyntaxStatus (lexcont: LexerContinuation) =
+    let encodeLexInt (lexcont: LexerContinuation) =
         match lexcont with
         | LexCont.Token(ifdefs, stringNest) ->
-            encodeLexCont (
-                FSharpTokenizerColorState.Token,
-                0L,
-                pos0,
-                ifdefs,
-                indentationSyntaxStatus,
-                LexerStringKind.String,
-                stringNest,
-                0
-            )
+            encodeLexCont (FSharpTokenizerColorState.Token, 0L, pos0, ifdefs, LexerStringKind.String, stringNest, 0)
         | LexCont.IfDefSkip(ifdefs, stringNest, n, m) ->
-            encodeLexCont (
-                FSharpTokenizerColorState.IfDefSkip,
-                int64 n,
-                m.Start,
-                ifdefs,
-                indentationSyntaxStatus,
-                LexerStringKind.String,
-                stringNest,
-                0
-            )
+            encodeLexCont (FSharpTokenizerColorState.IfDefSkip, int64 n, m.Start, ifdefs, LexerStringKind.String, stringNest, 0)
         | LexCont.EndLine(ifdefs, stringNest, econt) ->
             match econt with
             | LexerEndlineContinuation.IfdefSkip(n, m) ->
-                encodeLexCont (
-                    FSharpTokenizerColorState.EndLineThenSkip,
-                    int64 n,
-                    m.Start,
-                    ifdefs,
-                    indentationSyntaxStatus,
-                    LexerStringKind.String,
-                    stringNest,
-                    0
-                )
+                encodeLexCont (FSharpTokenizerColorState.EndLineThenSkip, int64 n, m.Start, ifdefs, LexerStringKind.String, stringNest, 0)
             | LexerEndlineContinuation.Token ->
-                encodeLexCont (
-                    FSharpTokenizerColorState.EndLineThenToken,
-                    0L,
-                    pos0,
-                    ifdefs,
-                    indentationSyntaxStatus,
-                    LexerStringKind.String,
-                    stringNest,
-                    0
-                )
+                encodeLexCont (FSharpTokenizerColorState.EndLineThenToken, 0L, pos0, ifdefs, LexerStringKind.String, stringNest, 0)
         | LexCont.String(ifdefs, stringNest, style, kind, delimLen, m) ->
             let state =
                 match style with
@@ -767,29 +704,11 @@ module internal LexerStateEncoding =
                 | LexerStringStyle.TripleQuote -> FSharpTokenizerColorState.TripleQuoteString
                 | LexerStringStyle.ExtendedInterpolated -> FSharpTokenizerColorState.ExtendedInterpolatedString
 
-            encodeLexCont (state, 0L, m.Start, ifdefs, indentationSyntaxStatus, kind, stringNest, delimLen)
+            encodeLexCont (state, 0L, m.Start, ifdefs, kind, stringNest, delimLen)
         | LexCont.Comment(ifdefs, stringNest, n, m) ->
-            encodeLexCont (
-                FSharpTokenizerColorState.Comment,
-                int64 n,
-                m.Start,
-                ifdefs,
-                indentationSyntaxStatus,
-                LexerStringKind.String,
-                stringNest,
-                0
-            )
+            encodeLexCont (FSharpTokenizerColorState.Comment, int64 n, m.Start, ifdefs, LexerStringKind.String, stringNest, 0)
         | LexCont.SingleLineComment(ifdefs, stringNest, n, m) ->
-            encodeLexCont (
-                FSharpTokenizerColorState.SingleLineComment,
-                int64 n,
-                m.Start,
-                ifdefs,
-                indentationSyntaxStatus,
-                LexerStringKind.String,
-                stringNest,
-                0
-            )
+            encodeLexCont (FSharpTokenizerColorState.SingleLineComment, int64 n, m.Start, ifdefs, LexerStringKind.String, stringNest, 0)
         | LexCont.StringInComment(ifdefs, stringNest, style, n, m) ->
             let state =
                 match style with
@@ -798,50 +717,34 @@ module internal LexerStateEncoding =
                 | LexerStringStyle.TripleQuote
                 | LexerStringStyle.ExtendedInterpolated -> FSharpTokenizerColorState.TripleQuoteStringInComment
 
-            encodeLexCont (state, int64 n, m.Start, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest, 0)
-        | LexCont.MLOnly(ifdefs, stringNest, m) ->
-            encodeLexCont (
-                FSharpTokenizerColorState.CamlOnly,
-                0L,
-                m.Start,
-                ifdefs,
-                indentationSyntaxStatus,
-                LexerStringKind.String,
-                stringNest,
-                0
-            )
+            encodeLexCont (state, int64 n, m.Start, ifdefs, LexerStringKind.String, stringNest, 0)
 
     let decodeLexInt (state: FSharpTokenizerLexState) =
-        let tag, n1, p1, ifdefs, lightSyntaxStatusInitial, stringKind, stringNest, delimLen =
-            decodeLexCont state
+        let tag, n1, p1, ifdefs, stringKind, stringNest, delimLen = decodeLexCont state
 
-        let lexcont =
-            match tag with
-            | FSharpTokenizerColorState.Token -> LexCont.Token(ifdefs, stringNest)
-            | FSharpTokenizerColorState.IfDefSkip -> LexCont.IfDefSkip(ifdefs, stringNest, n1, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.String ->
-                LexCont.String(ifdefs, stringNest, LexerStringStyle.SingleQuote, stringKind, delimLen, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.Comment -> LexCont.Comment(ifdefs, stringNest, n1, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.SingleLineComment -> LexCont.SingleLineComment(ifdefs, stringNest, n1, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.StringInComment ->
-                LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.SingleQuote, n1, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.VerbatimStringInComment ->
-                LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.Verbatim, n1, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.TripleQuoteStringInComment ->
-                LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.TripleQuote, n1, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.CamlOnly -> LexCont.MLOnly(ifdefs, stringNest, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.VerbatimString ->
-                LexCont.String(ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, delimLen, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.TripleQuoteString ->
-                LexCont.String(ifdefs, stringNest, LexerStringStyle.TripleQuote, stringKind, delimLen, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.ExtendedInterpolatedString ->
-                LexCont.String(ifdefs, stringNest, LexerStringStyle.ExtendedInterpolated, stringKind, delimLen, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.EndLineThenSkip ->
-                LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.IfdefSkip(n1, mkRange "file" p1 p1))
-            | FSharpTokenizerColorState.EndLineThenToken -> LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Token)
-            | _ -> LexCont.Token([], stringNest)
-
-        lightSyntaxStatusInitial, lexcont
+        match tag with
+        | FSharpTokenizerColorState.Token -> LexCont.Token(ifdefs, stringNest)
+        | FSharpTokenizerColorState.IfDefSkip -> LexCont.IfDefSkip(ifdefs, stringNest, n1, mkRange "file" p1 p1)
+        | FSharpTokenizerColorState.String ->
+            LexCont.String(ifdefs, stringNest, LexerStringStyle.SingleQuote, stringKind, delimLen, mkRange "file" p1 p1)
+        | FSharpTokenizerColorState.Comment -> LexCont.Comment(ifdefs, stringNest, n1, mkRange "file" p1 p1)
+        | FSharpTokenizerColorState.SingleLineComment -> LexCont.SingleLineComment(ifdefs, stringNest, n1, mkRange "file" p1 p1)
+        | FSharpTokenizerColorState.StringInComment ->
+            LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.SingleQuote, n1, mkRange "file" p1 p1)
+        | FSharpTokenizerColorState.VerbatimStringInComment ->
+            LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.Verbatim, n1, mkRange "file" p1 p1)
+        | FSharpTokenizerColorState.TripleQuoteStringInComment ->
+            LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.TripleQuote, n1, mkRange "file" p1 p1)
+        | FSharpTokenizerColorState.VerbatimString ->
+            LexCont.String(ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, delimLen, mkRange "file" p1 p1)
+        | FSharpTokenizerColorState.TripleQuoteString ->
+            LexCont.String(ifdefs, stringNest, LexerStringStyle.TripleQuote, stringKind, delimLen, mkRange "file" p1 p1)
+        | FSharpTokenizerColorState.ExtendedInterpolatedString ->
+            LexCont.String(ifdefs, stringNest, LexerStringStyle.ExtendedInterpolated, stringKind, delimLen, mkRange "file" p1 p1)
+        | FSharpTokenizerColorState.EndLineThenSkip ->
+            LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.IfdefSkip(n1, mkRange "file" p1 p1))
+        | FSharpTokenizerColorState.EndLineThenToken -> LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Token)
+        | _ -> LexCont.Token([], stringNest)
 
 //----------------------------------------------------------------------------
 // Colorization
@@ -961,11 +864,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
 
     // Call the given continuation, reusing the same 'lexargs' each time but adjust
     // its mutable entries to set up the right state
-    let callLexCont lexcont indentationSyntaxStatus skip =
-
-        // Set up the arguments to lexing
-        lexargs.indentationSyntaxStatus <- indentationSyntaxStatus
-
+    let callLexCont lexcont skip =
         match lexcont with
         | LexCont.EndLine(ifdefs, stringNest, cont) ->
             lexargs.ifdefStack <- ifdefs
@@ -1016,11 +915,6 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
             | LexerStringStyle.TripleQuote
             | LexerStringStyle.ExtendedInterpolated -> Lexer.tripleQuoteStringInComment n m lexargs skip lexbuf
 
-        | LexCont.MLOnly(ifdefs, stringNest, m) ->
-            lexargs.ifdefStack <- ifdefs
-            lexargs.stringNest <- stringNest
-            Lexer.mlOnly m lexargs skip lexbuf
-
     let columnsOfCurrentToken () =
         let leftp = lexbuf.StartPos
         let rightp = lexbuf.EndPos
@@ -1034,7 +928,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
         let rightc = rightc - 1
         struct (leftc, rightc)
 
-    let getTokenWithPosition lexcont indentationSyntaxStatus =
+    let getTokenWithPosition lexcont =
         // Column of token
         // Get the token & position - either from a stack or from the lexer
         try
@@ -1042,7 +936,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                 true, tokenStack.Pop()
             else
                 // Choose which lexer entry point to call and call it
-                let token = callLexCont lexcont indentationSyntaxStatus skip
+                let token = callLexCont lexcont skip
                 let struct (leftc, rightc) = columnsOfCurrentToken ()
 
                 // Splits tokens like ">." into multiple tokens - this duplicates behavior from the 'lexfilter'
@@ -1110,14 +1004,10 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
         use _ = UseBuildPhase BuildPhase.Parse
         use _ = UseDiagnosticsLogger DiscardErrorsLogger
 
-        let indentationSyntaxStatus, lexcont = LexerStateEncoding.decodeLexInt lexState
-
-        let indentationSyntaxStatus =
-            IndentationAwareSyntaxStatus(indentationSyntaxStatus, false)
+        let lexcont = LexerStateEncoding.decodeLexInt lexState
 
         // Grab a token
-        let isCached, (token, leftc, rightc) =
-            getTokenWithPosition lexcont indentationSyntaxStatus
+        let isCached, (token, leftc, rightc) = getTokenWithPosition lexcont
 
         // Check for end-of-string and failure
         let tokenDataOption, lexcontFinal, tokenTag =
@@ -1160,16 +1050,14 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
 
         // Check for patterns like #-IDENT and see if they look like meta commands for .fsx files. If they do then merge them into a single token.
         let tokenDataOption, lexintFinal =
-            let lexintFinal =
-                LexerStateEncoding.encodeLexInt indentationSyntaxStatus.Status lexcontFinal
+            let lexintFinal = LexerStateEncoding.encodeLexInt lexcontFinal
 
             match tokenDataOption, singleLineTokenState, tokenTagToTokenId tokenTag with
             | Some tokenData, SingleLineTokenState.BeforeHash, TOKEN_HASH ->
                 // Don't allow further matches.
                 singleLineTokenState <- SingleLineTokenState.NoFurtherMatchPossible
                 // Peek at the next token
-                let isCached, (nextToken, _, rightc) =
-                    getTokenWithPosition lexcont indentationSyntaxStatus
+                let isCached, (nextToken, _, rightc) = getTokenWithPosition lexcont
 
                 match nextToken with
                 | IDENT possibleMetaCommand ->
@@ -1208,8 +1096,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                                 FSharpTokenTriggerClass = FSharpTokenTriggerClass.None
                             }
 
-                        let lexintFinal =
-                            LexerStateEncoding.encodeLexInt indentationSyntaxStatus.Status lexcontFinal
+                        let lexintFinal = LexerStateEncoding.encodeLexInt lexcontFinal
 
                         Some tokenData, lexintFinal
                     | _ -> tokenDataOption, lexintFinal
@@ -1246,18 +1133,9 @@ type FSharpSourceTokenizer
     let lexResourceManager = LexResourceManager()
 
     let applyLineDirectives = false
-    let indentationSyntaxStatus = IndentationAwareSyntaxStatus(true, false)
 
     let lexargs =
-        mkLexargs (
-            conditionalDefines,
-            indentationSyntaxStatus,
-            lexResourceManager,
-            [],
-            DiscardErrorsLogger,
-            PathMap.empty,
-            applyLineDirectives
-        )
+        mkLexargs (conditionalDefines, lexResourceManager, [], DiscardErrorsLogger, PathMap.empty, applyLineDirectives)
 
     member _.CreateLineTokenizer(lineText: string) =
         let lexbuf =
@@ -1291,7 +1169,6 @@ module FSharpKeywords =
 [<Flags>]
 type FSharpLexerFlags =
     | Default = 0x11011
-    | LightSyntaxOn = 0x00001
     | Compiling = 0x00010
     | CompilingFSharpCore = 0x00110
     | SkipTrivia = 0x01000
@@ -1307,7 +1184,6 @@ type FSharpTokenKind =
     | CommentTrivia
     | WhitespaceTrivia
     | HashLine
-    | HashLight
     | InactiveCode
     | LineCommentTrivia
     | StringText
@@ -1485,13 +1361,6 @@ type FSharpTokenKind =
     | KeywordString
     | String
     | ByteArray
-    | Asr
-    | InfixAsr
-    | InfixLand
-    | InfixLor
-    | InfixLsl
-    | InfixLsr
-    | InfixLxor
     | InfixMod
 
 [<Struct; NoComparison; NoEquality>]
@@ -1506,13 +1375,6 @@ type FSharpToken =
 
     member this.Kind =
         match this.tok with
-        | ASR -> FSharpTokenKind.Asr
-        | INFIX_STAR_STAR_OP "asr" -> FSharpTokenKind.Asr
-        | INFIX_STAR_DIV_MOD_OP "land" -> FSharpTokenKind.InfixLand
-        | INFIX_STAR_DIV_MOD_OP "lor" -> FSharpTokenKind.InfixLor
-        | INFIX_STAR_STAR_OP "lsl" -> FSharpTokenKind.InfixLsl
-        | INFIX_STAR_STAR_OP "lsr" -> FSharpTokenKind.InfixLsr
-        | INFIX_STAR_DIV_MOD_OP "lxor" -> FSharpTokenKind.InfixLxor
         | INFIX_STAR_DIV_MOD_OP "mod" -> FSharpTokenKind.InfixMod
         | HASH_IF _ -> FSharpTokenKind.HashIf
         | HASH_ELSE _ -> FSharpTokenKind.HashElse
@@ -1521,7 +1383,6 @@ type FSharpToken =
         | COMMENT _ -> FSharpTokenKind.CommentTrivia
         | WHITESPACE _ -> FSharpTokenKind.WhitespaceTrivia
         | HASH_LINE _ -> FSharpTokenKind.HashLine
-        | HASH_LIGHT _ -> FSharpTokenKind.HashLight
         | INACTIVECODE _ -> FSharpTokenKind.InactiveCode
         | LINE_COMMENT _ -> FSharpTokenKind.LineCommentTrivia
         | STRING_TEXT _ -> FSharpTokenKind.StringText
@@ -1785,13 +1646,6 @@ type FSharpToken =
         | FSharpTokenKind.OffsideWith
 
         // * Reserved - from OCAML *
-        | FSharpTokenKind.Asr
-        | FSharpTokenKind.InfixAsr
-        | FSharpTokenKind.InfixLand
-        | FSharpTokenKind.InfixLor
-        | FSharpTokenKind.InfixLsl
-        | FSharpTokenKind.InfixLsr
-        | FSharpTokenKind.InfixLxor
         | FSharpTokenKind.InfixMod
         | FSharpTokenKind.Sig
 
@@ -1874,9 +1728,6 @@ module FSharpLexerImpl =
         let canSkipTrivia =
             (flags &&& FSharpLexerFlags.SkipTrivia) = FSharpLexerFlags.SkipTrivia
 
-        let isLightSyntaxOn =
-            (flags &&& FSharpLexerFlags.LightSyntaxOn) = FSharpLexerFlags.LightSyntaxOn
-
         let isCompiling =
             (flags &&& FSharpLexerFlags.Compiling) = FSharpLexerFlags.Compiling
 
@@ -1889,26 +1740,16 @@ module FSharpLexerImpl =
         let lexbuf =
             UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, text)
 
-        let indentationSyntaxStatus = IndentationAwareSyntaxStatus(isLightSyntaxOn, true)
         let applyLineDirectives = isCompiling
 
         let lexargs =
-            mkLexargs (
-                conditionalDefines,
-                indentationSyntaxStatus,
-                LexResourceManager(0),
-                [],
-                diagnosticsLogger,
-                pathMap,
-                applyLineDirectives
-            )
+            mkLexargs (conditionalDefines, LexResourceManager(0), [], diagnosticsLogger, pathMap, applyLineDirectives)
 
         let getNextToken =
             let lexer = Lexer.token lexargs canSkipTrivia
 
             if canUseLexFilter then
-                let lexFilter =
-                    LexFilter.LexFilter(lexargs.indentationSyntaxStatus, isCompilingFSharpCore, lexer, lexbuf, false)
+                let lexFilter = LexFilter.LexFilter(isCompilingFSharpCore, lexer, lexbuf, false)
 
                 (fun _ -> lexFilter.GetToken())
             else

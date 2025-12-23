@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
-#light
+
 
 // Regression test for FSharp1.0:4939
 // Title: Make overload resolution in the presence of extension members work more like C#
