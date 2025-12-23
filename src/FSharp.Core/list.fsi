@@ -45,6 +45,8 @@ module List =
     ///
     /// <returns>The resulting list.</returns>
     /// 
+    /// <remarks>Time complexity: O(n) where n is the length of the first list. Space complexity: O(n).</remarks>
+    /// 
     /// <example id="append-1">
     /// <code lang="fsharp">
     /// List.append [ 1..3 ] [ 4..7 ]
@@ -343,6 +345,8 @@ module List =
     /// <param name="lists">The input sequence of lists.</param>
     ///
     /// <returns>The resulting concatenated list.</returns>
+    /// 
+    /// <remarks>Time complexity: O(n) where n is the total number of elements in all lists. Space complexity: O(n).</remarks>
     /// 
     /// <example id="concat-1">
     /// <code lang="fsharp">
@@ -1012,6 +1016,8 @@ module List =
     ///
     /// <returns>The first element of the list.</returns>
     ///
+    /// <remarks>Time complexity: O(1). Space complexity: O(1).</remarks>
+    ///
     /// <example id="head-1">
     /// <code lang="fsharp">
     /// let inputs = ["banana"; "pear"]
@@ -1250,7 +1256,7 @@ module List =
     ///
     /// <returns>The length of the list.</returns>
     ///
-    /// <remarks>The notation <c>array.Length</c> is preferred.</remarks>
+    /// <remarks>Time complexity: O(n) where n is the length of the list. Space complexity: O(1). The notation <c>array.Length</c> is preferred.</remarks>
     ///
     /// <example id="length-1">
     /// <code lang="fsharp">
@@ -2086,6 +2092,8 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The list after removing the first element.</returns>
+    ///
+    /// <remarks>Time complexity: O(1). Space complexity: O(1).</remarks>
     ///
     /// <example id="tail-1">
     /// <code lang="fsharp">

@@ -295,6 +295,8 @@ module Set =
     ///
     /// <returns>A new set containing <c>value</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(log n) where n is the size of the set. Space complexity: O(log n) due to path copying in the balanced tree.</remarks>
+    ///
     /// <example id="set-add">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
@@ -537,6 +539,8 @@ module Set =
     ///
     /// <returns>The intersection of <c>set1</c> and <c>set2</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(n + m) where n and m are the sizes of the input sets. Space complexity: O(min(n, m)).</remarks>
+    ///
     /// <example id="set-intersect">
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
@@ -579,6 +583,8 @@ module Set =
     /// <param name="set2">The second input set.</param>
     ///
     /// <returns>The union of <c>set1</c> and <c>set2</c>.</returns>
+    ///
+    /// <remarks>Time complexity: O(n + m) where n and m are the sizes of the input sets. Space complexity: O(n + m).</remarks>
     ///
     /// <example id="set-union">
     /// <code lang="fsharp">
@@ -677,6 +683,8 @@ module Set =
     /// <param name="set">The input set.</param>
     ///
     /// <returns>The input set with <c>value</c> removed.</returns>
+    ///
+    /// <remarks>Time complexity: O(log n) where n is the size of the set. Space complexity: O(log n) due to path copying in the balanced tree.</remarks>
     ///
     /// <example id="set-remove">
     /// <code lang="fsharp">
