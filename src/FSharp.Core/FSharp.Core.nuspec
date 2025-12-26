@@ -4,8 +4,12 @@
         $CommonMetadataElements$
         <language>en-US</language>
         <dependencies>
-            <group targetFramework=".NETStandard2.0" />
-            <group targetFramework=".NETStandard2.1" />
+            <group targetFramework=".NETStandard2.0">
+                <dependency id="System.Collections.Immutable" version="$SystemCollectionsImmutablePackageVersion$" exclude="Build,Analyzers" />
+            </group>
+            <group targetFramework=".NETStandard2.1">
+                <dependency id="System.Collections.Immutable" version="$SystemCollectionsImmutablePackageVersion$" exclude="Build,Analyzers" />
+            </group>
         </dependencies>
     </metadata>
     <files>
