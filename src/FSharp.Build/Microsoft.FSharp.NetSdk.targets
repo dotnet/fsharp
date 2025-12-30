@@ -233,7 +233,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     </ItemGroup>
 
     <PropertyGroup Condition="'@(_ResolvedFSharpCore)' != ''">
-      <_ResolvedFSharpCoreVersion>%(_ResolvedFSharpCore.NuGetPackageVersion)</_ResolvedFSharpCoreVersion>
+      <_ResolvedFSharpCoreVersion>@(_ResolvedFSharpCore->'%(NuGetPackageVersion)')</_ResolvedFSharpCoreVersion>
       <_ResolvedFSharpCoreMajor>$([System.Version]::Parse('$(_ResolvedFSharpCoreVersion.Split('-')[0])').Major)</_ResolvedFSharpCoreMajor>
       <_FSharpCoreVersionTooHigh Condition="$(_ResolvedFSharpCoreMajor) &gt; $(FSharpCoreMaximumMajorVersion)">true</_FSharpCoreVersionTooHigh>
     </PropertyGroup>
