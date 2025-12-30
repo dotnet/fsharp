@@ -234,7 +234,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
     <PropertyGroup Condition="'@(_ResolvedFSharpCore->Count())' == '1'">
       <_ResolvedFSharpCoreVersion>@(_ResolvedFSharpCore->'%(NuGetPackageVersion)')</_ResolvedFSharpCoreVersion>
-      <_ResolvedFSharpCoreMajor>$([System.Version]::Parse($(_ResolvedFSharpCoreVersion.Split('-')[0])).Major)</_ResolvedFSharpCoreMajor>
+      <_ResolvedFSharpCoreMajor>$([System.Version]::Parse('$(_ResolvedFSharpCoreVersion.Split('-')[0])').Major)</_ResolvedFSharpCoreMajor>
       <_FSharpCoreVersionTooHigh Condition="$(_ResolvedFSharpCoreMajor) &gt; $(FSharpCoreMaximumMajorVersion)">true</_FSharpCoreVersionTooHigh>
     </PropertyGroup>
 

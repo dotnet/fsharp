@@ -7,7 +7,7 @@
 
     <!-- Simulate version comparison -->
     <PropertyGroup Condition="'$(TestResolvedVersion)' != ''">
-      <_TestResolvedMajor>$([System.Version]::Parse($(TestResolvedVersion.Split('-')[0])).Major)</_TestResolvedMajor>
+      <_TestResolvedMajor>$([System.Version]::Parse('$(TestResolvedVersion.Split('-')[0])').Major)</_TestResolvedMajor>
       <_TestShouldWarn Condition="$(_TestResolvedMajor) &gt; $(FSharpCoreMaximumMajorVersion)">true</_TestShouldWarn>
     </PropertyGroup>
 
