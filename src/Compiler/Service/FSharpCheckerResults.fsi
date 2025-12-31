@@ -497,7 +497,7 @@ type public FSharpCheckFileResults =
         tcState: TcState *
         moduleNamesDict: ModuleNamesDict *
         loadClosure: LoadClosure option *
-        backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *
+        backgroundDiagnostics: PhasedDiagnostic[] *
         isIncompleteTypeCheckEnvironment: bool *
         projectOptions: FSharpProjectOptions *
         builder: IncrementalBuilder option *
@@ -610,7 +610,7 @@ module internal ParseAndCheckFile =
 
         member AnyErrors: bool
 
-        member CollectedPhasedDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+        member CollectedPhasedDiagnostics: PhasedDiagnostic array
 
         member CollectedDiagnostics: symbolEnv: SymbolEnv option -> FSharpDiagnostic array
 
