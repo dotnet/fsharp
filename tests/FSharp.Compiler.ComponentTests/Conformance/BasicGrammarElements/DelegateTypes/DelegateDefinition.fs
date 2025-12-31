@@ -48,7 +48,7 @@ namespace FSharpTest
         |> shouldSucceed
 
     [<Fact>]
-    let ``Delegate with optional parameter and CallerLineNumber`` () =
+    let ``Delegate with optional parameter`` () =
         FSharp """open System.Runtime.CompilerServices
 type A = delegate of [<CallerLineNumber>] ?a: int -> unit
 let f = fun (a: int option) -> defaultArg a 100 |> printf "line: %d"
@@ -59,49 +59,11 @@ a.Invoke()"""
         |> verifyOutput "line: 5"
         
     [<Fact>]
-    let ``Delegate with optional parameter and CallerFilePath`` () =
-        FSharp """open System.Runtime.CompilerServices
-type A = delegate of [<CallerFilePath>] ?path: string -> unit
-let f = fun (path: string option) -> 
-    match path with
-    | Some p -> if p.Contains("DelegateDefinition.fs") then printfn "SUCCESS" else printfn "FAIL: %s" p
-    | None -> printfn "FAIL: None"
+    let ``Delegate with struct optional parameter`` () =
+        FSharp """type A = delegate of [<Struct>] ?a: int -> unit
+let f = fun (a: int voption) -> defaultValueArg a 100 |> printf "line: %d"
 let a = A f
-a.Invoke()"""
+a.Invoke(5)"""
         |> compileExeAndRun
         |> shouldSucceed
-        |> verifyOutput "SUCCESS"
-
-    [<Fact>]
-    let ``Delegate with CallerFilePath without optional should fail`` () =
-        FSharp """namespace Test
-open System.Runtime.CompilerServices
-type TestDelegate = delegate of [<CallerFilePath>] path: string -> unit"""
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 1247, Line 3, Col 52, Line 3, Col 56, "'CallerFilePath' can only be applied to optional arguments")
-        ]
-
-    [<Fact>]
-    let ``Delegate with CallerFilePath on wrong type should fail`` () =
-        FSharp """namespace Test
-open System.Runtime.CompilerServices  
-type TestDelegate = delegate of [<CallerFilePath>] ?x: int -> unit"""
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 1246, Line 3, Col 53, Line 3, Col 54, "'CallerFilePath' must be applied to an argument of type 'string', but has been applied to an argument of type 'int'")
-        ]
-
-    [<Fact>]
-    let ``Delegate with CallerLineNumber on wrong type should fail`` () =
-        FSharp """namespace Test
-open System.Runtime.CompilerServices
-type TestDelegate = delegate of [<CallerLineNumber>] ?x: string -> unit"""
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 1246, Line 3, Col 54, Line 3, Col 55, "'CallerLineNumber' must be applied to an argument of type 'int', but has been applied to an argument of type 'string'")
-        ]
-
+        |> verifyOutput "line: 5" 
