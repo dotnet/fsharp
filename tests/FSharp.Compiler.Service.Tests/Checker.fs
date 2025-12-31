@@ -147,6 +147,11 @@ module Checker =
         let names = plid.QualifyingIdents @ [plid.PartialIdent]
         { SourceContext = context; Pos = context.CaretPos; PartialIdentifier = plid }
 
+    let getParseResultsWithContext (markedSource: string) =
+        let context = SourceContext.fromMarkedSource markedSource
+        let parseResults = getParseFileResults "Test.fsx" context.Source
+        context, parseResults
+
     let getCheckedResolveContext (markedSource: string) =
         let context = getResolveContext markedSource
         let _, checkResults = getParseAndCheckResults context.Source

@@ -60,7 +60,7 @@ type internal TcInfo =
         latestCcuSigForFile: ModuleOrNamespaceType option
 
         /// Accumulated diagnostics, last file first
-        tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+        tcDiagnosticsRev: PhasedDiagnostic[] list
 
         tcDependencyFiles: string list
 
@@ -85,7 +85,7 @@ type internal TcIntermediate =
         moduleNamesDict: ModuleNamesDict
 
         /// Accumulated diagnostics, last file first
-        tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+        tcDiagnosticsRev: PhasedDiagnostic[] list
 
         tcDependencyFiles: string list
 
@@ -1120,13 +1120,13 @@ type internal TransparentCompiler
                         delayedLogger.CommitDelayedDiagnostics diagnosticsLogger
                         diagnosticsLogger.GetDiagnostics()
                     | _ -> Array.ofList delayedLogger.Diagnostics
-                    |> Array.map (fun (diagnostic, severity) ->
+                    |> Array.map (fun (diagnostic) ->
                         let flatErrors =
                             bootstrapInfoOpt
                             |> Option.map (fun bootstrapInfo -> bootstrapInfo.TcConfig.flatErrors)
                             |> Option.defaultValue false // TODO: do we need to figure this out?
 
-                        FSharpDiagnostic.CreateFromException(diagnostic, severity, suggestNamesForErrors, flatErrors, None))
+                        FSharpDiagnostic.CreateFromException(diagnostic, suggestNamesForErrors, flatErrors, None))
 
                 return bootstrapInfoOpt, diagnostics
             }
@@ -1407,7 +1407,7 @@ type internal TransparentCompiler
 
                 let hadParseErrors =
                     file.ParseDiagnostics
-                    |> Array.exists (snd >> (=) FSharpDiagnosticSeverity.Error)
+                    |> Array.exists (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
 
                 let input, moduleNamesDict =
                     DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
@@ -2478,7 +2478,7 @@ type internal TransparentCompiler
                     let flaterrors = otherFlags |> List.contains "--flaterrors"
 
                     loadClosure.LoadClosureRootFileDiagnostics
-                    |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, false, flaterrors, None))
+                    |> List.map (fun diagnostic -> FSharpDiagnostic.CreateFromException(diagnostic, false, flaterrors, None))
 
                 return snapshot, (diags @ diagnostics.Diagnostics)
             }

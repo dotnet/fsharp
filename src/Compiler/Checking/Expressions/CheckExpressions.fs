@@ -6073,9 +6073,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.DoBang (trivia = { DoBangKeyword = m })
     | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
-    | SynExpr.WhileBang (range = m)
-    | SynExpr.LetOrUse (isBang = true; trivia = { LetOrUseKeyword = m }) ->
+    | SynExpr.WhileBang (range = m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+    | LetOrUse({ Bindings = [ SynBinding(trivia = { LeadingKeyword = leadingKeyword }) ]}, true, _) ->
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), leadingKeyword.Range))
 
     | SynExpr.IndexFromEnd (rightExpr, m) ->
         errorR(Error(FSComp.SR.tcTraitInvocationShouldUseTick(), m))
@@ -9207,7 +9208,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.YieldOrReturn _
         | SynExpr.YieldOrReturnFrom _
         | SynExpr.MatchBang _
-        | SynExpr.LetOrUse (isBang = true)
+        | LetOrUse(_, true, _)
         | SynExpr.DoBang _
         | SynExpr.WhileBang _
         | SynExpr.TraitCall _
@@ -10622,7 +10623,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
         TcLinearExprs bodyChecker cenv env2 overallTy tpenv isCompExpr expr2 (fun (expr2R, tpenv) ->
             cont (Expr.Sequential (expr1R, expr2R, NormalSeq, m), tpenv))
 
-    | SynExpr.LetOrUse (isRecursive = isRec; isUse= isUse; bindings = binds; body = body; range = m) when not (isUse && isCompExpr) ->
+    | LetOrUse({ IsRecursive = isRec ; Bindings = binds; Body = body; Range = m }, _, isUse) when not (isUse && isCompExpr) ->
         if isRec then
             // TcLinearExprs processes at most one recursive binding, this is not tailcalling
             CheckRecursiveBindingIds binds
@@ -11561,12 +11562,14 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
 
     // Canonicalize constraints prior to generalization
     let denv = env.DisplayEnv
-    CanonicalizePartialInferenceProblem cenv.css denv synBindsRange
-        (checkedBinds |> List.collect (fun tbinfo ->
-            let (CheckedBindingInfo(_, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) = tbinfo
-            let (ExplicitTyparInfo(_, declaredTypars, _)) = explicitTyparInfo
-            let maxInferredTypars = (freeInTypeLeftToRight g false tauTy)
-            declaredTypars @ maxInferredTypars))
+    try
+        CanonicalizePartialInferenceProblem cenv.css denv synBindsRange
+            (checkedBinds |> List.collect (fun tbinfo ->
+                let (CheckedBindingInfo(_, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) = tbinfo
+                let (ExplicitTyparInfo(_, declaredTypars, _)) = explicitTyparInfo
+                let maxInferredTypars = (freeInTypeLeftToRight g false tauTy)
+                declaredTypars @ maxInferredTypars))
+    with RecoverableException _ -> ()
 
     let lazyFreeInEnv = lazy (GeneralizationHelpers.ComputeUngeneralizableTypars env)
 

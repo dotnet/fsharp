@@ -102,7 +102,8 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
   </ItemGroup>
 <PropertyGroup>
- <NoWarn>$(NoWarn);NU1510</NoWarn> <!-- NU1510: Project is explicitly referencing the runtime assembly 'System.Collections.Immutable', however, if we remove it, it tries to find it on the wrong path. Also, local NoWarn does not help - This is just me trying to enforce it -->
+ <NoWarn>$(NoWarn);NU1510;44</NoWarn> <!-- NU1510: Project is explicitly referencing the runtime assembly 'System.Collections.Immutable', however, if we remove it, it tries to find it on the wrong path. Also, local NoWarn does not help - This is just me trying to enforce it -->
+ <!-- 44: AssemblyName.CodeBase is deprecated but needed for assembly resolution in VS integration tests -->
 </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" GeneratePathProperty="true"  />

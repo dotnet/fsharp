@@ -9365,6 +9365,20 @@ module NonStructuralComparisonOverTimeSpanDirect =
     do check "test9407" (NonStructuralComparison.hash 11L) (Operators.hash 11L)
     do check "test9408" (NonStructuralComparison.hash 11UL) (Operators.hash 11UL)
 
+let testLazySimple () =
+    let f23 () = let z = lazy (12345) in z.Force()
+    check "lazy_simple" 12345 (f23())
+
+let testSeqWithTryFinally () =
+    let result = 
+        seq {
+            try
+                yield 1
+                yield 2
+            with
+            | ex -> ()
+        } |> Seq.toList
+    check "seq_try_with" [1; 2] result
 
 [<EntryPoint>]
 let main _ =
@@ -9385,6 +9399,8 @@ let main _ =
     PercentAPublicTests.tests ()
     PercentAInternalTests.tests ()
     ClassWithEvents.testWithEventClass ()
+    testLazySimple ()
+    testSeqWithTryFinally ()
 
     match !failures with 
     | [] -> 
