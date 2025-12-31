@@ -1068,8 +1068,41 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                             (fun args ->
                                 let scriptFile = args[0]
                                 let scriptArgs = List.tail args
+
+                                // Filter out and process preferreduilang from script args
+                                let isPreferredUiLangArg (arg: string) =
+                                    arg.StartsWith("--preferreduilang:", StringComparison.OrdinalIgnoreCase)
+                                    || arg.StartsWith("/preferreduilang:", StringComparison.OrdinalIgnoreCase)
+
+                                let rec filterScriptArgs (args: string list) =
+                                    match args with
+                                    | [] -> []
+                                    | (arg: string) :: rest when isPreferredUiLangArg arg ->
+                                        // Extract culture and set it
+                                        let colonIndex = arg.IndexOf(':')
+
+                                        if colonIndex >= 0 && colonIndex < arg.Length - 1 then
+                                            let culture = arg.Substring(colonIndex + 1)
+
+                                            try
+                                                // Validate culture first by creating CultureInfo
+                                                let cultureInfo = CultureInfo(culture)
+                                                // Only set if valid
+                                                tcConfigB.preferredUiLang <- Some culture
+                                                Thread.CurrentThread.CurrentUICulture <- cultureInfo
+                                            with
+                                            | :? CultureNotFoundException
+                                            | :? ArgumentException ->
+                                                // Ignore invalid culture, just don't set it
+                                                ()
+
+                                        filterScriptArgs rest
+                                    | arg :: rest -> arg :: filterScriptArgs rest
+
+                                let filteredScriptArgs = filterScriptArgs scriptArgs
+
                                 inputFilesAcc <- inputFilesAcc @ [ (scriptFile, true) ] (* record script.fsx for evaluation *)
-                                List.iter recordExplicitArg scriptArgs (* record rest of line as explicit arguments *)
+                                List.iter recordExplicitArg filteredScriptArgs (* record rest of line as explicit arguments *)
                                 tcConfigB.noFeedback <- true (* "quiet", no banners responses etc *)
                                 interact <- false (* --exec, exit after eval *)
                                 [] (* no arguments passed on, all consumed here *)
