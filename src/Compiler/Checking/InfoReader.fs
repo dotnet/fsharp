@@ -780,10 +780,10 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
             None
         else
             let checkMembersOfInterface (ty: TType) =
-                let meths = GetIntrinsicMethInfosOfType infoReader None AccessibleFromSomeFSharpCode AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
-                meths |> List.tryPick (fun minfo ->
+                let meths = this.GetIntrinsicMethInfosOfType None AccessibleFromSomeFSharpCode AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
+                meths |> List.tryPick (fun (minfo: MethInfo) ->
                     // Static abstract non-sealed (non-DIM) members
-                    if minfo.IsStatic && minfo.IsAbstract && not minfo.IsFinal then
+                    if not minfo.IsInstance && minfo.IsAbstract && not minfo.IsFinal then
                         Some minfo.LogicalName
                     else
                         None
@@ -1017,13 +1017,13 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     member _.IsInterfaceTypeWithMatchingStaticAbstractMember m nm ad ty = 
         isInterfaceWithStaticAbstractMethodCache.Apply((ad, nm), m, ty)
 
-    member _.TryFindUnimplementedStaticAbstractMemberOfType(m: range, interfaceTy: TType) : string option =
+    member _.TryFindUnimplementedStaticAbstractMemberOfType (m: range) (interfaceTy: TType) : string option =
         if not (isInterfaceTy g interfaceTy) then
             None
         elif not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) then
             None
         else
-            unimplementedStaticAbstractMemberCache.Apply((AccessibleFromSomewhere, m, interfaceTy))
+            unimplementedStaticAbstractMemberCache.Apply(((None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes), m, interfaceTy))
 
 let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
