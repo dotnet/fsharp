@@ -228,8 +228,7 @@ type InfoReader =
     /// Check if an interface type has an unimplemented static abstract member.
     /// Returns Some(memberLogicalName) if found, None otherwise.
     /// Results are cached per interface type definition.
-    member TryFindUnimplementedStaticAbstractMemberOfType:
-        m: range -> interfaceTy: TType -> string option
+    member TryFindUnimplementedStaticAbstractMemberOfType: m: range -> interfaceTy: TType -> string option
 
 val checkLanguageFeatureRuntimeAndRecover:
     infoReader: InfoReader -> langFeature: Features.LanguageFeature -> m: range -> unit
