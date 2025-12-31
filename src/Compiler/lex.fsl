@@ -1502,6 +1502,12 @@ and tripleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
       fin.Finish buf kind LexerStringFinisherContext.TripleQuote cont }
 
+ |  '"' '"' '"' 'B'
+    { let (buf, fin, _m, kind, args) = sargs
+      args.interpolationDelimiterLength <- 0
+      let cont = LexCont.Token(args.ifdefStack, args.stringNest)
+      fin.Finish buf { kind with IsByteString = true } LexerStringFinisherContext.TripleQuote cont }
+
  | newline
     { let (buf, _fin, m, kind, args) = sargs
       incrLine lexbuf
