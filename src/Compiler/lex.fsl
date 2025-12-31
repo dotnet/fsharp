@@ -54,12 +54,6 @@ let fail args (lexbuf:UnicodeLexing.Lexbuf) msg dflt =
      args.diagnosticsLogger.ErrorR(Error(msg,m))
      dflt
 
-/// Update tracking of the last token position for XML doc comment position checking
-let updateLastTokenPos (args: LexArgs) (lexbuf: UnicodeLexing.Lexbuf) =
-    let endPos = lexbuf.EndPos
-    args.lastTokenEndLine <- endPos.Line
-    args.lastTokenEndColumn <- endPos.Column
-
 //--------------------------
 // Integer parsing
 
@@ -418,7 +412,6 @@ rule token (args: LexArgs) (skip: bool) = parse
  | int
      { let s = removeUnderscores (lexeme lexbuf)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator.
-       updateLastTokenPos args lexbuf
        if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
            try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
@@ -429,7 +422,6 @@ rule token (args: LexArgs) (skip: bool) = parse
  | int32
      { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator.
-       updateLastTokenPos args lexbuf
        if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
            try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
@@ -492,12 +484,10 @@ rule token (args: LexArgs) (skip: bool) = parse
      }
 
  | ieee64
-     { updateLastTokenPos args lexbuf
-       IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
+     { IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
 
  | decimal
-     { updateLastTokenPos args lexbuf
-       try
+     { try
           let s = removeUnderscores (lexemeTrimRight lexbuf 1)
           // This implements a range check for decimal literals
           let d = System.Decimal.Parse(s,System.Globalization.NumberStyles.AllowExponent ||| System.Globalization.NumberStyles.Number,System.Globalization.CultureInfo.InvariantCulture)
@@ -750,10 +740,6 @@ rule token (args: LexArgs) (skip: bool) = parse
  | "///" op_char*
      { // Match exactly 3 slash, 4+ slash caught by preceding rule
        let m = lexbuf.LexemeRange
-       // Check if there was a token on this line before this /// comment
-       // If lastTokenEndLine matches the current line, there's code before the comment
-       if args.lastTokenEndLine = m.StartLine then
-           warning (Error(FSComp.SR.xmlDocNotFirstOnLine(), m))
        let doc = lexemeTrimLeft lexbuf 3
        let sb = (new StringBuilder(100)).Append(doc)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
@@ -866,7 +852,7 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | '(' { LPAREN }
 
- | ')' { updateLastTokenPos args lexbuf; RPAREN }
+ | ')' { RPAREN }
 
  | '*' { STAR }
 
@@ -924,13 +910,13 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | "[<" { LBRACK_LESS }
 
- | "]" { updateLastTokenPos args lexbuf; RBRACK }
+ | "]" { RBRACK }
 
- | "|]" { updateLastTokenPos args lexbuf; BAR_RBRACK }
+ | "|]" { BAR_RBRACK }
 
- | "|}" { updateLastTokenPos args lexbuf; BAR_RBRACE }
+ | "|}" { BAR_RBRACE }
 
- | ">]" { updateLastTokenPos args lexbuf; GREATER_RBRACK }
+ | ">]" { GREATER_RBRACK }
 
  | "{"
      {
@@ -980,12 +966,10 @@ rule token (args: LexArgs) (skip: bool) = parse
            // will be reported w.r.t. the first '{'
            args.stringNest <- (counter - 1, style, d, altR, m) :: rest
            let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-           updateLastTokenPos args lexbuf
            RBRACE cont
 
        | _ ->
            let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-           updateLastTokenPos args lexbuf
            RBRACE cont
      }
 

@@ -6,6 +6,7 @@ open System
 open System.Text
 
 open Internal.Utilities
+open Internal.Utilities.Library
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler.DiagnosticsLogger
@@ -62,10 +63,6 @@ type LexArgs =
         mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
         mutable stringNest: LexerInterpolatedStringNesting
         mutable interpolationDelimiterLength: int
-        /// Tracks the line number of the last non-whitespace, non-comment token
-        mutable lastTokenEndLine: int
-        /// Tracks the end column of the last non-whitespace, non-comment token
-        mutable lastTokenEndColumn: int
     }
 
 /// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
@@ -88,8 +85,6 @@ let mkLexargs
         stringNest = []
         pathMap = pathMap
         interpolationDelimiterLength = 0
-        lastTokenEndLine = 0
-        lastTokenEndColumn = 0
     }
 
 /// Register the lexbuf and call the given function
@@ -401,7 +396,7 @@ module Keywords =
             (*------- for prototyping and explaining offside rule *)
             FSHARP, "__token_OBLOCKSEP", OBLOCKSEP
             FSHARP, "__token_OWITH", OWITH
-            FSHARP, "__token_ODECLEND", ODECLEND(range0, false)
+            FSHARP, "__token_ODECLEND", ODECLEND range0
             FSHARP, "__token_OTHEN", OTHEN
             FSHARP, "__token_OELSE", OELSE
             FSHARP, "__token_OEND", OEND
@@ -450,21 +445,14 @@ module Keywords =
         if IsCompilerGeneratedName s then
             warning (Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved (), lexbuf.LexemeRange))
 
-        // Track token position for XML doc comment checking
-        args.lastTokenEndLine <- lexbuf.EndPos.Line
-        args.lastTokenEndColumn <- lexbuf.EndPos.Column
         args.resourceManager.InternIdentifierToken s
 
     let KeywordOrIdentifierToken args (lexbuf: Lexbuf) s =
-        // Track token position for XML doc comment checking
-        args.lastTokenEndLine <- lexbuf.EndPos.Line
-        args.lastTokenEndColumn <- lexbuf.EndPos.Column
-
         match keywordTable.TryGetValue s with
         | true, v ->
             match v with
             | RESERVED ->
-                warning (ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved s, lexbuf.LexemeRange))
+                warning (ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved (s), lexbuf.LexemeRange))
                 IdentifierToken args lexbuf s
             | _ ->
                 match s with
@@ -475,7 +463,7 @@ module Keywords =
                 | "lsr"
                 | "asr" ->
                     if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-                        mlCompatWarning (FSComp.SR.mlCompatKeyword s) lexbuf.LexemeRange
+                        mlCompatWarning (FSComp.SR.mlCompatKeyword (s)) lexbuf.LexemeRange
                 | _ -> ()
 
                 v

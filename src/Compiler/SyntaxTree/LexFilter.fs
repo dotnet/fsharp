@@ -673,6 +673,14 @@ type LexFilterImpl (
         savedLexbufState <- tokenLexbufState
         haveLexbufState <- true
 
+        // Track the last non-comment token position for XML doc comment validation
+        match token with
+        | LINE_COMMENT _ -> ()
+        | BLOCK_COMMENT _
+        | BLOCK_COMMENT_OPEN
+        | WHITESPACE _ -> ()
+        | _ -> XmlDocStore.SetLastNonCommentTokenLine lexbuf tokenLexbufState.EndPos.Line
+
         let tokenTup = pool.Rent()
         tokenTup.Token <- token
         tokenTup.LexbufState <- tokenLexbufState
@@ -2628,6 +2636,17 @@ type LexFilterImpl (
         true
 
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) =
+          // Check if XML doc comment (///) appears after other code on the same line
+          match tokenTup.Token with
+          | LINE_COMMENT comment when comment.StartsWithOrdinal("///") ->
+              let commentStartLine = tokenTup.StartPos.Line
+              let lastNonCommentLine = XmlDocStore.GetLastNonCommentTokenLine lexbuf
+              if lastNonCommentLine = commentStartLine then
+                  // XML doc comment appears on same line as previous non-comment token
+                  let m = mkFileIndexRange tokenTup.LexbufState.FileIndex tokenTup.StartPos (tokenTup.StartPos.ShiftColumnBy(3))
+                  warning(Error(FSComp.SR.xmlDocNotFirstOnLine(), m))
+          | _ -> ()
+
           match tokenTup.Token with
           | HASH_IDENT ident ->
               let hashPos = LexbufState(tokenTup.StartPos, tokenTup.StartPos.ShiftColumnBy(1), false)
