@@ -681,6 +681,14 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
                         if isByrefTyconRef cenv.g tcref2 then
                             errorR(Error(FSComp.SR.chkNoByrefsOfByrefs(NicePrint.minimalStringOfType cenv.denv ty), m))
                 CheckTypesDeep cenv (visitType, None, None, None, None) cenv.g env tinst
+            
+            // Check for interfaces with unimplemented static abstract members used as type arguments
+            if tcref.CanDeref then
+                let typars = tcref.Typars m
+                if typars.Length = tinst.Length then
+                    (typars, tinst) ||> List.iter2 (fun typar typeArg ->
+                        CheckInterfaceTypeArgumentForStaticAbstractMembers cenv m typar typeArg
+                    )
 
         let visitTraitSolution info =
             match info with
@@ -720,6 +728,27 @@ let CheckTypeInstNoByrefs cenv env m tyargs =
 
 let CheckTypeInstNoInnerByrefs cenv env m tyargs =
     tyargs |> List.iter (CheckTypeNoInnerByrefs cenv env m)
+
+/// Check that an interface type used as a type argument to a constrained type parameter
+/// has implementations for all static abstract members.
+/// This only applies when the type parameter has an interface constraint - using interfaces
+/// with unconstrained generics (like List<ITest> or Dictionary<K, ITest>) is fine.
+///
+/// See: https://github.com/dotnet/fsharp/issues/19184
+let CheckInterfaceTypeArgumentForStaticAbstractMembers (cenv: cenv) (m: range) (typar: Typar) (typeArg: TType) =
+    if cenv.reportErrors then
+        // Only check if the type parameter has interface constraints
+        let hasInterfaceConstraint =
+            typar.Constraints |> List.exists (function
+                | TyparConstraint.CoercesTo(constraintTy, _) -> isInterfaceTy cenv.g constraintTy
+                | _ -> false)
+
+        if hasInterfaceConstraint && isInterfaceTy cenv.g typeArg then
+            match cenv.infoReader.TryFindUnimplementedStaticAbstractMemberOfType(m, typeArg) with
+            | Some memberName ->
+                let interfaceTypeName = NicePrint.minimalStringOfType cenv.denv typeArg
+                errorR(Error(FSComp.SR.chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument(interfaceTypeName, memberName), m))
+            | None -> ()
 
 /// Applied functions get wrapped in coerce nodes for subsumption coercions
 let (|OptionalCoerce|) expr =
