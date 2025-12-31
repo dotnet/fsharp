@@ -2092,3 +2092,38 @@ Actual:
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
+
+    let withXmlDoc (xmlFileName: string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--doc:{xmlFileName}" ] "withXmlDoc is only supported for F#" cUnit
+
+    let verifyXmlDocContains (expectedTexts: string list) (result: CompilationResult) : CompilationResult =
+        match result with
+        | CompilationResult.Failure _ -> failwith "Cannot verify XML doc on failed compilation"
+        | CompilationResult.Success output ->
+            match output.OutputPath with
+            | None -> failwith "No output path available"
+            | Some dllPath ->
+                let xmlPath = Path.ChangeExtension(dllPath, ".xml")
+                if not (File.Exists xmlPath) then
+                    failwith $"XML doc file not found: {xmlPath}"
+                let content = File.ReadAllText(xmlPath)
+                for expected in expectedTexts do
+                    if not (content.Contains(expected)) then
+                        failwith $"XML doc missing: '{expected}'\n\nActual:\n{content}"
+                result
+
+    let verifyXmlDocNotContains (unexpectedTexts: string list) (result: CompilationResult) : CompilationResult =
+        match result with
+        | CompilationResult.Failure _ -> failwith "Cannot verify XML doc on failed compilation"
+        | CompilationResult.Success output ->
+            match output.OutputPath with
+            | None -> failwith "No output path available"
+            | Some dllPath ->
+                let xmlPath = Path.ChangeExtension(dllPath, ".xml")
+                if not (File.Exists xmlPath) then
+                    failwith $"XML doc file not found: {xmlPath}"
+                let content = File.ReadAllText(xmlPath)
+                for unexpected in unexpectedTexts do
+                    if content.Contains(unexpected) then
+                        failwith $"XML doc should not contain: '{unexpected}'"
+                result

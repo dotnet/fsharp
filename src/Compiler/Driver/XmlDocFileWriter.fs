@@ -7,6 +7,7 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
+open FSharp.Compiler.Xml.XmlDocIncludeExpander
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
@@ -85,7 +86,8 @@ module XmlDocWriter =
 
         let addMember id xmlDoc =
             if hasDoc xmlDoc then
-                let doc = xmlDoc.GetXmlText()
+                let expandedDoc = expandIncludes xmlDoc
+                let doc = expandedDoc.GetXmlText()
                 members <- (id, doc) :: members
 
         let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc

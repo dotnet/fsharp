@@ -331,6 +331,7 @@
     <Compile Include="Miscellaneous\ListLiterals.fs" />
     <Compile Include="Miscellaneous\SemanticClassificationKeyBuilder.fs" />
     <Compile Include="Miscellaneous\XmlDoc.fs" />
+    <Compile Include="Miscellaneous\XmlDocInclude.fs" />
     <Compile Include="Miscellaneous\FsharpSuiteMigrated.fs" />
     <Compile Include="Miscellaneous\MigratedCoreTests.fs" />
     <Compile Include="Miscellaneous\MigratedOverloadTests.fs" />
