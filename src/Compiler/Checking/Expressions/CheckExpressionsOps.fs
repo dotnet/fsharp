@@ -400,7 +400,7 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
 /// - capturedMemberBindings: list of (localVar, valueExpr) pairs to prepend before the object expression
 /// - methodBodyRemap: Remap to apply to object expression method bodies to use the captured locals
 let TryExtractStructMembersFromObjectExpr 
-    (g: TcGlobals)
+    (g: TcGlobals.TcGlobals)
     (enclosingStructTyconRefOpt: TyconRef option)
     (isInterfaceTy: bool) 
     (baseValOpt: Val option)
