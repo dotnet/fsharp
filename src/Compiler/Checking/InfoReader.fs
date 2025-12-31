@@ -784,7 +784,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
                 meths |> List.tryPick (fun (minfo: MethInfo) ->
                     // Static abstract non-sealed (non-DIM) members
                     if not minfo.IsInstance && minfo.IsAbstract && not minfo.IsFinal then
-                        Some minfo.LogicalName
+                        Some minfo.DisplayNameCore
                     else
                         None
                 )

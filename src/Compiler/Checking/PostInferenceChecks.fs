@@ -1396,6 +1396,33 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
     let env = { env with isInAppExpr = true }
 
     CheckTypeInstNoByrefs cenv env m tyargs
+    
+    // Check for interfaces with unimplemented static abstract members used as type arguments
+    // See: https://github.com/dotnet/fsharp/issues/19184
+    if cenv.reportErrors && not tyargs.IsEmpty then
+        match f with
+        | Expr.Val (vref, _, _) ->
+            match vref.TryDeref with
+            | ValueSome v ->
+                let typars = v.Typars
+                if typars.Length = tyargs.Length then
+                    (typars, tyargs) ||> List.iter2 (fun typar typeArg ->
+                        // Only check if the type parameter has interface constraints
+                        let hasInterfaceConstraint =
+                            typar.Constraints |> List.exists (function
+                                | TyparConstraint.CoercesTo(constraintTy, _) -> isInterfaceTy cenv.g constraintTy
+                                | _ -> false)
+
+                        if hasInterfaceConstraint && isInterfaceTy cenv.g typeArg then
+                            match cenv.infoReader.TryFindUnimplementedStaticAbstractMemberOfType m typeArg with
+                            | Some memberName ->
+                                let interfaceTypeName = NicePrint.minimalStringOfType cenv.denv typeArg
+                                errorR(Error(FSComp.SR.chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument(interfaceTypeName, memberName), m))
+                            | None -> ()
+                    )
+            | _ -> ()
+        | _ -> ()
+    
     CheckExprNoByrefs cenv env f
 
     let hasReceiver =
