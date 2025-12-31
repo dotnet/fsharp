@@ -1745,3 +1745,25 @@ let v = dict["key"]
         |> typecheck
         |> shouldSucceed
 
+    [<FactForNETCOREAPP>]
+    let ``Compile and run succeeds for concrete type with IWSAM constraint`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+let test<'T when 'T :> ITest>(x: 'T) = 'T.Doot
+
+// This should work - passing concrete type Test()
+let t = Test()
+let result = test(t)
+if result <> 5 then failwith "Expected 5"
+printfn "Success: %d" result
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> compileAndRun
+        |> shouldSucceed
+

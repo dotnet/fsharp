@@ -635,6 +635,24 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
     | Expr.Op (TOp.Coerce, _, [f], _) -> mkArgsForAppliedExpr isBaseCall argsl f
     | _  -> []
 
+/// Check if a type argument is an interface with unimplemented static abstract members
+/// when used with a type parameter that has interface constraints.
+/// See: https://github.com/dotnet/fsharp/issues/19184
+let CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers (cenv: cenv) m (typar: Typar) (typeArg: TType) =
+    if cenv.reportErrors then
+        // Only check if the type parameter has interface constraints
+        let hasInterfaceConstraint =
+            typar.Constraints |> List.exists (function
+                | TyparConstraint.CoercesTo(constraintTy, _) -> isInterfaceTy cenv.g constraintTy
+                | _ -> false)
+
+        if hasInterfaceConstraint && isInterfaceTy cenv.g typeArg then
+            match cenv.infoReader.TryFindUnimplementedStaticAbstractMemberOfType m typeArg with
+            | Some memberName ->
+                let interfaceTypeName = NicePrint.minimalStringOfType cenv.denv typeArg
+                errorR(Error(FSComp.SR.chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument(interfaceTypeName, memberName), m))
+            | None -> ()
+
 /// Check types occurring in the TAST.
 let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
     if cenv.reportErrors then
@@ -686,23 +704,10 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
             // This only applies when the type parameter has an interface constraint - using interfaces
             // with unconstrained generics (like List<ITest> or Dictionary<K, ITest>) is fine.
             // See: https://github.com/dotnet/fsharp/issues/19184
-            if cenv.reportErrors && tcref.CanDeref then
+            if tcref.CanDeref then
                 let typars = tcref.Typars m
                 if typars.Length = tinst.Length then
-                    (typars, tinst) ||> List.iter2 (fun typar typeArg ->
-                        // Only check if the type parameter has interface constraints
-                        let hasInterfaceConstraint =
-                            typar.Constraints |> List.exists (function
-                                | TyparConstraint.CoercesTo(constraintTy, _) -> isInterfaceTy cenv.g constraintTy
-                                | _ -> false)
-
-                        if hasInterfaceConstraint && isInterfaceTy cenv.g typeArg then
-                            match cenv.infoReader.TryFindUnimplementedStaticAbstractMemberOfType m typeArg with
-                            | Some memberName ->
-                                let interfaceTypeName = NicePrint.minimalStringOfType cenv.denv typeArg
-                                errorR(Error(FSComp.SR.chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument(interfaceTypeName, memberName), m))
-                            | None -> ()
-                    )
+                    (typars, tinst) ||> List.iter2 (CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m)
 
         let visitTraitSolution info =
             match info with
@@ -1399,27 +1404,14 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
     
     // Check for interfaces with unimplemented static abstract members used as type arguments
     // See: https://github.com/dotnet/fsharp/issues/19184
-    if cenv.reportErrors && not tyargs.IsEmpty then
+    if not tyargs.IsEmpty then
         match f with
         | Expr.Val (vref, _, _) ->
             match vref.TryDeref with
             | ValueSome v ->
                 let typars = v.Typars
                 if typars.Length = tyargs.Length then
-                    (typars, tyargs) ||> List.iter2 (fun typar typeArg ->
-                        // Only check if the type parameter has interface constraints
-                        let hasInterfaceConstraint =
-                            typar.Constraints |> List.exists (function
-                                | TyparConstraint.CoercesTo(constraintTy, _) -> isInterfaceTy cenv.g constraintTy
-                                | _ -> false)
-
-                        if hasInterfaceConstraint && isInterfaceTy cenv.g typeArg then
-                            match cenv.infoReader.TryFindUnimplementedStaticAbstractMemberOfType m typeArg with
-                            | Some memberName ->
-                                let interfaceTypeName = NicePrint.minimalStringOfType cenv.denv typeArg
-                                errorR(Error(FSComp.SR.chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument(interfaceTypeName, memberName), m))
-                            | None -> ()
-                    )
+                    (typars, tyargs) ||> List.iter2 (CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m)
             | _ -> ()
         | _ -> ()
     
