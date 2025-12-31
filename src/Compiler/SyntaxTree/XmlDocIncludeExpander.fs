@@ -10,6 +10,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
+open Internal.Utilities.Library
 
 /// Thread-safe cache for loaded XML files
 let private xmlDocCache =
@@ -23,12 +24,12 @@ let private loadXmlFile (filePath: string) : Result<XDocument, string> =
         fun path ->
             try
                 if not (FileSystem.FileExistsShim(path)) then
-                    Error $"File not found: {path}"
+                    Result.Error $"File not found: {path}"
                 else
                     let doc = XDocument.Load(path)
-                    Ok doc
+                    Result.Ok doc
             with ex ->
-                Error $"Error loading file '{path}': {ex.Message}"
+                Result.Error $"Error loading file '{path}': {ex.Message}"
     )
 
 /// Resolve a file path (absolute or relative to source file)
@@ -40,7 +41,10 @@ let private resolveFilePath (baseFileName: string) (includePath: string) : strin
             if String.IsNullOrEmpty(baseFileName) || baseFileName = "unknown" then
                 Directory.GetCurrentDirectory()
             else
-                Path.GetDirectoryName(baseFileName)
+                match Path.GetDirectoryName(baseFileName) with
+                | Null -> Directory.GetCurrentDirectory()
+                | NonNull dir when String.IsNullOrEmpty(dir) -> Directory.GetCurrentDirectory()
+                | NonNull dir -> dir
 
         Path.GetFullPath(Path.Combine(baseDir, includePath))
 
@@ -49,19 +53,19 @@ let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement seq
     try
         let elements = doc.XPathSelectElements(xpath)
 
-        if isNull elements || Seq.isEmpty elements then
-            Error $"XPath query returned no results: {xpath}"
+        if obj.ReferenceEquals(elements, null) || Seq.isEmpty elements then
+            Result.Error $"XPath query returned no results: {xpath}"
         else
-            Ok elements
+            Result.Ok elements
     with ex ->
-        Error $"Invalid XPath expression '{xpath}': {ex.Message}"
+        Result.Error $"Invalid XPath expression '{xpath}': {ex.Message}"
 
 /// Recursively expand includes in XML content
 let rec private expandIncludesInContent
     (baseFileName: string)
     (content: string)
     (inProgressFiles: Set<string>)
-    (range: Range.range)
+    (range: range)
     : string =
     // Early exit if content doesn't contain "<include" (case-insensitive check)
     if not (content.IndexOf("<include", StringComparison.OrdinalIgnoreCase) >= 0) then
@@ -73,7 +77,7 @@ let rec private expandIncludesInContent
             let doc = XDocument.Parse(wrappedContent)
 
             let includeElements =
-                doc.Descendants(XName.op_Implicit "include") |> Seq.toList
+                doc.Descendants(!!(XName.op_Implicit "include")) |> Seq.toList
 
             if includeElements.IsEmpty then
                 content
@@ -81,15 +85,15 @@ let rec private expandIncludesInContent
                 let mutable modified = false
 
                 for includeElem in includeElements do
-                    let fileAttr = includeElem.Attribute(XName.op_Implicit "file")
-                    let pathAttr = includeElem.Attribute(XName.op_Implicit "path")
+                    let fileAttr = includeElem.Attribute(!!(XName.op_Implicit "file"))
+                    let pathAttr = includeElem.Attribute(!!(XName.op_Implicit "path"))
 
                     match fileAttr, pathAttr with
-                    | null, _ ->
+                    | Null, _ ->
                         warning (Error(FSComp.SR.xmlDocIncludeError "Missing 'file' attribute", range))
-                    | _, null ->
+                    | _, Null ->
                         warning (Error(FSComp.SR.xmlDocIncludeError "Missing 'path' attribute", range))
-                    | fileAttr, pathAttr ->
+                    | NonNull fileAttr, NonNull pathAttr ->
                         let includePath = fileAttr.Value
                         let xpath = pathAttr.Value
                         let resolvedPath = resolveFilePath baseFileName includePath
@@ -104,11 +108,11 @@ let rec private expandIncludesInContent
                             )
                         else
                             match loadXmlFile resolvedPath with
-                            | Error msg -> warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
-                            | Ok includeDoc ->
+                            | Result.Error msg -> warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
+                            | Result.Ok includeDoc ->
                                 match evaluateXPath includeDoc xpath with
-                                | Error msg -> warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
-                                | Ok elements ->
+                                | Result.Error msg -> warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
+                                | Result.Ok elements ->
                                     // Get the inner content of selected elements
                                     let newNodes =
                                         elements
@@ -143,8 +147,11 @@ let rec private expandIncludesInContent
 
                 if modified then
                     // Extract content from root wrapper
-                    let resultDoc = doc.Root.Nodes() |> Seq.map (fun n -> n.ToString()) |> String.concat ""
-                    resultDoc
+                    match doc.Root with
+                    | Null -> content
+                    | NonNull root ->
+                        let resultDoc = root.Nodes() |> Seq.map (fun n -> n.ToString()) |> String.concat ""
+                        resultDoc
                 else
                     content
         with ex ->

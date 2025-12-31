@@ -2103,10 +2103,25 @@ Actual:
             match output.OutputPath with
             | None -> failwith "No output path available"
             | Some dllPath ->
+                // First try same directory as DLL
                 let xmlPath = Path.ChangeExtension(dllPath, ".xml")
-                if not (File.Exists xmlPath) then
-                    failwith $"XML doc file not found: {xmlPath}"
-                let content = File.ReadAllText(xmlPath)
+                
+                // If not found, try looking in parent directory (for temp builds)
+                let xmlPathToUse =
+                    if File.Exists xmlPath then
+                        xmlPath
+                    else
+                        // Try the current directory in case --doc was relative
+                        let dir = Path.GetDirectoryName(dllPath)
+                        let possiblePath = Path.Combine(dir, Path.GetFileName(xmlPath))
+                        if File.Exists possiblePath then
+                            possiblePath
+                        else
+                            xmlPath // Use original path for error message
+                
+                if not (File.Exists xmlPathToUse) then
+                    failwith $"XML doc file not found: {xmlPathToUse}"
+                let content = File.ReadAllText(xmlPathToUse)
                 for expected in expectedTexts do
                     if not (content.Contains(expected)) then
                         failwith $"XML doc missing: '{expected}'\n\nActual:\n{content}"
@@ -2120,9 +2135,21 @@ Actual:
             | None -> failwith "No output path available"
             | Some dllPath ->
                 let xmlPath = Path.ChangeExtension(dllPath, ".xml")
-                if not (File.Exists xmlPath) then
-                    failwith $"XML doc file not found: {xmlPath}"
-                let content = File.ReadAllText(xmlPath)
+                
+                let xmlPathToUse =
+                    if File.Exists xmlPath then
+                        xmlPath
+                    else
+                        let dir = Path.GetDirectoryName(dllPath)
+                        let possiblePath = Path.Combine(dir, Path.GetFileName(xmlPath))
+                        if File.Exists possiblePath then
+                            possiblePath
+                        else
+                            xmlPath
+                
+                if not (File.Exists xmlPathToUse) then
+                    failwith $"XML doc file not found: {xmlPathToUse}"
+                let content = File.ReadAllText(xmlPathToUse)
                 for unexpected in unexpectedTexts do
                     if content.Contains(unexpected) then
                         failwith $"XML doc should not contain: '{unexpected}'"

@@ -68,18 +68,19 @@ let f x = x
 
     [<Fact>]
     let ``Include with relative path expands`` () =
-        let dir = setupDir [ "Test.fs", ""; "data/simple.data.xml", simpleData ]
-        let fsPath = Path.Combine(dir, "Test.fs")
-
-        try
-            Fs
-                """
+        let srcCode =
+            """
 module Test
 /// <include file="data/simple.data.xml" path="/data/summary"/>
 let f x = x
 """
-            |> withName "Test"
-            |> FsFromPath fsPath
+
+        let dir = setupDir [ "data/simple.data.xml", simpleData ]
+        let fsPath = Path.Combine(dir, "Test.fs")
+        File.WriteAllText(fsPath, srcCode)
+
+        try
+            FsFromPath fsPath
             |> withXmlDoc "Test.xml"
             |> compile
             |> shouldSucceed
@@ -182,20 +183,21 @@ let f x = x
 
     [<Fact>]
     let ``Relative path with parent directory works`` () =
-        let dir =
-            setupDir [ "src/Test.fs", ""; "data/simple.data.xml", simpleData ]
-
-        let fsPath = Path.Combine(dir, "src", "Test.fs")
-
-        try
-            Fs
-                """
+        let srcCode =
+            """
 module Test
 /// <include file="../data/simple.data.xml" path="/data/summary"/>
 let f x = x
 """
-            |> withName "Test"
-            |> FsFromPath fsPath
+
+        let dir = setupDir [ "data/simple.data.xml", simpleData ]
+        let srcDir = Path.Combine(dir, "src")
+        Directory.CreateDirectory(srcDir) |> ignore
+        let fsPath = Path.Combine(srcDir, "Test.fs")
+        File.WriteAllText(fsPath, srcCode)
+
+        try
+            FsFromPath fsPath
             |> withXmlDoc "Test.xml"
             |> compile
             |> shouldSucceed

@@ -2017,6 +2017,11 @@
         <target state="translated">Ten komentarz XML jest nieprawidłowy: wiele wpisów dokumentacji dla parametru „{0}”</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocIncludeError">
+        <source>XML documentation include error: {0}</source>
+        <target state="new">XML documentation include error: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
         <source>This XML comment is invalid: unknown parameter '{0}'</source>
         <target state="translated">Ten komentarz XML jest nieprawidłowy: nieznany parametr „{0}”</target>
