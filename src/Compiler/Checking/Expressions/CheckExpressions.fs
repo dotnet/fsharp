@@ -7312,10 +7312,22 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         // Fix for struct object expressions: extract captured struct members to avoid byref fields
         // This transformation is only applied when ALL of the following conditions are met:
         // 1. The object expression derives from a base class (not just implementing an interface)
-        // 2. The object expression captures instance members from an enclosing struct
+        // 2. We're inside a struct instance member method (env.eFamilyType is a struct)
+        // 3. The object expression captures the struct's 'this' reference (baseValOpt)
         // See CheckExpressionsOps.TryExtractStructMembersFromObjectExpr for implementation details
+        let enclosingStructTyconRefOpt = 
+            match env.eFamilyType with
+            | Some tcref when tcref.IsStructOrEnumTycon -> Some tcref
+            | _ -> None
+
         let capturedStructMembers, methodBodyRemap =
-            CheckExpressionsOps.TryExtractStructMembersFromObjectExpr isInterfaceTy overridesAndVirts mWholeExpr
+            CheckExpressionsOps.TryExtractStructMembersFromObjectExpr 
+                g
+                enclosingStructTyconRefOpt
+                isInterfaceTy 
+                baseValOpt
+                overridesAndVirts 
+                mWholeExpr
         
         let allTypeImpls =
           overridesAndVirts |> List.map (fun (m, implTy, _, dispatchSlotsKeyed, _, overrides) ->
