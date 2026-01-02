@@ -216,24 +216,54 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
     if doc.IsEmpty then
         doc
     else
-        // Get the elaborated XML text which includes proper XML structure
-        let content = doc.GetXmlText()
+        let unprocessedLines = doc.UnprocessedLines
+        let baseFileName = doc.Range.FileName
 
-        // Early exit if content doesn't contain "<include" (case-insensitive)
-        if not (content.IndexOf("<include", StringComparison.OrdinalIgnoreCase) >= 0) then
+        // Early exit: check if any line contains "<include" (cheap check)
+        let hasIncludes =
+            unprocessedLines |> Array.exists (fun line -> line.Contains("<include"))
+
+        if not hasIncludes then
             doc
         else
-            let baseFileName = doc.Range.FileName
+            // Process each line, expanding includes where found
+            let expandedLines =
+                unprocessedLines
+                |> Array.map (fun line ->
+                    if not (line.Contains("<include")) then
+                        line
+                    else
+                        match tryParseIncludeLine line with
+                        | None -> line
+                        | Some includeInfo ->
+                            let resolvedPath = resolveFilePath baseFileName includeInfo.FilePath
 
-            let expandedContent =
-                expandIncludesInContent baseFileName content Set.empty doc.Range
+                            match loadXmlFile resolvedPath with
+                            | Result.Error msg ->
+                                warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
+                                line
+                            | Result.Ok includeDoc ->
+                                match evaluateXPath includeDoc includeInfo.XPath with
+                                | Result.Error msg ->
+                                    warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
+                                    line
+                                | Result.Ok elements ->
+                                    // Get the content from selected elements
+                                    let nodes = elements |> Seq.collect (fun e -> e.Nodes())
 
-            // Create new XmlDoc with expanded content if it changed
-            if expandedContent = content then
+                                    let expandedNodes =
+                                        expandElements resolvedPath nodes (Set.singleton resolvedPath) doc.Range
+
+                                    // Convert to string - these become the new lines
+                                    let expandedText =
+                                        expandedNodes
+                                        |> Seq.map (fun n -> n.ToString())
+                                        |> String.concat Environment.NewLine
+
+                                    expandedText)
+
+            // Only create new XmlDoc if something changed
+            if expandedLines = unprocessedLines then
                 doc
             else
-                // Split back into lines to match the XmlDoc structure
-                let lines =
-                    expandedContent.Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
-
-                XmlDoc(lines, doc.Range)
+                XmlDoc(expandedLines, doc.Range)
