@@ -897,10 +897,10 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
 
     member _.ResetErrorCount() = errorCount <- 0
 
-    override _.DiagnosticSink(diagnostic, severity) =
+    override _.DiagnosticSink(diagnostic) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions) with
         | FSharpDiagnosticSeverity.Error ->
             fsiStdinSyphon.PrintDiagnostic(tcConfig, diagnostic)
             errorCount <- errorCount + 1
@@ -913,7 +913,7 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
         | FSharpDiagnosticSeverity.Info as adjustedSeverity ->
             DoWithDiagnosticColor adjustedSeverity (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
-                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
+                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, diagnostic.Severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
@@ -1068,8 +1068,41 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                             (fun args ->
                                 let scriptFile = args[0]
                                 let scriptArgs = List.tail args
+
+                                // Filter out and process preferreduilang from script args
+                                let isPreferredUiLangArg (arg: string) =
+                                    arg.StartsWith("--preferreduilang:", StringComparison.OrdinalIgnoreCase)
+                                    || arg.StartsWith("/preferreduilang:", StringComparison.OrdinalIgnoreCase)
+
+                                let rec filterScriptArgs (args: string list) =
+                                    match args with
+                                    | [] -> []
+                                    | (arg: string) :: rest when isPreferredUiLangArg arg ->
+                                        // Extract culture and set it
+                                        let colonIndex = arg.IndexOf(':')
+
+                                        if colonIndex >= 0 && colonIndex < arg.Length - 1 then
+                                            let culture = arg.Substring(colonIndex + 1)
+
+                                            try
+                                                // Validate culture first by creating CultureInfo
+                                                let cultureInfo = CultureInfo(culture)
+                                                // Only set if valid
+                                                tcConfigB.preferredUiLang <- Some culture
+                                                Thread.CurrentThread.CurrentUICulture <- cultureInfo
+                                            with
+                                            | :? CultureNotFoundException
+                                            | :? ArgumentException ->
+                                                // Ignore invalid culture, just don't set it
+                                                ()
+
+                                        filterScriptArgs rest
+                                    | arg :: rest -> arg :: filterScriptArgs rest
+
+                                let filteredScriptArgs = filterScriptArgs scriptArgs
+
                                 inputFilesAcc <- inputFilesAcc @ [ (scriptFile, true) ] (* record script.fsx for evaluation *)
-                                List.iter recordExplicitArg scriptArgs (* record rest of line as explicit arguments *)
+                                List.iter recordExplicitArg filteredScriptArgs (* record rest of line as explicit arguments *)
                                 tcConfigB.noFeedback <- true (* "quiet", no banners responses etc *)
                                 interact <- false (* --exec, exit after eval *)
                                 [] (* no arguments passed on, all consumed here *)
@@ -2131,7 +2164,8 @@ type internal FsiDynamicCompiler
         if tcConfig.printAst then
             for input in declaredImpls do
                 fprintfn fsiConsoleOutput.Out "AST:"
-                fprintfn fsiConsoleOutput.Out "%+A" input
+                let layout = DebugPrint.implFileL input
+                fprintfn fsiConsoleOutput.Out "%s" (LayoutRender.showL layout)
 #endif
 
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
@@ -2223,46 +2257,50 @@ type internal FsiDynamicCompiler
                     inputs
                 ))
 
-        // typeCheckOnly either reports all errors found so far or exits with 0 - it stops processing the script
+        // typeCheckOnly: check for errors and skip code generation
         if tcConfig.typeCheckOnly then
+            // Always abort on errors (for both loaded files and main script)
             diagnosticsLogger.AbortOnError(fsiConsoleOutput)
-            raise StopProcessing
+            // Update state with type-checking results but skip code generation
+            let newIState = { istate with tcState = tcState }
 
-        let codegenResults, optEnv, fragName =
-            ProcessTypedImpl(
-                diagnosticsLogger,
-                optEnv,
-                tcState,
-                tcConfig,
-                isInteractiveItExpr,
-                topCustomAttrs,
-                prefixPath,
-                isIncrementalFragment,
-                declaredImpls,
-                ilxGenerator
-            )
+            newIState, tcEnvAtEndOfLastInput, []
+        else
+            let codegenResults, optEnv, fragName =
+                ProcessTypedImpl(
+                    diagnosticsLogger,
+                    optEnv,
+                    tcState,
+                    tcConfig,
+                    isInteractiveItExpr,
+                    topCustomAttrs,
+                    prefixPath,
+                    isIncrementalFragment,
+                    declaredImpls,
+                    ilxGenerator
+                )
 
-        let newState, declaredImpls =
-            ProcessCodegenResults(
-                ctok,
-                diagnosticsLogger,
-                istate,
-                optEnv,
-                tcState,
-                tcConfig,
-                prefixPath,
-                showTypes,
-                isIncrementalFragment,
-                fragName,
-                declaredImpls,
-                ilxGenerator,
-                codegenResults,
-                m
-            )
+            let newState, declaredImpls =
+                ProcessCodegenResults(
+                    ctok,
+                    diagnosticsLogger,
+                    istate,
+                    optEnv,
+                    tcState,
+                    tcConfig,
+                    prefixPath,
+                    showTypes,
+                    isIncrementalFragment,
+                    fragName,
+                    declaredImpls,
+                    ilxGenerator,
+                    codegenResults,
+                    m
+                )
 
-        CheckEntryPoint istate.tcGlobals declaredImpls
+            CheckEntryPoint istate.tcGlobals declaredImpls
 
-        (newState, tcEnvAtEndOfLastInput, declaredImpls)
+            (newState, tcEnvAtEndOfLastInput, declaredImpls)
 
     let tryGetGeneratedValue istate cenv v =
         match istate.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(istate.emEnv), v) with
@@ -2583,7 +2621,7 @@ type internal FsiDynamicCompiler
             )
 
         let bindingA = mkBind (mkSynPatVar None itID) expr
-        let defA = SynModuleDecl.Let(false, [ bindingA ], m)
+        let defA = SynModuleDecl.Let(false, [ bindingA ], m, SynModuleDeclLetTrivia.Zero)
         [ defA ]
 
     // Construct an invisible call to Debugger.Break(), in the specified range

@@ -24,6 +24,9 @@
     <Compile Include="..\unittests\TestLib.Utils.fs">
       <Link>UnitTests.TestLib.Utils.fs</Link>
     </Compile>
+    <Compile Include="..\..\..\tests\FSharp.Test.Utilities\VSInstallDiscovery.fs">
+      <Link>VSInstallDiscovery.fs</Link>
+    </Compile>
     <Compile Include="FSharpLanguageServiceTestable.fs" />
     <Compile Include="VsMocks.fs" />
     <Compile Include="Salsa.fs" />

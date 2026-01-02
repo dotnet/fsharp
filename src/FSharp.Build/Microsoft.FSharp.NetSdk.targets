@@ -70,7 +70,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <RestoreAdditionalProjectSources Condition="Exists('$(_FSharpCoreLibraryPacksFolder)')">$(RestoreAdditionalProjectSources);$(_FSharpCoreLibraryPacksFolder)</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
-  <Target Name="CollectFSharpDesignTimeTools" BeforeTargets="BeforeCompile" DependsOnTargets="_GetFrameworkAssemblyReferences">
+  <Target Name="CollectFSharpDesignTimeTools" BeforeTargets="BeforeCompile" DependsOnTargets="ResolveReferences">
     <ItemGroup>
       <PropertyNames Include = "Pkg$([System.String]::Copy('%(PackageReference.FileName)').Replace('.','_'))" Condition = " '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' == '' "/>
       <PropertyNames Include = "Pkg$([System.String]::Copy('%(PackageReference.FileName)%(PackageReference.Extension)').Replace('.','_'))" Condition = " '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' != '' "/>
@@ -79,7 +79,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </Target>
 
   <Target Name="PackageFSharpDesignTimeTools" AfterTargets="ResolveReferences">
-    <CallTarget Targets="_GetFrameworkAssemblyReferences" Condition="'@(ReferencePath)' == ''" />
     <PropertyGroup>
       <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
       <FSharpToolsDirectory Condition = " '$(FSharpToolsDirectory)' == '' ">tools</FSharpToolsDirectory>
@@ -176,7 +175,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <GenerateILLinkSubstitutions
       AssemblyName="$(AssemblyName)"
       IntermediateOutputPath="$(IntermediateOutputPath)">
-      <Output TaskParameter="GeneratedItems" ItemName="Embed" />
+      <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
     </GenerateILLinkSubstitutions>
   </Target>
 

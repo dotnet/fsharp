@@ -43,7 +43,7 @@ ImplFile
                       Yes (13,4--13,14), { LeadingKeyword = Let (13,4--13,7)
                                            InlineKeyword = None
                                            EqualsRange = Some (13,10--13,11) })],
-                  (13,4--13,14))], false, (12,0--13,14),
+                  (13,4--13,14), { InKeyword = None })], false, (12,0--13,14),
               { ModuleKeyword = Some (12,0--12,6)
                 EqualsRange = Some (12,40--12,41) })],
           PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

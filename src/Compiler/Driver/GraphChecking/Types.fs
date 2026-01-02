@@ -173,13 +173,14 @@ type internal FilePairMap(files: FileInProject array) =
             |> Option.map (fun (implFile: FileInProject) -> (sigFile.Idx, implFile.Idx)))
         |> Array.choose id
 
-    let goodPairs, wrongOrderPairs =
+    let goodPairs, misorderedPairs =
         pairs |> Array.partition (fun (sigIdx, implIdx) -> sigIdx < implIdx)
 
     let sigToImpl, implToSig = buildBiDirectionalMaps goodPairs
 
-    // Pairs where the signature file comes after the implementation file in the project order. We need to track them to report such errors.
-    let wrongOrder = wrongOrderPairs |> Map.ofArray
+    // Pairs where the signature file comes after the implementation file in the project order.
+    // We need to track them to report FS0238 (implementation already given).
+    let misordered = misorderedPairs |> Map.ofArray
 
     member x.GetSignatureIndex(implementationIndex: FileIndex) = Map.find implementationIndex implToSig
     member x.GetImplementationIndex(signatureIndex: FileIndex) = Map.find signatureIndex sigToImpl
@@ -195,7 +196,8 @@ type internal FilePairMap(files: FileInProject array) =
 
     member x.IsSignature(index: FileIndex) = Map.containsKey index sigToImpl
 
-    member x.TryGetWrongOrderSignatureToImplementationIndex(index: FileIndex) = wrongOrder |> Map.tryFind index
+    member x.TryGetOutOfOrderImplementationIndex(signatureIndex: FileIndex) =
+        misordered |> Map.tryFind signatureIndex
 
 /// Callback that returns a previously calculated 'Result and updates 'State accordingly.
 type internal Finisher<'Node, 'State, 'Result> = Finisher of node: 'Node * finisher: ('State -> 'Result * 'State)
