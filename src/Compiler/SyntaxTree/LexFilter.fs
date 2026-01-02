@@ -676,8 +676,7 @@ type LexFilterImpl (
         // Track the last non-comment token position for XML doc comment validation
         match token with
         | LINE_COMMENT _ -> ()
-        | BLOCK_COMMENT _
-        | BLOCK_COMMENT_OPEN
+        | COMMENT _
         | WHITESPACE _ -> ()
         | _ -> XmlDocStore.SetLastNonCommentTokenLine lexbuf tokenLexbufState.EndPos.Line
 
