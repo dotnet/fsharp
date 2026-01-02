@@ -403,7 +403,6 @@ let TryExtractStructMembersFromObjectExpr
     (g: TcGlobals.TcGlobals)
     (enclosingStructTyconRefOpt: TyconRef option)
     (isInterfaceTy: bool)
-    (baseValOpt: Val option)
     overridesAndVirts
     (mWholeExpr: range)
     : (Val * Expr) list * Remap =
@@ -411,7 +410,6 @@ let TryExtractStructMembersFromObjectExpr
     // Only transform when:
     // 1. Not a pure interface implementation  
     // 2. We're inside a struct instance member (eFamilyType is a struct)
-    // The baseValOpt check was incorrect - baseVal is the base class instance, not the struct this
     match enclosingStructTyconRefOpt with
     | Some enclosingTcref when not isInterfaceTy ->
         // Collect all method bodies from the object expression overrides

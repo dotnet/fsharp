@@ -7326,7 +7326,6 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
                 g
                 enclosingStructTyconRefOpt
                 isInterfaceTy 
-                baseValOpt
                 overridesAndVirts 
                 mWholeExpr
         
