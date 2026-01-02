@@ -434,17 +434,6 @@ let TryExtractStructMembersFromObjectExpr
                     unionFreeVars acc exprFreeVars)
                 emptyFreeVars
 
-        freeVars.FreeLocals
-        |> Zset.elements
-        |> List.iter (fun v -> 
-                v.DisplayName 
-                v.HasDeclaringEntity 
-                v.IsInstanceMember
-            if v.HasDeclaringEntity then
-                let decl = v.DeclaringEntity
-                    decl.CompiledName 
-                    decl.Deref.IsStructOrEnumTycon)
-
         // Filter to problematic free variables:
         // 1. Variables from STRUCT types (HasDeclaringEntity && is struct)
         // 2. Variables without a DeclaringEntity (likely struct constructor params/fields)
