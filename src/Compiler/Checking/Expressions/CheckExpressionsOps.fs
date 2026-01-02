@@ -430,19 +430,14 @@ let TryExtractStructMembersFromObjectExpr
                         unionFreeVars acc bodyFreeVars)
                     emptyFreeVars
 
-            // Filter to only instance members of the enclosing struct type
+            // Filter to values that belong to the enclosing struct type
+            // This includes both instance members AND fields (like constructor parameters)
             let structMembers =
                 freeVars.FreeLocals
                 |> Zset.elements
                 |> List.filter (fun (v: Val) ->
-                    // Must be an instance member (not static)
-                    v.IsInstanceMember
-                    &&
-                    // Must have a declaring entity
-                    v.HasDeclaringEntity
-                    &&
-                    // The declaring entity must be the enclosing struct
-                    tyconRefEq g v.DeclaringEntity enclosingTcref)
+                    // Must have a declaring entity that matches the enclosing struct
+                    v.HasDeclaringEntity && tyconRefEq g v.DeclaringEntity enclosingTcref)
 
             // Early exit if no struct members captured
             if structMembers.IsEmpty then
