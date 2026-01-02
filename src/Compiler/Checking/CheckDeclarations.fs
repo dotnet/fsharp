@@ -3715,17 +3715,10 @@ module EstablishTypeDefinitionCores =
                                   let fparams =
                                       curriedArgInfos.Head
                                       |> List.map (fun (ty, argInfo: ArgReprInfo) ->
-                                            let ty =
-                                              if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
-                                                  match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
-                                                  | Some (Attrib(range=m)) ->
-                                                      checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
-                                                      mkValueOptionTy g ty
-                                                  | _ ->
-                                                      mkOptionTy g ty            
-                                              else ty
-
-                                            MakeSlotParam(ty, argInfo)) 
+                                            // Extract parameter attributes including optional and caller info flags
+                                            // This ensures delegates have proper metadata for optional parameters
+                                            let (ParamAttribs(_, isInArg, isOutArg, optArgInfo, _, _)) = CrackParamAttribsInfo g (ty, argInfo)
+                                            TSlotParam(Option.map textOfId argInfo.Name, ty, isInArg, isOutArg, optArgInfo.IsOptional, argInfo.Attribs)) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))

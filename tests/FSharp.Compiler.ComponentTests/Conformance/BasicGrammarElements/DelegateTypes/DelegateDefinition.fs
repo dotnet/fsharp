@@ -66,4 +66,46 @@ let a = A f
 a.Invoke(5)"""
         |> compileExeAndRun
         |> shouldSucceed
-        |> verifyOutput "line: 5" 
+        |> verifyOutput "line: 5"
+
+    [<Fact>]
+    let ``Delegate with OptionalArgument and CallerLineNumber`` () =
+        FSharp """open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+type TestDelegate = delegate of [<OptionalArgument; CallerLineNumber>] line: int option -> unit
+let f = fun (line: int option) -> 
+    match line with
+    | Some l -> printfn "line: %d" l
+    | None -> printfn "no line"
+let d = TestDelegate f
+d.Invoke()"""
+        |> compileExeAndRun
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Delegate with OptionalArgument and CallerFilePath`` () =
+        FSharp """open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+type TestDelegate = delegate of [<OptionalArgument; CallerFilePath>] path: string option -> unit
+let f = fun (path: string option) -> 
+    match path with
+    | Some p -> printfn "path: %s" p
+    | None -> printfn "no path"
+let d = TestDelegate f
+d.Invoke()"""
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Delegate with OptionalArgument and CallerMemberName`` () =
+        FSharp """open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+type TestDelegate = delegate of [<OptionalArgument; CallerMemberName>] memberName: string option -> unit
+let f = fun (memberName: string option) -> 
+    match memberName with
+    | Some m -> printfn "member: %s" m
+    | None -> printfn "no member"
+let d = TestDelegate f
+d.Invoke()"""
+        |> compileExeAndRun
+        |> shouldSucceed 
