@@ -96,9 +96,56 @@ let private tryParseIncludeLine (line: string) : IncludeInfo option =
         with _ ->
             None
 
+/// Generic include expansion driver that works for both lines and XElement nodes
+let rec private expandIncludes'<'T>
+    (tryGetIncludeInfo: 'T -> IncludeInfo option)
+    (expandLoaded: string -> XElement seq -> Set<string> -> range -> 'T seq)
+    (baseFileName: string)
+    (items: 'T seq)
+    (inProgressFiles: Set<string>)
+    (range: range)
+    : 'T seq =
+    items
+    |> Seq.collect (fun item ->
+        match tryGetIncludeInfo item with
+        | None -> Seq.singleton item
+        | Some includeInfo ->
+            let resolvedPath = resolveFilePath baseFileName includeInfo.FilePath
+
+            // Check for circular includes
+            if inProgressFiles.Contains(resolvedPath) then
+                warning (Error(FSComp.SR.xmlDocIncludeError $"Circular include detected: {resolvedPath}", range))
+                Seq.singleton item
+            else
+                match loadXmlFile resolvedPath with
+                | Result.Error msg ->
+                    warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
+                    Seq.singleton item
+                | Result.Ok includeDoc ->
+                    match evaluateXPath includeDoc includeInfo.XPath with
+                    | Result.Error msg ->
+                        warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
+                        Seq.singleton item
+                    | Result.Ok elements ->
+                        // Expand the loaded content recursively
+                        let updatedInProgress = inProgressFiles.Add(resolvedPath)
+                        expandLoaded resolvedPath elements updatedInProgress range)
+
 /// Recursively expand includes in XElement nodes
 let rec private expandElements (baseFileName: string) (nodes: XNode seq) (inProgressFiles: Set<string>) (range: range) : XNode seq =
-    nodes
+    let tryGetIncludeFromNode (node: XNode) =
+        if node.NodeType <> System.Xml.XmlNodeType.Element then
+            None
+        else
+            let elem = node :?> XElement
+            tryGetInclude elem
+
+    let expandLoadedElements resolvedPath (elements: XElement seq) updatedInProgress range =
+        let nodes = elements |> Seq.collect (fun (e: XElement) -> e.Nodes())
+        expandElements resolvedPath nodes updatedInProgress range
+
+    // Handle non-include elements by recursing on children
+    expandIncludes' tryGetIncludeFromNode expandLoadedElements baseFileName nodes inProgressFiles range
     |> Seq.collect (fun node ->
         if node.NodeType <> System.Xml.XmlNodeType.Element then
             Seq.singleton node
@@ -106,37 +153,14 @@ let rec private expandElements (baseFileName: string) (nodes: XNode seq) (inProg
             let elem = node :?> XElement
 
             match tryGetInclude elem with
+            | Some _ -> Seq.singleton node // Already handled by expandIncludes'
             | None ->
-                // Not an include element, recursively process children
+                // Not an include, recurse on children
                 let expandedChildren =
                     expandElements baseFileName (elem.Nodes()) inProgressFiles range
 
                 let newElem = XElement(elem.Name, elem.Attributes(), expandedChildren)
-                Seq.singleton (newElem :> XNode)
-            | Some includeInfo ->
-                // This is an include element
-                let resolvedPath = resolveFilePath baseFileName includeInfo.FilePath
-
-                // Check for circular includes
-                if inProgressFiles.Contains(resolvedPath) then
-                    warning (Error(FSComp.SR.xmlDocIncludeError $"Circular include detected: {resolvedPath}", range))
-                    Seq.singleton node
-                else
-                    match loadXmlFile resolvedPath with
-                    | Result.Error msg ->
-                        warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
-                        Seq.singleton node
-                    | Result.Ok includeDoc ->
-                        match evaluateXPath includeDoc includeInfo.XPath with
-                        | Result.Error msg ->
-                            warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
-                            Seq.singleton node
-                        | Result.Ok elements ->
-                            // Recursively expand the loaded content
-                            let updatedInProgress = inProgressFiles.Add(resolvedPath)
-                            let nodes = elements |> Seq.collect (fun e -> e.Nodes())
-                            let expandedContent = expandElements resolvedPath nodes updatedInProgress range
-                            expandedContent)
+                Seq.singleton (newElem :> XNode))
 
 /// Process XML content line by line, only parsing lines with includes
 let rec private expandIncludesInContent (baseFileName: string) (content: string) (inProgressFiles: Set<string>) (range: range) : string =
@@ -226,41 +250,20 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
         if not hasIncludes then
             doc
         else
-            // Process each line, expanding includes where found
+            // Expand includes in the line array, keeping the array structure
             let expandedLines =
-                unprocessedLines
-                |> Array.map (fun line ->
-                    if not (line.Contains("<include")) then
-                        line
-                    else
-                        match tryParseIncludeLine line with
-                        | None -> line
-                        | Some includeInfo ->
-                            let resolvedPath = resolveFilePath baseFileName includeInfo.FilePath
-
-                            match loadXmlFile resolvedPath with
-                            | Result.Error msg ->
-                                warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
-                                line
-                            | Result.Ok includeDoc ->
-                                match evaluateXPath includeDoc includeInfo.XPath with
-                                | Result.Error msg ->
-                                    warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
-                                    line
-                                | Result.Ok elements ->
-                                    // Get the content from selected elements
-                                    let nodes = elements |> Seq.collect (fun e -> e.Nodes())
-
-                                    let expandedNodes =
-                                        expandElements resolvedPath nodes (Set.singleton resolvedPath) doc.Range
-
-                                    // Convert to string - these become the new lines
-                                    let expandedText =
-                                        expandedNodes
-                                        |> Seq.map (fun n -> n.ToString())
-                                        |> String.concat Environment.NewLine
-
-                                    expandedText)
+                expandIncludes'
+                    tryParseIncludeLine
+                    (fun resolvedPath elements updatedInProgress range ->
+                        // Convert XElements to lines (may be multiple lines)
+                        let nodes = elements |> Seq.collect (fun e -> e.Nodes())
+                        let expandedNodes = expandElements resolvedPath nodes updatedInProgress range
+                        expandedNodes |> Seq.map (fun n -> n.ToString()))
+                    baseFileName
+                    unprocessedLines
+                    Set.empty
+                    doc.Range
+                |> Array.ofSeq
 
             // Only create new XmlDoc if something changed
             if expandedLines = unprocessedLines then
