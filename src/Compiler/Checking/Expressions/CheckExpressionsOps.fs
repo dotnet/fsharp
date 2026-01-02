@@ -399,14 +399,15 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
 /// Returns: (capturedMemberBindings, methodBodyRemap) where:
 /// - capturedMemberBindings: list of (localVar, valueExpr) pairs to prepend before the object expression
 /// - methodBodyRemap: Remap to apply to object expression method bodies to use the captured locals
-let TryExtractStructMembersFromObjectExpr 
+let TryExtractStructMembersFromObjectExpr
     (g: TcGlobals.TcGlobals)
     (enclosingStructTyconRefOpt: TyconRef option)
-    (isInterfaceTy: bool) 
+    (isInterfaceTy: bool)
     (baseValOpt: Val option)
     overridesAndVirts
-    (mWholeExpr: range) : (Val * Expr) list * Remap =
-    
+    (mWholeExpr: range)
+    : (Val * Expr) list * Remap =
+
     // Only transform when:
     // 1. Not a pure interface implementation
     // 2. We're inside a struct instance member (eFamilyType is a struct)
@@ -422,7 +423,7 @@ let TryExtractStructMembersFromObjectExpr
                 overridesAndVirts
                 |> List.collect (fun (_, _, _, _, _, overrides) ->
                     overrides |> List.map (fun (_, (_, _, _, _, bindingBody)) -> bindingBody))
-            
+
             // Early exit if no methods to analyze
             if allMethodBodies.IsEmpty then
                 [], Remap.Empty
@@ -430,22 +431,26 @@ let TryExtractStructMembersFromObjectExpr
                 // Find all free variables in the method bodies
                 let freeVars =
                     allMethodBodies
-                    |> List.fold (fun acc body ->
-                        let bodyFreeVars = freeInExpr CollectTyparsAndLocals body
-                        unionFreeVars acc bodyFreeVars) emptyFreeVars
-                
+                    |> List.fold
+                        (fun acc body ->
+                            let bodyFreeVars = freeInExpr CollectTyparsAndLocals body
+                            unionFreeVars acc bodyFreeVars)
+                        emptyFreeVars
+
                 // Filter to only instance members of the enclosing struct type
                 let structMembers =
                     freeVars.FreeLocals
                     |> Zset.elements
                     |> List.filter (fun (v: Val) ->
                         // Must be an instance member (not static)
-                        v.IsInstanceMember &&
+                        v.IsInstanceMember
+                        &&
                         // Must have a declaring entity
-                        v.HasDeclaringEntity &&
+                        v.HasDeclaringEntity
+                        &&
                         // The declaring entity must be the enclosing struct
                         tyconRefEq g v.DeclaringEntity enclosingTcref)
-                
+
                 // Early exit if no struct members captured
                 if structMembers.IsEmpty then
                     [], Remap.Empty
@@ -459,15 +464,21 @@ let TryExtractStructMembersFromObjectExpr
                             // The value expression is just a reference to the member
                             let valueExpr = exprForVal mWholeExpr memberVal
                             (memberVal, localVal, valueExpr))
-                    
+
                     // Build a remap from original member vals to new local vals
                     let remap =
                         bindings
-                        |> List.fold (fun (remap: Remap) (origVal, localVal, _) ->
-                            { remap with valRemap = remap.valRemap.Add origVal (mkLocalValRef localVal) }) Remap.Empty
-                    
+                        |> List.fold
+                            (fun (remap: Remap) (origVal, localVal, _) ->
+                                { remap with
+                                    valRemap = remap.valRemap.Add origVal (mkLocalValRef localVal)
+                                })
+                            Remap.Empty
+
                     // Return the bindings to be added before the object expression
-                    let bindPairs = bindings |> List.map (fun (_, localVal, valueExpr) -> (localVal, valueExpr))
+                    let bindPairs =
+                        bindings |> List.map (fun (_, localVal, valueExpr) -> (localVal, valueExpr))
+
                     bindPairs, remap
         | _ -> [], Remap.Empty
     | _ -> [], Remap.Empty
