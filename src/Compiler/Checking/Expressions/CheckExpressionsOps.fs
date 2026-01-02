@@ -400,24 +400,25 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
 /// - capturedMemberBindings: list of (localVar, valueExpr) pairs to prepend before the object expression
 /// - methodBodyRemap: Remap to apply to object expression method bodies to use the captured locals
 let TryExtractStructMembersFromObjectExpr
-    (g: TcGlobals.TcGlobals)
-    (enclosingStructTyconRefOpt: TyconRef option)
+    (_g: TcGlobals.TcGlobals)
+    (_enclosingStructTyconRefOpt: TyconRef option)
     (isInterfaceTy: bool)
+    (ctorCall: Expr) // The base constructor call expression
     overridesAndVirts
     (mWholeExpr: range)
     : (Val * Expr) list * Remap =
 
     // DEBUG: Log when we're called
     printfn "DEBUG: TryExtractStructMembersFromObjectExpr called"
-    printfn "  enclosingStructTyconRefOpt: %A" (enclosingStructTyconRefOpt |> Option.map (fun t -> t.CompiledName))
+    printfn "  _enclosingStructTyconRefOpt: %A" (_enclosingStructTyconRefOpt |> Option.map (fun t -> t.CompiledName))
     printfn "  isInterfaceTy: %b" isInterfaceTy
 
-    // Only transform when:
-    // 1. Not a pure interface implementation
-    // 2. We're inside a struct instance member (eFamilyType is a struct)
-    match enclosingStructTyconRefOpt with
-    | Some enclosingTcref when not isInterfaceTy ->
-        printfn "DEBUG: Inside struct member context: %s" enclosingTcref.CompiledName
+    // Skip transformation for pure interface implementations
+    // The byref issue only occurs when passing struct members to base class constructors
+    if isInterfaceTy then
+        printfn "DEBUG: Skipping - is interface implementation"
+        [], Remap.Empty
+    else
         // Collect all method bodies from the object expression overrides
         let allMethodBodies =
             overridesAndVirts
@@ -425,78 +426,80 @@ let TryExtractStructMembersFromObjectExpr
 
         printfn "DEBUG: Found %d method bodies" allMethodBodies.Length
 
-        // Early exit if no methods to analyze
-        if allMethodBodies.IsEmpty then
-            printfn "DEBUG: No method bodies, skipping transformation"
-            [], Remap.Empty
-        else
-            // Find all free variables in the method bodies
-            let freeVars =
-                allMethodBodies
-                |> List.fold
-                    (fun acc body ->
-                        let bodyFreeVars = freeInExpr CollectTyparsAndLocals body
-                        unionFreeVars acc bodyFreeVars)
-                    emptyFreeVars
+        // Analyze free variables in BOTH the base constructor call AND the method bodies
+        // The struct members might be passed to the base constructor (the problematic case)
+        let allExprs = ctorCall :: allMethodBodies
 
-            printfn "DEBUG: Found %d total free locals" (Zset.count freeVars.FreeLocals)
+        // Find all free variables
+        let freeVars =
+            allExprs
+            |> List.fold
+                (fun acc expr ->
+                    let exprFreeVars = freeInExpr CollectTyparsAndLocals expr
+                    unionFreeVars acc exprFreeVars)
+                emptyFreeVars
+
+        printfn "DEBUG: Found %d total free locals" (Zset.count freeVars.FreeLocals)
+        freeVars.FreeLocals
+        |> Zset.elements
+        |> List.iter (fun v -> 
+            printfn "  Free var: %s, HasDeclaringEntity: %b, IsInstanceMember: %b" 
+                v.DisplayName 
+                v.HasDeclaringEntity 
+                v.IsInstanceMember
+            if v.HasDeclaringEntity then
+                let decl = v.DeclaringEntity
+                printfn "    DeclaringEntity: %s, IsStructOrEnumTycon: %b" 
+                    decl.CompiledName 
+                    decl.Deref.IsStructOrEnumTycon)
+
+        // Filter to problematic free variables:
+        // 1. Variables from STRUCT types (HasDeclaringEntity && is struct)
+        // 2. Variables without a DeclaringEntity (likely struct constructor params/fields)
+        //    that would require capturing the struct 'this' pointer
+        let problematicVars =
             freeVars.FreeLocals
             |> Zset.elements
-            |> List.iter (fun v -> 
-                printfn "  Free var: %s, HasDeclaringEntity: %b, IsInstanceMember: %b" 
-                    v.DisplayName 
-                    v.HasDeclaringEntity 
-                    v.IsInstanceMember
-                if v.HasDeclaringEntity then
-                    let decl = v.DeclaringEntity
-                    printfn "    DeclaringEntity: %s, IsStructOrEnumTycon: %b" 
-                        decl.CompiledName 
-                        (isStructTyconRef decl))
+            |> List.filter (fun (v: Val) ->
+                // Case 1: Variable belongs to a struct type
+                (v.HasDeclaringEntity && v.DeclaringEntity.Deref.IsStructOrEnumTycon)
+                ||
+                // Case 2: Variable without declaring entity (likely struct constructor param)
+                // We conservatively extract these to avoid potential byref captures
+                (not v.HasDeclaringEntity && not v.IsModuleBinding))
 
-            // Filter to values that belong to the enclosing struct type
-            // This includes both instance members AND fields (like constructor parameters)
-            let structMembers =
-                freeVars.FreeLocals
-                |> Zset.elements
-                |> List.filter (fun (v: Val) ->
-                    // Must have a declaring entity that matches the enclosing struct
-                    v.HasDeclaringEntity && tyconRefEq g v.DeclaringEntity enclosingTcref)
+        printfn "DEBUG: Filtered to %d problematic variables" problematicVars.Length
+        problematicVars |> List.iter (fun v -> printfn "  - %s (HasDeclaringEntity: %b)" v.DisplayName v.HasDeclaringEntity)
 
-            printfn "DEBUG: Found %d free variables total" (Zset.count freeVars.FreeLocals)
-            printfn "DEBUG: Filtered to %d struct members" structMembers.Length
-            structMembers |> List.iter (fun v -> printfn "  - %s (HasDeclaringEntity: %b)" v.DisplayName v.HasDeclaringEntity)
+        // Early exit if no problematic variables
+        if problematicVars.IsEmpty then
+            printfn "DEBUG: No problematic variables, skipping transformation"
+            [], Remap.Empty
+        else
+            printfn "DEBUG: Applying transformation for %d problematic variables" problematicVars.Length
+            // Create local variables for each problematic free variable
+            let bindings =
+                problematicVars
+                |> List.map (fun (memberVal: Val) ->
+                    // Create a new local to hold the value
+                    let localVal, _ = mkCompGenLocal mWholeExpr memberVal.DisplayName memberVal.Type
+                    // The value expression is just a reference to the original variable
+                    let valueExpr = exprForVal mWholeExpr memberVal
+                    (memberVal, localVal, valueExpr))
 
-            // Early exit if no struct members captured
-            if structMembers.IsEmpty then
-                printfn "DEBUG: No struct members captured, skipping transformation"
-                [], Remap.Empty
-            else
-                // Create local variables for each captured struct member
-                let bindings =
-                    structMembers
-                    |> List.map (fun (memberVal: Val) ->
-                        // Create a new local to hold the member's value
-                        let localVal, _ = mkCompGenLocal mWholeExpr memberVal.DisplayName memberVal.Type
-                        // The value expression is just a reference to the member
-                        let valueExpr = exprForVal mWholeExpr memberVal
-                        (memberVal, localVal, valueExpr))
+            // Build a remap from original member vals to new local vals
+            let remap =
+                bindings
+                |> List.fold
+                    (fun (remap: Remap) (origVal, localVal, _) ->
+                        { remap with
+                            valRemap = remap.valRemap.Add origVal (mkLocalValRef localVal)
+                        })
+                    Remap.Empty
 
-                // Build a remap from original member vals to new local vals
-                let remap =
-                    bindings
-                    |> List.fold
-                        (fun (remap: Remap) (origVal, localVal, _) ->
-                            { remap with
-                                valRemap = remap.valRemap.Add origVal (mkLocalValRef localVal)
-                            })
-                        Remap.Empty
+            // Return the bindings to be added before the object expression
+            let bindPairs =
+                bindings |> List.map (fun (_, localVal, valueExpr) -> (localVal, valueExpr))
 
-                // Return the bindings to be added before the object expression
-                let bindPairs =
-                    bindings |> List.map (fun (_, localVal, valueExpr) -> (localVal, valueExpr))
-
-                printfn "DEBUG: Created %d bindings for struct member capture" bindPairs.Length
-                bindPairs, remap
-    | _ -> 
-        printfn "DEBUG: Skipping transformation (not in struct context or is interface)"
-        [], Remap.Empty
+            printfn "DEBUG: Created %d bindings for problematic variable capture" bindPairs.Length
+            bindPairs, remap
