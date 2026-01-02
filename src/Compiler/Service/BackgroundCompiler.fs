@@ -1352,7 +1352,7 @@ type internal BackgroundCompiler
                 let flatErrors = options.OtherOptions |> Array.contains "--flaterrors"
 
                 loadClosure.LoadClosureRootFileDiagnostics
-                |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, false, flatErrors, None))
+                |> List.map (fun diagnostic -> FSharpDiagnostic.CreateFromException(diagnostic, false, flatErrors, None))
 
             return options, (diags @ diagnostics.Diagnostics)
         }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
-  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="29eefe27a350eb8b0bcbababa7863a0d1086295d" BarId="293166" />
+  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="5661a2c0a84a3fd32916395b254ce50e5ad7e9fe" BarId="295411" />
   <ProductDependencies>
     <Dependency Name="Microsoft.Build" Version="18.1.0-preview-25515-01">
       <Uri>https://github.com/dotnet/msbuild</Uri>
@@ -76,9 +76,9 @@
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="11.0.0-beta.25615.1">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="11.0.0-beta.25626.7">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>059959b98fc4350c619399ae2bf4c7b854779ecf</Sha>
+      <Sha>47888ab45fbdd0e6c0fe5e7f82eb1fe47cd7b7f0</Sha>
     </Dependency>
     <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.25502.1">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
