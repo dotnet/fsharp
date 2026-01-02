@@ -14,7 +14,9 @@ open Internal.Utilities.Library
 
 /// Thread-safe cache for loaded XML files
 let private xmlDocCache =
-    let cacheOptions = FSharp.Compiler.Caches.CacheOptions.getDefault StringComparer.OrdinalIgnoreCase
+    let cacheOptions =
+        FSharp.Compiler.Caches.CacheOptions.getDefault StringComparer.OrdinalIgnoreCase
+
     new FSharp.Compiler.Caches.Cache<string, Result<XDocument, string>>(cacheOptions, "XmlDocIncludeCache")
 
 /// Load an XML file from disk with caching
@@ -61,12 +63,7 @@ let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement seq
         Result.Error $"Invalid XPath expression '{xpath}': {ex.Message}"
 
 /// Recursively expand includes in XML content
-let rec private expandIncludesInContent
-    (baseFileName: string)
-    (content: string)
-    (inProgressFiles: Set<string>)
-    (range: range)
-    : string =
+let rec private expandIncludesInContent (baseFileName: string) (content: string) (inProgressFiles: Set<string>) (range: range) : string =
     // Early exit if content doesn't contain "<include" (case-insensitive check)
     if not (content.IndexOf("<include", StringComparison.OrdinalIgnoreCase) >= 0) then
         content
@@ -76,8 +73,7 @@ let rec private expandIncludesInContent
             let wrappedContent = "<root>" + content + "</root>"
             let doc = XDocument.Parse(wrappedContent)
 
-            let includeElements =
-                doc.Descendants(!!(XName.op_Implicit "include")) |> Seq.toList
+            let includeElements = doc.Descendants(!!(XName.op_Implicit "include")) |> Seq.toList
 
             if includeElements.IsEmpty then
                 content
@@ -89,10 +85,8 @@ let rec private expandIncludesInContent
                     let pathAttr = includeElem.Attribute(!!(XName.op_Implicit "path"))
 
                     match fileAttr, pathAttr with
-                    | Null, _ ->
-                        warning (Error(FSComp.SR.xmlDocIncludeError "Missing 'file' attribute", range))
-                    | _, Null ->
-                        warning (Error(FSComp.SR.xmlDocIncludeError "Missing 'path' attribute", range))
+                    | Null, _ -> warning (Error(FSComp.SR.xmlDocIncludeError "Missing 'file' attribute", range))
+                    | _, Null -> warning (Error(FSComp.SR.xmlDocIncludeError "Missing 'path' attribute", range))
                     | NonNull fileAttr, NonNull pathAttr ->
                         let includePath = fileAttr.Value
                         let xpath = pathAttr.Value
@@ -100,12 +94,7 @@ let rec private expandIncludesInContent
 
                         // Check for circular includes
                         if inProgressFiles.Contains(resolvedPath) then
-                            warning (
-                                Error(
-                                    FSComp.SR.xmlDocIncludeError $"Circular include detected: {resolvedPath}",
-                                    range
-                                )
-                            )
+                            warning (Error(FSComp.SR.xmlDocIncludeError $"Circular include detected: {resolvedPath}", range))
                         else
                             match loadXmlFile resolvedPath with
                             | Result.Error msg -> warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
@@ -114,10 +103,7 @@ let rec private expandIncludesInContent
                                 | Result.Error msg -> warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
                                 | Result.Ok elements ->
                                     // Get the inner content of selected elements
-                                    let newNodes =
-                                        elements
-                                        |> Seq.collect (fun elem -> elem.Nodes())
-                                        |> Seq.toList
+                                    let newNodes = elements |> Seq.collect (fun elem -> elem.Nodes()) |> Seq.toList
 
                                     // Recursively expand includes in the loaded content
                                     let updatedInProgress = inProgressFiles.Add(resolvedPath)
@@ -130,16 +116,11 @@ let rec private expandIncludesInContent
                                                 let elemContent = elemNode.ToString()
 
                                                 let expanded =
-                                                    expandIncludesInContent
-                                                        resolvedPath
-                                                        elemContent
-                                                        updatedInProgress
-                                                        range
+                                                    expandIncludesInContent resolvedPath elemContent updatedInProgress range
 
                                                 XElement.Parse(expanded) :> XNode
                                             else
-                                                node
-                                        )
+                                                node)
 
                                     // Replace the include element with expanded content
                                     includeElem.ReplaceWith(expandedNodes)
@@ -170,12 +151,16 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
             doc
         else
             let baseFileName = doc.Range.FileName
-            let expandedContent = expandIncludesInContent baseFileName content Set.empty doc.Range
+
+            let expandedContent =
+                expandIncludesInContent baseFileName content Set.empty doc.Range
 
             // Create new XmlDoc with expanded content
             if expandedContent = content then
                 doc
             else
                 // Parse back into lines
-                let lines = expandedContent.Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
+                let lines =
+                    expandedContent.Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
+
                 XmlDoc(lines, doc.Range)
