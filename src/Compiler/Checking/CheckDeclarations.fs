@@ -3715,9 +3715,16 @@ module EstablishTypeDefinitionCores =
                                   let fparams =
                                       curriedArgInfos.Head
                                       |> List.map (fun (ty, argInfo: ArgReprInfo) ->
-                                            // For delegates, we don't use CrackParamAttribsInfo or isOptional
-                                            // Delegates with optional parameters should use the ?param syntax
-                                            // which is handled elsewhere in the compiler
+                                            let ty =
+                                              if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
+                                                  match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
+                                                  | Some (Attrib(range=m)) ->
+                                                      checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
+                                                      mkValueOptionTy g ty
+                                                  | _ ->
+                                                      mkOptionTy g ty            
+                                              else ty
+
                                             MakeSlotParam(ty, argInfo)) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 

@@ -47,7 +47,7 @@ namespace FSharpTest
         |> compile
         |> shouldSucceed
 
-    [<Fact(Skip="Known issue: MethodDefNotFound with delegates and optional parameters")>]
+    [<Fact>]
     let ``Delegate with optional parameter`` () =
         FSharp """open System.Runtime.CompilerServices
 type A = delegate of [<CallerLineNumber>] ?a: int -> unit
@@ -58,7 +58,7 @@ a.Invoke()"""
         |> shouldSucceed
         |> verifyOutput "line: 5"
         
-    [<Fact(Skip="Known issue: MethodDefNotFound with delegates and optional parameters")>]
+    [<Fact>]
     let ``Delegate with struct optional parameter`` () =
         FSharp """type A = delegate of [<Struct>] ?a: int -> unit
 let f = fun (a: int voption) -> defaultValueArg a 100 |> printf "line: %d"
