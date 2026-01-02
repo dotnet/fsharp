@@ -7,7 +7,7 @@ module StructObjectExpression =
 
     [<Fact>]
     let ``Object expression in struct should not generate byref field - simple case`` () =
-        FSharp """
+        Fsx """
 type Class(test : obj) = class end
 
 [<Struct>]
@@ -20,12 +20,12 @@ type Struct(test : obj) =
 let s = Struct(42)
 let obj = s.Test()
         """
-        |> compile
+        |> compileExeAndRun
         |> shouldSucceed
 
     [<Fact>]
     let ``Object expression in struct with multiple fields`` () =
-        FSharp """
+        Fsx """
 type Base(x: int, y: string) = class end
 
 [<Struct>]
@@ -38,12 +38,12 @@ type MyStruct(x: int, y: string) =
 let s = MyStruct(42, "test")
 let obj = s.CreateObj()
         """
-        |> compile
+        |> compileExeAndRun
         |> shouldSucceed
 
     [<Fact>]
     let ``Object expression in struct referencing field in override method`` () =
-        FSharp """
+        Fsx """
 type IFoo =
     abstract member DoSomething : unit -> int
 
@@ -58,5 +58,5 @@ let s = MyStruct(21)
 let foo = s.CreateFoo()
 let result = foo.DoSomething()
         """
-        |> compile
+        |> compileExeAndRun
         |> shouldSucceed
