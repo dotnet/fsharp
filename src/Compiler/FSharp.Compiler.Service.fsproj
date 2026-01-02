@@ -484,6 +484,10 @@
     <Compile Include="Driver\fsc.fs" />
 
     <!-- the symbol API. -->
+    <Compile Include="Symbols\XmlDocSigParser.fsi" />
+    <Compile Include="Symbols\XmlDocSigParser.fs" />
+    <Compile Include="Symbols\XmlDocInheritance.fsi" />
+    <Compile Include="Symbols\XmlDocInheritance.fs" />
     <Compile Include="Symbols\SymbolHelpers.fsi" />
     <Compile Include="Symbols\SymbolHelpers.fs" />
     <Compile Include="Symbols\Symbols.fsi" />

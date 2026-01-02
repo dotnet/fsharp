@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.XmlDocFileWriter
 
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
@@ -15,4 +16,4 @@ module XmlDocWriter =
 
     /// Writes the XmlDocSig property of each element (field, union case, etc)
     /// of the specified compilation unit to an XML document in a new text file.
-    val WriteXmlDocFile: g: TcGlobals * assemblyName: string * generatedCcu: CcuThunk * xmlFile: string -> unit
+    val WriteXmlDocFile: g: TcGlobals * infoReader: InfoReader * assemblyName: string * generatedCcu: CcuThunk * xmlFile: string -> unit

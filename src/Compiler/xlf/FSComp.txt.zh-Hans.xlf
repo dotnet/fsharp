@@ -2017,6 +2017,11 @@
         <target state="translated">此 XML 注释无效: 参数“{0}”有多个文档条目</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocInheritDocError">
+        <source>XML documentation inheritdoc error: {0}</source>
+        <target state="new">XML documentation inheritdoc error: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
         <source>This XML comment is invalid: unknown parameter '{0}'</source>
         <target state="translated">此 XML 注释无效: 未知参数“{0}”</target>

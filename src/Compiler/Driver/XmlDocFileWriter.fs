@@ -4,7 +4,9 @@ module internal FSharp.Compiler.XmlDocFileWriter
 
 open System.IO
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
@@ -77,7 +79,7 @@ module XmlDocWriter =
 
         doModuleSig None generatedCcu.Contents
 
-    let WriteXmlDocFile (g, assemblyName, generatedCcu: CcuThunk, xmlFile) =
+    let WriteXmlDocFile (g, _infoReader: InfoReader, assemblyName, generatedCcu: CcuThunk, xmlFile) =
         if not (FileSystemUtils.checkSuffix xmlFile "xml") then
             error (Error(FSComp.SR.docfileNoXmlSuffix (), Range.rangeStartup))
 
@@ -85,6 +87,8 @@ module XmlDocWriter =
 
         let addMember id xmlDoc =
             if hasDoc xmlDoc then
+                // TODO: For now, skip inheritdoc expansion since we need ValRef/TyconRef which we don't have from Val/Tycon
+                // This will be a follow-up enhancement
                 let doc = xmlDoc.GetXmlText()
                 members <- (id, doc) :: members
 

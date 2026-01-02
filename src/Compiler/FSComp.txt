@@ -1684,6 +1684,7 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3390,xmlDocDuplicateParameter,"This XML comment is invalid: multiple documentation entries for parameter '%s'"
 3390,xmlDocUnresolvedCrossReference,"This XML comment is invalid: unresolved cross-reference '%s'"
 3390,xmlDocMissingParameter,"This XML comment is incomplete: no documentation for parameter '%s'"
+3390,xmlDocInheritDocError,"XML documentation inheritdoc error: %s"
 3391,tcImplicitConversionUsedForNonMethodArg,"This expression uses the implicit conversion '%s' to convert type '%s' to type '%s'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\"."
 3392,containerDeprecated,"The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead."
 3393,containerSigningUnsupportedOnThisPlatform,"Key container signing is not supported on this platform."

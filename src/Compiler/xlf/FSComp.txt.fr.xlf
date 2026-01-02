@@ -2017,6 +2017,11 @@
         <target state="translated">Ce commentaire XML est non valide : il existe plusieurs entrées de documentation pour le paramètre '{0}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocInheritDocError">
+        <source>XML documentation inheritdoc error: {0}</source>
+        <target state="new">XML documentation inheritdoc error: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
         <source>This XML comment is invalid: unknown parameter '{0}'</source>
         <target state="translated">Ce commentaire XML est non valide : paramètre inconnu '{0}'</target>
