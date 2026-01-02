@@ -147,14 +147,16 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
         // Work with unprocessed lines to preserve the original format
         let unprocessedLines = doc.UnprocessedLines
         let content = String.concat "\n" unprocessedLines
-        
+
         // Early exit if content doesn't contain "<include" (case-insensitive)
         if not (content.IndexOf("<include", StringComparison.OrdinalIgnoreCase) >= 0) then
             doc
         else
             let baseFileName = doc.Range.FileName
-            let expandedContent = expandIncludesInContent baseFileName content Set.empty doc.Range
-            
+
+            let expandedContent =
+                expandIncludesInContent baseFileName content Set.empty doc.Range
+
             // Create new XmlDoc with expanded content
             if expandedContent = content then
                 doc
