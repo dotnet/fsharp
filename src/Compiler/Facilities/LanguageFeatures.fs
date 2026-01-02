@@ -433,13 +433,16 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     /// Try to parse a feature name string to a LanguageFeature option using reflection
     static member TryParseFeature(featureName: string) =
         let normalized = featureName.Trim()
-        let bindingFlags = 
-            System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic
+
+        let bindingFlags =
+            System.Reflection.BindingFlags.Public
+            ||| System.Reflection.BindingFlags.NonPublic
 
         Microsoft.FSharp.Reflection.FSharpType.GetUnionCases(typeof<LanguageFeature>, bindingFlags)
         |> Array.tryFind (fun case -> System.String.Equals(case.Name, normalized, System.StringComparison.OrdinalIgnoreCase))
         |> Option.bind (fun case ->
-            let union = Microsoft.FSharp.Reflection.FSharpValue.MakeUnion(case, [||], bindingFlags)
+            let union =
+                Microsoft.FSharp.Reflection.FSharpValue.MakeUnion(case, [||], bindingFlags)
 
             match box union with
             | null -> None
