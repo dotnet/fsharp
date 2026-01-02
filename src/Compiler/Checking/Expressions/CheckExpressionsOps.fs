@@ -407,18 +407,27 @@ let TryExtractStructMembersFromObjectExpr
     (mWholeExpr: range)
     : (Val * Expr) list * Remap =
 
+    // DEBUG: Log when we're called
+    printfn "DEBUG: TryExtractStructMembersFromObjectExpr called"
+    printfn "  enclosingStructTyconRefOpt: %A" (enclosingStructTyconRefOpt |> Option.map (fun t -> t.CompiledName))
+    printfn "  isInterfaceTy: %b" isInterfaceTy
+
     // Only transform when:
     // 1. Not a pure interface implementation
     // 2. We're inside a struct instance member (eFamilyType is a struct)
     match enclosingStructTyconRefOpt with
     | Some enclosingTcref when not isInterfaceTy ->
+        printfn "DEBUG: Inside struct member context: %s" enclosingTcref.CompiledName
         // Collect all method bodies from the object expression overrides
         let allMethodBodies =
             overridesAndVirts
             |> List.collect (fun (_, _, _, _, _, overrides) -> overrides |> List.map (fun (_, (_, _, _, _, bindingBody)) -> bindingBody))
 
+        printfn "DEBUG: Found %d method bodies" allMethodBodies.Length
+
         // Early exit if no methods to analyze
         if allMethodBodies.IsEmpty then
+            printfn "DEBUG: No method bodies, skipping transformation"
             [], Remap.Empty
         else
             // Find all free variables in the method bodies
@@ -430,6 +439,20 @@ let TryExtractStructMembersFromObjectExpr
                         unionFreeVars acc bodyFreeVars)
                     emptyFreeVars
 
+            printfn "DEBUG: Found %d total free locals" (Zset.count freeVars.FreeLocals)
+            freeVars.FreeLocals
+            |> Zset.elements
+            |> List.iter (fun v -> 
+                printfn "  Free var: %s, HasDeclaringEntity: %b, IsInstanceMember: %b" 
+                    v.DisplayName 
+                    v.HasDeclaringEntity 
+                    v.IsInstanceMember
+                if v.HasDeclaringEntity then
+                    let decl = v.DeclaringEntity
+                    printfn "    DeclaringEntity: %s, IsStructOrEnumTycon: %b" 
+                        decl.CompiledName 
+                        (isStructTyconRef decl))
+
             // Filter to values that belong to the enclosing struct type
             // This includes both instance members AND fields (like constructor parameters)
             let structMembers =
@@ -439,8 +462,13 @@ let TryExtractStructMembersFromObjectExpr
                     // Must have a declaring entity that matches the enclosing struct
                     v.HasDeclaringEntity && tyconRefEq g v.DeclaringEntity enclosingTcref)
 
+            printfn "DEBUG: Found %d free variables total" (Zset.count freeVars.FreeLocals)
+            printfn "DEBUG: Filtered to %d struct members" structMembers.Length
+            structMembers |> List.iter (fun v -> printfn "  - %s (HasDeclaringEntity: %b)" v.DisplayName v.HasDeclaringEntity)
+
             // Early exit if no struct members captured
             if structMembers.IsEmpty then
+                printfn "DEBUG: No struct members captured, skipping transformation"
                 [], Remap.Empty
             else
                 // Create local variables for each captured struct member
@@ -467,5 +495,8 @@ let TryExtractStructMembersFromObjectExpr
                 let bindPairs =
                     bindings |> List.map (fun (_, localVal, valueExpr) -> (localVal, valueExpr))
 
+                printfn "DEBUG: Created %d bindings for struct member capture" bindPairs.Length
                 bindPairs, remap
-    | _ -> [], Remap.Empty
+    | _ -> 
+        printfn "DEBUG: Skipping transformation (not in struct context or is interface)"
+        [], Remap.Empty

@@ -7316,10 +7316,21 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         // 2. We're inside a struct instance member method (env.eFamilyType is a struct)
         // 3. The object expression captures the struct's 'this' reference (baseValOpt)
         // See CheckExpressionsOps.TryExtractStructMembersFromObjectExpr for implementation details
+        
+        // DEBUG: Log env.eFamilyType
+        printfn "DEBUG CheckExpressions: env.eFamilyType = %A" (env.eFamilyType |> Option.map (fun t -> t.CompiledName))
+        
         let enclosingStructTyconRefOpt = 
             match env.eFamilyType with
-            | Some tcref when tcref.IsStructOrEnumTycon -> Some tcref
-            | _ -> None
+            | Some tcref when tcref.IsStructOrEnumTycon -> 
+                printfn "DEBUG CheckExpressions: Found struct context: %s" tcref.CompiledName
+                Some tcref
+            | Some tcref ->
+                printfn "DEBUG CheckExpressions: Found non-struct context: %s (IsStruct: %b)" tcref.CompiledName tcref.IsStructOrEnumTycon
+                None
+            | _ -> 
+                printfn "DEBUG CheckExpressions: No eFamilyType"
+                None
 
         let capturedStructMembers, methodBodyRemap =
             CheckExpressionsOps.TryExtractStructMembersFromObjectExpr 
