@@ -7311,26 +7311,10 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         // 3. create the specs of overrides
         
         // Fix for struct object expressions: extract captured struct members to avoid byref fields
-        // This transformation is only applied when ALL of the following conditions are met:
-        // 1. The object expression derives from a base class (not just implementing an interface)
-        // 2. We're inside a struct instance member method (env.eFamilyType is a struct)
-        // 3. The object expression captures the struct's 'this' reference (baseValOpt)
-        // See CheckExpressionsOps.TryExtractStructMembersFromObjectExpr for implementation details
-        
-        // DEBUG: Log env.eFamilyType
-        printfn "DEBUG CheckExpressions: env.eFamilyType = %A" (env.eFamilyType |> Option.map (fun t -> t.CompiledName))
-        
         let enclosingStructTyconRefOpt = 
             match env.eFamilyType with
-            | Some tcref when tcref.IsStructOrEnumTycon -> 
-                printfn "DEBUG CheckExpressions: Found struct context: %s" tcref.CompiledName
-                Some tcref
-            | Some tcref ->
-                printfn "DEBUG CheckExpressions: Found non-struct context: %s (IsStruct: %b)" tcref.CompiledName tcref.IsStructOrEnumTycon
-                None
-            | _ -> 
-                printfn "DEBUG CheckExpressions: No eFamilyType"
-                None
+            | Some tcref when tcref.IsStructOrEnumTycon -> Some tcref
+            | _ -> None
 
         let capturedStructMembers, methodBodyRemap =
             CheckExpressionsOps.TryExtractStructMembersFromObjectExpr 
@@ -7382,8 +7366,15 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         if not supportsObjectExpressionWithoutOverrides && not isInterfaceTy && overrides'.IsEmpty && extraImpls.IsEmpty then
            errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
 
+        // Remap constructor call to use local copies of struct members
+        let ctorCall' =
+            if methodBodyRemap.valRemap.IsEmpty then
+                ctorCall
+            else
+                remapExpr g CloneAll methodBodyRemap ctorCall
+
         // 4. Build the implementation
-        let expr = mkObjExpr(objtyR, baseValOpt, ctorCall, overrides', extraImpls, mWholeExpr)
+        let expr = mkObjExpr(objtyR, baseValOpt, ctorCall', overrides', extraImpls, mWholeExpr)
         let expr = mkCoerceIfNeeded g realObjTy objtyR expr
         
         // Wrap with bindings for captured struct members

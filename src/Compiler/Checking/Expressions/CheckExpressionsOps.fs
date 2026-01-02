@@ -409,14 +409,10 @@ let TryExtractStructMembersFromObjectExpr
     : (Val * Expr) list * Remap =
 
     // DEBUG: Log when we're called
-    printfn "DEBUG: TryExtractStructMembersFromObjectExpr called"
-    printfn "  _enclosingStructTyconRefOpt: %A" (_enclosingStructTyconRefOpt |> Option.map (fun t -> t.CompiledName))
-    printfn "  isInterfaceTy: %b" isInterfaceTy
 
     // Skip transformation for pure interface implementations
     // The byref issue only occurs when passing struct members to base class constructors
     if isInterfaceTy then
-        printfn "DEBUG: Skipping - is interface implementation"
         [], Remap.Empty
     else
         // Collect all method bodies from the object expression overrides
@@ -424,7 +420,6 @@ let TryExtractStructMembersFromObjectExpr
             overridesAndVirts
             |> List.collect (fun (_, _, _, _, _, overrides) -> overrides |> List.map (fun (_, (_, _, _, _, bindingBody)) -> bindingBody))
 
-        printfn "DEBUG: Found %d method bodies" allMethodBodies.Length
 
         // Analyze free variables in BOTH the base constructor call AND the method bodies
         // The struct members might be passed to the base constructor (the problematic case)
@@ -439,17 +434,14 @@ let TryExtractStructMembersFromObjectExpr
                     unionFreeVars acc exprFreeVars)
                 emptyFreeVars
 
-        printfn "DEBUG: Found %d total free locals" (Zset.count freeVars.FreeLocals)
         freeVars.FreeLocals
         |> Zset.elements
         |> List.iter (fun v -> 
-            printfn "  Free var: %s, HasDeclaringEntity: %b, IsInstanceMember: %b" 
                 v.DisplayName 
                 v.HasDeclaringEntity 
                 v.IsInstanceMember
             if v.HasDeclaringEntity then
                 let decl = v.DeclaringEntity
-                printfn "    DeclaringEntity: %s, IsStructOrEnumTycon: %b" 
                     decl.CompiledName 
                     decl.Deref.IsStructOrEnumTycon)
 
@@ -468,15 +460,11 @@ let TryExtractStructMembersFromObjectExpr
                 // We conservatively extract these to avoid potential byref captures
                 (not v.HasDeclaringEntity && not v.IsModuleBinding))
 
-        printfn "DEBUG: Filtered to %d problematic variables" problematicVars.Length
-        problematicVars |> List.iter (fun v -> printfn "  - %s (HasDeclaringEntity: %b)" v.DisplayName v.HasDeclaringEntity)
 
         // Early exit if no problematic variables
         if problematicVars.IsEmpty then
-            printfn "DEBUG: No problematic variables, skipping transformation"
             [], Remap.Empty
         else
-            printfn "DEBUG: Applying transformation for %d problematic variables" problematicVars.Length
             // Create local variables for each problematic free variable
             let bindings =
                 problematicVars
@@ -501,5 +489,4 @@ let TryExtractStructMembersFromObjectExpr
             let bindPairs =
                 bindings |> List.map (fun (_, localVal, valueExpr) -> (localVal, valueExpr))
 
-            printfn "DEBUG: Created %d bindings for problematic variable capture" bindPairs.Length
             bindPairs, remap

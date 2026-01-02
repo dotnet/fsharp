@@ -10,7 +10,7 @@ module StructObjectExpression =
         Fsx """
 type Class(test : obj) = class end
 
-[<Struct>]
+[<Struct; NoComparison>]
 type Struct(test : obj) =
     member _.Test() = {
         new Class(test) with
@@ -20,6 +20,7 @@ type Struct(test : obj) =
 let s = Struct(42)
 let obj = s.Test()
         """
+        |> withOptions [ "--nowarn:52" ] // Suppress struct copy warning
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -28,7 +29,7 @@ let obj = s.Test()
         Fsx """
 type Base(x: int, y: string) = class end
 
-[<Struct>]
+[<Struct; NoComparison>]
 type MyStruct(x: int, y: string) =
     member _.CreateObj() = {
         new Base(x, y) with
@@ -38,6 +39,7 @@ type MyStruct(x: int, y: string) =
 let s = MyStruct(42, "test")
 let obj = s.CreateObj()
         """
+        |> withOptions [ "--nowarn:52" ]
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -47,7 +49,7 @@ let obj = s.CreateObj()
 type IFoo =
     abstract member DoSomething : unit -> int
 
-[<Struct>]
+[<Struct; NoComparison>]
 type MyStruct(value: int) =
     member _.CreateFoo() = {
         new IFoo with
@@ -58,5 +60,6 @@ let s = MyStruct(21)
 let foo = s.CreateFoo()
 let result = foo.DoSomething()
         """
+        |> withOptions [ "--nowarn:52" ]
         |> compileExeAndRun
         |> shouldSucceed
