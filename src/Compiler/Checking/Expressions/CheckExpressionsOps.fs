@@ -408,15 +408,14 @@ let TryExtractStructMembersFromObjectExpr
     : (Val * Expr) list * Remap =
 
     // Only transform when:
-    // 1. Not a pure interface implementation  
+    // 1. Not a pure interface implementation
     // 2. We're inside a struct instance member (eFamilyType is a struct)
     match enclosingStructTyconRefOpt with
     | Some enclosingTcref when not isInterfaceTy ->
         // Collect all method bodies from the object expression overrides
         let allMethodBodies =
             overridesAndVirts
-            |> List.collect (fun (_, _, _, _, _, overrides) ->
-                overrides |> List.map (fun (_, (_, _, _, _, bindingBody)) -> bindingBody))
+            |> List.collect (fun (_, _, _, _, _, overrides) -> overrides |> List.map (fun (_, (_, _, _, _, bindingBody)) -> bindingBody))
 
         // Early exit if no methods to analyze
         if allMethodBodies.IsEmpty then
@@ -470,6 +469,8 @@ let TryExtractStructMembersFromObjectExpr
                         Remap.Empty
 
                 // Return the bindings to be added before the object expression
-                let bindPairs = bindings |> List.map (fun (_, localVal, valueExpr) -> (localVal, valueExpr))
+                let bindPairs =
+                    bindings |> List.map (fun (_, localVal, valueExpr) -> (localVal, valueExpr))
+
                 bindPairs, remap
     | _ -> [], Remap.Empty
