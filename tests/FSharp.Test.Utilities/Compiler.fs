@@ -2114,7 +2114,7 @@ Actual:
                }
         | _ -> failwith "withXmlDoc is only supported for F#"
 
-    let verifyXmlDocContains (expectedTexts: string list) (result: CompilationResult) : CompilationResult =
+    let private verifyXmlDocWith (verifyFn: string -> string list -> unit) (texts: string list) (result: CompilationResult) : CompilationResult =
         match result with
         | CompilationResult.Failure _ -> failwith "Cannot verify XML doc on failed compilation"
         | CompilationResult.Success output ->
@@ -2133,31 +2133,23 @@ Actual:
                     else failwith $"XML doc file not found: tried {xmlPath1} and {xmlPath2}"
                 
                 let content = File.ReadAllText(xmlPath)
-                for expected in expectedTexts do
-                    if not (content.Contains(expected)) then
-                        failwith $"XML doc missing: '{expected}'\n\nActual:\n{content}"
+                verifyFn content texts
                 result
 
+    let verifyXmlDocContains (expectedTexts: string list) (result: CompilationResult) : CompilationResult =
+        verifyXmlDocWith
+            (fun content texts ->
+                for expected in texts do
+                    if not (content.Contains(expected)) then
+                        failwith $"XML doc missing: '{expected}'\n\nActual:\n{content}")
+            expectedTexts
+            result
+
     let verifyXmlDocNotContains (unexpectedTexts: string list) (result: CompilationResult) : CompilationResult =
-        match result with
-        | CompilationResult.Failure _ -> failwith "Cannot verify XML doc on failed compilation"
-        | CompilationResult.Success output ->
-            match output.OutputPath with
-            | None -> failwith "No output path available"
-            | Some dllPath ->
-                let dir = Path.GetDirectoryName(dllPath)
-                // Try to find the XML file - could be named after the assembly or "output.xml"
-                let dllBaseName = Path.GetFileNameWithoutExtension(dllPath)
-                let xmlPath1 = Path.Combine(dir, dllBaseName + ".xml")
-                let xmlPath2 = Path.Combine(dir, "output.xml")
-                
-                let xmlPath =
-                    if File.Exists xmlPath1 then xmlPath1
-                    elif File.Exists xmlPath2 then xmlPath2
-                    else failwith $"XML doc file not found: tried {xmlPath1} and {xmlPath2}"
-                
-                let content = File.ReadAllText(xmlPath)
-                for unexpected in unexpectedTexts do
+        verifyXmlDocWith
+            (fun content texts ->
+                for unexpected in texts do
                     if content.Contains(unexpected) then
-                        failwith $"XML doc should not contain: '{unexpected}'"
-                result
+                        failwith $"XML doc should not contain: '{unexpected}'")
+            unexpectedTexts
+            result
