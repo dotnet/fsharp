@@ -144,23 +144,21 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
     if doc.IsEmpty then
         doc
     else
-        let content = doc.GetXmlText()
-
+        // Work with unprocessed lines to preserve the original format
+        let unprocessedLines = doc.UnprocessedLines
+        let content = String.concat "\n" unprocessedLines
+        
         // Early exit if content doesn't contain "<include" (case-insensitive)
         if not (content.IndexOf("<include", StringComparison.OrdinalIgnoreCase) >= 0) then
             doc
         else
             let baseFileName = doc.Range.FileName
-
-            let expandedContent =
-                expandIncludesInContent baseFileName content Set.empty doc.Range
-
+            let expandedContent = expandIncludesInContent baseFileName content Set.empty doc.Range
+            
             // Create new XmlDoc with expanded content
             if expandedContent = content then
                 doc
             else
-                // Parse back into lines
-                let lines =
-                    expandedContent.Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
-
+                // Parse back into lines - preserve line structure
+                let lines = expandedContent.Split([| '\n' |], StringSplitOptions.None)
                 XmlDoc(lines, doc.Range)
