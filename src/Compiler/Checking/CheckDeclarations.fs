@@ -3715,6 +3715,26 @@ module EstablishTypeDefinitionCores =
                                   let fparams =
                                       curriedArgInfos.Head
                                       |> List.map (fun (ty, argInfo: ArgReprInfo) ->
+                                            // Handle type wrapping for optional parameters
+                                            // The ?param syntax provides unwrapped type (e.g., int) with OptionalArgumentAttribute
+                                            // and needs wrapping to int option.
+                                            // Explicit [<OptionalArgument>] path: string option already has wrapped type.
+                                            let ty =
+                                              if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
+                                                  // Only wrap if the type is not already an option type
+                                                  if isOptionTy g ty || isValueOptionTy g ty then
+                                                      // Type is already wrapped (e.g., string option), don't wrap again
+                                                      ty
+                                                  else
+                                                      // Type needs wrapping (e.g., from ?param syntax)
+                                                      match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
+                                                      | Some (Attrib(range=m)) ->
+                                                          checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
+                                                          mkValueOptionTy g ty
+                                                      | _ ->
+                                                          mkOptionTy g ty            
+                                              else ty
+
                                             // Extract parameter attributes including optional and caller info flags
                                             // This ensures delegates have proper metadata for optional parameters
                                             let (ParamAttribs(_, isInArg, isOutArg, optArgInfo, _, _)) = CrackParamAttribsInfo g (ty, argInfo)
