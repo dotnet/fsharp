@@ -62,82 +62,143 @@ let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement seq
     with ex ->
         Result.Error $"Invalid XPath expression '{xpath}': {ex.Message}"
 
-/// Recursively expand includes in XML content
-let rec private expandIncludesInContent (baseFileName: string) (content: string) (inProgressFiles: Set<string>) (range: range) : string =
-    // Early exit if content doesn't contain "<include" (case-insensitive check)
-    if not (content.IndexOf("<include", StringComparison.OrdinalIgnoreCase) >= 0) then
-        content
+/// Include directive information
+type private IncludeInfo = { FilePath: string; XPath: string }
+
+/// Extract include directive from an XElement if it has both required attributes
+let private tryGetInclude (elem: XElement) : IncludeInfo option =
+    let fileAttr = elem.Attribute(!!(XName.op_Implicit "file"))
+    let pathAttr = elem.Attribute(!!(XName.op_Implicit "path"))
+
+    match fileAttr, pathAttr with
+    | NonNull file, NonNull path ->
+        Some
+            {
+                FilePath = file.Value
+                XPath = path.Value
+            }
+    | _ -> None
+
+/// Try to parse a line as an include directive (must be include tag alone on the line)
+let private tryParseIncludeLine (line: string) : IncludeInfo option =
+    let trimmed = line.Trim()
+    // Quick check: must start with < and contain "include"
+    if not (trimmed.StartsWith("<") && trimmed.Contains("include")) then
+        None
     else
         try
-            // Wrap content in a root element to handle multiple top-level elements
-            let wrappedContent = "<root>" + content + "</root>"
-            let doc = XDocument.Parse(wrappedContent)
+            let elem = XElement.Parse(trimmed)
 
-            let includeElements = doc.Descendants(!!(XName.op_Implicit "include")) |> Seq.toList
-
-            if includeElements.IsEmpty then
-                content
+            if elem.Name.LocalName = "include" then
+                tryGetInclude elem
             else
-                let mutable modified = false
+                None
+        with _ ->
+            None
 
-                for includeElem in includeElements do
-                    let fileAttr = includeElem.Attribute(!!(XName.op_Implicit "file"))
-                    let pathAttr = includeElem.Attribute(!!(XName.op_Implicit "path"))
+/// Recursively expand includes in XElement nodes
+let rec private expandElements (baseFileName: string) (nodes: XNode seq) (inProgressFiles: Set<string>) (range: range) : XNode seq =
+    nodes
+    |> Seq.collect (fun node ->
+        if node.NodeType <> System.Xml.XmlNodeType.Element then
+            Seq.singleton node
+        else
+            let elem = node :?> XElement
 
-                    match fileAttr, pathAttr with
-                    | Null, _ -> warning (Error(FSComp.SR.xmlDocIncludeError "Missing 'file' attribute", range))
-                    | _, Null -> warning (Error(FSComp.SR.xmlDocIncludeError "Missing 'path' attribute", range))
-                    | NonNull fileAttr, NonNull pathAttr ->
-                        let includePath = fileAttr.Value
-                        let xpath = pathAttr.Value
-                        let resolvedPath = resolveFilePath baseFileName includePath
+            match tryGetInclude elem with
+            | None ->
+                // Not an include element, recursively process children
+                let expandedChildren =
+                    expandElements baseFileName (elem.Nodes()) inProgressFiles range
 
-                        // Check for circular includes
-                        if inProgressFiles.Contains(resolvedPath) then
-                            warning (Error(FSComp.SR.xmlDocIncludeError $"Circular include detected: {resolvedPath}", range))
-                        else
-                            match loadXmlFile resolvedPath with
-                            | Result.Error msg -> warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
-                            | Result.Ok includeDoc ->
-                                match evaluateXPath includeDoc xpath with
-                                | Result.Error msg -> warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
-                                | Result.Ok elements ->
-                                    // Get the inner content of selected elements
-                                    let newNodes = elements |> Seq.collect (fun elem -> elem.Nodes()) |> Seq.toList
+                let newElem = XElement(elem.Name, elem.Attributes(), expandedChildren)
+                Seq.singleton (newElem :> XNode)
+            | Some includeInfo ->
+                // This is an include element
+                let resolvedPath = resolveFilePath baseFileName includeInfo.FilePath
 
-                                    // Recursively expand includes in the loaded content
-                                    let updatedInProgress = inProgressFiles.Add(resolvedPath)
-
-                                    let expandedNodes =
-                                        newNodes
-                                        |> List.map (fun node ->
-                                            if node.NodeType = System.Xml.XmlNodeType.Element then
-                                                let elemNode = node :?> XElement
-                                                let elemContent = elemNode.ToString()
-
-                                                let expanded =
-                                                    expandIncludesInContent resolvedPath elemContent updatedInProgress range
-
-                                                XElement.Parse(expanded) :> XNode
-                                            else
-                                                node)
-
-                                    // Replace the include element with expanded content
-                                    includeElem.ReplaceWith(expandedNodes)
-                                    modified <- true
-
-                if modified then
-                    // Extract content from root wrapper
-                    match doc.Root with
-                    | Null -> content
-                    | NonNull root ->
-                        let resultDoc = root.Nodes() |> Seq.map (fun n -> n.ToString()) |> String.concat ""
-                        resultDoc
+                // Check for circular includes
+                if inProgressFiles.Contains(resolvedPath) then
+                    warning (Error(FSComp.SR.xmlDocIncludeError $"Circular include detected: {resolvedPath}", range))
+                    Seq.singleton node
                 else
-                    content
-        with ex ->
-            warning (Error(FSComp.SR.xmlDocIncludeError $"Error parsing XML: {ex.Message}", range))
+                    match loadXmlFile resolvedPath with
+                    | Result.Error msg ->
+                        warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
+                        Seq.singleton node
+                    | Result.Ok includeDoc ->
+                        match evaluateXPath includeDoc includeInfo.XPath with
+                        | Result.Error msg ->
+                            warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
+                            Seq.singleton node
+                        | Result.Ok elements ->
+                            // Recursively expand the loaded content
+                            let updatedInProgress = inProgressFiles.Add(resolvedPath)
+                            let nodes = elements |> Seq.collect (fun e -> e.Nodes())
+                            let expandedContent = expandElements resolvedPath nodes updatedInProgress range
+                            expandedContent)
+
+/// Process XML content line by line, only parsing lines with includes
+let rec private expandIncludesInContent (baseFileName: string) (content: string) (inProgressFiles: Set<string>) (range: range) : string =
+    // Early exit if content doesn't contain "<include" (cheap check, no allocation)
+    if not (content.Contains("<include")) then
+        content
+    else
+        let lines = content.Split([| '\r'; '\n' |], StringSplitOptions.None)
+        let mutable hasIncludes = false
+
+        // First pass: check if any lines contain include tags
+        for line in lines do
+            if line.Contains("<include") then
+                hasIncludes <- true
+
+        if not hasIncludes then
             content
+        else
+            // Process lines with includes
+            let processedLines =
+                lines
+                |> Array.map (fun line ->
+                    // Cheap detection: only parse if line contains <include
+                    if not (line.Contains("<include")) then
+                        line
+                    else
+                        match tryParseIncludeLine line with
+                        | None -> line // Not a valid include directive, keep as-is
+                        | Some includeInfo ->
+                            let resolvedPath = resolveFilePath baseFileName includeInfo.FilePath
+
+                            // Check for circular includes
+                            if inProgressFiles.Contains(resolvedPath) then
+                                warning (Error(FSComp.SR.xmlDocIncludeError $"Circular include detected: {resolvedPath}", range))
+                                line
+                            else
+                                match loadXmlFile resolvedPath with
+                                | Result.Error msg ->
+                                    warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
+                                    line
+                                | Result.Ok includeDoc ->
+                                    match evaluateXPath includeDoc includeInfo.XPath with
+                                    | Result.Error msg ->
+                                        warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
+                                        line
+                                    | Result.Ok elements ->
+                                        // Expand the loaded content recursively
+                                        let updatedInProgress = inProgressFiles.Add(resolvedPath)
+
+                                        let expandedNodes =
+                                            expandElements
+                                                resolvedPath
+                                                (elements |> Seq.collect (fun e -> e.Nodes()))
+                                                updatedInProgress
+                                                range
+
+                                        let expandedText =
+                                            expandedNodes |> Seq.map (fun n -> n.ToString()) |> String.concat ""
+                                        // Recursively expand any includes in the loaded content
+                                        expandIncludesInContent resolvedPath expandedText updatedInProgress range)
+
+            String.concat Environment.NewLine processedLines
 
 /// Expand all <include> elements in XML documentation text
 let expandIncludesInText (baseFileName: string) (xmlText: string) (range: range) : string =
