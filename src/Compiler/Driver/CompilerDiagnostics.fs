@@ -2247,10 +2247,102 @@ type PhasedDiagnostic with
 
     /// used by fsc.exe and fsi.exe, but not by VS
     /// prints error and related errors to the specified StringBuilder
-    member diagnostic.Output(buf, tcConfig: TcConfig, severity) =
+    member diagnostic.Output(buf: StringBuilder, tcConfig: TcConfig, severity: FSharpDiagnosticSeverity) =
 
         // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
         let diagnostics = CollectFormattedDiagnostics(tcConfig, severity, diagnostic, true)
+
+        let renderRich (details: FormattedDiagnosticDetailedInfo) =
+            let severityText =
+                match severity with
+                | FSharpDiagnosticSeverity.Error -> "Error"
+                | FSharpDiagnosticSeverity.Warning -> "Warning"
+                | FSharpDiagnosticSeverity.Info
+                | FSharpDiagnosticSeverity.Hidden -> "Info"
+
+            let codeText = sprintf "FS%04d" details.Canonical.ErrorNumber
+
+            let messageSentences =
+                details.Message.Split([| '\n' |], StringSplitOptions.None)
+                |> Seq.collect (fun line ->
+                    let parts = line.Split([| '.' |], StringSplitOptions.None)
+
+                    parts
+                    |> Seq.mapi (fun idx part ->
+                        let trimmed = part.Trim()
+
+                        if trimmed = "" then
+                            None
+                        else
+                            let hasDot = idx < parts.Length - 1 || line.EndsWith(".")
+                            Some(if hasDot then trimmed + "." else trimmed)))
+                |> Seq.choose id
+                |> Seq.toList
+
+            let messageLines =
+                match messageSentences with
+                | head :: tail ->
+                    seq {
+                        yield sprintf "[%s] %s: %s" codeText severityText head
+                        yield! tail |> Seq.map (fun s -> sprintf "│ %s" s)
+                    }
+                | [] -> seq { yield sprintf "[%s] %s" codeText details.Message }
+
+            let locationAndSnippet =
+                match details.Location with
+                | Some l when not l.IsEmpty ->
+                    seq {
+                        let range = l.Range
+
+                        let fileDisplay =
+                            if String.IsNullOrWhiteSpace l.File then
+                                "unknown"
+                            else
+                                l.File
+
+                        yield sprintf "└─ [%s:(%d,%d)]" fileDisplay range.StartLine range.StartColumn
+                        yield ""
+
+                        try
+                            let fullPath =
+                                l.File |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
+
+                            if FileSystem.FileExistsShim fullPath then
+                                let content = File.ReadAllLines fullPath
+
+                                if content.Length > 0 then
+                                    let startLine = max 1 (range.StartLine - 1)
+                                    let endLine = min content.Length range.StartLine
+
+                                    let snippetLines =
+                                        [
+                                            for ln in startLine .. min content.Length (endLine + 1) -> ln, content[ln - 1]
+                                        ]
+
+                                    let lineNoWidth =
+                                        snippetLines
+                                        |> List.map fst
+                                        |> List.map string
+                                        |> List.map String.length
+                                        |> List.max
+
+                                    let caretStart = max 0 (range.StartColumn - 1)
+                                    let caretWidth = max 1 (max 0 (range.EndColumn - range.StartColumn))
+                                    let caretLine = String.make caretStart ' ' + String.make caretWidth '^'
+
+                                    for (ln, text) in snippetLines do
+                                        yield sprintf "  %*d | %s" lineNoWidth ln text
+
+                                        if ln = range.StartLine then
+                                            yield sprintf "  %s | %s" (String.make lineNoWidth ' ') caretLine
+                        with _ ->
+                            ()
+                    }
+                | _ -> Seq.empty
+
+            Seq.append messageLines locationAndSnippet
+            |> String.concat "\n"
+            |> fun rendered -> buf.Append(rendered) |> ignore
 
         for e in diagnostics do
             Printf.bprintf buf "\n"
@@ -2274,17 +2366,7 @@ type PhasedDiagnostic with
 
                     buf.AppendString details.Canonical.TextRepresentation
                     buf.AppendString details.Message
-                | DiagnosticStyle.Rich ->
-                    buf.AppendString details.Canonical.TextRepresentation
-                    buf.AppendString details.Message
-
-                    match details.Location with
-                    | Some l when not l.IsEmpty ->
-                        buf.AppendString l.TextRepresentation
-
-                        if details.Context.IsSome then
-                            buf.AppendString details.Context.Value
-                    | _ -> ()
+                | DiagnosticStyle.Rich -> renderRich details
 
     member diagnostic.OutputContext(buf, prefix, fileLineFunction) =
         match diagnostic.Range with
