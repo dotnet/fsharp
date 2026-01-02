@@ -139,6 +139,17 @@ let rec private expandIncludesInContent (baseFileName: string) (content: string)
             warning (Error(FSComp.SR.xmlDocIncludeError $"Error parsing XML: {ex.Message}", range))
             content
 
+/// Expand all <include> elements in XML documentation text
+let expandIncludesInText (baseFileName: string) (xmlText: string) (range: range) : string =
+    // Early exit if content doesn't contain "<include" (case-insensitive)
+    if
+        String.IsNullOrEmpty(xmlText)
+        || not (xmlText.IndexOf("<include", StringComparison.OrdinalIgnoreCase) >= 0)
+    then
+        xmlText
+    else
+        expandIncludesInContent baseFileName xmlText Set.empty range
+
 /// Expand all <include> elements in an XmlDoc
 let expandIncludes (doc: XmlDoc) : XmlDoc =
     if doc.IsEmpty then

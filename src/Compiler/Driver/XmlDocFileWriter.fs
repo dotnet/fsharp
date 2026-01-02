@@ -86,9 +86,9 @@ module XmlDocWriter =
 
         let addMember id xmlDoc =
             if hasDoc xmlDoc then
-                let expandedDoc = expandIncludes xmlDoc
-                let doc = expandedDoc.GetXmlText()
-                members <- (id, doc) :: members
+                let xmlText = xmlDoc.GetXmlText()
+                let expandedText = expandIncludesInText xmlDoc.Range.FileName xmlText xmlDoc.Range
+                members <- (id, expandedText) :: members
 
         let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc
 
