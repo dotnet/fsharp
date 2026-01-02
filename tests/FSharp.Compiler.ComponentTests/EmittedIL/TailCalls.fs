@@ -251,7 +251,7 @@ let run() =
     IL_0040:  ldc.i4.s   42
     IL_0042:  ldc.i4.5
     IL_0043:  call       void TailCall06::foo<int32>(int32,
-                                                     !!0)
+                                                      !!0)
             """
             ]
 
@@ -275,4 +275,35 @@ let rec countdown n =
              int32& pinned V_2)
             """
             ]
+
+    [<Fact>]
+    let ``TailCall 08 - No tail call when pinning local byref``() =
+        FSharp """
+module TailCall08
+
+open Microsoft.FSharp.NativeInterop
+open System.Runtime.CompilerServices
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let bar (pValue: nativeptr<int>) : unit =
+    let value = NativePtr.read pValue
+    printfn "value = %A" value
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let foo() =
+    let mutable value = 42
+    use ptr = fixed &value
+    bar ptr
+
+[<EntryPoint>]
+let main _ =
+    foo()
+    0
+        """
+        |> asExe
+        |> compileWithTailCalls
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> verifyOutput "value = 42\n"
 
