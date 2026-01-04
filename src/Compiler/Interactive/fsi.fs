@@ -4490,7 +4490,10 @@ type FsiInteractionProcessor
     member _.ParseAndCheckInteraction(legacyReferenceResolver, istate, text: string, ?keepAssemblyContents: bool) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        let nextFragmentPath = fsiDynamicCompiler.PeekNextFragmentPath()
+        let asmName =
+            match keepAssemblyContents with
+            | Some true -> Some(fsiDynamicCompiler.PeekNextFragmentPath())
+            | _ -> None
 
         let fsiInteractiveChecker =
             FsiInteractiveChecker(
@@ -4502,7 +4505,7 @@ type FsiInteractionProcessor
                 ?keepAssemblyContents = keepAssemblyContents
             )
 
-        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text, asmName = nextFragmentPath)
+        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text, ?asmName = asmName)
 
 //----------------------------------------------------------------------------
 // Server mode:
