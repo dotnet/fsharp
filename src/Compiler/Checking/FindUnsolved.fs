@@ -216,6 +216,7 @@ and accDiscrim cenv env d mFallback =
     | DecisionTreeTest.ArrayLength(_, ty) -> accTy cenv env mFallback ty
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> ()
+    | DecisionTreeTest.StringLengthZero ty -> accTy cenv env mFallback ty
     | DecisionTreeTest.IsInst (srcTy, tgtTy) -> accTy cenv env mFallback srcTy; accTy cenv env mFallback tgtTy
     | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _, _) ->
         accExpr cenv env exp

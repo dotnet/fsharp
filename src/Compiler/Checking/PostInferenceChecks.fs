@@ -1918,6 +1918,7 @@ and CheckDecisionTreeTest cenv env m discrim =
     | DecisionTreeTest.ArrayLength (_, ty) -> CheckTypeNoInnerByrefs cenv env m ty
     | DecisionTreeTest.Const _ -> ()
     | DecisionTreeTest.IsNull -> ()
+    | DecisionTreeTest.StringLengthZero ty -> CheckTypeNoInnerByrefs cenv env m ty
     | DecisionTreeTest.IsInst (srcTy, tgtTy)    -> CheckTypeNoInnerByrefs cenv env m srcTy; CheckTypeNoInnerByrefs cenv env m tgtTy
     | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _) -> CheckExprNoByrefs cenv env exp
     | DecisionTreeTest.Error _ -> ()

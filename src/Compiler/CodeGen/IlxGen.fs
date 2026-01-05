@@ -4831,6 +4831,7 @@ and eligibleForFilter (cenv: cenv) expr =
            | DecisionTreeTest.ArrayLength _ -> true
            | DecisionTreeTest.Const _ -> true
            | DecisionTreeTest.IsNull -> true
+           | DecisionTreeTest.StringLengthZero _ -> true
            | DecisionTreeTest.IsInst _ -> true
            | DecisionTreeTest.ActivePatternCase _ -> false // must only be run once
            | DecisionTreeTest.Error _ -> false
@@ -7783,6 +7784,7 @@ and GenDecisionTreeSwitch
         | DecisionTreeTest.ArrayLength _
         | DecisionTreeTest.IsInst _
         | DecisionTreeTest.IsNull
+        | DecisionTreeTest.StringLengthZero _
         | DecisionTreeTest.Const(Const.Zero) ->
             if not (isSingleton cases) || Option.isNone defaultTargetOpt then
                 failwith "internal error: GenDecisionTreeSwitch: DecisionTreeTest.IsInst/isnull/query"

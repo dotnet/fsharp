@@ -2348,6 +2348,8 @@ val mkIncr: TcGlobals -> range -> Expr -> Expr
 
 val mkLdlen: TcGlobals -> range -> Expr -> Expr
 
+val mkGetStringLength: TcGlobals -> range -> Expr -> Expr
+
 val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 //-------------------------------------------------------------------------
