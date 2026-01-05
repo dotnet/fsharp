@@ -2643,15 +2643,12 @@ type LexFilterImpl (
               let endPos = tokenTup.EndPos
               if endPos.Column >= startPos.Column + 3 then
                   // Get the lexeme from the buffer
-                  let lexbufSource = lexbuf.LexBuffer
-                  let lexemeStart = lexbufSource.StartIndex
-                  let lexemeEnd = lexbufSource.EndIndex
-                  if lexemeEnd - lexemeStart >= 3 then
+                  let lexbufSource = lexbuf.LexemeView
+                  if lexbufSource.Length >= 3 then
                       let isXmlDoc = 
-                          lexbufSource.Lexeme[0] = '/' &&
-                          lexbufSource.Lexeme[1] = '/' &&
-                          lexbufSource.Lexeme[2] = '/' &&
-                          (lexemeEnd - lexemeStart = 3 || lexbufSource.Lexeme[3] <> '/')
+                          lexbufSource[0] = '/' &&
+                          lexbufSource[1] = '/' &&
+                          lexbufSource[2] = '/'
                       
                       if isXmlDoc then
                           let commentStartLine = startPos.Line
