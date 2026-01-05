@@ -2637,26 +2637,6 @@ type LexFilterImpl (
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) =
           // Check if XML doc comment (///) appears after other code on the same line
           match tokenTup.Token with
-          | LINE_COMMENT (LexCont.SingleLineComment _) ->
-              // Check if this is an XML doc comment (///) by examining the lexbuf content
-              let startPos = tokenTup.StartPos
-              let endPos = tokenTup.EndPos
-              if endPos.Column >= startPos.Column + 3 then
-                  // Get the lexeme from the buffer
-                  let lexbufSource = lexbuf.LexemeView
-                  if lexbufSource.Length >= 3 then
-                      let isXmlDoc = 
-                          lexbufSource[0] = '/' &&
-                          lexbufSource[1] = '/' &&
-                          lexbufSource[2] = '/'
-                      
-                      if isXmlDoc then
-                          let commentStartLine = startPos.Line
-                          let lastNonCommentLine = XmlDocStore.GetLastNonCommentTokenLine lexbuf
-                          if lastNonCommentLine = commentStartLine then
-                              // XML doc comment appears on same line as previous non-comment token
-                              let m = mkSynRange startPos (startPos.ShiftColumnBy(3))
-                              warning(Error(FSComp.SR.xmlDocNotFirstOnLine(), m))
           | _ -> ()
 
           match tokenTup.Token with
