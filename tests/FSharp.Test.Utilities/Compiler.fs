@@ -2093,13 +2093,10 @@ Actual:
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
 
-    let withXmlDoc (_xmlFileName: string) (cUnit: CompilationUnit) : CompilationUnit =
-        // We ignore the xmlFileName and always derive the XML path from the DLL output path
-        // The actual --doc path will be constructed at compile time
+    let withXmlDoc (cUnit: CompilationUnit) : CompilationUnit =
+        // The XML doc file path will be derived from the DLL output path
         match cUnit with
         | FS fs ->
-            // We'll use a marker that gets replaced during compilation
-            // or we ensure the output directory is set so we can construct the path
             let outputDir =
                 match fs.OutputDirectory with
                 | Some di -> di

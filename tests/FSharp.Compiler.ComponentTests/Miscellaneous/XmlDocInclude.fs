@@ -58,7 +58,7 @@ module Test
 /// <include file="{dataPath}" path="/data/summary"/>
 let f x = x
 """
-            |> withXmlDoc "Test.xml"
+            |> withXmlDoc
             |> compile
             |> shouldSucceed
             |> verifyXmlDocContains [ "Included summary text." ]
@@ -78,7 +78,7 @@ module Test
 /// <include file="{dataPath}" path="/data/summary"/>
 let f x = x
 """
-            |> withXmlDoc "Test.xml"
+            |> withXmlDoc
             |> compile
             |> shouldSucceed
             |> verifyXmlDocContains [ "Included summary text." ]
@@ -103,7 +103,7 @@ module Test
 /// <include file="{outerPath}" path="/data/summary"/>
 let f x = x
 """
-            |> withXmlDoc "Test.xml"
+            |> withXmlDoc
             |> compile
             |> shouldSucceed
             |> verifyXmlDocContains [ "Outer text without nesting." ]
@@ -119,7 +119,7 @@ module Test
 /// <include file="/nonexistent/file.xml" path="/data/summary"/>
 let f x = x
 """
-        |> withXmlDoc "Test.xml"
+        |> withXmlDoc
         |> compile
         |> shouldSucceed
         |> ignore
@@ -132,7 +132,7 @@ module Test
 /// <summary>Regular summary</summary>
 let f x = x
 """
-        |> withXmlDoc "Test.xml"
+        |> withXmlDoc
         |> compile
         |> shouldSucceed
         |> verifyXmlDocContains [ "Regular summary" ]
@@ -163,7 +163,7 @@ module Test
 /// <include file="{aPath}" path="/data/summary"/>
 let f x = x
 """
-            |> withXmlDoc "Test.xml"
+            |> withXmlDoc
             |> compile
             |> shouldSucceed
             |> ignore
@@ -182,7 +182,7 @@ module Test
 /// <include file="{dataPath}" path="/data/summary"/>
 let f x = x
 """
-            |> withXmlDoc "Test.xml"
+            |> withXmlDoc
             |> compile
             |> shouldSucceed
             |> verifyXmlDocContains [ "Included summary text." ]
@@ -202,7 +202,7 @@ module Test
 /// <include file="{dataPath}" path="/data/summary"/>
 let f x = x
 """
-            |> withXmlDoc "Test.xml"
+            |> withXmlDoc
             |> compile
             |> shouldSucceed
             |> verifyXmlDocNotContains [ "<include" ]
@@ -239,10 +239,30 @@ module Test
 /// </summary>
 let f x = x
 """
-            |> withXmlDoc "Test.xml"
+            |> withXmlDoc
             |> compile
             |> shouldSucceed
             |> verifyXmlDocContains [ "First part."; "Second part." ]
+            |> ignore
+        finally
+            cleanup dir
+
+    [<Fact>]
+    let ``Include with empty path attribute generates warning`` () =
+        let dir = setupDir [ "data/simple.data.xml", simpleData ]
+        let dataPath = Path.Combine(dir, "data/simple.data.xml").Replace("\\", "/")
+
+        try
+            Fs
+                $"""
+module Test
+/// <include file="{dataPath}" path=""/>
+let f x = x
+"""
+            |> withXmlDoc
+            |> compile
+            |> shouldSucceed
+            |> verifyXmlDocNotContains [ "Included summary text." ]
             |> ignore
         finally
             cleanup dir
