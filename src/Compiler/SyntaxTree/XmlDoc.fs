@@ -188,9 +188,8 @@ type XmlDocCollector() =
     member _.HasComments grabPointPos =
         savedGrabPoints.TryGetValue grabPointPos |> fst
 
-    member _.SetLastNonCommentTokenLine(line: int) =
-        lastNonCommentTokenLine <- line
-    
+    member _.SetLastNonCommentTokenLine(line: int) = lastNonCommentTokenLine <- line
+
     member _.LastNonCommentTokenLine = lastNonCommentTokenLine
 
     member _.CheckInvalidXmlDocPositions() =

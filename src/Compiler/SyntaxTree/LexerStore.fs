@@ -67,7 +67,7 @@ module XmlDocStore =
     let SetLastNonCommentTokenLine (lexbuf: Lexbuf) (line: int) =
         let collector = getCollector lexbuf
         collector.SetLastNonCommentTokenLine(line)
-    
+
     let GetLastNonCommentTokenLine (lexbuf: Lexbuf) =
         let collector = getCollector lexbuf
         collector.LastNonCommentTokenLine
