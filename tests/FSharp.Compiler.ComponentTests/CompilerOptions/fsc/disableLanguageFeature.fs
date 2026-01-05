@@ -20,9 +20,9 @@ printfn "Hello, World"
 
     [<Fact>]
     let ``disableLanguageFeature should disable NameOf feature``() =
+        // nameof with type parameter requires LanguageFeature.NameOf
         FSharp """
-let x = 5
-let name = nameof(x)
+let f<'T>() = nameof<'T>
         """
         |> withOptions ["--langversion:latest"; "--disableLanguageFeature:NameOf"]
         |> typecheck
@@ -45,9 +45,9 @@ printfn "Hello, World"
 
     [<Fact>]
     let ``disableLanguageFeature can be used multiple times``() =
+        // nameof with type parameter requires LanguageFeature.NameOf
         FSharp """
-let x = 5
-let name = nameof(x)
+let f<'T>() = nameof<'T>
         """
         |> withOptions ["--langversion:latest"; "--disableLanguageFeature:NameOf"; "--disableLanguageFeature:StringInterpolation"]
         |> typecheck
@@ -57,9 +57,9 @@ let name = nameof(x)
 
     [<Fact>]
     let ``disableLanguageFeature is case insensitive``() =
+        // nameof with type parameter requires LanguageFeature.NameOf
         FSharp """
-let x = 5
-let name = nameof(x)
+let f<'T>() = nameof<'T>
         """
         |> withOptions ["--langversion:latest"; "--disableLanguageFeature:nameof"]
         |> typecheck
