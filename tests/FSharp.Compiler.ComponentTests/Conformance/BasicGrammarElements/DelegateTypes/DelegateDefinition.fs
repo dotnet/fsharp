@@ -81,6 +81,7 @@ let d = TestDelegate f
 d.Invoke()"""
         |> compileExeAndRun
         |> shouldSucceed
+        // CallerLineNumber will be the actual line number, we just verify it compiles and runs
         
     [<Fact>]
     let ``Delegate with OptionalArgument and CallerFilePath`` () =
@@ -95,6 +96,7 @@ let d = TestDelegate f
 d.Invoke()"""
         |> compileExeAndRun
         |> shouldSucceed
+        // CallerFilePath will be the actual file path, we just verify it compiles and runs
 
     [<Fact>]
     let ``Delegate with OptionalArgument and CallerMemberName`` () =
@@ -108,4 +110,21 @@ let f = fun (memberName: string option) ->
 let d = TestDelegate f
 d.Invoke()"""
         |> compileExeAndRun
-        |> shouldSucceed 
+        |> shouldSucceed
+        // CallerMemberName will be the actual member name, we just verify it compiles and runs
+
+    [<Fact>]
+    let ``Delegate with nested option type`` () =
+        FSharp """type TestDelegate = delegate of x: int option option -> unit
+let f = fun (x: int option option) -> 
+    match x with
+    | Some (Some v) -> printfn "value: %d" v
+    | Some None -> printfn "inner none"
+    | None -> printfn "outer none"
+let d = TestDelegate f
+d.Invoke(Some (Some 42))
+d.Invoke(Some None)
+d.Invoke(None)"""
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyOutputContains [| "value: 42"; "inner none"; "outer none" |] 
