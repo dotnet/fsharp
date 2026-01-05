@@ -401,20 +401,24 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
 /// - methodBodyRemap: Remap to apply to object expression method bodies to use the captured locals
 let TryExtractStructMembersFromObjectExpr
     (_g: TcGlobals.TcGlobals)
-    (_enclosingStructTyconRefOpt: TyconRef option)
+    (enclosingStructTyconRefOpt: TyconRef option)
     (isInterfaceTy: bool)
     (ctorCall: Expr) // The base constructor call expression
     overridesAndVirts
     (mWholeExpr: range)
     : (Val * Expr) list * Remap =
 
-    // DEBUG: Log when we're called
-
-    // Skip transformation for pure interface implementations
-    // The byref issue only occurs when passing struct members to base class constructors
-    if isInterfaceTy then
+    // Only transform when we're actually inside a struct member method
+    // This prevents false positives in module functions or class methods
+    match enclosingStructTyconRefOpt with
+    | None -> 
+        // Not in a struct context - skip transformation
         [], Remap.Empty
-    else
+    | Some _ when isInterfaceTy -> 
+        // Interface-only implementation - skip transformation
+        // The byref issue only occurs when passing struct members to base class constructors
+        [], Remap.Empty
+    | Some _ ->
         // Collect all method bodies from the object expression overrides
         let allMethodBodies =
             overridesAndVirts
@@ -438,16 +442,23 @@ let TryExtractStructMembersFromObjectExpr
         // 1. Variables from STRUCT types (HasDeclaringEntity && is struct)
         // 2. Variables without a DeclaringEntity (likely struct constructor params/fields)
         //    that would require capturing the struct 'this' pointer
+        // EXCLUDE:
+        // - Method parameters (they are bound in method scope, not captured)
+        // - Module bindings (they are not struct members)
         let problematicVars =
             freeVars.FreeLocals
             |> Zset.elements
             |> List.filter (fun (v: Val) ->
-                // Case 1: Variable belongs to a struct type
-                (v.HasDeclaringEntity && v.DeclaringEntity.Deref.IsStructOrEnumTycon)
-                ||
-                // Case 2: Variable without declaring entity (likely struct constructor param)
-                // We conservatively extract these to avoid potential byref captures
-                (not v.HasDeclaringEntity && not v.IsModuleBinding))
+                // CRITICAL: Exclude method parameters - they are NOT captured variables
+                not v.IsParameter &&
+                (
+                    // Case 1: Variable belongs to a struct type
+                    (v.HasDeclaringEntity && v.DeclaringEntity.Deref.IsStructOrEnumTycon)
+                    ||
+                    // Case 2: Variable without declaring entity (likely struct constructor param)
+                    // We conservatively extract these to avoid potential byref captures
+                    (not v.HasDeclaringEntity && not v.IsModuleBinding)
+                ))
 
 
         // Early exit if no problematic variables

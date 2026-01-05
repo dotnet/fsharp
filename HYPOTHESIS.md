@@ -1,0 +1,125 @@
+# Hypothesis Analysis: False Positive Byref Errors in seq.fs
+
+## Problem
+The transformation to fix struct object expression captures is incorrectly triggering on `seq.fs` code that uses byref parameters in object expression methods. The code is valid but the transformation is capturing ALL free variables including byref-typed ones, which then causes errors.
+
+## Context
+The errors all occur in enumerator implementations like:
+```fsharp
+let map f (e: IEnumerator<_>) : IEnumerator<_> =
+    upcast
+        { new MapEnumerator<_>() with
+            member _.DoMoveNext(curr: byref<_>) =  // 'curr' is a byref PARAMETER, not a captured variable
+                if e.MoveNext() then
+                    curr <- f e.Current
+                    true
+```
+
+The variable `curr` is a **byref parameter** to the method, not a captured free variable. The transformation is incorrectly treating it as a free variable that needs to be extracted.
+
+---
+
+## Hypothesis 1: Free Variable Analysis Includes Method Parameters
+
+**Theory**: The `freeInExpr` function is incorrectly identifying method parameters (including byref parameters) as "free variables" that need extraction. These parameters are bound within the method scope and should NOT be captured.
+
+**How to Test**:
+1. Add debug logging in `TryExtractStructMembersFromObjectExpr` to print the `LogicalName` and `IsByRefPointer` of all detected "problematic" variables
+2. Check if `curr` appears in the `problematicVars` list
+3. Check if `curr.IsByRefPointer` is true
+
+**How to Fix**:
+Add a filter to exclude method parameters from extraction:
+```fsharp
+let problematicVars =
+    freeVars.FreeLocals
+    |> Zset.elements
+    |> List.filter (fun (v: Val) ->
+        // EXCLUDE method parameters - they are not actually captured
+        not v.IsParameter &&
+        // Case 1: Variable belongs to a struct type
+        (v.HasDeclaringEntity && v.DeclaringEntity.Deref.IsStructOrEnumTycon)
+        ||
+        // Case 2: Variable without declaring entity (likely struct constructor param)
+        (not v.HasDeclaringEntity && not v.IsModuleBinding))
+```
+
+**Expected Outcome**: The byref parameters in seq.fs would be excluded from extraction, eliminating the false positive errors.
+
+---
+
+## Hypothesis 2: Transformation is Being Applied to Non-Struct Contexts
+
+**Theory**: The transformation is being applied to object expressions that are NOT inside struct member methods (e.g., module-level functions in seq.fs). The early guard `if isInterfaceTy` only checks if the object expression implements an interface, but doesn't check if we're in a struct context.
+
+**How to Test**:
+1. Add debug logging at the start of `TryExtractStructMembersFromObjectExpr` to print:
+   - `enclosingStructTyconRefOpt` (should be None for module functions)
+   - `isInterfaceTy` value
+   - Whether any problematic vars were found
+2. Check if transformation is running for seq.fs enumerators
+
+**How to Fix**:
+Add an early guard to skip transformation when not in a struct context:
+```fsharp
+let TryExtractStructMembersFromObjectExpr ... =
+    // Only transform if we're inside a struct member method
+    match enclosingStructTyconRefOpt with
+    | None -> [], Remap.Empty  // Not in a struct, skip transformation
+    | Some _ when isInterfaceTy -> [], Remap.Empty  // Interface only, skip
+    | Some _ ->
+        // Continue with transformation logic...
+```
+
+**Expected Outcome**: The transformation would not run at all for module-level functions in seq.fs, eliminating all false positives.
+
+---
+
+## Hypothesis 3: Byref Variables Are Being Incorrectly Remapped
+
+**Theory**: The transformation correctly identifies that `curr` should NOT be extracted, but the remapping logic is still trying to remap it anyway, creating illegal captured byref references.
+
+**How to Test**:
+1. Add debug logging before creating the `Remap` to show which variables are in the remap dictionary
+2. Check if `curr` or other byref variables appear in the remap
+3. Verify that the remapping is only happening for struct members, not for all variables
+
+**How to Fix**:
+Ensure the remap ONLY includes the variables we extracted to locals:
+```fsharp
+// Only create remap for the variables we actually extracted
+let remap = 
+    if List.isEmpty problematicVars then
+        Remap.Empty
+    else
+        let captureLocals = problematicVars |> List.map (fun v -> mkCompGenLocal v.Range v.LogicalName v.Type)
+        let captureBindings = List.zip captureLocals problematicVars |> List.map (fun (local, orig) -> 
+            local, exprForValRef mWholeExpr (mkLocalValRef orig))
+        
+        // Build remap: original var -> local var
+        let remapDict = 
+            (problematicVars, captureLocals)
+            ||> List.zip
+            |> List.fold (fun acc (origV, localV) ->
+                ValMap.add origV (mkLocalValRef localV) acc) ValMap.empty
+        
+        captureBindings, Remap.Empty.BindVals remapDict
+```
+
+**Expected Outcome**: Only struct members would be remapped, byref parameters would remain unchanged.
+
+---
+
+## Recommended Action Priority
+
+1. **TEST Hypothesis 2 FIRST** - This is most likely the root cause. The transformation shouldn't run at all for module functions.
+2. **TEST Hypothesis 1 SECOND** - Even if #2 is fixed, we should still filter out parameters as a defensive measure.
+3. **TEST Hypothesis 3 LAST** - Only if #1 and #2 don't fully resolve the issue.
+
+## Implementation Plan
+
+1. Add debug instrumentation to verify which hypothesis is correct
+2. Implement the fix for the correct hypothesis  
+3. Remove debug instrumentation
+4. Run bootstrap build to verify FSharp.Core compiles
+5. Run tests to verify the original issue is still fixed
