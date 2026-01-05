@@ -2637,13 +2637,29 @@ type LexFilterImpl (
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) =
           // Check if XML doc comment (///) appears after other code on the same line
           match tokenTup.Token with
-          | LINE_COMMENT comment when comment.StartsWithOrdinal("///") ->
-              let commentStartLine = tokenTup.StartPos.Line
-              let lastNonCommentLine = XmlDocStore.GetLastNonCommentTokenLine lexbuf
-              if lastNonCommentLine = commentStartLine then
-                  // XML doc comment appears on same line as previous non-comment token
-                  let m = mkFileIndexRange tokenTup.LexbufState.FileIndex tokenTup.StartPos (tokenTup.StartPos.ShiftColumnBy(3))
-                  warning(Error(FSComp.SR.xmlDocNotFirstOnLine(), m))
+          | LINE_COMMENT (LexCont.SingleLineComment _) ->
+              // Check if this is an XML doc comment (///) by examining the lexbuf content
+              let startPos = tokenTup.StartPos
+              let endPos = tokenTup.EndPos
+              if endPos.Column >= startPos.Column + 3 then
+                  // Get the lexeme from the buffer
+                  let lexbufSource = lexbuf.LexBuffer
+                  let lexemeStart = lexbufSource.StartIndex
+                  let lexemeEnd = lexbufSource.EndIndex
+                  if lexemeEnd - lexemeStart >= 3 then
+                      let isXmlDoc = 
+                          lexbufSource.Lexeme[0] = '/' &&
+                          lexbufSource.Lexeme[1] = '/' &&
+                          lexbufSource.Lexeme[2] = '/' &&
+                          (lexemeEnd - lexemeStart = 3 || lexbufSource.Lexeme[3] <> '/')
+                      
+                      if isXmlDoc then
+                          let commentStartLine = startPos.Line
+                          let lastNonCommentLine = XmlDocStore.GetLastNonCommentTokenLine lexbuf
+                          if lastNonCommentLine = commentStartLine then
+                              // XML doc comment appears on same line as previous non-comment token
+                              let m = mkSynRange startPos (startPos.ShiftColumnBy(3))
+                              warning(Error(FSComp.SR.xmlDocNotFirstOnLine(), m))
           | _ -> ()
 
           match tokenTup.Token with
