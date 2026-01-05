@@ -75,13 +75,13 @@ open System.Runtime.InteropServices
 type TestDelegate = delegate of [<OptionalArgument; CallerLineNumber>] line: int option -> unit
 let f = fun (line: int option) -> 
     match line with
-    | Some l -> printfn "line: %d" l
-    | None -> printfn "no line"
+    | Some l -> printf "line: %d" l
+    | None -> printf "no line"
 let d = TestDelegate f
 d.Invoke()"""
         |> compileExeAndRun
         |> shouldSucceed
-        // CallerLineNumber will be the actual line number, we just verify it compiles and runs
+        |> verifyOutput "line: 9"
         
     [<Fact>]
     let ``Delegate with OptionalArgument and CallerFilePath`` () =
@@ -90,13 +90,13 @@ open System.Runtime.InteropServices
 type TestDelegate = delegate of [<OptionalArgument; CallerFilePath>] path: string option -> unit
 let f = fun (path: string option) -> 
     match path with
-    | Some p -> printfn "path: %s" p
-    | None -> printfn "no path"
+    | Some p -> printf "has path"
+    | None -> printf "no path"
 let d = TestDelegate f
 d.Invoke()"""
         |> compileExeAndRun
         |> shouldSucceed
-        // CallerFilePath will be the actual file path, we just verify it compiles and runs
+        |> verifyOutput "has path"
 
     [<Fact>]
     let ``Delegate with OptionalArgument and CallerMemberName`` () =
@@ -105,13 +105,13 @@ open System.Runtime.InteropServices
 type TestDelegate = delegate of [<OptionalArgument; CallerMemberName>] memberName: string option -> unit
 let f = fun (memberName: string option) -> 
     match memberName with
-    | Some m -> printfn "member: %s" m
-    | None -> printfn "no member"
+    | Some m -> printf "has member"
+    | None -> printf "no member"
 let d = TestDelegate f
 d.Invoke()"""
         |> compileExeAndRun
         |> shouldSucceed
-        // CallerMemberName will be the actual member name, we just verify it compiles and runs
+        |> verifyOutput "has member"
 
     [<Fact>]
     let ``Delegate with nested option type`` () =
