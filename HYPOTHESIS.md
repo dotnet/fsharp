@@ -123,3 +123,72 @@ let remap =
 3. Remove debug instrumentation
 4. Run bootstrap build to verify FSharp.Core compiles
 5. Run tests to verify the original issue is still fixed
+
+---
+
+# Test Failure Analysis - StructObjectExpression Tests
+
+## Summary of Test Failures
+
+**Test Run**: All 3 StructObjectExpression tests FAILED
+- Test 1: "Simple case" - TypeLoadException (byref field still generated)
+- Test 2: "Multiple fields" - FS0406 error (underscore variable '_' treated as byref)
+- Test 3: "Referencing field in override method" - FS0406 error (same issue)
+
+## Hypothesis 4: env.eFamilyType Not Set for Struct Members
+
+**Theory**: `env.eFamilyType` is not being set when type-checking struct member methods, so `enclosingStructTyconRefOpt` is always None, and the transformation never runs.
+
+**Evidence**: 
+- Test 1 still gets TypeLoadException, indicating no transformation occurred
+- The transformation has early guard for None that would skip it
+
+**How to Test**:
+Add debug logging in CheckExpressions.fs to print `env.eFamilyType` value when calling the transformation.
+
+**How to Fix**:
+If `env.eFamilyType` is not set, need to find alternative way to detect struct context. Options:
+1. Check the type being defined in the current scope
+2. Pass additional context from the calling code
+3. Use a different mechanism to detect struct member methods
+
+**Status**: TESTING
+
+## Hypothesis 5: IsMemberOrModuleBinding Filter Rejecting Struct Fields
+
+**Theory**: Constructor parameters that become struct fields are not marked as `IsMemberOrModuleBinding`, so they're being filtered out and not extracted.
+
+**Evidence**:
+- Tests use struct constructor parameters (test, x, y, value)
+- Filter includes `v.IsMemberOrModuleBinding` which might be false for these
+
+**How to Test**:
+Add debug logging to see what `IsMemberOrModuleBinding` returns for the test struct parameters.
+
+**How to Fix**:
+Need to identify the correct property/check for struct constructor parameters. Possibilities:
+1. Check `v.IsCtorThisVal` or similar
+2. Check if variable is declared in constructor scope
+3. Remove `IsMemberOrModuleBinding` filter and rely on other checks
+
+**Status**: TESTING
+
+## Hypothesis 6: Underscore Variable Being Captured
+
+**Theory**: The error mentions byref variable '_' which suggests the `this` parameter (represented as underscore in method signatures) is being treated as a problematic variable.
+
+**Evidence**:
+- Error messages say "The byref-typed variable '_' is used in an invalid way"
+- Struct methods use `member _.MethodName()` syntax
+
+**How to Test**:
+Check if the free variable analysis is finding the implicit `this` parameter (represented as _).
+
+**How to Fix**:
+Filter out the `this` parameter from problematic variables. Check for:
+1. `v.IsCtorThisVal`
+2. `v.BaseOrThisInfo = ThisVal`
+3. Variable name is a compiler-generated name for `this`
+
+**Status**: INVESTIGATING
+
