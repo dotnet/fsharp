@@ -1,5 +1,7 @@
 namespace Internal.Utilities.Collections
 
+open Internal.Utilities.Library
+
 [<AutoOpen>]
 module internal Utils =
 
@@ -59,7 +61,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
 
     member Clear: predicate: ('TKey -> bool) -> unit
 
-    member Get: key: ICacheKey<'TKey, 'TVersion> * computation: Async<'TValue> -> Async<'TValue>
+    member Get: key: ICacheKey<'TKey, 'TVersion> * computation: Async2<'TValue> -> Async2<'TValue>
+
+    member GetAsync: key: ICacheKey<'TKey, 'TVersion> * computation: Async<'TValue> -> Async<'TValue>
 
     member TryGet: key: 'TKey * predicate: ('TVersion -> bool) -> 'TValue option
 

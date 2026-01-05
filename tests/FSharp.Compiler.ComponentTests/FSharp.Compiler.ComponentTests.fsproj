@@ -316,12 +316,6 @@
     <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
-    <Compile Include="CompilerService\RangeModule.fs" />
-    <Compile Include="CompilerService\Caches.fs" />
-    <Compile Include="CompilerService\LruCache.fs" />
-    <Compile Include="CompilerService\AsyncMemoize.fs" />
-    <Compile Include="CompilerService\FSharpWorkspace.fs" />
-    <Compile Include="CompilerService\DependencyGraph.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -356,6 +350,12 @@
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
     <Compile Include="Attributes\AttributeCtorSetPropAccess.fs" />
+    <Compile Include="CompilerService\RangeModule.fs" />
+    <Compile Include="CompilerService\Caches.fs" />
+    <Compile Include="CompilerService\LruCache.fs" />
+    <Compile Include="CompilerService\AsyncMemoize.fs" />
+    <Compile Include="CompilerService\FSharpWorkspace.fs" />
+    <Compile Include="CompilerService\DependencyGraph.fs" />
   </ItemGroup>
 
   <ItemGroup>
