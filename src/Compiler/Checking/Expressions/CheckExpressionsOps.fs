@@ -450,7 +450,8 @@ let TryExtractStructMembersFromObjectExpr
             |> Zset.elements
             |> List.filter (fun (v: Val) ->
                 // CRITICAL: Exclude method parameters - they are NOT captured variables
-                not v.IsParameter &&
+                // Parameters are values that are NOT member or module bindings
+                v.IsMemberOrModuleBinding &&
                 (
                     // Case 1: Variable belongs to a struct type
                     (v.HasDeclaringEntity && v.DeclaringEntity.Deref.IsStructOrEnumTycon)
