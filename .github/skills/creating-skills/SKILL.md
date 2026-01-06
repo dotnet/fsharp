@@ -1,7 +1,6 @@
 ---
 name: creating-skills
 description: Create custom agent capabilities when discovering novel tools, receiving task-agnostic tips from reviewers, or after researching specialized workflows not covered in existing instructions. Teaches structure, YAML optimization for LLM discoverability, and token efficiency.
-license: MIT
 ---
 
 # Creating GitHub Copilot Agent Skills
@@ -37,7 +36,6 @@ This skill teaches you how to create effective GitHub Copilot Agent Skills for t
 
 Skills should be placed in `.github/skills/` directory:
 - **Project skills** (repository-specific): `.github/skills/skill-name/`
-- **Personal skills** (user-specific): `~/.copilot/skills/skill-name/` (not applicable for this repo)
 
 Each skill must have its own subdirectory with a lowercase, hyphenated name that matches the `name` field in the frontmatter.
 

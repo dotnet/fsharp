@@ -1,7 +1,6 @@
 ---
 name: hypothesis-driven-debugging
 description: Investigate compiler failures, test errors, or unexpected behavior through systematic minimal reproduction, 3-hypothesis testing, and verification. Always re-run builds and tests after changes.
-license: MIT
 ---
 
 # Hypothesis-Driven Debugging
