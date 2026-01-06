@@ -4730,7 +4730,6 @@ module DebugPrint =
         | DecisionTreeTest.ArrayLength (n, ty) -> wordL(tagText "length") ^^ intL n ^^ typeL ty
         | DecisionTreeTest.Const c -> wordL(tagText "is") ^^ constL c
         | DecisionTreeTest.IsNull -> wordL(tagText "isnull")
-        | DecisionTreeTest.StringLengthZero _ -> wordL(tagText "is") ^^ wordL(tagText "empty string")
         | DecisionTreeTest.IsInst (_, ty) -> wordL(tagText "isinst") ^^ typeL ty
         | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _) -> wordL(tagText "query") ^^ exprL exp
         | DecisionTreeTest.Error _ -> wordL (tagText "error recovery")
@@ -5354,7 +5353,6 @@ and accFreeInTest (opts: FreeVarOptions) discrim acc =
     | DecisionTreeTest.ArrayLength(_, ty) -> accFreeVarsInTy opts ty acc
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> acc
-    | DecisionTreeTest.StringLengthZero ty -> accFreeVarsInTy opts ty acc
     | DecisionTreeTest.IsInst (srcTy, tgtTy) -> accFreeVarsInTy opts srcTy (accFreeVarsInTy opts tgtTy acc)
     | DecisionTreeTest.ActivePatternCase (exp, tys, _, activePatIdentity, _, _) -> 
         accFreeInExpr opts exp 
@@ -6228,7 +6226,6 @@ and remapDecisionTree ctxt compgen tmenv x =
                     | DecisionTreeTest.Const _ -> test
                     | DecisionTreeTest.IsInst (srcTy, tgtTy) -> DecisionTreeTest.IsInst (remapType tmenv srcTy, remapType tmenv tgtTy) 
                     | DecisionTreeTest.IsNull -> DecisionTreeTest.IsNull 
-                    | DecisionTreeTest.StringLengthZero ty -> DecisionTreeTest.StringLengthZero (remapType tmenv ty)
                     | DecisionTreeTest.ActivePatternCase _ -> failwith "DecisionTreeTest.ActivePatternCase should only be used during pattern match compilation"
                     | DecisionTreeTest.Error(m) -> DecisionTreeTest.Error(m)
                 let subTreeR = remapDecisionTree ctxt compgen tmenv subTree

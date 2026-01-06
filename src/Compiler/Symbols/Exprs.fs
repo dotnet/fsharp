@@ -1359,9 +1359,6 @@ module FSharpExprConvert =
                     let env = { env with suppressWitnesses = true }
                     ConvExpr cenv env eq 
                 E.IfThenElse (eqR, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
-        | DecisionTreeTest.StringLengthZero _ ->
-            // StringLengthZero should not be used in pattern compilation; empty strings use Const
-            wfail("StringLengthZero discriminator should not be used", m)
         | DecisionTreeTest.IsInst (_srcTy, tgtTy) -> 
             let e1R = ConvExpr cenv env inpExpr
             E.IfThenElse (E.TypeTest (ConvType cenv tgtTy, e1R)  |> Mk cenv m g.bool_ty, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 

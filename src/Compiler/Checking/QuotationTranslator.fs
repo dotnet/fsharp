@@ -1111,10 +1111,6 @@ and ConvDecisionTree cenv env tgs typR x =
                         let eqR = ConvExpr cenv env eq
                         QP.mkCond (eqR, ConvDecisionTree cenv env tgs typR dtree, acc)
 
-                | DecisionTreeTest.StringLengthZero _ ->
-                    // StringLengthZero should not be used in pattern compilation; empty strings use Const
-                    wfail(InternalError( "DecisionTreeTest.StringLengthZero in quoted expression", m))
-
                 | DecisionTreeTest.IsInst (_srcTy, tgtTy) ->
                     let e1R = ConvExpr cenv env e1
                     QP.mkCond (mkTypeTest (ConvType cenv env m tgtTy, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)

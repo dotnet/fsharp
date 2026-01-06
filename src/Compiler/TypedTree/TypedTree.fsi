@@ -3391,9 +3391,6 @@ type DecisionTreeTest =
     /// Test if the input to a decision tree is null
     | IsNull
 
-    /// Test if the input to a decision tree is a string with length zero
-    | StringLengthZero of ty: TType
-
     /// IsInst(source, target)
     ///
     /// Test if the input to a decision tree is an instance of the given type
