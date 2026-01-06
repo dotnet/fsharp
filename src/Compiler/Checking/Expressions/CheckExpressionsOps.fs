@@ -415,11 +415,6 @@ let TryExtractStructMembersFromObjectExpr
         // Not in a struct context - skip transformation
         printfn "DEBUG: TryExtractStructMembers - No enclosing struct (enclosingStructTyconRefOpt=None)"
         [], Remap.Empty
-    | Some structTcref when isInterfaceTy -> 
-        // Interface-only implementation - skip transformation
-        // The byref issue only occurs when passing struct members to base class constructors
-        printfn "DEBUG: TryExtractStructMembers - Interface only (struct=%s, isInterface=true)" structTcref.DisplayName
-        [], Remap.Empty
     | Some structTcref ->
         printfn "DEBUG: TryExtractStructMembers - IN STRUCT CONTEXT (struct=%s, isInterface=%b)" structTcref.DisplayName isInterfaceTy
         // Collect all method bodies from the object expression overrides

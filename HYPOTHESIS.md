@@ -253,5 +253,33 @@ match enclosingStructTyconRefOpt with
         not v.IsModuleBinding)
 ```
 
+## Hypothesis 9: Interface Implementations Also Need Transformation
+
+**Theory**: The early guard `if isInterfaceTy then [], Remap.Empty` was added based on the assumption that interface implementations don't cause byref issues. However, the test "Object expression in struct referencing field in override method" shows that interface implementations CAN capture struct members and cause the same byref issue.
+
+**Evidence from test failure**:
+```fsharp
+[<Struct; NoComparison>]
+type MyStruct(value: int) =
+    member _.CreateFoo() = {
+        new IFoo with
+        member _.DoSomething() = value * 2  // <-- Captures 'value' from struct
+    }
+```
+
+Error: `The byref-typed variable '_' is used in an invalid way.`
+
+Debug shows: `DEBUG: TryExtractStructMembers - Interface only (struct=MyStruct, isInterface=true)`
+
+**How to test**:
+The test already demonstrates the issue. Remove the `isInterfaceTy` guard and see if it passes.
+
+**How to fix**:
+Remove the early guard for `isInterfaceTy`. The transformation should apply to BOTH:
+1. Object expressions deriving from base classes
+2. Object expressions implementing interfaces
+
+When inside a struct member and capturing struct instance state.
+
 **Status**: IMPLEMENTING FIX
 
