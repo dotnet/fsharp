@@ -86,17 +86,17 @@ let private tryGetInclude (elem: XElement) : IncludeInfo option =
             }
     | _ -> None
 
-/// Try to parse a line as an include directive (must be include tag alone on the line)
-let private tryParseIncludeLine (line: string) : IncludeInfo option =
-        try
-            let elem = XElement.Parse(line.Trim())
+/// Active pattern to parse a line as an include directive (must be include tag alone on the line)
+let private (|ParsedXmlInclude|_|) (line: string) : IncludeInfo option =
+    try
+        let elem = XElement.Parse(line.Trim())
 
-            if elem.Name.LocalName = "include" then
-                tryGetInclude elem
-            else
-                None
-        with _ ->
+        if elem.Name.LocalName = "include" then
+            tryGetInclude elem
+        else
             None
+    with _ ->
+        None
 
 /// Load and expand includes from an external file
 /// This is the single unified error-handling and expansion logic
@@ -114,17 +114,13 @@ let private loadAndExpand
     if inProgressFiles.Contains(resolvedPath) then
         Result.Error $"Circular include detected: {resolvedPath}"
     else
-        match loadXmlFile resolvedPath with
-        | Result.Error msg -> Result.Error msg
-        | Result.Ok includeDoc ->
-            match evaluateXPath includeDoc includeInfo.XPath with
-            | Result.Error msg -> Result.Error msg
-            | Result.Ok elements ->
-                // Expand the loaded content recursively
-                let updatedInProgress = inProgressFiles.Add(resolvedPath)
-                let nodes = elements |> Seq.collect (fun e -> e.Nodes())
-                let expandedNodes = expandNodes resolvedPath nodes updatedInProgress range
-                Result.Ok expandedNodes
+        loadXmlFile resolvedPath
+        |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
+        |> Result.map (fun elements ->
+            // Expand the loaded content recursively
+            let updatedInProgress = inProgressFiles.Add(resolvedPath)
+            let nodes = elements |> Seq.collect (fun e -> e.Nodes())
+            expandNodes resolvedPath nodes updatedInProgress range)
 
 /// Recursively expand includes in XElement nodes
 /// This is the ONLY recursive expansion - works on XElement level, never on strings
@@ -170,21 +166,18 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
             // Expand includes in the line array, keeping the array structure
             let expandedLines =
                 unprocessedLines
-                |> Seq.collect (fun line ->
-                    if not (mayContainInclude line) then
-                        Seq.singleton line
-                    else
-                        match tryParseIncludeLine line with
-                        | None -> Seq.singleton line
-                        | Some includeInfo ->
-                            match loadAndExpand baseFileName includeInfo Set.empty doc.Range expandElements with
-                            | Result.Error msg ->
-                                warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
-                                Seq.singleton line
-                            | Result.Ok nodes ->
-                                // Convert nodes to strings (may be multiple lines)
-                                nodes |> Seq.map (fun n -> n.ToString()))
-                |> Array.ofSeq
+                |> Array.collect (fun line ->
+                    match line with
+                    | s when not (mayContainInclude s) -> [| line |]
+                    | ParsedXmlInclude includeInfo ->
+                        match loadAndExpand baseFileName includeInfo Set.empty doc.Range expandElements with
+                        | Result.Error msg ->
+                            warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
+                            [| line |]
+                        | Result.Ok nodes ->
+                            // Convert nodes to strings (may be multiple lines)
+                            nodes |> Seq.map (fun n -> n.ToString()) |> Array.ofSeq
+                    | _ -> [| line |])
 
             // Only create new XmlDoc if something changed
             if
