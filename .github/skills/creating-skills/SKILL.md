@@ -1,12 +1,35 @@
 ---
 name: creating-skills
-description: Guide for creating GitHub Copilot Agent Skills. Use this when asked to create new skills, understand skill structure, or learn about skill best practices.
+description: Create custom agent capabilities when discovering novel tools, receiving task-agnostic tips from reviewers, or after researching specialized workflows not covered in existing instructions. Teaches structure, YAML optimization for LLM discoverability, and token efficiency.
 license: MIT
 ---
 
 # Creating GitHub Copilot Agent Skills
 
 This skill teaches you how to create effective GitHub Copilot Agent Skills for this repository.
+
+## Pre-Check: Avoid Duplication
+
+**STOP** and check before creating a new skill:
+
+1. **Does it exist already?**
+   - List all skills: `ls -la .github/skills/`
+   - Read existing skill frontmatter and content
+   - If semantically similar skill exists, STOP
+
+2. **Should an existing skill be expanded?**
+   - If frontmatter semantically matches your use case → Update existing skill's description
+   - Add keywords to improve discoverability rather than creating duplicate
+
+3. **Should existing skill content change?**
+   - If frontmatter matches but content incomplete → Add section to existing skill
+   - Enhance with additional examples, procedures, or troubleshooting
+   - Update frontmatter only if significantly broadening scope
+
+**Only create new skill if:**
+- No semantic overlap with existing skills
+- Addresses distinct problem domain
+- Has unique triggering conditions
 
 ## Skill Structure
 
@@ -23,20 +46,8 @@ Each skill must have its own subdirectory with a lowercase, hyphenated name that
 Every skill directory must contain a `SKILL.md` file (case-sensitive) with:
 
 1. **YAML Frontmatter** (required):
-   ```yaml
-   ---
-   name: skill-name
-   description: Clear description of what the skill does and when to use it
-   license: MIT  # optional
-   ---
-   ```
 
-2. **Markdown Body** with:
-   - Clear instructions for the agent
-   - Examples of when to use the skill
-   - Step-by-step procedures
-   - Guidelines and best practices
-   - Links to related resources
+2. **Markdown Body** with clear instructions, examples, procedures, guidelines, and references
 
 ### Additional Resources
 
@@ -66,7 +77,6 @@ The frontmatter is critical for skill discoverability and token efficiency:
 ### Optional Fields
 
 - **license** (string): License for the skill (e.g., MIT, Apache-2.0)
-- Custom fields as needed for your use case
 
 ### Description Guidelines
 

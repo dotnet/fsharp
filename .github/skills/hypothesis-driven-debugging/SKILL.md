@@ -1,6 +1,6 @@
 ---
 name: hypothesis-driven-debugging
-description: Systematic approach to debugging failures by creating minimal reproductions, forming testable hypotheses, and iterating until resolution. Use when investigating test failures, build errors, or unexpected behavior.
+description: Investigate compiler failures, test errors, or unexpected behavior through systematic minimal reproduction, 3-hypothesis testing, and verification. Always re-run builds and tests after changes.
 license: MIT
 ---
 
