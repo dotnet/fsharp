@@ -78,7 +78,7 @@ module XmlDocWriter =
 
         doModuleSig None generatedCcu.Contents
 
-    let WriteXmlDocFile (g, infoReader: InfoReader, assemblyName, generatedCcu: CcuThunk, xmlFile) =
+    let WriteXmlDocFile (g, _infoReader: InfoReader, assemblyName, generatedCcu: CcuThunk, xmlFile) =
         if not (FileSystemUtils.checkSuffix xmlFile "xml") then
             error (Error(FSComp.SR.docfileNoXmlSuffix (), Range.rangeStartup))
 
