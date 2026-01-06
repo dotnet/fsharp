@@ -32,6 +32,20 @@ let f<'T>() = nameof<'T>
         |> ignore
 
     [<Fact>]
+    let ``disableLanguageFeature should disable NestedCopyAndUpdate feature``() =
+        // Nested copy and update requires LanguageFeature.NestedCopyAndUpdate  
+        FSharp """
+type Inner = { X: int }
+type Outer = { Inner: Inner }
+let o = { Inner = { X = 1 } }
+let o2 = { o with Inner.X = 2 }
+        """
+        |> withOptions ["--langversion:latest"; "--disableLanguageFeature:NestedCopyAndUpdate"]
+        |> typecheck
+        |> shouldFail
+        |> ignore
+
+    [<Fact>]
     let ``disableLanguageFeature with invalid feature name should fail``() =
         FSharp """
 printfn "Hello, World"
