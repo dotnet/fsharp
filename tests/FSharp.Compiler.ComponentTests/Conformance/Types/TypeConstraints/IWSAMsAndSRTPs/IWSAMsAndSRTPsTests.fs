@@ -1579,3 +1579,191 @@ type T =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         ]
 
+    // Tests for IWSAM type argument validation (issue #19184)
+    
+    [<FactForNETCOREAPP>]
+    let ``Error when interface with unimplemented static abstract is used as type argument to constrained generic`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+let test<'T when 'T :> ITest>(x: 'T) = 'T.Doot
+
+let t = Test() :> ITest
+let result = test(t)
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3868, Line 12, Col 14, Line 12, Col 21,
+             "The interface 'ITest' cannot be used as a type argument because the static abstract member 'Doot' does not have a most specific implementation in the interface.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``No error when concrete type implementing IWSAM is used as type argument`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+let test<'T when 'T :> ITest>(x: 'T) = 'T.Doot
+
+let t = Test()
+let result = test(t)
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Error when interface with unimplemented static abstract in base interface is used as type argument`` () =
+        Fsx """
+type IBase =
+    static abstract BaseMember : int
+
+type IDerived =
+    inherit IBase
+
+let test<'T when 'T :> IDerived>(x: 'T) = 'T.BaseMember
+
+let t = Unchecked.defaultof<IDerived>
+let result = test(t)
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3868, Line 11, Col 14, Line 11, Col 21,
+             "The interface 'IDerived' cannot be used as a type argument because the static abstract member 'BaseMember' does not have a most specific implementation in the interface.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``No error when interface with static abstract is used with unconstrained generic List`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+// Using interface as type argument to List - this is fine because List doesn't
+// have any constraints that would invoke static abstract members
+let items : ITest list = []
+let items2 = [ Test() :> ITest ]
+let head = List.tryHead items
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``No error when interface with static abstract is used with unconstrained generic Map`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+// Using interface as type argument to Map - this is fine
+let m : Map<string, ITest> = Map.empty
+let m2 = Map.add "key" (Test() :> ITest) m
+let v = Map.tryFind "key" m
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``No error when interface with static abstract is used with Option`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+// Using interface as type argument to Option - this is fine
+let opt : ITest option = None
+let opt2 = Some (Test() :> ITest)
+let opt3 : Option<ITest> = Option.None
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``No error when interface with static abstract is used with generic functions`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+// Using interface with unconstrained generic functions - this is fine
+let t = Test() :> ITest
+let same = id t
+let u = ignore t
+let boxed = box t
+let arr : ITest array = [| t |]
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``No error when interface with static abstract is used with Dictionary`` () =
+        Fsx """
+open System.Collections.Generic
+
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+// Using interface as type argument to Dictionary - this is fine
+let dict = Dictionary<string, ITest>()
+dict.Add("key", Test())
+let v = dict["key"]
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Compile and run succeeds for concrete type with IWSAM constraint`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+let test<'T when 'T :> ITest>(x: 'T) = 'T.Doot
+
+// This should work - passing concrete type Test()
+let t = Test()
+let result = test(t)
+if result <> 5 then failwith "Expected 5"
+printfn "Success: %d" result
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> compileAndRun
+        |> shouldSucceed
+
