@@ -132,6 +132,11 @@
         <target state="translated">Jeśli typ używa obu [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;] atrybutów, oznacza to, że jest statyczny. Elementy członkowskie wystąpienia są niedozwolone.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument">
+        <source>The interface '{0}' cannot be used as a type argument because the static abstract member '{1}' does not have a most specific implementation in the interface.</source>
+        <target state="new">The interface '{0}' cannot be used as a type argument because the static abstract member '{1}' does not have a most specific implementation in the interface.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkNotTailRecursive">
         <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">Składowa lub funkcja „{0}” ma atrybut „TailCallAttribute”, ale nie jest używana w sposób cykliczny końca.</target>

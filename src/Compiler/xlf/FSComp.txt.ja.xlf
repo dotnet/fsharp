@@ -132,6 +132,11 @@
         <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。インスタンス メンバーは許可されません。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument">
+        <source>The interface '{0}' cannot be used as a type argument because the static abstract member '{1}' does not have a most specific implementation in the interface.</source>
+        <target state="new">The interface '{0}' cannot be used as a type argument because the static abstract member '{1}' does not have a most specific implementation in the interface.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkNotTailRecursive">
         <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">メンバーまたは関数 '{0}' には 'TailCallAttribute' 属性がありますが、末尾の再帰的な方法では使用されていません。</target>
