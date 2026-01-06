@@ -1557,6 +1557,11 @@
         <target state="translated">Nieprawidłowe ograniczenie. Prawidłowe formularze ograniczeń obejmują \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" dla ograniczeń własnych. Zobacz https://aka.ms/fsharp-type-constraints.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidStructLayoutExtendedKind">
+        <source>LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.</source>
+        <target state="new">LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
         <target state="translated">Używanie elementu "[&lt;Struct&gt;]" w przypadku wartości, funkcji i metod jest dozwolone tylko w definicjach częściowo aktywnego wzorca</target>
@@ -1657,6 +1662,11 @@
         <target state="new">The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOnlyStructsCanHaveExtendedLayout">
+        <source>Only structs may be given the 'ExtendedLayoutAttribute'</source>
+        <target state="new">Only structs may be given the 'ExtendedLayoutAttribute'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">Składnia wyrażenia „expr1[expr2]” jest niejednoznaczna, gdy jest używana jako argument. Zobacz https://aka.ms/fsharp-index-notation. Jeśli zamierzasz indeksować lub fragmentować, to w pozycji argumentu musi być użyte wyrażenie „expr1.[expr2]”. Jeśli wywołujesz funkcję z wieloma argumentami typu curried, dodaj spację między nimi, np. „someFunction expr1 [expr2]”.</target>
@@ -1752,6 +1762,11 @@
         <target state="translated">Używanie kodu z możliwością wznowienia lub automatów stanów z możliwością wznowienia wymaga parametru /langversion: wersja zapoznawcza</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcRuntimeDoesNotSupportExtendedLayoutTypes">
+        <source>The target runtime does not support extended layout types. ExtendedLayoutAttribute requires a newer runtime.</source>
+        <target state="new">The target runtime does not support extended layout types. ExtendedLayoutAttribute requires a newer runtime.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
         <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
         <target state="translated">Nie można wywołać „{0}” — metody ustawiającej dla właściwości tylko do inicjowania. Zamiast tego użyj inicjowania obiektu. Zobacz https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
@@ -1760,6 +1775,11 @@
       <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
         <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
         <target state="translated">Nie można dodać powiązań statycznych do rozszerzeń wewnętrznych. Zamiast tego rozważ użycie „statycznego elementu członkowskiego”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructLayoutAndExtendedLayout">
+        <source>The attributes 'StructLayoutAttribute' and 'ExtendedLayoutAttribute' cannot be used together on the same type</source>
+        <target state="new">The attributes 'StructLayoutAttribute' and 'ExtendedLayoutAttribute' cannot be used together on the same type</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
