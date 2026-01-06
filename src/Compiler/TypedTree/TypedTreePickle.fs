@@ -3442,9 +3442,10 @@ and p_dtree_discrim x st =
     | DecisionTreeTest.ArrayLength(n, ty) ->
         p_byte 4 st
         p_tup2 p_int p_ty (n, ty) st
-    | DecisionTreeTest.StringLengthZero ty ->
-        p_byte 5 st
-        p_ty ty st
+    | DecisionTreeTest.StringLengthZero _ ->
+        // Pickle as Const "" for backward compatibility with older compilers
+        p_byte 1 st
+        p_const (Const.String "") st
     | DecisionTreeTest.ActivePatternCase _ -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
     | DecisionTreeTest.Error _ -> pfailwith st "DecisionTreeTest.Error: only used during pattern match compilation"
 
@@ -3491,7 +3492,6 @@ and u_dtree_discrim st =
     | 2 -> DecisionTreeTest.IsNull
     | 3 -> u_tup2 u_ty u_ty st |> DecisionTreeTest.IsInst
     | 4 -> u_tup2 u_int u_ty st |> DecisionTreeTest.ArrayLength
-    | 5 -> u_ty st |> DecisionTreeTest.StringLengthZero
     | _ -> ufailwith st "u_dtree_discrim"
 
 and u_target st =

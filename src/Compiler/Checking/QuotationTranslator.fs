@@ -1112,13 +1112,8 @@ and ConvDecisionTree cenv env tgs typR x =
                         QP.mkCond (eqR, ConvDecisionTree cenv env tgs typR dtree, acc)
 
                 | DecisionTreeTest.StringLengthZero _ ->
-                    // Convert string length zero test to a condition: s != null && s.Length = 0
-                    let lengthExpr = mkGetStringLength cenv.g m e1
-                    let lengthTest = mkILAsmCeq cenv.g m lengthExpr (mkInt cenv.g m 0)
-                    let nullTest = mkNonNullTest cenv.g m e1
-                    let combinedTest = mkLazyAnd cenv.g m nullTest lengthTest
-                    let combinedTestR = ConvExpr cenv env combinedTest
-                    QP.mkCond (combinedTestR, ConvDecisionTree cenv env tgs typR dtree, acc)
+                    // StringLengthZero should not be used in pattern compilation; empty strings use Const
+                    wfail(InternalError( "DecisionTreeTest.StringLengthZero in quoted expression", m))
 
                 | DecisionTreeTest.IsInst (_srcTy, tgtTy) ->
                     let e1R = ConvExpr cenv env e1

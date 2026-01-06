@@ -611,8 +611,6 @@ let getDiscrimOfPattern (g: TcGlobals) tpinst t =
         Some(DecisionTreeTest.IsInst (instType tpinst srcTy, instType tpinst tgtTy))
     | TPat_exnconstr(tcref, _, _m) ->
         Some(DecisionTreeTest.IsInst (g.exn_ty, mkWoNullAppTy tcref []))
-    | TPat_const (Const.String "", _m) ->
-        Some(DecisionTreeTest.StringLengthZero g.string_ty)
     | TPat_const (c, _m) ->
         Some(DecisionTreeTest.Const c)
     | TPat_unioncase (c, tyargs', _, _m) ->
@@ -641,7 +639,6 @@ let discrimsEq (g: TcGlobals) d1 d2 =
   | DecisionTreeTest.ArrayLength (n1, _),   DecisionTreeTest.ArrayLength(n2, _) -> (n1=n2)
   | DecisionTreeTest.Const c1,              DecisionTreeTest.Const c2 -> (c1=c2)
   | DecisionTreeTest.IsNull,               DecisionTreeTest.IsNull -> true
-  | DecisionTreeTest.StringLengthZero _,   DecisionTreeTest.StringLengthZero _ -> true
   | DecisionTreeTest.IsInst (srcTy1, tgtTy1), DecisionTreeTest.IsInst (srcTy2, tgtTy2) -> typeEquiv g srcTy1 srcTy2 && typeEquiv g tgtTy1 tgtTy2
   | DecisionTreeTest.ActivePatternCase (_, _, _, vrefOpt1, n1, _), DecisionTreeTest.ActivePatternCase (_, _, _, vrefOpt2, n2, _) ->
       match vrefOpt1, vrefOpt2 with
@@ -661,9 +658,6 @@ let isDiscrimSubsumedBy g amap m discrim taken =
         computeWhatFailingNullTestImpliesAboutTypeTest g tgtTy2 = Implication.Fails
     | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsNull ->
         computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 = Implication.Fails
-    | DecisionTreeTest.IsNull, DecisionTreeTest.StringLengthZero _ ->
-        // Null subsumes empty string - if null is already handled, we don't need a separate empty string case
-        true
     | _ ->
         false
 
@@ -695,7 +689,6 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
     match discrim, prev with
     | _, [] -> true
     | DecisionTreeTest.Const _, DecisionTreeTest.Const _ :: _
-    | DecisionTreeTest.StringLengthZero _, DecisionTreeTest.StringLengthZero _ :: _
     | DecisionTreeTest.ArrayLength _, DecisionTreeTest.ArrayLength _ :: _
     | DecisionTreeTest.UnionCase _, DecisionTreeTest.UnionCase _ :: _ -> true
 
@@ -798,18 +791,19 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
         error(InternalError("inexhaustive match - need a default case!", m))
 
     // Split string, float, uint64, int64, unativeint, nativeint matches into serial equality tests
-    | TCase((DecisionTreeTest.StringLengthZero _ | DecisionTreeTest.ArrayLength _ | DecisionTreeTest.Const (Const.Single _ | Const.Double _ | Const.String _ | Const.Decimal _ | Const.Int64 _ | Const.UInt64 _ | Const.IntPtr _ | Const.UIntPtr _)), _) :: _, Some dflt ->
+    | TCase((DecisionTreeTest.ArrayLength _ | DecisionTreeTest.Const (Const.Single _ | Const.Double _ | Const.String _ | Const.Decimal _ | Const.Int64 _ | Const.UInt64 _ | Const.IntPtr _ | Const.UIntPtr _)), _) :: _, Some dflt ->
         List.foldBack
             (fun (TCase(discrim, tree)) sofar ->
                 let testexpr = expr
                 let testexpr =
                     match discrim with
-                    | DecisionTreeTest.StringLengthZero _       ->
-                        let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
-                        mkLetBind m bind (mkLazyAnd g m (mkNonNullTest g m vExpr) (mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)))
                     | DecisionTreeTest.ArrayLength(n, _)       ->
                         let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
                         mkLetBind m bind (mkLazyAnd g m (mkNonNullTest g m vExpr) (mkILAsmCeq g m (mkLdlen g m vExpr) (mkInt g m n)))
+                    | DecisionTreeTest.Const (Const.String "")  ->
+                        // Optimize empty string check to use null-safe length check
+                        let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
+                        mkLetBind m bind (mkLazyAnd g m (mkNonNullTest g m vExpr) (mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)))
                     | DecisionTreeTest.Const (Const.String _ as c)  ->
                         mkCallEqualsOperator g m g.string_ty testexpr (Expr.Const (c, m, g.string_ty))
                     | DecisionTreeTest.Const (Const.Decimal _ as c)  ->
@@ -1556,9 +1550,6 @@ let CompilePatternBasic
             | TPat_const (c1, _) ->
                 match discrim with
                 | DecisionTreeTest.Const c2 when (c1=c2) ->
-                    [Frontier (i, newActives, valMap)]
-                | DecisionTreeTest.StringLengthZero _ when (c1 = Const.String "") ->
-                    // Empty string constant matches StringLengthZero discriminator
                     [Frontier (i, newActives, valMap)]
                 | DecisionTreeTest.Const _ ->
                     // All constants refute all other constants (no overlapping between constants!)

@@ -1360,13 +1360,8 @@ module FSharpExprConvert =
                     ConvExpr cenv env eq 
                 E.IfThenElse (eqR, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
         | DecisionTreeTest.StringLengthZero _ ->
-            // Convert string length zero test to a condition
-            let lengthExpr = mkGetStringLength g m inpExpr
-            let lengthTest = mkILAsmCeq g m lengthExpr (mkInt g m 0)
-            let nullTest = mkNonNullTest g m inpExpr
-            let combinedTest = mkLazyAnd g m nullTest lengthTest
-            let combinedTestR = ConvExpr cenv env combinedTest
-            E.IfThenElse (combinedTestR, ConvDecisionTree cenv env dtreeRetTy dtree m, acc)
+            // StringLengthZero should not be used in pattern compilation; empty strings use Const
+            wfail("StringLengthZero discriminator should not be used", m)
         | DecisionTreeTest.IsInst (_srcTy, tgtTy) -> 
             let e1R = ConvExpr cenv env inpExpr
             E.IfThenElse (E.TypeTest (ConvType cenv tgtTy, e1R)  |> Mk cenv m g.bool_ty, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
