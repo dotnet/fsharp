@@ -11645,7 +11645,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     match tdLayout with
                     | ILTypeDefLayout.Explicit _ -> List.iter validateExplicit ilFieldDefs
                     | ILTypeDefLayout.Sequential _ -> List.iter validateSequential ilFieldDefs
-                    | ILTypeDefLayout.Extended -> List.iter validateSequential ilFieldDefs  // Extended layout also disallows FieldOffset
+                    | ILTypeDefLayout.Extended -> List.iter validateSequential ilFieldDefs // Extended layout also disallows FieldOffset
                     | _ -> ()
 
                     let tdef =

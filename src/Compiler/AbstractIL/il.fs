@@ -2633,7 +2633,7 @@ let convertLayout layout =
     | ILTypeDefLayout.Auto -> TypeAttributes.AutoLayout
     | ILTypeDefLayout.Sequential _ -> TypeAttributes.SequentialLayout
     | ILTypeDefLayout.Explicit _ -> TypeAttributes.ExplicitLayout
-    | ILTypeDefLayout.Extended -> enum<TypeAttributes>(0x18)
+    | ILTypeDefLayout.Extended -> enum<TypeAttributes> (0x18)
 
 let convertEncoding encoding =
     match encoding with
