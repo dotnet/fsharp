@@ -7236,6 +7236,13 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
     // Add the object type to the ungeneralizable items
     let env = {env with eUngeneralizableItems = addFreeItemOfTy objTy env.eUngeneralizableItems }
 
+    // Save the enclosing family type BEFORE entering the object expression's family region
+    // This is needed to detect if we're inside a struct member method (for struct object expression fix)
+    let enclosingStructTyconRefOpt = 
+        match env.eFamilyType with
+        | Some tcref when tcref.IsStructOrEnumTycon -> Some tcref
+        | _ -> None
+
     // Object expression members can access protected members of the implemented type
     let env = EnterFamilyRegion tcref env
     let ad = env.AccessRights
@@ -7311,11 +7318,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         // 3. create the specs of overrides
         
         // Fix for struct object expressions: extract captured struct members to avoid byref fields
-        let enclosingStructTyconRefOpt = 
-            match env.eFamilyType with
-            | Some tcref when tcref.IsStructOrEnumTycon -> Some tcref
-            | _ -> None
-
+        // Note: enclosingStructTyconRefOpt was captured earlier (before EnterFamilyRegion)
         let capturedStructMembers, methodBodyRemap =
             CheckExpressionsOps.TryExtractStructMembersFromObjectExpr 
                 g

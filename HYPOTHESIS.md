@@ -192,3 +192,30 @@ Filter out the `this` parameter from problematic variables. Check for:
 
 **Status**: INVESTIGATING
 
+## Hypothesis 7: env.eFamilyType Overwritten by EnterFamilyRegion
+
+**Theory**: In CheckExpressions.fs line 7240, `EnterFamilyRegion tcref env` sets `env.eFamilyType` to the object expression's base type (tcref), OVERWRITING any previous family type. If we're inside a struct member when creating the object expression, the struct's TyconRef in `env.eFamilyType` is lost before we can use it at line 7315.
+
+**Evidence**:
+- Line 7240: `let env = EnterFamilyRegion tcref env` - tcref is the object expression's type
+- Line 7315: We try to read `env.eFamilyType` but it's now the object expression type, not the struct
+- Debug output shows: `DEBUG: TryExtractStructMembers - No enclosing struct (enclosingStructTyconRefOpt=None)`
+
+**How to Test**:
+Add debug logging BEFORE line 7240 to see if `env.eFamilyType` contains a struct TyconRef.
+
+**How to Fix**:
+Save the original `env.eFamilyType` BEFORE calling `EnterFamilyRegion` at line 7240:
+```fsharp
+// Save the enclosing family type before entering the object expression's family region
+let enclosingStructTyconRefOpt = 
+    match env.eFamilyType with
+    | Some tcref when tcref.IsStructOrEnumTycon -> Some tcref
+    | _ -> None
+
+// Object expression members can access protected members of the implemented type
+let env = EnterFamilyRegion tcref env
+```
+
+**Status**: CONFIRMED - Implementing fix now
+
