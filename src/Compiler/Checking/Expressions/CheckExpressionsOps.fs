@@ -413,10 +413,8 @@ let TryExtractStructMembersFromObjectExpr
     match enclosingStructTyconRefOpt with
     | None -> 
         // Not in a struct context - skip transformation
-        printfn "DEBUG: TryExtractStructMembers - No enclosing struct (enclosingStructTyconRefOpt=None)"
         [], Remap.Empty
-    | Some structTcref ->
-        printfn "DEBUG: TryExtractStructMembers - IN STRUCT CONTEXT (struct=%s, isInterface=%b)" structTcref.DisplayName isInterfaceTy
+    | Some _structTcref ->
         // Collect all method bodies from the object expression overrides
         let allMethodBodies =
             overridesAndVirts
@@ -442,17 +440,8 @@ let TryExtractStructMembersFromObjectExpr
         // - Constructor calls (v.LogicalName = ".ctor")
         // - Module bindings (global state, not instance state)
         let problematicVars =
-            let allFreeVars = freeVars.FreeLocals |> Zset.elements
-            printfn "DEBUG: Found %d total free variables" allFreeVars.Length
-            allFreeVars
-            |> List.iter (fun v -> 
-                printfn "DEBUG:   Free var '%s': IsMemberOrModuleBinding=%b, HasDeclaringEntity=%b, IsModuleBinding=%b" 
-                    v.LogicalName v.IsMemberOrModuleBinding v.HasDeclaringEntity v.IsModuleBinding
-                if v.HasDeclaringEntity then
-                    printfn "DEBUG:     DeclaringEntity='%s', IsStruct=%b" 
-                        v.DeclaringEntity.DisplayName v.DeclaringEntity.Deref.IsStructOrEnumTycon)
-            
-            allFreeVars
+            freeVars.FreeLocals
+            |> Zset.elements
             |> List.filter (fun (v: Val) ->
                 // Exclude constructor calls - they're not captured variables
                 v.LogicalName <> ".ctor" &&
@@ -461,12 +450,8 @@ let TryExtractStructMembersFromObjectExpr
 
         // Early exit if no problematic variables
         if problematicVars.IsEmpty then
-            printfn "DEBUG: No problematic vars found - skipping transformation"
             [], Remap.Empty
         else
-            printfn "DEBUG: Found %d problematic vars to extract: %s" 
-                problematicVars.Length 
-                (problematicVars |> List.map (fun v -> v.LogicalName) |> String.concat ", ")
             // Create local variables for each problematic free variable
             let bindings =
                 problematicVars
