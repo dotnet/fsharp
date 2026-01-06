@@ -88,13 +88,8 @@ let private tryGetInclude (elem: XElement) : IncludeInfo option =
 
 /// Try to parse a line as an include directive (must be include tag alone on the line)
 let private tryParseIncludeLine (line: string) : IncludeInfo option =
-    let trimmed = line.Trim()
-    // Quick check: must start with < and contain "include"
-    if not (trimmed.StartsWith("<") && mayContainInclude trimmed) then
-        None
-    else
         try
-            let elem = XElement.Parse(trimmed)
+            let elem = XElement.Parse(line.Trim())
 
             if elem.Name.LocalName = "include" then
                 tryGetInclude elem
