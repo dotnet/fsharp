@@ -185,6 +185,18 @@ let checkSignatureAndImplementation code checkResultsAction parseResultsAction =
     checkCode getParseAndCheckResults
     checkCode getParseAndCheckResultsOfSignatureFile
 
+let checkSignatureAndImplementationWithWarnOn3879 code checkResultsAction parseResultsAction =
+    let checkCode getResultsFunc =
+        let parseResults, checkResults = getResultsFunc code
+        checkResultsAction checkResults
+        parseResultsAction parseResults
+
+    checkCode (fun code -> getParseAndCheckResultsWithOptions [| "--warnon:3879" |] code)
+    // For signature files
+    let parseResults, checkResults = parseAndCheckScriptWithOptions ("Test.fsi", code, [| "--warnon:3879" |])
+    checkResultsAction checkResults
+    parseResultsAction parseResults
+
 let checkParsingErrors expected (parseResults: FSharpParseFileResults) =
     parseResults.Diagnostics |> Array.map (fun x ->
         let range = x.Range
@@ -391,7 +403,7 @@ and B = class end
 
 [<Fact>]
 let ``types 03 - xml doc after 'and'``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 type A = class end
@@ -420,7 +432,7 @@ and ///B1
 
 [<Fact>]
 let ``types 04 - xml doc before/after 'and'``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 type A = class end
@@ -447,7 +459,7 @@ and ///B2
 
 [<Fact>]
 let ``types 05 - attributes after 'type'``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 ///A1
@@ -519,7 +531,7 @@ and B = int -> int
 
 [<Fact>]
 let ``let bindings 01 - allowed positions``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 ///f1
 let ///f2
     rec ///f3
@@ -608,7 +620,7 @@ let y = x
 
 [<Fact>]
 let ``let bindings 03 - 'let in' with attributes after 'let'``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 let ///X
     [<Attr>] x = 3 in print x
 """
@@ -694,7 +706,7 @@ let x = 5
 
 [<Fact>]
 let ``let bindings 07 - attribute after 'let'``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 ///X1
 let ///X2
     [<Literal>] x = 5
@@ -739,7 +751,7 @@ and g x = f x
 
 [<Fact>]
 let ``let bindings 09 - xml doc after 'and'``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 let rec f x = g x
 and ///G1
     ///G2
@@ -766,7 +778,7 @@ and ///G1
 
 [<Fact>]
 let ``let bindings 10 - xml doc before/after 'and'``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 let rec f x = g x
 ///G1
 and ///G2
@@ -831,7 +843,7 @@ type A =
 
 [<Fact>]
 let ``type members 02``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 type A =
     member x.A() = ///B1
         ()
@@ -887,7 +899,7 @@ type A =
 
 [<Fact>]
 let ``type members 04 - property accessors``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 type B =
     ///A1
     ///A2
@@ -947,7 +959,7 @@ type A() =
 
 [<Fact>]
 let ``type members 06 - implicit ctor``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 type A ///CTOR1
        ///CTOR2
        [<Attr>]
@@ -1070,7 +1082,7 @@ module
 
 [<Fact>]
 let ``module 02 - attributes after 'module'``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 ///M1
 module ///M2
        [<Attr>]
@@ -1241,7 +1253,7 @@ extern void E()
 
 [<Fact>]
 let ``exception 01 - allowed positions``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 ///E1
@@ -1268,7 +1280,7 @@ exception ///E4
 
 [<Fact>]
 let ``exception 02 - attribute after 'exception'``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 exception ///E
@@ -1620,7 +1632,7 @@ type Class2() =
 
 [<Fact>]
 let ``Discriminated Union - triple slash after case definition should warn``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 type MyDU =
