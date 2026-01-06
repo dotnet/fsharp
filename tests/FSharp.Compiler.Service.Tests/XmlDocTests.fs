@@ -1636,3 +1636,20 @@ type MyDU =
                 Warning 3879, Line 5, Col 19, Line 5, Col 22, "XML documentation comments should be the first non-whitespace text on a line."
                 Warning 3879, Line 6, Col 12, Line 6, Col 15, "XML documentation comments should be the first non-whitespace text on a line."
             |])
+
+[<Fact>]
+let ``XML doc after opening brace should not warn``(): unit =
+    checkSignatureAndImplementation """
+module Test
+
+type MyType = {
+    /// This is valid XML documentation for the field
+    Field1: int
+    /// Another valid documentation
+    Field2: string
+}
+"""
+        (fun _ -> ())
+        (fun parseResults ->
+            parseResults |>
+            checkParsingErrors [||])
