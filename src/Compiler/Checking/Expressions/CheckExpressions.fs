@@ -7323,7 +7323,6 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
             CheckExpressionsOps.TryExtractStructMembersFromObjectExpr 
                 g
                 enclosingStructTyconRefOpt
-                isInterfaceTy
                 ctorCall // Also analyze the base constructor call
                 overridesAndVirts 
                 mWholeExpr

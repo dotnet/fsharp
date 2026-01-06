@@ -402,7 +402,6 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
 let TryExtractStructMembersFromObjectExpr
     (_g: TcGlobals.TcGlobals)
     (enclosingStructTyconRefOpt: TyconRef option)
-    (isInterfaceTy: bool)
     (ctorCall: Expr) // The base constructor call expression
     overridesAndVirts
     (mWholeExpr: range)
