@@ -401,7 +401,7 @@ module CustomAttributes_Basic =
   .class public sequential ansi sealed beforefieldinit Test.MyExtendedStruct
          extends [runtime]System.ValueType
   {
-    .custom instance void [runtime]System.Runtime.InteropServices.ExtendedLayoutAttribute::.ctor(valuetype [runtime]System.Runtime.InteropServices.ExtendedLayoutKind) = ( 01 00 00 00 00 00 00 00 )
+    .custom instance void System.Runtime.InteropServices.ExtendedLayoutAttribute::.ctor(valuetype System.Runtime.InteropServices.ExtendedLayoutKind) = ( 01 00 00 00 00 00 00 00 )
     .field public int32 X
     .field public float64 Y
             """
