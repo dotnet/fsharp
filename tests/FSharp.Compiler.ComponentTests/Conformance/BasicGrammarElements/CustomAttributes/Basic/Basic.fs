@@ -398,7 +398,7 @@ module CustomAttributes_Basic =
         |> shouldSucceed
         |> verifyIL [
             """
-  .class public sequential ansi sealed beforefieldinit Test.MyExtendedStruct
+  .class public extended ansi sealed beforefieldinit Test.MyExtendedStruct
          extends [runtime]System.ValueType
   {
     .custom instance void System.Runtime.InteropServices.ExtendedLayoutAttribute::.ctor(valuetype System.Runtime.InteropServices.ExtendedLayoutKind) = ( 01 00 00 00 00 00 00 00 )

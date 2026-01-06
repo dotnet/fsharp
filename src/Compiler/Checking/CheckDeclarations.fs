@@ -3437,9 +3437,11 @@ module EstablishTypeDefinitionCores =
                 
             let structLayoutAttributeCheck allowed = 
                 let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
-                let extendedKind = 1  // LayoutKind.Extended cannot be specified via StructLayout
+                // LayoutKind.Extended (value 1) cannot be specified via StructLayoutAttribute
+                // Users must use ExtendedLayoutAttribute instead
+                let extendedLayoutKind = 1
                 match structLayoutAttr with
-                | Some kind when kind = extendedKind ->
+                | Some kind when kind = extendedLayoutKind ->
                     errorR (Error(FSComp.SR.tcInvalidStructLayoutExtendedKind(), m))
                 | Some kind ->
                     if allowed then 
