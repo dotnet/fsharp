@@ -2044,6 +2044,8 @@ and typeLayoutOfFlags (ctxt: ILMetadataReader) mdv flags tidx =
         ILTypeDefLayout.Sequential(seekReadClassLayout ctxt mdv tidx)
     elif f = 0x00000010 then
         ILTypeDefLayout.Explicit(seekReadClassLayout ctxt mdv tidx)
+    elif f = 0x00000018 then
+        ILTypeDefLayout.Extended
     else
         ILTypeDefLayout.Auto
 

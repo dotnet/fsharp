@@ -11855,6 +11855,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }, ILDefaultPInvokeEncoding.Ansi
                             | _ -> ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
 
+                        // Check for ExtendedLayoutAttribute first
+                        if HasFSharpAttributeOpt g g.attrib_ExtendedLayoutAttribute_opt tycon.Attribs then
+                            ILTypeDefLayout.Extended, ILDefaultPInvokeEncoding.Ansi
+                        else
+
                         match tycon.Attribs with
                         | EntityAttrib g WellKnownEntityAttributes.StructLayoutAttribute (Attrib(_,
                                                                                                  _,
