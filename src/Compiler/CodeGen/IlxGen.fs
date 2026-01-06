@@ -11564,7 +11564,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             tdef
 
                     let tdLayout, tdEncoding =
-                        match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
+                        // Check for ExtendedLayoutAttribute first
+                        if HasFSharpAttributeOpt g g.attrib_ExtendedLayoutAttribute_opt tycon.Attribs then
+                            ILTypeDefLayout.Extended, ILDefaultPInvokeEncoding.Ansi
+                        else
+                            match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
                         | Some(Attrib(_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
                             let decoder = AttributeDecoder namedArgs
                             let ilPack = decoder.FindInt32 "Pack" 0x0
@@ -11617,7 +11621,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             else
                                 ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }, ILDefaultPInvokeEncoding.Ansi
 
-                        | _ -> ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
+                            | _ -> ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
 
                     // if the type's layout is Explicit, ensure that each field has a valid offset
                     let validateExplicit (fdef: ILFieldDef) =

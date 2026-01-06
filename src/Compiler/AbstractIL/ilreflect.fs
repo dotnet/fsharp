@@ -2106,6 +2106,7 @@ let typeAttributesOfTypeLayout cenv emEnv x =
     | ILTypeDefLayout.Auto -> None
     | ILTypeDefLayout.Explicit p -> (attr 0x02 p)
     | ILTypeDefLayout.Sequential p -> (attr 0x00 p)
+    | ILTypeDefLayout.Extended -> None  // No StructLayoutAttribute needed; user's ExtendedLayoutAttribute is preserved
 
 //----------------------------------------------------------------------------
 // buildTypeDefPass1 cenv

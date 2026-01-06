@@ -1487,6 +1487,7 @@ type TcGlobals(
   member val attrib_IsByRefLikeAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
   member val attrib_StructLayoutAttribute = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
+  member val attrib_ExtendedLayoutAttribute_opt = tryFindSysAttrib "System.Runtime.InteropServices.ExtendedLayoutAttribute"
   member val attrib_TypeForwardedToAttribute = findSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
   member val attrib_ComVisibleAttribute = findSysAttrib "System.Runtime.InteropServices.ComVisibleAttribute"
   member val attrib_ComImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.ComImportAttribute"

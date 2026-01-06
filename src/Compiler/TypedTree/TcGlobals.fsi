@@ -481,6 +481,8 @@ type internal TcGlobals =
 
     member attrib_StructLayoutAttribute: BuiltinAttribInfo
 
+    member attrib_ExtendedLayoutAttribute_opt: BuiltinAttribInfo option
+
     member attrib_StructuralComparisonAttribute: BuiltinAttribInfo
 
     member attrib_StructuralEqualityAttribute: BuiltinAttribInfo

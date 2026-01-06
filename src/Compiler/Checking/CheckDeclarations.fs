@@ -3416,6 +3416,7 @@ module EstablishTypeDefinitionCores =
             let hasMeasureableAttr = HasFSharpAttribute g g.attrib_MeasureableAttribute attrs
             
             let structLayoutAttr = TryFindFSharpInt32Attribute g g.attrib_StructLayoutAttribute attrs
+            let hasExtendedLayoutAttr = HasFSharpAttributeOpt g g.attrib_ExtendedLayoutAttribute_opt attrs
             let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute g g.attrib_AllowNullLiteralAttribute attrs = Some true
 
             if hasAbstractAttr then 
@@ -3436,7 +3437,10 @@ module EstablishTypeDefinitionCores =
                 
             let structLayoutAttributeCheck allowed = 
                 let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
+                let extendedKind = 1  // LayoutKind.Extended cannot be specified via StructLayout
                 match structLayoutAttr with
+                | Some kind when kind = extendedKind ->
+                    errorR (Error(FSComp.SR.tcInvalidStructLayoutExtendedKind(), m))
                 | Some kind ->
                     if allowed then 
                         if kind = explicitKind then
@@ -3446,6 +3450,22 @@ module EstablishTypeDefinitionCores =
                     else
                         errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(), m))
                 | None -> ()
+
+            let extendedLayoutAttributeCheck () =
+                if hasExtendedLayoutAttr then
+                    // Check runtime support
+                    match g.attrib_ExtendedLayoutAttribute_opt with
+                    | None -> 
+                        errorR (Error(FSComp.SR.tcRuntimeDoesNotSupportExtendedLayoutTypes(), m))
+                    | Some _ -> ()
+                    
+                    // Check not combined with StructLayoutAttribute
+                    if structLayoutAttr.IsSome then
+                        errorR (Error(FSComp.SR.tcStructLayoutAndExtendedLayout(), m))
+
+            let noExtendedLayoutAttributeCheck () =
+                if hasExtendedLayoutAttr then
+                    errorR (Error(FSComp.SR.tcOnlyStructsCanHaveExtendedLayout(), m))
                 
             let hiddenReprChecks hasRepr =
                  structLayoutAttributeCheck false
@@ -3684,17 +3704,20 @@ module EstablishTypeDefinitionCores =
                                   if not (isNil slotsigs) then 
                                     errorR (Error(FSComp.SR.tcStructTypesCannotContainAbstractMembers(), m)) 
                                   structLayoutAttributeCheck true
+                                  extendedLayoutAttributeCheck()
 
                                   TFSharpStruct
                               | SynTypeDefnKind.Interface -> 
                                   if hasSealedAttr = Some true then errorR (Error(FSComp.SR.tcInterfaceTypesCannotBeSealed(), m))
                                   structLayoutAttributeCheck false
+                                  noExtendedLayoutAttributeCheck()
                                   noAbstractClassAttributeCheck()
                                   allowNullLiteralAttributeCheck()
                                   noFieldsCheck userFields
                                   TFSharpInterface
                               | SynTypeDefnKind.Class -> 
                                   structLayoutAttributeCheck(not isIncrClass)
+                                  noExtendedLayoutAttributeCheck()
                                   allowNullLiteralAttributeCheck()
                                   for slot in abstractSlots do
                                       if not slot.IsInstanceMember then
@@ -3703,6 +3726,7 @@ module EstablishTypeDefinitionCores =
                               | SynTypeDefnKind.Delegate (ty, arity) -> 
                                   noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedDelegate
                                   structLayoutAttributeCheck false
+                                  noExtendedLayoutAttributeCheck()
                                   noAllowNullLiteralAttributeCheck()
                                   noAbstractClassAttributeCheck()
                                   noFieldsCheck userFields
