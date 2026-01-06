@@ -18,14 +18,14 @@ This file should be imported by eng/Versions.props
     <SystemReflectionMetadataPackageVersion>9.0.0</SystemReflectionMetadataPackageVersion>
     <SystemThreadingTasksDataflowPackageVersion>9.0.0</SystemThreadingTasksDataflowPackageVersion>
     <!-- dotnet/roslyn dependencies -->
-    <MicrosoftCodeAnalysisPackageVersion>5.0.0-2.25622.3</MicrosoftCodeAnalysisPackageVersion>
-    <MicrosoftCodeAnalysisCompilersPackageVersion>5.0.0-2.25622.3</MicrosoftCodeAnalysisCompilersPackageVersion>
-    <MicrosoftCodeAnalysisCSharpPackageVersion>5.0.0-2.25622.3</MicrosoftCodeAnalysisCSharpPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.0.0-2.25622.3</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.0.0-2.25622.3</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>5.0.0-2.25622.3</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
-    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.0.0-2.25622.3</MicrosoftCodeAnalysisFeaturesPackageVersion>
-    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.0.0-2.25622.3</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <MicrosoftCodeAnalysisPackageVersion>5.0.0-2.26054.2</MicrosoftCodeAnalysisPackageVersion>
+    <MicrosoftCodeAnalysisCompilersPackageVersion>5.0.0-2.26054.2</MicrosoftCodeAnalysisCompilersPackageVersion>
+    <MicrosoftCodeAnalysisCSharpPackageVersion>5.0.0-2.26054.2</MicrosoftCodeAnalysisCSharpPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.0.0-2.26054.2</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.0.0-2.26054.2</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>5.0.0-2.26054.2</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
+    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.0.0-2.26054.2</MicrosoftCodeAnalysisFeaturesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.0.0-2.26054.2</MicrosoftVisualStudioLanguageServicesPackageVersion>
     <!-- dotnet/arcade dependencies -->
     <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.25555.6</MicrosoftDotNetArcadeSdkPackageVersion>
     <!-- _git/dotnet-optimization dependencies -->
