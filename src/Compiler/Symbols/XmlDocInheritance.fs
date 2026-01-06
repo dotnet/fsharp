@@ -8,7 +8,7 @@ open FSharp.Compiler.Xml
 /// Expands `<inheritdoc>` elements in XML documentation (currently a placeholder)
 /// Returns the original documentation unchanged
 /// TODO: Implement full inheritdoc expansion
-let expandInheritDoc (m: range) (doc: XmlDoc) : XmlDoc =
+let expandInheritDoc (_m: range) (doc: XmlDoc) : XmlDoc =
     // Placeholder implementation - just return the original doc
     // Full implementation would:
     // 1. Check for <inheritdoc> elements in the XML
