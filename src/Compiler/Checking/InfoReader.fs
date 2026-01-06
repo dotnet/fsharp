@@ -775,6 +775,26 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
             ))
            g amap m AllowMultiIntfInstantiations.Yes ty
 
+    let GetUnimplementedStaticAbstractMemberOfTypeUncached (_flags, m, interfaceTy) =
+        if not (isInterfaceTy g interfaceTy) then
+            None
+        else
+            let checkMembersOfInterface (ty: TType) =
+                let meths = this.GetIntrinsicMethInfosOfType None AccessibleFromSomeFSharpCode AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
+                meths |> List.tryPick (fun (minfo: MethInfo) ->
+                    // Static abstract non-sealed (non-DIM) members
+                    if not minfo.IsInstance && minfo.IsAbstract && not minfo.IsFinal then
+                        Some minfo.DisplayNameCore
+                    else
+                        None
+                )
+
+            match checkMembersOfInterface interfaceTy with
+            | Some name -> Some name
+            | None ->
+                let baseInterfaces = AllInterfacesOfType g amap m AllowMultiIntfInstantiations.Yes interfaceTy
+                baseInterfaces |> List.tryPick checkMembersOfInterface
+
     let hashFlags0 = 
         { new IEqualityComparer<string option * AccessorDomain * AllowMultiIntfInstantiations> with 
                member _.GetHashCode((filter: string option, ad: AccessorDomain, _allowMultiIntfInst1)) = hash filter + AccessorDomain.CustomGetHashCode ad
@@ -815,6 +835,11 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     let primaryTypeHierarchyCache = MakeInfoCache "primaryTypeHierarchyCache" GetPrimaryTypeHierarchyUncached HashIdentity.Structural
     let implicitConversionCache = MakeInfoCache "implicitConversionCache" FindImplicitConversionsUncached hashFlags3
     let isInterfaceWithStaticAbstractMethodCache = MakeInfoCache "isInterfaceWithStaticAbstractMethodCache" IsInterfaceTypeWithMatchingStaticAbstractMemberUncached hashFlags4
+    let unimplementedStaticAbstractMemberCache =
+        MakeInfoCache
+            "unimplementedStaticAbstractMemberCache"
+            GetUnimplementedStaticAbstractMemberOfTypeUncached
+            hashFlags0
 
     // Runtime feature support
 
@@ -991,6 +1016,14 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
 
     member _.IsInterfaceTypeWithMatchingStaticAbstractMember m nm ad ty = 
         isInterfaceWithStaticAbstractMethodCache.Apply((ad, nm), m, ty)
+
+    member _.TryFindUnimplementedStaticAbstractMemberOfType (m: range) (interfaceTy: TType) : string option =
+        if not (isInterfaceTy g interfaceTy) then
+            None
+        elif not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) then
+            None
+        else
+            unimplementedStaticAbstractMemberCache.Apply(((None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes), m, interfaceTy))
 
 let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
