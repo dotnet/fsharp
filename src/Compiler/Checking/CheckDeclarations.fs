@@ -3437,8 +3437,9 @@ module EstablishTypeDefinitionCores =
                 
             let structLayoutAttributeCheck allowed = 
                 let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
-                // LayoutKind.Extended (value 1) cannot be specified via StructLayoutAttribute
-                // Users must use ExtendedLayoutAttribute instead
+                // LayoutKind.Extended will have enum value 1 in future .NET versions (currently unused slot)
+                // It cannot be specified via StructLayoutAttribute - users must use ExtendedLayoutAttribute instead
+                // See: https://github.com/dotnet/runtime/issues/102727
                 let extendedLayoutKind = 1
                 match structLayoutAttr with
                 | Some kind when kind = extendedLayoutKind ->
