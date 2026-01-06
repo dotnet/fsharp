@@ -217,5 +217,41 @@ let enclosingStructTyconRefOpt =
 let env = EnterFamilyRegion tcref env
 ```
 
-**Status**: CONFIRMED - Implementing fix now
+## Hypothesis 8: Filter Logic Rejecting Constructor Parameters Without DeclaringEntity
+
+**Theory**: Struct constructor parameters captured by object expressions don't have `DeclaringEntity` set and aren't marked as `IsMemberOrModuleBinding`. The current filter logic requires one of these, so these parameters are being filtered out and not extracted.
+
+**Evidence from debug output**:
+```
+DEBUG:   Free var 'test': IsMemberOrModuleBinding=false, HasDeclaringEntity=false, IsModuleBinding=false
+DEBUG: No problematic vars found - skipping transformation
+```
+
+The variable `test` is a struct constructor parameter that SHOULD be extracted, but:
+- It doesn't have `DeclaringEntity` 
+- It's not marked as `IsMemberOrModuleBinding`
+- Current filter logic rejects it
+
+**How to test**:
+Debug output already confirms this - the variables are found as free vars but filtered out as "not problematic".
+
+**How to fix**:
+When we're in a struct context (`enclosingStructTyconRefOpt` is Some), we should extract ALL non-parameter free variables that aren't module-level bindings. The fact that we're in a struct member method means any free variables captured are likely struct instance state.
+
+New filter logic:
+```fsharp
+match enclosingStructTyconRefOpt with
+| None -> [] // Not in struct, no transformation needed
+| Some _ ->
+    // In a struct context - extract free variables that could cause byref captures
+    freeVars.FreeLocals
+    |> Zset.elements  
+    |> List.filter (fun (v: Val) ->
+        // Exclude constructor calls (they're not captured variables)
+        not (v.LogicalName = ".ctor") &&
+        // Exclude module-level bindings (they're global, not instance state)
+        not v.IsModuleBinding)
+```
+
+**Status**: IMPLEMENTING FIX
 

@@ -441,13 +441,11 @@ let TryExtractStructMembersFromObjectExpr
                     unionFreeVars acc exprFreeVars)
                 emptyFreeVars
 
-        // Filter to problematic free variables:
-        // 1. Variables from STRUCT types (HasDeclaringEntity && is struct)
-        // 2. Variables without a DeclaringEntity (likely struct constructor params/fields)
-        //    that would require capturing the struct 'this' pointer
+        // Filter to problematic free variables when in a struct context:
+        // We need to extract any non-global variables that could cause byref struct captures
         // EXCLUDE:
-        // - Method parameters (they are bound in method scope, not captured)
-        // - Module bindings (they are not struct members)
+        // - Constructor calls (v.LogicalName = ".ctor")
+        // - Module bindings (global state, not instance state)
         let problematicVars =
             let allFreeVars = freeVars.FreeLocals |> Zset.elements
             printfn "DEBUG: Found %d total free variables" allFreeVars.Length
@@ -461,17 +459,10 @@ let TryExtractStructMembersFromObjectExpr
             
             allFreeVars
             |> List.filter (fun (v: Val) ->
-                // CRITICAL: Exclude method parameters - they are NOT captured variables
-                // Parameters are values that are NOT member or module bindings
-                v.IsMemberOrModuleBinding &&
-                (
-                    // Case 1: Variable belongs to a struct type
-                    (v.HasDeclaringEntity && v.DeclaringEntity.Deref.IsStructOrEnumTycon)
-                    ||
-                    // Case 2: Variable without declaring entity (likely struct constructor param)
-                    // We conservatively extract these to avoid potential byref captures
-                    (not v.HasDeclaringEntity && not v.IsModuleBinding)
-                ))
+                // Exclude constructor calls - they're not captured variables
+                v.LogicalName <> ".ctor" &&
+                // Exclude module-level bindings - they're global, not instance state
+                not v.IsModuleBinding)
 
         // Early exit if no problematic variables
         if problematicVars.IsEmpty then
