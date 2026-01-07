@@ -338,3 +338,37 @@ This ensures we only extract variables that are instance members of the ENCLOSIN
 
 **Status**: IMPLEMENTING FIX
 
+
+
+## Hypothesis 10: Static member false positive - ROOT CAUSE & REVERT
+
+**Status**: ROOT CAUSE IDENTIFIED - ALL TRANSFORMATION CODE REVERTED
+
+**Problem**: StructBox.Comparer static member in seqcore.fs causes regression
+
+**Root Cause**: The approach using `env.eFamilyType` is fundamentally flawed:
+- `env.eFamilyType` represents the TYPE being defined (e.g., StructBox)
+- It does NOT distinguish between static vs instance member contexts
+- Static member: `env.eFamilyType` = Some(StructBox) even though there's no `this`
+- Instance member: `env.eFamilyType` = Some(StructBox) with a `this` context
+
+**Critical Discovery**: Even after COMPLETELY DISABLING the transformation (`enclosingStructTyconRefOpt = None`),
+the seqcore.fs error persists! This proves the bootstrap compiler has the buggy code baked in.
+
+**What This Means**:
+1. Can't fix the regression with code changes alone - need to rebuild bootstrap
+2. The current approach is architecturally wrong
+3. Need a different detection mechanism that identifies instance member context
+
+**Decision**: REVERTED ALL TRANSFORMATION CODE
+- Removed TryExtractStructMembersFromObjectExpr function (89 lines)
+- Removed transformation calls from CheckExpressions.fs (42 lines)
+- Kept test file for future reference
+- Total: 131 lines of code removed
+
+**Next Steps**: Need a completely fresh approach that:
+1. Detects instance member context (not just struct type context)
+2. Probably needs to check for presence of a `this` value in scope
+3. Or pass additional context parameter through TcObjectExpr
+
+**Test Results**: N/A - transformation completely removed
