@@ -56,13 +56,13 @@
     Target: _RunBootstrap
     
     Builds the bootstrap compiler by publishing proto.proj.
-    Uses minimal verbosity and errors-only console output for clean CI logs.
+    Uses minimal verbosity for clean CI logs.
     On failure, emits MSBuild error that stops the build.
   -->
   <Target Name="_RunBootstrap">
     <Message Text="Building bootstrap compiler..." Importance="high" />
     
-    <Exec Command="dotnet publish &quot;$(RepoRoot)proto.proj&quot; -c Proto -v:minimal /clp:NoSummary;ErrorsOnly"
+    <Exec Command="dotnet publish &quot;$(RepoRoot)proto.proj&quot; -c Proto -v:minimal"
           IgnoreExitCode="true"
           ConsoleToMSBuild="true">
       <Output TaskParameter="ExitCode" PropertyName="_BootstrapExitCode" />
