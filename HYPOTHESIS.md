@@ -372,3 +372,38 @@ the seqcore.fs error persists! This proves the bootstrap compiler has the buggy 
 3. Or pass additional context parameter through TcObjectExpr
 
 **Test Results**: N/A - transformation completely removed
+
+---
+
+## Hypothesis 11: Test Validation Without Fix
+
+**Theory**: With all transformation code removed, the tests should fail with the original bug, confirming they are correctly written to detect the issue.
+
+**How to test**:
+Run: `dotnet test tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj --filter "FullyQualifiedName~StructObjectExpression"`
+
+**Expected Results**: All 3 tests should fail with byref-related errors
+
+**Actual Results**: ✅ CONFIRMED - All 3 tests fail as expected:
+
+**Test 1**: "Object expression in struct should not generate byref field - simple case"
+- **Error**: `TypeLoadException: A ByRef or ByRef-like type cannot be used as the type for an instance field in a non-ByRef-like type`
+- **Meaning**: The object expression closure is capturing a byref to the struct, generating invalid IL that fails at runtime
+
+**Test 2**: "Object expression in struct with multiple fields"  
+- **Error**: `Error 406: The byref-typed variable '_' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.`
+- **Location**: Line 8, column 17-25 (the `CreateObj()` method)
+- **Meaning**: Compiler detects the invalid byref capture at compile time
+
+**Test 3**: "Object expression in struct referencing field in override method"
+- **Error**: `Error 406: The byref-typed variable '_' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.`
+- **Location**: Line 9, column 17-28 (the `CreateFoo()` method)
+- **Meaning**: Compiler detects the invalid byref capture at compile time
+
+**Conclusion**: 
+- ✅ Tests are properly written and correctly detect the bug
+- ✅ The problem is real and reproducible
+- ✅ Test suite is ready for validating a future correct implementation
+- ❌ Need a different architectural approach to fix the issue
+
+**Status**: INVESTIGATION COMPLETE - AWAITING CORRECT IMPLEMENTATION APPROACH
