@@ -100,12 +100,11 @@ let private (|ParsedXmlInclude|_|) (line: string) : IncludeInfo option =
 
 /// Load and expand includes from an external file
 /// This is the single unified error-handling and expansion logic
-let private loadAndExpand
+let rec private resolveSingleInclude
     (baseFileName: string)
     (includeInfo: IncludeInfo)
     (inProgressFiles: Set<string>)
     (range: range)
-    (expandNodes: string -> XNode seq -> Set<string> -> range -> XNode seq)
     : Result<XNode seq, string> =
 
     let resolvedPath = resolveFilePath baseFileName includeInfo.FilePath
@@ -120,11 +119,11 @@ let private loadAndExpand
             // Expand the loaded content recursively
             let updatedInProgress = inProgressFiles.Add(resolvedPath)
             let nodes = elements |> Seq.collect (fun e -> e.Nodes())
-            expandNodes resolvedPath nodes updatedInProgress range)
+            expandAllIncludeNodes resolvedPath nodes updatedInProgress range)
 
 /// Recursively expand includes in XElement nodes
 /// This is the ONLY recursive expansion - works on XElement level, never on strings
-let rec private expandElements (baseFileName: string) (nodes: XNode seq) (inProgressFiles: Set<string>) (range: range) : XNode seq =
+and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (inProgressFiles: Set<string>) (range: range) : XNode seq =
     nodes
     |> Seq.collect (fun node ->
         if node.NodeType <> System.Xml.XmlNodeType.Element then
@@ -136,13 +135,13 @@ let rec private expandElements (baseFileName: string) (nodes: XNode seq) (inProg
             | None ->
                 // Not an include element, recursively process children
                 let expandedChildren =
-                    expandElements baseFileName (elem.Nodes()) inProgressFiles range
+                    expandAllIncludeNodes baseFileName (elem.Nodes()) inProgressFiles range
 
                 let newElem = XElement(elem.Name, elem.Attributes(), expandedChildren)
                 Seq.singleton (newElem :> XNode)
             | Some includeInfo ->
                 // This is an include element - expand it
-                match loadAndExpand baseFileName includeInfo inProgressFiles range expandElements with
+                match resolveSingleInclude baseFileName includeInfo inProgressFiles range with
                 | Result.Error msg ->
                     warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
                     Seq.singleton node
@@ -170,7 +169,7 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
                     match line with
                     | s when not (mayContainInclude s) -> [| line |]
                     | ParsedXmlInclude includeInfo ->
-                        match loadAndExpand baseFileName includeInfo Set.empty doc.Range expandElements with
+                        match resolveSingleInclude baseFileName includeInfo Set.empty doc.Range with
                         | Result.Error msg ->
                             warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
                             [| line |]
