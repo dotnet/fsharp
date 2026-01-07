@@ -3115,6 +3115,9 @@ type internal FsiDynamicCompiler
 
     member _.ValueBound = valueBoundEvent.Publish
 
+    member _.PeekNextFragmentPath() =
+        FsiDynamicModulePrefix + $"%04d{fragmentId + 1}"
+
 //----------------------------------------------------------------------------
 // ctrl-c handling
 //----------------------------------------------------------------------------
@@ -4484,13 +4487,25 @@ type FsiInteractionProcessor
         let names = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
         names
 
-    member _.ParseAndCheckInteraction(legacyReferenceResolver, istate, text: string) =
+    member _.ParseAndCheckInteraction(legacyReferenceResolver, istate, text: string, ?keepAssemblyContents: bool) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        let fsiInteractiveChecker =
-            FsiInteractiveChecker(legacyReferenceResolver, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
+        let asmName =
+            match keepAssemblyContents with
+            | Some true -> Some(fsiDynamicCompiler.PeekNextFragmentPath())
+            | _ -> None
 
-        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text)
+        let fsiInteractiveChecker =
+            FsiInteractiveChecker(
+                legacyReferenceResolver,
+                tcConfig,
+                istate.tcGlobals,
+                istate.tcImports,
+                istate.tcState,
+                ?keepAssemblyContents = keepAssemblyContents
+            )
+
+        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text, ?asmName = asmName)
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -4842,8 +4857,13 @@ type FsiEvaluationSession
         fsiInteractionProcessor.CompletionsForPartialLID(fsiInteractionProcessor.CurrentState, longIdent)
         |> Seq.ofList
 
-    member _.ParseAndCheckInteraction(code) =
-        fsiInteractionProcessor.ParseAndCheckInteraction(legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
+    member _.ParseAndCheckInteraction(code, ?keepAssemblyContents) =
+        fsiInteractionProcessor.ParseAndCheckInteraction(
+            legacyReferenceResolver,
+            fsiInteractionProcessor.CurrentState,
+            code,
+            ?keepAssemblyContents = keepAssemblyContents
+        )
         |> Cancellable.runWithoutCancellation
 
     member _.InteractiveChecker = checker

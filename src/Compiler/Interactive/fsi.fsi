@@ -276,13 +276,20 @@ type FsiEvaluationSession =
     /// This event is triggered after parsing and checking, either via input from 'stdin', or via a call to EvalInteraction.
     member PartialAssemblySignatureUpdated: IEvent<unit>
 
-    /// Typecheck the given script fragment in the type checking context implied by the current state
-    /// of F# Interactive. The results can be used to access intellisense, perform resolutions,
-    /// check brace matching and other information.
+    /// <summary>
+    ///  <para>Typecheck the given script fragment in the type checking context implied by the current state
+    ///  of F# Interactive. The results can be used to access intellisense, perform resolutions,
+    ///  check brace matching and other information. Accessing assembly contents need 'keepAssemblyContents'
+    ///  set to 'true'.</para>
+    ///  <para></para>
+    ///  <para>Operations may be run concurrently with other requests to the InteractiveChecker.</para>
+    /// </summary>
     ///
-    /// Operations may be run concurrently with other requests to the InteractiveChecker.
+    /// <param name="code">Source code of the interaction to check.</param>
+    /// <param name="keepAssemblyContents">Keep the checked contents of the interaction.</param>
     member ParseAndCheckInteraction:
-        code: string -> FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults
+        code: string * ?keepAssemblyContents: bool ->
+            FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults
 
     /// The single, global interactive checker to use in conjunction with other operations
     /// on the FsiEvaluationSession.

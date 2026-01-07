@@ -219,4 +219,29 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
       <PathMap>@(_TopLevelSourceRoot->'%(EscapedKey)=%(EscapedValue)', ','),$(PathMap)</PathMap>
     </PropertyGroup>
   </Target>
+
+  <!--
+    Warn if resolved FSharp.Core major version exceeds SDK's compiler version.
+  -->
+  <Target Name="_CheckForUnsupportedFSharpCoreVersion" 
+          AfterTargets="ResolvePackageAssets"
+          Condition="'$(ValidateFSharpCoreVersion)' != 'false' and '$(FSharpCoreMaximumMajorVersion)' != ''">
+
+    <ItemGroup>
+      <_ResolvedFSharpCore Include="@(ReferencePath)" 
+                            Condition="'%(ReferencePath.NuGetPackageId)' == 'FSharp.Core'" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="'@(_ResolvedFSharpCore->Count())' == '1'">
+      <_ResolvedFSharpCoreVersion>@(_ResolvedFSharpCore->'%(NuGetPackageVersion)')</_ResolvedFSharpCoreVersion>
+      <_ResolvedFSharpCoreMajor>$([System.Version]::Parse('$(_ResolvedFSharpCoreVersion.Split('-')[0])').Major)</_ResolvedFSharpCoreMajor>
+      <_FSharpCoreVersionTooHigh Condition="$(_ResolvedFSharpCoreMajor) &gt; $(FSharpCoreMaximumMajorVersion)">true</_FSharpCoreVersionTooHigh>
+    </PropertyGroup>
+
+    <Warning 
+      Condition="'$(_FSharpCoreVersionTooHigh)' == 'true'"
+      Code="FSSDK0001"
+      Text="The referenced FSharp.Core $(_ResolvedFSharpCoreVersion) has a higher major version ($(_ResolvedFSharpCoreMajor)) than this SDK supports ($(FSharpCoreMaximumMajorVersion)). This may cause compilation errors or runtime failures." />
+
+  </Target>
 </Project>
