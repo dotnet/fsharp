@@ -281,5 +281,60 @@ Remove the early guard for `isInterfaceTy`. The transformation should apply to B
 
 When inside a struct member and capturing struct instance state.
 
+**Status**: FIXED (commit 7623be8)
+
+---
+
+## Hypothesis 10: Static Members Incorrectly Transformed
+
+**Theory**: The transformation is running on static members that create object expressions, even though static members don't have instance state that could cause byref captures. The issue is in FSharp.Core seqcore.fs:
+
+```fsharp
+[<Struct>]
+type StructBox<'T> =
+    member x.Value = value
+    
+    static member Comparer =  // <-- STATIC member, not instance
+        let gcomparer = HashIdentity.Structural<'T>
+        { new IEqualityComparer<StructBox<'T>> with
+               member _.GetHashCode(v) = gcomparer.GetHashCode(v.Value)
+               member _.Equals(v1,v2) = gcomparer.Equals(v1.Value,v2.Value) }
+```
+
+**The Problem**:
+1. We're inside StructBox's static member → `env.eFamilyType` = Some(StructBox)
+2. Object expression parameters `v`, `v1`, `v2` are of type `StructBox<'T>`
+3. Current filter: excludes `.ctor` and module bindings only
+4. Parameters `v`, `v1`, `v2` pass the filter (they're not .ctor, not module bindings)
+5. Transformation incorrectly extracts them → creates invalid local bindings
+
+**Root Cause**: 
+The filter doesn't distinguish between:
+- **Actual instance members** of the enclosing struct (e.g., `this.value`, `this.field`)
+- **Method parameters** that happen to be the struct type (e.g., `v`, `v1`, `v2`)
+
+**How to test**:
+Add check: Only extract variables that are **actual instance members** of the enclosing struct.
+- Must have `v.HasDeclaringEntity` 
+- AND `tyconRefEq g v.DeclaringEntity enclosingTcref`
+
+**How to fix**:
+Change filter from:
+```fsharp
+v.LogicalName <> ".ctor" && not v.IsModuleBinding
+```
+
+To:
+```fsharp
+v.LogicalName <> ".ctor" && 
+not v.IsModuleBinding &&
+v.HasDeclaringEntity &&
+(match tryTcrefOfAppTy g v.Type with
+ | ValueSome tcref -> tyconRefEq g tcref enclosingTcref
+ | _ -> false)
+```
+
+This ensures we only extract variables that are instance members of the ENCLOSING struct, not just any variable of the struct type.
+
 **Status**: IMPLEMENTING FIX
 

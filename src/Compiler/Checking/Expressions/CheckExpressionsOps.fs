@@ -400,7 +400,7 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
 /// - capturedMemberBindings: list of (localVar, valueExpr) pairs to prepend before the object expression
 /// - methodBodyRemap: Remap to apply to object expression method bodies to use the captured locals
 let TryExtractStructMembersFromObjectExpr
-    (_g: TcGlobals.TcGlobals)
+    (g: TcGlobals.TcGlobals)
     (enclosingStructTyconRefOpt: TyconRef option)
     (ctorCall: Expr) // The base constructor call expression
     overridesAndVirts
@@ -413,7 +413,7 @@ let TryExtractStructMembersFromObjectExpr
     | None -> 
         // Not in a struct context - skip transformation
         [], Remap.Empty
-    | Some _structTcref ->
+    | Some structTcref ->
         // Collect all method bodies from the object expression overrides
         let allMethodBodies =
             overridesAndVirts
@@ -434,10 +434,8 @@ let TryExtractStructMembersFromObjectExpr
                 emptyFreeVars
 
         // Filter to problematic free variables when in a struct context:
-        // We need to extract any non-global variables that could cause byref struct captures
-        // EXCLUDE:
-        // - Constructor calls (v.LogicalName = ".ctor")
-        // - Module bindings (global state, not instance state)
+        // We need to extract ONLY instance members of the enclosing struct
+        // This prevents false positives where method parameters happen to be the struct type
         let problematicVars =
             freeVars.FreeLocals
             |> Zset.elements
@@ -445,7 +443,11 @@ let TryExtractStructMembersFromObjectExpr
                 // Exclude constructor calls - they're not captured variables
                 v.LogicalName <> ".ctor" &&
                 // Exclude module-level bindings - they're global, not instance state
-                not v.IsModuleBinding)
+                not v.IsModuleBinding &&
+                // CRITICAL: Only include variables that are actual instance members of the enclosing struct
+                // This excludes method parameters, local variables, etc. that happen to be the struct type
+                v.HasDeclaringEntity &&
+                tyconRefEq g v.DeclaringEntity structTcref)
 
         // Early exit if no problematic variables
         if problematicVars.IsEmpty then
