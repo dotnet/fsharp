@@ -14,19 +14,12 @@ jobs:
     # You can define any steps you want, and they will run before the agent starts.
     # If you do not check out your code, Copilot will do this for you.
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
-      - name: Restore the compiler service solution
-        env:
-          CI: false
-        run: ./build.sh -c Release --verbosity quiet || true
-      - name: Restore the language server solution
-        env:
-          CI: false
-        run: dotnet build ./LSPSolutionSlim.sln -c Release --verbosity quiet || true
-      - name: Restore dotnet tools
-        env:
-          CI: false
-        run: dotnet tool restore
+      - name: Restore
+        run: |
+          dotnet restore FSharp.sln || true
+          dotnet restore LSPSolutionSlim.sln || true
+          dotnet tool restore || true
