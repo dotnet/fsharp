@@ -26,10 +26,12 @@
          - Configuration is Proto (we ARE the bootstrap)
          - DisableCompilerRedirection is true (user wants SDK compiler)
          - BUILDING_USING_DOTNET is true (FSharp.Compiler.Service.sln uses SDK compiler)
+         - MSBuildProjectDirectory is under artifacts (test/temp projects, build outputs)
     -->
     <_SkipBootstrap Condition="'$(Configuration)' == 'Proto'">true</_SkipBootstrap>
     <_SkipBootstrap Condition="'$(DisableCompilerRedirection)' == 'true'">true</_SkipBootstrap>
     <_SkipBootstrap Condition="'$(BUILDING_USING_DOTNET)' == 'true'">true</_SkipBootstrap>
+    <_SkipBootstrap Condition="$(MSBuildProjectDirectory.StartsWith('$(ArtifactsDir)'))">true</_SkipBootstrap>
   </PropertyGroup>
 
   <!--
