@@ -3721,12 +3721,9 @@ module EstablishTypeDefinitionCores =
                                             // Explicit [<OptionalArgument>] path: string option already has wrapped type.
                                             let ty =
                                               if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
-                                                  // Only wrap if the type is not already an option type
                                                   if isOptionTy g ty || isValueOptionTy g ty then
-                                                      // Type is already wrapped (e.g., string option), don't wrap again
                                                       ty
                                                   else
-                                                      // Type needs wrapping (e.g., from ?param syntax)
                                                       match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
                                                       | Some (Attrib(range=m)) ->
                                                           checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
