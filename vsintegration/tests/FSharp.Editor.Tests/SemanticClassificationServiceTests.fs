@@ -240,3 +240,69 @@ module ``It should still show up as a keyword even if the type parameter is inva
 """
 
         verifyClassificationAtEndOfMarker (sourceText, marker, classificationType)
+
+    [<Fact>]
+    member _.``Optional parameters should be classified correctly``() =
+        let sourceText =
+            """
+type TestType() =
+    member _.memb(?optional:string) = optional
+"""
+
+        let ranges = getRanges sourceText
+
+        // The issue was that QuickParse returning None for '?' caused misclassification
+        // This test verifies that we get semantic classification data and nothing is
+        // incorrectly classified as a type or namespace due to the ? prefix
+
+        // Look for any identifier "optional" in the classifications
+        let text = SourceText.From(sourceText)
+
+        let optionalRanges =
+            ranges
+            |> List.filter (fun item ->
+                try
+                    // Get the actual text from the source using SourceText
+                    let span = RoslynHelpers.TryFSharpRangeToTextSpan(text, item.Range)
+
+                    match span with
+                    | ValueSome textSpan ->
+                        let actualText = text.GetSubText(textSpan).ToString()
+                        actualText = "optional"
+                    | ValueNone -> false
+                with _ ->
+                    false)
+
+        // Provide detailed diagnostics if test fails
+        let allClassifications =
+            ranges
+            |> List.map (fun item ->
+                try
+                    let span = RoslynHelpers.TryFSharpRangeToTextSpan(text, item.Range)
+
+                    let textStr =
+                        match span with
+                        | ValueSome ts -> text.GetSubText(ts).ToString()
+                        | ValueNone -> "[no span]"
+
+                    sprintf "Range %A: '%s' (%A)" item.Range textStr item.Type
+                with ex ->
+                    sprintf "Range %A: [error: %s] (%A)" item.Range ex.Message item.Type)
+            |> String.concat "\n"
+
+        let errorMessage =
+            sprintf
+                "Should have classification data for 'optional' identifier.\nFound %d ranges total.\nAll classifications:\n%s"
+                ranges.Length
+                allClassifications
+
+        Assert.True(optionalRanges.Length > 0, errorMessage)
+
+        // Verify that none of the "optional" occurrences are classified as type/namespace
+        // (which would indicate the bug is present)
+        for optionalRange in optionalRanges do
+            let classificationType =
+                FSharpClassificationTypes.getClassificationTypeName optionalRange.Type
+
+            Assert.NotEqual<string>(ClassificationTypeNames.ClassName, classificationType)
+            Assert.NotEqual<string>(ClassificationTypeNames.NamespaceName, classificationType)
