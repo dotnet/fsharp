@@ -4,7 +4,6 @@ module internal FSharp.Compiler.CheckExpressionsOps
 
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open Internal.Utilities.Collections
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
@@ -390,91 +389,3 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
         mkValueOptionTy g tyarg
     else
         mkOptionTy g tyarg
-
-/// Extract captured struct instance members from object expressions to avoid illegal byref fields in closures.
-/// When an object expression inside a struct instance member method captures struct fields, the generated
-/// closure would contain a byref<Struct> field which violates CLI rules. This function extracts those struct
-/// member values into local variables and rewrites the object expression methods to use the locals instead.
-///
-/// Returns: (capturedMemberBindings, methodBodyRemap) where:
-/// - capturedMemberBindings: list of (localVar, valueExpr) pairs to prepend before the object expression
-/// - methodBodyRemap: Remap to apply to object expression method bodies to use the captured locals
-let TryExtractStructMembersFromObjectExpr
-    (g: TcGlobals.TcGlobals)
-    (enclosingStructTyconRefOpt: TyconRef option)
-    (ctorCall: Expr) // The base constructor call expression
-    overridesAndVirts
-    (mWholeExpr: range)
-    : (Val * Expr) list * Remap =
-
-    // Only transform when we're actually inside a struct member method
-    // This prevents false positives in module functions or class methods
-    match enclosingStructTyconRefOpt with
-    | None -> 
-        // Not in a struct context - skip transformation
-        [], Remap.Empty
-    | Some structTcref ->
-        // Collect all method bodies from the object expression overrides
-        let allMethodBodies =
-            overridesAndVirts
-            |> List.collect (fun (_, _, _, _, _, overrides) -> overrides |> List.map (fun (_, (_, _, _, _, bindingBody)) -> bindingBody))
-
-
-        // Analyze free variables in BOTH the base constructor call AND the method bodies
-        // The struct members might be passed to the base constructor (the problematic case)
-        let allExprs = ctorCall :: allMethodBodies
-
-        // Find all free variables
-        let freeVars =
-            allExprs
-            |> List.fold
-                (fun acc expr ->
-                    let exprFreeVars = freeInExpr CollectTyparsAndLocals expr
-                    unionFreeVars acc exprFreeVars)
-                emptyFreeVars
-
-        // Filter to problematic free variables when in a struct context:
-        // We need to extract ONLY instance members of the enclosing struct
-        // This prevents false positives where method parameters happen to be the struct type
-        let problematicVars =
-            freeVars.FreeLocals
-            |> Zset.elements
-            |> List.filter (fun (v: Val) ->
-                // Exclude constructor calls - they're not captured variables
-                v.LogicalName <> ".ctor" &&
-                // Exclude module-level bindings - they're global, not instance state
-                not v.IsModuleBinding &&
-                // CRITICAL: Only include variables that are actual instance members of the enclosing struct
-                // This excludes method parameters, local variables, etc. that happen to be the struct type
-                v.HasDeclaringEntity &&
-                tyconRefEq g v.DeclaringEntity structTcref)
-
-        // Early exit if no problematic variables
-        if problematicVars.IsEmpty then
-            [], Remap.Empty
-        else
-            // Create local variables for each problematic free variable
-            let bindings =
-                problematicVars
-                |> List.map (fun (memberVal: Val) ->
-                    // Create a new local to hold the value
-                    let localVal, _ = mkCompGenLocal mWholeExpr memberVal.DisplayName memberVal.Type
-                    // The value expression is just a reference to the original variable
-                    let valueExpr = exprForVal mWholeExpr memberVal
-                    (memberVal, localVal, valueExpr))
-
-            // Build a remap from original member vals to new local vals
-            let remap =
-                bindings
-                |> List.fold
-                    (fun (remap: Remap) (origVal, localVal, _) ->
-                        { remap with
-                            valRemap = remap.valRemap.Add origVal (mkLocalValRef localVal)
-                        })
-                    Remap.Empty
-
-            // Return the bindings to be added before the object expression
-            let bindPairs =
-                bindings |> List.map (fun (_, localVal, valueExpr) -> (localVal, valueExpr))
-
-            bindPairs, remap

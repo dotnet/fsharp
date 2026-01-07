@@ -7236,13 +7236,6 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
     // Add the object type to the ungeneralizable items
     let env = {env with eUngeneralizableItems = addFreeItemOfTy objTy env.eUngeneralizableItems }
 
-    // Save the enclosing family type BEFORE entering the object expression's family region
-    // This is needed to detect if we're inside a struct member method (for struct object expression fix)
-    let enclosingStructTyconRefOpt = 
-        match env.eFamilyType with
-        | Some tcref when tcref.IsStructOrEnumTycon -> Some tcref
-        | _ -> None
-
     // Object expression members can access protected members of the implemented type
     let env = EnterFamilyRegion tcref env
     let ad = env.AccessRights
@@ -7316,17 +7309,6 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
                 DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, isOverallTyAbstract, true, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
 
         // 3. create the specs of overrides
-        
-        // Fix for struct object expressions: extract captured struct members to avoid byref fields
-        // Note: enclosingStructTyconRefOpt was captured earlier (before EnterFamilyRegion)
-        let capturedStructMembers, methodBodyRemap =
-            CheckExpressionsOps.TryExtractStructMembersFromObjectExpr 
-                g
-                enclosingStructTyconRefOpt
-                ctorCall // Also analyze the base constructor call
-                overridesAndVirts 
-                mWholeExpr
-        
         let allTypeImpls =
           overridesAndVirts |> List.map (fun (m, implTy, _, dispatchSlotsKeyed, _, overrides) ->
               let overrides' =
@@ -7350,14 +7332,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
                                 | Some x -> x
                                 | None -> error(Error(FSComp.SR.tcAtLeastOneOverrideIsInvalid(), mObjTy))
 
-                            // Remap method body to use local copies of struct members
-                            let bindingBody' =
-                                if methodBodyRemap.valRemap.IsEmpty then
-                                    bindingBody
-                                else
-                                    remapExpr g CloneAll methodBodyRemap bindingBody
-
-                            yield TObjExprMethod(overridden.GetSlotSig(cenv.amap, m), bindingAttribs, mtps, [thisVal] :: methodVars, bindingBody', id.idRange) ]
+                            yield TObjExprMethod(overridden.GetSlotSig(cenv.amap, m), bindingAttribs, mtps, [thisVal] :: methodVars, bindingBody, id.idRange) ]
               (implTy, overrides'))
 
         let objtyR, overrides' = allTypeImpls.Head
@@ -7368,24 +7343,9 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         if not supportsObjectExpressionWithoutOverrides && not isInterfaceTy && overrides'.IsEmpty && extraImpls.IsEmpty then
            errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
 
-        // Remap constructor call to use local copies of struct members
-        let ctorCall' =
-            if methodBodyRemap.valRemap.IsEmpty then
-                ctorCall
-            else
-                remapExpr g CloneAll methodBodyRemap ctorCall
-
         // 4. Build the implementation
-        let expr = mkObjExpr(objtyR, baseValOpt, ctorCall', overrides', extraImpls, mWholeExpr)
+        let expr = mkObjExpr(objtyR, baseValOpt, ctorCall, overrides', extraImpls, mWholeExpr)
         let expr = mkCoerceIfNeeded g realObjTy objtyR expr
-        
-        // Wrap with bindings for captured struct members
-        let expr =
-            if capturedStructMembers.IsEmpty then
-                expr
-            else
-                List.foldBack (fun (v, e) body -> mkInvisibleLet mWholeExpr v e body) capturedStructMembers expr
-        
         expr, tpenv
 
 //-------------------------------------------------------------------------
