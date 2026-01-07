@@ -7,4 +7,4 @@ open FSharp.Compiler.Xml
 
 /// Expands `<inheritdoc>` elements in XML documentation (currently a placeholder)
 /// Returns the original documentation unchanged
-val expandInheritDoc: m: range -> doc: XmlDoc -> XmlDoc
+val expandInheritDoc: _m: range -> doc: XmlDoc -> XmlDoc
