@@ -118,7 +118,7 @@ let rec private resolveSingleInclude
         |> Result.map (fun elements ->
             // Expand the loaded content recursively
             let updatedInProgress = inProgressFiles.Add(resolvedPath)
-            let nodes = elements |> Seq.collect (fun e -> e.Nodes())
+            let nodes = elements |> Seq.cast<XNode>
             expandAllIncludeNodes resolvedPath nodes updatedInProgress range)
 
 /// Recursively expand includes in XElement nodes
