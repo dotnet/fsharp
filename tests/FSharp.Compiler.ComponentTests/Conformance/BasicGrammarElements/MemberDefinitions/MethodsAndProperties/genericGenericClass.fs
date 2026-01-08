@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
-#light
+
 
 type Foo<'a>() = 
     let mutable m_val : 'a list = []

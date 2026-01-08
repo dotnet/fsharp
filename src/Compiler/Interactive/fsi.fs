@@ -3534,13 +3534,6 @@ type FsiStdinLexerProvider
         lexResourceManager: LexResourceManager
     ) =
 
-    // #light is the default for FSI
-    let indentationSyntaxStatus =
-        let initialIndentationAwareSyntaxStatus =
-            (tcConfigB.indentationAwareSyntax <> Some false)
-
-        IndentationAwareSyntaxStatus(initialIndentationAwareSyntaxStatus, warn = false)
-
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string MaybeNull) =
         UnicodeLexing.FunctionAsLexbuf(
             true,
@@ -3601,24 +3594,10 @@ type FsiStdinLexerProvider
         let applyLineDirectives = true
 
         let lexargs =
-            mkLexargs (
-                tcConfigB.conditionalDefines,
-                indentationSyntaxStatus,
-                lexResourceManager,
-                [],
-                diagnosticsLogger,
-                PathMap.empty,
-                applyLineDirectives
-            )
+            mkLexargs (tcConfigB.conditionalDefines, lexResourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
 
         let tokenizer =
-            LexFilter.LexFilter(
-                indentationSyntaxStatus,
-                tcConfigB.compilingFSharpCore,
-                Lexer.token lexargs skip,
-                lexbuf,
-                tcConfigB.tokenize = TokenizeOption.Debug
-            )
+            LexFilter.LexFilter(tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf, tcConfigB.tokenize = TokenizeOption.Debug)
 
         tokenizer
 

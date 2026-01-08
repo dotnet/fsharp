@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:3473
 // Signature checking issue with extension of a type defined in a C# dll
 //<Expects status="success"></Expects>
-#light
+
 
 module Experiment.Test
 

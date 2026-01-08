@@ -27,11 +27,6 @@
         <target state="translated">源文件“{0}”(位于位置 {1}/{2})已出现在编译列表(位于位置 {3}/{4})中。请确认该文件仅包含在项目文件中一次。</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildInvalidSourceFileExtensionML">
-        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="translated">无法识别“{0}”的文件扩展名。源文件必须具有扩展名 .fs、.fsi、.fsx 或 .fsscript。要启用已弃用的 .ml 或 .mli 扩展名，请使用 “--langversion:5.0” 和 “--mlcompatibility”。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">无法识别“{0}”的文件扩展名。源文件必须具有扩展名 .fs、.fsi、.fsx 或 .fsscript</target>
@@ -497,11 +492,6 @@
         <target state="translated">当 RequireQualifiedAccess 属性时允许小写 DU</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureMLCompatRevisions">
-        <source>ML compatibility revisions</source>
-        <target state="translated">ML 兼容性修订</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
         <target state="translated">不允许将模式匹配丢弃用于不采用数据的联合事例。</target>
@@ -842,11 +832,6 @@
         <target state="translated">此版本的 F# 不支持扩展字符串内插。</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexIfOCaml">
-        <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
-        <target state="translated">不再支持 IF-FSHARP/IF-CAML 区域</target>
-        <note />
-      </trans-unit>
       <trans-unit id="lexInvalidAsciiByteLiteral">
         <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.</source>
         <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.</target>
@@ -952,39 +937,9 @@
         <target state="translated">不允许将模式丢弃用于不采用数据的联合事例。</target>
         <note />
       </trans-unit>
-      <trans-unit id="mlCompatError">
-        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="translated">此构造已弃用。{0}。可以通过使用 “--langversion:5.0” 和 “--mlcompatibility” 启用此功能。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatKeyword">
-        <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
-        <target state="translated">在早期版本的 F# 中，“{0}”是保留关键字，但现在已启用此关键字的使用</target>
-        <note />
-      </trans-unit>
       <trans-unit id="mlCompatLightOffNoLongerSupported">
-        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="translated">“#light \"off\"” 或 “#indent \"off\"” 在的使用在 F# 2.0 中已启用，并且不再受支持</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
-        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="translated">在泛型类型名称，例如 “(int, int) Map”，之前使用多个带圆括号类型参数已在 F# 2.0 中弃用，并且不再受支持</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatSigColonNoLongerSupported">
-        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="translated">使用 “module M: sig ... end ” 在 F# 2.0 中已弃用，并且不再受支持。请将 “:” 更改为 “=”，删除 “sig” 和 “end”，并改为使用缩进</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatSigEndNoLongerSupported">
-        <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="translated">使用 “module M = sig ... end ” 在 F# 2.0 中已弃用，并且不再受支持。请删除 “sig” 和 “end” 并改用缩进</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatStructEndNoLongerSupported">
-        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
-        <target state="translated">使用 “module M = struct ... end ” 在 F# 2.0 中已弃用，并且不再受支持。请删除 “struct” 和 “end” 并改用缩进</target>
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -1045,6 +1000,11 @@
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
         <target state="translated">引用程序集路径无效</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersionOutOfSupport">
+        <source>Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</source>
+        <target state="new">Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">
@@ -2150,11 +2110,6 @@
       <trans-unit id="buildCouldNotFindSourceFile">
         <source>Source file '{0}' could not be found</source>
         <target state="translated">未能找到源文件“{0}”</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildInvalidSourceFileExtension">
-        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx, .fsscript, .ml or .mli.</source>
-        <target state="translated">无法识别“{0}”的文件扩展名。源文件的扩展名必须为 .fs、.fsi、.fsx、.fsscript、.ml 或 .mli。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCouldNotResolveAssembly">
@@ -3695,11 +3650,6 @@
       <trans-unit id="parsEofInVerbatimStringInComment">
         <source>End of file in verbatim string embedded in comment begun at or before here</source>
         <target state="translated">文件尾在此处或之前开始的注释中嵌入的原义字符串中</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsEofInIfOcaml">
-        <source>End of file in IF-OCAML section begun at or before here</source>
-        <target state="translated">文件尾在此处或之前开始的 IF-OCAML 节中</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInDirective">
@@ -6117,11 +6067,6 @@
         <target state="translated">定义条件编译符号(缩写: -d)</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsMlcompatibility">
-        <source>Ignore ML compatibility warnings</source>
-        <target state="translated">忽略 ML 兼容性警告</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsNologo">
         <source>Suppress compiler copyright message</source>
         <target state="translated">取消显示编译器版权消息</target>
@@ -6773,8 +6718,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">F# 代码中不允许使用制表符，除非使用了 #indent \"off\" 选项</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">F# 代码中不允许使用制表符，除非使用了 #indent \"off\" 选项</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">
@@ -6992,11 +6937,6 @@
         <target state="translated">对于在此位置或附近使用“unmanaged”约束的泛型构造的用法，无法解析其多义性</target>
         <note />
       </trans-unit>
-      <trans-unit id="mlCompatMessage">
-        <source>This construct is for ML compatibility. {0}. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.</source>
-        <target state="translated">此构造适用于 ML 兼容性。{0}。可以通过使用“--mlcompatibility”或“--nowarn:62”来禁用此警告。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ilFieldDoesNotHaveValidOffsetForStructureLayout">
         <source>The type '{0}' has been marked as having an Explicit layout, but the field '{1}' has not been marked with the 'FieldOffset' attribute</source>
         <target state="translated">类型“{0}”已标记为具有显式布局，但字段“{1}”尚未用“FieldOffset”特性进行标记</target>
@@ -7015,16 +6955,6 @@
       <trans-unit id="parsInvalidPrefixOperatorDefinition">
         <source>Invalid operator definition. Prefix operator definitions must use a valid prefix operator name.</source>
         <target state="translated">运算符定义无效。前缀运算符定义必须使用有效的前缀运算符名称。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCompilingExtensionIsForML">
-        <source>The file extensions '.ml' and '.mli' are for ML compatibility</source>
-        <target state="translated">文件扩展名“.ml”和“.mli”适用于 ML 兼容性</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexIndentOffForML">
-        <source>Consider using a file with extension '.ml' or '.mli' instead</source>
-        <target state="translated">请考虑改用扩展名为“.ml”或“.mli”的文件</target>
         <note />
       </trans-unit>
       <trans-unit id="activePatternIdentIsNotFunctionTyped">
@@ -8543,8 +8473,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
-        <source>Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.</source>
-        <target state="translated">与布尔条件配合使用，作为布尔值或运算符。相当于 ||。另外，也用于成员约束。</target>
+        <source>Used in member constraints.</source>
+        <target state="needs-review-translation">与布尔条件配合使用，作为布尔值或运算符。相当于 ||。另外，也用于成员约束。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

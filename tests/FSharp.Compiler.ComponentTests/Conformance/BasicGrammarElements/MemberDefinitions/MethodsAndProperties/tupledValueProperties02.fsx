@@ -8,7 +8,7 @@
 //<Expects status="success">    member Verify: int</Expects>
 //<Expects status="success">    member X: decimal \* decimal with set</Expects>
 //<Expects status="success">    member Y: decimal \* decimal with set</Expects>
-#light
+
 
 type x ()= class
             let mutable verificationX = false

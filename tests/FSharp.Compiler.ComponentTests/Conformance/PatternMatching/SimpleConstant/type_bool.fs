@@ -1,7 +1,7 @@
 // #Conformance #PatternMatching #Constants 
 // Pattern Matching - Simple Constants
 // Type: Bool
-#light
+
 
 let isZero x =
     match x with

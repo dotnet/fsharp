@@ -1,5 +1,5 @@
 // #Regression #Conformance #Binding 
-#light
+
 // Regression test for FSHARP1.0:1917
 // Verify that when given an ambiguous let binding we treat it as a function binding, rather than a pattern match.
 

@@ -766,12 +766,6 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         this.AssertQuickInfoContainsAtEndOfMarker (fileContents, "ype", "")  // just want to ensure there is no assertion fired by the parse tree walker
    
     [<Fact>]
-    member public this.``ShiftKeyDown``() =
-        ShiftKeyDown(this.VS)
-        this.AssertQuickInfoContainsAtEndOfMarker 
-          ("""#light""","#ligh","")
-
-    [<Fact>]
     member public this.``ActivePatterns.Declaration``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
           ("""let ( |One|Two| ) x = One(x+1)""","ne|Tw","int -> Choice")
@@ -1047,7 +1041,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
     [<Fact>]
     member public this.``IdentifierWithTick``() = 
         let code = 
-                                    ["#light"
+                                    [
                                      "let x = 1"
                                      "let x' = \"foo\""
                                      "if (*aaa*)x = 1 then (*bbb*)x' else \"\""
@@ -1113,12 +1107,11 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         let file1 = AddFileFromText(project,"File1.fs",
-                                    ["#light"
+                                    [
                                      "type Bob() = "
                                      "    let x = 1"])
         let file2 = AddFileFromText(project,"File2.fs",
-                                    ["#light"
-                                     "let bob = new File1.Bob()"])
+                                    [ "let bob = new File1.Bob()"])
         let file1 = OpenFile(project,"File1.fs")
         let file2 = OpenFile(project,"File2.fs")
         
@@ -1141,12 +1134,11 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         let file1 = AddLinkedFileFromTextEx(project, @"..\LINK.FS", @"..\link.fs", @"MyLink.fs",
-                                    ["#light"
+                                    [
                                      "type Bob() = "
                                      "    let x = 1"])
         let file2 = AddFileFromText(project,"File2.fs",
-                                    ["#light"
-                                     "let bob = new Link.Bob()"])
+                                    [ "let bob = new Link.Bob()"])
         let file1 = OpenFile(project, @"..\link.fs")
         let file2 = OpenFile(project, @"File2.fs")
         
@@ -1165,7 +1157,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
     [<Fact>]
     member public this.``TauStarter``() =
         let code =
-                                    ["#light"
+                                    [
                                      "type (*Scenario01*)Bob() ="
                                      "    let x = 1"
                                      "type (*Scenario021*)Bob ="
@@ -1190,8 +1182,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         Assert.True(tooltip.Contains("Alice ="))
 
     member private this.QuickInfoResolutionTest lines queries =
-        let code = [ yield "#light"
-                     yield! lines ]
+        let code = [ yield! lines ]
         let (_, _, file) = this.CreateSingleFileProject(code)
         TakeCoffeeBreak(this.VS) 
 
@@ -1356,13 +1347,13 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
     /// Quickinfo was throwing an exception when the mouse was over the end of a line.
     [<Fact>]
     member public this.``AtEndOfLine``() =
-        let fileContent = """#light"""
-        this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "#light" "Bug:"
+        let fileContent = """//"""
+        this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "//" "Bug:"
         
     [<Fact>]
     member public this.``Regression.FieldRepeatedInToolTip.Bug3538``() = 
         this.AssertIdentifierInToolTipExactlyOnce
-          """#light
+          """
              open System.Runtime.InteropServices
              [<StructLayout(LayoutKind.Explicit)>]
              type A() = 
@@ -1373,7 +1364,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
     [<Fact>]
     member public this.``Regression.FieldRepeatedInToolTip.Bug3818``() = 
         this.AssertIdentifierInToolTipExactlyOnce
-          """#light
+          """
              [<System.AttributeUsage(System.AttributeTargets.All, Inherited = false)>]
              type A() = 
                do ()"""
@@ -1381,7 +1372,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         
     [<Fact>]
     member public this.``MethodAndPropTooltip``() = 
-        let fileContent = """#light
+        let fileContent = """
                              open System
                              do
                                Console.Clear()
@@ -1472,7 +1463,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
     [<Fact>]
     member public this.``Regression.ModuleAlias.Bug3790b``() = 
         let code =
-                                    [ "#light"
+                                    [
                                       "module ``Some`` = Microsoft.FSharp.Collections.List"
                                       "let _ = ``Some``.append [] []" ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -1532,13 +1523,13 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         let solution = this.CreateSolution()
         let project1 = CreateProject(solution,"testproject1")
         let file1 = AddFileFromText(project1,"File1.fs",
-                                    ["#light"
+                                    [
                                      "type (*bob*)Bob1() = "
                                      "    let x = 1"])
         let file1 = OpenFile(project1,"File1.fs")
         let project2 = CreateProject(solution,"testproject2")
         let file2 = AddFileFromText(project2,"File2.fs",
-                                    ["#light"
+                                    [
                                      "type (*bob*)Bob2() = "
                                      "    let x = 1"])
         let file2 = OpenFile(project2,"File2.fs")
@@ -1562,11 +1553,11 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         let file1 = AddFileFromText(project,"File1.fs",
-                                    ["#light"
+                                    [
                                      "type Bob() = "
                                      "    let x = 1"])
         let file2 = AddFileFromText(project,"..\\File2.fs",
-                                    ["#light"
+                                    [
                                      "let bob = new File1.Bob()"])
         let file1 = OpenFile(project,"File1.fs")
         let file2 = OpenFile(project,"..\\File2.fs")
@@ -1587,7 +1578,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
     [<Fact>]
     member public this.``MissingDependencyReferences.QuickInfo.Bug5409``() =     
         let code = 
-                                    ["#light"
+                                    [
                                      "let myForm = new System.Windows.Forms.Form()"
                                     ]
         let (_, _, file) = this.CreateSingleFileProject(code, references = ["System.Windows.Forms"])
@@ -1992,8 +1983,7 @@ query."
     member public this.``Regression.Class.Printing.CSharp.Classes.Only.Bug4592``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
-              ["#light";
-              "System.Random"] ,
+              ["System.Random"] ,
              (* marker *)
              "System.Random",
              (* completed item *)             
@@ -2026,8 +2016,7 @@ query."
     member public this.``Regression.Class.Printing.CSharp.Classes.Bug4624``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
-              ["#light";
-               "System.Security.Policy.CodeConnectAccess"],
+              ["System.Security.Policy.CodeConnectAccess"],
              (* marker *)
              "System.Security.Policy.CodeConnectAccess",
              (* completed item *)             
@@ -2050,8 +2039,7 @@ query."
     member public this.``Regression.Class.Printing.FSharp.Classes.Bug4624``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
-              ["#light";               
-               "type F1() = ";
+              ["type F1() = ";
                "    class        ";
                "        inherit System.Windows.Forms.Form()";
                "        abstract AAA : int  with get";

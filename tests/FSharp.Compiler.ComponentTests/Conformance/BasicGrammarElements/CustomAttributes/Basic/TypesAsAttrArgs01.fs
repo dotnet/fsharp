@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #Attributes 
-#light
+
 
 // Verify the ability to specify types as parameters into Attributes
 

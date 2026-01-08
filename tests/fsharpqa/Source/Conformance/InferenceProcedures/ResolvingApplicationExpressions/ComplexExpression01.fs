@@ -1,5 +1,5 @@
 // #Conformance #TypeInference #ApplicationExpressions 
-#light
+
 
 // Verify you can pipe a complex expression through the F# compiler
 
