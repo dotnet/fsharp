@@ -28,6 +28,9 @@ exception MatchIncomplete of bool * (string * bool) option * range
 exception RuleNeverMatched of range
 exception EnumMatchIncomplete of bool * (string * bool) option * range
 
+// Debug flag for pattern match compilation - set to true to enable debug output
+let verbose = false
+
 type ActionOnFailure =
     | ThrowIncompleteMatchException
     | IgnoreWithWarning
@@ -768,6 +771,17 @@ let (|ConstNeedsDefaultCase|_|) c =
 ///     switches, string switches and floating point switches are treated in the
 ///     same way as DecisionTreeTest.IsInst.
 let rec BuildSwitch inpExprOpt g isNullFiltered expr edges dflt m =
+    if verbose then 
+        dprintf "BuildSwitch: isNullFiltered=%b, #edges=%d, dflt.IsSome=%b\n" isNullFiltered (List.length edges) (Option.isSome dflt)
+        edges |> List.iteri (fun i (TCase(discrim, _)) ->
+            let discrimStr = 
+                match discrim with
+                | DecisionTreeTest.IsNull -> "IsNull"
+                | DecisionTreeTest.Const (Const.String s) -> sprintf "Const(String \"%s\")" s
+                | DecisionTreeTest.Const c -> sprintf "Const(%A)" c
+                | DecisionTreeTest.ArrayLength (n, _) -> sprintf "ArrayLength(%d)" n
+                | _ -> sprintf "%A" discrim
+            dprintf "  Edge[%d]: %s\n" i discrimStr)
     match edges, dflt with
     | [], None      -> failwith "internal error: no edges and no default"
     | [], Some dflt -> dflt
@@ -793,23 +807,36 @@ let rec BuildSwitch inpExprOpt g isNullFiltered expr edges dflt m =
 
     // Split string, float, uint64, int64, unativeint, nativeint matches into serial equality tests
     | TCase((DecisionTreeTest.ArrayLength _ | DecisionTreeTest.Const (Const.Single _ | Const.Double _ | Const.String _ | Const.Decimal _ | Const.Int64 _ | Const.UInt64 _ | Const.IntPtr _ | Const.UIntPtr _)), _) :: _, Some dflt ->
+        if verbose then dprintf "foldBack: Processing %d edges with isNullFiltered=%b\n" (List.length edges) isNullFiltered
         List.foldBack
             (fun (TCase(discrim, tree)) sofar ->
+                if verbose then
+                    let discrimStr = 
+                        match discrim with
+                        | DecisionTreeTest.Const (Const.String s) -> sprintf "Const(String \"%s\")" s
+                        | DecisionTreeTest.Const c -> sprintf "Const(%A)" c
+                        | DecisionTreeTest.ArrayLength (n, _) -> sprintf "ArrayLength(%d)" n
+                        | _ -> sprintf "%A" discrim
+                    dprintf "  foldBack iteration: discrim=%s, isNullFiltered=%b\n" discrimStr isNullFiltered
                 let testexpr = expr
                 let testexpr =
                     match discrim with
                     | DecisionTreeTest.ArrayLength(n, _)       ->
+                        if verbose then dprintf "    ArrayLength: creating test with isNullFiltered=%b\n" isNullFiltered
                         let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
                         // Skip null check if we're in a null-filtered context
                         let test = mkILAsmCeq g m (mkLdlen g m vExpr) (mkInt g m n)
                         let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
+                        if verbose then dprintf "    ArrayLength: skipping null check? %b\n" isNullFiltered
                         mkLetBind m bind finalTest
                     | DecisionTreeTest.Const (Const.String "")  ->
+                        if verbose then dprintf "    Empty string: creating test with isNullFiltered=%b\n" isNullFiltered
                         // Optimize empty string check to use null-safe length check
                         let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
                         let test = mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)
                         // Skip null check if we're in a null-filtered context
                         let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
+                        if verbose then dprintf "    Empty string: skipping null check? %b\n" isNullFiltered
                         mkLetBind m bind finalTest
                     | DecisionTreeTest.Const (Const.String _ as c)  ->
                         mkCallEqualsOperator g m g.string_ty testexpr (Expr.Const (c, m, g.string_ty))
