@@ -19,3 +19,6 @@
 * Fix type erasure logic for `nativeptr<'T>` overloads to properly preserve element type differences during duplicate member checking. ([Issue #<ISSUE_NUMBER>](https://github.com/dotnet/fsharp/issues/<ISSUE_NUMBER>), [PR #<PR_NUMBER>](https://github.com/dotnet/fsharp/pull/<PR_NUMBER>))
 
 ### Changed
+
+* Removed parsing support for long-deprecated ML constructs and non-light syntax. ([PR #19143](https://github.com/dotnet/fsharp/pull/19143))
+* Released `asr`, `land`, `lor`, `lsl`, `lsr` and `lxor` as usable keywords (note: `mod` continues to be reserved). ([PR #19143](https://github.com/dotnet/fsharp/pull/19143))

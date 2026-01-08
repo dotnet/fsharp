@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
-#light
+
 
 // Sanity check generated equality
 

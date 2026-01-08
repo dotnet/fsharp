@@ -3115,6 +3115,9 @@ type internal FsiDynamicCompiler
 
     member _.ValueBound = valueBoundEvent.Publish
 
+    member _.PeekNextFragmentPath() =
+        FsiDynamicModulePrefix + $"%04d{fragmentId + 1}"
+
 //----------------------------------------------------------------------------
 // ctrl-c handling
 //----------------------------------------------------------------------------
@@ -3531,13 +3534,6 @@ type FsiStdinLexerProvider
         lexResourceManager: LexResourceManager
     ) =
 
-    // #light is the default for FSI
-    let indentationSyntaxStatus =
-        let initialIndentationAwareSyntaxStatus =
-            (tcConfigB.indentationAwareSyntax <> Some false)
-
-        IndentationAwareSyntaxStatus(initialIndentationAwareSyntaxStatus, warn = false)
-
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string MaybeNull) =
         UnicodeLexing.FunctionAsLexbuf(
             true,
@@ -3598,24 +3594,10 @@ type FsiStdinLexerProvider
         let applyLineDirectives = true
 
         let lexargs =
-            mkLexargs (
-                tcConfigB.conditionalDefines,
-                indentationSyntaxStatus,
-                lexResourceManager,
-                [],
-                diagnosticsLogger,
-                PathMap.empty,
-                applyLineDirectives
-            )
+            mkLexargs (tcConfigB.conditionalDefines, lexResourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
 
         let tokenizer =
-            LexFilter.LexFilter(
-                indentationSyntaxStatus,
-                tcConfigB.compilingFSharpCore,
-                Lexer.token lexargs skip,
-                lexbuf,
-                tcConfigB.tokenize = TokenizeOption.Debug
-            )
+            LexFilter.LexFilter(tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf, tcConfigB.tokenize = TokenizeOption.Debug)
 
         tokenizer
 
@@ -4484,13 +4466,25 @@ type FsiInteractionProcessor
         let names = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
         names
 
-    member _.ParseAndCheckInteraction(legacyReferenceResolver, istate, text: string) =
+    member _.ParseAndCheckInteraction(legacyReferenceResolver, istate, text: string, ?keepAssemblyContents: bool) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        let fsiInteractiveChecker =
-            FsiInteractiveChecker(legacyReferenceResolver, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
+        let asmName =
+            match keepAssemblyContents with
+            | Some true -> Some(fsiDynamicCompiler.PeekNextFragmentPath())
+            | _ -> None
 
-        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text)
+        let fsiInteractiveChecker =
+            FsiInteractiveChecker(
+                legacyReferenceResolver,
+                tcConfig,
+                istate.tcGlobals,
+                istate.tcImports,
+                istate.tcState,
+                ?keepAssemblyContents = keepAssemblyContents
+            )
+
+        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text, ?asmName = asmName)
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -4842,8 +4836,13 @@ type FsiEvaluationSession
         fsiInteractionProcessor.CompletionsForPartialLID(fsiInteractionProcessor.CurrentState, longIdent)
         |> Seq.ofList
 
-    member _.ParseAndCheckInteraction(code) =
-        fsiInteractionProcessor.ParseAndCheckInteraction(legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
+    member _.ParseAndCheckInteraction(code, ?keepAssemblyContents) =
+        fsiInteractionProcessor.ParseAndCheckInteraction(
+            legacyReferenceResolver,
+            fsiInteractionProcessor.CurrentState,
+            code,
+            ?keepAssemblyContents = keepAssemblyContents
+        )
         |> Cancellable.runWithoutCancellation
 
     member _.InteractiveChecker = checker

@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #TypeExtensions 
-#light
+
 
 // Verify ability to add a type extension for an operator
 // Note that C# and VB do NOT support this.

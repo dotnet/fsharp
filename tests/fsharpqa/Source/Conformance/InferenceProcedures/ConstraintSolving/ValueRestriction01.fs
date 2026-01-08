@@ -1,5 +1,5 @@
 // #Conformance #TypeInference #TypeConstraints 
-#light
+
 
 // Verify ability to have unknown open variables if
 // they are internal.

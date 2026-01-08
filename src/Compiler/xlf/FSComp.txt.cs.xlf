@@ -27,11 +27,6 @@
         <target state="translated">Zdrojový soubor {0} (na pozici {1}/{2}) se už zobrazil v seznamu kompilací (na pozici {3}/{4}). Ověřte prosím, že je v souboru projektu zahrnutý jen jednou.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildInvalidSourceFileExtensionML">
-        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojové soubory musí mít příponu .fs, .fsi, .fsx nebo .fsscript. Pokud chcete povolit použití zastaralých přípon .ml nebo .mli, použijte parametry --langversion:5.0 a --mlcompatibility.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojové soubory musí mít příponu .fs, .fsi, .fsx nebo .fsscript.</target>
@@ -130,6 +125,11 @@
       <trans-unit id="chkInstanceMemberOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
         <target state="translated">Pokud typ používá atribut [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], znamená to, že je statický. Členové instance nejsou povoleni.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument">
+        <source>The interface '{0}' cannot be used as a type argument because the static abstract member '{1}' does not have a most specific implementation in the interface.</source>
+        <target state="new">The interface '{0}' cannot be used as a type argument because the static abstract member '{1}' does not have a most specific implementation in the interface.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNotTailRecursive">
@@ -492,11 +492,6 @@
         <target state="translated">Povolit duplikát malými písmeny při atributu RequireQualifiedAccess</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureMLCompatRevisions">
-        <source>ML compatibility revisions</source>
-        <target state="translated">Revize kompatibility ML</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
         <target state="translated">Zahození shody vzoru není povolené pro případ sjednocení, který nepřijímá žádná data.</target>
@@ -837,11 +832,6 @@
         <target state="translated">Rozšířená interpolace řetězců není v této verzi jazyka F# podporována.</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexIfOCaml">
-        <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
-        <target state="translated">Oblasti IF-FSHARP/IF-CAML už nejsou podporovány.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="lexInvalidAsciiByteLiteral">
         <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.</source>
         <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.</target>
@@ -947,39 +937,9 @@
         <target state="translated">Pro případ sjednocení, který nepřijímá žádná data, se zahození vzoru nepovoluje.</target>
         <note />
       </trans-unit>
-      <trans-unit id="mlCompatError">
-        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="translated">Tento konstruktor je zastaralý. {0}. Tuto funkci můžete povolit pomocí parametrů --langversion:5.0 a --mlcompatibility.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatKeyword">
-        <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
-        <target state="translated">V předchozích verzích jazyka F# bylo {0} rezervovaným klíčovým slovem, ale použití tohoto klíčového slova je nyní zastaralé.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="mlCompatLightOffNoLongerSupported">
-        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="translated">Použití #light \"off\" nebo #indent \"off\" je ve verzi F# 2.0 zastaralé a už není podporováno.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
-        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="translated">Použití několika parametrů typu v závorkách před názvem obecného typu, například (int, int) Map, je ve verzi F# 2.0 zastaralé a už není podporováno.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatSigColonNoLongerSupported">
-        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="translated">Použití modulu M: sig ... end je ve verzi F# 2.0 zastaralé a už není podporováno. Změňte : na =, odeberte sig a end použijte místo toho odsazení.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatSigEndNoLongerSupported">
-        <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="translated">Použití modulu M: sig ... end je ve verzi F# 2.0 zastaralé a už není podporováno. Odeberte sig a end použijte místo toho odsazení.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatStructEndNoLongerSupported">
-        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
-        <target state="translated">Použití modulu M: struct ... end je ve verzi F# 2.0 zastaralé a už není podporováno. Odeberte struct a end použijte místo toho odsazení.</target>
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -1040,6 +1000,11 @@
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
         <target state="translated">Neplatná cesta k referenčnímu sestavení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersionOutOfSupport">
+        <source>Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</source>
+        <target state="new">Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">
@@ -2145,11 +2110,6 @@
       <trans-unit id="buildCouldNotFindSourceFile">
         <source>Source file '{0}' could not be found</source>
         <target state="translated">Zdrojový soubor {0} se nenašel.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildInvalidSourceFileExtension">
-        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx, .fsscript, .ml or .mli.</source>
-        <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojový soubor musí mít příponu .fs, .fsi, .fsx, .fsscript, .ml nebo .mli.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCouldNotResolveAssembly">
@@ -3690,11 +3650,6 @@
       <trans-unit id="parsEofInVerbatimStringInComment">
         <source>End of file in verbatim string embedded in comment begun at or before here</source>
         <target state="translated">Konec souboru začal v doslovném řetězci vloženém do komentáře na této pozici nebo před ní.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsEofInIfOcaml">
-        <source>End of file in IF-OCAML section begun at or before here</source>
-        <target state="translated">Konec souboru začal v oddílu IF-OCAML na této pozici nebo před ní.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInDirective">
@@ -6112,11 +6067,6 @@
         <target state="translated">Definuje symboly podmíněné kompilace (krátký tvar: -d).</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsMlcompatibility">
-        <source>Ignore ML compatibility warnings</source>
-        <target state="translated">Ignoruje upozornění na kompatibilitu s ML.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsNologo">
         <source>Suppress compiler copyright message</source>
         <target state="translated">Potlačí zprávu o autorských právech kompilátoru.</target>
@@ -6768,8 +6718,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">Výraz tabulátoru není v kódu F# povolený, pokud se nepoužije možnost #indent \"off\".</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="needs-review-translation">Výraz tabulátoru není v kódu F# povolený, pokud se nepoužije možnost #indent \"off\".</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">
@@ -6987,11 +6937,6 @@
         <target state="translated">Nepovedlo se vyřešit nejednoznačnost v použití obecného konstruktoru s omezením unmanaged na této pozici nebo blízko ní.</target>
         <note />
       </trans-unit>
-      <trans-unit id="mlCompatMessage">
-        <source>This construct is for ML compatibility. {0}. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.</source>
-        <target state="translated">Tento konstruktor je určený pro kompatibilitu ML. {0}. Toto upozornění můžete pomocí --mlcompatibility nebo --nowarn:62 vypnout.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ilFieldDoesNotHaveValidOffsetForStructureLayout">
         <source>The type '{0}' has been marked as having an Explicit layout, but the field '{1}' has not been marked with the 'FieldOffset' attribute</source>
         <target state="translated">Typ {0} je označený jako typ s explicitním rozložením, ale u pole {1} chybí atribut FieldOffset.</target>
@@ -7010,16 +6955,6 @@
       <trans-unit id="parsInvalidPrefixOperatorDefinition">
         <source>Invalid operator definition. Prefix operator definitions must use a valid prefix operator name.</source>
         <target state="translated">Neplatná definice operátora. Definice operátorů předpon musí používat platné názvy těchto operátorů.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCompilingExtensionIsForML">
-        <source>The file extensions '.ml' and '.mli' are for ML compatibility</source>
-        <target state="translated">Přípony .ml a .mli zajišťují kompatibilitu s ML.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexIndentOffForML">
-        <source>Consider using a file with extension '.ml' or '.mli' instead</source>
-        <target state="translated">Zvažte možnost použít místo toho soubor s příponou .ml nebo .mli.</target>
         <note />
       </trans-unit>
       <trans-unit id="activePatternIdentIsNotFunctionTyped">
@@ -8538,8 +8473,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
-        <source>Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.</source>
-        <target state="translated">Používá se v logických podmínkách jako logický operátor or. Ekvivalent ||. Používá se také v omezeních členů.</target>
+        <source>Used in member constraints.</source>
+        <target state="needs-review-translation">Používá se v logických podmínkách jako logický operátor or. Ekvivalent ||. Používá se také v omezeních členů.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

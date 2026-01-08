@@ -2,7 +2,7 @@
 // By default, record types implement IComparable
 
 
-#light
+
 
 [<Measure>] type Kg
 

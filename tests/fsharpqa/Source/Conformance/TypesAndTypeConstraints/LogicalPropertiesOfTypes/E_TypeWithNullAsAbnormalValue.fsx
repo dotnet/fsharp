@@ -1,6 +1,6 @@
 // #Regression #Conformance #TypeConstraints 
 // Type With Null As Abnormal Value.fsx
-#light
+
 // F# List
 let x1 : int list = null
 

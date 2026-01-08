@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:2097
 // Make sure we can assign to a static field imported from a C# assembly
 //<Expects status="success"></Expects>
-#light
+
 
 // Retrieve initial value
 let before = C.d

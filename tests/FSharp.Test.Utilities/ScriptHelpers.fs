@@ -22,7 +22,6 @@ type LangVersion =
     | V90
     | Preview
     | Latest
-    | SupportsMl
 
 type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
 
@@ -42,7 +41,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         if quiet then "--quiet"
         match langVersion with
         | LangVersion.V47 -> "--langversion:4.7"
-        | LangVersion.V50 | LangVersion.SupportsMl -> "--langversion:5.0"
+        | LangVersion.V50 -> "--langversion:5.0"
         | LangVersion.Preview -> "--langversion:preview"
         | LangVersion.Latest -> "--langversion:latest"
         | LangVersion.V60 -> "--langversion:6.0"

@@ -1,5 +1,5 @@
 // #Regression #Conformance #UnitsOfMeasure 
-#light 
+
 
 // Regression for FSB 3472, apply the type equations float<1> = float, float32<1> = float, decimal<1> = decimal when computing all predicates on types
 

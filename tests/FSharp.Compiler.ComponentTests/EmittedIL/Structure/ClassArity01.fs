@@ -1,5 +1,5 @@
 // #NoMT #CodeGen #Interop 
-#light
+
 
 // Verify the generation of class function arity
 

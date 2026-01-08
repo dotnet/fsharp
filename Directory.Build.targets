@@ -20,21 +20,6 @@
     <PackageReference Include="XunitXml.TestLogger" Version="$(XunitXmlTestLoggerVersion)" />
   </ItemGroup>
 
-  <!--
-    When .NET gets built from source, make the SDK aware there are bootstrap packages
-    for Microsoft.NETCore.App.Runtime.<rid> and Microsoft.NETCore.App.Crossgen2.<rid>.
-  -->
-  <ItemGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
-    <KnownRuntimePack Update="Microsoft.NETCore.App">
-      <RuntimePackRuntimeIdentifiers
-        Condition="'%(TargetFramework)' == '$(NetCurrent)'">%(RuntimePackRuntimeIdentifiers);$(NETCoreSdkRuntimeIdentifier)</RuntimePackRuntimeIdentifiers>
-    </KnownRuntimePack>
-    <KnownCrossgen2Pack Update="Microsoft.NETCore.App.Crossgen2">
-      <Crossgen2RuntimeIdentifiers
-        Condition="'%(TargetFramework)' == '$(NetCurrent)'">%(Crossgen2RuntimeIdentifiers);$(NETCoreSdkRuntimeIdentifier)</Crossgen2RuntimeIdentifiers>
-    </KnownCrossgen2Pack>
-  </ItemGroup>
-
   <!-- We want to restore ALL the MIBCs when we build anything, since in the future it will contain different profiles, not only the FSC one we got from building Giraffe -->
   <Import Project="$(MSBuildThisFileDirectory)\eng\restore\optimizationData.targets"/>
   <ItemGroup>
