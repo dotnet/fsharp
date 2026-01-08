@@ -13,6 +13,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
+open FSharp.Compiler.Symbols.XmlDocInheritance
 open FSharp.Compiler.IO
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -343,7 +344,9 @@ module internal SymbolHelpers =
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d =
         match xmlDoc with
         | Some xmlDoc when not xmlDoc.IsEmpty  ->
-            FSharpXmlDoc.FromXmlText xmlDoc
+            // Expand <inheritdoc> elements for tooltips (design-time)
+            let expandedDoc = expandInheritDoc (Some infoReader) m Set.empty xmlDoc
+            FSharpXmlDoc.FromXmlText expandedDoc
         | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) =

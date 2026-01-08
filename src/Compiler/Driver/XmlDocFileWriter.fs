@@ -6,6 +6,7 @@ open System.IO
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
+open FSharp.Compiler.Symbols.XmlDocInheritance
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
@@ -78,7 +79,7 @@ module XmlDocWriter =
 
         doModuleSig None generatedCcu.Contents
 
-    let WriteXmlDocFile (g, _infoReader: InfoReader, assemblyName, generatedCcu: CcuThunk, xmlFile) =
+    let WriteXmlDocFile (g, infoReader: InfoReader, assemblyName, generatedCcu: CcuThunk, xmlFile) =
         if not (FileSystemUtils.checkSuffix xmlFile "xml") then
             error (Error(FSComp.SR.docfileNoXmlSuffix (), Range.rangeStartup))
 
@@ -86,7 +87,10 @@ module XmlDocWriter =
 
         let addMember id xmlDoc =
             if hasDoc xmlDoc then
-                let doc = xmlDoc.GetXmlText()
+                // Expand <inheritdoc> elements before writing to XML file
+                let expandedDoc = 
+                    XmlDocInheritance.expandInheritDoc (Some infoReader) Range.rangeStartup Set.empty xmlDoc
+                let doc = expandedDoc.GetXmlText()
                 members <- (id, doc) :: members
 
         let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc

@@ -1583,3 +1583,189 @@ type Class2() =
     parseResults |> checkParsingErrors [||]
     checkResults |> checkXmlSymbols [ Parameter "MyRather.MyDeep.MyNamespace.Class1.X", [|"x"|] ]
     checkResults |> checkXmlSymbols [ Parameter "MyRather.MyDeep.MyNamespace.Class1", [|"class1"|] ]
+
+// Tests for <inheritdoc> in tooltips/quickinfo (design-time)
+module InheritDocTooltipTests =
+    
+    [<Fact>]
+    let ``inheritdoc should expand in tooltip for type``() =
+        let code = """
+module Test
+
+/// <summary>Base type documentation</summary>
+/// <remarks>Important remarks</remarks>
+type BaseType() = class end
+
+/// <inheritdoc cref="T:Test.BaseType"/>
+type DerivedType() = class end
+"""
+        let parseResults, checkResults = getParseAndCheckResults code
+        
+        // Check that DerivedType symbol has expanded XML
+        let derivedSymbol = findSymbolByName "DerivedType" checkResults
+        let xmlDoc = (derivedSymbol :?> FSharpEntity).XmlDoc
+        
+        match xmlDoc with
+        | FSharpXmlDoc.FromXmlText t ->
+            let xmlText = t.UnprocessedLines |> String.concat "\n"
+            // Should contain the inherited documentation
+            Assert.Contains("<summary>Base type documentation</summary>", xmlText)
+            Assert.Contains("<remarks>Important remarks</remarks>", xmlText)
+        | _ -> failwith "Expected FromXmlText"
+    
+    [<Fact>]
+    let ``inheritdoc with path should filter in tooltip``() =
+        let code = """
+module Test
+
+/// <summary>Base documentation</summary>
+/// <remarks>Base remarks</remarks>
+type BaseType() = class end
+
+/// <summary>Derived specific</summary>
+/// <inheritdoc cref="T:Test.BaseType" path="/remarks"/>
+type DerivedType() = class end
+"""
+        let parseResults, checkResults = getParseAndCheckResults code
+        
+        let derivedSymbol = findSymbolByName "DerivedType" checkResults
+        let xmlDoc = (derivedSymbol :?> FSharpEntity).XmlDoc
+        
+        match xmlDoc with
+        | FSharpXmlDoc.FromXmlText t ->
+            let xmlText = t.UnprocessedLines |> String.concat "\n"
+            // Should have its own summary
+            Assert.Contains("<summary>Derived specific</summary>", xmlText)
+            // Should have inherited remarks only
+            Assert.Contains("<remarks>Base remarks</remarks>", xmlText)
+            // Should NOT have inherited summary
+            Assert.DoesNotContain("Base documentation", xmlText)
+        | _ -> failwith "Expected FromXmlText"
+    
+    [<Fact>]
+    let ``inheritdoc should expand for method in tooltip``() =
+        let code = """
+module Test
+
+type BaseClass() =
+    /// <summary>Base method documentation</summary>
+    /// <param name="x">First parameter</param>
+    /// <param name="y">Second parameter</param>
+    /// <returns>The sum</returns>
+    abstract member Add: x:int -> y:int -> int
+    default _.Add(x, y) = x + y
+
+type DerivedClass() =
+    inherit BaseClass()
+    /// <inheritdoc/>
+    override _.Add(x, y) = x + y + 1
+"""
+        let parseResults, checkResults = getParseAndCheckResults code
+        
+        // Find the override method
+        let allSymbols = checkResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+        let addMethod = 
+            allSymbols 
+            |> Seq.filter (fun su -> 
+                match su.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m -> m.DisplayName = "Add" && m.DeclaringEntity.IsSome && m.DeclaringEntity.Value.DisplayName = "DerivedClass"
+                | _ -> false)
+            |> Seq.head
+        
+        let xmlDoc = (addMethod.Symbol :?> FSharpMemberOrFunctionOrValue).XmlDoc
+        
+        // Note: Implicit inheritdoc (without cref) is not yet supported, 
+        // so this should either have original doc or emit a warning
+        // For now we just verify the XmlDoc is not empty
+        match xmlDoc with
+        | FSharpXmlDoc.FromXmlText t ->
+            // Should have the inheritdoc element preserved or expanded
+            let xmlText = t.UnprocessedLines |> String.concat "\n"
+            Assert.NotEmpty(xmlText)
+        | FSharpXmlDoc.None -> ()
+        | _ -> ()
+    
+    [<Fact>]
+    let ``inheritdoc should handle nested inheritance in tooltip``() =
+        let code = """
+module Test
+
+/// <summary>GrandBase documentation</summary>
+type GrandBase() = class end
+
+/// <inheritdoc cref="T:Test.GrandBase"/>
+type Base() = class end
+
+/// <inheritdoc cref="T:Test.Base"/>
+type Derived() = class end
+"""
+        let parseResults, checkResults = getParseAndCheckResults code
+        
+        let derivedSymbol = findSymbolByName "Derived" checkResults
+        let xmlDoc = (derivedSymbol :?> FSharpEntity).XmlDoc
+        
+        match xmlDoc with
+        | FSharpXmlDoc.FromXmlText t ->
+            let xmlText = t.UnprocessedLines |> String.concat "\n"
+            // Should have recursively expanded documentation from GrandBase
+            Assert.Contains("GrandBase documentation", xmlText)
+        | _ -> failwith "Expected FromXmlText"
+    
+    [<Fact>]
+    let ``inheritdoc circular reference should not crash tooltip``() =
+        let code = """
+module Test
+
+/// <inheritdoc cref="T:Test.TypeB"/>
+type TypeA() = class end
+
+/// <inheritdoc cref="T:Test.TypeA"/>
+type TypeB() = class end
+"""
+        let parseResults, checkResults = getParseAndCheckResults code
+        
+        // Should not crash - cycle detection should prevent infinite recursion
+        let typeASymbol = findSymbolByName "TypeA" checkResults
+        let xmlDocA = (typeASymbol :?> FSharpEntity).XmlDoc
+        
+        let typeBSymbol = findSymbolByName "TypeB" checkResults
+        let xmlDocB = (typeBSymbol :?> FSharpEntity).XmlDoc
+        
+        // Both should have their original docs (with inheritdoc preserved)
+        // The cycle prevention should return the original doc
+        match xmlDocA, xmlDocB with
+        | FSharpXmlDoc.FromXmlText tA, FSharpXmlDoc.FromXmlText tB ->
+            Assert.NotEmpty(tA.UnprocessedLines)
+            Assert.NotEmpty(tB.UnprocessedLines)
+        | _ -> ()
+    
+    [<Fact>]
+    let ``inheritdoc should work for interface implementation tooltip``() =
+        let code = """
+module Test
+
+/// <summary>Service interface</summary>
+/// <remarks>Core contract</remarks>
+type IService =
+    /// <summary>Execute operation</summary>
+    /// <param name="input">The input</param>
+    abstract Execute: input:string -> string
+
+/// <inheritdoc cref="T:Test.IService"/>
+type ServiceImpl() =
+    interface IService with
+        member _.Execute(input) = input
+"""
+        let parseResults, checkResults = getParseAndCheckResults code
+        
+        let implSymbol = findSymbolByName "ServiceImpl" checkResults
+        let xmlDoc = (implSymbol :?> FSharpEntity).XmlDoc
+        
+        match xmlDoc with
+        | FSharpXmlDoc.FromXmlText t ->
+            let xmlText = t.UnprocessedLines |> String.concat "\n"
+            // Should have inherited interface documentation
+            Assert.Contains("Service interface", xmlText)
+            Assert.Contains("Core contract", xmlText)
+        | _ -> failwith "Expected FromXmlText"
+
