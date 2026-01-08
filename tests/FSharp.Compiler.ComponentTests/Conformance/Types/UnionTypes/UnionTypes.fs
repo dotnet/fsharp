@@ -517,16 +517,6 @@ module UnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    //SOURCE=SampleFromSpec01b.fsx SCFLAGS=                                                       # SampleFromSpec01b.fsx
-    [<Theory; FileInlineData("SampleFromSpec01b.fsx")>]
-    let ``SampleFromSpec01b_fsx`` compilation =
-        compilation
-        |> getCompilation
-        |> withOcamlCompat
-        |> withLangVersion50
-        |> verifyCompileAndRun
-        |> shouldSucceed
-
     //SOURCE=SampleFromSpec01d.fsx SCFLAGS=                                                       # SampleFromSpec01d.fsx
     [<Theory; FileInlineData("SampleFromSpec01d.fsx")>]
     let ``SampleFromSpec01d_fsx`` compilation =

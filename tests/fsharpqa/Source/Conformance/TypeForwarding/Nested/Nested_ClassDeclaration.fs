@@ -1,4 +1,4 @@
-#light
+
 open System
 
 let a = 1

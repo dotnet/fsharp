@@ -2,7 +2,7 @@
 #if TESTS_AS_APP
 module Core_controlWebExt
 #endif
-#light
+
 
 let failuresFile =
    let f = System.Environment.GetEnvironmentVariable("CONTROL_FAILURES_LOG")

@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
-#light
+
 
 type EType = A = 1 | B = 2
 

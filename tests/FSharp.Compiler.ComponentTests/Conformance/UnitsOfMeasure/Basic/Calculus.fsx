@@ -1,5 +1,5 @@
 // #Conformance #UnitsOfMeasure 
-#light
+
 
 let diff (h:float<_>) (f :_ -> float<_>) = fun x -> (f (x+h) - f (x-h)) / (2.0*h)
   

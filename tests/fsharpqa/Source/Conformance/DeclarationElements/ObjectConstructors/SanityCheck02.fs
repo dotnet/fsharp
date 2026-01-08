@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #ObjectConstructors 
-#light
+
 
 type King =
     class

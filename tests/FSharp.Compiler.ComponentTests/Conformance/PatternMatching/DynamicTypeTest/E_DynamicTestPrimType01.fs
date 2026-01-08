@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #TypeTests 
-#light
+
 
 // Verify error when using a dynamic type test on 
 // type without any proper sub types.

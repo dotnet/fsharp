@@ -3,7 +3,7 @@
 //<Expects id="FS0010" span="(13,6)" status="error">Unexpected character '.+' in pattern. Expected '\)' or other token</Expects>
 //<Expects id="FS0583" span="(13,5)" status="error">Unmatched '\('</Expects>
 //<Expects id="FS0010" span="(15,6)" status="error">Unexpected character '.+' in expression</Expects>
-#light
+
 let (++) x = x + 1
 if (++) 4 <> 5 then exit 1
 
