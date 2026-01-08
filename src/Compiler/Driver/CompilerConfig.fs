@@ -1424,6 +1424,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.CloneToBuilder() =
         { data with
             conditionalDefines = data.conditionalDefines
+            disabledLanguageFeatures = data.disabledLanguageFeatures
         }
 
     member tcConfig.ComputeCanContainEntryPoint(sourceFiles: string list) =
