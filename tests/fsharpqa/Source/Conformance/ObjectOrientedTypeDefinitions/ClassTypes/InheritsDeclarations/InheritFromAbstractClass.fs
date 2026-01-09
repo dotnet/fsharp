@@ -3,7 +3,7 @@
 // Impossible to subclass certain C# classes
 //<Expects status="success"></Expects>
 
-#light
+
 type Bottom() =
     inherit Mid()
     override x.PubF() = ()

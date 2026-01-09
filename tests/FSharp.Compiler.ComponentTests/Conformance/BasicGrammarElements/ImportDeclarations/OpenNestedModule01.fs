@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #Import 
-#light
+
 
 module ABC =
 

@@ -37,7 +37,6 @@ type LanguageFeature =
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
-    | MLCompatRevisions
     | BetterExceptionPrinting
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
@@ -103,8 +102,11 @@ type LanguageVersion =
     /// Create a LanguageVersion management object
     new: string -> LanguageVersion
 
-    /// Get the list of valid versions
+    /// Is the selected LanguageVersion valid
     static member ContainsVersion: string -> bool
+
+    /// Is the selected LanguageVersion currently supported
+    static member IsVersionSupported: string -> bool
 
     /// Has preview been explicitly specified
     member IsPreviewEnabled: bool

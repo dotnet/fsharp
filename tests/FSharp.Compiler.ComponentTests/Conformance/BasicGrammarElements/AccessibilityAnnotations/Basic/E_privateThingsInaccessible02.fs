@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #Accessibility 
-#light
+
 // Private modules
 // Private type or module is private to its immediately enclosing module. This means the module PrivateModule in the repro 
 // is indeed accessible to the rest of the implicit enclosing module. 

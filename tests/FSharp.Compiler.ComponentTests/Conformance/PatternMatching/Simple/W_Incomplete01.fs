@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching 
-#light
+
 
 // Regression testcase for FSharp 1.0:2070
 // Warning on incomplete match

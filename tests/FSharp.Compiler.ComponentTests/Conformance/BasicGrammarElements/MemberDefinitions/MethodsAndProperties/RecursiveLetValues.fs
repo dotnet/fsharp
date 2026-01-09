@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
-#light
+
 
 // Regression test for FSHARP1.0:4150 - Bug in List.partition (Was : Recursive functions declared in implicit class constructors taking exactly two parameters yield error "Invalid Value.")
 

@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Classes #Inheritance 
-#light
+
 
 // Verify that the 'base' keyword refers to base type
 

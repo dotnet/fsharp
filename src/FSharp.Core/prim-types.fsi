@@ -1733,8 +1733,10 @@ namespace Microsoft.FSharp.Core
         module IntrinsicOperators = 
 
             /// <summary>Binary 'and'. When used as a binary operator the right hand value is evaluated only on demand.</summary>
-            [<CompilerMessage("In F# code, use 'e1 && e2' instead of 'e1 & e2'", 1203, IsHidden=true)>]
-            val (&): e1: bool -> e2: bool -> bool
+            [<CompiledName("op_Amp")>]
+            [<Obsolete("This construct is deprecated. Use 'e1 && e2' instead.", true)>]
+            [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
+            val __obsoleteAnd: e1: bool -> e2: bool -> bool
 
             /// <summary>Binary 'and'. When used as a binary operator the right hand value is evaluated only on demand</summary>
             ///
@@ -1746,8 +1748,9 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>Binary 'or'. When used as a binary operator the right hand value is evaluated only on demand.</summary>
             [<CompiledName("Or")>]
-            [<CompilerMessage("In F# code, use 'e1 || e2' instead of 'e1 or e2'", 1203, IsHidden=true)>]
-            val (or): e1: bool -> e2: bool -> bool
+            [<Obsolete("This construct is deprecated. Use 'e1 || e2' instead.", true)>]
+            [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
+            val __obsoleteOr: e1: bool -> e2: bool -> bool
 
             /// <summary>Binary 'or'. When used as a binary operator the right hand value is evaluated only on demand</summary>
             ///
@@ -3271,8 +3274,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultValueArg")>]
         val defaultValueArg: arg: 'T voption -> defaultValue: 'T -> 'T 
 
-        /// <summary>Concatenate two strings. The operator '+' may also be used.</summary>
-        [<CompilerMessage("This construct is for ML compatibility. Consider using the '+' operator instead. This may require a type annotation to indicate it acts on strings. This message can be disabled using '--nowarn:62' or '#nowarn \"62\"'.", 62, IsHidden=true)>]
+        /// <summary>Concatenate two strings. Use the '+' operator instead.</summary>
+        [<Obsolete("This construct is deprecated. Use the '+' operator instead.", true)>]
+        [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
         val (^): s1:string -> s2:string -> string
 
         /// <summary>Raises an exception</summary>

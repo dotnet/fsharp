@@ -4,7 +4,7 @@
 // Regression test for FSHARP1.0:5375
 //<Expects id="FS0557" span="(11,36-11,39)" status="error">A getter property is expected to be a function, e\.g\. 'get\(\) = \.\.\.' or 'get\(index\) = \.\.\.'</Expects>
 
-#light
+
 
 type action() =
     let mutable m_addToExisting = false

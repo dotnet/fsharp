@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #Unions 
-#light
+
 
 // Verify error if not all union pattern rules capture the
 // same set of values

@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Enums 
-#light
+
 
 // FSB 937, enums on not int32 types? e.g. int64.
 

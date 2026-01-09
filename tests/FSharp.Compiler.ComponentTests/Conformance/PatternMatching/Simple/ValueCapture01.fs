@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Test some of the semantics of value capture
 

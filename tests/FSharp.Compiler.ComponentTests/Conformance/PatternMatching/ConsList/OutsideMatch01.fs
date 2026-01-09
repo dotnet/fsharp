@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching
-#light
+
 
 // Verify pattern matching on lists outside of a patch statement
 

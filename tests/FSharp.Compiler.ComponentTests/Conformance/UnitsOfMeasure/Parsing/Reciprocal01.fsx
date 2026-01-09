@@ -5,7 +5,7 @@
 // Regression test for FSHARP1.0:4195
 // Reciprocals parsed incorrectly for Measure definitions.
 
-#light
+
 open System
 
 [<Measure>] type s              // [<Measure>] type s

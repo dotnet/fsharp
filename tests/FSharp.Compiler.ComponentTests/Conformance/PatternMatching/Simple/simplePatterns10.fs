@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light 
+
 
 let f x y =
     match x, y with

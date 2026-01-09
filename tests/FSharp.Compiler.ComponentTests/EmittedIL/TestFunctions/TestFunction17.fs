@@ -1,5 +1,5 @@
 // #NoMono #NoMT #CodeGen #EmittedIL   
-#light
+
 
 type R = { x:int; y:int }
 

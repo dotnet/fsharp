@@ -4,5 +4,5 @@
 // We want to verify that when the extension is .fsx
 // we do not emit any warning like:
 // "The declarations in this File will be placed in an implicit module..."
-#light
+
 exit 0

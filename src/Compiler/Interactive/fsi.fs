@@ -897,10 +897,10 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
 
     member _.ResetErrorCount() = errorCount <- 0
 
-    override _.DiagnosticSink(diagnostic, severity) =
+    override _.DiagnosticSink(diagnostic) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions) with
         | FSharpDiagnosticSeverity.Error ->
             fsiStdinSyphon.PrintDiagnostic(tcConfig, diagnostic)
             errorCount <- errorCount + 1
@@ -913,7 +913,7 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
         | FSharpDiagnosticSeverity.Info as adjustedSeverity ->
             DoWithDiagnosticColor adjustedSeverity (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
-                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
+                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, diagnostic.Severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
@@ -1068,8 +1068,41 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                             (fun args ->
                                 let scriptFile = args[0]
                                 let scriptArgs = List.tail args
+
+                                // Filter out and process preferreduilang from script args
+                                let isPreferredUiLangArg (arg: string) =
+                                    arg.StartsWith("--preferreduilang:", StringComparison.OrdinalIgnoreCase)
+                                    || arg.StartsWith("/preferreduilang:", StringComparison.OrdinalIgnoreCase)
+
+                                let rec filterScriptArgs (args: string list) =
+                                    match args with
+                                    | [] -> []
+                                    | (arg: string) :: rest when isPreferredUiLangArg arg ->
+                                        // Extract culture and set it
+                                        let colonIndex = arg.IndexOf(':')
+
+                                        if colonIndex >= 0 && colonIndex < arg.Length - 1 then
+                                            let culture = arg.Substring(colonIndex + 1)
+
+                                            try
+                                                // Validate culture first by creating CultureInfo
+                                                let cultureInfo = CultureInfo(culture)
+                                                // Only set if valid
+                                                tcConfigB.preferredUiLang <- Some culture
+                                                Thread.CurrentThread.CurrentUICulture <- cultureInfo
+                                            with
+                                            | :? CultureNotFoundException
+                                            | :? ArgumentException ->
+                                                // Ignore invalid culture, just don't set it
+                                                ()
+
+                                        filterScriptArgs rest
+                                    | arg :: rest -> arg :: filterScriptArgs rest
+
+                                let filteredScriptArgs = filterScriptArgs scriptArgs
+
                                 inputFilesAcc <- inputFilesAcc @ [ (scriptFile, true) ] (* record script.fsx for evaluation *)
-                                List.iter recordExplicitArg scriptArgs (* record rest of line as explicit arguments *)
+                                List.iter recordExplicitArg filteredScriptArgs (* record rest of line as explicit arguments *)
                                 tcConfigB.noFeedback <- true (* "quiet", no banners responses etc *)
                                 interact <- false (* --exec, exit after eval *)
                                 [] (* no arguments passed on, all consumed here *)
@@ -2131,7 +2164,8 @@ type internal FsiDynamicCompiler
         if tcConfig.printAst then
             for input in declaredImpls do
                 fprintfn fsiConsoleOutput.Out "AST:"
-                fprintfn fsiConsoleOutput.Out "%+A" input
+                let layout = DebugPrint.implFileL input
+                fprintfn fsiConsoleOutput.Out "%s" (LayoutRender.showL layout)
 #endif
 
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
@@ -3081,6 +3115,9 @@ type internal FsiDynamicCompiler
 
     member _.ValueBound = valueBoundEvent.Publish
 
+    member _.PeekNextFragmentPath() =
+        FsiDynamicModulePrefix + $"%04d{fragmentId + 1}"
+
 //----------------------------------------------------------------------------
 // ctrl-c handling
 //----------------------------------------------------------------------------
@@ -3497,13 +3534,6 @@ type FsiStdinLexerProvider
         lexResourceManager: LexResourceManager
     ) =
 
-    // #light is the default for FSI
-    let indentationSyntaxStatus =
-        let initialIndentationAwareSyntaxStatus =
-            (tcConfigB.indentationAwareSyntax <> Some false)
-
-        IndentationAwareSyntaxStatus(initialIndentationAwareSyntaxStatus, warn = false)
-
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string MaybeNull) =
         UnicodeLexing.FunctionAsLexbuf(
             true,
@@ -3564,24 +3594,10 @@ type FsiStdinLexerProvider
         let applyLineDirectives = true
 
         let lexargs =
-            mkLexargs (
-                tcConfigB.conditionalDefines,
-                indentationSyntaxStatus,
-                lexResourceManager,
-                [],
-                diagnosticsLogger,
-                PathMap.empty,
-                applyLineDirectives
-            )
+            mkLexargs (tcConfigB.conditionalDefines, lexResourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
 
         let tokenizer =
-            LexFilter.LexFilter(
-                indentationSyntaxStatus,
-                tcConfigB.compilingFSharpCore,
-                Lexer.token lexargs skip,
-                lexbuf,
-                tcConfigB.tokenize = TokenizeOption.Debug
-            )
+            LexFilter.LexFilter(tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf, tcConfigB.tokenize = TokenizeOption.Debug)
 
         tokenizer
 
@@ -4450,13 +4466,25 @@ type FsiInteractionProcessor
         let names = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
         names
 
-    member _.ParseAndCheckInteraction(legacyReferenceResolver, istate, text: string) =
+    member _.ParseAndCheckInteraction(legacyReferenceResolver, istate, text: string, ?keepAssemblyContents: bool) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        let fsiInteractiveChecker =
-            FsiInteractiveChecker(legacyReferenceResolver, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
+        let asmName =
+            match keepAssemblyContents with
+            | Some true -> Some(fsiDynamicCompiler.PeekNextFragmentPath())
+            | _ -> None
 
-        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text)
+        let fsiInteractiveChecker =
+            FsiInteractiveChecker(
+                legacyReferenceResolver,
+                tcConfig,
+                istate.tcGlobals,
+                istate.tcImports,
+                istate.tcState,
+                ?keepAssemblyContents = keepAssemblyContents
+            )
+
+        fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text, ?asmName = asmName)
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -4808,8 +4836,13 @@ type FsiEvaluationSession
         fsiInteractionProcessor.CompletionsForPartialLID(fsiInteractionProcessor.CurrentState, longIdent)
         |> Seq.ofList
 
-    member _.ParseAndCheckInteraction(code) =
-        fsiInteractionProcessor.ParseAndCheckInteraction(legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
+    member _.ParseAndCheckInteraction(code, ?keepAssemblyContents) =
+        fsiInteractionProcessor.ParseAndCheckInteraction(
+            legacyReferenceResolver,
+            fsiInteractionProcessor.CurrentState,
+            code,
+            ?keepAssemblyContents = keepAssemblyContents
+        )
         |> Cancellable.runWithoutCancellation
 
     member _.InteractiveChecker = checker
