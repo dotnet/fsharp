@@ -6719,7 +6719,7 @@
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
         <source>TABs are not allowed in F# code</source>
-        <target state="needs-review-translation">No se permiten tabulaciones en código de F# a menos que se use la opción #indent \"off\".</target>
+        <target state="new">TABs are not allowed in F# code</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">
@@ -8474,7 +8474,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
         <source>Used in member constraints.</source>
-        <target state="needs-review-translation">Se usa con las condiciones booleanas como operador booleano or. Equivale a ||. También se usa en las restricciones de miembro.</target>
+        <target state="new">Used in member constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

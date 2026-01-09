@@ -6719,7 +6719,7 @@
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
         <source>TABs are not allowed in F# code</source>
-        <target state="needs-review-translation">В коде F# табуляция может использоваться только при использовании параметра #indent \"off\"</target>
+        <target state="new">TABs are not allowed in F# code</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">
@@ -8474,7 +8474,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
         <source>Used in member constraints.</source>
-        <target state="needs-review-translation">Используется с логическими условиями в качестве логического значения или оператора. Эквивалентно ||. Также используется в ограничениях членов.</target>
+        <target state="new">Used in member constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">
