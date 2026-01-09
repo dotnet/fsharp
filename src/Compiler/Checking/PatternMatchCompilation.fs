@@ -817,10 +817,6 @@ let rec BuildSwitch inpExprOpt g isNullFiltered expr edges dflt m =
     // Split string, float, uint64, int64, unativeint, nativeint matches into serial equality tests
     | TCase((DecisionTreeTest.ArrayLength _ | DecisionTreeTest.Const (Const.Single _ | Const.Double _ | Const.String _ | Const.Decimal _ | Const.Int64 _ | Const.UInt64 _ | Const.IntPtr _ | Const.UIntPtr _)), _) :: _, Some dflt ->
         if verbose then dprintf "foldBack: Processing %d edges with isNullFiltered=%b\n" (List.length edges) isNullFiltered
-        // Check if any edge is an IsNull test - if so, we don't need null checks for subsequent tests
-        let hasIsNullEdge = edges |> List.exists (fun (TCase(d, _)) -> match d with | DecisionTreeTest.IsNull -> true | _ -> false)
-        let effectiveIsNullFiltered = isNullFiltered || hasIsNullEdge
-        if verbose && hasIsNullEdge then dprintf "  Found IsNull edge in list, setting effectiveIsNullFiltered=true\n"
         List.foldBack
             (fun (TCase(discrim, tree)) sofar ->
                 if verbose then
@@ -830,25 +826,25 @@ let rec BuildSwitch inpExprOpt g isNullFiltered expr edges dflt m =
                         | DecisionTreeTest.Const c -> sprintf "Const(%A)" c
                         | DecisionTreeTest.ArrayLength (n, _) -> sprintf "ArrayLength(%d)" n
                         | _ -> sprintf "%A" discrim
-                    dprintf "  foldBack iteration: discrim=%s, effectiveIsNullFiltered=%b\n" discrimStr effectiveIsNullFiltered
+                    dprintf "  foldBack iteration: discrim=%s, isNullFiltered=%b\n" discrimStr isNullFiltered
                 let testexpr = expr
                 let testexpr =
                     match discrim with
                     | DecisionTreeTest.ArrayLength(n, _)       ->
-                        if verbose then dprintf "    ArrayLength: creating test with effectiveIsNullFiltered=%b\n" effectiveIsNullFiltered
+                        if verbose then dprintf "    ArrayLength: creating test with isNullFiltered=%b\n" isNullFiltered
                         let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
                         // Skip null check if we're in a null-filtered context
                         let test = mkILAsmCeq g m (mkLdlen g m vExpr) (mkInt g m n)
-                        let finalTest = if effectiveIsNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
-                        if verbose then dprintf "    ArrayLength: skipping null check? %b\n" effectiveIsNullFiltered
+                        let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
+                        if verbose then dprintf "    ArrayLength: skipping null check? %b\n" isNullFiltered
                         mkLetBind m bind finalTest
                     | DecisionTreeTest.Const (Const.String "")  ->
                         // Optimize empty string check to use null-safe length check
                         let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
                         let test = mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)
-                        // Skip null check if we're in a null-filtered context OR if there's an IsNull edge
-                        let finalTest = if effectiveIsNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
-                        if verbose then dprintf "    Empty string: skipping null check? %b\n" effectiveIsNullFiltered
+                        // Skip null check if we're in a null-filtered context
+                        let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
+                        if verbose then dprintf "    Empty string: skipping null check? %b\n" isNullFiltered
                         mkLetBind m bind finalTest
                     | DecisionTreeTest.Const (Const.String _ as c)  ->
                         mkCallEqualsOperator g m g.string_ty testexpr (Expr.Const (c, m, g.string_ty))
