@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Enums 
-#light
+
 
 // FSB 531, Cannot use "A | B" in enum flags when specifying a custom attribute (not a recognised constant)
 

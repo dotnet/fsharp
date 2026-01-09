@@ -196,6 +196,9 @@ type FSharpDiagnostic =
     /// Gets the severity for the diagnostic
     member Severity: FSharpDiagnosticSeverity
 
+    /// Gets the original severity prior to adjustments via compiler flags, #nowarn and other features
+    member DefaultSeverity: FSharpDiagnosticSeverity
+
     /// Gets the message for the diagnostic
     member Message: string
 
@@ -226,11 +229,7 @@ type FSharpDiagnostic =
             FSharpDiagnostic
 
     static member internal CreateFromException:
-        diagnostic: PhasedDiagnostic *
-        severity: FSharpDiagnosticSeverity *
-        suggestNames: bool *
-        flatErrors: bool *
-        symbolEnv: SymbolEnv option ->
+        diagnostic: PhasedDiagnostic * suggestNames: bool * flatErrors: bool * symbolEnv: SymbolEnv option ->
             FSharpDiagnostic
 
     /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'),
@@ -266,7 +265,7 @@ type internal CompilationDiagnosticLogger =
             CompilationDiagnosticLogger
 
     /// Get the captured diagnostics
-    member GetDiagnostics: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+    member GetDiagnostics: unit -> PhasedDiagnostic[]
 
 module internal DiagnosticHelpers =
 
@@ -275,7 +274,6 @@ module internal DiagnosticHelpers =
         allErrors: bool *
         mainInputFileName: string *
         diagnostic: PhasedDiagnostic *
-        severity: FSharpDiagnosticSeverity *
         suggestNames: bool *
         flatErrors: bool *
         symbolEnv: SymbolEnv option ->
@@ -285,7 +283,7 @@ module internal DiagnosticHelpers =
         FSharpDiagnosticOptions *
         allErrors: bool *
         mainInputFileName: string *
-        seq<PhasedDiagnostic * FSharpDiagnosticSeverity> *
+        seq<PhasedDiagnostic> *
         suggestNames: bool *
         flatErrors: bool *
         symbolEnv: SymbolEnv option ->

@@ -1,7 +1,7 @@
 // #Regression #Conformance #Quotations 
 // Regression test for FSHARP1.0:5428
 // Make sure SpecificCall pattern correctly returns Some for the instance obj of an instance call
-#light
+
 
 open Microsoft.FSharp.Quotations.DerivedPatterns
 

@@ -178,10 +178,12 @@ module BuildPhaseSubcategory =
 
 type PhasedDiagnostic =
     { Exception: exn
-      Phase: BuildPhase }
+      Phase: BuildPhase
+      Severity: FSharpDiagnosticSeverity
+      DefaultSeverity: FSharpDiagnosticSeverity }
 
     /// Construct a phased error
-    static member Create: exn: exn * phase: BuildPhase -> PhasedDiagnostic
+    static member Create: exn: exn * phase: BuildPhase * severity: FSharpDiagnosticSeverity -> PhasedDiagnostic
 
     /// Return true if the textual phase given is from the compile part of the build process.
     /// This set needs to be equal to the set of subcategories that the language service can produce.
@@ -208,7 +210,7 @@ type DiagnosticsLogger =
     member DebugDisplay: unit -> string
 
     /// Emit a diagnostic to the logger
-    abstract DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    abstract DiagnosticSink: diagnostic: PhasedDiagnostic -> unit
 
     /// Get the number of error diagnostics reported
     abstract ErrorCount: int
@@ -235,9 +237,9 @@ type CapturingDiagnosticsLogger =
 
     member CommitDelayedDiagnostics: diagnosticsLogger: DiagnosticsLogger -> unit
 
-    override DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    override DiagnosticSink: diagnostic: PhasedDiagnostic -> unit
 
-    member Diagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+    member Diagnostics: PhasedDiagnostic list
 
     override ErrorCount: int
 
@@ -313,11 +315,7 @@ val informationalWarning: exn: exn -> unit
 
 val simulateError: diagnostic: PhasedDiagnostic -> 'T
 
-val diagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
-
-val errorSink: diagnostic: PhasedDiagnostic -> unit
-
-val warnSink: diagnostic: PhasedDiagnostic -> unit
+val diagnosticSink: diagnostic: PhasedDiagnostic -> unit
 
 val errorRecovery: exn: exn -> m: range -> unit
 
@@ -332,10 +330,6 @@ val libraryOnlyError: m: range -> unit
 val libraryOnlyWarning: m: range -> unit
 
 val deprecatedOperator: m: range -> unit
-
-val mlCompatWarning: s: string -> m: range -> unit
-
-val mlCompatError: s: string -> m: range -> unit
 
 val suppressErrorReporting: f: (unit -> 'T) -> 'T
 
@@ -459,8 +453,13 @@ val tryLanguageFeatureErrorOption:
 
 val languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
 
+module internal StackGuardMetrics =
+    val Listen: unit -> IDisposable
+    val StatsToString: unit -> string
+    val CaptureStatsAndWriteToConsole: unit -> IDisposable
+
 type StackGuard =
-    new: maxDepth: int * name: string -> StackGuard
+    new: name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
     member Guard:
@@ -471,8 +470,6 @@ type StackGuard =
             'T
 
     member GuardCancellable: Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
-
-    static member GetDepthOption: string -> int
 
 /// This represents the global state established as each task function runs as part of the build.
 ///

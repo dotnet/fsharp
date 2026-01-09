@@ -309,7 +309,7 @@ module SyntaxTraversal =
                     if posGt pos (fst r).Start then
                         e <- r
 
-                snd (e) ()
+                snd e ()
             | [ x ] -> x ()
             | _ ->
 #if DEBUG
@@ -342,7 +342,7 @@ module SyntaxTraversal =
                     |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path))
                     |> List.append (attributeApplicationDives path attributes)
                     |> pick decl
-                | SynModuleDecl.Let(isRecursive, synBindingList, range) ->
+                | SynModuleDecl.Let(isRecursive = isRecursive; bindings = synBindingList; range = range) ->
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | Some x -> Some x
                     | None ->
@@ -528,7 +528,17 @@ module SyntaxTraversal =
                         for SynExprRecordField(fieldName = (field, _); expr = e; blockSeparator = sepOpt) in fields do
                             yield
                                 dive (path, copyOpt, Some field) field.Range (fun r ->
-                                    if rangeContainsPos field.Range pos then
+                                    // Treat the caret placed right after the field name (before '=' or a value) as "inside" the field,
+                                    // but only if the field does not yet have a value.
+                                    //
+                                    // Examples (the '$' marks the caret):
+                                    //   { r with Field1$ }
+                                    //   { r with
+                                    //       Field1$
+                                    //   }
+                                    let isCaretAfterFieldNameWithoutValue = (e.IsNone && posEq pos field.Range.End)
+
+                                    if rangeContainsPos field.Range pos || isCaretAfterFieldNameWithoutValue then
                                         visitor.VisitRecordField r
                                     else
                                         None)
@@ -669,7 +679,12 @@ module SyntaxTraversal =
                         ]
                         |> pick expr
 
-                | SynExpr.LetOrUse(isRecursive = isRecursive; bindings = synBindingList; body = synExpr; range = range) ->
+                | SynExpr.LetOrUse({
+                                       IsRecursive = isRecursive
+                                       Bindings = synBindingList
+                                       Body = synExpr
+                                       Range = range
+                                   }) ->
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | None ->
                         [
@@ -947,7 +962,7 @@ module SyntaxTraversal =
                 match traverseSynExpr path synExpr with
                 | None -> attributeApplicationDives path attributes |> pick attributes
                 | x -> x
-            | SynMemberDefn.LetBindings(synBindingList, isRecursive, _, range) ->
+            | SynMemberDefn.LetBindings(bindings = synBindingList; isRecursive = isRecursive; range = range) ->
                 match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                 | None ->
                     synBindingList

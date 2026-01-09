@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexicalAnalysis 
-#light
+
 
 // Verify error when trying to take the byte string of 
 // a string literal with unicode characters

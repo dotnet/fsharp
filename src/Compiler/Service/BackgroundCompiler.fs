@@ -6,36 +6,22 @@ open FSharp.Compiler.BuildGraph
 open System
 open System.Diagnostics
 open System.IO
-open System.Reflection
-open System.Reflection.Emit
 open System.Threading
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.ILDynamicAssemblyWriter
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Driver
-open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.IO
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Tokenization
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
 type SourceTextHash = int64
@@ -45,7 +31,7 @@ type FilePath = string
 type ProjectPath = string
 type FileVersion = int
 
-type FSharpProjectSnapshot = FSharp.Compiler.CodeAnalysis.ProjectSnapshot.FSharpProjectSnapshot
+type FSharpProjectSnapshot = ProjectSnapshot.FSharpProjectSnapshot
 
 type internal IBackgroundCompiler =
 
@@ -78,24 +64,17 @@ type internal IBackgroundCompiler =
     abstract member DownsizeCaches: unit -> unit
 
     abstract member FindReferencesInFile:
-        fileName: string *
-        options: FSharpProjectOptions *
-        symbol: FSharp.Compiler.Symbols.FSharpSymbol *
-        canInvalidateProject: bool *
-        userOpName: string ->
-            Async<seq<FSharp.Compiler.Text.range>>
+        fileName: string * options: FSharpProjectOptions * symbol: FSharpSymbol * canInvalidateProject: bool * userOpName: string ->
+            Async<seq<range>>
 
     abstract member FindReferencesInFile:
-        fileName: string * projectSnapshot: FSharpProjectSnapshot * symbol: FSharp.Compiler.Symbols.FSharpSymbol * userOpName: string ->
-            Async<seq<FSharp.Compiler.Text.range>>
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * symbol: FSharpSymbol * userOpName: string -> Async<seq<range>>
 
     abstract member GetAssemblyData:
-        options: FSharpProjectOptions * outputFileName: string * userOpName: string ->
-            Async<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
+        options: FSharpProjectOptions * outputFileName: string * userOpName: string -> Async<ProjectAssemblyDataResult>
 
     abstract member GetAssemblyData:
-        projectSnapshot: FSharpProjectSnapshot * outputFileName: string * userOpName: string ->
-            Async<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
+        projectSnapshot: FSharpProjectSnapshot * outputFileName: string * userOpName: string -> Async<ProjectAssemblyDataResult>
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     abstract member GetBackgroundCheckResultsForFileInProject:
@@ -114,7 +93,7 @@ type internal IBackgroundCompiler =
         sourceText: ISourceText *
         caret: Position option *
         previewEnabled: bool option *
-        loadedTimeStamp: System.DateTime option *
+        loadedTimeStamp: DateTime option *
         otherFlags: string array option *
         useFsiAuxLib: bool option *
         useSdkRefs: bool option *
@@ -122,7 +101,7 @@ type internal IBackgroundCompiler =
         assumeDotNetFramework: bool option *
         optionsStamp: int64 option *
         userOpName: string ->
-            Async<FSharpProjectOptions * FSharp.Compiler.Diagnostics.FSharpDiagnostic list>
+            Async<FSharpProjectOptions * FSharpDiagnostic list>
 
     abstract GetProjectSnapshotFromScript:
         fileName: string *
@@ -130,7 +109,7 @@ type internal IBackgroundCompiler =
         caret: Position option *
         documentSource: DocumentSource *
         previewEnabled: bool option *
-        loadedTimeStamp: System.DateTime option *
+        loadedTimeStamp: DateTime option *
         otherFlags: string array option *
         useFsiAuxLib: bool option *
         useSdkRefs: bool option *
@@ -1373,7 +1352,7 @@ type internal BackgroundCompiler
                 let flatErrors = options.OtherOptions |> Array.contains "--flaterrors"
 
                 loadClosure.LoadClosureRootFileDiagnostics
-                |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, false, flatErrors, None))
+                |> List.map (fun diagnostic -> FSharpDiagnostic.CreateFromException(diagnostic, false, flatErrors, None))
 
             return options, (diags @ diagnostics.Diagnostics)
         }

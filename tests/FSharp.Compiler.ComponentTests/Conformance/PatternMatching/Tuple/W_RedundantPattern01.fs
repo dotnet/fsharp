@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #Tuples 
-#light
+
 
 // Verify warning with redundant pattern
 

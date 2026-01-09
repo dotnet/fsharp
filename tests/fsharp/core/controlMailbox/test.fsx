@@ -2,7 +2,7 @@
 #if TESTS_AS_APP
 module Core_controlMailBox
 #endif
-#light
+
 
 #nowarn "40" // recursive references
 

@@ -257,8 +257,8 @@ module SynExpr =
 
         match trimmed[0], originalNotation with
         | _, ":=" -> ValueSome ColonEquals
-        | _, ("||" | "or") -> ValueSome(BarBar(OriginalNotation originalNotation))
-        | _, ("&" | "&&") -> ValueSome(AmpAmp(OriginalNotation originalNotation))
+        | _, "||" -> ValueSome(BarBar(OriginalNotation originalNotation))
+        | _, "&&" -> ValueSome(AmpAmp(OriginalNotation originalNotation))
         | '|', _
         | '&', _
         | '<', _
@@ -420,7 +420,7 @@ module SynExpr =
                 | SynExpr.DotNamedIndexedPropertySet(rhsExpr = expr)
                 | SynExpr.DotIndexedSet(valueExpr = expr)
                 | SynExpr.LongIdentSet(expr = expr)
-                | SynExpr.LetOrUse(body = expr)
+                | SynExpr.LetOrUse({ Body = expr })
                 | SynExpr.Lambda(body = expr)
                 | SynExpr.Match(clauses = Last(SynMatchClause(resultExpr = expr)))
                 | SynExpr.MatchLambda(matchClauses = Last(SynMatchClause(resultExpr = expr)))
@@ -1135,7 +1135,7 @@ module SynExpr =
             | SynExpr.ForEach(bodyExpr = Is inner), SynExpr.Typed _
             | SynExpr.Match _, SynExpr.Typed _
             | SynExpr.Do _, SynExpr.Typed _
-            | SynExpr.LetOrUse(body = Is inner), SynExpr.Typed _
+            | SynExpr.LetOrUse({ Body = Is inner }), SynExpr.Typed _
             | SynExpr.TryWith _, SynExpr.Typed _
             | SynExpr.TryFinally _, SynExpr.Typed _ -> false
             | _, SynExpr.Typed _ -> true
@@ -1164,7 +1164,7 @@ module SynExpr =
 
                 ambiguous || dangling inner
 
-            | OuterBinaryExpr inner (_, Right), (SynExpr.Sequential _ | SynExpr.LetOrUse(trivia = { InKeyword = None })) -> true
+            | OuterBinaryExpr inner (_, Right), (SynExpr.Sequential _ | SynExpr.LetOrUse({ Trivia = { InKeyword = None } })) -> true
             | OuterBinaryExpr inner (_, Right), inner -> dangling inner
 
             // new T(expr)

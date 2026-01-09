@@ -1,6 +1,6 @@
 // #Conformance #DeclarationElements #Modules 
 //<Expects status="success"></Expects>
-#light
+
 
 module A =
     module B =

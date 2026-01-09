@@ -105,7 +105,7 @@ type CvtResFile() =
 
     static member private ReadStringOrID(fhIn: BinaryReader) =
         let mutable (pstring: RESOURCE_STRING) = RESOURCE_STRING()
-        let mutable (firstWord: WCHAR) = (fhIn.ReadChar())
+        let mutable (firstWord: WCHAR) = fhIn.ReadChar()
 
         if int firstWord = 0xFFFF then
             pstring.Ordinal <- fhIn.ReadUInt16()
@@ -173,7 +173,7 @@ type SectionCharacteristics =
 
 type ResourceSection() =
     new(sectionBytes: byte[], relocations: uint32[]) as this =
-        (ResourceSection())
+        ResourceSection()
 
         then
             Debug.Assert(sectionBytes :> obj <> Unchecked.defaultof<_>)
@@ -433,7 +433,7 @@ type VersionHelper() =
                                             if not (Char.IsDigit elements[i].[idx]) then
                                                 invalidFormat <- true
 
-                                                VersionHelper.TryGetValue((elements[i].Substring(0, idx)), ref values[i])
+                                                VersionHelper.TryGetValue(elements[i].Substring(0, idx), ref values[i])
                                                 |> ignore<bool>
 
                                                 breakLoop <- true
@@ -1139,7 +1139,7 @@ type NativeResourceWriter() =
                             else Unchecked.defaultof<_>
 
                         dataWriter.WriteUInt32(uint32 virtualAddressBase + sizeOfDirectoryTree + 16u + uint32 dataWriter.Count)
-                        let mutable (data: byte[]) = (List<byte>(r.Data)).ToArray()
+                        let mutable (data: byte[]) = List<byte>(r.Data).ToArray()
                         dataWriter.WriteUInt32(uint32 data.Length)
                         dataWriter.WriteUInt32 r.CodePage
                         dataWriter.WriteUInt32 0u

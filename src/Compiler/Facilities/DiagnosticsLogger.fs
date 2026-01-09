@@ -2,7 +2,6 @@
 
 module FSharp.Compiler.DiagnosticsLogger
 
-open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
@@ -14,8 +13,8 @@ open System.Threading
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open System.Threading.Tasks
+open System.Collections.Concurrent
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -287,10 +286,18 @@ type PhasedDiagnostic =
     {
         Exception: exn
         Phase: BuildPhase
+        Severity: FSharpDiagnosticSeverity
+        DefaultSeverity: FSharpDiagnosticSeverity
     }
 
     /// Construct a phased error
-    static member Create(exn: exn, phase: BuildPhase) : PhasedDiagnostic = { Exception = exn; Phase = phase }
+    static member Create(exn: exn, phase: BuildPhase, severity: FSharpDiagnosticSeverity) : PhasedDiagnostic =
+        {
+            Exception = exn
+            Phase = phase
+            Severity = severity
+            DefaultSeverity = severity
+        }
 
     member this.DebugDisplay() =
         sprintf "%s: %s" (this.Subcategory()) this.Exception.Message
@@ -356,7 +363,7 @@ type DiagnosticsLogger(nameForDebugging: string) =
 
     // The 'Impl' factoring enables a developer to place a breakpoint at the non-Impl
     // code just below and get a breakpoint for all error logger implementations.
-    abstract DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    abstract DiagnosticSink: diagnostic: PhasedDiagnostic -> unit
 
     member x.CheckForErrors() = (x.ErrorCount > 0)
 
@@ -368,14 +375,14 @@ type DiagnosticsLogger(nameForDebugging: string) =
 
 let DiscardErrorsLogger =
     { new DiagnosticsLogger("DiscardErrorsLogger") with
-        member _.DiagnosticSink(diagnostic, severity) = ()
+        member _.DiagnosticSink(diagnostic) = ()
         member _.ErrorCount = 0
     }
 
 let AssertFalseDiagnosticsLogger =
     { new DiagnosticsLogger("AssertFalseDiagnosticsLogger") with
         // TODO: reenable these asserts in the compiler service
-        member _.DiagnosticSink(diagnostic, severity) = (* assert false; *) ()
+        member _.DiagnosticSink(diagnostic) = (* assert false; *) ()
         member _.ErrorCount = (* assert false; *) 0
     }
 
@@ -384,16 +391,16 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
     let mutable errorCount = 0
     let diagnostics = ResizeArray()
 
-    override _.DiagnosticSink(diagnostic, severity) =
+    override _.DiagnosticSink(diagnostic) =
         let diagnostic =
             match eagerFormat with
             | None -> diagnostic
             | Some f -> f diagnostic
 
-        if severity = FSharpDiagnosticSeverity.Error then
+        if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
             errorCount <- errorCount + 1
 
-        diagnostics.Add(diagnostic, severity)
+        diagnostics.Add(diagnostic)
 
     override _.ErrorCount = errorCount
 
@@ -458,7 +465,7 @@ module DiagnosticsLoggerExtensions =
             | ReportedError _ ->
                 PreserveStackTrace exn
                 raise exn
-            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase), severity)
+            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase, severity))
 
         member x.ErrorR exn =
             x.EmitDiagnostic(exn, FSharpDiagnosticSeverity.Error)
@@ -473,8 +480,8 @@ module DiagnosticsLoggerExtensions =
             x.ErrorR exn
             raise (ReportedError(Some exn))
 
-        member x.SimulateError diagnostic =
-            x.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Error)
+        member x.SimulateError(diagnostic) =
+            x.DiagnosticSink(diagnostic)
             raise (ReportedError(Some diagnostic.Exception))
 
         member x.ErrorRecovery (exn: exn) (m: range) =
@@ -482,8 +489,8 @@ module DiagnosticsLoggerExtensions =
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
             // Don't send ThreadAbortException down the error channel
-            | :? System.Threading.ThreadAbortException
-            | WrappedError(:? System.Threading.ThreadAbortException, _) -> ()
+            | :? ThreadAbortException
+            | WrappedError(:? ThreadAbortException, _) -> ()
             | ReportedError _
             | WrappedError(ReportedError _, _) -> ()
             | StopProcessing
@@ -581,17 +588,11 @@ let error exn =
     DiagnosticsThreadStatics.DiagnosticsLogger.Error exn
 
 /// Simulates an error. For test purposes only.
-let simulateError (diagnostic: PhasedDiagnostic) =
-    DiagnosticsThreadStatics.DiagnosticsLogger.SimulateError diagnostic
+let simulateError diagnostic =
+    DiagnosticsThreadStatics.DiagnosticsLogger.SimulateError(diagnostic)
 
-let diagnosticSink (diagnostic, severity) =
-    DiagnosticsThreadStatics.DiagnosticsLogger.DiagnosticSink(diagnostic, severity)
-
-let errorSink diagnostic =
-    diagnosticSink (diagnostic, FSharpDiagnosticSeverity.Error)
-
-let warnSink diagnostic =
-    diagnosticSink (diagnostic, FSharpDiagnosticSeverity.Warning)
+let diagnosticSink diagnostic =
+    DiagnosticsThreadStatics.DiagnosticsLogger.DiagnosticSink(diagnostic)
 
 let errorRecovery exn m =
     DiagnosticsThreadStatics.DiagnosticsLogger.ErrorRecovery exn m
@@ -611,12 +612,6 @@ let libraryOnlyWarning m = warning (LibraryUseOnly m)
 let deprecatedOperator m =
     deprecatedWithError (FSComp.SR.elDeprecatedOperator ()) m
 
-let mlCompatWarning s m =
-    warning (UserCompilerMessage(FSComp.SR.mlCompatMessage s, 62, m))
-
-let mlCompatError s m =
-    errorR (UserCompilerMessage(FSComp.SR.mlCompatError s, 62, m))
-
 [<DebuggerStepThrough>]
 let suppressErrorReporting f =
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
@@ -624,7 +619,7 @@ let suppressErrorReporting f =
     try
         let diagnosticsLogger =
             { new DiagnosticsLogger("suppressErrorReporting") with
-                member _.DiagnosticSink(_phasedError, _isError) = ()
+                member _.DiagnosticSink(_diagnostic) = ()
                 member _.ErrorCount = 0
             }
 
@@ -868,10 +863,91 @@ let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFea
     let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
     error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary (featureStr, suggestedVersionStr), m))
 
-/// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
-type StackGuard(maxDepth: int, name: string) =
+module StackGuardMetrics =
 
-    let mutable depth = 1
+    let meter = FSharp.Compiler.Diagnostics.Metrics.Meter
+
+    let jumpCounter =
+        meter.CreateCounter<int64>(
+            "stackguard-jumps",
+            description = "Tracks the number of times the stack guard has jumped to a new thread"
+        )
+
+    let countJump memberName location depth =
+        let tags =
+            let mutable tags = TagList()
+            tags.Add(Activity.Tags.callerMemberName, memberName)
+            tags.Add("source", location)
+            tags.Add("depth", depth)
+            tags
+
+        jumpCounter.Add(1L, &tags)
+
+    // Used by the self-listener.
+    let dataByFunctionName = ConcurrentDictionary<_, int64 ref * int ref>()
+
+    let Listen () =
+        let listener = new Metrics.MeterListener()
+
+        listener.EnableMeasurementEvents jumpCounter
+
+        listener.SetMeasurementEventCallback(fun _ v tags _ ->
+            let memberName = nonNull tags[0].Value :?> string
+            let source = nonNull tags[1].Value :?> string
+            let depth = nonNull tags[2].Value :?> int
+
+            let counter, minDepth =
+                dataByFunctionName.GetOrAdd((memberName, source), fun _ -> ref 0L, ref Int32.MaxValue)
+
+            counter.Value <- counter.Value + v
+            minDepth.Value <- min depth minDepth.Value)
+
+        listener.Start()
+        listener :> IDisposable
+
+    let StatsToString () =
+        let headers = [ "caller"; "source"; "jumps"; "min depth" ]
+
+        let data =
+            [
+                for kvp in dataByFunctionName do
+                    let memberName, source = kvp.Key
+                    let jumps, depth = kvp.Value
+                    [ memberName; source; string jumps.Value; string depth.Value ]
+            ]
+
+        if List.isEmpty data then
+            ""
+        else
+            $"StackGuard jumps:\n{Metrics.printTable headers data}"
+
+    let CaptureStatsAndWriteToConsole () =
+        let listener = Listen()
+
+        { new IDisposable with
+            member _.Dispose() =
+                listener.Dispose()
+                StatsToString() |> printfn "%s"
+        }
+
+/// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
+type StackGuard(name: string) =
+
+    let depth = new ThreadLocal<int>()
+
+    static member inline IsStackSufficient() =
+
+        // We single out netstandard2.0 because it lacks the non-throwing TryEnsureSufficientExecutionStack
+        // TODO: Get rid of this throwing version as soon as we can.
+#if NETSTANDARD2_0
+        try
+            RuntimeHelpers.EnsureSufficientExecutionStack()
+            true
+        with :? InsufficientExecutionStackException ->
+            false
+#else
+        RuntimeHelpers.TryEnsureSufficientExecutionStack()
+#endif
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member _.Guard
@@ -882,46 +958,29 @@ type StackGuard(maxDepth: int, name: string) =
             [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
         ) =
 
-        Activity.addEventWithTags
-            "DiagnosticsLogger.StackGuard.Guard"
-            (seq {
-                Activity.Tags.stackGuardName, box name
-                Activity.Tags.stackGuardCurrentDepth, depth
-                Activity.Tags.stackGuardMaxDepth, maxDepth
-                Activity.Tags.callerMemberName, memberName
-                Activity.Tags.callerFilePath, path
-                Activity.Tags.callerLineNumber, line
-            })
-
-        depth <- depth + 1
+        depth.Value <- depth.Value + 1
 
         try
-            if depth % maxDepth = 0 then
+            if StackGuard.IsStackSufficient() then
+                f ()
+            else
+                let fileName = System.IO.Path.GetFileName(path)
+                let depthWhenJump = depth.Value
+
+                StackGuardMetrics.countJump memberName $"{fileName}:{line}" depthWhenJump
 
                 async {
                     do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
+                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depthWhenJump})"
                     return f ()
                 }
                 |> Async.RunImmediate
-            else
-                f ()
         finally
-            depth <- depth - 1
+            depth.Value <- depth.Value - 1
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member x.GuardCancellable(original: Cancellable<'T>) =
         Cancellable(fun ct -> x.Guard(fun () -> Cancellable.run ct original))
-
-    static member val DefaultDepth =
-#if DEBUG
-        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 50
-#else
-        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 100
-#endif
-
-    static member GetDepthOption(name: string) =
-        GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
 
 // UseMultipleDiagnosticLoggers in ParseAndCheckProject.fs provides similar functionality.
 // We should probably adapt and reuse that code.

@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments 
-#light
+
 
 // Test an optional parameter of type 'option option option a'
 type Foo<'a>() =

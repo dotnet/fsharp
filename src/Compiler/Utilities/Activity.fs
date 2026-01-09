@@ -18,6 +18,54 @@ module ActivityNames =
 
     let AllRelevantNames = [| FscSourceName; ProfiledSourceName |]
 
+module Metrics =
+    let Meter = new Metrics.Meter(ActivityNames.FscSourceName)
+
+    let formatTable headers rows =
+        let columnWidths =
+            headers :: rows
+            |> List.transpose
+            |> List.map (List.map String.length >> List.max)
+
+        let center width (cell: string) =
+            String.replicate ((width - cell.Length) / 2) " " + cell |> _.PadRight(width)
+
+        let headers = (columnWidths, headers) ||> List.map2 center
+
+        let printRow (row: string list) =
+            row
+            |> List.mapi (fun i (cell: string) ->
+                if i = 0 then
+                    cell.PadRight(columnWidths[i])
+                else
+                    cell.PadLeft(columnWidths[i]))
+            |> String.concat " | "
+            |> sprintf "| %s |"
+
+        let headerRow = printRow headers
+
+        let divider = headerRow |> String.map (fun c -> if c = '|' then c else '-')
+        let hl = String.replicate divider.Length "-"
+
+        use sw = new StringWriter()
+
+        sw.WriteLine hl
+        sw.WriteLine headerRow
+        sw.WriteLine divider
+
+        for row in rows do
+            sw.WriteLine(printRow row)
+
+        sw.WriteLine hl
+
+        string sw
+
+    let printTable headers rows =
+        try
+            formatTable headers rows
+        with exn ->
+            $"Error formatting table: {exn}"
+
 [<RequireQualifiedAccess>]
 module internal Activity =
 
@@ -107,7 +155,7 @@ module internal Activity =
         | null -> ()
         | activity when activity.Source = activitySource ->
             let collection = tags |> Seq.map KeyValuePair |> ActivityTagsCollection
-            let event = new ActivityEvent(name, tags = collection)
+            let event = ActivityEvent(name, tags = collection)
             activity.AddEvent event |> ignore
         | _ -> ()
 
@@ -178,7 +226,7 @@ module internal Activity =
                     ActivityStopped =
                         (fun a ->
                             Console.Write('|')
-                            let indentedName = new String('>', a.Depth) + a.DisplayName
+                            let indentedName = String('>', a.Depth) + a.DisplayName
                             Console.Write(indentedName.PadRight(nameColumnWidth))
 
                             let elapsed = (a.StartTimeUtc + a.Duration - reportingStart).TotalSeconds
@@ -190,7 +238,7 @@ module internal Activity =
                             Console.WriteLine())
                 )
 
-            Console.WriteLine(new String('-', header.Length))
+            Console.WriteLine(String('-', header.Length))
             Console.WriteLine(header)
             Console.WriteLine(header |> String.map (fun c -> if c = '|' then c else '-'))
 
@@ -200,7 +248,7 @@ module internal Activity =
                 member this.Dispose() =
                     statsMeasurementListener.Dispose()
                     consoleWriterListener.Dispose()
-                    Console.WriteLine(new String('-', header.Length))
+                    Console.WriteLine(String('-', header.Length))
             }
 
     module CsvExport =
@@ -226,7 +274,7 @@ module internal Activity =
                     txtVal
 
         let private createCsvRow (a: Activity) =
-            let sb = new StringBuilder(128)
+            let sb = StringBuilder(128)
 
             let appendWithLeadingComma (s: string MaybeNull) =
                 sb.Append(',') |> ignore
@@ -237,9 +285,9 @@ module internal Activity =
             appendWithLeadingComma (a.StartTimeUtc.ToString("HH-mm-ss.ffff"))
             appendWithLeadingComma ((a.StartTimeUtc + a.Duration).ToString("HH-mm-ss.ffff"))
             appendWithLeadingComma (a.Duration.TotalSeconds.ToString("000.0000", System.Globalization.CultureInfo.InvariantCulture))
-            appendWithLeadingComma (a.Id)
-            appendWithLeadingComma (a.ParentId)
-            appendWithLeadingComma (a.RootId)
+            appendWithLeadingComma a.Id
+            appendWithLeadingComma a.ParentId
+            appendWithLeadingComma a.RootId
 
             Tags.AllKnownTags
             |> Array.iter (a.GetTagItem >> escapeStringForCsv >> appendWithLeadingComma)

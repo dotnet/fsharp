@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #Classes 
-#light
+
 
 // FSB 1502, Implement a "sealed" attribute
 //<Expects id="FS0945" status="error">Cannot inherit a sealed type</Expects>

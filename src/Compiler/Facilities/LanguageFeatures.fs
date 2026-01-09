@@ -47,7 +47,6 @@ type LanguageFeature =
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
-    | MLCompatRevisions
     | BetterExceptionPrinting
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
@@ -177,7 +176,6 @@ type LanguageVersion(versionText) =
                 LanguageFeature.DelegateTypeNameResolutionFix, languageVersion60
 
                 // F# 7.0
-                LanguageFeature.MLCompatRevisions, languageVersion70
                 LanguageFeature.BetterExceptionPrinting, languageVersion70
                 LanguageFeature.ReallyLongLists, languageVersion70
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
@@ -295,10 +293,17 @@ type LanguageVersion(versionText) =
     /// Has preview been explicitly specified
     member _.IsPreviewEnabled = specified = previewVersion
 
-    /// Does the languageVersion support this version string
+    /// Is the selected LanguageVersion valid
     static member ContainsVersion version =
         let langVersion = getVersionFromString version
         langVersion <> 0m && languageVersions.Contains langVersion
+
+    /// Is the selected LanguageVersion currently supported
+    static member IsVersionSupported version =
+        let langVersion = getVersionFromString version
+
+        langVersion >= languageVersion80
+        || System.Environment.GetEnvironmentVariable("SKIP_VERSION_SUPPORTED_CHECK") = "1"
 
     /// Get a list of valid strings for help text
     static member ValidOptions = validOptions
@@ -351,7 +356,6 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
-        | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions ()
         | LanguageFeature.BetterExceptionPrinting -> FSComp.SR.featureBetterExceptionPrinting ()
         | LanguageFeature.DelegateTypeNameResolutionFix -> FSComp.SR.featureDelegateTypeNameResolutionFix ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()

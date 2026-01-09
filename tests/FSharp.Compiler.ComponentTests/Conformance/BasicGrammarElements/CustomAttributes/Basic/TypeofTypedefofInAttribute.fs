@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #Attributes 
-#light
+
 
 // FSB 3565, verify typeof<_> and typedefof<_> can be used in
 // attributes. Also, verify that their behavior is the same in

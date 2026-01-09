@@ -6,7 +6,6 @@ open System
 open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.Text
-open FSharp.Compiler.Features
 
 #nowarn "57"
 
@@ -28,7 +27,6 @@ type FSharpTokenizerColorState =
     | Comment = 5
     | StringInComment = 6
     | VerbatimStringInComment = 7
-    | CamlOnly = 8
     | VerbatimString = 9
     | SingleLineComment = 10
     | EndLineThenSkip = 11
@@ -359,7 +357,6 @@ module FSharpKeywords =
 [<Flags; Experimental("This FCS API is experimental and subject to change.")>]
 type public FSharpLexerFlags =
     | Default = 0x11011
-    | LightSyntaxOn = 0x00001
     | Compiling = 0x00010
     | CompilingFSharpCore = 0x00110
     | SkipTrivia = 0x01000
@@ -375,7 +372,6 @@ type public FSharpTokenKind =
     | CommentTrivia
     | WhitespaceTrivia
     | HashLine
-    | HashLight
     | InactiveCode
     | LineCommentTrivia
     | StringText
@@ -553,13 +549,6 @@ type public FSharpTokenKind =
     | KeywordString
     | String
     | ByteArray
-    | Asr
-    | InfixAsr
-    | InfixLand
-    | InfixLor
-    | InfixLsl
-    | InfixLsr
-    | InfixLxor
     | InfixMod
 
 [<Struct; NoComparison; NoEquality; Experimental("This FCS API is experimental and subject to change.")>]

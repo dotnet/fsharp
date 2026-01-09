@@ -5,7 +5,7 @@
 // extension methods... so this code compiles just fine.
 //<Expects status="success"></Expects>
 
-#light
+
 namespace NS
   module K = 
 

@@ -8,7 +8,6 @@ open System.Reflection
 open FSharp.Compiler.IO
 open Internal.Utilities.Library
 
-open FSharp.Compiler.AbstractIL.AsciiConstants
 open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.AbstractIL.IL
 

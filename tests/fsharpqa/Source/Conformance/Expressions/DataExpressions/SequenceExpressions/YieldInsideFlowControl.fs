@@ -1,5 +1,5 @@
 // #Regression #Conformance #DataExpressions #Sequences 
-#light
+
 
 // Regression test for FSharp1.0:3930 - "Invalid sequence expression" error when using yield combined with if-then expressions in seq.
 
