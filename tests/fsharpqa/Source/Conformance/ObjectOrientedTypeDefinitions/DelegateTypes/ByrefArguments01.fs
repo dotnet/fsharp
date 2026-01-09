@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Delegates 
-#light
+
 
 // FSB 151, Cannot construct delegate values that accept byref arguments
 

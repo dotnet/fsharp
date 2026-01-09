@@ -6,17 +6,11 @@ open FSharp.Test
 open FSharp.Test.ScriptHelpers 
 open Miscellaneous.FsharpSuiteMigrated.TestFrameworkAdapter  
 
-[<Fact>]
-let misc () = singleTestBuildAndRunVersion "typecheck/misc" FSC_OPTIMIZED LangVersion.SupportsMl
-
 [<FactForDESKTOP(Skip = "Failing in new test framework")>]
 let ``type check neg01`` () = singleNegTest ( "typecheck/sigs") "neg01"
 
 [<FactForDESKTOP>]
 let ``type check neg02`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V60 "neg02"
-
-[<FactForDESKTOP(Skip = "Failing in new test framework")>]
-let ``type check neg03`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.SupportsMl "neg03"
 
 [<FactForDESKTOP>]
 let ``type check neg04`` () = singleNegTest ( "typecheck/sigs") "neg04"

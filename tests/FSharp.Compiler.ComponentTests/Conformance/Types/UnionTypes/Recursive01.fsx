@@ -3,7 +3,7 @@
 // Note: don't try to make much sense of this code.
 // It's a rather (intentionally) convoluted code.
 //<Expects status="success"></Expects>
-#light
+
 
 type E = | Sum of E * E
          | Mul of E * E

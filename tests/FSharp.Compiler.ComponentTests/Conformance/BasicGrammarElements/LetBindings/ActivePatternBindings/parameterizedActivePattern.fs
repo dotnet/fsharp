@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #LetBindings #ActivePatterns 
-#light
+
 
 let (|MulN|_|) (n:int) (inp:int) = if inp % 3 = 0 then Some(inp/n) else None
 

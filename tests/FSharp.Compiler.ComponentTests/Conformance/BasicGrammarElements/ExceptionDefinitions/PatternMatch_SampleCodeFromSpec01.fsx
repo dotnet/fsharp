@@ -2,7 +2,7 @@
 // This is the sample code that appears in the specs under 9.4
 // It shows how to use exceptions in pattern match
 //<Expects status="success"></Expects>
-#light
+
 
 exception Error of int * string
 

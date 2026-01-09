@@ -1,7 +1,7 @@
 // #Regression #Conformance #DeclarationElements #Accessibility 
 // On member
 
-#light
+
 
 module M =
           type Foo() = class 

@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #LetBindings 
-#light
+
 
 // Verify warning when 'do-bindings' do not return unit.
 

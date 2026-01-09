@@ -1,5 +1,5 @@
 // #Conformance #DataExpressions #ComputationExpressions 
-#light
+
 
 // Verify use of 'for i = ... in Computation Expressions
 

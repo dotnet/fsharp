@@ -3,7 +3,7 @@
 // closing square bracket following closing generic type angle bracket  is syntax error without whitespace
 //<Expects status="success"></Expects>
 
-#light
+
 
 [<Measure>] type Kg
 type R4 = { I : list<float<Kg>> }

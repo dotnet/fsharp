@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #TypeTests 
-#light
+
 
 // Verify result of dynamic type test on sealed type.
 

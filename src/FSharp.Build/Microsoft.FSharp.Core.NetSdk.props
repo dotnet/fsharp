@@ -20,10 +20,14 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(_FSCorePackageVersionSet)' != 'true'">
-    <_FSCorePackageVersionSet>true</_FSCorePackageVersionSet>
+  <PropertyGroup Condition="'$(FSCorePackageVersionSet)' != 'true'">
+    <FSCorePackageVersionSet>true</FSCorePackageVersionSet>
     <FSCorePackageVersion>{{FSCorePackageVersionValue}}</FSCorePackageVersion>
     <_FSharpCoreLibraryPacksFolder Condition="'$(_FSharpCoreLibraryPacksFolder)' == ''">$([MSBuild]::EnsureTrailingSlash('$(MSBuildThisFileDirectory)'))library-packs</_FSharpCoreLibraryPacksFolder>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(FSCorePackageVersionSet)' == 'true' and '$(FSCorePackageVersion)' != '' and !$(FSCorePackageVersion.Contains('{'))">
+    <FSharpCoreMaximumMajorVersion Condition="'$(FSharpCoreMaximumMajorVersion)' == ''">$([System.Version]::Parse('$(FSCorePackageVersion.Split('-')[0])').Major)</FSharpCoreMaximumMajorVersion>
   </PropertyGroup>
 
 </Project>
