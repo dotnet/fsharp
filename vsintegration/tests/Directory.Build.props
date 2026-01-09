@@ -1,0 +1,12 @@
+<Project>
+
+  <!-- Import parent Directory.Build.props chain first -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!-- Test-specific settings for xUnit3/MTP migration -->
+  <PropertyGroup>
+    <!-- Force x64 for .NET Framework test executables to avoid OOM and sizeof issues -->
+    <PlatformTarget Condition="'$(OutputType)' == 'Exe' and '$(TargetFramework)' == 'net472'">x64</PlatformTarget>
+  </PropertyGroup>
+
+</Project>
