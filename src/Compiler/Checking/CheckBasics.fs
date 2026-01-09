@@ -455,7 +455,7 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
             if IsPartiallyQualifiedNamespace modref then 
                  errorR(Error(FSComp.SR.tcOpenUsedWithPartiallyQualifiedPath(fullDisplayTextOfModRef modref), m)))
         
-    let modrefs = List.map p23 modrefs
+    let modrefs = List.map (fun (_, modref, _) -> modref) modrefs
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
     let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.ModuleOrNamespace (SynLongIdent(longId, [], []), m), modrefs, [], scopem, false)
