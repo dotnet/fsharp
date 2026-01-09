@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeInference #TypeConstraints 
-#light
+
 
 // Verify error message when an enum constraint fails.
 //<Expects id="FS0001" status="error">The type 'int16' does not match the type 'int64'</Expects>

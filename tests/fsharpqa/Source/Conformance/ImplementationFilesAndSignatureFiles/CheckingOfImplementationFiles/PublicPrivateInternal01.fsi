@@ -1,5 +1,5 @@
 // #Conformance #SignatureFiles 
-#light
+
 
 // Test FSI checking for public, private, and internal 'stuff'
 

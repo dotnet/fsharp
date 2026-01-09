@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeInference #TypeConstraints 
-#light
+
 
 // Verify error associated with open type variable
 

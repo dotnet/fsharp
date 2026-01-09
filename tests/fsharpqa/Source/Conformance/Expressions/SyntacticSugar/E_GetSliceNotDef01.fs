@@ -1,5 +1,5 @@
 // #Regression #Conformance #SyntacticSugar 
-#light
+
 
 // Verify error if GetSlice is not defined
 //<Expects id="FS0039" status="error">The type 'DU' does not define the field, constructor or member 'GetSlice'</Expects>

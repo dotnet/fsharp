@@ -1,6 +1,6 @@
 module Core_access
 
-#light
+
 let failures = ref []
 
 let report_failure (s : string) = 
