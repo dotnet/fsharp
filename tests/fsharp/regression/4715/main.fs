@@ -1,4 +1,4 @@
-#light
+
 module app.main
 
 open System

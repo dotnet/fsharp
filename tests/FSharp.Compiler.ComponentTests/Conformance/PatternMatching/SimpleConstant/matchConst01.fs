@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #Constants 
-#light
+
 
 let isZero x =
     match x with

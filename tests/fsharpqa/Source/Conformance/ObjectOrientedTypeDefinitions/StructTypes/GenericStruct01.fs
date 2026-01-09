@@ -1,7 +1,7 @@
 // #Conformance #ObjectOrientedTypes #Structs 
-#light
 
-#light
+
+
 
 // Verify no PEVerify errors when returning a generic struct
 

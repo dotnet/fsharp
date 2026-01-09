@@ -2,7 +2,7 @@
 // Number type specifier are not case-sensitive
 // Bin
 //<Expects status="success"></Expects>
-#light
+
 
 let x1 = 0B1
 let y1 = 0b1

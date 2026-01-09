@@ -1,5 +1,5 @@
 ﻿// #Globalization 
-#light
+
 
 namespace हताहत 
 

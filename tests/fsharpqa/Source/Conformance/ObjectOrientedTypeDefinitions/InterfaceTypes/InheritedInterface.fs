@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
-#light
+
 
 // Verify you can use inheritance with interfaces
 type IAge =

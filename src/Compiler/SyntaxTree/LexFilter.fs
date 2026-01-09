@@ -588,7 +588,6 @@ type PositionWithColumn =
 // build a LexFilter
 //--------------------------------------------------------------------------*)
 type LexFilterImpl (
-    indentationSyntaxStatus: IndentationAwareSyntaxStatus,
     compilingFSharpCore,
     lexer: Lexbuf -> token,
     lexbuf: Lexbuf,
@@ -2776,16 +2775,6 @@ type LexFilterImpl (
                  let ctxtToken = if pushed then tokenTup else fallbackToken
                  delayToken(pool.UseLocation(ctxtToken, OBLOCKBEGIN))
 
-    let rec swTokenFetch() =
-        let tokenTup = popNextTokenTup()
-        let tokenReplaced = rulesForBothSoftWhiteAndHardWhite tokenTup
-        if tokenReplaced then swTokenFetch()
-        else
-            let lexbufState = tokenTup.LexbufState
-            let tok = tokenTup.Token
-            pool.Return tokenTup
-            returnToken lexbufState tok
-
     //----------------------------------------------------------------------------
     // Part VI. Publish the new lexer function.
     //--------------------------------------------------------------------------
@@ -2797,16 +2786,14 @@ type LexFilterImpl (
             let _firstTokenTup = peekInitial()
             ()
 
-        if indentationSyntaxStatus.Status
-        then hwTokenFetch true
-        else swTokenFetch()
+        hwTokenFetch true
 
 // LexFilterImpl does the majority of the work for offsides rules and other magic.
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
-type LexFilter (indentationSyntaxStatus: IndentationAwareSyntaxStatus, compilingFSharpCore, lexer, lexbuf: Lexbuf, debug) =
+type LexFilter (compilingFSharpCore, lexer, lexbuf: Lexbuf, debug) =
     let debug = debug || forceDebug
-    let inner = LexFilterImpl(indentationSyntaxStatus, compilingFSharpCore, lexer, lexbuf, debug)
+    let inner = LexFilterImpl(compilingFSharpCore, lexer, lexbuf, debug)
 
     // We don't interact with lexbuf state at all, any inserted tokens have same state/location as the real one read, so
     // we don't have to do any of the wrapped lexbuf magic that you see in LexFilterImpl.

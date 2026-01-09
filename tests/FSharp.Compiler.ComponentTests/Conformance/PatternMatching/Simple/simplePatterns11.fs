@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 let sumEvenValues (tuple:int*int) =
     match tuple with

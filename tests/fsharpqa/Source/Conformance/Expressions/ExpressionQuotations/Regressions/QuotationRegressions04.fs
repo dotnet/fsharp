@@ -1,5 +1,5 @@
 // #Regression #Conformance #Quotations 
-#light
+
 
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns

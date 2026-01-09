@@ -1,5 +1,5 @@
 // #Conformance #TypeInference 
-#light
+
 
 // Leave parameters generic, verify ability to infer which dispatch slot member corresponds to
 

@@ -3,7 +3,7 @@
 // ICE in Units of Measure + Polymorphism
 //<Expects status="success"></Expects>
 
-#light
+
 module Test
 type Unit<[<Measure>] 'a >() =
     abstract Factor : unit -> float

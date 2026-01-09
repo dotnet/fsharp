@@ -3,7 +3,7 @@
 // Attribute under test:  AssemblyFileVersion
 //<Expects status="success"></Expects>
 
-#light
+
 
 open System
 open System.Reflection;

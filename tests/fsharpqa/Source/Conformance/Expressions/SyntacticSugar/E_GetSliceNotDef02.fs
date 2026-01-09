@@ -1,5 +1,5 @@
 // #Regression #Conformance #SyntacticSugar 
-#light
+
 
 // Verify error using a 1D slice if only a 2D version added
 //<Expects id="FS0501" status="error" span="(31,9)">The member or object constructor 'GetSlice' takes 4 argument\(s\) but is here given 2\. The required signature is 'member Foo\.GetSlice: lb1: 'a option \* ub1: 'a option \* lb2: 'a option \* ub2: 'a option -> unit'</Expects>

@@ -584,24 +584,6 @@ rule token (args: LexArgs) (skip: bool) = parse
                 UINT8 (byte(x))
        | _ -> fail args lexbuf  (FSComp.SR.lexInvalidAsciiByteLiteral()) (UINT8(byte 0)) }
 
- | "(*IF-FSHARP"
-     { if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-          mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange
-       if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
-       else token args skip lexbuf }
-
- | "(*F#"
-     { if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
-       else token args skip lexbuf }
-
- | "ENDIF-FSHARP*)"
-     { if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
-       else token args skip lexbuf  }
-
- | "F#*)"
-     { if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
-       else token args skip lexbuf }
-
  | "(*)"
      { LPAREN_STAR_RPAREN }
 
@@ -609,11 +591,6 @@ rule token (args: LexArgs) (skip: bool) = parse
      { let m = lexbuf.LexemeRange
        if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, 1, m))
        else comment (1,m,args) skip lexbuf }
-
- | "(*IF-CAML*)" |  "(*IF-OCAML*)"
-     { let m = lexbuf.LexemeRange
-       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
-       else mlOnly m args skip lexbuf }
 
  | '"'
      { let buf, fin, m = startString args lexbuf
@@ -726,7 +703,7 @@ rule token (args: LexArgs) (skip: bool) = parse
        else WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest)) }
 
  | offwhite+
-     { if args.indentationSyntaxStatus.Status then errorR(Error(FSComp.SR.lexTabsNotAllowed(), lexbuf.LexemeRange))
+     { errorR(Error(FSComp.SR.lexTabsNotAllowed(), lexbuf.LexemeRange))
        if not skip then WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest))
        else token args skip lexbuf }
 
@@ -1014,25 +991,16 @@ rule token (args: LexArgs) (skip: bool) = parse
        let tok = shouldStartFile args lexbuf m (0,FSComp.SR.lexHashBangMustBeFirstInFile()) tok
        if not skip then tok else singleLineComment (None,1,m,m,args) skip lexbuf }
 
- | "#light" anywhite*
- | ("#indent" | "#light") anywhite+ "\"on\""
-   { if args.indentationSyntaxStatus.ExplicitlySet && args.indentationSyntaxStatus.WarnOnMultipleTokens then
-         let s = lexeme lexbuf
-         warning(Error((0, sprintf "%s should only be set once in an F# source file." s), lexbuf.LexemeRange))
-         // TODO: where should this go? (abelb)
-         //warning(Error((0,"#light should only occur as the first non-comment text in an F# source file."), lexbuf.LexemeRange))
-     args.indentationSyntaxStatus.Status <- true
-     if not skip then HASH_LIGHT (LexCont.Token(args.ifdefStack, args.stringNest))
-     else token args skip lexbuf }
+| "#light" anywhite* newline
+   { incrLine lexbuf
+     token args skip lexbuf }
+
+| ("#indent" | "#light") anywhite+ "\"on\""
+   { token args skip lexbuf }
 
  | ("#indent" | "#light") anywhite+ "\"off\""
-   { args.indentationSyntaxStatus.Status <- false
-     if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-         mlCompatError (FSComp.SR.mlCompatLightOffNoLongerSupported()) lexbuf.LexemeRange
-     else
-         mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange
-     if not skip then HASH_LIGHT (LexCont.Token (args.ifdefStack, args.stringNest))
-     else token args skip lexbuf }
+   { errorR (Error(FSComp.SR.mlCompatLightOffNoLongerSupported(), lexbuf.LexemeRange))
+     token args skip lexbuf }
 
  | anywhite* "#if" anywhite+ anystring
    { let m = lexbuf.LexemeRange
@@ -1080,7 +1048,6 @@ rule token (args: LexArgs) (skip: bool) = parse
  | anywhite* "#if" ident_char+
  | anywhite* "#else" ident_char+
  | anywhite* "#endif" ident_char+
- | anywhite* "#light" ident_char+
    { let n = (lexeme lexbuf).IndexOf('#')
      lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
      HASH_IDENT(lexemeTrimLeft lexbuf (n+1)) }
@@ -1906,37 +1873,3 @@ and tripleQuoteStringInComment (n: int) (m: range) (args: LexArgs) (skip: bool) 
  | _
      { if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, n, m))
        else tripleQuoteStringInComment n m args skip lexbuf }
-
-
-and mlOnly (m: range) (args: LexArgs) (skip: bool) = parse
- | "\""
-     { let buf = ByteBuffer.Create StringCapacity
-       let m2 = lexbuf.LexemeRange
-       let _ = singleQuoteString (buf, LexerStringFinisher.Default, m2, LexerStringKind.String, args) skip lexbuf
-       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
-       else mlOnly m args skip lexbuf }
-
- | newline
-     { incrLine lexbuf
-       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
-       else mlOnly m args skip lexbuf }
-
- | "(*ENDIF-CAML*)"
-     { if not skip then COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
-       else token args skip lexbuf }
-
- | "(*ENDIF-OCAML*)"
-     { if not skip then COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
-       else token args skip lexbuf }
-
- | [^ '(' '"' '\n' '\r' ]+
-     { if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
-       else mlOnly m args skip lexbuf }
-
- | eof
-     { EOF (LexCont.MLOnly(args.ifdefStack, args.stringNest, m)) }
-
- | surrogateChar surrogateChar
- | _
-     { if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
-       else mlOnly m args skip lexbuf }

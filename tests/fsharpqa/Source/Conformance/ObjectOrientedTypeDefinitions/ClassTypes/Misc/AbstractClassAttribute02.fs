@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #Classes 
-#light
+
 
 // Verify error associated with putting the AbstractClass attribute o
 // on non-class types.

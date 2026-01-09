@@ -27,11 +27,6 @@
         <target state="translated">Plik źródłowy „{0}” (na pozycji {1}/{2}) już pojawił się na liście kompilacji (na pozycji {3}/{4}). Sprawdź, czy jest on uwzględniony tylko raz w pliku projektu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildInvalidSourceFileExtensionML">
-        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="translated">Rozszerzenie pliku "{0}" nie zostało rozpoznane. Pliki źródłowe muszą mieć rozszerzenie .fs, .fsi, .fsx lub .fsscript. Aby włączyć przestarzałe używanie rozszerzeń. ml lub .mli, użyj polecenia "--langversion: 5.0" i "--mlcompatibility".</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">Rozszerzenie pliku "{0}" nie zostało rozpoznane. Pliki źródłowe muszą mieć rozszerzenie .fs, .fsi, .fsx lub .fsscript</target>
@@ -497,11 +492,6 @@
         <target state="translated">Zezwalaj na małą literę DU, gdy występuje RequireQualifiedAccess</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureMLCompatRevisions">
-        <source>ML compatibility revisions</source>
-        <target state="translated">Poprawki dotyczące zgodności Machine Learning</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
         <target state="translated">Odrzucenie dopasowania wzorca jest niedozwolone w przypadku unii, która nie pobiera żadnych danych.</target>
@@ -842,11 +832,6 @@
         <target state="translated">Rozszerzona interpolacja ciągów nie jest obsługiwana w tej wersji języka F#.</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexIfOCaml">
-        <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
-        <target state="translated">Regiony IF-FSHARP/IF-CAML nie są już obsługiwane</target>
-        <note />
-      </trans-unit>
       <trans-unit id="lexInvalidAsciiByteLiteral">
         <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.</source>
         <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.</target>
@@ -952,39 +937,9 @@
         <target state="translated">Odrzucanie wzorca jest niedozwolone w przypadku unii, która nie przyjmuje żadnych danych.</target>
         <note />
       </trans-unit>
-      <trans-unit id="mlCompatError">
-        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="translated">Ta konstrukcja jest przestarzała. {0}. Tę funkcję można włączyć przy użyciu poleceń"--langversion:5.0" i "--mlcompatibility".</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatKeyword">
-        <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
-        <target state="translated">W poprzednich wersjach języka F# "{0}" było zarezerwowanym słowem kluczowym, ale używanie tego słowa kluczowego jest obecnie przestarzałe</target>
-        <note />
-      </trans-unit>
       <trans-unit id="mlCompatLightOffNoLongerSupported">
-        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="translated">Używanie polecenia '#light \"off\"' or '#indent \"off\"' jest przestarzałe w języku F# 2.0 i nie jest już obsługiwane</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
-        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="translated">Używanie wielu parametrów typu „w nawiasach” przed nazwą typu ogólnego, takim jak "Mapa (int, int)", jest przestarzałe w języku F# 2.0 i nie jest już obsługiwane</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatSigColonNoLongerSupported">
-        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="translated">Używanie wyrażenia "module M: sig ... end" jest przestarzałe w języku F# 2.0 i nie jest już obsługiwane. Zmień ":" na "=" i usuń element "sig" oraz "end" i w zamian użyj wcięcia</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatSigEndNoLongerSupported">
-        <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="translated">Używanie wyrażenia "module M: sig ... end" jest przestarzałe w języku F# 2.0 i nie jest już obsługiwane. Usuń element "sig" oraz "end" i w zamian użyj wcięcia</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatStructEndNoLongerSupported">
-        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
-        <target state="translated">Używanie wyrażenia "module M: struct ... end" jest przestarzałe w języku F# 2.0 i nie jest już obsługiwane. Usuń element "struct" oraz "end" i w zamian użyj wcięcia</target>
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -1045,6 +1000,11 @@
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
         <target state="translated">Nieprawidłowa ścieżka zestawu odwołania“</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersionOutOfSupport">
+        <source>Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</source>
+        <target state="new">Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">
@@ -2150,11 +2110,6 @@
       <trans-unit id="buildCouldNotFindSourceFile">
         <source>Source file '{0}' could not be found</source>
         <target state="translated">Nie można znaleźć pliku źródłowego „{0}”</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildInvalidSourceFileExtension">
-        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx, .fsscript, .ml or .mli.</source>
-        <target state="translated">Rozszerzenie pliku „{0}” nie zostało rozpoznane. Pliki źródłowe muszą mieć rozszerzenie fs, fsi, fsx, fsscript, ml lub mli.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCouldNotResolveAssembly">
@@ -3695,11 +3650,6 @@
       <trans-unit id="parsEofInVerbatimStringInComment">
         <source>End of file in verbatim string embedded in comment begun at or before here</source>
         <target state="translated">Koniec pliku w ciągu dosłownego wyrażenia osadzonym w komentarzu rozpoczętym w tym miejscu lub przed nim</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsEofInIfOcaml">
-        <source>End of file in IF-OCAML section begun at or before here</source>
-        <target state="translated">Koniec pliku w sekcji IF-OCAML rozpoczętej w tym miejscu lub przed nim</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInDirective">
@@ -6117,11 +6067,6 @@
         <target state="translated">Definiuj symbole kompilacji warunkowej (krótka wersja: -d)</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsMlcompatibility">
-        <source>Ignore ML compatibility warnings</source>
-        <target state="translated">Ignoruj ostrzeżenia dotyczące zgodności z językiem ML</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsNologo">
         <source>Suppress compiler copyright message</source>
         <target state="translated">Pomiń komunikat kompilatora o prawach autorskich</target>
@@ -6773,8 +6718,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">Znaki TAB są niedozwolone w kodzie języka F#, chyba że użyto opcji #indent \"off\"</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="new">TABs are not allowed in F# code</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">
@@ -6992,11 +6937,6 @@
         <target state="translated">Nie można usunąć niejednoznaczności w przypadku użycia konstrukcji ogólnej z ograniczeniem „unmanaged” w tym miejscu lub w jego pobliżu</target>
         <note />
       </trans-unit>
-      <trans-unit id="mlCompatMessage">
-        <source>This construct is for ML compatibility. {0}. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.</source>
-        <target state="translated">Ta konstrukcja zapewnia zgodność z językiem ML. {0}. Możesz wyłączyć to ostrzeżenie, używając opcji „--mlcompatibility” lub opcji „--nowarn:62”.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ilFieldDoesNotHaveValidOffsetForStructureLayout">
         <source>The type '{0}' has been marked as having an Explicit layout, but the field '{1}' has not been marked with the 'FieldOffset' attribute</source>
         <target state="translated">Typ „{0}” został oznaczony jako mający układ Explicit, ale pole „{1}” nie zostało oznaczone za pomocą atrybutu „FieldOffset”</target>
@@ -7015,16 +6955,6 @@
       <trans-unit id="parsInvalidPrefixOperatorDefinition">
         <source>Invalid operator definition. Prefix operator definitions must use a valid prefix operator name.</source>
         <target state="translated">Nieprawidłowa definicja operatora. Definicje operatora prefiksu muszą używać prawidłowej nazwy operatora prefiksu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCompilingExtensionIsForML">
-        <source>The file extensions '.ml' and '.mli' are for ML compatibility</source>
-        <target state="translated">Rozszerzenia pliku „ml” i „mli” są używane na potrzeby zgodności z językiem ML</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexIndentOffForML">
-        <source>Consider using a file with extension '.ml' or '.mli' instead</source>
-        <target state="translated">Rozważ użycie pliku z rozszerzeniem „ml” lub „mli”</target>
         <note />
       </trans-unit>
       <trans-unit id="activePatternIdentIsNotFunctionTyped">
@@ -8543,8 +8473,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
-        <source>Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.</source>
-        <target state="translated">Używane z warunkami wartości logicznej jako wartość logiczna lub operator. Odpowiednik symbolu ||. Używane również w ograniczeniach elementu członkowskiego.</target>
+        <source>Used in member constraints.</source>
+        <target state="new">Used in member constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

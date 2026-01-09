@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #Events 
-#light
+
 
 // Verify ability to implement events on an interface
 
