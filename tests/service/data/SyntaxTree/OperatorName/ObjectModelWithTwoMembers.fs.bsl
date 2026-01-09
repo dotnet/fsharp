@@ -32,7 +32,7 @@ ImplFile
                              { LeadingKeyword = Let (3,4--3,7)
                                InlineKeyword = None
                                EqualsRange = Some (3,26--3,27) })], false, false,
-                         (3,4--3,29));
+                         (3,4--3,29), { InKeyword = None });
                       GetSetMember
                         (Some
                            (SynBinding

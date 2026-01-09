@@ -4437,7 +4437,7 @@ module internal Project34 =
             // i.e. the private type System.Data.Listeners may not be available on Mono.
             yield @"-r:" + (__SOURCE_DIRECTORY__ ++ ".." ++ "service" ++ "data" ++ "System.Data.dll")
         |]
-        |> Array.filter(fun arg -> not((arg.Contains("System.Data")) && not (arg.Contains(@"service\data\System.Data.dll"))))
+        |> Array.filter(fun arg -> not(arg.Contains("System.Data") && not (arg.Contains(@"service\data\System.Data.dll"))))
 
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
@@ -5807,7 +5807,7 @@ let checkContentAsScript content =
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module ScriptClosureCacheUse =    
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``References from #r nuget are included in script project options`` () =
         let checkResults = checkContentAsScript """
     #i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"

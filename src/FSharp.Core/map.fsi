@@ -210,7 +210,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     interface IDictionary<'Key, 'Value>
     interface ICollection<KeyValuePair<'Key, 'Value>>
     interface IEnumerable<KeyValuePair<'Key, 'Value>>
-    interface System.IComparable
+    interface IComparable
     interface System.Collections.IStructuralEquatable
     interface System.Collections.IEnumerable
     interface IReadOnlyCollection<KeyValuePair<'Key, 'Value>>

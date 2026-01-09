@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis #Operators 
-#light
+
 
 let (?) (o : obj) (s : string) : string =
     let ty = o.GetType()

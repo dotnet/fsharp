@@ -671,7 +671,8 @@ type UsingMSBuild()  =
     /// exp = (<expected line>, <expected identifier>) option
     member internal this.SolutionGotoDefinitionTestWithSimpleFile (startLoc : string)(exp : (string * string) option) : unit =
       let lines = 
-        [ "#light"
+        [
+          ""
           "let _ = 3"
           "let _ = \"hi\""
           "let _ = 2 + 3"
@@ -1290,7 +1291,8 @@ type UsingMSBuild()  =
     [<Fact>]
     member this.``GotoDefinition.ObjectOriented.StructConstructor`` () =
       let lines = 
-        [ "#light"
+        [
+          ""
           "[<Struct>]"
           "type Astruct(x:int, y:int) ="
           "  [<DefaultValue()>]"

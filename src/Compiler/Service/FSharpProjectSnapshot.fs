@@ -5,7 +5,6 @@ module FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open System
 open System.Collections.Generic
 open System.IO
-open System.Reflection
 open FSharp.Compiler.IO
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -133,7 +132,7 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
 type internal FSharpFileSnapshotWithSource
     (FileName: string, SourceHash: ImmutableArray<byte>, Source: ISourceTextNew, IsLastCompiland: bool, IsExe: bool) =
 
-    let version = lazy (SourceHash.ToBuilder().ToArray())
+    let version = lazy SourceHash.ToBuilder().ToArray()
     let stringVersion = lazy (version.Value |> BitConverter.ToString)
 
     member val Version = version.Value
@@ -152,13 +151,8 @@ type internal FSharpFileSnapshotWithSource
 
 /// A source file snapshot with parsed syntax tree
 type internal FSharpParsedFile
-    (
-        FileName: string,
-        SyntaxTreeHash: byte array,
-        SourceText: ISourceText,
-        ParsedInput: ParsedInput,
-        ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
-    ) =
+    (FileName: string, SyntaxTreeHash: byte array, SourceText: ISourceText, ParsedInput: ParsedInput, ParseDiagnostics: PhasedDiagnostic[])
+    =
 
     member _.FileName = FileName
     member _.SourceText = SourceText
@@ -203,14 +197,14 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
 
     let noFileVersionsKey =
         lazy
-            ({ new ICacheKey<_, _> with
-                 member _.GetLabel() = projectConfig.Label
-                 member _.GetKey() = projectConfig.Identifier
+            { new ICacheKey<_, _> with
+                member _.GetLabel() = projectConfig.Label
+                member _.GetKey() = projectConfig.Identifier
 
-                 member _.GetVersion() =
-                     noFileVersionsHash.Value |> Md5Hasher.toString
+                member _.GetVersion() =
+                    noFileVersionsHash.Value |> Md5Hasher.toString
 
-             })
+            }
 
     let fullHash =
         lazy
@@ -226,11 +220,11 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
 
     let fullKey =
         lazy
-            ({ new ICacheKey<_, _> with
-                 member _.GetLabel() = projectConfig.Label
-                 member _.GetKey() = projectConfig.Identifier
-                 member _.GetVersion() = fullHash.Value |> Md5Hasher.toString
-             })
+            { new ICacheKey<_, _> with
+                member _.GetLabel() = projectConfig.Label
+                member _.GetKey() = projectConfig.Identifier
+                member _.GetVersion() = fullHash.Value |> Md5Hasher.toString
+            }
 
     let addHash (file: 'T) hash =
         hash |> Md5Hasher.addString file.FileName |> Md5Hasher.addBytes file.Version

@@ -53,13 +53,13 @@ ImplFile
                               { LeadingKeyword = Let (9,16--9,19)
                                 InlineKeyword = None
                                 EqualsRange = Some (9,22--9,23) })],
-                          (9,16--9,25))], false, (8,12--9,25),
-                      { ModuleKeyword = Some (8,12--8,18)
-                        EqualsRange = Some (8,33--8,34) })], false, (5,4--9,25),
-                  { ModuleKeyword = Some (5,4--5,10)
-                    EqualsRange = Some (5,18--5,19) })], false, (4,0--9,25),
-              { ModuleKeyword = Some (4,0--4,6)
-                EqualsRange = Some (4,14--4,15) })],
+                          (9,16--9,25), { InKeyword = None })], false,
+                      (8,12--9,25), { ModuleKeyword = Some (8,12--8,18)
+                                      EqualsRange = Some (8,33--8,34) })], false,
+                  (5,4--9,25), { ModuleKeyword = Some (5,4--5,10)
+                                 EqualsRange = Some (5,18--5,19) })], false,
+              (4,0--9,25), { ModuleKeyword = Some (4,0--4,6)
+                             EqualsRange = Some (4,14--4,15) })],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--9,25), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []

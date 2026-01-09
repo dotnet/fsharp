@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexicalAnalysis 
-#light
+
 
 open System.Text.RegularExpressions
 

@@ -22,8 +22,6 @@ open FSharp.Compiler.TcGlobals
 
 let verboseTLR = false
 
-let InnerLambdasToTopLevelFunctionsStackGuardDepth = StackGuard.GetDepthOption "InnerLambdasToTopLevelFunctions"
-
 //-------------------------------------------------------------------------
 // library helpers
 //-------------------------------------------------------------------------
@@ -193,7 +191,7 @@ module Pass1_DetermineTLRAndArities =
             let tps, vss, _b, _rty = stripTopLambda (e, f.Type)
             let nFormals = vss.Length
             let nMaxApplied = GetMaxNumArgsAtUses xinfo f
-            let arity = Operators.min nFormals nMaxApplied
+            let arity = min nFormals nMaxApplied
             if atTopLevel then
                 Some (f, arity)
             elif g.realsig then
@@ -1372,7 +1370,7 @@ let MakeTopLevelRepresentationDecisions ccu g expr =
                 recShortCallS = recShortCallS
                 envPackM = envPackM
                 fHatM = fHatM
-                stackGuard = StackGuard(InnerLambdasToTopLevelFunctionsStackGuardDepth, "InnerLambdasToTopLevelFunctionsStackGuardDepth") }
+                stackGuard = StackGuard("InnerLambdasToTopLevelFunctionsStackGuardDepth") }
           let z = Pass4_RewriteAssembly.rewriteState0
           Pass4_RewriteAssembly.TransImplFile penv z expr
 

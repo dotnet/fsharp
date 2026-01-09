@@ -4,18 +4,15 @@ namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
 open System
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Quotations
-open Microsoft.FSharp.Quotations.DerivedPatterns
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Linq.RuntimeHelpers
 open System.Collections
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Linq
-open System.Linq.Expressions
 open System.Reflection
 
 // ----------------------------------------------------------------------------
@@ -49,12 +46,12 @@ module internal Adapters =
             && not (FSharpType.GetRecordFields t |> Array.forall (fun f -> f.CanWrite)))
 
     let MemberInitializationHelperMeth =
-        methodhandleof (LeafExpressionConverter.MemberInitializationHelper)
+        methodhandleof LeafExpressionConverter.MemberInitializationHelper
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
     let NewAnonymousObjectHelperMeth =
-        methodhandleof (LeafExpressionConverter.NewAnonymousObjectHelper)
+        methodhandleof LeafExpressionConverter.NewAnonymousObjectHelper
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
@@ -77,10 +74,10 @@ module internal Adapters =
         let rec propSetList acc x =
             match x with
             // detect " v.X <- y"
-            | ((Patterns.PropertySet(Some(Patterns.Var var), _, _, _)) as p) :: xs when var = varArg ->
+            | Patterns.PropertySet(Some(Patterns.Var var), _, _, _) as p :: xs when var = varArg ->
                 propSetList (p :: acc) xs
             // skip unit values
-            | (Patterns.Value(v, _)) :: xs when isNull v -> propSetList acc xs
+            | Patterns.Value(v, _) :: xs when isNull v -> propSetList acc xs
             // detect "v"
             | [ Patterns.Var var ] when var = varArg -> Some acc
             | _ -> None
@@ -112,17 +109,17 @@ module internal Adapters =
     let anonObjectTypes = tupleTypes |> Array.map snd
 
     let tupleToAnonTypeMap =
-        let t = new Dictionary<Type, Type>()
+        let t = Dictionary<Type, Type>()
 
-        for (k, v) in tupleTypes do
+        for k, v in tupleTypes do
             t.[k] <- v
 
         t
 
     let anonToTupleTypeMap =
-        let t = new Dictionary<Type, Type>()
+        let t = Dictionary<Type, Type>()
 
-        for (k, v) in tupleTypes do
+        for k, v in tupleTypes do
             t.[v] <- k
 
         t
@@ -193,10 +190,7 @@ module internal Adapters =
         match expr with
         | Patterns.PropertyGet(Some(Patterns.NewRecord(typ, els)), propInfo, []) ->
             let fields =
-                Microsoft.FSharp.Reflection.FSharpType.GetRecordFields(
-                    typ,
-                    BindingFlags.Public ||| BindingFlags.NonPublic
-                )
+                FSharpType.GetRecordFields(typ, BindingFlags.Public ||| BindingFlags.NonPublic)
 
             match fields |> Array.tryFindIndex (fun p -> p = propInfo) with
             | None -> None
@@ -258,7 +252,7 @@ module internal Adapters =
         | NoConv -> ty
 
     let IsNewAnonymousObjectHelperQ =
-        let mhandle = (methodhandleof (LeafExpressionConverter.NewAnonymousObjectHelper))
+        let mhandle = (methodhandleof LeafExpressionConverter.NewAnonymousObjectHelper)
 
         let minfo = (MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
 

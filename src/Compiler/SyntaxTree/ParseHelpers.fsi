@@ -7,7 +7,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text
-open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Xml
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
@@ -93,7 +92,6 @@ type LexerContinuation =
         style: LexerStringStyle *
         int *
         range: range
-    | MLOnly of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * range: range
     | EndLine of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * LexerEndlineContinuation
 
     member LexerIfdefStack: LexerIfdefStackEntries
@@ -194,25 +192,40 @@ type BindingSet =
         range
 
 val mkClassMemberLocalBindings:
-    isStatic: bool * initialRangeOpt: range option * attrs: SynAttributes * vis: SynAccess option * BindingSet ->
+    isStatic: bool *
+    initialRangeOpt: range option *
+    attrs: SynAttributes *
+    vis: SynAccess option *
+    bindingSet: BindingSet *
+    mIn: range option ->
         SynMemberDefn
 
 /// Creates SynExpr.LetOrUse based on isBang parameter
-/// Handles all four cases: 'let', 'let!', 'use', and 'use!'
-val mkLetExpression:
-    isBang: bool *
+/// Handles 'let' and 'use'
+val mkLetExpression: mIn: range option * mWhole: range * body: SynExpr * bindingInfo: BindingSet -> SynExpr
+
+/// Helper for creating let!/use! expressions
+/// Handles 'let!' and 'use!'
+val mkLetBangExpression:
     mIn: range option *
     mWhole: range *
     body: SynExpr *
-    bindingInfo: BindingSet option *
-    bangInfo: (SynPat * SynExpr * SynBinding list * range * range option * bool) option ->
+    bangInfo:
+        (SynPat * SynBindingReturnInfo option * SynExpr * SynBinding list * SynLeadingKeyword * range option * bool) ->
         SynExpr
 
 val mkAndBang:
-    mKeyword: range * pat: SynPat * rhs: SynExpr * mWhole: range * mEquals: range * mIn: range option -> SynBinding
+    mKeyword: range *
+    pat: SynPat *
+    returnInfo: SynBindingReturnInfo option *
+    rhs: SynExpr *
+    mWhole: range *
+    mEquals: range ->
+        SynBinding
 
 val mkDefnBindings:
-    mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range -> SynModuleDecl list
+    mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range * mIn: range option ->
+        SynModuleDecl list
 
 val idOfPat: parseState: IParseState -> m: range -> p: SynPat -> Ident
 

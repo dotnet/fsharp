@@ -8,7 +8,9 @@
     <PackageTargetFallback>netcoreapp1.0</PackageTargetFallback>
     <IsShipping>true</IsShipping>
     <DependencyTargetFramework>net472</DependencyTargetFramework>
-    <DeployExtension>true</DeployExtension>
+    <DeployExtension>true</DeployExtension>    
+    <UseSharedCompilation>false</UseSharedCompilation>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
 
   <Import Project="VisualFSharp.Core.targets" />

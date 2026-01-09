@@ -74,7 +74,7 @@
          we should also support $(NetPrevious) for all releases.
          This will likely include FCS and FSharp.Core as well as shipped products.
          Right now, it only covers products we ship (FSC and FSI), not NuGet packages. -->
-    <When Condition="'$(DotNetBuildSourceOnly)' == 'true' AND '$(DotNetBuildFromVMR)' == 'true'">
+    <When Condition="'$(DotNetBuildSourceOnly)' == 'true'">
       <PropertyGroup>
         <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
       </PropertyGroup>

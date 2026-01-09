@@ -7,8 +7,6 @@ open System
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
-open System.Reflection
-
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -1538,7 +1536,7 @@ type TILObjectReprData =
 type TProvidedTypeInfo = 
     { 
       /// The parameters given to the provider that provided to this type.
-      ResolutionEnvironment: TypeProviders.ResolutionEnvironment
+      ResolutionEnvironment: ResolutionEnvironment
 
       /// The underlying System.Type (wrapped as a ProvidedType to make sure we don't call random things on
       /// System.Type, and wrapped as Tainted to make sure we track which provider this came from, for reporting
@@ -2189,7 +2187,7 @@ let private (|Public|Internal|Private|) (TAccess p) =
     | _ when List.forall isInternalCompPath p -> Internal 
     | _ -> Private
 
-let getSyntaxAccessForCompPath (TAccess a) = match a with | CompPath(_, sa, _) :: _ -> sa | _ -> TypedTree.SyntaxAccess.Unknown
+let getSyntaxAccessForCompPath (TAccess a) = match a with | CompPath(_, sa, _) :: _ -> sa | _ -> SyntaxAccess.Unknown
 
 let updateSyntaxAccessForCompPath access syntaxAccess =
     match access with
@@ -2213,9 +2211,9 @@ type Accessibility =
 
     member x.AsILMemberAccess () =
         match getSyntaxAccessForCompPath x with
-        | TypedTree.SyntaxAccess.Public -> ILMemberAccess.Public
-        | TypedTree.SyntaxAccess.Internal -> ILMemberAccess.Assembly
-        | TypedTree.SyntaxAccess.Private -> ILMemberAccess.Private
+        | SyntaxAccess.Public -> ILMemberAccess.Public
+        | SyntaxAccess.Internal -> ILMemberAccess.Assembly
+        | SyntaxAccess.Private -> ILMemberAccess.Private
         | _ ->
             if x.IsPublic then ILMemberAccess.Public
             elif x.IsInternal then ILMemberAccess.Assembly
@@ -2229,7 +2227,7 @@ type Accessibility =
 
     override x.ToString() =
         match x with
-        | TAccess (paths) ->
+        | TAccess paths ->
             let mangledTextOfCompPath (CompPath(scoref, _, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
             let scopename =
                 if x.IsPublic then "public"
@@ -2262,6 +2260,9 @@ type TyparOptionalData =
 
       /// Set to true if the typar is contravariant, i.e. declared as <in T> in C#
       mutable typar_is_contravariant: bool
+
+      /// The declared name of the type parameter.
+      mutable typar_declared_name: string option
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2363,10 +2364,10 @@ type Typar =
     member x.SetAttribs attribs = 
         match attribs, x.typar_opt_data with
         | [], None -> ()
-        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_constraints = []; typar_is_contravariant = false } when doc.IsEmpty ->
+        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_constraints = []; typar_is_contravariant = false; typar_declared_name = None } when doc.IsEmpty ->
             x.typar_opt_data <- None
         | _, Some optData -> optData.typar_attribs <- attribs
-        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false; typar_declared_name = None }
 
     /// Get the XML documentation for the type parameter
     member x.XmlDoc =
@@ -2384,7 +2385,20 @@ type Typar =
     member x.SetILName il_name =
         match x.typar_opt_data with
         | Some optData -> optData.typar_il_name <- il_name
-        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = false }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = false; typar_declared_name = None}
+
+    /// Get the declared name of the type parameter
+    member x.DeclaredName =
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_declared_name
+        | _ -> None
+
+    /// Save the name as the declared name of the type parameter if it is not already set
+    member x.PreserveDeclaredName() =
+        match x.typar_opt_data with
+        | Some optData when optData.typar_declared_name = None -> optData.typar_declared_name <- Some x.Name
+        | None -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = false; typar_declared_name = Some x.Name }
+        | _ -> ()
 
     /// Indicates the display name of a type variable
     member x.DisplayName = if x.Name = "?" then "?"+string x.Stamp else x.Name
@@ -2393,17 +2407,17 @@ type Typar =
     member x.SetConstraints cs =
         match cs, x.typar_opt_data with
         | [], None -> ()
-        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_attribs = [];typar_is_contravariant = false } when doc.IsEmpty ->
+        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_attribs = [];typar_is_contravariant = false; typar_declared_name = None } when doc.IsEmpty ->
             x.typar_opt_data <- None
         | _, Some optData -> optData.typar_constraints <- cs
-        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = []; typar_is_contravariant = false }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = []; typar_is_contravariant = false; typar_declared_name = None }
 
     /// Marks the typar as being contravariant
     member x.MarkAsContravariant() = 
         match x.typar_opt_data with
         | Some optData -> optData.typar_is_contravariant <- true
         | _ ->
-            x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = true }
+            x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = true; typar_declared_name = None }
 
     /// Creates a type variable that contains empty data, and is not yet linked. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Typar = 
@@ -2425,7 +2439,7 @@ type Typar =
         x.typar_solution <- tg.typar_solution
         match tg.typar_opt_data with
         | Some tg -> 
-            let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs; typar_is_contravariant = tg.typar_is_contravariant }
+            let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs; typar_is_contravariant = tg.typar_is_contravariant; typar_declared_name = tg.typar_declared_name }
             x.typar_opt_data <- Some optData
         | None -> ()
 
@@ -3696,7 +3710,7 @@ type EntityRef =
     /// or comes from another F# assembly then it does not (because the documentation will get read from 
     /// an XML file).
     member x.XmlDoc =
-        if not (x.Deref.XmlDoc.IsEmpty) then
+        if not x.Deref.XmlDoc.IsEmpty then
                 x.Deref.XmlDoc
         else
             x.Deref.entity_opt_data
@@ -5593,14 +5607,14 @@ type NamedDebugPointKey =
 
     override x.Equals(yobj: objnull) = 
         match yobj with 
-        | :? NamedDebugPointKey as y -> Range.equals x.Range y.Range && x.Name = y.Name
+        | :? NamedDebugPointKey as y -> equals x.Range y.Range && x.Name = y.Name
         | _ -> false
 
     interface IComparable with
         member x.CompareTo(yobj: obj) =
            match yobj with 
            | :? NamedDebugPointKey as y ->  
-               let c = Range.rangeOrder.Compare(x.Range, y.Range) 
+               let c = rangeOrder.Compare(x.Range, y.Range) 
                if c <> 0 then c else
                compare x.Name y.Name
            | _ -> -1
@@ -6044,7 +6058,7 @@ type Construct() =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m, objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (ty)), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),
@@ -6185,7 +6199,7 @@ type Construct() =
             typar_opt_data =
                 match attribs with
                 | [] -> None
-                | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false  } } 
+                | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false; typar_declared_name = None } }
 
     /// Create a new type parameter node for a declared type parameter
     static member NewRigidTypar nm m =

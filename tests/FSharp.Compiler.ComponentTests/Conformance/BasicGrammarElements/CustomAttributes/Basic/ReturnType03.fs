@@ -5,7 +5,7 @@
 // Note: the syntax is kind of awkward...
 //<Expects status="success"></Expects>
 
-#light
+
 
 [<System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = true)>]
 type CA1 = 

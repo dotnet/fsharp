@@ -1,6 +1,6 @@
 // #Conformance #MemberDefinitions #Mutable #ObjectOrientedTypes #Classes #InterfacesAndImplementations #Recursion 
 
-#light
+
 
 #if TESTS_AS_APP
 module Core_members_incremental_testhw
@@ -389,10 +389,10 @@ module ScalaPersonExample =
         member x.LastName  = lastName  : string
         member x.Spouse    = spouse    : Person1 option
         member x.Introduction() =
-          "Hi, my name is " ^ firstName ^ " " ^ lastName ^
+          "Hi, my name is " + firstName + " " + lastName +
           (match spouse with
            | None        -> "."
-           | Some spouse -> " and this is my spouse, " ^ spouse.FirstName ^ " " ^ spouse.LastName ^ ".")
+           | Some spouse -> " and this is my spouse, " + spouse.FirstName + " " + spouse.LastName + ".")
         // TODO: the implicit ctor is not in scope for defining alt constructors.
         // new (f,l) = new Person1(f,l,None)
     

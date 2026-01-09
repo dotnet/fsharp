@@ -19,7 +19,6 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.BuildGraph
 
 exception FileNameNotResolved of searchedLocations: string * fileName: string * range: range
 
@@ -257,9 +256,6 @@ type TcConfigBuilder =
 
         mutable implicitlyResolveAssemblies: bool
 
-        /// Set if the user has explicitly turned indentation-aware syntax on/off
-        mutable indentationAwareSyntax: bool option
-
         mutable conditionalDefines: string list
 
         /// Sources added into the build with #load
@@ -288,8 +284,6 @@ type TcConfigBuilder =
         mutable embedResources: string list
 
         mutable diagnosticsOptions: FSharpDiagnosticOptions
-
-        mutable mlCompatibility: bool
 
         mutable checkNullness: bool
 
@@ -608,9 +602,6 @@ type TcConfig =
 
     member implicitlyResolveAssemblies: bool
 
-    /// Set if the user has explicitly turned indentation-aware syntax on/off
-    member indentationAwareSyntax: bool option
-
     member conditionalDefines: string list
 
     member subsystemVersion: int * int
@@ -630,8 +621,6 @@ type TcConfig =
     member embedResources: string list
 
     member diagnosticsOptions: FSharpDiagnosticOptions
-
-    member mlCompatibility: bool
 
     member checkNullness: bool
 
@@ -823,8 +812,6 @@ type TcConfig =
 
     member strictIndentation: bool option
 
-    member ComputeIndentationAwareSyntaxInitialStatus: string -> bool
-
     member GetTargetFrameworkDirectories: unit -> string list
 
     /// Get the loaded sources that exist and issue a warning for the ones that don't
@@ -953,11 +940,6 @@ val FSharpImplFileSuffixes: string list
 
 /// Script file suffixes
 val FSharpScriptFileSuffixes: string list
-
-/// File suffixes where #light is the default
-val FSharpIndentationAwareSyntaxFileSuffixes: string list
-
-val FSharpMLCompatFileSuffixes: string list
 
 /// Indicates whether experimental features should be enabled automatically
 val FSharpExperimentalFeaturesEnabledAutomatically: bool

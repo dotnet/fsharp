@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexicalAnalysis 
-#light
+
 
 // Verify error with malformed short unicode character
 

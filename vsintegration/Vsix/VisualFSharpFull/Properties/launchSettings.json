@@ -3,7 +3,16 @@
     "VisualFSharpDebug": {
       "commandName": "Executable",
       "executablePath": "$(DevEnvDir)devenv.exe",
-      "commandLineArgs": "/rootsuffix $(VSSDKTargetPlatformRegRootSuffix) /log"
+      "commandLineArgs": "/rootsuffix $(VSSDKTargetPlatformRegRootSuffix) /log",
+      "environmentVariables": {
+        "FSharpCompilerPath": "$(FSharpCompilerPathForDebuggingLocally)",
+        "DisableAutoSetFscCompilerPath": "true",
+        "FSharpPreferNetFrameworkTools": "true",
+        "FSharp_Shim_Present": "true",
+        "FSharpPreferAnyCpuTools": "true",
+        "Fsc_NetFramework_ToolPath": "$(FSharpCompilerPathForDebuggingLocally)",
+        "Fsc_NetFramework_AnyCpu_ToolExe": "fscAnyCpu.exe"
+      }
     }
   }
 }

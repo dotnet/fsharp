@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis 
-#light
+
 
 (*F#
 

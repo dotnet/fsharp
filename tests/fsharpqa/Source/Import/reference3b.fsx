@@ -5,7 +5,7 @@
 // using both fsc and fsi
 // Note: the code here consumes stuff imported from reference1.exe or reference1.dll
 // It has nothing to do with the test itself. Any F# code would pretty much do.
-#light
+
 
 #r "reference1.exe"
 
