@@ -465,8 +465,6 @@ let ParseInput
         elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
             let intfs = Parser.signatureFile lexer lexbuf
             PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, diagnosticOptions, Set identStore), None
-        else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-            error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
         else
             error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
     finally
