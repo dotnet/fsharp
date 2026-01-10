@@ -10,9 +10,19 @@ module AssertExpression =
 
     let test (code: string) =
         let msgShouldContains = code.[7..].Replace(@"\", @"\\").Replace("\"", "\\\"")
-        FSharp $"try
-%s{code}
-with ex -> if not(ex.Message.Contains \"%s{msgShouldContains}\") then reraise()"
+        FSharp $"
+namespace System.Diagnostics
+type Debug =
+    static member Assert(condition: bool) = if not condition then Some \"Assertion failed\" else None
+    static member Assert(condition: bool, message: string) =
+        if not condition then Some message else None
+
+namespace global
+module Test =
+    match %s{code} with
+    | Some msg when msg = \"%s{msgShouldContains}\" -> ()
+    | None -> ()
+    | Some msg -> failwith msg"
         |> withOptions ["--define:DEBUG"]
         |> withLangVersionPreview
         |> asExe

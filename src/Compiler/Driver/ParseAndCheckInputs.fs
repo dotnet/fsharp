@@ -460,6 +460,7 @@ let ParseInput
         // Call the appropriate parser - for signature files or implementation files
         if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
             let impl = Parser.implementationFile lexer lexbuf
+
             PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, diagnosticOptions, Set identStore),
             Some lexbuf.SourceText
         elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
