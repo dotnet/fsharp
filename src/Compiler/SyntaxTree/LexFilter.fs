@@ -2637,10 +2637,6 @@ type LexFilterImpl (
         true
 
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) =
-          // Check if XML doc comment (///) appears after other code on the same line
-          match tokenTup.Token with
-          | _ -> ()
-
           match tokenTup.Token with
           | HASH_IDENT ident ->
               let hashPos = LexbufState(tokenTup.StartPos, tokenTup.StartPos.ShiftColumnBy(1), false)

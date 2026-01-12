@@ -1665,3 +1665,38 @@ type MyType = {
         (fun parseResults ->
             parseResults |>
             checkParsingErrors [||])
+
+[<Fact>]
+let ``XML doc after equals in expression should warn``(): unit =
+    checkSignatureAndImplementationWithWarnOn3879 """
+module Test
+
+let x = /// XML doc comment should not be allowed here
+  42
+"""
+        (fun _ -> ())
+        (fun parseResults ->
+            parseResults |>
+            checkParsingErrors [|
+                Warning 3879, Line 4, Col 8, Line 4, Col 11, "XML documentation comments should be the first non-whitespace text on a line.";
+                Information 3520, Line 4, Col 8, Line 4, Col 54, "XML comment is not placed on a valid language element and will be ignored."
+            |])
+
+[<Fact>]
+let ``XML doc after brace in seq expression should warn``(): unit =
+    checkSignatureAndImplementationWithWarnOn3879 """
+module Test
+
+let x = 
+  seq { /// XML doc comment should not be allowed here either
+    for i in 1..10 do
+      i * i
+  }
+"""
+        (fun _ -> ())
+        (fun parseResults ->
+            parseResults |>
+            checkParsingErrors [|
+                Warning 3879, Line 5, Col 8, Line 5, Col 11, "XML documentation comments should be the first non-whitespace text on a line.";
+                Information 3520, Line 5, Col 8, Line 5, Col 61, "XML comment is not placed on a valid language element and will be ignored."
+            |])
