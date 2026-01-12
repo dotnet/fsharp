@@ -3,7 +3,7 @@
 //<Expects status="notin">NONTERM</Expects>
 //<Expects id="FS3565" status="error">Expecting type</Expects>
 
-#light
+
 
 type ProjectFlavoring = {
      Create:(*projectFilename:*)string->(*files:*)string list->(*references:*)string list->(*projReferences:*)string list->

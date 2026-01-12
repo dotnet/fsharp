@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis 
-#light
+
 
 // Verify no syntax errors or problems when using XML doc comments
 

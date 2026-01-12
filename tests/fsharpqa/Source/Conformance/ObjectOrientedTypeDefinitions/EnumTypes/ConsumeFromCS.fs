@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Enums 
-#light
+
 namespace NF
   module M = 
     type SimpleEnum =

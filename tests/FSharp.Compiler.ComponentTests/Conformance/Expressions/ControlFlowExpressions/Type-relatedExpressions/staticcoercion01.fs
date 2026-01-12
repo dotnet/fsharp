@@ -1,5 +1,5 @@
 // #Conformance #TypeRelatedExpressions #TypeAnnotations 
-#light
+
 
 (1 :> obj)
 ("Hello" :> obj)

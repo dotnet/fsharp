@@ -2,7 +2,7 @@
 // Verify error when trying to inherit from a struct type
 // Regression test for FSHARP1.0:2803
 //<Expects id="FS0945" status="error">Cannot inherit a sealed type</Expects>
-#light
+
 
 type StructType = struct
     new(x : int, y : int) = { X = x; Y = y }

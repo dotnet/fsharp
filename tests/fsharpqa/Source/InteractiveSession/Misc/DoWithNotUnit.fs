@@ -1,5 +1,5 @@
 // #Regression #NoMT #FSI 
-#light
+
 
 // Regression test for FSHARP1.0:3628 - "do 1" expression code gen error, unverifiable code
 

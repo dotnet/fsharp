@@ -1,5 +1,5 @@
 // #Regression #NoMT #FSI 
-#light
+
 
 // Regression test for FSHARP1.0:1564 - Parsing difference in FSI between redirection and loading with #directives
 

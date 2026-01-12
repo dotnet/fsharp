@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #Attributes 
-#light
+
 
 // FSB 1437, Assembly attribute w/array parameter fails to build
 

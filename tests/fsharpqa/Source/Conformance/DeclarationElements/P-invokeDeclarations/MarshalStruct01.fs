@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #PInvoke 
-#light
+
 
 // Sanity check marshalling structs via PInvoke
 // Specifically, the [StructLayout] attribute.

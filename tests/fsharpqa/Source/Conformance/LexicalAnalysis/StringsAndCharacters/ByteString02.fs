@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis 
-#light
+
 
 // Test ability to specify byte strings
 // Multi line using backslash

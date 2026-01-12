@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #ObjectConstructors 
-#light
+
 
 // Verify explicit constructors work for class types
 // FSB 1.0 2927, grammar collision for accessibility modifiers on representation and members

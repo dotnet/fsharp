@@ -2,7 +2,7 @@
 // Exception definition define new discriminated union cases
 // Verify that we cannot use "sig-spec" when defining an exception
 
-#light
+
 
 // This is the corresponding case for DU (deprecated, but ok)
 // type T = | T1 : a:int -> T

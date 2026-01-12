@@ -1,5 +1,5 @@
 // #Conformance #TypeRelatedExpressions #TypeAnnotations 
-#light
+
 //
 // Expressions
 //
@@ -8,7 +8,7 @@
 //
 // Misc test on 'null'
 //<Expects status="success"></Expects>
-#light
+
 
 let a = null : string
 let b = [(null : _); box 1]
