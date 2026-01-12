@@ -74,7 +74,6 @@ param (
     [switch]$compressAllMetadata,
     [switch]$buildnorealsig = $true,
     [switch]$verifypackageshipstatus = $false,
-    [string]$testBatch = "",
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
@@ -366,17 +365,12 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
 
-    $testBatchSuffix = ""
-    if ($testBatch) {
-      $testBatchSuffix = "_batch$testBatch"
-    }
-
     # MTP uses --report-xunit-trx with filename only (no path)
     # Results go to TestResults directory under project output by default
-    $testLogFileName = "${projectName}_${targetFramework}$testBatchSuffix.trx"
+    $testLogFileName = "${projectName}_${targetFramework}.trx"
     $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
 
-    $testBinLogPath = "$LogDir\${projectName}_$targetFramework$testBatch.binlog"
+    $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
     
     # MTP requires --solution flag for .sln files
     $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
@@ -394,9 +388,6 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     }
 
     $test_args += " $settings"
-    if ($testBatch) {
-        $test_args += " --filter-query /[batch=$testBatch]"
-    }
 
     Write-Host("$test_args")
     Exec-Console $dotnetExe $test_args

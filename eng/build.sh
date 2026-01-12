@@ -78,7 +78,6 @@ source_build=false
 product_build=false
 from_vmr=false
 buildnorealsig=true
-testbatch=""
 properties=""
 docker=false
 args=""
@@ -103,11 +102,6 @@ while [[ $# > 0 ]]; do
       ;;
     --configuration|-c)
       configuration=$2
-      args="$args $1"
-      shift
-      ;;
-    --testbatch)
-      testbatch=$2
       args="$args $1"
       shift
       ;;
@@ -234,12 +228,8 @@ function Test() {
 
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
-  testbatchsuffix=""
-    if [[ "$testbatch" != "" ]]; then
-    testbatchsuffix="_batch$testbatch"
-  fi
   # MTP uses --report-xunit-trx with filename only (no path)
-  testlogfilename="${projectname}_${targetframework}${testbatchsuffix}.trx"
+  testlogfilename="${projectname}_${targetframework}.trx"
   testresultsdir="$artifacts_dir/TestResults/$configuration"
   
   # MTP requires --solution flag for .sln files
@@ -248,10 +238,6 @@ function Test() {
     args=(test --solution "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
   else
     args=(test --project "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
-  fi
-
-  if [[ "$testbatch" != "" ]]; then
-    args+=(--filter-query "/[batch=$testbatch]")
   fi
 
   "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
