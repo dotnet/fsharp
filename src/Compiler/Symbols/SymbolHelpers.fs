@@ -13,7 +13,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Symbols.XmlDocInheritance
+open FSharp.Compiler.XmlDocInheritance
 open FSharp.Compiler.IO
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -344,8 +344,11 @@ module internal SymbolHelpers =
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d =
         match xmlDoc with
         | Some xmlDoc when not xmlDoc.IsEmpty  ->
+            // Get the CCU of the item for same-compilation resolution
+            let ccuOpt = ccuOfItem infoReader.g d
             // Expand <inheritdoc> elements for tooltips (design-time)
-            let expandedDoc = expandInheritDoc (Some infoReader) m Set.empty xmlDoc
+            // Pass None for currentModuleType and implicitTargetCref
+            let expandedDoc = expandInheritDoc (Some infoReader) ccuOpt None None m Set.empty xmlDoc
             FSharpXmlDoc.FromXmlText expandedDoc
         | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 
