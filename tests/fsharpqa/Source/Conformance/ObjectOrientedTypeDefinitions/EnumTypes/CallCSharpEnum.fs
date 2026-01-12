@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Enums #ReqNOMT 
-#light
+
 // Consume a C# Enum from F#
 namespace NF
     module M = 

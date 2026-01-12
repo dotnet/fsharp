@@ -1,5 +1,5 @@
 // #Conformance #SyntacticSugar #ReqNOMT 
-#light
+
 
 // Verify 2D slices.  Note that in F# you (currently?) cannot
 // declare square array literals, so we need to convert expected

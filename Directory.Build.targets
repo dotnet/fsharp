@@ -3,6 +3,14 @@
   <Import Project="FSharpTests.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
   <Import Project="CoordinateXliff.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' "/>
 
+  <!-- Disable R2R when building source-only and not targeting the current SDK bundled TFM. -->
+  <PropertyGroup>
+    <PublishReadyToRun Condition="'$(DotNetBuildSourceOnly)' == 'true' and
+      '$(TargetFrameworkIdentifier)' == '.NETCoreApp' and
+      '$(TargetFrameworkVersion)' != ''
+      and $([MSBuild]::VersionLessThan('$(TargetFrameworkVersion)', '$(BundledNETCoreAppTargetFrameworkVersion)'))">false</PublishReadyToRun>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- Note, that default framework is used here (the one we use for development in the current cycle),
          since it's a non-arcade and non-sourcebuild scenario -->
@@ -18,21 +26,6 @@
     <PackageReference Include="xunit" Version="$(XUnitVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XUnitRunnerVersion)" />
     <PackageReference Include="XunitXml.TestLogger" Version="$(XunitXmlTestLoggerVersion)" />
-  </ItemGroup>
-
-  <!--
-    When .NET gets built from source, make the SDK aware there are bootstrap packages
-    for Microsoft.NETCore.App.Runtime.<rid> and Microsoft.NETCore.App.Crossgen2.<rid>.
-  -->
-  <ItemGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
-    <KnownRuntimePack Update="Microsoft.NETCore.App">
-      <RuntimePackRuntimeIdentifiers
-        Condition="'%(TargetFramework)' == '$(NetCurrent)'">%(RuntimePackRuntimeIdentifiers);$(NETCoreSdkRuntimeIdentifier)</RuntimePackRuntimeIdentifiers>
-    </KnownRuntimePack>
-    <KnownCrossgen2Pack Update="Microsoft.NETCore.App.Crossgen2">
-      <Crossgen2RuntimeIdentifiers
-        Condition="'%(TargetFramework)' == '$(NetCurrent)'">%(Crossgen2RuntimeIdentifiers);$(NETCoreSdkRuntimeIdentifier)</Crossgen2RuntimeIdentifiers>
-    </KnownCrossgen2Pack>
   </ItemGroup>
 
   <!-- We want to restore ALL the MIBCs when we build anything, since in the future it will contain different profiles, not only the FSC one we got from building Giraffe -->

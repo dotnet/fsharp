@@ -2,7 +2,7 @@
 // Implicitly implemented Equals should not throw
 // Regression test for FSHARP1.0:1633
 // Unions
-#light
+
 
 type M = 
   | A of string

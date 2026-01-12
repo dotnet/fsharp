@@ -1,6 +1,6 @@
 // #Conformance #ObjectOrientedTypes #TypeExtensions 
 //verify that you can extend a type multiple times
-#light
+
 namespace NS
   module M = 
 

@@ -47,7 +47,7 @@ let f2 n =
   let f3 (x:int) = failwith "a" in
   z2
 
-let _ : string = try (f2 3).x(3) ^ "unused" with Failure _ -> ""
+let _ : string = try (f2 3).x(3) + "unused" with Failure _ -> ""
 #endif
 
 

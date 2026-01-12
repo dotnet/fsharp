@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #TypeExtensions 
-#light
+
 
 // Verify error for invalid type extensions
 // Extend primitive types with methods called DoStuff()

@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 type Alphabet = 
     | A         | B         | C         | D         | E 

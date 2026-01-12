@@ -1,7 +1,7 @@
 // #Conformance #TypeRelatedExpressions #TypeAnnotations 
 // Upcast with 1-level class hierarchy - cast to interface
 //<Expects status="success"></Expects>
-#light
+
 
 type I    = interface
                abstract member M : int -> int

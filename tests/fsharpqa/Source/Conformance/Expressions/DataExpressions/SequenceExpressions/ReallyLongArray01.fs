@@ -1,5 +1,5 @@
 // #Conformance #DataExpressions #Sequences 
-#light
+
 
 // Verify arrays can be really, really long
 

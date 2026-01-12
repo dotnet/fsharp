@@ -20,22 +20,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.UnicodeLexing
 
-/// Lexer args: status of #light processing.  Mutated when a #light
-/// directive is processed. This alters the behaviour of the lexfilter.
-[<Sealed>]
-type IndentationAwareSyntaxStatus(initial: bool, warn: bool) =
-    let mutable status = None
-
-    member x.Status
-        with get () =
-            match status with
-            | None -> initial
-            | Some v -> v
-        and set v = status <- Some(v)
-
-    member x.ExplicitlySet = status.IsSome
-    member x.WarnOnMultipleTokens = warn
-
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager(?capacity: int) =
@@ -59,7 +43,6 @@ type LexArgs =
         applyLineDirectives: bool
         pathMap: PathMap
         mutable ifdefStack: LexerIfdefStack
-        mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
         mutable stringNest: LexerInterpolatedStringNesting
         mutable interpolationDelimiterLength: int
     }
@@ -71,13 +54,10 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs
-    (conditionalDefines, indentationSyntaxStatus, resourceManager, ifdefStack, diagnosticsLogger, pathMap: PathMap, applyLineDirectives)
-    =
+let mkLexargs (conditionalDefines, resourceManager, ifdefStack, diagnosticsLogger, pathMap: PathMap, applyLineDirectives) =
     {
         conditionalDefines = conditionalDefines
         ifdefStack = ifdefStack
-        indentationSyntaxStatus = indentationSyntaxStatus
         resourceManager = resourceManager
         diagnosticsLogger = diagnosticsLogger
         applyLineDirectives = applyLineDirectives
@@ -323,7 +303,6 @@ module Keywords =
             ALWAYS, "and", AND
             ALWAYS, "as", AS
             ALWAYS, "assert", ASSERT
-            ALWAYS, "asr", INFIX_STAR_STAR_OP "asr"
             ALWAYS, "base", BASE
             ALWAYS, "begin", BEGIN
             ALWAYS, "class", CLASS
@@ -352,13 +331,8 @@ module Keywords =
             FSHARP, "inline", INLINE
             FSHARP, "interface", INTERFACE
             FSHARP, "internal", INTERNAL
-            ALWAYS, "land", INFIX_STAR_DIV_MOD_OP "land"
             ALWAYS, "lazy", LAZY
             ALWAYS, "let", LET(false)
-            ALWAYS, "lor", INFIX_STAR_DIV_MOD_OP "lor"
-            ALWAYS, "lsl", INFIX_STAR_STAR_OP "lsl"
-            ALWAYS, "lsr", INFIX_STAR_STAR_OP "lsr"
-            ALWAYS, "lxor", INFIX_STAR_DIV_MOD_OP "lxor"
             ALWAYS, "match", MATCH
             FSHARP, "member", MEMBER
             ALWAYS, "mod", INFIX_STAR_DIV_MOD_OP "mod"
@@ -453,19 +427,7 @@ module Keywords =
             | RESERVED ->
                 warning (ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved s, lexbuf.LexemeRange))
                 IdentifierToken args lexbuf s
-            | _ ->
-                match s with
-                | "land"
-                | "lor"
-                | "lxor"
-                | "lsl"
-                | "lsr"
-                | "asr" ->
-                    if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-                        mlCompatWarning (FSComp.SR.mlCompatKeyword s) lexbuf.LexemeRange
-                | _ -> ()
-
-                v
+            | _ -> v
         | _ ->
             match s with
             | "__SOURCE_DIRECTORY__"
