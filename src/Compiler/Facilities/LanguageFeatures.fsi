@@ -117,6 +117,9 @@ type LanguageVersion =
     /// Does the selected LanguageVersion support the specified feature
     member SupportsFeature: LanguageFeature -> bool
 
+    /// Get the disabled features
+    member DisabledFeatures: LanguageFeature array
+
     /// Create a new LanguageVersion with updated disabled features
     member WithDisabledFeatures: LanguageFeature array -> LanguageVersion
 

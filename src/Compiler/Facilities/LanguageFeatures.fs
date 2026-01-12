@@ -279,6 +279,9 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
     let disabledFeatures: LanguageFeature array = defaultArg disabledFeaturesArray [||]
 
+    /// Get the disabled features
+    member _.DisabledFeatures = disabledFeatures
+
     /// Check if this feature is supported by the selected langversion
     member _.SupportsFeature featureId =
         if Array.contains featureId disabledFeatures then
@@ -454,9 +457,18 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
     override x.Equals(yobj: obj) =
         match yobj with
-        | :? LanguageVersion as y -> x.SpecifiedVersion = y.SpecifiedVersion
+        | :? LanguageVersion as y ->
+            x.SpecifiedVersion = y.SpecifiedVersion
+            && x.DisabledFeatures.Length = y.DisabledFeatures.Length
+            && (x.DisabledFeatures, y.DisabledFeatures) ||> Array.forall2 (=)
         | _ -> false
 
-    override x.GetHashCode() = hash x.SpecifiedVersion
+    override x.GetHashCode() =
+        let mutable h = hash x.SpecifiedVersion
+
+        for f in x.DisabledFeatures do
+            h <- h ^^^ hash f
+
+        h
 
     static member Default = defaultLanguageVersion
