@@ -6,6 +6,7 @@ open System.IO
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.XmlDocInheritance
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -85,11 +86,49 @@ module XmlDocWriter =
 
         let mutable members = []
 
-        let addMember id xmlDoc =
+        /// Compute implicit target cref for a member from its ImplementedSlotSigs
+        /// Returns something like "M:Namespace.IInterface.MethodName" for interface implementations
+        let computeImplicitTargetCref (v: Val) : string option =
+            match v.ImplementedSlotSigs with
+            | slotSig :: _ ->
+                // Get the declaring interface/base class type
+                let declaringType = slotSig.DeclaringType
+                let methodName = slotSig.Name
+
+                // Try to get the type reference
+                match tryTcrefOfAppTy g declaringType with
+                | ValueSome tcref ->
+                    // Build the full type path
+                    let typePath =
+                        match tcref.CompilationPathOpt with
+                        | Some cp ->
+                            let accessPath = cp.AccessPath |> List.map fst |> String.concat "."
+
+                            if accessPath.Length = 0 then
+                                tcref.CompiledName
+                            else
+                                accessPath + "." + tcref.CompiledName
+                        | None -> tcref.CompiledName
+                    // Determine if this is a method or property
+                    match v.MemberInfo with
+                    | Some memberInfo ->
+                        match memberInfo.MemberFlags.MemberKind with
+                        | SynMemberKind.PropertyGet
+                        | SynMemberKind.PropertySet
+                        | SynMemberKind.PropertyGetSet ->
+                            // For properties, use P: prefix and the property name
+                            Some("P:" + typePath + "." + v.PropertyName)
+                        | _ ->
+                            // For methods, use M: prefix
+                            Some("M:" + typePath + "." + methodName)
+                    | None -> Some("M:" + typePath + "." + methodName)
+                | ValueNone -> None
+            | [] -> None
+
+        let addMemberWithImplicitTarget id xmlDoc implicitTargetOpt =
             if hasDoc xmlDoc then
                 // Expand <inheritdoc> elements before writing to XML file
                 // Pass the generatedCcu for same-compilation type resolution
-                // Pass None for implicit target (will emit warning for implicit inheritdoc without cref)
                 let ccuMtyp = generatedCcu.Contents.ModuleOrNamespaceType
 
                 let expandedDoc =
@@ -97,7 +136,7 @@ module XmlDocWriter =
                         (Some infoReader)
                         (Some generatedCcu)
                         (Some ccuMtyp)
-                        None // implicitTargetCrefOpt
+                        implicitTargetOpt
                         Range.rangeStartup
                         Set.empty
                         xmlDoc
@@ -105,7 +144,12 @@ module XmlDocWriter =
                 let doc = expandedDoc.GetXmlText()
                 members <- (id, doc) :: members
 
-        let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc
+        let addMember id xmlDoc =
+            addMemberWithImplicitTarget id xmlDoc None
+
+        let doVal (v: Val) =
+            let implicitTarget = computeImplicitTargetCref v
+            addMemberWithImplicitTarget v.XmlDocSig v.XmlDoc implicitTarget
 
         let doField (rf: RecdField) = addMember rf.XmlDocSig rf.XmlDoc
 
