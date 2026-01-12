@@ -1,5 +1,5 @@
 // #Conformance #LexFilter #Precedence 
-#light
+
 
 let mutable z=0;; // #light must not touch these. (non-#light will)
 let mutable y=0;;

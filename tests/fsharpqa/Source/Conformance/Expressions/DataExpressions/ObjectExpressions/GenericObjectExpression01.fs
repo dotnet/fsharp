@@ -1,5 +1,5 @@
 // #Regression #Conformance #DataExpressions #ObjectConstructors 
-#light  
+
 
 // FSB 1112, Bug in definition of generic interface
 

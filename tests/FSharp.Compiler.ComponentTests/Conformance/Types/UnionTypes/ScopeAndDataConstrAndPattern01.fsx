@@ -5,7 +5,7 @@
 // and to form patterns.
 // This is the positive case.
 //<Expects status="success"></Expects>
-#light
+
 
     [<Measure>] type ı
 

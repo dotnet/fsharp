@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #TypeExtensions 
-#light
+
 namespace NS
   module M = 
     type Lib with

@@ -1,5 +1,5 @@
 // #Regression #Conformance #ApplicationExpressions 
-#light
+
 
 // Before check-in 11472, assert(false) had a special treatment (used to throw an AssertionFailure exception)
 // Now, it is just a normal expression and it is subject to conditional compilation rules.

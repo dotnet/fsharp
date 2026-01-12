@@ -538,7 +538,7 @@ type staticInInterface =
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         SetVersionFile(project,"nonexistent")
-        let file = AddFileFromText(project,"File1.fs",["#light"])
+        let file = AddFileFromText(project,"File1.fs",[])
         let file = OpenFile(project,"File1.fs")            
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
         VerifyErrorListContainedExpectedStr("nonexistent",project)
@@ -547,7 +547,7 @@ type staticInInterface =
     member public this.``BackgroundComplier``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
-                #light
+
 
                 module Test
 
@@ -807,7 +807,7 @@ type staticInInterface =
                 
 (* TODO why does this portion not work?  specifically, last assert fails 
         printfn "changing file..."
-        ReplaceFileInMemory file1 ["#light"
+        ReplaceFileInMemory file1 [
                                    "let xx = \"foo\""   // now x is string
                                    "printfn \"hi\""]
 

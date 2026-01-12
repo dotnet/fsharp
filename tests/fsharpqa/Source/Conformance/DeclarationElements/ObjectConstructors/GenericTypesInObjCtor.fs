@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #ObjectConstructors 
-#light
+
 
 // Verify ability to create a generic class with a generic type in its object ctor.
 

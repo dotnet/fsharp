@@ -56,10 +56,10 @@ type UsingMSBuild()  =
         let project2 = CreateProject(solution,"testproject2")                
         SetConfigurationAndPlatform(project1, "Debug|AnyCPU")  // maybe due to msbuild bug on dev10, we must set config/platform when building with ProjectReferences
         SetConfigurationAndPlatform(project2, "Debug|AnyCPU")  // maybe due to msbuild bug on dev10, we must set config/platform when building with ProjectReferences
-        let file1 = AddFileFromText(project1,"File1.fs", ["#light"
+        let file1 = AddFileFromText(project1,"File1.fs", [
                                                           "let xx = 42"
                                                           "printfn \"hi\""])
-        let file2 = AddFileFromText(project2,"File2.fs", ["#light"
+        let file2 = AddFileFromText(project2,"File2.fs", [
                                                           "let yy = File1.xx"
                                                           "printfn \"hi\""])      
         // Add a project-to-project reference.
@@ -96,8 +96,8 @@ type UsingMSBuild()  =
         let project2 = CreateProject(solution,"testproject2")    
         SetConfigurationAndPlatform(project1, "Debug|AnyCPU")  // maybe due to msbuild bug on dev10, we must set config/platform when building with ProjectReferences
         SetConfigurationAndPlatform(project2, "Debug|AnyCPU")  // maybe due to msbuild bug on dev10, we must set config/platform when building with ProjectReferences
-        let file1 = AddFileFromText(project1,"File1.fs", ["#light"])
-        let file2 = AddFileFromText(project2,"File2.fs", ["#light"])
+        let file1 = AddFileFromText(project1,"File1.fs", [])
+        let file2 = AddFileFromText(project2,"File2.fs", [])
         
         // Add a project-to-project reference. 
         // WARNING: See bug 4434 - when unit testing this actually goes and builds project1!!!!
@@ -128,10 +128,10 @@ type UsingMSBuild()  =
         // Create the projects/
         let project1 = CreateProject(solution,"testproject1")
         let project2 = CreateProject(solution,"testproject2")                
-        let file1 = AddFileFromText(project1,"File1.fs", ["#light"
+        let file1 = AddFileFromText(project1,"File1.fs", [
                                                           "let xx = 42"
                                                           "printfn \"hi\""])
-        let file2 = AddFileFromText(project2,"File2.fs", ["#light"
+        let file2 = AddFileFromText(project2,"File2.fs", [
                                                           "let yy = File1.xx"
                                                           "printfn \"hi\""])
         
@@ -169,12 +169,12 @@ type UsingMSBuild()  =
         let project1 = CreateProject(solution,"testproject1")
         
         let file1 = AddFileFromText(project1,"File1.fs",
-                                    ["#light"]
+                                    []
                                      )
         let file1 = OpenFile(project1,"File1.fs")
         let project2 = CreateProject(solution,"testproject2")
         let file2 = AddFileFromText(project2,"File2.fs",
-                                    ["#light"
+                                    [
                                      "File1.File1."
                                      "()"])
         let file2 = OpenFile(project2,"File2.fs")
@@ -194,7 +194,7 @@ type UsingMSBuild()  =
         
         // Now modify project1's file and rebuild.
         ReplaceFileInMemory file1 
-                                ["#light"
+                                [
                                  "module File1 = "
                                  "    let Mary x = \"\""]
         SaveFileToDisk file1
@@ -221,12 +221,12 @@ type UsingMSBuild()  =
             ".."+(path1.Substring(tempLen-1))
 
         let file1 = AddFileFromText(project1,"File1.fs",
-                                    ["#light"]
+                                    []
                                      )
         let file1 = OpenFile(project1,"File1.fs")
         let project2 = CreateProject(solution,"testproject2")
         let file2 = AddFileFromText(project2,"File2.fs",
-                                    ["#light"
+                                    [
                                      "File1.File1."
                                      "()"])
         let file2 = OpenFile(project2,"File2.fs")
@@ -248,7 +248,7 @@ type UsingMSBuild()  =
 
         // Now modify project1's file and rebuild.
         ReplaceFileInMemory file1 
-                                ["#light"
+                                [
                                  "module File1 = "
                                  "    let Mary x = \"\""]
         SaveFileToDisk file1      
@@ -269,12 +269,12 @@ type UsingMSBuild()  =
         let project1 = CreateProject(solution,"testproject1")
         
         let file1 = AddFileFromText(project1,"File1.fs",
-                                    ["#light"]
+                                    []
                                      )
         let file1 = OpenFile(project1,"File1.fs")
         let project2 = CreateProject(solution,"testproject2")
         let file2 = AddFileFromText(project2,"File2.fs",
-                                    ["#light"
+                                    [
                                      "File1.File1."
                                      "()"])
         let file2 = OpenFile(project2,"File2.fs")
@@ -300,7 +300,7 @@ type UsingMSBuild()  =
         
         // Now modify project1's file and rebuild.
         ReplaceFileInMemory file1 
-                                ["#light"
+                                [
                                  "module File1 = "
                                  "    let Mary x = \"\""]
         SaveFileToDisk file1   

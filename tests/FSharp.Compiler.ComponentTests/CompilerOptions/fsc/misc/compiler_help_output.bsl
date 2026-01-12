@@ -82,7 +82,6 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --langversion:{version|latest|preview}   Specify language version such as 'latest' or 'preview'.
 --checked[+|-]                           Generate overflow checks (off by default)
 --define:<string>                        Define conditional compilation symbols (Short form: -d)
---mlcompatibility                        Ignore ML compatibility warnings
 --strict-indentation[+|-]                Override indentation rules implied by the language version (off by default)
 
 

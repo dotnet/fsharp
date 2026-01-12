@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 let result = 
     match 42 with

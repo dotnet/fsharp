@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
-#light
+
 
 type Foo() =
     static member DoStuff (a, b, c, d:string) = a + b + c + d.Length

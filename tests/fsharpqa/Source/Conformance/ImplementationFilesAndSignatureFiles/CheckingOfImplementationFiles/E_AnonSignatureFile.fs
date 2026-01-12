@@ -1,5 +1,5 @@
 // #Conformance #SignatureFiles 
-#light
+
 
 type TypeInAnonSigFile() =
     member this.Value = 10

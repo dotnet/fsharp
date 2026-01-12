@@ -54,6 +54,7 @@
     <Compile Include="RangeTests.fs" />
     <Compile Include="TooltipTests.fs" />
     <Compile Include="TokenizerTests.fs" />
+    <Compile Include="QuickParseTests.fs" />
     <Compile Include="CompilerTestHelpers.fs" />
     <Compile Include="ManglingNameOfProvidedTypes.fs" />
     <Compile Include="HashIfExpression.fs" />
