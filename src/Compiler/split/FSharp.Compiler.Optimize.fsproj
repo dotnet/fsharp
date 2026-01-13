@@ -110,6 +110,7 @@
   <!-- InternalsVisibleTo for downstream split projects -->
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Compiler.CodeGen" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Service" />
   </ItemGroup>
 
   <!-- Package references for netstandard2.0 -->

@@ -74,6 +74,11 @@
     </Compile>
   </ItemGroup>
 
+  <!-- InternalsVisibleTo for downstream split projects -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.Service" />
+  </ItemGroup>
+
   <!-- Project references -->
   <ItemGroup>
     <ProjectReference Include="FSharp.Compiler.Utilities.fsproj" />

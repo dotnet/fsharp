@@ -187,6 +187,7 @@
     <InternalsVisibleTo Include="FSharp.Compiler.Checking" />
     <InternalsVisibleTo Include="FSharp.Compiler.Optimize" />
     <InternalsVisibleTo Include="FSharp.Compiler.CodeGen" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Service" />
   </ItemGroup>
 
   <!-- Package references for netstandard2.0 -->
