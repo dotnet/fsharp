@@ -57,7 +57,7 @@ module InterruptibleLazy =
     let force (x: InterruptibleLazy<'T>) = x.Value
 
 [<AutoOpen>]
-module internal PervasiveAutoOpens =
+module PervasiveAutoOpens =
     /// Logical shift right treating int32 as unsigned integer.
     /// Code that uses this should probably be adjusted to use unsigned integer types.
     let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
@@ -413,7 +413,7 @@ module Option =
         with _ ->
             None
 
-module internal ValueTuple =
+module ValueTuple =
     let inline map1Of2 ([<InlineIfLambda>] f) struct (a1, a2) = struct (f a1, a2)
 
 module List =
@@ -879,7 +879,7 @@ type AnyCallerThreadToken() =
     interface ExecutionToken
 
 [<AutoOpen>]
-module internal LockAutoOpens =
+module LockAutoOpens =
     /// Represents a place where we are stating that execution on the compilation thread is required. The
     /// reason why will be documented in a comment in the code at the callsite.
     let RequireCompilationThread (_ctok: CompilationThreadToken) = ()

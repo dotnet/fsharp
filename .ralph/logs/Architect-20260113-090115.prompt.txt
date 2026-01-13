@@ -1,0 +1,23 @@
+You are an architect. Break this request into independently verifiable subtasks.
+
+REQUEST:  I want you to figure out a way the split FSharp.Compiler.Service.fsproj into multiple projects so that we get leaner incremental builds when working
+on just a part of the project. This is just a small experiment for now. Think of splitting it like ...IL,IlImport,SyntaxTree,TypedTree,Optimizations,IlxGen,Symbols... and most likely naturally some projects will emerge due to
+the need for across-project boundaries, some projects carrying type definitions or shared abstractions (maybe) or some useful Utils project. The need is clear - by having more projects with ProjectReference between them,
+msbuild will help with faster incremental builds. The existing project order is best derived from .fsproj of the Compiler.Service. If possible, since this is an experiment, do not move files but instead just link files from
+.fsproj into their existing location(s). You will need to create new .fsproj, new ProjectReference in them and add some essential msbuild config into the new project(s). The needed info about ordering must come from .fsproj project file. The needed dependencies, just as an approximation, can come from open of modules. You might write yourself a basic preprocessor script that goes over all .fs files inside the src/Compiler folder and collects their  declarations, but it will be very rough. Remember to put .fsi and .fs files together when moving. Remember to respect special stuff in existing .fsproj properties and move it where needed. Some parts like nowarns centrally, some parts like FsLex and FsYacc stuff only where needed. For the few dependencies, especial Lex and Yacc, try to put them only into the project which really needs them .FOR THE ARCHITECT: I want you to spend more time on the cuts and also read all the /docs there are about compiler architecture, it can be useful for understanding the cuts. You shall create a dedicated file with the main idea of the final architecture, as in who depends on whom. We want to make massive benefits from incremental builds and possibly also msbuild parallelization if some aspects can be done without interconnected deps. Like parsing and ilimport can be two parts which do not depend on each other in any direction. Only create new projects like shared abstractions if necessary, in general try to avoid that.
+
+First, analyze the codebase thoroughly.
+
+Then create .ralph/VISION.md with:
+- High-level goal and approach
+- Key design decisions and rationale
+- Important context for subtasks
+- Any constraints or gotchas discovered
+
+Finally, output JSON with the subtasks:
+
+```json
+{"overview": "approach", "subtasks": [{"id": 1, "title": "title", "description": "what to do", "verificationCriteria": ["check1"]}]}
+```
+
+Output PLAN_COMPLETE when done.

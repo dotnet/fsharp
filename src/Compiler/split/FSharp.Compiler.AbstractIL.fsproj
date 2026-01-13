@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
+    <NoWarn>$(NoWarn);57</NoWarn> <!-- Experimental -->
+    <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
+    <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
+    <NoWarn>$(NoWarn);NU5125</NoWarn>
+    <NoWarn>$(NoWarn);64;1204</NoWarn> <!--Temporary fix for sourcebuild -->
+    <AssemblyName>FSharp.Compiler.AbstractIL</AssemblyName>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <Nullable>enable</Nullable>
+    <!-- Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations.
+         Therefore we want to use the latest BCL APIs from NetCurrent.
+         We are still not building the actual product in NetCurrent, so for official builds we remain as ns2.0.
+         For 'BUILDING_USING_DOTNET' builds, we still want latest BCL annotations, so that contributors can get related warnings locally.
+     -->
+    <TargetFrameworks Condition=" '$(OfficialBuildId)' == '' AND '$(FSharpNetCoreProductTargetFramework)' != '' AND '$(Configuration)' != 'Proto' AND '$(SKIP_NETCURRENT_FSC_BUILD)' != 'true' ">$(FSharpNetCoreProductTargetFramework);$(TargetFrameworks)</TargetFrameworks>
+    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
+    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
+    <!-- 3218: ArgumentsInSigAndImplMismatch -->
+    <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
+    <!-- 3390: xmlDocBadlyFormed -->
+    <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+    <!-- 3261: Nullness warning - not equivalent - currently triggers when proto builds source files like Fscomp.fs -->
+    <OtherFlags Condition="'$(Configuration)' == 'Proto'">$(OtherFlags) --nowarn:3261</OtherFlags>
+    <!-- generate IL filter blocks in order to prevent StackOverFlowException in TcExpr guarded with |RecoverableException| active pattern-->
+    <OtherFlags>$(OtherFlags) --generate-filter-blocks</OtherFlags>
+    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
+    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+    <NoOptimizationData>false</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- FsLex/FsYacc for illex.fsl and ilpars.fsy -->
+    <FsLex Include="..\AbstractIL\illex.fsl">
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiLexer --internal --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.AbstractIL.AsciiParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>AbstractIL\illex.fsl</Link>
+    </FsLex>
+    <None Include="..\AbstractIL\illex.fsl">
+      <Link>AbstractIL\illex.fsl</Link>
+    </None>
+    <FsYacc Include="..\AbstractIL\ilpars.fsy">
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL.AsciiConstants --open FSharp.Compiler.AbstractIL.IL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
+      <Link>AbstractIL\ilpars.fsy</Link>
+    </FsYacc>
+    <None Include="..\AbstractIL\ilpars.fsy">
+      <Link>AbstractIL\FsYacc\ilpars.fsy</Link>
+    </None>
+
+    <!-- AbstractIL source files -->
+    <Compile Include="..\AbstractIL\il.fsi">
+      <Link>AbstractIL\il.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\il.fs">
+      <Link>AbstractIL\il.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilx.fsi">
+      <Link>AbstractIL\ilx.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilx.fs">
+      <Link>AbstractIL\ilx.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilascii.fsi">
+      <Link>AbstractIL\ilascii.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilascii.fs">
+      <Link>AbstractIL\ilascii.fs</Link>
+    </Compile>
+
+    <!-- FsYacc/FsLex generated outputs (order: ilpars before illex) -->
+    <Compile Include="$(FsYaccOutputFolder)ilpars.fsi">
+      <Link>AbstractIL\FsYaccOut\ilpars.fsi</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)ilpars.fs">
+      <Link>AbstractIL\FsYaccOut\ilpars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)illex.fsi">
+      <Link>AbstractIL\FsLexOut\illex.fsi</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)illex.fs">
+      <Link>AbstractIL\FsLexOut\illex.fs</Link>
+    </Compile>
+
+    <!-- Remaining AbstractIL files in order from main fsproj -->
+    <Compile Include="..\AbstractIL\ilprint.fsi">
+      <Link>AbstractIL\ilprint.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilprint.fs">
+      <Link>AbstractIL\ilprint.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilmorph.fsi">
+      <Link>AbstractIL\ilmorph.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilmorph.fs">
+      <Link>AbstractIL\ilmorph.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilsign.fsi">
+      <Link>AbstractIL\ilsign.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilsign.fs">
+      <Link>AbstractIL\ilsign.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilnativeres.fsi">
+      <Link>AbstractIL\ilnativeres.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilnativeres.fs">
+      <Link>AbstractIL\ilnativeres.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilsupp.fsi">
+      <Link>AbstractIL\ilsupp.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilsupp.fs">
+      <Link>AbstractIL\ilsupp.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilbinary.fsi">
+      <Link>AbstractIL\ilbinary.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilbinary.fs">
+      <Link>AbstractIL\ilbinary.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilread.fsi">
+      <Link>AbstractIL\ilread.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilread.fs">
+      <Link>AbstractIL\ilread.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilwritepdb.fsi">
+      <Link>AbstractIL\ilwritepdb.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilwritepdb.fs">
+      <Link>AbstractIL\ilwritepdb.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilwrite.fsi">
+      <Link>AbstractIL\ilwrite.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilwrite.fs">
+      <Link>AbstractIL\ilwrite.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilreflect.fsi">
+      <Link>AbstractIL\ilreflect.fsi</Link>
+    </Compile>
+    <Compile Include="..\AbstractIL\ilreflect.fs">
+      <Link>AbstractIL\ilreflect.fs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <!-- Project reference to FSharp.Compiler.Utilities -->
+  <ItemGroup>
+    <ProjectReference Include="FSharp.Compiler.Utilities.fsproj" />
+  </ItemGroup>
+
+  <!-- FsLex/FsYacc tool references for BUILDING_USING_DOTNET -->
+  <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
+    <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- Package references for netstandard2.0 -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+  </ItemGroup>
+
+</Project>

@@ -22,7 +22,7 @@ module InterruptibleLazy =
     val force: InterruptibleLazy<'T> -> 'T
 
 [<AutoOpen>]
-module internal PervasiveAutoOpens =
+module PervasiveAutoOpens =
     /// Logical shift right treating int32 as unsigned integer.
     /// Code that uses this should probably be adjusted to use unsigned integer types.
     val (>>>&): x: int32 -> n: int32 -> int32
@@ -84,7 +84,7 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
 
     abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
 
-module internal Order =
+module Order =
 
     val orderBy: p: ('T -> 'U) -> IComparer<'T> when 'U: comparison and 'T: not null and 'T: not struct
 
@@ -92,7 +92,7 @@ module internal Order =
 
     val toFunction: pxOrder: IComparer<'U> -> x: 'U -> y: 'U -> int
 
-module internal Array =
+module Array =
 
     val mapq: f: ('a -> 'a) -> inp: 'a[] -> 'a[] when 'a: not struct
 
@@ -134,13 +134,13 @@ module internal Array =
 
     val prepend: item: 'T -> array: 'T[] -> 'T[]
 
-module internal Option =
+module Option =
 
     val mapFold: f: ('a -> 'b -> 'c * 'a) -> s: 'a -> opt: 'b option -> 'c option * 'a
 
     val attempt: f: (unit -> 'T) -> 'T option
 
-module internal List =
+module List =
 
     val sortWithOrder: c: IComparer<'T> -> elements: 'T list -> 'T list
 
@@ -227,7 +227,7 @@ module internal List =
         list: 'T list ->
             struct ('Result list * 'State)
 
-module internal ResizeArray =
+module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.
     /// This requires `items/chunkSize` Array copies of length `chunkSize` if `items/chunkSize % 0 = 0`,
@@ -239,10 +239,10 @@ module internal ResizeArray =
     /// probability of smaller collections. Stop-the-world is still possible, just less likely.
     val mapToSmallArrayChunks: f: ('t -> 'a) -> inp: ResizeArray<'t> -> 'a[][]
 
-module internal Span =
+module Span =
     val inline exists: predicate: ('T -> bool) -> span: Span<'T> -> bool
 
-module internal String =
+module String =
 
     val make: n: int -> c: char -> string
 
@@ -283,7 +283,7 @@ module internal String =
 
     val getLines: str: string -> string[]
 
-module internal Dictionary =
+module Dictionary =
     val inline newWithSize: size: int -> Dictionary<'a, 'b> when 'a: equality
     val inline ofList: xs: ('Key * 'Value) list -> Dictionary<'Key, 'Value> when 'Key: equality
 
@@ -297,7 +297,7 @@ type internal DictionaryExtensions =
     static member inline BagExistsValueForKey:
         dic: Dictionary<'key, 'value list> * key: 'key * f: ('value -> bool) -> bool
 
-module internal Lazy =
+module Lazy =
     val force: x: Lazy<'T> -> 'T
 
 /// Represents a permission active at this point in execution
@@ -337,7 +337,7 @@ type internal Lock<'LockTokenType when 'LockTokenType :> LockToken> =
     member AcquireLock: f: ('LockTokenType -> 'a) -> 'a
 
 [<AutoOpen>]
-module internal LockAutoOpens =
+module LockAutoOpens =
     /// Represents a place where we are stating that execution on the compilation thread is required. The
     /// reason why will be documented in a comment in the code at the callsite.
     val RequireCompilationThread: _ctok: CompilationThreadToken -> unit
@@ -353,7 +353,7 @@ module internal LockAutoOpens =
 
     val AssumeLockWithoutEvidence: unit -> #LockToken
 
-module internal Map =
+module Map =
     val tryFindMulti: k: 'a -> map: Map<'a, 'b list> -> 'b list when 'a: comparison
 
 [<Struct>]
@@ -361,7 +361,7 @@ type internal ResultOrException<'TResult> =
     | Result of result: 'TResult
     | Exception of ``exception``: Exception
 
-module internal ResultOrException =
+module ResultOrException =
 
     val success: a: 'a -> ResultOrException<'a>
 
@@ -424,7 +424,7 @@ type internal LazyWithContext<'T, 'ctxt> =
     member IsForced: bool
 
 /// Intern tables to save space.
-module internal Tables =
+module Tables =
 #if NET8_0_OR_GREATER
     val memoize: f: ('a -> 'b) -> ('a -> 'b) when 'a: equality and 'a: not null
 #else
@@ -437,7 +437,7 @@ type internal IPartialEqualityComparer<'T> =
     abstract InEqualityRelation: 'T -> bool
 
 /// Interface that defines methods for comparing objects using partial equality relation
-module internal IPartialEqualityComparer =
+module IPartialEqualityComparer =
     val On:
         f: ('a -> 'b) -> c: IPartialEqualityComparer<'b> -> IPartialEqualityComparer<'a>
             when 'a: not null and 'a: not struct
@@ -451,7 +451,7 @@ type internal NameMultiMap<'T> = NameMap<'T list>
 
 type internal MultiMap<'T, 'U when 'T: comparison> = Map<'T, 'U list>
 
-module internal NameMap =
+module NameMap =
 
     val empty: Map<'a, 'b> when 'a: comparison
 
@@ -518,7 +518,7 @@ module internal NameMap =
 
     val tryFindInRange: p: ('a -> bool) -> m: Map<'b, 'a> -> 'a option when 'b: comparison
 
-module internal NameMultiMap =
+module NameMultiMap =
 
     val existsInRange: f: ('T -> bool) -> m: NameMultiMap<'T> -> bool
 
@@ -540,7 +540,7 @@ module internal NameMultiMap =
 
     val ofList: xs: (string * 'T) list -> NameMultiMap<'T>
 
-module internal MultiMap =
+module MultiMap =
 
     val existsInRange: f: ('a -> bool) -> m: MultiMap<'b, 'a> -> bool when 'b: comparison
 
@@ -559,7 +559,7 @@ module internal MultiMap =
 type internal LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
 
 [<AutoOpen>]
-module internal MapAutoOpens =
+module MapAutoOpens =
     type internal Map<'Key, 'Value when 'Key: comparison> with
 
         static member Empty: Map<'Key, 'Value> when 'Key: comparison

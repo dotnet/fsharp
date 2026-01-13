@@ -3,7 +3,7 @@ namespace Internal.Utilities.Library
 open System
 
 [<AutoOpen>]
-module internal NullnessShims =
+module NullnessShims =
 
     let inline isNotNull (x: 'T) = not (isNull x)
 

@@ -47,6 +47,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.AbstractIL" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Embedded resources -->
     <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
