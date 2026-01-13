@@ -28,14 +28,17 @@ let private hasInheritDoc (xmlText: string) = xmlText.IndexOf("<inheritdoc") >= 
 let private extractInheritDocDirectives (doc: XDocument) =
     let inheritDocName = XName.op_Implicit "inheritdoc"
 
+    let crefName = XName.op_Implicit "cref" |> Operators.nonNull
+    let pathName = XName.op_Implicit "path" |> Operators.nonNull
+    
     doc.Descendants(inheritDocName)
     |> Seq.map (fun elem ->
-        let crefAttr = elem.Attribute(XName.op_Implicit "cref")
-        let pathAttr = elem.Attribute(XName.op_Implicit "path")
+        let crefAttr = elem.Attribute(crefName)
+        let pathAttr = elem.Attribute(pathName)
 
         {
-            Cref = if isNull crefAttr then None else Some crefAttr.Value
-            Path = if isNull pathAttr then None else Some pathAttr.Value
+            Cref = match crefAttr with null -> None | attr -> Some attr.Value
+            Path = match pathAttr with null -> None | attr -> Some attr.Value
             Element = elem
         })
     |> List.ofSeq
@@ -564,11 +567,12 @@ and private expandInheritDocText
 
                 // Return the modified document
                 // Extract content from the wrapper <doc> element
-                let root = xdoc.Root
-
-                root.Nodes()
-                |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
-                |> String.concat "\n"
+                match xdoc.Root with
+                | null -> xmlText
+                | root ->
+                    root.Nodes()
+                    |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
+                    |> String.concat "\n"
         with :? System.Xml.XmlException ->
             // If XML parsing fails, return original doc unchanged
             xmlText
