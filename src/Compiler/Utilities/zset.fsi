@@ -5,9 +5,9 @@ namespace Internal.Utilities.Collections
 open System.Collections.Generic
 
 /// Sets with a specific comparison function
-type internal Zset<'T> = Internal.Utilities.Collections.Tagged.Set<'T>
+type Zset<'T> = Internal.Utilities.Collections.Tagged.Set<'T>
 
-module internal Zset =
+module Zset =
 
     val empty: IComparer<'T> -> Zset<'T>
     val isEmpty: Zset<'T> -> bool

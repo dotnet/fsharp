@@ -13,13 +13,13 @@ open Internal.Utilities.Library
 
 [<NoEquality; NoComparison>]
 [<AllowNullLiteral>]
-type internal SetTree<'T>(k: 'T) =
+type SetTree<'T>(k: 'T) =
     member _.Key = k
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
 [<AllowNullLiteral>]
-type internal SetTreeNode<'T>(v: 'T, left: SetTree<'T>, right: SetTree<'T>, h: int) =
+type SetTreeNode<'T>(v: 'T, left: SetTree<'T>, right: SetTree<'T>, h: int) =
     inherit SetTree<'T>(v)
 
     member _.Left = left
@@ -577,7 +577,7 @@ module SetTree =
 
 [<System.Diagnostics.DebuggerDisplay "Count = {Count}">]
 [<Sealed>]
-type internal Set<'T, 'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer: IComparer<'T>, tree: SetTree<'T>) =
+type Set<'T, 'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer: IComparer<'T>, tree: SetTree<'T>) =
 
     static let refresh (s: Set<_, _>) t =
         Set<_, _>(comparer = s.Comparer, tree = t)
@@ -710,14 +710,14 @@ type internal Set<'T, 'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer:
 
 [<NoEquality; NoComparison>]
 [<AllowNullLiteral>]
-type internal MapTree<'Key, 'Value>(k: 'Key, v: 'Value) =
+type MapTree<'Key, 'Value>(k: 'Key, v: 'Value) =
     member _.Key = k
     member _.Value = v
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
 [<AllowNullLiteral>]
-type internal MapTreeNode<'Key, 'Value>(k: 'Key, v: 'Value, left: MapTree<'Key, 'Value>, right: MapTree<'Key, 'Value>, h: int) =
+type MapTreeNode<'Key, 'Value>(k: 'Key, v: 'Value, left: MapTree<'Key, 'Value>, right: MapTree<'Key, 'Value>, h: int) =
     inherit MapTree<'Key, 'Value>(k, v)
 
     member _.Left = left
@@ -1173,7 +1173,7 @@ module MapTree =
 
 [<System.Diagnostics.DebuggerDisplay "Count = {Count}">]
 [<Sealed>]
-type internal Map<'Key, 'T, 'ComparerTag> when 'ComparerTag :> IComparer<'Key>(comparer: IComparer<'Key>, tree: MapTree<'Key, 'T>) =
+type Map<'Key, 'T, 'ComparerTag> when 'ComparerTag :> IComparer<'Key>(comparer: IComparer<'Key>, tree: MapTree<'Key, 'T>) =
 
     static let refresh (m: Map<_, _, 'ComparerTag>) t =
         Map<_, _, 'ComparerTag>(comparer = m.Comparer, tree = t)
@@ -1272,6 +1272,6 @@ type internal Map<'Key, 'T, 'ComparerTag> when 'ComparerTag :> IComparer<'Key>(c
 
     override this.GetHashCode() = this.ComputeHashCode()
 
-type internal Map<'Key, 'T> = Map<'Key, 'T, IComparer<'Key>>
+type Map<'Key, 'T> = Map<'Key, 'T, IComparer<'Key>>
 
-type internal Set<'T> = Set<'T, IComparer<'T>>
+type Set<'T> = Set<'T, IComparer<'T>>

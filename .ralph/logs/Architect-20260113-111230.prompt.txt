@@ -1,0 +1,35 @@
+You are an architect. Break this request into independently verifiable subtasks.
+
+REQUEST: Continue
+
+First, analyze the codebase thoroughly.
+Check .ralph/ folder for any previous attempts (VISION.md, logs).
+
+Then create or update .ralph/VISION.md with:
+- High-level goal and approach
+- Key design decisions and rationale
+- Important context for subtasks
+- Any constraints or gotchas discovered
+- Lessons learned from previous attempts (if any)
+
+Finally, output JSON with the subtasks:
+
+```json
+{"overview": "approach", "subtasks": [{"id": 1, "title": "title", "description": "what to do", "verificationCriteria": ["check1"]}]}
+```
+
+Output PLAN_COMPLETE when done.
+
+=== PREVIOUS ATTEMPT DETECTED ===
+The .ralph/ folder contains data from a previous run.
+
+PREVIOUS VISION (.ralph/VISION.md exists):
+- Read it to understand what was tried before
+- You may UPDATE it, REPLACE it, or keep it
+
+PREVIOUS LOGS: 70 log files in .ralph/logs/
+- Review them to understand what worked and what failed
+- You may DELETE old logs if starting fresh
+
+You have full control: learn from the past or start fresh.
+=== END PREVIOUS CONTEXT ===

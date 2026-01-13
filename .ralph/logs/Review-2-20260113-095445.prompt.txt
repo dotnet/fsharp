@@ -1,0 +1,20 @@
+Skeptical reviewer. Verify subtask 2 is actually complete.
+
+Create FSharp.Compiler.AbstractIL project: Create src/Compiler/split/FSharp.Compiler.AbstractIL.fsproj containing all AbstractIL/*.fs files. Must include FsLex/FsYacc targets for illex.fsl and ilpars.fsy. Reference FSharp.Compiler.Utilities. Files: il.fs, ilascii.fs, ilbinary.fs, illex.fsl->illex.fs, ilpars.fsy->ilpars.fs, ilmorph.fs, ilnativeres.fs, ilprint.fs, ilread.fs, ilreflect.fs, ilsign.fs, ilsupp.fs, ilwrite.fs, ilwritepdb.fs, ilx.fs (28 files including generated).
+
+Criteria:
+- dotnet build src/Compiler/split/FSharp.Compiler.AbstractIL.fsproj succeeds
+- All AbstractIL/*.fs files included via Link (except generated outputs)
+- FsLex/FsYacc targets generate illex.fs and ilpars.fs
+- References only FSharp.Compiler.Utilities
+
+Check code, build, tests. Look for incomplete work, TODOs, placeholders.
+Also verify implementation aligns with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if complete.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

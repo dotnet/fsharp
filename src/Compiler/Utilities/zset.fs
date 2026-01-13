@@ -6,9 +6,9 @@ open Internal.Utilities.Collections.Tagged
 open System.Collections.Generic
 
 /// Sets with a specific comparison function
-type internal Zset<'T> = Internal.Utilities.Collections.Tagged.Set<'T>
+type Zset<'T> = Internal.Utilities.Collections.Tagged.Set<'T>
 
-module internal Zset =
+module Zset =
 
     let empty (ord: IComparer<'T>) =
         Internal.Utilities.Collections.Tagged.Set<_, _>.Empty(ord)

@@ -1,0 +1,21 @@
+Skeptical reviewer. Verify subtask 3 is actually complete.
+
+Create FSharp.Compiler.SyntaxTree project: Create src/Compiler/split/FSharp.Compiler.SyntaxTree.fsproj containing all SyntaxTree/*.fs files plus FsLex/FsYacc targets for lex.fsl, pars.fsy, pplex.fsl, pppars.fsy. Reference only FSharp.Compiler.Utilities. Include PrettyNaming.fs/fsi, UnicodeLexing.fs/fsi, XmlDoc.fs/fsi, SyntaxTrivia.fs/fsi, SyntaxTree.fs/fsi, SyntaxTreeOps.fs/fsi, WarnScopes.fs/fsi, LexerStore.fs/fsi, ParseHelpers.fs/fsi, LexHelpers.fs/fsi, LexFilter.fs/fsi, and generated lex.fs, pars.fs, pplex.fs, pppars.fs.
+
+Criteria:
+- dotnet build src/Compiler/split/FSharp.Compiler.SyntaxTree.fsproj succeeds
+- All SyntaxTree/*.fs files included via Link
+- FsLex/FsYacc targets generate lex.fs, pars.fs, pplex.fs, pppars.fs
+- References only FSharp.Compiler.Utilities
+- Add InternalsVisibleTo for SyntaxTree in Utilities project
+
+Check code, build, tests. Look for incomplete work, TODOs, placeholders.
+Also verify implementation aligns with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if complete.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

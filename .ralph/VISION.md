@@ -266,9 +266,38 @@ This file should be placed in TypedTree or Checking layer instead.
 |---------|---------|--------|
 | 1 | FSharp.Compiler.Utilities | ✅ Complete (commit 4d761bb) |
 | 2 | FSharp.Compiler.AbstractIL | ✅ Complete |
-| 3 | FSharp.Compiler.SyntaxTree | 🚫 Blocked (build system issues) |
-| 4 | FSharp.Compiler.TypedTree | Pending |
+| 3 | FSharp.Compiler.SyntaxTree | ✅ Complete |
+| 4 | FSharp.Compiler.TypedTree | ✅ Complete |
 | 5 | FSharp.Compiler.Checking | Pending |
 | 6 | FSharp.Compiler.Optimize | Pending |
 | 7 | FSharp.Compiler.CodeGen | Pending |
 | 8 | FSharp.Compiler.Service (update) | Pending |
+
+### Subtask 4: FSharp.Compiler.TypedTree - COMPLETED
+
+**Status**: Created and building successfully
+
+**Key findings**:
+
+1. **Additional visibility changes required**: TypedTree uses inline function `cached` from `Internal.Utilities.Library.Extras` (lib.fs). Since inline functions in internal modules can't be used across assembly boundaries even with InternalsVisibleTo, the following types/modules needed to be made public:
+   - `lib.fs`/`lib.fsi`: Changed `module internal Internal.Utilities.Library.Extras` to `module Internal.Utilities.Library.Extras`
+   - `zset.fs`/`zset.fsi`: Changed `type internal Zset` and `module internal Zset` to public
+   - `zmap.fs`/`zmap.fsi`: Changed `type internal Zmap` and `module internal Zmap` to public
+   - `TaggedCollections.fs`/`TaggedCollections.fsi`: Changed `type internal Set` and `type internal Map` to public
+
+2. **Dependency chain**: TypedTree → SyntaxTree → AbstractIL → Utilities
+
+3. **InternalsVisibleTo added**: 
+   - Utilities → TypedTree
+   - AbstractIL → TypedTree
+   - SyntaxTree → TypedTree
+
+**Files created/modified**:
+- Created: `src/Compiler/split/FSharp.Compiler.TypedTree.fsproj`
+- Modified: `FSharp.Compiler.AbstractIL.fsproj` (added IVT for TypedTree)
+- Modified: `FSharp.Compiler.SyntaxTree.fsproj` (added IVT for TypedTree)
+- Modified: `FSharp.Compiler.Utilities.fsproj` (added IVT for TypedTree)
+- Modified: `lib.fs`/`lib.fsi` (public module)
+- Modified: `zset.fs`/`zset.fsi` (public type/module)
+- Modified: `zmap.fs`/`zmap.fsi` (public type/module)
+- Modified: `TaggedCollections.fs`/`TaggedCollections.fsi` (public Set/Map types)

@@ -6,9 +6,9 @@ open Internal.Utilities.Collections.Tagged
 open System.Collections.Generic
 
 /// Maps with a specific comparison function
-type internal Zmap<'Key, 'T> = Internal.Utilities.Collections.Tagged.Map<'Key, 'T>
+type Zmap<'Key, 'T> = Internal.Utilities.Collections.Tagged.Map<'Key, 'T>
 
-module internal Zmap =
+module Zmap =
 
     let empty (ord: IComparer<'T>) = Map<_, _, _>.Empty(ord)
 

@@ -11,7 +11,7 @@ namespace Internal.Utilities.Collections.Tagged
 
     /// Immutable sets where a constraint tag carries information about the class of key-comparer being used.  
     [<Sealed>]
-    type internal Set<'T,'ComparerTag> when 'ComparerTag :> IComparer<'T> =
+    type Set<'T,'ComparerTag> when 'ComparerTag :> IComparer<'T> =
 
         /// A useful shortcut for <c>Set.add</c>.  Note this operation produces a new set
         /// and does not mutate the original set.  The new set will share many storage
@@ -117,7 +117,7 @@ namespace Internal.Utilities.Collections.Tagged
 
         override Equals : objEqualsArg -> bool
 
-    type internal Set<'T> = Set<'T, IComparer<'T>>    
+    type Set<'T> = Set<'T, IComparer<'T>>    
 
     /// Immutable maps.  Keys are ordered by construction function specified
     /// when creating empty maps or by F# structural comparison if no
@@ -131,7 +131,7 @@ namespace Internal.Utilities.Collections.Tagged
 
     /// Immutable maps.  A constraint tag carries information about the class of key-comparers being used.  
     [<Sealed>]
-    type internal Map<'Key,'Value,'ComparerTag>  when 'ComparerTag :> IComparer<'Key> =
+    type Map<'Key,'Value,'ComparerTag>  when 'ComparerTag :> IComparer<'Key> =
 
         /// Return a new map with the binding added to the given map.
         member Add: 'Key * 'Value -> Map<'Key,'Value,'ComparerTag>
@@ -221,5 +221,5 @@ namespace Internal.Utilities.Collections.Tagged
 
         override Equals : objEqualsArg -> bool
 
-    type internal Map<'Key,'Value> = Map<'Key, 'Value, IComparer<'Key>>    
+    type Map<'Key,'Value> = Map<'Key, 'Value, IComparer<'Key>>    
 

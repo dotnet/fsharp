@@ -1,0 +1,6 @@
+Code quality pass. Remove commented-out code, debug instrumentation, orphaned files, unused imports.
+Build and tests must pass.
+
+═══════════════════════════════════════════════════════
+When done, you MUST output: QUALITY_COMPLETE
+═══════════════════════════════════════════════════════

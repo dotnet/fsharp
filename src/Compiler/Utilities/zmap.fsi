@@ -5,9 +5,9 @@ namespace Internal.Utilities.Collections
 open System.Collections.Generic
 
 /// Maps with a specific comparison function
-type internal Zmap<'Key, 'T> = Internal.Utilities.Collections.Tagged.Map<'Key, 'T>
+type Zmap<'Key, 'T> = Internal.Utilities.Collections.Tagged.Map<'Key, 'T>
 
-module internal Zmap =
+module Zmap =
 
     val empty: IComparer<'Key> -> Zmap<'Key, 'T>
     val isEmpty: Zmap<'Key, 'T> -> bool

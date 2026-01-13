@@ -1,0 +1,6 @@
+Performance review. Fix obvious inefficiencies, resource leaks, bad algorithms.
+Only clear issues. Build and tests must pass.
+
+═══════════════════════════════════════════════════════
+When done, you MUST output: PERF_COMPLETE
+═══════════════════════════════════════════════════════

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Internal.Utilities.Library.Extras
+module Internal.Utilities.Library.Extras
 
 open System.IO
 open System.Text
