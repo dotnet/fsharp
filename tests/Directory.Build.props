@@ -28,4 +28,14 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
 
+  <!-- Test-specific settings for xUnit3/MTP migration -->
+  <!-- Force x64 for .NET Framework test executables to avoid OOM and sizeof issues.
+       Note: OutputType isn't available at props evaluation time, so we apply to all net472 test projects -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Clear RuntimeIdentifier(s) to avoid conflict with PlatformTarget -->
+    <RuntimeIdentifier />
+    <RuntimeIdentifiers />
+  </PropertyGroup>
+
 </Project>
