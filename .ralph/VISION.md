@@ -279,15 +279,17 @@ This file should be placed in TypedTree or Checking layer instead.
 
 **Key findings**:
 
-1. **Additional visibility changes required**: TypedTree uses inline function `cached` from `Internal.Utilities.Library.Extras` (lib.fs). Since inline functions in internal modules can't be used across assembly boundaries even with InternalsVisibleTo, the following types/modules needed to be made public:
+1. **Direct Utilities reference required**: TypedTree source files directly use types from Utilities (like `range`, `MaybeNull`, `LockToken`, `Internal.Utilities.Library`). Even though SyntaxTree and AbstractIL transitively reference Utilities, TypedTree needs a **direct** ProjectReference to Utilities for type visibility.
+
+2. **Additional visibility changes required**: TypedTree uses inline function `cached` from `Internal.Utilities.Library.Extras` (lib.fs). Since inline functions in internal modules can't be used across assembly boundaries even with InternalsVisibleTo, the following types/modules needed to be made public:
    - `lib.fs`/`lib.fsi`: Changed `module internal Internal.Utilities.Library.Extras` to `module Internal.Utilities.Library.Extras`
    - `zset.fs`/`zset.fsi`: Changed `type internal Zset` and `module internal Zset` to public
    - `zmap.fs`/`zmap.fsi`: Changed `type internal Zmap` and `module internal Zmap` to public
    - `TaggedCollections.fs`/`TaggedCollections.fsi`: Changed `type internal Set` and `type internal Map` to public
 
-2. **Dependency chain**: TypedTree → SyntaxTree → AbstractIL → Utilities
+3. **Dependency chain**: TypedTree → SyntaxTree, AbstractIL, Utilities (direct references to all three)
 
-3. **InternalsVisibleTo added**: 
+4. **InternalsVisibleTo added**: 
    - Utilities → TypedTree
    - AbstractIL → TypedTree
    - SyntaxTree → TypedTree

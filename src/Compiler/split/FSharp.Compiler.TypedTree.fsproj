@@ -117,6 +117,7 @@
 
   <!-- Project references -->
   <ItemGroup>
+    <ProjectReference Include="FSharp.Compiler.Utilities.fsproj" />
     <ProjectReference Include="FSharp.Compiler.AbstractIL.fsproj" />
     <ProjectReference Include="FSharp.Compiler.SyntaxTree.fsproj" />
   </ItemGroup>
