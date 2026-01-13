@@ -2002,6 +2002,11 @@
         <target state="translated">Ce commentaire XML est non valide : attribut 'name' manquant pour le paramètre ou la référence de paramètre</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocNotFirstOnLine">
+        <source>XML documentation comments should be the first non-whitespace text on a line.</source>
+        <target state="new">XML documentation comments should be the first non-whitespace text on a line.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
         <target state="translated">Ce commentaire XML est non valide : référence croisée non résolue '{0}'</target>
