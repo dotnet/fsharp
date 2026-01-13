@@ -2002,6 +2002,11 @@
         <target state="translated">此 XML 註解無效: 參數或參數參考沒有 'name' 屬性</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocNotFirstOnLine">
+        <source>XML documentation comments should be the first non-whitespace text on a line.</source>
+        <target state="new">XML documentation comments should be the first non-whitespace text on a line.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
         <target state="translated">此 XML 註解無效: 未解析的交互參照 '{0}'</target>
@@ -6719,7 +6724,7 @@
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
         <source>TABs are not allowed in F# code</source>
-        <target state="needs-review-translation">F# 程式碼中不允許使用 TAB，除非使用 #indent \"off\" 選項</target>
+        <target state="new">TABs are not allowed in F# code</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">
@@ -8474,7 +8479,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
         <source>Used in member constraints.</source>
-        <target state="needs-review-translation">搭配布林值條件使用，作為布林值或運算子。相當於 ||。也用於成員條件約束。</target>
+        <target state="new">Used in member constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

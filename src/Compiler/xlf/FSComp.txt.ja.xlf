@@ -2002,6 +2002,11 @@
         <target state="translated">この XML コメントは無効です: パラメーターまたはパラメーター参照に 'name' 属性がありません</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocNotFirstOnLine">
+        <source>XML documentation comments should be the first non-whitespace text on a line.</source>
+        <target state="new">XML documentation comments should be the first non-whitespace text on a line.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
         <target state="translated">この XML コメントは無効です: 相互参照 '{0}' が未解決です</target>
@@ -6719,7 +6724,7 @@
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
         <source>TABs are not allowed in F# code</source>
-        <target state="needs-review-translation">F# コードにタブを使用するには、#indent \"off\" オプションを使用する必要があります</target>
+        <target state="new">TABs are not allowed in F# code</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">
@@ -8474,7 +8479,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
         <source>Used in member constraints.</source>
-        <target state="needs-review-translation">ブール値の or 演算子としてブール条件で使用します。|| に相当します。メンバー制約でも使用します。</target>
+        <target state="new">Used in member constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

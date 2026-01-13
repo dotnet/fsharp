@@ -2002,6 +2002,11 @@
         <target state="translated">이 XML 주석이 잘못됨: 매개 변수 또는 매개 변수 참조에 'name' 특성이 없음</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocNotFirstOnLine">
+        <source>XML documentation comments should be the first non-whitespace text on a line.</source>
+        <target state="new">XML documentation comments should be the first non-whitespace text on a line.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
         <target state="translated">이 XML 주석이 잘못됨: 확인되지 않은 상호 참조 '{0}'</target>
@@ -6719,7 +6724,7 @@
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
         <source>TABs are not allowed in F# code</source>
-        <target state="needs-review-translation">#indent \"off\" 옵션을 사용하지 않는 한 TAB은 F# 코드에서 허용되지 않습니다.</target>
+        <target state="new">TABs are not allowed in F# code</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">
@@ -8474,7 +8479,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
         <source>Used in member constraints.</source>
-        <target state="needs-review-translation">부울 또는 연산자로 부울 조건과 함께 사용됩니다. ||와 같습니다. 멤버 제약 조건에도 사용됩니다.</target>
+        <target state="new">Used in member constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

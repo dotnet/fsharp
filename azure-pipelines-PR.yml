@@ -901,6 +901,10 @@ stages:
     - template: /eng/templates/regression-test-jobs.yml
       parameters:
         testMatrix:
+        - repo: marklam/SlowBuildRepro
+          commit: bbe2dec4d0379b5d7d0480997858c30d442fbb42
+          buildScript: dotnet build
+          displayName: UMX_Slow_Repro        
         - repo: fsprojects/FSharpPlus
           commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
           buildScript: build.cmd
