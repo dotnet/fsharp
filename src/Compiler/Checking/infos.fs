@@ -1516,7 +1516,7 @@ type ILFieldInfo =
         match x with
         | ILFieldInfo(tinfo, _) -> tinfo.TypeInstOfRawMetadata
 #if !NO_TYPEPROVIDERS
-        | ProvidedField _ -> [] /// GENERIC TYPE PROVIDERS
+        | ProvidedField _ -> [] // GENERIC TYPE PROVIDERS
 #endif
 
      /// Get the name of the field

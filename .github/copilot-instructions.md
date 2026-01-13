@@ -1,5 +1,34 @@
 # GitHub Copilot Instructions for F# Compiler
 
+## DEBUGGING MINDSET - CRITICAL
+
+**Your changes are the cause until proven otherwise.**
+
+When encountering test failures or build issues after making changes:
+
+1. **NEVER assume "pre-existing failure"** - This is incorrect 99% of the time
+2. **ALWAYS assume your PR diff caused the issue** - Even if it seems unrelated
+3. **Remember the bootstrap**: The F# compiler compiles itself. If you introduced broken code in earlier commits, even if you "reverted" it later, the bootstrap compiler may be using the broken version
+4. **Clean and rebuild**: When in doubt, `git clean -xfd artifacts` and rebuild from scratch to eliminate bootstrap contamination
+5. **Compare your diff**: Use `git diff <base_commit> HEAD` to see ALL changes in your PR, not just the latest commit
+6. **Verify with original code**: Temporarily revert your changes to confirm tests pass without them
+
+**Forbidden phrases:**
+- "pre-existing issue" 
+- "was already broken"
+- "not related to my changes"
+- "known limitation"
+
+**Required verification before claiming something was already broken:**
+1. Clean build artifacts completely
+2. Checkout the base branch
+3. Build and run the same test
+4. Document the failure with the base branch commit hash
+
+Only after this verification can you legitimately claim a pre-existing issue.
+
+---
+
 ## STRUCTURE YOUR CHANGE (BEFORE EDITING)
 Keep scope tight.  
 General guide:
