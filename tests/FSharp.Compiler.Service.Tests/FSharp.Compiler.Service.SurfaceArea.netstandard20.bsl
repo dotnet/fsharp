@@ -3024,6 +3024,552 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Int32 GetHashCode(System.C
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Int32 Tag
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Int32 get_Tag()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: System.String ToString()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 CodeGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 Compile
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 DefaultPhase
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 IlGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 IlxGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 Interactive
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 Optimize
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 Output
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 Parameter
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 Parse
+FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags: Int32 TypeCheck
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean Equals(BuildPhase)
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean Equals(BuildPhase, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsCodeGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsCompile
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsDefaultPhase
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsIlGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsIlxGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsInteractive
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsOptimize
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsOutput
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsParameter
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsParse
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean IsTypeCheck
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsCodeGen()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsCompile()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsDefaultPhase()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsIlGen()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsIlxGen()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsInteractive()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsOptimize()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsOutput()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsParameter()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsParse()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Boolean get_IsTypeCheck()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase CodeGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase Compile
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase DefaultPhase
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase IlGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase IlxGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase Interactive
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase Optimize
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase Output
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase Parameter
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase Parse
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase TypeCheck
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_CodeGen()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_Compile()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_DefaultPhase()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_IlGen()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_IlxGen()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_Interactive()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_Optimize()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_Output()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_Parameter()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_Parse()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: BuildPhase get_TypeCheck()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: FSharp.Compiler.DiagnosticsLogger+BuildPhase+Tags
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Int32 CompareTo(BuildPhase)
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Int32 CompareTo(System.Object)
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Int32 Tag
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: Int32 get_Tag()
+FSharp.Compiler.DiagnosticsLogger+BuildPhase: System.String ToString()
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String CodeGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String Compile
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String DefaultPhase
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String IlGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String IlxGen
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String Interactive
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String Internal
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String Optimize
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String Output
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String Parameter
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String Parse
+FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory: System.String TypeCheck
+FSharp.Compiler.DiagnosticsLogger+CapturingDiagnosticsLogger: Int32 ErrorCount
+FSharp.Compiler.DiagnosticsLogger+CapturingDiagnosticsLogger: Int32 get_ErrorCount()
+FSharp.Compiler.DiagnosticsLogger+CapturingDiagnosticsLogger: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic] Diagnostics
+FSharp.Compiler.DiagnosticsLogger+CapturingDiagnosticsLogger: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic] get_Diagnostics()
+FSharp.Compiler.DiagnosticsLogger+CapturingDiagnosticsLogger: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic,FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic]])
+FSharp.Compiler.DiagnosticsLogger+CapturingDiagnosticsLogger: Void CommitDelayedDiagnostics(DiagnosticsLogger)
+FSharp.Compiler.DiagnosticsLogger+CapturingDiagnosticsLogger: Void DiagnosticSink(PhasedDiagnostic)
+FSharp.Compiler.DiagnosticsLogger+CompilationGlobalsScope: BuildPhase BuildPhase
+FSharp.Compiler.DiagnosticsLogger+CompilationGlobalsScope: BuildPhase get_BuildPhase()
+FSharp.Compiler.DiagnosticsLogger+CompilationGlobalsScope: DiagnosticsLogger DiagnosticsLogger
+FSharp.Compiler.DiagnosticsLogger+CompilationGlobalsScope: DiagnosticsLogger get_DiagnosticsLogger()
+FSharp.Compiler.DiagnosticsLogger+CompilationGlobalsScope: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+CompilationGlobalsScope: Void .ctor(DiagnosticsLogger, BuildPhase)
+FSharp.Compiler.DiagnosticsLogger+Deprecated: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+Deprecated: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+Deprecated: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+Deprecated: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+Deprecated: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+Deprecated: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+Deprecated: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+Deprecated: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+Deprecated: System.String get_message()
+FSharp.Compiler.DiagnosticsLogger+Deprecated: System.String message
+FSharp.Compiler.DiagnosticsLogger+Deprecated: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+Deprecated: Void .ctor(System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Boolean enabledByLangFeature
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Boolean get_enabledByLangFeature()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Int32 get_number()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Int32 number
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: System.String get_message()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: System.String message
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature: Void .ctor(Int32, System.String, FSharp.Compiler.Text.Range, Boolean)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle+Tags: Int32 Default
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle+Tags: Int32 Emacs
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle+Tags: Int32 Gcc
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle+Tags: Int32 Rich
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle+Tags: Int32 Test
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle+Tags: Int32 VisualStudio
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean IsDefault
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean IsEmacs
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean IsGcc
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean IsRich
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean IsTest
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean IsVisualStudio
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean get_IsDefault()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean get_IsEmacs()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean get_IsGcc()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean get_IsRich()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean get_IsTest()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Boolean get_IsVisualStudio()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle Default
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle Emacs
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle Gcc
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle Rich
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle Test
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle VisualStudio
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle get_Default()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle get_Emacs()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle get_Gcc()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle get_Rich()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle get_Test()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: DiagnosticStyle get_VisualStudio()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle+Tags
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Int32 Tag
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: Int32 get_Tag()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle: System.String ToString()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: Int32 get_number()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: Int32 number
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] get_suggestions()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] suggestions
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: System.String Message
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: System.String get_identifier()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: System.String get_message()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: System.String identifier
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: System.String message
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions: Void .ctor(Int32, System.String, FSharp.Compiler.Text.Range, System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit])
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: Int32 get_number()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: Int32 number
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: System.String Message
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: System.String get_message()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: System.String message
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText: Void .ctor(Int32, System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger: Boolean CheckForErrors()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger: Boolean CheckForRealErrorsIgnoringWarnings
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger: Boolean get_CheckForRealErrorsIgnoringWarnings()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger: Int32 ErrorCount
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger: Int32 get_ErrorCount()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger: System.String DebugDisplay()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger: Void .ctor(System.String)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger: Void DiagnosticSink(PhasedDiagnostic)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions: Boolean get_tryAndDetectDev15()
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions: Boolean tryAndDetectDev15
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions: T DiagnosticsLogger.Error[T](DiagnosticsLogger, System.Exception)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions: T DiagnosticsLogger.SimulateError[T](DiagnosticsLogger, PhasedDiagnostic)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions: Void DiagnosticsLogger.ErrorR(DiagnosticsLogger, System.Exception)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions: Void DiagnosticsLogger.ErrorRecovery(DiagnosticsLogger, System.Exception, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions: Void DiagnosticsLogger.ErrorRecoveryNoRange(DiagnosticsLogger, System.Exception)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions: Void DiagnosticsLogger.StopProcessingRecovery(DiagnosticsLogger, System.Exception, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions: Void DiagnosticsLogger.Warning(DiagnosticsLogger, System.Exception)
+FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions: Void PreserveStackTrace[T](T)
+FSharp.Compiler.DiagnosticsLogger+Exiter: T Exit[T](Int32)
+FSharp.Compiler.DiagnosticsLogger+Experimental: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+Experimental: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+Experimental: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+Experimental: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+Experimental: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+Experimental: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+Experimental: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+Experimental: Microsoft.FSharp.Core.FSharpOption`1[System.String] diagnosticId
+FSharp.Compiler.DiagnosticsLogger+Experimental: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_diagnosticId()
+FSharp.Compiler.DiagnosticsLogger+Experimental: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_message()
+FSharp.Compiler.DiagnosticsLogger+Experimental: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_urlFormat()
+FSharp.Compiler.DiagnosticsLogger+Experimental: Microsoft.FSharp.Core.FSharpOption`1[System.String] message
+FSharp.Compiler.DiagnosticsLogger+Experimental: Microsoft.FSharp.Core.FSharpOption`1[System.String] urlFormat
+FSharp.Compiler.DiagnosticsLogger+Experimental: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+Experimental: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+Experimental: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+InternalError: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+InternalError: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+InternalError: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+InternalError: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+InternalError: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+InternalError: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+InternalError: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+InternalError: System.String Message
+FSharp.Compiler.DiagnosticsLogger+InternalError: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+InternalError: System.String get_message()
+FSharp.Compiler.DiagnosticsLogger+InternalError: System.String message
+FSharp.Compiler.DiagnosticsLogger+InternalError: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+InternalError: Void .ctor(System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+InternalException: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+InternalException: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+InternalException: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+InternalException: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+InternalException: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+InternalException: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+InternalException: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+InternalException: System.Exception exn
+FSharp.Compiler.DiagnosticsLogger+InternalException: System.Exception get_exn()
+FSharp.Compiler.DiagnosticsLogger+InternalException: System.String Message
+FSharp.Compiler.DiagnosticsLogger+InternalException: System.String ToString()
+FSharp.Compiler.DiagnosticsLogger+InternalException: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+InternalException: System.String get_msg()
+FSharp.Compiler.DiagnosticsLogger+InternalException: System.String msg
+FSharp.Compiler.DiagnosticsLogger+InternalException: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+InternalException: Void .ctor(System.Exception, System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly: Void .ctor(FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+MultipleDiagnosticsLoggers: Microsoft.FSharp.Control.FSharpAsync`1[T[]] Parallel[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]])
+FSharp.Compiler.DiagnosticsLogger+MultipleDiagnosticsLoggers: Microsoft.FSharp.Control.FSharpAsync`1[T[]] Sequential[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]])
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Boolean get_isError()
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Boolean isError
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Microsoft.FSharp.Core.FSharpOption`1[System.String] diagnosticId
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_diagnosticId()
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_message()
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_urlFormat()
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Microsoft.FSharp.Core.FSharpOption`1[System.String] message
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Microsoft.FSharp.Core.FSharpOption`1[System.String] urlFormat
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic: Void .ctor(Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+OperationResult: OperationResult`1 ignore[T](OperationResult`1)
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1+ErrorResult[T]: Microsoft.FSharp.Collections.FSharpList`1[System.Exception] get_warnings()
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1+ErrorResult[T]: Microsoft.FSharp.Collections.FSharpList`1[System.Exception] warnings
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1+ErrorResult[T]: System.Exception error
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1+ErrorResult[T]: System.Exception get_error()
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1+OkResult[T]: Microsoft.FSharp.Collections.FSharpList`1[System.Exception] get_warnings()
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1+OkResult[T]: Microsoft.FSharp.Collections.FSharpList`1[System.Exception] warnings
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1+OkResult[T]: T get_result()
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1+OkResult[T]: T result
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1+Tags[T]: Int32 ErrorResult
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1+Tags[T]: Int32 OkResult
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: Boolean IsErrorResult
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: Boolean IsOkResult
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: Boolean get_IsErrorResult()
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: Boolean get_IsOkResult()
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: FSharp.Compiler.DiagnosticsLogger+OperationResult`1+ErrorResult[T]
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: FSharp.Compiler.DiagnosticsLogger+OperationResult`1+OkResult[T]
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: FSharp.Compiler.DiagnosticsLogger+OperationResult`1+Tags[T]
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: Int32 Tag
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: Int32 get_Tag()
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: OperationResult`1 NewErrorResult(Microsoft.FSharp.Collections.FSharpList`1[System.Exception], System.Exception)
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: OperationResult`1 NewOkResult(Microsoft.FSharp.Collections.FSharpList`1[System.Exception], T)
+FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]: System.String ToString()
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: Boolean Equals(PhasedDiagnostic)
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: Boolean Equals(PhasedDiagnostic, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: Boolean IsPhaseInCompile()
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: Boolean IsSubcategoryOfCompile(System.String)
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: BuildPhase Phase
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: BuildPhase get_Phase()
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity DefaultSeverity
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity Severity
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity get_DefaultSeverity()
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity get_Severity()
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: PhasedDiagnostic Create(System.Exception, BuildPhase, FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity)
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: System.Exception Exception
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: System.Exception get_Exception()
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: System.String DebugDisplay()
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: System.String Subcategory()
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: System.String ToString()
+FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic: Void .ctor(System.Exception, BuildPhase, FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity, FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity)
+FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode: Void .ctor(FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+ReportedError: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+ReportedError: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+ReportedError: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+ReportedError: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+ReportedError: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+ReportedError: Microsoft.FSharp.Core.FSharpOption`1[System.Exception] Data0
+FSharp.Compiler.DiagnosticsLogger+ReportedError: Microsoft.FSharp.Core.FSharpOption`1[System.Exception] get_Data0()
+FSharp.Compiler.DiagnosticsLogger+ReportedError: System.String Message
+FSharp.Compiler.DiagnosticsLogger+ReportedError: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+ReportedError: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+ReportedError: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[System.Exception])
+FSharp.Compiler.DiagnosticsLogger+StackGuard: T Guard[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], System.String, System.String, Int32)
+FSharp.Compiler.DiagnosticsLogger+StackGuard: Void .ctor(System.String)
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExiter: Int32 ExitCode
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExiter: Int32 get_ExitCode()
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExiter: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExiter: Void set_ExitCode(Int32)
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: Microsoft.FSharp.Core.FSharpOption`1[System.Exception] Data0
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: Microsoft.FSharp.Core.FSharpOption`1[System.Exception] get_Data0()
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: System.String Message
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: System.String ToString()
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+StopProcessingExn: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[System.Exception])
+FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,b] Delay[b](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,b])
+FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder: OperationResult`1 Bind[h,i](OperationResult`1, Microsoft.FSharp.Core.FSharpFunc`2[h,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[i]])
+FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder: OperationResult`1 Combine[c,d](OperationResult`1, Microsoft.FSharp.Core.FSharpFunc`2[c,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[d]])
+FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder: OperationResult`1 For[e](Microsoft.FSharp.Collections.FSharpList`1[e], Microsoft.FSharp.Core.FSharpFunc`2[e,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[Microsoft.FSharp.Core.Unit]])
+FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder: OperationResult`1 Return[g](g)
+FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder: OperationResult`1 While(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Boolean], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[Microsoft.FSharp.Core.Unit]])
+FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder: OperationResult`1 Zero()
+FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder: T Run[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder: f ReturnFrom[f](f)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: System.String assemblyName
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: System.String get_assemblyName()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: System.String get_path()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: System.String path
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference: Void .ctor(System.String, System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: System.String Message
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: System.String assemblyName
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: System.String get_assemblyName()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: System.String get_path()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: System.String path
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange: Void .ctor(System.String, System.String)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: System.String assemblyName
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: System.String get_assemblyName()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError: Void .ctor(System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange: System.String assemblyName
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange: System.String get_assemblyName()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange: Void .ctor(System.String)
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: FSharp.Compiler.Text.Range range
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: Int32 get_number()
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: Int32 number
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: System.String get_message()
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: System.String message
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage: Void .ctor(System.String, Int32, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger+WrappedError: Boolean Equals(System.Exception, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+WrappedError: Boolean Equals(System.Object)
+FSharp.Compiler.DiagnosticsLogger+WrappedError: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+WrappedError: FSharp.Compiler.Text.Range Data1
+FSharp.Compiler.DiagnosticsLogger+WrappedError: FSharp.Compiler.Text.Range get_Data1()
+FSharp.Compiler.DiagnosticsLogger+WrappedError: Int32 GetHashCode()
+FSharp.Compiler.DiagnosticsLogger+WrappedError: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.DiagnosticsLogger+WrappedError: System.Exception Data0
+FSharp.Compiler.DiagnosticsLogger+WrappedError: System.Exception get_Data0()
+FSharp.Compiler.DiagnosticsLogger+WrappedError: System.String Message
+FSharp.Compiler.DiagnosticsLogger+WrappedError: System.String get_Message()
+FSharp.Compiler.DiagnosticsLogger+WrappedError: Void .ctor()
+FSharp.Compiler.DiagnosticsLogger+WrappedError: Void .ctor(System.Exception, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger: DiagnosticsLogger AssertFalseDiagnosticsLogger
+FSharp.Compiler.DiagnosticsLogger: DiagnosticsLogger DiscardErrorsLogger
+FSharp.Compiler.DiagnosticsLogger: DiagnosticsLogger get_AssertFalseDiagnosticsLogger()
+FSharp.Compiler.DiagnosticsLogger: DiagnosticsLogger get_DiscardErrorsLogger()
+FSharp.Compiler.DiagnosticsLogger: Exiter QuitProcessExiter
+FSharp.Compiler.DiagnosticsLogger: Exiter get_QuitProcessExiter()
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+BuildPhase
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+BuildPhaseSubcategory
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+CapturingDiagnosticsLogger
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+CompilationGlobalsScope
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+Deprecated
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+DiagnosticEnabledWithLanguageFeature
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+DiagnosticStyle
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+DiagnosticWithSuggestions
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+DiagnosticWithText
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+DiagnosticsLoggerExtensions
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+Exiter
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+Experimental
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+InternalError
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+InternalException
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+LibraryUseOnly
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+MultipleDiagnosticsLoggers
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+ObsoleteDiagnostic
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+OperationResult
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+PhasedDiagnostic
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+PossibleUnverifiableCode
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+ReportedError
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+StackGuard
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+StopProcessingExiter
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+StopProcessingExn
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+TrackErrorsBuilder
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReference
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+UnresolvedPathReferenceNoRange
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceError
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+UnresolvedReferenceNoRange
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+UserCompilerMessage
+FSharp.Compiler.DiagnosticsLogger: FSharp.Compiler.DiagnosticsLogger+WrappedError
+FSharp.Compiler.DiagnosticsLogger: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] NoSuggestions
+FSharp.Compiler.DiagnosticsLogger: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] get_NoSuggestions()
+FSharp.Compiler.DiagnosticsLogger: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.Exception],T]] CheckNoErrorsAndGetWarnings[T](OperationResult`1)
+FSharp.Compiler.DiagnosticsLogger: Microsoft.FSharp.Core.FSharpValueOption`1[Microsoft.FSharp.Core.Unit] |StopProcessing|_|(System.Exception)
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 AtLeastOne2D[T,b](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[b,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[System.Boolean]]], Microsoft.FSharp.Collections.FSharpList`1[T], Microsoft.FSharp.Collections.FSharpList`1[b])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 AtLeastOneD[T](Microsoft.FSharp.Core.FSharpFunc`2[T,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[T])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 CompleteD
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 ErrorD[T](System.Exception)
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 Iterate2D[T,b](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[b,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[Microsoft.FSharp.Core.Unit]]], Microsoft.FSharp.Collections.FSharpList`1[T], Microsoft.FSharp.Collections.FSharpList`1[b])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 IterateD[T](Microsoft.FSharp.Core.FSharpFunc`2[T,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Collections.FSharpList`1[T])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 IterateIdxD[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[T,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[Microsoft.FSharp.Core.Unit]]], Microsoft.FSharp.Collections.FSharpList`1[T])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 MapD[T,b](Microsoft.FSharp.Core.FSharpFunc`2[T,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[b]], Microsoft.FSharp.Collections.FSharpList`1[T])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 MapReduce2D[T,T2,c](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T2,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[c]]], c, Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.FSharpFunc`2[c,c]], Microsoft.FSharp.Collections.FSharpList`1[T], Microsoft.FSharp.Collections.FSharpList`1[T2])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 MapReduceD[T,b](Microsoft.FSharp.Core.FSharpFunc`2[T,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[b]], b, Microsoft.FSharp.Core.FSharpFunc`2[b,Microsoft.FSharp.Core.FSharpFunc`2[b,b]], Microsoft.FSharp.Collections.FSharpList`1[T])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 OptionD[T](Microsoft.FSharp.Core.FSharpFunc`2[T,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[T])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 RepeatWhileD(Int32, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[System.Boolean]])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 ResultD[T](T)
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 TryD[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[T]])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 WarnD(System.Exception)
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 WhileD(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Boolean], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[Microsoft.FSharp.Core.Unit]])
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 bind[T,b](Microsoft.FSharp.Core.FSharpFunc`2[T,FSharp.Compiler.DiagnosticsLogger+OperationResult`1[b]], OperationResult`1)
+FSharp.Compiler.DiagnosticsLogger: OperationResult`1 get_CompleteD()
+FSharp.Compiler.DiagnosticsLogger: System.Exception AttachRange(FSharp.Compiler.Text.Range, System.Exception)
+FSharp.Compiler.DiagnosticsLogger: System.Exception Error(System.Tuple`2[System.Int32,System.String], FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger: System.Exception ErrorEnabledWithLanguageFeature(System.Tuple`2[System.Int32,System.String], FSharp.Compiler.Text.Range, Boolean)
+FSharp.Compiler.DiagnosticsLogger: System.Exception ErrorWithSuggestions(System.Tuple`2[System.Int32,System.String], FSharp.Compiler.Text.Range, System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit])
+FSharp.Compiler.DiagnosticsLogger: System.Exception StopProcessing[T]()
+FSharp.Compiler.DiagnosticsLogger: System.Exception findOriginalException(System.Exception)
+FSharp.Compiler.DiagnosticsLogger: System.IDisposable UseBuildPhase(BuildPhase)
+FSharp.Compiler.DiagnosticsLogger: System.IDisposable UseDiagnosticsLogger(DiagnosticsLogger)
+FSharp.Compiler.DiagnosticsLogger: System.IDisposable UseTransformedDiagnosticsLogger(Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger,FSharp.Compiler.DiagnosticsLogger+DiagnosticsLogger])
+FSharp.Compiler.DiagnosticsLogger: System.String NewlineifyErrorString(System.String)
+FSharp.Compiler.DiagnosticsLogger: System.String NormalizeErrorString(System.String)
+FSharp.Compiler.DiagnosticsLogger: System.String get_stringThatIsAProxyForANewlineInFlatErrors()
+FSharp.Compiler.DiagnosticsLogger: System.String stringThatIsAProxyForANewlineInFlatErrors
+FSharp.Compiler.DiagnosticsLogger: T CommitOperationResult[T](OperationResult`1)
+FSharp.Compiler.DiagnosticsLogger: T conditionallySuppressErrorReporting[T](Boolean, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+FSharp.Compiler.DiagnosticsLogger: T error[T](System.Exception)
+FSharp.Compiler.DiagnosticsLogger: T protectAssemblyExplorationF[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.String],T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+FSharp.Compiler.DiagnosticsLogger: T protectAssemblyExplorationNoReraise[T](T, T, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+FSharp.Compiler.DiagnosticsLogger: T protectAssemblyExploration[T](T, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+FSharp.Compiler.DiagnosticsLogger: T simulateError[T](PhasedDiagnostic)
+FSharp.Compiler.DiagnosticsLogger: T suppressErrorReporting[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+FSharp.Compiler.DiagnosticsLogger: TrackErrorsBuilder get_trackErrors()
+FSharp.Compiler.DiagnosticsLogger: TrackErrorsBuilder trackErrors
+FSharp.Compiler.DiagnosticsLogger: Void RaiseOperationResult(OperationResult`1)
+FSharp.Compiler.DiagnosticsLogger: Void ReportWarnings[a](Microsoft.FSharp.Collections.FSharpList`1[a])
+FSharp.Compiler.DiagnosticsLogger: Void SetThreadBuildPhaseNoUnwind(BuildPhase)
+FSharp.Compiler.DiagnosticsLogger: Void SetThreadDiagnosticsLoggerNoUnwind(DiagnosticsLogger)
+FSharp.Compiler.DiagnosticsLogger: Void deprecatedOperator(FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger: Void deprecatedWithError(System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger: Void diagnosticSink(PhasedDiagnostic)
+FSharp.Compiler.DiagnosticsLogger: Void errorR(System.Exception)
+FSharp.Compiler.DiagnosticsLogger: Void errorRecovery(System.Exception, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger: Void errorRecoveryNoRange(System.Exception)
+FSharp.Compiler.DiagnosticsLogger: Void informationalWarning(System.Exception)
+FSharp.Compiler.DiagnosticsLogger: Void libraryOnlyError(FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger: Void libraryOnlyWarning(FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger: Void stopProcessingRecovery(System.Exception, FSharp.Compiler.Text.Range)
+FSharp.Compiler.DiagnosticsLogger: Void warning(System.Exception)
 FSharp.Compiler.EditorServices.AssemblyContent: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol] GetAssemblyContent(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.EditorServices.IAssemblyContentCache,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol]],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol]], FSharp.Compiler.EditorServices.AssemblyContentType, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpAssembly])
 FSharp.Compiler.EditorServices.AssemblyContent: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol] GetAssemblySignatureContent(FSharp.Compiler.EditorServices.AssemblyContentType, FSharp.Compiler.Symbols.FSharpAssemblySignature)
 FSharp.Compiler.EditorServices.AssemblyContentType+Tags: Int32 Full
@@ -12409,10 +12955,308 @@ FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Boolean ContainsKey(Key)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Boolean Equals(System.Object)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Boolean Exists(Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[Value,System.Boolean]])
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Boolean ForAll(Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[Value,System.Boolean]])
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Boolean IsEmpty
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Boolean get_IsEmpty()
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Int32 Count
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Int32 GetHashCode()
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Int32 get_Count()
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Internal.Utilities.Collections.Tagged.Map`3[Key,T,ComparerTag] MapRange[T](Microsoft.FSharp.Core.FSharpFunc`2[Value,T])
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Internal.Utilities.Collections.Tagged.Map`3[Key,T,ComparerTag] Map[T](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[Value,T]])
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag] Add(Key, Value)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag] Create(ComparerTag, System.Collections.Generic.IEnumerable`1[System.Tuple`2[Key,Value]])
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag] Empty(ComparerTag)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag] Filter(Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[Value,System.Boolean]])
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag] FromList(ComparerTag, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[Key,Value]])
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag] Remove(Key)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[Key,Value]] ToList()
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Microsoft.FSharp.Core.FSharpOption`1[T] First[T](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[Value,Microsoft.FSharp.Core.FSharpOption`1[T]]])
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Microsoft.FSharp.Core.FSharpOption`1[Value] TryFind(Key)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: State FoldSection[State](Key, Key, Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[Value,Microsoft.FSharp.Core.FSharpFunc`2[State,State]]], State)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: State Fold[State](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[Value,Microsoft.FSharp.Core.FSharpFunc`2[State,State]]], State)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: System.Tuple`2[Internal.Utilities.Collections.Tagged.Map`3[Key,T,ComparerTag],State] FoldAndMap[State,T](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[Value,Microsoft.FSharp.Core.FSharpFunc`2[State,System.Tuple`2[T,State]]]], State)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: System.Tuple`2[Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag],Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]] Partition(Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[Value,System.Boolean]])
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: System.Tuple`2[Key,Value][] ToArray()
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Value Item [Key]
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Value get_Item(Key)
+Internal.Utilities.Collections.Tagged.Map`3[Key,Value,ComparerTag]: Void Iterate(Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[Value,Microsoft.FSharp.Core.Unit]])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Boolean Contains(T)
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Boolean Equality(Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag], Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Boolean Equals(System.Object)
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Boolean Exists(Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Boolean ForAll(Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Boolean IsEmpty
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Boolean IsSubsetOf(Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Boolean IsSupersetOf(Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Boolean get_IsEmpty()
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Int32 Compare(Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag], Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Int32 Count
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Int32 GetHashCode()
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Int32 get_Count()
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] Add(T)
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] Create(ComparerTag, System.Collections.Generic.IEnumerable`1[T])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] Difference(Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag], Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] Empty(ComparerTag)
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] Filter(Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] Intersection(Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag], Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] Remove(T)
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] Singleton(ComparerTag, T)
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] Union(Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag], Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] op_Addition(Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag], Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag] op_Subtraction(Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag], Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Microsoft.FSharp.Collections.FSharpList`1[T] ToList()
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: State Fold[State](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[State,State]], State)
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: System.Tuple`2[Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag],Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]] Partition(Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean])
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: T Choose
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: T MaximumElement
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: T MinimumElement
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: T get_Choose()
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: T get_MaximumElement()
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: T get_MinimumElement()
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: T[] ToArray()
+Internal.Utilities.Collections.Tagged.Set`2[T,ComparerTag]: Void Iterate(Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit])
+Internal.Utilities.Collections.Zmap: Boolean exists[Key,T](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Boolean forall[Key,T](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Boolean isEmpty[Key,T](Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Boolean mem[Key,T](Key, Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Boolean memberOf[Key,T](Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]], Key)
+Internal.Utilities.Collections.Zmap: Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]] add[Key,T](Key, T, Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]] empty[Key,T](System.Collections.Generic.IComparer`1[Key])
+Internal.Utilities.Collections.Zmap: Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]] ofList[Key,T](System.Collections.Generic.IComparer`1[Key], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[Key,T]])
+Internal.Utilities.Collections.Zmap: Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]] remove[Key,T](Key, Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Internal.Utilities.Collections.Tagged.Map`3[Key,U,System.Collections.Generic.IComparer`1[Key]] map[T,U,Key](Microsoft.FSharp.Core.FSharpFunc`2[T,U], Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Internal.Utilities.Collections.Tagged.Map`3[Key,U,System.Collections.Generic.IComparer`1[Key]] mapi[Key,T,U](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[T,U]], Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Microsoft.FSharp.Collections.FSharpList`1[Key] keys[Key,T](Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[Key,T]] toList[Key,T](Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Microsoft.FSharp.Collections.FSharpList`1[T] values[Key,T](Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Microsoft.FSharp.Collections.FSharpList`1[U] chooseL[Key,T,U](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[U]]], Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Key,T]] first[Key,T](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Microsoft.FSharp.Core.FSharpOption`1[T] tryFind[Key,T](Key, Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: Microsoft.FSharp.Core.FSharpOption`1[U] choose[Key,T,U](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[U]]], Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: System.Tuple`2[State,Internal.Utilities.Collections.Tagged.Map`3[Key,U,System.Collections.Generic.IComparer`1[Key]]] foldMap[State,Key,T,U](Microsoft.FSharp.Core.FSharpFunc`2[State,Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Tuple`2[State,U]]]], State, Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: T find[Key,T](Key, Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]])
+Internal.Utilities.Collections.Zmap: U foldSection[Key,T,U](Key, Key, Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[U,U]]], Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]], U)
+Internal.Utilities.Collections.Zmap: U fold[Key,T,U](Microsoft.FSharp.Core.FSharpFunc`2[Key,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[U,U]]], Internal.Utilities.Collections.Tagged.Map`3[Key,T,System.Collections.Generic.IComparer`1[Key]], U)
+Internal.Utilities.Collections.Zmap: Void iter[T,U](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[U,Microsoft.FSharp.Core.Unit]], Internal.Utilities.Collections.Tagged.Map`3[T,U,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Boolean contains[T](T, Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Boolean equal[T](Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Boolean exists[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Boolean forall[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Boolean isEmpty[T](Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Boolean memberOf[T](Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]], T)
+Internal.Utilities.Collections.Zset: Boolean subset[T](Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Int32 count[T](Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]] addList[T](Microsoft.FSharp.Collections.FSharpList`1[T], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]] add[T](T, Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]] diff[T](Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]] empty[T](System.Collections.Generic.IComparer`1[T])
+Internal.Utilities.Collections.Zset: Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]] filter[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]] inter[T](Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]] remove[T](T, Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]] singleton[T](System.Collections.Generic.IComparer`1[T], T)
+Internal.Utilities.Collections.Zset: Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]] union[T](Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: Microsoft.FSharp.Collections.FSharpList`1[T] elements[T](Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Collections.Zset: State fold[T,State](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[State,State]], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]], State)
+Internal.Utilities.Collections.Zset: Void iter[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], Internal.Utilities.Collections.Tagged.Set`2[T,System.Collections.Generic.IComparer`1[T]])
+Internal.Utilities.Library.Array: Boolean areEqual[T](T[], T[])
+Internal.Utilities.Library.Array: Boolean endsWith[a](a[], a[])
+Internal.Utilities.Library.Array: Boolean existsOne[a](Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a[])
+Internal.Utilities.Library.Array: Boolean existsTrue(Boolean[])
+Internal.Utilities.Library.Array: Boolean isSubArray[T](T[], T[], Int32)
+Internal.Utilities.Library.Array: Boolean lengthsEqAndForall2[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], a[], b[])
+Internal.Utilities.Library.Array: Boolean startsWith[a](a[], a[])
+Internal.Utilities.Library.Array: Int32 findFirstIndexWhereTrue[a](a[], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean])
+Internal.Utilities.Library.Array: Microsoft.FSharp.Control.FSharpAsync`1[U[]] mapAsync[T,U](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Control.FSharpAsync`1[U]], T[])
+Internal.Utilities.Library.Array: System.Collections.Generic.IComparer`1[T[]] order[T](System.Collections.Generic.IComparer`1[T])
+Internal.Utilities.Library.Array: T[] prepend[T](T, T[])
+Internal.Utilities.Library.Array: T[][] heads[T](T[])
+Internal.Utilities.Library.Array: Void revInPlace[T](T[])
+Internal.Utilities.Library.Array: a[] mapq[a](Microsoft.FSharp.Core.FSharpFunc`2[a,a], a[])
+Internal.Utilities.Library.Array: a[] replace[a](Int32, a, a[])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] CreateDictionary(T[])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T[]])
+Internal.Utilities.Library.Dictionary: System.Collections.Generic.Dictionary`2[Key,Value] ofList[Key,Value](Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[Key,Value]])
+Internal.Utilities.Library.Dictionary: System.Collections.Generic.Dictionary`2[a,b] newWithSize[a,b](Int32)
+Internal.Utilities.Library.Extras+ArrayParallel: U[] map[T,U](Microsoft.FSharp.Core.FSharpFunc`2[T,U], T[])
+Internal.Utilities.Library.Extras+ArrayParallel: U[] mapi[T,U](Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[T,U]], T[])
+Internal.Utilities.Library.Extras+ArrayParallel: Void iter[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], T[])
+Internal.Utilities.Library.Extras+ArrayParallel: Void iteri[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit]], T[])
+Internal.Utilities.Library.Extras+Async: Microsoft.FSharp.Control.FSharpAsync`1[U] map[T,U](Microsoft.FSharp.Core.FSharpFunc`2[T,U], Microsoft.FSharp.Control.FSharpAsync`1[T])
+Internal.Utilities.Library.Extras+Bits: Int32 b0(Int32)
+Internal.Utilities.Library.Extras+Bits: Int32 b1(Int32)
+Internal.Utilities.Library.Extras+Bits: Int32 b2(Int32)
+Internal.Utilities.Library.Extras+Bits: Int32 b3(Int32)
+Internal.Utilities.Library.Extras+Bits: Int32 mask32(Int32, Int32)
+Internal.Utilities.Library.Extras+Bits: Int32 pown32(Int32)
+Internal.Utilities.Library.Extras+Bits: Int64 mask64(Int32, Int32)
+Internal.Utilities.Library.Extras+Bits: Int64 pown64(Int32)
+Internal.Utilities.Library.Extras+Bool: System.Collections.Generic.IComparer`1[System.Boolean] get_order()
+Internal.Utilities.Library.Extras+Bool: System.Collections.Generic.IComparer`1[System.Boolean] order
+Internal.Utilities.Library.Extras+DisposablesTracker: Void .ctor()
+Internal.Utilities.Library.Extras+DisposablesTracker: Void Register[a](a)
+Internal.Utilities.Library.Extras+Graph`2[Data,Id]: Data GetNodeData(Id)
+Internal.Utilities.Library.Extras+Graph`2[Data,Id]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Data,Id], Microsoft.FSharp.Collections.FSharpList`1[Data], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[Data,Data]])
+Internal.Utilities.Library.Extras+Graph`2[Data,Id]: Void IterateCycles(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Collections.FSharpList`1[Data],Microsoft.FSharp.Core.Unit])
+Internal.Utilities.Library.Extras+Int32: System.Collections.Generic.IComparer`1[System.Int32] get_order()
+Internal.Utilities.Library.Extras+Int32: System.Collections.Generic.IComparer`1[System.Int32] order
+Internal.Utilities.Library.Extras+Int64: System.Collections.Generic.IComparer`1[System.Int64] get_order()
+Internal.Utilities.Library.Extras+Int64: System.Collections.Generic.IComparer`1[System.Int64] order
+Internal.Utilities.Library.Extras+IntMap: Boolean mem[T](Int32, Internal.Utilities.Collections.Tagged.Map`3[System.Int32,T,System.Collections.Generic.IComparer`1[System.Int32]])
+Internal.Utilities.Library.Extras+IntMap: Internal.Utilities.Collections.Tagged.Map`3[System.Int32,T,System.Collections.Generic.IComparer`1[System.Int32]] add[T](Int32, T, Internal.Utilities.Collections.Tagged.Map`3[System.Int32,T,System.Collections.Generic.IComparer`1[System.Int32]])
+Internal.Utilities.Library.Extras+IntMap: Internal.Utilities.Collections.Tagged.Map`3[System.Int32,T,System.Collections.Generic.IComparer`1[System.Int32]] remove[T](Int32, Internal.Utilities.Collections.Tagged.Map`3[System.Int32,T,System.Collections.Generic.IComparer`1[System.Int32]])
+Internal.Utilities.Library.Extras+IntMap: Internal.Utilities.Collections.Tagged.Map`3[System.Int32,a,System.Collections.Generic.IComparer`1[System.Int32]] empty[a]()
+Internal.Utilities.Library.Extras+IntMap: Internal.Utilities.Collections.Tagged.Map`3[System.Int32,a,System.Collections.Generic.IComparer`1[System.Int32]] map[T,a](Microsoft.FSharp.Core.FSharpFunc`2[T,a], Internal.Utilities.Collections.Tagged.Map`3[System.Int32,T,System.Collections.Generic.IComparer`1[System.Int32]])
+Internal.Utilities.Library.Extras+IntMap: Microsoft.FSharp.Core.FSharpOption`1[T] tryFind[T](Int32, Internal.Utilities.Collections.Tagged.Map`3[System.Int32,T,System.Collections.Generic.IComparer`1[System.Int32]])
+Internal.Utilities.Library.Extras+IntMap: T find[T](Int32, Internal.Utilities.Collections.Tagged.Map`3[System.Int32,T,System.Collections.Generic.IComparer`1[System.Int32]])
+Internal.Utilities.Library.Extras+IntMap: Void iter[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit]], Internal.Utilities.Collections.Tagged.Map`3[System.Int32,T,System.Collections.Generic.IComparer`1[System.Int32]])
+Internal.Utilities.Library.Extras+IntMap: a fold[T,a](Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[a,a]]], Internal.Utilities.Collections.Tagged.Map`3[System.Int32,T,System.Collections.Generic.IComparer`1[System.Int32]], a)
+Internal.Utilities.Library.Extras+ListAssoc: Microsoft.FSharp.Core.FSharpOption`1[value] tryFind[key,value](Microsoft.FSharp.Core.FSharpFunc`2[key,Microsoft.FSharp.Core.FSharpFunc`2[key,System.Boolean]], key, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[key,value]])
+Internal.Utilities.Library.Extras+ListAssoc: c find[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], a, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[b,c]])
+Internal.Utilities.Library.Extras+ListParallel: Microsoft.FSharp.Collections.FSharpList`1[U] map[T,U](Microsoft.FSharp.Core.FSharpFunc`2[T,U], Microsoft.FSharp.Collections.FSharpList`1[T])
+Internal.Utilities.Library.Extras+ListSet: Boolean contains[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], a, Microsoft.FSharp.Collections.FSharpList`1[b])
+Internal.Utilities.Library.Extras+ListSet: Boolean equals[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[b])
+Internal.Utilities.Library.Extras+ListSet: Boolean hasDuplicates[a](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.Extras+ListSet: Boolean isSubsetOf[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[b])
+Internal.Utilities.Library.Extras+ListSet: Boolean isSupersetOf[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[b])
+Internal.Utilities.Library.Extras+ListSet: Int32 findIndex[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], b, Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.Extras+ListSet: Microsoft.FSharp.Collections.FSharpList`1[a] insert[a](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean]], a, Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.Extras+ListSet: Microsoft.FSharp.Collections.FSharpList`1[a] intersect[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[b], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.Extras+ListSet: Microsoft.FSharp.Collections.FSharpList`1[a] setify[a](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.Extras+ListSet: Microsoft.FSharp.Collections.FSharpList`1[a] subtract[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[b])
+Internal.Utilities.Library.Extras+ListSet: Microsoft.FSharp.Collections.FSharpList`1[a] unionFavourLeft[a](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.Extras+ListSet: Microsoft.FSharp.Collections.FSharpList`1[a] unionFavourRight[a](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.Extras+ListSet: Microsoft.FSharp.Collections.FSharpList`1[b] remove[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], a, Microsoft.FSharp.Collections.FSharpList`1[b])
+Internal.Utilities.Library.Extras+MaybeLazy`1+Lazy[T]: Internal.Utilities.Library.InterruptibleLazy`1[T] Item
+Internal.Utilities.Library.Extras+MaybeLazy`1+Lazy[T]: Internal.Utilities.Library.InterruptibleLazy`1[T] get_Item()
+Internal.Utilities.Library.Extras+MaybeLazy`1+Strict[T]: T Item
+Internal.Utilities.Library.Extras+MaybeLazy`1+Strict[T]: T get_Item()
+Internal.Utilities.Library.Extras+MaybeLazy`1+Tags[T]: Int32 Lazy
+Internal.Utilities.Library.Extras+MaybeLazy`1+Tags[T]: Int32 Strict
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Boolean Equals(MaybeLazy`1)
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Boolean Equals(MaybeLazy`1, System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Boolean Equals(System.Object)
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Boolean IsLazy
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Boolean IsStrict
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Boolean get_IsLazy()
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Boolean get_IsStrict()
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Int32 GetHashCode()
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Int32 GetHashCode(System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Int32 Tag
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Int32 get_Tag()
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Internal.Utilities.Library.Extras+MaybeLazy`1+Lazy[T]
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Internal.Utilities.Library.Extras+MaybeLazy`1+Strict[T]
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: Internal.Utilities.Library.Extras+MaybeLazy`1+Tags[T]
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: MaybeLazy`1 NewLazy(Internal.Utilities.Library.InterruptibleLazy`1[T])
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: MaybeLazy`1 NewStrict(T)
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: System.String ToString()
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: T Force()
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: T Value
+Internal.Utilities.Library.Extras+MaybeLazy`1[T]: T get_Value()
+Internal.Utilities.Library.Extras+NameMap: Internal.Utilities.Collections.Tagged.Set`2[System.String,System.Collections.Generic.IComparer`1[System.String]] domain[a](Microsoft.FSharp.Collections.FSharpMap`2[System.String,a])
+Internal.Utilities.Library.Extras+NameMap: Microsoft.FSharp.Collections.FSharpList`1[System.String] domainL[a](Microsoft.FSharp.Collections.FSharpMap`2[System.String,a])
+Internal.Utilities.Library.Extras+NameSetModule: Internal.Utilities.Collections.Tagged.Set`2[System.String,System.Collections.Generic.IComparer`1[System.String]] ofList(Microsoft.FSharp.Collections.FSharpList`1[System.String])
+Internal.Utilities.Library.Extras+Pair: System.Collections.Generic.IComparer`1[System.ValueTuple`2[T1,T2]] order[T1,T2](System.Collections.Generic.IComparer`1[T1], System.Collections.Generic.IComparer`1[T2])
+Internal.Utilities.Library.Extras+Zmap: Internal.Utilities.Collections.Tagged.Map`3[a,b,System.Collections.Generic.IComparer`1[a]] mapKey[a,b](a, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpOption`1[b],Microsoft.FSharp.Core.FSharpOption`1[b]], Internal.Utilities.Collections.Tagged.Map`3[a,b,System.Collections.Generic.IComparer`1[a]])
+Internal.Utilities.Library.Extras+Zmap: b force[a,b](a, Internal.Utilities.Collections.Tagged.Map`3[a,b,System.Collections.Generic.IComparer`1[a]])
+Internal.Utilities.Library.Extras+Zset: Internal.Utilities.Collections.Tagged.Set`2[a,System.Collections.Generic.IComparer`1[a]] fixpoint[a](Microsoft.FSharp.Core.FSharpFunc`2[Internal.Utilities.Collections.Tagged.Set`2[a,System.Collections.Generic.IComparer`1[a]],Internal.Utilities.Collections.Tagged.Set`2[a,System.Collections.Generic.IComparer`1[a]]], Internal.Utilities.Collections.Tagged.Set`2[a,System.Collections.Generic.IComparer`1[a]])
+Internal.Utilities.Library.Extras+Zset: Internal.Utilities.Collections.Tagged.Set`2[a,System.Collections.Generic.IComparer`1[a]] ofList[a](System.Collections.Generic.IComparer`1[a], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.Extras+cache`1[T]: Boolean Equals(System.Object)
+Internal.Utilities.Library.Extras+cache`1[T]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Extras+cache`1[T]: Boolean Equals(cache`1)
+Internal.Utilities.Library.Extras+cache`1[T]: Boolean Equals(cache`1, System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Extras+cache`1[T]: Int32 CompareTo(System.Object)
+Internal.Utilities.Library.Extras+cache`1[T]: Int32 CompareTo(System.Object, System.Collections.IComparer)
+Internal.Utilities.Library.Extras+cache`1[T]: Int32 CompareTo(cache`1)
+Internal.Utilities.Library.Extras+cache`1[T]: Int32 GetHashCode()
+Internal.Utilities.Library.Extras+cache`1[T]: Int32 GetHashCode(System.Collections.IEqualityComparer)
+Internal.Utilities.Library.Extras+cache`1[T]: System.String ToString()
+Internal.Utilities.Library.Extras+cache`1[T]: T cacheVal
+Internal.Utilities.Library.Extras+cache`1[T]: T cacheVal@
+Internal.Utilities.Library.Extras+cache`1[T]: T get_cacheVal()
+Internal.Utilities.Library.Extras+cache`1[T]: Void .ctor(T)
+Internal.Utilities.Library.Extras+cache`1[T]: Void set_cacheVal(T)
+Internal.Utilities.Library.Extras: Boolean debug
+Internal.Utilities.Library.Extras: Boolean get_debug()
+Internal.Utilities.Library.Extras: Boolean get_progress()
+Internal.Utilities.Library.Extras: Boolean get_tracking()
+Internal.Utilities.Library.Extras: Boolean get_verbose()
+Internal.Utilities.Library.Extras: Boolean isEnvVarSet(System.String)
+Internal.Utilities.Library.Extras: Boolean progress
+Internal.Utilities.Library.Extras: Boolean tracking
+Internal.Utilities.Library.Extras: Boolean verbose
+Internal.Utilities.Library.Extras: Int32 GetEnvInteger(System.String, Int32)
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+ArrayParallel
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+Async
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+Bits
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+Bool
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+DisposablesTracker
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+Graph`2[Data,Id]
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+Int32
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+Int64
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+IntMap
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+ListAssoc
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+ListParallel
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+ListSet
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+MaybeLazy`1[T]
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+NameMap
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+NameSetModule
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+Pair
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+Zmap
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+Zset
+Internal.Utilities.Library.Extras: Internal.Utilities.Library.Extras+cache`1[T]
+Internal.Utilities.Library.Extras: Microsoft.FSharp.Core.FSharpValueOption`1[a] tryGetCacheValue[a](cache`1)
+Internal.Utilities.Library.Extras: System.String buildString(Microsoft.FSharp.Core.FSharpFunc`2[System.Text.StringBuilder,Microsoft.FSharp.Core.Unit])
+Internal.Utilities.Library.Extras: System.Tuple`2[System.Tuple`2[c,e],d] mapFoldFst[a,b,c,d,e](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Tuple`2[c,d]]], a, b, e)
+Internal.Utilities.Library.Extras: System.Tuple`2[System.Tuple`2[e,c],d] mapFoldSnd[a,b,c,d,e](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Tuple`2[c,d]]], a, e, b)
+Internal.Utilities.Library.Extras: System.Tuple`2[a,b] pair[a,b](a, b)
+Internal.Utilities.Library.Extras: System.Tuple`2[b,c] map1Of2[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,b], a, c)
+Internal.Utilities.Library.Extras: System.Tuple`2[b,d] mapPair[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[c,d], a, c)
+Internal.Utilities.Library.Extras: System.Tuple`2[c,b] map2Of2[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,b], c, a)
+Internal.Utilities.Library.Extras: System.Tuple`3[b,c,d] map1Of3[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,b], a, c, d)
+Internal.Utilities.Library.Extras: System.Tuple`3[b,d,f] mapTriple[a,b,c,d,e,f](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[c,d], Microsoft.FSharp.Core.FSharpFunc`2[e,f], a, c, e)
+Internal.Utilities.Library.Extras: System.Tuple`3[c,b,d] map2Of3[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,b], c, a, d)
+Internal.Utilities.Library.Extras: System.Tuple`3[c,d,b] map3Of3[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,b], c, d, a)
+Internal.Utilities.Library.Extras: System.Tuple`4[b,d,f,h] mapQuadruple[a,b,c,d,e,f,g,h](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[c,d], Microsoft.FSharp.Core.FSharpFunc`2[e,f], Microsoft.FSharp.Core.FSharpFunc`2[g,h], a, c, e, g)
+Internal.Utilities.Library.Extras: System.Tuple`4[c,d,b,e] map3Of4[a,b,c,d,e](Microsoft.FSharp.Core.FSharpFunc`2[a,b], c, d, a, e)
+Internal.Utilities.Library.Extras: System.Tuple`4[c,d,e,b] map4Of4[a,b,c,d,e](Microsoft.FSharp.Core.FSharpFunc`2[a,b], c, d, e, a)
+Internal.Utilities.Library.Extras: System.Tuple`5[c,d,e,f,b] map5Of5[a,b,c,d,e,f](Microsoft.FSharp.Core.FSharpFunc`2[a,b], c, d, e, f, a)
+Internal.Utilities.Library.Extras: System.Tuple`6[c,d,e,f,g,b] map6Of6[a,b,c,d,e,f,g](Microsoft.FSharp.Core.FSharpFunc`2[a,b], c, d, e, f, g, a)
+Internal.Utilities.Library.Extras: T cacheOptByref[T](Microsoft.FSharp.Core.FSharpOption`1[T] ByRef, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+Internal.Utilities.Library.Extras: T nullableSlotEmpty[T]()
+Internal.Utilities.Library.Extras: T vsnd[T](System.ValueTuple`2[T,T])
+Internal.Utilities.Library.Extras: Void StringBuilder.AppendString(System.Text.StringBuilder, System.String)
+Internal.Utilities.Library.Extras: Void dispose(System.IDisposable)
+Internal.Utilities.Library.Extras: Void set_progress(Boolean)
+Internal.Utilities.Library.Extras: Void set_tracking(Boolean)
+Internal.Utilities.Library.Extras: Void writeViaBuffer(System.IO.TextWriter, Microsoft.FSharp.Core.FSharpFunc`2[System.Text.StringBuilder,Microsoft.FSharp.Core.Unit])
+Internal.Utilities.Library.Extras: a cacheOptRef[a](Microsoft.FSharp.Core.FSharpRef`1[Microsoft.FSharp.Core.FSharpOption`1[a]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,a])
+Internal.Utilities.Library.Extras: a cached[a](cache`1, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,a])
+Internal.Utilities.Library.Extras: a nullableSlotFull[a](a)
+Internal.Utilities.Library.Extras: a p13[a,b,c](a, b, c)
+Internal.Utilities.Library.Extras: a p14[a,b,c,d](a, b, c, d)
+Internal.Utilities.Library.Extras: a p15[a,b,c,d,e](a, b, c, d, e)
+Internal.Utilities.Library.Extras: b p23[a,b,c](a, b, c)
+Internal.Utilities.Library.Extras: b p24[a,b,c,d](a, b, c, d)
+Internal.Utilities.Library.Extras: b p25[a,b,c,d,e](a, b, c, d, e)
+Internal.Utilities.Library.Extras: c fold1Of2[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,c]], a, b, d)
+Internal.Utilities.Library.Extras: c p33[a,b,c](a, b, c)
+Internal.Utilities.Library.Extras: c p34[a,b,c,d](a, b, c, d)
+Internal.Utilities.Library.Extras: c p35[a,b,c,d,e](a, b, c, d, e)
+Internal.Utilities.Library.Extras: cache`1 newCache[a]()
+Internal.Utilities.Library.Extras: d p44[a,b,c,d](a, b, c, d)
+Internal.Utilities.Library.Extras: d p45[a,b,c,d,e](a, b, c, d, e)
+Internal.Utilities.Library.Extras: e foldPair[a,b,c,d,e](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,c]], Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.FSharpFunc`2[d,e]], a, b, d)
+Internal.Utilities.Library.Extras: e p55[a,b,c,d,e](a, b, c, d, e)
+Internal.Utilities.Library.Extras: g foldTriple[a,b,c,d,e,f,g](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,c]], Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.FSharpFunc`2[d,e]], Microsoft.FSharp.Core.FSharpFunc`2[e,Microsoft.FSharp.Core.FSharpFunc`2[f,g]], a, b, d, f)
+Internal.Utilities.Library.Extras: i foldQuadruple[a,b,c,d,e,f,g,h,i](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,c]], Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.FSharpFunc`2[d,e]], Microsoft.FSharp.Core.FSharpFunc`2[e,Microsoft.FSharp.Core.FSharpFunc`2[f,g]], Microsoft.FSharp.Core.FSharpFunc`2[g,Microsoft.FSharp.Core.FSharpFunc`2[h,i]], a, b, d, f, h)
+Internal.Utilities.Library.IPartialEqualityComparer: Internal.Utilities.Library.IPartialEqualityComparer`1[a] On[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Internal.Utilities.Library.IPartialEqualityComparer`1[b])
+Internal.Utilities.Library.IPartialEqualityComparer: Microsoft.FSharp.Collections.FSharpList`1[T] partialDistinctBy[T](Internal.Utilities.Library.IPartialEqualityComparer`1[T], Microsoft.FSharp.Collections.FSharpList`1[T])
 Internal.Utilities.Library.InterruptibleLazy: T force[T](Internal.Utilities.Library.InterruptibleLazy`1[T])
 Internal.Utilities.Library.InterruptibleLazy`1[T]: Boolean IsValueCreated
 Internal.Utilities.Library.InterruptibleLazy`1[T]: Boolean get_IsValueCreated()
@@ -12421,3 +13265,160 @@ Internal.Utilities.Library.InterruptibleLazy`1[T]: T Force()
 Internal.Utilities.Library.InterruptibleLazy`1[T]: T Value
 Internal.Utilities.Library.InterruptibleLazy`1[T]: T get_Value()
 Internal.Utilities.Library.InterruptibleLazy`1[T]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+Internal.Utilities.Library.Lazy: T force[T](System.Lazy`1[T])
+Internal.Utilities.Library.List: Boolean checkq[a](Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: Boolean existsSquared[a](Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[a]])
+Internal.Utilities.Library.List: Boolean existsi[a](Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: Boolean forallSquared[a](Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[a]])
+Internal.Utilities.Library.List: Boolean isSingleton[T](Microsoft.FSharp.Collections.FSharpList`1[T])
+Internal.Utilities.Library.List: Boolean lengthsEqAndForall2[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[b])
+Internal.Utilities.Library.List: Boolean memAssoc[a,b](a, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[a,b]])
+Internal.Utilities.Library.List: Boolean memq[a](a, Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: Int32 count[a](Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[b]] mapSquared[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[a]])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[b]] mapiSquared[a,b](Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[a,b]]], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[a]])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`4[a,b,c,d]] zip4[a,b,c,d](Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[b], Microsoft.FSharp.Collections.FSharpList`1[c], Microsoft.FSharp.Collections.FSharpList`1[d])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[T] duplicates[T](Microsoft.FSharp.Collections.FSharpList`1[T])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[T] mapq[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], Microsoft.FSharp.Collections.FSharpList`1[T])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[T] sortWithOrder[T](System.Collections.Generic.IComparer`1[T], Microsoft.FSharp.Collections.FSharpList`1[T])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[a] mapNth[a](Int32, Microsoft.FSharp.Core.FSharpFunc`2[a,a], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[a] prependIfSome[a](Microsoft.FSharp.Core.FSharpOption`1[a], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[b] collectSquared[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Collections.FSharpList`1[b]], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[a]])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[b] mapHeadTail[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: Microsoft.FSharp.Collections.FSharpList`1[c] collect2[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,Microsoft.FSharp.Collections.FSharpList`1[c]]], Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[b])
+Internal.Utilities.Library.List: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[a],a]] tryFrontAndBack[a](Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[a,Microsoft.FSharp.Collections.FSharpList`1[a]]] tryRemove[a](Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[a,System.Int32]] findi[a](Int32, Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: System.Collections.Generic.IComparer`1[Microsoft.FSharp.Collections.FSharpList`1[T]] order[T](System.Collections.Generic.IComparer`1[T])
+Internal.Utilities.Library.List: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[c]],a] mapFoldSquared[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Tuple`2[c,a]]], a, Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[b]])
+Internal.Utilities.Library.List: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[c]],a] mapiFoldSquared[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`3[System.Int32,System.Int32,b],System.Tuple`2[c,a]]], a, Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[b]])
+Internal.Utilities.Library.List: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[a],Microsoft.FSharp.Collections.FSharpList`1[a]] splitAfter[a](Int32, Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[a],Microsoft.FSharp.Collections.FSharpList`1[a]] takeUntil[a](Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[a],a] frontAndBack[a](Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[b],Microsoft.FSharp.Collections.FSharpList`1[c]] splitChoose[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpChoice`2[b,c]], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[c],a] collectFold[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[c],a]]], a, Microsoft.FSharp.Collections.FSharpList`1[b])
+Internal.Utilities.Library.List: System.Tuple`2[a,Microsoft.FSharp.Collections.FSharpList`1[a]] headAndTail[a](Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.List: System.Tuple`4[Microsoft.FSharp.Collections.FSharpList`1[a],Microsoft.FSharp.Collections.FSharpList`1[b],Microsoft.FSharp.Collections.FSharpList`1[c],Microsoft.FSharp.Collections.FSharpList`1[d]] unzip4[a,b,c,d](Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`4[a,b,c,d]])
+Internal.Utilities.Library.List: System.ValueTuple`2[Microsoft.FSharp.Collections.FSharpList`1[Result],State] vMapFold[T,State,Result](Microsoft.FSharp.Core.FSharpFunc`2[State,Microsoft.FSharp.Core.FSharpFunc`2[T,System.ValueTuple`2[Result,State]]], State, Microsoft.FSharp.Collections.FSharpList`1[T])
+Internal.Utilities.Library.List: Void iter3[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.Unit]]], Microsoft.FSharp.Collections.FSharpList`1[a], Microsoft.FSharp.Collections.FSharpList`1[b], Microsoft.FSharp.Collections.FSharpList`1[c])
+Internal.Utilities.Library.List: Void iterSquared[a](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[a]])
+Internal.Utilities.Library.List: a indexNotFound[a]()
+Internal.Utilities.Library.List: a[][] toArraySquared[a](Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[a]])
+Internal.Utilities.Library.List: b assoc[a,b](a, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[a,b]])
+Internal.Utilities.Library.LockAutoOpens: Internal.Utilities.Library.AnyCallerThreadToken AnyCallerThread
+Internal.Utilities.Library.LockAutoOpens: Internal.Utilities.Library.AnyCallerThreadToken get_AnyCallerThread()
+Internal.Utilities.Library.LockAutoOpens: Internal.Utilities.Library.CompilationThreadToken AssumeCompilationThreadWithoutEvidence()
+Internal.Utilities.Library.LockAutoOpens: Void DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent(Internal.Utilities.Library.CompilationThreadToken)
+Internal.Utilities.Library.LockAutoOpens: Void RequireCompilationThread(Internal.Utilities.Library.CompilationThreadToken)
+Internal.Utilities.Library.LockAutoOpens: a AssumeLockWithoutEvidence[a]()
+Internal.Utilities.Library.Map: Microsoft.FSharp.Collections.FSharpList`1[b] tryFindMulti[a,b](a, Microsoft.FSharp.Collections.FSharpMap`2[a,Microsoft.FSharp.Collections.FSharpList`1[b]])
+Internal.Utilities.Library.MapAutoOpens: Microsoft.FSharp.Collections.FSharpList`1[Value] Map`2.get_Values[Key,Value](Microsoft.FSharp.Collections.FSharpMap`2[Key,Value])
+Internal.Utilities.Library.MapAutoOpens: Microsoft.FSharp.Collections.FSharpMap`2[Key,Value] Map`2.AddMany[Key,Value](Microsoft.FSharp.Collections.FSharpMap`2[Key,Value], System.Collections.Generic.KeyValuePair`2[Key,Value][])
+Internal.Utilities.Library.MapAutoOpens: Microsoft.FSharp.Collections.FSharpMap`2[Key,Value] Map`2.AddOrModify[Key,Value](Microsoft.FSharp.Collections.FSharpMap`2[Key,Value], Key, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpOption`1[Value],Value])
+Internal.Utilities.Library.MapAutoOpens: Microsoft.FSharp.Collections.FSharpMap`2[Key,Value] Map`2.get_Empty.Static[Key,Value]()
+Internal.Utilities.Library.MultiMap: Boolean existsInRange[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], Microsoft.FSharp.Collections.FSharpMap`2[b,Microsoft.FSharp.Collections.FSharpList`1[a]])
+Internal.Utilities.Library.MultiMap: Microsoft.FSharp.Collections.FSharpList`1[b] find[a,b](a, Microsoft.FSharp.Collections.FSharpMap`2[a,Microsoft.FSharp.Collections.FSharpList`1[b]])
+Internal.Utilities.Library.MultiMap: Microsoft.FSharp.Collections.FSharpList`1[b] range[a,b](Microsoft.FSharp.Collections.FSharpMap`2[a,Microsoft.FSharp.Collections.FSharpList`1[b]])
+Internal.Utilities.Library.MultiMap: Microsoft.FSharp.Collections.FSharpMap`2[a,Microsoft.FSharp.Collections.FSharpList`1[b]] add[a,b](a, b, Microsoft.FSharp.Collections.FSharpMap`2[a,Microsoft.FSharp.Collections.FSharpList`1[b]])
+Internal.Utilities.Library.MultiMap: Microsoft.FSharp.Collections.FSharpMap`2[a,Microsoft.FSharp.Collections.FSharpList`1[b]] empty[a,b]()
+Internal.Utilities.Library.MultiMap: Microsoft.FSharp.Collections.FSharpMap`2[a,Microsoft.FSharp.Collections.FSharpList`1[b]] ofList[a,b](Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[a,b]])
+Internal.Utilities.Library.MultiMap: Microsoft.FSharp.Collections.FSharpMap`2[b,Microsoft.FSharp.Collections.FSharpList`1[a]] initBy[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], System.Collections.Generic.IEnumerable`1[a])
+Internal.Utilities.Library.NameMap: Boolean existsInRange[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], Microsoft.FSharp.Collections.FSharpMap`2[b,a])
+Internal.Utilities.Library.NameMap: Boolean exists[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], Microsoft.FSharp.Collections.FSharpMap`2[a,b])
+Internal.Utilities.Library.NameMap: Boolean forall[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], Microsoft.FSharp.Collections.FSharpMap`2[a,b])
+Internal.Utilities.Library.NameMap: Boolean isEmpty[T](Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: Boolean mem[T](System.String, Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: Boolean suball2[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean]], Microsoft.FSharp.Collections.FSharpMap`2[a,c], Microsoft.FSharp.Collections.FSharpMap`2[a,b])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,T]] toList[T](Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpList`1[b] range[a,b](Microsoft.FSharp.Collections.FSharpMap`2[a,b])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,T] add[T](System.String, T, Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,T] filterRange[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,T] layer[T](Microsoft.FSharp.Collections.FSharpMap`2[System.String,T], Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,T] ofList[T](Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,T]])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,T] ofSeq[T](System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,T]])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,a] mapFilter[T,a](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[a]], Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,a] map[T,a](Microsoft.FSharp.Core.FSharpFunc`2[T,a], Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,b] union[a,b](Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[a],b], System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Collections.FSharpMap`2[System.String,a]])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[a,b] empty[a,b]()
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[b,a] ofKeyedList[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Collections.FSharpMap`2[c,Microsoft.FSharp.Collections.FSharpList`1[a]] layerAdditive[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Collections.FSharpList`1[a],Microsoft.FSharp.Core.FSharpFunc`2[b,Microsoft.FSharp.Collections.FSharpList`1[a]]], Microsoft.FSharp.Collections.FSharpMap`2[c,b], Microsoft.FSharp.Collections.FSharpMap`2[c,Microsoft.FSharp.Collections.FSharpList`1[a]])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Core.FSharpOption`1[T] tryFind[T](System.String, Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: Microsoft.FSharp.Core.FSharpOption`1[a] tryFindInRange[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], Microsoft.FSharp.Collections.FSharpMap`2[b,a])
+Internal.Utilities.Library.NameMap: System.Tuple`2[Microsoft.FSharp.Collections.FSharpMap`2[System.String,T],Microsoft.FSharp.Collections.FSharpMap`2[System.String,T]] partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: System.Tuple`2[Microsoft.FSharp.Collections.FSharpMap`2[System.String,b],a] mapFold[a,T,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Tuple`2[b,a]]]], a, Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: T find[T](System.String, Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: Void iter[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Collections.FSharpMap`2[System.String,T])
+Internal.Utilities.Library.NameMap: a foldBackRange[T,a](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[a,a]], Microsoft.FSharp.Collections.FSharpMap`2[System.String,T], a)
+Internal.Utilities.Library.NameMap: a foldBack[T,a](Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[a,a]]], Microsoft.FSharp.Collections.FSharpMap`2[System.String,T], a)
+Internal.Utilities.Library.NameMap: c subfold2[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,c]], Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[d,Microsoft.FSharp.Core.FSharpFunc`2[b,Microsoft.FSharp.Core.FSharpFunc`2[c,c]]]], Microsoft.FSharp.Collections.FSharpMap`2[a,d], Microsoft.FSharp.Collections.FSharpMap`2[a,b], c)
+Internal.Utilities.Library.NameMultiMap: Boolean existsInRange[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]])
+Internal.Utilities.Library.NameMultiMap: Microsoft.FSharp.Collections.FSharpList`1[T] find[T](System.String, Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]])
+Internal.Utilities.Library.NameMultiMap: Microsoft.FSharp.Collections.FSharpList`1[T] rangeReversingEachBucket[T](Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]])
+Internal.Utilities.Library.NameMultiMap: Microsoft.FSharp.Collections.FSharpList`1[T] range[T](Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]])
+Internal.Utilities.Library.NameMultiMap: Microsoft.FSharp.Collections.FSharpList`1[a] chooseRange[T,a](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[a]], Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]])
+Internal.Utilities.Library.NameMultiMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]] add[T](System.String, T, Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]])
+Internal.Utilities.Library.NameMultiMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]] empty[T]()
+Internal.Utilities.Library.NameMultiMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]] initBy[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.String], System.Collections.Generic.IEnumerable`1[T])
+Internal.Utilities.Library.NameMultiMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]] ofList[T](Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,T]])
+Internal.Utilities.Library.NameMultiMap: Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[a]] map[T,a](Microsoft.FSharp.Core.FSharpFunc`2[T,a], Microsoft.FSharp.Collections.FSharpMap`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[T]])
+Internal.Utilities.Library.NullnessShims: Boolean isNotNull[T](T)
+Internal.Utilities.Library.NullnessShims: Boolean nullSafeEquality[T](T, T, Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]])
+Internal.Utilities.Library.NullnessShims: Microsoft.FSharp.Core.FSharpValueOption`1[System.String] |NonEmptyString|_|(System.String)
+Internal.Utilities.Library.NullnessShims: T op_BangBang[T](T)
+Internal.Utilities.Library.NullnessShims: b op_Concatenate[a,b](a, Microsoft.FSharp.Core.FSharpFunc`2[a,b])
+Internal.Utilities.Library.Option: Microsoft.FSharp.Core.FSharpOption`1[T] attempt[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+Internal.Utilities.Library.Option: System.Tuple`2[Microsoft.FSharp.Core.FSharpOption`1[c],a] mapFold[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpFunc`2[b,System.Tuple`2[c,a]]], a, Microsoft.FSharp.Core.FSharpOption`1[b])
+Internal.Utilities.Library.Order: Int32 toFunction[U](System.Collections.Generic.IComparer`1[U], U, U)
+Internal.Utilities.Library.Order: System.Collections.Generic.IComparer`1[T] orderBy[T,U](Microsoft.FSharp.Core.FSharpFunc`2[T,U])
+Internal.Utilities.Library.Order: System.Collections.Generic.IComparer`1[T] orderOn[T,U](Microsoft.FSharp.Core.FSharpFunc`2[T,U], System.Collections.Generic.IComparer`1[U])
+Internal.Utilities.Library.PervasiveAutoOpens: Boolean String.EndsWithOrdinal(System.String, System.String)
+Internal.Utilities.Library.PervasiveAutoOpens: Boolean String.EndsWithOrdinalIgnoreCase(System.String, System.String)
+Internal.Utilities.Library.PervasiveAutoOpens: Boolean String.StartsWithOrdinal(System.String, System.String)
+Internal.Utilities.Library.PervasiveAutoOpens: Boolean isNilOrSingleton[a](Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.PervasiveAutoOpens: Boolean isNil[a](Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.PervasiveAutoOpens: Boolean isSingleton[a](Microsoft.FSharp.Collections.FSharpList`1[a])
+Internal.Utilities.Library.PervasiveAutoOpens: Boolean op_EqualsEqualsEquals[a](a, a)
+Internal.Utilities.Library.PervasiveAutoOpens: Int32 LOH_SIZE_THRESHOLD_BYTES
+Internal.Utilities.Library.PervasiveAutoOpens: Int32 String.IndexOfOrdinal(System.String, System.String)
+Internal.Utilities.Library.PervasiveAutoOpens: Int32 String.IndexOfOrdinal(System.String, System.String, Int32)
+Internal.Utilities.Library.PervasiveAutoOpens: Int32 String.IndexOfOrdinal(System.String, System.String, Int32, Int32)
+Internal.Utilities.Library.PervasiveAutoOpens: Int32 get_LOH_SIZE_THRESHOLD_BYTES()
+Internal.Utilities.Library.PervasiveAutoOpens: Int32 op_GreaterGreaterGreaterAmp(Int32, Int32)
+Internal.Utilities.Library.PervasiveAutoOpens: Internal.Utilities.Library.InterruptibleLazy`1[a] notlazy[a](a)
+Internal.Utilities.Library.PervasiveAutoOpens: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit] get_reportTime()
+Internal.Utilities.Library.PervasiveAutoOpens: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit] reportTime
+Internal.Utilities.Library.PervasiveAutoOpens: Microsoft.FSharp.Core.FSharpValueOption`1[System.Exception] |RecoverableException|_|(System.Exception)
+Internal.Utilities.Library.PervasiveAutoOpens: T Async.RunImmediate.Static[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Internal.Utilities.Library.PervasiveAutoOpens: T |InterruptibleLazy|[T](Internal.Utilities.Library.InterruptibleLazy`1[T])
+Internal.Utilities.Library.PervasiveAutoOpens: a getHole[a](Microsoft.FSharp.Core.FSharpRef`1[Microsoft.FSharp.Core.FSharpOption`1[a]])
+Internal.Utilities.Library.PervasiveAutoOpens: a notFound[a]()
+Internal.Utilities.Library.PervasiveAutoOpens: d foldOn[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.FSharpFunc`2[b,d]], c, a)
+Internal.Utilities.Library.ResizeArray: a[][] chunkBySize[t,a](Int32, Microsoft.FSharp.Core.FSharpFunc`2[t,a], System.Collections.Generic.List`1[t])
+Internal.Utilities.Library.ResizeArray: a[][] mapToSmallArrayChunks[t,a](Microsoft.FSharp.Core.FSharpFunc`2[t,a], System.Collections.Generic.List`1[t])
+Internal.Utilities.Library.ResultOrException: Internal.Utilities.Library.ResultOrException`1[a] otherwise[a](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Internal.Utilities.Library.ResultOrException`1[a]], Internal.Utilities.Library.ResultOrException`1[a])
+Internal.Utilities.Library.ResultOrException: Internal.Utilities.Library.ResultOrException`1[a] raze[a](System.Exception)
+Internal.Utilities.Library.ResultOrException: Internal.Utilities.Library.ResultOrException`1[a] success[a](a)
+Internal.Utilities.Library.ResultOrException: Internal.Utilities.Library.ResultOrException`1[b] op_BarQmarkGreater[a,b](Internal.Utilities.Library.ResultOrException`1[a], Microsoft.FSharp.Core.FSharpFunc`2[a,b])
+Internal.Utilities.Library.ResultOrException: a ForceRaise[a](Internal.Utilities.Library.ResultOrException`1[a])
+Internal.Utilities.Library.Span: Boolean exists[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.Span`1[T])
+Internal.Utilities.Library.String: Boolean contains(System.String, Char)
+Internal.Utilities.Library.String: Boolean isLeadingIdentifierCharacterUpperCase(System.String)
+Internal.Utilities.Library.String: Char get(System.String, Int32)
+Internal.Utilities.Library.String: Char[] toCharArray(System.String)
+Internal.Utilities.Library.String: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.Unit] |Contains|_|(System.String, System.String)
+Internal.Utilities.Library.String: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.Unit] |StartsWith|_|(System.String, System.String)
+Internal.Utilities.Library.String: System.Collections.Generic.IComparer`1[System.String] get_order()
+Internal.Utilities.Library.String: System.Collections.Generic.IComparer`1[System.String] order
+Internal.Utilities.Library.String: System.String capitalize(System.String)
+Internal.Utilities.Library.String: System.String dropPrefix(System.String, System.String)
+Internal.Utilities.Library.String: System.String dropSuffix(System.String, System.String)
+Internal.Utilities.Library.String: System.String lowerCaseFirstChar(System.String)
+Internal.Utilities.Library.String: System.String lowercase(System.String)
+Internal.Utilities.Library.String: System.String make(Int32, Char)
+Internal.Utilities.Library.String: System.String sub(System.String, Int32, Int32)
+Internal.Utilities.Library.String: System.String uncapitalize(System.String)
+Internal.Utilities.Library.String: System.String uppercase(System.String)
+Internal.Utilities.Library.String: System.String[] getLines(System.String)
+Internal.Utilities.Library.String: System.String[] split(System.StringSplitOptions, System.String[], System.String)
+Internal.Utilities.Library.String: System.Tuple`2[System.String,Microsoft.FSharp.Core.FSharpOption`1[System.Int32]] extractTrailingIndex(System.String)
+Internal.Utilities.Library.Tables: Microsoft.FSharp.Core.FSharpFunc`2[a,b] memoize[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b])
