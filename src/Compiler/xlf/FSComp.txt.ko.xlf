@@ -2023,8 +2023,8 @@
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInheritDocError">
-        <source>XML documentation inheritdoc error: {0}</source>
-        <target state="new">XML documentation inheritdoc error: {0}</target>
+        <source>This XML comment is invalid: inheritdoc error: {0}</source>
+        <target state="new">This XML comment is invalid: inheritdoc error: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
