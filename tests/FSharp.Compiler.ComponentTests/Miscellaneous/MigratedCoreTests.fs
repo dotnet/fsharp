@@ -292,24 +292,6 @@ let ``members-factors-mutrec-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/me
 let ``members-factors-mutrec-FSI`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSI
 
 [<Fact>]
-let ``graph-FSC_DEBUG`` () = singleTestBuildAndRunVersion "perf/graph" FSC_DEBUG LangVersion.SupportsMl
-
-[<Fact>]
-let ``graph-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "perf/graph" FSC_OPTIMIZED LangVersion.SupportsMl
-
-[<Fact>]
-let ``graph-FSI`` () = singleTestBuildAndRunVersion "perf/graph" FSI LangVersion.SupportsMl
-
-[<Fact>]
-let ``nbody-FSC_DEBUG`` () = singleTestBuildAndRunVersion "perf/nbody" FSC_DEBUG LangVersion.SupportsMl
-
-[<Fact>]
-let ``nbody-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "perf/nbody" FSC_OPTIMIZED LangVersion.SupportsMl
-
-[<Fact>]
-let ``nbody-FSI`` () = singleTestBuildAndRunVersion "perf/nbody" FSI LangVersion.SupportsMl
-
-[<Fact>]
 let ``forexpression-FSC_DEBUG`` () = singleTestBuildAndRun "core/forexpression" FSC_DEBUG
 
 [<Fact>]

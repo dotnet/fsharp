@@ -2,7 +2,7 @@
 // Regression test for FSharp1.0:2106
 //<Expects id="FS0010" span="(22,25-22,32)" status="error"></Expects>
 
-#light 
+
 
 open Microsoft.FSharp.Control
 

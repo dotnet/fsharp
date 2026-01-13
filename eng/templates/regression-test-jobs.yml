@@ -60,14 +60,23 @@ jobs:
         Write-Host "Repository structure:"
         Get-ChildItem -Name
         
-        Write-Host "Verifying build script exists: ${{ item.buildScript }}"
-        if (Test-Path "${{ item.buildScript }}") {
-          Write-Host "Build script found: ${{ item.buildScript }}"
+        # Check if buildScript is a built-in dotnet command or a file-based script
+        # Note: buildScript comes from the pipeline YAML configuration (testMatrix parameter),
+        # not from external user input, so it's safe to use
+        $buildScript = "${{ item.buildScript }}"
+        if ($buildScript -like "dotnet*") {
+          Write-Host "Build command is a built-in dotnet command: $buildScript"
+          Write-Host "Skipping file existence check for built-in command"
         } else {
-          Write-Host "Build script not found: ${{ item.buildScript }}"
-          Write-Host "Available files in root:"
-          Get-ChildItem
-          exit 1
+          Write-Host "Verifying build script exists: $buildScript"
+          if (Test-Path $buildScript) {
+            Write-Host "Build script found: $buildScript"
+          } else {
+            Write-Host "Build script not found: $buildScript"
+            Write-Host "Available files in root:"
+            Get-ChildItem
+            exit 1
+          }
         }
       displayName: Checkout ${{ item.displayName }} at specific commit
 
@@ -144,15 +153,23 @@ jobs:
         Write-Host "============================================"
         Write-Host ""
         
-        # Use dotnet pack with binary logging on Windows to generate binlog files
-        # On Linux, execute the build script directly
-        if ($IsWindows) {
-          Write-Host "Running: dotnet pack build.proj -bl:build.binlog"
-          dotnet pack build.proj -bl:build.binlog
+        $buildScript = "${{ item.buildScript }}"
+        
+        # Check if it's a built-in dotnet command or a file-based script
+        # Note: buildScript comes from the pipeline YAML configuration (testMatrix parameter),
+        # not from external user input, so using Invoke-Expression is safe here
+        if ($buildScript -like "dotnet*") {
+          Write-Host "Executing built-in command: $buildScript"
+          Invoke-Expression $buildScript
+        } elseif ($IsWindows) {
+          # Execute the provided script on Windows
+          Write-Host "Executing file-based script: $buildScript"
+          & ".\$buildScript"
         } else {
-          Write-Host "Executing: ${{ item.buildScript }}"
-          chmod +x "${{ item.buildScript }}"
-          bash -c "./${{ item.buildScript }}"
+          # Execute the provided script on Linux
+          Write-Host "Executing file-based script: $buildScript"
+          chmod +x "$buildScript"
+          bash -c "./$buildScript"
         }
         $exitCode = $LASTEXITCODE
         

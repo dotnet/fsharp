@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #ActivePatterns 
-#light
+
 
 // Single case active pattern
 let (|Double|) x = (x, x)

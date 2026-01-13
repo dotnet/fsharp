@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeConstraints 
-#light
+
 // FSB 1742, Wrong ctor signature (in ctor constraint) is not reported as an error
 //<Expects id="FS0700" span="(13,15-13,40)" status="error">'new'.+constraint</Expects>
 // DefaultConstructorConstraint01.fs(12,15-12,40): error FS0191: 'new' constraints must take one argument of type 'unit' and return the constructed type.

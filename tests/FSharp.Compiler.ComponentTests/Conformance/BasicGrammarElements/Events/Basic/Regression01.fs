@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #Events 
-#light
+
 
 // FSB 942, mutable variable escapes its scope when used with an event handler
 // Verify that you can hook up event handlers to mutable variables

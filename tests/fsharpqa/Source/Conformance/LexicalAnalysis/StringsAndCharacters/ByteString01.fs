@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis 
-#light
+
 
 // Test the ability to specify byte strings
 let test = "ABC"B

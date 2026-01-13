@@ -2809,7 +2809,6 @@ type FSharpParsingOptions =
         DiagnosticOptions: FSharpDiagnosticOptions
         LangVersionText: string
         IsInteractive: bool
-        IndentationAwareSyntax: bool option
         StrictIndentation: bool option
         CompilingFSharpCore: bool
         IsExe: bool
@@ -2827,7 +2826,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = FSharpDiagnosticOptions.Default
             LangVersionText = LanguageVersion.Default.VersionText
             IsInteractive = false
-            IndentationAwareSyntax = None
             StrictIndentation = None
             CompilingFSharpCore = false
             IsExe = false
@@ -2841,7 +2839,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = tcConfig.diagnosticsOptions
             LangVersionText = tcConfig.langVersion.VersionText
             IsInteractive = isInteractive
-            IndentationAwareSyntax = tcConfig.indentationAwareSyntax
             StrictIndentation = tcConfig.strictIndentation
             CompilingFSharpCore = tcConfig.compilingFSharpCore
             IsExe = tcConfig.target.IsExe
@@ -2855,7 +2852,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = tcConfigB.diagnosticsOptions
             LangVersionText = tcConfigB.langVersion.VersionText
             IsInteractive = isInteractive
-            IndentationAwareSyntax = tcConfigB.indentationAwareSyntax
             StrictIndentation = tcConfigB.strictIndentation
             CompilingFSharpCore = tcConfigB.compilingFSharpCore
             IsExe = tcConfigB.target.IsExe
@@ -2943,21 +2939,7 @@ module internal ParseAndCheckFile =
                         )
             |]
 
-    let getLightSyntaxStatus fileName options =
-        let indentationAwareSyntaxOnByDefault =
-            List.exists (FileSystemUtils.checkSuffix fileName) FSharpIndentationAwareSyntaxFileSuffixes
-
-        let indentationSyntaxStatus =
-            if indentationAwareSyntaxOnByDefault then
-                (options.IndentationAwareSyntax <> Some false)
-            else
-                (options.IndentationAwareSyntax = Some true)
-
-        IndentationAwareSyntaxStatus(indentationSyntaxStatus, true)
-
-    let createLexerFunction fileName options lexbuf (errHandler: DiagnosticsHandler) (ct: CancellationToken) =
-        let indentationSyntaxStatus = getLightSyntaxStatus fileName options
-
+    let createLexerFunction options lexbuf (errHandler: DiagnosticsHandler) (ct: CancellationToken) =
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
         let conditionalDefines =
@@ -2970,18 +2952,10 @@ module internal ParseAndCheckFile =
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
         let lexargs =
-            mkLexargs (
-                conditionalDefines,
-                indentationSyntaxStatus,
-                lexResourceManager,
-                [],
-                errHandler.DiagnosticsLogger,
-                PathMap.empty,
-                options.ApplyLineDirectives
-            )
+            mkLexargs (conditionalDefines, lexResourceManager, [], errHandler.DiagnosticsLogger, PathMap.empty, options.ApplyLineDirectives)
 
         let tokenizer =
-            LexFilter.LexFilter(indentationSyntaxStatus, options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf, false)
+            LexFilter.LexFilter(options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf, false)
 
         if ct.CanBeCanceled then
             (fun _ ->
@@ -3015,7 +2989,7 @@ module internal ParseAndCheckFile =
             let errHandler =
                 DiagnosticsHandler(false, fileName, options.DiagnosticOptions, suggestNamesForErrors, false)
 
-            let lexfun = createLexerFunction fileName options lexbuf errHandler ct
+            let lexfun = createLexerFunction options lexbuf errHandler ct
 
             let parenTokensBalance t1 t2 =
                 match t1, t2 with
@@ -3126,7 +3100,7 @@ module internal ParseAndCheckFile =
         let parseResult =
             usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
 
-                let lexfun = createLexerFunction fileName options lexbuf errHandler ct
+                let lexfun = createLexerFunction options lexbuf errHandler ct
 
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase)
@@ -3986,14 +3960,16 @@ type FSharpCheckProjectResults
     override _.ToString() =
         "FSharpCheckProjectResults(" + projectFileName + ")"
 
-type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, tcState) =
+type FsiInteractiveChecker
+    (legacyReferenceResolver, tcConfig: TcConfig, tcGlobals: TcGlobals, tcImports: TcImports, tcState, ?keepAssemblyContents: bool) =
 
-    let keepAssemblyContents = false
+    let keepAssemblyContents = defaultArg keepAssemblyContents false
 
-    member _.ParseAndCheckInteraction(sourceText: ISourceText, ?userOpName: string) =
+    member _.ParseAndCheckInteraction(sourceText: ISourceText, ?userOpName: string, ?asmName: string) =
         cancellable {
             let userOpName = defaultArg userOpName "Unknown"
-            let fileName = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
+            let asmName = defaultArg asmName "stdin"
+            let fileName = Path.Combine(tcConfig.implicitIncludeDir, asmName + ".fsx")
             let suggestNamesForErrors = true // Will always be true, this is just for readability
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
             let parsingOptions =
@@ -4083,6 +4059,12 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
             let typeCheckResults =
                 FSharpCheckFileResults(fileName, errors, Some tcFileInfo, dependencyFiles, None, false)
 
+            let checkedImplFiles =
+                if keepAssemblyContents then
+                    tcFileInfo.ImplementationFile |> Option.map List.singleton
+                else
+                    None
+
             let details =
                 (tcGlobals,
                  tcImports,
@@ -4091,9 +4073,9 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                  Choice2Of2(tcFileInfo.ScopeSymbolUses |> Seq.singleton |> async.Return),
                  None,
                  (fun () -> None),
-                 mkSimpleAssemblyRef "stdin",
+                 mkSimpleAssemblyRef asmName,
                  tcState.TcEnvFromImpls.AccessRights,
-                 None,
+                 checkedImplFiles,
                  dependencyFiles,
                  Some projectOptions)
 

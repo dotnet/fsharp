@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Structs 
-#light
+
 namespace NS
   module M = 
     let mutable r = 0

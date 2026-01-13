@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #TypeInference 
-#light
+
 // attribute must match struct-end
 //<Expects id="FS0927" status="error">kind.*does not match</Expects>
 //<Expects id="FS0927" status="error">kind.*does not match</Expects>

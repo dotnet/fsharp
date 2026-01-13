@@ -3,7 +3,7 @@
 // Enum type definitions do not support negative literals
 // Negative literal with no space 
 // See FSHARP1.0:3714
-#light
+
 
 type EnumInt8       = | A1 = -10y
 type EnumInt16      = | A1 = -10s
