@@ -229,12 +229,16 @@
 
   <!-- Project references -->
   <ItemGroup>
+    <ProjectReference Include="FSharp.Compiler.Utilities.fsproj" />
+    <ProjectReference Include="FSharp.Compiler.AbstractIL.fsproj" />
+    <ProjectReference Include="FSharp.Compiler.SyntaxTree.fsproj" />
     <ProjectReference Include="FSharp.Compiler.TypedTree.fsproj" />
   </ItemGroup>
 
   <!-- InternalsVisibleTo for downstream split projects -->
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Compiler.Optimize" />
+    <InternalsVisibleTo Include="FSharp.Compiler.CodeGen" />
   </ItemGroup>
 
   <!-- Package references for netstandard2.0 -->

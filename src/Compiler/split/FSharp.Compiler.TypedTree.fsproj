@@ -49,6 +49,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Compiler.Checking" />
     <InternalsVisibleTo Include="FSharp.Compiler.Optimize" />
+    <InternalsVisibleTo Include="FSharp.Compiler.CodeGen" />
   </ItemGroup>
 
   <ItemGroup>

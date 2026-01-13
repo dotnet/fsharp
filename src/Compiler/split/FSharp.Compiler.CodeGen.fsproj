@@ -11,7 +11,7 @@
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
     <NoWarn>$(NoWarn);NU5125</NoWarn>
     <NoWarn>$(NoWarn);64;1204</NoWarn> <!--Temporary fix for sourcebuild -->
-    <AssemblyName>FSharp.Compiler.Optimize</AssemblyName>
+    <AssemblyName>FSharp.Compiler.CodeGen</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <Nullable>enable</Nullable>
@@ -47,54 +47,30 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Optimize source files in order from main fsproj -->
-    <Compile Include="..\Optimize\Optimizer.fsi">
-      <Link>Optimize\Optimizer.fsi</Link>
+    <!-- CodeGen source files in order from main fsproj -->
+    <Compile Include="..\CodeGen\IlxGenSupport.fsi">
+      <Link>CodeGen\IlxGenSupport.fsi</Link>
     </Compile>
-    <Compile Include="..\Optimize\Optimizer.fs">
-      <Link>Optimize\Optimizer.fs</Link>
+    <Compile Include="..\CodeGen\IlxGenSupport.fs">
+      <Link>CodeGen\IlxGenSupport.fs</Link>
     </Compile>
-    <Compile Include="..\Optimize\DetupleArgs.fsi">
-      <Link>Optimize\DetupleArgs.fsi</Link>
+    <Compile Include="..\CodeGen\EraseClosures.fsi">
+      <Link>CodeGen\EraseClosures.fsi</Link>
     </Compile>
-    <Compile Include="..\Optimize\DetupleArgs.fs">
-      <Link>Optimize\DetupleArgs.fs</Link>
+    <Compile Include="..\CodeGen\EraseClosures.fs">
+      <Link>CodeGen\EraseClosures.fs</Link>
     </Compile>
-    <Compile Include="..\Optimize\InnerLambdasToTopLevelFuncs.fsi">
-      <Link>Optimize\InnerLambdasToTopLevelFuncs.fsi</Link>
+    <Compile Include="..\CodeGen\EraseUnions.fsi">
+      <Link>CodeGen\EraseUnions.fsi</Link>
     </Compile>
-    <Compile Include="..\Optimize\InnerLambdasToTopLevelFuncs.fs">
-      <Link>Optimize\InnerLambdasToTopLevelFuncs.fs</Link>
+    <Compile Include="..\CodeGen\EraseUnions.fs">
+      <Link>CodeGen\EraseUnions.fs</Link>
     </Compile>
-    <Compile Include="..\Optimize\LowerCalls.fsi">
-      <Link>Optimize\LowerCalls.fsi</Link>
+    <Compile Include="..\CodeGen\IlxGen.fsi">
+      <Link>CodeGen\IlxGen.fsi</Link>
     </Compile>
-    <Compile Include="..\Optimize\LowerCalls.fs">
-      <Link>Optimize\LowerCalls.fs</Link>
-    </Compile>
-    <Compile Include="..\Optimize\LowerSequences.fsi">
-      <Link>Optimize\LowerSequences.fsi</Link>
-    </Compile>
-    <Compile Include="..\Optimize\LowerSequences.fs">
-      <Link>Optimize\LowerSequences.fs</Link>
-    </Compile>
-    <Compile Include="..\Optimize\LowerComputedCollections.fsi">
-      <Link>Optimize\LowerComputedCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\Optimize\LowerComputedCollections.fs">
-      <Link>Optimize\LowerComputedCollections.fs</Link>
-    </Compile>
-    <Compile Include="..\Optimize\LowerStateMachines.fsi">
-      <Link>Optimize\LowerStateMachines.fsi</Link>
-    </Compile>
-    <Compile Include="..\Optimize\LowerStateMachines.fs">
-      <Link>Optimize\LowerStateMachines.fs</Link>
-    </Compile>
-    <Compile Include="..\Optimize\LowerLocalMutables.fsi">
-      <Link>Optimize\LowerLocalMutables.fsi</Link>
-    </Compile>
-    <Compile Include="..\Optimize\LowerLocalMutables.fs">
-      <Link>Optimize\LowerLocalMutables.fs</Link>
+    <Compile Include="..\CodeGen\IlxGen.fs">
+      <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
   </ItemGroup>
 
@@ -105,11 +81,7 @@
     <ProjectReference Include="FSharp.Compiler.SyntaxTree.fsproj" />
     <ProjectReference Include="FSharp.Compiler.TypedTree.fsproj" />
     <ProjectReference Include="FSharp.Compiler.Checking.fsproj" />
-  </ItemGroup>
-
-  <!-- InternalsVisibleTo for downstream split projects -->
-  <ItemGroup>
-    <InternalsVisibleTo Include="FSharp.Compiler.CodeGen" />
+    <ProjectReference Include="FSharp.Compiler.Optimize.fsproj" />
   </ItemGroup>
 
   <!-- Package references for netstandard2.0 -->

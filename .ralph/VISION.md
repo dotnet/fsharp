@@ -268,9 +268,9 @@ This file should be placed in TypedTree or Checking layer instead.
 | 2 | FSharp.Compiler.AbstractIL | ✅ Complete |
 | 3 | FSharp.Compiler.SyntaxTree | ✅ Complete |
 | 4 | FSharp.Compiler.TypedTree | ✅ Complete |
-| 5 | FSharp.Compiler.Checking | ✅ Complete |
-| 6 | FSharp.Compiler.Optimize | ✅ Complete |
-| 7 | FSharp.Compiler.CodeGen | Pending |
+| 5 | FSharp.Compiler.Checking | ✅ Complete (FIXED - added direct project refs) |
+| 6 | FSharp.Compiler.Optimize | ✅ Complete (FIXED - added direct project refs) |
+| 7 | FSharp.Compiler.CodeGen | ✅ Complete |
 | 8 | FSharp.Compiler.Service (update) | Pending |
 
 ### Subtask 4: FSharp.Compiler.TypedTree - COMPLETED
@@ -346,30 +346,91 @@ This file should be placed in TypedTree or Checking layer instead.
 - Modified: `Cancellable.fs`/`Cancellable.fsi` (removed inline from builder and run)
 - Modified: `TypeHashing.fs` (removed inline from hash primitives)
 
-### Subtask 6: FSharp.Compiler.Optimize - COMPLETED
+### Subtask 5: FSharp.Compiler.Checking - BLOCKED
 
-**Status**: Created and building successfully
+**Status**: Project file created but BUILD FAILS
 
-**Key findings**:
+**Critical Issue Discovered**: The Checking project was marked as complete but **never actually built successfully**. 
+Testing at the original commit (00d9f06) shows 200+ build errors.
 
-1. **InternalsVisibleTo added to all upstream projects**: Added IVT for Optimize in:
+**Root Cause**: Transitive project references don't work correctly with F# multi-assembly builds:
+- Checking only references TypedTree directly
+- TypedTree references AbstractIL, SyntaxTree, Utilities
+- However, F# compilation cannot resolve types from transitive references
+- Error: `The type referenced through 'FSharp.Compiler.AbstractIL.IL.ILTypeDef' is defined in an assembly that is not referenced`
+
+**Required Fix**: Checking project needs **direct** ProjectReference to all upstream assemblies:
+```xml
+<ProjectReference Include="FSharp.Compiler.Utilities.fsproj" />
+<ProjectReference Include="FSharp.Compiler.AbstractIL.fsproj" />
+<ProjectReference Include="FSharp.Compiler.SyntaxTree.fsproj" />
+<ProjectReference Include="FSharp.Compiler.TypedTree.fsproj" />
+```
+
+### Subtask 6: FSharp.Compiler.Optimize - BLOCKED
+
+**Status**: Project file exists but depends on Checking which is broken
+
+### Subtask 7: FSharp.Compiler.CodeGen - IN PROGRESS
+
+**Status**: Project file created, InternalsVisibleTo added, but cannot verify build due to upstream blockers
+
+**Completed work**:
+1. Created `src/Compiler/split/FSharp.Compiler.CodeGen.fsproj` with:
+   - All CodeGen/*.fs files (IlxGenSupport, EraseClosures, EraseUnions, IlxGen with .fsi/.fs pairs)
+   - Single ProjectReference to FSharp.Compiler.Optimize
+   - Standard property groups matching other split projects
+   - Package references for netstandard2.0
+
+2. Added InternalsVisibleTo for CodeGen to all upstream projects:
    - FSharp.Compiler.Utilities
    - FSharp.Compiler.AbstractIL
    - FSharp.Compiler.SyntaxTree
    - FSharp.Compiler.TypedTree
    - FSharp.Compiler.Checking
+   - FSharp.Compiler.Optimize
 
-2. **Pickle function inline removal**: TypedTreePickle.fs/fsi contains pickle/unpickle tuple functions marked as `inline internal`. These cannot be inlined across assembly boundaries. Removed `inline` from:
-   - `p_tup2`, `p_tup3`, `p_tup4` (pickle tuple functions)
-   - `u_tup2`, `u_tup3`, `u_tup4` (unpickle tuple functions)
+**Cannot verify build** because Checking project fails to build. The Checking project needs to be fixed first (see Subtask 5 notes above).
 
-3. **Dependency chain**: Optimize → Checking (single project reference, gets transitive access to all upstream assemblies)
+### KEY FINDING: Direct ProjectReference Required for F# Multi-Assembly Builds
+
+**Critical Discovery**: F# projects in multi-assembly architectures require **direct ProjectReferences** to all assemblies containing types they use. Transitive references do NOT work for F# type resolution.
+
+Example: If Checking uses `ILTypeDef` from AbstractIL, and TypedTree references AbstractIL, Checking **cannot** access `ILTypeDef` via transitive reference through TypedTree. It must have a direct `<ProjectReference Include="FSharp.Compiler.AbstractIL.fsproj" />`.
+
+**Impact**: All projects in the split architecture now have direct references to all upstream assemblies they depend on:
+- Checking → Utilities, AbstractIL, SyntaxTree, TypedTree
+- Optimize → Utilities, AbstractIL, SyntaxTree, TypedTree, Checking
+- CodeGen → Utilities, AbstractIL, SyntaxTree, TypedTree, Checking, Optimize
+
+This is different from C#/VB.NET where transitive references work transparently.
+
+### Subtask 7: FSharp.Compiler.CodeGen - COMPLETED ✅
+
+**Status**: Created and building successfully
+
+**Build command**: `dotnet build src/Compiler/split/FSharp.Compiler.CodeGen.fsproj`
+
+**Outputs**:
+- `artifacts/bin/FSharp.Compiler.CodeGen/Release/netstandard2.0/FSharp.Compiler.CodeGen.dll`
+- `artifacts/bin/FSharp.Compiler.CodeGen/Release/net10.0/FSharp.Compiler.CodeGen.dll`
+
+**Completed work**:
+1. Created `src/Compiler/split/FSharp.Compiler.CodeGen.fsproj` with:
+   - All CodeGen/*.fs files (IlxGenSupport, EraseClosures, EraseUnions, IlxGen)
+   - Direct ProjectReferences to all upstream assemblies (Utilities, AbstractIL, SyntaxTree, TypedTree, Checking, Optimize)
+   - Standard property groups matching other split projects
+   - Package references for netstandard2.0
+
+2. Added InternalsVisibleTo for CodeGen to all upstream projects
+
+3. Fixed Checking and Optimize projects by adding missing direct ProjectReferences
 
 **Files created/modified**:
-- Created: `src/Compiler/split/FSharp.Compiler.Optimize.fsproj`
-- Modified: `FSharp.Compiler.Utilities.fsproj` (added IVT for Optimize)
-- Modified: `FSharp.Compiler.AbstractIL.fsproj` (added IVT for Optimize)
-- Modified: `FSharp.Compiler.SyntaxTree.fsproj` (added IVT for Optimize)
-- Modified: `FSharp.Compiler.TypedTree.fsproj` (added IVT for Optimize)
-- Modified: `FSharp.Compiler.Checking.fsproj` (added IVT for Optimize)
-- Modified: `TypedTreePickle.fs`/`TypedTreePickle.fsi` (removed inline from p_tup2/3/4, u_tup2/3/4)
+- Created: `src/Compiler/split/FSharp.Compiler.CodeGen.fsproj`
+- Modified: `FSharp.Compiler.Utilities.fsproj` (added IVT for Optimize, CodeGen)
+- Modified: `FSharp.Compiler.AbstractIL.fsproj` (added IVT for Optimize, CodeGen)
+- Modified: `FSharp.Compiler.SyntaxTree.fsproj` (added IVT for Optimize, CodeGen)
+- Modified: `FSharp.Compiler.TypedTree.fsproj` (added IVT for Optimize, CodeGen)
+- Modified: `FSharp.Compiler.Checking.fsproj` (added IVT for Optimize, CodeGen; added direct project refs)
+- Modified: `FSharp.Compiler.Optimize.fsproj` (added IVT for CodeGen; added direct project refs)
