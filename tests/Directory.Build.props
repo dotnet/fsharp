@@ -36,6 +36,8 @@
     <!-- Clear RuntimeIdentifier(s) to avoid conflict with PlatformTarget -->
     <RuntimeIdentifier />
     <RuntimeIdentifiers />
+    <!-- Suppress architecture mismatch warnings for test projects that reference x86 compiler tools -->
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
   </PropertyGroup>
 
 </Project>
