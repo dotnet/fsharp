@@ -198,6 +198,7 @@
   <!-- InternalsVisibleTo for downstream split projects -->
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Compiler.TypedTree" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Checking" />
   </ItemGroup>
 
   <!-- Package references for netstandard2.0 -->

@@ -184,6 +184,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Compiler.SyntaxTree" />
     <InternalsVisibleTo Include="FSharp.Compiler.TypedTree" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Checking" />
   </ItemGroup>
 
   <!-- Package references for netstandard2.0 -->

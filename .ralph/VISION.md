@@ -268,7 +268,7 @@ This file should be placed in TypedTree or Checking layer instead.
 | 2 | FSharp.Compiler.AbstractIL | ✅ Complete |
 | 3 | FSharp.Compiler.SyntaxTree | ✅ Complete |
 | 4 | FSharp.Compiler.TypedTree | ✅ Complete |
-| 5 | FSharp.Compiler.Checking | Pending |
+| 5 | FSharp.Compiler.Checking | ✅ Complete |
 | 6 | FSharp.Compiler.Optimize | Pending |
 | 7 | FSharp.Compiler.CodeGen | Pending |
 | 8 | FSharp.Compiler.Service (update) | Pending |
@@ -303,3 +303,45 @@ This file should be placed in TypedTree or Checking layer instead.
 - Modified: `zset.fs`/`zset.fsi` (public type/module)
 - Modified: `zmap.fs`/`zmap.fsi` (public type/module)
 - Modified: `TaggedCollections.fs`/`TaggedCollections.fsi` (public Set/Map types)
+
+### Subtask 5: FSharp.Compiler.Checking - COMPLETED
+
+**Status**: Created and building successfully
+
+**Key findings**:
+
+1. **Extensive inline function modifications required**: Cross-assembly inlining doesn't work for `inline` functions in `internal` modules, even with `InternalsVisibleTo`. Multiple inline functions had to have their `inline` attribute removed:
+   - `TypedTreeOps.fs`: `IsTyparTyWithConstraint`, `HasConstraint` (removed inline)
+   - `SyntaxTreeOps.fs`: `findSynAttribute` (removed inline)
+   - `Cancellable.fs`: All `CancellableBuilder` methods (removed inline and `[<InlineIfLambda>]`)
+   - `Cancellable.fs`: `Cancellable.run` (removed inline)
+   - `TypeHashing.fs`: `hashText`, `combineHash`, `pipeToHash`, `addFullStructuralHash`, `hashListOrderMatters`, `hashListOrderIndependent` (removed inline and `[<InlineIfLambda>]`)
+
+2. **DiagnosticsLogger module visibility**: Changed from `module internal` to `module` (public) to enable cross-assembly use of inline functions like `ErrorD`. Had to add explicit `internal` markers to types that should remain internal:
+   - `DiagnosticsThreadStatics`
+   - `SuppressLanguageFeatureCheck`
+   - Language feature functions (`languageFeatureError`, `checkLanguageFeatureError`, etc.)
+   - `GuardCancellable` method
+
+3. **InternalsVisibleTo added**:
+   - Utilities → Checking
+   - AbstractIL → Checking
+   - SyntaxTree → Checking
+   - TypedTree → Checking
+
+4. **Performance trade-off**: Removing `inline` from these functions may have a minor performance impact, but is necessary for the multi-assembly architecture. The affected functions are:
+   - Type constraint checking (relatively low-frequency operations)
+   - Cancellable computation expression (used for cancellation-aware code)
+   - Hash functions (used in signature hashing)
+
+**Files created/modified**:
+- Created: `src/Compiler/split/FSharp.Compiler.Checking.fsproj`
+- Modified: `FSharp.Compiler.Utilities.fsproj` (added IVT for Checking)
+- Modified: `FSharp.Compiler.AbstractIL.fsproj` (added IVT for Checking)
+- Modified: `FSharp.Compiler.SyntaxTree.fsproj` (added IVT for Checking)
+- Modified: `FSharp.Compiler.TypedTree.fsproj` (added IVT for Checking)
+- Modified: `DiagnosticsLogger.fsi` (made module public, added internal markers)
+- Modified: `TypedTreeOps.fs`/`TypedTreeOps.fsi` (removed inline from specific functions)
+- Modified: `SyntaxTreeOps.fs`/`SyntaxTreeOps.fsi` (removed inline from findSynAttribute)
+- Modified: `Cancellable.fs`/`Cancellable.fsi` (removed inline from builder and run)
+- Modified: `TypeHashing.fs` (removed inline from hash primitives)

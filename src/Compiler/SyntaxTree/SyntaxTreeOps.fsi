@@ -45,7 +45,7 @@ val mkSynCompGenSimplePatVar: id: Ident -> SynSimplePat
 
 val pushUnaryArg: expr: SynExpr -> arg: Ident -> SynExpr
 
-val inline findSynAttribute: attrName: string -> synAttrs: SynAttributes -> bool
+val findSynAttribute: attrName: string -> synAttrs: SynAttributes -> bool
 
 [<return: Struct>]
 val (|LetOrUse|_|): expr: SynExpr -> (SynLetOrUse * bool * bool) voption

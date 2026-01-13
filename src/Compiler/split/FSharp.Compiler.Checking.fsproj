@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
+    <NoWarn>$(NoWarn);57</NoWarn> <!-- Experimental -->
+    <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
+    <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
+    <NoWarn>$(NoWarn);NU5125</NoWarn>
+    <NoWarn>$(NoWarn);64;1204</NoWarn> <!--Temporary fix for sourcebuild -->
+    <AssemblyName>FSharp.Compiler.Checking</AssemblyName>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <Nullable>enable</Nullable>
+    <!-- Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations.
+         Therefore we want to use the latest BCL APIs from NetCurrent.
+         We are still not building the actual product in NetCurrent, so for official builds we remain as ns2.0.
+         For 'BUILDING_USING_DOTNET' builds, we still want latest BCL annotations, so that contributors can get related warnings locally.
+     -->
+    <TargetFrameworks Condition=" '$(OfficialBuildId)' == '' AND '$(FSharpNetCoreProductTargetFramework)' != '' AND '$(Configuration)' != 'Proto' AND '$(SKIP_NETCURRENT_FSC_BUILD)' != 'true' ">$(FSharpNetCoreProductTargetFramework);$(TargetFrameworks)</TargetFrameworks>
+    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
+    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
+    <!-- 3218: ArgumentsInSigAndImplMismatch -->
+    <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
+    <!-- 3390: xmlDocBadlyFormed -->
+    <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+    <!-- 3261: Nullness warning - not equivalent - currently triggers when proto builds source files like Fscomp.fs -->
+    <OtherFlags Condition="'$(Configuration)' == 'Proto'">$(OtherFlags) --nowarn:3261</OtherFlags>
+    <!-- generate IL filter blocks in order to prevent StackOverFlowException in TcExpr guarded with |RecoverableException| active pattern-->
+    <OtherFlags>$(OtherFlags) --generate-filter-blocks</OtherFlags>
+    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+    <NoOptimizationData>false</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Checking source files in order from main fsproj -->
+    <Compile Include="..\Checking\import.fsi">
+      <Link>Checking\import.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\import.fs">
+      <Link>Checking\import.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\TypeHierarchy.fsi">
+      <Link>Checking\TypeHierarchy.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\TypeHierarchy.fs">
+      <Link>Checking\TypeHierarchy.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\infos.fsi">
+      <Link>Checking\infos.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\infos.fs">
+      <Link>Checking\infos.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\AccessibilityLogic.fsi">
+      <Link>Checking\AccessibilityLogic.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\AccessibilityLogic.fs">
+      <Link>Checking\AccessibilityLogic.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\AttributeChecking.fsi">
+      <Link>Checking\AttributeChecking.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\AttributeChecking.fs">
+      <Link>Checking\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\TypeRelations.fsi">
+      <Link>Checking\TypeRelations.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\TypeRelations.fs">
+      <Link>Checking\TypeRelations.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\InfoReader.fsi">
+      <Link>Checking\InfoReader.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\InfoReader.fs">
+      <Link>Checking\InfoReader.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\NicePrint.fsi">
+      <Link>Checking\NicePrint.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\NicePrint.fs">
+      <Link>Checking\NicePrint.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\AugmentWithHashCompare.fsi">
+      <Link>Checking\AugmentWithHashCompare.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\AugmentWithHashCompare.fs">
+      <Link>Checking\AugmentWithHashCompare.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\NameResolution.fsi">
+      <Link>Checking\NameResolution.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\NameResolution.fs">
+      <Link>Checking\NameResolution.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\SignatureConformance.fsi">
+      <Link>Checking\SignatureConformance.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\SignatureConformance.fs">
+      <Link>Checking\SignatureConformance.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\MethodOverrides.fsi">
+      <Link>Checking\MethodOverrides.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\MethodOverrides.fs">
+      <Link>Checking\MethodOverrides.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\MethodCalls.fsi">
+      <Link>Checking\MethodCalls.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\MethodCalls.fs">
+      <Link>Checking\MethodCalls.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\PatternMatchCompilation.fsi">
+      <Link>Checking\PatternMatchCompilation.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\PatternMatchCompilation.fs">
+      <Link>Checking\PatternMatchCompilation.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\ConstraintSolver.fsi">
+      <Link>Checking\ConstraintSolver.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\ConstraintSolver.fs">
+      <Link>Checking\ConstraintSolver.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckFormatStrings.fsi">
+      <Link>Checking\CheckFormatStrings.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckFormatStrings.fs">
+      <Link>Checking\CheckFormatStrings.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\FindUnsolved.fsi">
+      <Link>Checking\FindUnsolved.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\FindUnsolved.fs">
+      <Link>Checking\FindUnsolved.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\QuotationTranslator.fsi">
+      <Link>Checking\QuotationTranslator.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\QuotationTranslator.fs">
+      <Link>Checking\QuotationTranslator.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\PostInferenceChecks.fsi">
+      <Link>Checking\PostInferenceChecks.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\PostInferenceChecks.fs">
+      <Link>Checking\PostInferenceChecks.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\TailCallChecks.fsi">
+      <Link>Checking\TailCallChecks.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\TailCallChecks.fs">
+      <Link>Checking\TailCallChecks.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckBasics.fsi">
+      <Link>Checking\CheckBasics.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckBasics.fs">
+      <Link>Checking\CheckBasics.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckRecordSyntaxHelpers.fsi">
+      <Link>Checking\CheckRecordSyntaxHelpers.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckRecordSyntaxHelpers.fs">
+      <Link>Checking\CheckRecordSyntaxHelpers.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\Expressions\CheckExpressionsOps.fs">
+      <Link>Checking\Expressions\CheckExpressionsOps.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\Expressions\CheckExpressions.fsi">
+      <Link>Checking\Expressions\CheckExpressions.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\Expressions\CheckExpressions.fs">
+      <Link>Checking\Expressions\CheckExpressions.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckPatterns.fsi">
+      <Link>Checking\CheckPatterns.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckPatterns.fs">
+      <Link>Checking\CheckPatterns.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\Expressions\CheckComputationExpressions.fsi">
+      <Link>Checking\Expressions\CheckComputationExpressions.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\Expressions\CheckComputationExpressions.fs">
+      <Link>Checking\Expressions\CheckComputationExpressions.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\Expressions\CheckSequenceExpressions.fs">
+      <Link>Checking\Expressions\CheckSequenceExpressions.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\Expressions\CheckArrayOrListComputedExpressions.fs">
+      <Link>Checking\Expressions\CheckArrayOrListComputedExpressions.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckIncrementalClasses.fsi">
+      <Link>Checking\CheckIncrementalClasses.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckIncrementalClasses.fs">
+      <Link>Checking\CheckIncrementalClasses.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckDeclarations.fsi">
+      <Link>Checking\CheckDeclarations.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\CheckDeclarations.fs">
+      <Link>Checking\CheckDeclarations.fs</Link>
+    </Compile>
+    <Compile Include="..\Checking\SignatureHash.fsi">
+      <Link>Checking\SignatureHash.fsi</Link>
+    </Compile>
+    <Compile Include="..\Checking\SignatureHash.fs">
+      <Link>Checking\SignatureHash.fs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <!-- Project references -->
+  <ItemGroup>
+    <ProjectReference Include="FSharp.Compiler.TypedTree.fsproj" />
+  </ItemGroup>
+
+  <!-- Package references for netstandard2.0 -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+  </ItemGroup>
+
+</Project>

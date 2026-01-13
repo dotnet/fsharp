@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.DiagnosticsLogger
+module FSharp.Compiler.DiagnosticsLogger
 
 open System
 open FSharp.Compiler.Diagnostics
@@ -245,7 +245,7 @@ type CapturingDiagnosticsLogger =
 
 /// Thread statics for the installed diagnostic logger
 [<Class>]
-type DiagnosticsThreadStatics =
+type internal DiagnosticsThreadStatics =
 
     static member BuildPhase: BuildPhase with get, set
 
@@ -436,22 +436,22 @@ val NormalizeErrorString: text: string -> string
 /// Indicates whether a language feature check should be skipped. Typically used in recursive functions
 /// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
 [<RequireQualifiedAccess>]
-type SuppressLanguageFeatureCheck =
+type internal SuppressLanguageFeatureCheck =
     | Yes
     | No
 
-val languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn
+val internal languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn
 
-val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
+val internal checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
-val tryCheckLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> bool
+val internal tryCheckLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> bool
 
-val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
+val internal checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
-val tryLanguageFeatureErrorOption:
+val internal tryLanguageFeatureErrorOption:
     langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn option
 
-val languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
+val internal languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
 
 module internal StackGuardMetrics =
     val Listen: unit -> IDisposable
@@ -469,7 +469,7 @@ type StackGuard =
         [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
             'T
 
-    member GuardCancellable: Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
+    member internal GuardCancellable: Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
 
 /// This represents the global state established as each task function runs as part of the build.
 ///

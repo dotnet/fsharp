@@ -18,12 +18,12 @@ module internal HashingPrimitives =
 
     type Hash = int
 
-    let inline hashText (s: string) : Hash = hash s
-    let inline combineHash acc y : Hash = (acc <<< 1) + y + 631
-    let inline pipeToHash (value: Hash) (acc: Hash) = combineHash acc value
-    let inline addFullStructuralHash value (acc: Hash) = combineHash acc (hash value)
+    let hashText (s: string) : Hash = hash s
+    let combineHash acc y : Hash = (acc <<< 1) + y + 631
+    let pipeToHash (value: Hash) (acc: Hash) = combineHash acc value
+    let addFullStructuralHash value (acc: Hash) = combineHash acc (hash value)
 
-    let inline hashListOrderMatters ([<InlineIfLambda>] func) (items: #seq<'T>) : Hash =
+    let hashListOrderMatters (func: 'T -> Hash) (items: #seq<'T>) : Hash =
         let mutable acc = 0
 
         for i in items do
@@ -34,7 +34,7 @@ module internal HashingPrimitives =
 
         acc
 
-    let inline hashListOrderIndependent ([<InlineIfLambda>] func) (items: #seq<'T>) : Hash =
+    let hashListOrderIndependent (func: 'T -> Hash) (items: #seq<'T>) : Hash =
         let mutable acc = 0
 
         for i in items do

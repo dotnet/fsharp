@@ -114,7 +114,7 @@ let rec pushUnaryArg expr arg =
 
 /// CAUTION: This function operates over the untyped tree, so should be used only when absolutely necessary. It doesn't verify assembly origine nor does it respect type aliases.
 /// Also, keep in mind that it will only check last part of the assembly (with or without the `Attribute` suffix).
-let inline findSynAttribute (attrName: string) (synAttrs: SynAttributes) =
+let findSynAttribute (attrName: string) (synAttrs: SynAttributes) =
     let attributesToSearch =
         if attrName.EndsWith("Attribute") then
             set [ attrName; attrName.Substring(0, attrName.Length - 9) ]

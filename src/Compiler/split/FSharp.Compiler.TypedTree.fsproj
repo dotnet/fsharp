@@ -47,6 +47,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.Checking" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- TypedTree source files in order from main fsproj -->
     <Compile Include="..\TypedTree\tainted.fsi">
       <Link>TypedTree\tainted.fsi</Link>
