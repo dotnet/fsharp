@@ -1,23 +1,21 @@
 # `<inheritdoc>` XML Documentation Implementation
 
-## OVERALL PROGRESS: 100% Complete - VERIFIED BY 23 PASSING TESTS
+## OVERALL PROGRESS: 95% Complete
 
 ```
-Types with explicit cref:   ████████████████████ 100% (6 tests)
-Types with implicit:        ████████████████████ 100% (2 tests)  
-Methods with explicit cref: ████████████████████ 100% (2 tests)
-Methods with implicit:      ████████████████████ 100% (3 tests)
-Properties with explicit:   ████████████████████ 100% (1 test)
-Properties with implicit:   ████████████████████ 100% (1 test)
-Generic type crefs:         ████████████████████ 100% (1 test)
-Nested type crefs:          ████████████████████ 100% (1 test)
-Cross-module resolution:    ████████████████████ 100% (1 test)
-External IL types:          ████████████████████ 100% (2 tests)
-Tooltips/IDE:               ████████████████████ 100% (all tests)
-Cycle detection:            ████████████████████ 100% (1 test)
+Core InheritDoc Logic:      ████████████████████ 100% (23 tests passing)
+Tooltip Integration:        ████████████████████ 100% (54 tests passing)
+XmlDoc Tests:               ████████████████████ 100% (82 passed, 5 skipped)
+Build (macOS):              ████████████████████ 100% (clean)
+Deduplication Refactor:     ████████████████░░░░  80% (code done, uncommitted)
+Windows Build Verification: ░░░░░░░░░░░░░░░░░░░░   0% (cannot verify on macOS)
 ```
 
-**Last Verified:** All 23 InheritDocTooltipTests passing on Debug/net10.0
+**VERIFIED ON macOS:** Build passes, all 23 InheritDoc + 54 Tooltip + 82 XmlDoc tests pass
+
+### REMAINING WORK
+1. ⚠️ **Uncommitted changes**: `GoToDefinition.fs` deduplication refactor (code complete)
+2. ❌ **Windows verification needed**: FSharp.Editor project cannot build on macOS
 
 ---
 
@@ -75,14 +73,13 @@ Cycle detection:            █████████████████�
 
 ---
 
+## COMPLETED DEDUPLICATION
+
+✅ **GoToDefinition.fs now uses XmlDocSigParser**: The `DocCommentIdToPath` method in `vsintegration/src/FSharp.Editor/Navigation/GoToDefinition.fs` has been refactored to use the shared `XmlDocSigParser.parseDocCommentId` from `FSharp.Compiler.Symbols`. This eliminated ~80 lines of duplicated regex logic.
+
 ## KNOWN LIMITATIONS / FUTURE WORK
 
-1. **Code duplication with GoToDefinition.fs**: The `XmlDocSigParser` (in compiler) duplicates regex logic from `vsintegration/src/FSharp.Editor/Navigation/GoToDefinition.fs` (`DocCommentIdToPath` method, lines 963-1055). Both parse doc comment IDs like `T:Namespace.Type` and `M:Namespace.Type.Method`. 
-   - **Consolidation opportunity**: `XmlDocSigParser` is already in the public API (`FSharp.Compiler.Symbols`). The vsintegration project could reference it instead of having its own parser. This is ~80 lines of duplicated regex logic.
-   - **Risk**: Low - same patterns, different return types. Would need adapter code.
-   - **Priority**: Low - feature works, this is purely cleanup.
-
-2. **XML file generation for implicit members**: The XML file writer expands docs at the entity level. Member-level implicit expansion is handled but relies on tooltip path.
+1. **XML file generation for implicit members**: The XML file writer expands docs at the entity level. Member-level implicit expansion is handled but relies on tooltip path.
 
 ---
 
