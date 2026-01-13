@@ -1779,8 +1779,7 @@ val IsNonNullableStructTyparTy: TcGlobals -> TType -> bool
 
 val HasConstraint: predicate: (TyparConstraint -> bool) -> Typar -> bool
 
-val IsTyparTyWithConstraint:
-    TcGlobals -> predicate: (TyparConstraint -> bool) -> TType -> bool
+val IsTyparTyWithConstraint: TcGlobals -> predicate: (TyparConstraint -> bool) -> TType -> bool
 
 /// Determine if a type is a variable type with the ': not struct' constraint.
 ///

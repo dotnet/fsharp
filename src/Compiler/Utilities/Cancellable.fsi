@@ -64,12 +64,10 @@ type internal CancellableBuilder =
 
     member TryFinally: comp: Cancellable<'T> * compensation: (unit -> unit) -> Cancellable<'T>
 
-    member TryWith:
-        comp: Cancellable<'T> * handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
+    member TryWith: comp: Cancellable<'T> * handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
 
     member Using:
-        resource: 'Resource MaybeNull * comp: ('Resource MaybeNull -> Cancellable<'T>) ->
-            Cancellable<'T>
+        resource: 'Resource MaybeNull * comp: ('Resource MaybeNull -> Cancellable<'T>) -> Cancellable<'T>
             when 'Resource :> IDisposable and 'Resource: not struct and 'Resource: not null
 
     member Zero: unit -> Cancellable<unit>

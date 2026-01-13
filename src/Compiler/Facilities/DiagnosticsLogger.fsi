@@ -444,9 +444,11 @@ val internal languageFeatureError: langVersion: LanguageVersion -> langFeature: 
 
 val internal checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
-val internal tryCheckLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> bool
+val internal tryCheckLanguageFeatureAndRecover:
+    langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> bool
 
-val internal checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
+val internal checkLanguageFeatureAndRecover:
+    langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
 val internal tryLanguageFeatureErrorOption:
     langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn option
@@ -469,7 +471,8 @@ type StackGuard =
         [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
             'T
 
-    member internal GuardCancellable: Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
+    member internal GuardCancellable:
+        Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
 
 /// This represents the global state established as each task function runs as part of the build.
 ///
