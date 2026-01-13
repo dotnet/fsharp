@@ -232,6 +232,11 @@
     <ProjectReference Include="FSharp.Compiler.TypedTree.fsproj" />
   </ItemGroup>
 
+  <!-- InternalsVisibleTo for downstream split projects -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.Optimize" />
+  </ItemGroup>
+
   <!-- Package references for netstandard2.0 -->
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />

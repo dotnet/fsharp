@@ -199,6 +199,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Compiler.TypedTree" />
     <InternalsVisibleTo Include="FSharp.Compiler.Checking" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Optimize" />
   </ItemGroup>
 
   <!-- Package references for netstandard2.0 -->

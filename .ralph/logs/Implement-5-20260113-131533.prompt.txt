@@ -1,0 +1,23 @@
+Implement subtask 5: Create FSharp.Compiler.Checking project
+
+Create src/Compiler/split/FSharp.Compiler.Checking.fsproj containing all Checking/*.fs files. Reference FSharp.Compiler.TypedTree. Files include: import.fs, TypeHierarchy.fs, infos.fs, AccessibilityLogic.fs, AttributeChecking.fs, TypeRelations.fs, InfoReader.fs, NicePrint.fs, AugmentWithHashCompare.fs, NameResolution.fs, SignatureConformance.fs, MethodOverrides.fs, MethodCalls.fs, PatternMatchCompilation.fs, ConstraintSolver.fs, CheckFormatStrings.fs, FindUnsolved.fs, QuotationTranslator.fs, PostInferenceChecks.fs, CheckBasics.fs, CheckExpressions.fs, CheckPatterns.fs, CheckComputationExpressions.fs, CheckIncrementalClasses.fs, CheckDeclarations.fs.
+
+Criteria:
+- dotnet build src/Compiler/split/FSharp.Compiler.Checking.fsproj succeeds
+- All Checking/*.fs files included via Link
+- References only FSharp.Compiler.TypedTree
+- Add InternalsVisibleTo for Checking in TypedTree project
+
+IMPORTANT: Read .ralph/VISION.md first for context and design decisions.
+
+Do one unit of work. Build and tests must pass.
+Do NOT commit yet - commit only when subtask is fully complete.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings before proceeding.
+
+═══════════════════════════════════════════════════════
+When ALL criteria are met, COMMIT your changes, then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

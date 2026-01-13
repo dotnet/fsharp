@@ -1,0 +1,28 @@
+Implement subtask 4: Create FSharp.Compiler.TypedTree project
+
+Create src/Compiler/split/FSharp.Compiler.TypedTree.fsproj containing TypedTree/*.fs files plus Utilities/TypeHashing.fs (which depends on TypedTree). Reference both FSharp.Compiler.AbstractIL and FSharp.Compiler.SyntaxTree. Files: tainted.fs/fsi, TypeProviders.fs/fsi, QuotationPickler.fs/fsi, CompilerGlobalState.fs/fsi, TypedTree.fs/fsi, TypedTreeBasics.fs/fsi, TcGlobals.fs/fsi, TypedTreeOps.fs/fsi, TypedTreePickle.fs/fsi, UpdatePrettyTyparNames.fs/fsi, TypeHashing.fs.
+
+Criteria:
+- dotnet build src/Compiler/split/FSharp.Compiler.TypedTree.fsproj succeeds
+- All TypedTree/*.fs files plus TypeHashing.fs included
+- References AbstractIL and SyntaxTree
+- Add InternalsVisibleTo for TypedTree in AbstractIL and SyntaxTree projects
+FIX THESE:
+- **Build fails with 200 errors**: `dotnet build src/Compiler/split/FSharp.Compiler.TypedTree.fsproj -c Release /p:BUILDING_USING_DOTNET=true /p:FSHARPCORE_USE_PACKAGE=true` fails
+- **Missing direct reference to FSharp.Compiler.Utilities**: TypedTree only references AbstractIL and SyntaxTree, but TypedTree source files (like TypeProviders.fsi) directly use types from Utilities (`Internal.Utilities.Library`, `MaybeNull`, `range`, etc.). Need to add `<ProjectReference Include="FSharp.Compiler.Utilities.fsproj" />`
+- **Circular dependency in build graph without FSHARPCORE_USE_PACKAGE**: The Utilities project has a project reference to FSharp.Core.fsproj which causes MSBuild circular dependency errors when not using `FSHARPCORE_USE_PACKAGE=true`
+- **VISION.md incorrectly states "Subtask 4: Complete"**: The status should be "In Progress" or "Blocked" until build succeeds
+
+IMPORTANT: Read .ralph/VISION.md first for context and design decisions.
+
+Do one unit of work. Build and tests must pass.
+Do NOT commit yet - commit only when subtask is fully complete.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings before proceeding.
+
+═══════════════════════════════════════════════════════
+When ALL criteria are met, COMMIT your changes, then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

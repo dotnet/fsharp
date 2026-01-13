@@ -47,13 +47,13 @@ val internal p_string: string -> WriterState -> unit
 val internal p_lazy: pickler<'T> -> InterruptibleLazy<'T> pickler
 
 /// Serialize a tuple of data
-val inline internal p_tup2: pickler<'T1> -> pickler<'T2> -> pickler<'T1 * 'T2>
+val internal p_tup2: pickler<'T1> -> pickler<'T2> -> pickler<'T1 * 'T2>
 
 /// Serialize a tuple of data
-val inline internal p_tup3: pickler<'T1> -> pickler<'T2> -> pickler<'T3> -> pickler<'T1 * 'T2 * 'T3>
+val internal p_tup3: pickler<'T1> -> pickler<'T2> -> pickler<'T3> -> pickler<'T1 * 'T2 * 'T3>
 
 /// Serialize a tuple of data
-val inline internal p_tup4:
+val internal p_tup4:
     pickler<'T1> -> pickler<'T2> -> pickler<'T3> -> pickler<'T4> -> pickler<'T1 * 'T2 * 'T3 * 'T4>
 
 /// Serialize an array of data
@@ -109,13 +109,13 @@ val internal u_string: ReaderState -> string
 val internal u_lazy: unpickler<'T> -> unpickler<InterruptibleLazy<'T>>
 
 /// Deserialize a tuple
-val inline internal u_tup2: unpickler<'T2> -> unpickler<'T3> -> unpickler<'T2 * 'T3>
+val internal u_tup2: unpickler<'T2> -> unpickler<'T3> -> unpickler<'T2 * 'T3>
 
 /// Deserialize a tuple
-val inline internal u_tup3: unpickler<'T2> -> unpickler<'T3> -> unpickler<'T4> -> unpickler<'T2 * 'T3 * 'T4>
+val internal u_tup3: unpickler<'T2> -> unpickler<'T3> -> unpickler<'T4> -> unpickler<'T2 * 'T3 * 'T4>
 
 /// Deserialize a tuple
-val inline internal u_tup4:
+val internal u_tup4:
     unpickler<'T2> -> unpickler<'T3> -> unpickler<'T4> -> unpickler<'T5> -> unpickler<'T2 * 'T3 * 'T4 * 'T5>
 
 /// Deserialize an array of values

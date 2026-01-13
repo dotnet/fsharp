@@ -1,0 +1,20 @@
+Skeptical reviewer. Verify subtask 4 is actually complete.
+
+Create FSharp.Compiler.TypedTree project: Create src/Compiler/split/FSharp.Compiler.TypedTree.fsproj containing TypedTree/*.fs files plus Utilities/TypeHashing.fs (which depends on TypedTree). Reference both FSharp.Compiler.AbstractIL and FSharp.Compiler.SyntaxTree. Files: tainted.fs/fsi, TypeProviders.fs/fsi, QuotationPickler.fs/fsi, CompilerGlobalState.fs/fsi, TypedTree.fs/fsi, TypedTreeBasics.fs/fsi, TcGlobals.fs/fsi, TypedTreeOps.fs/fsi, TypedTreePickle.fs/fsi, UpdatePrettyTyparNames.fs/fsi, TypeHashing.fs.
+
+Criteria:
+- dotnet build src/Compiler/split/FSharp.Compiler.TypedTree.fsproj succeeds
+- All TypedTree/*.fs files plus TypeHashing.fs included
+- References AbstractIL and SyntaxTree
+- Add InternalsVisibleTo for TypedTree in AbstractIL and SyntaxTree projects
+
+Check code, build, tests. Look for incomplete work, TODOs, placeholders.
+Also verify implementation aligns with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if complete.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

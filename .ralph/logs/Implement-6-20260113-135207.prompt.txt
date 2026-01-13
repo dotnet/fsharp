@@ -1,0 +1,22 @@
+Implement subtask 6: Create FSharp.Compiler.Optimize project
+
+Create src/Compiler/split/FSharp.Compiler.Optimize.fsproj containing Optimize/*.fs files. Reference FSharp.Compiler.Checking. Files include: Optimizer.fs, LowerSequences.fs, LowerComputedCollections.fs, LowerStateMachines.fs, LowerCalls.fs, LowerLocalMutables.fs, InnerLambdasToTopLevelFuncs.fs, Detuple.fs.
+
+Criteria:
+- dotnet build src/Compiler/split/FSharp.Compiler.Optimize.fsproj succeeds
+- All Optimize/*.fs files included
+- References only FSharp.Compiler.Checking
+
+IMPORTANT: Read .ralph/VISION.md first for context and design decisions.
+
+Do one unit of work. Build and tests must pass.
+Do NOT commit yet - commit only when subtask is fully complete.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings before proceeding.
+
+═══════════════════════════════════════════════════════
+When ALL criteria are met, COMMIT your changes, then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

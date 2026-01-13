@@ -269,7 +269,7 @@ This file should be placed in TypedTree or Checking layer instead.
 | 3 | FSharp.Compiler.SyntaxTree | ✅ Complete |
 | 4 | FSharp.Compiler.TypedTree | ✅ Complete |
 | 5 | FSharp.Compiler.Checking | ✅ Complete |
-| 6 | FSharp.Compiler.Optimize | Pending |
+| 6 | FSharp.Compiler.Optimize | ✅ Complete |
 | 7 | FSharp.Compiler.CodeGen | Pending |
 | 8 | FSharp.Compiler.Service (update) | Pending |
 
@@ -345,3 +345,31 @@ This file should be placed in TypedTree or Checking layer instead.
 - Modified: `SyntaxTreeOps.fs`/`SyntaxTreeOps.fsi` (removed inline from findSynAttribute)
 - Modified: `Cancellable.fs`/`Cancellable.fsi` (removed inline from builder and run)
 - Modified: `TypeHashing.fs` (removed inline from hash primitives)
+
+### Subtask 6: FSharp.Compiler.Optimize - COMPLETED
+
+**Status**: Created and building successfully
+
+**Key findings**:
+
+1. **InternalsVisibleTo added to all upstream projects**: Added IVT for Optimize in:
+   - FSharp.Compiler.Utilities
+   - FSharp.Compiler.AbstractIL
+   - FSharp.Compiler.SyntaxTree
+   - FSharp.Compiler.TypedTree
+   - FSharp.Compiler.Checking
+
+2. **Pickle function inline removal**: TypedTreePickle.fs/fsi contains pickle/unpickle tuple functions marked as `inline internal`. These cannot be inlined across assembly boundaries. Removed `inline` from:
+   - `p_tup2`, `p_tup3`, `p_tup4` (pickle tuple functions)
+   - `u_tup2`, `u_tup3`, `u_tup4` (unpickle tuple functions)
+
+3. **Dependency chain**: Optimize → Checking (single project reference, gets transitive access to all upstream assemblies)
+
+**Files created/modified**:
+- Created: `src/Compiler/split/FSharp.Compiler.Optimize.fsproj`
+- Modified: `FSharp.Compiler.Utilities.fsproj` (added IVT for Optimize)
+- Modified: `FSharp.Compiler.AbstractIL.fsproj` (added IVT for Optimize)
+- Modified: `FSharp.Compiler.SyntaxTree.fsproj` (added IVT for Optimize)
+- Modified: `FSharp.Compiler.TypedTree.fsproj` (added IVT for Optimize)
+- Modified: `FSharp.Compiler.Checking.fsproj` (added IVT for Optimize)
+- Modified: `TypedTreePickle.fs`/`TypedTreePickle.fsi` (removed inline from p_tup2/3/4, u_tup2/3/4)

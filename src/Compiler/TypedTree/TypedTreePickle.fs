@@ -309,16 +309,16 @@ let bits_of_float (x: float) = System.BitConverter.DoubleToInt64Bits x
 let p_single i st = p_int32 (bits_of_float32 i) st
 let p_char i st = p_uint16 (uint16 (int32 i)) st
 
-let inline p_tup2 p1 p2 (a, b) (st: WriterState) =
+let p_tup2 p1 p2 (a, b) (st: WriterState) =
     (p1 a st: unit)
     (p2 b st: unit)
 
-let inline p_tup3 p1 p2 p3 (a, b, c) (st: WriterState) =
+let p_tup3 p1 p2 p3 (a, b, c) (st: WriterState) =
     (p1 a st: unit)
     (p2 b st: unit)
     (p3 c st: unit)
 
-let inline p_tup4 p1 p2 p3 p4 (a, b, c, d) (st: WriterState) =
+let p_tup4 p1 p2 p3 p4 (a, b, c, d) (st: WriterState) =
     (p1 a st: unit)
     (p2 b st: unit)
     (p3 c st: unit)
@@ -474,18 +474,18 @@ let u_used_space1 f st =
         warning (Error(FSComp.SR.pickleUnexpectedNonZero st.ifile, range0))
         None
 
-let inline u_tup2 p1 p2 (st: ReaderState) =
+let u_tup2 p1 p2 (st: ReaderState) =
     let a = p1 st
     let b = p2 st
     (a, b)
 
-let inline u_tup3 p1 p2 p3 (st: ReaderState) =
+let u_tup3 p1 p2 p3 (st: ReaderState) =
     let a = p1 st
     let b = p2 st
     let c = p3 st
     (a, b, c)
 
-let inline u_tup4 p1 p2 p3 p4 (st: ReaderState) =
+let u_tup4 p1 p2 p3 p4 (st: ReaderState) =
     let a = p1 st
     let b = p2 st
     let c = p3 st
