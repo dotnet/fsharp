@@ -179,12 +179,12 @@ module XmlDocInheritanceTests =
     [<Fact>]
     let ``Empty XmlDoc returns empty`` () =
         let emptyDoc = XmlDoc.Empty
-        let result = expandInheritDoc None None None None Range.Zero Set.empty emptyDoc
+        let result = expandInheritDoc None None None None Range.range0 Set.empty emptyDoc
         Assert.True(result.IsEmpty)
 
     [<Fact>]
     let ``XmlDoc without inheritdoc returns unchanged`` () =
-        let doc = XmlDoc([|"<summary>Test summary</summary>"|], Range.Zero)
+        let doc = XmlDoc([|"<summary>Test summary</summary>"|], Range.range0)
         let result = expandInheritDoc None None None None Range.Zero Set.empty doc
         Assert.Equal(doc.GetXmlText(), result.GetXmlText())
 
