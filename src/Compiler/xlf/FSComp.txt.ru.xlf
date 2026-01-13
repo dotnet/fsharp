@@ -2002,6 +2002,11 @@
         <target state="translated">Недопустимый XML-комментарий: отсутствует атрибут "name" для параметра или ссылки на параметр</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocNotFirstOnLine">
+        <source>XML documentation comments should be the first non-whitespace text on a line.</source>
+        <target state="new">XML documentation comments should be the first non-whitespace text on a line.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
         <target state="translated">Недопустимый XML-комментарий: неразрешенная перекрестная ссылка "{0}"</target>
