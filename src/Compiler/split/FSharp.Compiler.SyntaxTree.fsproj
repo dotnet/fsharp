@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
+    <NoWarn>$(NoWarn);57</NoWarn> <!-- Experimental -->
+    <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
+    <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
+    <NoWarn>$(NoWarn);NU5125</NoWarn>
+    <NoWarn>$(NoWarn);64;1204</NoWarn> <!--Temporary fix for sourcebuild -->
+    <AssemblyName>FSharp.Compiler.SyntaxTree</AssemblyName>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <Nullable>enable</Nullable>
+    <!-- Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations.
+         Therefore we want to use the latest BCL APIs from NetCurrent.
+         We are still not building the actual product in NetCurrent, so for official builds we remain as ns2.0.
+         For 'BUILDING_USING_DOTNET' builds, we still want latest BCL annotations, so that contributors can get related warnings locally.
+     -->
+    <TargetFrameworks Condition=" '$(OfficialBuildId)' == '' AND '$(FSharpNetCoreProductTargetFramework)' != '' AND '$(Configuration)' != 'Proto' AND '$(SKIP_NETCURRENT_FSC_BUILD)' != 'true' ">$(FSharpNetCoreProductTargetFramework);$(TargetFrameworks)</TargetFrameworks>
+    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
+    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
+    <!-- 3218: ArgumentsInSigAndImplMismatch -->
+    <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
+    <!-- 3390: xmlDocBadlyFormed -->
+    <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+    <!-- 3261: Nullness warning - not equivalent - currently triggers when proto builds source files like Fscomp.fs -->
+    <OtherFlags Condition="'$(Configuration)' == 'Proto'">$(OtherFlags) --nowarn:3261</OtherFlags>
+    <!-- generate IL filter blocks in order to prevent StackOverFlowException in TcExpr guarded with |RecoverableException| active pattern-->
+    <OtherFlags>$(OtherFlags) --generate-filter-blocks</OtherFlags>
+    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
+    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+    <NoOptimizationData>false</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SyntaxTree source files -->
+    <Compile Include="..\SyntaxTree\PrettyNaming.fsi">
+      <Link>SyntaxTree\PrettyNaming.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\PrettyNaming.fs">
+      <Link>SyntaxTree\PrettyNaming.fs</Link>
+    </Compile>
+
+    <!-- FsLex/FsYacc inputs for pplex.fsl, pppars.fsy, lex.fsl, pars.fsy -->
+    <FsLex Include="..\pplex.fsl">
+      <OtherFlags>--module FSharp.Compiler.PPLexer --internal --open FSharp.Compiler.Lexhelp --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.PPParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>SyntaxTree\pplex.fsl</Link>
+    </FsLex>
+    <FsYacc Include="..\pppars.fsy">
+      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler.ParseHelpers --open FSharp.Compiler.LexerStore --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
+      <Link>SyntaxTree\pppars.fsy</Link>
+    </FsYacc>
+    <FsLex Include="..\lex.fsl">
+      <OtherFlags>--module FSharp.Compiler.Lexer --open FSharp.Compiler.Lexhelp --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.Parser --open FSharp.Compiler.Text --open FSharp.Compiler.ParseHelpers --open FSharp.Compiler.LexerStore --internal --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>SyntaxTree\lex.fsl</Link>
+    </FsLex>
+    <FsYacc Include="..\pars.fsy">
+      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --open FSharp.Compiler.Text --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
+      <Link>SyntaxTree\pars.fsy</Link>
+    </FsYacc>
+    <None Include="..\pplex.fsl">
+      <Link>SyntaxTree\FsLex\pplex.fsl</Link>
+    </None>
+    <None Include="..\lex.fsl">
+      <Link>SyntaxTree\FsLex\lex.fsl</Link>
+    </None>
+    <None Include="..\pppars.fsy">
+      <Link>SyntaxTree\FsYacc\pppars.fsy</Link>
+    </None>
+    <None Include="..\pars.fsy">
+      <Link>SyntaxTree\FsYacc\pars.fsy</Link>
+    </None>
+
+    <!-- SyntaxTree source files continued -->
+    <Compile Include="..\SyntaxTree\UnicodeLexing.fsi">
+      <Link>SyntaxTree\UnicodeLexing.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\UnicodeLexing.fs">
+      <Link>SyntaxTree\UnicodeLexing.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\XmlDoc.fsi">
+      <Link>SyntaxTree\XmlDoc.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\XmlDoc.fs">
+      <Link>SyntaxTree\XmlDoc.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\SyntaxTrivia.fsi">
+      <Link>SyntaxTree\SyntaxTrivia.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\SyntaxTrivia.fs">
+      <Link>SyntaxTree\SyntaxTrivia.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\SyntaxTree.fsi">
+      <Link>SyntaxTree\SyntaxTree.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\SyntaxTree.fs">
+      <Link>SyntaxTree\SyntaxTree.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\SyntaxTreeOps.fsi">
+      <Link>SyntaxTree\SyntaxTreeOps.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\SyntaxTreeOps.fs">
+      <Link>SyntaxTree\SyntaxTreeOps.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\WarnScopes.fsi">
+      <Link>SyntaxTree\WarnScopes.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\WarnScopes.fs">
+      <Link>SyntaxTree\WarnScopes.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\LexerStore.fsi">
+      <Link>SyntaxTree\LexerStore.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\LexerStore.fs">
+      <Link>SyntaxTree\LexerStore.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\ParseHelpers.fsi">
+      <Link>SyntaxTree\ParseHelpers.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\ParseHelpers.fs">
+      <Link>SyntaxTree\ParseHelpers.fs</Link>
+    </Compile>
+
+    <!-- FsYacc/FsLex generated outputs (order: pppars, pars, LexHelpers, pplex, lex) -->
+    <Compile Include="$(FsYaccOutputFolder)pppars.fsi">
+      <Link>SyntaxTree\FsYaccOutput\pppars.fsi</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pppars.fs">
+      <Link>SyntaxTree\FsYaccOutput\pppars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pars.fsi">
+      <Link>SyntaxTree\FsYaccOutput\pars.fsi</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pars.fs">
+      <Link>SyntaxTree\FsYaccOutput\pars.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\LexHelpers.fsi">
+      <Link>SyntaxTree\LexHelpers.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\LexHelpers.fs">
+      <Link>SyntaxTree\LexHelpers.fs</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)pplex.fsi">
+      <Link>SyntaxTree\FsLexOutput\pplex.fsi</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)pplex.fs">
+      <Link>SyntaxTree\FsLexOutput\pplex.fs</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)lex.fsi">
+      <Link>SyntaxTree\FsLexOutput\lex.fsi</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)lex.fs">
+      <Link>SyntaxTree\FsLexOutput\lex.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\LexFilter.fsi">
+      <Link>SyntaxTree\LexFilter.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree\LexFilter.fs">
+      <Link>SyntaxTree\LexFilter.fs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <!-- Project references -->
+  <ItemGroup>
+    <ProjectReference Include="FSharp.Compiler.AbstractIL.fsproj" />
+    <ProjectReference Include="FSharp.Compiler.Utilities.fsproj" />
+  </ItemGroup>
+
+  <!-- FsLex/FsYacc tool references for BUILDING_USING_DOTNET -->
+  <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
+    <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- Package references for netstandard2.0 -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+  </ItemGroup>
+
+</Project>

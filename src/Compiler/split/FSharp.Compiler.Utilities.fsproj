@@ -48,6 +48,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Compiler.AbstractIL" />
+    <InternalsVisibleTo Include="FSharp.Compiler.SyntaxTree" />
   </ItemGroup>
 
   <ItemGroup>

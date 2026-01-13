@@ -88,8 +88,8 @@ Therefore:
 |---------|----------|--------------|
 | **FSharp.Compiler.Utilities** | Utilities/*.fs + Facilities/*.fs (prim-lexing, prim-parsing, ranges, diagnostics) | FSharp.Core |
 | **FSharp.Compiler.AbstractIL** | AbstractIL/*.fs (IL types, binary read/write, illex/ilpars) | Utilities |
-| **FSharp.Compiler.SyntaxTree** | SyntaxTree/*.fs + lex.fsl/pars.fsy outputs (AST, parsing, lexing) | Utilities |
-| **FSharp.Compiler.TypedTree** | TypedTree/*.fs (TAST, TcGlobals, TypeProviders, Pickle) | AbstractIL, SyntaxTree |
+| **FSharp.Compiler.SyntaxTree** | SyntaxTree/*.fs + lex.fsl/pars.fsy outputs (AST, parsing, lexing) | AbstractIL (for inline IL parsing) |
+| **FSharp.Compiler.TypedTree** | TypedTree/*.fs (TAST, TcGlobals, TypeProviders, Pickle) | SyntaxTree |
 | **FSharp.Compiler.Checking** | Checking/*.fs (import, type checking, constraint solving) | TypedTree |
 | **FSharp.Compiler.Optimize** | Optimize/*.fs (Optimizer, Lower*, Detuple) | Checking |
 | **FSharp.Compiler.CodeGen** | CodeGen/*.fs (IlxGen, EraseClosures/Unions) | Optimize |
@@ -126,22 +126,25 @@ From open statements analysis:
 - **IlxGen.fs** opens: `FSharp.Compiler.AbstractIL.IL`, `FSharp.Compiler.TypedTree`, `FSharp.Compiler.Optimizer`, `FSharp.Compiler.Import`
 
 This confirms:
-- SyntaxTree is independent of AbstractIL ✓
+- ~~SyntaxTree is independent of AbstractIL~~ **CORRECTED**: SyntaxTree DOES depend on AbstractIL - see Subtask 3 notes
 - TypedTree depends on both AbstractIL and SyntaxTree ✓
 - Checking depends on TypedTree (and transitively AbstractIL, SyntaxTree) ✓
 
-### 6. Build Graph for Parallelization
+### 6. Build Graph for Parallelization (REVISED)
 
 ```
                     FSharp.Core
                          │
                          ▼
               FSharp.Compiler.Utilities
-                    /          \
-                   ▼            ▼
-    FSharp.Compiler.AbstractIL   FSharp.Compiler.SyntaxTree
-                    \          /
-                     ▼        ▼
+                         │
+                         ▼
+              FSharp.Compiler.AbstractIL
+                         │
+                         ▼
+              FSharp.Compiler.SyntaxTree
+                         │
+                         ▼
               FSharp.Compiler.TypedTree
                          │
                          ▼
@@ -157,7 +160,9 @@ This confirms:
               FSharp.Compiler.Service
 ```
 
-**Maximum parallelism**: AbstractIL and SyntaxTree can build in parallel after Utilities.
+**Note**: Original vision assumed AbstractIL and SyntaxTree could build in parallel. 
+However, SyntaxTree depends on AbstractIL due to inline IL parsing (ParseHelpers.fs uses 
+`AsciiParser`/`AsciiLexer` from AbstractIL to parse `(# ... #)` inline IL syntax).
 
 ## Important Gotchas
 
@@ -216,13 +221,52 @@ This file should be placed in TypedTree or Checking layer instead.
 
 3. **FsLex/FsYacc Integration**: The AbstractIL project correctly generates `illex.fs` and `ilpars.fs` using the buildtools targets.
 
+### Subtask 3: FSharp.Compiler.SyntaxTree - BLOCKED
+
+**Status**: Project file created but encountering multiple build system issues
+
+**Key findings**:
+
+1. **SyntaxTree DOES depend on AbstractIL** - ParseHelpers.fs uses `AsciiParser`/`AsciiLexer` from AbstractIL to parse inline IL syntax `(# ... #)`. This contradicts the original VISION assumption that SyntaxTree and AbstractIL are independent. The dependency graph is now LINEAR (no parallelism at SyntaxTree level):
+   ```
+   Utilities → AbstractIL → SyntaxTree → TypedTree → ...
+   ```
+
+2. **Dependency chain requires**: SyntaxTree → AbstractIL + SyntaxTree → Utilities (direct refs to both)
+
+3. **FSComp.SR access issue**: The `FSComp.SR` module is auto-generated from FSComp.txt EmbeddedText with `type internal SR`. Even with `InternalsVisibleTo`, accessing from another assembly requires:
+   - Direct project reference to Utilities
+   - The `FSComp` namespace to be resolvable
+   
+4. **Type extension issue**: `String.StartsWithOrdinal` and similar extension methods defined in `PervasiveAutoOpens` (illib.fs) are not accessible from SyntaxTree even though:
+   - `open Internal.Utilities.Library` is present
+   - `InternalsVisibleTo` is configured
+   - The extensions use `[<AutoOpen>]`
+
+5. **MSBuild multi-TFM rebuild issue**: When SyntaxTree is built with both AbstractIL and Utilities as project references, AbstractIL fails to rebuild with `System.Reflection.Emit` type resolution errors. This happens ONLY during transitive builds, not when AbstractIL is built directly.
+
+6. **Root cause hypothesis**: The diamond dependency pattern (SyntaxTree → AbstractIL → Utilities AND SyntaxTree → Utilities) combined with multi-TFM (netstandard2.0 + net10.0) creates package restoration race conditions or incorrect assembly resolution.
+
+**Created files**:
+- `src/Compiler/split/FSharp.Compiler.SyntaxTree.fsproj` - Project file with:
+  - All SyntaxTree/*.fs files linked
+  - FsLex/FsYacc targets for lex.fsl, pars.fsy, pplex.fsl, pppars.fsy
+  - References to AbstractIL and Utilities
+  - FsLex/FsYacc buildtools references
+
+**Potential solutions to investigate**:
+1. Build only net10.0 TFM initially to avoid netstandard2.0 System.Reflection.Emit complexity
+2. Use `PrivateAssets="All"` on transitive dependencies
+3. Investigate MSBuild project evaluation order for multi-TFM
+4. Consider making FSComp module public or providing a public facade
+
 ### Progress Summary
 
 | Subtask | Project | Status |
 |---------|---------|--------|
 | 1 | FSharp.Compiler.Utilities | ✅ Complete (commit 4d761bb) |
 | 2 | FSharp.Compiler.AbstractIL | ✅ Complete |
-| 3 | FSharp.Compiler.SyntaxTree | Pending |
+| 3 | FSharp.Compiler.SyntaxTree | 🚫 Blocked (build system issues) |
 | 4 | FSharp.Compiler.TypedTree | Pending |
 | 5 | FSharp.Compiler.Checking | Pending |
 | 6 | FSharp.Compiler.Optimize | Pending |
