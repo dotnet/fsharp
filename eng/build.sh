@@ -309,7 +309,7 @@ function BuildSolution {
     BuildMessage="Error building tools"
     local args=("publish" "$repo_root/proto.proj" "$blrestore" "$bltools" "/p:Configuration=Proto" "/p:DotNetBuild=$product_build" "/p:DotNetBuildSourceOnly=$source_build" "/p:DotNetBuildFromVMR=$from_vmr" ${properties[@]+"${properties[@]}"})
     echo $args
-    "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}"  #$args || exit $?
+    "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
   fi
 
   if [[ "$skip_build" != true ]]; then
