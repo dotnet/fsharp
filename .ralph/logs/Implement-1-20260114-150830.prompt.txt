@@ -1,0 +1,32 @@
+Implement subtask 1: Create
+   tracking documents
+
+Create MIGRATION_BLOCKERS.md and
+   TEST_FRAMEWORK_ADDITIONS.md in tests/FSharp.Compiler.ComponentTests/ to track issues discovered
+   during migration. These will document tests that cannot be migrated and framework features that
+   need to be added. Reference FSHARPQA_MIGRATION.md Part 2 for format.
+
+Criteria:
+- File tests/FSharp.Compiler.ComponentTests/MIGRATION_BLOCKERS.md exists with proper markdown
+   header
+- File tests/FSharp.Compiler.ComponentTests/TEST_FRAMEWORK_ADDITIONS.md exists with
+   proper markdown header
+- Both files have placeholder sections for tracking issues
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+Do one unit of work. Build and tests must pass.
+Do NOT commit yet - commit only when subtask is fully complete.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this subtask is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL criteria are met, COMMIT your changes, then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

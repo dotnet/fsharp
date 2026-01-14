@@ -1,0 +1,44 @@
+You are an architect. Break this request into MANY small, independently verifiable subtasks.
+
+REQUEST: Check FSHARPQA_MIGRATION.md. Make sure subagents receive context as pointers to important files by name - the initial spec lists those file and they will be a means of communication.  Establish a robust process for implementing that via a massive series of small subtasks. Optimize for easy of review (file moves a lot better then file edits) and reusing whatever is provided in TestUtilities and especially Compiler.fs helper file
+
+IMPORTANT GUIDELINES:
+- Create as many subtasks as needed - 20, 30, even 50 is fine
+- Each subtask should be SMALL and completable in one focused session
+- Each subtask MUST have clear, objective verificationCriteria
+- Verification criteria should be concrete: 'file X exists', 'command Y succeeds', 'test Z passes'
+- Subtasks run sequentially - later ones can depend on earlier ones
+- When in doubt, split into smaller pieces
+
+First, analyze the codebase thoroughly.
+Check .ralph/ folder for any previous attempts (VISION.md, logs, PROBLEMS.md).
+
+Then create or update .ralph/VISION.md with:
+- High-level goal and approach
+- Key design decisions and rationale
+- Important context for subtasks
+- Any constraints or gotchas discovered
+- Lessons learned from previous attempts (if any)
+
+Finally, output JSON with the subtasks:
+
+```json
+{"overview": "approach", "subtasks": [{"id": 1, "title": "short title", "description": "detailed description of what to do", "verificationCriteria": ["specific check 1", "specific check 2"]}]}
+```
+
+Each verificationCriteria should be a concrete, testable statement like:
+- 'File src/utils/helper.ts exists and exports function parseConfig'
+- 'Running npm test passes with 0 failures'
+- 'The function handles empty input without throwing'
+
+Output PLAN_COMPLETE when done.
+
+=== PREVIOUS ATTEMPT DETECTED ===
+The .ralph/ folder contains data from a previous run.
+
+PREVIOUS LOGS: 21 log files in .ralph/logs/
+- Review them to understand what worked and what failed
+- You may DELETE old logs if starting fresh
+
+You have full control: learn from the past or start fresh.
+=== END PREVIOUS CONTEXT ===
