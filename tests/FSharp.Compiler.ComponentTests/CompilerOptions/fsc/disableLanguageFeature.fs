@@ -53,7 +53,7 @@ printfn "Hello, World"
         |> withOptions ["--disableLanguageFeature:InvalidFeatureName"]
         |> typecheck
         |> shouldFail
-        |> withErrorCode 3879
+        |> withErrorCode 3881
         |> withDiagnosticMessageMatches "Unrecognized language feature name"
         |> ignore
 
