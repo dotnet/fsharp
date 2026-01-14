@@ -185,12 +185,12 @@ module XmlDocInheritanceTests =
     [<Fact>]
     let ``XmlDoc without inheritdoc returns unchanged`` () =
         let doc = XmlDoc([|"<summary>Test summary</summary>"|], Range.range0)
-        let result = expandInheritDoc None None None None Range.Zero Set.empty doc
+        let result = expandInheritDoc None None None None Range.range0 Set.empty doc
         Assert.Equal(doc.GetXmlText(), result.GetXmlText())
 
     [<Fact>]
     let ``XmlDoc with inheritdoc but no InfoReader returns unchanged`` () =
-        let doc = XmlDoc([|"<inheritdoc/>"|], Range.Zero)
+        let doc = XmlDoc([|"<inheritdoc/>"|], Range.range0)
         let result = expandInheritDoc None None None None Range.Zero Set.empty doc
         // Without InfoReader, should return unchanged
         Assert.NotNull(result)
