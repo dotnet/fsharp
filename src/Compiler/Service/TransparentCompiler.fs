@@ -490,10 +490,11 @@ type internal TransparentCompiler
 
         let applyCompilerOptions tcConfig =
             let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
+
             try
                 ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
             with
-            | :? OperationCanceledException -> reraise()
+            | :? OperationCanceledException -> reraise ()
             | exn -> errorRecovery exn range0
 
         let closure =
@@ -909,8 +910,8 @@ type internal TransparentCompiler
             let sourceFilesNew =
                 try
                     ApplyCommandLineArgs(tcConfigB, projectSnapshot.SourceFileNames, commandLineArgs)
-                with 
-                | :? OperationCanceledException -> reraise()
+                with
+                | :? OperationCanceledException -> reraise ()
                 | exn ->
                     errorRecovery exn range0
                     projectSnapshot.SourceFileNames
@@ -965,8 +966,10 @@ type internal TransparentCompiler
                 // for each cached project.  So here we create a new tcGlobals, with the existing framework values
                 // and updated realsig and langversion
                 let tcGlobals =
-                    if tcGlobals.langVersion <> tcConfig.langVersion
-                        || tcGlobals.realsig <> tcConfig.realsig then
+                    if
+                        tcGlobals.langVersion <> tcConfig.langVersion
+                        || tcGlobals.realsig <> tcConfig.realsig
+                    then
                         TcGlobals(
                             tcGlobals.compilingFSharpCore,
                             tcGlobals.ilg,
