@@ -326,6 +326,7 @@
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
     <Compile Include="Diagnostics\NONTERM.fs" />
+    <Compile Include="Diagnostics\ParsingAtEOF.fs" />
     <Compile Include="Diagnostics\Records.fs" />
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
     <Compile Include="Miscellaneous\ListLiterals.fs" />
