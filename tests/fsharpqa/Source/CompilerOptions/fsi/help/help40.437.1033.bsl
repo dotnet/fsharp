@@ -1,7 +1,7 @@
 Microsoft (R) F# Interactive version 15.1.200.0 for F# 10.0
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
-Usage: fsi <options> [script.fsx [<arguments>]]
+Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 
 
                 - INPUT FILES -
