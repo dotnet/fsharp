@@ -5,9 +5,9 @@
 # ReqNOCov	-- skip this test/suite if we are doing a code coverage run
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
-CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions
+# CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions  # MIGRATED to ComponentTests
 CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors
-CompilerOptions02,NoMT,gcc			CompilerOptions\fsc\gccerrors
+# CompilerOptions02,NoMT,gcc			CompilerOptions\fsc\gccerrors  # MIGRATED to ComponentTests
 CompilerOptions01,NoMT				CompilerOptions\fsc\lib
 CompilerOptions01,NoMT				CompilerOptions\fsc\noframework
 CompilerOptions01,NoMT				CompilerOptions\fsc\nologo
@@ -17,12 +17,12 @@ CompilerOptions01,NoMT,pdbs			CompilerOptions\fsc\pdb
 CompilerOptions01,NoMT				CompilerOptions\fsc\platform
 CompilerOptions01,NoMT				CompilerOptions\fsc\Removed
 CompilerOptions01,NoMT				CompilerOptions\fsc\responsefile
-CompilerOptions01,NoMT				CompilerOptions\fsc\standalone
-CompilerOptions01,NoMT,NoHostedCompiler CompilerOptions\fsc\staticlink
+# CompilerOptions01,NoMT				CompilerOptions\fsc\standalone  # MIGRATED to ComponentTests
+# CompilerOptions01,NoMT,NoHostedCompiler CompilerOptions\fsc\staticlink  # MIGRATED to ComponentTests
 CompilerOptions01,NoMT				CompilerOptions\fsc\subsystemversion
-CompilerOptions01,NoMT				CompilerOptions\fsc\tailcalls
-CompilerOptions01,NoMT				CompilerOptions\fsc\target
-CompilerOptions01,NoMT,NoHostedCompiler CompilerOptions\fsc\tokenize
+# CompilerOptions01,NoMT				CompilerOptions\fsc\tailcalls  # MIGRATED to ComponentTests
+# CompilerOptions01,NoMT				CompilerOptions\fsc\target  # MIGRATED to ComponentTests
+# CompilerOptions01,NoMT,NoHostedCompiler CompilerOptions\fsc\tokenize  # MIGRATED to ComponentTests
 
 CompilerOptions01,NoMT,help			CompilerOptions\fsi\help
 CompilerOptions01,NoMT				CompilerOptions\fsi\highentropyva

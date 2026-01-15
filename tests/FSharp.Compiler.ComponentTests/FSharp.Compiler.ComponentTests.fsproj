@@ -316,6 +316,13 @@
     <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
+    <Compile Include="CompilerOptions\fsc\dumpAllCommandLineOptions\dumpAllCommandLineOptions.fs" />
+    <Compile Include="CompilerOptions\fsc\gccerrors\gccerrors.fs" />
+    <Compile Include="CompilerOptions\fsc\standalone\standalone.fs" />
+    <Compile Include="CompilerOptions\fsc\staticlink\staticlink.fs" />
+    <Compile Include="CompilerOptions\fsc\tailcalls\tailcalls.fs" />
+    <Compile Include="CompilerOptions\fsc\target\target.fs" />
+    <Compile Include="CompilerOptions\fsc\tokenize\tokenize.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\Caches.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
