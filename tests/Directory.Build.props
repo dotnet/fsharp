@@ -30,8 +30,9 @@
 
   <!-- Test-specific settings for xUnit3/MTP migration -->
   <!-- Force x64 for .NET Framework test executables to avoid OOM and sizeof issues.
-       Note: OutputType isn't available at props evaluation time, so we apply to all net472 test projects -->
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
+       Note: OutputType isn't available at props evaluation time, so we apply to all net472 test projects
+       Only apply to actual test runner projects (*.Tests, *.ComponentTests, *.UnitTests), not dynamically generated test fixtures -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472' AND ($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests')))">
     <PlatformTarget>x64</PlatformTarget>
     <!-- Clear RuntimeIdentifier(s) to avoid conflict with PlatformTarget -->
     <RuntimeIdentifier />
