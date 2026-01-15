@@ -53,7 +53,8 @@ val internal p_tup2: pickler<'T1> -> pickler<'T2> -> pickler<'T1 * 'T2>
 val internal p_tup3: pickler<'T1> -> pickler<'T2> -> pickler<'T3> -> pickler<'T1 * 'T2 * 'T3>
 
 /// Serialize a tuple of data
-val internal p_tup4: pickler<'T1> -> pickler<'T2> -> pickler<'T3> -> pickler<'T4> -> pickler<'T1 * 'T2 * 'T3 * 'T4>
+val internal p_tup4:
+    pickler<'T1> -> pickler<'T2> -> pickler<'T3> -> pickler<'T4> -> pickler<'T1 * 'T2 * 'T3 * 'T4>
 
 /// Serialize an array of data
 val internal p_array: pickler<'T> -> pickler<'T[]>

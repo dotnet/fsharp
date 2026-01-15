@@ -23,7 +23,7 @@ module internal HashingPrimitives =
     let pipeToHash (value: Hash) (acc: Hash) = combineHash acc value
     let addFullStructuralHash value (acc: Hash) = combineHash acc (hash value)
 
-    let hashListOrderMatters (func: 'T -> Hash) (items: #seq<'T>) : Hash =
+    let hashListOrderMatters (func) (items: #seq<'T>) : Hash =
         let mutable acc = 0
 
         for i in items do
@@ -34,7 +34,7 @@ module internal HashingPrimitives =
 
         acc
 
-    let hashListOrderIndependent (func: 'T -> Hash) (items: #seq<'T>) : Hash =
+    let hashListOrderIndependent (func) (items: #seq<'T>) : Hash =
         let mutable acc = 0
 
         for i in items do

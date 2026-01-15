@@ -837,13 +837,13 @@ module Dictionary =
 type DictionaryExtensions() =
 
     [<Extension>]
-    static member inline BagAdd(dic: Dictionary<'key, 'value list>, key: 'key, value: 'value) =
+    static member BagAdd(dic: Dictionary<'key, 'value list>, key: 'key, value: 'value) =
         match dic.TryGetValue key with
         | true, values -> dic[key] <- value :: values
         | _ -> dic[key] <- [ value ]
 
     [<Extension>]
-    static member inline BagExistsValueForKey(dic: Dictionary<'key, 'value list>, key: 'key, f: 'value -> bool) =
+    static member BagExistsValueForKey(dic: Dictionary<'key, 'value list>, key: 'key, f: 'value -> bool) =
         match dic.TryGetValue key with
         | true, values -> values |> List.exists f
         | _ -> false

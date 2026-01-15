@@ -9157,7 +9157,7 @@ let IsUnionTypeWithNullAsTrueValue (g: TcGlobals) (tycon: Tycon) =
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref
 
-let HasConstraint predicate (tp:Typar)  = 
+let HasConstraint (predicate) (tp:Typar)  = 
     tp.Constraints |> List.exists predicate
 
 let inline tryGetTyparTyWithConstraint g ([<InlineIfLambda>] predicate) ty = 
@@ -9165,7 +9165,7 @@ let inline tryGetTyparTyWithConstraint g ([<InlineIfLambda>] predicate) ty =
     | ValueSome tp as x when HasConstraint predicate tp -> x
     | _ -> ValueNone
 
-let IsTyparTyWithConstraint g predicate ty = 
+let IsTyparTyWithConstraint g (predicate) ty = 
     match tryDestTyparTy g ty with 
     | ValueSome tp -> HasConstraint predicate tp
     | ValueNone -> false

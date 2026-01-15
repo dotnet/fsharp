@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="FSharp.Compiler.Split.props" />
+
+  <PropertyGroup>
+    <AssemblyName>FSharp.Compiler.Driver</AssemblyName>
+  </PropertyGroup>
+
+  <!-- InternalsVisibleTo for downstream split projects -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.Interactive" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Service" />
+  </ItemGroup>
+
+  <!-- Driver source files -->
+  <ItemGroup>
+    <Compile Include="..\Driver\FxResolver.fsi">
+      <Link>Driver\FxResolver.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\FxResolver.fs">
+      <Link>Driver\FxResolver.fs</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager\AssemblyResolveHandler.fsi">
+      <Link>Driver\AssemblyResolveHandler.fsi</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager\AssemblyResolveHandler.fs">
+      <Link>Driver\AssemblyResolveHandler.fs</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager\NativeDllResolveHandler.fsi">
+      <Link>Driver\NativeDllResolveHandler.fsi</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager\NativeDllResolveHandler.fs">
+      <Link>Driver\NativeDllResolveHandler.fs</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager\DependencyProvider.fsi">
+      <Link>Driver\DependencyProvider.fsi</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager\DependencyProvider.fs">
+      <Link>Driver\DependencyProvider.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\CompilerConfig.fsi">
+      <Link>Driver\CompilerConfig.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\CompilerConfig.fs">
+      <Link>Driver\CompilerConfig.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\CompilerImports.fsi">
+      <Link>Driver\CompilerImports.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\CompilerImports.fs">
+      <Link>Driver\CompilerImports.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\CompilerDiagnostics.fsi">
+      <Link>Driver\CompilerDiagnostics.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\CompilerDiagnostics.fs">
+      <Link>Driver\CompilerDiagnostics.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\Continuation.fsi">
+      <Link>Driver\GraphChecking\Continuation.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\Continuation.fs">
+      <Link>Driver\GraphChecking\Continuation.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\Types.fsi">
+      <Link>Driver\GraphChecking\Types.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\Types.fs">
+      <Link>Driver\GraphChecking\Types.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\Graph.fsi">
+      <Link>Driver\GraphChecking\Graph.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\Graph.fs">
+      <Link>Driver\GraphChecking\Graph.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\TrieMapping.fsi">
+      <Link>Driver\GraphChecking\TrieMapping.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\TrieMapping.fs">
+      <Link>Driver\GraphChecking\TrieMapping.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\FileContentMapping.fsi">
+      <Link>Driver\GraphChecking\FileContentMapping.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\FileContentMapping.fs">
+      <Link>Driver\GraphChecking\FileContentMapping.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\DependencyResolution.fsi">
+      <Link>Driver\GraphChecking\DependencyResolution.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\DependencyResolution.fs">
+      <Link>Driver\GraphChecking\DependencyResolution.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\GraphProcessing.fsi">
+      <Link>Driver\GraphChecking\GraphProcessing.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\GraphChecking\GraphProcessing.fs">
+      <Link>Driver\GraphChecking\GraphProcessing.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\ParseAndCheckInputs.fsi">
+      <Link>Driver\ParseAndCheckInputs.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\ParseAndCheckInputs.fs">
+      <Link>Driver\ParseAndCheckInputs.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\ScriptClosure.fsi">
+      <Link>Driver\ScriptClosure.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\ScriptClosure.fs">
+      <Link>Driver\ScriptClosure.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\CompilerOptions.fsi">
+      <Link>Driver\CompilerOptions.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\CompilerOptions.fs">
+      <Link>Driver\CompilerOptions.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\OptimizeInputs.fsi">
+      <Link>Driver\OptimizeInputs.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\OptimizeInputs.fs">
+      <Link>Driver\OptimizeInputs.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\XmlDocFileWriter.fsi">
+      <Link>Driver\XmlDocFileWriter.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\XmlDocFileWriter.fs">
+      <Link>Driver\XmlDocFileWriter.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\BinaryResourceFormats.fsi">
+      <Link>Driver\BinaryResourceFormats.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\BinaryResourceFormats.fs">
+      <Link>Driver\BinaryResourceFormats.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\StaticLinking.fsi">
+      <Link>Driver\StaticLinking.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\StaticLinking.fs">
+      <Link>Driver\StaticLinking.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\CreateILModule.fsi">
+      <Link>Driver\CreateILModule.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\CreateILModule.fs">
+      <Link>Driver\CreateILModule.fs</Link>
+    </Compile>
+    <Compile Include="..\Driver\fsc.fsi">
+      <Link>Driver\fsc.fsi</Link>
+    </Compile>
+    <Compile Include="..\Driver\fsc.fs">
+      <Link>Driver\fsc.fs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <!-- Project references -->
+  <ItemGroup>
+    <ProjectReference Include="FSharp.Compiler.Utilities.fsproj" />
+    <ProjectReference Include="FSharp.Compiler.AbstractIL.fsproj" />
+    <ProjectReference Include="FSharp.Compiler.SyntaxTree.fsproj" />
+    <ProjectReference Include="FSharp.Compiler.TypedTree.fsproj" />
+    <ProjectReference Include="FSharp.Compiler.Checking.fsproj" />
+    <ProjectReference Include="FSharp.Compiler.Optimize.fsproj" />
+    <ProjectReference Include="FSharp.Compiler.CodeGen.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
+  </ItemGroup>
+
+</Project>

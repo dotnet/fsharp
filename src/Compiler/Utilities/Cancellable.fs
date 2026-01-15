@@ -69,7 +69,7 @@ type Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>
 
 module Cancellable =
 
-    let run (ct: CancellationToken) (Cancellable oper) =
+    let inline run (ct: CancellationToken) (Cancellable oper) =
         if ct.IsCancellationRequested then
             ValueOrCancelled.Cancelled(OperationCanceledException ct)
         else
@@ -115,12 +115,12 @@ module Cancellable =
 
 type CancellableBuilder() =
 
-    member _.Delay(f) =
+    member inline _.Delay([<InlineIfLambda>] f) =
         Cancellable(fun ct ->
             let (Cancellable g) = f ()
             g ct)
 
-    member _.Bind(comp, k) =
+    member inline _.Bind(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
 
             __debugPoint ""
@@ -129,7 +129,7 @@ type CancellableBuilder() =
             | ValueOrCancelled.Value v1 -> Cancellable.run ct (k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.BindReturn(comp, k) =
+    member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
 
             __debugPoint ""
@@ -138,7 +138,7 @@ type CancellableBuilder() =
             | ValueOrCancelled.Value v1 -> ValueOrCancelled.Value(k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.Combine(comp1, comp2) =
+    member inline _.Combine(comp1, comp2) =
         Cancellable(fun ct ->
 
             __debugPoint ""
@@ -147,7 +147,7 @@ type CancellableBuilder() =
             | ValueOrCancelled.Value() -> Cancellable.run ct comp2
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.TryWith(comp, handler) =
+    member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
         Cancellable(fun ct ->
 
             __debugPoint ""
@@ -167,7 +167,7 @@ type CancellableBuilder() =
                 | Choice2Of2 err -> Cancellable.run ct (handler err)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.Using(resource: _ MaybeNull, comp) =
+    member inline _.Using(resource: _ MaybeNull, [<InlineIfLambda>] comp) =
         Cancellable(fun ct ->
 
             __debugPoint ""
@@ -191,7 +191,7 @@ type CancellableBuilder() =
                 | Choice2Of2 err -> raise err
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.TryFinally(comp, compensation) =
+    member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
         Cancellable(fun ct ->
 
             __debugPoint ""
@@ -213,12 +213,12 @@ type CancellableBuilder() =
                 | Choice2Of2 err -> raise err
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.Return v =
+    member inline _.Return v =
         Cancellable(fun _ -> ValueOrCancelled.Value v)
 
-    member _.ReturnFrom(v: Cancellable<'T>) = v
+    member inline _.ReturnFrom(v: Cancellable<'T>) = v
 
-    member _.Zero() =
+    member inline _.Zero() =
         Cancellable(fun _ -> ValueOrCancelled.Value())
 
 [<AutoOpen>]

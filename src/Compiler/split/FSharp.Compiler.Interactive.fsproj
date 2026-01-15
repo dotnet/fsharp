@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="FSharp.Compiler.Split.props" />
+
+  <PropertyGroup>
+    <AssemblyName>FSharp.Compiler.Interactive</AssemblyName>
+  </PropertyGroup>
+
+  <!-- Embedded resources for Interactive -->
+  <ItemGroup>
+    <EmbeddedText Include="..\Interactive\FSIstrings.txt">
+      <Link>FSIstrings.txt</Link>
+    </EmbeddedText>
+  </ItemGroup>
+
+  <!-- Interactive source files -->
+  <ItemGroup>
+    <Compile Include="..\Interactive\FSharpInteractiveServer.fsi"><Link>Interactive\FSharpInteractiveServer.fsi</Link></Compile>
+    <Compile Include="..\Interactive\FSharpInteractiveServer.fs"><Link>Interactive\FSharpInteractiveServer.fs</Link></Compile>
+    <Compile Include="..\Interactive\ControlledExecution.fs"><Link>Interactive\ControlledExecution.fs</Link></Compile>
+    <Compile Include="..\Interactive\fsihelp.fsi"><Link>Interactive\fsihelp.fsi</Link></Compile>
+    <Compile Include="..\Interactive\fsihelp.fs"><Link>Interactive\fsihelp.fs</Link></Compile>
+    <Compile Include="..\Interactive\fsi.fsi"><Link>Interactive\fsi.fsi</Link></Compile>
+    <Compile Include="..\Interactive\fsi.fs"><Link>Interactive\fsi.fs</Link></Compile>
+  </ItemGroup>
+
+  <!-- Project references - Interactive depends on Service -->
+  <ItemGroup>
+    <ProjectReference Include="FSharp.Compiler.Service.fsproj" />
+  </ItemGroup>
+
+</Project>

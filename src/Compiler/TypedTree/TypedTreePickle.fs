@@ -324,14 +324,14 @@ let p_tup4 p1 p2 p3 p4 (a, b, c, d) (st: WriterState) =
     (p3 c st: unit)
     (p4 d st: unit)
 
-let inline p_tup5 p1 p2 p3 p4 p5 (a, b, c, d, e) (st: WriterState) =
+let p_tup5 p1 p2 p3 p4 p5 (a, b, c, d, e) (st: WriterState) =
     (p1 a st: unit)
     (p2 b st: unit)
     (p3 c st: unit)
     (p4 d st: unit)
     (p5 e st: unit)
 
-let inline p_tup6 p1 p2 p3 p4 p5 p6 (a, b, c, d, e, f) (st: WriterState) =
+let p_tup6 p1 p2 p3 p4 p5 p6 (a, b, c, d, e, f) (st: WriterState) =
     (p1 a st: unit)
     (p2 b st: unit)
     (p3 c st: unit)
@@ -339,7 +339,7 @@ let inline p_tup6 p1 p2 p3 p4 p5 p6 (a, b, c, d, e, f) (st: WriterState) =
     (p5 e st: unit)
     (p6 f st: unit)
 
-let inline p_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (a, b, c, d, e, f, x7, x8, x9) (st: WriterState) =
+let p_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (a, b, c, d, e, f, x7, x8, x9) (st: WriterState) =
     (p1 a st: unit)
     (p2 b st: unit)
     (p3 c st: unit)
@@ -350,7 +350,7 @@ let inline p_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (a, b, c, d, e, f, x7, x8, x9) (st:
     (p8 x8 st: unit)
     (p9 x9 st: unit)
 
-let inline p_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (a, b, c, d, e, f, x7, x8, x9, x10, x11) (st: WriterState) =
+let p_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (a, b, c, d, e, f, x7, x8, x9, x10, x11) (st: WriterState) =
     (p1 a st: unit)
     (p2 b st: unit)
     (p3 c st: unit)
@@ -492,7 +492,7 @@ let u_tup4 p1 p2 p3 p4 (st: ReaderState) =
     let d = p4 st
     (a, b, c, d)
 
-let inline u_tup5 p1 p2 p3 p4 p5 (st: ReaderState) =
+let u_tup5 p1 p2 p3 p4 p5 (st: ReaderState) =
     let a = p1 st
     let b = p2 st
     let c = p3 st
@@ -500,7 +500,7 @@ let inline u_tup5 p1 p2 p3 p4 p5 (st: ReaderState) =
     let e = p5 st
     (a, b, c, d, e)
 
-let inline u_tup6 p1 p2 p3 p4 p5 p6 (st: ReaderState) =
+let u_tup6 p1 p2 p3 p4 p5 p6 (st: ReaderState) =
     let a = p1 st
     let b = p2 st
     let c = p3 st
@@ -509,7 +509,7 @@ let inline u_tup6 p1 p2 p3 p4 p5 p6 (st: ReaderState) =
     let f = p6 st
     (a, b, c, d, e, f)
 
-let inline u_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (st: ReaderState) =
+let u_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (st: ReaderState) =
     let a = p1 st
     let b = p2 st
     let c = p3 st
@@ -520,7 +520,7 @@ let inline u_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (st: ReaderState) =
     let x8 = p8 st
     (a, b, c, d, e, f, x7, x8)
 
-let inline u_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (st: ReaderState) =
+let u_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (st: ReaderState) =
     let a = p1 st
     let b = p2 st
     let c = p3 st
@@ -532,7 +532,7 @@ let inline u_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (st: ReaderState) =
     let x9 = p9 st
     (a, b, c, d, e, f, x7, x8, x9)
 
-let inline u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st: ReaderState) =
+let u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st: ReaderState) =
     let a = p1 st
     let b = p2 st
     let c = p3 st
@@ -548,7 +548,7 @@ let inline u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st: ReaderState) 
     let x13 = p13 st
     (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13)
 
-let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (st: ReaderState) =
+let u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (st: ReaderState) =
     let a = p1 st
     let b = p2 st
     let c = p3 st

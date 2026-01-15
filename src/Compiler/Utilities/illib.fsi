@@ -291,10 +291,10 @@ module Dictionary =
 type internal DictionaryExtensions =
 
     [<Extension>]
-    static member inline BagAdd: dic: Dictionary<'key, 'value list> * key: 'key * value: 'value -> unit
+    static member BagAdd: dic: Dictionary<'key, 'value list> * key: 'key * value: 'value -> unit
 
     [<Extension>]
-    static member inline BagExistsValueForKey:
+    static member BagExistsValueForKey:
         dic: Dictionary<'key, 'value list> * key: 'key * f: ('value -> bool) -> bool
 
 module Lazy =
