@@ -658,3 +658,104 @@ module General =
         |> withErrorCode 0767
         |> withErrorCode 0035
         |> ignore
+
+    // W_CreateIDisposable.fs - FS0760 IDisposable creation should use 'new Type(args)'
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_CreateIDisposable.fs"|])>]
+    let ``W_CreateIDisposable_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0760
+        |> ignore
+
+    // W_FailwithRedundantArgs.fs - FS3189 redundant args in failwith
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_FailwithRedundantArgs.fs"|])>]
+    let ``W_FailwithRedundantArgs_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3189
+        |> ignore
+
+    // W_FailwithfRedundantArgs.fs - FS3189 redundant args in failwithf
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_FailwithfRedundantArgs.fs"|])>]
+    let ``W_FailwithfRedundantArgs_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3189
+        |> ignore
+
+    // W_RaiseRedundantArgs.fs - FS3189 redundant args in raise
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_RaiseRedundantArgs.fs"|])>]
+    let ``W_RaiseRedundantArgs_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3189
+        |> ignore
+
+    // W_InvalidArgRedundantArgs.fs - FS3189 redundant args in invalidArg
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_InvalidArgRedundantArgs.fs"|])>]
+    let ``W_InvalidArgRedundantArgs_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3189
+        |> ignore
+
+    // W_NullArgRedundantArgs.fs - FS3189 redundant args in nullArg
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_NullArgRedundantArgs.fs"|])>]
+    let ``W_NullArgRedundantArgs_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3189
+        |> ignore
+
+    // W_InvalidOpRedundantArgs.fs - FS3189 redundant args in invalidOp
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_InvalidOpRedundantArgs.fs"|])>]
+    let ``W_InvalidOpRedundantArgs_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3189
+        |> ignore
+
+    // W_LowercaseLiteralIgnored.fs - FS3190 lowercase literal shadowed warning
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_LowercaseLiteralIgnored.fs"|])>]
+    let ``W_LowercaseLiteralIgnored_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3190
+        |> ignore
+
+    // W_LowercaseLiteralNotIgnored.fs - FS0026 rule will never be matched
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_LowercaseLiteralNotIgnored.fs"|])>]
+    let ``W_LowercaseLiteralNotIgnored_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0026
+        |> ignore
+
+    // W_IndexedPropertySetter01.fs - FS0191 indexed property setter should be curried
+    // Regression test for FSHARP1.0:1185
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_IndexedPropertySetter01.fs"|])>]
+    let ``W_IndexedPropertySetter01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0191
+        |> ignore
