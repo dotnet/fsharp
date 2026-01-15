@@ -1,6 +1,6 @@
-Updated: 2026-01-15 08:03:07
-Elapsed: 00:45:38
-Message: Subtask 5: Implement iteration 1
+Updated: 2026-01-15 08:17:41
+Elapsed: 01:00:11
+Message: Subtask 7: Implement iteration 1
 
 Subtasks:
   [1] Migrate
@@ -9,9 +9,9 @@ Subtasks:
   [3] Migrate ObjectConstructor
    and DontWarn files: Done (2 iters)
   [4] Migrate argument and sealed attribute tests: Done (2 iters)
-  [5] Migrate property and constraint tests: Running Implement iter 1
-  [6] Migrate incomplete and unexpected constructs: Todo
-  [7] Migrate override and quotation tests: Todo
+  [5] Migrate property and constraint tests: Done (2 iters)
+  [6] Migrate incomplete and unexpected constructs: Done (2 iters)
+  [7] Migrate override and quotation tests: Running Implement iter 1
   [8] Migrate
    redundant args and lowercase literal tests: Todo
   [9] Handle special case
@@ -23,6 +23,6 @@ Subtasks:
   [13] Verify all Diagnostics tests pass: Todo
   [14] Final commit and summary: Todo
 
-Agent PID: 12218
-Agent Started: 08:01:29
-Agent Log: /Users/tomasgrosup/code/fsharp/.ralph/logs/Implement-5-20260115-080129.log
+Agent PID: 14581
+Agent Started: 08:14:49
+Agent Log: /Users/tomasgrosup/code/fsharp/.ralph/logs/Implement-7-20260115-081449.log

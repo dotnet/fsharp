@@ -589,3 +589,72 @@ module General =
         |> withErrorCode 0010
         |> ignore
 
+    // W_OverrideImplementationInAugmentation01a.fs - FS0060 warning on override in augmentation
+    // Regression test for FSHARP1.0:1273
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_OverrideImplementationInAugmentation01a.fs"|])>]
+    let ``W_OverrideImplementationInAugmentation01a_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0060
+        |> ignore
+
+    // W_OverrideImplementationInAugmentation02b.fs - FS0060 warning + FS0001 error (type mismatch)
+    // Regression test for FSHARP1.0:1273
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_OverrideImplementationInAugmentation02b.fs"|])>]
+    let ``W_OverrideImplementationInAugmentation02b_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0060
+        |> withErrorCode 0001
+        |> ignore
+
+    // W_OverrideImplementationInAugmentation03a.fs - FS0060 warning on default in augmentation
+    // Regression test for FSHARP1.0:1273
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_OverrideImplementationInAugmentation03a.fs"|])>]
+    let ``W_OverrideImplementationInAugmentation03a_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0060
+        |> ignore
+
+    // W_OverrideImplementationInAugmentation03b.fs - FS0060 warning on override in augmentation
+    // Regression test for FSHARP1.0:1273
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_OverrideImplementationInAugmentation03b.fs"|])>]
+    let ``W_OverrideImplementationInAugmentation03b_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0060
+        |> ignore
+
+    // E_Quotation_UnresolvedGenericConstruct01.fs - FS0331 and FS0071 errors
+    // Regression test for FSHARP1.0:1278
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_Quotation_UnresolvedGenericConstruct01.fs"|])>]
+    let ``E_Quotation_UnresolvedGenericConstruct01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0331
+        |> withErrorCode 0071
+        |> ignore
+
+    // E_InvalidObjectExpression01.fs - FS0251, FS0767, FS0035 errors
+    // Regression test for DevDiv:4858
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_InvalidObjectExpression01.fs"|])>]
+    let ``E_InvalidObjectExpression01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0251
+        |> withErrorCode 0767
+        |> withErrorCode 0035
+        |> ignore
