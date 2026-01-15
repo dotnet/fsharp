@@ -524,3 +524,68 @@ module General =
         |> withErrorCode 0010
         |> ignore
 
+    // E_IncompleteConstruct01.fs - FS3567 Expecting member body
+    // Regression test for FSHARP1.0:1181
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_IncompleteConstruct01.fs"|])>]
+    let ``E_IncompleteConstruct01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3567
+        |> ignore
+
+    // E_IncompleteConstruct01b.fs - FS3567 Expecting member body (no syntax error message)
+    // Regression test for FSHARP1.0:1181
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_IncompleteConstruct01b.fs"|])>]
+    let ``E_IncompleteConstruct01b_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3567
+        |> ignore
+
+    // E_UnexpectedKeyworkWith01.fs - FS0010 unexpected keyword 'with'
+    // Regression test for FSHARP1.0:1872
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_UnexpectedKeyworkWith01.fs"|])>]
+    let ``E_UnexpectedKeyworkWith01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0010
+        |> ignore
+
+    // E_MemberObjectctorTakeGiven.fs - FS0502 member/object constructor wrong type arguments
+    // Regression test for FSHARP1.0:1423
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_MemberObjectctorTakeGiven.fs"|])>]
+    let ``E_MemberObjectctorTakeGiven_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0502
+        |> ignore
+
+    // E_StructMustHaveAtLeastOneField.fs - struct can now be empty
+    // Related to FSHARP1.0:3143
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_StructMustHaveAtLeastOneField.fs"|])>]
+    let ``E_StructMustHaveAtLeastOneField_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // E_UnexpectedSymbol01.fs - FS0010 unexpected symbol, FS0588 unfinished let block
+    // Regression test for FSHARP1.0:2099, FSHARP1.0:2670
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_UnexpectedSymbol01.fs"|])>]
+    let ``E_UnexpectedSymbol01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0010
+        |> ignore
+
