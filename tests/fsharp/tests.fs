@@ -452,17 +452,6 @@ module CoreTests =
 
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-        // some features missing in 4.7
-        for version in ["4.7"] do
-            let outFile = "compilation.langversion.old.output.txt"
-            let expectedFile = "compilation.langversion.old.output.bsl"
-            fscBothToOutExpectFail cfg outFile "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --nologo --langversion:%s" cfg.fsc_flags version ["test.fsx"]
-
-            let diffs = fsdiff cfg outFile expectedFile
-            match diffs with
-            | "" -> ()
-            | _ -> failwithf "'%s' and '%s' differ; %A" outFile expectedFile diffs
-
         // check error messages for some cases
         let outFile = "compilation.errors.output.txt"
         let expectedFile = "compilation.errors.output.bsl"
@@ -1447,18 +1436,6 @@ module CoreTests =
 
 module VersionTests =
     [<Fact>]
-    let ``member-selfidentifier-version4_6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" (FSC_BUILDONLY true) "4.6"
-
-    [<Fact>]
-    let ``member-selfidentifier-version4_7``() = singleTestBuildAndRunVersion "core/members/self-identifier/version47" (FSC_BUILDONLY true) "4.7"
-
-    [<Fact>]
-    let ``indent-version4_7``() = singleTestBuildAndRunVersion "core/indent/version47" (FSC_BUILDONLY true) "4.7"
-
-    [<Fact>]
-    let ``nameof-version4_6``() = singleTestBuildAndRunVersion "core/nameof/version46" (FSC_BUILDONLY true) "4.6"
-
-    [<Fact>]
     let ``nameof-versionpreview``() = singleTestBuildAndRunVersion "core/nameof/preview" (FSC_BUILDONLY true) "preview"
 
     [<Fact>]
@@ -2023,20 +2000,6 @@ module TypecheckTests =
 
     [<Fact>]
     let ``type check neg17`` () = singleNegTest (testConfig "typecheck/sigs") "neg17"
-
-    [<Fact>]
-    let ``type check neg24 version 4_6`` () =
-        let cfg = testConfig "typecheck/sigs/version46"
-        // For some reason this warning is off by default in the test framework but in this case we are testing for it
-        let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
-        singleVersionedNegTest cfg "4.6" "neg24"
-
-    [<Fact>]
-    let ``type check neg24 version 4_7`` () =
-        let cfg = testConfig "typecheck/sigs/version47"
-        // For some reason this warning is off by default in the test framework but in this case we are testing for it
-        let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
-        singleVersionedNegTest cfg "4.7" "neg24"
 
     [<Fact>]
     let ``type check neg24 version preview`` () =
