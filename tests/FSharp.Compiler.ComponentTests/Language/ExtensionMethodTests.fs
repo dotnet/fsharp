@@ -51,7 +51,7 @@ type Foo =
 
 let f (b:int) = b.PlusOne()
             """
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -127,7 +127,7 @@ type Foo =
     [<Extension>]
     static member PlusOne (a:int) : int = a + 1
 """
-            |> withLangVersion70
+            |> withLangVersionPreview
             |> withName "FSLib"
 
         let csharp =
