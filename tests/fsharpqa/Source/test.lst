@@ -6,12 +6,12 @@
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
 # CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions  # MIGRATED to ComponentTests
-CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors
+# CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors  # MIGRATED to ComponentTests
 # CompilerOptions02,NoMT,gcc			CompilerOptions\fsc\gccerrors  # MIGRATED to ComponentTests
 CompilerOptions01,NoMT				CompilerOptions\fsc\lib
 # CompilerOptions01,NoMT				CompilerOptions\fsc\noframework  # MIGRATED to ComponentTests
 # CompilerOptions01,NoMT				CompilerOptions\fsc\nologo  # MIGRATED to ComponentTests
-CompilerOptions01,NoMT				CompilerOptions\fsc\optimize
+# CompilerOptions01,NoMT				CompilerOptions\fsc\optimize  # MIGRATED to ComponentTests
 CompilerOptions01,NoMT				CompilerOptions\fsc\out
 CompilerOptions01,NoMT,pdbs			CompilerOptions\fsc\pdb
 CompilerOptions01,NoMT				CompilerOptions\fsc\platform
