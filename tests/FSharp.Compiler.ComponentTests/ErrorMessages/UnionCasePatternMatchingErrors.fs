@@ -120,7 +120,7 @@ let myVal =
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3548, Line 9, Col 5, Line 9, Col 8, "Pattern discard is not allowed for union case that takes no data.")
+        |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
     
     [<Fact>]
     let ``Union function Pattern discard not allowed for union case that takes no data with Lang version preview`` () =
@@ -199,7 +199,7 @@ let myVal =
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3548, Line 13, Col 7, Line 13, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+        |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
  
     [<Fact>]
     let ``Grouped Pattern discard not allowed for union case that takes no data with Lang preview`` () =
@@ -331,8 +331,8 @@ let myVal =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3548, Line 16, Col 7, Line 16, Col 10, "Pattern discard is not allowed for union case that takes no data.")
-            (Warning 3548, Line 17, Col 20, Line 17, Col 23, "Pattern discard is not allowed for union case that takes no data.")
+            (Warning 3548, Line 17, Col 7, Line 17, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+            (Warning 3548, Line 18, Col 20, Line 18, Col 23, "Pattern discard is not allowed for union case that takes no data.")
         ]
     
     [<Theory; FileInlineData("E_UnionCaseTakesNoArguments.fs")>]

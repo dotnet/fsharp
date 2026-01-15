@@ -12,7 +12,7 @@ module UseBindings =
     let ``UseBindings - UseBindingDiscard01_fs - Current LangVersion`` compilation =
         compilation
         |> asFsx
-        |> withLangVersion60
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> ignore
@@ -31,7 +31,7 @@ module UseBindings =
     let ``Dispose called for discarded value of use binding`` compilation =
         compilation
         |> asExe
-        |> withLangVersion60
+        |> withLangVersion80
         |> compileAndRun
         |> shouldSucceed
         

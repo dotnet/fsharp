@@ -63,6 +63,7 @@ module Modules =
         |> shouldFail
         |> withDiagnostics [
             Error 535, Line 1, Col 1, Line 1, Col 35, "Ignoring attributes on module abbreviation"
+            Error 222, Line 1, Col 1, Line 1, Col 42, "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration."
         ]
                                  
     [<Fact>]
