@@ -60,9 +60,8 @@ let ``array-no-dot-warnings-langversion-8_0`` () =
 let ``ref-ops-deprecation-langversion-preview`` () =
     singleVersionedNegTest "core/ref-ops-deprecation" LangVersion.Preview "test-langversion-preview"
 
-[<Fact>]
-let ``auto-widen-version-8_0``() = 
-    singleVersionedNegTest "core/auto-widen/5.0" LangVersion.V80 "test"
+// Note: auto-widen-version-5_0 test was removed as it tested behavior when auto-widen was disabled (langversion < 8.0)
+// Now that minimum is 8.0, auto-widen is always enabled and the test folder core/auto-widen/5.0 can be removed
 
 [<Fact>]
 let ``auto-widen-version-FSC_DEBUG-preview``() =

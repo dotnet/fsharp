@@ -37,7 +37,7 @@ module SerializableAttribute =
     let ``ToplevelModule_LangVersion60_fs`` compilation =
         compilation
         |> getCompilation
-        |> withLangVersion60
+        |> withLangVersion80
         |> verifyCompilation
 
     // SOURCE=ToplevelNamespace.fs SCFLAGS="-a -g --langversion:6.0 --out:ToplevelNamespace-preview.dll --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ToplevelNamespace-preview.dll"		# ToplevelNamespace.fs - Desktop preview
@@ -45,5 +45,5 @@ module SerializableAttribute =
     let ``ToplevelNamespace_LangVersion60_fs`` compilation =
         compilation
         |> getCompilation
-        |> withLangVersion60
+        |> withLangVersion80
         |> verifyCompilation
