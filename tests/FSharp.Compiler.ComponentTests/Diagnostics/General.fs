@@ -268,3 +268,63 @@ module General =
         |> withWarningCode 0086
         |> ignore
 
+    // W_redefineOperator03.fs - FS0086 <= operator should not be redefined
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_redefineOperator03.fs"|])>]
+    let ``W_redefineOperator03_fs`` compilation =
+        compilation
+        |> withOptions ["-a"; "--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0086
+        |> ignore
+
+    // W_redefineOperator04.fs - FS0086 >= operator should not be redefined
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_redefineOperator04.fs"|])>]
+    let ``W_redefineOperator04_fs`` compilation =
+        compilation
+        |> withOptions ["-a"; "--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0086
+        |> ignore
+
+    // W_redefineOperator05.fs - FS0086 <> operator should not be redefined
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_redefineOperator05.fs"|])>]
+    let ``W_redefineOperator05_fs`` compilation =
+        compilation
+        |> withOptions ["-a"; "--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0086
+        |> ignore
+
+    // W_redefineOperator06.fs - FS0086 = operator should not be redefined
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_redefineOperator06.fs"|])>]
+    let ``W_redefineOperator06_fs`` compilation =
+        compilation
+        |> withOptions ["-a"; "--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0086
+        |> ignore
+
+    // W_redefineOperator08.fs - FS0086 && operator should not be redefined
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_redefineOperator08.fs"|])>]
+    let ``W_redefineOperator08_fs`` compilation =
+        compilation
+        |> withOptions ["-a"; "--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0086
+        |> ignore
+
+    // W_redefineOperator10.fs - FS0086 || operator should not be redefined
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_redefineOperator10.fs"|])>]
+    let ``W_redefineOperator10_fs`` compilation =
+        compilation
+        |> withOptions ["-a"; "--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0086
+        |> ignore
+

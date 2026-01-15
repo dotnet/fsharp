@@ -1,103 +1,89 @@
-# FSharpQA Migration - VISION
+# FSharpQA Migration - VISION (Updated 2026-01-15)
 
 ## High-Level Goal
-Migrate 1680 tests from the legacy `tests/fsharpqa` Perl-based test suite to `tests/FSharp.Compiler.ComponentTests` using the existing test infrastructure (Compiler.fs, DirectoryAttribute, FileInlineDataAttribute).
+Migrate tests from the legacy `tests/fsharpqa` Perl-based test suite to `tests/FSharp.Compiler.ComponentTests` using the existing test infrastructure.
+
+## Current State (As of 2026-01-15)
+
+### Completed Packages (4 of 4 Diagnostics packages in progress)
+All 4 Diagnostics packages have test files and resources created. Status:
+
+| Package | env.lst Tests | Resources Migrated | Test File | Source Cleanup |
+|---------|---------------|-------------------|-----------|----------------|
+| DIAG-ASYNC | 15 | 19 files | async.fs (197 lines) | **Pending** - source files still in fsharpqa |
+| DIAG-NONTERM | 36 | 38 files | NONTERM.fs (385 lines) | **Pending** - only env.lst remains |
+| DIAG-PARSINGEOF | 12 | 12 files | ParsingAtEOF.fs (121 lines) | **Pending** - only env.lst remains |
+| DIAG-GENERAL | ~55 (50 unique) | 26 files | General.fs (270 lines) | **Pending** - 29+ files need migration |
+
+### Git Commits Made (on branch `fsharpqa_migration`)
+1. `8e3f32799` - Add migration tracking documents
+2. `4434e00a7` - Complete DIAG-ASYNC migration: 15 env.lst tests to async.fs
+3. `e1cbf72e6` - Migrate DIAG-NONTERM: 36 tests
+4. `e0393d899` - Migrate DIAG-PARSINGEOF tests
+5. `3b730eb05` - Migrate first 25 tests from DIAG-GENERAL
+
+### Remaining Work for Diagnostics
+
+1. **DIAG-GENERAL (Priority 1)** - 29+ more files to migrate:
+   - W_redefineOperator03-10.fs (6 files)
+   - E_matrix_*.fs (4 files)
+   - E_ExpressionHasType_FullPath01.fs
+   - Multi-file tests: E_ConsiderAddingSealedAttribute01.fsi + .fs
+   - FSI mode tests: X-DontWarnOnImplicitModule01.fsx, .fsscript
+   - Missing source file tests: E_MissingSourceFile01-04.fs
+   - All other E_*.fs and W_*.fs files
+
+2. **Cleanup (Priority 2)** - Delete source folders after verification:
+   - `tests/fsharpqa/Source/Diagnostics/async/` - delete after tests pass
+   - `tests/fsharpqa/Source/Diagnostics/NONTERM/` - delete env.lst
+   - `tests/fsharpqa/Source/Diagnostics/ParsingAtEOF/` - delete env.lst
+   - `tests/fsharpqa/Source/Diagnostics/General/` - delete after all migrated
 
 ## Key Design Decisions
 
 ### 1. Use Existing Infrastructure (Don't Reinvent)
-- **Compiler.fs** provides all compilation helpers: `typecheck`, `compile`, `shouldFail`, `shouldSucceed`, `withDiagnostics`, `withErrorCode`, etc.
-- **DirectoryAttribute** allows batch-testing all files in a directory with baselines
-- **FileInlineDataAttribute** allows single-file tests with compile options
-- **No new test framework needed** - everything exists in FSharp.Test.Utilities
+- **Compiler.fs** provides all compilation helpers
+- **DirectoryAttribute** allows batch-testing with Includes filter
+- **No new test framework needed**
 
-### 2. Git-Move Source Files (Preserve History & Review)
-- Source files (`.fs`, `.fsx`, `.fsi`) are **git-moved unchanged** to `resources/tests/[path]/`
-- This preserves line numbers (Expects spans remain valid)
-- Clean PR review shows renames, not edits
-- `<Expects>` comments stay in files for reference
+### 2. Git-Move Source Files (Preserve History)
+- `git mv` source files unchanged to `resources/tests/[path]/`
+- Preserves line numbers and clean PR review
 
-### 3. Test Generation Pattern
-For each test in `env.lst`:
+### 3. Test Pattern
 ```fsharp
-[<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/async", Includes=[|"file.fs"|])>]
+[<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"file.fs"|])>]
 let ``test name`` compilation =
     compilation
-    |> asFsx  // if FSI mode
-    |> withOptions ["--warnaserror+"; "--test:ErrorRanges"]
-    |> typecheck  // fastest method
+    |> withOptions ["--test:ErrorRanges"]
+    |> typecheck
     |> shouldFail
-    |> withErrorCode 0025
+    |> withErrorCode NNNN
     |> ignore
 ```
 
-### 4. env.lst Parsing
-Each line in `env.lst` defines a test:
-- `SOURCE=file.fs` → file to compile
-- `SCFLAGS="..."` → compiler options → `withOptions [...]`
-- `COMPILE_ONLY=1` → use `typecheck` (fastest)
-- `FSIMODE=EXEC` → use `asFsx`
+## Important Notes
 
-### 5. Expects Parsing
-Comments in source files define expected diagnostics:
-- `<Expects status="error" id="FS0025" span="(10,10-10,22)">message</Expects>`
-- Maps to: `withDiagnostics [(Error 25, Line 10, Col 10, Line 10, Col 22, "message")]`
-- Or simplified: `withErrorCode 25` + `withDiagnosticMessageMatches "pattern"`
+### SKIP_VERSION_SUPPORTED_CHECK
+When running tests, set `SKIP_VERSION_SUPPORTED_CHECK=1` to avoid version compatibility failures with langversion tests.
 
-## Important Context for Subtasks
+### Build/Test Commands
+```bash
+# Build
+dotnet build tests/FSharp.Compiler.ComponentTests -c Release
 
-### Files to Reference
-1. **FSHARPQA_MIGRATION.md** - Master spec with all package definitions and patterns
-2. **FEATURE_MAPPING.md** - Mapping from fsharpqa patterns to ComponentTests equivalents
-3. **tests/FSharp.Test.Utilities/Compiler.fs** - All test helpers (2000+ lines)
-4. **tests/FSharp.Test.Utilities/DirectoryAttribute.fs** - Batch test attribute
-5. **tests/FSharp.Test.Utilities/FileInlineDataAttribute.fs** - Single file test attribute
+# Run specific tests
+SKIP_VERSION_SUPPORTED_CHECK=1 dotnet test tests/FSharp.Compiler.ComponentTests -c Release --filter "FullyQualifiedName~Diagnostics.General"
+```
 
-### Current State
-- 1680 tests remaining in fsharpqa
-- Some async tests already partially migrated (4 tests in async.fs, 18 files in resources)
-- Need to complete remaining tests and delete fsharpqa folders
+### Multi-file Tests
+For tests with `SOURCE="file1.fsi file2.fs"`:
+```fsharp
+|> withAdditionalSourceFile (SourceFromPath (resourcePath + "/file1.fsi"))
+```
 
-### Workflow Per Package
-1. Parse `env.lst` to get test definitions
-2. `git mv` source files to `resources/tests/[path]/`
-3. Create test `.fs` file with test cases
-4. Add `<Compile Include="...">` to .fsproj
-5. Build and verify tests run
-6. Delete fsharpqa source folder after verification
+## Lessons Learned
 
-## Constraints and Gotchas
-
-### Platform Classification
-- Most tests are CrossPlatform (default)
-- Mark WindowsOnly/DesktopOnly tests with traits and skip checks
-- Agent runs on macOS - tests should skip gracefully, not error
-
-### Don't Break Existing Tests
-- ComponentTests already have many tests
-- Add to existing structure, don't duplicate
-- Use existing resource paths: `resources/tests/[category]/[folder]/`
-
-### Build System
-- Run `dotnet build tests/FSharp.Compiler.ComponentTests` to verify
-- Build currently broken on main (FSharp.Core version conflict) - pre-existing issue
-- Focus on correctness, not fixing unrelated build issues
-
-## Lessons from Previous Attempts
-
-### What Worked
-- Using DirectoryAttribute with Includes for selective file testing
-- Pattern: `|> typecheck |> shouldFail |> withErrorCode N` for simple diagnostics
-- Git-moving files preserves review quality
-
-### What Didn't Work
-- Trying to match exact message text (use regex patterns instead)
-- Creating new test framework pieces (use existing Compiler.fs)
-- Large monolithic migrations (split into small packages)
-
-## Priority Order
-1. Small packages first (DIAG-NONTERM, DIAG-PARSINGEOF)
-2. CompilerOptions (straightforward, isolated)
-3. Diagnostics (larger but well-structured)
-4. Conformance (largest, save for later)
-5. Complex packages last (INTERACTIVE, IMPORT)
+1. **bash posix_spawnp errors** - Can occur with many sessions; use view/glob/grep instead of ls
+2. **Pre-existing test failures** - 294 tests fail on main; these are NOT caused by migration
+3. **Small batches work better** - Commit after each 20-30 files migrated

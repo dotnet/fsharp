@@ -22,3 +22,15 @@
    TestFailure:
      Command: ./build.sh -c Release --testcoreclr
 
+## Subtask 5 - Implement iteration 1 (2026-01-14 19:32:07)
+-    VERIFY_FAILED
+
+   **Classification: TestFailure**
+
+   **Summary:**
+   - Build: OK (succeeded)
+   - Tests: FAILED - 294 test failures
+
+   **Key Failing Test Categories:**
+   1. `CompilerOptions.Fsc.langversion` - langversion tests for F# 5/5.0
+
