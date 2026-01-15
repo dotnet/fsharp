@@ -194,7 +194,7 @@ let check msg actual expected = if actual <> expected then failwithf "FAILED %s,
         let lib = applicativeLib opts
         // Adjust the expected errors for the number of lines in the library
         let libLineAdjust = lib |> Seq.filter (fun c -> c = '\n') |> Seq.length
-        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust [| "/langversion:4.7" |] libLineAdjust (lib + source) errors
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust [| "/langversion:8.0" |] libLineAdjust (lib + source) errors
 
     [<Fact>]
     let ``AndBang TraceApplicative`` () =
