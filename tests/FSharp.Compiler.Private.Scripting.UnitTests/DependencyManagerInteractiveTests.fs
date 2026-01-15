@@ -735,7 +735,7 @@ x |> Seq.iter(fun r ->
 
   F# Interactive command line options:"""
 
-        use script = new FSharpScript(quiet = false, langVersion = LangVersion.V47)
+        use script = new FSharpScript(quiet = false, langVersion = LangVersion.V80)
 
         use capture = new TestConsole.ExecutionCapture()
         let _opt = script.Eval("#help") |> getValue
