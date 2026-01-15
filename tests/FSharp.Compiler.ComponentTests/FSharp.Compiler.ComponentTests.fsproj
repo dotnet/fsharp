@@ -323,6 +323,8 @@
     <Compile Include="CompilerOptions\fsc\gccerrors\gccerrors.fs" />
     <Compile Include="CompilerOptions\fsc\standalone\standalone.fs" />
     <Compile Include="CompilerOptions\fsc\staticlink\staticlink.fs" />
+    <Compile Include="CompilerOptions\fsc\pdb\Pdb.fs" />
+    <Compile Include="CompilerOptions\fsc\subsystemversion\Subsystemversion.fs" />
     <Compile Include="CompilerOptions\fsc\tailcalls\tailcalls.fs" />
     <Compile Include="CompilerOptions\fsc\target\target.fs" />
     <Compile Include="CompilerOptions\fsc\tokenize\tokenize.fs" />
