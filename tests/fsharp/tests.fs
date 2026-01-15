@@ -54,15 +54,6 @@ module CoreTests =
 
         execAndCheckPassed cfg ("." ++ "test-no-checknulls.exe") ""
 
-
-    [<Fact>]
-    let ``subtype-langversion-46`` () =
-        let cfg = testConfig "core/subtype"
-
-        fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
-
-        execAndCheckPassed cfg ("." ++ "test-langversion-46.exe") ""
-
 #endif
 
 
@@ -612,11 +603,6 @@ module CoreTests =
     let ``printing`` () =
          runPrintingTest "--multiemit- --debug+" "output"
 
-    // F# 5.0 changed some things printing output
-    [<FSharp.Test.FactSkipOnSignedBuild>]
-    let ``printing-langversion47`` () =
-         runPrintingTest "--langversion:4.7" "output.47"
-
     // Output should not change with optimization off
     [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing-optimizeoff`` () =
@@ -914,18 +900,6 @@ module CoreTests =
         fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
 
         execAndCheckPassed cfg ("." ++ "test-checknulls.exe") ""
-
-
- 
-    [<Fact>]
-    let ``libtest-langversion-46`` () =
-        let cfg = testConfig "core/libtest"
-
-        
-
-        fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
-
-        execAndCheckPassed cfg ("." ++ "test-langversion-46.exe") ""
 
 
     [<Fact>]
@@ -1885,7 +1859,7 @@ module TypecheckTests =
     [<Fact>]
     let ``sigs pos40`` () =
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --langversion:6.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
+        fsc cfg "%s --langversion:8.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
         peverify cfg "pos40.exe"
         exec cfg ("." ++ "pos40.exe") ""
         
