@@ -388,3 +388,41 @@ module General =
         |> withWarningCode 1125
         |> ignore
 
+    // E_ObjectConstructorAndTry01.fs - Regression test for FSHARP1.0:1980 (class with for loop in constructor)
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_ObjectConstructorAndTry01.fs"|])>]
+    let ``E_ObjectConstructorAndTry01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // E_ObjectConstructorAndTry02.fs - Regression test for FSHARP1.0:1980 (struct with for loop in constructor)
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_ObjectConstructorAndTry02.fs"|])>]
+    let ``E_ObjectConstructorAndTry02_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // X-DontWarnOnImplicitModule01.fsx - Regression test for FSHARP1.0:2893 (no implicit module warning for .fsx)
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"X-DontWarnOnImplicitModule01.fsx"|])>]
+    let ``X-DontWarnOnImplicitModule01_fsx`` compilation =
+        compilation
+        |> asFsx
+        |> withOptions ["--warnaserror+"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // X-DontWarnOnImplicitModule01.fsscript - Regression test for FSHARP1.0:2893 (no implicit module warning for .fsscript)
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"X-DontWarnOnImplicitModule01.fsscript"|])>]
+    let ``X-DontWarnOnImplicitModule01_fsscript`` compilation =
+        compilation
+        |> asFsx
+        |> withOptions ["--warnaserror+"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
