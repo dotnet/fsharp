@@ -191,37 +191,37 @@ module XmlDocInheritanceTests =
     [<Fact>]
     let ``XmlDoc with inheritdoc but no InfoReader returns unchanged`` () =
         let doc = XmlDoc([|"<inheritdoc/>"|], Range.range0)
-        let result = expandInheritDoc None None None None Range.Zero Set.empty doc
+        let result = expandInheritDoc None None None None Range.range0 Set.empty doc
         // Without InfoReader, should return unchanged
         Assert.NotNull(result)
 
     [<Fact>]
     let ``XmlDoc with inheritdoc cref is detected`` () =
-        let doc = XmlDoc([|"<inheritdoc cref=\"T:System.String\"/>"|], Range.Zero)
-        let result = expandInheritDoc None None None None Range.Zero Set.empty doc
+        let doc = XmlDoc([|"<inheritdoc cref=\"T:System.String\"/>"|], Range.range0)
+        let result = expandInheritDoc None None None None Range.range0 Set.empty doc
         // Without InfoReader, should return unchanged
         Assert.NotNull(result)
 
     [<Fact>]
     let ``XmlDoc with inheritdoc path is detected`` () =
-        let doc = XmlDoc([|"<inheritdoc path=\"/summary\"/>"|], Range.Zero)
-        let result = expandInheritDoc None None None None Range.Zero Set.empty doc
+        let doc = XmlDoc([|"<inheritdoc path=\"/summary\"/>"|], Range.range0)
+        let result = expandInheritDoc None None None None Range.range0 Set.empty doc
         // Without InfoReader, should return unchanged
         Assert.NotNull(result)
 
     [<Fact>]
     let ``Malformed XML is handled gracefully`` () =
-        let doc = XmlDoc([|"<unclosed>"|], Range.Zero)
-        let result = expandInheritDoc None None None None Range.Zero Set.empty doc
+        let doc = XmlDoc([|"<unclosed>"|], Range.range0)
+        let result = expandInheritDoc None None None None Range.range0 Set.empty doc
         // Should return original doc when XML is malformed
         Assert.Equal(doc.GetXmlText(), result.GetXmlText())
 
     [<Fact>]
     let ``Cycle detection prevents infinite recursion`` () =
-        let doc = XmlDoc([|"<inheritdoc cref=\"T:System.String\"/>"|], Range.Zero)
+        let doc = XmlDoc([|"<inheritdoc cref=\"T:System.String\"/>"|], Range.range0)
         // Simulate a cycle by pre-populating visited set
         let visited = Set.ofList ["T:System.String"]
-        let result = expandInheritDoc None None None None Range.Zero visited doc
+        let result = expandInheritDoc None None None None Range.range0 visited doc
         // Should return original doc when cycle is detected
         Assert.NotNull(result)
 
