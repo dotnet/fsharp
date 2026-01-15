@@ -426,3 +426,48 @@ module General =
         |> shouldSucceed
         |> ignore
 
+    // E_AreYouMissingAnArgumentToAFunction01.fs - Regression test for FSHARP1.0:2804
+    // FS0001 type mismatch errors (make sure we don't emit ?.)
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_AreYouMissingAnArgumentToAFunction01.fs"|])>]
+    let ``E_AreYouMissingAnArgumentToAFunction01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0001
+        |> ignore
+
+    // E_AreYouMissingAnArgumentToAFunction01b.fs - Regression test for FSHARP1.0:2804
+    // FS0001 type mismatch (make sure we don't emit ?.)
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_AreYouMissingAnArgumentToAFunction01b.fs"|])>]
+    let ``E_AreYouMissingAnArgumentToAFunction01b_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0001
+        |> ignore
+
+    // E_ConsiderAddingSealedAttribute01 - Multi-file test (fsi + fs)
+    // FS0297 type definitions not compatible because implementation is not sealed but signature implies it is
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_ConsiderAddingSealedAttribute01.fsi"|])>]
+    let ``E_ConsiderAddingSealedAttribute01_fsi_fs`` compilation =
+        compilation
+        |> withAdditionalSourceFile (SourceFromPath (resourcePath ++ "E_ConsiderAddingSealedAttribute01.fs"))
+        |> withOptions ["--test:ErrorRanges"]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 0297
+        |> ignore
+
+    // E_LiteralEnumerationMustHaveType01.fs - Regression test for FSHARP1.0:1729
+    // FS0886 not a valid value for enumeration literal (BigInt and NatNum not allowed)
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_LiteralEnumerationMustHaveType01.fs"|])>]
+    let ``E_LiteralEnumerationMustHaveType01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0886
+        |> ignore
+
