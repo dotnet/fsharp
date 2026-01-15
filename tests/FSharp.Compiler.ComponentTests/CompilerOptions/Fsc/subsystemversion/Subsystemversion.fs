@@ -10,6 +10,7 @@ open FSharp.Test.Compiler
 // --subsystemversion option error tests (DesktopOnly)
 // Tests for invalid subsystemversion arguments that produce errors.
 
+[<Trait("Category", "DesktopOnly")>]
 module Subsystemversion =
 
     // Test: --subsystemversion:3.99 - version too low
