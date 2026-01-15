@@ -181,7 +181,7 @@ type C() =
     override this.M4() = ()
     member this.M5() = ()
         """
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -216,7 +216,7 @@ type B() =
     member this.M5() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         
@@ -305,7 +305,7 @@ type B() =
     member this.M4() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -388,7 +388,7 @@ type C() =
     member this.M5() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
 
@@ -464,7 +464,7 @@ type C() =
     member this.M5() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         
@@ -536,7 +536,7 @@ type C() =
     member this.M5() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withDiagnostics [
