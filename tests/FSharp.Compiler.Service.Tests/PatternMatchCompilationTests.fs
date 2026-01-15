@@ -288,7 +288,7 @@ match A with
 
 [<Fact>]
 let ``As 01 - names and wildcards`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 match 1 with
 | _ as w -> let x = w + 1 in ()
 
@@ -304,7 +304,7 @@ match 3 with
 
 [<FactForNETCOREAPP>]
 let ``As 02 - type testing`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 let (|Id|) = id
 match box 1 with
 | :? int as a -> let b = a + 1 in ()
@@ -326,7 +326,7 @@ match box 1 with
 
 [<FactForNETCOREAPP>]
 let ``As 03 - impossible type testing`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 match Unchecked.defaultof<System.ValueType> with
 | :? System.Enum as (:? System.ConsoleKey as a) -> let b = a + enum 1 in ()
 | :? System.Enum as (:? System.ConsoleKey as c) -> let d = c + enum 1 in ()
@@ -341,7 +341,7 @@ match Unchecked.defaultof<System.ValueType> with
 
 [<FactForNETCOREAPP>]
 let ``As 04 - duplicate type testing`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 match Unchecked.defaultof<System.ValueType> with
 | :? System.Enum as (a & b) -> let c = a = b in ()
 | :? System.Enum as (:? System.ConsoleKey as (d & e)) -> let f = d + e + enum 1 in ()
@@ -354,7 +354,7 @@ match Unchecked.defaultof<System.ValueType> with
 
 [<FactForNETCOREAPP>]
 let ``As 05 - inferred type testing`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 match Unchecked.defaultof<obj> with
 | :? _ as a -> let _ = a in ()
 
@@ -369,7 +369,7 @@ match Unchecked.defaultof<int> with
 
 [<Fact>]
 let ``As 06 - completeness`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 match Unchecked.defaultof<bool> with
 | true as a -> if a then ()
 | b as false -> if not b then ()
@@ -438,7 +438,7 @@ parenPattern:
   | parenPattern COLON_COLON  parenPattern
   | constrPattern
     *)
-    let _, checkResults = getParseAndCheckResults70 $"""
+    let _, checkResults = getParseAndCheckResults80 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -466,7 +466,7 @@ Some v |> eq<struct(int * int)>
 
 [<FactForNETCOREAPP>]
 let ``As 08 - syntactical precedence matrix testing right - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -523,7 +523,7 @@ Some w |> eq<obj>
 
 [<FactForNETCOREAPP>]
 let ``As 09 - `syntactical precedence matrix testing right - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 let (|DefinedPattern|) = id
 let a as 1 = true
 let b as true = 2
@@ -573,7 +573,7 @@ let z as
 
 [<Fact>]
 let ``As 10 - syntactical precedence matrix testing left - total patterns`` () =
-    let _, checkResults = getParseAndCheckResults70 $"""
+    let _, checkResults = getParseAndCheckResults80 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -602,7 +602,7 @@ Some x |> eq<struct(int * int)>
 
 [<FactForNETCOREAPP>]
 let ``As 11 - syntactical precedence matrix testing left - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -659,7 +659,7 @@ Some w |> eq<obj>
 
 [<FactForNETCOREAPP>]
 let ``As 12 - syntactical precedence matrix testing left - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 let (|DefinedPattern|) = id
 let 1 as a = true
 let true as b = 2
@@ -711,7 +711,7 @@ let z as =
 
 [<FactForNETCOREAPP>]
 let ``As 13 - syntactical precedence matrix testing right with type tests - total patterns`` () =
-    let _, checkResults = getParseAndCheckResults70 $"""
+    let _, checkResults = getParseAndCheckResults80 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -772,7 +772,7 @@ Some x |> eq<obj>
 
 [<FactForNETCOREAPP>]
 let ``As 14 - syntactical precedence matrix testing right with type tests - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -848,7 +848,7 @@ Some w |> eq<obj>
 
 [<FactForNETCOREAPP>]
 let ``As 15 - syntactical precedence matrix testing right with type tests - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 let (|DefinedPattern|) = id
 let :? a as 1 = true
 let :? b as true = 2
@@ -919,7 +919,7 @@ let :? z as
 [<FactForNETCOREAPP>]
 let ``As 16 - syntactical precedence matrix testing left with type tests - total patterns`` () =
     let validSet = set (seq { 'a'..'x' }) - set [ 'p'; 'q' ] |> Set.map string
-    let _, checkResults = getParseAndCheckResults70 $"""
+    let _, checkResults = getParseAndCheckResults80 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -972,7 +972,7 @@ Some "" |> eq<int> // No more type checks after the above line?
 
 [<FactForNETCOREAPP>]
 let ``As 17 - syntactical precedence matrix testing left with type tests - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -1063,7 +1063,7 @@ Some "" |> eq<int>
 
 [<FactForNETCOREAPP>]
 let ``As 18 - syntactical precedence matrix testing left with type tests - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 let (|DefinedPattern|) = id
 let 1 as :? a = true
 let true as :? b = 2
@@ -1124,7 +1124,7 @@ let as :? z =
 
 [<FactForNETCOREAPP>]
 let ``As 19 - syntactical precedence matrix testing - valid syntactic patterns that cause type errors later`` () =
-    let _, checkResults = getParseAndCheckResults70 """
+    let _, checkResults = getParseAndCheckResults80 """
 type I() = inherit System.Attribute()
 type M() = inherit I()
 
@@ -1156,7 +1156,7 @@ let y as ?z = 8
 
 [<FactForNETCOREAPP>]
 let ``As 20 - limit the right of 'as' patterns to only variable patterns in F# 5`` () =
-    let _, checkResults = getParseAndCheckResults50 """
+    let _, checkResults = getParseAndCheckResults80 """
 let f : obj -> _ =
     function
     | :? int as i -> i
