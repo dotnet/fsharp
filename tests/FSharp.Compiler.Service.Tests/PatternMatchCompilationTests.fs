@@ -693,7 +693,6 @@ let z as =
         "(15,0--15,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.";
         "(17,0--17,3): Incomplete structured construct at or before this point in implementation file";
         "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further. To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
-        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further. To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(3,13--3,17): This expression was expected to have type 'int' but here has type 'bool'";
         "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).";
         "(4,16--4,17): This expression was expected to have type 'bool' but here has type 'int'";
@@ -1100,7 +1099,6 @@ let as :? z =
         "(18,0--18,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (17:1). Try indenting this further. To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(19,0--19,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (18:1). Try indenting this further. To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further. To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
-        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further. To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(3,12--3,13): The type 'a' is not defined.";
         "(3,9--3,13): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
         "(4,15--4,16): The type 'b' is not defined.";
@@ -1166,7 +1164,7 @@ let f : obj -> _ =
 """
     assertHasSymbolUsages ["i"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(5,6--5,18): Feature 'non-variable patterns to the right of 'as' patterns' is not available in F# 5.0. Please use language version 6.0 or greater."
+        "(3,4--3,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
 
 [<Fact>]
