@@ -117,10 +117,11 @@ type LanguageVersion(versionText) =
     static let languageVersion80 = 8.0m
     static let languageVersion90 = 9.0m
     static let languageVersion100 = 10.0m
+    static let languageVersion110 = 11.0m
     static let previewVersion = 9999m // Language version when preview specified
-    static let defaultVersion = languageVersion100 // Language version when default specified
+    static let defaultVersion = languageVersion110 // Language version when default specified
     static let latestVersion = defaultVersion // Language version when latest specified
-    static let latestMajorVersion = languageVersion100 // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion110 // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
 
@@ -135,6 +136,7 @@ type LanguageVersion(versionText) =
                 languageVersion80
                 languageVersion90
                 languageVersion100
+                languageVersion110
             |]
 
     static let features =
@@ -241,6 +243,12 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ReturnFromFinal, languageVersion100
                 LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions, languageVersion100
 
+                // F# 11.0
+                // Put stabilized features here for F# 11.0 previews via .NET SDK preview channels
+
+                // Difference between languageVersion110 and preview - 11.0 gets turned on automatically by picking a preview .NET 11 SDK
+                // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
+
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
             ]
@@ -268,6 +276,8 @@ type LanguageVersion(versionText) =
         | "9" -> languageVersion90
         | "10.0"
         | "10" -> languageVersion100
+        | "11.0"
+        | "11" -> languageVersion110
         | _ -> 0m
 
     let specified = getVersionFromString versionText
