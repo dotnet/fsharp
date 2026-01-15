@@ -99,7 +99,6 @@ type B =
          ]
 
     [<Theory>]
-    [<InlineData("7.0")>]
     [<InlineData("8.0")>]
     [<InlineData("preview")>]
     let ``Mutually recursive type definition that using custom attributes``(langVersion) =

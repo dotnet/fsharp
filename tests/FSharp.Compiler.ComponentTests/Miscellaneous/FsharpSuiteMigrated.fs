@@ -88,7 +88,6 @@ module TestFrameworkAdapter =
         | LangVersion.V90 -> "9.0",bonusArgs
         | LangVersion.Preview -> "preview",bonusArgs
         | LangVersion.Latest  -> "latest", bonusArgs
-        | _ -> failwith $"Unsupported lang version: %A{version}"
 
 
     let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion sessionIsolation = 

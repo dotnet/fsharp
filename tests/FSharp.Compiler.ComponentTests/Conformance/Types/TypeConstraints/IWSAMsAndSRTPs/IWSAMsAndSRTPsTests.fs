@@ -328,8 +328,8 @@ let main _ =
     #if !NETCOREAPP
     [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
     #else   
-    [<InlineData("6.0")>]
-    [<InlineData("7.0")>]
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
     [<Theory>]
     #endif
     let ``Extension method on interface without SAM does not produce a warning`` version =

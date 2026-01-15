@@ -268,20 +268,8 @@ check "fewljvwerjlvwe1" ceResult.Value 3
 check "fewljvwerjvwe12" (tracer.GetTrace ()) [|TraceOp.ApplicativeBind2Return; TraceOp.Log "hello!";TraceOp.Log "goodbye!";TraceOp.ApplicativeBindReturn|]
             """
 
-    [<Fact>]
-    let ``AndBang TraceApplicative Disable`` () =
-        ApplicativeLibErrorTestFeatureDisabled includeAll 
-            """
-let tracer = TraceApplicative()
-
-let ceResult : Trace<int> =
-    tracer {
-        let! x = Trace 3
-        and! y = Trace true
-        return if y then x else -1
-    }
-            """
-            [| FSharpDiagnosticSeverity.Error, 3344, (7, 9, 7, 13), "This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature." |]
+    // NOTE: The `AndBang TraceApplicative Disable` test was removed because with langversion 8.0 minimum,
+    // the `and!` feature (introduced in F# 5.0) is always available.
 
     [<Fact>]
     let ``AndBang TraceMultiBindingMonoid`` () =
