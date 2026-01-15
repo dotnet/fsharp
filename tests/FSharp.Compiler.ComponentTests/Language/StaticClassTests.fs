@@ -11,7 +11,7 @@ module StaticClassTests =
 [<Sealed; AbstractClass>]
 type T = class end
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
 
@@ -41,7 +41,7 @@ type T() = class end
 [<Sealed; AbstractClass>]
 type T() = class end
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
 
@@ -64,7 +64,7 @@ type T(x: int) = class end
 [<Sealed; AbstractClass>]
 type T(x: int) = class end
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
 
@@ -89,7 +89,7 @@ type T =
 type T =
     new () = {}
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
 
@@ -117,7 +117,7 @@ type B =
     val mutable G : int
     new () = { F = 3; G = 3 }
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
     [<Fact>]
@@ -126,7 +126,7 @@ type B =
 [<Sealed; AbstractClass>]
 type ListDebugView<'T>(l: 'T list) = class end
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -214,7 +214,7 @@ type T() =
     member this.M() = ()
     static member X = 1
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -241,7 +241,7 @@ type T() =
     static member M() = ()
     static member X = T.M()
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -265,7 +265,7 @@ type C() =
     let a = 1
     static let x = 1
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -277,7 +277,7 @@ type C() =
     let rec a = 1
     static let x = 1
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -289,7 +289,7 @@ type C() =
     static let a = 1
     static let x = a
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -301,7 +301,7 @@ type C() =
     static let rec a = 1
     static let x = a
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -370,7 +370,7 @@ type C() =
     interface MyInterface with
         member this.M() = ()
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -385,7 +385,7 @@ type C =
     interface MyInterface with
         member this.M() = ()
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -435,7 +435,7 @@ type T =
     abstract C : i:int -> int
     abstract D : i:int -> int
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
     
@@ -449,7 +449,7 @@ type T() =
     abstract C : i:int -> int
     abstract D : i:int -> int
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -504,7 +504,7 @@ type ConsoleRetriever =
             stdin.ReadLine()
         """
          |> withNoWarn 3535
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -568,7 +568,7 @@ type T =
     
     static member Get() = T.F
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -586,7 +586,7 @@ type T() =
     
     static member Get() = T.F
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -634,7 +634,7 @@ type B =
     val F : int
     val mutable G : int
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
 
@@ -646,7 +646,7 @@ type B() =
     val F : int
     val mutable G : int
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -697,7 +697,7 @@ type T =
     member _.Item1 with set i value = ()
     member _.Item2 with get i = 3 and set i value = ()
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
 
@@ -738,7 +738,7 @@ type T =
     new () = { F = 3; G = 3 }
     new (x, y) = { F = x; G = y }
         """
-         |> withLangVersion70
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
