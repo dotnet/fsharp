@@ -325,6 +325,9 @@
     <Compile Include="CompilerOptions\fsc\tailcalls\tailcalls.fs" />
     <Compile Include="CompilerOptions\fsc\target\target.fs" />
     <Compile Include="CompilerOptions\fsc\tokenize\tokenize.fs" />
+    <Compile Include="CompilerOptions\fsc\lib\lib.fs" />
+    <Compile Include="CompilerOptions\fsc\out\out.fs" />
+    <Compile Include="CompilerOptions\fsc\responsefile\responsefile.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\Caches.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
