@@ -308,6 +308,7 @@
     <Compile Include="CompilerOptions\fsc\misc\misc.fs" />
     <Compile Include="CompilerOptions\fsc\misc\utf8output.fs" />
     <Compile Include="CompilerOptions\fsc\noframework\noframework.fs" />
+    <Compile Include="CompilerOptions\fsc\nologo\nologo.fs" />
     <Compile Include="CompilerOptions\fsc\platform\platform.fs" />
     <Compile Include="CompilerOptions\fsc\times\times.fs" />
     <Compile Include="CompilerOptions\fsc\warn\warn.fs" />
