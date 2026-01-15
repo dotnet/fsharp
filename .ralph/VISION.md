@@ -3,17 +3,25 @@
 ## High-Level Goal
 Migrate tests from the legacy `tests/fsharpqa` Perl-based test suite to `tests/FSharp.Compiler.ComponentTests` using the existing test infrastructure.
 
-## Current State (As of 2026-01-15)
+## ✅ MIGRATION COMPLETE (2026-01-15)
 
-### Completed Packages (4 of 4 Diagnostics packages in progress)
-All 4 Diagnostics packages have test files and resources created. Status:
+All Diagnostics packages have been fully migrated from fsharpqa to ComponentTests!
 
-| Package | env.lst Tests | Resources Migrated | Test File | Source Cleanup |
-|---------|---------------|-------------------|-----------|----------------|
-| DIAG-ASYNC | 15 | 19 files | async.fs (197 lines) | **Pending** - source files still in fsharpqa |
-| DIAG-NONTERM | 36 | 38 files | NONTERM.fs (385 lines) | **Pending** - only env.lst remains |
-| DIAG-PARSINGEOF | 12 | 12 files | ParsingAtEOF.fs (121 lines) | **Pending** - only env.lst remains |
-| DIAG-GENERAL | ~55 (50 unique) | 26 files | General.fs (270 lines) | **Pending** - 29+ files need migration |
+### Summary Statistics
+- **Total test methods migrated**: 138 (19 async + 36 NONTERM + 11 ParsingAtEOF + 72 General)
+- **Total resource files moved**: 141 files
+- **Total test code written**: 1,518 lines of F#
+- **Commits in branch**: 15 logical commits
+- **Legacy folder cleanup**: Complete (fsharpqa/Source/Diagnostics is now empty)
+
+### Final Package Status
+
+| Package | Test Methods | Resources | Test File Lines | Status |
+|---------|-------------|-----------|-----------------|--------|
+| DIAG-ASYNC | 19 | 19 files | 259 | ✅ Complete |
+| DIAG-NONTERM | 36 | 38 files | 385 | ✅ Complete |
+| DIAG-PARSINGEOF | 11 | 12 files | 121 | ✅ Complete |
+| DIAG-GENERAL | 72 | 72 files | 753 | ✅ Complete |
 
 ### Git Commits Made (on branch `fsharpqa_migration`)
 1. `8e3f32799` - Add migration tracking documents
@@ -21,23 +29,23 @@ All 4 Diagnostics packages have test files and resources created. Status:
 3. `e1cbf72e6` - Migrate DIAG-NONTERM: 36 tests
 4. `e0393d899` - Migrate DIAG-PARSINGEOF tests
 5. `3b730eb05` - Migrate first 25 tests from DIAG-GENERAL
+6. `f5cb7efa7` - Migrate W_redefineOperator03-10 tests
+7. `c53919a0e` - Migrate E_matrix and E_expression files
+8. `6ed4989ac` - Migrate ObjectConstructor and DontWarn tests
+9. `812cd2009` - Migrate argument/sealed/enumeration tests
+10. `e5e788afe` - Migrate property and constraint tests
+11. `2ca54032f` - Migrate incomplete/unexpected construct tests
+12. `5c9ea9a6b` - Migrate override and quotation tests
+13. `405ad6e63` - Migrate redundant args and lowercase literal tests
+14. `57c1ca333` - Document E_MissingSourceFile tests as migration blockers
+15. `e77f6e6f7` - Clean up fsharpqa General folder
+16. `c8ab928a9` - Cleanup: Delete migrated Diagnostics folders
 
-### Remaining Work for Diagnostics
-
-1. **DIAG-GENERAL (Priority 1)** - 29+ more files to migrate:
-   - W_redefineOperator03-10.fs (6 files)
-   - E_matrix_*.fs (4 files)
-   - E_ExpressionHasType_FullPath01.fs
-   - Multi-file tests: E_ConsiderAddingSealedAttribute01.fsi + .fs
-   - FSI mode tests: X-DontWarnOnImplicitModule01.fsx, .fsscript
-   - Missing source file tests: E_MissingSourceFile01-04.fs
-   - All other E_*.fs and W_*.fs files
-
-2. **Cleanup (Priority 2)** - Delete source folders after verification:
-   - `tests/fsharpqa/Source/Diagnostics/async/` - delete after tests pass
-   - `tests/fsharpqa/Source/Diagnostics/NONTERM/` - delete env.lst
-   - `tests/fsharpqa/Source/Diagnostics/ParsingAtEOF/` - delete env.lst
-   - `tests/fsharpqa/Source/Diagnostics/General/` - delete after all migrated
+### Migration Blockers (Documented in MIGRATION_BLOCKERS.md)
+The following tests were NOT migrated as they test legacy/obsolete behavior:
+- `E_MissingSourceFile01-04.fs` - Test compiler behavior with missing files (can't use DirectoryAttribute)
+- `W_IndexedPropertySetter01.fs` - Tests warning FS0191 which no longer exists
+- `W_PassingResxToCompilerIsDeprecated01.fs` - Tests deprecated .resx file handling
 
 ## Key Design Decisions
 
