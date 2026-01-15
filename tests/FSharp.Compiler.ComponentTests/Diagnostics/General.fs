@@ -471,3 +471,56 @@ module General =
         |> withErrorCode 0886
         |> ignore
 
+    // E_IndexedPropertySetter01.fs - FS0554 invalid declaration syntax
+    // Regression test for FSHARP1.0:1185
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_IndexedPropertySetter01.fs"|])>]
+    let ``E_IndexedPropertySetter01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0554
+        |> ignore
+
+    // E_PropertyIsNotReadable01.fs - FS0807 property is not readable
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_PropertyIsNotReadable01.fs"|])>]
+    let ``E_PropertyIsNotReadable01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0807
+        |> ignore
+
+    // E_MemberConstraintsWithSpecialStatus01.fs - FS0077 member constraint with 'Pow' name given special status
+    // Regression test for FSHARP1.0:2890
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_MemberConstraintsWithSpecialStatus01.fs"|])>]
+    let ``E_MemberConstraintsWithSpecialStatus01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 0077
+        |> ignore
+
+    // E_FoundInPowerPack_Matrix01.fs - FS0039 type 'Matrix' is not defined
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_FoundInPowerPack_Matrix01.fs"|])>]
+    let ``E_FoundInPowerPack_Matrix01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0039
+        |> ignore
+
+    // E_UnexpectedKeywordAs01.fs - FS0010 unexpected keyword 'as' in expression
+    // Regression test for FSHARP1.0:1698
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_UnexpectedKeywordAs01.fs"|])>]
+    let ``E_UnexpectedKeywordAs01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0010
+        |> ignore
+

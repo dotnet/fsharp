@@ -1,0 +1,25 @@
+Skeptical reviewer. Verify subtask 3 is actually complete.
+
+Migrate ObjectConstructor
+   and DontWarn files: Move E_ObjectConstructorAndTry01.fs,
+   E_ObjectConstructorAndTry02.fs, X-DontWarnOnImplicitModule01.fsx,
+   X-DontWarnOnImplicitModule01.fsscript using git mv. The .fsx/.fsscript files test --warnaserror+
+    with success (no warnings). Add test methods.
+
+Criteria:
+- 4 files moved to
+   resources/tests/Diagnostics/General/
+- 4 test methods added to General.fs
+- FSX/fsscript tests
+    use asFsx modifier
+
+Check code, build, tests. Look for incomplete work, TODOs, placeholders.
+Also verify implementation aligns with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if complete.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
