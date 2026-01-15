@@ -749,13 +749,5 @@ module General =
         |> withWarningCode 0026
         |> ignore
 
-    // W_IndexedPropertySetter01.fs - FS0191 indexed property setter should be curried
-    // Regression test for FSHARP1.0:1185
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_IndexedPropertySetter01.fs"|])>]
-    let ``W_IndexedPropertySetter01_fs`` compilation =
-        compilation
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldFail
-        |> withWarningCode 0191
-        |> ignore
+    // W_IndexedPropertySetter01.fs - Removed: FS0191 warning no longer exists in modern F# compiler
+    // The warning about indexed property setters with tupled arguments was deprecated

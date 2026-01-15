@@ -87,3 +87,4 @@ For tests with `SOURCE="file1.fsi file2.fs"`:
 1. **bash posix_spawnp errors** - Can occur with many sessions; use view/glob/grep instead of ls
 2. **Pre-existing test failures** - 294 tests fail on main; these are NOT caused by migration
 3. **Small batches work better** - Commit after each 20-30 files migrated
+4. **Obsolete warnings** - Some legacy tests (e.g. W_IndexedPropertySetter01.fs with FS0191) test for warnings that no longer exist in modern F# compiler. These should NOT be migrated - they should be skipped/deleted.
