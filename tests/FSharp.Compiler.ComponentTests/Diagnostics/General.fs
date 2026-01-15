@@ -328,3 +328,63 @@ module General =
         |> withWarningCode 0086
         |> ignore
 
+    // E_matrix_class01.fs - FS0039 type 'matrix' not defined in Math
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_matrix_class01.fs"|])>]
+    let ``E_matrix_class01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0039
+        |> ignore
+
+    // E_matrix_interface01.fs - FS0039 type 'matrix' not defined in Math
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_matrix_interface01.fs"|])>]
+    let ``E_matrix_interface01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0039
+        |> ignore
+
+    // E_matrix_LetBinding01.fs - FS0039 type 'matrix' not defined in Math
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_matrix_LetBinding01.fs"|])>]
+    let ``E_matrix_LetBinding01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0039
+        |> ignore
+
+    // E_matrix_struct01.fs - FS0039 type 'matrix' not defined in Math
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_matrix_struct01.fs"|])>]
+    let ``E_matrix_struct01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0039
+        |> ignore
+
+    // E_ExpressionHasType_FullPath01.fs - FS0001 type mismatch with full path
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"E_ExpressionHasType_FullPath01.fs"|])>]
+    let ``E_ExpressionHasType_FullPath01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0001
+        |> ignore
+
+    // W_GenericTypeProvideATypeInstantiation01.fs - FS1125 generic type instantiation missing
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/General", Includes=[|"W_GenericTypeProvideATypeInstantiation01.fs"|])>]
+    let ``W_GenericTypeProvideATypeInstantiation01_fs`` compilation =
+        compilation
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 1125
+        |> ignore
+

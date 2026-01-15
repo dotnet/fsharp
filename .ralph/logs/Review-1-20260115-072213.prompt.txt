@@ -1,0 +1,29 @@
+Skeptical reviewer. Verify subtask 1 is actually complete.
+
+Migrate
+   W_redefineOperator files: Move W_redefineOperator03.fs through
+   W_redefineOperator10.fs (6 files) from tests/fsharpqa/Source/Diagnostics/General/ to
+   tests/FSharp.Compiler.ComponentTests/resources/tests/Diagnostics/General/ using git mv. Add
+   corresponding test methods to General.fs following the existing pattern (withOptions
+   ["--test:ErrorRanges"; "-a"], typecheck, shouldSucceed with warning). Parse each file's
+   <Expects> to determine the correct assertions.
+
+Criteria:
+- Files
+   W_redefineOperator03.fs through W_redefineOperator10.fs exist in
+   tests/FSharp.Compiler.ComponentTests/resources/tests/Diagnostics/General/
+- 6 new test methods
+   added to General.fs for these files
+- git status shows the files as renamed (not
+   deleted+added)
+
+Check code, build, tests. Look for incomplete work, TODOs, placeholders.
+Also verify implementation aligns with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if complete.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
