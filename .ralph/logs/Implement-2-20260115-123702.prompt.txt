@@ -1,0 +1,59 @@
+*** THIS IS ITERATION 2 - Previous attempts did not complete successfully ***
+
+Check .ralph/PROBLEMS.md for issues from previous iterations.
+Check git log and git diff to see what was already done.
+Learn from previous attempts - do something DIFFERENT this time.
+
+Implement subtask 2: Migrate ComponentTests Conformance files
+
+Migrate 9 files in tests/FSharp.Compiler.ComponentTests/Conformance/ subdirs:
+-
+   UseBindings/UseBindings.fs (withLangVersion60)
+-
+   LexicalFiltering/OffsideExceptions/OffsideExceptions.fs (withLangVersion50,
+   withLangVersion60)
+- Types/TypeConstraints/IWSAMsAndSRTPs/IWSAMsAndSRTPsTests.fs
+   (withLangVersion70, withLangVersion60)
+- Types/UnionTypes/UnionStructTypes.fs
+   (withLangVersion70)
+- Types/UnionTypes/UnionTypes.fs (withLangVersion70, withLangVersion60)
+-
+   BasicGrammarElements/StaticLet/StaticLetInUnionsAndRecords.fs (withLangVersion70)
+-
+   BasicGrammarElements/MemberDefinitions/MethodsAndProperties/MethodsAndProperties.fs
+   (withLangVersion70)
+- PatternMatching/As/As.fs (withLangVersion60)
+-
+   InferenceProcedures/RecursiveSafetyAnalysis/RecursiveSafetyAnalysis.fs (raw langversion
+   string)
+
+Replace all old langversions with withLangVersion80.
+
+Criteria:
+- grep
+    -n 'withLangVersion(46|47|50|60|70)' tests/FSharp.Compiler.ComponentTests/Conformance/**/*.fs
+   returns 0 matches
+- SKIP_VERSION_SUPPORTED_CHECK=1 dotnet build
+   tests/FSharp.Compiler.ComponentTests exits 0
+
+FIX THESE ISSUES:
+- Verification did not output VERIFY_PASSED or VERIFY_FAILED
+
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+Do one unit of work. Build and tests must pass.
+Do NOT commit yet - commit only when subtask is fully complete.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this subtask is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL criteria are met, COMMIT your changes, then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
