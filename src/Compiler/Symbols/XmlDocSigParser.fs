@@ -45,6 +45,7 @@ module XmlDocSigParser =
         match m.Success, kindStr with
         | true, ("M" | "P" | "E") ->
             let parts = m.Groups["entity"].Value.Split('.')
+
             if parts.Length < 2 then
                 ParsedDocCommentId.None
             else
@@ -68,8 +69,7 @@ module XmlDocSigParser =
                     | _ -> DocCommentIdKind.Unknown
 
                 // Handle constructor name conversion (#ctor in doc comments, .ctor in F#)
-                let finalMemberName =
-                    if memberOrVal = "#ctor" then ".ctor" else memberOrVal
+                let finalMemberName = if memberOrVal = "#ctor" then ".ctor" else memberOrVal
 
                 ParsedDocCommentId.Member(entityPath, finalMemberName, genericParametersCount, kind)
 
@@ -79,6 +79,7 @@ module XmlDocSigParser =
 
         | true, "F" ->
             let parts = m.Groups["entity"].Value.Split('.')
+
             if parts.Length < 2 then
                 ParsedDocCommentId.None
             else

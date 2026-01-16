@@ -30,15 +30,21 @@ let private extractInheritDocDirectives (doc: XDocument) =
 
     let crefName = XName.op_Implicit "cref" |> Operators.nonNull
     let pathName = XName.op_Implicit "path" |> Operators.nonNull
-    
+
     doc.Descendants(inheritDocName)
     |> Seq.map (fun elem ->
         let crefAttr = elem.Attribute(crefName)
         let pathAttr = elem.Attribute(pathName)
 
         {
-            Cref = match crefAttr with null -> None | attr -> Some attr.Value
-            Path = match pathAttr with null -> None | attr -> Some attr.Value
+            Cref =
+                match crefAttr with
+                | null -> None
+                | attr -> Some attr.Value
+            Path =
+                match pathAttr with
+                | null -> None
+                | attr -> Some attr.Value
             Element = elem
         })
     |> List.ofSeq

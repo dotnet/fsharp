@@ -969,8 +969,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
 
         | ParsedDocCommentId.Member(typePath, memberName, genericArity, kind) ->
             // Convert constructor name format (.ctor in parser, ``.ctor`` needed for F# lookup)
-            let memberOrValName =
-                if memberName = ".ctor" then "``.ctor``" else memberName
+            let memberOrValName = if memberName = ".ctor" then "``.ctor``" else memberName
 
             let symbolMemberType =
                 match kind with

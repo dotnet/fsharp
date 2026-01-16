@@ -13,4 +13,12 @@ open FSharp.Compiler.Xml
 /// Takes an optional ModuleOrNamespaceType for accessing the current compilation's typed content
 /// Takes an optional implicit target cref for resolving <inheritdoc/> without cref attribute
 /// Takes a set of visited signatures to prevent cycles
-val expandInheritDoc: infoReaderOpt: InfoReader option -> ccuOpt: CcuThunk option -> currentModuleTypeOpt: ModuleOrNamespaceType option -> implicitTargetCrefOpt: string option -> m: range -> visited: Set<string> -> doc: XmlDoc -> XmlDoc
+val expandInheritDoc:
+    infoReaderOpt: InfoReader option ->
+    ccuOpt: CcuThunk option ->
+    currentModuleTypeOpt: ModuleOrNamespaceType option ->
+    implicitTargetCrefOpt: string option ->
+    m: range ->
+    visited: Set<string> ->
+    doc: XmlDoc ->
+        XmlDoc
