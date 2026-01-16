@@ -14,11 +14,11 @@ This file tracks progress of FSharpPlus validation with local F# compiler.
 | 1 | Setup Verification | ✅ DONE | 0 | All criteria verified |
 | 2 | Build Target | ✅ DONE | 0 | Build succeeded with local compiler |
 | 3 | Test Target | ✅ PASS | 0 | All 397 tests passed (net10.0) |
-| 4 | AllDocs Target | PENDING | - | `dotnet msbuild -target:AllDocs build.proj` |
-| 5 | ReleaseDocs Target | PENDING | - | `dotnet msbuild -target:ReleaseDocs build.proj` |
-| 6 | Uncomment Tests | PENDING | - | General.fs, Traversals.fs |
-| 7 | Run Uncommented Tests | PENDING | - | Collect failures |
-| 8 | Document Regressions | PENDING | - | Create REMAINING_FSHARPPLUS_REGRESSIONS.md |
+| 4 | AllDocs Target | ✅ PASS | 0 | Updated docsTool to net10.0; completed |
+| 5 | ReleaseDocs Target | ✅ PASS | 0 | Completed successfully |
+| 6 | Uncomment Tests | ✅ DONE | - | Tests cause compiler hang (FS0465) |
+| 7 | Run Uncommented Tests | ✅ DONE | - | Compiler hangs on complex type inference |
+| 8 | Document Regressions | ✅ DONE | - | See REMAINING_FSHARPPLUS_REGRESSIONS.md |
 
 ## Detailed Logs
 
@@ -74,16 +74,32 @@ export LocalFSharpCompilerConfiguration=Release
 - All 397 FSharpPlus tests passed with local F# compiler
 
 ### Subtask 4: AllDocs Target
-_Pending_
+**Status**: ✅ PASS  
+**Timestamp**: 2026-01-16T21:48:00Z  
+**Command**: `dotnet msbuild -target:AllDocs build.proj`  
+**Exit Code**: 0  
+**Verification Criteria**:
+- ✅ Exit code 0
+- ✅ No 'error FS' messages in output
+- ✅ Status file updated with PASS
+
+**Notes**: 
+- Build completed successfully (0 Warning(s), 0 Error(s))
+- Documentation generated for FSharpPlus.fsproj
+- docsTool running on net10.0
 
 ### Subtask 5: ReleaseDocs Target
-_Pending_
+**Status**: ✅ PASS  
+See summary table - completed successfully.
 
 ### Subtask 6: Uncomment Tests
-_Pending_
+**Status**: ✅ DONE  
+See summary table - tests cause compiler hang (FS0465).
 
 ### Subtask 7: Run Uncommented Tests
-_Pending_
+**Status**: ✅ DONE  
+See summary table - compiler hangs on complex type inference.
 
 ### Subtask 8: Document Regressions
-_Pending_
+**Status**: ✅ DONE  
+See REMAINING_FSHARPPLUS_REGRESSIONS.md for full documentation.
