@@ -101,8 +101,10 @@
     <Compile Include="Conformance\LexicalAnalysis\Generics.fs" />
     <Compile Include="Conformance\LexicalAnalysis\SymbolicKeywords.fs" />
     <Compile Include="Conformance\LexicalAnalysis\SymbolicOperators.fs" />
+    <Compile Include="Conformance\LexicalFiltering\Basic\Basic.fs" />
     <Compile Include="Conformance\LexicalFiltering\HashLight\HashLight.fs" />
     <Compile Include="Conformance\LexicalFiltering\HighPrecedenceApplication\HighPrecedenceApplication.fs" />
+    <Compile Include="Conformance\LexicalFiltering\LexicalAnalysisOfTypeApplications\LexicalAnalysisOfTypeApplications.fs" />
     <Compile Include="Conformance\LexicalFiltering\OffsideExceptions\OffsideExceptions.fs" />
     <Compile Include="Conformance\PatternMatching\Simple\Simple.fs" />
     <Compile Include="Conformance\PatternMatching\Array\Array.fs" />
