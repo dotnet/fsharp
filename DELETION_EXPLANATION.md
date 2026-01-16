@@ -37,3 +37,38 @@ All 6 deleted core test files fall into safe deletion categories:
 | Underscore self-identifier | Implicitly tested in 80+ files using `member _.` syntax |
 | `nameof` operator | `nameof/preview/test.fsx` + `FSharp.Compiler.ComponentTests/Language/NameofTests.fs` |
 | Old langversion compilation | No longer applicable - 8.0 is minimum |
+
+---
+
+## Typecheck/Sigs Version Test Files Audit
+
+This section audits the 4 deleted files in `tests/fsharp/typecheck/sigs/version46/` and `version47/`.
+
+| File | Category | Justification | Risk |
+|------|----------|---------------|------|
+| `tests/fsharp/typecheck/sigs/version46/neg24.fs` | **B** | Tests FS0035 "deprecated" warnings for sequence expressions like `[ if true then 1 else 2 ]` at langversion 4.6. In 4.6, these patterns produced FS0035 errors requiring parentheses or explicit yields. The version47 counterpart showed these patterns became valid. The main `neg24.fs` (retained at sigs root) is now the 4.7+ version that tests the modern behavior. | **OK** |
+| `tests/fsharp/typecheck/sigs/version46/neg24.bsl` | **B** | Baseline for version46/neg24.fs containing 8 FS0035 "deprecated" errors and 7 FS0816/FS0495 errors. The FS0035 errors tested langversion-specific warnings that no longer apply. The FS0816 and FS0495 errors (curried extension methods, named args) are still tested in the main `neg24.bsl`. | **OK** |
+| `tests/fsharp/typecheck/sigs/version47/neg24.fs` | **B** | Tests implicit yield behavior in sequence expressions at langversion 4.7. This was the "success" counterpart showing that `[ if true then 1 else 2 ]` works without errors in 4.7+. The main `neg24.fs` now uses this exact content (including `module OldNegative`, `ListPositive2`, `BuilderPositive2`, `ListNegative2` etc.) with 8.0+ as baseline. | **OK** |
+| `tests/fsharp/typecheck/sigs/version47/neg24.bsl` | **B** | Baseline for version47/neg24.fs. Now the main `neg24.bsl` contains these exact errors (FS0816, FS0495, FS0020, FS0001) verifying the same behavior - curried extension member errors, implicit yield behaviors, and type mismatches in negative test scenarios. | **OK** |
+
+### Analysis Summary
+
+**Key Observation**: The main `tests/fsharp/typecheck/sigs/neg24.fs` file was updated to be the version47 content. Comparing:
+
+1. **version46/neg24.fs** - Had a `module Negative` block where `[ if true then 1 else 2 ]` produced FS0035 deprecation warnings
+2. **version47/neg24.fs** - Renamed this to `module OldNegative` with comments like "// no longer an error or warning" and added extensive `ListPositive2`, `SeqPositive2`, `BuilderPositive2` modules testing implicit yield
+3. **Main neg24.fs** - Contains the version47 content exactly (same module structure, same test cases)
+
+**Coverage Verification**:
+
+| Test Scenario | Deleted From | Now Covered By |
+|--------------|--------------|----------------|
+| Implicit yield in lists `[ if true then 1 else 2 ]` | version46 (error), version47 (ok) | Main `neg24.fs` - `ListPositive2` module |
+| Implicit yield in arrays `[| if ... |]` | version46 (error), version47 (ok) | Main `neg24.fs` - `ArrayPositive2` module |
+| Implicit yield in seq expressions | version46 (error), version47 (ok) | Main `neg24.fs` - `SeqPositive2` module |
+| Implicit yield in computation builders | version47 only | Main `neg24.fs` - `BuilderPositive2` module |
+| Mixed yield/non-yield errors | version47 only | Main `neg24.fs` - `ListNegative2`, `ArrayNegative2`, `SeqNegative2`, `BuilderNegative2` modules |
+| Curried extension member errors (FS0816) | Both versions | Main `neg24.fs` - `BadCurriedExtensionMember` module |
+| Named argument errors (FS0495) | Both versions | Main `neg24.fs` - line 70 |
+
+**Conclusion**: All 4 deleted typecheck/sigs version files are **Category B - superseded by retained counterpart**. The main `neg24.fs` file at the sigs root now contains comprehensive testing for implicit yield behavior (the 4.7+ behavior), while the version-specific tests that only existed to show "this doesn't work in 4.6" or "this works in 4.7" are no longer needed since 8.0+ is the minimum langversion.
