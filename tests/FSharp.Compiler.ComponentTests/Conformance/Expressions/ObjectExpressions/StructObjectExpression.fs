@@ -63,3 +63,87 @@ let result = foo.DoSomething()
         |> withOptions [ "--nowarn:52" ]
         |> compileExeAndRun
         |> shouldSucceed
+
+    // Regression tests - these must continue to work
+
+    [<Fact>]
+    let ``Static member in struct with object expression should compile - StructBox regression`` () =
+        // This is the StructBox.Comparer pattern from FSharp.Core/seqcore.fs
+        // Static members don't have 'this' so should NOT be transformed
+        Fsx """
+open System.Collections.Generic
+
+[<Struct; NoComparison; NoEquality>]
+type StructBox<'T when 'T: equality>(value: 'T) =
+    member x.Value = value
+    
+    static member Comparer =
+        let gcomparer = HashIdentity.Structural<'T>
+        { new IEqualityComparer<StructBox<'T>> with
+            member _.GetHashCode(v) = gcomparer.GetHashCode(v.Value)
+            member _.Equals(v1, v2) = gcomparer.Equals(v1.Value, v2.Value) }
+
+let comparer = StructBox<int>.Comparer
+let box1 = StructBox(42)
+let box2 = StructBox(42)
+let result = comparer.Equals(box1, box2)
+if not result then failwith "Expected equal"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Module level object expression with struct parameter should compile`` () =
+        // Module-level functions don't have instance context
+        Fsx """
+[<Struct>]
+type MyStruct(value: int) =
+    member x.Value = value
+
+let createComparer () =
+    { new System.Object() with
+        member _.ToString() = "comparer" }
+
+let c = createComparer()
+if c.ToString() <> "comparer" then failwith "Failed"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Object expression in struct not capturing anything should compile`` () =
+        // Object expression that doesn't reference any struct state
+        Fsx """
+[<Struct; NoComparison>]
+type MyStruct(value: int) =
+    member _.CreateObj() = {
+        new System.Object() with
+        member _.ToString() = "constant"
+    }
+
+let s = MyStruct(42)
+let obj = s.CreateObj()
+if obj.ToString() <> "constant" then failwith "Failed"
+        """
+        |> withOptions [ "--nowarn:52" ]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Object expression in struct with method parameters should not confuse params with captures`` () =
+        // Method parameters are not instance captures, should not trigger transformation
+        Fsx """
+[<Struct; NoComparison>]
+type MyStruct(value: int) =
+    member _.Transform(multiplier: int) = {
+        new System.Object() with
+        member _.ToString() = string (value * multiplier)
+    }
+
+let s = MyStruct(21)
+let obj = s.Transform(2)
+if obj.ToString() <> "42" then failwith "Expected 42"
+        """
+        |> withOptions [ "--nowarn:52" ]
+        |> compileExeAndRun
+        |> shouldSucceed

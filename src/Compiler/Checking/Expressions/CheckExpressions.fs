@@ -7236,6 +7236,13 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
     // Add the object type to the ungeneralizable items
     let env = {env with eUngeneralizableItems = addFreeItemOfTy objTy env.eUngeneralizableItems }
 
+    // Save the enclosing struct context BEFORE EnterFamilyRegion overwrites env.eFamilyType.
+    // This is used later to detect struct instance captures that would generate illegal byref fields.
+    let enclosingStructTyconRefOpt =
+        match env.eFamilyType with
+        | Some tcref when tcref.IsStructOrEnumTycon -> Some tcref
+        | _ -> None
+
     // Object expression members can access protected members of the implemented type
     let env = EnterFamilyRegion tcref env
     let ad = env.AccessRights
@@ -7344,8 +7351,101 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
            errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
 
         // 4. Build the implementation
-        let expr = mkObjExpr(objtyR, baseValOpt, ctorCall, overrides', extraImpls, mWholeExpr)
-        let expr = mkCoerceIfNeeded g realObjTy objtyR expr
+        // Check for struct instance captures that would generate illegal byref fields.
+        // When a struct instance method creates an object expression that captures constructor
+        // parameters, those captures go through 'this' which is a byref. This would create
+        // illegal byref fields in the closure class. To fix this, we extract the captured
+        // values to local bindings before the object expression.
+        
+        // Collect free variables from all parts of the object expression
+        let collectFreeVars expr =
+            (freeInExpr CollectLocals expr).FreeLocals |> Zset.elements
+
+        // Collect all method parameters (bound variables) from object expression methods
+        // These should NOT be treated as struct instance captures
+        let methodParams =
+            [
+                for TObjExprMethod(_, _, _, paramGroups, _, _) in overrides' do
+                    for paramGroup in paramGroups do
+                        for v in paramGroup do
+                            yield v
+                for (_, methods) in extraImpls do
+                    for TObjExprMethod(_, _, _, paramGroups, _, _) in methods do
+                        for paramGroup in paramGroups do
+                            for v in paramGroup do
+                                yield v
+            ]
+            |> List.map (fun v -> v.Stamp)
+            |> Set.ofList
+
+        let allFreeVars =
+            [
+                yield! collectFreeVars ctorCall
+                for TObjExprMethod(_, _, _, _, body, _) in overrides' do
+                    yield! collectFreeVars body
+                for (_, methods) in extraImpls do
+                    for TObjExprMethod(_, _, _, _, body, _) in methods do
+                        yield! collectFreeVars body
+            ]
+            |> List.distinctBy (fun v -> v.Stamp)
+
+        // Filter to struct instance captures:
+        // - We're in a struct context (enclosingStructTyconRefOpt is Some)
+        // - The value is NOT a method parameter of the object expression
+        // - The value is NOT a module binding
+        // - The value is NOT a member or module binding (excludes property getters, etc.)
+        // - The value is NOT a constructor
+        let structCaptures =
+            match enclosingStructTyconRefOpt with
+            | None -> []
+            | Some _ ->
+                allFreeVars
+                |> List.filter (fun v ->
+                    not v.IsModuleBinding &&
+                    not v.IsMemberOrModuleBinding &&
+                    not (Set.contains v.Stamp methodParams) &&
+                    v.LogicalName <> ".ctor")
+
+        let expr =
+            if List.isEmpty structCaptures then
+                // No transformation needed - build the object expression directly
+                let expr = mkObjExpr(objtyR, baseValOpt, ctorCall, overrides', extraImpls, mWholeExpr)
+                mkCoerceIfNeeded g realObjTy objtyR expr
+            else
+                // Create local bindings for each captured value to avoid byref captures
+                let localBindings =
+                    structCaptures
+                    |> List.map (fun v ->
+                        let local, localExpr = mkCompGenLocal mWholeExpr (v.LogicalName + "$captured") v.Type
+                        let readExpr = exprForVal mWholeExpr v
+                        (v, local, localExpr, readExpr))
+
+                // Build remap: original val -> local val
+                let remap =
+                    localBindings
+                    |> List.fold (fun (r: Remap) (orig, local, _, _) ->
+                        { r with valRemap = r.valRemap.Add orig (mkLocalValRef local) })
+                        Remap.Empty
+
+                // Helper to remap an object expression method
+                let remapMethod (TObjExprMethod(slotSig, attrs, mtps, paramGroups, body, range)) =
+                    TObjExprMethod(slotSig, attrs, mtps, paramGroups, remapExpr g CloneAll remap body, range)
+
+                // Remap all parts of the object expression
+                let ctorCall' = remapExpr g CloneAll remap ctorCall
+                let overrides'' = overrides' |> List.map remapMethod
+                let extraImpls' = extraImpls |> List.map (fun (ty, ms) -> (ty, ms |> List.map remapMethod))
+
+                // Build the object expression with remapped references
+                let objExpr = mkObjExpr(objtyR, baseValOpt, ctorCall', overrides'', extraImpls', mWholeExpr)
+                let objExpr = mkCoerceIfNeeded g realObjTy objtyR objExpr
+
+                // Wrap with let bindings: let x$captured = x in ...
+                localBindings
+                |> List.foldBack (fun (_, local, _, valueExpr) body ->
+                    mkLet DebugPointAtBinding.NoneAtInvisible mWholeExpr local valueExpr body)
+                <| objExpr
+
         expr, tpenv
 
 //-------------------------------------------------------------------------
