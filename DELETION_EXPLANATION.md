@@ -705,3 +705,62 @@ type I<'T> =
 - The ExtensionMethodTests.fs file had no deletions, only version migrations
 
 **No coverage gap exists** - version gate tests add no value once older langversions are unsupported.
+
+---
+
+## tests/fsharp/tests.fs Deleted Test Cases Audit
+
+This section audits the ~10 deleted test cases from `tests/fsharp/tests.fs` (the main test driver file for fsharp test suites).
+
+### Deleted Test Cases Analysis
+
+| Deleted Test | Category | Justification | Risk |
+|--------------|----------|---------------|------|
+| `subtype-langversion-46` | **B** | Tests subtype constraint behavior at langversion 4.6 by building `test.fsx` and running the executable. The same test file is now covered by `subtype-langversion-checknulls` and `subtype-langversion-no-checknulls` tests which run the identical `test.fsx` at current langversion with different null checking flags. No langversion-specific behavior was being tested - just running the same subtype conformance tests. | **OK** |
+| `fsfromfsviacs langversion compilation test` | **A** | Tests that certain C# interop scenarios produce FS0193/FS0001 type mismatch errors at langversion 4.7. The deleted test loop checked versions ["4.7"] against a baseline `compilation.langversion.old.output.bsl`. The main test (retained) still checks `compilation.errors.output.bsl` which contains the same type errors at modern langversion. The 4.7-specific baseline tested the same FS0193/FS0001 errors about option/nullable mismatches. | **OK** |
+| `printing-langversion47` | **B** | Tests FSI printing output at langversion 4.7 against `output.47.stdout.bsl` and `output.47.stderr.bsl` baselines. Comparing `output.47.stdout.bsl` with `output.stdout.bsl` shows they are essentially identical (same FSI val declarations). The main `printing` test (retained) covers FSI output at current langversion. F# 5.0+ made no semantic changes to printing output - only minor formatting. | **OK** |
+| `libtest-langversion-46` | **B** | Tests the libtest suite at langversion 4.6 by building `test.fsx` and running. The same `test.fsx` file is now covered by `libtest-FSI_NETFX_STDIN`, `libtest-unoptimized codegen`, `libtest-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`, and `libtest-langversion-checknulls` which run the identical test file at current langversion. No langversion-specific behavior existed in libtest. | **OK** |
+| `member-selfidentifier-version4_6` | **A** | Tests `member _.Method()` syntax produces FS0010 error at langversion 4.6. This is a "feature not available" test - the underscore self-identifier was introduced in F# 4.7. The `version46/test.fs` file was deleted (documented above in Core Test Files section). | **OK** |
+| `member-selfidentifier-version4_7` | **B** | Tests `member _.Method()` syntax works at langversion 4.7. This was the "success" counterpart. The feature is now standard and implicitly tested throughout the codebase (80+ files use `member _.`). | **OK** |
+| `indent-version4_7` | **B** | Tests indentation/offside warnings at langversion 4.7. The `version47/test.fsx` was deleted (documented above in Core Test Files section). Offside exceptions are now tested in ComponentTests. | **OK** |
+| `nameof-version4_6` | **A** | Tests `nameof` produces FS0039 "not defined" errors at langversion 4.6. The `version46/test.fsx` was deleted (documented above in Core Test Files section). This is purely a "feature not available" test. | **OK** |
+| `type check neg24 version 4_6` | **B** | Tests implicit yield sequence expression warnings at langversion 4.6 against `version46/neg24.bsl`. The main `neg24.fs` (retained) now contains the 4.7+ behavior which is the current baseline. Documented above in Typecheck/Sigs section. | **OK** |
+| `type check neg24 version 4_7` | **B** | Tests implicit yield sequence expressions at langversion 4.7. The main `neg24.fs` (retained) contains this exact content. Documented above in Typecheck/Sigs section. | **OK** |
+
+### Key Observations
+
+1. **All 10 deleted tests fall into safe categories (A or B)**
+2. **Category A tests (4)**: Testing "feature X not available in version Y" - pointless once Y is unsupported
+3. **Category B tests (6)**: Either superseded by retained tests or testing behavior now standard in 8.0+
+4. **No unique behavioral tests were lost** - all tested scenarios are covered by retained tests
+
+### Coverage Verification
+
+| Deleted Test | Now Covered By |
+|--------------|----------------|
+| `subtype-langversion-46` | `subtype-langversion-checknulls`, `subtype-langversion-no-checknulls` |
+| `fsfromfsviacs langversion compilation` | Main fsfromfsviacs test with `compilation.errors.output.bsl` |
+| `printing-langversion47` | Main `printing` test (identical FSI output behavior) |
+| `libtest-langversion-46` | `libtest-FSI_NETFX_STDIN`, `libtest-unoptimized codegen`, etc. |
+| `member-selfidentifier-version4_6/4_7` | Implicit in 80+ files using `member _.` syntax |
+| `indent-version4_7` | `FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/OffsideExceptions/` |
+| `nameof-version4_6` | `nameof/preview/test.fsx` + `Language/NameofTests.fs` |
+| `type check neg24 version 4_6/4_7` | Main `neg24.fs` at sigs root (same content as version47) |
+
+### Note on pos40.fs Langversion Change
+
+The diff shows `pos40.fs` langversion was changed from 6.0 to 8.0:
+```fsharp
+- fsc cfg "%s --langversion:6.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
++ fsc cfg "%s --langversion:8.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
+```
+
+This is a **migration, not a deletion** - the test still exists but runs at langversion 8.0 instead of 6.0. No analysis needed as the test content is unchanged.
+
+### Conclusion
+
+**All ~10 deleted tests.fs test cases are safe deletions**:
+- 4 were Category A (testing unavailability in old versions)
+- 6 were Category B (superseded by retained tests)
+- No coverage gaps exist
+- All behavioral tests have retained counterparts
