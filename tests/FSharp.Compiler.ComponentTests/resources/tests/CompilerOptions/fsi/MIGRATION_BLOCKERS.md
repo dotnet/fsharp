@@ -6,12 +6,13 @@ This document tracks FSI tests that **cannot be migrated** from `tests/fsharpqa/
 
 | Folder | Test Count | Error ID | Reason |
 |--------|------------|----------|--------|
-| help | 4 | N/A (StopProcessingExn) | Help options exit before session creation |
+| help | 4 | N/A (StopProcessingExn) | Help options (`-?`, `--help`, `/?`) exit before session creation |
+| help (langversion) | 1 | N/A (StopProcessingExn) | `--langversion:?` help output exits before session creation |
 | highentropyva | 1 | FS0243 | Unrecognized option crashes session |
 | subsystemversion | 1 | FS0243 | Unrecognized option crashes session |
-| **Total** | **6** | | |
+| **Total** | **7** | | |
 
-> **Note**: The help baseline files (`help40.437.1033.bsl`, `help40-nologo.437.1033.bsl`) also document `--langversion:?` output, which is another FSI help feature that would have the same migration blocker.
+> **Note**: The `--langversion:?` blocker is counted separately because while it's documented in the same help baseline files, it represents a distinct help feature with the same migration blocker behavior.
 
 ---
 
@@ -89,6 +90,24 @@ SOURCE=E_subsystemversion01.fsx COMPILE_ONLY=1 FSIMODE=PIPE SCFLAGS="--subsystem
 
 ---
 
+### 4. langversion help (1 test)
+
+**Source**: `tests/fsharpqa/Source/CompilerOptions/fsi/help/` (documented in baseline files)
+
+**Option**: `--langversion:?`
+
+**Behavior**: Displays the allowed values for language version and exits.
+
+**Why Blocked**: The `--langversion:?` option causes FSI to display help output for available language versions and exit. Like other help options, this triggers `StopProcessingExn` before `FsiEvaluationSession.Create` completes, preventing the component test infrastructure from capturing the output.
+
+**Evidence**: The help baseline file `help40.437.1033.bsl` documents this option at lines 66-67:
+```
+--langversion:?                          Display the allowed values for
+                                         language version.
+```
+
+---
+
 ## Potential Solutions (Future Work)
 
 ### Option 1: Process Execution Helper
@@ -107,7 +126,7 @@ Change `FsiEvaluationSession.Create` to not throw `StopProcessingExn` for help/u
 **Risk**: This could break existing consumers of the API.
 
 ### Option 3: Keep in Legacy Suite
-Accept these 6 tests as permanent blockers and maintain them in the legacy fsharpqa infrastructure indefinitely.
+Accept these 7 tests as permanent blockers and maintain them in the legacy fsharpqa infrastructure indefinitely.
 
 ---
 
