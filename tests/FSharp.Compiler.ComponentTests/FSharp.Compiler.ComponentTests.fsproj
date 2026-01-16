@@ -331,6 +331,8 @@
     <Compile Include="CompilerOptions\fsc\lib\lib.fs" />
     <Compile Include="CompilerOptions\fsc\out\out.fs" />
     <Compile Include="CompilerOptions\fsc\responsefile\responsefile.fs" />
+    <Compile Include="CompilerOptions\fsi\Langversion.fs" />
+    <Compile Include="CompilerOptions\fsi\Nologo.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\Caches.fs" />
     <Compile Include="CompilerService\LruCache.fs" />

@@ -47,6 +47,37 @@ The following tests were NOT migrated as they test legacy/obsolete behavior:
 - `W_IndexedPropertySetter01.fs` - Tests warning FS0191 which no longer exists
 - `W_PassingResxToCompilerIsDeprecated01.fs` - Tests deprecated .resx file handling
 
+## CompilerOptions/fsi Migration (2026-01-15)
+
+### Migrated Tests (5 total)
+- **langversion** (3 tests): Bad langversion error tests in Langversion.fs
+- **nologo** (2 tests): FSI --nologo option tests in Nologo.fs
+
+### Migration Blockers - FSI Option Tests
+
+The following tests could NOT be migrated due to infrastructure limitations:
+
+1. **help tests (4 tests)** - DesktopOnly
+   - Tests `-?`, `--help`, `/?` FSI help options
+   - Original tests compare full help output to baseline files (`help40.437.1033.bsl`)
+   - **Blocker**: Help options cause `StopProcessingExn` which crashes `FsiEvaluationSession.Create`
+   - The component test infrastructure cannot capture FSI output before session termination
+   
+2. **highentropyva (1 test)** - DesktopOnly  
+   - Tests that `--highentropyva+` is rejected by FSI
+   - **Blocker**: Unrecognized options cause `StopProcessingExn` before session creation completes
+   - Would require external FSI process execution to capture error output
+
+3. **subsystemversion (1 test)** - DesktopOnly
+   - Tests that `--subsystemversion:4.00` is rejected by FSI
+   - **Blocker**: Same as highentropyva - session fails before output can be captured
+
+**Technical Details**: The `runFsi` function uses `FsiEvaluationSession.Create` which throws `StopProcessingExn` when:
+- An unrecognized option is passed
+- A help option (`-?`, `--help`, `/?`) is passed
+
+These scenarios require running the actual FSI executable and capturing stdout/stderr.
+
 ## Key Design Decisions
 
 ### 1. Use Existing Infrastructure (Don't Reinvent)
@@ -96,3 +127,4 @@ For tests with `SOURCE="file1.fsi file2.fs"`:
 2. **Pre-existing test failures** - 294 tests fail on main; these are NOT caused by migration
 3. **Small batches work better** - Commit after each 20-30 files migrated
 4. **Obsolete warnings** - Some legacy tests (e.g. W_IndexedPropertySetter01.fs with FS0191) test for warnings that no longer exist in modern F# compiler. These should NOT be migrated - they should be skipped/deleted.
+5. **FSI session limitations** - Cannot test FSI command-line option rejection with `runFsi` since session creation throws exceptions before output can be captured
