@@ -170,3 +170,102 @@ The "interfaces with multiple generic instantiation" feature was introduced in F
 3. The semantic checking (FS3360 "may unify" errors) remains thoroughly tested in the 5.0 files
 
 **No coverage gap exists** - the feature itself and its type-checking semantics are fully covered by the retained 5.0 test files.
+
+---
+
+## ObjectExpressions E_ObjExprWithSameInterface01.4.7.fs Audit
+
+This section audits the deleted file `tests/fsharpqa/Source/Conformance/Expressions/DataExpressions/ObjectExpressions/E_ObjExprWithSameInterface01.4.7.fs`.
+
+### What Was Tested
+
+The deleted file tested that implementing the same interface (`IQueue`) at multiple generic instantiations (`IQueue<'T>` and `IQueue<obj>`) in an object expression produced the FS3350 "Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7" error.
+
+### Analysis
+
+| File | Category | Justification | Risk |
+|------|----------|---------------|------|
+| `E_ObjExprWithSameInterface01.4.7.fs` | **A** | Tests exclusively that implementing multiple generic instantiations of the same interface produces FS3350 "Feature not available in F# 4.7" error. This is a classic version-gate test - once 4.7 is no longer supported, testing that it errors is pointless. | **OK** |
+
+### 5.0 Counterpart Verification
+
+The counterpart file `E_ObjExprWithSameInterface01.5.0.fs` is **retained** and tests the semantic error FS3361:
+
+```
+"You cannot implement the interface 'IQueue<_>' with the two instantiations 'IQueue<'T>' and 'IQueue<obj>' because they may unify."
+```
+
+This is the **actual type-checking error** that occurs in F# 5.0+ when types may unify at runtime - the genuine semantic check that protects against runtime errors. The 4.7 file only tested that the feature was gated; the 5.0 file tests the actual semantic validation.
+
+### Conclusion
+
+**Category A - Safe to Delete**. The 5.0 counterpart tests the real semantic error (FS3361 "may unify") which is the actual protection against the Dev10:854519 / Dev11:5525 regression. No coverage gap exists.
+
+---
+
+## SequenceExpressions version46/W_IfThenElse0*.fs Audit
+
+This section audits the 3 deleted files in `tests/fsharpqa/Source/Conformance/Expressions/DataExpressions/SequenceExpressions/version46/`:
+- `W_IfThenElse01.fs`
+- `W_IfThenElse02.fs`
+- `W_IfThenElse03.fs`
+
+### What Was Tested
+
+These files tested the FS0035 "deprecated" warning in F# 4.6 for implicit yield patterns in list expressions:
+
+| File | Test Pattern | FS0035 Error |
+|------|--------------|--------------|
+| `W_IfThenElse01.fs` | `[ if true then 1 else 2 ]` | "This list or array expression includes an element of the form 'if ... then ... else'. Parenthesize this expression..." |
+| `W_IfThenElse02.fs` | `[ if true then 1 else printfn "hello"; 3 ]` | Same FS0035 warning for complex else branch |
+| `W_IfThenElse03.fs` | `[ if true then printfn "hello"; () ]` | Same FS0035 warning for side-effecting if-then |
+
+In F# 4.6, these patterns required parentheses to disambiguate between:
+1. A single element computed via if-then-else: `[ (if true then 1 else 2) ]`
+2. A sequence expression generating multiple elements
+
+### Analysis
+
+| File | Category | Justification | Risk |
+|------|----------|---------------|------|
+| `version46/W_IfThenElse01.fs` | **B** | The version47 counterpart shows this pattern now works via implicit yield with no error. The test for FS0035 in old version is no longer relevant. | **OK** |
+| `version46/W_IfThenElse02.fs` | **B** | The version47 counterpart shows this pattern now works via implicit yield. Behavioral coverage preserved. | **OK** |
+| `version46/W_IfThenElse03.fs` | **B** | The version47 counterpart shows side-effecting expressions now work in implicit yield context. Behavioral coverage preserved. | **OK** |
+
+### Version 4.7 Counterpart Verification
+
+The `version47/` counterparts are **retained** and test that these patterns compile and run successfully:
+
+| Retained File | What It Tests |
+|--------------|---------------|
+| `version47/W_IfThenElse01.fs` | `[ if true then 1 else 2 ]` compiles with implicit yield, returns `[1]` |
+| `version47/W_IfThenElse02.fs` | `[ if false then 1 else printfn "hello"; 3 ]` compiles, returns `[3]` |
+| `version47/W_IfThenElse03.fs` | `[ if true then printfn "hello"; () ]` compiles, returns empty list (side effects only) |
+
+### Are FS0035 Warnings Still Tested Elsewhere?
+
+**Yes, in different contexts.** The FS0035 "deprecated" warning is still tested for other deprecated constructs:
+- `neg06.bsl`, `neg10.bsl`, `neg12.bsl` - various deprecated syntax patterns
+- `E_CantUseDollarSign.fs` - deprecated `$` operator
+- `StructNotAllowDoKeyword.fs` - deprecated struct syntax
+
+The **specific** FS0035 warning for "if...then...else in list expressions" is no longer emitted in F# 4.7+ because implicit yield was introduced. This warning is now **obsolete** - it was replaced by a feature (implicit yield) that makes the disambiguation unnecessary.
+
+### Why This Warning Was Removed
+
+In F# 4.7+, the compiler supports "implicit yield" in list/array/sequence expressions. The pattern:
+
+```fsharp
+[ if true then 1 else 2 ]
+```
+
+Is now unambiguously interpreted as a list with a single element (the result of the if-then-else). The old FS0035 warning that required parentheses is no longer needed because:
+1. The `yield` keyword is now optional
+2. The compiler can determine intent from context
+3. The ambiguity the warning protected against no longer exists
+
+### Conclusion
+
+**All 3 files are Category B - Safe to Delete**. Each version46 file has a retained version47 counterpart that tests the same pattern now works correctly. The FS0035 "deprecated" warning for implicit yield patterns is itself deprecated - it was replaced by the implicit yield feature in F# 4.7.
+
+**No coverage gap exists** - the behavior (list expressions with if-then-else) is tested in version47, and the warning is no longer relevant.
