@@ -497,3 +497,78 @@ let (|Foo|_|) x = ValueNone
 - All features have extensive positive test coverage at 8.0+
 
 **No coverage gap exists** - the version gate tests add no value once older langversions are unsupported.
+
+---
+
+## StaticClassTests.fs Deletions Audit
+
+This section audits the deleted tests from `tests/FSharp.Compiler.ComponentTests/Language/StaticClassTests.fs` as part of the LangVersion 8.0+ migration.
+
+### Summary
+
+The file originally contained pairs of tests: one for `lang version70` and one for `lang preview`, testing identical static class scenarios. During migration:
+- **Deleted**: Tests with `lang version70` suffix
+- **Retained**: Tests with `lang preview` suffix (renamed to remove version suffix)
+- **Result**: No test coverage lost - each deleted test had an identical retained counterpart
+
+### Deleted Tests and Their Counterparts
+
+| Deleted Test | Retained Counterpart | Category | Risk |
+|-------------|---------------------|----------|------|
+| `Sealed and AbstractClass on a type in lang version70` | `Sealed and AbstractClass on a type` | **B** | **OK** |
+| `Sealed and AbstractClass on a type in lang preview` | MERGED with above (duplicate) | **B** | **OK** |
+| `Sealed and AbstractClass on a type with constructor in lang preview` | `Sealed and AbstractClass on a type with constructor` | **B** | **OK** |
+| `Sealed and AbstractClass on a type with constructor in lang version70` | MERGED with above | **B** | **OK** |
+| `Sealed and AbstractClass on a type with constructor with arguments in lang version70` | `Sealed and AbstractClass on a type with constructor with arguments` | **B** | **OK** |
+| `When Sealed and AbstractClass on a type with additional constructors in lang version70` | `When Sealed and AbstractClass on a type with additional constructors` | **B** | **OK** |
+| `When Sealed and AbstractClass on a type with explicit fields and constructor in lang version70` | `When Sealed and AbstractClass on a type with explicit fields and constructor` | **B** | **OK** |
+| `When Sealed and AbstractClass on a generic type with constructor in lang version70` | `When Sealed and AbstractClass on a generic type with constructor` | **B** | **OK** |
+| `Sealed and AbstractClass on a type with instance members in lang version70` | `Sealed and AbstractClass on a type with instance members` | **B** | **OK** |
+| `Sealed and AbstractClass on a type with static members in lang preview` | `Sealed and AbstractClass on a type with static members` | **B** | **OK** |
+| `Sealed and AbstractClass on a type with static and non static let bindings in lang 70` | `Sealed and AbstractClass with static and non static let bindings` | **B** | **OK** |
+| `Sealed and AbstractClass on a type with static and non static recursive let bindings in lang 70` | `Sealed and AbstractClass with static and non static recursive let bindings` | **B** | **OK** |
+| `Sealed and AbstractClass on a type with static let bindings in lang 70` | `Sealed and AbstractClass with static let bindings` | **B** | **OK** |
+| `Sealed and AbstractClass on a type with recursive static let bindings in lang 70` | `Sealed and AbstractClass with recursive static let bindings` | **B** | **OK** |
+| `Sealed and AbstractClass on a type implementing interface in lang 70` | `Sealed and AbstractClass on a type implementing interface` | **B** | **OK** |
+| `Sealed and AbstractClass on a type implicit constructor implementing interface in lang 70` | `Sealed and AbstractClass on a type implicit constructor implementing interface` | **B** | **OK** |
+| `Sealed and AbstractClass on a type implicit constructor declaring abstract members in Lang 70` | `Sealed and AbstractClass on a type implicit constructor declaring abstract members` | **B** | **OK** |
+| `Sealed and AbstractClass on a type declaring abstract members in Lang 70` | `Sealed and AbstractClass on a type declaring abstract members` | **B** | **OK** |
+| `Sealed and AbstractClass on a type with implicit constructor declaring static explicit field in Lang preview` | `Sealed and AbstractClass on a type with implicit constructor declaring static explicit field` | **B** | **OK** |
+| `Sealed and AbstractClass on a type with declaring static explicit field in Lang preview` | `Sealed and AbstractClass on a type declaring static explicit field` | **B** | **OK** |
+| `When Sealed and AbstractClass on a type with non static explicit fields and implicit constructor in lang 70` | `When Sealed and AbstractClass on a type with non static explicit fields and implicit constructor` | **B** | **OK** |
+| `When Sealed and AbstractClass on a type with non static explicit fields and constructor in lang 70` | `When Sealed and AbstractClass on a type with non static explicit fields and constructor` | **B** | **OK** |
+| `Sealed and AbstractClass on a types with instance member properties on lang version70` | `Sealed and AbstractClass on a types with instance member properties` | **B** | **OK** |
+| `Sealed and AbstractClass on types with non static members lang version70` | `Sealed and AbstractClass on types with non static members` | **B** | **OK** |
+
+### Theory Test Consolidation
+
+The file also contained a `[<Theory>]` test with `[<InlineData("7.0")>]`:
+
+| Deleted InlineData | Retained InlineData | Test Name |
+|-------------------|---------------------|-----------|
+| `"7.0"` | `"8.0"`, `"preview"` | `Mutually recursive type definition that using custom attributes` |
+
+This is **Category B - Safe to Delete** - the same test logic runs at 8.0 and preview, covering the same code paths.
+
+### Key Observations
+
+1. **All deletions are Category B (superseded by retained counterpart)**
+2. **No unique test logic was lost** - every deleted test had an identical version at 8.0/preview
+3. **26 tests retained** - comprehensive coverage of static class functionality remains
+4. **Test naming improved** - version suffixes removed, making test names cleaner
+
+### Why Were These Tests Duplicated Originally?
+
+The original test structure tested static class behavior at **both** langversion 7.0 and preview/8.0 to verify that:
+1. The feature worked at 7.0 (when static classes were introduced)
+2. The feature still worked at preview/8.0 (no regression)
+
+Now that 8.0 is the minimum supported langversion, only one copy of each test is needed.
+
+### Conclusion
+
+**All StaticClassTests deletions are Category B - Safe to Delete**:
+- Each deleted test was a duplicate testing identical behavior at a different langversion
+- The retained tests at 8.0/preview cover all the same scenarios
+- No test coverage gap exists
+
