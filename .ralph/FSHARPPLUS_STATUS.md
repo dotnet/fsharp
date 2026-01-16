@@ -90,7 +90,19 @@ export LocalFSharpCompilerConfiguration=Release
 
 ### Subtask 5: ReleaseDocs Target
 **Status**: ✅ PASS  
-See summary table - completed successfully.
+**Timestamp**: 2026-01-16T22:11:00Z  
+**Verified**: 2026-01-16T22:11:00Z  
+**Command**: `dotnet msbuild -target:ReleaseDocs build.proj`  
+**Exit Code**: 0  
+**Verification Criteria**:
+- ✅ Exit code 0
+- ✅ No 'error FS' messages in output
+- ✅ Status file updated with PASS
+
+**Notes**: 
+- Build succeeded (0 Warning(s), 0 Error(s))
+- Documentation generated and gh-pages updated
+- Commit message: "Update generated documentation for version 1.8.0"
 
 ### Subtask 6: Uncomment Tests
 **Status**: ✅ DONE  
@@ -98,7 +110,50 @@ See summary table - tests cause compiler hang (FS0465).
 
 ### Subtask 7: Run Uncommented Tests
 **Status**: ✅ DONE  
-See summary table - compiler hangs on complex type inference.
+**Timestamp**: 2026-01-17T00:10:00Z  
+**Command**: `dotnet build tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj`  
+**Exit Code**: TIMEOUT (3+ minutes)
+
+**Observation**: Compiler hangs during compilation of test files with complex SRTP type inference. No error messages are produced before the hang.
+
+**Error Details** (from FSharpPlus source comments and prior CI runs):
+
+#### Error 1: FS0465 - Type Inference Too Complicated
+- **File**: `tests/FSharpPlus.Tests/General.fs`
+- **Line**: 1199
+- **Code**: `let _ = choice (NonEmptyList.ofList (toList t))`
+- **Error Code**: FS0465
+- **Full Message**: 
+  ```
+  error FS0465: Type inference problem too complicated (maximum iteration depth reached).
+  Consider adding further type annotations.
+  ```
+
+#### Error 2: FS0465 - Type Inference Too Complicated  
+- **File**: `tests/FSharpPlus.Tests/General.fs`
+- **Line**: 1203
+- **Code**: `let _ = choice (WrappedSeqE t)`
+- **Error Code**: FS0465
+- **Full Message**: 
+  ```
+  error FS0465: Type inference problem too complicated (maximum iteration depth reached).
+  Consider adding further type annotations.
+  ```
+
+#### Error 3: FS0071 - Type Constraint Mismatch
+- **File**: `tests/FSharpPlus.Tests/General.fs`
+- **Line**: 1707
+- **Code**: `let _x1 = curryN f1 100`
+- **Error Code**: FS0071
+- **Full Message**:
+  ```
+  error FS0071: Type constraint mismatch when applying the default type 'Tuple<int>' for a type inference variable.
+  Type mismatch. Expecting a '(Tuple<int> -> int list) -> int -> obj' 
+  but given a '(Tuple<int> -> int list) -> int -> int list'
+  The type 'obj' does not match the type 'int list'
+  ```
+
+**Note**: These errors were documented in FSharpPlus source comments by maintainers. With the local compiler, the build hangs indefinitely instead of producing FS0465 within a reasonable time. This represents a potential performance regression in type inference timeout behavior.
 
 ### Subtask 8: Document Regressions
 **Status**: ✅ DONE  
