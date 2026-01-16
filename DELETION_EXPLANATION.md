@@ -118,3 +118,55 @@ The "Fixed-index slice" feature (tracked as `LanguageFeature.FixedIndexSlice3d4d
 - Core runtime tests (`core/array/test.fsx`)
 
 There is **no coverage gap** - the feature has extensive positive test coverage.
+
+---
+
+## InterfaceTypes Multiple Generic Instantiation Tests Audit
+
+This section audits the 7 deleted files in `tests/fsharpqa/Source/Conformance/ObjectOrientedTypeDefinitions/InterfaceTypes/` that tested "interfaces with multiple generic instantiation" errors.
+
+### Background
+
+The "interfaces with multiple generic instantiation" feature was introduced in F# 5.0. Prior to 5.0, implementing the same interface at different generic instantiations was forbidden. The 4.7 tests verified this restriction existed (error FS3350), while the 5.0 tests verified the feature works.
+
+### Deleted Files Analysis
+
+| Deleted File (4.7) | Category | Error Tested | 5.0 Counterpart Retained | Risk |
+|-------------------|----------|--------------|--------------------------|------|
+| `E_MultipleInst01.4.7.fs` | **A** | FS3350: "Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7" | ✅ `MultipleInst01.5.0.fs` - Tests `type C` implementing `IA<int>` and `IA<string>` successfully | **OK** |
+| `E_MultipleInst04.4.7.fs` | **A** | FS3350: Same "not available" error for two-parameter generic interface `IA<'a,'b>` | ✅ `MultipleInst04.5.0.fs` - Tests `C<'a>` implementing `IA<int,char>` and `IA<char,int>` successfully | **OK** |
+| `E_MultipleInst07.4.7.fs` | **A** | FS3350: Same "not available" error for aliased types with measures | ✅ `E_MultipleInst07.5.0.fs` - Tests FS3360 "may unify" error (the *semantic* error, not version gate) | **OK** |
+| `E_ImplementGenIFaceTwice01_4.7.fs` | **A** | FS3350: Same "not available" error for interface inheritance pattern | ✅ `E_ImplementGenIFaceTwice01_5.0.fs` - Tests FS3360 "may unify" error (the semantic error) | **OK** |
+| `E_ImplementGenIFaceTwice02_4.7.fs` | **A** | FS3350: Same "not available" error | ✅ `ImplementGenIFaceTwice02_5.0.fs` - Tests successful implementation of `IFoo<string>` and `IFoo<int64>` | **OK** |
+| `E_ConsumeMultipleInterfaceFromCS.4.7.fs` | **A** | FS3350: Three instances of "not available" error for consuming C# multiple-instantiation types | ✅ `ConsumeMultipleInterfaceFromCS.5.0.fs` + `E_ConsumeMultipleInterfaceFromCS.5.0.fs` - Tests both success scenarios and FS0443 semantic errors | **OK** |
+| `E_ClassConsumeMultipleInterfaceFromCS.4.7.fs` | **A** | FS3350: Same "not available" error for class inheritance from C# type | ✅ `ClassConsumeMultipleInterfaceFromCS.5.0.fs` - Tests successful inheritance and interface implementation | **OK** |
+
+### Key Observations
+
+1. **All 7 deleted files are Category A** - they exclusively test the FS3350 "Feature X is not available in F# 4.7" error message
+2. **All have 5.0+ counterparts** - every deleted 4.7 file has a corresponding 5.0 file that tests:
+   - Either successful feature usage (when types don't unify)
+   - Or semantic error FS3360/FS0443 "may unify" (when types could unify at runtime)
+3. **The semantic errors are preserved** - `E_MultipleInst07.5.0.fs` and `E_ImplementGenIFaceTwice01_5.0.fs` test the *actual* type checking errors (FS3360) that remain even in F# 8.0+
+
+### 5.0 Counterpart Verification
+
+| Retained 5.0 File | What It Tests | Status |
+|------------------|---------------|--------|
+| `MultipleInst01.5.0.fs` | Empty interface `IA<'a>` with two instantiations - should compile successfully | ✅ Retained |
+| `MultipleInst04.5.0.fs` | Two-parameter interface `IA<'a,'b>` with distinct instantiations - should compile successfully | ✅ Retained |
+| `E_MultipleInst07.5.0.fs` | Interface where `int<kg>` and `MyInt` (alias for `int`) may unify - should error FS3360 | ✅ Retained |
+| `E_ImplementGenIFaceTwice01_5.0.fs` | Inherited interface pattern where types may unify - should error FS3360 | ✅ Retained |
+| `ImplementGenIFaceTwice02_5.0.fs` | `IFoo<string>` and `IFoo<int64>` which don't unify - should compile successfully | ✅ Retained |
+| `ConsumeMultipleInterfaceFromCS.5.0.fs` | Consuming C# types with multiple instantiations - should work | ✅ Retained |
+| `E_ConsumeMultipleInterfaceFromCS.5.0.fs` | Object expressions that would create multiple instantiations - should error FS0443 | ✅ Retained |
+| `ClassConsumeMultipleInterfaceFromCS.5.0.fs` | Inheriting from C# type with multiple instantiations - should work | ✅ Retained |
+
+### Conclusion
+
+**All 7 deleted InterfaceTypes 4.7 files are Category A - Safe to Delete**. Each file:
+1. Only tested the FS3350 "feature not available in F# 4.7" error
+2. Has a retained 5.0+ counterpart that tests either the success case or the semantic error case
+3. The semantic checking (FS3360 "may unify" errors) remains thoroughly tested in the 5.0 files
+
+**No coverage gap exists** - the feature itself and its type-checking semantics are fully covered by the retained 5.0 test files.
