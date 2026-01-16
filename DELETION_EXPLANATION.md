@@ -72,3 +72,49 @@ This section audits the 4 deleted files in `tests/fsharp/typecheck/sigs/version4
 | Named argument errors (FS0495) | Both versions | Main `neg24.fs` - line 70 |
 
 **Conclusion**: All 4 deleted typecheck/sigs version files are **Category B - superseded by retained counterpart**. The main `neg24.fs` file at the sigs root now contains comprehensive testing for implicit yield behavior (the 4.7+ behavior), while the version-specific tests that only existed to show "this doesn't work in 4.6" or "this works in 4.7" are no longer needed since 8.0+ is the minimum langversion.
+
+---
+
+## FixedIndexSliceTests.fs Audit
+
+This section audits the complete deletion of `tests/fsharp/Compiler/Language/FixedIndexSliceTests.fs`.
+
+### What Was Tested
+
+The deleted file contained two test methods:
+1. `Fixed index 3d slicing should not be available in 47` - Verified that 3D array slicing syntax like `arr3.[1, *, *]` produced FS0039 errors ("GetSlice not defined") at langversion 4.7
+2. `Fixed index 4d slicing should not be available in 47` - Verified that 4D array slicing syntax like `arr4.[1, *, *, *]` produced FS0039 errors at langversion 4.7
+
+These tests were purely verifying that the "Fixed-index slice" language feature was **not available** in older langversions.
+
+### Category Assessment
+
+| File | Category | Justification | Risk |
+|------|----------|---------------|------|
+| `tests/fsharp/Compiler/Language/FixedIndexSliceTests.fs` | **A** | Tests exclusively verified that 3D/4D fixed-index slicing produced FS0039 "GetSlice not defined" errors at langversion 4.7. This is a classic "feature not available in version X" test - once 4.7 is no longer supported, testing that it errors is pointless. | **OK** |
+
+### Coverage Verification: Does 3D/4D Slicing Have Test Coverage Elsewhere?
+
+**YES** - The feature has comprehensive test coverage:
+
+| Test Location | What It Covers |
+|--------------|----------------|
+| `tests/fsharpqa/Source/Conformance/Expressions/SyntacticSugar/Slices05.fs` | Extensive 3D array slicing with fixed indices: `x.[1,*,1..4]`, `x.[*,1,*]`, etc. (150 lines of slicing tests) |
+| `tests/FSharp.Core.UnitTests/FSharp.Core/Microsoft.FSharp.Collections/Array3Module.fs` | 3D array slicing tests including `SlicingBoundedStartEnd`, `SlicingSingleFixed1/2/3`, `SlicingDoubleFixed1/2/3`, reverse indexing (`^`) tests |
+| `tests/FSharp.Core.UnitTests/FSharp.Core/Microsoft.FSharp.Collections/Array4Module.fs` | 4D array slicing tests including `SlicingTripleFixed1-4`, `SlicingDoubleFixed1-6`, `SlicingSingleFixed1-4`, reverse indexing tests |
+| `tests/fsharp/core/array/test.fsx` | Runtime tests for 3D/4D array slicing operations |
+
+### Feature Background
+
+The "Fixed-index slice" feature (tracked as `LanguageFeature.FixedIndexSlice3d4d` in `LanguageFeatures.fs`) was introduced in F# 5.0 preview. It allows slicing multidimensional arrays with fixed indices:
+- `arr3d.[1, *, *]` - slice 3D array fixing first dimension
+- `arr4d.[1, *, 2, *]` - slice 4D array fixing first and third dimensions
+
+### Conclusion
+
+**Category A - Safe to Delete**. The deleted test only verified that slicing *failed* in langversion 4.7. The feature itself (slicing *working*) is thoroughly tested in:
+- Conformance tests (`Slices05.fs`)
+- FSharp.Core unit tests (`Array3Module.fs`, `Array4Module.fs`)
+- Core runtime tests (`core/array/test.fsx`)
+
+There is **no coverage gap** - the feature has extensive positive test coverage.
