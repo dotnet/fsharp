@@ -576,3 +576,132 @@ Now that 8.0 is the minimum supported langversion, only one copy of each test is
 - The retained tests at 8.0/preview cover all the same scenarios
 - No test coverage gap exists
 
+
+
+---
+
+## ComponentTests Language Folder Deletions Audit
+
+This section audits 5 deleted test cases from files in `tests/FSharp.Compiler.ComponentTests/Language/` that were testing version gate error messages.
+
+### Overview
+
+All deleted tests followed the same pattern: they tested that using a language feature with `--langversion:7.0` produces an FS3350 error message like:
+> "Feature 'X' is not available in F# 7.0. Please use language version 8.0 or greater."
+
+Since 8.0 is now the minimum supported langversion, these tests are obsolete.
+
+### Deleted Tests
+
+| File | Deleted Test | Error Message Tested | Category | Risk |
+|------|-------------|---------------------|----------|------|
+| `CopyAndUpdateTests.fs` | `Cannot use nested copy-and-update in lang version70` | FS3350: "Feature 'Nested record field copy-and-update' is not available in F# 7.0" | **A** | **OK** |
+| `DotLambdaTests.fs` | `ToString with F# 7` | FS3350: "Feature 'underscore dot shorthand for accessor only function' is not available in F# 7.0" | **A** | **OK** |
+| `PrintfFormatTests.fs` | `Non-inline literals cannot be used as printf format in lang version70` | FS3350: "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0" (2 occurrences) | **A** | **OK** |
+| `InterfaceTests.fs` | `Concrete static members are not allowed in interfaces in lang version70` | FS3350: "Feature 'Static members in interfaces' is not available in F# 7.0" | **A** | **OK** |
+
+### Note on ExtensionMethodTests.fs
+
+The `ExtensionMethodTests.fs` file had no test deletions - only version migrations from `withLangVersion70` to `withLangVersionPreview` for tests that were testing actual behavior (extension method resolution errors), not version gate errors.
+
+### Detailed Analysis
+
+#### 1. CopyAndUpdateTests.fs - `Cannot use nested copy-and-update in lang version70`
+
+**Deleted Code:**
+```fsharp
+let ``Cannot use nested copy-and-update in lang version70``() =
+    FSharp """
+type NestedRecTy = { B: string }
+type RecTy = { D: NestedRecTy; E: string option }
+let t2 x = { x with D.B = "a" }
+    """
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 3350, Line 6, Col 21, Line 6, Col 24, "Feature 'Nested record field copy-and-update' is not available in F# 7.0...")
+    ]
+```
+
+**Why Category A**: This test ONLY verifies the FS3350 error message appears. The file retains 15+ tests that comprehensively test nested copy-and-update functionality including: field merging, generic records, struct records, anonymous records, recursive records, IL verification, and error cases.
+
+#### 2. DotLambdaTests.fs - `ToString with F# 7`
+
+**Deleted Code:**
+```fsharp
+let ``ToString with F# 7`` () =
+    Fsx """let x = "a" |> _.ToString()"""
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withSingleDiagnostic (Error 3350, ..., "Feature 'underscore dot shorthand...' is not available in F# 7.0...")
+```
+
+**Why Category A**: This test ONLY verifies the FS3350 error message for the `_.Method()` shorthand syntax at langversion 7.0. The file retains 25+ tests covering: member resolution, generics, static members, operators, nullness, upcast errors, lambda scope, extension methods, etc.
+
+#### 3. PrintfFormatTests.fs - `Non-inline literals cannot be used as printf format in lang version70`
+
+**Deleted Code:**
+```fsharp
+let ``Non-inline literals cannot be used as printf format in lang version70``() =
+    let csLib = CSharp """public static class Library { public const string Version = "1.0.0"; }"""
+    FSharp """
+module PrintfFormatTests
+[<Literal>]
+let Format = "%s%d%s"
+let bad1 = sprintf Format "yup" Format.Length (string Format.Length)
+let ok1 = sprintf "%s" Format
+let bad2 = sprintf Library.Version
+    """
+    |> withLangVersion70
+    |> withReferences [csLib]
+    |> compile
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 3350, ..., "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0...")
+        (Error 3350, ..., "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0...")
+    ]
+```
+
+**Why Category A**: This test ONLY verifies FS3350 appears when using literal format strings at langversion 7.0. The file retains tests for the actual printf format functionality.
+
+#### 4. InterfaceTests.fs - `Concrete static members are not allowed in interfaces in lang version70`
+
+**Deleted Code:**
+```fsharp
+let ``Concrete static members are not allowed in interfaces in lang version70``() =
+    FSharp """
+[<Interface>]
+type I<'T> =
+    static member Echo (x: 'T) = x
+    static member Prop = Unchecked.defaultof<'T>
+    """
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 3350, ..., "Feature 'Static members in interfaces' is not available in F# 7.0...")
+    ]
+```
+
+**Why Category A**: This test ONLY verifies FS3350 appears for static interface members at langversion 7.0. The file retains `Concrete static members are allowed in interfaces as intrinsics in lang version80` and other tests that verify the actual feature works correctly.
+
+### Coverage Verification
+
+| Deleted Test | Feature | Retained Coverage |
+|--------------|---------|-------------------|
+| `Cannot use nested copy-and-update in lang version70` | Nested copy-and-update | 15+ tests: field merging, generics, structs, anon records, IL verification, error cases |
+| `ToString with F# 7` | Underscore dot shorthand | 25+ tests: member resolution, generics, operators, extension methods, nullness |
+| `Non-inline literals...lang version70` | Printf literal format strings | Tests in same file for format string type checking |
+| `Concrete static members...lang version70` | Static interface members | `...in lang version80` test, multiple interface implementation tests |
+
+### Conclusion
+
+**All 4 deleted ComponentTests Language test cases are Category A - Safe to Delete**:
+- Each test exclusively verified an FS3350 "Feature X is not available in F# 7.0" error
+- None tested actual feature behavior - only version gate enforcement
+- All features have comprehensive positive test coverage at 8.0+
+- The ExtensionMethodTests.fs file had no deletions, only version migrations
+
+**No coverage gap exists** - version gate tests add no value once older langversions are unsupported.
