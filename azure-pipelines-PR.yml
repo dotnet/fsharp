@@ -891,6 +891,8 @@ stages:
           - script: dotnet tool restore
             displayName: Restore dotnet tools
           - pwsh: .\tests\ILVerify\ilverify.ps1
+            env:
+              SKIP_NETCURRENT_FSC_BUILD: true
             displayName: Run ILVerify
             workingDirectory: $(Build.SourcesDirectory)
 
