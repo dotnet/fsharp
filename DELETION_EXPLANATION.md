@@ -539,6 +539,10 @@ The file originally contained pairs of tests: one for `lang version70` and one f
 | `When Sealed and AbstractClass on a type with non static explicit fields and constructor in lang 70` | `When Sealed and AbstractClass on a type with non static explicit fields and constructor` | **B** | **OK** |
 | `Sealed and AbstractClass on a types with instance member properties on lang version70` | `Sealed and AbstractClass on a types with instance member properties` | **B** | **OK** |
 | `Sealed and AbstractClass on types with non static members lang version70` | `Sealed and AbstractClass on types with non static members` | **B** | **OK** |
+| `Sealed and AbstractClass on a type implementing an interface with static abstract members in Lang 70` | `Sealed and AbstractClass on a type implementing an interface with static abstract members` | **B** | **OK** |
+| `Sealed and AbstractClass on a type implementing an interface with static abstract members in Lang preview` | MERGED with above | **B** | **OK** |
+| `Sealed and AbstractClass on a type implicit constructor implementing an interface with static abstract members in Lang preview` | `Sealed and AbstractClass on a type implicit constructor implementing an interface with static abstract members` | **B** | **OK** |
+| `When Sealed and AbstractClass on a type with a primary(parameters) and additional constructor in lang preview` | `When Sealed and AbstractClass on a type with a primary(parameters) and additional constructor` | **B** | **OK** |
 
 ### Theory Test Consolidation
 
@@ -554,7 +558,7 @@ This is **Category B - Safe to Delete** - the same test logic runs at 8.0 and pr
 
 1. **All deletions are Category B (superseded by retained counterpart)**
 2. **No unique test logic was lost** - every deleted test had an identical version at 8.0/preview
-3. **26 tests retained** - comprehensive coverage of static class functionality remains
+3. **27 tests retained** - comprehensive coverage of static class functionality remains
 4. **Test naming improved** - version suffixes removed, making test names cleaner
 
 ### Why Were These Tests Duplicated Originally?
