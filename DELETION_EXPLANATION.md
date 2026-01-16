@@ -421,3 +421,79 @@ This behavior is version-independent and works the same in 4.6, 5.0, and 8.0. Th
 - The file contains 40+ additional tests at 8.0+ covering comprehensive `open type` scenarios (nested types, generics, measures, enums, error cases, etc.)
 
 **No coverage gap exists** - the feature has extensive positive test coverage at langversion 8.0.
+
+---
+
+## StringInterpolation.fs and StructActivePatternTests.fs Deleted Tests Audit
+
+This section audits 3 deleted test cases from `tests/fsharp/Compiler/Language/`:
+- 2 tests from `StringInterpolation.fs`
+- 1 test from `StructActivePatternTests.fs`
+
+### Deleted Test Cases
+
+| Test Case | File | Category | Justification | Risk |
+|-----------|------|----------|---------------|------|
+| `%B fails for langVersion 5.0` | `StringInterpolation.fs` | **A** | Tests FS3350 "Feature 'binary formatting for integers' is not available in F# 5.0. Please use language version 6.0 or greater." This is purely a version gate error message test. The `%B succeeds for langVersion preview` test (retained) verifies that `%B` formatting works correctly. | **OK** |
+| `Basic string interpolation (4.7)` | `StringInterpolation.fs` | **A** | Tests FS3350 "Feature 'string interpolation' is not available in F# 4.7. Please use language version 5.0 or greater." This is purely a version gate error message test. The file has 60+ tests at 8.0+ that comprehensively test string interpolation features, including the `SimpleCheckTest` that exercises basic interpolation scenarios. | **OK** |
+| `Struct active pattern (-langversion:5.0)` | `StructActivePatternTests.fs` | **A** | Tests FS3350 "Feature 'struct representation for active patterns' is not available in F# 5.0. Please use language version 6.0 or greater." This is purely a version gate error message test. The file retains 15+ tests at 8.0+ that verify struct active pattern functionality (construction, IL shape, matching semantics). | **OK** |
+
+### Analysis Details
+
+#### `%B fails for langVersion 5.0`
+
+**Original test code:**
+```fsharp
+CompilerAssert.TypeCheckWithErrorsAndOptions [| "--langversion:5.0" |]
+    """printf "%B" 10"""
+    [|(FSharpDiagnosticSeverity.Error, 3350, (1, 8, 1, 12),
+       "Feature 'binary formatting for integers' is not available in F# 5.0. Please use language version 6.0 or greater.")|]
+```
+
+**Why Category A**: The test only verifies that an FS3350 version gate error appears. No behavior is being tested. The `%B succeeds for langVersion preview` test immediately following it tests the actual functionality.
+
+#### `Basic string interpolation (4.7)`
+
+**Original test code:**
+```fsharp
+CompilerAssert.TypeCheckWithErrorsAndOptions [| "--langversion:4.7" |]
+    """
+let x = $"one" 
+    """
+    [|(FSharpDiagnosticSeverity.Error, 3350, (2, 9, 2, 15),
+       "Feature 'string interpolation' is not available in F# 4.7. Please use language version 5.0 or greater.")|]
+```
+
+**Why Category A**: This test exclusively verifies the FS3350 error appears when trying to use `$"..."` syntax in an old langversion. The file has extensive positive testing of string interpolation at 8.0+.
+
+#### `Struct active pattern (-langversion:5.0)`
+
+**Original test code:**
+```fsharp
+CompilerAssert.TypeCheckWithErrorsAndOptions [| "--langversion:5.0"|]
+    """
+[<return:Struct>]
+let (|Foo|_|) x = ValueNone
+    """
+    [|(FSharpDiagnosticSeverity.Error, 3350, (3, 6, 3, 13),
+       "Feature 'struct representation for active patterns' is not available in F# 5.0. Please use language version 6.0 or greater.")|]
+```
+
+**Why Category A**: This test exclusively verifies the FS3350 error appears when trying to use `[<return:Struct>]` on an active pattern in an old langversion. The file retains extensive positive testing of struct active patterns at 8.0+.
+
+### Coverage Verification
+
+| Deleted Test | Feature | Retained Coverage |
+|--------------|---------|-------------------|
+| `%B fails for langVersion 5.0` | Binary integer formatting | `%B succeeds for langVersion preview` - tests `%B` printf format works |
+| `Basic string interpolation (4.7)` | String interpolation | 60+ tests in same file testing interpolation syntax, fills, formats, FormattableString, etc. |
+| `Struct active pattern (-langversion:5.0)` | Struct active patterns | 15+ tests: `Simple partial`/`Total`, `IL structure`, `Mixed active patterns`, `Simple usage`, various edge cases |
+
+### Conclusion
+
+**All 3 deleted test cases are Category A - Safe to Delete**:
+- Each test exclusively verified an FS3350 "Feature X is not available in F# Y.Z" error message
+- None tested actual behavior - only version gate enforcement
+- All features have extensive positive test coverage at 8.0+
+
+**No coverage gap exists** - the version gate tests add no value once older langversions are unsupported.
