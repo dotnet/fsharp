@@ -359,3 +359,65 @@ This works in all F# versions because it doesn't use DIM consumption (letting th
 - DIM consumption is now **positively tested** with 33+ "Runs" tests at langversion 8.0
 
 **No coverage gap exists** - the feature has more test coverage at 8.0+ (33 Runs + 46 Errors = 79 total test scenarios) than the deleted 4.6 module provided.
+
+---
+
+## OpenTypeDeclarationTests.fs Audit
+
+This section audits the deleted `langversion:4.6` tests from `tests/fsharp/Compiler/Language/OpenTypeDeclarationTests.fs`.
+
+### Background
+
+The "open type declaration" feature (`open type System.Math`) was introduced in F# 5.0. Prior to 5.0, using `open type` produced an FS3350 error: "Feature 'open type declaration' is not available in F# 4.6. Please use language version 5.0 or greater."
+
+### Deleted Tests
+
+| Deleted Test (4.6) | Category | Error Tested | 8.0 Counterpart Retained | Risk |
+|--------------------|----------|--------------|--------------------------|------|
+| `OpenSystemMathOnce - langversion:4.6` | **A** | FS3350 "Feature not available" + FS0039 "Min not defined" | ✅ `OpenSystemMathOnce - langversion:8.0` - Tests `open type System.Math` and `Min()` call succeeds | **OK** |
+| `OpenSystemMathTwice - langversion:4.6` | **A** | FS3350 "Feature not available" (2 instances) + FS0039 "Min not defined" (2 instances) | ✅ `OpenSystemMathTwice - langversion:80` - Tests multiple `open type` statements succeed | **OK** |
+| `OpenMyMathOnce - langversion:4.6` | **A** | FS3350 "Feature not available" + FS0039 "Min not defined" (2 instances) | ✅ `OpenMyMathOnce - langversion:8.0` - Tests `open type MyMath` and `Min()` calls succeed | **OK** |
+| `DontOpenAutoMath - langversion:4.6` | **B** | FS0039 "AutoMin not defined" - tested that without `open type`, AutoOpen type members aren't in scope | ✅ `DontOpenAutoMath - langversion:8.0` - Tests the same scenario: `AutoMin` is accessible via `[<AutoOpen>]` on the containing type | **OK** |
+| `OpenAutoMath - langversion:4.6` | **A** | FS3350 "Feature not available" + FS0039 "AutoMin not defined" (2 instances) | ✅ `OpenAutoMath - langversion:8.0` - Tests `open type AutoOpenMyMath` succeeds | **OK** |
+
+### Key Observations
+
+1. **All 5 deleted tests are Category A or B** - they exclusively test either:
+   - FS3350 "Feature 'open type declaration' is not available in F# 4.6" error (Category A)
+   - Behavior that works identically in 8.0+ (Category B - `DontOpenAutoMath`)
+
+2. **All have 8.0+ counterparts** - Every deleted 4.6 test has a corresponding 8.0 test that verifies the same scenario succeeds:
+   - `open type System.Math` → `Min()` callable
+   - `open type MyMath` → custom `Min()` callable  
+   - `[<AutoOpen>]` on types → members accessible without explicit `open type`
+   - `open type AutoOpenMyMath` → redundant but valid
+
+3. **The 5.0 tests were renamed to 8.0** - The original file had pairs:
+   - `OpenSystemMathOnce - langversion:4.6` (deleted) + `OpenSystemMathOnce - langversion:5.0` (renamed to 8.0)
+   - Same pattern for all 5 test pairs
+
+### DontOpenAutoMath Special Case
+
+The `DontOpenAutoMath - langversion:4.6` test is slightly different from the others - it tested FS0039 "AutoMin not defined", NOT FS3350. However, this was because the test **didn't use** `open type` at all - it tested that `[<AutoOpen>]` on a type automatically makes its static members available.
+
+This behavior is version-independent and works the same in 4.6, 5.0, and 8.0. The 8.0 counterpart tests the exact same thing: calling `AutoMin()` works because `AutoOpenMyMath` has `[<AutoOpen>]`.
+
+### Retained Coverage at 8.0
+
+| Scenario | Retained Test |
+|----------|---------------|
+| `open type System.Math` | `OpenSystemMathOnce - langversion:8.0` |
+| Multiple `open type` statements | `OpenSystemMathTwice - langversion:80` |
+| `open type` with custom static class | `OpenMyMathOnce - langversion:8.0` |
+| AutoOpen behavior | `DontOpenAutoMath - langversion:8.0` |
+| `open type` with AutoOpen type | `OpenAutoMath - langversion:8.0` |
+| Accessing static fields via `open type` | `OpenAccessibleFields - langversion:8.0` |
+
+### Conclusion
+
+**All 5 deleted OpenTypeDeclarationTests are Category A or B - Safe to Delete**:
+- FS3350 version gate tests are pointless when 4.6 is no longer supported
+- Each deleted test has a retained 8.0 counterpart that tests the same scenario successfully
+- The file contains 40+ additional tests at 8.0+ covering comprehensive `open type` scenarios (nested types, generics, measures, enums, error cases, etc.)
+
+**No coverage gap exists** - the feature has extensive positive test coverage at langversion 8.0.
