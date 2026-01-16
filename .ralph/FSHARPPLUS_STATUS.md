@@ -12,8 +12,8 @@ This file tracks progress of FSharpPlus validation with local F# compiler.
 | ID | Task | Status | Exit Code | Notes |
 |----|------|--------|-----------|-------|
 | 1 | Setup Verification | ✅ DONE | 0 | All criteria verified |
-| 2 | Build Target | PENDING | - | `dotnet msbuild -target:Build build.proj` |
-| 3 | Test Target | PENDING | - | `dotnet msbuild -target:Test build.proj` |
+| 2 | Build Target | ✅ DONE | 0 | Build succeeded with local compiler |
+| 3 | Test Target | ✅ PASS | 0 | All 397 tests passed (net10.0) |
 | 4 | AllDocs Target | PENDING | - | `dotnet msbuild -target:AllDocs build.proj` |
 | 5 | ReleaseDocs Target | PENDING | - | `dotnet msbuild -target:ReleaseDocs build.proj` |
 | 6 | Uncomment Tests | PENDING | - | General.fs, Traversals.fs |
@@ -47,10 +47,31 @@ export LocalFSharpCompilerConfiguration=Release
 - Build can still proceed with local compiler; test execution will need .NET 8.0 or TargetFramework adjustment
 
 ### Subtask 2: Build Target  
-_Pending_
+**Status**: ✅ COMPLETE (VERIFIED)  
+**Timestamp**: 2026-01-16T19:25:00Z  
+**Verified**: 2026-01-16T19:35:00Z  
+**Command**: `dotnet msbuild -target:Build build.proj`  
+**Exit Code**: 0  
+**Notes**: Build succeeded in 113.1s with local F# compiler
+**Verification Criteria**:
+- ✅ Exit code 0
+- ✅ No 'error FS' messages in output
+- ✅ FSharpPlus.dll exists: ~/code/FSharpPlus/src/FSharpPlus/bin/Release/net8.0/FSharpPlus.dll (6.5MB)
 
 ### Subtask 3: Test Target
-_Pending_
+**Status**: ✅ PASS  
+**Timestamp**: 2026-01-16T19:56:00Z  
+**Command**: `dotnet msbuild -target:Test build.proj`  
+**Exit Code**: 0  
+**Results**: Passed: 397, Failed: 0, Skipped: 0  
+**Notes**: 
+- Updated test project and dependencies from net8.0 to net10.0 (machine only has .NET 10.0)
+- Changed files in FSharpPlus:
+  - tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj (net8.0 → net10.0)
+  - tests/CSharpLib/CSharpLib.csproj (net8.0 → net10.0)
+  - src/FSharpPlus.TypeLevel/FSharpPlus.TypeLevel.fsproj (net8.0 → net10.0)
+  - src/FSharpPlus.TypeLevel/Providers/FSharpPlus.Providers.fsproj (net8.0 → net10.0)
+- All 397 FSharpPlus tests passed with local F# compiler
 
 ### Subtask 4: AllDocs Target
 _Pending_
