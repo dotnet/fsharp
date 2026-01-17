@@ -138,6 +138,7 @@
     <Compile Include="Conformance\Types\TypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionTypes.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionStructTypes.fs" />
+    <Compile Include="Conformance\TypesAndTypeConstraints\TypesAndTypeConstraints.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic\Basic.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Bounds\Bounds.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Constants\Constants.fs" />
