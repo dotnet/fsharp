@@ -115,6 +115,14 @@
     <Compile Include="Conformance\LexicalAnalysis\Generics.fs" />
     <Compile Include="Conformance\LexicalAnalysis\SymbolicKeywords.fs" />
     <Compile Include="Conformance\LexicalAnalysis\SymbolicOperators.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\ConditionalCompilation.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\Directives.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\IdentifierReplacements.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\IdentifiersAndKeywords.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\LineDirectives.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\ShiftGenerics.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\StringsAndCharacters.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\Whitespace.fs" />
     <Compile Include="Conformance\LexicalFiltering\Basic\Basic.fs" />
     <Compile Include="Conformance\LexicalFiltering\HashLight\HashLight.fs" />
     <Compile Include="Conformance\LexicalFiltering\HighPrecedenceApplication\HighPrecedenceApplication.fs" />

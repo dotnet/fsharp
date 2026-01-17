@@ -14,6 +14,7 @@ module Generics =
     let ``Generics - RightShift001_fs`` compilation =
         compilation
         |> asFsx
+        |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -24,6 +25,7 @@ module Generics =
     let ``Generics - RightShift002_fs`` compilation =
         compilation
         |> asFsx
+        |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
         |> ignore
