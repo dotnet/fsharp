@@ -1,0 +1,60 @@
+Implement subtask 12: Migrate Conformance/ObjectOrientedTypeDefinitions
+
+Migrate the ObjectOrientedTypeDefinitions test folders (~356 tests):
+   InterfaceTypes, ClassTypes (multiple subfolders), AbstractMembers, TypeKindInference, EnumTypes,
+    DelegateTypes, StructTypes, TypeExtensions. This is a large package - may need multiple
+   commits. Parse env.lst files, create test files, git-move source files, verify tests pass,
+   delete fsharpqa folders. Reference: /Users/tomasgrosup/code/fsharp/FSHARPQA_MIGRATION.md and
+   /Users/tomasgrosup/code/fsharp/FEATURE_MAPPING.md
+
+Criteria:
+- Test file(s) exist
+    in tests/FSharp.Compiler.ComponentTests/Conformance/ObjectOrientedTypeDefinitions/
+- Command
+   'dotnet test --filter FullyQualifiedName~ObjectOrientedTypeDefinitions' passes or skips
+   gracefully
+- Directory tests/fsharpqa/Source/Conformance/ObjectOrientedTypeDefinitions is empty
+    or deleted
+- Git commit(s) made with descriptive messages
+
+FIX THESE ISSUES:
+- **InterfaceTypes.fs is commented out** in the fsproj - tests exist but aren't executed
+- **14 env.lst files remain** in
+- **No git commit** for ObjectOrientedTypeDefinitions migration (recent commits are for other
+- **Multiple categories still have tests in fsharpqa**:
+- InterfaceTypes: ~40+ tests including C# interop tests
+- ClassTypes/ImplicitObjectConstructors: 1 test
+- ClassTypes/AsDeclarations: 2 tests
+- ClassTypes/LetDoDeclarations: 1 WPF test
+- ClassTypes/InheritsDeclarations: 8 tests (many C# interop)
+- ClassTypes/MemberDeclarations: ~30 tests (many C# interop)
+- ClassTypes/ValueRestriction: 2 tests
+- AbstractMembers: ~15 tests (many C# interop)
+- DelegateTypes: 6 tests (1 C# interop)
+- TypeExtensions/basic: ~24 tests (some C# interop)
+- TypeExtensions/intrinsic: 5 multi-file tests
+- TypeExtensions/optional: 17 tests with library dependencies
+- **Criteria check**:
+- ❌ Tests exist but InterfaceTypes.fs is **commented out** - not running
+- ⚠️ 190 tests pass but fsharpqa folder has 14 env.lst files remaining
+- ❌ Directory `tests/fsharpqa/Source/Conformance/ObjectOrientedTypeDefinitions` is NOT
+- ❌ No git commit for ObjectOrientedTypeDefinitions migration found
+
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+Do one unit of work. Build and tests must pass.
+Do NOT commit yet - commit only when subtask is fully complete.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this subtask is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL criteria are met, COMMIT your changes, then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

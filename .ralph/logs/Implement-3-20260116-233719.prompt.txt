@@ -1,0 +1,41 @@
+Implement subtask 3: Document FSI migration blockers
+
+The fsi/help,
+   fsi/highentropyva, and fsi/subsystemversion folders cannot be migrated due to
+   FsiEvaluationSession.Create throwing StopProcessingExn. Create or update
+   tests/FSharp.Compiler.ComponentTests/resources/tests/CompilerOptions/fsi/MIGRATION_BLOCKERS.md
+   documenting these 7 tests with technical details. Do NOT delete these fsharpqa folders - they
+   represent known blockers. Reference: /Users/tomasgrosup/code/fsharp/FSHARPQA_MIGRATION.md
+
+Criteria:
+- File
+   tests/FSharp.Compiler.ComponentTests/resources/tests/CompilerOptions/fsi/MIGRATION_BLOCKERS.md
+   exists
+- File documents all 7 blocked tests (4 help, 1 highentropyva, 1 subsystemversion, 1
+   langversion help baseline)
+- Directories tests/fsharpqa/Source/CompilerOptions/fsi/help,
+   highentropyva, subsystemversion still exist (intentionally not deleted)
+
+FIX THESE ISSUES:
+- MIGRATION_BLOCKERS.md summary table shows "Total: 6" but criteria requires documenting 7 tests
+- The criteria explicitly states "7 tests (4 help, 1 highentropyva, 1 subsystemversion, 1
+- Fix: Either update the document to explicitly list the langversion help (`--langversion:?`) as
+
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+Do one unit of work. Build and tests must pass.
+Do NOT commit yet - commit only when subtask is fully complete.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this subtask is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL criteria are met, COMMIT your changes, then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

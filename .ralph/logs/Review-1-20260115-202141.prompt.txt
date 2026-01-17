@@ -1,0 +1,26 @@
+Skeptical reviewer. Verify subtask 1 is actually complete.
+
+Verify existing Diagnostics
+   migration: Verify that the completed Diagnostics migration (async.fs,
+   General.fs, NONTERM.fs, ParsingAtEOF.fs) compiles and tests pass. Run:
+   BUILDING_USING_DOTNET=true SKIP_VERSION_SUPPORTED_CHECK=1 dotnet test
+   tests/FSharp.Compiler.ComponentTests -c Debug -f net10.0 --filter
+   'FullyQualifiedName~Diagnostics'. Confirm fsharpqa/Source/Diagnostics folder is deleted.
+   Reference: /Users/tomasgrosup/code/fsharp/FSHARPQA_MIGRATION.md
+
+Criteria:
+- Command 'dotnet test --filter FullyQualifiedName~Diagnostics' completes without build errors
+- All Diagnostics tests pass or skip gracefully (no failures)
+- Directory
+   tests/fsharpqa/Source/Diagnostics does not exist
+
+Check code, build, tests. Look for incomplete work, TODOs, placeholders.
+Also verify implementation aligns with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if complete.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

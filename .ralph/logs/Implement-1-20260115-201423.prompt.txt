@@ -1,0 +1,33 @@
+Implement subtask 1: Verify existing Diagnostics
+   migration
+
+Verify that the completed Diagnostics migration (async.fs,
+   General.fs, NONTERM.fs, ParsingAtEOF.fs) compiles and tests pass. Run:
+   BUILDING_USING_DOTNET=true SKIP_VERSION_SUPPORTED_CHECK=1 dotnet test
+   tests/FSharp.Compiler.ComponentTests -c Debug -f net10.0 --filter
+   'FullyQualifiedName~Diagnostics'. Confirm fsharpqa/Source/Diagnostics folder is deleted.
+   Reference: /Users/tomasgrosup/code/fsharp/FSHARPQA_MIGRATION.md
+
+Criteria:
+- Command 'dotnet test --filter FullyQualifiedName~Diagnostics' completes without build errors
+- All Diagnostics tests pass or skip gracefully (no failures)
+- Directory
+   tests/fsharpqa/Source/Diagnostics does not exist
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+Do one unit of work. Build and tests must pass.
+Do NOT commit yet - commit only when subtask is fully complete.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this subtask is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL criteria are met, COMMIT your changes, then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

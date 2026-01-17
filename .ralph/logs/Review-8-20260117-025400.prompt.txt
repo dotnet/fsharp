@@ -1,0 +1,27 @@
+Skeptical reviewer. Verify subtask 8 is actually complete.
+
+Migrate Conformance/TypesAndTypeConstraints: Migrate the TypesAndTypeConstraints test folders (~96 tests):
+   LogicalPropertiesOfTypes, CheckingSyntacticTypes, TypeParameterDefinitions, TypeConstraints.
+   Parse env.lst files, create test files, git-move source files, verify tests pass, delete
+   fsharpqa folders. Reference: /Users/tomasgrosup/code/fsharp/FSHARPQA_MIGRATION.md and
+   /Users/tomasgrosup/code/fsharp/FEATURE_MAPPING.md
+
+Criteria:
+- Test file(s) exist
+    in tests/FSharp.Compiler.ComponentTests/Conformance/TypesAndTypeConstraints/
+- Command 'dotnet
+    test --filter FullyQualifiedName~TypesAndTypeConstraints' passes or skips gracefully
+- Directory tests/fsharpqa/Source/Conformance/TypesAndTypeConstraints is empty or deleted
+- Git
+   commit made with descriptive message
+
+Check code, build, tests. Look for incomplete work, TODOs, placeholders.
+Also verify implementation aligns with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if complete.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
