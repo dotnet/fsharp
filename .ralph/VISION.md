@@ -37,9 +37,41 @@ Total unmigrateable tests deleted: 39
 
 ### 📋 Remaining Work (~1,450 tests)
 
+### 📋 Expressions Status - COMPLETE
+**All migratable tests migrated (238 tests passing, 3 skipped)**
+
+Migrated folders:
+- ConstantExpressions (22 tests)
+- EvaluationOfElaboratedForms (1 test)
+- SyntacticSugar (10 tests, 1 skipped per issue #7735)
+- SyntacticSugarAndAmbiguities (1 test)
+- Type-relatedExpressions (21 tests)
+- ApplicationExpressions/Assertion (3 tests)
+- ApplicationExpressions/ObjectConstruction (2 tests)
+- ControlFlowExpressions/PatternMatching (5 tests)
+- ControlFlowExpressions/SequenceIteration (4 tests)
+- ControlFlowExpressions/SimpleFor (3 tests)
+- ControlFlowExpressions/TryFinally (2 tests)
+- ControlFlowExpressions/TryWith (4 tests)
+- DataExpressions/RangeExpressions (4 tests)
+- DataExpressions/TupleExpressions (3 tests)
+- DataExpressions/Simple (1 test)
+- DataExpressions/NameOf (10 tests)
+- DataExpressions/SequenceExpressions (19 tests)
+- DataExpressions/ComputationExpressions (27 tests, 1 skipped - #indent "off")
+- DataExpressions/ObjectExpressions (16 tests, 1 skipped - C# interop)
+- DataExpressions/AddressOf (2 tests)
+
+**Deleted folders (unmigrateable - C# interop/multi-file compilation):**
+- DataExpressions/AddressOf: 4 C# interop tests
+- DataExpressions/QueryExpressions: 41 C# interop tests (requires Utils.dll)
+- ExpressionQuotations/Baselines: 64 multi-file tests (requires QuoteUtils.dll)
+- ExpressionQuotations/Regressions: 49 tests
+
+Total unmigrateable tests deleted: 158
+
 | Category | env.lst files | Est. Tests | Priority |
 |----------|--------------|------------|----------|
-| Conformance/Expressions | Many | ~380 | Medium |
 | Conformance/TypeForwarding | 6 | ~303 | High (complex C# interop) |
 | Conformance/LexicalAnalysis | Many | ~180 | Low |
 | Conformance/InferenceProcedures | Many | ~124 | Medium |

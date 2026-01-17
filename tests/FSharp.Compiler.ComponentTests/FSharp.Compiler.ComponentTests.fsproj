@@ -101,6 +101,7 @@
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\TryFinally\TryFinally.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\TryWith\TryWith.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\Type-relatedExpressions\Type-relatedExpressions.fs" />
+    <Compile Include="Conformance\Expressions\DataExpressions\AddressOf\AddressOf.fs" />
     <Compile Include="Conformance\Expressions\DataExpressions\ComputationExpressions\ComputationExpressions.fs" />
     <Compile Include="Conformance\Expressions\DataExpressions\NameOf\NameOf.fs" />
     <Compile Include="Conformance\Expressions\DataExpressions\ObjectExpressions\ObjectExpressions.fs" />
