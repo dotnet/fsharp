@@ -195,6 +195,63 @@ This multi-stage cross-language compilation with external execution is not suppo
 
 ---
 
+### INTERACTIVE-SESSION: InteractiveSession/Misc
+
+**Original Location:** tests/fsharpqa/Source/InteractiveSession/Misc/
+
+**Tests in env.lst:** ~107 tests across 2 env.lst files
+
+**Tests Successfully Migrated:** 10 tests (inline FSI tests)
+
+**Reason for Blocking (~97 tests):**
+
+1. **fsi.CommandLineArgs tests (3 tests):** CommandLineArgs01.fs, CommandLineArgs01b.fs, CommandLineArgs02.fs
+   - Use `fsi.CommandLineArgs` object which is only available inside an FSI session
+   - `runFsi` runs FSI as an external process, not as an in-memory session
+
+2. **FSIMODE=PIPE tests with stdin piping:**
+   - Many tests use `FSIMODE=PIPE` which pipes script content to FSI via stdin
+   - The `runFsi` test helper doesn't support this stdin piping mode
+
+3. **PRECMD tests (~5 tests):**
+   - Tests like issue2411/app.fsx require PRECMD to compile C# libraries first
+   - ReferencesFullPath.fsx uses PRECMD to dynamically generate the test script
+
+4. **Relative #r reference tests (~50+ tests):**
+   - Extensive tests for `#r` with relative paths from different directories (ccc/, aaa/bbb/, etc.)
+   - Tests invoke FSI from different relative paths (`fsi.exe --exec path\script.fsx`)
+   - These require file-system based testing with actual file paths
+
+5. **--simpleresolution tests (~10 tests):**
+   - Use `--simpleresolution --noframework` with Windows-specific paths like `%FSCOREDLLPATH%`
+   - Platform-specific resolution behavior
+
+6. **NOMONO/ReqENU tests:**
+   - TimeToggles.fsx requires English locale (ReqENU)
+   - References40.fsx, Regressions01.fs marked NOMONO (mono-incompatible)
+
+7. **Tests causing test host crashes (~5 tests):**
+   - Array2D1.fsx - test host crashes (unknown cause)
+   - ReflectionBugOnMono6320.fsx - test host crashes
+   - DefinesInteractive.fs - test host crashes intermittently
+   - These may be timing/resource issues with parallel test execution
+
+**Migrated Tests (10):**
+- EmptyList - empty list literal in FSI
+- ToStringNull - null ToString handling
+- DeclareEvent - event declaration in FSI
+- E_let_equal01 - error: incomplete let binding
+- E_let_id - error: incomplete binding
+- E_let_mutable_equal - error: mutable binding syntax
+- E_emptyRecord - error: empty record type
+- E_type_id_equal_pipe - error: incomplete union case
+- E_GlobalMicrosoft - error: undefined value
+- E_RangeOperator01 - error: malformed range operator
+
+**Decision:** Partial migration with 10 working inline tests. The remaining ~97 tests require FSI session internals, file-system paths, or PRECMD execution that the ComponentTests framework doesn't support.
+
+---
+
 ## Resolved Blockers
 
 _Record resolved blockers here for reference._

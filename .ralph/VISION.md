@@ -15,6 +15,7 @@ Migrate tests from the legacy `tests/fsharpqa` Perl-based test suite to `tests/F
 | ObjectOrientedTypeDefinitions | 218 | ✅ Complete, folder deleted |
 | Expressions | 238 | ✅ Complete, folder deleted |
 | Conformance/TypeForwarding | 10 (partial) | ✅ C# interop tests migrated, folder deleted |
+| InteractiveSession | 10 (partial) | ✅ Basic FSI tests migrated, blockers documented |
 
 ### 🚫 Migration Blockers
 These tests cannot be migrated due to framework limitations:
@@ -23,6 +24,22 @@ These tests cannot be migrated due to framework limitations:
 - **FSI subsystemversion** (1 test): Same issue
 - **langversion:4.7 tests** (5 tests): Test framework doesn't correctly apply older langversions
 - **TypeForwarding runtime tests** (~293 tests): Require assembly substitution after F# compilation (see MIGRATION_BLOCKERS.md)
+- **InteractiveSession tests** (~97 tests): Require FSI session internals, file-system paths, or PRECMD execution (see MIGRATION_BLOCKERS.md)
+
+### 📋 InteractiveSession Status - PARTIAL MIGRATION
+The InteractiveSession tests verify FSI behavior including session management, script loading, and interactive features.
+
+**Migrated:** 10 basic FSI tests covering:
+- Empty list literal handling
+- Null ToString handling
+- Event declaration in FSI
+- Various parser error messages
+
+**Not migrated (~97 tests):** 
+1. fsi.CommandLineArgs tests (require internal FSI session)
+2. FSIMODE=PIPE tests (stdin piping)
+3. Relative #r reference resolution tests
+4. PRECMD-dependent tests
 
 ### 📋 TypeForwarding Status - PARTIAL MIGRATION
 The TypeForwarding tests verify F# runtime behavior with .NET type forwarding - a scenario where F# code compiled against one assembly continues to work when types are forwarded to another assembly at runtime.
@@ -40,7 +57,7 @@ This assembly-swap-at-runtime pattern cannot be supported by the in-memory test 
 
 **Deleted folders:** Class, Cycle, Delegate, Interface, Nested, Struct
 
-### 📋 Remaining Work (~1,150 tests)
+### 📋 Remaining Work (~1,053 tests after InteractiveSession partial migration)
 
 | Category | env.lst files | Est. Tests | Priority |
 |----------|--------------|------------|----------|
@@ -52,7 +69,7 @@ This assembly-swap-at-runtime pattern cannot be supported by the in-memory test 
 | Conformance/LexicalFiltering | 5 | ~28 | Low |
 | Conformance/SpecialAttributesAndTypes | Few | ~14 | Low |
 | Conformance/Signatures | Few | ~11 | Low |
-| InteractiveSession | 2 | ~169 | High (complex FSI tests) |
+| InteractiveSession | 2 | ~97 blocked | Blocked (see MIGRATION_BLOCKERS.md) |
 | Import | 1 | ~103 | High (C#/VB interop) |
 | Misc | 1 | ~31 | Low |
 | Libraries | 3 | ~6 | Low |
