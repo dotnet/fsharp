@@ -252,6 +252,52 @@ This multi-stage cross-language compilation with external execution is not suppo
 
 ---
 
+### IMPORT: Import tests
+
+**Original Location:** tests/fsharpqa/Source/Import/
+
+**Tests in env.lst:** ~61 test entries (103 with platform combinations)
+
+**Tests Successfully Migrated:** 16 tests covering:
+- Basic C# library referencing
+- C# conversion operators (implicit/explicit)
+- Multiple implicit/explicit operators from C# generic types
+- C# extension methods on structs and classes
+- C# extension methods on F# types
+- Static field assignment to C# fields
+- InternalsVisibleTo (IVT) with C# libraries
+- FamAndAssembly (private protected) access with IVT
+- Iterate over BCL collections (StringDictionary)
+- Accessing F# record fields from other assemblies
+- F# module references (DLL to DLL)
+- F# namespace module references
+- Referencing F# executable assemblies
+- Line directive (CallerLineNumber/CallerFilePath) from C#
+
+**Not migrated (~45 test entries):**
+
+1. **Platform mismatch tests (16 entries):** anycpu/x86/x64/Itanium combinations
+   - The test framework's `withOptions` doesn't support C# platform options
+   - Tests verify MSVC/Roslyn behavior more than F# behavior
+
+2. **FSIMODE=PIPE/FEED tests (~7 entries):** FSI with stdin piping
+   - The test framework doesn't support FSI stdin piping mode
+   
+3. **Multi-stage PRECMD tests (~12 entries):**
+   - Tests requiring FSC_PIPE to pre-compile F# libraries
+   - Tests requiring CSC_PIPE with complex multi-assembly scenarios
+   
+4. **Reference tests with #r directive (~8 entries):**
+   - Tests using #r to reference DLLs via script paths
+   - Require file-system based testing
+
+5. **Negative tests with C# references (~2 entries):**
+   - The test framework's typecheck with C# references doesn't properly link libraries for failure scenarios
+
+**Decision:** Partial migration with 16 tests covering the core C#/F# interop scenarios. The remaining tests require platform-specific options, FSI piping, or multi-stage compilation that the in-memory test framework doesn't support.
+
+---
+
 ## Resolved Blockers
 
 _Record resolved blockers here for reference._

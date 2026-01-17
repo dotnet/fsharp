@@ -340,6 +340,7 @@
     <Compile Include="Interop\ParamArrayMigrated.fs" />
     <Compile Include="Interop\ParamArray.fs" />
     <Compile Include="Interop\Literals.fs" />
+    <Compile Include="Import\ImportTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
     <Compile Include="Scripting\PreferredUiLangTests.fs" />
