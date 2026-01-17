@@ -1,82 +1,108 @@
-# FSharpQA Migration - VISION (Updated 2026-01-15)
+# FSharpQA Migration - VISION (Updated 2026-01-17)
 
 ## High-Level Goal
 Migrate tests from the legacy `tests/fsharpqa` Perl-based test suite to `tests/FSharp.Compiler.ComponentTests` using the existing test infrastructure.
 
-## ✅ MIGRATION COMPLETE (2026-01-15)
+## Current Status Summary
 
-All Diagnostics packages have been fully migrated from fsharpqa to ComponentTests!
+### ✅ Completed Migrations
+| Category | Tests | Status |
+|----------|-------|--------|
+| Diagnostics (all 4 packages) | 138 | ✅ Complete, folder deleted |
+| CompilerOptions/fsc | All | ✅ Complete (no env.lst files remain) |
+| CompilerOptions/fsi/langversion | 3 | ✅ Complete |
+| CompilerOptions/fsi/nologo | 2 | ✅ Complete |
+| ObjectOrientedTypeDefinitions (partial) | 218 | ✅ Tests passing, 7 env.lst remain |
 
-### Summary Statistics
-- **Total test methods migrated**: 138 (19 async + 36 NONTERM + 11 ParsingAtEOF + 72 General)
-- **Total resource files moved**: 141 files
-- **Total test code written**: 1,518 lines of F#
-- **Commits in branch**: 15 logical commits
-- **Legacy folder cleanup**: Complete (fsharpqa/Source/Diagnostics is now empty)
+### 🚫 Migration Blockers
+These tests cannot be migrated due to framework limitations:
+- **FSI help tests** (4 tests): `-?`, `--help`, `/?` cause session crash before output
+- **FSI highentropyva** (1 test): Unrecognized options crash session
+- **FSI subsystemversion** (1 test): Same issue
+- **langversion:4.7 tests** (5 tests): Test framework doesn't correctly apply older langversions
 
-### Final Package Status
+### 📋 ObjectOrientedTypeDefinitions Status
+**Migrated (7 folders deleted):**
+- ExplicitFields, ExplicitObjectConstructors (empty)
+- ImplicitObjectConstructors, AsDeclarations, ValueRestriction
+- MemberDeclarations, TypeExtensions/intrinsic
 
-| Package | Test Methods | Resources | Test File Lines | Status |
-|---------|-------------|-----------|-----------------|--------|
-| DIAG-ASYNC | 19 | 19 files | 259 | ✅ Complete |
-| DIAG-NONTERM | 36 | 38 files | 385 | ✅ Complete |
-| DIAG-PARSINGEOF | 11 | 12 files | 121 | ✅ Complete |
-| DIAG-GENERAL | 72 | 72 files | 753 | ✅ Complete |
+**Remaining (7 folders with C# interop/complex deps):**
+- InterfaceTypes: 8 tests with C# interop
+- ClassTypes/LetDoDeclarations: 1 WPF test
+- ClassTypes/InheritsDeclarations: 3 tests with C# interop
+- AbstractMembers: 4 tests with C# interop
+- DelegateTypes: 1 test with C# interop
+- TypeExtensions/basic: 5 tests with C# interop
+- TypeExtensions/optional: 17 tests with library dependencies
 
-### Git Commits Made (on branch `fsharpqa_migration`)
-1. `8e3f32799` - Add migration tracking documents
-2. `4434e00a7` - Complete DIAG-ASYNC migration: 15 env.lst tests to async.fs
-3. `e1cbf72e6` - Migrate DIAG-NONTERM: 36 tests
-4. `e0393d899` - Migrate DIAG-PARSINGEOF tests
-5. `3b730eb05` - Migrate first 25 tests from DIAG-GENERAL
-6. `f5cb7efa7` - Migrate W_redefineOperator03-10 tests
-7. `c53919a0e` - Migrate E_matrix and E_expression files
-8. `6ed4989ac` - Migrate ObjectConstructor and DontWarn tests
-9. `812cd2009` - Migrate argument/sealed/enumeration tests
-10. `e5e788afe` - Migrate property and constraint tests
-11. `2ca54032f` - Migrate incomplete/unexpected construct tests
-12. `5c9ea9a6b` - Migrate override and quotation tests
-13. `405ad6e63` - Migrate redundant args and lowercase literal tests
-14. `57c1ca333` - Document E_MissingSourceFile tests as migration blockers
-15. `e77f6e6f7` - Clean up fsharpqa General folder
-16. `c8ab928a9` - Cleanup: Delete migrated Diagnostics folders
+### 📋 Remaining Work (~1,800 tests)
 
-### Migration Blockers (Documented in MIGRATION_BLOCKERS.md)
-The following tests were NOT migrated as they test legacy/obsolete behavior:
-- `E_MissingSourceFile01-04.fs` - Test compiler behavior with missing files (can't use DirectoryAttribute)
-- `W_IndexedPropertySetter01.fs` - Tests warning FS0191 which no longer exists
-- `W_PassingResxToCompilerIsDeprecated01.fs` - Tests deprecated .resx file handling
+| Category | env.lst files | Est. Tests | Priority |
+|----------|--------------|------------|----------|
+| Conformance/Expressions | Many | ~380 | Medium |
+| Conformance/ObjectOrientedTypeDefinitions | Many | ~356 | Medium |
+| Conformance/TypeForwarding | 6 | ~303 | High (complex C# interop) |
+| Conformance/LexicalAnalysis | Many | ~180 | Low |
+| Conformance/InferenceProcedures | Many | ~124 | Medium |
+| Conformance/TypesAndTypeConstraints | 4 | ~96 | Medium |
+| Conformance/ImplementationFilesAndSignatureFiles | Many | ~69 | Low |
+| Conformance/DeclarationElements | 2 | ~34 | Medium |
+| Conformance/LexicalFiltering | 5 | ~28 | Low |
+| Conformance/SpecialAttributesAndTypes | Few | ~14 | Low |
+| Conformance/Signatures | Few | ~11 | Low |
+| InteractiveSession | 2 | ~169 | High (complex FSI tests) |
+| Import | 1 | ~103 | High (C#/VB interop) |
+| Misc | 1 | ~31 | Low |
+| Libraries | 3 | ~6 | Low |
+| Stress | 1 | ~4 | Low |
+| MultiTargeting | 1 | ~3 | Low |
 
-## CompilerOptions/fsi Migration (2026-01-15)
+## Key Design Decisions
 
-### Migrated Tests (5 total)
-- **langversion** (3 tests): Bad langversion error tests in Langversion.fs
-- **nologo** (2 tests): FSI --nologo option tests in Nologo.fs
+### 1. Use Existing Infrastructure (Don't Reinvent)
+- **Compiler.fs** provides all compilation helpers
+- **DirectoryAttribute** allows batch-testing with Includes filter
+- **No new test framework needed**
 
-### Migration Blockers - FSI Option Tests
+### 2. Git-Move Source Files (Preserve History)
+- `git mv` source files unchanged to `resources/tests/[path]/`
+- Preserves line numbers and clean PR review
 
-The following tests could NOT be migrated due to infrastructure limitations:
+### 3. Test Pattern
+```fsharp
+[<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/[path]", Includes=[|"file.fs"|])>]
+let ``test name`` compilation =
+    compilation
+    |> withOptions ["--test:ErrorRanges"]
+    |> typecheck
+    |> shouldFail
+    |> withErrorCode NNNN
+    |> ignore
+```
 
-1. **help tests (4 tests)** - DesktopOnly
-   - Tests `-?`, `--help`, `/?` FSI help options
-   - Original tests compare full help output to baseline files (`help40.437.1033.bsl`)
-   - **Blocker**: Help options cause `StopProcessingExn` which crashes `FsiEvaluationSession.Create`
-   - The component test infrastructure cannot capture FSI output before session termination
-   
-2. **highentropyva (1 test)** - DesktopOnly  
-   - Tests that `--highentropyva+` is rejected by FSI
-   - **Blocker**: Unrecognized options cause `StopProcessingExn` before session creation completes
-   - Would require external FSI process execution to capture error output
+## Important Build/Test Commands
+```bash
+# Build with proper env vars
+BUILDING_USING_DOTNET=true SKIP_VERSION_SUPPORTED_CHECK=1 dotnet build tests/FSharp.Compiler.ComponentTests -c Debug
 
-3. **subsystemversion (1 test)** - DesktopOnly
-   - Tests that `--subsystemversion:4.00` is rejected by FSI
-   - **Blocker**: Same as highentropyva - session fails before output can be captured
+# Run specific tests  
+BUILDING_USING_DOTNET=true SKIP_VERSION_SUPPORTED_CHECK=1 dotnet test tests/FSharp.Compiler.ComponentTests -c Debug -f net10.0 --filter "FullyQualifiedName~[TestName]"
+```
 
-**Technical Details**: The `runFsi` function uses `FsiEvaluationSession.Create` which throws `StopProcessingExn` when:
-- An unrecognized option is passed
-- A help option (`-?`, `--help`, `/?`) is passed
+## Reference Documents
+- **Master Instructions**: `/Users/tomasgrosup/code/fsharp/FSHARPQA_MIGRATION.md`
+- **Feature Mapping**: `/Users/tomasgrosup/code/fsharp/FEATURE_MAPPING.md`
+- **Test Framework Additions**: `/Users/tomasgrosup/code/fsharp/TEST_FRAMEWORK_ADDITIONS.md`
 
-These scenarios require running the actual FSI executable and capturing stdout/stderr.
+## Lessons Learned
+
+1. **FSI session limitations** - Cannot test FSI command-line option rejection with `runFsi` since session creation throws exceptions
+2. **Pre-existing test failures** - 294 tests fail on main; these are NOT caused by migration
+3. **Small batches work better** - Commit after each 20-30 files migrated
+4. **TypeForwarding tests** - Complex C# interop, need careful handling
+5. **Import tests** - Many require C#/VB compilation helpers
+6. **Always use env vars** - `BUILDING_USING_DOTNET=true` and `SKIP_VERSION_SUPPORTED_CHECK=1` required
 
 ## Key Design Decisions
 
