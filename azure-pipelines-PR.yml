@@ -914,3 +914,12 @@ stages:
           buildScript: build.sh
           displayName: FSharpPlus_Linux
           useVmImage: $(UbuntuMachineQueueName)
+        - repo: fsprojects/FSharpPlus
+          commit: 2648efe
+          buildScript: build.cmd
+          displayName: FsharpPlus_NET10
+        - repo: fsprojects/FSharpPlus
+          commit: 2648efe
+          buildScript: build.sh
+          displayName: FsharpPlus_Net10_Linux
+          useVmImage: $(UbuntuMachineQueueName)
