@@ -138,6 +138,9 @@
     <Compile Include="Conformance\PatternMatching\Decimal\Decimal.fs" />
     <Compile Include="Conformance\Printing\Printing.fs" />
     <Compile Include="Conformance\Signatures\Signatures.fs" />
+    <Compile Include="Conformance\ImplementationFilesAndSignatureFiles\CheckingOfImplementationFiles.fs" />
+    <Compile Include="Conformance\ImplementationFilesAndSignatureFiles\SignatureFiles.fs" />
+    <Compile Include="Conformance\ImplementationFilesAndSignatureFiles\NamespacesFragmentsAndImplementationFiles.fs" />
     <Compile Include="Conformance\SpecialAttributesAndTypes\CallerInfo.fs" />
     <Compile Include="Conformance\SpecialAttributesAndTypes\ThreadStatic.fs" />
     <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
