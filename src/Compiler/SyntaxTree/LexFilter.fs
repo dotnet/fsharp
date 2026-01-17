@@ -672,6 +672,16 @@ type LexFilterImpl (
         savedLexbufState <- tokenLexbufState
         haveLexbufState <- true
 
+        // Track the last non-comment token position for XML doc comment validation
+        // Exclude: comments, whitespace, opening brace, and equals (XML docs after = { are valid)
+        match token with
+        | LINE_COMMENT _ -> ()
+        | COMMENT _
+        | WHITESPACE _
+        | LBRACE _ // XML doc comments after opening brace are legitimate
+        | EQUALS -> () // XML doc comments after = (before {) are also legitimate  
+        | _ -> XmlDocStore.SetLastNonCommentTokenLine lexbuf tokenLexbufState.EndPos.Line
+
         let tokenTup = pool.Rent()
         tokenTup.Token <- token
         tokenTup.LexbufState <- tokenLexbufState

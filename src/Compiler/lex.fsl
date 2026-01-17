@@ -717,6 +717,11 @@ rule token (args: LexArgs) (skip: bool) = parse
  | "///" op_char*
      { // Match exactly 3 slash, 4+ slash caught by preceding rule
        let m = lexbuf.LexemeRange
+       // Check if this XML doc comment appears after other code on the same line
+       let lastNonCommentLine = XmlDocStore.GetLastNonCommentTokenLine lexbuf
+       if lastNonCommentLine = m.StartLine then
+           // XML doc comment appears on same line as previous non-comment token
+           informationalWarning(Error(FSComp.SR.xmlDocNotFirstOnLine(), m))
        let doc = lexemeTrimLeft lexbuf 3
        let sb = (new StringBuilder(100)).Append(doc)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))

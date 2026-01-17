@@ -6,6 +6,7 @@ open System
 open System.Text
 
 open Internal.Utilities
+open Internal.Utilities.Library
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler.DiagnosticsLogger
@@ -425,7 +426,7 @@ module Keywords =
         | true, v ->
             match v with
             | RESERVED ->
-                warning (ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved s, lexbuf.LexemeRange))
+                warning (ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved (s), lexbuf.LexemeRange))
                 IdentifierToken args lexbuf s
             | _ -> v
         | _ ->

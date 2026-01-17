@@ -5,6 +5,7 @@
     <TargetFrameworks>net9.0</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>3879</NoWarn>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <OtherFlags>--standalone</OtherFlags>
   </PropertyGroup>

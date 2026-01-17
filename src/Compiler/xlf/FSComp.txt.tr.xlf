@@ -2002,6 +2002,11 @@
         <target state="translated">Bu XML açıklaması geçersiz: Parametre veya parametre başvurusu için 'name' özniteliği eksik</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocNotFirstOnLine">
+        <source>XML documentation comments should be the first non-whitespace text on a line.</source>
+        <target state="new">XML documentation comments should be the first non-whitespace text on a line.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
         <target state="translated">Bu XML açıklaması geçersiz: '{0}' çapraz başvurusu çözümlenmemiş</target>

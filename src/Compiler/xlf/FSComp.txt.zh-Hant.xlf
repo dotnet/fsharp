@@ -2002,6 +2002,11 @@
         <target state="translated">此 XML 註解無效: 參數或參數參考沒有 'name' 屬性</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocNotFirstOnLine">
+        <source>XML documentation comments should be the first non-whitespace text on a line.</source>
+        <target state="new">XML documentation comments should be the first non-whitespace text on a line.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
         <target state="translated">此 XML 註解無效: 未解析的交互參照 '{0}'</target>

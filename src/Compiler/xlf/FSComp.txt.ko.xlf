@@ -2002,6 +2002,11 @@
         <target state="translated">이 XML 주석이 잘못됨: 매개 변수 또는 매개 변수 참조에 'name' 특성이 없음</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocNotFirstOnLine">
+        <source>XML documentation comments should be the first non-whitespace text on a line.</source>
+        <target state="new">XML documentation comments should be the first non-whitespace text on a line.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
         <target state="translated">이 XML 주석이 잘못됨: 확인되지 않은 상호 참조 '{0}'</target>
