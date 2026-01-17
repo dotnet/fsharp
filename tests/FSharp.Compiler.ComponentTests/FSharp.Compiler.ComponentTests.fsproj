@@ -78,6 +78,8 @@
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindings.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBangBindings.fs" />
     <Compile Include="Conformance\Constraints\Unmanaged.fs" />
+    <Compile Include="Conformance\DeclarationElements\ObjectConstructors.fs" />
+    <Compile Include="Conformance\DeclarationElements\PInvokeDeclarations.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
