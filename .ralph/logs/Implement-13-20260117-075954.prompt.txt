@@ -1,0 +1,57 @@
+*** THIS IS ITERATION 2 - Previous attempts did not complete successfully ***
+
+Check .ralph/PROBLEMS.md for issues from previous iterations.
+Check git log and git diff to see what was already done.
+Learn from previous attempts - do something DIFFERENT this time.
+
+Implement subtask 13: Migrate
+   Conformance/Expressions
+
+Migrate the Expressions test folders (~380 tests).
+   This is the largest Conformance package. Subfolders include ApplicationExpressions,
+   ConstantExpressions, ControlFlowExpressions, DataExpressions, ExpressionQuotations, and others.
+   May need multiple commits. Parse env.lst files, create test files, git-move source files, verify
+    tests pass, delete fsharpqa folders. Reference:
+   /Users/tomasgrosup/code/fsharp/FSHARPQA_MIGRATION.md and
+   /Users/tomasgrosup/code/fsharp/FEATURE_MAPPING.md
+
+Criteria:
+- Test file(s) exist
+    in tests/FSharp.Compiler.ComponentTests/Conformance/Expressions/
+- Command 'dotnet test
+   --filter FullyQualifiedName~Expressions' passes or skips gracefully
+- Directory
+   tests/fsharpqa/Source/Conformance/Expressions is empty or deleted
+- Git commit(s) made with
+   descriptive messages
+
+FIX THESE ISSUES:
+-    **VERIFY_FAILED**
+
+   Build succeeded, but test run shows 324 test failures (vs 294 documented baseline on main).
+
+   Key failures observed:
+   1. **OffsideExceptions tests** - Fail due to Warning 58 indentation issues in baseline
+   expectations
+   2. **Regressions01_fs test** - Fails with "Language version '5.0' is out of support" error
+   (Error 3879)
+
+
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+Do one unit of work. Build and tests must pass.
+Do NOT commit yet - commit only when subtask is fully complete.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this subtask is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL criteria are met, COMMIT your changes, then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

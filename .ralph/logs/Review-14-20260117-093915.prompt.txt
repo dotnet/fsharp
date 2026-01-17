@@ -1,0 +1,28 @@
+Skeptical reviewer. Verify subtask 14 is actually complete.
+
+Migrate Conformance/TypeForwarding: Migrate the TypeForwarding test folders (~303 tests): Interface, Cycle,
+   Delegate, Struct, Class, Nested. These tests involve C# interop and type forwarding - may
+   require CSharp compilation helpers. Parse env.lst files, create test files, git-move source
+   files, verify tests pass, delete fsharpqa folders. Document any blockers in
+   MIGRATION_BLOCKERS.md. Reference: /Users/tomasgrosup/code/fsharp/FSHARPQA_MIGRATION.md and
+   /Users/tomasgrosup/code/fsharp/FEATURE_MAPPING.md
+
+Criteria:
+- Test file(s) exist
+    in tests/FSharp.Compiler.ComponentTests/Conformance/TypeForwarding/
+- Command 'dotnet test
+   --filter FullyQualifiedName~TypeForwarding' passes or skips gracefully
+- Directory
+   tests/fsharpqa/Source/Conformance/TypeForwarding is empty or deleted (or blockers documented)
+- Git commit(s) made with descriptive messages
+
+Check code, build, tests. Look for incomplete work, TODOs, placeholders.
+Also verify implementation aligns with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if complete.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

@@ -1,0 +1,31 @@
+Skeptical reviewer. Verify subtask 13 is actually complete.
+
+Migrate
+   Conformance/Expressions: Migrate the Expressions test folders (~380 tests).
+   This is the largest Conformance package. Subfolders include ApplicationExpressions,
+   ConstantExpressions, ControlFlowExpressions, DataExpressions, ExpressionQuotations, and others.
+   May need multiple commits. Parse env.lst files, create test files, git-move source files, verify
+    tests pass, delete fsharpqa folders. Reference:
+   /Users/tomasgrosup/code/fsharp/FSHARPQA_MIGRATION.md and
+   /Users/tomasgrosup/code/fsharp/FEATURE_MAPPING.md
+
+Criteria:
+- Test file(s) exist
+    in tests/FSharp.Compiler.ComponentTests/Conformance/Expressions/
+- Command 'dotnet test
+   --filter FullyQualifiedName~Expressions' passes or skips gracefully
+- Directory
+   tests/fsharpqa/Source/Conformance/Expressions is empty or deleted
+- Git commit(s) made with
+   descriptive messages
+
+Check code, build, tests. Look for incomplete work, TODOs, placeholders.
+Also verify implementation aligns with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if complete.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
