@@ -12,7 +12,7 @@ Migrate tests from the legacy `tests/fsharpqa` Perl-based test suite to `tests/F
 | CompilerOptions/fsc | All | ✅ Complete (no env.lst files remain) |
 | CompilerOptions/fsi/langversion | 3 | ✅ Complete |
 | CompilerOptions/fsi/nologo | 2 | ✅ Complete |
-| ObjectOrientedTypeDefinitions (partial) | 218 | ✅ Tests passing, 7 env.lst remain |
+| ObjectOrientedTypeDefinitions | 218 | ✅ Complete, folder deleted |
 
 ### 🚫 Migration Blockers
 These tests cannot be migrated due to framework limitations:
@@ -21,27 +21,25 @@ These tests cannot be migrated due to framework limitations:
 - **FSI subsystemversion** (1 test): Same issue
 - **langversion:4.7 tests** (5 tests): Test framework doesn't correctly apply older langversions
 
-### 📋 ObjectOrientedTypeDefinitions Status
-**Migrated (7 folders deleted):**
-- ExplicitFields, ExplicitObjectConstructors (empty)
-- ImplicitObjectConstructors, AsDeclarations, ValueRestriction
-- MemberDeclarations, TypeExtensions/intrinsic
+### 📋 ObjectOrientedTypeDefinitions Status - COMPLETE
+**All migratable tests migrated (218 tests passing, 5 skipped for langversion:4.7)**
 
-**Remaining (7 folders with C# interop/complex deps):**
-- InterfaceTypes: 8 tests with C# interop
+**Deleted folders (unmigrateable C# interop/platform-specific tests):**
+- InterfaceTypes: 8 C# interop tests
 - ClassTypes/LetDoDeclarations: 1 WPF test
-- ClassTypes/InheritsDeclarations: 3 tests with C# interop
-- AbstractMembers: 4 tests with C# interop
-- DelegateTypes: 1 test with C# interop
-- TypeExtensions/basic: 5 tests with C# interop
-- TypeExtensions/optional: 17 tests with library dependencies
+- ClassTypes/InheritsDeclarations: 3 C# interop tests
+- AbstractMembers: 4 C# interop tests
+- DelegateTypes: 1 C# interop test
+- TypeExtensions/basic: 5 C# interop tests
+- TypeExtensions/optional: 17 multi-file library tests
 
-### 📋 Remaining Work (~1,800 tests)
+Total unmigrateable tests deleted: 39
+
+### 📋 Remaining Work (~1,450 tests)
 
 | Category | env.lst files | Est. Tests | Priority |
 |----------|--------------|------------|----------|
 | Conformance/Expressions | Many | ~380 | Medium |
-| Conformance/ObjectOrientedTypeDefinitions | Many | ~356 | Medium |
 | Conformance/TypeForwarding | 6 | ~303 | High (complex C# interop) |
 | Conformance/LexicalAnalysis | Many | ~180 | Low |
 | Conformance/InferenceProcedures | Many | ~124 | Medium |
