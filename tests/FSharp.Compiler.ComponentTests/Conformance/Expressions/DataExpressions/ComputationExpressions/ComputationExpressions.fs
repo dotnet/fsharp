@@ -22,7 +22,7 @@ module DataExpressions_ComputationExpressions =
 
     // SOURCE=ForLoop01.fs SCFLAGS=--langversion:5.0 --mlcompatibility
     // Note: --mlcompatibility is no longer supported; using ignoreWarnings instead
-    [<Theory; FileInlineData("ForLoop01.fs")>]
+    [<Theory(Skip = "Language version 5.0 is out of support"); FileInlineData("ForLoop01.fs")>]
     let ``ForLoop01_fs`` compilation =
         compilation
         |> getCompilation
@@ -34,7 +34,7 @@ module DataExpressions_ComputationExpressions =
 
     // SOURCE=Regressions01.fs SCFLAGS=--langversion:5.0 --mlcompatibility
     // Note: --mlcompatibility is no longer supported; using ignoreWarnings instead
-    [<Theory; FileInlineData("Regressions01.fs")>]
+    [<Theory(Skip = "Language version 5.0 is out of support"); FileInlineData("Regressions01.fs")>]
     let ``Regressions01_fs`` compilation =
         compilation
         |> getCompilation
