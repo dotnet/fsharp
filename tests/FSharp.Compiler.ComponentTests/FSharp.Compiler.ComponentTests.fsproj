@@ -419,6 +419,8 @@
     <Compile Include="Miscellaneous\MigratedTypeCheckTests.fs" />
     <Compile Include="Miscellaneous\GraphTests.fs" />
     <Compile Include="Miscellaneous\FileIndex.fs" />
+    <Compile Include="Miscellaneous\MigratedMisc.fs" />
+    <Compile Include="Libraries\NativeInterop.fs" />
     <Compile Include="Signatures\TestHelpers.fs" />
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />

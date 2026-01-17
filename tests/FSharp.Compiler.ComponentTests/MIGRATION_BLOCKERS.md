@@ -87,6 +87,114 @@ These tests verify the compiler's error handling when source files specified on 
 
 ---
 
+### MISC: Misc/Windows-specific and complex tests
+
+**Files:** productioncoverage02.fs, productioncoverage03.fsscript, StaticMethodValueTypeMain.fs, DefaultManifest.fs, DefaultManifest_dll.fs, WhetherEmbeddedManifest.fs, 6448.fs, SerializableClosure01.fs, AssemblyResolve01.fs, AssemblyResolve01.fsx, AsyncOperations.fs
+
+**Original Location:** tests/fsharpqa/Source/Misc/
+
+**Reason for Blocking:**
+These tests cannot be migrated due to various infrastructure limitations:
+
+1. **productioncoverage02.fs** - Uses P/Invoke to kernel32.dll (Windows-only)
+2. **productioncoverage03.fsscript** - Requires pre-compiled NestedClasses.dll
+3. **StaticMethodValueTypeMain.fs** - Requires pre-compiled StaticMethodValueTypeLib.dll
+4. **DefaultManifest.fs/DefaultManifest_dll.fs** - Requires PRECMD to pre-compile DLL, uses P/Invoke to kernel32.dll
+5. **WhetherEmbeddedManifest.fs** - Marked NOMONO, uses reflection on manifest resources (platform-specific)
+6. **6448.fs, SerializableClosure01.fs** - Uses AppDomain.CreateDomain (DesktopOnly - not supported in .NET Core)
+7. **AssemblyResolve01.fs/fsx** - Uses AppDomain.CurrentDomain.add_AssemblyResolve and external DLLs
+8. **AsyncOperations.fs** - Complex async helper module, not a standalone test
+
+**Decision:** Skip migration. The migrated tests (14 of ~24) cover the portable F# compilation scenarios. The remaining tests require Windows-specific APIs, pre-compiled external DLLs, or .NET Framework-only features (AppDomain security).
+
+---
+
+### STRESS: Stress tests (code generators)
+
+**Files:** CodeGeneratorFor2766.fsx, SeqExprCapacity.fsx
+
+**Original Location:** tests/fsharpqa/Source/Stress/
+
+**env.lst entries:**
+```
+ReqENU,ReqRetail,STRESS SOURCE=2766.fs PRECMD="$FSI_PIPE --exec CodeGeneratorFor2766.fsx"
+ReqNOCov,ReqRetail,STRESS SOURCE=SeqExprCapacity.fs PRECMD="$FSI_PIPE --exec SeqExprCapacity.fsx"
+```
+
+**Reason for Blocking:**
+These tests use PRECMD to run FSI scripts that generate large F# source files dynamically, then compile the generated files. The test infrastructure does not support:
+1. Running FSI scripts as a pre-compilation step
+2. Dynamically generating source files before compilation
+3. The generated files (2766.fs, SeqExprCapacity.fs) don't exist in the repository
+
+**Decision:** Skip migration. These stress tests require code generation that can't be done with in-memory compilation.
+
+---
+
+### MULTITARGETING: MultiTargeting tests
+
+**Files:** E_MissingReferenceToFSharpCore20.fs, E_BadPathToFSharpCore.fs, E_BadPathToFSharpCore.fsx
+
+**Original Location:** tests/fsharpqa/Source/MultiTargeting/
+
+**env.lst entries:**
+```
+NOMONO SOURCE=E_MissingReferenceToFSharpCore20.fs SCFLAGS="--noframework -r %WINDIR%\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll"
+NOMONO SOURCE=E_BadPathToFSharpCore.fs SCFLAGS="--noframework -r %WINDIR%\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll -r I_DO_NOT_EXIST\FSharp.Core.dll"
+```
+
+**Reason for Blocking:**
+1. All tests marked NOMONO (Windows-only)
+2. Use Windows-specific paths (`%WINDIR%\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll`)
+3. Target .NET Framework 4.0 mscorlib (not applicable to .NET Core)
+4. Test scenarios (referencing old .NET Framework assemblies) are obsolete for modern .NET
+
+**Decision:** Skip migration. These tests are for legacy .NET Framework multi-targeting scenarios that don't apply to modern .NET Core/5+/6+/7+/8+/9+/10.0 development.
+
+---
+
+### LIBRARIES-PARTIALTRUST: Libraries/Core/PartialTrust
+
+**Files:** PartialTrust01.fs
+
+**Original Location:** tests/fsharpqa/Source/Libraries/Core/PartialTrust/
+
+**Reason for Blocking:**
+Uses .NET Framework Code Access Security (CAS) model:
+- `System.Security.Permissions.PermissionSet`
+- `System.Security.Permissions.SecurityPermission`
+- `AppDomain.CreateDomain` with security sandbox
+
+These APIs don't exist in .NET Core.
+
+**Decision:** Skip migration. CAS is not supported in .NET Core.
+
+---
+
+### LIBRARIES-PORTABLE: Libraries/Portable
+
+**Files:** provider.fs, consumer.cs, parse_tests.fs, parse_oracle.cs
+
+**Original Location:** tests/fsharpqa/Source/Libraries/Portable/
+
+**env.lst entries:**
+```
+NoMT SOURCE=provider.fs POSTCMD="$CSC_PIPE /r:provider.dll /r:System.Numerics.dll consumer.cs && consumer.exe"
+NoMT SOURCE=parse_tests.fs SCFLAGS="--standalone -g -a" POSTCMD="$CSC_PIPE /debug+ /r:parse_tests.dll /r:System.Numerics.dll parse_oracle.cs && parse_oracle.exe"
+```
+
+**Reason for Blocking:**
+These tests require:
+1. Compiling F# to DLL
+2. Using CSC to compile C# that references the F# DLL
+3. Running the C# executable
+
+This multi-stage cross-language compilation with external execution is not supported by the in-memory test framework.
+
+**Decision:** Skip migration. Cross-language compilation with runtime execution requires file-system based testing.
+
+---
+
 ## Resolved Blockers
 
 _Record resolved blockers here for reference._
