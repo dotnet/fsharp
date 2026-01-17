@@ -194,6 +194,7 @@
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\AbstractMembers\AbstractMembers.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\InterfaceTypes\InterfaceTypes.fs" />
+    <Compile Include="Conformance\TypeForwarding\TypeForwardingTests.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic\Basic.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Bounds\Bounds.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Constants\Constants.fs" />

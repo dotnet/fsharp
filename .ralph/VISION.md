@@ -13,6 +13,8 @@ Migrate tests from the legacy `tests/fsharpqa` Perl-based test suite to `tests/F
 | CompilerOptions/fsi/langversion | 3 | ✅ Complete |
 | CompilerOptions/fsi/nologo | 2 | ✅ Complete |
 | ObjectOrientedTypeDefinitions | 218 | ✅ Complete, folder deleted |
+| Expressions | 238 | ✅ Complete, folder deleted |
+| Conformance/TypeForwarding | 10 (partial) | ✅ C# interop tests migrated, folder deleted |
 
 ### 🚫 Migration Blockers
 These tests cannot be migrated due to framework limitations:
@@ -20,59 +22,28 @@ These tests cannot be migrated due to framework limitations:
 - **FSI highentropyva** (1 test): Unrecognized options crash session
 - **FSI subsystemversion** (1 test): Same issue
 - **langversion:4.7 tests** (5 tests): Test framework doesn't correctly apply older langversions
+- **TypeForwarding runtime tests** (~293 tests): Require assembly substitution after F# compilation (see MIGRATION_BLOCKERS.md)
 
-### 📋 ObjectOrientedTypeDefinitions Status - COMPLETE
-**All migratable tests migrated (218 tests passing, 5 skipped for langversion:4.7)**
+### 📋 TypeForwarding Status - PARTIAL MIGRATION
+The TypeForwarding tests verify F# runtime behavior with .NET type forwarding - a scenario where F# code compiled against one assembly continues to work when types are forwarded to another assembly at runtime.
 
-**Deleted folders (unmigrateable C# interop/platform-specific tests):**
-- InterfaceTypes: 8 C# interop tests
-- ClassTypes/LetDoDeclarations: 1 WPF test
-- ClassTypes/InheritsDeclarations: 3 C# interop tests
-- AbstractMembers: 4 C# interop tests
-- DelegateTypes: 1 C# interop test
-- TypeExtensions/basic: 5 C# interop tests
-- TypeExtensions/optional: 17 multi-file library tests
+**Migrated:** 10 C# interop tests covering:
+- Class, Interface, Struct, Delegate, Nested type access from F#
+- Generic and non-generic type scenarios
 
-Total unmigrateable tests deleted: 39
+**Not migrated (~293 tests):** Runtime type forwarding tests require:
+1. Building F# exe against assembly A
+2. Replacing assembly A with forwarding stub (types in assembly B)
+3. Running F# exe with new assembly configuration
 
-### 📋 Remaining Work (~1,450 tests)
+This assembly-swap-at-runtime pattern cannot be supported by the in-memory test framework.
 
-### 📋 Expressions Status - COMPLETE
-**All migratable tests migrated (238 tests passing, 3 skipped)**
+**Deleted folders:** Class, Cycle, Delegate, Interface, Nested, Struct
 
-Migrated folders:
-- ConstantExpressions (22 tests)
-- EvaluationOfElaboratedForms (1 test)
-- SyntacticSugar (10 tests, 1 skipped per issue #7735)
-- SyntacticSugarAndAmbiguities (1 test)
-- Type-relatedExpressions (21 tests)
-- ApplicationExpressions/Assertion (3 tests)
-- ApplicationExpressions/ObjectConstruction (2 tests)
-- ControlFlowExpressions/PatternMatching (5 tests)
-- ControlFlowExpressions/SequenceIteration (4 tests)
-- ControlFlowExpressions/SimpleFor (3 tests)
-- ControlFlowExpressions/TryFinally (2 tests)
-- ControlFlowExpressions/TryWith (4 tests)
-- DataExpressions/RangeExpressions (4 tests)
-- DataExpressions/TupleExpressions (3 tests)
-- DataExpressions/Simple (1 test)
-- DataExpressions/NameOf (10 tests)
-- DataExpressions/SequenceExpressions (19 tests)
-- DataExpressions/ComputationExpressions (27 tests, 1 skipped - #indent "off")
-- DataExpressions/ObjectExpressions (16 tests, 1 skipped - C# interop)
-- DataExpressions/AddressOf (2 tests)
-
-**Deleted folders (unmigrateable - C# interop/multi-file compilation):**
-- DataExpressions/AddressOf: 4 C# interop tests
-- DataExpressions/QueryExpressions: 41 C# interop tests (requires Utils.dll)
-- ExpressionQuotations/Baselines: 64 multi-file tests (requires QuoteUtils.dll)
-- ExpressionQuotations/Regressions: 49 tests
-
-Total unmigrateable tests deleted: 158
+### 📋 Remaining Work (~1,150 tests)
 
 | Category | env.lst files | Est. Tests | Priority |
 |----------|--------------|------------|----------|
-| Conformance/TypeForwarding | 6 | ~303 | High (complex C# interop) |
 | Conformance/LexicalAnalysis | Many | ~180 | Low |
 | Conformance/InferenceProcedures | Many | ~124 | Medium |
 | Conformance/TypesAndTypeConstraints | 4 | ~96 | Medium |
