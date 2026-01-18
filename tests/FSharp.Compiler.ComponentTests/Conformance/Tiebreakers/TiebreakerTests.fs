@@ -89,3 +89,83 @@ let result = Example.Process(42)
         |> typecheck
         |> shouldSucceed
         |> ignore
+
+    // ============================================================================
+    // RFC Section Examples 1-4: Basic Concreteness Scenarios
+    // ============================================================================
+
+    [<Fact>]
+    let ``Example 1 - Basic Generic vs Concrete - Option of t vs Option of int`` () =
+        // RFC Example 1: Option<'t> vs Option<int>
+        // Option<int> should be preferred as it is more concrete
+        FSharp """
+module Test
+
+type Example =
+    static member Invoke(value: Option<'t>) = "generic"
+    static member Invoke(value: Option<int>) = "int"
+
+// With tiebreaker: resolves to Invoke(Option<int>) - more concrete
+let result = Example.Invoke(Some 42)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 2 - Fully Generic vs Wrapped - t vs Option of t - still ambiguous`` () =
+        // RFC Example 2: 't vs Option<'t>
+        // This tests a case where parameter structures differ ('t vs Option<'t>)
+        // The current tiebreaker implementation compares instantiated type arguments,
+        // not parameter structure shapes. This case remains ambiguous.
+        // NOTE: Full implementation of this case would require comparing parameter type shapes.
+        FSharp """
+module Test
+
+type Example =
+    static member Process(value: 't) = "fully generic"
+    static member Process(value: Option<'t>) = "wrapped"
+
+// Currently ambiguous: structural comparison not yet implemented
+let result = Example.Process(Some 42)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
+
+    [<Fact>]
+    let ``Example 3 - Nested Generics - Option of Option of t vs Option of Option of int`` () =
+        // RFC Example 3: Nested Option types
+        // Option<Option<int>> should be preferred as innermost type is more concrete
+        FSharp """
+module Test
+
+type Example =
+    static member Handle(value: Option<Option<'t>>) = "nested generic"
+    static member Handle(value: Option<Option<int>>) = "nested int"
+
+// With tiebreaker: resolves to Handle(Option<Option<int>>) - innermost type is more concrete
+let result = Example.Handle(Some(Some 42))
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 4 - Triple Nesting Depth - list Option Result deep nesting`` () =
+        // RFC Example 4: Deep nesting - list<Option<Result<'t, exn>>> vs list<Option<Result<int, exn>>>
+        // The more concrete overload (int) should be preferred at depth 3
+        FSharp """
+module Test
+
+type Example =
+    static member Deep(value: list<Option<Result<'t, exn>>>) = "generic"
+    static member Deep(value: list<Option<Result<int, exn>>>) = "int"
+
+// With tiebreaker: resolves to Deep(list<Option<Result<int, exn>>>) - more concrete at depth 3
+let result = Example.Deep([Some(Ok 42)])
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
