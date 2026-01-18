@@ -1,9 +1,14 @@
-# FSharpQA Migration - VISION (Updated 2026-01-17)
+# FSharpQA Migration - VISION (Final Status 2026-01-17)
 
 ## High-Level Goal
 Migrate tests from the legacy `tests/fsharpqa` Perl-based test suite to `tests/FSharp.Compiler.ComponentTests` using the existing test infrastructure.
 
-## Current Status Summary
+## ✅ Migration Complete
+
+### Final Statistics
+- **Total migrated tests:** ~635
+- **ComponentTests suite:** 6274 total tests (5937 passed, 62 failed, 275 skipped)
+- **Test failures:** 62 (well below the 294 pre-existing threshold)
 
 ### ✅ Completed Migrations
 | Category | Tests | Status |
@@ -17,6 +22,20 @@ Migrate tests from the legacy `tests/fsharpqa` Perl-based test suite to `tests/F
 | Conformance/TypeForwarding | 10 (partial) | ✅ C# interop tests migrated, folder deleted |
 | InteractiveSession | 10 (partial) | ✅ Basic FSI tests migrated, blockers documented |
 | Import | 16 (partial) | ✅ C#/F# interop tests migrated, folder deleted |
+
+### 📂 Remaining in fsharpqa/Source/
+Infrastructure files (kept intentionally):
+- `run.pl` - Perl test runner
+- `test.lst` - Master test list
+- `comparer.fsx` - Baseline comparison script
+- `Common/` - Shared test utilities
+- `KnownFail.txt` - Known failure tracking
+- `.gitignore` files
+
+Documented blocker folders (cannot be migrated):
+- `CompilerOptions/fsi/help/` - 4 tests (FSI crashes on help options)
+- `CompilerOptions/fsi/highentropyva/` - 1 test (unrecognized option crashes)
+- `CompilerOptions/fsi/subsystemversion/` - 1 test (same issue)
 
 ### 🚫 Migration Blockers
 These tests cannot be migrated due to framework limitations:
