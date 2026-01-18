@@ -69,6 +69,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
+open FSharp.Compiler.OverloadResolutionRules
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
