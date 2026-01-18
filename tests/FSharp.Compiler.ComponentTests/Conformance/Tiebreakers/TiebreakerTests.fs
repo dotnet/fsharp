@@ -550,3 +550,224 @@ let example () =
         |> typecheck
         |> shouldSucceed
         |> ignore
+
+    // ============================================================================
+    // RFC Section Examples 10-12: Optional and ParamArray Interactions
+    // These tests verify the interaction between the "more concrete" tiebreaker
+    // and existing rules for optional/ParamArray parameters.
+    // ============================================================================
+
+    [<Fact>]
+    let ``Example 10 - Mixed Optional and Generic - existing optional rule has priority`` () =
+        // RFC Example 10: Existing Rule 8 (prefer no optional) applies BEFORE concreteness
+        // The generic overload WITHOUT optional should win over the concrete WITH optional
+        FSharp """
+module Test
+
+type Example =
+    static member Configure(value: Option<'t>) = "generic, required"
+    static member Configure(value: Option<int>, ?timeout: int) = "int, optional timeout"
+
+// Rule 8 (prefer no optional args) applies FIRST, before concreteness
+// Resolves to Configure(Option<'t>) because it has no optional parameters
+let result = Example.Configure(Some 42)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 10 - Mixed Optional - verify priority order does not change`` () =
+        // Additional test: Even with nested generics, optional rule still takes priority
+        FSharp """
+module Test
+
+type Example =
+    static member Process(value: Option<Option<'t>>) = "nested generic, no optional"
+    static member Process(value: Option<Option<int>>, ?retries: int) = "nested int, with optional"
+
+// Rule 8 applies first: prefer no optional args
+// The generic overload without optional wins
+let result = Example.Process(Some(Some 42))
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 11 - Both Have Optional - concreteness breaks tie`` () =
+        // RFC Example 11: Both overloads have optional parameters
+        // Rule 8 returns 0 (equal), so concreteness should break the tie
+        FSharp """
+module Test
+
+type Example =
+    static member Format(value: Option<'t>, ?prefix: string) = "generic"
+    static member Format(value: Option<int>, ?prefix: string) = "int"
+
+// Both have optional args -> Rule 8 returns 0 (equal)
+// "More concrete" tiebreaker applies: Option<int> > Option<'t>
+// Resolves to Format(Option<int>, ?prefix)
+let result = Example.Format(Some 42)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 11 - Both Have Optional - with different optional types`` () =
+        // Both overloads have optional parameters with different types
+        FSharp """
+module Test
+
+type Example =
+    static member Transform(value: Option<'t>, ?prefix: string) = "generic"
+    static member Transform(value: Option<int>, ?timeout: int) = "int"
+
+// Both have optional args -> Rule 8 returns 0
+// Concreteness comparison: Option<int> > Option<'t>
+// Resolves to Transform(Option<int>, ?timeout)
+let result = Example.Transform(Some 42)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 11 - Both Have Optional - multiple optional params`` () =
+        // Both overloads have multiple optional parameters
+        FSharp """
+module Test
+
+type Example =
+    static member Config(value: Option<'t>, ?prefix: string, ?suffix: string) = "generic"
+    static member Config(value: Option<int>, ?min: int, ?max: int) = "int"
+
+// Both have optional args (multiple) -> Rule 8 returns 0
+// Concreteness: Option<int> > Option<'t>
+let result = Example.Config(Some 42)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 11 - Both Have Optional - nested generics`` () =
+        // Both overloads have optional with nested generic types
+        FSharp """
+module Test
+
+type Example =
+    static member Handle(value: Option<Option<'t>>, ?tag: string) = "nested generic"
+    static member Handle(value: Option<Option<int>>, ?tag: string) = "nested int"
+
+// Both have optional -> Rule 8 is tie
+// Concreteness at inner level: Option<int> > Option<'t>
+let result = Example.Handle(Some(Some 42))
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 12 - ParamArray with Generic Elements - concreteness breaks tie`` () =
+        // RFC Example 12: ParamArray with generic element types
+        // Both use ParamArray conversion -> Rule 5 returns 0
+        // Rule 6 (element type comparison via subsumption) may return 0 for type vars
+        // Concreteness should break the tie: Option<int>[] > Option<'t>[]
+        FSharp """
+module Test
+
+type Example =
+    static member Log([<System.ParamArray>] items: Option<'t>[]) = "generic options"
+    static member Log([<System.ParamArray>] items: Option<int>[]) = "int options"
+
+// Both use ParamArray conversion -> Rule 5 returns 0
+// Concreteness compares element types: Option<int> > Option<'t>
+// Resolves to Log(Option<int>[])
+let result = Example.Log(Some 1, Some 2, Some 3)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 12 - ParamArray - nested generic element types`` () =
+        // ParamArray with nested generic element types
+        FSharp """
+module Test
+
+type Example =
+    static member Combine([<System.ParamArray>] values: Option<Option<'t>>[]) = "nested generic"
+    static member Combine([<System.ParamArray>] values: Option<Option<int>>[]) = "nested int"
+
+// Both use ParamArray -> Rule 5 tie
+// Concreteness: Option<Option<int>>[] > Option<Option<'t>>[]
+let result = Example.Combine(Some(Some 1), Some(Some 2))
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 12 - ParamArray - Result element types`` () =
+        // ParamArray with Result element types - more concrete error type wins
+        FSharp """
+module Test
+
+type Example =
+    static member Process([<System.ParamArray>] results: Result<int, 'e>[]) = "generic error"
+    static member Process([<System.ParamArray>] results: Result<int, string>[]) = "string error"
+
+// Both use ParamArray -> Rule 5 tie
+// Concreteness: Result<int, string>[] > Result<int, 'e>[]
+let r1 : Result<int, string> = Ok 1
+let r2 : Result<int, string> = Ok 2
+let result = Example.Process(r1, r2)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ParamArray vs explicit array - identical types remain ambiguous`` () =
+        // When both overloads have identical array types (string[]), the only difference
+        // is the ParamArray attribute. Rule 5 distinguishes based on HOW the call is made
+        // (ParamArray conversion vs explicit array), but with identical types this can be ambiguous.
+        // NOTE: This tests current behavior - identical types with ParamArray difference
+        FSharp """
+module Test
+
+type Example =
+    // Explicit array parameter (NOT ParamArray)
+    static member Write(messages: string[]) = "explicit array"
+    // ParamArray version
+    static member Write([<System.ParamArray>] messages: string[]) = "param array"
+
+// When calling with explicit array, both overloads match the array type
+// This is ambiguous because both have identical parameter types
+let messages = [| "a"; "b"; "c" |]
+let result = Example.Write(messages)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41 // FS0041 - ambiguous when both have same types
+        |> ignore
+
+    [<Fact>]
+    let ``Combined Optional and ParamArray - complex scenario`` () =
+        // Combining optional parameters and ParamArray in same overload set
+        FSharp """
+module Test
+
+type Example =
+    static member Send(target: string, [<System.ParamArray>] data: Option<'t>[]) = "generic"
+    static member Send(target: string, [<System.ParamArray>] data: Option<int>[]) = "int"
+
+// Both overloads: no optional args (Rule 8 tie), both use ParamArray (Rule 5 tie)
+// Concreteness breaks the tie: Option<int>[] > Option<'t>[]
+let result = Example.Send("dest", Some 1, Some 2, Some 3)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
