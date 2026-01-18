@@ -140,6 +140,7 @@
     <Compile Include="Conformance\UnitsOfMeasure\Parsing\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker\TypeChecker.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\WithOOP\WithOOP.fs" />
+    <Compile Include="Conformance\Tiebreakers\TiebreakerTests.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\VeryLargeClasses.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
