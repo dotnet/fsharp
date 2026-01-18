@@ -13,7 +13,7 @@ open Microsoft.FSharp.Control
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 type DelegateEvent<'Delegate when 'Delegate :> Delegate> =
 #else
-type DelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate : not null> =
+type DelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate: not null> =
 #endif
     /// <summary>Creates an event object suitable for implementing an arbitrary type of delegate.</summary>
     /// <returns>The event object.</returns>
@@ -39,7 +39,8 @@ type DelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate : not null
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct> =
 #else
-type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct and 'Delegate: not null> =
+type Event<'Delegate, 'Args
+    when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct and 'Delegate: not null> =
 #endif
 
     /// <summary>Creates an event object suitable for delegate types following the standard .NET Framework convention of a first 'sender' argument.</summary>

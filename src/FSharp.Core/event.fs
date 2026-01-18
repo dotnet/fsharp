@@ -28,7 +28,7 @@ module private Atomic =
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 type DelegateEvent<'Delegate when 'Delegate :> Delegate>() =
 #else
-type DelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate : not null>() =
+type DelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate: not null>() =
 #endif
     let mutable multicast: Delegate = null
 
@@ -84,7 +84,8 @@ type EventWrapper<'Delegate, 'Args> = delegate of 'Delegate * objnull * 'Args ->
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct>()
 #else
-type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct and 'Delegate: not null>()
+type Event<'Delegate, 'Args
+    when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct and 'Delegate: not null>()
 #endif
     =
 
