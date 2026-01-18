@@ -1061,21 +1061,11 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         // Allow expected of WithNull and actual of WithoutNull except for specially marked APIs (handled above)        
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
-            // Suppress nullness warnings for delegate types in event contexts.
-            // This handles the common case of implementing INotifyPropertyChanged, ICommand, etc.
-            // where C# interfaces lack nullability annotations but F# event types have not-null constraints.
-            // See https://github.com/dotnet/fsharp/issues/18361 and https://github.com/dotnet/fsharp/issues/18349
-            let g = csenv.g
-            let sty1 = stripTyEqns g ty1
-            let sty2 = stripTyEqns g ty2
-            // Suppress warning when both types are delegates (same delegate type, just different nullness)
-            let suppressDelegateWarning = 
-                isDelegateTy g sty1 && isDelegateTy g sty2
-            if g.checkNullness && not suppressDelegateWarning then 
+            if csenv.g.checkNullness then 
                 WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2))
             else
                 CompleteD
-        
+
 // nullness1: target
 // nullness2: source
 and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
@@ -1108,27 +1098,11 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
-            // Suppress nullness warnings for delegate types in event contexts.
-            // This handles the common case of implementing INotifyPropertyChanged, ICommand, etc.
-            // where C# interfaces lack nullability annotations but F# event types have not-null constraints.
-            // See https://github.com/dotnet/fsharp/issues/18361 and https://github.com/dotnet/fsharp/issues/18349
-            //
-            // Check if the types (after stripping equations) are delegate types.
-            // For delegate event handlers, we suppress the nullness warning because:
-            // 1. C# interfaces often lack nullable annotations on event parameters
-            // 2. F#'s event types have a not-null constraint on delegates
-            // 3. The mismatch is a false positive for common patterns
-            let g = csenv.g
-            let sty1 = stripTyEqns g ty1
-            let sty2 = stripTyEqns g ty2
-            // Both types must be delegates (same delegate type, just different nullness)
-            let suppressDelegateWarning = 
-                isDelegateTy g sty1 && isDelegateTy g sty2
-            if g.checkNullness && not suppressDelegateWarning then               
-                 WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
+            if csenv.g.checkNullness then               
+                WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
             else
                 CompleteD
-        
+
 and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty1 ty =
     trackErrors {
         let m = csenv.m
