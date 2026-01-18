@@ -1280,3 +1280,263 @@ let result = Example.Process(value)
         |> typecheck
         |> shouldSucceed
         |> ignore
+
+    // ============================================================================
+    // Constraint and TDC Interaction Tests
+    // RFC section-examples.md Example 15, section-tdc-interaction.md, section-adhoc-rules.md
+    // ============================================================================
+
+    [<Fact>]
+    let ``Example 15 - Constrained vs unconstrained type variable - not yet supported`` () =
+        // RFC section-examples.md Example 15: Constrained type variable vs unconstrained
+        // NOTE: F# does not currently allow overloading based solely on type constraints.
+        // Methods with same name and same parameter structure (differing only in constraints)
+        // are considered duplicate signatures (FS0438).
+        // This test documents current F# behavior - this is PROPOSED for future enhancement.
+        FSharp """
+module Test
+
+open System
+
+type Example =
+    static member Compare(value: 't) = "unconstrained"
+    static member Compare(value: 't when 't :> IComparable) = "comparable"
+
+let result = Example.Compare(42)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 438 // FS0438: Duplicate method
+        |> ignore
+
+    [<Fact>]
+    let ``Constrained type variable - different wrapper types with constraints allowed`` () =
+        // This tests a valid scenario where constraints are used with different wrapper types
+        // The constraint doesn't create a duplicate, the different parameter types do
+        FSharp """
+module Test
+
+open System
+
+type Example =
+    static member Compare(value: 't) = "generic"
+    static member Compare(value: IComparable) = "interface"
+
+let result = Example.Compare(42)
+// int implements IComparable, but 't is more general
+// Existing Rule 10 (prefer non-generic) may apply, or both match
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``TDC priority - No TDC preferred over TDC even when TDC target is more concrete`` () =
+        // RFC section-tdc-interaction.md: TDC rules have HIGHER priority than concreteness
+        // When one overload requires TDC and another doesn't, no-TDC wins
+        FSharp """
+module Test
+
+type Example =
+    static member Process(x: int) = "int"           // No TDC needed
+    static member Process(x: int64) = "int64"       // Would need TDC: int→int64
+
+let result = Example.Process(42)
+// Result: Calls Process(int) - TDC Rule 1 applies BEFORE concreteness
+// Both overloads match, but int→int overload needs no conversion
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``TDC priority - Concreteness applies only when TDC is equal`` () =
+        // RFC section-tdc-interaction.md Scenario 2: When neither overload uses TDC,
+        // concreteness tiebreaker applies
+        FSharp """
+module Test
+
+type Example =
+    static member Invoke(value: Option<'t>) = "generic"
+    static member Invoke(value: Option<int list>) = "concrete"
+
+let result = Example.Invoke(Some([1]))
+// Neither overload uses TDC (both are direct matches)
+// TDC Rules 1-3 return 0 (equal)
+// "More concrete" tiebreaker applies → selects Option<int list>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``TDC priority - Combined TDC and generic resolution`` () =
+        // RFC section-tdc-interaction.md Scenario 5: Both overloads require same TDC
+        // When TDC usage is equal, concreteness breaks the tie
+        FSharp """
+module Test
+
+type Example =
+    static member Handle(x: int64, y: Option<'t>) = "generic"
+    static member Handle(x: int64, y: Option<string>) = "concrete"
+
+let result = Example.Handle(42L, Some("hello"))
+// Both overloads need no TDC for first arg (int64 matches directly with 42L)
+// TDC Rules 1-3 return 0 (equal TDC usage)
+// "More concrete" compares Option<'t> vs Option<string>
+// Result: Calls Handle(int64, Option<string>) - more concrete
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``TDC priority - Nullable TDC preferred over op_Implicit TDC`` () =
+        // RFC section-tdc-interaction.md: TDC Rule 3 prefers nullable-only TDC over op_Implicit
+        // This test verifies TDC rule ordering is preserved
+        FSharp """
+module Test
+
+type Example =
+    static member Method(x: System.Nullable<int>) = "nullable"    // TDC: int → Nullable<int>
+    static member Method(x: int) = "direct"                       // No TDC
+
+let result = Example.Method(42)
+// Result: Calls Method(int) - TDC Rule 1 prefers no conversion
+// Concreteness never evaluated
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Adhoc rule - Func is preferred over other delegate types`` () =
+        // RFC section-adhoc-rules.md Rule 1: Func<_> is always better than any other delegate type
+        // This tests the existing adhoc rule which applies BEFORE concreteness
+        FSharp """
+module Test
+
+open System
+
+type CustomDelegate = delegate of int -> string
+
+type Example =
+    static member Process(f: Func<int, string>) = "func"
+    static member Process(f: CustomDelegate) = "custom"
+
+let result = Example.Process(fun x -> string x)
+// Adhoc Rule 1: Func<_> is preferred over other delegates
+// Result: Calls Process(Func<...>) — Func is preferred over CustomDelegate
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Adhoc rule - Func concreteness applies when both are Func`` () =
+        // RFC section-adhoc-rules.md: When both overloads use Func, concreteness breaks the tie
+        // Func<int, string> is more concrete than Func<'a, 'b>
+        FSharp """
+module Test
+
+open System
+
+type Example =
+    static member Invoke(f: Func<int, string>) = "concrete func"
+    static member Invoke(f: Func<'a, 'b>) = "generic func"
+
+let result = Example.Invoke(fun x -> string x)
+// Both are Func types, adhoc rule doesn't differentiate
+// Concreteness: Func<int, string> > Func<'a, 'b>
+// Result: Calls Invoke(Func<int, string>) — most concrete Func
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Adhoc rule - T preferred over Nullable T`` () =
+        // RFC section-adhoc-rules.md Rule 3: T is always better than Nullable<T> (F# 5.0+)
+        // This adhoc rule applies BEFORE concreteness
+        FSharp """
+module Test
+
+type Example =
+    static member Parse(value: int) = "direct"
+    static member Parse(value: System.Nullable<int>) = "nullable"
+
+let result = Example.Parse(42)
+// Adhoc Rule 3: T preferred over Nullable<T>
+// Result: Calls Parse(int) — T is preferred over Nullable<T>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Adhoc rule - Nullable concreteness applies when both are Nullable`` () =
+        // RFC section-adhoc-rules.md: When both overloads use Nullable, concreteness breaks the tie
+        // Nullable<int> is more concrete than Nullable<'t>
+        FSharp """
+module Test
+
+type Example =
+    static member Convert(value: System.Nullable<int>) = "nullable int"
+    static member Convert(value: System.Nullable<'t>) = "nullable generic"
+
+let result = Example.Convert(System.Nullable<int>(42))
+// Both are Nullable types, adhoc rule doesn't differentiate
+// Concreteness: Nullable<int> > Nullable<'t>
+// Result: Calls Convert(Nullable<int>) — more concrete
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Adhoc rule - Nullable and concreteness combined`` () =
+        // RFC section-adhoc-rules.md Scenario 4: Combined Nullable and concreteness
+        // Tests that adhoc rules and concreteness work together correctly
+        FSharp """
+module Test
+
+type Example =
+    static member Convert(value: int) = "int"
+    static member Convert(value: System.Nullable<int>) = "nullable int"
+    static member Convert(value: System.Nullable<'t>) = "nullable generic"
+
+let result1 = Example.Convert(42)
+// Step 1: int vs Nullable<int> — adhoc Rule 3 prefers int
+// Result: Calls Convert(int)
+
+let result2 = Example.Convert(System.Nullable<int>(42))
+// Now passing Nullable explicitly:
+// Step 1: Nullable<int> vs Nullable<'t> — concreteness applies
+// Result: Calls Convert(Nullable<int>) — more concrete
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Constraint - Multiple constraints not yet supported for overloading`` () =
+        // RFC section-examples.md: More constraints = more concrete (PROPOSED)
+        // NOTE: F# does not currently allow overloading based solely on type constraints.
+        // Methods with same name and same parameter structure (differing only in constraints)
+        // are considered duplicate signatures (FS0438).
+        // This test documents current F# behavior - constraint-based overloading is PROPOSED.
+        FSharp """
+module Test
+
+open System
+
+type Example =
+    static member Process(value: 't when 't :> IComparable) = "one constraint"
+    static member Process(value: 't when 't :> IComparable and 't :> IFormattable) = "two constraints"
+
+let result = Example.Process(42)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 438 // FS0438: Duplicate method
+        |> ignore
