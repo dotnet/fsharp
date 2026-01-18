@@ -921,7 +921,7 @@ stages:
          # remove this before merging
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: dotnet msbuild build.proj -target:'Build;Pack;Test;AllDocs'
+          buildScript: dotnet msbuild build.proj -t:Build`;Pack`;Test`;AllDocs
           displayName: FsharpPlus_NET10_FullTestSuite 
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
