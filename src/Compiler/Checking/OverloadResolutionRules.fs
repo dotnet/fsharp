@@ -236,18 +236,24 @@ let private preferNonGenericRule : TiebreakRule =
       Compare = fun _ (candidate, _, _) (other, _, _) ->
         compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty }
 
-/// Rule 13: Prefer more concrete type instantiations (RFC placeholder)
+/// Rule 13: Prefer more concrete type instantiations (RFC FS-XXXX)
 /// This is the "Most Concrete" tiebreaker from the RFC.
-/// Currently a placeholder that returns 0 (no preference).
+/// Only activates when BOTH methods are generic (have type arguments).
+/// Note: The actual implementation uses compareTypeConcreteness from ConstraintSolver.fs
 let private moreConcreteRule : TiebreakRule =
     { Priority = 13
       Name = "MoreConcrete"
       Description = "Prefer more concrete type instantiations over more generic ones"
-      Compare = fun _ctx (_candidate, _, _) (_other, _, _) ->
-        // TODO: Implement compareTypeConcreteness algorithm from RFC
-        // This should recursively compare type arguments, preferring concrete over generic
-        // using a dominance rule: must be better in at least one position, not worse in any
-        0 }
+      Compare = fun _ctx (candidate, _, _) (other, _, _) ->
+        // Note: The actual logic is implemented directly in the better() function
+        // in ConstraintSolver.fs because compareTypeConcreteness is defined there
+        // and uses the csenv context. This rule documents the priority position.
+        // Returns 0 here - the real comparison happens in better().
+        if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
+            // Placeholder - actual implementation is in ConstraintSolver.fs better()
+            0
+        else
+            0 }
 
 /// Rule 14: F# 5.0 NullableOptionalInterop - compare all args including optional/named
 let private nullableOptionalInteropRule : TiebreakRule =

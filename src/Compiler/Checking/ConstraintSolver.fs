@@ -3850,6 +3850,21 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         let c = compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
         if c <> 0 then c else
 
+        // Prefer more concrete type instantiations (RFC FS-XXXX: "Most Concrete" tiebreaker)
+        // Only activates when BOTH methods are generic (have type arguments)
+        let c = 
+            if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
+                let tyArgs1 = candidate.CalledTyArgs
+                let tyArgs2 = other.CalledTyArgs
+                if tyArgs1.Length = tyArgs2.Length then
+                    let comparisons = List.map2 compareTypeConcreteness tyArgs1 tyArgs2
+                    aggregateComparisons comparisons
+                else
+                    0
+            else
+                0
+        if c <> 0 then c else
+
         // F# 5.0 rule - prior to F# 5.0 named arguments (on the caller side) were not being taken 
         // into account when comparing overloads.  So adding a name to an argument might mean 
         // overloads could no longer be distinguished.  We thus look at *all* arguments (whether
