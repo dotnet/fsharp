@@ -3658,6 +3658,76 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
     let compareTypes ty1 ty2 = 
         (ty1, ty2) ||> compareCond (fun x1 x2 -> TypeFeasiblySubsumesType ndeep csenv.g csenv.amap m x2 CanCoerce x1) 
 
+    /// Aggregate pairwise comparison results using dominance rule.
+    /// Returns 1 if ty1 dominates (better in some positions, not worse in any),
+    /// -1 if ty2 dominates, 0 if incomparable or equal.
+    let aggregateComparisons (comparisons: int list) =
+        let hasPositive = comparisons |> List.exists (fun c -> c > 0)
+        let hasNegative = comparisons |> List.exists (fun c -> c < 0)
+        if not hasNegative && hasPositive then 1
+        elif not hasPositive && hasNegative then -1
+        else 0
+
+    /// Count constraints on a type parameter
+    let countTyparConstraints (tp: Typar) =
+        tp.Constraints |> List.length
+
+    /// Compare types under the "more concrete" partial ordering.
+    /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
+    let rec compareTypeConcreteness ty1 ty2 =
+        let g = csenv.g
+        let sty1 = stripTyEqns g ty1
+        let sty2 = stripTyEqns g ty2
+        match sty1, sty2 with
+        // Case 1: Both are type variables - compare by constraint count
+        | TType_var (tp1, _), TType_var (tp2, _) ->
+            let c1 = countTyparConstraints tp1
+            let c2 = countTyparConstraints tp2
+            compare c1 c2
+        
+        // Case 2: Type variable vs concrete type - concrete is more concrete
+        | TType_var _, _ -> -1
+        | _, TType_var _ -> 1
+        
+        // Case 3: Type applications - compare type arguments when constructors match
+        | TType_app (tcref1, args1, _), TType_app (tcref2, args2, _) ->
+            if not (tyconRefEq g tcref1 tcref2) then 0
+            elif args1.Length <> args2.Length then 0
+            else
+                let comparisons = List.map2 compareTypeConcreteness args1 args2
+                aggregateComparisons comparisons
+        
+        // Case 4: Tuple types - compare element-wise
+        | TType_tuple (_, elems1), TType_tuple (_, elems2) ->
+            if elems1.Length <> elems2.Length then 0
+            else
+                let comparisons = List.map2 compareTypeConcreteness elems1 elems2
+                aggregateComparisons comparisons
+        
+        // Case 5: Function types - compare domain and range
+        | TType_fun (dom1, rng1, _), TType_fun (dom2, rng2, _) ->
+            let cDomain = compareTypeConcreteness dom1 dom2
+            let cRange = compareTypeConcreteness rng1 rng2
+            aggregateComparisons [cDomain; cRange]
+        
+        // Case 6: Anonymous record types - compare fields
+        | TType_anon (info1, tys1), TType_anon (info2, tys2) ->
+            if not (anonInfoEquiv info1 info2) then 0
+            else
+                let comparisons = List.map2 compareTypeConcreteness tys1 tys2
+                aggregateComparisons comparisons
+        
+        // Case 7: Measure types - equal or incomparable
+        | TType_measure _, TType_measure _ -> 0
+        
+        // Case 8: Universal quantified types (forall)
+        | TType_forall (tps1, body1), TType_forall (tps2, body2) ->
+            if tps1.Length <> tps2.Length then 0
+            else compareTypeConcreteness body1 body2
+        
+        // Default: Different structural forms are incomparable
+        | _ -> 0
+
     /// Compare arguments under the feasibly-subsumes ordering and the adhoc Func-is-better-than-other-delegates rule
     let compareArg (calledArg1: CalledArg) (calledArg2: CalledArg) =
         let c = compareTypes calledArg1.CalledArgumentType calledArg2.CalledArgumentType
