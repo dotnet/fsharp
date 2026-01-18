@@ -90,6 +90,7 @@
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\Type-relatedExpressions\Type-relatedExpressions.fs" />
+    <Compile Include="Conformance\Expressions\ExpressionQuotations\Baselines.fs" />
     <Compile Include="Conformance\InferenceProcedures\ByrefSafetyAnalysis\ByrefSafetyAnalysis.fs" />
     <Compile Include="Conformance\InferenceProcedures\RecursiveSafetyAnalysis\RecursiveSafetyAnalysis.fs" />
     <Compile Include="Conformance\LexicalAnalysis\ElseIfBug14761.fs" />
@@ -370,6 +371,7 @@
 
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Conformance\Expressions\ExpressionQuotations\Baselines\*.fs" CopyToOutputDirectory="Never" />
     <EmbeddedResource Remove="Properties\**" />
     <None Remove="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <None Remove="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
