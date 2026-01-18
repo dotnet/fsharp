@@ -1540,3 +1540,525 @@ let result = Example.Process(42)
         |> shouldFail
         |> withErrorCode 438 // FS0438: Duplicate method
         |> ignore
+
+    // ============================================================================
+    // Orthogonal Test Scenarios - Beyond RFC Examples
+    // These stress-test edge cases with F# specific features
+    // ============================================================================
+
+    // --------------------------------------------------------------------------
+    // SRTP (Statically Resolved Type Parameters) Tests
+    // --------------------------------------------------------------------------
+
+    [<Fact>]
+    let ``SRTP - Generic SRTP vs concrete type instantiation`` () =
+        // SRTP with generic constraint vs SRTP with concrete type
+        // Tests that concreteness applies within SRTP contexts
+        FSharp """
+module Test
+
+type Handler =
+    static member inline Process< ^T when ^T : (static member Parse : string -> ^T)>(s: string) : Option< ^T> =
+        Some (( ^T) : (static member Parse : string -> ^T) s)
+    static member inline Process(s: string) : Option<int> =
+        Some(System.Int32.Parse s)
+
+// When calling with string that should parse to int, concrete Option<int> is preferred
+let result : Option<int> = Handler.Process("42")
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``SRTP - Inline function with concrete specialization`` () =
+        // Inline function with SRTP that has a more concrete alternative
+        FSharp """
+module Test
+
+type Converter =
+    static member inline Convert< ^T when ^T : (member Value : int)>(x: ^T) = (^T : (member Value : int) x)
+    static member Convert(x: System.Nullable<int>) = x.GetValueOrDefault()
+
+let result = Converter.Convert(System.Nullable<int>(42))
+// Concrete Nullable<int> overload is more specific than SRTP generic
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``SRTP - Member constraint with nested type arguments`` () =
+        // SRTP with nested generic types in the constraint
+        FSharp """
+module Test
+
+type Builder =
+    static member inline Build< ^T when ^T : (static member Create : unit -> Option< ^T>)>() : Option< ^T> =
+        (^T : (static member Create : unit -> Option< ^T>) ())
+    static member Build() : Option<int> = Some 0
+
+let result : Option<int> = Builder.Build()
+// Option<int> is more concrete than generic SRTP result
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // --------------------------------------------------------------------------
+    // Byref/Inref/Outref Combination Tests
+    // --------------------------------------------------------------------------
+
+    [<Fact>]
+    let ``Byref - outref of int vs outref of generic`` () =
+        // outref concreteness comparison
+        FSharp """
+module Test
+
+type Writer =
+    static member Write(dest: outref<int>, value: int) = dest <- value
+    static member Write(dest: outref<'T>, value: 'T) = dest <- value
+
+let mutable x = 0
+Writer.Write(&x, 42)
+// outref<int> is more concrete than outref<'T>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Byref - inref and outref combined with generics`` () =
+        // Tests mixed inref/outref parameters
+        FSharp """
+module Test
+
+type Transformer =
+    static member Transform(src: inref<int>, dest: outref<int>) = dest <- src
+    static member Transform(src: inref<'T>, dest: outref<'T>) = dest <- src
+
+let mutable value = 42
+let mutable result = 0
+Transformer.Transform(&value, &result)
+// Both inref<int> and outref<int> are more concrete than generic versions
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Byref - byref with nested option type`` () =
+        // Byref to a complex nested type
+        FSharp """
+module Test
+
+type RefProcessor =
+    static member Process(r: byref<Option<int>>) = r <- Some 42
+    static member Process(r: byref<Option<'T>>) = r <- None
+
+let mutable opt : Option<int> = None
+RefProcessor.Process(&opt)
+// byref<Option<int>> is more concrete than byref<Option<'T>>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Byref - nativeptr with concrete vs generic element type`` () =
+        // Tests nativeptr concreteness (simplified version that compiles)
+        FSharp """
+module Test
+
+open Microsoft.FSharp.NativeInterop
+
+type PtrHandler =
+    static member Handle(p: nativeptr<int>) = 1
+    static member Handle(p: nativeptr<'T>) = 2
+
+// Just test that the overloads can be defined - actual pointer usage
+// would require unsafe code blocks which complicate the test
+let inline handlePtr (p: nativeptr<int>) = PtrHandler.Handle(p)
+// nativeptr<int> is more concrete than nativeptr<'T>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // --------------------------------------------------------------------------
+    // Anonymous Record Type Tests
+    // --------------------------------------------------------------------------
+
+    [<Fact>]
+    let ``Anonymous Record - concrete field type vs generic`` () =
+        // Anonymous record with concrete vs generic field types
+        FSharp """
+module Test
+
+type Processor =
+    static member Process(r: {| Value: int |}) = "int"
+    static member Process(r: {| Value: 'T |}) = "generic"
+
+let result = Processor.Process({| Value = 42 |})
+// {| Value: int |} is more concrete than {| Value: 'T |}
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Anonymous Record - nested anonymous records with concreteness`` () =
+        // Nested anonymous records where inner type differs
+        FSharp """
+module Test
+
+type Handler =
+    static member Handle(r: {| Inner: {| X: int |} |}) = "concrete"
+    static member Handle(r: {| Inner: {| X: 'T |} |}) = "generic"
+
+let result = Handler.Handle({| Inner = {| X = 42 |} |})
+// Innermost type int is more concrete than 'T
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Anonymous Record - option of anonymous record`` () =
+        // Option wrapping anonymous record
+        FSharp """
+module Test
+
+type Builder =
+    static member Build(x: Option<{| Id: int; Name: string |}>) = "concrete"
+    static member Build(x: Option<{| Id: 'T; Name: string |}>) = "generic id"
+
+let result = Builder.Build(Some {| Id = 1; Name = "test" |})
+// Option<{| Id: int; ... |}> is more concrete
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // --------------------------------------------------------------------------
+    // Units of Measure Tests
+    // --------------------------------------------------------------------------
+
+    [<Fact>]
+    let ``Units of Measure - concrete measure vs generic measure`` () =
+        // Concrete unit of measure vs generic measure type parameter
+        FSharp """
+module Test
+
+[<Measure>] type m
+[<Measure>] type s
+
+type Calculator =
+    static member Calculate(x: float<m>) = "meters"
+    static member Calculate(x: float<'u>) = "generic unit"
+
+let distance : float<m> = 5.0<m>
+let result = Calculator.Calculate(distance)
+// float<m> is more concrete than float<'u>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Units of Measure - derived units vs base units`` () =
+        // Derived unit (m/s) vs generic measure
+        FSharp """
+module Test
+
+[<Measure>] type m
+[<Measure>] type s
+
+type Physics =
+    static member Velocity(x: float<m/s>) = "velocity"
+    static member Velocity(x: float<'u>) = "generic"
+
+let speed : float<m/s> = 10.0<m/s>
+let result = Physics.Velocity(speed)
+// float<m/s> is more concrete than float<'u>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Units of Measure - option of measured value`` () =
+        // Option wrapping measured values
+        FSharp """
+module Test
+
+[<Measure>] type kg
+
+type Scale =
+    static member Weigh(x: Option<float<kg>>) = "kg"
+    static member Weigh(x: Option<float<'u>>) = "generic"
+
+let result = Scale.Weigh(Some 75.0<kg>)
+// Option<float<kg>> is more concrete
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Units of Measure - array of measured values`` () =
+        // Array of measured values with concreteness
+        FSharp """
+module Test
+
+[<Measure>] type Hz
+
+type SignalProcessor =
+    static member Process(samples: float<Hz>[]) = "Hz array"
+    static member Process(samples: float<'u>[]) = "generic array"
+
+let frequencies : float<Hz>[] = [| 440.0<Hz>; 880.0<Hz> |]
+let result = SignalProcessor.Process(frequencies)
+// float<Hz>[] is more concrete than float<'u>[]
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // --------------------------------------------------------------------------
+    // F#-Specific Types: Async, MailboxProcessor, Lazy, etc.
+    // --------------------------------------------------------------------------
+
+    [<Fact>]
+    let ``Async - Async of int vs Async of generic`` () =
+        // Async with concrete vs generic inner type
+        FSharp """
+module Test
+
+type AsyncRunner =
+    static member Run(comp: Async<int>) = "int async"
+    static member Run(comp: Async<'T>) = "generic async"
+
+let computation = async { return 42 }
+let result = AsyncRunner.Run(computation)
+// Async<int> is more concrete than Async<'T>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Async - nested Async of Result`` () =
+        // Async<Result<int, exn>> vs Async<Result<'T, exn>>
+        FSharp """
+module Test
+
+type AsyncHandler =
+    static member Handle(comp: Async<Result<int, exn>>) = "int result async"
+    static member Handle(comp: Async<Result<'T, exn>>) = "generic result async"
+
+let computation : Async<Result<int, exn>> = async { return Ok 42 }
+let result = AsyncHandler.Handle(computation)
+// Async<Result<int, exn>> is more concrete
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``MailboxProcessor - concrete message type vs generic`` () =
+        // MailboxProcessor with concrete vs generic message types
+        FSharp """
+module Test
+
+type Message = Start | Stop
+
+type Dispatcher =
+    static member Dispatch(mb: MailboxProcessor<int>) = "int mailbox"
+    static member Dispatch(mb: MailboxProcessor<'T>) = "generic mailbox"
+
+let mb = MailboxProcessor.Start(fun inbox -> async { return () })
+let result = Dispatcher.Dispatch(mb)
+// MailboxProcessor<int> would be more concrete, but mb is generic here
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Lazy - Lazy of complex type vs generic`` () =
+        // Lazy with concrete inner type
+        FSharp """
+module Test
+
+type LazyLoader =
+    static member Load(value: Lazy<int list>) = "int list lazy"
+    static member Load(value: Lazy<'T>) = "generic lazy"
+
+let lazyValue = lazy [1; 2; 3]
+let result = LazyLoader.Load(lazyValue)
+// Lazy<int list> is more concrete than Lazy<'T>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Choice - Choice with concrete types vs generic`` () =
+        // Choice types with concreteness
+        FSharp """
+module Test
+
+type Router =
+    static member Route(choice: Choice<int, string>) = "int or string"
+    static member Route(choice: Choice<'T1, 'T2>) = "generic choice"
+
+let c = Choice1Of2 42
+let result = Router.Route(c)
+// Choice<int, string> is more concrete than Choice<'T1, 'T2>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Voption - ValueOption of int vs generic`` () =
+        // ValueOption with concrete type
+        FSharp """
+module Test
+
+type ValueProcessor =
+    static member Process(v: ValueOption<int>) = "voption int"
+    static member Process(v: ValueOption<'T>) = "voption generic"
+
+let vopt = ValueSome 42
+let result = ValueProcessor.Process(vopt)
+// ValueOption<int> is more concrete than ValueOption<'T>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ValueTask - ValueTask of int vs generic`` () =
+        // ValueTask with concrete inner type
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+type TaskRunner =
+    static member Run(t: ValueTask<int>) = "int valuetask"
+    static member Run(t: ValueTask<'T>) = "generic valuetask"
+
+let vt = ValueTask<int>(42)
+let result = TaskRunner.Run(vt)
+// ValueTask<int> is more concrete than ValueTask<'T>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // --------------------------------------------------------------------------
+    // Computation Expression Integration Tests
+    // --------------------------------------------------------------------------
+
+    [<Fact>]
+    let ``CE - seq expression with concrete element type`` () =
+        // Seq with concrete element type
+        FSharp """
+module Test
+
+type SeqHandler =
+    static member Handle(s: seq<int>) = "int seq"
+    static member Handle(s: seq<'T>) = "generic seq"
+
+let numbers = seq { 1; 2; 3 }
+let result = SeqHandler.Handle(numbers)
+// seq<int> is more concrete than seq<'T>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``CE - list comprehension with complex type`` () =
+        // List with nested option
+        FSharp """
+module Test
+
+type ListHandler =
+    static member Handle(lst: Option<int> list) = "option int list"
+    static member Handle(lst: Option<'T> list) = "option generic list"
+
+let items = [ Some 1; Some 2; None ]
+let result = ListHandler.Handle(items)
+// Option<int> list is more concrete
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``CE - async comprehension result type`` () =
+        // Async comprehension with specific return type
+        FSharp """
+module Test
+
+type AsyncBuilder =
+    static member Wrap(comp: Async<int * string>) = "tuple async"
+    static member Wrap(comp: Async<'T>) = "generic async"
+
+let work = async {
+    return (42, "hello")
+}
+let result = AsyncBuilder.Wrap(work)
+// Async<int * string> is more concrete than Async<'T>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // --------------------------------------------------------------------------
+    // Discriminated Union Tests
+    // --------------------------------------------------------------------------
+
+    [<Fact>]
+    let ``DU - Result with concrete error type`` () =
+        // Result with concrete error type
+        FSharp """
+module Test
+
+type ErrorHandler =
+    static member Handle(r: Result<int, string>) = "int result string error"
+    static member Handle(r: Result<int, 'E>) = "int result generic error"
+
+let ok : Result<int, string> = Ok 42
+let result = ErrorHandler.Handle(ok)
+// Result<int, string> is more concrete than Result<int, 'E>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``DU - Nested custom DU with generics`` () =
+        // Custom DU with generic type parameters
+        FSharp """
+module Test
+
+type Tree<'T> =
+    | Leaf of 'T
+    | Node of Tree<'T> * Tree<'T>
+
+type TreeProcessor =
+    static member Process(t: Tree<int>) = "int tree"
+    static member Process(t: Tree<'T>) = "generic tree"
+
+let tree = Node(Leaf 1, Leaf 2)
+let result = TreeProcessor.Process(tree)
+// Tree<int> is more concrete than Tree<'T>
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
