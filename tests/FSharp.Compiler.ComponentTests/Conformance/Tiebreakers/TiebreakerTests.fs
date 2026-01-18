@@ -308,3 +308,245 @@ let result = Example.Pair(1, 2)
         |> typecheck
         |> shouldSucceed
         |> ignore
+
+    // ============================================================================
+    // RFC Section Examples 7-9: Real-World Scenarios
+    // These are the primary motivating use cases for the "more concrete" tiebreaker
+    // NOTE: Some cases require structural type comparison ('t vs Task<'T>)
+    // which is not yet implemented. Tests document current vs expected behavior.
+    // ============================================================================
+
+    [<Fact>]
+    let ``Example 7 - ValueTask constructor scenario - Task of T vs T - currently ambiguous`` () =
+        // RFC Example 7: ValueTask<'T> constructor disambiguation
+        // ValueTask(task: Task<'T>) vs ValueTask(result: 'T)
+        // FUTURE: When passing Task<int>, the Task<'T> overload should be preferred
+        // because Task<int> is more concrete than treating it as bare 'T
+        // CURRENT: Structural comparison ('T vs Task<'T>) not yet implemented - ambiguous
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+[<NoComparison>]
+type ValueTaskSimulator<'T> =
+    | FromResult of 'T
+    | FromTask of Task<'T>
+
+type ValueTaskFactory =
+    static member Create(result: 'T) = ValueTaskSimulator<'T>.FromResult result
+    static member Create(task: Task<'T>) = ValueTaskSimulator<'T>.FromTask task
+
+let createFromTask () =
+    let task = Task.FromResult(42)
+    // Currently ambiguous: structural comparison not yet implemented
+    // FUTURE: Task<int> matches Task<'T> more concretely than 'T
+    let result = ValueTaskFactory.Create(task)
+    result
+        """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41 // FS0041 - currently ambiguous, future: should resolve
+        |> ignore
+
+    [<Fact>]
+    let ``Example 7 - ValueTask constructor - bare int resolves to result overload`` () =
+        // When passing a bare int (not Task<int>), the 'T overload should still work
+        // because int is more concrete than Task<int> when the value IS an int
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+type ValueTaskFactory =
+    static member Create(result: 'T) = "result"
+    static member Create(task: Task<'T>) = "task"
+
+let createFromInt () =
+    // When passing int, the 'T overload is the only match (Task<'T> doesn't fit int)
+    let result = ValueTaskFactory.Create(42)
+    result
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 8 - CE Source overloads - FsToolkit AsyncResult pattern - currently ambiguous`` () =
+        // RFC Example 8: Computation Expression Builder - Source overloads
+        // Demonstrates CE builder patterns from FsToolkit.ErrorHandling
+        // FUTURE: Async<Result<'ok, 'error>> should be preferred over Async<'t> when applicable
+        // CURRENT: Structural comparison (Result<'ok,'error> vs 't) not yet implemented
+        FSharp """
+module Test
+
+open System
+
+type AsyncResultBuilder() =
+    member _.Return(x) = async { return Ok x }
+    member _.ReturnFrom(x) = x
+    
+    // Source overloads - the tiebreaker should prefer more concrete
+    member _.Source(result: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> = result
+    member _.Source(result: Result<'ok, 'error>) : Async<Result<'ok, 'error>> = async { return result }
+    member _.Source(asyncValue: Async<'t>) : Async<Result<'t, exn>> = 
+        async { 
+            let! v = asyncValue 
+            return Ok v 
+        }
+    
+    member _.Bind(computation: Async<Result<'ok, 'error>>, f: 'ok -> Async<Result<'ok2, 'error>>) =
+        async {
+            let! result = computation
+            match result with
+            | Ok value -> return! f value
+            | Error e -> return Error e
+        }
+
+let asyncResult = AsyncResultBuilder()
+
+// When input is Async<Result<int, string>>, the Async<Result<'ok, 'error>> overload
+// FUTURE: should be preferred over Async<'t> because Result<_,_> is more concrete than 't
+// CURRENT: Ambiguous until structural comparison is implemented
+let example () =
+    let source : Async<Result<int, string>> = async { return Ok 42 }
+    asyncResult.Source(source)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41 // FS0041 - currently ambiguous, future: should resolve
+        |> ignore
+
+    [<Fact>]
+    let ``Example 8 - CE Source overloads - Async of plain value uses generic`` () =
+        // When input is Async<int> (not Async<Result<...>>), only Async<'t> matches
+        FSharp """
+module Test
+
+type SimpleBuilder() =
+    member _.Source(asyncResult: Async<Result<'ok, 'error>>) = "async result"
+    member _.Source(asyncValue: Async<'t>) = "async generic"
+
+let builder = SimpleBuilder()
+
+// Async<int> doesn't match Async<Result<'ok, 'error>>, so Async<'t> is used
+let result = builder.Source(async { return 42 })
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 9 - CE Bind with Task types - TaskBuilder pattern`` () =
+        // RFC Example 9: TaskBuilder.fs-style Bind pattern
+        // Bind(task: Task<'a>, ...) should be preferred over Bind(taskLike: 't, ...)
+        // when passing Task<int>
+        // SUCCESS: The tiebreaker correctly prefers Task<'a> over 't
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+type TaskBuilder() =
+    member _.Return(x: 'a) : Task<'a> = Task.FromResult(x)
+    
+    // Generic await - matches any type via SRTP (simulated here as bare 't)
+    member _.Bind(taskLike: 't, continuation: 't -> Task<'b>) : Task<'b> = 
+        continuation taskLike
+        
+    // Optimized Task path - more concrete
+    member _.Bind(task: Task<'a>, continuation: 'a -> Task<'b>) : Task<'b> = 
+        task.ContinueWith(fun (t: Task<'a>) -> continuation(t.Result)).Unwrap()
+
+let taskBuilder = TaskBuilder()
+
+// When passing Task<int>, the Task<'a> overload is preferred
+// because Task<int> is more concrete than bare 't
+let example () =
+    let task = Task.FromResult(42)
+    taskBuilder.Bind(task, fun x -> Task.FromResult(x + 1))
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Example 9 - CE Bind with Task - non-task value uses generic overload`` () =
+        // When passing a non-Task value, only the generic overload matches
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+type SimpleTaskBuilder() =
+    member _.Bind(taskLike: 't, continuation: 't -> Task<'b>) = continuation taskLike
+    member _.Bind(task: Task<'a>, continuation: 'a -> Task<'b>) = 
+        task.ContinueWith(fun (t: Task<'a>) -> continuation(t.Result)).Unwrap()
+
+let builder = SimpleTaskBuilder()
+
+// When passing int (not Task), only the generic overload matches
+let result = builder.Bind(42, fun x -> Task.FromResult(x + 1))
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Real-world pattern - Source with Result types vs generic - currently ambiguous`` () =
+        // Additional real-world test: Source overload prioritization for Result types
+        // FUTURE: Result<'a, 'e> should be preferred over 't
+        // CURRENT: Structural comparison not yet implemented
+        FSharp """
+module Test
+
+type Builder() =
+    // More concrete - explicitly handles Result
+    member _.Source(x: Result<'a, 'e>) = "result"
+    // Less concrete - handles any type
+    member _.Source(x: 't) = "generic"
+
+let b = Builder()
+
+// Result<int, string> FUTURE: should prefer the Result overload
+// CURRENT: Ambiguous until structural comparison is implemented
+let result = b.Source(Ok 42 : Result<int, string>)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41 // FS0041 - currently ambiguous, future: should resolve
+        |> ignore
+
+    [<Fact>]
+    let ``Real-world pattern - Nested task result types`` () =
+        // Pattern from async CE builders with nested Task<Result<...>>
+        // SUCCESS: Task<Result<'a,'e>> is correctly preferred over Task<'t>
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+type AsyncBuilder() =
+    // More concrete - Task of Result
+    member _.Bind(x: Task<Result<'a, 'e>>, f: 'a -> Task<Result<'b, 'e>>) = 
+        x.ContinueWith(fun (t: Task<Result<'a, 'e>>) ->
+            match t.Result with
+            | Ok v -> f(v)
+            | Error e -> Task.FromResult(Error e)
+        ).Unwrap()
+        
+    // Less concrete - any Task
+    member _.Bind(x: Task<'t>, f: 't -> Task<Result<'b, 'e>>) = 
+        x.ContinueWith(fun (t: Task<'t>) -> f(t.Result)).Unwrap()
+
+let ab = AsyncBuilder()
+
+// Task<Result<int, string>> correctly prefers the Task<Result<...>> overload
+// The tiebreaker works because Result<int, string> is more concrete than 't
+let example () =
+    let taskResult : Task<Result<int, string>> = Task.FromResult(Ok 42)
+    ab.Bind(taskResult, fun x -> Task.FromResult(Ok (x + 1)))
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
