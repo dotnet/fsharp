@@ -8,188 +8,121 @@ open FSharp.Test.Compiler
 
 module NumericLiterals =
 
-    // SOURCE: casingBin.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"casingBin.fs"|])>]
-    let ``NumericLiterals - casingBin_fs`` compilation =
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"enumNegativeLiterals001.fs"|])>]
+    let ``NumericLiterals - enumNegativeLiterals001_fs - `` compilation =
         compilation
-        |> ignoreWarnings
+        |> asFsx
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    // SOURCE: casingHex.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"casingHex.fs"|])>]
-    let ``NumericLiterals - casingHex_fs`` compilation =
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
+    //<Expects status="error" span="(8,30)" id="FS0010">Unexpected symbol '-' in union case$</Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals001.fs"|])>]
+    let ``NumericLiterals - E_enumNegativeLiterals001_fs - `` compilation =
         compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: casingOct.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"casingOct.fs"|])>]
-    let ``NumericLiterals - casingOct_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: casingIEEE-lf-LF01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"casingIEEE-lf-LF01.fs"|])>]
-    let ``NumericLiterals - casingIEEE_lf_LF01_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: casingIEEE-lf-LF02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"casingIEEE-lf-LF02.fs"|])>]
-    let ``NumericLiterals - casingIEEE_lf_LF02_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: casingIEEE-lf-LF03a.fs SCFLAGS: --test:ErrorRanges
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"casingIEEE-lf-LF03a.fs"|])>]
-    let ``NumericLiterals - casingIEEE_lf_LF03a_fs`` compilation =
-        compilation
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 1156
-        |> ignore
-
-    // SOURCE: casingIEEE-lf-LF03b.fs SCFLAGS: --test:ErrorRanges
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"casingIEEE-lf-LF03b.fs"|])>]
-    let ``NumericLiterals - casingIEEE_lf_LF03b_fs`` compilation =
-        compilation
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 1156
-        |> ignore
-
-    // SOURCE: NumericLiterals01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"NumericLiterals01.fs"|])>]
-    let ``NumericLiterals - NumericLiterals01_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: MaxLiterals01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"MaxLiterals01.fs"|])>]
-    let ``NumericLiterals - MaxLiterals01_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: E_MaxLiterals01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_MaxLiterals01.fs"|])>]
-    let ``NumericLiterals - E_MaxLiterals01_fs`` compilation =
-        compilation
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 1142
-        |> ignore
-
-    // SOURCE: E_MaxLiterals02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_MaxLiterals02.fs"|])>]
-    let ``NumericLiterals - E_MaxLiterals02_fs`` compilation =
-        compilation
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 1144
-        |> ignore
-
-    // SOURCE: E_MaxLiterals03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_MaxLiterals03.fs"|])>]
-    let ``NumericLiterals - E_MaxLiterals03_fs`` compilation =
-        compilation
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 0001
-        |> ignore
-
-    // SOURCE: E_MaxLiterals04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_MaxLiterals04.fs"|])>]
-    let ``NumericLiterals - E_MaxLiterals04_fs`` compilation =
-        compilation
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 1149
-        |> ignore
-
-    // SOURCE: BigNums01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"BigNums01.fs"|])>]
-    let ``NumericLiterals - BigNums01_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: E_BigNums40.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_BigNums40.fs"|])>]
-    let ``NumericLiterals - E_BigNums40_fs`` compilation =
-        compilation
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 0784
-        |> ignore
-
-    // SOURCE: E_BigNumNotImpl01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_BigNumNotImpl01.fs"|])>]
-    let ``NumericLiterals - E_BigNumNotImpl01_fs`` compilation =
-        compilation
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 0039
-        |> ignore
-
-    // SOURCE: E_DecimalWO0Prefix.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_DecimalWO0Prefix.fs"|])>]
-    let ``NumericLiterals - E_DecimalWO0Prefix_fs`` compilation =
-        compilation
-        |> typecheck
+        |> asFsx
+        |> compile
         |> shouldFail
         |> withErrorCode 0010
+        |> withDiagnosticMessageMatches "Unexpected symbol '-' in union case$"
         |> ignore
 
-    // SOURCE: E_InvalidIEEE64.fs SCFLAGS: --test:ErrorRanges
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_InvalidIEEE64.fs"|])>]
-    let ``NumericLiterals - E_InvalidIEEE64_fs`` compilation =
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
+    //<Expects status="error" span="(8,30)" id="FS0010">Unexpected symbol '-' in union case$</Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals002.fs"|])>]
+    let ``NumericLiterals - E_enumNegativeLiterals002_fs - `` compilation =
         compilation
+        |> asFsx
+        |> compile
+        |> shouldFail
+        |> withErrorCode 0010
+        |> withDiagnosticMessageMatches "Unexpected symbol '-' in union case$"
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
+    //<Expects status="error" span="(8,30)" id="FS0010">Unexpected symbol '-' in union case$</Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals003.fs"|])>]
+    let ``NumericLiterals - E_enumNegativeLiterals003_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> compile
+        |> shouldFail
+        |> withErrorCode 0010
+        |> withDiagnosticMessageMatches "Unexpected symbol '-' in union case$"
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
+    //<Expects status="error" span="(8,30)" id="FS0010">Unexpected symbol '-' in union case$</Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals004.fs"|])>]
+    let ``NumericLiterals - E_enumNegativeLiterals004_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> compile
+        |> shouldFail
+        |> withErrorCode 0010
+        |> withDiagnosticMessageMatches "Unexpected symbol '-' in union case$"
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
+    //<Expects status="error" span="(8,30)" id="FS0010">Unexpected symbol '-' in union case$</Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals005.fs"|])>]
+    let ``NumericLiterals - E_enumNegativeLiterals005_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> compile
+        |> shouldFail
+        |> withErrorCode 0010
+        |> withDiagnosticMessageMatches "Unexpected symbol '-' in union case$"
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
+    //<Expects status="error" span="(8,30)" id="FS0010">Unexpected symbol '-' in union case$</Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals006.fs"|])>]
+    let ``NumericLiterals - E_enumNegativeLiterals006_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> compile
+        |> shouldFail
+        |> withErrorCode 0010
+        |> withDiagnosticMessageMatches "Unexpected symbol '-' in union case$"
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
+    //<Expects status="error" span="(8,30)" id="FS0010">Unexpected symbol '-' in union case$</Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals007.fs"|])>]
+    let ``NumericLiterals - E_enumNegativeLiterals007_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> compile
+        |> shouldFail
+        |> withErrorCode 0010
+        |> withDiagnosticMessageMatches "Unexpected symbol '-' in union case$"
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
+    //<Expects status="error" span="(8,23)" id="FS0951">Literal enumerations must have type int, uint, int16, uint16, int64, uint64, byte, sbyte or char</Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals008.fs"|])>]
+    let ``NumericLiterals - E_enumNegativeLiterals008_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 0951
+        |> withDiagnosticMessageMatches "Literal enumerations must have type int, uint, int16, uint16, int64, uint64, byte, sbyte or char"
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals009.fs"|])>]
+    let ``NumericLiterals - E_enumNegativeLiterals009_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withErrorCode 1153
+        |> withErrorCode 0951
+        |> withDiagnosticMessageMatches "Literal enumerations must have type int, uint, int16, uint16, int64, uint64, byte, sbyte or char"
         |> ignore
 
-    // SOURCE: E_BigIntConversion01b.fs SCFLAGS: --test:ErrorRanges
-    // Note: This test expected error but behavior may have changed in modern F#
-    [<Theory(Skip = "BigInteger to char conversion behavior may have changed"); Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_BigIntConversion01b.fs"|])>]
-    let ``NumericLiterals - E_BigIntConversion01b_fs`` compilation =
-        compilation
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 0001
-        |> ignore
-
-    // SOURCE: BigIntConversion02b.fs SCFLAGS: --test:ErrorRanges --warnaserror+
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"BigIntConversion02b.fs"|])>]
-    let ``NumericLiterals - BigIntConversion02b_fs`` compilation =
-        compilation
-        |> withOptions ["--test:ErrorRanges"; "--warnaserror+"]
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore

@@ -8,20 +8,63 @@ open FSharp.Test.Compiler
 
 module SymbolicKeywords =
 
-    // SOURCE: GreaterThanClosedParenthesis01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicKeywords", Includes=[|"GreaterThanClosedParenthesis01.fs"|])>]
-    let ``SymbolicKeywords - GreaterThanClosedParenthesis01_fs`` compilation =
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicKeywords)
+    //<Expects status="success"></Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicKeywords", Includes=[|"GreaterThanClosedCurly01.fs"|])>]
+    let ``SymbolicKeywords - GreaterThanClosedCurly01_fs - `` compilation =
         compilation
-        |> ignoreWarnings
+        |> asFsx
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    // SOURCE: GreaterThanClosedSquare02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicKeywords", Includes=[|"GreaterThanClosedSquare02.fs"|])>]
-    let ``SymbolicKeywords - GreaterThanClosedSquare02_fs`` compilation =
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicKeywords)
+    //<Expects status="success"></Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicKeywords", Includes=[|"GreaterThanClosedCurly02.fs"|])>]
+    let ``SymbolicKeywords - GreaterThanClosedCurly02_fs - `` compilation =
         compilation
-        |> ignoreWarnings
+        |> asFsx
         |> typecheck
         |> shouldSucceed
         |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicKeywords)
+    //<Expects status="success"></Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicKeywords", Includes=[|"GreaterThanClosedCurly03.fs"|])>]
+    let ``SymbolicKeywords - GreaterThanClosedCurly03_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicKeywords)
+    //<Expects status="success"></Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicKeywords", Includes=[|"GreaterThanClosedCurly04.fs"|])>]
+    let ``SymbolicKeywords - GreaterThanClosedCurly04_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicKeywords)
+    //<Expects status="success"></Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicKeywords", Includes=[|"GreaterThanClosedCurly05.fs"|])>]
+    let ``SymbolicKeywords - GreaterThanClosedCurly05_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicKeywords)
+    //<Expects status="success"></Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicKeywords", Includes=[|"GreaterThanClosedSquare01.fs"|])>]
+    let ``SymbolicKeywords - GreaterThanClosedSquare01_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+

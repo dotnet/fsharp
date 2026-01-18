@@ -8,137 +8,84 @@ open FSharp.Test.Compiler
 
 module SymbolicOperators =
 
-    // SOURCE: LessThanDotOpenParen001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"LessThanDotOpenParen001.fs"|])>]
-    let ``SymbolicOperators - LessThanDotOpenParen001_fs`` compilation =
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicOperators)
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"GreaterThanDotParen01.fs"|])>]
+    let ``SymbolicOperators - GreaterThanDotParen01_fs - `` compilation =
         compilation
-        |> ignoreWarnings
+        |> asFsx
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    // SOURCE: QMarkSimple.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkSimple.fs"|])>]
-    let ``SymbolicOperators - QMarkSimple_fs`` compilation =
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicOperators)
+    //<Expects status="error" span="(13,7)" id="FS1208">Invalid operator definition\. Prefix operator definitions must use a valid prefix operator name\.$</Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"E_GreaterThanDotParen01.fs"|])>]
+    let ``SymbolicOperators - E_GreaterThanDotParen01_fs - `` compilation =
         compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: QMarkNested.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkNested.fs"|])>]
-    let ``SymbolicOperators - QMarkNested_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: QMarkArguments.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkArguments.fs"|])>]
-    let ``SymbolicOperators - QMarkArguments_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: QMarkAssignSimple.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkAssignSimple.fs"|])>]
-    let ``SymbolicOperators - QMarkAssignSimple_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: E_QMarkGeneric.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"E_QMarkGeneric.fs"|])>]
-    let ``SymbolicOperators - E_QMarkGeneric_fs`` compilation =
-        compilation
-        |> typecheck
+        |> asFsx
+        |> compile
         |> shouldFail
-        |> withErrorCode 0717
+        |> withErrorCode 1208
+        |> withDiagnosticMessageMatches "Invalid operator definition\. Prefix operator definitions must use a valid prefix operator name\.$"
         |> ignore
 
-    // SOURCE: QMarkPrecedenceSpace.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkPrecedenceSpace.fs"|])>]
-    let ``SymbolicOperators - QMarkPrecedenceSpace_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicOperators)
+    //<Expects status="error" id="FS0670">This code is not sufficiently generic\. The type variable  \^T when  \^T : \(static member \( \+ \) :  \^T \*  \^T ->  \^a\) could not be generalized because it would escape its scope</Expects>
+    [<InlineData(true)>]            // RealSig
+    [<InlineData(false)>]           // Regular
+    [<Theory>]
+    let ``SymbolicOperators_E_LessThanDotOpenParen001_fs`` (realsig) =
+        Fsx """
 
-    // SOURCE: QMarkPrecedenceArray.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkPrecedenceArray.fs"|])>]
-    let ``SymbolicOperators - QMarkPrecedenceArray_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+type public TestType<'T,'S>() =
+    
+    member public s.Value with get() = Unchecked.defaultof<'T>
+    static member public (+++) (a : TestType<'T,'S>, b : TestType<'T,'S>) = a.Value
+    static member public (+++) (a : TestType<'T,'S>, b : 'T) = b
+    static member public (+++) (a : 'T, b : TestType<'T,'S>) = a
+    static member public (+++) (a : TestType<'T,'S>, b : 'T -> 'S) = a.Value
+    static member public (+++) (a : 'S -> 'T, b : TestType<'T,'S>) = (a 17) + b.Value
 
-    // SOURCE: QMarkPrecedenceMethodCall.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkPrecedenceMethodCall.fs"|])>]
-    let ``SymbolicOperators - QMarkPrecedenceMethodCall_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+let inline (+++) (a : ^a) (b : ^b) = ((^a or ^b): (static member (+++): ^a * ^b -> ^c) (a,b) )
 
-    // SOURCE: QMarkPrecedenceMethodCallSpace.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkPrecedenceMethodCallSpace.fs"|])>]
-    let ``SymbolicOperators - QMarkPrecedenceMethodCallSpace_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+let tt0 = TestType<int, string>()
+let tt1 = TestType<int, string>()
 
-    // SOURCE: QMarkPrecedenceInArrays.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkPrecedenceInArrays.fs"|])>]
-    let ``SymbolicOperators - QMarkPrecedenceInArrays_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+let f (x : string) = 18
 
-    // SOURCE: QMarkPrecedenceCurrying.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkPrecedenceCurrying.fs"|])>]
-    let ``SymbolicOperators - QMarkPrecedenceCurrying_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+let a0 = tt0 +++ tt1
+let a1 = tt0 +++ 11
+let a2 =  12 +++ tt1
+let a3 = tt0 +++ (fun x -> "18")
+let a4 = f +++ tt0
 
-    // SOURCE: QMarkExpressionAsArgument.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkExpressionAsArgument.fs"|])>]
-    let ``SymbolicOperators - QMarkExpressionAsArgument_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: QMarkExpressionAsArgument2.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"QMarkExpressionAsArgument2.fs"|])>]
-    let ``SymbolicOperators - QMarkExpressionAsArgument2_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // SOURCE: E_CantUseDollarSign.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"E_CantUseDollarSign.fs"|])>]
-    let ``SymbolicOperators - E_CantUseDollarSign_fs`` compilation =
-        compilation
-        |> typecheck
+let a5 = TestType<int, string>.(+++)(f, tt0)
+let a6 = TestType<int, string>.(+++)((fun (x : string) -> 18), tt0)"""
+        |> withOptions ["--flaterrors"]
+        |> withRealInternalSignature realsig
+        |> compile
         |> shouldFail
-        |> withErrorCode 0035
+        |> withErrorCode 0670
+        |> withDiagnosticMessageMatches " 'a\) could not be generalized because it would escape its scope"
         |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicOperators)
+    //<Expects status="success"></Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"GreaterThanColon001.fs"|])>]
+    let ``SymbolicOperators - GreaterThanColon001_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicOperators)
+    //<Expects status="success"></Expects>
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"E_GreaterThanColon002.fs"|])>]
+    let ``SymbolicOperators - E_GreaterThanColon002_fs - `` compilation =
+        compilation
+        |> asFsx
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+

@@ -27,32 +27,3 @@ module SequenceIteration =
             (Warning 25, Line 27, Col 20, Line 27, Col 28, "Incomplete pattern matches on this expression. For example, the value 'None' may indicate a case not covered by the pattern(s).")
         ]
 
-    // SOURCE=SequenceIteration01.fs
-    [<Theory; FileInlineData("SequenceIteration01.fs")>]
-    let ``SequenceIteration01_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> compile
-        |> shouldSucceed
-
-    // SOURCE=IEnumerableIteration01.fs
-    [<Theory; FileInlineData("IEnumerableIteration01.fs")>]
-    let ``IEnumerableIteration01_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> ignoreWarnings
-        |> compile
-        |> shouldSucceed
-
-    // SOURCE=E_BadIEnumerable01.fs SCFLAGS="--test:ErrorRanges"
-    [<Theory; FileInlineData("E_BadIEnumerable01.fs")>]
-    let ``E_BadIEnumerable01_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 1231

@@ -7,8 +7,8 @@ Migrate tests from the legacy `tests/fsharpqa` Perl-based test suite to `tests/F
 
 ### Final Statistics
 - **Total migrated tests:** ~635
-- **ComponentTests suite:** 6277 total tests (6001 passed, 0 failed, 276 skipped)
-- **Test failures:** 0 (all tests pass)
+- **CompilerOptions.Fsc tests:** 296 total (273 passed, 23 skipped)
+- **Note:** Pre-existing test failures (~294) exist in the main branch and are not related to this migration
 
 ### ✅ Completed Migrations
 | Category | Tests | Status |

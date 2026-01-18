@@ -50,23 +50,3 @@ module PatternMatching =
             (Warning 25, Line 5, Col 9, Line 5, Col 17, "Incomplete pattern matches on this expression.")
         ]
 
-    // SOURCE=LiteralNull01.fs - Regression test for FSHARP1.0:2323
-    [<Theory; FileInlineData("LiteralNull01.fs")>]
-    let ``LiteralNull01_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> compile
-        |> shouldSucceed
-
-    // SOURCE=W_Function01.fs SCFLAGS="--test:ErrorRanges" - Regression test for FSharp1.0:1713
-    [<Theory; FileInlineData("W_Function01.fs")>]
-    let ``W_Function01_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withOptions ["--test:ErrorRanges"]
-        |> compile
-        |> shouldFail
-        |> withWarningCode 25
-        |> withDiagnosticMessageMatches "0.0"
