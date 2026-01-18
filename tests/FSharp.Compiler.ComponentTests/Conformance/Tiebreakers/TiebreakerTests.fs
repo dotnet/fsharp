@@ -1143,3 +1143,140 @@ let example () =
         |> shouldFail
         |> withErrorCode 41 // Currently ambiguous - structural comparison needed
         |> ignore
+
+    // ============================================================================
+    // Byref and Span Type Tests
+    // RFC section-byref-span.md scenarios
+    // ============================================================================
+
+    [<Fact>]
+    let ``Span - Span of byte vs Span of generic - resolves to concrete byte`` () =
+        // RFC section-byref-span.md: Element type comparison for Span
+        // Span<byte> is more concrete than Span<'T>
+        FSharp """
+module Test
+
+open System
+
+type Parser =
+    static member Parse(data: Span<'T>) = "generic"
+    static member Parse(data: Span<byte>) = "bytes"
+
+let runTest () =
+    let buffer: byte[] = [| 1uy; 2uy; 3uy |]
+    let span = Span(buffer)
+    Parser.Parse(span)
+    // Concreteness: Span<byte> > Span<'T>
+    // Result: "bytes"
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ReadOnlySpan - element type comparison - concrete vs generic`` () =
+        // RFC section-byref-span.md: ReadOnlySpan<byte> > ReadOnlySpan<'T>
+        FSharp """
+module Test
+
+open System
+
+type Parser =
+    static member Parse(data: ReadOnlySpan<'T>) = "generic"
+    static member Parse(data: ReadOnlySpan<byte>) = "bytes"
+
+let runTest () =
+    let bytes: byte[] = [| 1uy; 2uy; 3uy |]
+    let roSpan = ReadOnlySpan(bytes)
+    Parser.Parse(roSpan)
+    // Concreteness: ReadOnlySpan<byte> > ReadOnlySpan<'T>
+    // Result: "bytes"
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Adhoc rule - T is always better than inref of T`` () =
+        // RFC section-byref-span.md: Existing adhoc rule T > inref<T> takes precedence
+        // This rule is applied BEFORE concreteness in compareArg
+        FSharp """
+module Test
+
+type Example =
+    static member Process(x: int) = "by value"
+    static member Process(x: inref<int>) = "by ref"
+
+let value = 42
+let result = Example.Process(value)
+// Adhoc rule: T > inref<T>
+// Result: "by value" (adhoc rule prefers T over inref<T>)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Span - generic element with nested type - Option of int vs Option of generic`` () =
+        // RFC section-byref-span.md: Concreteness applies to element types within Span
+        FSharp """
+module Test
+
+open System
+
+type DataHandler =
+    static member Handle(data: Span<Option<'T>>) = "generic option"
+    static member Handle(data: Span<Option<int>>) = "int option"
+
+let runTest () =
+    let options: Option<int>[] = [| Some 1; Some 2 |]
+    let span = Span(options)
+    DataHandler.Handle(span)
+    // Element type comparison:
+    // - Span<Option<int>>: element = Option<int> (concrete)
+    // - Span<Option<'T>>: element = Option<'T> (generic)
+    // Result: "int option" via more concrete
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Inref with nested generic - Result of int vs Result of generic`` () =
+        // RFC section-byref-span.md: Concreteness applies to types within inref
+        FSharp """
+module Test
+
+type RefProcessor =
+    static member Transform(ref: inref<Result<'T, exn>>) = "generic result"
+    static member Transform(ref: inref<Result<int, exn>>) = "int result"
+
+let runTest () =
+    let mutable result: Result<int, exn> = Ok 42
+    RefProcessor.Transform(&result)
+    // Compares: Result<int, exn> vs Result<'T, exn>
+    // Result: "int result" (more concrete in first type arg)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Adhoc rule priority - T over inref T takes precedence over concreteness`` () =
+        // RFC section-byref-span.md: Priority order - adhoc rules come before concreteness
+        // Even when comparing generic T over concrete inref<int>, adhoc rule determines outcome
+        FSharp """
+module Test
+
+type Example =
+    static member Process<'a>(x: 'a) = "generic by value"
+    static member Process(x: inref<int>) = "concrete by ref"
+
+let value = 42
+let result = Example.Process(value)
+// Even though inref<int> is more concrete type-wise, the adhoc rule T > inref<T> 
+// applies in compareArg and prefers passing by value
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
