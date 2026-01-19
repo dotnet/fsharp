@@ -321,6 +321,7 @@
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerOptions\fsi\Langversion.fs" />
     <Compile Include="CompilerOptions\fsi\Nologo.fs" />
+    <Compile Include="CompilerOptions\fsi\FsiCliTests.fs" />
     <Compile Include="CompilerOptions\CliProcessTests.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\Caches.fs" />
