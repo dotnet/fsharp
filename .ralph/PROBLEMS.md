@@ -100,3 +100,11 @@
 - ✅ CommandLineArgs tests exist and pass (BLOCKER 6 resolved)
 - **Root cause:** The tests were not properly verified after migration. The `ExnOnNonUIThread`
 
+## Subtask 5 - Implement iteration 2 (2026-01-19 20:55:46)
+-    **VERIFY_FAILED**: 300 test failures in OffsideExceptions baseline tests. While the migration
+   infrastructure (runFsiProcess, runFscProcess, TypeForwarding tests) appears complete, the build
+   fails with baseline drift errors in Warning 58 indentation tests. Investigation needed to
+   determine if this is a pre-existing issue or caused by the branch changes.
+
+
+
