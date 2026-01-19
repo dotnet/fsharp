@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <RootDir Condition="'$(RootDir)'==''">Bootstrap</RootDir>
+    <NETCORE_ENGINEERING_TELEMETRY>Bootstrap</NETCORE_ENGINEERING_TELEMETRY>
   </PropertyGroup>
 
   <ItemGroup>

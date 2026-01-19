@@ -56,26 +56,24 @@ Plan your task:
 
 Always run the core command. Always verify exit codes. No assumptions.
 
-## 1. Core Command
+## 1. Build
 ```
-./build.sh -c Release --testcoreclr
+dotnet build FSharp.sln -c Release
 ```
-Non‑zero → classify & stop.
 
-## 2. Bootstrap (Failure Detection Only)
-Two-phase build. No separate bootstrap command.  
-Early proto/tool errors (e.g. "Error building tools") → `BootstrapFailure` (capture key lines). Stop.
+## 2. Test
+```
+dotnet test tests/FSharp.Compiler.ComponentTests -c Release
+dotnet test tests/FSharp.Compiler.Service.Tests -c Release
+```
 
 ## 3. Build Failure
-Proto ok but solution build fails → `BuildFailure`.  
 Capture exit code, ≤15 error lines (`error FS`, `error F#`, `error MSB`), binlog path: `artifacts/log/Release/Build.*.binlog`.  
 Do not proceed to tests.
 
-## 4. Tests
-Core command runs CoreCLR tests:
+## 4. Tests (Full Suite)
+Additional CoreCLR tests:
 - FSharp.Test.Utilities
-- FSharp.Compiler.ComponentTests
-- FSharp.Compiler.Service.Tests
 - FSharp.Compiler.Private.Scripting.UnitTests
 - FSharp.Build.UnitTests
 - FSharp.Core.UnitTests

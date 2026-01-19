@@ -1,4 +1,5 @@
 <Project>
+  <Import Project="eng/targets/Bootstrap.targets" Condition="'$(DISABLE_ARCADE)' != 'true'" />
   <Import Project="FSharpBuild.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
   <Import Project="FSharpTests.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
   <Import Project="CoordinateXliff.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' "/>

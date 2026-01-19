@@ -1,0 +1,92 @@
+<Project>
+
+  <!--
+    Bootstrap.targets
+    
+    Automatically builds the bootstrap compiler when needed for FSharp.sln.
+    
+    Goals:
+    - dotnet build FSharp.sln works without scripts
+    - Bootstrap runs automatically on first build (if missing)
+    - Bootstrap errors surface as proper MSBuild errors
+    - Bootstrap output is silent on success
+    - Skips bootstrap when not needed (Proto config, SDK compiler mode, etc.)
+  -->
+
+  <PropertyGroup>
+    <!-- Bootstrap output directory -->
+    <BootstrapDir>$(ArtifactsDir)Bootstrap\</BootstrapDir>
+    
+    <!-- Bootstrap tool paths -->
+    <FsLexBootstrapPath>$(BootstrapDir)fslex\fslex.dll</FsLexBootstrapPath>
+    <FsYaccBootstrapPath>$(BootstrapDir)fsyacc\fsyacc.dll</FsYaccBootstrapPath>
+    <FscBootstrapPath>$(BootstrapDir)fsc\fsc.dll</FscBootstrapPath>
+    
+    <!-- Skip bootstrap when:
+         - Configuration is Proto (we ARE the bootstrap)
+         - DisableCompilerRedirection is true (user wants SDK compiler)
+         - BUILDING_USING_DOTNET is true (FSharp.Compiler.Service.sln uses SDK compiler)
+         - MSBuildProjectDirectory is under artifacts (test/temp projects, build outputs)
+    -->
+    <_SkipBootstrap Condition="'$(Configuration)' == 'Proto'">true</_SkipBootstrap>
+    <_SkipBootstrap Condition="'$(DisableCompilerRedirection)' == 'true'">true</_SkipBootstrap>
+    <_SkipBootstrap Condition="'$(BUILDING_USING_DOTNET)' == 'true'">true</_SkipBootstrap>
+    <_SkipBootstrap Condition="$(MSBuildProjectDirectory.StartsWith('$(ArtifactsDir)'))">true</_SkipBootstrap>
+  </PropertyGroup>
+
+  <!--
+    Target: _CheckBootstrapNeeded
+    
+    Runs before Restore and Build to check if bootstrap compiler exists.
+    If any of the bootstrap tools are missing, triggers bootstrap build.
+  -->
+  <Target Name="_CheckBootstrapNeeded" 
+          BeforeTargets="Restore;Build" 
+          Condition="'$(_SkipBootstrap)' != 'true'">
+    
+    <PropertyGroup>
+      <_BootstrapNeeded>false</_BootstrapNeeded>
+      <_BootstrapNeeded Condition="!Exists('$(FsLexBootstrapPath)')">true</_BootstrapNeeded>
+      <_BootstrapNeeded Condition="!Exists('$(FsYaccBootstrapPath)')">true</_BootstrapNeeded>
+      <_BootstrapNeeded Condition="!Exists('$(FscBootstrapPath)')">true</_BootstrapNeeded>
+    </PropertyGroup>
+
+    <CallTarget Targets="_RunBootstrap" Condition="'$(_BootstrapNeeded)' == 'true'" />
+  </Target>
+
+  <!--
+    Target: _RunBootstrap
+    
+    Builds the bootstrap compiler by publishing proto.proj.
+    Uses minimal verbosity for clean CI logs.
+    On failure, emits MSBuild error that stops the build.
+  -->
+  <Target Name="_RunBootstrap">
+    <Message Text="Building bootstrap compiler..." Importance="high" />
+    
+    <Exec Command="dotnet publish &quot;$(RepoRoot)proto.proj&quot; -c Proto -v:minimal"
+          IgnoreExitCode="true"
+          ConsoleToMSBuild="true">
+      <Output TaskParameter="ExitCode" PropertyName="_BootstrapExitCode" />
+    </Exec>
+
+    <Error Text="Bootstrap build failed. Check output above." 
+           Condition="'$(_BootstrapExitCode)' != '0'" />
+    
+    <Message Text="Bootstrap complete." 
+             Importance="high" 
+             Condition="'$(_BootstrapExitCode)' == '0'" />
+  </Target>
+
+  <!--
+    Target: RebuildBootstrap
+    
+    Public target to force rebuild of bootstrap compiler.
+    Usage: dotnet build /t:RebuildBootstrap
+  -->
+  <Target Name="RebuildBootstrap">
+    <RemoveDir Directories="$(BootstrapDir)" />
+    <CallTarget Targets="_RunBootstrap" />
+  </Target>
+
+</Project>
