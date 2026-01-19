@@ -1,0 +1,44 @@
+SPRINT 1: Fix core algorithm
+
+The
+   current implementation in ConstraintSolver.fs lines 3853-3866 compares `candidate.CalledTyArgs`
+   (instantiated method type arguments) but should compare parameter types. Fix by: 1) Change from
+   comparing CalledTyArgs to comparing AllUnnamedCalledArgs parameter types, 2) Use
+   compareTypeConcreteness on each CalledArgumentType, 3) Apply dominance aggregation. After fix,
+   Example 2 ('t vs Option<'t>) and Examples 5/7/8 (partial concreteness) should resolve. Run:
+   dotnet test tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj --filter
+   "FullyQualifiedName~Tiebreakers" -c Debug -f net10.0
+
+Definition of Done (DoD):
+- Build succeeds with 0 errors
+- 91 tiebreaker tests still pass
+- Tests comparing 't vs Option<'t> now resolve (flip test
+   expectations)
+- Tests comparing Result<int,'e> vs Result<'ok,'e> now resolve
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+=== SPRINT COMPLETION REQUIREMENTS ===
+This sprint MUST deliver a TESTED, BUILDING product increment.
+ALL DoD items must pass for the sprint to be complete.
+
+1. Write/update code AND tests together (not separately)
+2. Run build - it MUST succeed
+3. Run tests - they MUST pass
+4. Verify each DoD criterion is satisfied
+
+Do NOT commit untested code. Tests are part of THIS sprint, not a future one.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this sprint is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL DoD items are satisfied, COMMIT your changes,
+then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

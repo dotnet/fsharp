@@ -113,12 +113,10 @@ let result = Example.Invoke(Some 42)
         |> ignore
 
     [<Fact>]
-    let ``Example 2 - Fully Generic vs Wrapped - t vs Option of t - still ambiguous`` () =
+    let ``Example 2 - Fully Generic vs Wrapped - t vs Option of t - resolves to wrapped`` () =
         // RFC Example 2: 't vs Option<'t>
         // This tests a case where parameter structures differ ('t vs Option<'t>)
-        // The current tiebreaker implementation compares instantiated type arguments,
-        // not parameter structure shapes. This case remains ambiguous.
-        // NOTE: Full implementation of this case would require comparing parameter type shapes.
+        // Option<'t> should be preferred as it is more concrete (has concrete structure)
         FSharp """
 module Test
 
@@ -126,12 +124,11 @@ type Example =
     static member Process(value: 't) = "fully generic"
     static member Process(value: Option<'t>) = "wrapped"
 
-// Currently ambiguous: structural comparison not yet implemented
+// Resolves to wrapped - Option<'t> is more concrete than bare 't
 let result = Example.Process(Some 42)
         """
         |> typecheck
-        |> shouldFail
-        |> withErrorCode 41
+        |> shouldSucceed
         |> ignore
 
     [<Fact>]
@@ -195,11 +192,9 @@ let result = Example.Transform(Ok 42 : Result<int, string>)
         |> ignore
 
     [<Fact>]
-    let ``Example 5 - Multiple Type Parameters - Partial concreteness int ok - currently ambiguous`` () =
-        // When only int is concrete, Result<int, 'error> ideally should beat Result<'ok, 'error>
-        // NOTE: Current implementation limitation - partial concreteness with two-way comparison
-        // between fully generic and partially concrete does not yet resolve.
-        // This test documents current behavior. Future enhancement may resolve this.
+    let ``Example 5 - Multiple Type Parameters - Partial concreteness int ok - resolves`` () =
+        // When only int is concrete, Result<int, 'error> beats Result<'ok, 'error>
+        // int is more concrete than 'ok, while 'error = 'error
         FSharp """
 module Test
 
@@ -207,20 +202,17 @@ type Example =
     static member Process(value: Result<'ok, 'error>) = "fully generic"
     static member Process(value: Result<int, 'error>) = "int ok"
 
-// Currently ambiguous - see note above
+// Resolves to int ok - Result<int, 'error> is more concrete
 let result = Example.Process(Ok 42 : Result<int, exn>)
         """
         |> typecheck
-        |> shouldFail
-        |> withErrorCode 41 // FS0041 - currently ambiguous
+        |> shouldSucceed
         |> ignore
 
     [<Fact>]
-    let ``Example 5 - Multiple Type Parameters - Partial concreteness string error - currently ambiguous`` () =
-        // When only string error is concrete, Result<'ok, string> ideally should beat Result<'ok, 'error>
-        // NOTE: Current implementation limitation - partial concreteness with two-way comparison
-        // between fully generic and partially concrete does not yet resolve.
-        // This test documents current behavior. Future enhancement may resolve this.
+    let ``Example 5 - Multiple Type Parameters - Partial concreteness string error - resolves`` () =
+        // When only string error is concrete, Result<'ok, string> beats Result<'ok, 'error>
+        // 'ok = 'ok, while string is more concrete than 'error
         FSharp """
 module Test
 
@@ -228,12 +220,11 @@ type Example =
     static member Handle(value: Result<'ok, 'error>) = "fully generic"
     static member Handle(value: Result<'ok, string>) = "string error"
 
-// Currently ambiguous - see note above
+// Resolves to string error - Result<'ok, string> is more concrete
 let result = Example.Handle(Ok "test" : Result<string, string>)
         """
         |> typecheck
-        |> shouldFail
-        |> withErrorCode 41 // FS0041 - currently ambiguous
+        |> shouldSucceed
         |> ignore
 
     [<Fact>]
@@ -317,12 +308,11 @@ let result = Example.Pair(1, 2)
     // ============================================================================
 
     [<Fact>]
-    let ``Example 7 - ValueTask constructor scenario - Task of T vs T - currently ambiguous`` () =
+    let ``Example 7 - ValueTask constructor scenario - Task of T vs T - resolves to Task`` () =
         // RFC Example 7: ValueTask<'T> constructor disambiguation
         // ValueTask(task: Task<'T>) vs ValueTask(result: 'T)
-        // FUTURE: When passing Task<int>, the Task<'T> overload should be preferred
+        // When passing Task<int>, the Task<'T> overload is preferred
         // because Task<int> is more concrete than treating it as bare 'T
-        // CURRENT: Structural comparison ('T vs Task<'T>) not yet implemented - ambiguous
         FSharp """
 module Test
 
@@ -339,14 +329,12 @@ type ValueTaskFactory =
 
 let createFromTask () =
     let task = Task.FromResult(42)
-    // Currently ambiguous: structural comparison not yet implemented
-    // FUTURE: Task<int> matches Task<'T> more concretely than 'T
+    // Task<int> matches Task<'T> more concretely than 'T
     let result = ValueTaskFactory.Create(task)
     result
         """
         |> typecheck
-        |> shouldFail
-        |> withErrorCode 41 // FS0041 - currently ambiguous, future: should resolve
+        |> shouldSucceed
         |> ignore
 
     [<Fact>]
@@ -372,11 +360,10 @@ let createFromInt () =
         |> ignore
 
     [<Fact>]
-    let ``Example 8 - CE Source overloads - FsToolkit AsyncResult pattern - currently ambiguous`` () =
+    let ``Example 8 - CE Source overloads - FsToolkit AsyncResult pattern - resolves`` () =
         // RFC Example 8: Computation Expression Builder - Source overloads
         // Demonstrates CE builder patterns from FsToolkit.ErrorHandling
-        // FUTURE: Async<Result<'ok, 'error>> should be preferred over Async<'t> when applicable
-        // CURRENT: Structural comparison (Result<'ok,'error> vs 't) not yet implemented
+        // Async<Result<'ok, 'error>> is preferred over Async<'t> when applicable
         FSharp """
 module Test
 
@@ -386,7 +373,7 @@ type AsyncResultBuilder() =
     member _.Return(x) = async { return Ok x }
     member _.ReturnFrom(x) = x
     
-    // Source overloads - the tiebreaker should prefer more concrete
+    // Source overloads - the tiebreaker prefers more concrete
     member _.Source(result: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> = result
     member _.Source(result: Result<'ok, 'error>) : Async<Result<'ok, 'error>> = async { return result }
     member _.Source(asyncValue: Async<'t>) : Async<Result<'t, exn>> = 
@@ -406,15 +393,13 @@ type AsyncResultBuilder() =
 let asyncResult = AsyncResultBuilder()
 
 // When input is Async<Result<int, string>>, the Async<Result<'ok, 'error>> overload
-// FUTURE: should be preferred over Async<'t> because Result<_,_> is more concrete than 't
-// CURRENT: Ambiguous until structural comparison is implemented
+// is preferred over Async<'t> because Result<_,_> is more concrete than 't
 let example () =
     let source : Async<Result<int, string>> = async { return Ok 42 }
     asyncResult.Source(source)
         """
         |> typecheck
-        |> shouldFail
-        |> withErrorCode 41 // FS0041 - currently ambiguous, future: should resolve
+        |> shouldSucceed
         |> ignore
 
     [<Fact>]
@@ -493,10 +478,9 @@ let result = builder.Bind(42, fun x -> Task.FromResult(x + 1))
         |> ignore
 
     [<Fact>]
-    let ``Real-world pattern - Source with Result types vs generic - currently ambiguous`` () =
-        // Additional real-world test: Source overload prioritization for Result types
-        // FUTURE: Result<'a, 'e> should be preferred over 't
-        // CURRENT: Structural comparison not yet implemented
+    let ``Real-world pattern - Source with Result types vs generic - resolves`` () =
+        // Real-world test: Source overload prioritization for Result types
+        // Result<'a, 'e> is preferred over 't as it has concrete structure
         FSharp """
 module Test
 
@@ -508,13 +492,11 @@ type Builder() =
 
 let b = Builder()
 
-// Result<int, string> FUTURE: should prefer the Result overload
-// CURRENT: Ambiguous until structural comparison is implemented
+// Result<int, string> prefers the Result overload
 let result = b.Source(Ok 42 : Result<int, string>)
         """
         |> typecheck
-        |> shouldFail
-        |> withErrorCode 41 // FS0041 - currently ambiguous, future: should resolve
+        |> shouldSucceed
         |> ignore
 
     [<Fact>]
@@ -1133,15 +1115,12 @@ module AsyncResultCEExtensions =
 let asyncResult = AsyncResultBuilder()
 
 // When Source is called with Async<Result<int, string>>, the more concrete overload wins
-// FUTURE: Currently ambiguous due to structural comparison limitation
-// This test documents expected behavior when structural comparison is implemented
 let example () =
     let source : Async<Result<int, string>> = async { return Ok 42 }
     asyncResult.Source(source)
         """
         |> typecheck
-        |> shouldFail
-        |> withErrorCode 41 // Currently ambiguous - structural comparison needed
+        |> shouldSucceed
         |> ignore
 
     // ============================================================================

@@ -3852,12 +3852,15 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
         // Prefer more concrete type instantiations (RFC FS-XXXX: "Most Concrete" tiebreaker)
         // Only activates when BOTH methods are generic (have type arguments)
+        // Compare FORMAL parameter types (not instantiated) to handle cases like 't vs Option<'t>
         let c = 
             if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
-                let tyArgs1 = candidate.CalledTyArgs
-                let tyArgs2 = other.CalledTyArgs
-                if tyArgs1.Length = tyArgs2.Length then
-                    let comparisons = List.map2 compareTypeConcreteness tyArgs1 tyArgs2
+                // Get formal (uninstantiated) parameter types using FormalMethodInst
+                let formalParams1 = candidate.Method.GetParamDatas(csenv.amap, m, candidate.Method.FormalMethodInst) |> List.concat
+                let formalParams2 = other.Method.GetParamDatas(csenv.amap, m, other.Method.FormalMethodInst) |> List.concat
+                if formalParams1.Length = formalParams2.Length then
+                    let comparisons = List.map2 (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) -> 
+                        compareTypeConcreteness ty1 ty2) formalParams1 formalParams2
                     aggregateComparisons comparisons
                 else
                     0

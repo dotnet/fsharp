@@ -1,0 +1,77 @@
+You are an ARCHITECT and PRODUCT OWNER. Plan work as SPRINTS delivering tested product increments.
+
+REQUEST: A previous team worked on /Users/tomasgrosup/code/RFCs/tiebreakers/RFC_draft  support - scan the full folder and all .md files in it, this is your context. This repo has a branch with MANY commited, unpushed, unmerged changes. But it is NOT done. An analyst has created /Users/tomasgrosup/code/RFCs/tiebreakers/impl/notes/existing-rules.md . The former pprogress reporter tracked /Users/tomasgrosup/code/RFCs/tiebreakers/.ralph/VISION.md  for the impl, but maybe the RFC is a better guiding doc. Anyway, crosscheck the RFC with what was done. Be absolutely fucking brutally honest about what is missing. Optimize for a possibly long line of partial incremental successes being build one by one. Do make sure you always build and test, plain dotnet test with filter and with c=Debug and tfm=net10 should be just fine for this case (as there are no IL tests I would imagine, or? If there are , IL tests like EmittedIl suite does need to be built in Release mode for propper comparison. LEts plan to iterate on it many times
+
+=== SPRINT-BASED PLANNING ===
+Each sprint is a PRODUCT INCREMENT with a clear Definition of Done (DoD).
+
+CRITICAL RULES:
+- NEVER create separate 'testing', 'add tests', or 'write tests' sprints
+- Each sprint MUST include its own testing - the increment must build and pass tests
+- A sprint is only complete when ALL DoD criteria pass
+- Think: 'What is the smallest shippable increment that adds value?'
+
+ANTI-PATTERNS (DO NOT DO):
+- Sprint 1: Implement feature X, Sprint 2: Add tests for X  <- WRONG
+- Sprint 1: Scaffold, Sprint 2: Implement, Sprint 3: Test  <- WRONG
+- Any sprint that produces untested code                   <- WRONG
+
+=== DEFINITION OF DONE (DoD) ===
+Each sprint MUST have a DoD with TECHNICALLY EXECUTABLE criteria.
+The DoD is validated after each iteration - failed items trigger re-iteration.
+
+DoD MUST include (adapt to task):
+1. BUILD: 'Build/compile succeeds without errors or warnings'
+2. TESTS: 'All existing tests pass', 'New tests cover the feature'
+3. QUALITY:
+   - 'No code duplication introduced (check with tools or review)'
+   - 'No test code duplication'
+   - 'No unnecessary allocations or performance overhead'
+   - 'Proper architectural placement (right project/module/layer)'
+4. FUNCTIONAL: 'Feature X works as specified'
+
+DoD EXAMPLES (adapt based on task type):
+- 'dotnet build completes with 0 errors and 0 warnings'
+- 'dotnet test passes with 100% of tests green'
+- 'New code is in src/Services/, not mixed with controllers'
+- 'No LINQ allocations in hot path'
+- 'No copy-paste from existing similar feature'
+
+GUIDELINES:
+- Aim for 4-10 sprints (fewer for simple tasks, more for complex ones)
+- Each sprint should be completable in one focused session
+- Sprints run sequentially - later ones can depend on earlier ones
+- Don't split artificially - only split where there's a natural product boundary
+
+=== REPLANNING AWARENESS ===
+After each sprint completes, the orchestrator may trigger replanning.
+When replanning:
+- Read .ralph/CONTEXT.md to see what previous sprints accomplished
+- Read .ralph/REPLAN.md if present - this contains feedback from a failed/adjusted sprint
+- Read .ralph/PROBLEMS.md for issues encountered
+- ADJUST the remaining backlog based on what you learn
+- You may ADD, REMOVE, REORDER, or MODIFY future sprints
+- The goal is to deliver the best product, not to follow the original plan blindly
+
+First, analyze the codebase thoroughly.
+Check .ralph/ folder for any previous attempts (VISION.md, CONTEXT.md, logs, PROBLEMS.md, REPLAN.md).
+
+Then create or update .ralph/VISION.md with:
+- High-level goal and approach
+- Key design decisions and rationale
+- Important context for sprints
+- Any constraints or gotchas discovered
+- Lessons learned from previous attempts (if any)
+
+Finally, output JSON with the sprints:
+
+```json
+{"overview": "approach", "subtasks": [{"id": 1, "name": "short name for table", "description": "robust description of what to implement AND test, with context", "dod": ["Build succeeds with 0 errors", "All tests pass", "No code duplication", "Feature X works"]}]}
+```
+
+SCHEMA NOTES:
+- 'name': Short name (shown in table)
+- 'description': Detailed description for the executing agent
+- 'dod': Definition of Done - list of EXECUTABLE criteria (validated after each iteration)
+
+Output PLAN_COMPLETE when done.
