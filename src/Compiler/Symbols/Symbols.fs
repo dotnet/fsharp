@@ -93,7 +93,8 @@ module Impl =
         if doc.IsEmpty then
             FSharpXmlDoc.FromXmlText doc
         else
-            let expandedDoc = expandInheritDoc (Some cenv.infoReader) (Some cenv.thisCcu) cenv.thisCcuTy implicitTargetCrefOpt doc.Range Set.empty doc
+            let allCcus = cenv.tcImports.GetCcusInDeclOrder()
+            let expandedDoc = expandInheritDoc (Some allCcus) (Some cenv.thisCcu) cenv.thisCcuTy implicitTargetCrefOpt doc.Range Set.empty doc
             FSharpXmlDoc.FromXmlText expandedDoc
 
     let makeElaboratedXmlDoc (doc: XmlDoc) =

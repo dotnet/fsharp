@@ -347,8 +347,9 @@ module internal SymbolHelpers =
             // Get the CCU of the item for same-compilation resolution
             let ccuOpt = ccuOfItem infoReader.g d
             // Expand <inheritdoc> elements for tooltips (design-time)
-            // Pass None for currentModuleType and implicitTargetCref
-            let expandedDoc = expandInheritDoc (Some infoReader) ccuOpt None None m Set.empty xmlDoc
+            // Pass None for allCcus (external assemblies) as we don't have TcImports here
+            // Same-compilation types will still resolve via ccuOpt
+            let expandedDoc = expandInheritDoc None ccuOpt None None m Set.empty xmlDoc
             FSharpXmlDoc.FromXmlText expandedDoc
         | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 

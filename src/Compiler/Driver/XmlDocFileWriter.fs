@@ -3,8 +3,8 @@
 module internal FSharp.Compiler.XmlDocFileWriter
 
 open System.IO
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.XmlDocInheritance
@@ -80,7 +80,8 @@ module XmlDocWriter =
 
         doModuleSig None generatedCcu.Contents
 
-    let WriteXmlDocFile (g, infoReader: InfoReader, assemblyName, generatedCcu: CcuThunk, xmlFile) =
+    let WriteXmlDocFile (g, tcImports: TcImports, assemblyName, generatedCcu: CcuThunk, xmlFile) =
+        let allCcus = tcImports.GetCcusInDeclOrder()
         if not (FileSystemUtils.checkSuffix xmlFile "xml") then
             error (Error(FSComp.SR.docfileNoXmlSuffix (), Range.rangeStartup))
 
@@ -133,7 +134,7 @@ module XmlDocWriter =
 
                 let expandedDoc =
                     XmlDocInheritance.expandInheritDoc
-                        (Some infoReader)
+                        (Some allCcus)
                         (Some generatedCcu)
                         (Some ccuMtyp)
                         implicitTargetOpt
