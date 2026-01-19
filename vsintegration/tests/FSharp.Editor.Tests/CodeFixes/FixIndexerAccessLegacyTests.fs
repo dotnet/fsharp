@@ -28,6 +28,6 @@ let first = list.[2]
 """
             }
 
-    let actual = codeFix |> tryFix code (Manual("list[2]", "FS3217"))
+    let actual = codeFix |> tryFix code (Manual("[2]", "FS3217"))
 
     Assert.Equal(expected, actual)
