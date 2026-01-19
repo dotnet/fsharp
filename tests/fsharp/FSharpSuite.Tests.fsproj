@@ -53,6 +53,7 @@
     <Compile Include="Compiler\Language\OptionalInteropTests.fs" />
     <Compile Include="Compiler\Language\StaticNameResolutionTests.fs" />
     <Compile Include="Compiler\Language\UIntTests.fs" />
+    <Compile Include="Compiler\Language\FixedIndexSliceTests.fs" />
     <Compile Include="Compiler\Language\SlicingQuotationTests.fs" />
     <Compile Include="Compiler\Language\CustomCollectionTests.fs" />
     <Compile Include="Compiler\Language\HatDesugaringTests.fs" />
