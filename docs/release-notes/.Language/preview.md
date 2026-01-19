@@ -11,7 +11,6 @@
 * Allow `let!`, `use!`, `and!` type annotations without requiring parentheses (([PR #18508](https://github.com/dotnet/fsharp/pull/18508) and [PR #18682](https://github.com/dotnet/fsharp/pull/18682)))
 * Exception names are now validated for illegal characters using the same mechanism as types/modules/namespaces ([Issue #18763](https://github.com/dotnet/fsharp/issues/18763))
 * Support tail calls in computation expressions ([PR #18804](https://github.com/dotnet/fsharp/pull/18804))
-* Add `--disableLanguageFeature` CLI switch and MSBuild property to selectively disable specific F# language features on a per-project basis. ([PR #TBD](https://github.com/dotnet/fsharp/pull/TBD))
 
 ### Fixed
 
