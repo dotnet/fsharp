@@ -119,9 +119,9 @@ type LanguageVersion(versionText) =
     static let languageVersion100 = 10.0m
     static let languageVersion110 = 11.0m
     static let previewVersion = 9999m // Language version when preview specified
-    static let defaultVersion = languageVersion110 // Language version when default specified
+    static let defaultVersion = languageVersion100 // Language version when default specified
     static let latestVersion = defaultVersion // Language version when latest specified
-    static let latestMajorVersion = languageVersion110 // Language version when latestmajor specified
+    static let latestMajorVersion = defaultVersion // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
 
