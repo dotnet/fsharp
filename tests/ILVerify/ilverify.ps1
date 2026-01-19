@@ -27,7 +27,10 @@ Write-Host "Checking whether running on Windows: $IsWindows"
 Write-Host "Repository path: $repo_path"
 
 [string] $script = if ($IsWindows) { Join-Path $repo_path "build.cmd" } else { Join-Path $repo_path "build.sh" }
-[string] $additional_arguments = if ($IsWindows) { "-noVisualStudio -p:UpdateXlfOnBuild=false" } else { "-p:UpdateXlfOnBuild=false" }
+[string] $additional_arguments = if ($IsWindows) { "-noVisualStudio" } else { "" }
+
+# Set environment variable to disable UpdateXlf target (not needed for IL verification)
+$env:UpdateXlfOnBuild = "false"
 
 # Set configurations to build
 [string[]] $configurations = @("Debug", "Release")
