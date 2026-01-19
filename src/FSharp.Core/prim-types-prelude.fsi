@@ -6,7 +6,6 @@
 
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
 #nowarn "61" // The containing type can use <c>null</c> as a representation value for its nullary union case. This member will be compiled as a static member.
-#nowarn "62" // This construct is for ML compatibility. The syntax <c>module ... : sig .. end</c> is deprecated unless OCaml compatibility is enabled. Consider using <c>module ... = begin .. end'.
 
 // Basic F# type definitions, functions and operators.
 namespace Microsoft.FSharp.Core

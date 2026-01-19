@@ -1129,17 +1129,6 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 let defineSymbol tcConfigB s =
     tcConfigB.conditionalDefines <- s :: tcConfigB.conditionalDefines
 
-let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
-    CompilerOption(
-        "mlcompatibility",
-        tagNone,
-        OptionUnit(fun () ->
-            tcConfigB.mlCompatibility <- true
-            tcConfigB.TurnWarningOff(rangeCmdArgs, "62")),
-        None,
-        Some(FSComp.SR.optsMlcompatibility ())
-    )
-
 let GetLanguageVersions () =
     seq {
         FSComp.SR.optsSupportedLangVersions ()
@@ -1153,6 +1142,8 @@ let setLanguageVersion (specifiedVersion: string) =
         ()
     elif not (LanguageVersion.ContainsVersion specifiedVersion) then
         error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+    elif not (LanguageVersion.IsVersionSupported specifiedVersion) then
+        error (Error(FSComp.SR.optsLangVersionOutOfSupport (specifiedVersion, "10.0"), rangeCmdArgs))
 
     LanguageVersion(specifiedVersion)
 
@@ -1191,8 +1182,6 @@ let languageFlags tcConfigB =
         )
 
         CompilerOption("define", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsDefine ()))
-
-        mlCompatibilityFlag tcConfigB
 
         CompilerOption(
             "strict-indentation",
@@ -1887,15 +1876,6 @@ let compilingFsLibNoBigIntFlag =
         None
     )
 
-let mlKeywordsFlag =
-    CompilerOption(
-        "ml-keywords",
-        tagNone,
-        OptionUnit(fun () -> ()),
-        Some(DeprecatedCommandLineOptionNoDescription("--ml-keywords", rangeCmdArgs)),
-        None
-    )
-
 let gnuStyleErrorsFlag tcConfigB =
     CompilerOption(
         "gnu-style-errors",
@@ -1905,39 +1885,10 @@ let gnuStyleErrorsFlag tcConfigB =
         None
     )
 
-let deprecatedFlagsBoth tcConfigB =
-    [
-        CompilerOption(
-            "light",
-            tagNone,
-            OptionUnit(fun () -> tcConfigB.indentationAwareSyntax <- Some true),
-            Some(DeprecatedCommandLineOptionNoDescription("--light", rangeCmdArgs)),
-            None
-        )
-
-        CompilerOption(
-            "indentation-syntax",
-            tagNone,
-            OptionUnit(fun () -> tcConfigB.indentationAwareSyntax <- Some true),
-            Some(DeprecatedCommandLineOptionNoDescription("--indentation-syntax", rangeCmdArgs)),
-            None
-        )
-
-        CompilerOption(
-            "no-indentation-syntax",
-            tagNone,
-            OptionUnit(fun () -> tcConfigB.indentationAwareSyntax <- Some false),
-            Some(DeprecatedCommandLineOptionNoDescription("--no-indentation-syntax", rangeCmdArgs)),
-            None
-        )
-    ]
-
-let deprecatedFlagsFsi tcConfigB =
-    [ noFrameworkFlag false tcConfigB; yield! deprecatedFlagsBoth tcConfigB ]
+let deprecatedFlagsFsi tcConfigB = [ noFrameworkFlag false tcConfigB ]
 
 let deprecatedFlagsFsc tcConfigB =
-    deprecatedFlagsBoth tcConfigB
-    @ [
+    [
         cliRootFlag tcConfigB
         CompilerOption(
             "jit-optimize",
@@ -2124,7 +2075,6 @@ let deprecatedFlagsFsc tcConfigB =
             None
         )
 
-        mlKeywordsFlag
         gnuStyleErrorsFlag tcConfigB
     ]
 

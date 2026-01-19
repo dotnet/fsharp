@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
-#light
+
 
 // Verify error if you declare a setter twice
 

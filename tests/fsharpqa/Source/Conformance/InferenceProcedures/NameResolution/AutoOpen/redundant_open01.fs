@@ -3,7 +3,7 @@
 // Auto-open of my own namespace
 // Case: redundant open
 //      
-#light 
+
 
 module XX.YY.ZZ.MM
    open XX.YY.ZZ      // redundant, but ok!

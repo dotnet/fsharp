@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #Attributes 
-#light
+
 
 // FSB 950, Custom attributes with flags enumeration arguments
 

@@ -1,5 +1,5 @@
 // #Conformance #TypeRelatedExpressions #TypeAnnotations 
-#light
+
 
 [<Measure>] type s
 

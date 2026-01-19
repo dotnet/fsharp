@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #Enums 
-#light
+
 
 // FSB 1552, Internal error: badly formed Item_ctor_group.
 //<Expects id="FS0039" span="(21,26-21,31)" status="error">The value or constructor 'Black' is not defined</Expects>

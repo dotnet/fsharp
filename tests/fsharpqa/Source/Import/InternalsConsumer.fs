@@ -1,5 +1,5 @@
 // #Regression #NoMT #Import 
-#light
+
 
 // Regression test for FSharp1.0:3882 - C# internals are not visible to F# when C# uses the InternalsVisibleTo attribute
 // Greetings and Calc classes are exposed by a referenced C# class library

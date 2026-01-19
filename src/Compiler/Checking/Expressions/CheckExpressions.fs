@@ -2651,6 +2651,7 @@ module EventDeclarationNormalization =
             let MakeOne (prefix, target) =
                 let declPattern = RenameBindingPattern (fun s -> prefix + s) declPattern
                 let argName = "handler"
+                let mBinding = mBinding.MakeSynthetic()
 
                 // modify the rhs and argument data
                 let bindingRhs, valSynData =
@@ -2662,6 +2663,7 @@ module EventDeclarationNormalization =
                    match rhsExpr with
                    // Detect 'fun () -> e' which results from the compilation of a property getter
                    | SynExpr.Lambda (args=SynSimplePats.SimplePats(pats = []); body=trueRhsExpr; range=m) ->
+                       let m = m.MakeSynthetic()
                        let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, SynLongIdent([ident(target, m)], [], [None]), m)) (SynExpr.Ident (ident(argName, m))) m
 
                        // reconstitute rhsExpr
@@ -3789,14 +3791,12 @@ let buildApp (cenv: cenv) expr resultTy arg m =
 
     // Special rule for building applications of the 'x && y' operator
     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [x0], _)), _
-         when valRefEq g vref g.and_vref
-           || valRefEq g vref g.and2_vref ->
+         when valRefEq g vref g.and2_vref ->
         MakeApplicableExprNoFlex cenv (mkLazyAnd g m x0 arg), resultTy
 
     // Special rule for building applications of the 'x || y' operator
     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [x0], _)), _
-         when valRefEq g vref g.or_vref
-           || valRefEq g vref g.or2_vref ->
+         when valRefEq g vref g.or2_vref ->
         MakeApplicableExprNoFlex cenv (mkLazyOr g m x0 arg ), resultTy
 
     // Special rule for building applications of the 'reraise' operator
@@ -8627,9 +8627,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                     match leftExpr with
                     | ApplicableExpr(expr=Expr.Val (vref, _, _))
                     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [_], _))
-                         when valRefEq g vref g.and_vref
-                           || valRefEq g vref g.and2_vref
-                           || valRefEq g vref g.or_vref
+                         when valRefEq g vref g.and2_vref
                            || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
                     | _ -> env
 

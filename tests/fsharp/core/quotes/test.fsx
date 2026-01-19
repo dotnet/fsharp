@@ -2,7 +2,7 @@
 #if TESTS_AS_APP
 module Core_quotes
 #endif
-#light
+
 
 #if !TESTS_AS_APP && !NETCOREAPP
 #r "cslib.dll"

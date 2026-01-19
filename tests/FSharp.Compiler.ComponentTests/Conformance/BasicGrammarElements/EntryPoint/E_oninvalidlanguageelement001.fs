@@ -4,7 +4,7 @@
 // attribute on invalid language element (error)
 
 
-#light
+
 
 [<EntryPoint>]
 module M =
