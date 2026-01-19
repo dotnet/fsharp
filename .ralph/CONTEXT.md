@@ -24,3 +24,34 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Verification:** Build succeeded, 91/91 tiebreaker tests passing.
 
 ---
+
+## Sprint 2: Flip test expectations
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 3: Add diagnostics FS35xx
+
+**Summary:** Completed in 3 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 4: Add language feature flag
+
+**Summary:** Added `LanguageFeature.MoreConcreteTiebreaker` as F# 10.0 stable feature.
+
+**Changes:**
+- Added `MoreConcreteTiebreaker` to LanguageFeature enum in LanguageFeatures.fs/fsi
+- Added feature to version 10.0 in features dictionary
+- Added feature string `featureMoreConcreteTiebreaker` in FSComp.txt
+- Gated `better()` concreteness comparison with `g.langVersion.SupportsFeature(LanguageFeature.MoreConcreteTiebreaker)`
+- Gated `wasConcretenessTiebreaker` helper similarly
+
+**Verification:** Build succeeded, 93/93 tiebreaker tests passing.
+
+---

@@ -34,16 +34,17 @@
 
 ### What is NOT Done (Remaining Work)
 
-1. ❌ **Diagnostics (FS3570/FS3571) NOT IMPLEMENTED**
+1. ✅ **Diagnostics (FS3575/FS3576) IMPLEMENTED**
    - RFC requires optional warnings for transparency
-   - FS3570/FS3571 are NOT in FSComp.txt (FS3570 is used for a different feature!)
-   - Need to find new warning numbers
-   - Need to wire up warning emission in ConstraintSolver.fs
+   - FS3575 (tcMoreConcreteTiebreakerUsed) - warning when concreteness tiebreaker selects a winner
+   - FS3576 (tcGenericOverloadBypassed) - reserved for future use
+   - Both are off by default, can be enabled with --warnon:3575
+   - Warning emission wired up in ConstraintSolver.fs via wasConcretenessTiebreaker helper
 
-2. ❌ **Language Feature Flag NOT ADDED**
-   - RFC implementation should be behind a language feature flag
-   - `LanguageFeature.MoreConcreteTiebreaker` not defined
-   - No preview/opt-in mechanism
+2. ✅ **Language Feature Flag ADDED**
+   - `LanguageFeature.MoreConcreteTiebreaker` defined as F# 10.0 stable feature
+   - Tiebreaker code gated with `g.langVersion.SupportsFeature(LanguageFeature.MoreConcreteTiebreaker)`
+   - Feature can be disabled with `--langversion:9.0` if regressions are found
 
 3. ❌ **Constraint Count Comparison NOT WORKING**
    - Algorithm pseudo-code says: more constraints = more concrete
