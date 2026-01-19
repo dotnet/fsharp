@@ -8,6 +8,7 @@
     <XunitRunnerConsoleVersion Condition="'$(XunitRunnerConsoleVersion)' == ''">3.0.0-pre.25</XunitRunnerConsoleVersion>
     <XunitRunnerVisualStudioVersion Condition="'$(XunitRunnerVisualStudioVersion)' == ''">3.1.4</XunitRunnerVisualStudioVersion>
     <MicrosoftTestPlatformVersion Condition="'$(MicrosoftTestPlatformVersion)' == ''">17.14.1</MicrosoftTestPlatformVersion>
+    <MicrosoftTestingExtensionsHangDumpVersion Condition="'$(MicrosoftTestingExtensionsHangDumpVersion)' == ''">1.5.1</MicrosoftTestingExtensionsHangDumpVersion>
   </PropertyGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
