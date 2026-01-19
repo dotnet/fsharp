@@ -452,10 +452,10 @@ let AnalyzeObjExprStructCaptures
         | Some _ ->
             allFreeVars
             |> List.filter (fun v ->
-                not v.IsModuleBinding &&
-                not v.IsMemberOrModuleBinding &&
-                not (Set.contains v.Stamp methodParams) &&
-                v.LogicalName <> ".ctor")
+                not v.IsModuleBinding
+                && not v.IsMemberOrModuleBinding
+                && not (Set.contains v.Stamp methodParams)
+                && v.LogicalName <> ".ctor")
 
     let shouldTransform = not (List.isEmpty structCaptures)
     (shouldTransform, structCaptures, methodParams)
@@ -478,15 +478,20 @@ let TransformObjExprForStructByrefCaptures
     let localBindings =
         structCaptures
         |> List.map (fun v ->
-            let local, _localExpr = mkCompGenLocal mWholeExpr (v.LogicalName + "$captured") v.Type
+            let local, _localExpr =
+                mkCompGenLocal mWholeExpr (v.LogicalName + "$captured") v.Type
+
             let readExpr = exprForVal mWholeExpr v
             (v, local, readExpr))
 
     // Build remap: original val -> local val
     let remap =
         localBindings
-        |> List.fold (fun (r: Remap) (orig, local, _) ->
-            { r with valRemap = r.valRemap.Add orig (mkLocalValRef local) })
+        |> List.fold
+            (fun (r: Remap) (orig, local, _) ->
+                { r with
+                    valRemap = r.valRemap.Add orig (mkLocalValRef local)
+                })
             Remap.Empty
 
     // Helper to remap an object expression method
@@ -496,14 +501,17 @@ let TransformObjExprForStructByrefCaptures
     // Remap all parts of the object expression
     let ctorCall' = remapExpr g CloneAll remap ctorCall
     let overrides' = overrides |> List.map remapMethod
-    let extraImpls' = extraImpls |> List.map (fun (ty, ms) -> (ty, ms |> List.map remapMethod))
+
+    let extraImpls' =
+        extraImpls |> List.map (fun (ty, ms) -> (ty, ms |> List.map remapMethod))
 
     // Build the object expression with remapped references
-    let objExpr = mkObjExpr(objtyR, baseValOpt, ctorCall', overrides', extraImpls', mWholeExpr)
+    let objExpr =
+        mkObjExpr (objtyR, baseValOpt, ctorCall', overrides', extraImpls', mWholeExpr)
+
     let objExpr = mkCoerceIfNeeded g realObjTy objtyR objExpr
 
     // Wrap with let bindings: let x$captured = x in ...
     localBindings
-    |> List.foldBack (fun (_, local, valueExpr) body ->
-        mkLet DebugPointAtBinding.NoneAtInvisible mWholeExpr local valueExpr body)
+    |> List.foldBack (fun (_, local, valueExpr) body -> mkLet DebugPointAtBinding.NoneAtInvisible mWholeExpr local valueExpr body)
     <| objExpr
