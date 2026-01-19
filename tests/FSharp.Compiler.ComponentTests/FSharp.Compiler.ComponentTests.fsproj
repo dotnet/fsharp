@@ -319,6 +319,7 @@
     <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
+    <Compile Include="CompilerOptions\fsc\FscCliTests.fs" />
     <Compile Include="CompilerOptions\fsi\Langversion.fs" />
     <Compile Include="CompilerOptions\fsi\Nologo.fs" />
     <Compile Include="CompilerOptions\fsi\FsiCliTests.fs" />
