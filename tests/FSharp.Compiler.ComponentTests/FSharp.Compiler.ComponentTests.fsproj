@@ -129,6 +129,8 @@
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\AbstractMembers\AbstractMembers.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\DelegateTypes\DelegateTypes.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\InterfaceTypes\InterfaceTypes.fs" />
+    <Compile Include="Conformance\TypeForwarding\TypeForwardingTests.fs" />
+    <Compile Include="Conformance\TypeForwarding\NegativeCases.fs" />
     <Compile Include="Conformance\Types\RecordTypes\AnonymousRecords.fs" />
     <Compile Include="Conformance\Types\RecordTypes\RecordTypes.fs" />
     <Compile Include="Conformance\Types\StructTypes\StructTypes.fs" />
