@@ -294,14 +294,6 @@ let OpenModuleOrNamespaceRefs tcSink g amap scopem root env mvvs openDeclaration
     CallOpenDeclarationSink tcSink openDeclaration
     env
 
-/// Adjust the TcEnv to account for opening a type implied by an `open type` declaration
-let OpenTypeContent tcSink g amap scopem env (ty: TType) openDeclaration =
-    let env =
-        { env with eNameResEnv = AddTypeContentsToNameEnv g amap env.eAccessRights scopem env.eNameResEnv ty }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
-    CallOpenDeclarationSink tcSink openDeclaration
-    env
-
 /// Adjust the TcEnv to account for a new root Ccu being available, e.g. a referenced assembly
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =
     if isNil modrefs then env else
@@ -679,99 +671,9 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv augSpfn =
 // Bind 'open' declarations
 //------------------------------------------------------------------------- 
 
-let TcOpenLidAndPermitAutoResolve tcSink (env: TcEnv) amap (longId : Ident list) =
-    let ad = env.AccessRights
-    match longId with
-    | [] -> []
-    | id :: rest ->
-        let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true ShouldNotifySink.Yes with 
-        | Result res -> res
-        | Exception err ->
-            errorR(err); []
-
 let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) = 
-    match TcOpenLidAndPermitAutoResolve tcSink env amap longId with
-    | [] -> env, []
-    | modrefs ->
-
-    // validate opened namespace names
-    for id in longId do
-        if id.idText <> MangledGlobalName then
-            CheckNamespaceModuleOrTypeName g id
-
-    let IsPartiallyQualifiedNamespace (modref: ModuleOrNamespaceRef) = 
-        let (CompPath(_, _, p)) = modref.CompilationPath 
-        // Bug FSharp 1.0 3274: FSI paths don't count when determining this warning
-        let p = 
-            match p with 
-            | [] -> []
-            | (h, _) :: t -> if h.StartsWithOrdinal FsiDynamicModulePrefix then t else p
-
-        // See https://fslang.uservoice.com/forums/245727-f-language/suggestions/6107641-make-microsoft-prefix-optional-when-using-core-f
-        let isFSharpCoreSpecialCase =
-            match ccuOfTyconRef modref with 
-            | None -> false
-            | Some ccu -> 
-                ccuEq ccu g.fslibCcu &&
-                // Check if we're using a reference one string shorter than what we expect.
-                //
-                // "p" is the fully qualified path _containing_ the thing we're opening, e.g. "Microsoft.FSharp" when opening "Microsoft.FSharp.Data"
-                // "longId" is the text being used, e.g. "FSharp.Data"
-                //    Length of thing being opened = p.Length + 1
-                //    Length of reference = longId.Length
-                // So the reference is a "shortened" reference if (p.Length + 1) - 1 = longId.Length
-                (p.Length + 1) - 1 = longId.Length && 
-                fst p[0] = "Microsoft" 
-
-        modref.IsNamespace && 
-        p.Length >= longId.Length &&
-        not isFSharpCoreSpecialCase
-        // Allow "open Foo" for "Microsoft.Foo" from FSharp.Core
-
-    modrefs |> List.iter (fun (_, modref, _) ->
-       if modref.IsModule && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute modref.Attribs then 
-           errorR(Error(FSComp.SR.tcModuleRequiresQualifiedAccess(fullDisplayTextOfModRef modref), m)))
-
-    // Bug FSharp 1.0 3133: 'open Lexing'. Skip this warning if we successfully resolved to at least a module name
-    if not (modrefs |> List.exists (fun (_, modref, _) -> modref.IsModule && not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute modref.Attribs))) then
-        modrefs |> List.iter (fun (_, modref, _) ->
-            if IsPartiallyQualifiedNamespace modref then 
-                 errorR(Error(FSComp.SR.tcOpenUsedWithPartiallyQualifiedPath(fullDisplayTextOfModRef modref), m)))
-        
-    let modrefs = List.map p23 modrefs
-    modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
-
-    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.ModuleOrNamespace (SynLongIdent(longId, [], []), m), modrefs, [], scopem, false)
-    let env = OpenModuleOrNamespaceRefs tcSink g amap scopem false env modrefs openDecl
-    env, [openDecl]
-
-let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
-    let g = cenv.g
-
-    checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
-
-    let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
-
-    if not (isAppTy g ty) then
-        errorR(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
-
-    if isByrefTy g ty then
-        errorR(Error(FSComp.SR.tcIllegalByrefsInOpenTypeDeclaration(), m))
-
-    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type (synType, m), [], [ty], scopem, false)
-    let env = OpenTypeContent cenv.tcSink g cenv.amap scopem env ty openDecl
-    env, [openDecl]
-
-let TcOpenDecl (cenv: cenv) mOpenDecl scopem env target = 
-    let g = cenv.g
-    match target with
-    | SynOpenDeclTarget.ModuleOrNamespace (longId, m) ->
-        TcOpenModuleOrNamespaceDecl cenv.tcSink g cenv.amap scopem env (longId.LongIdent, m)
-
-    | SynOpenDeclTarget.Type (synType, m) ->
-        TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
-        
+    CheckBasics.TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m)
+    
 let MakeSafeInitField (cenv: cenv) env m isStatic = 
     let id =
         // Ensure that we have an g.CompilerGlobalState

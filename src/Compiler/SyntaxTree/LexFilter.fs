@@ -66,6 +66,8 @@ type Context =
     // Indicates we're processing the second part of a match, after the 'with'
     // First bool indicates "was this 'with' followed immediately by a '|'"?
     | CtxtMatchClauses of bool * Position
+    // Used to avoid early inserting OBLOCKEND in `open type ...`
+    | CtxtOpen of Position
 
     member c.StartPos =
         match c with
@@ -74,6 +76,7 @@ type Context =
         | CtxtWithAsLet p
         | CtxtWithAsAugment p
         | CtxtMatchClauses (_, p) | CtxtIf p | CtxtMatch p | CtxtFor p | CtxtWhile p | CtxtWhen p | CtxtFunction p | CtxtFun p | CtxtTry p | CtxtThen p | CtxtElse p | CtxtVanilla (p, _)
+        | CtxtOpen p
         | CtxtSeqBlock (_, p, _) -> p
 
     member c.StartCol = c.StartPos.Column
@@ -109,6 +112,7 @@ type Context =
         | CtxtThen _ -> "then"
         | CtxtElse p -> sprintf "else(%s)" (stringOfPos p)
         | CtxtVanilla (p, _) -> sprintf "vanilla(%s)" (stringOfPos p)
+        | CtxtOpen _ -> "open"
 
 and AddBlockEnd = AddBlockEnd | NoAddBlockEnd | AddOneSidedBlockEnd
 and FirstInSequence = FirstInSeqBlock | NotFirstInSeqBlock
@@ -980,7 +984,7 @@ type LexFilterImpl (
 
 
             // These contexts all require indentation by at least one space
-            | _, (CtxtInterfaceHead _ | CtxtNamespaceHead _ | CtxtModuleHead _ | CtxtException _ | CtxtModuleBody (_, false) | CtxtIf _ | CtxtWithAsLet _ | CtxtLetDecl _ | CtxtMemberHead _ | CtxtMemberBody _ as limitCtxt :: _)
+            | _, (CtxtInterfaceHead _ | CtxtNamespaceHead _ | CtxtModuleHead _ | CtxtException _ | CtxtModuleBody (_, false) | CtxtIf _ | CtxtWithAsLet _ | CtxtLetDecl _ | CtxtMemberHead _ | CtxtMemberBody _ | CtxtOpen _ as limitCtxt :: _)
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
 
             // These contexts can have their contents exactly aligning
@@ -2576,6 +2580,29 @@ type LexFilterImpl (
             pushCtxtSeqBlock tokenTup AddBlockEnd
             returnToken tokenLexbufState token
 
+        // The expression/type-scoped `open type ...` case, 
+        // prevent early inserting OBLOCKEND by `insertComingSoonTokens`
+        | OPEN, head :: _ when peekNextToken().IsTYPE && 
+            isSameLine() &&     // `open` and `type` should be on the same line. If them can be on different lines, 
+                                // the `type` keyword can have same indentation as `open`.
+            (match head with    // Follow the checks in `insertComingSoonTokens`
+             // open-parens of sorts
+             | CtxtParen(TokenLExprParen, _) -> true
+             // seq blocks
+             | CtxtSeqBlock _ -> true
+             // vanillas
+             | CtxtVanilla _ -> true
+             | _ -> false) ->
+            pushCtxt tokenTup (CtxtOpen tokenStartPos)
+            if debug then dprintf "pushing CtxtOpen at tokenStartPos = %a\n" outputPos tokenStartPos
+            returnToken tokenLexbufState token
+
+        // The expression/type-scoped `open type ...` case
+        | TYPE, CtxtOpen _ :: _ ->
+            if debug then dprintf "--> because TYPE is coming, popping CtxtOpen\n"
+            popCtxt()
+            returnToken tokenLexbufState token
+            
         | TYPE, _ ->
             // Check if this type definition is inappropriately nested in another type
             checkForInvalidDeclsInTypeDefn "TYPE"

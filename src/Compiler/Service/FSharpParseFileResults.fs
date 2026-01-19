@@ -763,6 +763,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                         | SynExpr.DotLambda(_, m, _) -> yield! checkRange m
 
+                        | SynExpr.Open(body = bodyExpr) -> yield! walkExpr true bodyExpr
                 ]
 
             // Process a class declaration or F# type declaration

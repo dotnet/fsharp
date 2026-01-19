@@ -4054,6 +4054,14 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOK
     | NoNewTypars
 
+/// Adjust the TcEnv to account for opening a type implied by an `open type` declaration
+let OpenTypeContent tcSink g amap scopem env (ty: TType) openDeclaration =
+    let env =
+        { env with eNameResEnv = AddTypeContentsToNameEnv g amap env.eAccessRights scopem env.eNameResEnv ty }
+    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
+    CallOpenDeclarationSink tcSink openDeclaration
+    env
+
 //-------------------------------------------------------------------------
 // Checking types and type constraints
 //-------------------------------------------------------------------------
@@ -6085,6 +6093,11 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.IndexRange (range=m) ->
         error(Error(FSComp.SR.tcInvalidIndexerExpression(), m))
+
+    | SynExpr.Open (target, mOpen, _m, body) ->
+        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.OpensInExpressionScope mOpen
+        let env, _openDecls = TcOpenDecl cenv mOpen body.Range env target
+        TcExprThatCanBeCtorBody cenv overallTy env tpenv body
 
 and TcExprMatch (cenv: cenv) overallTy env tpenv synInputExpr spMatch synClauses =
     let inputExpr, inputTy, tpenv =
@@ -9212,6 +9225,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.TraitCall _
         | SynExpr.IndexFromEnd _
         | SynExpr.IndexRange _
+        | SynExpr.Open _
             -> false
 
     // Propagate the known application structure into function types
@@ -12852,6 +12866,32 @@ and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) 
     // Post letrec env
     let envbody = AddLocalVals g cenv.tcSink scopem prelimRecValues env
     binds, envbody, tpenv
+
+and TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
+    let g = cenv.g
+
+    checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
+
+    let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
+
+    if not (isAppTy g ty) then
+        errorR(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
+
+    if isByrefTy g ty then
+        errorR(Error(FSComp.SR.tcIllegalByrefsInOpenTypeDeclaration(), m))
+
+    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type (synType, m), [], [ty], scopem, false)
+    let env = OpenTypeContent cenv.tcSink g cenv.amap scopem env ty openDecl
+    env, [openDecl]
+
+and TcOpenDecl (cenv: cenv) mOpenDecl scopem env target = 
+    let g = cenv.g
+    match target with
+    | SynOpenDeclTarget.ModuleOrNamespace (longId, m) ->
+        TcOpenModuleOrNamespaceDecl cenv.tcSink g cenv.amap scopem env (longId.LongIdent, m)
+
+    | SynOpenDeclTarget.Type (synType, m) ->
+        TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
 
 //-------------------------------------------------------------------------
 // Bind specifications of values

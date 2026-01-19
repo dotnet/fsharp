@@ -64,19 +64,13 @@ module ImportDeclarations =
             (Error 10, Line 7, Col 5, Line 7, Col 9, "Unexpected keyword 'open' in member definition")
         ]
 
-    // SOURCE=E_openModInFun.fs   SCFLAGS="--test:ErrorRanges"		# E_openModInFun.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_openModInFun.fs"|])>]
-    let ``E_openModInFun_fs`` compilation =
+    // SOURCE=openModInFun.fs   		# openModInFun.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"openModInFun.fs"|])>]
+    let ``openModInFun_fs`` compilation =
         compilation
-        |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 10, Line 9, Col 5, Line 9, Col 9, "Unexpected keyword 'open' in binding. Expected incomplete structured construct at or before this point or other token.")
-            (Error 10, Line 17, Col 9, Line 17, Col 13, "Unexpected keyword 'open' in binding")
-            (Error 58, Line 23, Col 9, Line 23, Col 13, "'open' declarations must appear at module level, not inside types.")
-            (Error 10, Line 23, Col 9, Line 23, Col 13, "Unexpected keyword 'open' in expression")
-            (Error 3567, Line 23, Col 9, Line 23, Col 13, "Expecting member body")
-        ]
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
 
     // SOURCE=OpenNestedModule01.fs					# OpenNestedModule01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OpenNestedModule01.fs"|])>]

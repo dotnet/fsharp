@@ -974,6 +974,10 @@ type SynExpr =
     /// F# syntax: f?x
     | Dynamic of funcExpr: SynExpr * qmark: range * argExpr: SynExpr * range: range
 
+    /// An 'open' definition within an expr
+    /// let open System in ...
+    | Open of target: SynOpenDeclTarget * openDeclRange: range * range: range * body: SynExpr
+
     /// Gets the syntax range of this construct
     member Range: range
 

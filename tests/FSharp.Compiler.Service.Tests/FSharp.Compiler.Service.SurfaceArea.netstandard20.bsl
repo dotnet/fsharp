@@ -7374,6 +7374,14 @@ FSharp.Compiler.Syntax.SynExpr+ObjExpr: Microsoft.FSharp.Core.FSharpOption`1[FSh
 FSharp.Compiler.Syntax.SynExpr+ObjExpr: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] withKeyword
 FSharp.Compiler.Syntax.SynExpr+ObjExpr: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident]]] argOptions
 FSharp.Compiler.Syntax.SynExpr+ObjExpr: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident]]] get_argOptions()
+FSharp.Compiler.Syntax.SynExpr+Open: FSharp.Compiler.Syntax.SynExpr body
+FSharp.Compiler.Syntax.SynExpr+Open: FSharp.Compiler.Syntax.SynExpr get_body()
+FSharp.Compiler.Syntax.SynExpr+Open: FSharp.Compiler.Syntax.SynOpenDeclTarget get_target()
+FSharp.Compiler.Syntax.SynExpr+Open: FSharp.Compiler.Syntax.SynOpenDeclTarget target
+FSharp.Compiler.Syntax.SynExpr+Open: FSharp.Compiler.Text.Range get_openDeclRange()
+FSharp.Compiler.Syntax.SynExpr+Open: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExpr+Open: FSharp.Compiler.Text.Range openDeclRange
+FSharp.Compiler.Syntax.SynExpr+Open: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+Paren: FSharp.Compiler.Syntax.SynExpr expr
 FSharp.Compiler.Syntax.SynExpr+Paren: FSharp.Compiler.Syntax.SynExpr get_expr()
 FSharp.Compiler.Syntax.SynExpr+Paren: FSharp.Compiler.Text.Range get_leftParenRange()
@@ -7478,6 +7486,7 @@ FSharp.Compiler.Syntax.SynExpr+Tags: Int32 NamedIndexedPropertySet
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 New
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Null
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 ObjExpr
+FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Open
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Paren
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Quote
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Record
@@ -7656,6 +7665,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean IsNamedIndexedPropertySet
 FSharp.Compiler.Syntax.SynExpr: Boolean IsNew
 FSharp.Compiler.Syntax.SynExpr: Boolean IsNull
 FSharp.Compiler.Syntax.SynExpr: Boolean IsObjExpr
+FSharp.Compiler.Syntax.SynExpr: Boolean IsOpen
 FSharp.Compiler.Syntax.SynExpr: Boolean IsParen
 FSharp.Compiler.Syntax.SynExpr: Boolean IsQuote
 FSharp.Compiler.Syntax.SynExpr: Boolean IsRecord
@@ -7726,6 +7736,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean get_IsNamedIndexedPropertySet()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsNew()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsNull()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsObjExpr()
+FSharp.Compiler.Syntax.SynExpr: Boolean get_IsOpen()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsParen()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsQuote()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsRecord()
@@ -7795,6 +7806,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewNamedIndexedPr
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewNew(Boolean, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewNull(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewObjExpr(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident]]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberDefn], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynInterfaceImpl], FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewOpen(FSharp.Compiler.Syntax.SynOpenDeclTarget, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynExpr)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewParen(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewQuote(FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewRecord(Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[FSharp.Compiler.Syntax.SynType,FSharp.Compiler.Syntax.SynExpr,FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]],FSharp.Compiler.Text.Range]], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]]], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExprRecordField], FSharp.Compiler.Text.Range)
@@ -7864,6 +7876,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+NamedIndexedPrope
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+New
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Null
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+ObjExpr
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Open
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Paren
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Quote
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Record
