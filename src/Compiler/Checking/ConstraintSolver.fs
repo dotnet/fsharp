@@ -3853,7 +3853,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         // Prefer more concrete type instantiations (RFC FS-XXXX: "Most Concrete" tiebreaker)
         // Only activates when BOTH methods are generic (have type arguments)
         // Compare FORMAL parameter types (not instantiated) to handle cases like 't vs Option<'t>
-        let c = 
+        let concretenessCmp = 
             if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
                 // Get formal (uninstantiated) parameter types using FormalMethodInst
                 let formalParams1 = candidate.Method.GetParamDatas(csenv.amap, m, candidate.Method.FormalMethodInst) |> List.concat
@@ -3866,7 +3866,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
                     0
             else
                 0
-        if c <> 0 then c else
+        if concretenessCmp <> 0 then concretenessCmp else
 
         // F# 5.0 rule - prior to F# 5.0 named arguments (on the caller side) were not being taken 
         // into account when comparing overloads.  So adding a name to an argument might mean 
@@ -3900,7 +3900,100 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         match candidate.AssociatedPropertyInfo,other.AssociatedPropertyInfo,candidate.Method.IsExtensionMember,other.Method.IsExtensionMember with
         | Some p1, Some p2, false, false -> compareTypes p1.ApparentEnclosingType p2.ApparentEnclosingType
         | _ -> 0
+    
+    /// Check if concreteness tiebreaker was the deciding factor between winner and loser
+    /// Returns Some with method name strings if concreteness decided, None otherwise 
+    let wasConcretenessTiebreaker (winner: CalledMeth<_>, winnerWarnings, _, winnerTDC) (loser: CalledMeth<_>, loserWarnings, _, loserTDC) =
+        let winnerWarnCount = List.length winnerWarnings
+        let loserWarnCount = List.length loserWarnings
         
+        // Check all rules that come BEFORE concreteness in order
+        // If any of them would decide the result, concreteness wasn't the deciding factor
+        
+        // Rule: Prefer methods that don't use type-directed conversion
+        let c1 = compare (match winnerTDC with TypeDirectedConversionUsed.No -> 1 | _ -> 0) (match loserTDC with TypeDirectedConversionUsed.No -> 1 | _ -> 0)
+        if c1 <> 0 then None else
+        
+        // Rule: Prefer methods that need less type-directed conversion
+        let c2 = compare (match winnerTDC with TypeDirectedConversionUsed.Yes(_, false, _) -> 1 | _ -> 0) (match loserTDC with TypeDirectedConversionUsed.Yes(_, false, _) -> 1 | _ -> 0)
+        if c2 <> 0 then None else
+        
+        // Rule: Prefer methods that only have nullable type-directed conversions
+        let c3 = compare (match winnerTDC with TypeDirectedConversionUsed.Yes(_, _, true) -> 1 | _ -> 0) (match loserTDC with TypeDirectedConversionUsed.Yes(_, _, true) -> 1 | _ -> 0)
+        if c3 <> 0 then None else
+        
+        // Rule: Prefer methods that don't give "this code is less generic" warnings
+        let c4 = compare (winnerWarnCount = 0) (loserWarnCount = 0)
+        if c4 <> 0 then None else
+        
+        // Rule: Prefer methods that don't use param array arg
+        let c5 = compare (not winner.UsesParamArrayConversion) (not loser.UsesParamArrayConversion)
+        if c5 <> 0 then None else
+        
+        // Rule: Prefer methods with more precise param array arg type
+        let c6 = 
+            if winner.UsesParamArrayConversion && loser.UsesParamArrayConversion then
+                compareTypes (winner.GetParamArrayElementType()) (loser.GetParamArrayElementType())
+            else 0
+        if c6 <> 0 then None else
+        
+        // Rule: Prefer methods that don't use out args
+        let c7 = compare (not winner.HasOutArgs) (not loser.HasOutArgs)
+        if c7 <> 0 then None else
+        
+        // Rule: Prefer methods that don't use optional args
+        let c8 = compare (not winner.HasOptionalArgs) (not loser.HasOptionalArgs)
+        if c8 <> 0 then None else
+        
+        // Rule: check regular unnamed args
+        let c9 = 
+            if winner.TotalNumUnnamedCalledArgs = loser.TotalNumUnnamedCalledArgs then
+                let cs = 
+                    (if winner.Method.IsExtensionMember && loser.Method.IsExtensionMember then 
+                        let objArgTys1 = winner.CalledObjArgTys(m) 
+                        let objArgTys2 = loser.CalledObjArgTys(m) 
+                        if objArgTys1.Length = objArgTys2.Length then 
+                            List.map2 compareTypes objArgTys1 objArgTys2
+                        else []
+                     else []) @
+                    ((winner.AllUnnamedCalledArgs, loser.AllUnnamedCalledArgs) ||> List.map2 compareArg) 
+                if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 1
+                elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then -1
+                else 0
+            else 0
+        if c9 <> 0 then None else
+        
+        // Rule: prefer non-extension methods 
+        let c10 = compare (not winner.Method.IsExtensionMember) (not loser.Method.IsExtensionMember)
+        if c10 <> 0 then None else
+        
+        // Rule: between extension methods, prefer most recently opened
+        let c11 = 
+            if winner.Method.IsExtensionMember && loser.Method.IsExtensionMember then 
+                compare winner.Method.ExtensionMemberPriority loser.Method.ExtensionMemberPriority 
+            else 0
+        if c11 <> 0 then None else
+        
+        // Rule: Prefer non-generic methods
+        let c12 = compare winner.CalledTyArgs.IsEmpty loser.CalledTyArgs.IsEmpty
+        if c12 <> 0 then None else
+        
+        // NOW check concreteness - if it decides, return true
+        let cConcreteness = 
+            if not winner.CalledTyArgs.IsEmpty && not loser.CalledTyArgs.IsEmpty then
+                let formalParams1 = winner.Method.GetParamDatas(csenv.amap, m, winner.Method.FormalMethodInst) |> List.concat
+                let formalParams2 = loser.Method.GetParamDatas(csenv.amap, m, loser.Method.FormalMethodInst) |> List.concat
+                if formalParams1.Length = formalParams2.Length then
+                    let comparisons = List.map2 (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) -> 
+                        compareTypeConcreteness ty1 ty2) formalParams1 formalParams2
+                    aggregateComparisons comparisons
+                else 0
+            else 0
+        
+        if cConcreteness > 0 then
+            Some (winner.Method.DisplayName, loser.Method.DisplayName)
+        else
+            None
 
     let bestMethods =
         let indexedApplicableMeths = applicableMeths |> List.indexed
@@ -3914,8 +4007,22 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
                 None) 
 
     match bestMethods with 
-    | [(calledMeth, warns, t, _)] ->
-        Some calledMeth, OkResult (warns, ()), WithTrace t
+    | [(calledMeth, warns, t, _) as winner] ->
+        // Check if concreteness tiebreaker was decisive against any other candidate
+        let concretenessWarns = 
+            applicableMeths 
+            |> List.choose (fun loser ->
+                let (loserMeth, _, _, _) = loser
+                if System.Object.ReferenceEquals(loserMeth, calledMeth) then None
+                else wasConcretenessTiebreaker winner loser)
+        let allWarns = 
+            match concretenessWarns with
+            | [] -> warns
+            | (winnerName, loserName) :: _ -> 
+                // Add the concreteness tiebreaker warning
+                let warn = Error(FSComp.SR.tcMoreConcreteTiebreakerUsed(winnerName, winnerName, loserName), m)
+                warn :: warns
+        Some calledMeth, OkResult (allWarns, ()), WithTrace t
 
     | bestMethods -> 
         let methods = 

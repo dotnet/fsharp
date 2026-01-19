@@ -2041,3 +2041,44 @@ let result = TreeProcessor.Process(tree)
         |> typecheck
         |> shouldSucceed
         |> ignore
+
+    // ============================================================================
+    // Diagnostic Tests - Warning FS3575 for Concreteness Tiebreaker
+    // ============================================================================
+
+    [<Fact>]
+    let ``Warning 3575 - Not emitted by default when concreteness tiebreaker used`` () =
+        // By default, warning 3575 is off, so no warning should be emitted
+        // Both overloads are generic, but one is more concrete
+        FSharp """
+module Test
+
+type Example =
+    static member Invoke<'t>(value: Option<'t>) = "generic"
+    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
+
+let result = Example.Invoke(Some([1]))
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3575 - Emitted when enabled and concreteness tiebreaker is used`` () =
+        // When --warnon:3575 is passed, warning should be emitted
+        // Both overloads are generic, but Option<'t list> is more concrete than Option<'t>
+        FSharp """
+module Test
+
+type Example =
+    static member Invoke<'t>(value: Option<'t>) = "generic"
+    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
+
+let result = Example.Invoke(Some([1]))
+        """
+        |> withOptions ["--warnon:3575"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3575
+        |> withDiagnosticMessageMatches "concreteness"
+        |> ignore
