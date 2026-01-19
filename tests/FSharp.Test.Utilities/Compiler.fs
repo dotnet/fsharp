@@ -1242,6 +1242,47 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
+    // ============================================================================
+    // CLI Subprocess Helpers
+    // These are FOR CLI TESTS ONLY where subprocess execution is legitimately required.
+    // Use cases: --help output, exit codes, missing file CLI errors.
+    // Do NOT use these for compiler/FSI tests - use in-process alternatives instead.
+    // ============================================================================
+
+    /// Result from running FSC or FSI as a subprocess
+    type ProcessResult =
+        { ExitCode: int
+          StdOut: string
+          StdErr: string }
+
+    /// FOR CLI TESTS ONLY. Runs FSI as subprocess to test CLI behavior (--help, exit codes).
+    /// Do NOT use for compiler tests - use runFsi instead.
+    /// Requires justification comment in calling test.
+    let runFsiProcess (args: string list) : ProcessResult =
+        let config = TestFramework.initialConfig
+        let argString = String.concat " " args
+#if NETCOREAPP
+        // On .NET Core, FSI is a .dll that needs to be run via dotnet
+        let exitCode, stdout, stderr = Commands.executeProcess config.DotNetExe ($"\"{config.FSI}\" {argString}") (Path.GetTempPath())
+#else
+        let exitCode, stdout, stderr = Commands.executeProcess config.FSI argString (Path.GetTempPath())
+#endif
+        { ExitCode = exitCode; StdOut = stdout; StdErr = stderr }
+
+    /// FOR CLI TESTS ONLY. Runs FSC as subprocess to test CLI behavior (missing file errors).
+    /// Do NOT use for compiler tests - use compile instead.
+    /// Requires justification comment in calling test.
+    let runFscProcess (args: string list) : ProcessResult =
+        let config = TestFramework.initialConfig
+        let argString = String.concat " " args
+#if NETCOREAPP
+        // On .NET Core, FSC is a .dll that needs to be run via dotnet
+        let exitCode, stdout, stderr = Commands.executeProcess config.DotNetExe ($"\"{config.FSC}\" {argString}") (Path.GetTempPath())
+#else
+        let exitCode, stdout, stderr = Commands.executeProcess config.FSC argString (Path.GetTempPath())
+#endif
+        { ExitCode = exitCode; StdOut = stdout; StdErr = stderr }
+
     let convenienceBaselineInstructions baseline expected actual =
         $"""to update baseline:
 $ cp {baseline.FilePath} {baseline.BslSource}
