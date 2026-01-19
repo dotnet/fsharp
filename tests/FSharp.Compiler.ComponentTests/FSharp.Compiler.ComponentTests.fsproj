@@ -132,6 +132,8 @@
     <Compile Include="Conformance\TypeForwarding\TypeForwardingTests.fs" />
     <Compile Include="Conformance\TypeForwarding\NegativeCases.fs" />
     <Compile Include="Conformance\TypeForwarding\TypeForwardingHelpersTests.fs" />
+    <Compile Include="Conformance\TypeForwarding\ClassTests.fs" />
+    <Compile Include="Conformance\TypeForwarding\StructTests.fs" />
     <Compile Include="Conformance\Types\RecordTypes\AnonymousRecords.fs" />
     <Compile Include="Conformance\Types\RecordTypes\RecordTypes.fs" />
     <Compile Include="Conformance\Types\StructTypes\StructTypes.fs" />
