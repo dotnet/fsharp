@@ -2130,3 +2130,211 @@ Actual:
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
+
+    // ============================================================================
+    // TypeForwardingHelpers - Runtime assembly swap tests (in-process via reflection)
+    // 
+    // The original FSharpQA test pattern for TypeForwarding was:
+    // 1. Compile C# library v1 with types defined directly
+    // 2. Compile F# exe referencing the v1 library
+    // 3. Replace v1 library with a forwarding stub (TypeForwardedTo attributes)
+    // 4. Run F# exe - should work because types are forwarded to new target
+    //
+    // This module enables that pattern using in-process reflection execution.
+    // ============================================================================
+
+    /// Result of a type forwarding test execution
+    type TypeForwardingResult =
+        | TFSuccess of output: string
+        | TFCompilationFailure of stage: string * errors: ErrorInfo list
+        | TFExecutionFailure of exn: exn
+
+    /// Helpers for testing runtime type forwarding scenarios
+    module TypeForwardingHelpers =
+
+        /// Creates a temporary directory for type forwarding tests
+        let createTestDirectory () =
+            let dir = createTemporaryDirectory ()
+            dir.FullName
+
+        /// Compiles a C# source to a specific path and returns the path
+        let compileCSharpTo (source: string) (assemblyName: string) (outputDir: string) (references: string list) : string option * ErrorInfo list =
+            let outputDirectory = new DirectoryInfo(outputDir)
+            outputDirectory.Create()
+
+            // Build reference metadata from paths
+            let additionalReferences =
+                references
+                |> List.map (fun path -> MetadataReference.CreateFromFile(path) :> MetadataReference)
+                |> ImmutableArray.CreateRange
+
+            let frameworkRefs = TargetFrameworkUtil.getReferences TargetFramework.Current
+            let allRefs = frameworkRefs.As<MetadataReference>().AddRange(additionalReferences)
+
+            let cmpl =
+                CSharpCompilation.Create(
+                    assemblyName,
+                    [ CSharpSyntaxTree.ParseText(source, CSharpParseOptions(CSharpLanguageVersion.toLanguageVersion CSharpLanguageVersion.CSharp9)) ],
+                    allRefs,
+                    CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+
+            let filePath = Path.Combine(outputDir, assemblyName + ".dll")
+            let result = cmpl.Emit(filePath)
+
+            if result.Success then
+                (Some filePath, [])
+            else
+                let errors = result.Diagnostics |> Seq.map toErrorInfo |> Seq.toList
+                (None, errors)
+
+        /// Compiles F# source to a specific path and returns the path
+        let compileFSharpTo (source: string) (assemblyName: string) (outputDir: string) (references: string list) : string option * ErrorInfo list =
+            let outputDirectory = new DirectoryInfo(outputDir)
+            outputDirectory.Create()
+
+            let fs: FSharpCompilationSource = {
+                Source = SourceCodeFileKind.Create("test.fs", source)
+                AdditionalSources = []
+                Baseline = None
+                Options = [
+                    "--nowarn:3370"
+                    "--deterministic+"
+                    "--optimize+"
+                ] @ (references |> List.map (fun r -> $"-r:{r}"))
+                OutputType = Exe
+                OutputDirectory = Some outputDirectory
+                Name = Some assemblyName
+                IgnoreWarnings = false
+                References = []  // We pass refs via -r option since we need exact paths
+                TargetFramework = TargetFramework.Current
+                StaticLink = false
+            }
+
+            let result = compileFSharp fs
+
+            match result with
+            | CompilationResult.Success s ->
+                match s.OutputPath with
+                | Some path -> (Some path, [])
+                | None -> (None, [])
+            | CompilationResult.Failure f ->
+                (None, f.Diagnostics)
+
+        /// Executes an assembly in-process via reflection and returns stdout
+        let executeInProcess (assemblyPath: string) : string option * exn option =
+            try
+                // Use a separate AssemblyLoadContext to allow loading assemblies with same names but different paths
+                let context = new System.Runtime.Loader.AssemblyLoadContext("TypeForwardingTest", isCollectible = true)
+                try
+                    // Load the assembly and all dependencies from the same directory
+                    let assemblyDir = Path.GetDirectoryName(assemblyPath)
+                    
+                    // Use the Resolving event on the context instance to load dependencies
+                    context.add_Resolving(fun ctx name ->
+                        let dllPath = Path.Combine(assemblyDir, name.Name + ".dll")
+                        if File.Exists(dllPath) then
+                            ctx.LoadFromAssemblyPath(dllPath)
+                        else
+                            null
+                    )
+
+                    let assembly = context.LoadFromAssemblyPath(assemblyPath)
+                    let entryPoint = assembly.EntryPoint
+
+                    if isNull entryPoint then
+                        (None, Some (InvalidOperationException("No entry point found in assembly") :> exn))
+                    else
+                        // Capture stdout - don't use 'use' as we need to get output before disposing
+                        let oldOut = Console.Out
+                        let sw = new StringWriter()
+                        Console.SetOut(sw)
+                        try
+                            // F# entry points expect string[] argv
+                            let args : string array = [||]
+                            let _ = entryPoint.Invoke(null, [| args :> obj |])
+                            sw.Flush()
+                            let output = sw.ToString()
+                            Console.SetOut(oldOut)
+                            sw.Dispose()
+                            (Some output, None)
+                        with
+                        | :? TargetInvocationException as tie ->
+                            Console.SetOut(oldOut)
+                            sw.Dispose()
+                            (None, Some tie.InnerException)
+                        | ex ->
+                            Console.SetOut(oldOut)
+                            sw.Dispose()
+                            (None, Some ex)
+                finally
+                    context.Unload()
+            with ex ->
+                (None, Some ex)
+
+        /// Main test function: Verifies type forwarding works at runtime
+        ///
+        /// Pattern:
+        /// 1. Compile originalCSharp as "Library.dll" (types defined directly)
+        /// 2. Compile F# exe referencing Library.dll
+        /// 3. Compile targetCSharp as "Target.dll" (actual type definitions)
+        /// 4. Compile forwarderCSharp as "Library.dll" (overwrites original, has TypeForwardedTo)
+        /// 5. Execute F# exe via reflection - should succeed because types are forwarded
+        ///
+        /// All compilation and execution is in-process. Only file I/O touches disk.
+        let verifyTypeForwarding
+            (originalCSharp: string)      // C# source with types defined (becomes Library v1)
+            (forwarderCSharp: string)     // C# source with TypeForwardedTo attributes (becomes Library v2)
+            (targetCSharp: string)        // C# source with type definitions (becomes Target.dll)
+            (fsharpSource: string)        // F# source that uses the types
+            : TypeForwardingResult =
+
+            let testDir = createTestDirectory ()
+
+            // Step 1: Compile original C# library with types defined directly
+            match compileCSharpTo originalCSharp "Library" testDir [] with
+            | (None, errs) -> TFCompilationFailure ("Original C# library", errs)
+            | (Some libraryPath, _) ->
+
+            // Step 2: Compile F# exe referencing the library
+            match compileFSharpTo fsharpSource "Program" testDir [libraryPath] with
+            | (None, errs) -> TFCompilationFailure ("F# executable", errs)
+            | (Some fsharpExePath, _) ->
+
+            // Step 3: Compile target library with actual type definitions
+            match compileCSharpTo targetCSharp "Target" testDir [] with
+            | (None, errs) -> TFCompilationFailure ("Target C# library", errs)
+            | (Some targetPath, _) ->
+
+            // Step 4: Compile forwarder library (overwrites original Library.dll)
+            // The forwarder references Target.dll and has TypeForwardedTo attributes
+            match compileCSharpTo forwarderCSharp "Library" testDir [targetPath] with
+            | (None, errs) -> TFCompilationFailure ("Forwarder C# library", errs)
+            | (Some _, _) ->
+
+            // Step 5: Execute F# exe - types should be resolved via forwarding
+            match executeInProcess fsharpExePath with
+            | (None, Some ex) -> TFExecutionFailure ex
+            | (Some output, _) -> TFSuccess output
+            | (None, None) -> TFExecutionFailure (InvalidOperationException("Execution returned no output and no error"))
+
+        /// Asserts that type forwarding succeeds
+        let shouldSucceed (result: TypeForwardingResult) : unit =
+            match result with
+            | TFSuccess _ -> ()
+            | TFCompilationFailure (stage, errs) ->
+                let errMsgs = errs |> List.map (fun e -> e.Message) |> String.concat "\n"
+                failwith $"Type forwarding test failed at compilation stage '{stage}':\n{errMsgs}"
+            | TFExecutionFailure ex ->
+                failwith $"Type forwarding test failed at execution:\n{ex.Message}\n{ex.StackTrace}"
+
+        /// Asserts that type forwarding succeeds with specific output
+        let shouldSucceedWithOutput (expected: string) (result: TypeForwardingResult) : unit =
+            match result with
+            | TFSuccess output ->
+                if not (output.Contains(expected)) then
+                    failwith $"Expected output to contain '{expected}' but got:\n{output}"
+            | TFCompilationFailure (stage, errs) ->
+                let errMsgs = errs |> List.map (fun e -> e.Message) |> String.concat "\n"
+                failwith $"Type forwarding test failed at compilation stage '{stage}':\n{errMsgs}"
+            | TFExecutionFailure ex ->
+                failwith $"Type forwarding test failed at execution:\n{ex.Message}\n{ex.StackTrace}"
