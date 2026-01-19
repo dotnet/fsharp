@@ -94,7 +94,11 @@ module Impl =
             FSharpXmlDoc.FromXmlText doc
         else
             let allCcus = cenv.tcImports.GetCcusInDeclOrder()
-            let expandedDoc = expandInheritDoc (Some allCcus) (Some cenv.thisCcu) cenv.thisCcuTy implicitTargetCrefOpt doc.Range Set.empty doc
+            // Create a lookup function that searches XML documentation files by assembly name and signature
+            let tryFindXmlDocBySignature (assemblyName: string) (xmlDocSig: string) : XmlDoc option =
+                cenv.amap.assemblyLoader.TryFindXmlDocumentationInfo(assemblyName)
+                |> Option.bind (fun xmlDocInfo -> xmlDocInfo.TryGetXmlDocBySig(xmlDocSig))
+            let expandedDoc = expandInheritDoc (Some allCcus) (Some tryFindXmlDocBySignature) (Some cenv.thisCcu) cenv.thisCcuTy implicitTargetCrefOpt doc.Range Set.empty doc
             FSharpXmlDoc.FromXmlText expandedDoc
 
     let makeElaboratedXmlDoc (doc: XmlDoc) =

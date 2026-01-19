@@ -126,15 +126,22 @@ module XmlDocWriter =
                 | ValueNone -> None
             | [] -> None
 
+        let amap = tcImports.GetImportMap()
+        
         let addMemberWithImplicitTarget id xmlDoc implicitTargetOpt =
             if hasDoc xmlDoc then
                 // Expand <inheritdoc> elements before writing to XML file
                 // Pass the generatedCcu for same-compilation type resolution
                 let ccuMtyp = generatedCcu.Contents.ModuleOrNamespaceType
+                // Create a lookup function that searches XML documentation files by assembly name and signature
+                let tryFindXmlDocBySignature (assemblyName: string) (xmlDocSig: string) : XmlDoc option =
+                    amap.assemblyLoader.TryFindXmlDocumentationInfo(assemblyName)
+                    |> Option.bind (fun xmlDocInfo -> xmlDocInfo.TryGetXmlDocBySig(xmlDocSig))
 
                 let expandedDoc =
                     XmlDocInheritance.expandInheritDoc
                         (Some allCcus)
+                        (Some tryFindXmlDocBySignature)
                         (Some generatedCcu)
                         (Some ccuMtyp)
                         implicitTargetOpt

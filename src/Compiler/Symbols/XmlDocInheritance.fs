@@ -307,15 +307,36 @@ let private tryGetXmlDocFromCcu (ccu: CcuThunk) (cref: string) : string option =
 
 /// Attempts to retrieve XML documentation from external assemblies by searching all loaded CCUs
 /// Uses the parsed cref path to do efficient lookup via AllEntitiesByCompiledAndLogicalMangledNames
-let private tryGetXmlDocFromExternalCcus (allCcus: CcuThunk list) (cref: string) : string option =
-    // Try each CCU using efficient path-based lookup
-    allCcus
-    |> List.tryPick (fun ccu -> tryGetXmlDocFromCcu ccu cref)
+/// Falls back to XML documentation files for IL types where entity.XmlDoc is empty
+let private tryGetXmlDocFromExternalCcus 
+    (allCcus: CcuThunk list) 
+    (tryFindXmlDocBySignature: (string -> string -> XmlDoc option) option)
+    (cref: string) 
+    : string option =
+    // First try entity-based lookup (for F# types in referenced assemblies)
+    let fromEntity =
+        allCcus
+        |> List.tryPick (fun ccu -> tryGetXmlDocFromCcu ccu cref)
+    
+    match fromEntity with
+    | Some doc -> Some doc
+    | None ->
+        // Fall back to XML documentation files (for IL types like System.Exception)
+        // The cref IS the XML signature (e.g., "T:System.Exception")
+        match tryFindXmlDocBySignature with
+        | Some lookupFn ->
+            allCcus
+            |> List.tryPick (fun ccu ->
+                match lookupFn ccu.AssemblyName cref with
+                | Some xmlDoc when not xmlDoc.IsEmpty -> Some(xmlDoc.GetXmlText())
+                | _ -> None)
+        | None -> None
 
 /// Attempts to retrieve XML documentation for a given cref
 /// Tries current module type first (same-compilation), then CCU, then external assemblies
 let private tryGetXmlDocByCref
     (allCcusOpt: CcuThunk list option)
+    (tryFindXmlDocBySignature: (string -> string -> XmlDoc option) option)
     (ccuOpt: CcuThunk option)
     (currentModuleTypeOpt: ModuleOrNamespaceType option)
     (cref: string)
@@ -340,12 +361,12 @@ let private tryGetXmlDocByCref
             | None ->
                 // Fall back to external assembly resolution by searching all loaded CCUs
                 match allCcusOpt with
-                | Some allCcus -> tryGetXmlDocFromExternalCcus allCcus cref
+                | Some allCcus -> tryGetXmlDocFromExternalCcus allCcus tryFindXmlDocBySignature cref
                 | None -> None
         | None ->
             // No CCU available, try external assembly resolution only
             match allCcusOpt with
-            | Some allCcus -> tryGetXmlDocFromExternalCcus allCcus cref
+            | Some allCcus -> tryGetXmlDocFromExternalCcus allCcus tryFindXmlDocBySignature cref
             | None -> None
 
 /// Applies an XPath filter to XML content
@@ -381,6 +402,7 @@ let private applyXPathFilter (m: range) (xpath: string) (sourceXml: string) : st
 /// Recursively expands inheritdoc in the retrieved documentation
 let rec private expandInheritedDoc
     (allCcusOpt: CcuThunk list option)
+    (tryFindXmlDocBySignature: (string -> string -> XmlDoc option) option)
     (ccuOpt: CcuThunk option)
     (currentModuleTypeOpt: ModuleOrNamespaceType option)
     (implicitTargetCrefOpt: string option)
@@ -395,13 +417,14 @@ let rec private expandInheritedDoc
         xmlText
     else
         let newVisited = visited.Add(cref)
-        expandInheritDocText allCcusOpt ccuOpt currentModuleTypeOpt implicitTargetCrefOpt m newVisited xmlText
+        expandInheritDocText allCcusOpt tryFindXmlDocBySignature ccuOpt currentModuleTypeOpt implicitTargetCrefOpt m newVisited xmlText
 
 /// Expands `<inheritdoc>` elements in XML documentation text
 /// Uses CCUs to resolve cref targets to their documentation
 /// Tracks visited signatures to prevent infinite recursion
 and private expandInheritDocText
     (allCcusOpt: CcuThunk list option)
+    (tryFindXmlDocBySignature: (string -> string -> XmlDoc option) option)
     (ccuOpt: CcuThunk option)
     (currentModuleTypeOpt: ModuleOrNamespaceType option)
     (implicitTargetCrefOpt: string option)
@@ -434,12 +457,13 @@ and private expandInheritDocText
                             warning (Error(FSComp.SR.xmlDocInheritDocError ($"Circular reference detected for '{cref}'"), m))
                         else
                             // Try to resolve the cref and get its documentation
-                            match tryGetXmlDocByCref allCcusOpt ccuOpt currentModuleTypeOpt cref with
+                            match tryGetXmlDocByCref allCcusOpt tryFindXmlDocBySignature ccuOpt currentModuleTypeOpt cref with
                             | Some inheritedXml ->
                                 // Recursively expand the inherited doc
                                 let expandedInheritedXml =
                                     expandInheritedDoc
                                         allCcusOpt
+                                        tryFindXmlDocBySignature
                                         ccuOpt
                                         currentModuleTypeOpt
                                         implicitTargetCrefOpt
@@ -482,11 +506,12 @@ and private expandInheritDocText
                                 )
                             else
                                 // Try to resolve the implicit target
-                                match tryGetXmlDocByCref allCcusOpt ccuOpt currentModuleTypeOpt implicitCref with
+                                match tryGetXmlDocByCref allCcusOpt tryFindXmlDocBySignature ccuOpt currentModuleTypeOpt implicitCref with
                                 | Some inheritedXml ->
                                     let expandedInheritedXml =
                                         expandInheritedDoc
                                             allCcusOpt
+                                            tryFindXmlDocBySignature
                                             ccuOpt
                                             currentModuleTypeOpt
                                             None
@@ -540,6 +565,7 @@ and private expandInheritDocText
 /// Tracks visited signatures to prevent infinite recursion
 let expandInheritDoc
     (allCcusOpt: CcuThunk list option)
+    (tryFindXmlDocBySignature: (string -> string -> XmlDoc option) option)
     (ccuOpt: CcuThunk option)
     (currentModuleTypeOpt: ModuleOrNamespaceType option)
     (implicitTargetCrefOpt: string option)
@@ -553,7 +579,7 @@ let expandInheritDoc
         let xmlText = doc.GetXmlText()
 
         let expandedText =
-            expandInheritDocText allCcusOpt ccuOpt currentModuleTypeOpt implicitTargetCrefOpt m visited xmlText
+            expandInheritDocText allCcusOpt tryFindXmlDocBySignature ccuOpt currentModuleTypeOpt implicitTargetCrefOpt m visited xmlText
 
         if obj.ReferenceEquals(xmlText, expandedText) || xmlText = expandedText then
             doc
