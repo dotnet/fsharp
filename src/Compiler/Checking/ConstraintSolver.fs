@@ -3854,7 +3854,8 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         // Only activates when BOTH methods are generic (have type arguments)
         // Compare FORMAL parameter types (not instantiated) to handle cases like 't vs Option<'t>
         let concretenessCmp = 
-            if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
+            if g.langVersion.SupportsFeature(LanguageFeature.MoreConcreteTiebreaker) &&
+               not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
                 // Get formal (uninstantiated) parameter types using FormalMethodInst
                 let formalParams1 = candidate.Method.GetParamDatas(csenv.amap, m, candidate.Method.FormalMethodInst) |> List.concat
                 let formalParams2 = other.Method.GetParamDatas(csenv.amap, m, other.Method.FormalMethodInst) |> List.concat
@@ -3980,7 +3981,8 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         
         // NOW check concreteness - if it decides, return true
         let cConcreteness = 
-            if not winner.CalledTyArgs.IsEmpty && not loser.CalledTyArgs.IsEmpty then
+            if g.langVersion.SupportsFeature(LanguageFeature.MoreConcreteTiebreaker) &&
+               not winner.CalledTyArgs.IsEmpty && not loser.CalledTyArgs.IsEmpty then
                 let formalParams1 = winner.Method.GetParamDatas(csenv.amap, m, winner.Method.FormalMethodInst) |> List.concat
                 let formalParams2 = loser.Method.GetParamDatas(csenv.amap, m, loser.Method.FormalMethodInst) |> List.concat
                 if formalParams1.Length = formalParams2.Length then

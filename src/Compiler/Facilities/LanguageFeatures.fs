@@ -104,6 +104,7 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | MoreConcreteTiebreaker
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -240,6 +241,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
                 LanguageFeature.ReturnFromFinal, languageVersion100
                 LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions, languageVersion100
+                LanguageFeature.MoreConcreteTiebreaker, languageVersion100
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
@@ -419,6 +421,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions -> FSComp.SR.featureErrorOnInvalidDeclsInTypeDefinitions ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
+        | LanguageFeature.MoreConcreteTiebreaker -> FSComp.SR.featureMoreConcreteTiebreaker ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
