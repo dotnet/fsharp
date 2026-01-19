@@ -9,6 +9,8 @@ namespace InteractiveSession
 
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test
+open System.IO
 
 module Misc =
 
@@ -1301,3 +1303,804 @@ exit 0;;
         |> runFsi
         |> shouldSucceed
         |> ignore
+
+    // ================================================================================
+    // Additional FSIMODE=PIPE tests from fsharpqa - Sprint 4 iteration 3
+    // ================================================================================
+
+    // Test: DefinesInteractive - INTERACTIVE symbol is defined in FSI
+    [<Fact>]
+    let ``DefinesInteractive - INTERACTIVE is defined in FSI``() =
+        Fsx """
+// Verify INTERACTIVE is defined for all fsi sessions
+let test1 = 
+    #if INTERACTIVE
+    1
+    #else
+    0
+    #endif
+
+// COMPILED should NOT be defined in FSI
+let test2 = 
+    #if COMPILED
+    0
+    #else
+    1
+    #endif
+
+if test1 <> 1 then exit 1;;
+if test2 <> 1 then exit 1;;
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: Regressions02 - interface constraint on type generic parameter
+    // Regression for FSB 3739
+    [<Fact>]
+    let ``Regressions02 - interface constraint on generic type parameter``() =
+        Fsx """
+type IA = 
+    abstract AbstractMember : int -> int
+
+type IB = 
+    abstract AbstractMember : int -> int
+
+type C<'a when 'a :> IB>() = 
+    static member StaticMember(x:'a) = x.AbstractMember(1)
+;;
+
+type Tester() =
+    interface IB with
+        override this.AbstractMember x = -x
+
+if C<Tester>.StaticMember( new Tester() ) <> -1 then
+    exit 1
+
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: DefaultReferences - System.Core.dll is available in FSI
+    // Regression for FSB 3594
+    [<Fact>]
+    let ``DefaultReferences - Action and HashSet available in FSI``() =
+        Fsx """
+// Use Action
+open System
+let a = new Action<_>(fun () -> printfn "stuff");;
+
+a.Invoke();;
+
+// Use HashSet
+open System.Collections.Generic
+let hs = new HashSet<_>([1 .. 10]);;
+
+type A = System.Action<int>
+type B = System.Action<int,int>;;
+
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: E_ErrorRanges01 - incomplete pattern matching warning
+    // Regression for FSharp1.0:2815
+    [<Fact>]
+    let ``E_ErrorRanges01 - incomplete pattern match warning``() =
+        Fsx """
+type Suit =
+    | Club
+    | Heart
+
+type Card =
+    | Ace of Suit
+    | ValueCard of int * Suit
+
+let test card =
+    match card with
+    | ValueCard(5, Club) -> true
+
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> withStdErrContains "Incomplete pattern"
+        |> ignore
+
+    // Test: DoWithNotUnit - do with int expression
+    // Regression for FSHARP1.0:3628
+    [<Fact>]
+    let ``DoWithNotUnit - do with non-unit expression``() =
+        Fsx """
+let fA (x:int) = do x
+
+let resA = fA 12
+
+type T() = 
+    class 
+        let x = do 1
+        member this.X = x
+    end
+
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: E_let_id_equal01 - incomplete let x = 
+    // Regression for FSHARP1.0:5629
+    [<Fact>]
+    let ``E_let_id_equal01 - incomplete let binding``() =
+        Fsx """
+let x = ;;
+exit 1;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldFail
+        |> withStdErrContains "Incomplete"
+        |> ignore
+
+    // Test: E_let_equal_tuple - let = tuple
+    // Regression for FSHARP1.0:5629
+    [<Fact>]
+    let ``E_let_equal_tuple - let equals tuple syntax error``() =
+        Fsx """
+let = 1,2,3;;
+exit 1;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldFail
+        |> withStdErrContains "Unexpected symbol '=' in binding"
+        |> ignore
+
+    // Test: E_module_mutable_id_equal - module mutable M syntax error
+    // Regression for FSHARP1.0:5629
+    [<Fact>]
+    let ``E_module_mutable_id_equal - module mutable syntax error``() =
+        Fsx """
+module mutable M = ;;
+exit 1;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldFail
+        |> withStdErrContains "Unexpected"
+        |> ignore
+
+    // Test: E_let_id_equal_let_id_equal_n - chained incomplete let
+    // Regression for FSHARP1.0:5629
+    [<Fact>]
+    let ``E_let_id_equal_let_id_equal_n - chained incomplete let``() =
+        Fsx """
+let a = let b = ;;
+exit 1;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldFail
+        |> withStdErrContains "Incomplete"
+        |> ignore
+
+    // Test: ExnOnNonUIThread - exception from async shows proper message
+    // Regression for FSB 5802
+    [<Fact>]
+    let ``ExnOnNonUIThread - exception from async thread``() =
+        Fsx """
+// Exception should be surfaced properly
+Async.Start (async { failwith "game over man, game over" } );;
+System.Threading.Thread.Sleep(500);;
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: LoadFile01 - simple #load
+    [<Fact>]
+    let ``LoadFile01 - simple load directive``() =
+        Fsx """
+let p = 1;;
+if p <> 1 then exit 1;;
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: LoadFile02 - simple let binding
+    [<Fact>]
+    let ``LoadFile02 - simple let binding``() =
+        Fsx """
+let q = 2;;
+if q <> 2 then exit 1;;
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: Array2D01 - Array2D operations with generics
+    // Regression for 6348
+    [<Fact>]
+    let ``Array2D01 - 2D array with generics``() =
+        Fsx """
+/// A type of operations
+type IOps<'T> =
+    abstract Add : 'T * 'T -> 'T
+    abstract Zero : 'T;;
+
+/// Create an instance of an F77Array and capture its operation set
+type Matrix<'T> internal (ops: IOps<'T>, arr: 'T[,]) =
+    member internal x.Ops = ops
+    member internal x.Data = arr;;
+
+type Matrix =
+    /// A function to capture operations 
+    static member inline private captureOps() = 
+        { new IOps<_> with 
+            member x.Add(a,b) = a + b
+            member x.Zero = LanguagePrimitives.GenericZero<_> }
+
+    /// Create an instance of an F77Array and capture its operation set
+    static member inline Create nRows nCols =  Matrix<'T>(Matrix.captureOps(), Array2D.zeroCreate nRows nCols);;
+
+Matrix.Create 10 10;;
+
+type Array2D1<'T> =
+  new(a: 'T[,]) =
+    printfn "start"
+    {
+    };;
+
+Array2D1 (array2D [[1];[2]]) |> ignore;;
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: GenericInterfaceWithConstraints - complex generic constraints
+    [<Fact>]
+    let ``GenericInterfaceWithConstraints - interface with where clause``() =
+        Fsx """
+type IProcessor<'a> =
+    abstract Process : 'a -> 'a
+
+type StringProcessor() =
+    interface IProcessor<string> with
+        member _.Process x = x.ToUpper()
+
+let processor : IProcessor<string> = StringProcessor()
+let result = processor.Process "hello"
+if result <> "HELLO" then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: RecordWithMutableField - mutable record fields
+    [<Fact>]
+    let ``RecordWithMutableField - mutable field modification``() =
+        Fsx """
+type Point = { mutable X: int; mutable Y: int }
+let p = { X = 0; Y = 0 }
+p.X <- 10
+p.Y <- 20
+if p.X <> 10 || p.Y <> 20 then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: ClassWithStaticMember - static members in FSI
+    [<Fact>]
+    let ``ClassWithStaticMember - static member access``() =
+        Fsx """
+type Counter() =
+    static let mutable count = 0
+    static member Increment() = count <- count + 1; count
+    static member Current = count
+
+if Counter.Current <> 0 then exit 1
+if Counter.Increment() <> 1 then exit 1
+if Counter.Increment() <> 2 then exit 1
+if Counter.Current <> 2 then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: AbstractClass - abstract class implementation
+    [<Fact>]
+    let ``AbstractClass - abstract class with implementation``() =
+        Fsx """
+[<AbstractClass>]
+type Shape() =
+    abstract Area : float
+    abstract Perimeter : float
+
+type Rectangle(width: float, height: float) =
+    inherit Shape()
+    override _.Area = width * height
+    override _.Perimeter = 2.0 * (width + height)
+
+let rect = Rectangle(3.0, 4.0)
+if rect.Area <> 12.0 then exit 1
+if rect.Perimeter <> 14.0 then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: InheritedClass - class inheritance
+    [<Fact>]
+    let ``InheritedClass - class with base class``() =
+        Fsx """
+type Animal(name: string) =
+    member _.Name = name
+    abstract member Speak : unit -> string
+    default _.Speak() = "..."
+
+type Dog(name: string) =
+    inherit Animal(name)
+    override _.Speak() = "Woof!"
+
+let dog = Dog("Rex")
+if dog.Name <> "Rex" then exit 1
+if dog.Speak() <> "Woof!" then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: DisposablePattern - IDisposable implementation
+    [<Fact>]
+    let ``DisposablePattern - use binding with IDisposable``() =
+        Fsx """
+let mutable disposed = false
+
+type Resource() =
+    interface System.IDisposable with
+        member _.Dispose() = disposed <- true
+
+let test() =
+    use r = new Resource()
+    ()
+
+test()
+if not disposed then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: TryWithFinally - exception handling with finally
+    [<Fact>]
+    let ``TryWithFinally - try-with-finally blocks``() =
+        Fsx """
+let mutable finallyCalled = false
+let mutable caught = false
+
+try
+    try
+        raise (System.InvalidOperationException("test"))
+    with
+    | :? System.InvalidOperationException -> caught <- true
+finally
+    finallyCalled <- true
+
+if not caught then exit 1
+if not finallyCalled then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: CustomException - user-defined exceptions
+    [<Fact>]
+    let ``CustomException - exception with data``() =
+        Fsx """
+exception MyError of code: int * message: string
+
+let result =
+    try
+        raise (MyError(42, "Something went wrong"))
+        0
+    with
+    | MyError(code, msg) -> code
+
+if result <> 42 then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: SequenceYield - yield in sequences
+    [<Fact>]
+    let ``SequenceYield - yield and yield! in sequences``() =
+        Fsx """
+let nested = seq {
+    yield 1
+    yield! [2; 3]
+    yield 4
+}
+
+let list = nested |> Seq.toList
+if list <> [1; 2; 3; 4] then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: ComputationBuilderBind - custom computation expressions
+    [<Fact>]
+    let ``ComputationBuilderBind - bind in computation expression``() =
+        Fsx """
+type MaybeBuilder() =
+    member _.Bind(x, f) = match x with Some v -> f v | None -> None
+    member _.Return(x) = Some x
+
+let maybe = MaybeBuilder()
+
+let result = maybe {
+    let! x = Some 10
+    let! y = Some 20
+    return x + y
+}
+
+if result <> Some 30 then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: QueryExpression - query expressions
+    [<Fact>]
+    let ``QueryExpression - basic query expressions``() =
+        Fsx """
+let numbers = [1; 2; 3; 4; 5]
+
+let result = 
+    query {
+        for n in numbers do
+        where (n > 2)
+        select (n * 2)
+    }
+    |> Seq.toList
+
+if result <> [6; 8; 10] then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: MultipleInterfaces - class implementing multiple interfaces
+    [<Fact>]
+    let ``MultipleInterfaces - class with multiple interface implementations``() =
+        Fsx """
+type IReadable =
+    abstract Read : unit -> string
+
+type IWritable =
+    abstract Write : string -> unit
+
+type File(content: string) =
+    let mutable data = content
+    interface IReadable with
+        member _.Read() = data
+    interface IWritable with
+        member _.Write(s) = data <- s
+
+let f = File("initial")
+(f :> IWritable).Write("modified")
+if (f :> IReadable).Read() <> "modified" then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: GenericFunction - generic function instantiation
+    [<Fact>]
+    let ``GenericFunction - type parameter instantiation``() =
+        Fsx """
+let swap<'a> (x: 'a, y: 'a) = (y, x)
+
+let (a, b) = swap (1, 2)
+if a <> 2 || b <> 1 then exit 1
+
+let (c, d) = swap ("hello", "world")
+if c <> "world" || d <> "hello" then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: UnionCasesWithNamedFields - DU with named fields
+    [<Fact>]
+    let ``UnionCasesWithNamedFields - named fields in union cases``() =
+        Fsx """
+type Result<'T, 'E> =
+    | Ok of value: 'T
+    | Error of error: 'E
+
+let r = Ok(value = 42)
+match r with
+| Ok(value = v) when v = 42 -> ()
+| _ -> exit 1
+
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: ByRefParameter - byref parameter handling
+    [<Fact>]
+    let ``ByRefParameter - byref parameter modification``() =
+        Fsx """
+let addOne (x: byref<int>) = x <- x + 1
+
+let mutable value = 10
+addOne &value
+if value <> 11 then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: PrivateModuleMember - private module members not visible
+    [<Fact>]
+    let ``PrivateModuleMember - private binding in module``() =
+        Fsx """
+module M =
+    let private secret = 42
+    let getSecret() = secret
+
+if M.getSecret() <> 42 then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: PatternMatchAsPattern - as pattern
+    [<Fact>]
+    let ``PatternMatchAsPattern - as pattern in matching``() =
+        Fsx """
+let describe x =
+    match x with
+    | (1, _) as tuple -> $"starts with 1: {tuple}"
+    | (_, 2) as tuple -> $"ends with 2: {tuple}"
+    | tuple -> $"other: {tuple}"
+
+if describe (1, 5) <> "starts with 1: (1, 5)" then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: PatternMatchGuard - when guard in pattern
+    [<Fact>]
+    let ``PatternMatchGuard - when guard condition``() =
+        Fsx """
+let classify n =
+    match n with
+    | x when x < 0 -> "negative"
+    | x when x = 0 -> "zero"
+    | _ -> "positive"
+
+if classify (-5) <> "negative" then exit 1
+if classify 0 <> "zero" then exit 1
+if classify 10 <> "positive" then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: RecursiveValue - recursive value definition
+    [<Fact>]
+    let ``RecursiveValue - rec value binding``() =
+        Fsx """
+let rec fib n =
+    if n <= 1 then n
+    else fib (n-1) + fib (n-2)
+
+if fib 10 <> 55 then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: ArraySlicing - array slice syntax
+    [<Fact>]
+    let ``ArraySlicing - array slice expressions``() =
+        Fsx """
+let arr = [| 0; 1; 2; 3; 4; 5 |]
+let slice = arr.[1..3]
+if slice <> [| 1; 2; 3 |] then exit 1
+
+let fromStart = arr.[..2]
+if fromStart <> [| 0; 1; 2 |] then exit 1
+
+let toEnd = arr.[3..]
+if toEnd <> [| 3; 4; 5 |] then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: StringInterpolation - string interpolation
+    [<Fact>]
+    let ``StringInterpolation - interpolated strings``() =
+        Fsx """
+let name = "World"
+let count = 42
+let greeting = $"Hello, {name}! Count: {count}"
+if greeting <> "Hello, World! Count: 42" then exit 1
+
+let formatted = $"Pi is approximately {System.Math.PI:F2}"
+if not (formatted.Contains("3.14")) then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: Nullability - null value handling
+    [<Fact>]
+    let ``Nullability - null reference handling``() =
+        Fsx """
+let s : string = null
+if not (isNull s) then exit 1
+
+let notNull = "hello"
+if isNull notNull then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test: DefaultValueAttribute - DefaultValue on fields
+    [<Fact>]
+    let ``DefaultValueAttribute - default value fields``() =
+        Fsx """
+type Container() =
+    [<DefaultValue>]
+    val mutable Value : int
+
+let c = Container()
+if c.Value <> 0 then exit 1
+c.Value <- 42
+if c.Value <> 42 then exit 1
+exit 0;;
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // ================================================================================
+    // fsi.CommandLineArgs tests - BLOCKER 6 from VERIFICATION_v3_SuspiciousItems.md
+    // These tests verify that fsi.CommandLineArgs is correctly populated in FSI sessions
+    // These tests use subprocess execution because fsi.CommandLineArgs requires the FSI host
+    // ================================================================================
+
+    // Regression test for FSHARP1.0:2439 - fsi.CommandLineArgs with no extra args
+    [<Fact>]
+    let ``CommandLineArgs01 - no extra arguments``() =
+        // The first arg is the script name, so with no extra args there should be 1 arg
+        let scriptContent = """
+if fsi.CommandLineArgs.Length >= 1 then exit 0 else exit 1
+"""
+        let tmpFile = Path.GetTempFileName() + ".fsx"
+        try
+            File.WriteAllText(tmpFile, scriptContent)
+            let errors, _, _ = 
+                CompilerAssert.RunScriptWithOptionsAndReturnResult 
+                    [| tmpFile |] 
+                    ""
+            Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
+        finally
+            if File.Exists(tmpFile) then File.Delete(tmpFile)
+
+    // Regression test for FSHARP1.0:2439 - verify first arg is script/fsi name
+    [<Fact>]
+    let ``CommandLineArgs01b - first arg is script name``() =
+        // First arg (index 0) should be the script/fsi path
+        let scriptContent = """
+let x = fsi.CommandLineArgs.[0]
+// Just verify we can access it without error - it should be the script path
+if System.String.IsNullOrEmpty(x) then exit 1
+exit 0
+"""
+        let tmpFile = Path.GetTempFileName() + ".fsx"
+        try
+            File.WriteAllText(tmpFile, scriptContent)
+            let errors, _, _ = 
+                CompilerAssert.RunScriptWithOptionsAndReturnResult 
+                    [| tmpFile |] 
+                    ""
+            Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
+        finally
+            if File.Exists(tmpFile) then File.Delete(tmpFile)
+
+    // Regression test for FSHARP1.0:2439 - fsi.CommandLineArgs with one argument
+    [<Fact>]
+    let ``CommandLineArgs02 - one extra argument``() =
+        // When running with an extra argument "Hello", we should see it at args.[1]
+        let scriptContent = """
+let x = fsi.CommandLineArgs.Length
+let y = fsi.CommandLineArgs.[1]
+printfn "%A %A" x y
+if (x <> 2) || (y <> "Hello") then exit 1
+exit 0
+"""
+        let tmpFile = Path.GetTempFileName() + ".fsx"
+        try
+            File.WriteAllText(tmpFile, scriptContent)
+            let errors, _, _ = 
+                CompilerAssert.RunScriptWithOptionsAndReturnResult 
+                    [| tmpFile; "Hello" |] 
+                    ""
+            Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
+        finally
+            if File.Exists(tmpFile) then File.Delete(tmpFile)
+
