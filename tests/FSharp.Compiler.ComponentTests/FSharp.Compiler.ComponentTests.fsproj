@@ -51,6 +51,7 @@
     <Compile Include="Conformance\BasicGrammarElements\FieldMembers\FieldMembers.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ImportDeclarations\ImportDeclarations.fs" />
+    <Compile Include="Import\ImportTests.fs" />
     <Compile Include="Conformance\BasicGrammarElements\InterfaceSpecificationsAndImplementations\InterfaceSpecificationsAndImplementations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
@@ -125,6 +126,9 @@
     <Compile Include="Conformance\PatternMatching\Decimal\Decimal.fs" />
     <Compile Include="Conformance\Printing\Printing.fs" />
     <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
+    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\AbstractMembers\AbstractMembers.fs" />
+    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\DelegateTypes\DelegateTypes.fs" />
+    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\InterfaceTypes\InterfaceTypes.fs" />
     <Compile Include="Conformance\Types\RecordTypes\AnonymousRecords.fs" />
     <Compile Include="Conformance\Types\RecordTypes\RecordTypes.fs" />
     <Compile Include="Conformance\Types\StructTypes\StructTypes.fs" />

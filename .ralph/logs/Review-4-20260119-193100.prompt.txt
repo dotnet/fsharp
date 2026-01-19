@@ -1,0 +1,52 @@
+*** REVIEW ITERATION 2 - Previous reviews found issues ***
+Check .ralph/PROBLEMS.md for context.
+
+Skeptical reviewer. Verify SPRINT 4 delivers a complete, tested product increment.
+
+Migrate
+   FSIMODE=PIPE InteractiveSession tests: Migrate ~50 InteractiveSession tests
+   that use FSIMODE=PIPE. The audit confirms runFsi already handles this - the team didn't try
+   it.
+1. Restore deleted tests from git history: git show 646276c18^ for files in
+   InteractiveSession/Misc
+2. Add tests to ComponentTests/InteractiveSession/Misc.fs or new
+   files
+3. Use existing Fsx + runFsi infrastructure
+4. Focus on: fsi.CommandLineArgs tests (try
+   FSharpScript with argv first), #r relative path tests, multi-file FSI tests
+
+Reference
+   VERIFICATION_v3_SuspiciousItems.md 'BLOCKER 1: FSIMODE=PIPE' and 'BLOCKER 6:
+   fsi.CommandLineArgs'.
+
+Verification Criteria:
+- Build succeeds: dotnet build
+   tests/FSharp.Compiler.ComponentTests
+- Tests pass: dotnet test
+   tests/FSharp.Compiler.ComponentTests --filter 'FullyQualifiedName~InteractiveSession' -c
+   Release
+- At least 30 additional InteractiveSession tests migrated
+
+=== SPRINT REVIEW CHECKLIST ===
+A sprint is ONLY complete if ALL of these are true:
+1. Build/compile succeeds without errors
+2. All tests pass (new AND existing)
+3. The feature works as specified
+4. No TODOs, placeholders, or incomplete implementations
+5. Implementation aligns with .ralph/VISION.md
+
+REJECT the sprint if tests are missing or failing.
+REJECT the sprint if 'tests will be added later' - tests must be NOW.
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if the sprint delivers a complete, tested increment.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+Read .ralph/CONTEXT.md to see what previous subtasks accomplished.
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===

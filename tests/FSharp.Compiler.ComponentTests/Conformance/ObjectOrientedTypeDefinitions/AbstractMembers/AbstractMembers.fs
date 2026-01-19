@@ -117,3 +117,177 @@ module AbstractMembers =
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
+
+    // PRECMD tests migrated from fsharpqa/Source/Conformance/ObjectOrientedTypeDefinitions/AbstractMembers
+    // Original: PRECMD="$FSC_PIPE -a BaseClassAndInterface.fs" SCFLAGS="-r BaseClassAndInterface.dll -d FSLIBRARY"
+    // Regression test for TFS#834683 - DerivedClass with F# base library
+    [<Fact>]
+    let ``DerivedClass with F# base library`` () =
+        let fsLib =
+            FSharp """
+module FSLibrary
+
+// Interface with a member
+type I = abstract M : unit -> unit
+
+type C = 
+    new() = {}
+    abstract member M : unit -> unit
+    default this.M() = System.Console.WriteLine("I am my method")
+    interface I with
+        member this.M() = 
+            System.Console.WriteLine("I am going via the interface")
+            this.M()
+"""
+            |> asLibrary
+            |> withName "BaseClassAndInterface"
+
+        FSharp """
+open FSLibrary
+
+type D = 
+    inherit C
+    new() = {}
+    override this.M() = System.Console.WriteLine("I am method M in D")
+                        base.M()
+
+let d = D()
+d.M()
+let di = d :> I
+di.M()
+"""
+        |> asExe
+        |> withReferences [fsLib]
+        |> ignoreWarnings
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // Original: PRECMD="$CSC_PIPE /t:library BaseClassAndInterface.cs" SCFLAGS="-r BaseClassAndInterface.dll -d CSLIBRARY"
+    // Regression test for TFS#834683 - DerivedClass with C# base library
+    [<Fact>]
+    let ``DerivedClass with C# base library`` () =
+        let csLib =
+            CSharp """
+namespace CSLibrary
+{
+    public interface I
+    {
+        void M();
+    }
+
+    public class C : I
+    {
+        public virtual void M() { System.Console.WriteLine("I am my method"); }
+
+        void I.M()
+        {
+            System.Console.WriteLine("I am going via the interface");
+            M();
+        }
+    }
+}
+"""
+            |> withName "BaseClassAndInterface"
+
+        FSharp """
+open CSLibrary
+
+type D = 
+    inherit C
+    new() = {}
+    override this.M() = System.Console.WriteLine("I am method M in D")
+                        base.M()
+
+let d = D()
+d.M()
+let di = d :> I
+di.M()
+"""
+        |> asExe
+        |> withReferences [csLib]
+        |> ignoreWarnings
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // Original: PRECMD="$CSC_PIPE /t:library BaseClass.cs" SCFLAGS="-r:BaseClass.dll"
+    // Regression test for FSHARP1.0:5815 - calling unimplemented base methods
+    [<Fact>]
+    let ``E_CallToUnimplementedMethod02 with C# abstract base class`` () =
+        let csLib =
+            CSharp """
+/// A C# class with virtual and abstract methods
+/// Consumed by E_CallToUnimplementedMethod02.fs
+public abstract class B
+{
+    public virtual double M(int i)
+    {
+        return 1.0;
+    }
+
+    public abstract void M(string i);
+}
+"""
+            |> withName "BaseClass"
+
+        FSharp """
+module Test
+// Regression test for FSHARP1.0:5815
+// It's illegal to call unimplemented base methods
+
+type C() = 
+    inherit B()
+    override x.M(a:int) = base.M(a)
+    override x.M(a:string) = base.M(a)
+"""
+        |> asLibrary
+        |> withReferences [csLib]
+        |> withOptions ["--test:ErrorRanges"]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1201
+        |> withDiagnosticMessageMatches "Cannot call an abstract base member: 'M'"
+
+    // Original: PRECMD="$CSC_PIPE /t:library AbstractTypeLib.cs" SCFLAGS="-r:AbstractTypeLib.dll"
+    // Dev10:921995/Dev11:15622 - error when instantiating abstract class from C#
+    [<Fact>]
+    let ``E_CreateAbstractTypeFromCS01 - cannot instantiate abstract C# class`` () =
+        let csLib =
+            CSharp """
+using System;
+
+namespace TestLib
+{
+    public abstract class A : IComparable<A>
+    {
+        public A() { }
+        public abstract int CompareTo(A other);
+    }
+
+    public abstract class B<T> : IComparable<B<T>>
+    {
+        public B() { }
+        public abstract int CompareTo(B<T> other);
+    }
+}
+"""
+            |> withName "AbstractTypeLib"
+
+        FSharp """
+module Test
+let a = { new TestLib.A() with
+          member this.CompareTo x = 0 }
+
+let b = { new TestLib.B<string>() with
+          member this.CompareTo x = 0 }
+
+let x1 = new TestLib.A()
+let x2 = TestLib.A()
+let x3 = TestLib.B<int>()
+let x4 = new TestLib.B<string>()
+"""
+        |> asExe
+        |> withReferences [csLib]
+        |> withOptions ["--test:ErrorRanges"]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 759

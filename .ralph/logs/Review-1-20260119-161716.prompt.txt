@@ -1,0 +1,50 @@
+*** REVIEW ITERATION 2 - Previous reviews found issues ***
+Check .ralph/PROBLEMS.md for context.
+
+Skeptical reviewer. Verify SPRINT 1 delivers a complete, tested product increment.
+
+Add
+   runFsiProcess and runFscProcess CLI helpers: Add two subprocess helpers to
+   Compiler.fs for legitimate CLI test cases:
+1. `runFsiProcess` - runs fsi.exe as subprocess,
+   captures stdout/stderr/exitcode (for --help, exit code tests)
+2. `runFscProcess` - runs fsc.exe
+    as subprocess, captures stdout/stderr/exitcode (for missing file CLI errors)
+These are the
+   ONLY subprocess helpers needed. Include unit tests for both helpers.
+
+Reference
+   VERIFICATION_v3_SuspiciousItems.md section 'BLOCKER 2: FSI help options' and 'BLOCKER 5:
+   E_MissingSourceFile'.
+
+Verification Criteria:
+- Build succeeds: dotnet build
+   tests/FSharp.Test.Utilities
+- runFsiProcess helper exists in Compiler.fs
+- runFscProcess
+   helper exists in Compiler.fs
+- Unit tests pass for both helpers
+
+=== SPRINT REVIEW CHECKLIST ===
+A sprint is ONLY complete if ALL of these are true:
+1. Build/compile succeeds without errors
+2. All tests pass (new AND existing)
+3. The feature works as specified
+4. No TODOs, placeholders, or incomplete implementations
+5. Implementation aligns with .ralph/VISION.md
+
+REJECT the sprint if tests are missing or failing.
+REJECT the sprint if 'tests will be added later' - tests must be NOW.
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if the sprint delivers a complete, tested increment.
+Output REVIEW_FAILED followed by bullet list of issues if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===

@@ -1,0 +1,48 @@
+SPRINT 5: Migrate PRECMD dependency tests
+
+Migrate ~20 tests that used PRECMD to
+   pre-compile dependencies. The audit confirms the References mechanism already handles this.
+1.
+   Find tests using PRECMD/FSC_PIPE in git history
+2. Convert to use withReferences [dependency]
+   pattern
+3. This includes tests in Conformance that required pre-compiled libs
+
+Reference
+   VERIFICATION_v3_SuspiciousItems.md 'BLOCKER 4: PRECMD tests require pre-compilation steps'.
+
+Verification Criteria:
+- Build succeeds: dotnet build tests/FSharp.Compiler.ComponentTests
+- Tests pass for migrated PRECMD tests
+- At least 15 PRECMD-style tests migrated using
+   References
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+=== SPRINT COMPLETION REQUIREMENTS ===
+This sprint MUST deliver a TESTED, BUILDING product increment:
+1. Write/update code AND tests together (not separately)
+2. Run build - it MUST succeed
+3. Run tests - they MUST pass
+4. The feature must work as specified
+
+Do NOT commit untested code. Tests are part of THIS sprint, not a future one.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this sprint is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL criteria are met (including tests passing), COMMIT your changes,
+then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+Read .ralph/CONTEXT.md to see what previous subtasks accomplished.
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===
