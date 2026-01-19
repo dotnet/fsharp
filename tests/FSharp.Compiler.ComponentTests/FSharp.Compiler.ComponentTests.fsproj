@@ -282,6 +282,7 @@
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
     <Compile Include="Scripting\PreferredUiLangTests.fs" />
+    <Compile Include="InteractiveSession\Misc.fs" />
     <Compile Include="TypeChecks\TypeRelations.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
