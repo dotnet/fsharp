@@ -35,7 +35,7 @@ jobs:
       displayName: Download F# Core Artifacts
       inputs:
         artifactName: 'FSharpCoreArtifacts'
-        downloadPath: '$(Pipeline. Workspace)/FSharpCompiler/artifacts/bin/FSharp.Core'
+        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/FSharp.Core'
 
     - task: DownloadPipelineArtifact@2
       displayName:  Download UseLocalCompiler props
@@ -46,15 +46,15 @@ jobs:
     - pwsh: |
         Write-Host "Cloning repository:  ${{ item.repo }}"
         git clone --recursive https://github.com/${{ item.repo }}.git $(Pipeline.Workspace)/TestRepo
-        Set-Location $(Pipeline. Workspace)/TestRepo
+        Set-Location $(Pipeline.Workspace)/TestRepo
         
         Write-Host "Checking out commit:  ${{ item.commit }}"
-        git checkout ${{ item. commit }}
+        git checkout ${{ item.commit }}
         
         Write-Host "Initializing submodules (if any)..."
         git submodule update --init --recursive
         
-        Write-Host "Successfully checked out ${{ item.repo }} at commit ${{ item. commit }}"
+        Write-Host "Successfully checked out ${{ item.repo }} at commit ${{ item.commit }}"
         git log -1 --oneline
         
         Write-Host "Repository structure:"
@@ -78,7 +78,7 @@ jobs:
       displayName:  Checkout ${{ item.displayName }} at specific commit
 
     - pwsh: |
-        Set-Location $(Pipeline. Workspace)/TestRepo
+        Set-Location $(Pipeline.Workspace)/TestRepo
         Write-Host "Removing global.json to use latest SDK..."
         if (Test-Path "global.json") {
           Remove-Item "global.json" -Force
@@ -93,20 +93,20 @@ jobs:
       inputs:
         packageType: sdk
         version: '8.0.x'
-        installationPath: $(Pipeline.Workspace)/TestRepo/. dotnet
+        installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
 
     - task: UseDotNet@2
       displayName:  Install .NET SDK 10.0.100 for ${{ item.displayName }}
       inputs:
         packageType: sdk
         version: '10.0.100'
-        installationPath: $(Pipeline. Workspace)/TestRepo/.dotnet
+        installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
 
     - pwsh: |
-        Set-Location $(Pipeline. Workspace)/TestRepo
+        Set-Location $(Pipeline.Workspace)/TestRepo
         
-        Write-Host "Running PrepareRepoForRegressionTesting. fsx..."
-        dotnet fsi $(Build.SourcesDirectory)/eng/scripts/PrepareRepoForRegressionTesting.fsx "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory. Build.props"
+        Write-Host "Running PrepareRepoForRegressionTesting.fsx..."
+        dotnet fsi $(Build.SourcesDirectory)/eng/scripts/PrepareRepoForRegressionTesting.fsx "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props"
         
         if ($LASTEXITCODE -ne 0) {
           Write-Host "Failed to prepare repository for regression testing"
@@ -129,12 +129,12 @@ jobs:
         Write-Host ""
         Write-Host "F# Core available:"
         if (Test-Path "$(Pipeline.Workspace)/FSharpCompiler/bin/FSharp.Core/Release/netstandard2.0/FSharp.Core.dll") {
-          Write-Host "FSharp.Core. dll found"
+          Write-Host "FSharp.Core.dll found"
         } else {
-          Write-Host "FSharp.Core. dll not found"
+          Write-Host "FSharp.Core.dll not found"
         }
         Write-Host ""
-        Write-Host "Directory. Build.props content:"
+        Write-Host "Directory.Build.props content:"
         Get-Content "Directory.Build.props"
         Write-Host ""
         Write-Host "==========================================="
@@ -144,15 +144,15 @@ jobs:
         Set-Location $(Pipeline.Workspace)/TestRepo
         Write-Host "============================================"
         Write-Host "Starting build for ${{ item.displayName }}"
-        Write-Host "Repository: ${{ item. repo }}"
+        Write-Host "Repository: ${{ item.repo }}"
         Write-Host "Commit: ${{ item.commit }}"
-        Write-Host "Build Script: ${{ item. buildScript }}"
+        Write-Host "Build Script: ${{ item.buildScript }}"
         Write-Host "============================================"
         Write-Host ""
         
         $buildScript = '${{ item.buildScript }}'
-        $errorLogPath = "$(Pipeline.Workspace)/build-errors. log"
-        $fullLogPath = "$(Pipeline.Workspace)/build-full. log"
+        $errorLogPath = "$(Pipeline.Workspace)/build-errors.log"
+        $fullLogPath = "$(Pipeline.Workspace)/build-full.log"
         
         # Function to filter and capture important lines
         function Process-BuildOutput {
@@ -182,7 +182,7 @@ jobs:
         } else {
           Write-Host "Executing file-based script: $buildScript"
           chmod +x "$buildScript"
-          bash -c ". /$buildScript" 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
+          bash -c "./$buildScript" 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
             Process-BuildOutput $_
           }
         }
@@ -199,23 +199,23 @@ jobs:
         }
       displayName:  Build ${{ item.displayName }} with local F# compiler
       env:
-        LocalFSharpCompilerPath: $(Pipeline. Workspace)/FSharpCompiler
+        LocalFSharpCompilerPath: $(Pipeline.Workspace)/FSharpCompiler
         LoadLocalFSharpBuild: 'True'
         LocalFSharpCompilerConfiguration: Release
       timeoutInMinutes:  45
 
     - pwsh:  |
-        Set-Location $(Pipeline. Workspace)/TestRepo
-        $binlogDir = "$(Pipeline. Workspace)/BinaryLogs"
+        Set-Location $(Pipeline.Workspace)/TestRepo
+        $binlogDir = "$(Pipeline.Workspace)/BinaryLogs"
         New-Item -ItemType Directory -Force -Path $binlogDir | Out-Null
 
-        Write-Host "Collecting . binlog files..."
+        Write-Host "Collecting .binlog files..."
         $binlogs = Get-ChildItem -Path "." -Filter "*.binlog" -Recurse -ErrorAction SilentlyContinue
-        if ($binlogs. Count -eq 0) {
-          Write-Host "No . binlog files found"
+        if ($binlogs.Count -eq 0) {
+          Write-Host "No .binlog files found"
         } else {
           foreach ($binlog in $binlogs) {
-            Write-Host "Copying:  $($binlog. FullName)"
+            Write-Host "Copying:  $($binlog.FullName)"
             Copy-Item $binlog.FullName -Destination $binlogDir
           }
           Write-Host "Collected $($binlogs.Count) .binlog files"
@@ -238,7 +238,7 @@ jobs:
         Write-Host ""
         Write-Host "============================================"
         Write-Host "Regression test completed for ${{ item.displayName }}"
-        Write-Host "Repository: ${{ item. repo }}"
+        Write-Host "Repository: ${{ item.repo }}"
         Write-Host "Commit: ${{ item.commit }}"
         Write-Host "Build Script: ${{ item.buildScript }}"
         
@@ -278,7 +278,7 @@ jobs:
             
             $totalLines = (Get-Content $errorLogPath | Measure-Object -Line).Lines
             if ($totalLines -gt 100) {
-              Write-Host "##[warning]...  and $($totalLines - 100) more lines (see full log or binary logs)"
+              Write-Host "##[warning]... and $($totalLines - 100) more lines (see full log or binary logs)"
             }
             
             Write-Host ""
@@ -294,7 +294,7 @@ jobs:
           Write-Host "./build.sh -c Release"
           Write-Host ""
           Write-Host "# 2. Clone and checkout the failing library"
-          Write-Host "cd . ."
+          Write-Host "cd .."
           Write-Host "git clone --recursive https://github.com/${{ item.repo }}.git TestRepo"
           Write-Host "cd TestRepo"
           Write-Host "git checkout ${{ item.commit }}"
@@ -302,7 +302,7 @@ jobs:
           Write-Host "rm -f global.json"
           Write-Host ""
           Write-Host "# 3. Prepare the repo for local compiler"
-          Write-Host "dotnet fsi ../fsharp/eng/scripts/PrepareRepoForRegressionTesting.fsx `"../fsharp/UseLocalCompiler.Directory.Build. props`""
+          Write-Host "dotnet fsi ../fsharp/eng/scripts/PrepareRepoForRegressionTesting.fsx `"../fsharp/UseLocalCompiler.Directory.Build.props`""
           Write-Host ""
           Write-Host "# 4. Build with local compiler"
           Write-Host "export LocalFSharpCompilerPath=`$PWD/../fsharp"
@@ -316,6 +316,6 @@ jobs:
         
         Write-Host ""
         Write-Host "Binary logs found:"
-        Get-ChildItem "*. binlog" -Recurse -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_. FullName }
+        Get-ChildItem "*.binlog" -Recurse -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
       displayName: Report ${{ item.displayName }} test result
       condition: always()
