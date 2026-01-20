@@ -85,11 +85,11 @@ if (-not $TestsOnly) {
 
     foreach ($task in $failedTasks) {
         Write-Host "Analyzing failed task: $($task.name)" -ForegroundColor Red
-        
+
         try {
             $log = Invoke-RestMethod -Uri $task.log.url -Method Get
-            $lines = $log -split "`n"
-            
+            $lines = $log -split "`r?`n"
+
             # Find MSBuild errors and ##[error] markers
             $errorLines = $lines | Where-Object { 
                 $_ -match ": error [A-Z]+\d*:" -or      # MSBuild errors (CS1234, MT1234, etc.)
@@ -101,12 +101,12 @@ if (-not $TestsOnly) {
                 # Clean up the line
                 $cleanLine = $errorLine -replace "^\d{4}-\d{2}-\d{2}T[\d:.]+Z\s*", ""
                 $cleanLine = $cleanLine -replace "##\[error\]", ""
-                
+
                 # Skip generic "exited with code" errors - we want the actual error
                 if ($cleanLine -match "exited with code") {
                     continue
                 }
-                
+
                 $allResults += [PSCustomObject]@{
                     Type    = "BuildError"
                     Source  = $task.name
@@ -133,25 +133,27 @@ if (-not $ErrorsOnly) {
 
     foreach ($job in $jobs) {
         Write-Host "Analyzing job for test failures: $($job.name)" -ForegroundColor Yellow
-        
+
         try {
             $logContent = Invoke-RestMethod -Uri $job.log.url -Method Get
-            $lines = $logContent -split "`n"
+            $lines = $logContent -split "`r?`n"
             
-            # Find test result lines: "Failed <TestName> [duration]"
+            # Find test result lines: "failed <TestName> (duration)"
+            # Format: ESC[31mfailedESC[m TestName ESC[90m(duration)ESC[m
+            # Note: \x1b is the hex escape for the ESC character (0x1B)
             for ($i = 0; $i -lt $lines.Count; $i++) {
-                if ($lines[$i] -match "^\d{4}-\d{2}-\d{2}.*\s+Failed\s+(\S+)\s+\[([^\]]+)\]") {
+                # Match ANSI-colored format - the reset code ESC[m comes immediately after "failed"
+                if ($lines[$i] -match '^\d{4}-\d{2}-\d{2}.*\x1b\[31mfailed\x1b\[m\s+(.+?)\s+\x1b\[90m\(([^)]+)\)\x1b\[m$') {
                     $testName = $matches[1]
                     $duration = $matches[2]
-                    
                     $errorMessage = ""
                     $stackTrace = ""
-                    
+
                     # Look ahead for error message and stack trace
                     for ($j = $i + 1; $j -lt $lines.Count; $j++) {
                         $line = $lines[$j]
                         $cleanLine = $line -replace "^\d{4}-\d{2}-\d{2}T[\d:.]+Z\s*", ""
-                        
+
                         if ($cleanLine -match "^\s*Error Message:") {
                             for ($k = $j + 1; $k -lt [Math]::Min($j + 10, $lines.Count); $k++) {
                                 $msgLine = $lines[$k] -replace "^\d{4}-\d{2}-\d{2}T[\d:.]+Z\s*", ""
@@ -161,7 +163,7 @@ if (-not $ErrorsOnly) {
                                 $errorMessage += $msgLine.Trim() + " "
                             }
                         }
-                        
+
                         if ($cleanLine -match "^\s*Stack Trace:") {
                             for ($k = $j + 1; $k -lt [Math]::Min($j + 5, $lines.Count); $k++) {
                                 $stLine = $lines[$k] -replace "^\d{4}-\d{2}-\d{2}T[\d:.]+Z\s*", ""
@@ -172,13 +174,13 @@ if (-not $ErrorsOnly) {
                             }
                             break
                         }
-                        
-                        # Stop if we hit the next test
-                        if ($cleanLine -match "^\s*(Passed|Failed|Skipped)\s+\S+\s+\[") {
+
+                        # Stop if we hit the next test (plain or ANSI-colored format)
+                        if ($cleanLine -match '(?:\x1b\[\d+m)?(passed|failed|skipped)(?:\x1b\[m)?\s+\S+') {
                             break
                         }
                     }
-                    
+
                     $allResults += [PSCustomObject]@{
                         Type    = "TestFailure"
                         Source  = $job.name
