@@ -489,7 +489,7 @@ When caller provides 2 args:
 3. Framework in place for future enhancement without regressions
 
 **Test Coverage Added**:
-- `TypeCompatibilityFilterTest.fs` with 20+ test cases covering:
+- `TypeCompatibilityFilterTest.fs` with 30+ test cases covering:
   - Sealed types (int, string, float, bool, byte)
   - Generic overloads (never filtered - conservative)
   - Interface parameters (IComparable, IEnumerable)
@@ -499,6 +499,9 @@ When caller provides 2 args:
   - Multi-parameter overloads with mixed types
   - Nullable conversions (T -> Nullable<T>)
   - Numeric conversions (int -> int64, nativeint)
+  - **Param arrays** with different element types (int[], string[], mixed with regular params)
+  - **Optional arguments** with type-distinguished overloads (int, string, float variants)
+  - **Complex optional args** with interface types (IComparable, IEnumerable<int>)
 
 **Test Results**:
 - All 31 OverloadingMembers tests pass

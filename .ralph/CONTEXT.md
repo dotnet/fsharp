@@ -138,7 +138,7 @@ This file is updated after each sprint completes. Use it to understand what was 
 - Framework in place for future enhancement without regressions
 
 **Test Coverage:**
-- TypeCompatibilityFilterTest.fs with 20+ test cases:
+- TypeCompatibilityFilterTest.fs with 30+ test cases:
   - Sealed types (int, string, float, bool, byte)
   - Generic overloads
   - Interface parameters (IComparable, IEnumerable)
@@ -148,6 +148,9 @@ This file is updated after each sprint completes. Use it to understand what was 
   - Multi-parameter overloads with mixed types
   - Nullable conversions
   - Numeric conversions
+  - **Param arrays** with different element types
+  - **Optional arguments** with type-distinguished overloads
+  - **Complex optional args** with interface types
 
 **Test Results:**
 - All 31 OverloadingMembers tests pass

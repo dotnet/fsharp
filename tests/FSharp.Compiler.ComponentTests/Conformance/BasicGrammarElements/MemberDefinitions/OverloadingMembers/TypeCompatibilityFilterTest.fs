@@ -96,4 +96,69 @@ if TypeCompatTest.WithNullable(Nullable<float>(3.14)) <> "nullable-float" then f
 if TypeCompatTest.NumericConversions(42L) <> "int64" then failwith "Failed: NumericConversions int64"
 if TypeCompatTest.NumericConversions(42n) <> "nativeint" then failwith "Failed: NumericConversions nativeint"
 
+// ========================================
+// Tests for param arrays with type compatibility
+// ========================================
+
+type ParamArrayTypeTest() =
+    // Param array overloads with different element types
+    static member Process([<ParamArray>] args: int[]) = sprintf "ints-%d" args.Length
+    static member Process([<ParamArray>] args: string[]) = sprintf "strings-%d" args.Length
+    static member Process([<ParamArray>] args: obj[]) = sprintf "objs-%d" args.Length
+    
+    // Mixed param array and regular params
+    static member Mixed(prefix: string, [<ParamArray>] values: int[]) = sprintf "%s-%d" prefix values.Length
+    static member Mixed(prefix: string, [<ParamArray>] values: string[]) = sprintf "%s-strs-%d" prefix values.Length
+
+// Param array tests - type compatibility should distinguish element types
+if ParamArrayTypeTest.Process(1, 2, 3) <> "ints-3" then failwith "Failed: ParamArray int"
+if ParamArrayTypeTest.Process("a", "b") <> "strings-2" then failwith "Failed: ParamArray string"
+// Empty param array is ambiguous when multiple overloads exist - skip that test
+
+// Mixed param array tests
+if ParamArrayTypeTest.Mixed("test", 1, 2) <> "test-2" then failwith "Failed: Mixed ParamArray int"
+if ParamArrayTypeTest.Mixed("test", "a", "b", "c") <> "test-strs-3" then failwith "Failed: Mixed ParamArray string"
+
+// ========================================
+// Tests for optional args with type compatibility
+// ========================================
+
+type OptionalArgsTypeTest() =
+    // Optional args - first param type distinguishes overloads (avoids ambiguity)
+    static member Method(x: int, ?y: int) = 
+        match y with
+        | Some v -> sprintf "int-int-%d-%d" x v
+        | None -> sprintf "int-none-%d" x
+    static member Method(x: string, ?y: string) = 
+        match y with
+        | Some v -> sprintf "string-string-%s-%s" x v
+        | None -> sprintf "string-none-%s" x
+    static member Method(x: float, ?y: float) = 
+        match y with
+        | Some v -> sprintf "float-float-%f-%f" x v
+        | None -> sprintf "float-none-%f" x
+        
+    // Optional args with complex types - use named params to avoid ambiguity
+    static member Complex(x: int, y: int, ?comparer: IComparable) =
+        match comparer with
+        | Some _ -> "with-comparer"
+        | None -> "no-comparer"
+    static member Complex(x: int, y: string, ?list: IEnumerable<int>) =
+        match list with
+        | Some _ -> "with-list"
+        | None -> "no-list"
+
+// Optional args tests - type compatibility with optional parameters
+if OptionalArgsTypeTest.Method(42) <> "int-none-42" then failwith "Failed: Optional int no-opt"
+if OptionalArgsTypeTest.Method(42, 10) <> "int-int-42-10" then failwith "Failed: Optional int with-opt"
+if OptionalArgsTypeTest.Method("hello") <> "string-none-hello" then failwith "Failed: Optional string no-opt"
+if OptionalArgsTypeTest.Method("hello", "world") <> "string-string-hello-world" then failwith "Failed: Optional string with-opt"
+if OptionalArgsTypeTest.Method(3.14) = "float-none-3.140000" || OptionalArgsTypeTest.Method(3.14).StartsWith("float-none-") then () else failwith "Failed: Optional float no-opt"
+
+// Complex optional args with interface types - distinguished by second required param
+if OptionalArgsTypeTest.Complex(42, 10) <> "no-comparer" then failwith "Failed: Optional Complex int-int no-opt"
+if OptionalArgsTypeTest.Complex(42, 10, comparer = (42 :> IComparable)) <> "with-comparer" then failwith "Failed: Optional Complex with-comparer"
+if OptionalArgsTypeTest.Complex(42, "test") <> "no-list" then failwith "Failed: Optional Complex int-string no-opt"
+if OptionalArgsTypeTest.Complex(42, "test", list = [1; 2; 3]) <> "with-list" then failwith "Failed: Optional Complex with-list"
+
 printfn "All type compatibility filtering tests passed!"
