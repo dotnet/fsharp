@@ -627,7 +627,8 @@ type FSharpChecker
     static member OverloadCacheMisses = ConstraintSolver.GetOverloadCacheMisses()
 
     /// Reset overload cache counters (for testability)
-    static member ResetOverloadCacheCounters() = ConstraintSolver.ResetOverloadCacheCounters()
+    static member ResetOverloadCacheCounters() =
+        ConstraintSolver.ResetOverloadCacheCounters()
 
     static member Instance = globalInstance.Force()
 

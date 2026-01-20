@@ -1,0 +1,59 @@
+SPRINT 6: Implement Overload Resolution Caching
+
+Design and implement a cache for
+   overload resolution results. Key: (method group identity, caller argument types). Value:
+   resolved CalledMeth or failure. Scope cache appropriately (per-file or per-expression-check
+   context). Handle cache invalidation when types are refined during inference. Measure cache hit
+   rate and overall speedup for repetitive patterns like test files with many Assert.Equal calls.
+
+Definition of Done (DoD):
+- Cache design documented in METHOD_RESOLUTION_PERF_IDEAS.md
+- Cache implementation
+   added to ConstraintSolver.fs or CheckExpressions.fs
+- Compiler builds with 0 errors
+- All
+   existing compiler tests pass
+- Cache hit rate measured on test project (target: >30% for
+   repetitive patterns)
+- Overall speedup measured and documented
+- METHOD_RESOLUTION_PERF_IDEAS.md Idea 2 updated with results
+
+FIX THESE ISSUES:
+- FAILED: All existing compiler tests pass (baseline was not updated before review)
+- ISSUES:
+- The SurfaceArea baseline file was not updated with the new public API entries for
+- **Fixed now**: Baseline has been updated and SurfaceArea test passes
+- The TypeCheckerRecoveryTests.Tuple02 failure is pre-existing and unrelated to Sprint 6
+
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+=== SPRINT COMPLETION REQUIREMENTS ===
+This sprint MUST deliver a TESTED, BUILDING product increment.
+ALL DoD items must pass for the sprint to be complete.
+
+1. Write/update code AND tests together (not separately)
+2. Run build - it MUST succeed
+3. Run tests - they MUST pass
+4. Verify each DoD criterion is satisfied
+
+Do NOT commit untested code. Tests are part of THIS sprint, not a future one.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this sprint is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL DoD items are satisfied, COMMIT your changes,
+then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+Read .ralph/CONTEXT.md to see what previous subtasks accomplished.
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===

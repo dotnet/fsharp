@@ -43,3 +43,10 @@
 - **The "SRTP side effect" justification is incomplete.** The code comments reference discovered
 - **The sprint deliverable was "implement quick type compatibility check" - not "add framework
 
+## Subtask 6 - Review->Implement iteration 1 (2026-01-20 20:36:47)
+- FAILED: All existing compiler tests pass (baseline was not updated before review)
+- ISSUES:
+- The SurfaceArea baseline file was not updated with the new public API entries for
+- **Fixed now**: Baseline has been updated and SurfaceArea test passes
+- The TypeCheckerRecoveryTests.Tuple02 failure is pre-existing and unrelated to Sprint 6
+

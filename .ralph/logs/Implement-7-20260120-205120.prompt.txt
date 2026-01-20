@@ -1,0 +1,51 @@
+SPRINT 7: Comprehensive Testing and Validation
+
+Run the full F# compiler test suite to
+   ensure no regressions. Focus on overload resolution edge cases: generic methods, param arrays,
+   optional parameters, named arguments, type-directed conversions, extension methods. Run
+   benchmarks comparing original vs optimized compiler on the test project. Document final
+   performance improvement.
+
+Definition of Done (DoD):
+- Full test suite passes: dotnet build -c Release && dotnet
+   test -c Release
+- Edge case tests explicitly verified passing
+- Benchmark comparison: original
+    vs optimized on 1500-assertion project
+- At least 50% improvement in untyped Assert.Equal
+   compilation time
+- No semantic changes to overload resolution (same method selected)
+- Results
+    documented in METHOD_RESOLUTION_PERF_IDEAS.md
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+=== SPRINT COMPLETION REQUIREMENTS ===
+This sprint MUST deliver a TESTED, BUILDING product increment.
+ALL DoD items must pass for the sprint to be complete.
+
+1. Write/update code AND tests together (not separately)
+2. Run build - it MUST succeed
+3. Run tests - they MUST pass
+4. Verify each DoD criterion is satisfied
+
+Do NOT commit untested code. Tests are part of THIS sprint, not a future one.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this sprint is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL DoD items are satisfied, COMMIT your changes,
+then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+Read .ralph/CONTEXT.md to see what previous subtasks accomplished.
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===
