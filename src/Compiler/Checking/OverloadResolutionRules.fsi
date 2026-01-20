@@ -20,6 +20,15 @@ type OverloadResolutionContext =
         ndeep: int
     }
 
+/// Aggregate pairwise comparison results using dominance rule.
+/// Returns 1 if ty1 dominates (better in some positions, not worse in any),
+/// -1 if ty2 dominates, 0 if incomparable or equal.
+val aggregateComparisons: comparisons: int list -> int
+
+/// Compare types under the "more concrete" partial ordering.
+/// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
+val compareTypeConcreteness: g: TcGlobals -> ty1: TType -> ty2: TType -> int
+
 /// Represents a single tiebreaker rule in overload resolution.
 /// Rules are ordered by priority (lower number = higher priority).
 type TiebreakRule =
