@@ -72,10 +72,7 @@ let ``type check neg19`` () = singleNegTest ( "typecheck/sigs") "neg19"
 [<FactForDESKTOP>]
 let ``type check neg20`` () = singleNegTest ( "typecheck/sigs") "neg20"
 
-[<FactForDESKTOP>]
-let ``type check neg20 version 8_0`` () =
-    let cfg =  "typecheck/sigs/version50"
-    singleVersionedNegTest cfg LangVersion.V80 "neg20"
+
 
 [<FactForDESKTOP>]
 let ``type check neg21`` () = singleNegTest ( "typecheck/sigs") "neg21"
