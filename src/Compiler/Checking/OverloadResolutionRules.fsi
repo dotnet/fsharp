@@ -58,3 +58,12 @@ val evaluateTiebreakRules:
     candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
         other: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
             int
+
+/// Check if a specific rule was the deciding factor between two methods.
+/// Returns true if all rules BEFORE the named rule returned 0, and the named rule returned > 0.
+val wasDecidedByRule:
+    ruleName: string ->
+    context: OverloadResolutionContext ->
+    winner: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
+        loser: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
+            bool

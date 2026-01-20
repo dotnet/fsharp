@@ -6,6 +6,7 @@ module internal FSharp.Compiler.OverloadResolutionRules
 
 open FSharp.Compiler.Features
 open FSharp.Compiler.Import
+open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.Text
 open FSharp.Compiler.TcGlobals
@@ -52,6 +53,7 @@ type TiebreakRule =
 let aggregateComparisons (comparisons: int list) =
     let hasPositive = comparisons |> List.exists (fun c -> c > 0)
     let hasNegative = comparisons |> List.exists (fun c -> c < 0)
+
     if not hasNegative && hasPositive then 1
     elif not hasPositive && hasNegative then -1
     else 0
@@ -61,52 +63,59 @@ let aggregateComparisons (comparisons: int list) =
 let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     let sty1 = stripTyEqns g ty1
     let sty2 = stripTyEqns g ty2
+
     match sty1, sty2 with
     // Case 1: Both are type variables - incomparable
     // RFC Example 15 (constraint specificity) is deferred due to F# language limitation (FS0438).
     // Comparing constraint counts would incorrectly affect SRTP resolution.
     | TType_var _, TType_var _ -> 0
-    
+
     // Case 2: Type variable vs concrete type - concrete is more concrete
     | TType_var _, _ -> -1
     | _, TType_var _ -> 1
-    
+
     // Case 3: Type applications - compare type arguments when constructors match
-    | TType_app (tcref1, args1, _), TType_app (tcref2, args2, _) ->
-        if not (tyconRefEq g tcref1 tcref2) then 0
-        elif args1.Length <> args2.Length then 0
+    | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) ->
+        if not (tyconRefEq g tcref1 tcref2) then
+            0
+        elif args1.Length <> args2.Length then
+            0
         else
             let comparisons = List.map2 (compareTypeConcreteness g) args1 args2
             aggregateComparisons comparisons
-    
+
     // Case 4: Tuple types - compare element-wise
-    | TType_tuple (_, elems1), TType_tuple (_, elems2) ->
-        if elems1.Length <> elems2.Length then 0
+    | TType_tuple(_, elems1), TType_tuple(_, elems2) ->
+        if elems1.Length <> elems2.Length then
+            0
         else
             let comparisons = List.map2 (compareTypeConcreteness g) elems1 elems2
             aggregateComparisons comparisons
-    
+
     // Case 5: Function types - compare domain and range
-    | TType_fun (dom1, rng1, _), TType_fun (dom2, rng2, _) ->
+    | TType_fun(dom1, rng1, _), TType_fun(dom2, rng2, _) ->
         let cDomain = compareTypeConcreteness g dom1 dom2
         let cRange = compareTypeConcreteness g rng1 rng2
-        aggregateComparisons [cDomain; cRange]
-    
+        aggregateComparisons [ cDomain; cRange ]
+
     // Case 6: Anonymous record types - compare fields
-    | TType_anon (info1, tys1), TType_anon (info2, tys2) ->
-        if not (anonInfoEquiv info1 info2) then 0
+    | TType_anon(info1, tys1), TType_anon(info2, tys2) ->
+        if not (anonInfoEquiv info1 info2) then
+            0
         else
             let comparisons = List.map2 (compareTypeConcreteness g) tys1 tys2
             aggregateComparisons comparisons
-    
+
     // Case 7: Measure types - equal or incomparable
     | TType_measure _, TType_measure _ -> 0
-    
+
     // Case 8: Universal quantified types (forall)
-    | TType_forall (tps1, body1), TType_forall (tps2, body2) ->
-        if tps1.Length <> tps2.Length then 0
-        else compareTypeConcreteness g body1 body2
-    
+    | TType_forall(tps1, body1), TType_forall(tps2, body2) ->
+        if tps1.Length <> tps2.Length then
+            0
+        else
+            compareTypeConcreteness g body1 body2
+
     // Default: Different structural forms are incomparable
     | _ -> 0
 
@@ -361,21 +370,38 @@ let private preferNonGenericRule: TiebreakRule =
 /// Rule 13: Prefer more concrete type instantiations (RFC FS-XXXX)
 /// This is the "Most Concrete" tiebreaker from the RFC.
 /// Only activates when BOTH methods are generic (have type arguments).
-/// Note: The actual implementation uses compareTypeConcreteness from ConstraintSolver.fs
 let private moreConcreteRule: TiebreakRule =
     {
         Priority = 13
         Name = "MoreConcrete"
         Description = "Prefer more concrete type instantiations over more generic ones"
         Compare =
-            fun _ctx (candidate, _, _) (other, _, _) ->
-                // Note: The actual logic is implemented directly in the better() function
-                // in ConstraintSolver.fs because compareTypeConcreteness is defined there
-                // and uses the csenv context. This rule documents the priority position.
-                // Returns 0 here - the real comparison happens in better().
-                if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
-                    // Placeholder - actual implementation is in ConstraintSolver.fs better()
-                    0
+            fun ctx (candidate, _, _) (other, _, _) ->
+                if
+                    ctx.g.langVersion.SupportsFeature(LanguageFeature.MoreConcreteTiebreaker)
+                    && not candidate.CalledTyArgs.IsEmpty
+                    && not other.CalledTyArgs.IsEmpty
+                then
+                    // Get formal (uninstantiated) parameter types using FormalMethodInst
+                    let formalParams1 =
+                        candidate.Method.GetParamDatas(ctx.amap, ctx.m, candidate.Method.FormalMethodInst)
+                        |> List.concat
+
+                    let formalParams2 =
+                        other.Method.GetParamDatas(ctx.amap, ctx.m, other.Method.FormalMethodInst)
+                        |> List.concat
+
+                    if formalParams1.Length = formalParams2.Length then
+                        let comparisons =
+                            List.map2
+                                (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
+                                    compareTypeConcreteness ctx.g ty1 ty2)
+                                formalParams1
+                                formalParams2
+
+                        aggregateComparisons comparisons
+                    else
+                        0
                 else
                     0
     }
@@ -454,5 +480,27 @@ let evaluateTiebreakRules
         | rule :: rest ->
             let c = rule.Compare context candidate other
             if c <> 0 then c else loop rest
+
+    loop rules
+
+/// Check if a specific rule was the deciding factor between two methods.
+/// Returns true if all rules BEFORE the named rule returned 0, and the named rule returned > 0.
+let wasDecidedByRule
+    (ruleName: string)
+    (context: OverloadResolutionContext)
+    (winner: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
+    (loser: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
+    : bool =
+    let rules = getAllTiebreakRules ()
+
+    let rec loop rules =
+        match rules with
+        | [] -> false
+        | rule :: rest ->
+            let c = rule.Compare context winner loser
+
+            if rule.Name = ruleName then c > 0 // The named rule decided in favor of winner
+            elif c <> 0 then false // An earlier rule decided, so the named rule wasn't the decider
+            else loop rest
 
     loop rules
