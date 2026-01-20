@@ -212,3 +212,12 @@ From Import:
 - ImportTests pass: 25/25 ✅
 
 ---
+
+## Subtask 8: Migrate
+   TypeForwarding tests batch 2 (Interface, Delegate, Nested, Cycle)
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
