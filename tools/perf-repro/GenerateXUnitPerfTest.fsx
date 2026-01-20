@@ -113,6 +113,11 @@ let generateProjectFile projectName =
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <IsTestProject>true</IsTestProject>
+    <!-- Use local output directories to avoid conflicts with repo build -->
+    <OutputPath>bin\$(Configuration)</OutputPath>
+    <BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>
+    <UseArtifactsOutput>false</UseArtifactsOutput>
+    <ArtifactsPath>$(MSBuildProjectDirectory)\artifacts</ArtifactsPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -120,7 +125,6 @@ let generateProjectFile projectName =
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.0" />
     <PackageReference Include="xunit" Version="2.4.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
