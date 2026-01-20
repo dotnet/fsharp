@@ -1,0 +1,62 @@
+Skeptical reviewer. Verify SPRINT 2 delivers a complete, tested product increment.
+
+Audit: RFC example coverage verification: Systematically verify that each RFC example from section-examples.md is covered
+   by tests. Create a mapping document showing RFC Example N -> Test Name.
+
+RFC Examples to
+   verify:
+- Example 1: Basic Generic vs Concrete (Option<'t> vs Option<int>)
+- Example 2: Fully
+   Generic vs Wrapped ('t vs Option<'t>)
+- Example 3: Nested Generics (Option<Option<'t>> vs
+   Option<Option<int>>)
+- Example 4: Triple Nesting Depth
+- Example 5: Multiple Type Parameters -
+    Result Type
+- Example 6: Incomparable Concreteness (Result<int, 'e> vs Result<'t, string>)
+-
+   Example 7: ValueTask Constructor Scenario
+- Example 8: CE Builder Source Overloads
+- Example
+   9: CE Bind with Task Types
+- Example 10-12: Optional and ParamArray interactions
+- Example 13:
+    Extension Methods
+- Example 14: Span with Generic Element Types
+- Example 15: Constrained vs
+   Unconstrained (DEFERRED - F# limitation)
+
+Update VISION.md with verification results.
+
+Definition of Done (DoD):
+- All 14 implementable RFC examples verified in test suite
+- Example 15 confirmed as deferred
+   (FS0438 language limitation)
+- VISION.md updated with example coverage mapping
+
+=== DoD VALIDATION ===
+Check EACH DoD criterion and report pass/fail for each.
+A sprint is ONLY complete if ALL DoD items pass.
+
+REJECT the sprint if:
+- Any DoD criterion fails
+- Tests are missing or failing
+- 'Tests will be added later' - tests must be NOW
+- TODOs, placeholders, or incomplete implementations
+- Implementation doesn't align with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if ALL DoD items pass.
+Output REVIEW_FAILED followed by:
+  PASSED: criterion1, criterion2
+  FAILED: criterion3, criterion4
+  ISSUES: bullet list of specific problems
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+Read .ralph/CONTEXT.md to see what previous subtasks accomplished.
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===

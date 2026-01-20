@@ -1,0 +1,27 @@
+Verify the task is complete based on acceptance criteria in .ralph/VISION.md.
+
+IMPORTANT: Adapt your verification approach to the task type:
+
+For coding tasks:
+  - Check for build instructions (Makefile, package.json, *.proj, README)
+  - Run appropriate build and test commands
+  - Output VERIFY_PASSED if build and tests succeed
+
+For documentation/design tasks (RFCs, docs, specs, proposals):
+  - Check the document exists and is complete
+  - Verify it addresses the requirements from VISION.md
+  - Check for proper formatting, structure, and clarity
+  - DO NOT attempt to build or test - just verify document quality
+  - Output VERIFY_PASSED if the document meets the criteria
+
+For other task types:
+  - Use judgment based on the actual work requested
+  - Verify against the criteria in VISION.md
+
+═══════════════════════════════════════════════════════
+Output VERIFY_PASSED if the task is complete per its criteria.
+Output VERIFY_FAILED followed by the issue if not.
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.

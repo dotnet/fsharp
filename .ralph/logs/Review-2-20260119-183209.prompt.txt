@@ -1,0 +1,42 @@
+Skeptical reviewer. Verify SPRINT 2 delivers a complete, tested product increment.
+
+Flip test expectations: After Sprint 1 fixes the algorithm, update
+   TiebreakerTests.fs to flip tests from `shouldFail |> withErrorCode 41` to `shouldSucceed` for:
+   1) Example 2 (t vs Option<t>), 2) Example 5 partial concreteness cases, 3) Example 7 ValueTask
+   scenario, 4) Example 8 CE Source pattern. Keep Example 6 (incomparable Result<int,'e> vs
+   Result<'t,string>) as shouldFail since those are truly incomparable by design. Run tiebreaker
+   tests to verify all pass.
+
+Definition of Done (DoD):
+- Build succeeds with 0 errors
+- All tiebreaker tests pass
+- No tests use shouldFail except for truly incomparable cases (Example 6)
+- Example 2,5,7,8
+   tests now expect shouldSucceed
+
+=== DoD VALIDATION ===
+Check EACH DoD criterion and report pass/fail for each.
+A sprint is ONLY complete if ALL DoD items pass.
+
+REJECT the sprint if:
+- Any DoD criterion fails
+- Tests are missing or failing
+- 'Tests will be added later' - tests must be NOW
+- TODOs, placeholders, or incomplete implementations
+- Implementation doesn't align with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if ALL DoD items pass.
+Output REVIEW_FAILED followed by:
+  PASSED: criterion1, criterion2
+  FAILED: criterion3, criterion4
+  ISSUES: bullet list of specific problems
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+Read .ralph/CONTEXT.md to see what previous subtasks accomplished.
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===

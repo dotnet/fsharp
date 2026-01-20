@@ -1,0 +1,50 @@
+SPRINT 3: Add diagnostics FS35xx
+
+Implement optional diagnostics per RFC section-diagnostics.md: 1) Find available warning
+   numbers in FS35xx range (FS3570 is taken by tcAmbiguousDiscardDotLambda), try FS3575/FS3576, 2)
+   Add entries to FSComp.txt: 3575,tcMoreConcreteTiebreakerUsed and 3576,tcGenericOverloadBypassed,
+    3) Add warning emission in ConstraintSolver.fs better() when concreteness tiebreaker selects a
+   winner, 4) Register in CompilerDiagnostics.fs as off by default, 5) Add test that enables
+   warning and verifies emission. Run: dotnet build src/Compiler -c Debug
+
+Definition of Done (DoD):
+- Build succeeds
+    with 0 errors
+- FSComp.txt contains new warning entries
+- CompilerDiagnostics.fs registers
+   warnings as off by default
+- Warning can be enabled with --warnon:3575
+- Test verifies warning
+    text when enabled
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+=== SPRINT COMPLETION REQUIREMENTS ===
+This sprint MUST deliver a TESTED, BUILDING product increment.
+ALL DoD items must pass for the sprint to be complete.
+
+1. Write/update code AND tests together (not separately)
+2. Run build - it MUST succeed
+3. Run tests - they MUST pass
+4. Verify each DoD criterion is satisfied
+
+Do NOT commit untested code. Tests are part of THIS sprint, not a future one.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this sprint is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL DoD items are satisfied, COMMIT your changes,
+then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+Read .ralph/CONTEXT.md to see what previous subtasks accomplished.
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===

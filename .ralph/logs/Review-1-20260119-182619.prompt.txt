@@ -1,0 +1,44 @@
+Skeptical reviewer. Verify SPRINT 1 delivers a complete, tested product increment.
+
+Fix core algorithm: The
+   current implementation in ConstraintSolver.fs lines 3853-3866 compares `candidate.CalledTyArgs`
+   (instantiated method type arguments) but should compare parameter types. Fix by: 1) Change from
+   comparing CalledTyArgs to comparing AllUnnamedCalledArgs parameter types, 2) Use
+   compareTypeConcreteness on each CalledArgumentType, 3) Apply dominance aggregation. After fix,
+   Example 2 ('t vs Option<'t>) and Examples 5/7/8 (partial concreteness) should resolve. Run:
+   dotnet test tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj --filter
+   "FullyQualifiedName~Tiebreakers" -c Debug -f net10.0
+
+Definition of Done (DoD):
+- Build succeeds with 0 errors
+- 91 tiebreaker tests still pass
+- Tests comparing 't vs Option<'t> now resolve (flip test
+   expectations)
+- Tests comparing Result<int,'e> vs Result<'ok,'e> now resolve
+
+=== DoD VALIDATION ===
+Check EACH DoD criterion and report pass/fail for each.
+A sprint is ONLY complete if ALL DoD items pass.
+
+REJECT the sprint if:
+- Any DoD criterion fails
+- Tests are missing or failing
+- 'Tests will be added later' - tests must be NOW
+- TODOs, placeholders, or incomplete implementations
+- Implementation doesn't align with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if ALL DoD items pass.
+Output REVIEW_FAILED followed by:
+  PASSED: criterion1, criterion2
+  FAILED: criterion3, criterion4
+  ISSUES: bullet list of specific problems
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===

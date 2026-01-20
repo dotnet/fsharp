@@ -1,0 +1,48 @@
+SPRINT 5: Release notes and baselines
+
+Finalize the PR: 1) Add entry to
+   docs/release-notes/FSharp.Compiler.Service/ for latest version with format '* Added Most
+   Concrete tiebreaker for overload resolution (RFC FS-XXXX). ([PR #NNNNN](url))', 2) Run
+   TEST_UPDATE_BSL=1 dotnet test for surface area tests if OverloadResolutionRules adds public API,
+    3) Run dotnet fantomas . --check for formatting, 4) Verify full component test suite passes.
+   Run: dotnet test tests/FSharp.Compiler.ComponentTests -c Debug -f net10.0 --no-restore
+
+Definition of Done (DoD):
+- Build succeeds with 0 errors
+- Release notes entry added
+- Surface area baselines updated if
+    needed
+- Formatting passes
+- All component tests pass
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+=== SPRINT COMPLETION REQUIREMENTS ===
+This sprint MUST deliver a TESTED, BUILDING product increment.
+ALL DoD items must pass for the sprint to be complete.
+
+1. Write/update code AND tests together (not separately)
+2. Run build - it MUST succeed
+3. Run tests - they MUST pass
+4. Verify each DoD criterion is satisfied
+
+Do NOT commit untested code. Tests are part of THIS sprint, not a future one.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this sprint is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL DoD items are satisfied, COMMIT your changes,
+then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+Read .ralph/CONTEXT.md to see what previous subtasks accomplished.
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===

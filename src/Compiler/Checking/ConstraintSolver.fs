@@ -3661,6 +3661,11 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
     /// Aggregate pairwise comparison results using dominance rule.
     /// Returns 1 if ty1 dominates (better in some positions, not worse in any),
     /// -1 if ty2 dominates, 0 if incomparable or equal.
+    ///
+    /// TODO: RFC section-diagnostics.md proposes enhanced FS0041 error messages that explain
+    /// WHY types are incomparable (e.g., "Result<int,'e> vs Result<'t,string> - each is more
+    /// concrete in different positions"). This is a UX enhancement for a future PR.
+    /// See VISION.md "What is NOT Done" for tracking.
     let aggregateComparisons (comparisons: int list) =
         let hasPositive = comparisons |> List.exists (fun c -> c > 0)
         let hasNegative = comparisons |> List.exists (fun c -> c < 0)

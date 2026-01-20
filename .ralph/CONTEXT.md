@@ -55,3 +55,49 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Verification:** Build succeeded, 93/93 tiebreaker tests passing.
 
 ---
+
+## Sprint 4: Add language feature flag
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 5: Release notes and baselines
+
+**Summary:** Added release notes entries and fixed formatting.
+
+**Changes:**
+- Added release notes entry in `docs/release-notes/.FSharp.Compiler.Service/11.0.0.md` under "Added" section
+- Added release notes entry in `docs/release-notes/.Language/preview.md` for language feature
+- Applied formatting via `dotnet fantomas` to `OverloadResolutionRules.fs/fsi`
+- Surface area baselines not needed (module is internal)
+
+**Verification:** Build succeeded, 93/93 tiebreaker tests passing, formatting check passed.
+
+---
+
+## Sprint 5: Release notes and baselines
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 1: Verification: Run full test suite
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 2: Audit: RFC example coverage verification
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---

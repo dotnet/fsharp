@@ -100,12 +100,13 @@ Complete mapping from RFC `section-examples.md` to test coverage in `TiebreakerT
    - Current impl: uses `compare c1 c2` which compares COUNT only
    - **BLOCKER:** F# doesn't allow overloading based solely on constraints (FS0438)
    - **STATUS:** Deferred - language limitation prevents implementation
-   - Test documents this behavior in `Example 15 - Constrained vs unconstrained type variable - not yet supported`
+   - **DOCUMENTATION:** See `TiebreakerTests.fs` test `Example 15 - Constrained vs unconstrained type variable - not yet supported`
 
 2. ⏳ **Enhanced FS0041 Error Message for Incomparable Types**
    - RFC proposes: explain WHY types are incomparable in the error
    - Current: standard FS0041 message without concreteness explanation
    - **STATUS:** Nice-to-have UX enhancement, not blocking for MVP
+   - **DOCUMENTATION:** See TODO in `ConstraintSolver.fs` at `aggregateComparisons` function
 
 ### What IS Done (Summary)
    - RFC Example 7: `'T vs Task<'T>` (ValueTask scenario) → WORKS

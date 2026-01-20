@@ -1,20 +1,27 @@
-SPRINT 1: Fix core algorithm
+SPRINT 1: Verification: Run full test suite
 
-The
-   current implementation in ConstraintSolver.fs lines 3853-3866 compares `candidate.CalledTyArgs`
-   (instantiated method type arguments) but should compare parameter types. Fix by: 1) Change from
-   comparing CalledTyArgs to comparing AllUnnamedCalledArgs parameter types, 2) Use
-   compareTypeConcreteness on each CalledArgumentType, 3) Apply dominance aggregation. After fix,
-   Example 2 ('t vs Option<'t>) and Examples 5/7/8 (partial concreteness) should resolve. Run:
-   dotnet test tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj --filter
-   "FullyQualifiedName~Tiebreakers" -c Debug -f net10.0
+Run the full component test suite
+   to verify the 93 tiebreaker tests still pass and no regressions were introduced. Verify the
+   build succeeds with zero warnings. This sprint confirms the baseline quality of the
+   implementation.
+
+Steps:
+1. Build the compiler: dotnet build
+   src/Compiler/FSharp.Compiler.Service.fsproj -c Debug
+2. Run tiebreaker tests: dotnet test
+   tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj --filter
+   "FullyQualifiedName~Tiebreakers" -c Debug
+3. Verify 93 tests pass
+4. Check formatting:
+   dotnet fantomas . --check
+
+No code changes expected - this is a verification sprint.
 
 Definition of Done (DoD):
 - Build succeeds with 0 errors
-- 91 tiebreaker tests still pass
-- Tests comparing 't vs Option<'t> now resolve (flip test
-   expectations)
-- Tests comparing Result<int,'e> vs Result<'ok,'e> now resolve
+- 93/93 tiebreaker tests pass
+- Formatting check passes (dotnet
+    fantomas . --check)
 
 IMPORTANT: Read .ralph/VISION.md for context and design decisions.
 
@@ -42,3 +49,8 @@ then output: SUBTASK_COMPLETE
 
 IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
 If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+Read .ralph/CONTEXT.md to see what previous subtasks accomplished.
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===

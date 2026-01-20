@@ -1267,11 +1267,21 @@ let result = Example.Process(value)
 
     [<Fact>]
     let ``Example 15 - Constrained vs unconstrained type variable - not yet supported`` () =
-        // RFC section-examples.md Example 15: Constrained type variable vs unconstrained
-        // NOTE: F# does not currently allow overloading based solely on type constraints.
+        // ============================================================================
+        // DEFERRED FEATURE: Constraint Specificity Comparison (RFC Example 15)
+        // ============================================================================
+        // RFC section-examples.md Example 15 proposes: 
+        //   'T when 'T :> IComparable<int> should beat 'T when 'T :> IComparable
+        //
+        // LIMITATION: F# does not allow overloading based solely on type constraints.
         // Methods with same name and same parameter structure (differing only in constraints)
-        // are considered duplicate signatures (FS0438).
-        // This test documents current F# behavior - this is PROPOSED for future enhancement.
+        // are considered duplicate signatures at definition time (FS0438).
+        //
+        // This test documents current F# behavior. Constraint specificity comparison
+        // requires a future F# language enhancement to allow constraint-based overloading.
+        //
+        // See VISION.md "What is NOT Done" for tracking.
+        // ============================================================================
         FSharp """
 module Test
 
