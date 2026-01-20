@@ -9834,6 +9834,61 @@ and CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
     | [argAttribs] -> argAttribs = n
     | _ -> false
 
+/// Lightweight arity pre-filter for MethInfo before expensive CalledMeth construction.
+/// Returns true if the method could potentially match the caller arguments based on arity.
+/// This is conservative - it may return true for methods that later fail IsCandidate,
+/// but it should never return false for methods that would pass IsCandidate.
+/// This optimization avoids constructing CalledMeth objects for methods that will definitely
+/// fail arity checks, reducing allocations in overload resolution.
+and MethInfoMayMatchCallerArgs 
+    (minfo: MethInfo)
+    (callerObjArgCount: int)         // Number of object/this arguments from caller
+    (numCallerCurriedGroups: int)    // Number of curried argument groups from caller
+    (totalUnnamedCallerArgs: int)    // Total unnamed args across all curried groups
+    : bool =
+    
+    // Check 1: Object argument compatibility
+    // For instance methods, caller must provide exactly one object argument
+    // For static methods, caller must provide zero object arguments
+    let objArgOk =
+        if minfo.IsInstance then callerObjArgCount = 1
+        elif minfo.IsExtensionMember then callerObjArgCount <= 1  // Extension methods can be called with or without explicit this
+        else callerObjArgCount = 0
+    
+    if not objArgOk then false
+    else
+        let numArgs = minfo.NumArgs
+        let numCalledCurriedGroups = numArgs.Length
+        
+        // Check 2: Curried group count must match for F# curried methods
+        // For single-group methods (most C# methods), this is always 1
+        if numCalledCurriedGroups > 1 && numCalledCurriedGroups <> numCallerCurriedGroups then
+            false
+        else
+            // Check 3: For single-group methods, check argument count compatibility
+            // We're conservative here because:
+            // - Methods may have optional parameters (caller can provide fewer args)
+            // - Methods may have param arrays (caller can provide more args)
+            // So we only filter out clearly incompatible cases
+            match numArgs with
+            | [calledArgCount] ->
+                // Single uncurried group (most common for C# methods like Assert.Equal)
+                // Conservative: only filter if caller has WAY more args than method
+                // (more than could be explained by param array expansion)
+                // Note: We don't filter on caller having fewer args because of optional params
+                if totalUnnamedCallerArgs > calledArgCount + 100 then
+                    // Extremely unlikely to match - more than 100 extra args
+                    false
+                else
+                    true
+            | [] ->
+                // Method takes no arguments - caller must also have no unnamed args
+                // (but we're conservative due to possible obj arg handling)
+                true
+            | _ ->
+                // Curried method - we already checked group count above
+                true
+
 and isSimpleFormalArg info =
     let (ParamAttribs(isParamArrayArg, _isInArg, isOutArg, optArgInfo, callerInfo, _reflArgInfo)) = info
     not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && callerInfo = NoCallerInfo
@@ -10009,6 +10064,17 @@ and TcMethodApplication_UniqueOverloadInference
 
     let callerArgs = { Unnamed = unnamedCurriedCallerArgs; Named = namedCurriedCallerArgs }
 
+    // Early arity pre-filter: Filter out methods that definitely won't match based on arity
+    // This avoids expensive CalledMeth construction for obviously incompatible overloads
+    let callerObjArgCount = List.length callerObjArgTys
+    let numCallerCurriedGroups = List.length unnamedCurriedCallerArgs
+    let totalUnnamedCallerArgs = fst callerArgCounts
+    
+    let arityFilteredCandidates = 
+        candidateMethsAndProps 
+        |> List.filter (fun (minfo, _pinfoOpt) -> 
+            MethInfoMayMatchCallerArgs minfo callerObjArgCount numCallerCurriedGroups totalUnnamedCallerArgs)
+
     let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
         let minst = FreshenMethInfo mItem minfo
         let callerTyArgs =
@@ -10018,7 +10084,7 @@ and TcMethodApplication_UniqueOverloadInference
         CalledMeth<SynExpr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt, staticTyOpt)
 
     let preArgumentTypeCheckingCalledMethGroup =
-        [ for minfo, pinfoOpt in candidateMethsAndProps do
+        [ for minfo, pinfoOpt in arityFilteredCandidates do
             let meth = makeOneCalledMeth (minfo, pinfoOpt, true)
             yield meth
             if meth.UsesParamArrayConversion then

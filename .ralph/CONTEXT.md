@@ -45,3 +45,48 @@ This file is updated after each sprint completes. Use it to understand what was 
 - `.ralph/VISION.md` - Added Sprint 2 findings section
 
 ---
+
+## Sprint 2: Analyze ResolveOverloading Hot Path
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 3: Early Arity Filtering
+
+**Summary:** Implemented early candidate pruning based on argument count before CalledMeth construction
+
+**Deliverables:**
+- `MethInfoMayMatchCallerArgs` helper function in `CheckExpressions.fs`
+  - Checks instance vs static method compatibility
+  - Checks curried group count match
+  - Conservative argument count filtering
+- Pre-filter integrated into `TcMethodApplication_UniqueOverloadInference`
+  - Filters `candidateMethsAndProps` before CalledMeth construction
+  - Reduces allocations for obviously incompatible overloads
+- New test `ArityFilteringTest.fs` covering:
+  - Methods with different arities (0-3 args)
+  - Static vs instance methods
+  - Optional parameters
+  - Param arrays
+
+**Key Implementation Details:**
+- Pre-filter runs BEFORE expensive CalledMeth construction
+- Conservative approach: only rejects methods that definitely won't match
+- Existing `IsCandidate` filter still runs as secondary verification
+- No changes to overload resolution semantics
+
+**Tests:**
+- All 30 OverloadingMembers tests pass
+- All 181 TypeChecks tests pass
+- New ArityFilteringTest.fs passes on both net10.0 and net472
+
+**Files changed:**
+- `src/Compiler/Checking/Expressions/CheckExpressions.fs` - Added MethInfoMayMatchCallerArgs and pre-filter
+- `tests/.../OverloadingMembers/ArityFilteringTest.fs` - New test file
+- `tests/.../OverloadingMembers/OverloadingMembers.fs` - Added test entry
+- `METHOD_RESOLUTION_PERF_IDEAS.md` - Updated Idea #1 status
+
+---

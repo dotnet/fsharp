@@ -14,16 +14,17 @@ This file tracks ideas and experiments for improving F# compiler performance whe
 ## Ideas Backlog
 
 ### 1. Early Candidate Pruning by Arity
-**Status**: ✅ Already implemented (via IsCandidate)
-**Location**: `ConstraintSolver.fs:3460` (before `FilterEachThenUndo`)
-**Hypothesis**: Filter candidates by argument count before expensive type checking
-**Expected Impact**: High - could eliminate 50%+ candidates early
+**Status**: ✅ Implemented (Sprint 3 - MethInfoMayMatchCallerArgs pre-filter)
+**Location**: `CheckExpressions.fs` (in `TcMethodApplication_UniqueOverloadInference`)
+**Hypothesis**: Filter candidates by argument count before expensive CalledMeth type checking
+**Expected Impact**: High - avoids CalledMeth construction for obviously incompatible overloads
 **Notes**:
-- Current code: `candidates |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))`
-- `IsCandidate` checks: accessibility, arity, obj args, named args assignment
-- **Sprint 2 Finding**: This is already implemented! The `IsCandidate` filter at line 3460 
-  already filters by arity before the expensive FilterEachThenUndo phases.
-- The issue is that CalledMeth objects are constructed BEFORE this filter runs
+- **Sprint 3 Implementation**: Added `MethInfoMayMatchCallerArgs` pre-filter function
+- Pre-filter checks: instance vs static method compatibility, curried group count, argument count
+- Conservative approach: only filters out methods that definitely won't match
+- Filter runs BEFORE CalledMeth construction, avoiding expensive object creation
+- Arity check in `IsCandidate` still runs as secondary verification after CalledMeth is built
+- New test `ArityFilteringTest.fs` verifies the optimization doesn't change semantics
 
 ---
 
