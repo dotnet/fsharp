@@ -563,18 +563,92 @@ let rec TypesQuicklyCompatible (g: TcGlobals) (callerArgTy: TType) (calledArgTy:
 /// Structural compatibility check - types must have compatible type constructors
 /// This is a conservative check - it returns true if types *might* be compatible.
 /// It only returns false if types are *definitely* incompatible.
-and TypesQuicklyCompatibleStructural (g: TcGlobals) (_callerArgTy: TType) (_calledArgTy: TType) : bool =
-    // For now, be ultra-conservative and always return true
-    // This ensures no regressions while still getting the benefit of the arity pre-filter
-    ignore g
-    true
+and TypesQuicklyCompatibleStructural (g: TcGlobals) (callerArgTy: TType) (calledArgTy: TType) : bool =
+    // If both types are sealed AND different type constructors, they're definitely incompatible
+    // (with exceptions for conversions already handled in TypesQuicklyCompatible)
+    
+    // Check for sealed types - if both are sealed and have different type constructors, 
+    // they cannot possibly match
+    let callerSealed = isSealedTy g callerArgTy
+    let calledSealed = isSealedTy g calledArgTy
+    
+    if callerSealed && calledSealed then
+        // Both are sealed types. For them to be compatible, they must have the same head type.
+        // Get the type definition references (if they're app types)
+        match tryTcrefOfAppTy g callerArgTy, tryTcrefOfAppTy g calledArgTy with
+        | ValueSome tcref1, ValueSome tcref2 ->
+            // Same type definition? Then compatible (type args might differ but that's for full checking)
+            tyconRefEq g tcref1 tcref2
+        | ValueNone, ValueNone ->
+            // Neither is an app type (e.g., both are tuple types, both are function types, etc.)
+            // Check structural compatibility for non-app sealed types
+            match callerArgTy, calledArgTy with
+            | TType_tuple(_, elems1), TType_tuple(_, elems2) -> 
+                // Tuples must have same arity to be compatible
+                elems1.Length = elems2.Length
+            | TType_app(_, args1, _), TType_app(_, args2, _) when isArrayTy g callerArgTy && isArrayTy g calledArgTy ->
+                // Arrays must have same rank
+                args1.Length = args2.Length
+            | TType_fun _, TType_fun _ -> true  // Functions - conservatively compatible
+            | _ -> true  // Unknown sealed types - be conservative
+        | _ -> 
+            // Mixed case: one is app type, one is not - different kinds, likely incompatible
+            // But be conservative in case of implicit conversions
+            true
+    else
+        // At least one is not sealed (could be an interface, abstract class, etc.)
+        // Be conservative and assume compatibility
+        true
 
 /// Check if a CalledMeth's argument types are quickly compatible with caller argument types.
 /// This is used to pre-filter overload candidates before expensive FilterEachThenUndo.
-let CalledMethQuicklyCompatible (_g: TcGlobals) (_calledMeth: CalledMeth<'T>) : bool =
-    // Ultra-conservative - always return true for now
-    // Full implementation will be added later
-    true
+/// Returns false only if the types are DEFINITELY incompatible.
+let CalledMethQuicklyCompatible (g: TcGlobals) (calledMeth: CalledMeth<'T>) : bool =
+    // Check all argument sets for type compatibility
+    // If any argument pair is definitely incompatible, filter out this candidate
+    let argSets = calledMeth.ArgSets
+    
+    argSets |> List.forall (fun argSet ->
+        // Check unnamed args: compare caller types with callee expected types
+        // Only check up to the length of the shorter list (extra args handled by param array logic)
+        let unnamedCompatible =
+            let callerArgs = argSet.UnnamedCallerArgs
+            let calledArgs = argSet.UnnamedCalledArgs
+            let minLen = min callerArgs.Length calledArgs.Length
+            let rec checkArgs i =
+                if i >= minLen then true
+                else
+                    let callerTy = callerArgs[i].CallerArgumentType
+                    let calledTy = calledArgs[i].CalledArgumentType
+                    if TypesQuicklyCompatible g callerTy calledTy then
+                        checkArgs (i + 1)
+                    else
+                        false
+            checkArgs 0
+        
+        // Check param array if present: all param array caller args must be compatible with element type
+        let paramArrayCompatible =
+            match argSet.ParamArrayCalledArgOpt with
+            | Some paramArrayArg ->
+                // Get the element type of the param array (array element type)
+                let paramArrayTy = paramArrayArg.CalledArgumentType
+                if isArrayTy g paramArrayTy then
+                    let elemTy = destArrayTy g paramArrayTy
+                    argSet.ParamArrayCallerArgs |> List.forall (fun callerArg ->
+                        TypesQuicklyCompatible g callerArg.CallerArgumentType elemTy)
+                else
+                    // Not an array type? Be conservative
+                    true
+            | None -> true
+        
+        // Check assigned named args
+        let namedCompatible =
+            argSet.AssignedNamedArgs |> List.forall (fun assignedArg ->
+                let callerTy = assignedArg.CallerArg.CallerArgumentType
+                let calledTy = assignedArg.CalledArg.CalledArgumentType
+                TypesQuicklyCompatible g callerTy calledTy)
+        
+        unnamedCompatible && paramArrayCompatible && namedCompatible)
 
 let ShowAccessDomain ad =
     match ad with 

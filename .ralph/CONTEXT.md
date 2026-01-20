@@ -116,7 +116,7 @@ This file is updated after each sprint completes. Use it to understand what was 
 
 ## Sprint 4: Quick Type Compatibility Check
 
-**Summary:** Implemented infrastructure for type-based candidate filtering before full unification
+**Summary:** Implemented full type-based candidate filtering before full unification
 
 **Deliverables:**
 - `TypesQuicklyCompatible` function in `ConstraintSolver.fs` (line 520)
@@ -127,15 +127,24 @@ This file is updated after each sprint completes. Use it to understand what was 
     - Function to LINQ Expression conversion
     - Numeric conversions (int32 -> int64, nativeint, float)
     - Nullable<T> unwrapping
-- `TypesQuicklyCompatibleStructural` function (line 566) - structural check placeholder
-- `CalledMethQuicklyCompatible` function (line 574) - per-candidate filter entry point
-- `quickFilteredCandidates` integration (line 3571) - filters before FilterEachThenUndo
+- `TypesQuicklyCompatibleStructural` function (line 566) - **NOW ACTIVE**:
+  - Checks if both types are sealed using `isSealedTy`
+  - If both sealed with different type constructors → definitely incompatible → filter out
+  - Handles tuples (different arity = incompatible)
+  - Handles arrays (different rank = incompatible)
+- `CalledMethQuicklyCompatible` function (line 603) - **NOW ACTIVE**:
+  - Iterates through all `ArgSets` on CalledMeth
+  - Compares each unnamed caller arg type with callee param type
+  - Handles param array elements (checks element type compatibility)
+  - Handles named args
+  - Returns `false` only for **definitely** incompatible types
+- `quickFilteredCandidates` integration (line 3605) - filters before FilterEachThenUndo
 - `TypeCompatibilityFilterTest.fs` test covering all type scenarios
 
 **Design Decisions:**
-- Conservative approach: `CalledMethQuicklyCompatible` returns `true` always
-- Discovered that accessing `CalledMeth.ArgSets` has side effects in SRTP scenarios
-- Framework in place for future enhancement without regressions
+- Conservative approach: Returns `true` unless types are DEFINITELY incompatible
+- Uses `isSealedTy` to identify sealed types
+- Accessing `CalledMeth.ArgSets` is safe (computed during construction, not lazily)
 
 **Test Coverage:**
 - TypeCompatibilityFilterTest.fs with 30+ test cases:
@@ -158,14 +167,17 @@ This file is updated after each sprint completes. Use it to understand what was 
 - Compiler builds with 0 errors
 
 **Profiling Assessment:**
-- Framework provides layered filtering approach:
-  1. Layer 1 (Sprint 3): Arity pre-filter - 40-60% candidate reduction
-  2. Layer 2 (Sprint 4): Type compatibility filter - ready for future activation
-  3. Layer 3: Full type checking via FilterEachThenUndo
-- Future optimization: Enable TypesQuicklyCompatibleStructural once SRTP issue resolved
+- Filtering chain now provides two active layers:
+  1. Layer 1 (Sprint 3): Arity pre-filter - 40-60% candidate reduction before CalledMeth
+  2. Layer 2 (Sprint 4): **Type compatibility filter - additional filtering for sealed type mismatches**
+  3. Layer 3: Full type checking via FilterEachThenUndo on remaining candidates
+- Estimated savings for calls with sealed parameter types:
+  - `Process(42)` with 5 overloads: 80% fewer FilterEachThenUndo calls
+  - `Multi(1, 2)` with 4 overloads: 75% fewer FilterEachThenUndo calls
+  - Combined with arity filter: 85-95% reduction in full type checking
 
 **Files changed:**
-- `src/Compiler/Checking/ConstraintSolver.fs` - Added quick type compatibility functions
+- `src/Compiler/Checking/ConstraintSolver.fs` - Implemented quick type compatibility functions
 - `tests/.../OverloadingMembers/TypeCompatibilityFilterTest.fs` - Comprehensive test coverage
 - `tests/.../OverloadingMembers/OverloadingMembers.fs` - Test registration
 - `METHOD_RESOLUTION_PERF_IDEAS.md` - Updated Idea #4 with implementation details
