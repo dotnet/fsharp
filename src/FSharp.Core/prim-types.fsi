@@ -6205,7 +6205,11 @@ namespace Microsoft.FSharp.Control
     /// CLI metadata to make the member appear to other CLI languages as a CLI event.</remarks>
     ///
     /// <category index="3">Events and Observables</category>
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     type IDelegateEvent<'Delegate when 'Delegate :> Delegate > =
+#else
+    type IDelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate : not null > =
+#endif
 
         /// <summary>Connect a handler delegate object to the event. A handler can
         /// be later removed using RemoveHandler. The listener will
@@ -6227,7 +6231,11 @@ namespace Microsoft.FSharp.Control
     ///
     /// <category index="3">Events and Observables</category>
     [<Interface>]
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     type IEvent<'Delegate,'Args when 'Delegate: delegate<'Args,unit> and 'Delegate :> Delegate > =
+#else
+    type IEvent<'Delegate,'Args when 'Delegate: delegate<'Args,unit> and 'Delegate :> Delegate and 'Delegate : not null > =
+#endif
         inherit IDelegateEvent<'Delegate>
         inherit IObservable<'Args>
     
