@@ -185,21 +185,26 @@ exception ArgDoesNotMatchError of
     calledArg: CalledArg *
     callerArg: CallerArg<Expr>
 
+/// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
+type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
+
 /// Cache key for overload resolution: combines method group identity with caller argument types
-/// Only used when all argument types are fully resolved (no type variables)
 [<Struct>]
 type OverloadResolutionCacheKey =
-    { MethodGroupHash: int
-      ArgTypeStamps: int64 list }
+    { 
+      /// Hash combining all method identities in the method group
+      MethodGroupHash: int
+      /// Type stamps for each caller argument (only used when all types are fully resolved)
+      ArgTypeStamps: struct(Stamp * Stamp) list
+    }
 
 /// Result of cached overload resolution
 [<Struct>]
 type OverloadResolutionCacheResult =
+    /// Resolution succeeded - index of the resolved method in the original calledMethGroup list
     | CachedResolved of methodIndex: int
+    /// Resolution failed (no matching overload)
     | CachedFailed
-
-/// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
-type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
 type ConstraintSolverState =
     {
@@ -226,11 +231,13 @@ type ConstraintSolverState =
 
         WarnWhenUsingWithoutNullOnAWithNullTarget: string option
         
-        /// Cache for overload resolution results.
+        /// Cache for overload resolution results
         OverloadResolutionCache: System.Collections.Generic.Dictionary<OverloadResolutionCacheKey, OverloadResolutionCacheResult>
         
-        /// Cache hit/miss counters for profiling
+        /// Counter for cache hits (for profiling)
         mutable OverloadCacheHits: int
+        
+        /// Counter for cache misses (for profiling)
         mutable OverloadCacheMisses: int
     }
 
