@@ -9841,6 +9841,8 @@ and CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
 /// This optimization avoids constructing CalledMeth objects for methods that will definitely
 /// fail arity checks, reducing allocations in overload resolution.
 and MethInfoMayMatchCallerArgs 
+    (amap: ImportMap)
+    (mItem: range)
     (minfo: MethInfo)
     (callerObjArgCount: int)         // Number of object/this arguments from caller
     (numCallerCurriedGroups: int)    // Number of curried argument groups from caller
@@ -9866,25 +9868,46 @@ and MethInfoMayMatchCallerArgs
             false
         else
             // Check 3: For single-group methods, check argument count compatibility
-            // We're conservative here because:
-            // - Methods may have optional parameters (caller can provide fewer args)
-            // - Methods may have param arrays (caller can provide more args)
-            // So we only filter out clearly incompatible cases
+            // using actual parameter attributes (optional, param array, caller info)
             match numArgs with
             | [calledArgCount] ->
-                // Single uncurried group (most common for C# methods like Assert.Equal)
-                // Conservative: only filter if caller has WAY more args than method
-                // (more than could be explained by param array expansion)
-                // Note: We don't filter on caller having fewer args because of optional params
-                if totalUnnamedCallerArgs > calledArgCount + 100 then
-                    // Extremely unlikely to match - more than 100 extra args
-                    false
-                else
+                // Get parameter attributes to determine which params are optional/param array
+                let paramAttribs = minfo.GetParamAttribs(amap, mItem)
+                match paramAttribs with
+                | [paramList] ->
+                    // Count optional parameters (optional args, caller info args, param arrays)
+                    // These don't require caller to provide explicit arguments
+                    let mutable minRequiredArgs = 0
+                    let mutable hasParamArray = false
+                    for (ParamAttribs(isParamArrayArg, _isInArg, _isOutArg, optArgInfo, callerInfo, _reflArgInfo)) in paramList do
+                        if isParamArrayArg then
+                            hasParamArray <- true
+                        elif optArgInfo.IsOptional || callerInfo <> NoCallerInfo then
+                            // Optional param or caller info - not required
+                            ()
+                        else
+                            minRequiredArgs <- minRequiredArgs + 1
+                    
+                    // Filter based on argument count:
+                    // - Caller must provide at least minRequiredArgs
+                    // - If no param array, caller can provide at most calledArgCount
+                    // - If has param array, caller can provide any number >= minRequiredArgs
+                    if totalUnnamedCallerArgs < minRequiredArgs then
+                        false
+                    elif hasParamArray then
+                        // Param array allows any number of additional args
+                        true
+                    elif totalUnnamedCallerArgs > calledArgCount then
+                        // Too many args and no param array to absorb them
+                        false
+                    else
+                        true
+                | _ ->
+                    // Unexpected structure, be conservative
                     true
             | [] ->
                 // Method takes no arguments - caller must also have no unnamed args
-                // (but we're conservative due to possible obj arg handling)
-                true
+                totalUnnamedCallerArgs = 0
             | _ ->
                 // Curried method - we already checked group count above
                 true
@@ -10073,7 +10096,7 @@ and TcMethodApplication_UniqueOverloadInference
     let arityFilteredCandidates = 
         candidateMethsAndProps 
         |> List.filter (fun (minfo, _pinfoOpt) -> 
-            MethInfoMayMatchCallerArgs minfo callerObjArgCount numCallerCurriedGroups totalUnnamedCallerArgs)
+            MethInfoMayMatchCallerArgs cenv.amap mItem minfo callerObjArgCount numCallerCurriedGroups totalUnnamedCallerArgs)
 
     let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
         let minst = FreshenMethInfo mItem minfo

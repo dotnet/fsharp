@@ -19,12 +19,32 @@ This file tracks ideas and experiments for improving F# compiler performance whe
 **Hypothesis**: Filter candidates by argument count before expensive CalledMeth type checking
 **Expected Impact**: High - avoids CalledMeth construction for obviously incompatible overloads
 **Notes**:
-- **Sprint 3 Implementation**: Added `MethInfoMayMatchCallerArgs` pre-filter function
-- Pre-filter checks: instance vs static method compatibility, curried group count, argument count
-- Conservative approach: only filters out methods that definitely won't match
+- **Sprint 3 Implementation (Updated)**: Added `MethInfoMayMatchCallerArgs` pre-filter function with proper parameter analysis
+- Pre-filter now uses `GetParamAttribs` to analyze each parameter:
+  - Calculates **minimum required args** (excluding optional params, CallerInfo params, and param arrays)
+  - Detects **param array** parameters (which allow unlimited additional args)
+- Filtering rules:
+  - Reject if caller provides fewer args than minRequiredArgs
+  - Reject if caller provides more args than method accepts AND no param array
+  - Allow if method has param array (can absorb extra args)
+- Instance vs static method compatibility check
+- Curried group count matching for F# curried methods
 - Filter runs BEFORE CalledMeth construction, avoiding expensive object creation
-- Arity check in `IsCandidate` still runs as secondary verification after CalledMeth is built
-- New test `ArityFilteringTest.fs` verifies the optimization doesn't change semantics
+- New test `ArityFilteringTest.fs` with MockAssert pattern verifies:
+  - Different arities (0-4 args)
+  - Optional parameters
+  - Param arrays
+  - CallerInfo parameters
+  - Assert.Equal-like overload patterns
+
+**Filtering Behavior for Assert.Equal-like Pattern**:
+When caller provides 2 args (e.g., `MockAssert.Equal(1, 2)`):
+- ✅ Kept: 2-arg overloads (int-int, string-string, float-float, obj-obj)
+- ❌ Filtered: 1-arg methods (Single)
+- ❌ Filtered: 4-arg methods (Quad)
+- ❌ Filtered: 3-arg methods (with precision/comparer)
+
+This reduces the number of candidates entering expensive CalledMeth construction and type checking.
 
 ---
 
