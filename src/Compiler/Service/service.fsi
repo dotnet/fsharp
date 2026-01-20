@@ -460,6 +460,15 @@ type public FSharpChecker =
     /// Report a statistic for testability
     static member ActualCheckFileCount: int
 
+    /// Report a statistic for testability: total overload resolution cache hits across all compilations
+    static member OverloadCacheHits: int
+
+    /// Report a statistic for testability: total overload resolution cache misses across all compilations
+    static member OverloadCacheMisses: int
+
+    /// Reset overload cache counters (for testability)
+    static member ResetOverloadCacheCounters: unit -> unit
+
     /// Flush all caches and garbage collect
     member ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients: unit -> unit
 

@@ -129,14 +129,14 @@ For repetitive patterns like test files with many `Assert.Equal` calls:
 | Pattern | Without Cache | With Cache | Cache Hit Rate |
 |---------|--------------|------------|----------------|
 | First call `Assert.Equal(1, 2)` | Full resolution | Full resolution | 0% (cache miss) |
-| Subsequent `Assert.Equal(x, y)` where x,y are int | Skip resolution | Return cached | ~99% |
+| Subsequent `Assert.Equal(x, y)` where x,y are int | Skip resolution | Return cached | 99.3% (measured) |
 | `Assert.Equal("a", "b")` (different types) | Full resolution | Full resolution | 0% (different key) |
 | `Assert.Equal<int>(1, 2)` (SRTP involved) | Not cached | Not cached | 0% (cx.IsSome) |
 
-For 1500 identical `Assert.Equal(int, int)` calls (non-SRTP):
-- **Without cache**: 1500 full FilterEachThenUndo passes
-- **With cache**: 1 full resolution + 1499 cache hits
-- **Estimated savings**: ~99.9% of resolution work eliminated for repetitive patterns
+For 150 identical `TestAssert.Equal(int, int)` calls (test validated):
+- **Cache Hits**: 149 (99.3%)
+- **Cache Misses**: 1 (first call, stores result)
+- **Estimated savings**: ~99% of resolution work eliminated for repetitive patterns
 
 **Overall Speedup Assessment:**
 - For repetitive patterns with simple types (int, string): Very significant (~30-50% reduction in type checking time)
@@ -145,9 +145,12 @@ For 1500 identical `Assert.Equal(int, int)` calls (non-SRTP):
 
 **Build/Test Verification (Sprint 6):**
 - Build.cmd -c Release: ✅ Build succeeded, 0 errors
-- All 62 OverloadingMembers tests pass ✅
-- All 356 TypeChecks tests pass (6 skipped - pre-existing) ✅
+- OverloadCacheTests (new tests): ✅ 3 tests pass
+  - `Overload cache hit rate exceeds 30 percent for repetitive int-int calls`: 99.3% hit rate
+  - `Overload cache returns correct resolution`: Validates cached results are correct
+  - `Overload cache provides measurable benefit`: Performance measurement test
 - Compiler builds and runs correctly with caching enabled
+- Global counters exposed via FSharpChecker (OverloadCacheHits, OverloadCacheMisses, ResetOverloadCacheCounters)
 
 ---
 

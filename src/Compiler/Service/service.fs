@@ -620,6 +620,15 @@ type FSharpChecker
 
     static member ActualCheckFileCount = BackgroundCompiler.ActualCheckFileCount
 
+    /// Report a statistic for testability: total overload resolution cache hits across all compilations
+    static member OverloadCacheHits = ConstraintSolver.GetOverloadCacheHits()
+
+    /// Report a statistic for testability: total overload resolution cache misses across all compilations
+    static member OverloadCacheMisses = ConstraintSolver.GetOverloadCacheMisses()
+
+    /// Reset overload cache counters (for testability)
+    static member ResetOverloadCacheCounters() = ConstraintSolver.ResetOverloadCacheCounters()
+
     static member Instance = globalInstance.Force()
 
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache

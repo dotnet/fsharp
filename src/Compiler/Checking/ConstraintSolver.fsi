@@ -15,6 +15,15 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
+/// Get the total number of overload cache hits across all compilations (for testability)
+val GetOverloadCacheHits: unit -> int
+
+/// Get the total number of overload cache misses across all compilations (for testability)
+val GetOverloadCacheMisses: unit -> int
+
+/// Reset the overload cache counters (for testability)
+val ResetOverloadCacheCounters: unit -> unit
+
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =
@@ -189,7 +198,6 @@ exception ArgDoesNotMatchError of
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
 /// Cache key for overload resolution: combines method group identity with caller argument types
-[<Struct>]
 type OverloadResolutionCacheKey =
     { 
       /// Hash combining all method identities in the method group

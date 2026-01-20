@@ -79,6 +79,24 @@ open FSharp.Compiler.TypeProviders
 // compilation environment, which currently corresponds to the scope
 // of the constraint resolution carried out by type checking.
 //------------------------------------------------------------------------- 
+
+//-------------------------------------------------------------------------
+// Global counters for overload resolution cache (for testability)
+// These accumulate across all compilations in the same process
+//------------------------------------------------------------------------- 
+let mutable globalOverloadCacheHits = 0
+let mutable globalOverloadCacheMisses = 0
+
+/// Get the total number of overload cache hits across all compilations (for testability)
+let GetOverloadCacheHits() = globalOverloadCacheHits
+
+/// Get the total number of overload cache misses across all compilations (for testability)
+let GetOverloadCacheMisses() = globalOverloadCacheMisses
+
+/// Reset the overload cache counters (for testability)
+let ResetOverloadCacheCounters() = 
+    globalOverloadCacheHits <- 0
+    globalOverloadCacheMisses <- 0
    
 let compgenId = mkSynId range0 unassignedTyparName
 
@@ -247,7 +265,6 @@ exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
 /// Cache key for overload resolution: combines method group identity with caller argument types
-[<Struct>]
 type OverloadResolutionCacheKey =
     { 
       /// Hash combining all method identities in the method group
@@ -470,10 +487,10 @@ let tryComputeOverloadCacheKey
     if hasNamedArgs then ValueNone
     else
     
-    // Compute method group hash
+    // Compute method group hash - use XOR for order-independence
     let mutable methodGroupHash = 0
     for cmeth in calledMethGroup do
-        methodGroupHash <- hash (methodGroupHash, computeMethInfoHash cmeth.Method)
+        methodGroupHash <- methodGroupHash ^^^ computeMethInfoHash cmeth.Method
     
     // Collect type stamps for all caller arguments
     let mutable argStamps = []
@@ -503,9 +520,11 @@ let tryGetCachedOverloadResolution
     match css.OverloadResolutionCache.TryGetValue(key) with
     | true, result -> 
         css.OverloadCacheHits <- css.OverloadCacheHits + 1
+        globalOverloadCacheHits <- globalOverloadCacheHits + 1
         ValueSome result
     | false, _ -> 
         css.OverloadCacheMisses <- css.OverloadCacheMisses + 1
+        globalOverloadCacheMisses <- globalOverloadCacheMisses + 1
         ValueNone
 
 /// Store an overload resolution result in the cache
@@ -3809,6 +3828,7 @@ and ResolveOverloadingCore
         Some calledMeth, OkResult (warns, ()), NoTrace
 
     | _ -> 
+      System.Console.Error.WriteLine(sprintf "NON-exactMatch branch: exactMatchCount=%d" exactMatchCandidates.Length)
       // Now determine the applicable methods.
       // Subsumption on arguments is allowed.
       let applicable =
@@ -3870,8 +3890,8 @@ and ResolveOverloadingCore
           Some calledMeth, OkResult (warns, ()), WithTrace t
 
       | applicableMeths -> 
-          // For ambiguous cases, don't cache (multiple applicable methods)
-          GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m
+          // Multiple applicable methods - use most applicable overload rules to find the best one
+          GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m cacheKeyOpt
 
 // Resolve the overloading of a method 
 // This is used after analyzing the types of arguments 
@@ -4029,7 +4049,7 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
         // Otherwise pass the overload resolution failure for error printing in CompileOps
         UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
 
-and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m =
+and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m (cacheKeyOpt: OverloadResolutionCacheKey voption) =
     let g = csenv.g
     let infoReader = csenv.InfoReader
     /// Compare two things by the given predicate. 
@@ -4214,9 +4234,17 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     match bestMethods with 
     | [(calledMeth, warns, t, _)] ->
+        // Store successful result in cache - we found a unique best method
+        match cacheKeyOpt with
+        | ValueSome cacheKey ->
+            let idx = calledMethGroup |> List.tryFindIndex (fun cm -> System.Object.ReferenceEquals(cm, calledMeth))
+            match idx with
+            | Some i -> storeOverloadResolutionResult csenv.SolverState cacheKey (CachedResolved i)
+            | None -> ()
+        | ValueNone -> ()
         Some calledMeth, OkResult (warns, ()), WithTrace t
 
-    | bestMethods -> 
+    | bestMethods ->
         let methods = 
             let getMethodSlotsAndErrors methodSlot errors =
                 [ match errors with
