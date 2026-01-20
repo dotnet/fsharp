@@ -34,7 +34,7 @@ module StressTests =
         sb.ToString()
 
     /// Test that parser handles deeply nested parens (expected to fail with parse error)
-    [<FactForNETCOREAPP>]
+    [<Fact>]
     let ``Stress - CodeGeneratorFor2766 - deeply nested unbalanced parens`` () =
         // Generate code with depth of 100 (reduced from 500 for test speed)
         let generatedCode = generateDeeplyNestedParens 100
@@ -47,7 +47,7 @@ module StressTests =
         |> withDiagnosticMessageMatches "Unexpected end of input"
 
     /// Test with smaller depth
-    [<FactForNETCOREAPP>]
+    [<Fact>]
     let ``Stress - CodeGeneratorFor2766 - nested parens depth 50`` () =
         let generatedCode = generateDeeplyNestedParens 50
         
@@ -85,7 +85,7 @@ module StressTests =
         sb.ToString()
 
     /// Test that compiler handles large sequential expression blocks
-    [<FactForNETCOREAPP>]
+    [<Fact>]
     let ``Stress - SeqExprCapacity - 500 sequential expressions`` () =
         let generatedCode = generateSeqExprCapacity 500
         
@@ -95,7 +95,7 @@ module StressTests =
         |> shouldSucceed
 
     /// Test with 1000 sequential expressions
-    [<FactForNETCOREAPP>]
+    [<Fact>]
     let ``Stress - SeqExprCapacity - 1000 sequential expressions`` () =
         let generatedCode = generateSeqExprCapacity 1000
         
@@ -105,7 +105,7 @@ module StressTests =
         |> shouldSucceed
 
     /// Test compileAndRun with sequential expressions
-    [<FactForNETCOREAPP>]
+    [<Fact>]
     let ``Stress - SeqExprCapacity - run 200 sequential expressions`` () =
         let generatedCode = generateSeqExprCapacity 200
         

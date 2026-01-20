@@ -138,6 +138,7 @@
     <Compile Include="Conformance\TypeForwarding\DelegateTests.fs" />
     <Compile Include="Conformance\TypeForwarding\NestedTests.fs" />
     <Compile Include="Conformance\TypeForwarding\CycleTests.fs" />
+    <Compile Include="Conformance\MultiTargeting.fs" />
     <Compile Include="Conformance\Stress\StressTests.fs" />
     <Compile Include="Conformance\Types\RecordTypes\AnonymousRecords.fs" />
     <Compile Include="Conformance\Types\RecordTypes\RecordTypes.fs" />

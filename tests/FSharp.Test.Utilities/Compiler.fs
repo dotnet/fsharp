@@ -85,6 +85,8 @@ module rec Compiler =
           References:       CompilationUnit list
           TargetFramework:  TargetFramework
           StaticLink:       bool
+          UseRawOptions:    bool
+          FsiArgs:          string list  // Command-line args for FSI (passed after --)
         }
 
         member this.CreateOutputDirectory() =
@@ -290,6 +292,8 @@ module rec Compiler =
             OutputDirectory   = Some (DirectoryInfo(outputDirectoryPath))
             TargetFramework   = TargetFramework.Current
             StaticLink        = false
+            UseRawOptions     = false
+            FsiArgs           = []
             } |> FS
 
     /// For all files specified in the specified directory, whose name can be found in includedFiles
@@ -382,6 +386,8 @@ module rec Compiler =
             References        = []
             TargetFramework   = TargetFramework.Current
             StaticLink        = false
+            UseRawOptions     = false
+            FsiArgs           = []
         }
 
     let private csFromString (source: SourceCodeFileKind) : CSharpCompilationSource =
@@ -505,6 +511,8 @@ module rec Compiler =
             References        = []
             TargetFramework   = TargetFramework.Current
             StaticLink        = false
+            UseRawOptions     = false
+            FsiArgs           = []
         } |> FS
 
     let CSharp (source: string) : CompilationUnit =
@@ -587,6 +595,16 @@ module rec Compiler =
 
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper options "withOptions is only supported for F#" cUnit
+
+    let withRawOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = options; UseRawOptions = true }
+        | _ -> failwith "withRawOptions is only supported for F#"
+
+    let withFsiArgs (args: string list) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with FsiArgs = args }
+        | _ -> failwith "withFsiArgs is only supported for F#"
 
     let withOptionsString (options: string) (cUnit: CompilationUnit) : CompilationUnit =
         let options = if String.IsNullOrWhiteSpace options then [] else (options.Split([|';'|])) |> Array.toList
@@ -864,7 +882,7 @@ module rec Compiler =
             | Some di -> di
             | None -> createTemporaryDirectory()
         let references = processReferences fs.References outputDirectory
-        let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, fs.TargetFramework, references, name, outputDirectory)
+        let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, fs.TargetFramework, references, name, outputDirectory, fs.UseRawOptions)
         compileFSharpCompilation compilation fs.IgnoreWarnings (FS fs)
 
     let toErrorInfo (d: Diagnostic) =
@@ -1060,7 +1078,7 @@ module rec Compiler =
                 else
                     outputDirectory.Create()
                     // Note that only the references are relevant here
-                    let compilation = Compilation.Compilation([], CompileOutput.Exe,Array.empty, TargetFramework.Current, references, None, None)
+                    let compilation = Compilation.Compilation([], CompileOutput.Exe,Array.empty, TargetFramework.Current, references, None, None, false)
                     evaluateReferences outputDirectory fsSource.IgnoreWarnings compilation
                     |> fst
 
@@ -1193,51 +1211,93 @@ module rec Compiler =
     let runFsi (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
         | FS fs ->
-            let source = fs.Source.GetSourceText |> Option.defaultWith fs.Source.LoadSourceText
-            let name = fs.Name |> Option.defaultValue "unnamed"
-            let options = fs.Options |> Array.ofList
-            let outputDirectory =
-                match fs.OutputDirectory with
-                | Some di -> di
-                | None -> createTemporaryDirectory()
-            outputDirectory.Create()
+            // If FsiArgs are specified, use subprocess (required for fsi.CommandLineArgs)
+            if not fs.FsiArgs.IsEmpty then
+                let source = fs.Source.GetSourceText |> Option.defaultWith fs.Source.LoadSourceText
+                let name = fs.Name |> Option.defaultValue "unnamed"
+                let outputDirectory =
+                    match fs.OutputDirectory with
+                    | Some di -> di
+                    | None -> createTemporaryDirectory()
+                outputDirectory.Create()
 
-            let references = processReferences fs.References outputDirectory
-            let cmpl = Compilation.Create(fs.Source, fs.OutputType, options, fs.TargetFramework, references, name, outputDirectory)
-            let _compilationRefs, _deps = evaluateReferences outputDirectory fs.IgnoreWarnings cmpl
-            let options =
-                let opts = new ResizeArray<string>(fs.Options)
+                // Write source to temp file
+                let tempFile = Path.Combine(outputDirectory.FullName, $"{name}.fsx")
+                File.WriteAllText(tempFile, source)
 
-                // For every built reference add a -I path so that fsi can find it easily
-                for reference in references do
-                    match reference with
-                    | CompilationReference( cmpl, _) ->
-                        match cmpl with
-                        | Compilation(_sources, _outputType, _options, _targetFramework, _references, _name, outputDirectory) ->
-                            if outputDirectory.IsSome then
-                                opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
-                    | _ -> ()
-                opts.ToArray()
-            let errors, stdOut, stdErr = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+                // Build args: options + "--" + fsiArgs + scriptPath
+                let allArgs = 
+                    List.concat [
+                        fs.Options
+                        (if fs.FsiArgs.IsEmpty then [] else ["--"])
+                        fs.FsiArgs
+                        [tempFile]
+                    ]
 
-            let mkResult output =
-              { OutputPath   = None
-                Dependencies = []
-                Adjust       = 0
-                Diagnostics  = []
-                PerFileErrors= []
-                Output       = Some output
-                Compilation  = cUnit }
+                let result = runFsiProcess allArgs
 
-            if errors.Count = 0 then
-                let output =
-                    ExecutionOutput { Outcome = NoExitCode; StdOut = stdOut; StdErr = stdErr }
-                CompilationResult.Success (mkResult output)
+                let mkResult output =
+                  { OutputPath   = None
+                    Dependencies = []
+                    Adjust       = 0
+                    Diagnostics  = []
+                    PerFileErrors= []
+                    Output       = Some output
+                    Compilation  = cUnit }
+
+                let output = ExecutionOutput { Outcome = ExitCode result.ExitCode; StdOut = result.StdOut; StdErr = result.StdErr }
+                if result.ExitCode = 0 then
+                    CompilationResult.Success (mkResult output)
+                else
+                    CompilationResult.Failure (mkResult output)
+
+            // Otherwise use in-process FsiEvaluationSession (faster)
             else
-                let err = (errors |> String.concat "\n").Replace("\r\n","\n")
-                let output =
-                    ExecutionOutput {Outcome = NoExitCode; StdOut = String.Empty; StdErr = err }
-                CompilationResult.Failure (mkResult output)
+                let source = fs.Source.GetSourceText |> Option.defaultWith fs.Source.LoadSourceText
+                let name = fs.Name |> Option.defaultValue "unnamed"
+                let options = fs.Options |> Array.ofList
+                let outputDirectory =
+                    match fs.OutputDirectory with
+                    | Some di -> di
+                    | None -> createTemporaryDirectory()
+                outputDirectory.Create()
+
+                let references = processReferences fs.References outputDirectory
+                let cmpl = Compilation.Create(fs.Source, fs.OutputType, options, fs.TargetFramework, references, name, outputDirectory)
+                let _compilationRefs, _deps = evaluateReferences outputDirectory fs.IgnoreWarnings cmpl
+                let options =
+                    let opts = new ResizeArray<string>(fs.Options)
+
+                    // For every built reference add a -I path so that fsi can find it easily
+                    for reference in references do
+                        match reference with
+                        | CompilationReference( cmpl, _) ->
+                            match cmpl with
+                            | Compilation(_sources, _outputType, _options, _targetFramework, _references, _name, outputDirectory, _useRawOptions) ->
+                                if outputDirectory.IsSome then
+                                    opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
+                        | _ -> ()
+                    opts.ToArray()
+                let errors, stdOut, stdErr = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+
+                let mkResult output =
+                  { OutputPath   = None
+                    Dependencies = []
+                    Adjust       = 0
+                    Diagnostics  = []
+                    PerFileErrors= []
+                    Output       = Some output
+                    Compilation  = cUnit }
+
+                if errors.Count = 0 then
+                    let output =
+                        ExecutionOutput { Outcome = NoExitCode; StdOut = stdOut; StdErr = stdErr }
+                    CompilationResult.Success (mkResult output)
+                else
+                    let err = (errors |> String.concat "\n").Replace("\r\n","\n")
+                    let output =
+                        ExecutionOutput {Outcome = NoExitCode; StdOut = String.Empty; StdErr = err }
+                    CompilationResult.Failure (mkResult output)
 
         | _ -> failwith "FSI running only supports F#."
 
@@ -2208,6 +2268,8 @@ Actual:
                 References = []  // We pass refs via -r option since we need exact paths
                 TargetFramework = TargetFramework.Current
                 StaticLink = false
+                UseRawOptions = false
+                FsiArgs = []
             }
 
             let result = compileFSharp fs

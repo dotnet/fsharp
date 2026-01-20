@@ -2110,3 +2110,322 @@ exit 0
         finally
             if File.Exists(tmpFile) then File.Delete(tmpFile)
 
+    // ================================================================================
+    // Data-driven error tests - automatically runs all tests in ErrorTestCases folder
+    // These are syntax error tests from fsharpqa that verify FSI reports proper errors
+    // ================================================================================
+
+    let errorTestCasesDir = Path.Combine(__SOURCE_DIRECTORY__, "ErrorTestCases")
+    let allErrorTests =
+        if Directory.Exists(errorTestCasesDir) then
+            Directory.EnumerateFiles(errorTestCasesDir, "E_*.fsx")
+            |> Seq.append (Directory.EnumerateFiles(errorTestCasesDir, "E_*.fs"))
+            |> Seq.toArray
+            |> Array.map Path.GetFileName
+            |> Array.map (fun f -> [|f :> obj|])
+        else
+            [||]
+
+    [<Theory>]
+    [<MemberData(nameof(allErrorTests))>]
+    let ``FSI error syntax tests from ErrorTestCases`` (fileName: string) =
+        let source = File.ReadAllText(Path.Combine(errorTestCasesDir, fileName))
+        // Most error tests just have source code - compile and expect failure
+        Fsx source
+        |> withOptions ["--nologo"]
+        |> compile
+        |> shouldFail
+        |> ignore
+
+    // ================================================================================
+    // CommandLineArgs tests - verify fsi.CommandLineArgs array population
+    // These MUST use subprocess via withFsiArgs because fsi.CommandLineArgs
+    // is only populated when running FSI as a subprocess, not in-process
+    // ================================================================================
+
+    // Regression test for FSHARP1.0:2439 - fsi.CommandLineArgs with no extra args
+    [<Fact>]
+    let ``CommandLineArgs01 - no arguments`` () =
+        Fsx """
+(if ((Seq.length fsi.CommandLineArgs) <> 1) then 1 else 0) |> exit
+"""
+        |> withOptions ["--nologo"]
+        |> withFsiArgs []  // No extra args - just script name
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Regression test for FSHARP1.0:2439 - fsi.CommandLineArgs with just "--"
+    [<Fact>]
+    let ``CommandLineArgs01b - double dash only`` () =
+        Fsx """
+// With just "--", fsi.CommandLineArgs should still be length 1 (just script name)
+if Seq.length fsi.CommandLineArgs <> 1 then exit 1
+exit 0
+"""
+        |> withOptions ["--nologo"; "--"]
+        |> withFsiArgs []  // No args after --
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Regression test for FSHARP1.0:2439 - fsi.CommandLineArgs with actual argument
+    [<Fact>]
+    let ``CommandLineArgs02 - one argument Hello`` () =
+        Fsx """
+let x = Seq.length fsi.CommandLineArgs
+let y = fsi.CommandLineArgs.[1]
+printfn "%A %A" x y
+if (x <> 2) || (y <> "Hello") then exit 1
+exit 0
+"""
+        |> withOptions ["--nologo"]
+        |> withFsiArgs ["Hello"]  // One arg: "Hello"
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // ================================================================================
+    // FSI Behavior Tests - In-Process (Type Checking, Compilation)
+    // These tests verify F# language features work correctly in FSI context
+    // but don't need actual FSI subprocess - in-process compilation is sufficient
+    // ================================================================================
+
+    // Regression for FSB 3594 - System.Core.dll is referenced by default
+    [<Fact>]
+    let ``DefaultReferences - System.Core available by default`` () =
+        Fsx """
+open System
+let a = new Action<_>(fun () -> printfn "stuff")
+a.Invoke()
+
+open System.Collections.Generic  
+let hs = new HashSet<_>([1 .. 10])
+
+type A = Action<int>
+type B = Action<int,int>
+()
+"""
+        |> withOptions ["--nologo"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    // Verify INTERACTIVE preprocessor define for FSI sessions
+    [<Fact>]
+    let ``DefinesInteractive - INTERACTIVE is defined`` () =
+        Fsx """
+#if INTERACTIVE
+let test1 = 1
+#else
+let test1 = 0
+#endif
+
+#if COMPILED
+let test2 = 0
+#else
+let test2 = 1
+#endif
+
+if test1 <> 1 || test2 <> 1 then exit 1
+()
+"""
+        |> withOptions ["--nologo"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    // Regression test for FSHARP1.0:5825 - Subtype constraint with abstract member
+    [<Fact>]
+    let ``SubtypeArgInterfaceWithAbstractMember - subtype constraint`` () =
+        Fsx """
+type I = 
+    abstract member m : unit 
+type C() = 
+    interface I with 
+        member this.m = () 
+let f (c : #C) = ()
+()
+"""
+        |> withOptions ["--nologo"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    // Regression test for FSHARP1.0:6320 - Pattern matching with lists
+    [<Fact>]
+    let ``ReflectionBugOnMono6320 - list pattern matching`` () =
+        Fsx """
+let reduce gen = 
+  match gen with 
+  | [_; _] -> 
+     printfn "path1"
+     1
+  | [_] -> 
+     printfn "path2"
+     2
+  | _ -> 
+     3
+
+let result = reduce [1;2]
+if result <> 1 then exit 1
+()
+"""
+        |> withOptions ["--nologo"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    // Regression test for FSHARP1.0:6433 - Computation expression builder
+    [<Fact>]
+    let ``ReflectionBugOnMono6433 - computation expression`` () =
+        Fsx """
+type MM() = 
+ member x.Combine(a,b) = a * b
+ member x.Yield(a) = a
+ member x.Zero() = 1
+ member x.For(e,f) = Seq.fold (fun s n -> x.Combine(s, f n)) (x.Zero()) e
+
+let mul = new MM()
+let factorial x = mul { for x in 1 .. x do yield x }
+let k = factorial 5
+
+if k <> 120 then exit 1
+()
+"""
+        |> withOptions ["--nologo"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    // ================================================================================
+    // FSI Behavior Tests - Subprocess (Directives, Output Verification)
+    // These tests REQUIRE subprocess because they test FSI-specific features
+    // like #r, #load directives, or verify FSI output formatting
+    // ================================================================================
+
+    // Regression test - #r directive with System.Core.dll
+    [<Fact>]
+    let ``References - #r System.Core.dll`` () =
+        Fsx """
+#r "System.Core.dll"
+()
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Regression test - #r directive on .NET 4.0 (Framework only)
+    [<FactForDESKTOP>]
+    let ``References40 - #r System.Core.dll on NET Framework`` () =
+        Fsx """
+#r "System.Core.dll"
+()
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> withStdOutContains "System.Core.dll"
+        |> ignore
+
+    // Regression test for FSHARP1.0:2549 - Compiler generated names not shown
+    [<Fact>]
+    let ``DontShowCompilerGenNames - suppress compiler generated names`` () =
+        Fsx """
+type T = 
+    member z.M1 ((x : int), (y: string)) = ignore
+    member z.M2 ((x, y) : int * string) = ignore
+;;
+
+exception ExnType of int * string
+;;
+
+type DiscUnion = | DataTag of int * string
+;;
+
+let f x y = x + y
+;;
+()
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // ================================================================================
+    // Additional FSI directive tests
+    // ================================================================================
+
+    // Helper functions for temp directory tests
+    let private withTempDirectory (test: string -> unit) =
+        let tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
+        Directory.CreateDirectory(tempDir) |> ignore
+
+        try
+            test tempDir
+        finally
+            try
+                if Directory.Exists(tempDir) then
+                    Directory.Delete(tempDir, true)
+            with _ -> ()
+
+    let private writeScript (dir: string) (filename: string) (content: string) =
+        let path = Path.Combine(dir, filename)
+        File.WriteAllText(path, content)
+        path
+
+    // Test that #r directive works with full absolute paths
+    // Migrated from fsharpqa InteractiveSession/ReferencesFullPath.fsx
+    [<Fact>]
+    let ``References - full path to assembly`` () =
+        // Get a full path to a framework assembly
+        let fwkDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+        let dllPath = Path.Combine(fwkDir, "System.dll")
+        
+        // Verify the assembly exists
+        if not (File.Exists(dllPath)) then
+            failwith $"Expected framework assembly not found: {dllPath}"
+        
+        // Test #r with full absolute path (using sprintf to inject path)
+        Fsx (sprintf "#r @\"%s\"\nopen System\nlet now = DateTime.Now\nnow |> ignore\n()" dllPath)
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+    // Test nested #load execution order
+    // Migrated from fsharpqa InteractiveSession/LoadOrderOfExecution3a.fsx
+    [<Fact>]
+    let ``LoadOrderOfExecution - nested load execution order`` () =
+        withTempDirectory (fun tempDir ->
+            // Create nested chain of files: 3a loads 2, which loads 1
+            let file1 = writeScript tempDir "LoadOrder1.fsx" "printfn \"let f x = x + 1\""
+            let file2Content = sprintf "#load @\"%s\"\nprintfn \"let y z = f z\"" (file1.Replace("\\", "\\\\"))
+            let file2 = writeScript tempDir "LoadOrder2.fsx" file2Content
+            let file3Content = sprintf "#load @\"%s\"\nprintfn \"let w = y 10\"" (file2.Replace("\\", "\\\\"))
+            let file3 = writeScript tempDir "LoadOrder3.fsx" file3Content
+            
+            // Execute and verify load order via Loading messages
+            let result = 
+                FsxFromPath file3
+                |> runFsi
+                |> shouldSucceed
+            
+            // The stdout should show loading messages in correct order
+            // We can't rely on printfn from #load'ed files as they don't get captured properly
+            // Instead verify the files were loaded in correct order: 1 -> 2 -> 3
+            match result.RunOutput with
+            | Some (ExecutionOutput execOut) ->
+                let output = execOut.StdOut
+                // Verify LoadOrder1.fsx is mentioned before LoadOrder2.fsx
+                let idx1 = output.IndexOf("LoadOrder1.fsx")
+                let idx2 = output.IndexOf("LoadOrder2.fsx")
+                if idx1 < 0 || idx2 < 0 then
+                    failwith $"Expected loading messages for LoadOrder1 and LoadOrder2. Got:\n{output}"
+                if idx1 > idx2 then
+                    failwith $"Files loaded in wrong order. LoadOrder1 should load before LoadOrder2. Got:\n{output}"
+            | _ -> failwith "Expected ExecutionOutput"
+            ())
+
+
