@@ -9846,16 +9846,18 @@ and MethInfoMayMatchCallerArgs
     (minfo: MethInfo)
     (callerObjArgCount: int)         // Number of object/this arguments from caller
     (numCallerCurriedGroups: int)    // Number of curried argument groups from caller
-    (totalUnnamedCallerArgs: int)    // Total unnamed args across all curried groups
+    (totalUnnamedCallerArgs: int)    // Total unnamed args (for max check)
     : bool =
     
     // Check 1: Object argument compatibility
     // For instance methods, caller must provide exactly one object argument
-    // For static methods, caller must provide zero object arguments
+    // For extension methods, allow 0 or 1 object arguments
+    // For static methods, we don't check - let the normal error reporting handle it
+    // (so we get proper "not an instance method" errors)
     let objArgOk =
         if minfo.IsInstance then callerObjArgCount = 1
         elif minfo.IsExtensionMember then callerObjArgCount <= 1  // Extension methods can be called with or without explicit this
-        else callerObjArgCount = 0
+        else true  // Static methods - let later checking handle mismatch for proper error
     
     if not objArgOk then false
     else
@@ -9871,34 +9873,23 @@ and MethInfoMayMatchCallerArgs
             // using actual parameter attributes (optional, param array, caller info)
             match numArgs with
             | [calledArgCount] ->
-                // Get parameter attributes to determine which params are optional/param array
+                // Get parameter attributes to determine if method has param array
                 let paramAttribs = minfo.GetParamAttribs(amap, mItem)
                 match paramAttribs with
                 | [paramList] ->
-                    // Count optional parameters (optional args, caller info args, param arrays)
-                    // These don't require caller to provide explicit arguments
-                    let mutable minRequiredArgs = 0
-                    let mutable hasParamArray = false
-                    for (ParamAttribs(isParamArrayArg, _isInArg, _isOutArg, optArgInfo, callerInfo, _reflArgInfo)) in paramList do
-                        if isParamArrayArg then
-                            hasParamArray <- true
-                        elif optArgInfo.IsOptional || callerInfo <> NoCallerInfo then
-                            // Optional param or caller info - not required
-                            ()
-                        else
-                            minRequiredArgs <- minRequiredArgs + 1
+                    // Check if method has param array (which can absorb extra args)
+                    let hasParamArray = paramList |> List.exists (fun (ParamAttribs(isParamArrayArg, _, _, _, _, _)) -> isParamArrayArg)
                     
                     // Filter based on argument count:
-                    // - Caller must provide at least minRequiredArgs
-                    // - If no param array, caller can provide at most calledArgCount
-                    // - If has param array, caller can provide any number >= minRequiredArgs
-                    if totalUnnamedCallerArgs < minRequiredArgs then
-                        false
-                    elif hasParamArray then
+                    // - Only filter if caller provides too many UNNAMED args (can't be property setters)
+                    // - Don't filter on "too few args" - let later checking give proper error message
+                    // - If has param array, allow any number of extra args
+                    if hasParamArray then
                         // Param array allows any number of additional args
                         true
                     elif totalUnnamedCallerArgs > calledArgCount then
-                        // Too many args and no param array to absorb them
+                        // Too many unnamed args and no param array to absorb them
+                        // Named args might be property setters so we don't count them for max
                         false
                     else
                         true
@@ -9906,7 +9897,8 @@ and MethInfoMayMatchCallerArgs
                     // Unexpected structure, be conservative
                     true
             | [] ->
-                // Method takes no arguments - caller must also have no unnamed args
+                // Method takes no arguments - caller must have no unnamed args
+                // (named args might be property setters)
                 totalUnnamedCallerArgs = 0
             | _ ->
                 // Curried method - we already checked group count above

@@ -1,0 +1,45 @@
+Skeptical reviewer. Verify SPRINT 4 delivers a complete, tested product increment.
+
+Implement Quick Type Compatibility Check: Add a fast-path type compatibility check before full unification in
+   FilterEachThenUndo. For each candidate, perform a quick structural comparison of caller arg
+   types vs callee param types - if they're obviously incompatible (e.g., caller has int but callee
+    expects IComparer with no generic match possible), skip full type checking. Must still handle
+   type-directed conversions, generics, and param arrays correctly.
+
+Definition of Done (DoD):
+- Quick compatibility
+   check added before CanMemberSigsMatchUpToCheck
+- Compiler builds with 0 errors
+- All existing
+   compiler tests pass
+- Test cases cover: generics, param arrays, optional args, type-directed
+   conversions
+- Profiling shows additional speedup beyond arity filtering
+- METHOD_RESOLUTION_PERF_IDEAS.md Idea 4 updated with results
+
+=== DoD VALIDATION ===
+Check EACH DoD criterion and report pass/fail for each.
+A sprint is ONLY complete if ALL DoD items pass.
+
+REJECT the sprint if:
+- Any DoD criterion fails
+- Tests are missing or failing
+- 'Tests will be added later' - tests must be NOW
+- TODOs, placeholders, or incomplete implementations
+- Implementation doesn't align with .ralph/VISION.md
+
+═══════════════════════════════════════════════════════
+Output REVIEW_PASSED if ALL DoD items pass.
+Output REVIEW_FAILED followed by:
+  PASSED: criterion1, criterion2
+  FAILED: criterion3, criterion4
+  ISSUES: bullet list of specific problems
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+=== SHARED CONTEXT ===
+Read .ralph/CONTEXT.md to see what previous subtasks accomplished.
+Read .ralph/LAST_VALIDATOR.md to see the last validation result.
+=== END SHARED CONTEXT ===

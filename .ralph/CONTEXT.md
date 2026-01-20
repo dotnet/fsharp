@@ -183,3 +183,53 @@ This file is updated after each sprint completes. Use it to understand what was 
 - `METHOD_RESOLUTION_PERF_IDEAS.md` - Updated Idea #4 with implementation details
 
 ---
+
+## Sprint 4: Implement Quick Type Compatibility Check
+
+**Summary:** Completed in 7 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 5: Lazy CalledMeth Property Setter Resolution
+
+**Summary:** Implemented lazy initialization for property setter lookups in CalledMeth constructor
+
+**Deliverables:**
+- Lazy computation of `assignedNamedProps` in `MethodCalls.fs`:
+  - Added `computeAssignedNamedProps` helper function (lines 577-621)
+  - Property lookups (`GetIntrinsicPropInfoSetsOfType`, `ExtensionPropInfosOfTypeInScope`, etc.) are deferred
+  - Used F# `lazy` to defer computation until `AssignedItemSetters` is accessed
+- Fast path optimization in `hasNoUnassignedNamedItems()`:
+  - If no named caller args are unassigned to method params → return true immediately
+  - No property lookups needed for the common case (no named property args)
+- Refactored `argSetInfos` tuple structure:
+  - Changed from 6-tuple to 5-tuple (property info computed lazily)
+  - `unassignedNamedItemsRaw` captured for lazy processing
+
+**Design Decisions:**
+- Conservative: Only defer property lookups, keep all other computations eager
+- Fast path: Common case (no named args) avoids forcing lazy
+- Safe: `AssignsAllNamedArgs` check still works correctly via `hasNoUnassignedNamedItems()`
+
+**Test Results:**
+- All 31 OverloadingMembers tests pass
+- All 175 TypeChecks tests pass
+- 2005 of 2006 FSharp.Compiler.Service tests pass (1 pre-existing failure)
+- Compiler builds with 0 errors
+
+**Profiling Assessment:**
+- For typical method calls (no named property args):
+  - Fast path returns immediately with no property lookups
+  - 4 expensive info-reader calls avoided per CalledMeth
+- For xUnit Assert.Equal pattern (no named args):
+  - All 10-15 CalledMeth objects skip property lookups entirely
+  - Estimated savings: 40-60 info-reader calls per Assert.Equal
+
+**Files changed:**
+- `src/Compiler/Checking/MethodCalls.fs` - Lazy property setter resolution
+- `tests/.../TypeCompatibilityFilterTest.fs` - Fixed pre-existing test issues
+- `METHOD_RESOLUTION_PERF_IDEAS.md` - Updated Idea #3 with implementation details
+
+---
