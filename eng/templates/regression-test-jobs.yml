@@ -188,7 +188,7 @@ jobs:
         } else {
           Write-Host "Executing file-based script: $buildScript"
           chmod +x "$buildScript"
-          bash -c ". /$buildScript" 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
+          bash -c "./$buildScript" 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
             Process-BuildOutput $_
           }
         }
@@ -208,7 +208,7 @@ jobs:
         LocalFSharpCompilerPath: $(Pipeline.Workspace)/FSharpCompiler
         LoadLocalFSharpBuild: 'True'
         LocalFSharpCompilerConfiguration: Release
-      timeoutInMinutes:  45
+      timeoutInMinutes:  120
 
     - pwsh:  |
         Set-Location $(Pipeline.Workspace)/TestRepo
