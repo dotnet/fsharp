@@ -435,6 +435,29 @@ f "abc" |> assertEqual "no value"
         |> shouldSucceed
         |> ignore
         
+  
+    [<FactForNETCOREAPP>]
+    let ``Can use with extension methods`` =
+      FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+
+type System.Object with
+  member this.A([<CallerArgumentExpression "this">] ?arg: string) = arg
+  
+[<Extension>]
+type B =
+    [<Extension>]
+    static member C (this: #obj, [<CallerArgumentExpression "this">] ?arg: string) = arg
+
+(1 + 2).A() |> assertEqual (Some "1 + 2")
+(1 + 2).C() |> assertEqual (Some "1 + 2")
+"""
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+        
     (* ------------ C# Interop tests ------------- *)
     [<FactForNETCOREAPP>]
     let ``C# can consume methods using CallerArgumentExpression receiving special parameter names`` () =
@@ -462,9 +485,14 @@ type A() =
     let ``Can recognize CallerArgumentExpression defined in C#`` () =
       let cs =
         CSharp """using System.Runtime.CompilerServices;
-public class AInCs
+        
+namespace Test
 {
-    public static string B(int param, [CallerArgumentExpression("param")] string expr = null) => expr;
+    public static class AInCs
+    {
+        public static string B(int param, [CallerArgumentExpression("param")] string expr = null) => expr;
+        public static string C<T>(this T param, [CallerArgumentExpression("param")] string expr = null) => expr;
+    }
 }
 
 namespace System.Runtime.CompilerServices
@@ -484,6 +512,7 @@ namespace System.Runtime.CompilerServices
 
       FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
+open Test
 
 type A() =
   static member B (``ab c``, [<CallerArgumentExpression "ab c">]?n) =
@@ -491,6 +520,7 @@ type A() =
 
 A.B "abc" |> assertEqual "\"abc\""
 AInCs.B (123 - 7) |> assertEqual "123 - 7"
+(123 - 7).C() |> assertEqual "123 - 7"
       """ 
       |> withLangVersionPreview
       |> withReferences [cs]

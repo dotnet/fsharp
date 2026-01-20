@@ -1450,20 +1450,30 @@ type CheckCallerAttributesEnv<'t> =
         sourceText: ISourceText option
         assignedArgs: AssignedCalledArg<'t> list
         canApplyCallerArgumentExpression: bool
+        extensionMethodObjArg: (string * range) option
     }
     
 /// Try to pick the code text of an argument with the given parameter name from a list of assigned arguments.
 let tryPickArgumentCodeText checkCallerAttributesEnv paramName =
-    if not checkCallerAttributesEnv.canApplyCallerArgumentExpression then None else
+    match checkCallerAttributesEnv.sourceText with
+    | _ when not checkCallerAttributesEnv.canApplyCallerArgumentExpression -> None
+    | None -> None
+    | Some sourceText ->
         checkCallerAttributesEnv.assignedArgs
         |> List.tryPick (fun { CalledArg=called; CallerArg=caller } -> 
-        match called.NameOpt, checkCallerAttributesEnv.sourceText with
-        | Some x, Some sourceText when x.idText = paramName ->
-            let range = caller.Range
+            match called.NameOpt with
+            | Some x when x.idText = paramName -> Some caller.Range
+            | _ -> None)
+        |> Option.orElseWith (fun () ->
+            checkCallerAttributesEnv.extensionMethodObjArg
+            |> Option.bind (fun (objArgName, range) ->
+                if objArgName = paramName then Some range
+                else None))
+        |> Option.bind (fun range -> 
             let code = sourceText.GetSubTextFromRange range
             if System.String.IsNullOrEmpty code then None
-            else Some code
-        | _ -> None)
+            else Some code        
+        )
 
 /// Get the expression that must be inserted on the caller side for a CallerSide optional arg,
 /// i.e. one where there is no corresponding caller arg.
@@ -1678,7 +1688,7 @@ let AdjustCallerArgForOptional tcVal tcFieldInit checkCallerAttributesEnv (infoR
 //    - VB also allows you to pass intrinsic values as optional values to parameters 
 //        typed as Object. What we do in this case is we box the intrinsic value."
 //
-let AdjustCallerArgsForOptionals tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) mItem mMethExpr (eCallerMemberName, sourceText, canApplyCallerArgumentExpression) =
+let AdjustCallerArgsForOptionals tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) mItem mMethExpr (eCallerMemberName, sourceText, canApplyCallerArgumentExpression, extensionMethodObjArg) =
     let g = infoReader.g
 
     let assignedNamedArgs = calledMeth.ArgSets |> List.collect (fun argSet -> argSet.AssignedNamedArgs)
@@ -1694,6 +1704,7 @@ let AdjustCallerArgsForOptionals tcVal tcFieldInit (infoReader: InfoReader) ad (
             eCallerMemberName = eCallerMemberName
             assignedArgs = assignedNamedArgs @ unnamedArgs
             canApplyCallerArgumentExpression = canApplyCallerArgumentExpression
+            extensionMethodObjArg = extensionMethodObjArg
         }
         
     if not canApplyCallerArgumentExpression && calledMeth.UnnamedCalledOptArgs |> List.exists (fun i -> i.CallerInfo.IsCallerArgumentExpression) then
@@ -1755,7 +1766,7 @@ let AdjustParamArrayCallerArgs tcVal g amap infoReader ad (calledMeth: CalledMet
 /// Build the argument list for a method call. Adjust for param array, optional arguments, byref arguments and coercions.
 /// For example, if you pass an F# reference cell to a byref then we must get the address of the 
 /// contents of the ref. Likewise lots of adjustments are made for optional arguments etc.
-let AdjustCallerArgs tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) objArgs lambdaVars mItem mMethExpr (eCallerMemberName, sourceText, canApplyCallerArgumentExpression) =
+let AdjustCallerArgs tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) objArgs lambdaVars mItem mMethExpr (eCallerMemberName, sourceText, canApplyCallerArgumentExpression, extensionMethodObjArg) =
     let g = infoReader.g
     let amap = infoReader.amap
     let calledMethInfo = calledMeth.Method
@@ -1777,7 +1788,7 @@ let AdjustCallerArgs tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: 
         AdjustParamArrayCallerArgs tcVal g amap infoReader ad calledMeth mMethExpr
 
     let optArgs, optArgPreBinder, adjustedNormalUnnamedArgs, adjustedFinalAssignedNamedArgs = 
-        AdjustCallerArgsForOptionals tcVal tcFieldInit infoReader ad calledMeth mItem mMethExpr (eCallerMemberName, sourceText, canApplyCallerArgumentExpression)
+        AdjustCallerArgsForOptionals tcVal tcFieldInit infoReader ad calledMeth mItem mMethExpr (eCallerMemberName, sourceText, canApplyCallerArgumentExpression, extensionMethodObjArg)
 
     let outArgs, outArgExprs, outArgTmpBinds =
         AdjustOutCallerArgs g calledMeth mMethExpr

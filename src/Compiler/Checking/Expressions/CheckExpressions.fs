@@ -10333,8 +10333,13 @@ and TcMethodApplication
         //      let f = System.ArgumentException.ThrowIfNullOrEmpty in f(null) <-- Cannot get the right text
         let canApplyCallerArgumentExpression = curriedCallerArgsOpt.IsSome
         
+        let extensionMethodObjArg =
+            match finalCalledMeth.Method.GetExtensionObjArgName(), objArgs with
+            | Some name, objArg :: _ -> Some (name, objArg.Range)
+            | _ -> None
+                    
         let tcVal = LightweightTcValForUsingInBuildMethodCall g
-        AdjustCallerArgs tcVal TcFieldInit cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr (env.eCallerMemberName, cenv.SourceText, canApplyCallerArgumentExpression)
+        AdjustCallerArgs tcVal TcFieldInit cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr (env.eCallerMemberName, cenv.SourceText, canApplyCallerArgumentExpression, extensionMethodObjArg)
 
     // Record the resolution of the named argument for the Language Service
     allArgs |> List.iter (fun assignedArg ->

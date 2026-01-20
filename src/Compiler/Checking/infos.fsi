@@ -301,6 +301,9 @@ type ILMethInfo =
     /// the method.
     member IsReadOnly: g: TcGlobals -> bool
 
+    /// Get the name of the 'self'/'this'/'object' argument of an IL extension method.
+    member GetExtensionObjArgName: unit -> string option
+
 /// Describes an F# use of a method
 [<NoComparison; NoEquality>]
 type MethInfo =
@@ -556,6 +559,9 @@ type MethInfo =
 
     /// Tries to get the object arg type if it's a byref type.
     member TryObjArgByrefType: amap: ImportMap * m: range * minst: TypeInst -> TType option
+
+    /// Get the name of the 'self'/'this'/'object' argument of an extension method.
+    member GetExtensionObjArgName: unit -> string option
 
 /// Represents a single use of a IL or provided field from one point in an F# program
 [<NoComparison; NoEquality>]

@@ -440,7 +440,10 @@ val AdjustCallerArgs:
     lambdaVars: 'a option ->
     mItem: range ->
     mMethExpr: range ->
-    eCallerMemberName: string option * sourceText: ISourceText option * canApplyCallerArgumentExpression: bool ->
+    eCallerMemberName: string option *
+    sourceText: ISourceText option *
+    canApplyCallerArgumentExpression: bool *
+    extensionMethodObjArg: (string * range) option ->
         (Expr -> Expr) *
         Expr list *
         'b option list *

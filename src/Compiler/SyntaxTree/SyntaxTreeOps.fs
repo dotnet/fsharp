@@ -732,6 +732,11 @@ module SynInfo =
             SynValData(None, SynValInfo(infosForArgs, retInfo), None)
 
         | Some memFlags ->
+            let selfMetadata =
+                match pat with
+                | Some(SynPat.LongIdent(longDotId = SynLongIdent(id = ident :: _))) -> [ SynArgInfo([], false, Some ident) ]
+                | _ -> selfMetadata
+
             let infosForObjArgs = if memFlags.IsInstance then [ selfMetadata ] else []
 
             let infosForArgs = AdjustMemberArgs memFlags.MemberKind infosForExplicitArgs

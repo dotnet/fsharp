@@ -671,6 +671,13 @@ type ILMethInfo =
         x.GetCompiledReturnType(amap, m, minst)
         |> GetFSharpViewOfReturnType amap.g
 
+    /// Get the name of the 'self'/'this'/'object' argument of an IL extension method.
+    member x.GetExtensionObjArgName() =
+        if x.IsILExtensionMethod then
+            let p = x.RawMetadata.Parameters.Head
+            p.Name
+        else
+            None
 
 /// Describes an F# use of a method
 [<System.Diagnostics.DebuggerDisplay("{DebuggerDisplayName}")>]
@@ -1240,6 +1247,20 @@ type MethInfo =
             [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
                     yield ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m)) ] ]
 #endif
+
+    /// Get the name of the 'self'/'this'/'object' argument of an extension method.
+    member x.GetExtensionObjArgName() =
+        match x with
+        | ILMeth(_, ilminfo, _) -> ilminfo.GetExtensionObjArgName()
+        | FSMeth(_, _, vref, _) ->
+            if x.IsInstance then
+                if x.IsExtensionMember then
+                    vref.ValReprInfo.Value.ArgInfos.Head.Head.Name |> Option.map (fun x -> x.idText)
+                else
+                    None
+            else None
+        | MethInfoWithModifiedReturnType(mi,_) -> mi.GetExtensionObjArgName()
+        | _ -> None
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with a method.
     /// An instance method returns one object argument.
