@@ -185,6 +185,19 @@ exception ArgDoesNotMatchError of
     calledArg: CalledArg *
     callerArg: CallerArg<Expr>
 
+/// Cache key for overload resolution: combines method group identity with caller argument types
+/// Only used when all argument types are fully resolved (no type variables)
+[<Struct>]
+type OverloadResolutionCacheKey =
+    { MethodGroupHash: int
+      ArgTypeStamps: int64 list }
+
+/// Result of cached overload resolution
+[<Struct>]
+type OverloadResolutionCacheResult =
+    | CachedResolved of methodIndex: int
+    | CachedFailed
+
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
@@ -212,6 +225,13 @@ type ConstraintSolverState =
         PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
         WarnWhenUsingWithoutNullOnAWithNullTarget: string option
+        
+        /// Cache for overload resolution results.
+        OverloadResolutionCache: System.Collections.Generic.Dictionary<OverloadResolutionCacheKey, OverloadResolutionCacheResult>
+        
+        /// Cache hit/miss counters for profiling
+        mutable OverloadCacheHits: int
+        mutable OverloadCacheMisses: int
     }
 
     static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState

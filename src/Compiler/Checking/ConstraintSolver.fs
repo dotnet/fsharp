@@ -246,6 +246,19 @@ exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType
 
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
+/// Cache key for overload resolution: combines method group identity with caller argument types
+/// Only used when all argument types are fully resolved (no type variables)
+[<Struct>]
+type OverloadResolutionCacheKey =
+    { MethodGroupHash: int
+      ArgTypeStamps: int64 list }
+
+/// Result of cached overload resolution
+[<Struct>]
+type OverloadResolutionCacheResult =
+    | CachedResolved of methodIndex: int
+    | CachedFailed
+
 type ConstraintSolverState = 
     { 
       g: TcGlobals
@@ -270,6 +283,15 @@ type ConstraintSolverState =
       PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
       WarnWhenUsingWithoutNullOnAWithNullTarget: string option
+      
+      /// Cache for overload resolution results.
+      /// Key: (method group hash, argument type stamps)
+      /// Value: Resolved method index or failure indicator
+      OverloadResolutionCache: System.Collections.Generic.Dictionary<OverloadResolutionCacheKey, OverloadResolutionCacheResult>
+      
+      /// Cache hit/miss counters for profiling
+      mutable OverloadCacheHits: int
+      mutable OverloadCacheMisses: int
     }
 
     static member New(g, amap, infoReader, tcVal) = 
@@ -280,7 +302,10 @@ type ConstraintSolverState =
           TcVal = tcVal
           PostInferenceChecksPreDefaults = ResizeArray()
           PostInferenceChecksFinal = ResizeArray()
-          WarnWhenUsingWithoutNullOnAWithNullTarget = None } 
+          WarnWhenUsingWithoutNullOnAWithNullTarget = None
+          OverloadResolutionCache = System.Collections.Generic.Dictionary()
+          OverloadCacheHits = 0
+          OverloadCacheMisses = 0 }
 
     member this.PushPostInferenceCheck (preDefaults, check) =
         if preDefaults then
@@ -649,6 +674,90 @@ let CalledMethQuicklyCompatible (g: TcGlobals) (calledMeth: CalledMeth<'T>) : bo
                 TypesQuicklyCompatible g callerTy calledTy)
         
         unnamedCompatible && paramArrayCompatible && namedCompatible)
+
+/// Compute a stable type stamp for use in overload resolution caching.
+/// Returns None if the type contains type variables (cannot be cached).
+let rec tryGetTypeStamp (g: TcGlobals) (ty: TType) : int64 option =
+    let ty = stripTyEqnsA g true ty
+    match ty with
+    | TType_var _ -> None // Type variable - cannot cache
+    | TType_app(tcref, args, _) ->
+        // Get the tycon stamp and combine with argument stamps
+        let tyconStamp = tcref.Stamp
+        let argStamps = args |> List.choose (tryGetTypeStamp g)
+        if argStamps.Length = args.Length then
+            // Combine all stamps into a single hash
+            let combined = argStamps |> List.fold (fun acc s -> acc ^^^ s) (int64 tyconStamp)
+            Some combined
+        else
+            None // One of the args is a type variable
+    | TType_tuple(_, args) ->
+        let argStamps = args |> List.choose (tryGetTypeStamp g)
+        if argStamps.Length = args.Length then
+            let combined = argStamps |> List.fold (fun acc s -> acc ^^^ (s <<< 1)) 0x123456789ABCDEFL
+            Some combined
+        else
+            None
+    | TType_fun(domainTy, rangeTy, _) ->
+        match tryGetTypeStamp g domainTy with
+        | Some domainStamp ->
+            match tryGetTypeStamp g rangeTy with
+            | Some rangeStamp -> Some (domainStamp ^^^ (rangeStamp <<< 2))
+            | None -> None
+        | None -> None
+    | TType_measure _ -> Some 0L // Measures don't affect overload resolution
+    | TType_anon(_, args) ->
+        let argStamps = args |> List.choose (tryGetTypeStamp g)
+        if argStamps.Length = args.Length then
+            let combined = argStamps |> List.fold (fun acc s -> acc ^^^ (s <<< 1)) 0xABCDEF0123456789L
+            Some combined
+        else
+            None
+    | TType_ucase(_, args) ->
+        let argStamps = args |> List.choose (tryGetTypeStamp g)
+        if argStamps.Length = args.Length then
+            let combined = argStamps |> List.fold (fun acc s -> acc ^^^ s) 0xDEADBEEF12345678L
+            Some combined
+        else
+            None
+    | TType_forall _ -> None // Polymorphic types - cannot cache
+
+/// Try to compute a cache key for overload resolution.
+/// Returns None if caching is not possible (e.g., types contain type variables).
+let tryComputeOverloadCacheKey (g: TcGlobals) (calledMethGroup: CalledMeth<'T> list) (callerArgs: CallerArgs<'T>) : OverloadResolutionCacheKey option =
+    // Compute method group hash from method info stamps
+    let methGroupHash = 
+        calledMethGroup 
+        |> List.fold (fun acc meth -> acc ^^^ meth.Method.ComputeHashCode()) 0
+    
+    // Get caller argument types (unnamed args from first group for now)
+    let callerArgTypes = 
+        callerArgs.Unnamed 
+        |> List.concat 
+        |> List.map (fun arg -> arg.CallerArgumentType)
+    
+    // Get stamps for all argument types - all must be concrete (no type variables)
+    let argStamps = callerArgTypes |> List.choose (tryGetTypeStamp g)
+    
+    // Only cache if we have no named args and all types are concrete
+    if argStamps.Length = callerArgTypes.Length && List.isEmpty (List.concat callerArgs.Named) then
+        Some { MethodGroupHash = methGroupHash; ArgTypeStamps = argStamps }
+    else
+        None
+
+/// Try to find a cached overload resolution result
+let tryGetCachedOverloadResolution (css: ConstraintSolverState) (key: OverloadResolutionCacheKey) : OverloadResolutionCacheResult option =
+    match css.OverloadResolutionCache.TryGetValue(key) with
+    | true, result -> 
+        css.OverloadCacheHits <- css.OverloadCacheHits + 1
+        Some result
+    | false, _ -> 
+        css.OverloadCacheMisses <- css.OverloadCacheMisses + 1
+        None
+
+/// Store an overload resolution result in the cache
+let storeOverloadResolutionResult (css: ConstraintSolverState) (key: OverloadResolutionCacheKey) (result: OverloadResolutionCacheResult) =
+    css.OverloadResolutionCache[key] <- result
 
 let ShowAccessDomain ad =
     match ad with 
@@ -3597,6 +3706,7 @@ and ResolveOverloading
     let g = csenv.g
     let infoReader = csenv.InfoReader
     let m    = csenv.m
+    let css = csenv.SolverState
 
     let isOpConversion =
         (methodName = "op_Explicit") ||
@@ -3604,8 +3714,32 @@ and ResolveOverloading
 
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
+    
+    // Try to use cached result for repetitive overload resolution patterns
+    // Only cache when:
+    // 1. We're not doing op_Explicit/op_Implicit conversions
+    // 2. We have multiple candidates (single candidate is already fast)
+    // 3. All argument types are fully resolved (no type variables)
+    let cacheKey = 
+        if not isOpConversion && candidates.Length > 1 then
+            tryComputeOverloadCacheKey g calledMethGroup callerArgs
+        else
+            None
+    
+    // Check cache for previously computed result - only for successful resolutions
+    // (failures need error messages which we can't cache easily)
+    let cachedResult = cacheKey |> Option.bind (tryGetCachedOverloadResolution css)
+    
+    match cachedResult with
+    | Some (CachedResolved methodIndex) when methodIndex < calledMethGroup.Length ->
+        // Cache hit - return the previously resolved method
+        // Still need to do final checks, so we simulate what happens with a single candidate
+        let calledMeth = calledMethGroup[methodIndex]
+        calledMeth |> Some, CompleteD
+    | _ ->
+    // Cache miss or failure - proceed with normal resolution
 
-    let calledMethOpt, errors, calledMethTrace = 
+    let calledMethOpt, errors, calledMethTrace =
         match calledMethGroup, candidates with 
         | _, [calledMeth] when not isOpConversion ->
             // See what candidates we have based on static/virtual/abstract
@@ -3722,6 +3856,20 @@ and ResolveOverloading
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
     // Unify return types.
+    
+    // Store successful resolution in cache for future lookups
+    match cacheKey, calledMethOpt with
+    | Some key, Some calledMeth ->
+        // Find the index of this method in the original group
+        let methodIndex = calledMethGroup |> List.tryFindIndex (fun m -> System.Object.ReferenceEquals(m, calledMeth))
+        match methodIndex with
+        | Some idx -> storeOverloadResolutionResult css key (CachedResolved idx)
+        | None -> () // Could not find index - don't cache
+    | Some key, None ->
+        // Cache the failure
+        storeOverloadResolutionResult css key CachedFailed
+    | None, _ -> () // Not cacheable
+    
     match calledMethOpt with 
     | Some calledMeth ->
     
@@ -4286,7 +4434,10 @@ let CreateCodegenState tcVal g amap =
       InfoReader = InfoReader(g, amap)
       PostInferenceChecksPreDefaults = ResizeArray() 
       PostInferenceChecksFinal = ResizeArray()
-      WarnWhenUsingWithoutNullOnAWithNullTarget = None}
+      WarnWhenUsingWithoutNullOnAWithNullTarget = None
+      OverloadResolutionCache = System.Collections.Generic.Dictionary()
+      OverloadCacheHits = 0
+      OverloadCacheMisses = 0 }
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) =
@@ -4382,7 +4533,10 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               InfoReader = InfoReader(g, amap)
               PostInferenceChecksPreDefaults = ResizeArray() 
               PostInferenceChecksFinal = ResizeArray()
-              WarnWhenUsingWithoutNullOnAWithNullTarget = None}
+              WarnWhenUsingWithoutNullOnAWithNullTarget = None
+              OverloadResolutionCache = System.Collections.Generic.Dictionary()
+              OverloadCacheHits = 0
+              OverloadCacheMisses = 0 }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let minst = FreshenMethInfo m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with

@@ -81,16 +81,64 @@ This translates to corresponding reductions in:
 ---
 
 ### 2. Overload Resolution Caching
-**Status**: 🔬 Under investigation (Priority P3)
-**Location**: New cache at `ConstraintSolver.fs` or `CheckExpressions.fs`
+**Status**: ✅ Implemented (Sprint 6)
+**Location**: `ConstraintSolver.fs` - ConstraintSolverState and ResolveOverloading
 **Hypothesis**: Cache (MethodGroup + ArgTypes) -> ResolvedMethod mapping
 **Expected Impact**: Very High for repetitive patterns like test files
 **Notes**:
-- Key: method group identity + caller argument types
-- Challenge: Invalidation when types are refined during inference
-- May need to scope cache per expression checking context
-- **Sprint 2 Analysis**: This is the highest-impact optimization but requires careful
-  design to handle type inference updates and ensure correctness
+- **Sprint 6 Implementation**: Full overload resolution caching system added
+  
+**Cache Design:**
+- **Key**: `OverloadResolutionCacheKey` struct containing:
+  - `MethodGroupHash`: Hash of all MethInfo identities in the group
+  - `ArgTypeStamps`: List of type stamps for each caller argument
+- **Value**: `OverloadResolutionCacheResult` discriminated union:
+  - `CachedResolved(methodIndex)`: Index of resolved method in group
+  - `CachedFailed`: Resolution failed (for skipping expensive error re-computation)
+  
+**Cache Location:**
+- Added to `ConstraintSolverState` record:
+  - `OverloadResolutionCache: Dictionary<OverloadResolutionCacheKey, OverloadResolutionCacheResult>`
+  - `OverloadCacheHits: int mutable` - counter for profiling
+  - `OverloadCacheMisses: int mutable` - counter for profiling
+
+**Caching Rules (Conservative Approach):**
+1. Only cache when NOT doing op_Explicit/op_Implicit conversions
+2. Only cache when candidates.Length > 1 (single candidate is already fast)
+3. Only cache when ALL argument types are fully resolved (no type variables)
+4. Only cache when no named arguments (simplifies key computation)
+
+**Key Helper Functions:**
+- `tryGetTypeStamp`: Computes stable stamp for a type, returns None if type contains type variables
+- `tryComputeOverloadCacheKey`: Creates cache key from method group + caller args
+- `tryGetCachedOverloadResolution`: Looks up cached result
+- `storeOverloadResolutionResult`: Stores resolution result in cache
+
+**Cache Hit Flow:**
+1. Compute cache key from (method group hash, arg type stamps)
+2. If cache hit with `CachedResolved(idx)`, return `calledMethGroup[idx]`
+3. If cache miss, proceed with normal resolution
+4. After resolution, store result in cache for future lookups
+
+**Estimated Cache Hit Rate:**
+
+For repetitive patterns like test files with many `Assert.Equal` calls:
+
+| Pattern | Without Cache | With Cache | Cache Hit Rate |
+|---------|--------------|------------|----------------|
+| First call `Assert.Equal(1, 2)` | Full resolution | Full resolution | 0% (cache miss) |
+| Subsequent `Assert.Equal(x, y)` where x,y are int | Skip resolution | Return cached | ~99% |
+| `Assert.Equal("a", "b")` (different types) | Full resolution | Full resolution | 0% (different key) |
+
+For 1500 identical `Assert.Equal(int, int)` calls:
+- **Without cache**: 1500 full FilterEachThenUndo passes
+- **With cache**: 1 full resolution + 1499 cache hits
+- **Savings**: ~99.9% of resolution work eliminated
+
+**Build/Test Verification (Sprint 6):**
+- Build.cmd -c Release: ✅ Build succeeded, 0 errors
+- All 31 OverloadingMembers tests pass
+- All 175 TypeChecks tests pass (3 skipped - pre-existing)
 
 ---
 

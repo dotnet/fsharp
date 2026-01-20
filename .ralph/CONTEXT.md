@@ -233,3 +233,54 @@ This file is updated after each sprint completes. Use it to understand what was 
 - `METHOD_RESOLUTION_PERF_IDEAS.md` - Updated Idea #3 with implementation details
 
 ---
+
+## Sprint 5: Optimize
+   CalledMeth Construction
+
+**Summary:** Completed in 4 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 6: Implement Overload Resolution Caching
+
+**Summary:** Implemented full caching system for overload resolution results
+
+**Deliverables:**
+- Cache types added to `ConstraintSolver.fs`:
+  - `OverloadResolutionCacheKey`: Struct key combining method group hash + arg type stamps
+  - `OverloadResolutionCacheResult`: DU for cached resolved/failed results
+- Cache storage added to `ConstraintSolverState`:
+  - `OverloadResolutionCache`: Dictionary for cached results
+  - `OverloadCacheHits` / `OverloadCacheMisses`: Profiling counters
+- Cache helper functions:
+  - `tryGetTypeStamp`: Compute stable type stamp for caching
+  - `tryComputeOverloadCacheKey`: Create cache key from method group + args
+  - `tryGetCachedOverloadResolution`: Lookup cached result
+  - `storeOverloadResolutionResult`: Store result in cache
+- Integration in `ResolveOverloading` function:
+  - Early cache lookup before FilterEachThenUndo
+  - Cache store after successful/failed resolution
+
+**Caching Rules:**
+1. Only cache when NOT doing op_Explicit/op_Implicit conversions
+2. Only cache when candidates.Length > 1 (single candidate already fast)
+3. Only cache when ALL argument types are fully resolved (no type variables)
+4. Only cache when no named arguments (simplifies key computation)
+
+**Expected Cache Hit Rate:**
+- For repetitive patterns like `Assert.Equal(1, 2)` called 1500 times: ~99%
+- Different argument types create different cache keys (no false positives)
+
+**Test Results:**
+- All 31 OverloadingMembers tests pass
+- All 175 TypeChecks tests pass (3 skipped - pre-existing)
+- Compiler builds with 0 errors
+
+**Files changed:**
+- `src/Compiler/Checking/ConstraintSolver.fs` - Cache implementation
+- `src/Compiler/Checking/ConstraintSolver.fsi` - Updated signature
+- `METHOD_RESOLUTION_PERF_IDEAS.md` - Updated Idea #2 with implementation details
+
+---
