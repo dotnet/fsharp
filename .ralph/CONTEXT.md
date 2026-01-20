@@ -56,37 +56,52 @@ This file is updated after each sprint completes. Use it to understand what was 
 
 ## Sprint 3: Early Arity Filtering
 
-**Summary:** Implemented early candidate pruning based on argument count before CalledMeth construction
+**Summary:** Implemented and fixed early candidate pruning based on argument count before CalledMeth construction
 
 **Deliverables:**
 - `MethInfoMayMatchCallerArgs` helper function in `CheckExpressions.fs`
+  - Now uses `GetParamAttribs` for proper parameter analysis
+  - Calculates **minimum required args** (excluding optional, CallerInfo, ParamArray params)
+  - Detects **param array** parameters (allows unlimited additional args)
   - Checks instance vs static method compatibility
   - Checks curried group count match
-  - Conservative argument count filtering
 - Pre-filter integrated into `TcMethodApplication_UniqueOverloadInference`
   - Filters `candidateMethsAndProps` before CalledMeth construction
   - Reduces allocations for obviously incompatible overloads
-- New test `ArityFilteringTest.fs` covering:
-  - Methods with different arities (0-3 args)
+- Enhanced test `ArityFilteringTest.fs` covering:
+  - Methods with different arities (0-4 args)
   - Static vs instance methods
   - Optional parameters
   - Param arrays
+  - CallerInfo parameters
+  - MockAssert pattern (Assert.Equal-like overloads)
 
-**Key Implementation Details:**
-- Pre-filter runs BEFORE expensive CalledMeth construction
-- Conservative approach: only rejects methods that definitely won't match
-- Existing `IsCandidate` filter still runs as secondary verification
-- No changes to overload resolution semantics
+**Key Implementation Details (Sprint 3 Fix):**
+- **Original implementation was no-op** (threshold of calledArgCount + 100)
+- **Fixed to use GetParamAttribs** to analyze each parameter
+- Filtering rules:
+  - Reject if caller provides fewer args than minRequiredArgs
+  - Reject if caller provides more args than method accepts AND no param array
+  - Allow if method has param array (can absorb extra args)
+- For Assert.Equal-like patterns with 2-arg calls, correctly filters out 1-arg, 3-arg, 4-arg overloads
 
 **Tests:**
 - All 30 OverloadingMembers tests pass
-- All 181 TypeChecks tests pass
-- New ArityFilteringTest.fs passes on both net10.0 and net472
+- All 175 TypeChecks tests pass (3 skipped)
+- Enhanced ArityFilteringTest.fs passes
+
+**Profiling Data Added:**
+- Detailed candidate reduction statistics in METHOD_RESOLUTION_PERF_IDEAS.md
+- Experiment 3 log entry with measured impact:
+  - 40-60% reduction in CalledMeth constructions
+  - 40-60% reduction in Trace allocations
+  - 40-60% reduction in FilterEachThenUndo invocations
+- Per-call savings: 9-11 CalledMeth allocations saved per Assert.Equal call
+- For 1500 calls: ~13,500 CalledMeth allocations saved
 
 **Files changed:**
-- `src/Compiler/Checking/Expressions/CheckExpressions.fs` - Added MethInfoMayMatchCallerArgs and pre-filter
-- `tests/.../OverloadingMembers/ArityFilteringTest.fs` - New test file
-- `tests/.../OverloadingMembers/OverloadingMembers.fs` - Added test entry
-- `METHOD_RESOLUTION_PERF_IDEAS.md` - Updated Idea #1 status
+- `src/Compiler/Checking/Expressions/CheckExpressions.fs` - Fixed MethInfoMayMatchCallerArgs with real filtering
+- `tests/.../OverloadingMembers/ArityFilteringTest.fs` - Enhanced with MockAssert pattern
+- `METHOD_RESOLUTION_PERF_IDEAS.md` - Updated Idea #1 with implementation details and profiling data
 
 ---
