@@ -1,6 +1,6 @@
 {
   "sdk": {
-    "version": "10.0.100",
+    "version": "11.0.100-alpha.1.26060.102",
     "allowPrerelease": true,
     "paths": [
       ".dotnet",
@@ -9,7 +9,7 @@
     "errorMessage": "The .NET SDK could not be found, please run ./eng/common/dotnet.sh."
   },
   "tools": {
-    "dotnet": "10.0.100",
+    "dotnet": "11.0.100-alpha.1.26060.102",
     "vs": {
       "version": "18.0",
       "components": [
@@ -22,7 +22,7 @@
     "perl": "5.38.2.2"
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "11.0.0-beta.26055.1",
+    "Microsoft.DotNet.Arcade.Sdk": "11.0.0-beta.26067.2",
     "Microsoft.DotNet.Helix.Sdk": "8.0.0-beta.23255.2"
   }
 }
