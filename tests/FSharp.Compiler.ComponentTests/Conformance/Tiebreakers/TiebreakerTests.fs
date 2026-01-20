@@ -1275,7 +1275,8 @@ let result = Example.Process(value)
         //
         // LIMITATION: F# does not allow overloading based solely on type constraints.
         // Methods with same name and same parameter structure (differing only in constraints)
-        // are considered duplicate signatures at definition time (FS0438).
+        // now result in ambiguity at call site (FS0041) since the concreteness tiebreaker
+        // does not compare constraint counts (which was removed to fix SRTP issues).
         //
         // This test documents current F# behavior. Constraint specificity comparison
         // requires a future F# language enhancement to allow constraint-based overloading.
@@ -1295,7 +1296,7 @@ let result = Example.Compare(42)
         """
         |> typecheck
         |> shouldFail
-        |> withErrorCode 438 // FS0438: Duplicate method
+        |> withErrorCode 41 // FS0041: Ambiguous overload (constraints don't break ties)
         |> ignore
 
     [<Fact>]
@@ -1512,8 +1513,8 @@ let result2 = Example.Convert(System.Nullable<int>(42))
         // RFC section-examples.md: More constraints = more concrete (PROPOSED)
         // NOTE: F# does not currently allow overloading based solely on type constraints.
         // Methods with same name and same parameter structure (differing only in constraints)
-        // are considered duplicate signatures (FS0438).
-        // This test documents current F# behavior - constraint-based overloading is PROPOSED.
+        // result in ambiguity at call site (FS0041) or duplicate method detection (FS0438).
+        // This test documents current F# behavior - constraint-based overloading is NOT YET supported.
         FSharp """
 module Test
 
@@ -1527,7 +1528,7 @@ let result = Example.Process(42)
         """
         |> typecheck
         |> shouldFail
-        |> withErrorCode 438 // FS0438: Duplicate method
+        |> withErrorCode 41 // FS0041: Ambiguous overload (no tiebreaker between constraint-only differences)
         |> ignore
 
     // ============================================================================

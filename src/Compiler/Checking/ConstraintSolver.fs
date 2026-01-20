@@ -3673,10 +3673,6 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         elif not hasPositive && hasNegative then -1
         else 0
 
-    /// Count constraints on a type parameter
-    let countTyparConstraints (tp: Typar) =
-        tp.Constraints |> List.length
-
     /// Compare types under the "more concrete" partial ordering.
     /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
     let rec compareTypeConcreteness ty1 ty2 =
@@ -3684,11 +3680,10 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         let sty1 = stripTyEqns g ty1
         let sty2 = stripTyEqns g ty2
         match sty1, sty2 with
-        // Case 1: Both are type variables - compare by constraint count
-        | TType_var (tp1, _), TType_var (tp2, _) ->
-            let c1 = countTyparConstraints tp1
-            let c2 = countTyparConstraints tp2
-            compare c1 c2
+        // Case 1: Both are type variables - incomparable
+        // RFC Example 15 (constraint specificity) is deferred due to F# language limitation (FS0438).
+        // Comparing constraint counts would incorrectly affect SRTP resolution.
+        | TType_var _, TType_var _ -> 0
         
         // Case 2: Type variable vs concrete type - concrete is more concrete
         | TType_var _, _ -> -1
