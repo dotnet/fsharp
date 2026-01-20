@@ -7,12 +7,11 @@ open System
 open System.IO
 open System.Diagnostics
 
-type ProfileConfig = {
-    GeneratedDir: string
-    OutputDir: string
-    TotalAsserts: int
-    MethodsCount: int
-}
+type ProfileConfig =
+    { GeneratedDir: string
+      OutputDir: string
+      TotalAsserts: int
+      MethodsCount: int }
 
 // Helper to run shell command and capture output
 let runCommand workingDir command args =
@@ -24,22 +23,25 @@ let runCommand workingDir command args =
     psi.RedirectStandardError <- true
     psi.UseShellExecute <- false
     psi.CreateNoWindow <- true
-    
+
     use proc = Process.Start(psi)
     let output = proc.StandardOutput.ReadToEnd()
     let error = proc.StandardError.ReadToEnd()
     proc.WaitForExit()
-    
+
     (proc.ExitCode, output, error)
 
 // Check if dotnet-trace is installed
-let ensureDotnetTrace() =
+let ensureDotnetTrace () =
     printfn "Checking for dotnet-trace..."
     let (exitCode, output, _) = runCommand "." "dotnet" "tool list -g"
-    
+
     if not (output.Contains("dotnet-trace")) then
         printfn "dotnet-trace not found. Installing..."
-        let (installCode, installOut, installErr) = runCommand "." "dotnet" "tool install -g dotnet-trace"
+
+        let (installCode, installOut, installErr) =
+            runCommand "." "dotnet" "tool install -g dotnet-trace"
+
         if installCode <> 0 then
             printfn "Failed to install dotnet-trace:"
             printfn "%s" installErr
@@ -55,26 +57,40 @@ let ensureDotnetTrace() =
 let generateProjects config =
     printfn "\n=== Generating Test Projects ==="
     let scriptPath = Path.Combine(__SOURCE_DIRECTORY__, "GenerateXUnitPerfTest.fsx")
-    
+
     // Generate untyped version (slow path)
     printfn "\nGenerating untyped version (slow path)..."
-    let untypedArgs = sprintf "--total %d --methods %d --output \"%s\" --untyped" 
-                        config.TotalAsserts config.MethodsCount config.GeneratedDir
-    let (exitCode1, output1, error1) = runCommand "." "dotnet" (sprintf "fsi \"%s\" %s" scriptPath untypedArgs)
-    
+
+    let untypedArgs =
+        sprintf
+            "--total %d --methods %d --output \"%s\" --untyped"
+            config.TotalAsserts
+            config.MethodsCount
+            config.GeneratedDir
+
+    let (exitCode1, output1, error1) =
+        runCommand "." "dotnet" (sprintf "fsi \"%s\" %s" scriptPath untypedArgs)
+
     if exitCode1 <> 0 then
         printfn "Failed to generate untyped project:"
         printfn "%s" error1
         false
     else
         printfn "%s" output1
-        
+
         // Generate typed version (fast path)
         printfn "\nGenerating typed version (fast path)..."
-        let typedArgs = sprintf "--total %d --methods %d --output \"%s\" --typed" 
-                          config.TotalAsserts config.MethodsCount config.GeneratedDir
-        let (exitCode2, output2, error2) = runCommand "." "dotnet" (sprintf "fsi \"%s\" %s" scriptPath typedArgs)
-        
+
+        let typedArgs =
+            sprintf
+                "--total %d --methods %d --output \"%s\" --typed"
+                config.TotalAsserts
+                config.MethodsCount
+                config.GeneratedDir
+
+        let (exitCode2, output2, error2) =
+            runCommand "." "dotnet" (sprintf "fsi \"%s\" %s" scriptPath typedArgs)
+
         if exitCode2 <> 0 then
             printfn "Failed to generate typed project:"
             printfn "%s" error2
@@ -85,9 +101,9 @@ let generateProjects config =
 
 // Restore dependencies for a project
 let restoreProject projectDir =
-    printfn "\nRestoring dependencies for %s..." (Path.GetFileName(projectDir : string))
+    printfn "\nRestoring dependencies for %s..." (Path.GetFileName(projectDir: string))
     let (exitCode, output, error) = runCommand projectDir "dotnet" "restore"
-    
+
     if exitCode <> 0 then
         printfn "Failed to restore project:"
         printfn "%s" error
@@ -99,29 +115,30 @@ let restoreProject projectDir =
 // Profile compilation of a project
 let profileCompilation projectDir outputDir projectName totalAsserts =
     printfn "\n=== Profiling Compilation: %s ===" projectName
-    
+
     let tracePath = Path.Combine(outputDir, sprintf "%s.nettrace" projectName)
-    
+
     // Clean previous build
     printfn "Cleaning previous build..."
     let (cleanCode, _, _) = runCommand projectDir "dotnet" "clean"
-    
+
     // Start dotnet-trace in the background
     printfn "Starting dotnet-trace..."
-    
+
     // Build the project with tracing
     // We'll use a simpler approach: time the build and collect a trace separately
     let stopwatch = Stopwatch.StartNew()
-    
+
     // For profiling compilation, we need to trace the dotnet build process
     // This is complex, so we'll use a simpler timing approach first
-    let buildArgs = "build --no-restore -c Release /p:DebugType=None /p:DebugSymbols=false"
-    
+    let buildArgs =
+        "build --no-restore -c Release /p:DebugType=None /p:DebugSymbols=false"
+
     printfn "Running: dotnet %s" buildArgs
     let buildStart = DateTime.Now
     let (buildCode, buildOutput, buildError) = runCommand projectDir "dotnet" buildArgs
     stopwatch.Stop()
-    
+
     if buildCode <> 0 then
         printfn "Build failed:"
         printfn "%s" buildError
@@ -129,44 +146,56 @@ let profileCompilation projectDir outputDir projectName totalAsserts =
     else
         let compilationTime = stopwatch.Elapsed.TotalSeconds
         printfn "Compilation completed in %.2f seconds" compilationTime
-        
+
         // Save timing information
         let timingPath = Path.Combine(outputDir, sprintf "%s.timing.txt" projectName)
-        let timingInfo = sprintf "Compilation Time: %.2f seconds\nTime per Assert: %.2f ms\n" 
-                           compilationTime ((compilationTime * 1000.0) / float totalAsserts)
+
+        let timingInfo =
+            sprintf
+                "Compilation Time: %.2f seconds\nTime per Assert: %.2f ms\n"
+                compilationTime
+                ((compilationTime * 1000.0) / float totalAsserts)
+
         File.WriteAllText(timingPath, timingInfo)
-        
+
         (true, compilationTime)
 
 // Profile compilation with dotnet-trace
 let profileWithTrace projectDir outputDir projectName totalAsserts =
     printfn "\n=== Profiling with dotnet-trace: %s ===" projectName
-    
+
     let tracePath = Path.Combine(outputDir, sprintf "%s.nettrace" projectName)
-    
+
     // Clean previous build
     let (cleanCode, _, _) = runCommand projectDir "dotnet" "clean"
-    
+
     // Create a temporary script to build and capture PID
     let buildScript = Path.Combine(Path.GetTempPath(), "build-with-trace.sh")
-    let scriptContent = 
-        sprintf "#!/bin/bash\ncd \"%s\"\ndotnet build --no-restore -c Release /p:DebugType=None /p:DebugSymbols=false > build.log 2>&1\n" 
+
+    let scriptContent =
+        sprintf
+            "#!/bin/bash\ncd \"%s\"\ndotnet build --no-restore -c Release /p:DebugType=None /p:DebugSymbols=false > build.log 2>&1\n"
             projectDir
-    
+
     File.WriteAllText(buildScript, scriptContent)
-    
+
     // We'll use a different approach: collect trace during build
     // Start trace, run build, stop trace
-    let buildArgs = "build --no-restore -c Release /p:DebugType=None /p:DebugSymbols=false"
-    
+    let buildArgs =
+        "build --no-restore -c Release /p:DebugType=None /p:DebugSymbols=false"
+
     // Collect trace by wrapping the build command
-    let traceArgs = sprintf "collect -o \"%s\" --format speedscope -- dotnet %s" tracePath buildArgs
-    
+    let traceArgs =
+        sprintf "collect -o \"%s\" --format speedscope -- dotnet %s" tracePath buildArgs
+
     printfn "Running: dotnet-trace %s" traceArgs
     let stopwatch = Stopwatch.StartNew()
-    let (traceCode, traceOutput, traceError) = runCommand projectDir "dotnet-trace" traceArgs
+
+    let (traceCode, traceOutput, traceError) =
+        runCommand projectDir "dotnet-trace" traceArgs
+
     stopwatch.Stop()
-    
+
     if traceCode <> 0 then
         printfn "Trace collection failed (this is expected on some systems):"
         printfn "%s" traceError
@@ -177,13 +206,19 @@ let profileWithTrace projectDir outputDir projectName totalAsserts =
         let compilationTime = stopwatch.Elapsed.TotalSeconds
         printfn "Trace collected successfully: %s" tracePath
         printfn "Compilation time: %.2f seconds" compilationTime
-        
+
         // Save timing information
         let timingPath = Path.Combine(outputDir, sprintf "%s.timing.txt" projectName)
-        let timingInfo = sprintf "Compilation Time: %.2f seconds\nTime per Assert: %.2f ms\nTrace File: %s\n" 
-                           compilationTime ((compilationTime * 1000.0) / float totalAsserts) tracePath
+
+        let timingInfo =
+            sprintf
+                "Compilation Time: %.2f seconds\nTime per Assert: %.2f ms\nTrace File: %s\n"
+                compilationTime
+                ((compilationTime * 1000.0) / float totalAsserts)
+                tracePath
+
         File.WriteAllText(timingPath, timingInfo)
-        
+
         (true, compilationTime)
 
 // Main profiling workflow
@@ -194,13 +229,13 @@ let runProfilingWorkflow config =
     printfn "  Test methods: %d" config.MethodsCount
     printfn "  Generated projects: %s" config.GeneratedDir
     printfn "  Output directory: %s" config.OutputDir
-    
+
     // Ensure output directory exists
     Directory.CreateDirectory(config.OutputDir) |> ignore
-    
+
     // Check for dotnet-trace (optional, we can fall back to timing)
-    let hasTrace = ensureDotnetTrace()
-    
+    let hasTrace = ensureDotnetTrace ()
+
     // Generate test projects
     if not (generateProjects config) then
         printfn "\nFailed to generate test projects"
@@ -208,9 +243,10 @@ let runProfilingWorkflow config =
     else
         let untypedDir = Path.Combine(config.GeneratedDir, "XUnitPerfTest.Untyped")
         let typedDir = Path.Combine(config.GeneratedDir, "XUnitPerfTest.Typed")
-        
+
         // Restore dependencies for both projects
         printfn "\n=== Restoring Dependencies ==="
+
         if not (restoreProject untypedDir) then
             printfn "Failed to restore untyped project"
             false
@@ -220,21 +256,35 @@ let runProfilingWorkflow config =
         else
             // Profile both versions
             let profileFunc = if hasTrace then profileWithTrace else profileCompilation
-            
-            let (untypedSuccess, untypedTime) = profileFunc untypedDir config.OutputDir "XUnitPerfTest.Untyped" config.TotalAsserts
-            let (typedSuccess, typedTime) = profileFunc typedDir config.OutputDir "XUnitPerfTest.Typed" config.TotalAsserts
-            
+
+            let (untypedSuccess, untypedTime) =
+                profileFunc untypedDir config.OutputDir "XUnitPerfTest.Untyped" config.TotalAsserts
+
+            let (typedSuccess, typedTime) =
+                profileFunc typedDir config.OutputDir "XUnitPerfTest.Typed" config.TotalAsserts
+
             if untypedSuccess && typedSuccess then
                 printfn "\n=== Profiling Complete ==="
-                printfn "Untyped version: %.2f seconds (%.2f ms per Assert)" untypedTime ((untypedTime * 1000.0) / float config.TotalAsserts)
-                printfn "Typed version: %.2f seconds (%.2f ms per Assert)" typedTime ((typedTime * 1000.0) / float config.TotalAsserts)
+
+                printfn
+                    "Untyped version: %.2f seconds (%.2f ms per Assert)"
+                    untypedTime
+                    ((untypedTime * 1000.0) / float config.TotalAsserts)
+
+                printfn
+                    "Typed version: %.2f seconds (%.2f ms per Assert)"
+                    typedTime
+                    ((typedTime * 1000.0) / float config.TotalAsserts)
+
                 printfn "Slowdown factor: %.2fx" (untypedTime / typedTime)
                 printfn "\nResults saved to: %s" config.OutputDir
-                
+
                 // Save summary
                 let summaryPath = Path.Combine(config.OutputDir, "summary.txt")
-                let summary = 
-                    sprintf "F# Compilation Performance Summary\n\
+
+                let summary =
+                    sprintf
+                        "F# Compilation Performance Summary\n\
 =====================================\n\n\
 Configuration:\n\
   Total Assert.Equal calls: %d\n\
@@ -245,12 +295,16 @@ Results:\n\
   Slowdown factor:     %.2fx\n\
   Time difference:     %.2f seconds\n\n\
 Output directory: %s\n"
-                        config.TotalAsserts config.MethodsCount 
-                        untypedTime ((untypedTime * 1000.0) / float config.TotalAsserts) 
-                        typedTime ((typedTime * 1000.0) / float config.TotalAsserts) 
-                        (untypedTime / typedTime) (untypedTime - typedTime) 
+                        config.TotalAsserts
+                        config.MethodsCount
+                        untypedTime
+                        ((untypedTime * 1000.0) / float config.TotalAsserts)
+                        typedTime
+                        ((typedTime * 1000.0) / float config.TotalAsserts)
+                        (untypedTime / typedTime)
+                        (untypedTime - typedTime)
                         config.OutputDir
-                
+
                 File.WriteAllText(summaryPath, summary)
                 printfn "\nSummary written to: %s" summaryPath
                 true
@@ -259,8 +313,9 @@ Output directory: %s\n"
                 false
 
 // CLI interface
-let printUsage() =
-    printfn """
+let printUsage () =
+    printfn
+        """
 Usage: dotnet fsi ProfileCompilation.fsx [options]
 
 Options:
@@ -281,7 +336,7 @@ let parseArgs (args: string[]) =
     let mutable generatedDir = "./generated"
     let mutable outputDir = "./results"
     let mutable i = 0
-    
+
     while i < args.Length do
         match args.[i] with
         | "--total" when i + 1 < args.Length ->
@@ -297,31 +352,28 @@ let parseArgs (args: string[]) =
             outputDir <- args.[i + 1]
             i <- i + 2
         | "--help" ->
-            printUsage()
+            printUsage ()
             exit 0
         | _ ->
             printfn "Unknown argument: %s" args.[i]
-            printUsage()
+            printUsage ()
             exit 1
-    
-    {
-        TotalAsserts = totalAsserts
-        MethodsCount = methodsCount
-        GeneratedDir = generatedDir
-        OutputDir = outputDir
-    }
+
+    { TotalAsserts = totalAsserts
+      MethodsCount = methodsCount
+      GeneratedDir = generatedDir
+      OutputDir = outputDir }
 
 // Main entry point
 let main (args: string[]) =
     try
         if args |> Array.contains "--help" then
-            printUsage()
+            printUsage ()
             0
         else
             let config = parseArgs args
             if runProfilingWorkflow config then 0 else 1
-    with
-    | ex ->
+    with ex ->
         printfn "Error: %s" ex.Message
         printfn "%s" ex.StackTrace
         1

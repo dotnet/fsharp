@@ -199,11 +199,11 @@ type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
 /// Cache key for overload resolution: combines method group identity with caller argument types
 type OverloadResolutionCacheKey =
-    { 
-      /// Hash combining all method identities in the method group
-      MethodGroupHash: int
-      /// Type stamps for each caller argument (only used when all types are fully resolved)
-      ArgTypeStamps: struct(Stamp * Stamp) list
+    {
+        /// Hash combining all method identities in the method group
+        MethodGroupHash: int
+        /// Type stamps for each caller argument (only used when all types are fully resolved)
+        ArgTypeStamps: struct (Stamp * Stamp) list
     }
 
 /// Result of cached overload resolution
@@ -238,13 +238,14 @@ type ConstraintSolverState =
         PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
         WarnWhenUsingWithoutNullOnAWithNullTarget: string option
-        
+
         /// Cache for overload resolution results
-        OverloadResolutionCache: System.Collections.Generic.Dictionary<OverloadResolutionCacheKey, OverloadResolutionCacheResult>
-        
+        OverloadResolutionCache:
+            System.Collections.Generic.Dictionary<OverloadResolutionCacheKey, OverloadResolutionCacheResult>
+
         /// Counter for cache hits (for profiling)
         mutable OverloadCacheHits: int
-        
+
         /// Counter for cache misses (for profiling)
         mutable OverloadCacheMisses: int
     }
