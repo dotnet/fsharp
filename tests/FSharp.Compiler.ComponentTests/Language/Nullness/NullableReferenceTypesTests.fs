@@ -1556,6 +1556,23 @@ let y = x :> IEquatable<string> // Should not warn about nullness
     |> shouldSucceed
 
 // Regression for https://github.com/dotnet/fsharp/issues/18488
+// This tests the exact scenario from the issue with obj | null return type
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Match null branch should refine variable to non-null - exact issue scenario`` () =
+    FSharp """module Test
+
+let bar : obj =
+    let getEnvironmentVariable : string -> (obj|null) = fun _ -> null
+
+    match "ENVVAR" |> getEnvironmentVariable with
+    | null -> obj() // return some obj in null case
+    | x -> x // x should be obj, not obj | null - no warning expected
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Regression for https://github.com/dotnet/fsharp/issues/18488
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Match null branch should refine variable to non-null in subsequent branches - type alias`` () =
     FSharp """module Test
