@@ -1,0 +1,42 @@
+SPRINT 1: Write failing test
+
+Create a test in NullableReferenceTypesTests.fs that reproduces the exact issue
+   from #18488: when matching a nullable type with `| null -> ...`, the variable in subsequent
+   branches should be refined to non-null. The test should use patterns like: `type objnull = obj |
+    null; let getEnvAliasObj (_: string) : objnull = failwith "stub"; let valueAliasObj = match
+   getEnvAliasObj "ENVVAR" with | null -> "missing" | x -> x.ToString()`. This test should
+   verify no nullness warning is emitted for `x.ToString()` since x is known non-null after the
+   null case. Also test with `System.Environment.GetEnvironmentVariable` pattern.
+
+Definition of Done (DoD):
+- Test
+   file compiles
+- Test fails when run against main branch (demonstrating the issue exists)
+- Test correctly expects no nullness warnings in non-null branches
+
+IMPORTANT: Read .ralph/VISION.md for context and design decisions.
+
+=== SPRINT COMPLETION REQUIREMENTS ===
+This sprint MUST deliver a TESTED, BUILDING product increment.
+ALL DoD items must pass for the sprint to be complete.
+
+1. Write/update code AND tests together (not separately)
+2. Run build - it MUST succeed
+3. Run tests - they MUST pass
+4. Verify each DoD criterion is satisfied
+
+Do NOT commit untested code. Tests are part of THIS sprint, not a future one.
+
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
+
+REPLANNING: If this sprint is impossible, wrong, or should be restructured,
+create .ralph/REPLAN.md explaining why and proposing changes. The orchestrator
+will trigger replanning. Use this for fundamental issues, not minor obstacles.
+
+═══════════════════════════════════════════════════════
+When ALL DoD items are satisfied, COMMIT your changes,
+then output: SUBTASK_COMPLETE
+═══════════════════════════════════════════════════════
+
+IMPORTANT: Read .ralph/VISION.md for project context and design decisions.
+If you hit a design obstacle, UPDATE .ralph/VISION.md with your findings.
