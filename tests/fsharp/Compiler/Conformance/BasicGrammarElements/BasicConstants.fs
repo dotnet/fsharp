@@ -9,8 +9,10 @@ module ``Basic Grammar Element Constants`` =
 
     [<Fact>]
     let ``Basic constants compile `` () =
+        let tripleQuotedByteString = " \"\"\" \" \"\"\"B "
+
         CompilerAssert.Pass 
-            """
+            $"""
 let sbyteConst = 1y
 let int16Const = 1us
 let int32Const = 1ul
@@ -42,6 +44,8 @@ let charConst = '1'
 let stringConst = "1"
     
 let bytestringConst = "1"B
+
+let byteTripleQuotedStringConst = {tripleQuotedByteString}
     
 let bytecharConst = '1'B
     

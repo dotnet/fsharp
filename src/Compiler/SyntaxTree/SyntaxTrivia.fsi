@@ -126,17 +126,13 @@ type SynExprDotLambdaTrivia =
 
 /// Represents additional information for SynExpr.LetOrUse
 [<NoEquality; NoComparison>]
-type SynExprLetOrUseTrivia =
+type SynLetOrUseTrivia =
     {
-        /// The syntax range of the `let` or `use` keyword.
-        LetOrUseKeyword: range
         /// The syntax range of the `in` keyword.
         InKeyword: range option
-
-        EqualsRange: range option
     }
 
-    static member Zero: SynExprLetOrUseTrivia
+    static member Zero: SynLetOrUseTrivia
 
 /// Represents additional information for SynExpr.Match
 [<NoEquality; NoComparison>]
@@ -306,9 +302,12 @@ type SynTypeDefnSigTrivia =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynLeadingKeyword =
     | Let of letRange: range
+    | LetBang of letBangRange: range
     | LetRec of letRange: range * recRange: range
     | And of andRange: range
+    | AndBang of andBangRange: range
     | Use of useRange: range
+    | UseBang of useBangRange: range
     | UseRec of useRange: range * recRange: range
     | Extern of externRange: range
     | Member of memberRange: range
@@ -376,6 +375,16 @@ type SynModuleSigDeclNestedModuleTrivia =
     }
 
     static member Zero: SynModuleSigDeclNestedModuleTrivia
+
+/// Represents additional information for SynModuleDecl.Let
+[<NoEquality; NoComparison>]
+type SynModuleDeclLetTrivia =
+    {
+        /// The syntax range of the `in` keyword.
+        InKeyword: range option
+    }
+
+    static member Zero: SynModuleDeclLetTrivia
 
 /// Represents the leading keyword in a SynModuleOrNamespace or SynModuleOrNamespaceSig
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -490,6 +499,13 @@ type SynMemberDefnAutoPropertyTrivia =
         /// The syntax range of 'get, set'
         GetSetKeywords: GetSetKeywords option
     }
+
+/// Represents additional information for SynMemberDefn.LetBindings
+[<NoEquality; NoComparison>]
+type SynMemberDefnLetBindingsTrivia =
+    { InKeyword: range option }
+
+    static member Zero: SynMemberDefnLetBindingsTrivia
 
 ///  Represents additional information for SynMemberDefn.AbstractSlot
 [<NoEquality; NoComparison>]

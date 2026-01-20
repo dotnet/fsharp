@@ -2651,6 +2651,7 @@ module EventDeclarationNormalization =
             let MakeOne (prefix, target) =
                 let declPattern = RenameBindingPattern (fun s -> prefix + s) declPattern
                 let argName = "handler"
+                let mBinding = mBinding.MakeSynthetic()
 
                 // modify the rhs and argument data
                 let bindingRhs, valSynData =
@@ -2662,6 +2663,7 @@ module EventDeclarationNormalization =
                    match rhsExpr with
                    // Detect 'fun () -> e' which results from the compilation of a property getter
                    | SynExpr.Lambda (args=SynSimplePats.SimplePats(pats = []); body=trueRhsExpr; range=m) ->
+                       let m = m.MakeSynthetic()
                        let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, SynLongIdent([ident(target, m)], [], [None]), m)) (SynExpr.Ident (ident(argName, m))) m
 
                        // reconstitute rhsExpr
@@ -3789,14 +3791,12 @@ let buildApp (cenv: cenv) expr resultTy arg m =
 
     // Special rule for building applications of the 'x && y' operator
     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [x0], _)), _
-         when valRefEq g vref g.and_vref
-           || valRefEq g vref g.and2_vref ->
+         when valRefEq g vref g.and2_vref ->
         MakeApplicableExprNoFlex cenv (mkLazyAnd g m x0 arg), resultTy
 
     // Special rule for building applications of the 'x || y' operator
     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [x0], _)), _
-         when valRefEq g vref g.or_vref
-           || valRefEq g vref g.or2_vref ->
+         when valRefEq g vref g.or2_vref ->
         MakeApplicableExprNoFlex cenv (mkLazyOr g m x0 arg ), resultTy
 
     // Special rule for building applications of the 'reraise' operator
@@ -6073,9 +6073,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.DoBang (trivia = { DoBangKeyword = m })
     | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
-    | SynExpr.WhileBang (range = m)
-    | SynExpr.LetOrUse (isBang = true; trivia = { LetOrUseKeyword = m }) ->
+    | SynExpr.WhileBang (range = m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+    | LetOrUse({ Bindings = [ SynBinding(trivia = { LeadingKeyword = leadingKeyword }) ]}, true, _) ->
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), leadingKeyword.Range))
 
     | SynExpr.IndexFromEnd (rightExpr, m) ->
         errorR(Error(FSComp.SR.tcTraitInvocationShouldUseTick(), m))
@@ -8607,9 +8608,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                     match leftExpr with
                     | ApplicableExpr(expr=Expr.Val (vref, _, _))
                     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [_], _))
-                         when valRefEq g vref g.and_vref
-                           || valRefEq g vref g.and2_vref
-                           || valRefEq g vref g.or_vref
+                         when valRefEq g vref g.and2_vref
                            || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
                     | _ -> env
 
@@ -9207,7 +9206,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.YieldOrReturn _
         | SynExpr.YieldOrReturnFrom _
         | SynExpr.MatchBang _
-        | SynExpr.LetOrUse (isBang = true)
+        | LetOrUse(_, true, _)
         | SynExpr.DoBang _
         | SynExpr.WhileBang _
         | SynExpr.TraitCall _
@@ -10622,7 +10621,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
         TcLinearExprs bodyChecker cenv env2 overallTy tpenv isCompExpr expr2 (fun (expr2R, tpenv) ->
             cont (Expr.Sequential (expr1R, expr2R, NormalSeq, m), tpenv))
 
-    | SynExpr.LetOrUse (isRecursive = isRec; isUse= isUse; bindings = binds; body = body; range = m) when not (isUse && isCompExpr) ->
+    | LetOrUse({ IsRecursive = isRec ; Bindings = binds; Body = body; Range = m }, _, isUse) when not (isUse && isCompExpr) ->
         if isRec then
             // TcLinearExprs processes at most one recursive binding, this is not tailcalling
             CheckRecursiveBindingIds binds

@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Enums 
-#light
+
 
 // Verify ability to put attributes on Enum tags
 

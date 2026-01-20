@@ -1,5 +1,5 @@
 // #Conformance #TypeConstraints 
-#light
+
 
 // Test Microsoft.FSharp.Reflection.IsRecord function works properly on various types
 

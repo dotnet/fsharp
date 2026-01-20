@@ -132,6 +132,14 @@ let (|SynSingleIdent|_|) x =
     | SynLongIdent([ id ], _, _) -> ValueSome id
     | _ -> ValueNone
 
+/// Active pattern to match any SynExpr.LetOrUse
+/// Returns a tuple of (isBang, isUse, record) allowing matching on both booleans and accessing the full record
+[<return: Struct>]
+let (|LetOrUse|_|) (expr: SynExpr) =
+    match expr with
+    | SynExpr.LetOrUse(letOrUse) -> ValueSome(letOrUse, letOrUse.IsBang, letOrUse.IsUse)
+    | _ -> ValueNone
+
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 [<return: Struct>]
 let (|LongOrSingleIdent|_|) inp =
@@ -498,18 +506,6 @@ let mkSynDotParenSet m a b c = mkSynTrifix m parenSet a b c
 let mkSynDotBrackGet m mDot a b = SynExpr.DotIndexedGet(a, b, mDot, m)
 
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
-
-let mkSynDotParenGet mLhs mDot a b =
-    match b with
-    | SynExpr.Tuple(false, [ _; _ ], _, _) ->
-        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
-        SynExpr.Const(SynConst.Unit, mLhs)
-
-    | SynExpr.Tuple(false, [ _; _; _ ], _, _) ->
-        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
-        SynExpr.Const(SynConst.Unit, mLhs)
-
-    | _ -> mkSynInfix mDot a parenGet b
 
 let mkSynUnit m = SynExpr.Const(SynConst.Unit, m)
 
@@ -955,7 +951,7 @@ let rec synExprContainsError inpExpr =
         | SynExpr.Match(expr = e; clauses = cl)
         | SynExpr.MatchBang(expr = e; clauses = cl) -> walkExpr e || walkMatchClauses cl
 
-        | SynExpr.LetOrUse(bindings = bs; body = e) -> walkBinds bs || walkExpr e
+        | SynExpr.LetOrUse({ Bindings = bs; Body = e }) -> walkBinds bs || walkExpr e
 
         | SynExpr.TryWith(tryExpr = e; withCases = cl) -> walkExpr e || walkMatchClauses cl
 

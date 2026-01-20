@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis 
-#light
+
 
 // Verify behavior of invalid escape sequences
 

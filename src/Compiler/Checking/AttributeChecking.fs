@@ -458,11 +458,7 @@ let CheckILAttributesForUnseen (g: TcGlobals) cattrs _m =
 let CheckFSharpAttributesForHidden g attribs = 
     not (isNil attribs) &&         
     (match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-        | Some(Attrib(_, _, [AttribStringArg _; AttribInt32Arg messageNumber],
-                    ExtractAttribNamedArg "IsHidden" (AttribBoolArg v), _, _, _)) -> 
-            // Message number 62 is for "ML Compatibility". Items labelled with this are visible in intellisense
-            // when mlCompatibility is set.
-            v && not (messageNumber = 62 && g.mlCompatibility)
+        | Some(Attrib(_, _, _, ExtractAttribNamedArg "IsHidden" (AttribBoolArg v), _, _, _)) -> v
         | _ -> false)
     || 
     (match TryFindFSharpAttribute g g.attrib_ComponentModelEditorBrowsableAttribute attribs with

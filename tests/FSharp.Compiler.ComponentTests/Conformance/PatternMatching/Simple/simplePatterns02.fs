@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Test constant pattern matches
 let x = 42

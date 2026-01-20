@@ -1108,7 +1108,7 @@ module MutRecBindingChecking =
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
                             [Phase2AInherit (ty, arg, baseValOpt, m); Phase2AIncrClassCtorJustAfterSuperInit], innerState
 
-                        | Some (SynMemberDefn.LetBindings (letBinds, isStatic, isRec, m)), _ ->
+                        | Some (SynMemberDefn.LetBindings (bindings = letBinds; isStatic = isStatic; isRecursive = isRec; range = m)), _ ->
                             match tcref.TypeOrMeasureKind, isStatic with 
                             | TyparKind.Measure, false -> errorR(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) 
                             | _ -> ()
@@ -3715,17 +3715,27 @@ module EstablishTypeDefinitionCores =
                                   let fparams =
                                       curriedArgInfos.Head
                                       |> List.map (fun (ty, argInfo: ArgReprInfo) ->
+                                            // Handle type wrapping for optional parameters
+                                            // The ?param syntax provides unwrapped type (e.g., int) with OptionalArgumentAttribute
+                                            // and needs wrapping to int option.
+                                            // Explicit [<OptionalArgument>] path: string option already has wrapped type.
                                             let ty =
                                               if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
-                                                  match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
-                                                  | Some (Attrib(range=m)) ->
-                                                      checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
-                                                      mkValueOptionTy g ty
-                                                  | _ ->
-                                                      mkOptionTy g ty            
+                                                  if isOptionTy g ty || isValueOptionTy g ty then
+                                                      ty
+                                                  else
+                                                      match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
+                                                      | Some (Attrib(range=m)) ->
+                                                          checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
+                                                          mkValueOptionTy g ty
+                                                      | _ ->
+                                                          mkOptionTy g ty            
                                               else ty
 
-                                            MakeSlotParam(ty, argInfo)) 
+                                            // Extract parameter attributes including optional and caller info flags
+                                            // This ensures delegates have proper metadata for optional parameters
+                                            let (ParamAttribs(_, isInArg, isOutArg, optArgInfo, _, _)) = CrackParamAttribsInfo g (ty, argInfo)
+                                            TSlotParam(Option.map textOfId argInfo.Name, ty, isInArg, isOutArg, optArgInfo.IsOptional, argInfo.Attribs)) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))
@@ -4412,7 +4422,7 @@ module TcDeclarations =
                 let attribs = mkAttributeList attribs mWholeAutoProp
                 let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, synExpr, synExpr.Range, [], attribs, None, SynBindingTrivia.Zero)
 
-                [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
+                [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp, SynMemberDefnLetBindingsTrivia.Zero))]
 
             | SynMemberDefn.Interface (members=Some membs) -> membs |> List.collect preAutoProps
             | SynMemberDefn.LetBindings _
@@ -5113,7 +5123,7 @@ let ElimSynModuleDeclExpr bind =
     match bind with 
     | SynModuleDecl.Expr (expr, m) -> 
         let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, DebugPointAtBinding.NoneAtDo, SynBindingTrivia.Zero)
-        SynModuleDecl.Let(false, [bind2], m)
+        SynModuleDecl.Let(false, [bind2], m, SynModuleDeclLetTrivia.Zero)
     | _ -> bind
 
 let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _>) env = 
@@ -5187,12 +5197,12 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                   let decls = typeDefs |> List.map MutRecShape.Tycon
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Let (letrec, binds, m) -> 
+              | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) -> 
                   let binds = 
                       if isNamespace then 
                           CheckLetOrDoInNamespace binds m; []
                       else
-                          if letrec then [MutRecShape.Lets binds]
+                          if isRecursive then [MutRecShape.Lets binds]
                           else List.map (List.singleton >> MutRecShape.Lets) binds
                   binds, (false, false, attrs)
 
@@ -5292,7 +5302,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               | _ -> [ TMDefOpens openDecls ]
           return (defns, [], []), env, env
 
-      | SynModuleDecl.Let (letrec, binds, m) -> 
+      | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) -> 
 
           match parent with
           | ParentNone ->
@@ -5301,7 +5311,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
           | Parent parentModule -> 
               let containerInfo = ModuleOrNamespaceContainerInfo parentModule
-              if letrec then 
+              if isRecursive then 
                 let scopem = unionRanges m scopem
                 let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(containerInfo, NoNewSlots, ModuleOrMemberBinding, bind))
                 let binds, env, _ = TcLetrecBindings WarnOnOverrides cenv env tpenv (binds, m, scopem)

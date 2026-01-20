@@ -17,7 +17,8 @@ ImplFile
                   Const (Int32 0, (3,12--3,13)), (3,4--3,9), Yes (3,0--3,13),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
-                    EqualsRange = Some (3,10--3,11) })], (3,0--3,13))],
+                    EqualsRange = Some (3,10--3,11) })], (3,0--3,13),
+              { InKeyword = None })],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,13), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

@@ -1,0 +1,23 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$(FSharpRepositoryPath)\eng\Versions.props" />
+
+  <PropertyGroup>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net10.0</TargetFramework>
+    <_TargetFrameworkVersionWithoutV>10.0</_TargetFrameworkVersionWithoutV>
+    <TargetFrameworkIdentifier>.NETCoreApp</TargetFrameworkIdentifier>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <TargetsDirectory>$(FSharpRepositoryPath)\artifacts\bin\FSharpSuite.Tests\$(Configuration)\$(TARGETFRAMEWORK)</TargetsDirectory>
+    <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
+    <OutputPath>$(MSBuildThisFileDirectory)</OutputPath>
+  </PropertyGroup>
+
+  <!-- Override SDK version BEFORE import -->
+  <PropertyGroup Condition="'$(TestFSCorePackageVersion)' != ''">
+    <FSCorePackageVersion>$(TestFSCorePackageVersion)</FSCorePackageVersion>
+    <FSCorePackageVersionSet>true</FSCorePackageVersionSet>
+  </PropertyGroup>
+
+  <Import Project="$(TargetsDirectory)\Microsoft.FSharp.NetSdk.props" />
+
+</Project>

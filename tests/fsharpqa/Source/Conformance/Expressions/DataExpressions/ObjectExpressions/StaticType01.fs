@@ -1,5 +1,5 @@
 // #Regression #Conformance #DataExpressions #ObjectConstructors 
-#light
+
 
 // Verify the static type of object expressions
 

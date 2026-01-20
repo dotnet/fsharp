@@ -8,7 +8,7 @@ module RequiresExplicitTypeArgumentsAttributeNotRespectedForMembers_FSharp_1_0_6
         [<RequiresExplicitTypeArgumentsAttribute>]
         member x.Foo<'a>(y:'a, ?z:int) = printfn "second"
 
-    let g1 = new G1()    
+    let g1 = new G1()
     g1.Foo(42)         // first
     g1.Foo<int>(42)    // first
     g1.Foo(42, 0)      // second
@@ -86,7 +86,7 @@ module CheckNoOverloadResolutionAgainstSignatureInformationGivenByTUpledAndRecor
         type R1 = { f1 : int }
         type R2 = { f2 : int }
         type D() = 
-            member x.N = x.M { f1 = 3 }  /// EXPECT ERROR
+            member x.N = x.M { f1 = 3 }  // EXPECT ERROR
             member x.M({ f1 = y }) = ()
             member x.M({ f2 = y }) = ()
 
@@ -94,12 +94,12 @@ module CheckNoOverloadResolutionAgainstSignatureInformationGivenByTUpledAndRecor
         type R1 = { f1 : int }
         type R2 = { f2 : int }
         type D() = 
-            member x.N = x.M (({ f1 = 3 },{ f1 = 3 }))  /// EXPECT ERROR
+            member x.N = x.M (({ f1 = 3 },{ f1 = 3 }))  // EXPECT ERROR
             member x.M((y1: R1,y2: R1)) = ()
             member x.M((y1: R2,y2: R1)) = ()
         
     module Negative3 = 
-        type R1 = { f1 : int }  /// EXPECT ERROR
+        type R1 = { f1 : int }  // EXPECT ERROR
         type D() = 
             member x.N = x.M 3
             member x.M(1) = ()

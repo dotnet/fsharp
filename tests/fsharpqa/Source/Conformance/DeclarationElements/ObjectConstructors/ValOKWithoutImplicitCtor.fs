@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #ObjectConstructors 
-#light
+
 
 // Verify val fields OK without default value if no implicit ctor is provided
 

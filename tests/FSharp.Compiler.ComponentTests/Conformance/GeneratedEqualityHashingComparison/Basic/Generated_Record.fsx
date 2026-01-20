@@ -2,7 +2,7 @@
 // Check thru reflection the set of methods
 // Record
 //<Expects status="success"></Expects>
-#light
+
          
 let TestListOfMethods (typ : System.Type) (exp : string array) = 
                                                             Array.sortInPlaceWith (fun a b -> System.String.Compare(a,b)) exp

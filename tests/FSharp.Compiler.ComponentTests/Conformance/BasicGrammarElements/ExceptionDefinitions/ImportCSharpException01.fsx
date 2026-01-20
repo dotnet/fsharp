@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Exceptions 
 // Import C# exception in F#
 //<Expects status="success"></Expects>
-#light
+
 
 // F# exception definition + abbreviation
 exception E = CSharpException.CSharpException

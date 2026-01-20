@@ -67,7 +67,7 @@ extern int private c()
         |> List.zip decls
         |> List.iter (fun (actual, expected) ->
             match actual with
-            | SynModuleDecl.Let (_, [SynBinding (accessibility = access)], _) -> Option.map string access |> shouldEqual expected
+            | SynModuleDecl.Let (bindings = [SynBinding (accessibility = access)]) -> Option.map string access |> shouldEqual expected
             | decl -> failwithf "unexpected decl: %O" decl)
 
         [ "a", (true, false, false, false)
@@ -91,7 +91,7 @@ extern int AccessibleChildren()"""
 
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-            SynModuleDecl.Let(false, [ SynBinding(range = mb) ] , ml)
+            SynModuleDecl.Let(isRecursive = false ; bindings = [ SynBinding(range = mb) ] ; range = ml)
         ]) ])) ->
             assertRange (2, 0) (3, 31) ml
             assertRange (2, 0) (3, 31) mb
@@ -107,10 +107,10 @@ extern void setCallbridgeSupportTarget(IntPtr newTarget)
         match ast with
         | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.Let(false, [ SynBinding(returnInfo =
+                SynModuleDecl.Let(isRecursive = false ; bindings = [ SynBinding(returnInfo =
                     Some (SynBindingReturnInfo(typeName =
                         SynType.App(typeName =
-                            SynType.LongIdent(SynLongIdent([unitIdent], [], [Some (IdentTrivia.OriginalNotation "void")])))))) ] , _)
+                            SynType.LongIdent(SynLongIdent([unitIdent], [], [Some (IdentTrivia.OriginalNotation "void")])))))) ] )
                 ])
             ])) ->
             Assert.Equal("unit", unitIdent.idText)
@@ -127,14 +127,14 @@ extern int AccessibleChildren(int* x)
         match ast with
         | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.Let(false, [ SynBinding(headPat =
+                SynModuleDecl.Let(isRecursive = false ; bindings = [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
                         SynPat.Tuple(elementPats = [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
                                 SynLongIdent([nativeptrIdent], [], [Some (IdentTrivia.OriginalNotation "*")])
                                 ))))
                         ])
-                    ])) ], _)
+                    ])) ])
                 ])
             ])) ->
             Assert.Equal("nativeptr", nativeptrIdent.idText)
@@ -151,14 +151,14 @@ extern int AccessibleChildren(obj& x)
         match ast with
         | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.Let(false, [ SynBinding(headPat =
+                SynModuleDecl.Let(isRecursive = false ; bindings = [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
                         SynPat.Tuple(elementPats = [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
                                 SynLongIdent([byrefIdent], [], [Some (IdentTrivia.OriginalNotation "&")])
                                 ))))
                         ])
-                    ])) ], _)
+                    ])) ])
                 ])
             ])) ->
             Assert.Equal("byref", byrefIdent.idText)
@@ -175,14 +175,14 @@ extern int AccessibleChildren(void* x)
         match ast with
         | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.Let(false, [ SynBinding(headPat =
+                SynModuleDecl.Let(isRecursive = false ; bindings = [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
                         SynPat.Tuple(elementPats = [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
                                 SynLongIdent([nativeintIdent], [], [Some (IdentTrivia.OriginalNotation "void*")])
                                 ))))
                         ])
-                    ])) ], _)
+                    ])) ])
                 ])
             ])) ->
             Assert.Equal("nativeint", nativeintIdent.idText)
@@ -1286,6 +1286,18 @@ type T() =
             )
 
         Assert.False hasPropertySymbols
+
+    [<Fact>]
+    let ``CLIEvent 01 - Synthetic range`` () =
+        let _, checkResults = getParseAndCheckResults """
+type T() =
+    [<CLIEvent>]
+    member this.Event = Event<int>().Publish
+"""
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.exists (fun symbolUse -> symbolUse.Symbol.DisplayNameCore = "handler")
+        |> shouldEqual false
+
 
 module Delegates =
     [<Fact>]
