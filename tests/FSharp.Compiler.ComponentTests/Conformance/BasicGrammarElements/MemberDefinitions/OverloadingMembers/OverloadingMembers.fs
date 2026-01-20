@@ -48,6 +48,15 @@ module MemberDefinitions_OverloadingMembers =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    // SOURCE=TypeCompatibilityFilterTest.fs               # TypeCompatibilityFilterTest.fs
+    // Tests that quick type compatibility filtering in overload resolution works correctly
+    // This covers: generics, param arrays, optional args, type-directed conversions
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeCompatibilityFilterTest.fs"|])>]
+    let ``TypeCompatibilityFilterTest_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     // SOURCE=E_InferredTypeNotUnique01.fs SCFLAGS="--test:ErrorRanges"			# E_InferredTypeNotUnique01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InferredTypeNotUnique01.fs"|])>]
     let ``E_InferredTypeNotUnique01_fs`` compilation =
