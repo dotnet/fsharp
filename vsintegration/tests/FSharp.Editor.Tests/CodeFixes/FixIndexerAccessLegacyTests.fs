@@ -13,8 +13,8 @@ let private codeFix = LegacyFixAddDotToIndexerAccessCodeFixProvider()
 let ``Fixes FS3217`` () =
     let code =
         """
-let xs = [ 1; 2; 3 ]
-let first = xs[2]
+let myList = [ 1; 2; 3 ]
+let first = myList[2]
 """
 
     let expected =
@@ -23,12 +23,13 @@ let first = xs[2]
                 Message = "Add . for indexer access."
                 FixedCode =
                     """
-let xs = [ 1; 2; 3 ]
-let first = xs.[2]
+let myList = [ 1; 2; 3 ]
+let first = myList.[2]
 """
             }
 
-    // Squiggly must end BEFORE '[' - the codefix expands forward to find '[' then appends '.'
-    let actual = codeFix |> tryFix code (Manual("xs", "FS3217"))
+    // The real FS3217 diagnostic spans just the identifier (e.g., "myList"), not "myList[2]"
+    // The codefix expands forward to find '[' then replaces span with "text."
+    let actual = codeFix |> tryFix code (Manual("= myList", "FS3217"))
 
     Assert.Equal(expected, actual)
