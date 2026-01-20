@@ -308,16 +308,14 @@ let private tryGetXmlDocFromCcu (ccu: CcuThunk) (cref: string) : string option =
 /// Attempts to retrieve XML documentation from external assemblies by searching all loaded CCUs
 /// Uses the parsed cref path to do efficient lookup via AllEntitiesByCompiledAndLogicalMangledNames
 /// Falls back to XML documentation files for IL types where entity.XmlDoc is empty
-let private tryGetXmlDocFromExternalCcus 
-    (allCcus: CcuThunk list) 
+let private tryGetXmlDocFromExternalCcus
+    (allCcus: CcuThunk list)
     (tryFindXmlDocBySignature: (string -> string -> XmlDoc option) option)
-    (cref: string) 
+    (cref: string)
     : string option =
     // First try entity-based lookup (for F# types in referenced assemblies)
-    let fromEntity =
-        allCcus
-        |> List.tryPick (fun ccu -> tryGetXmlDocFromCcu ccu cref)
-    
+    let fromEntity = allCcus |> List.tryPick (fun ccu -> tryGetXmlDocFromCcu ccu cref)
+
     match fromEntity with
     | Some doc -> Some doc
     | None ->

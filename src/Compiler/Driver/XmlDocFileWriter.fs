@@ -82,6 +82,7 @@ module XmlDocWriter =
 
     let WriteXmlDocFile (g, tcImports: TcImports, assemblyName, generatedCcu: CcuThunk, xmlFile) =
         let allCcus = tcImports.GetCcusInDeclOrder()
+
         if not (FileSystemUtils.checkSuffix xmlFile "xml") then
             error (Error(FSComp.SR.docfileNoXmlSuffix (), Range.rangeStartup))
 
@@ -127,7 +128,7 @@ module XmlDocWriter =
             | [] -> None
 
         let amap = tcImports.GetImportMap()
-        
+
         let addMemberWithImplicitTarget id xmlDoc implicitTargetOpt =
             if hasDoc xmlDoc then
                 // Expand <inheritdoc> elements before writing to XML file
