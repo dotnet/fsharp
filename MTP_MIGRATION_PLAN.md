@@ -1,7 +1,7 @@
 # Microsoft.Testing.Platform Migration Plan
 
-**Date:** December 11, 2025  
-**Status:** Planning Phase  
+**Date:** January 21, 2026  
+**Status:** In Progress
 **Target Completion:** TBD
 
 ## Executive Summary
@@ -38,9 +38,11 @@ This document outlines the plan to migrate the F# compiler repository from VSTes
 ```xml
 <PackageReference Include="xunit.v3" Version="$(XunitVersion)" />
 <PackageReference Include="xunit.v3.runner.console" Version="$(XunitRunnerConsoleVersion)" />
-<PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)" />
-<PackageReference Include="Microsoft.TestPlatform" Version="$(MicrosoftTestPlatformVersion)" />
+<!-- MTP extension for hang detection -->
+<PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
 ```
+
+**Note:** xUnit v3 includes Microsoft.Testing.Platform (MTP) as a transitive dependency. No explicit MTP package reference is needed. The `Microsoft.TestPlatform` package is the older VSTest package, not MTP.
 
 ### Build Scripts
 - **Windows:** `eng/Build.ps1` - `TestUsingMSBuild` function
@@ -221,7 +223,6 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
 Before:
 ```xml
 <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)" />
-<PackageReference Include="Microsoft.TestPlatform" Version="$(MicrosoftTestPlatformVersion)" />
 ```
 
 After:
@@ -234,7 +235,6 @@ After:
 Remove (only after ALL development environments support MTP):
 ```xml
 <XunitRunnerVisualStudioVersion>3.1.4</XunitRunnerVisualStudioVersion>
-<MicrosoftTestPlatformVersion>17.14.1</MicrosoftTestPlatformVersion>
 ```
 
 **Important:** According to xUnit.net documentation, keep these until you can be certain all supported versions of development environments are using MTP instead of VSTest. Supporting VSTest is separate from (and does not interfere with) MTP support.
@@ -460,5 +460,5 @@ No changes needed - xUnit.net TRX files are compatible with Azure Pipelines.
 
 ---
 
-**Last Updated:** December 11, 2025  
+**Last Updated:** January 21, 2026  
 **Next Review:** After Phase 1 completion
