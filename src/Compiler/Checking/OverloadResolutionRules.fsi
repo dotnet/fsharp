@@ -29,6 +29,12 @@ val aggregateComparisons: comparisons: int list -> int
 /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
 val compareTypeConcreteness: g: TcGlobals -> ty1: TType -> ty2: TType -> int
 
+/// Explain why two types are incomparable under the concreteness ordering.
+/// Returns Some with position-by-position details when types are incomparable (mixed results),
+/// Returns None when one type strictly dominates or they are equal.
+/// Each tuple contains (position, ty1Arg, ty2Arg, comparison) where comparison is 1/-1/0.
+val explainIncomparableConcreteness: g: TcGlobals -> ty1: TType -> ty2: TType -> (int * TType * TType * int) list option
+
 /// Represents a single tiebreaker rule in overload resolution.
 /// Rules are ordered by priority (lower number = higher priority).
 type TiebreakRule =

@@ -119,6 +119,57 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     // Default: Different structural forms are incomparable
     | _ -> 0
 
+/// Collect position-by-position comparison results for type arguments.
+/// Returns a list of (position, ty1Arg, ty2Arg, comparison) tuples.
+let private collectTypeArgComparisons (g: TcGlobals) (args1: TType list) (args2: TType list) : (int * TType * TType * int) list =
+    if args1.Length <> args2.Length then
+        []
+    else
+        (args1, args2)
+        ||> List.mapi2 (fun i ty1 ty2 -> (i, ty1, ty2, compareTypeConcreteness g ty1 ty2))
+
+/// Explain why two types are incomparable under the concreteness ordering.
+/// Returns Some with position-by-position details when types are incomparable (mixed results),
+/// Returns None when one type strictly dominates or they are equal.
+let explainIncomparableConcreteness (g: TcGlobals) (ty1: TType) (ty2: TType) : (int * TType * TType * int) list option =
+    let sty1 = stripTyEqns g ty1
+    let sty2 = stripTyEqns g ty2
+
+    let checkIncomparable (args1: TType list) (args2: TType list) =
+        let comparisons = collectTypeArgComparisons g args1 args2
+        let hasPositive = comparisons |> List.exists (fun (_, _, _, c) -> c > 0)
+        let hasNegative = comparisons |> List.exists (fun (_, _, _, c) -> c < 0)
+        // Incomparable means mixed results: at least one positive AND at least one negative
+        if hasPositive && hasNegative then Some comparisons else None
+
+    match sty1, sty2 with
+    // Type applications - check if incomparable
+    | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) ->
+        if tyconRefEq g tcref1 tcref2 && args1.Length = args2.Length then
+            checkIncomparable args1 args2
+        else
+            None
+
+    // Tuple types - check element-wise
+    | TType_tuple(_, elems1), TType_tuple(_, elems2) ->
+        if elems1.Length = elems2.Length then
+            checkIncomparable elems1 elems2
+        else
+            None
+
+    // Function types - check domain and range
+    | TType_fun(dom1, rng1, _), TType_fun(dom2, rng2, _) -> checkIncomparable [ dom1; rng1 ] [ dom2; rng2 ]
+
+    // Anonymous record types - check fields
+    | TType_anon(info1, tys1), TType_anon(info2, tys2) ->
+        if anonInfoEquiv info1 info2 then
+            checkIncomparable tys1 tys2
+        else
+            None
+
+    // All other cases are not incomparable in a way we can explain
+    | _ -> None
+
 // -------------------------------------------------------------------------
 // Helper functions for comparisons
 // -------------------------------------------------------------------------
