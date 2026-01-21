@@ -37,7 +37,7 @@ module As =
         | _ -> failwith "Match failed"
         """
         |> asExe
-        |> withLangVersion60
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         
