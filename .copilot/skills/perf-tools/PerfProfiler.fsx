@@ -8,7 +8,7 @@ open System.Diagnostics
 
 type Config = { Total: int; Methods: int; Output: string }
 
-let run dir cmd args =
+let run dir (cmd: string) (args: string) =
     let psi = ProcessStartInfo(cmd, args, WorkingDirectory = dir,
         RedirectStandardOutput = true, RedirectStandardError = true,
         UseShellExecute = false, CreateNoWindow = true)
