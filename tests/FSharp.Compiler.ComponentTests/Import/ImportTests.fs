@@ -497,6 +497,9 @@ let test () =
     
     [<Fact>]
     let ``FamAndAssembly - F# can access private protected member with IVT`` () =
+        // Migrated from: FamAndAssembly.fs
+        // private protected (FamAndAssembly) = accessible only within same assembly AND derived classes
+        // With IVT, F# is considered "same assembly", so access from derived class works
         let csLib =
             CSharp """
 using System.Runtime.CompilerServices;
@@ -520,6 +523,101 @@ type T() =
 """
         |> asLibrary
         |> withName "fsFamAndAssembly"
+        |> withReferences [csLib]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``FamAndAssembly - F# cannot access private protected member without IVT`` () =
+        // Migrated from: FamAndAssembly_NoIVT.fs
+        // Without IVT, F# is NOT considered "same assembly", so private protected is not accessible
+        let csLib =
+            CSharp """
+public class Accessibility
+{
+    public int Public { get; set; }
+    private protected int FamAndAssembly { get; set; }
+}
+"""
+            |> withName "csAccessibilityNoIVT"
+        
+        FSharp """
+namespace NS
+
+type T() =
+    inherit Accessibility()
+    member x.Test() = base.FamAndAssembly
+"""
+        |> asLibrary
+        |> withName "fsFamAndAssemblyNoIVT"
+        |> withReferences [csLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 39 // "The type does not define the field, constructor or member"
+        |> ignore
+
+    // ========================================
+    // FamOrAssembly (protected internal) Tests
+    // ========================================
+
+    [<Fact>]
+    let ``FamOrAssembly - F# can access protected internal member with IVT`` () =
+        // Migrated from: FamOrAssembly.fs
+        // protected internal (FamOrAssembly) = accessible from derived classes OR from same assembly
+        // With IVT, F# is considered "same assembly", so access always works (even without inheritance)
+        let csLib =
+            CSharp """
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("fsFamOrAssembly")]
+
+public class Accessibility
+{
+    public int Public { get; set; }
+    protected internal int FamOrAssembly { get; set; }
+}
+"""
+            |> withName "csAccessibilityFamOrAssembly"
+        
+        FSharp """
+namespace NS
+
+type T() =
+    inherit Accessibility()
+    member x.Test() = base.FamOrAssembly
+"""
+        |> asLibrary
+        |> withName "fsFamOrAssembly"
+        |> withReferences [csLib]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``FamOrAssembly - F# can access protected internal member from derived class without IVT`` () =
+        // Migrated from: FamOrAssembly_NoIVT.fs
+        // Without IVT, F# is NOT "same assembly", but protected internal is still accessible
+        // from derived classes (the "Fam" part of FamOrAssembly)
+        let csLib =
+            CSharp """
+public class Accessibility
+{
+    public int Public { get; set; }
+    protected internal int FamOrAssembly { get; set; }
+}
+"""
+            |> withName "csAccessibilityFamOrAssemblyNoIVT"
+        
+        FSharp """
+namespace NS
+
+type T() =
+    inherit Accessibility()
+    member x.Test() = base.FamOrAssembly
+"""
+        |> asLibrary
+        |> withName "fsFamOrAssemblyNoIVT"
         |> withReferences [csLib]
         |> compile
         |> shouldSucceed
