@@ -27,8 +27,8 @@ da9a250df Migrate TypeForwarding batch 2 (Interface, Delegate, Nested, Cycle)
 
 ### Migration Summary
 - **Original fsharpqa**: 1,527 test files
-- **New ComponentTests**: 3,511+ test methods (2.3x - tests were consolidated/expanded)
-- **Migration status**: ~95% complete
+- **New ComponentTests**: 3,600+ test methods (2.4x - tests were consolidated/expanded)
+- **Migration status**: 100% complete ✅
 
 ### Folders Fully Migrated ✅
 | Folder | Original Files | New Tests | Notes |
@@ -75,137 +75,39 @@ git diff origin/main..fsharpqa_migration -- tests/fsharpqa/
 
 ---
 
-## Remaining Tasks
+## Completed Tasks ✅
 
-### ⚡ HIGH PRIORITY
+All originally identified gaps have been migrated to ComponentTests:
 
-#### 1. TypeExtensions/optional (~22 tests)
-**Gap**: Optional extension members on types from external DLLs
+### ✅ 1. TypeExtensions/optional (12 tests)
+**Status**: COMPLETE
+**Location**: `tests/FSharp.Compiler.ComponentTests/Conformance/ObjectOrientedTypeDefinitions/TypeExtensions/optional/Optional.fs`
+**Coverage**: Instance/static extension members, properties, cross-assembly scenarios
 
-**Original files** (view with `git show origin/main:tests/fsharpqa/Source/Conformance/ObjectOrientedTypeDefinitions/TypeExtensions/optional/`):
-- `typeext_opt001.fs` through `typeext_opt008.fs`
-- `E_typeext_opt005.fs`
-- `GenericExtensions.fs`
-- `SignatureIssue01.fs`
-- `E_CrossModule01.fs`, `E_ModuleNotOpen.fs`, `E_NotInModule.fs`, `E_PrivateFields.fs`
-- `ShortNamesAllowed.fs`, `FSUsingExtendedTypes.fs`
+### ✅ 2. Import/em_csharp (10+ tests)
+**Status**: COMPLETE  
+**Location**: `tests/FSharp.Compiler.ComponentTests/Import/ImportTests.fs`
+**Coverage**: C# extension methods consumed from F#
 
-**Where to add**: `tests/FSharp.Compiler.ComponentTests/Conformance/ObjectOrientedTypeDefinitions/TypeExtensions/`
+### ✅ 3. Import/FamAndAssembly (29+ tests)
+**Status**: COMPLETE
+**Location**: `tests/FSharp.Compiler.ComponentTests/Import/ImportTests.fs`  
+**Coverage**: Protected internal accessibility (FamAndAssembly/FamOrAssembly) with and without IVT
 
-**How to implement**:
-```fsharp
-// Use FSharp helper lib for cross-assembly extensions
-let helperLib = 
-    FSharp """
-namespace NS
-type Lib() = 
-    member val instanceField = 0 with get, set
-"""
-    |> withName "HelperLib"
+### ✅ 4. SymbolicOperators/QMark (17 tests)
+**Status**: COMPLETE
+**Location**: `tests/FSharp.Compiler.ComponentTests/Conformance/LexicalAnalysis/SymbolicOperators.fs`
+**Coverage**: `?.` nullable operator precedence, nesting, error cases
 
-FSharp """
-namespace NS
-module M = 
-    type Lib with
-        member x.ExtensionMember() = 1
-        static member StaticExtensionMember() = 1
-"""
-|> withReferences [helperLib]
-|> compile
-|> shouldSucceed
-```
+### ✅ 5. NumericLiterals/casing (21 tests)
+**Status**: COMPLETE
+**Location**: `tests/FSharp.Compiler.ComponentTests/Conformance/LexicalAnalysis/NumericLiterals.fs`
+**Coverage**: Binary/hex/octal casing, IEEE float suffixes, overflow errors
 
-**Acceptance**: All extension scenarios covered - instance, static, properties, indexers, cross-assembly
-
----
-
-### 🔶 MEDIUM PRIORITY
-
-#### 2. Import/em_csharp (~9 tests)
-**Gap**: C# extension methods consumed from F#
-
-**Original files**: `tests/fsharpqa/Source/Import/em_csharp_*.fs`
-
-**Where to add**: `tests/FSharp.Compiler.ComponentTests/Import/ImportTests.fs`
-
-**How to implement**:
-```fsharp
-let csExtensions = 
-    CSharp """
-using System;
-public static class MyExtensions {
-    public static int ExtMethod(this string s) => s.Length;
-}
-"""
-    |> withName "CsExtensions"
-
-FSharp """
-open MyExtensions
-let result = "hello".ExtMethod()
-"""
-|> withReferences [csExtensions]
-|> compile
-|> shouldSucceed
-```
-
----
-
-#### 3. Import/FamAndAssembly (~4 tests)
-**Gap**: Protected internal accessibility from C#
-
-**Original files**: `FamAndAssembly.fs`, `FamAndAssembly_NoIVT.fs`, `FamOrAssembly.fs`, `FamOrAssembly_NoIVT.fs`
-
-**How to implement**: Need C# class with protected internal members + InternalsVisibleTo setup
-
----
-
-#### 4. SymbolicOperators/QMark (~14 tests)
-**Gap**: `?.` nullable operator precedence and nesting
-
-**Original files**: `tests/fsharpqa/Source/Conformance/LexicalAnalysis/SymbolicOperators/QMark*.fs`
-
-**Where to add**: `tests/FSharp.Compiler.ComponentTests/Conformance/LexicalAnalysis/SymbolicOperators.fs`
-
-**Scenarios to cover**:
-- `QMarkSimple.fs` - Basic `?.` usage
-- `QMarkNested.fs` - Nested nullable access
-- `QMarkPrecedence*.fs` - Precedence with arrays, method calls, currying
-- `E_QMarkGeneric.fs` - Error case
-
----
-
-### 🔵 LOW PRIORITY
-
-#### 5. NumericLiterals/casing (~10 tests)
-**Gap**: Literal casing variants and overflow errors
-
-**Original files**: `casingBin.fs`, `casingHex.fs`, `casingOct.fs`, `casingIEEE-lf-LF*.fs`, `E_MaxLiterals*.fs`
-
-**Where to add**: `tests/FSharp.Compiler.ComponentTests/Conformance/LexicalAnalysis/NumericLiterals.fs`
-
-**Example**:
-```fsharp
-[<Fact>]
-let ``Binary literal casing - 0b and 0B both work`` () =
-    FSharp """
-let a = 0b1010
-let b = 0B1010
-let equal = (a = b)
-"""
-    |> compile
-    |> shouldSucceed
-```
-
----
-
-#### 6. Comments/ocamlstyle (~15 tests)
-**Gap**: Legacy `(* *)` OCaml-style comments
-
-**Original files**: `ocamlstyle001.fs`, `ocamlstyle_nested001-005.fs`, `embeddedString001-004.fs`, etc.
-
-**Priority**: LOW - This syntax rarely regresses and is legacy
-
-**Where to add**: `tests/FSharp.Compiler.ComponentTests/Conformance/LexicalAnalysis/Comments.fs`
+### ✅ 6. Comments/ocamlstyle (21 tests)
+**Status**: COMPLETE
+**Location**: `tests/FSharp.Compiler.ComponentTests/Conformance/LexicalAnalysis/Comments.fs`
+**Coverage**: `(* *)` OCaml-style comments, nesting, embedded strings
 
 ---
 
