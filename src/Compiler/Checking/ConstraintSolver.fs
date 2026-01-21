@@ -264,13 +264,15 @@ exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType
 
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
-/// Cache key for overload resolution: combines method group identity with caller argument types
+/// Cache key for overload resolution: combines method group identity with caller argument types and return type
 type OverloadResolutionCacheKey =
     { 
       /// Hash combining all method identities in the method group
       MethodGroupHash: int
       /// Type stamps for each caller argument (only used when all types are fully resolved)
       ArgTypeStamps: struct(Stamp * Stamp) list
+      /// Type stamp for expected return type (if any), to differentiate calls with different expected types
+      ReturnTypeStamp: struct(Stamp * Stamp) voption
     }
 
 /// Result of cached overload resolution
@@ -479,7 +481,8 @@ let rec computeMethInfoHash (minfo: MethInfo) : int =
 let tryComputeOverloadCacheKey 
         (g: TcGlobals) 
         (calledMethGroup: CalledMeth<'T> list)
-        (callerArgs: CallerArgs<'T>) 
+        (callerArgs: CallerArgs<'T>)
+        (reqdRetTyOpt: OverallTy option)
         : OverloadResolutionCacheKey voption =
     
     // Don't cache if there are named arguments (simplifies key computation)
@@ -509,10 +512,32 @@ let tryComputeOverloadCacheKey
     
     if not allResolved then ValueNone
     else
-        ValueSome { 
-            MethodGroupHash = methodGroupHash
-            ArgTypeStamps = List.rev argStamps 
-        }
+        // Compute return type stamp if present
+        // This is critical for cases like:
+        // - c.CheckCooperativeLevel() returning bool (calls no-arg overload)
+        // - let a, b = c.CheckCooperativeLevel() (calls byref overload with tuple destructuring)
+        let retTyStamp =
+            match reqdRetTyOpt with
+            | Some overallTy -> 
+                // Extract the underlying TType from OverallTy
+                let retTy = overallTy.Commit
+                match tryGetTypeStamp g retTy with
+                | ValueSome stamp -> ValueSome stamp
+                | ValueNone -> 
+                    // Return type has unresolved type variable - can't cache
+                    ValueNone
+            | None -> 
+                // No return type constraint - use a marker value
+                ValueSome(struct(0L, 0L))
+        
+        match retTyStamp with
+        | ValueNone -> ValueNone
+        | retStamp ->
+            ValueSome { 
+                MethodGroupHash = methodGroupHash
+                ArgTypeStamps = List.rev argStamps
+                ReturnTypeStamp = retStamp
+            }
 
 /// Try to get a cached overload resolution result
 let tryGetCachedOverloadResolution 
@@ -3974,7 +3999,7 @@ and ResolveOverloading
           // - Have multiple candidates
           let cacheKeyOpt = 
               if not isOpConversion && cx.IsNone && candidates.Length > 1 then
-                  tryComputeOverloadCacheKey g calledMethGroup callerArgs
+                  tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt
               else
                   ValueNone
 

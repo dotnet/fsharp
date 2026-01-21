@@ -197,13 +197,15 @@ exception ArgDoesNotMatchError of
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
-/// Cache key for overload resolution: combines method group identity with caller argument types
+/// Cache key for overload resolution: combines method group identity with caller argument types and return type
 type OverloadResolutionCacheKey =
     {
         /// Hash combining all method identities in the method group
         MethodGroupHash: int
         /// Type stamps for each caller argument (only used when all types are fully resolved)
         ArgTypeStamps: struct (Stamp * Stamp) list
+        /// Type stamp for expected return type (if any), to differentiate calls with different expected types
+        ReturnTypeStamp: struct (Stamp * Stamp) voption
     }
 
 /// Result of cached overload resolution
