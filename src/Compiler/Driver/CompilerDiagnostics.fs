@@ -975,11 +975,38 @@ type Exception with
                     FSComp.SR.csNoOverloadsFound methodName
                     + optionalParts
                     + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
-                | PossibleCandidates(methodName, [], _) -> FSComp.SR.csMethodIsOverloaded methodName
-                | PossibleCandidates(methodName, overloads, _) ->
-                    FSComp.SR.csMethodIsOverloaded methodName
-                    + optionalParts
-                    + FSComp.SR.csCandidates (formatOverloads overloads)
+                | PossibleCandidates(methodName, [], _, _) -> FSComp.SR.csMethodIsOverloaded methodName
+                | PossibleCandidates(methodName, overloads, _, incomparableInfo) ->
+                    let baseMessage =
+                        FSComp.SR.csMethodIsOverloaded methodName
+                        + optionalParts
+                        + FSComp.SR.csCandidates (formatOverloads overloads)
+
+                    match incomparableInfo with
+                    | Some info ->
+                        let formatPositions positions =
+                            match positions with
+                            | [ p ] -> sprintf "position %d" p
+                            | _ ->
+                                positions
+                                |> List.map string
+                                |> String.concat ", "
+                                |> sprintf "positions %s"
+
+                        let line1 =
+                            sprintf
+                                "  - %s is more concrete at %s"
+                                info.Method1Name
+                                (formatPositions info.Method1BetterPositions)
+
+                        let line2 =
+                            sprintf
+                                "  - %s is more concrete at %s"
+                                info.Method2Name
+                                (formatPositions info.Method2BetterPositions)
+
+                        baseMessage + nl + FSComp.SR.csIncomparableConcreteness (line1 + nl + line2)
+                    | None -> baseMessage
 
             os.AppendString msg
 

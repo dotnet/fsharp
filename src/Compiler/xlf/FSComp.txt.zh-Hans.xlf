@@ -497,6 +497,11 @@
         <target state="translated">不允许将模式匹配丢弃用于不采用数据的联合事例。</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMoreConcreteTiebreaker">
+        <source>Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</source>
+        <target state="new">Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
@@ -1442,6 +1447,11 @@
         <target state="new">Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcGenericOverloadBypassed">
+        <source>A more generic overload was bypassed: '{0}'. The selected overload '{1}' was chosen because it has more concrete type parameters.</source>
+        <target state="new">A more generic overload was bypassed: '{0}'. The selected overload '{1}' was chosen because it has more concrete type parameters.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">语法“expr1[expr2]”用于索引。考虑添加类型批注来启用索引，或者在调用函数添加空格，例如“expr1 [expr2]”。</target>
@@ -1560,6 +1570,11 @@
       <trans-unit id="tcMissingRequiredMembers">
         <source>The following required properties have to be initialized:{0}</source>
         <target state="new">The following required properties have to be initialized:{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMoreConcreteTiebreakerUsed">
+        <source>Overload resolution selected '{0}' based on type concreteness. The more concrete type '{1}' was preferred over '{2}'. This is an informational message and can be enabled with --warnon:3575.</source>
+        <target state="new">Overload resolution selected '{0}' based on type concreteness. The more concrete type '{1}' was preferred over '{2}'. This is an informational message and can be enabled with --warnon:3575.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">

@@ -250,7 +250,7 @@ let result = Example.Compare(Ok 42 : Result<int, string>)
 
     [<Fact>]
     let ``Example 6 - Incomparable Concreteness - Error message is helpful`` () =
-        // Verify the error message mentions both candidates for incomparable case
+        // Verify the error message explains incomparable concreteness
         FSharp """
 module Test
 
@@ -262,7 +262,9 @@ let result = Example.Compare(Ok 42 : Result<int, string>)
         """
         |> typecheck
         |> shouldFail
-        |> withErrorCode 41 // FS0041 - error message will mention "Compare" candidates
+        |> withErrorCode 41 // FS0041
+        |> withDiagnosticMessageMatches "Neither candidate is strictly more concrete"
+        |> withDiagnosticMessageMatches "Compare is more concrete at position 1"
         |> ignore
 
     [<Fact>]

@@ -73,7 +73,8 @@ type OverloadResolutionFailure =
     | PossibleCandidates of
         methodName: string *
         candidates: OverloadInformation list *  // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
-        cx: TraitConstraintInfo option
+        cx: TraitConstraintInfo option *
+        incomparableConcreteness: OverloadResolutionRules.IncomparableConcretenessInfo option
 
 /// Represents known information prior to checking an expression or pattern, e.g. it's expected type
 type OverallTy =

@@ -170,6 +170,84 @@ let explainIncomparableConcreteness (g: TcGlobals) (ty1: TType) (ty2: TType) : (
     // All other cases are not incomparable in a way we can explain
     | _ -> None
 
+/// Represents why two methods are incomparable under concreteness ordering.
+/// Contains (method1Name, method1BetterPositions, method2Name, method2BetterPositions)
+type IncomparableConcretenessInfo =
+    {
+        Method1Name: string
+        Method1BetterPositions: int list
+        Method2Name: string
+        Method2BetterPositions: int list
+    }
+
+/// Explain why two CalledMeth objects are incomparable under the concreteness ordering.
+/// Returns Some info when the methods are incomparable due to mixed concreteness results.
+let explainIncomparableMethodConcreteness<'T>
+    (ctx: OverloadResolutionContext)
+    (meth1: CalledMeth<'T>)
+    (meth2: CalledMeth<'T>)
+    : IncomparableConcretenessInfo option
+    =
+    // Only applies when both methods are generic
+    if meth1.CalledTyArgs.IsEmpty || meth2.CalledTyArgs.IsEmpty then
+        None
+    else
+        // Get formal (uninstantiated) parameter types
+        let formalParams1 =
+            meth1.Method.GetParamDatas(ctx.amap, ctx.m, meth1.Method.FormalMethodInst)
+            |> List.concat
+
+        let formalParams2 =
+            meth2.Method.GetParamDatas(ctx.amap, ctx.m, meth2.Method.FormalMethodInst)
+            |> List.concat
+
+        if formalParams1.Length <> formalParams2.Length then
+            None
+        else
+            // Collect all type argument comparisons, drilling into type applications
+            let rec collectComparisons paramIdx (ty1: TType) (ty2: TType) : (int * int) list =
+                let sty1 = stripTyEqns ctx.g ty1
+                let sty2 = stripTyEqns ctx.g ty2
+
+                match sty1, sty2 with
+                | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) when tyconRefEq ctx.g tcref1 tcref2 && args1.Length = args2.Length ->
+                    // Compare type arguments of the type application
+                    args1
+                    |> List.mapi2
+                        (fun argIdx arg1 arg2 ->
+                            let c = compareTypeConcreteness ctx.g arg1 arg2
+                            (argIdx + 1, c)) // 1-based position for type args
+                        args2
+                | _ ->
+                    // Compare at parameter level
+                    [ (paramIdx, compareTypeConcreteness ctx.g ty1 ty2) ]
+
+            let allComparisons =
+                List.mapi2
+                    (fun i (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
+                        collectComparisons (i + 1) ty1 ty2)
+                    formalParams1
+                    formalParams2
+                |> List.concat
+
+            let meth1Better =
+                allComparisons |> List.choose (fun (pos, c) -> if c > 0 then Some pos else None)
+
+            let meth2Better =
+                allComparisons |> List.choose (fun (pos, c) -> if c < 0 then Some pos else None)
+
+            // Incomparable means each method is better in at least one position
+            if not meth1Better.IsEmpty && not meth2Better.IsEmpty then
+                Some
+                    {
+                        Method1Name = meth1.Method.DisplayName
+                        Method1BetterPositions = meth1Better
+                        Method2Name = meth2.Method.DisplayName
+                        Method2BetterPositions = meth2Better
+                    }
+            else
+                None
+
 // -------------------------------------------------------------------------
 // Helper functions for comparisons
 // -------------------------------------------------------------------------
