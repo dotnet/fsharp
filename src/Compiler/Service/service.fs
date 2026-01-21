@@ -626,6 +626,10 @@ type FSharpChecker
     /// Report a statistic for testability: total overload resolution cache misses across all compilations
     static member OverloadCacheMisses = ConstraintSolver.GetOverloadCacheMisses()
 
+    /// Get diagnostics for why cache key computation may be failing (for debugging tests)
+    /// Returns: (attempts, skippedCondition, skippedNamed, skippedArgType, skippedRetType)
+    static member OverloadCacheDiagnostics = ConstraintSolver.GetOverloadCacheDiagnostics()
+
     /// Reset overload cache counters (for testability)
     static member ResetOverloadCacheCounters() =
         ConstraintSolver.ResetOverloadCacheCounters()

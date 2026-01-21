@@ -21,6 +21,10 @@ val GetOverloadCacheHits: unit -> int
 /// Get the total number of overload cache misses across all compilations (for testability)
 val GetOverloadCacheMisses: unit -> int
 
+/// Get diagnostics for why cache key computation may be failing (for debugging tests)
+/// Returns: (attempts, skippedCondition, skippedNamed, skippedArgType, skippedRetType)
+val GetOverloadCacheDiagnostics: unit -> int * int * int * int * int
+
 /// Reset the overload cache counters (for testability)
 val ResetOverloadCacheCounters: unit -> unit
 

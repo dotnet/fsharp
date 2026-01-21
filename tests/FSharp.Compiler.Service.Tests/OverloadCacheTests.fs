@@ -74,6 +74,7 @@ let ``Overload cache hit rate exceeds 30 percent for repetitive int-int calls`` 
     
     let hitsAfter = FSharpChecker.OverloadCacheHits
     let missesAfter = FSharpChecker.OverloadCacheMisses
+    let (attempts, skippedCondition, skippedNamed, skippedArgType, skippedRetType) = FSharpChecker.OverloadCacheDiagnostics
     
     let hits = hitsAfter - hitsBefore
     let misses = missesAfter - missesBefore
@@ -83,10 +84,17 @@ let ``Overload cache hit rate exceeds 30 percent for repetitive int-int calls`` 
     printfn "  Total overload resolutions: %d" total
     printfn "  Cache hits: %d" hits
     printfn "  Cache misses: %d" misses
+    printfn ""
+    printfn "Cache key diagnostics:"
+    printfn "  Cache attempts: %d" attempts
+    printfn "  Skipped (condition not met): %d" skippedCondition
+    printfn "  Skipped (named args): %d" skippedNamed
+    printfn "  Skipped (unresolved arg type): %d" skippedArgType
+    printfn "  Skipped (unresolved ret type): %d" skippedRetType
     
     // We expect cache activity for repetitive patterns
     // If no cache activity, something is wrong with the implementation
-    Assert.True(total > 0, sprintf "Expected cache activity but got 0 (hits=%d, misses=%d). Cache may not be computing valid keys." hits misses)
+    Assert.True(total > 0, sprintf "Expected cache activity but got 0 (hits=%d, misses=%d, attempts=%d, skippedCond=%d, skippedNamed=%d, skippedArgType=%d, skippedRetType=%d). Cache may not be computing valid keys." hits misses attempts skippedCondition skippedNamed skippedArgType skippedRetType)
     
     let hitRate = float hits / float total * 100.0
     printfn "  Cache hit rate: %.1f%%" hitRate

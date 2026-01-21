@@ -466,6 +466,10 @@ type public FSharpChecker =
     /// Report a statistic for testability: total overload resolution cache misses across all compilations
     static member OverloadCacheMisses: int
 
+    /// Get diagnostics for why cache key computation may be failing (for debugging tests)
+    /// Returns: (attempts, skippedCondition, skippedNamed, skippedArgType, skippedRetType)
+    static member OverloadCacheDiagnostics: int * int * int * int * int
+
     /// Reset overload cache counters (for testability)
     static member ResetOverloadCacheCounters: unit -> unit
 

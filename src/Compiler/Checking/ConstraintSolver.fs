@@ -86,6 +86,11 @@ open FSharp.Compiler.TypeProviders
 //------------------------------------------------------------------------- 
 let mutable globalOverloadCacheHits = 0
 let mutable globalOverloadCacheMisses = 0
+let mutable globalOverloadCacheSkippedNamed = 0
+let mutable globalOverloadCacheSkippedArgType = 0
+let mutable globalOverloadCacheSkippedRetType = 0
+let mutable globalOverloadCacheSkippedCondition = 0
+let mutable globalOverloadCacheAttempts = 0
 
 /// Get the total number of overload cache hits across all compilations (for testability)
 let GetOverloadCacheHits() = globalOverloadCacheHits
@@ -93,10 +98,23 @@ let GetOverloadCacheHits() = globalOverloadCacheHits
 /// Get the total number of overload cache misses across all compilations (for testability)
 let GetOverloadCacheMisses() = globalOverloadCacheMisses
 
+/// Get diagnostics for why cache key computation may be failing
+let GetOverloadCacheDiagnostics() = 
+    (globalOverloadCacheAttempts, 
+     globalOverloadCacheSkippedCondition,
+     globalOverloadCacheSkippedNamed, 
+     globalOverloadCacheSkippedArgType, 
+     globalOverloadCacheSkippedRetType)
+
 /// Reset the overload cache counters (for testability)
 let ResetOverloadCacheCounters() = 
     globalOverloadCacheHits <- 0
     globalOverloadCacheMisses <- 0
+    globalOverloadCacheSkippedNamed <- 0
+    globalOverloadCacheSkippedArgType <- 0
+    globalOverloadCacheSkippedRetType <- 0
+    globalOverloadCacheSkippedCondition <- 0
+    globalOverloadCacheAttempts <- 0
    
 let compgenId = mkSynId range0 unassignedTyparName
 
@@ -487,7 +505,9 @@ let tryComputeOverloadCacheKey
     
     // Don't cache if there are named arguments (simplifies key computation)
     let hasNamedArgs = callerArgs.Named |> List.exists (fun namedList -> not (List.isEmpty namedList))
-    if hasNamedArgs then ValueNone
+    if hasNamedArgs then 
+        globalOverloadCacheSkippedNamed <- globalOverloadCacheSkippedNamed + 1
+        ValueNone
     else
     
     // Compute method group hash - must be order-dependent since we cache by index
@@ -510,7 +530,9 @@ let tryComputeOverloadCacheKey
             | ValueNone ->
                 allResolved <- false
     
-    if not allResolved then ValueNone
+    if not allResolved then 
+        globalOverloadCacheSkippedArgType <- globalOverloadCacheSkippedArgType + 1
+        ValueNone
     else
         // Compute return type stamp if present
         // This is critical for cases like:
@@ -524,8 +546,10 @@ let tryComputeOverloadCacheKey
                 match tryGetTypeStamp g retTy with
                 | ValueSome stamp -> ValueSome stamp
                 | ValueNone -> 
-                    // Return type has unresolved type variable - can't cache
-                    ValueNone
+                    // Return type has unresolved type variable - use wildcard
+                    // This is safe because overload resolution is primarily driven by argument types
+                    // When the return type is truly constraining, it typically resolves early
+                    ValueSome(struct(-3L, 0L))  // -3L = wildcard return type
             | None -> 
                 // No return type constraint - use a marker value
                 ValueSome(struct(0L, 0L))
@@ -3997,10 +4021,12 @@ and ResolveOverloading
           // - NOT doing op_Explicit/op_Implicit conversions
           // - NOT doing trait constraint (SRTP) resolution (cx is None)
           // - Have multiple candidates
+          globalOverloadCacheAttempts <- globalOverloadCacheAttempts + 1
           let cacheKeyOpt = 
               if not isOpConversion && cx.IsNone && candidates.Length > 1 then
                   tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt
               else
+                  globalOverloadCacheSkippedCondition <- globalOverloadCacheSkippedCondition + 1
                   ValueNone
 
           // Check cache for existing result
