@@ -3828,7 +3828,6 @@ and ResolveOverloadingCore
         Some calledMeth, OkResult (warns, ()), NoTrace
 
     | _ -> 
-      System.Console.Error.WriteLine(sprintf "NON-exactMatch branch: exactMatchCount=%d" exactMatchCandidates.Length)
       // Now determine the applicable methods.
       // Subsumption on arguments is allowed.
       let applicable =
