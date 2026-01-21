@@ -1,4 +1,4 @@
-Microsoft (R) F# Interactive version 13.9.200.0 for F# 9.0
+Microsoft (R) F# Interactive version 15.1.200.0 for F# 10.0
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
@@ -67,11 +67,12 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          language version.
 --langversion:{version|latest|preview}   Specify language version such as
                                          'latest' or 'preview'.
+--disableLanguageFeature:<string>        Disable a specific language feature
+                                         by name.
 --checked[+|-]                           Generate overflow checks (off by
                                          default)
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
---mlcompatibility                        Ignore ML compatibility warnings
 --strict-indentation[+|-]                Override indentation rules implied
                                          by the language version (off by
                                          default)

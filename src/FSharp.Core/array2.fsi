@@ -2,8 +2,6 @@
 
 namespace Microsoft.FSharp.Collections
 
-open System
-open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
 
 /// <summary>Contains operations for working with 2-dimensional arrays.</summary>

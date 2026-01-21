@@ -10,70 +10,72 @@ ImplFile
                  ComputationExpr
                    (false,
                     LetOrUse
-                      (false, false, true, true,
-                       [SynBinding
-                          (None, Normal, false, false, [], PreXmlDocEmpty,
-                           SynValData
-                             (None,
-                              SynValInfo ([], SynArgInfo ([], false, None)),
-                              None),
-                           Paren
-                             (Typed
-                                (Record
-                                   ([NamePatPairField
-                                       (SynLongIdent ([Name], [], [None]),
-                                        Some (4,17--4,18), (4,12--4,23),
-                                        Named
-                                          (SynIdent (name, None), false, None,
-                                           (4,19--4,23)),
-                                        Some
-                                          (Semicolon ((4,23--4,24), Some (4,24))));
-                                     NamePatPairField
-                                       (SynLongIdent ([Age], [], [None]),
-                                        Some (4,29--4,30), (4,25--4,34),
-                                        Named
-                                          (SynIdent (age, None), false, None,
-                                           (4,31--4,34)), None)], (4,10--4,36)),
-                                 LongIdent (SynLongIdent ([Person], [], [None])),
-                                 (4,10--4,44)), (4,9--4,45)), None,
-                           App
-                             (Atomic, false, Ident asyncPerson,
-                              Const (Unit, (4,59--4,61)), (4,48--4,61)),
-                           (4,4--4,61), Yes (4,4--4,61),
-                           { LeadingKeyword = Let (4,4--4,8)
-                             InlineKeyword = None
-                             EqualsRange = Some (4,46--4,47) });
-                        SynBinding
-                          (None, Normal, false, false, [], PreXmlDocEmpty,
-                           SynValData
-                             (None,
-                              SynValInfo ([], SynArgInfo ([], false, None)),
-                              None),
-                           Paren
-                             (Typed
-                                (Record
-                                   ([NamePatPairField
-                                       (SynLongIdent ([Id], [], [None]),
-                                        Some (5,15--5,16), (5,12--5,19),
-                                        Named
-                                          (SynIdent (id, None), false, None,
-                                           (5,17--5,19)), None)], (5,10--5,21)),
-                                 LongIdent (SynLongIdent ([User], [], [None])),
-                                 (5,10--5,27)), (5,9--5,28)), None,
-                           App
-                             (Atomic, false, Ident asyncUser,
-                              Const (Unit, (5,40--5,42)), (5,31--5,42)),
-                           (5,4--5,42), Yes (5,4--5,42),
-                           { LeadingKeyword = And (5,4--5,8)
-                             InlineKeyword = None
-                             EqualsRange = Some (5,29--5,30) })],
-                       YieldOrReturn
-                         ((false, true), Ident name, (6,4--6,15),
-                          { YieldOrReturnKeyword = (6,4--6,10) }), (4,4--6,15),
-                       { LetOrUseKeyword = (4,4--4,8)
-                         InKeyword = None
-                         EqualsRange = Some (4,46--4,47) }), (3,6--7,1)),
-                 (3,0--7,1)), (3,0--7,1))],
+                      { IsRecursive = false
+                        Bindings =
+                         [SynBinding
+                            (None, Normal, false, false, [], PreXmlDocEmpty,
+                             SynValData
+                               (None,
+                                SynValInfo ([], SynArgInfo ([], false, None)),
+                                None),
+                             Paren
+                               (Typed
+                                  (Record
+                                     ([NamePatPairField
+                                         (SynLongIdent ([Name], [], [None]),
+                                          Some (4,17--4,18), (4,12--4,23),
+                                          Named
+                                            (SynIdent (name, None), false, None,
+                                             (4,19--4,23)),
+                                          Some ((4,23--4,24), Some (4,24)));
+                                       NamePatPairField
+                                         (SynLongIdent ([Age], [], [None]),
+                                          Some (4,29--4,30), (4,25--4,34),
+                                          Named
+                                            (SynIdent (age, None), false, None,
+                                             (4,31--4,34)), None)], (4,10--4,36)),
+                                   LongIdent
+                                     (SynLongIdent ([Person], [], [None])),
+                                   (4,10--4,44)), (4,9--4,45)), None,
+                             App
+                               (Atomic, false, Ident asyncPerson,
+                                Const (Unit, (4,59--4,61)), (4,48--4,61)),
+                             (4,4--4,61), Yes (4,4--4,61),
+                             { LeadingKeyword = LetBang (4,4--4,8)
+                               InlineKeyword = None
+                               EqualsRange = Some (4,46--4,47) });
+                          SynBinding
+                            (None, Normal, false, false, [], PreXmlDocEmpty,
+                             SynValData
+                               (None,
+                                SynValInfo ([], SynArgInfo ([], false, None)),
+                                None),
+                             Paren
+                               (Typed
+                                  (Record
+                                     ([NamePatPairField
+                                         (SynLongIdent ([Id], [], [None]),
+                                          Some (5,15--5,16), (5,12--5,19),
+                                          Named
+                                            (SynIdent (id, None), false, None,
+                                             (5,17--5,19)), None)], (5,10--5,21)),
+                                   LongIdent (SynLongIdent ([User], [], [None])),
+                                   (5,10--5,27)), (5,9--5,28)), None,
+                             App
+                               (Atomic, false, Ident asyncUser,
+                                Const (Unit, (5,40--5,42)), (5,31--5,42)),
+                             (5,4--5,42), Yes (5,4--5,42),
+                             { LeadingKeyword = AndBang (5,4--5,8)
+                               InlineKeyword = None
+                               EqualsRange = Some (5,29--5,30) })]
+                        Body =
+                         YieldOrReturn
+                           ((false, true), Ident name, (6,4--6,15),
+                            { YieldOrReturnKeyword = (6,4--6,10) })
+                        Range = (4,4--6,15)
+                        Trivia = { InKeyword = None }
+                        IsFromSource = true }, (3,6--7,1)), (3,0--7,1)),
+              (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

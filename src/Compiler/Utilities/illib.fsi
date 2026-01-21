@@ -386,7 +386,8 @@ type internal UniqueStampGenerator<'T when 'T: equality and 'T: not null> =
 type internal MemoizationTable<'T, 'U when 'T: not null> =
 
     new:
-        compute: ('T -> 'U) * keyComparer: IEqualityComparer<'T> * ?canMemoize: ('T -> bool) -> MemoizationTable<'T, 'U>
+        name: string * compute: ('T -> 'U) * keyComparer: IEqualityComparer<'T> * ?canMemoize: ('T -> bool) ->
+            MemoizationTable<'T, 'U>
 
     member Apply: x: 'T -> 'U
 

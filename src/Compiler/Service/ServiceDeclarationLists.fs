@@ -102,12 +102,12 @@ module DeclarationListHelpers =
     let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos symbol (width: int option) : ToolTipElement =
         ToolTipFault |> Option.iter (fun msg -> 
            let exn = Error((0, msg), range0)
-           let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck)
+           let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck, FSharpDiagnosticSeverity.Error)
            simulateError ph)
         
         let layouts = 
             [ for minfo in minfos -> 
-                let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader m denv item.TyparInstantiation minfo
+                let prettyTyparInst, layout = prettyLayoutOfMethInfoFreeStyle infoReader m denv item.TyparInstantiation minfo
                 let xml = GetXmlCommentForMethInfoItem infoReader m item.Item minfo
                 let tpsL = FormatTyparMapping denv prettyTyparInst
                 let layout = PrintUtilities.squashToWidth width layout
@@ -167,7 +167,7 @@ module DeclarationListHelpers =
             FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref } symbol width
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
-            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInstantiation vref
+            let prettyTyparInst, resL = layoutQualifiedValOrMember denv infoReader item.TyparInstantiation vref
             let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             let tpsL = List.map toArray tpsL
@@ -183,12 +183,12 @@ module DeclarationListHelpers =
             let recd = uc.RecdFields 
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
-                NicePrint.layoutTyconRef denv ucinfo.TyconRef ^^
+                layoutTyconRef denv ucinfo.TyconRef ^^
                 sepL (tagPunctuation ".") ^^
                 wordL (tagUnionCase (ConvertValLogicalNameToDisplayNameCore uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
                 RightL.colon ^^
-                (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv infoReader ucinfo.TyconRef recd ^^ WordL.arrow) ^^
-                NicePrint.layoutType denv unionTy
+                (if List.isEmpty recd then emptyL else layoutUnionCases denv infoReader ucinfo.TyconRef recd ^^ WordL.arrow) ^^
+                layoutType denv unionTy
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml, ?symbol = symbol)
@@ -200,7 +200,7 @@ module DeclarationListHelpers =
                 wordL (tagText (FSComp.SR.typeInfoActivePatternResult())) ^^
                 wordL (tagActivePatternResult (List.item idx items) |> mkNav apinfo.Range) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv ty
+                layoutType denv ty
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml, ?symbol = symbol)
@@ -216,7 +216,7 @@ module DeclarationListHelpers =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
                 wordL (tagActivePatternCase apref.DisplayName |> mkNav v.DefinitionRange) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv prettyTy
+                layoutType denv prettyTy
             let layout = PrintUtilities.squashToWidth width layout
 
             let tpsL = FormatTyparMapping denv prettyTyparInst
@@ -228,7 +228,7 @@ module DeclarationListHelpers =
 
         // F# exception names
         | Item.ExnCase ecref -> 
-            let layout = NicePrint.layoutExnDef denv infoReader ecref
+            let layout = layoutExnDef denv infoReader ecref
             let layout = PrintUtilities.squashToWidth width layout
             let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
             let layout = toArray layout
@@ -242,7 +242,7 @@ module DeclarationListHelpers =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
                 wordL (tagParameter id) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv ty
+                layoutType denv ty
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml, paramName = id, ?symbol = symbol)
@@ -252,15 +252,15 @@ module DeclarationListHelpers =
             let rfield = rfinfo.RecdField
             let ty, _cxs = PrettyTypes.PrettifyType g rfinfo.FieldType
             let layout = 
-                NicePrint.layoutTyconRef denv rfinfo.TyconRef ^^
+                layoutTyconRef denv rfinfo.TyconRef ^^
                 SepL.dot ^^
                 wordL (tagRecordField rfield.DisplayName |> mkNav rfield.DefinitionRange) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv ty ^^
+                layoutType denv ty ^^
                 (
                     match rfinfo.LiteralValue with
                     | None -> emptyL
-                    | Some lit -> try WordL.equals ^^  NicePrint.layoutConst denv.g ty lit with _ -> emptyL
+                    | Some lit -> try WordL.equals ^^  layoutConst denv.g ty lit with _ -> emptyL
                 )
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
@@ -274,7 +274,7 @@ module DeclarationListHelpers =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
                 wordL (tagParameter id.idText) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv fieldTy
+                layoutType denv fieldTy
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml, paramName = id.idText, ?symbol = symbol)
@@ -292,17 +292,17 @@ module DeclarationListHelpers =
         | Item.ILField finfo ->
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoField())) ^^
-                NicePrint.layoutType denv finfo.ApparentEnclosingAppType ^^
+                layoutType denv finfo.ApparentEnclosingAppType ^^
                 SepL.dot ^^
                 wordL (tagField finfo.FieldName) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv (finfo.FieldType(amap, m)) ^^
+                layoutType denv (finfo.FieldType(amap, m)) ^^
                 (
                     match finfo.LiteralValue with
                     | None -> emptyL
                     | Some v ->
                         WordL.equals ^^
-                        try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (CheckExpressions.TcFieldInit m v) with _ -> emptyL
+                        try layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (CheckExpressions.TcFieldInit m v) with _ -> emptyL
                 )
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
@@ -314,18 +314,18 @@ module DeclarationListHelpers =
             let eventTy, _cxs = PrettyTypes.PrettifyType g eventTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoEvent())) ^^
-                NicePrint.layoutTyconRef denv einfo.ApparentEnclosingTyconRef ^^
+                layoutTyconRef denv einfo.ApparentEnclosingTyconRef ^^
                 SepL.dot ^^
                 wordL (tagEvent einfo.EventName) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv eventTy
+                layoutType denv eventTy
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // F# and .NET properties
         | Item.Property(info = pinfo :: _) -> 
-            let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
+            let layout = prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml, ?symbol = symbol)
@@ -345,11 +345,11 @@ module DeclarationListHelpers =
                     | None ->
                         let argTys = ParamNameAndTypesOfUnaryCustomOperation g minfo |> List.map (fun (ParamNameAndType(_, ty)) -> ty)
                         let argTys, _ = PrettyTypes.PrettifyTypes g argTys 
-                        wordL (tagMethod customOpName) ^^ sepListL SepL.space (List.map (fun ty -> LeftL.leftParen ^^ NicePrint.layoutType denv ty ^^ SepL.rightParen) argTys)
+                        wordL (tagMethod customOpName) ^^ sepListL SepL.space (List.map (fun ty -> LeftL.leftParen ^^ layoutType denv ty ^^ SepL.rightParen) argTys)
                 ) ^^
                 SepL.lineBreak ^^ SepL.lineBreak  ^^
                 wordL (tagText (FSComp.SR.typeInfoCallsWord())) ^^
-                NicePrint.layoutTyconRef denv minfo.ApparentEnclosingTyconRef ^^
+                layoutTyconRef denv minfo.ApparentEnclosingTyconRef ^^
                 SepL.dot ^^
                 wordL (tagMethod minfo.DisplayName)
 
@@ -367,9 +367,9 @@ module DeclarationListHelpers =
            let delTy, _cxs = PrettyTypes.PrettifyType g delTy
            let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delTy m AccessibleFromSomewhere
            let layout =
-               NicePrint.layoutTyconRef denv (tcrefOfAppTy g delTy) ^^
+               layoutTyconRef denv (tcrefOfAppTy g delTy) ^^
                LeftL.leftParen ^^
-               NicePrint.layoutType denv delFuncTy ^^
+               layoutType denv delFuncTy ^^
                RightL.rightParen
            let layout = PrintUtilities.squashToWidth width layout
            let layout = toArray layout
@@ -385,7 +385,7 @@ module DeclarationListHelpers =
                             // on types/members. The doc comments for the actual member will still
                             // be shown in the tip.
                             showDocumentation = false  }
-            let layout = NicePrint.layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
+            let layout = layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
             let layout = PrintUtilities.squashToWidth width layout
             let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = toArray layout
@@ -394,14 +394,14 @@ module DeclarationListHelpers =
 
         // Type variables
         | Item.TypeVar (_, typar) ->
-            let layout = NicePrint.prettyLayoutOfTypar denv typar
+            let layout = prettyLayoutOfTypar denv typar
             let layout = PrintUtilities.squashToWidth width layout
             ToolTipElement.Single (toArray layout, xml, ?symbol = symbol)
 
         // Traits
         | Item.Trait traitInfo ->
             let denv = { denv with shortConstraints = false}
-            let layout = NicePrint.prettyLayoutOfTrait denv traitInfo
+            let layout = prettyLayoutOfTrait denv traitInfo
             let layout = PrintUtilities.squashToWidth width layout
             ToolTipElement.Single (toArray layout, xml, ?symbol = symbol)
 
@@ -458,7 +458,7 @@ module DeclarationListHelpers =
                 wordL (tagText (FSComp.SR.typeInfoAnonRecdField())) ^^
                 wordL (tagRecordField nm) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv argTy
+                layoutType denv argTy
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, FSharpXmlDoc.None, ?symbol = symbol)
@@ -470,7 +470,7 @@ module DeclarationListHelpers =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
                 wordL (tagParameter id.idText) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv argTy
+                layoutType denv argTy
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml, paramName = id.idText, ?symbol = symbol)
@@ -553,10 +553,10 @@ module internal DescriptionListsImpl =
         // pretend no namespaces are open
         let denv = denv.SetOpenPaths([])
         // now printing will see a .NET-like canonical representation, that is good for sorting overloads into a reasonable order (see bug 94520)
-        NicePrint.stringOfTy denv strippedTy
+        stringOfTy denv strippedTy
 
     let PrettyParamOfRecdField g denv (f: RecdField) =
-        let display = NicePrint.prettyLayoutOfType denv f.FormalType
+        let display = prettyLayoutOfType denv f.FormalType
         let display = toArray display
         MethodGroupItemParameter(
           name = f.DisplayNameCore,
@@ -570,7 +570,7 @@ module internal DescriptionListsImpl =
             if isGenerated i f then 
                 initial.Display 
             else 
-                let display = NicePrint.layoutOfParamData denv (ParamData(false, false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
+                let display = layoutOfParamData denv (ParamData(false, false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
                 toArray display
 
         MethodGroupItemParameter(
@@ -580,7 +580,7 @@ module internal DescriptionListsImpl =
           isOptional=false)
 
     let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) as paramData) =
-        let display = NicePrint.layoutOfParamData denv paramData
+        let display = layoutOfParamData denv paramData
         let display = toArray display
         MethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
@@ -609,7 +609,7 @@ module internal DescriptionListsImpl =
                     let nm = id.idText
                     let prefix = 
                         if isParamArrayArg then
-                            NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
+                            PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
                             wordL (tagParameter nm) ^^
                             RightL.colon
                             //sprintf "%s %s: " (NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> showL) nm 
@@ -622,7 +622,7 @@ module internal DescriptionListsImpl =
 
         // Prettify everything
         let prettyTyparInst, (prettyParamTys, _prettyRetTy), (prettyParamTysL, prettyRetTyL), prettyConstraintsL = 
-            NicePrint.prettyLayoutOfInstAndSig denv (typarInst, paramTypes, paramTy)
+            prettyLayoutOfInstAndSig denv (typarInst, paramTypes, paramTy)
 
         // Remake the params using the prettified versions
         let prettyParams = 
@@ -642,7 +642,7 @@ module internal DescriptionListsImpl =
 
         // Prettify everything
         let prettyTyparInst, (prettyParamTys, _prettyRetTy), (prettyParamTysL, prettyRetTyL), prettyConstraintsL = 
-            NicePrint.prettyLayoutOfInstAndSig denv  (typarInst, paramTys, retTy) 
+            prettyLayoutOfInstAndSig denv  (typarInst, paramTys, retTy) 
 
         // Remake the params using the prettified versions
         let parameters = 
@@ -671,7 +671,7 @@ module internal DescriptionListsImpl =
             staticParameters 
                 |> Array.map (fun sp -> 
                     let ty = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType), m))
-                    let spKind = NicePrint.prettyLayoutOfType denv ty
+                    let spKind = prettyLayoutOfType denv ty
                     let spName = sp.PUntaint((fun sp -> sp.Name), m)
                     let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
                     let display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (tagParameter spName) ^^ RightL.colon ^^ spKind
@@ -706,7 +706,7 @@ module internal DescriptionListsImpl =
                     // for display as part of the method group
                     prettyParams, prettyRetTyL
                 | _ -> 
-                    let _prettyTyparInst, prettyTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] vTauTy
+                    let _prettyTyparInst, prettyTyL = prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] vTauTy
                     [], prettyTyL
 
             match vref.ValReprInfo with
@@ -747,10 +747,10 @@ module internal DescriptionListsImpl =
         | Item.UnionCase(ucinfo, _)   -> 
             let prettyParams = 
                 match ucinfo.UnionCase.RecdFields with
-                | [f] -> [PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField -1 f]
-                | fs -> fs |> List.mapi (PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField)
+                | [f] -> [PrettyParamOfUnionCaseField g denv isGeneratedUnionCaseField -1 f]
+                | fs -> fs |> List.mapi (PrettyParamOfUnionCaseField g denv isGeneratedUnionCaseField)
             let unionTy = generalizedTyconRef g ucinfo.TyconRef
-            let rtyL = NicePrint.layoutType denv unionTy
+            let rtyL = layoutType denv unionTy
             prettyParams, rtyL
 
         | Item.ActivePatternCase(apref)   -> 
@@ -769,24 +769,24 @@ module internal DescriptionListsImpl =
             prettyParams, prettyRetTyL
 
         | Item.ExnCase ecref -> 
-            let prettyParams = ecref |> recdFieldsOfExnDefRef |> List.mapi (PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedExceptionField) 
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] g.exn_ty
+            let prettyParams = ecref |> recdFieldsOfExnDefRef |> List.mapi (PrettyParamOfUnionCaseField g denv isGeneratedExceptionField) 
+            let _prettyTyparInst, prettyRetTyL = prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] g.exn_ty
             prettyParams, prettyRetTyL
 
         | Item.RecdField rfinfo ->
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] rfinfo.FieldType
+            let _prettyTyparInst, prettyRetTyL = prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] rfinfo.FieldType
             [], prettyRetTyL
 
         | Item.AnonRecdField(_anonInfo, tys, i, _) ->
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] tys[i]
+            let _prettyTyparInst, prettyRetTyL = prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] tys[i]
             [], prettyRetTyL
 
         | Item.ILField finfo ->
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] (finfo.FieldType(amap, m))
+            let _prettyTyparInst, prettyRetTyL = prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] (finfo.FieldType(amap, m))
             [], prettyRetTyL
 
         | Item.Event einfo ->
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] (PropTypeOfEventInfo infoReader m AccessibleFromSomewhere einfo)
+            let _prettyTyparInst, prettyRetTyL = prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] (PropTypeOfEventInfo infoReader m AccessibleFromSomewhere einfo)
             [], prettyRetTyL
 
         | Item.Property(info = pinfo :: _) -> 
@@ -836,7 +836,7 @@ module internal DescriptionListsImpl =
 
             | Some _ -> 
                 let retTy = minfo.GetFSharpReturnType(amap, m, minfo.FormalMethodInst)
-                let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] retTy
+                let _prettyTyparInst, prettyRetTyL = prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] retTy
                 [], prettyRetTyL  // no parameter data available for binary operators like 'zip', 'join' and 'groupJoin' since they use bespoke syntax 
 
         | Item.DelegateCtor delTy -> 

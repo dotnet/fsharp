@@ -2,6 +2,7 @@
 
 open System.Collections.Immutable
 open FSharp.Compiler.Syntax
+open System
 
 /// The index of a file inside a project.
 type internal FileIndex = int
@@ -24,6 +25,11 @@ type internal FileInProject =
         FileName: FileName
         ParsedInput: ParsedInput
     }
+
+    member x.IsScript =
+        match x.ParsedInput with
+        | ParsedInput.ImplFile impl -> impl.IsScript
+        | _ -> false
 
 /// There is a subtle difference between a module and namespace.
 /// A namespace does not necessarily expose a set of dependent files.
@@ -146,20 +152,35 @@ type internal QueryTrie = LongIdentifier -> QueryTrieNodeResult
 
 /// Helper class to help map signature files to implementation files and vice versa.
 type internal FilePairMap(files: FileInProject array) =
+    let sigFiles, implFiles = files |> Array.partition _.ParsedInput.IsSigFile
+
     let buildBiDirectionalMaps pairs =
         Map.ofArray pairs, Map.ofArray (pairs |> Array.map (fun (a, b) -> (b, a)))
 
-    let implToSig, sigToImpl =
-        files
-        |> Array.choose (fun f ->
-            match f.ParsedInput with
-            | ParsedInput.SigFile _ ->
-                files
-                |> Array.skip (f.Idx + 1)
-                |> Array.tryFind (fun (implFile: FileInProject) -> $"{implFile.FileName}i" = f.FileName)
-                |> Option.map (fun (implFile: FileInProject) -> (implFile.Idx, f.Idx))
-            | ParsedInput.ImplFile _ -> None)
-        |> buildBiDirectionalMaps
+    let matchFileNames (sigFile: FileInProject) (implFile: FileInProject) =
+        implFile.FileName.Length = sigFile.FileName.Length - 1
+        && sigFile.FileName.StartsWith(implFile.FileName, StringComparison.Ordinal)
+
+    let pairs =
+        sigFiles
+        |> Array.map (fun sigFile ->
+            // First, try to match the immediately following file.
+            files
+            |> Array.tryItem (sigFile.Idx + 1)
+            |> Option.filter (fun f -> f.ParsedInput.IsImplFile && matchFileNames sigFile f)
+            // Only if not a match, search all impl files.
+            |> Option.orElseWith (fun () -> implFiles |> Array.tryFind (matchFileNames sigFile))
+            |> Option.map (fun (implFile: FileInProject) -> (sigFile.Idx, implFile.Idx)))
+        |> Array.choose id
+
+    let goodPairs, misorderedPairs =
+        pairs |> Array.partition (fun (sigIdx, implIdx) -> sigIdx < implIdx)
+
+    let sigToImpl, implToSig = buildBiDirectionalMaps goodPairs
+
+    // Pairs where the signature file comes after the implementation file in the project order.
+    // We need to track them to report FS0238 (implementation already given).
+    let misordered = misorderedPairs |> Map.ofArray
 
     member x.GetSignatureIndex(implementationIndex: FileIndex) = Map.find implementationIndex implToSig
     member x.GetImplementationIndex(signatureIndex: FileIndex) = Map.find signatureIndex sigToImpl
@@ -174,6 +195,9 @@ type internal FilePairMap(files: FileInProject array) =
             None
 
     member x.IsSignature(index: FileIndex) = Map.containsKey index sigToImpl
+
+    member x.TryGetOutOfOrderImplementationIndex(signatureIndex: FileIndex) =
+        misordered |> Map.tryFind signatureIndex
 
 /// Callback that returns a previously calculated 'Result and updates 'State accordingly.
 type internal Finisher<'Node, 'State, 'Result> = Finisher of node: 'Node * finisher: ('State -> 'Result * 'State)

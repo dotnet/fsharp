@@ -3,7 +3,7 @@
 // Tokens beginning with # should not match greedily with directives
 // The only case where we are still a bit confused is #light, which is missing in
 // this source file (see HashContraint02.fs) and #endif.
-#light
+
 
 type R() = class
     end

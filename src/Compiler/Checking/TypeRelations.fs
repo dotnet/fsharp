@@ -28,15 +28,22 @@ type CanCoerce =
 [<Struct; NoComparison>]
 type TTypeCacheKey =
     | TTypeCacheKey of TypeStructure * TypeStructure * CanCoerce
-    static member FromStrippedTypes(ty1, ty2, canCoerce) =
-        TTypeCacheKey(getTypeStructure ty1, getTypeStructure ty2, canCoerce)
+    static member TryGetFromStrippedTypes(ty1, ty2, canCoerce) =
+        let tryGetTypeStructure ty =
+            match ty with
+            | TType_app _ ->
+                tryGetTypeStructureOfStrippedType ty
+            | _ -> ValueNone
+
+        (tryGetTypeStructure ty1, tryGetTypeStructure ty2)
+        ||> ValueOption.map2(fun t1 t2 -> TTypeCacheKey(t1, t2, canCoerce))
 
 let getTypeSubsumptionCache =
     let factory (g: TcGlobals) =
         let options =
             match g.compilationMode with
-            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault() |> Caches.CacheOptions.withNoEviction
-            | _ -> { Caches.CacheOptions.getDefault() with TotalCapacity = 65536; HeadroomPercentage = 75 }
+            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
+            | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
         new Caches.Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
     Extras.WeakMap.getOrCreate factory     
 
@@ -133,10 +140,6 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
 
     let checkSubsumes ty1 ty2 =
         match ty1, ty2 with
-        | TType_measure _, TType_measure _
-        | TType_var _, _ | _, TType_var _ ->
-            true
-
         | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
             List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
 
@@ -156,11 +159,17 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
                     // See if any interface in type hierarchy of ty2 is a supertype of ty1
                     List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
 
-    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
-        let key = TTypeCacheKey.FromStrippedTypes(ty1, ty2, canCoerce)
-        (getTypeSubsumptionCache g).GetOrAdd(key, fun _ -> checkSubsumes ty1 ty2)
-    else
-        checkSubsumes ty1 ty2
+    match ty1, ty2 with
+    | TType_measure _, TType_measure _
+    | TType_var _, _ | _, TType_var _ ->
+        true
+
+    | _ when g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache ->
+        match TTypeCacheKey.TryGetFromStrippedTypes(ty1, ty2, canCoerce) with
+        | ValueSome key ->
+            (getTypeSubsumptionCache g).GetOrAdd(key, fun _ -> checkSubsumes ty1 ty2)
+        | _ -> checkSubsumes ty1 ty2
+    | _ -> checkSubsumes ty1 ty2
 
 and TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 =
     match GetSuperTypeOfType g amap m ty2 with

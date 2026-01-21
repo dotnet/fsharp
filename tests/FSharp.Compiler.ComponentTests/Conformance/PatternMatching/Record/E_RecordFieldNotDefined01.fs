@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #Records 
-#light
+
 
 // Verify error if type of a record field is incorrect.
 

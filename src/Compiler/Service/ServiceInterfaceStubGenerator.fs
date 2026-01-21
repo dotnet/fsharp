@@ -351,7 +351,12 @@ module InterfaceStubGenerator =
                 // Ordinary instance members
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
-                | false, _, _, name when not (v.ApparentEnclosingEntity.HasAttribute<RequireQualifiedAccessAttribute>()) ->
+                | false, _, _, name when
+                    v.ApparentEnclosingEntity
+                    |> Option.map _.HasAttribute<RequireQualifiedAccessAttribute>()
+                    |> Option.defaultValue false
+                    |> not
+                    ->
                     name + " " + parArgs
                 // Ordinary static members or things (?) that require fully qualified access
                 | _, _, _, name -> name + parArgs
@@ -774,7 +779,7 @@ module InterfaceStubGenerator =
             else
                 match decl with
                 | SynModuleDecl.Exception(SynExceptionDefn(_, _, synMembers, _), _) -> List.tryPick walkSynMemberDefn synMembers
-                | SynModuleDecl.Let(_isRecursive, bindings, _range) -> List.tryPick walkBinding bindings
+                | SynModuleDecl.Let(bindings = bindings) -> List.tryPick walkBinding bindings
                 | SynModuleDecl.ModuleAbbrev(_lhs, _rhs, _range) -> None
                 | SynModuleDecl.NamespaceFragment(fragment) -> walkSynModuleOrNamespace fragment
                 | SynModuleDecl.NestedModule(decls = modules) -> List.tryPick walkSynModuleDecl modules
@@ -821,7 +826,7 @@ module InterfaceStubGenerator =
                     | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
                 | SynMemberDefn.NestedType(typeDef, _access, _range) -> walkSynTypeDefn typeDef
                 | SynMemberDefn.ValField _ -> None
-                | SynMemberDefn.LetBindings(bindings, _isStatic, _isRec, _range) -> List.tryPick walkBinding bindings
+                | SynMemberDefn.LetBindings(bindings = bindings) -> List.tryPick walkBinding bindings
                 | SynMemberDefn.Open _
                 | SynMemberDefn.ImplicitCtor _
                 | SynMemberDefn.Inherit _ -> None
@@ -904,8 +909,10 @@ module InterfaceStubGenerator =
 
                 | SynExpr.TypeApp(synExpr, _, _synTypeList, _commas, _, _, _range) -> walkExpr synExpr
 
-                | SynExpr.LetOrUse(bindings = synBindingList; body = synExpr) ->
-                    Option.orElse (List.tryPick walkBinding synBindingList) (walkExpr synExpr)
+                | SynExpr.LetOrUse({
+                                       Bindings = synBindingList
+                                       Body = synExpr
+                                   }) -> Option.orElse (List.tryPick walkBinding synBindingList) (walkExpr synExpr)
 
                 | SynExpr.TryWith(tryExpr = synExpr) -> walkExpr synExpr
 

@@ -21,7 +21,8 @@ ImplFile
                      FromParseError (3,6--3,6), (3,6--3,6)), (3,4--3,5),
                   Yes (3,0--3,6), { LeadingKeyword = Let (3,0--3,3)
                                     InlineKeyword = None
-                                    EqualsRange = None })], (3,0--3,6))],
+                                    EqualsRange = None })], (3,0--3,6),
+              { InKeyword = None })],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,6), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

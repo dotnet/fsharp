@@ -2,7 +2,7 @@
 // Record types may include members
 // Test both static and instance members
 //<Expects status="success"></Expects>
-#light
+
 
 // Instance member
 type T1 = { A : int }

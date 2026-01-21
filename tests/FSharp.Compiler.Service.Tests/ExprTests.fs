@@ -787,13 +787,13 @@ let ``Test Unoptimized Declarations Project1`` () =
     printfn "let expected2 =\n%A" (printDeclarations None (List.ofSeq file2.Declarations) |> Seq.toList)
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
-      |> Utils.filterHack
-      |> shouldEqual (Utils.filterHack expected)
+      |> filterHack
+      |> shouldEqual (filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
-      |> Utils.filterHack
-      |> shouldEqual (Utils.filterHack expected2)
+      |> filterHack
+      |> shouldEqual (filterHack expected2)
 
     ()
 
@@ -926,13 +926,13 @@ let ``Test Optimized Declarations Project1`` () =
     printfn "let expected2 =\n%A" (printDeclarations None (List.ofSeq file2.Declarations) |> Seq.toList)
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
-      |> Utils.filterHack
-      |> shouldEqual (Utils.filterHack expected)
+      |> filterHack
+      |> shouldEqual (filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
-      |> Utils.filterHack
-      |> shouldEqual (Utils.filterHack expected2)
+      |> filterHack
+      |> shouldEqual (filterHack expected2)
 
     ()
 
@@ -3207,7 +3207,7 @@ let f7() = callXY (C()) (D())
 let f8() = callXY (D()) (C())
     """
 
-    let createOptions() = createProjectOptions [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions [fileSource1] ["--langversion:8.0"]
 
 [<Fact>]
 let ``Test ProjectForWitnesses1`` () =
@@ -3269,7 +3269,7 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
             |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
             |> Option.get
         printfn "symbol = %s" symbol.FullName
-        let wpi = (symbol.GetWitnessPassingInfo())
+        let wpi = symbol.GetWitnessPassingInfo()
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
@@ -3288,7 +3288,7 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
             |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
             |> Option.get
         printfn "symbol = %s" symbol.FullName
-        let wpi = (symbol.GetWitnessPassingInfo())
+        let wpi = symbol.GetWitnessPassingInfo()
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
@@ -3329,7 +3329,7 @@ type MyNumberWrapper =
     { MyNumber: MyNumber }
     """
 
-    let createOptions() = createProjectOptions [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions [fileSource1] ["--langversion:8.0"]
 
 [<Fact>]
 let ``Test ProjectForWitnesses2`` () =
@@ -3384,11 +3384,11 @@ let s2 = sign p1
 
     """
 
-    let createOptions() = createProjectOptions [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions [fileSource1] ["--langversion:8.0"]
 
 [<Fact>]
 let ``Test ProjectForWitnesses3`` () =
-    let options = createProjectOptions [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
+    let options = createProjectOptions [ ProjectForWitnesses3.fileSource1 ] ["--langversion:8.0"]
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
@@ -3433,7 +3433,7 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
             |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
             |> Option.get
         printfn "symbol = %s" symbol.FullName
-        let wpi = (symbol.GetWitnessPassingInfo())
+        let wpi = symbol.GetWitnessPassingInfo()
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
@@ -3476,7 +3476,7 @@ let isNullQuoted (ts : 't[]) =
 
 """
 
-    let createOptions() = createProjectOptions [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions [fileSource1] ["--langversion:8.0"]
 
 [<Fact>]
 let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
@@ -3504,3 +3504,193 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
     printfn "actual:\n\n%A" actual
     actual
       |> shouldEqual expected
+
+//---------------------------------------------------------------------------------------------------------
+// Regression tests for ImmediateSubExpressions on generic types with conditional comparison/equality
+// https://github.com/dotnet/fsharp/issues/19118
+//
+// The bug: FCS crashes when accessing ImmediateSubExpressions on auto-generated comparison code
+// for generic DUs/records whose type parameters have ComparisonConditionalOn but not actual
+// comparison constraints. This is because GetWitnessArgs tries to generate witnesses for the
+// comparison constraint, but fails because the type parameter is rigid and can't have constraints added.
+
+module internal ProjectForWitnessConditionalComparison =
+
+    /// Helper to walk ALL expressions in a file, including ImmediateSubExpressions
+    /// This triggers the bug because it forces conversion of auto-generated comparison code
+    let walkAllExpressions (source : string) =
+        let fileName1 = System.IO.Path.ChangeExtension(getTemporaryFileName (), ".fs")
+        try
+            FileSystem.OpenFileForWriteShim(fileName1).Write(source)
+            let options = createProjectOptions [source] []
+            let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+            let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+
+            if wholeProjectResults.Diagnostics.Length > 0 then
+                for diag in wholeProjectResults.Diagnostics do
+                    printfn "Diagnostic: %s" diag.Message
+
+            for implFile in wholeProjectResults.AssemblyContents.ImplementationFiles do
+                // Walk all declarations and their expressions, including ImmediateSubExpressions
+                let rec walkExpr (e: FSharpExpr) =
+                    // Access ImmediateSubExpressions - this is what triggered #19118
+                    for subExpr in e.ImmediateSubExpressions do
+                        walkExpr subExpr
+
+                let rec walkDecl d =
+                    match d with
+                    | FSharpImplementationFileDeclaration.Entity (_, subDecls) ->
+                        for subDecl in subDecls do
+                            walkDecl subDecl
+                    | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (_, _, e) ->
+                        walkExpr e
+                    | FSharpImplementationFileDeclaration.InitAction e ->
+                        walkExpr e
+
+                for decl in implFile.Declarations do
+                    walkDecl decl
+        finally
+            try
+                FileSystem.FileDeleteShim fileName1
+            with
+            | _ -> ()
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic DU with no constraints should not crash`` () =
+    // This is the core bug repro - a generic DU where the type parameter has
+    // ComparisonConditionalOn but no actual comparison constraint
+    let source = """
+module M
+
+type Bar<'appEvent> =
+    | Wibble of 'appEvent
+"""
+    // This should not throw. Before the fix, it crashed with ConstraintSolverMissingConstraint.
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic DU with multiple type parameters should not crash`` () =
+    let source = """
+module M
+
+type MultiParam<'a, 'b, 'c> =
+    | Case1 of 'a
+    | Case2 of 'b * 'c
+    | Case3 of 'a * 'b * 'c
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic record with no constraints should not crash`` () =
+    let source = """
+module M
+
+type MyRecord<'t> = { Value: 't; Name: string }
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic struct DU should not crash`` () =
+    let source = """
+module M
+
+[<Struct>]
+type StructDU<'a> =
+    | StructCase of value: 'a
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - nested generic types should not crash`` () =
+    let source = """
+module M
+
+type Outer<'a> =
+    | OuterCase of Inner<'a>
+
+and Inner<'b> =
+    | InnerCase of 'b
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic DU with explicit comparison constraint works`` () =
+    // When the type parameter has the comparison constraint, witness generation should work;
+    // no crash occurred even before the bug was fixed. This test is here for completeness.
+    let source = """
+module M
+
+type WithConstraint<'a when 'a : comparison> =
+    | Constrained of 'a
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - non-generic DU works`` () =
+    // Non-generic types always worked fine (no generics = no witness issues). This test is here for completeness.
+    let source = """
+module M
+
+type SimpleUnion =
+    | Case1 of int
+    | Case2 of string
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic DU with NoComparison attribute should not crash`` () =
+    // With NoComparison, no comparison code is generated, so no crash ever occurred even before the bug was fixed.
+    // This test is here for completeness.
+    let source = """
+module M
+
+[<NoComparison>]
+type NoCompare<'a> =
+    | NoCompareCase of 'a
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic DU with NoEquality attribute should not crash`` () =
+    let source = """
+module M
+
+[<NoEquality; NoComparison>]
+type NoEq<'a> =
+    | NoEqCase of 'a
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic DU used in function should not crash`` () =
+    // Test that using the generic DU in actual code still works
+    let source = """
+module M
+
+type Option2<'t> =
+    | Some2 of 't
+    | None2
+
+let mapOption2 f opt =
+    match opt with
+    | Some2 x -> Some2 (f x)
+    | None2 -> None2
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - complex generic type hierarchy should not crash`` () =
+    let source = """
+module M
+
+type Result<'ok, 'err> =
+    | Ok of 'ok
+    | Error of 'err
+
+type Validated<'a> = Result<'a, string list>
+
+let validate pred msg value : Validated<'a> =
+    if pred value then Ok value
+    else Error [msg]
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source

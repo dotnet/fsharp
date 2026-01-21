@@ -10,14 +10,18 @@ open FSharp.Compiler.TypedTree
 val GroupUpdatesToNestedFields:
     fields: ((Ident list * Ident) * SynExpr option) list -> ((Ident list * Ident) * SynExpr option) list
 
-val TransformAstForNestedUpdates:
+val TransformAstForNestedUpdates<'a> :
     cenv: TcFileState ->
     env: TcEnv ->
     overallTy: TType ->
     lid: LongIdent ->
     exprBeingAssigned: SynExpr ->
-    withExpr: SynExpr * BlockSeparator ->
+    withExpr: SynExpr * (range * 'a) ->
         (Ident list * Ident) * SynExpr option
+
+val BindIdText: string
+
+val inline (|IsSimpleOrBoundExpr|_|): withExprOpt: (SynExpr * BlockSeparator) option -> bool
 
 val BindOriginalRecdExpr:
     withExpr: SynExpr * BlockSeparator -> mkRecdExpr: ((SynExpr * BlockSeparator) option -> SynExpr) -> SynExpr

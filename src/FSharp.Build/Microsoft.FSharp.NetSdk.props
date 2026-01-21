@@ -50,7 +50,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <UseStandardResourceNames Condition=" '$(UseStandardResourceNames)' == '' ">true</UseStandardResourceNames>
     <FsiExec Condition=" '$(FsiExec)' == '' ">true</FsiExec>
     <ReflectionFree Condition=" '$(ReflectionFree)' == '' ">false</ReflectionFree>
-    <ParallelCompilation Condition=" '$(ParallelCompilation)' == '' and '$(LangVersion)' == 'preview' "></ParallelCompilation>                       <!-- Default to parallel compilation for preview language users before it is rolled out to everyone -->
+    <ParallelCompilation Condition=" '$(ParallelCompilation)' == '' ">true</ParallelCompilation>
   </PropertyGroup>
 
   <!-- BinaryFormatter is disabled (warning is treated as error) by default in .NET8+, this mirroring the change in SDK (https://github.com/dotnet/sdk/pull/31591) -->
@@ -92,6 +92,16 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </ItemGroup>
 
   <Import Project="Microsoft.FSharp.Core.NetSdk.props" />                       <!-- Sets initial value of FSharp.Core -->
+
+  <!-- 
+    Auto-set LangVersion for preview SDK users. 
+    When using a preview SDK and user hasn't explicitly set LangVersion,
+    derive the language version from the SDK's major version.
+    This allows SDK 11 preview users to use F# 11 features automatically.
+  -->
+  <PropertyGroup Condition="'$(LangVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(NETCoreSdkVersion)' != '' and $(NETCoreSdkVersion.StartsWith('11.'))">
+    <LangVersion>11</LangVersion>
+  </PropertyGroup>
 
   <PropertyGroup>
     <ValueTupleImplicitPackageVersion>4.6.1</ValueTupleImplicitPackageVersion>

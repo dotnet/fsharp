@@ -3,53 +3,35 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
-open System.Diagnostics
-open System.IO
-open System.Reflection
-open System.Reflection.Emit
-open System.Threading
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.ILDynamicAssemblyWriter
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.CompilerDiagnostics
-open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
-open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.IO
-open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.BuildGraph
 
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
 type IsResultObsolete = IsResultObsolete of (unit -> bool)
 
 module CompileHelpers =
-    let mkCompilationDiagnosticsHandlers (flatErrors) =
+    let mkCompilationDiagnosticsHandlers flatErrors =
         let diagnostics = ResizeArray<_>()
 
         let diagnosticsLogger =
             { new DiagnosticsLogger("CompileAPI") with
 
-                member _.DiagnosticSink(diag, isError) =
-                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, true, flatErrors, None)) // Suggest names for errors
+                member _.DiagnosticSink(diagnostic) =
+                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diagnostic, true, flatErrors, None)) // Suggest names for errors
 
                 member _.ErrorCount =
                     diagnostics

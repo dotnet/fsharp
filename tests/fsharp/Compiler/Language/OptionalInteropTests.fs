@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.UnitTests
 
+open System
 open System.Collections.Immutable
 open Xunit
 open FSharp.Test
@@ -12,7 +13,7 @@ open Microsoft.CodeAnalysis
 module OptionalInteropTests =
 
     [<Theory>]
-    [<InlineData("5.0")>]
+    [<InlineData("8.0")>]
     [<InlineData("preview")>]
     let ``C# method with an optional parameter and called with an option type should compile`` langVersion =
         let csSrc =

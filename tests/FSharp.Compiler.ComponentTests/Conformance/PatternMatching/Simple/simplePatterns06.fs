@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 let (|MulTwo|_|)   x = if x % 2 = 0 then Some() else None
 let (|MulThree|_|) x = if x % 3 = 0 then Some() else None

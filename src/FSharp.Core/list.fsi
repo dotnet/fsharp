@@ -3,7 +3,6 @@
 namespace Microsoft.FSharp.Collections
 
 open System
-open System.Collections.Generic
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
@@ -1978,7 +1977,7 @@ module List =
     ///
     /// List.sort input
     /// </code>
-    /// Evaluates to <c>[1; 1 3; 4; 6; 8]</c>.
+    /// Evaluates to <c>[1; 1; 3; 4; 6; 8]</c>.
     /// </example>
     [<CompiledName("Sort")>]
     val sort: list:'T list -> 'T list when 'T : comparison

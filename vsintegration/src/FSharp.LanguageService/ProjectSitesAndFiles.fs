@@ -34,7 +34,6 @@ module internal rec Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 
 open System
 open System.Collections.Concurrent
-open System.ComponentModel.Composition
 open System.IO
 open System.Diagnostics
 open Microsoft.VisualStudio
@@ -86,7 +85,7 @@ type private ProjectSiteOfScriptFile(fileName:string, referencedProjectFileNames
 
     override x.ToString() = sprintf "ProjectSiteOfScriptFile(%s)" fileName
 
-/// An orphan file project is a .fs, .ml, .fsi, .mli that is not associated with a .fsproj.
+/// An orphan file project is a .fs, .fsi that is not associated with a .fsproj.
 /// By design, these are never going to typecheck because there is no affiliated references.
 /// We show many squiggles in this case because they're not particularly informational. 
 type private ProjectSiteOfSingleFile(sourceFile) =

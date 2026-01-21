@@ -1,11 +1,9 @@
 ﻿namespace FSharp.Compiler.Service.Tests
 
 open System
-open System.IO
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Test
 open Xunit
-open System.Threading
 
 type Sentinel () =
     let x = ()
@@ -663,3 +661,11 @@ module FsiTests =
         | Choice2Of2 e ->
             printfn "exception: %A" e
             raise e
+            
+    [<Fact>]
+    let ``LineDirectivesWork`` () =
+        use fsiSession = createFsiSession false
+        fsiSession.EvalInteraction("""#line 100
+        let y = __LINE__""")
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        Assert.shouldBe "100" boundValue.Value.ReflectionValue

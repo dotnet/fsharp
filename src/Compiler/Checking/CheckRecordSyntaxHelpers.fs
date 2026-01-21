@@ -13,7 +13,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
-open TypedTreeOps
 
 /// Merges updates to nested record fields on the same level in record copy-and-update.
 ///
@@ -65,7 +64,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             let rec buildLid res (id: Ident) =
                 function
                 | [] -> res
-                | (h: Ident) :: t ->
+                | h: Ident :: t ->
                     // Mark these hidden field accesses as synthetic so that they don't make it
                     // into the name resolution sink.
                     let h = ident (h.idText, h.idRange.MakeSynthetic())
@@ -90,14 +89,19 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
         let totalRange (origId: Ident) (id: Ident) =
             withStartEnd origId.idRange.End id.idRange.Start origId.idRange
 
-        match withExpr with
-        | SynExpr.Ident origId, (blockSep: BlockSeparator) ->
-            let lid, rng = upToId blockSep.Range id (origId :: ids)
+        let rangeOfBlockSeparator (id: Ident) =
+            let idEnd = id.idRange.End
+            let blockSeparatorStartCol = idEnd.Column
+            let blockSeparatorEndCol = blockSeparatorStartCol + 4
+            let blockSeparatorStartPos = mkPos idEnd.Line blockSeparatorStartCol
+            let blockSeparatorEndPos = mkPos idEnd.Line blockSeparatorEndCol
 
-            Some(
-                SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id),
-                BlockSeparator.Offside(blockSep.Range, None)
-            )
+            withStartEnd blockSeparatorStartPos blockSeparatorEndPos id.idRange
+
+        match withExpr with
+        | SynExpr.Ident origId, (sepRange, _) ->
+            let lid, rng = upToId sepRange id (origId :: ids)
+            Some(SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id), (rangeOfBlockSeparator id, None))
         | _ -> None
 
     let rec synExprRecd copyInfo (outerFieldId: Ident) innerFields exprBeingAssigned =
@@ -151,12 +155,26 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
         (accessIds, outerFieldId),
         Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest exprBeingAssigned)
 
+/// This name is used when a complex expression is bound for use as a binding in a copy-and-update expression.
+/// For example, in `{ f () with ... }`, `f ()` is replaced by `let bind@ = f ()`
+let BindIdText = "bind@"
+
+/// Finding the 'bind@' identifier is the only way to detect that an expression has already been bound.
+let inline (|IsSimpleOrBoundExpr|_|) (withExprOpt: (SynExpr * BlockSeparator) option) =
+    match withExprOpt with
+    | None -> true
+    | Some(expr, _) ->
+        match expr with
+        | SynExpr.LongIdent(_, lIds, _, _) -> lIds.LongIdent |> List.exists (fun id -> id.idText = BindIdText)
+        | SynExpr.Ident _ -> true
+        | _ -> false
+
 /// When the original expression in copy-and-update is more complex than `{ x with ... }`, like `{ f () with ... }`,
 /// we bind it first, so that it's not evaluated multiple times during a nested update
 let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr =
     let originalExpr, blockSep = withExpr
     let mOrigExprSynth = originalExpr.Range.MakeSynthetic()
-    let id = mkSynId mOrigExprSynth "bind@"
+    let id = mkSynId mOrigExprSynth BindIdText
     let withExpr = SynExpr.Ident id, blockSep
 
     let binding =
@@ -175,13 +193,14 @@ let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr =
              None,
              SynBindingTrivia.Zero)
 
-    SynExpr.LetOrUse(
-        isRecursive = false,
-        isUse = false,
-        isFromSource = false, // compiler generated during desugaring
-        isBang = false,
-        bindings = [ binding ],
-        body = mkRecdExpr (Some withExpr),
-        range = mOrigExprSynth,
-        trivia = SynExprLetOrUseTrivia.Zero
-    )
+    SynExpr.LetOrUse
+        {
+            IsRecursive = false
+            //isUse = false,
+            IsFromSource = false // compiler generated during desugaring
+            // isBang = false,
+            Bindings = [ binding ]
+            Body = mkRecdExpr (Some withExpr)
+            Range = mOrigExprSynth
+            Trivia = SynLetOrUseTrivia.Zero
+        }

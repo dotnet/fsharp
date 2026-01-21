@@ -59,9 +59,9 @@ module UseBangBindingsVersion9 =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 40, Col 18, Line 40, Col 29, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
-            (Error 3350, Line 41, Col 17, Line 41, Col 28, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
-            (Error 3350, Line 43, Col 17, Line 43, Col 28, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 40, Col 18, Line 40, Col 28, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 41, Col 17, Line 41, Col 27, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 43, Col 17, Line 43, Col 27, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
 
 module UseBangBindingsPreview =

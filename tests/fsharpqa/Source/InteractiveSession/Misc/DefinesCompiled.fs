@@ -1,5 +1,5 @@
 // #NoMT #FSI 
-#light
+
 
 // Verify COMPILED is defined for all compiled .fs files
 

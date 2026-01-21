@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #PatternMatchingGuards 
-#light
+
 
 // Verify multiple pattern parts can introduce new identifiers
 type Foo =

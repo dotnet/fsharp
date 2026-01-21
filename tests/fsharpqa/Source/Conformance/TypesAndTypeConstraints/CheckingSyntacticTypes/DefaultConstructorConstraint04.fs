@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeConstraints 
-#light
+
 // FSB 2029, default constructor constraint is ignoring the return type of the signature
 //<Expects id="FS0700" span="(12,15-12,40)" status="error">'new'.+constrain</Expects>
 // DefaultConstructorConstraint04.fs(11,15-11,40): error FS0191: 'new' constraints must take one argument of type 'unit' and return the constructed type.

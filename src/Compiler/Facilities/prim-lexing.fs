@@ -9,7 +9,6 @@ open System.IO
 open System.Collections.Immutable
 open Internal.Utilities.Library
 
-open Internal.Utilities.Collections
 open Internal.Utilities.Hashing
 
 type ISourceText =
@@ -510,7 +509,7 @@ type internal UnicodeTables(trans: uint16[] array, accept: uint16[]) =
     //      1 entry for EOF
 
     member tables.Interpret(initialState, lexBuffer: LexBuffer<char>) =
-        startInterpret (lexBuffer)
+        startInterpret lexBuffer
         scanUntilSentinel lexBuffer initialState
 
     static member Create(trans, accept) = UnicodeTables(trans, accept)

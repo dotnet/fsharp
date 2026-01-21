@@ -104,7 +104,7 @@ type internal FSharpFile = {
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
 
-    type ParseResult = ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+    type ParseResult = ParsedInput * range * string * PhasedDiagnostic array
 
     /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
     [<Sealed>]
@@ -198,7 +198,7 @@ type TcInfo =
         latestCcuSigForFile: ModuleOrNamespaceType option
 
         /// Accumulated diagnostics, last file first
-        tcDiagnosticsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+        tcDiagnosticsRev:PhasedDiagnostic[] list
 
         tcDependencyFiles: string list
 
@@ -229,7 +229,7 @@ type TcInfoExtras =
     member x.TcSymbolUses =
         x.tcSymbolUses
 
-type private SingleFileDiagnostics = (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+type private SingleFileDiagnostics = PhasedDiagnostic array
 type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
 
 /// Bound model of an underlying syntax and typed tree.
@@ -556,14 +556,13 @@ type FrameworkImportsCache(size) =
         // for each cached project.  So here we create a new tcGlobals, with the existing framework values
         // and updated realsig and langversion
         let tcGlobals =
-            if tcGlobals.langVersion.SpecifiedVersion <> tcConfig.langVersion.SpecifiedVersion
+            if tcGlobals.langVersion <> tcConfig.langVersion
                 || tcGlobals.realsig <> tcConfig.realsig then
                     TcGlobals(
                         tcGlobals.compilingFSharpCore,
                         tcGlobals.ilg,
                         tcGlobals.fslibCcu,
                         tcGlobals.directoryToResolveRelativePaths,
-                        tcGlobals.mlCompatibility,
                         tcGlobals.isInteractive,
                         tcGlobals.checkNullness,
                         tcGlobals.useReflectionFreeCodeGen,
@@ -1665,8 +1664,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 | _ ->
                     Array.ofList delayedLogger.Diagnostics, false
             diagnostics
-            |> Array.map (fun (diagnostic, severity) ->
-                FSharpDiagnostic.CreateFromException(diagnostic, severity, suggestNamesForErrors, flatErrors, None))
+            |> Array.map (fun (diagnostic) ->
+                FSharpDiagnostic.CreateFromException(diagnostic, suggestNamesForErrors, flatErrors, None))
 
         return builderOpt, diagnostics
       }

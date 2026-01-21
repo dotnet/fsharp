@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeConstraints 
-#light
+
 // Regression test for FSHARP1.0:3880
 // Type With Null As representation value
 // It is not allowed to use null directly!

@@ -3,10 +3,8 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Threading
-open System.Threading.Tasks
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -27,8 +25,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-
-open Internal.Utilities.Collections
 
 [<Experimental "This type is experimental and likely to be removed in the future.">]
 [<RequireQualifiedAccess>]
@@ -228,8 +224,6 @@ type public FSharpParsingOptions =
 
         IsInteractive: bool
 
-        IndentationAwareSyntax: bool option
-
         StrictIndentation: bool option
 
         CompilingFSharpCore: bool
@@ -244,6 +238,14 @@ type public FSharpParsingOptions =
 
     static member internal FromTcConfigBuilder:
         tcConfigB: TcConfigBuilder * sourceFiles: string[] * isInteractive: bool -> FSharpParsingOptions
+
+type public FSharpCodeCompletionOptions =
+    { SuggestPatternNames: bool
+      SuggestObsoleteSymbols: bool
+      SuggestGeneratedOverrides: bool
+      SuggestOverrideBodies: bool }
+
+    static member Default: FSharpCodeCompletionOptions
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
@@ -293,8 +295,8 @@ type public FSharpCheckFileResults =
     /// <param name="completionContextAtPos">
     ///    Completion context for a particular position computed in advance.
     /// </param>
-    /// <param name="genBodyForOverriddenMeth">
-    ///    A switch to determine whether to generate a default implementation body for overridden method when completing.
+    /// <param name="options">
+    ///    Options to allow customizing behavior by an IDE.
     /// </param>
     member GetDeclarationListInfo:
         parsedFileResults: FSharpParseFileResults option *
@@ -303,7 +305,7 @@ type public FSharpCheckFileResults =
         partialName: PartialLongName *
         ?getAllEntities: (unit -> AssemblySymbol list) *
         ?completionContextAtPos: (pos * CompletionContext option) *
-        ?genBodyForOverriddenMeth: bool ->
+        ?options: FSharpCodeCompletionOptions ->
             DeclarationListInfo
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
@@ -324,8 +326,8 @@ type public FSharpCheckFileResults =
     /// <param name="getAllEntities">
     ///    Function that returns all entities from current and referenced assemblies.
     /// </param>
-    /// <param name="genBodyForOverriddenMeth">
-    ///    A switch to determine whether to generate a default implementation body for overridden method when completing.
+    /// <param name="options">
+    ///    Options to allow customizing behavior by an IDE.
     /// </param>
     member GetDeclarationListSymbols:
         parsedFileResults: FSharpParseFileResults option *
@@ -333,7 +335,7 @@ type public FSharpCheckFileResults =
         lineText: string *
         partialName: PartialLongName *
         ?getAllEntities: (unit -> AssemblySymbol list) *
-        ?genBodyForOverriddenMeth: bool ->
+        ?options: FSharpCodeCompletionOptions ->
             FSharpSymbolUse list list
 
     /// <summary>Compute a formatted tooltip for the given keywords</summary>
@@ -495,7 +497,7 @@ type public FSharpCheckFileResults =
         tcState: TcState *
         moduleNamesDict: ModuleNamesDict *
         loadClosure: LoadClosure option *
-        backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *
+        backgroundDiagnostics: PhasedDiagnostic[] *
         isIncompleteTypeCheckEnvironment: bool *
         projectOptions: FSharpProjectOptions *
         builder: IncrementalBuilder option *
@@ -608,7 +610,7 @@ module internal ParseAndCheckFile =
 
         member AnyErrors: bool
 
-        member CollectedPhasedDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+        member CollectedPhasedDiagnostics: PhasedDiagnostic array
 
         member CollectedDiagnostics: symbolEnv: SymbolEnv option -> FSharpDiagnostic array
 
@@ -616,11 +618,16 @@ module internal ParseAndCheckFile =
 // Used internally to provide intellisense over F# Interactive.
 type internal FsiInteractiveChecker =
     internal new:
-        LegacyReferenceResolver * tcConfig: TcConfig * tcGlobals: TcGlobals * tcImports: TcImports * tcState: TcState ->
+        LegacyReferenceResolver *
+        tcConfig: TcConfig *
+        tcGlobals: TcGlobals *
+        tcImports: TcImports *
+        tcState: TcState *
+        ?keepAssemblyContents: bool ->
             FsiInteractiveChecker
 
     member internal ParseAndCheckInteraction:
-        sourceText: ISourceText * ?userOpName: string ->
+        sourceText: ISourceText * ?userOpName: string * ?asmName: string ->
             Cancellable<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
 
 module internal FSharpCheckerResultsSettings =

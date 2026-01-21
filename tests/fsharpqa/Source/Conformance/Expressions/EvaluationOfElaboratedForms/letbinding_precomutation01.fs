@@ -1,7 +1,7 @@
 // #Regression #Conformance 
 // Regression test for FSHARP1.0:3330
 // 
-#light
+
 
 
 let mutable times_x_was_computed = 0

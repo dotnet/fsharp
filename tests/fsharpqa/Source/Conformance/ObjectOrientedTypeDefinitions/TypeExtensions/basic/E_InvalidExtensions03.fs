@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
-#light
+
 
 //<Expects id="FS0925" status="error">Invalid type extension</Expects>
 

@@ -1,5 +1,5 @@
 // #NoMono #NoMT #CodeGen #EmittedIL   
-#light
+
 
 type D(x:int,y:int) = 
     let z = x + y

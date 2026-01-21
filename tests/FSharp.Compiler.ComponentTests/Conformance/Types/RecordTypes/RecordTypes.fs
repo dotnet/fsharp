@@ -116,7 +116,7 @@ module RecordTypes =
             (Warning 464, Line 15, Col 22, Line 15, Col 28, "This code is less generic than indicated by its annotations. A unit-of-measure specified using '_' has been determined to be '1', i.e. dimensionless. Consider making the code generic, or removing the use of '_'.")
             (Warning 464, Line 15, Col 35, Line 15, Col 42, "This code is less generic than indicated by its annotations. A unit-of-measure specified using '_' has been determined to be '1', i.e. dimensionless. Consider making the code generic, or removing the use of '_'.")
             (Error 5, Line 17, Col 1, Line 17, Col 5, "This field is not mutable")
-            (Error 1, Line 17, Col 16, Line 17, Col 22, "The type 'decimal<Kg>' does not match the type 'float<Kg>'")
+            (Error 1, Line 17, Col 16, Line 17, Col 22, "The type 'float<Kg>' does not match the type 'decimal<Kg>'")
             (Error 5, Line 18, Col 1, Line 18, Col 5, "This field is not mutable")
             (Error 1, Line 18, Col 16, Line 18, Col 21, "This expression was expected to have type\n    'float'    \nbut here has type\n    'decimal'    ")
         ]
@@ -592,3 +592,27 @@ module RecordTypes =
             (Error 668, Line 5, Col 24, Line 5, Col 25, "The field 'A' appears multiple times in this record expression or pattern")
             (Error 668, Line 5, Col 31, Line 5, Col 32, "The field 'B' appears multiple times in this record expression or pattern")
         ]
+
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument`` () =
+        Fsx
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedRecord<'a> = { A : int; B : NestedRecord<'a list> }
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 30, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument: signature`` () =
+        Fsi
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedRecord<'a> = { A : int; B : NestedRecord<'a list> }
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 30, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")

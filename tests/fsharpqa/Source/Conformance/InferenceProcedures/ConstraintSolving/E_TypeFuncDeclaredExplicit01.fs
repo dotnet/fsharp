@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeInference #TypeConstraints 
-#light
+
 
 // Verify that type functions need to be declared explicitly
 //<Expects id="FS0030" status="error">Value restriction</Expects>

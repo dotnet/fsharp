@@ -8,7 +8,7 @@
 
 
 
-#light
+
 
 type R =
   { a : int; b : string }

@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexicalAnalysis 
-#light
+
 
 // Verify error when names collide. Typically you just outscope the
 // other value, but when the generated names collide we emit an error.

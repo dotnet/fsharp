@@ -58,11 +58,10 @@ module Modules =
     [<Fact>]
     let ``Right Attribute Module Abbreviation with version 5_0 (compile)``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
-        |> withLangVersion50
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            Error 3350, Line 1, Col 33, Line 1, Col 35, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 6.0 or greater."
             Error 535, Line 1, Col 1, Line 1, Col 35, "Ignoring attributes on module abbreviation"
             Error 222, Line 1, Col 1, Line 1, Col 42, "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration."
         ]
@@ -182,15 +181,14 @@ AutoOpen>] L1 = do ()
         ]
 
     [<Fact>]
-    let ``Offside rule works for attributes inside module declarations in F# 5_0``() =
+    let ``Offside rule works for attributes inside module declarations in F# preview``() =
         Fsx """
 module [<
 AutoOpen>] L1 = do ()
         """
-        |> withLangVersion50
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withDiagnostics [
             Error 10, Line 3, Col 1, Line 3, Col 9, "Unexpected start of structured construct in attribute list"
-            Error 3350, Line 3, Col 1, Line 3, Col 9, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 6.0 or greater."
         ]

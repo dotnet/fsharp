@@ -4,6 +4,7 @@ namespace FSharp.DependencyManager.Nuget
 
 open System
 open System.Collections.Concurrent
+open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Text
@@ -11,6 +12,7 @@ open FSharp.DependencyManager.Nuget
 open FSharp.DependencyManager.Nuget.Utilities
 open FSharp.DependencyManager.Nuget.ProjectFile
 open FSDependencyManager
+open Internal.Utilities.FSharpEnvironment
 
 module FSharpDependencyManager =
 
@@ -302,10 +304,20 @@ type ResolveDependenciesResult
     member _.Roots = roots
 
 [<DependencyManager>]
-type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bool) =
+type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bool, additionalParams: IDictionary<string, obj>) =
 
     let key = "nuget"
     let name = "MsBuild Nuget DependencyManager"
+
+    let sdkDirOverride =
+        if isNull additionalParams then
+            None
+        else
+            match additionalParams.TryGetValue("sdkDirOverride") with
+            | true, (:? (string option) as sdkDirOverride) -> sdkDirOverride
+            | _ ->
+                Debug.Assert(false, "FSharpDependencyManager: 'sdkDirOverride: string option' is required.")
+                None
 
     let generatedScripts = ConcurrentDictionary<string, string>()
 
@@ -377,7 +389,8 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             directiveLines: (string * string) seq,
             targetFrameworkMoniker: string,
             runtimeIdentifier: string,
-            timeout: int
+            timeout: int,
+            dotnetHostPath: string option
         ) : PackageBuildResolutionResult =
         let scriptExt =
             match scriptExt with
@@ -395,7 +408,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             |> Seq.concat
 
         let generatedNugetSources =
-            generateSourcesFromNugetConfigs scriptDirectory projectDirectory.Value timeout
+            generateSourcesFromNugetConfigs dotnetHostPath scriptDirectory projectDirectory.Value timeout
 
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
@@ -424,7 +437,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
             writeFile projectPath generateProjectFile
             writeFile nugetPath generateProjectNugetConfigFile
-            buildProject projectPath binLogPath timeout
+            buildProject dotnetHostPath projectPath binLogPath timeout
 
         generateAndBuildProjectArtifacts
 
@@ -463,6 +476,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
     do AppDomain.CurrentDomain.ProcessExit |> Event.add (fun _ -> deleteScripts ())
 
+    new(outputDirectory: string option, useResultsCache: bool) = FSharpDependencyManager(outputDirectory, useResultsCache, null)
     new(outputDirectory: string option) = FSharpDependencyManager(outputDirectory, true)
 
     member _.Name = name
@@ -502,6 +516,8 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             | ".csx" -> "#r \""
             | _ -> "#r @\""
 
+        let dotnetHostPath = getDotnetHostPath sdkDirOverride
+
         let generateAndBuildProjectArtifacts =
             let resolutionHash =
                 FSharpDependencyManager.computeHashForResolutionInputs (
@@ -522,7 +538,8 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                         packageManagerTextLines,
                         targetFrameworkMoniker,
                         runtimeIdentifier,
-                        timeout
+                        timeout,
+                        dotnetHostPath
                     )
 
             match resolutionResult.resolutionsFile with
@@ -535,7 +552,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                 // We have succeeded to gather information -- generate script and copy the results to the cache
                 if not (fromCache) then
                     let generatedScriptBody =
-                        makeScriptFromReferences resolutionResult.references poundRprefix
+                        makeScriptFromReferences resolutionResult.references poundRprefix dotnetHostPath
 
                     emitFile generatedScriptPath generatedScriptBody
 

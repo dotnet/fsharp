@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #PInvoke 
-#light
+
 
 // Verify ability to map an F# function to a differently named Win32 method
 // via the 'EntryPoint' parameter.

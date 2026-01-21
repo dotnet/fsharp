@@ -352,7 +352,7 @@ type private IndexedList<'T>(itemLists: 'T list list, itemsByName: NameMultiMap<
 
 /// An InfoReader is an object to help us read and cache infos. 
 /// We create one of these for each file we typecheck. 
-type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
+type InfoReader(g: TcGlobals, amap: ImportMap) as this =
 
     /// Get the declared IL fields of a type, not including inherited fields
     let GetImmediateIntrinsicILFieldsOfType (optFilter, ad) m ty =
@@ -463,7 +463,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
              let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter, ad) m ty 
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty 
              match acc with 
-             | _ when not (isNil qinfos) -> Some(TraitItem (qinfos))
+             | _ when not (isNil qinfos) -> Some(TraitItem qinfos)
              | Some(MethodItem(inheritedMethSets)) when not (isNil minfos) -> Some(MethodItem (minfos :: inheritedMethSets))
              | _ when not (isNil minfos) -> Some(MethodItem [minfos])
              | Some(PropertyItem(inheritedPropSets)) when not (isNil pinfos) -> Some(PropertyItem(pinfos :: inheritedPropSets))
@@ -727,9 +727,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
     /// caches computations for monomorphic types.
 
-    let MakeInfoCache f (flagsEq : IEqualityComparer<_>) = 
+    let MakeInfoCache name f (flagsEq : IEqualityComparer<_>) = 
         MemoizationTable<_, _>
-             (compute=f,
+             (name, compute=f,
               // Only cache closed, monomorphic types (closed = all members for the type
               // have been processed). Generic type instantiations could be processed if we had 
               // a decent hash function for these.
@@ -775,6 +775,26 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
             ))
            g amap m AllowMultiIntfInstantiations.Yes ty
 
+    let GetUnimplementedStaticAbstractMemberOfTypeUncached (_flags, m, interfaceTy) =
+        if not (isInterfaceTy g interfaceTy) then
+            None
+        else
+            let checkMembersOfInterface (ty: TType) =
+                let meths = this.GetIntrinsicMethInfosOfType None AccessibleFromSomeFSharpCode AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
+                meths |> List.tryPick (fun (minfo: MethInfo) ->
+                    // Static abstract non-sealed (non-DIM) members
+                    if not minfo.IsInstance && minfo.IsAbstract && not minfo.IsFinal then
+                        Some minfo.DisplayNameCore
+                    else
+                        None
+                )
+
+            match checkMembersOfInterface interfaceTy with
+            | Some name -> Some name
+            | None ->
+                let baseInterfaces = AllInterfacesOfType g amap m AllowMultiIntfInstantiations.Yes interfaceTy
+                baseInterfaces |> List.tryPick checkMembersOfInterface
+
     let hashFlags0 = 
         { new IEqualityComparer<string option * AccessorDomain * AllowMultiIntfInstantiations> with 
                member _.GetHashCode((filter: string option, ad: AccessorDomain, _allowMultiIntfInst1)) = hash filter + AccessorDomain.CustomGetHashCode ad
@@ -796,25 +816,30 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let hashFlags3 = 
         { new IEqualityComparer<AccessorDomain> with 
                member _.GetHashCode((ad: AccessorDomain)) = AccessorDomain.CustomGetHashCode ad
-               member _.Equals((ad1), (ad2)) = nullSafeEquality ad1 ad2 (fun ad1 ad2 -> AccessorDomain.CustomEquals(g, ad1, ad2)) }
+               member _.Equals(ad1, ad2) = nullSafeEquality ad1 ad2 (fun ad1 ad2 -> AccessorDomain.CustomEquals(g, ad1, ad2)) }
                          
     let hashFlags4 = 
         { new IEqualityComparer<AccessorDomain * string> with 
                member _.GetHashCode((ad, nm)) = AccessorDomain.CustomGetHashCode ad + hash nm
                member _.Equals((ad1, nm1), (ad2, nm2)) = AccessorDomain.CustomEquals(g, ad1, ad2) && (nm1 = nm2) }
                          
-    let methodInfoCache = MakeInfoCache GetIntrinsicMethodSetsUncached hashFlags0
-    let propertyInfoCache = MakeInfoCache GetIntrinsicPropertySetsUncached hashFlags0
-    let recdOrClassFieldInfoCache =  MakeInfoCache GetIntrinsicRecdOrClassFieldInfosUncached hashFlags1
-    let ilFieldInfoCache = MakeInfoCache GetIntrinsicILFieldInfosUncached hashFlags1
-    let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
-    let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
-    let mostSpecificOverrideMethodInfoCache = MakeInfoCache GetIntrinsicMostSpecificOverrideMethodSetsUncached hashFlags0
+    let methodInfoCache = MakeInfoCache "methodInfoCache" GetIntrinsicMethodSetsUncached hashFlags0
+    let propertyInfoCache = MakeInfoCache "propertyInfoCache" GetIntrinsicPropertySetsUncached hashFlags0
+    let recdOrClassFieldInfoCache =  MakeInfoCache "recdOrClassFieldInfoCache" GetIntrinsicRecdOrClassFieldInfosUncached hashFlags1
+    let ilFieldInfoCache = MakeInfoCache "ilFieldInfoCache" GetIntrinsicILFieldInfosUncached hashFlags1
+    let eventInfoCache = MakeInfoCache "eventInfoCache" GetIntrinsicEventInfosUncached hashFlags1
+    let namedItemsCache = MakeInfoCache "namedItemsCache" GetIntrinsicNamedItemsUncached hashFlags2
+    let mostSpecificOverrideMethodInfoCache = MakeInfoCache "mostSpecificOverrideMethodInfoCache" GetIntrinsicMostSpecificOverrideMethodSetsUncached hashFlags0
 
-    let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierarchyUncached HashIdentity.Structural
-    let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierarchyUncached HashIdentity.Structural
-    let implicitConversionCache = MakeInfoCache FindImplicitConversionsUncached hashFlags3
-    let isInterfaceWithStaticAbstractMethodCache = MakeInfoCache IsInterfaceTypeWithMatchingStaticAbstractMemberUncached hashFlags4
+    let entireTypeHierarchyCache = MakeInfoCache "entireTypeHierarchyCache" GetEntireTypeHierarchyUncached HashIdentity.Structural
+    let primaryTypeHierarchyCache = MakeInfoCache "primaryTypeHierarchyCache" GetPrimaryTypeHierarchyUncached HashIdentity.Structural
+    let implicitConversionCache = MakeInfoCache "implicitConversionCache" FindImplicitConversionsUncached hashFlags3
+    let isInterfaceWithStaticAbstractMethodCache = MakeInfoCache "isInterfaceWithStaticAbstractMethodCache" IsInterfaceTypeWithMatchingStaticAbstractMemberUncached hashFlags4
+    let unimplementedStaticAbstractMemberCache =
+        MakeInfoCache
+            "unimplementedStaticAbstractMemberCache"
+            GetUnimplementedStaticAbstractMemberOfTypeUncached
+            hashFlags0
 
     // Runtime feature support
 
@@ -991,6 +1016,14 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     member _.IsInterfaceTypeWithMatchingStaticAbstractMember m nm ad ty = 
         isInterfaceWithStaticAbstractMethodCache.Apply((ad, nm), m, ty)
+
+    member _.TryFindUnimplementedStaticAbstractMemberOfType (m: range) (interfaceTy: TType) : string option =
+        if not (isInterfaceTy g interfaceTy) then
+            None
+        elif not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) then
+            None
+        else
+            unimplementedStaticAbstractMemberCache.Apply(((None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes), m, interfaceTy))
 
 let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then

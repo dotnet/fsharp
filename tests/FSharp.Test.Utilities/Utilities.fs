@@ -39,6 +39,29 @@ type FactForDESKTOPAttribute() =
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
 
+module SignedBuildSkip =
+    let isSignedBuild = System.Environment.GetEnvironmentVariable("SIGNTYPE") = "Real"
+    let skipMessage = "Test skipped on signed builds due to NuGet package restore restrictions"
+    
+    let skipIfSigned (attr: #FactAttribute) =
+        if isSignedBuild then
+            attr.Skip <- skipMessage
+
+type FactSkipOnSignedBuildAttribute() as this =
+    inherit FactAttribute()
+    do SignedBuildSkip.skipIfSigned this
+
+type TheorySkipOnSignedBuildAttribute() as this =
+    inherit TheoryAttribute()
+    do SignedBuildSkip.skipIfSigned this
+
+type FactForNETCOREAPPSkipOnSignedBuildAttribute() as this =
+    inherit FactAttribute()
+    do SignedBuildSkip.skipIfSigned this
+    #if !NETCOREAPP    
+    do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
+    #endif
+
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 
@@ -165,8 +188,8 @@ open System
 let main argv = 0"""
 
         let private getNetCoreAppReferences =
-            let mutable output = [||]
-            let mutable errors = [||]
+            let mutable output = ""
+            let mutable errors = ""
             let mutable cleanUp = true
             let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
             if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "CompilerAssert did not find artifacts directory --- has the location changed????"
@@ -196,17 +219,15 @@ let main argv = 0"""
                         errors <- dotneterrors
                         output <- dotnetoutput
                         printfn "Output:\n=======\n"
-                        output |> Seq.iter(fun line -> printfn "STDOUT:%s\n" line)
+                        printfn "%s" dotnetoutput
                         printfn "Errors:\n=======\n"
-                        errors  |> Seq.iter(fun line -> printfn "STDERR:%s\n" line)
+                        printfn "%s" dotneterrors
                         Assert.True(false, "Errors produced generating References")
 
                     File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
                 with | e ->
                     cleanUp <- false
                     let message =
-                        let output = output |> String.concat "\nSTDOUT: "
-                        let errors = errors |> String.concat "\nSTDERR: "
                         File.WriteAllText(Path.Combine(projectDirectory, "project.stdout"), output)
                         File.WriteAllText(Path.Combine(projectDirectory, "project.stderror"), errors)
                         $"""                        
