@@ -1268,23 +1268,10 @@ let result = Example.Process(value)
     // ============================================================================
 
     [<Fact>]
-    let ``Example 15 - Constrained vs unconstrained type variable - not yet supported`` () =
-        // ============================================================================
-        // DEFERRED FEATURE: Constraint Specificity Comparison (RFC Example 15)
-        // ============================================================================
-        // RFC section-examples.md Example 15 proposes: 
-        //   'T when 'T :> IComparable<int> should beat 'T when 'T :> IComparable
-        //
-        // LIMITATION: F# does not allow overloading based solely on type constraints.
-        // Methods with same name and same parameter structure (differing only in constraints)
-        // now result in ambiguity at call site (FS0041) since the concreteness tiebreaker
-        // does not compare constraint counts (which was removed to fix SRTP issues).
-        //
-        // This test documents current F# behavior. Constraint specificity comparison
-        // requires a future F# language enhancement to allow constraint-based overloading.
-        //
-        // See VISION.md "What is NOT Done" for tracking.
-        // ============================================================================
+    let ``Example 15 - Constrained vs unconstrained type variable - constrained wins`` () =
+        // RFC section-examples.md Example 15:
+        // A type variable with more constraints is more concrete than one with fewer constraints.
+        // The constrained overload ('t :> IComparable) should be selected over the unconstrained one.
         FSharp """
 module Test
 
@@ -1297,8 +1284,7 @@ type Example =
 let result = Example.Compare(42)
         """
         |> typecheck
-        |> shouldFail
-        |> withErrorCode 41 // FS0041: Ambiguous overload (constraints don't break ties)
+        |> shouldSucceed
         |> ignore
 
     [<Fact>]

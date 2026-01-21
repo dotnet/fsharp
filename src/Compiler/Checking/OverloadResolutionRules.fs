@@ -58,6 +58,30 @@ let aggregateComparisons (comparisons: int list) =
     elif not hasPositive && hasNegative then -1
     else 0
 
+/// Count the effective constraints on a type parameter for concreteness comparison.
+/// Counts: CoercesTo (:>), IsNonNullableStruct, IsReferenceType, MayResolveMember, 
+/// RequiresDefaultConstructor, IsEnum, IsDelegate, IsUnmanaged, SupportsComparison, SupportsEquality
+let countTypeParamConstraints (tp: Typar) =
+    tp.Constraints
+    |> List.sumBy (function
+        | TyparConstraint.CoercesTo _ -> 1
+        | TyparConstraint.IsNonNullableStruct _ -> 1
+        | TyparConstraint.IsReferenceType _ -> 1
+        | TyparConstraint.MayResolveMember _ -> 1
+        | TyparConstraint.RequiresDefaultConstructor _ -> 1
+        | TyparConstraint.IsEnum _ -> 1
+        | TyparConstraint.IsDelegate _ -> 1
+        | TyparConstraint.IsUnmanaged _ -> 1
+        | TyparConstraint.SupportsComparison _ -> 1
+        | TyparConstraint.SupportsEquality _ -> 1
+        // Don't count: DefaultsTo (inference-only), SupportsNull, NotSupportsNull (nullability), 
+        // SimpleChoice (printf-specific), AllowsRefStruct (anti-constraint)
+        | TyparConstraint.DefaultsTo _ -> 0
+        | TyparConstraint.SupportsNull _ -> 0
+        | TyparConstraint.NotSupportsNull _ -> 0
+        | TyparConstraint.SimpleChoice _ -> 0
+        | TyparConstraint.AllowsRefStruct _ -> 0)
+
 /// Compare types under the "more concrete" partial ordering.
 /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
 let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
@@ -65,10 +89,13 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     let sty2 = stripTyEqns g ty2
 
     match sty1, sty2 with
-    // Case 1: Both are type variables - incomparable
-    // RFC Example 15 (constraint specificity) is deferred due to F# language limitation (FS0438).
-    // Comparing constraint counts would incorrectly affect SRTP resolution.
-    | TType_var _, TType_var _ -> 0
+    // Case 1: Both are type variables - compare constraint counts (RFC section-algorithm.md lines 136-146)
+    | TType_var(tp1, _), TType_var(tp2, _) ->
+        let c1 = countTypeParamConstraints tp1
+        let c2 = countTypeParamConstraints tp2
+        if c1 > c2 then 1
+        elif c2 > c1 then -1
+        else 0
 
     // Case 2: Type variable vs concrete type - concrete is more concrete
     | TType_var _, _ -> -1
