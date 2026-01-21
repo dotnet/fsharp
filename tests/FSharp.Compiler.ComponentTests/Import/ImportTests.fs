@@ -156,10 +156,13 @@ let b3 = new Blah<int list,string list>()
 
     // ========================================
     // C# Extension Methods Tests
+    // Migrated from: tests/fsharpqa/Source/Import/em_csharp_*.fs
+    // Regression tests for FSHARP1.0:1494 - F# can import C# extension methods
     // ========================================
     
     [<Fact>]
-    let ``Extension methods - F# can call C# extension method on struct`` () =
+    let ``Extension methods - F# can call C# extension method on struct with void return`` () =
+        // Migrated from em_csharp_struct_void.fs
         let csLib =
             CSharp """
 public struct S { }
@@ -167,16 +170,14 @@ public struct S { }
 public static class ExtMethods
 {
     public static void M3(this S s, decimal d1, float f1) { }
-    public static decimal M1(this S s, decimal d1, float f1) { return d1; }
 }
 """
-            |> withName "csExtMethods"
+            |> withName "csExtStructVoid"
         
         FSharp """
 module M
 let s = S()
 s.M3(1.0M, 0.3f)
-let _ : decimal = s.M1(1.0M, 0.3f)
 """
         |> asLibrary
         |> withReferences [csLib]
@@ -185,7 +186,58 @@ let _ : decimal = s.M1(1.0M, 0.3f)
         |> ignore
 
     [<Fact>]
-    let ``Extension methods - F# can call C# extension method on class`` () =
+    let ``Extension methods - F# can call C# extension method on struct with nonvoid return`` () =
+        // Migrated from em_csharp_struct_nonvoid.fs
+        let csLib =
+            CSharp """
+public struct S { }
+
+public static class ExtMethods
+{
+    public static decimal M1(this S s, decimal d1, float f1) { return d1; }
+}
+"""
+            |> withName "csExtStructNonvoid"
+        
+        FSharp """
+module M
+let s = S()
+s.M1(1.2M, 0.3f) |> ignore
+"""
+        |> asLibrary
+        |> withReferences [csLib]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Extension methods - F# can call C# extension method on struct with params array`` () =
+        // Migrated from em_csharp_struct_params.fs
+        let csLib =
+            CSharp """
+public struct S { }
+
+public static class ExtMethods
+{
+    public static void M3(this S s, params decimal[] d) { }
+}
+"""
+            |> withName "csExtStructParams"
+        
+        FSharp """
+module M
+let s = S()
+s.M3([|1.0M; -2.0M|]) |> ignore
+"""
+        |> asLibrary
+        |> withReferences [csLib]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Extension methods - F# can call C# extension method on class with void return`` () =
+        // Migrated from em_csharp_class_void.fs
         let csLib =
             CSharp """
 public class C { }
@@ -193,16 +245,79 @@ public class C { }
 public static class ExtMethods
 {
     public static void M4(this C c, decimal d1, float f1) { }
-    public static decimal M2(this C c, decimal d1, float f1) { return -d1; }
 }
 """
-            |> withName "csExtMethods"
+            |> withName "csExtClassVoid"
         
         FSharp """
 module M
-let c = C()
-c.M4(1.0M, 0.3f)
-let _ : decimal = c.M2(1.0M, 0.3f)
+
+type T() = class 
+            inherit C()
+           end
+
+let t = T()
+t.M4(1.0M, 0.3f)
+"""
+        |> asLibrary
+        |> withReferences [csLib]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Extension methods - F# can call C# extension method on class with nonvoid return`` () =
+        // Migrated from em_csharp_class_nonvoid.fs
+        let csLib =
+            CSharp """
+public class C { }
+
+public static class ExtMethods
+{
+    public static decimal M4(this C c, decimal d1, float f1) { return d1 + (decimal)f1; }
+}
+"""
+            |> withName "csExtClassNonvoid"
+        
+        FSharp """
+module M
+
+type T() = class 
+            inherit C()
+           end
+
+let t = T()
+t.M4(1.0M, 0.3f) |> ignore
+"""
+        |> asLibrary
+        |> withReferences [csLib]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Extension methods - F# can call C# extension method on class with params array`` () =
+        // Migrated from em_csharp_class_params.fs
+        let csLib =
+            CSharp """
+public class C { }
+
+public static class ExtMethods
+{
+    public static void M4(this C c, params decimal[] d) { }
+}
+"""
+            |> withName "csExtClassParams"
+        
+        FSharp """
+module M
+
+type T() = class 
+            inherit C()
+           end
+
+let t = T()
+t.M4([|1.0M; -2.0M|]) |> ignore
 """
         |> asLibrary
         |> withReferences [csLib]
@@ -212,20 +327,20 @@ let _ : decimal = c.M2(1.0M, 0.3f)
 
     // ========================================
     // C# Extension Methods on F# Types Tests
+    // Migrated from: tests/fsharpqa/Source/Import/em_csharp_on_fsharp_1.fs, em_csharp_on_fsharp_2.fs
+    // Feature test for Bug51669 - F# can import C# extension methods on F# types
     // ========================================
     
     [<Fact>]
-    let ``Extension methods on F# types - C# extensions work on F# types`` () =
+    let ``Extension methods on F# types - C# extensions work on F# class type (FooA)`` () =
+        // Migrated from em_csharp_on_fsharp_1.fs
         let fsLib =
             FSharp """
 namespace BaseEmFs
 
 type FooA() = class end
-
-type FooB(x:int) =
-    member this.Value = x
 """
-            |> withName "fsBase"
+            |> withName "fsBaseA"
         
         let csLib =
             CSharp """
@@ -236,12 +351,12 @@ namespace EmLibCs
     public static class EmOnFs
     {
         public static void M1A(this FooA foo) { }
+        public static string M2A(this FooA foo, string s) { return s; }
         public static int M3A(this FooA foo, int x) { return x; }
-        public static int M3B(this FooB foo, int x) { return foo.Value + x; }
     }
 }
 """
-            |> withName "csEmLibCs"
+            |> withName "csEmLibCsA"
             |> withReferences [fsLib]
         
         FSharp """
@@ -250,12 +365,56 @@ module M
 open BaseEmFs
 open EmLibCs
 
-let fooA = FooA()
-fooA.M1A() |> ignore
-fooA.M3A(5) |> ignore
+let foo = FooA()
+foo.M1A() |> ignore
+foo.M2A("hello") |> ignore
+foo.M3A(5) |> ignore
+"""
+        |> asLibrary
+        |> withReferences [fsLib; csLib]
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
-let fooB = FooB(10)
-fooB.M3B(5) |> ignore
+    [<Fact>]
+    let ``Extension methods on F# types - C# extensions work on F# class type with constructor (FooB)`` () =
+        // Migrated from em_csharp_on_fsharp_2.fs
+        let fsLib =
+            FSharp """
+namespace BaseEmFs
+
+type FooB(x:int) =
+    member this.Value = x
+"""
+            |> withName "fsBaseB"
+        
+        let csLib =
+            CSharp """
+using BaseEmFs;
+
+namespace EmLibCs
+{
+    public static class EmOnFs
+    {
+        public static void M1B(this FooB foo) { }
+        public static string M2B(this FooB foo, string s) { return s; }
+        public static int M3B(this FooB foo, int x) { return foo.Value + x; }
+    }
+}
+"""
+            |> withName "csEmLibCsB"
+            |> withReferences [fsLib]
+        
+        FSharp """
+module M
+
+open BaseEmFs
+open EmLibCs
+
+let foo = FooB(10)
+foo.M1B() |> ignore
+foo.M2B("hello") |> ignore
+foo.M3B(5) |> ignore
 """
         |> asLibrary
         |> withReferences [fsLib; csLib]
