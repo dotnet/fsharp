@@ -7,47 +7,19 @@ Tools for investigating F# compiler performance issues, especially method resolu
 ```powershell
 cd .copilot/skills/perf-tools
 
-# Generate test project (100 untyped Assert.Equal calls)
-dotnet fsi PerfTestGenerator.fsx --total 100 --untyped
-
-# Profile compilation timing
-dotnet fsi PerfProfiler.fsx --total 1500
-
-# Full orchestrated workflow (Windows)
-.\RunPerfAnalysis.ps1 -Total 1500
-
-# Full orchestrated workflow (Unix)
-./RunPerfAnalysis.sh --total 1500
+# Profile compilation timing (generates test projects and compares typed vs untyped)
+dotnet fsi PerfProfiler.fsx --total 1500 --output ./results
 ```
 
 ## Script Reference
 
 | Script | Purpose | Key Options |
 |--------|---------|-------------|
-| `PerfTestGenerator.fsx` | Generate xUnit test projects | `--total`, `--typed`/`--untyped`, `--methods`, `--output` |
 | `PerfProfiler.fsx` | Profile compilation timing | `--total`, `--methods`, `--output` |
-| `RunPerfAnalysis.ps1` | Orchestration (Windows) | `-Total`, `-Methods`, `-Output` |
-| `RunPerfAnalysis.sh` | Orchestration (Unix) | `--total`, `--methods`, `--output` |
-
-### PerfTestGenerator.fsx
-
-Generates F# xUnit projects with `Assert.Equal` calls for profiling overload resolution.
-
-```bash
-dotnet fsi PerfTestGenerator.fsx --total 100 --untyped   # Slow path (overload resolution)
-dotnet fsi PerfTestGenerator.fsx --total 1500 --typed    # Fast path (explicit type)
-```
-
-**Options:**
-- `--total <n>` - Number of Assert.Equal calls (default: 1500)
-- `--methods <n>` - Number of test methods (default: 10)
-- `--typed` - Use `Assert.Equal<T>()` (fast path)
-- `--untyped` - Use `Assert.Equal()` (slow path, default)
-- `--output <dir>` - Output directory (default: ./generated)
 
 ### PerfProfiler.fsx
 
-Profiles compilation of typed vs untyped projects and compares timing.
+Generates test projects and profiles compilation of typed vs untyped patterns.
 
 ```bash
 dotnet fsi PerfProfiler.fsx --total 1500 --output ./results
@@ -116,18 +88,12 @@ Caches (MethodGroup + ArgTypes) → ResolvedMethod:
 
 ## Profiling Workflow
 
-1. **Generate test projects:**
+1. **Run profiler (generates projects and compiles):**
    ```bash
-   dotnet fsi PerfTestGenerator.fsx --total 1500 --untyped
-   dotnet fsi PerfTestGenerator.fsx --total 1500 --typed
+   dotnet fsi PerfProfiler.fsx --total 1500 --output ./results
    ```
 
-2. **Profile compilation:**
-   ```bash
-   dotnet fsi PerfProfiler.fsx --total 1500
-   ```
-
-3. **Analyze results:**
+2. **Analyze results:**
    - Check `results/summary.txt` for timing comparison
    - Ratio near 1.0 indicates optimizations working
    - Time per call < 1ms is target
