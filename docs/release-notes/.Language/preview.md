@@ -1,6 +1,6 @@
 ### Added
 
-* Added "Most Concrete" tiebreaker for overload resolution (RFC FS-XXXX). When multiple method overloads match, the overload with more concrete type parameters wins. ([PR #NNNNN](https://github.com/dotnet/fsharp/pull/NNNNN))
+* Added "Most Concrete" tiebreaker for overload resolution (RFC FS-XXXX). When multiple method overloads match, the overload with more concrete type parameters wins. ([PR TBD - insert PR number at merge time](https://github.com/dotnet/fsharp/pull/))
 * Better generic unmanaged structs handling. ([Language suggestion #692](https://github.com/fsharp/fslang-suggestions/issues/692), [PR #12154](https://github.com/dotnet/fsharp/pull/12154))
 * Deprecate places where `seq` can be omitted. ([Language suggestion #1033](https://github.com/fsharp/fslang-suggestions/issues/1033), [PR #17772](https://github.com/dotnet/fsharp/pull/17772))
 * Added type conversions cache, only enabled for compiler runs ([PR#17668](https://github.com/dotnet/fsharp/pull/17668))

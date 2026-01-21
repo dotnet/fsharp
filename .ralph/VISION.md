@@ -23,7 +23,7 @@ Ensure 100% compliance with the RFC specification for the "Most Concrete" tiebre
 | Gap | Status | Details |
 |-----|--------|---------|
 | FS3576/FS3571 diagnostic | ✅ DONE | Implemented and tested (4 new tests) |
-| Release notes placeholders | ⚠️ PLACEHOLDER | `#NNNNN` appears in both release notes files |
+| Release notes placeholders | ✅ DONE | Updated to `[PR TBD - insert PR number at merge time]` |
 | Full test verification | ⚠️ 2 PRE-EXISTING FAILURES | Constraint overloading tests fail with FS0438 (not FS3576 related) |
 
 ### Warning Number Mapping
@@ -49,7 +49,7 @@ The numbering deviation is acceptable - what matters is functionality.
 4. ✅ Enhanced FS0041 error message for incomparable types
 5. ✅ Informational diagnostic FS3575 when tiebreaker used
 6. ✅ FS3576 diagnostic for multiple candidates compared (implemented Sprint 1)
-7. ⬜ Release notes with valid PR references (or placeholder awareness)
+7. ✅ Release notes with valid PR references (or placeholder awareness)
 8. ⚠️ Full test suite passes (2 pre-existing constraint overloading test failures - FS0438)
 9. ✅ Rule engine pattern (no if-then chains)
 10. ⬜ Formatting clean
