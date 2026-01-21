@@ -385,7 +385,7 @@ module DeclarationListHelpers =
                             // on types/members. The doc comments for the actual member will still
                             // be shown in the tip.
                             showDocumentation = false  }
-            let layout = layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
+            let layout = NicePrint.layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
             let layout = PrintUtilities.squashToWidth width layout
             let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = toArray layout

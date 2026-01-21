@@ -536,6 +536,96 @@ let doIt(myAction : Action<int>) = myAc{caret}tion.Invoke(42)
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo ("""val myAction: Action<int>""" |> normalize)
+    
+// Tests for direct interfaces in tooltips
+[<Fact>]
+let ``Tooltip for class with multiple direct interfaces shows all direct interfaces`` () =
+    let tooltipText =
+        Checker.getTooltip """
+module DirectInterfaces
+
+// Define multiple interfaces
+type IA =
+    abstract DoA: unit -> unit
+
+type IB =
+    abstract DoB: unit -> unit
+
+// Class implementing multiple interfaces
+type ClassWithMultipleIn{caret}terfaces() =
+    interface IA with
+        member _.DoA() = ()
+    interface IB with
+        member _.DoB() = ()
+"""
+        |> assertAndGetSingleToolTipText
+    
+    // Verify both direct interfaces are shown
+    tooltipText |> Assert.shouldContain "interface IA"
+    tooltipText |> Assert.shouldContain "interface IB"
+
+[<Fact>]
+let ``Tooltip for class implementing interface chain shows only direct interface`` () =
+    let tooltipText =
+        Checker.getTooltip """
+module InterfaceChain
+
+// Define chained interfaces
+type IX =
+    abstract DoX: unit -> unit
+
+type IY =
+    inherit IX
+    abstract DoY: unit -> unit
+
+// Class implementing the most derived interface
+type ClassWithChained{caret}Interface() =
+    interface IY with
+        member _.DoY() = ()
+        member _.DoX() = ()
+"""
+        |> assertAndGetSingleToolTipText
+    
+    // Verify only direct interface is shown
+    tooltipText |> Assert.shouldContain "interface IY"
+    Assert.DoesNotContain("interface IX", tooltipText)
+
+[<Fact>]
+let ``Tooltip for class with combined interface hierarchy shows only direct interfaces`` () =
+    let tooltipText =
+        Checker.getTooltip """
+module CombinedHierarchy
+
+// Base interfaces
+type IBase1 =
+    abstract DoBase1: unit -> unit
+
+type IBase2 =
+    abstract DoBase2: unit -> unit
+
+// Derived interfaces
+type IDerived1 =
+    inherit IBase1
+    abstract DoDerived1: unit -> unit
+
+type IDerived2 =
+    inherit IBase2
+    abstract DoDerived2: unit -> unit
+
+// Class implementing multiple interfaces, some in a chain
+type Complex{caret}Class() =
+    interface IDerived1 with
+        member _.DoDerived1() = ()
+        member _.DoBase1() = ()
+    interface IBase2 with
+        member _.DoBase2() = ()
+"""
+        |> assertAndGetSingleToolTipText
+    
+    // Verify only direct interfaces are shown
+    tooltipText |> Assert.shouldContain "interface IDerived1"
+    tooltipText |> Assert.shouldContain "interface IBase2"
+    Assert.DoesNotContain("interface IBase1", tooltipText)
 
 [<Fact>]
 let ``Super type should be formatted in the prefix style`` () =
