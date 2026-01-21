@@ -4,7 +4,7 @@
 open System.IO
 open System.Diagnostics
 
-let releaseOrDebug = "Debug"
+let releaseOrDebug = "Release"
 let setEnvVar name value =
     System.Environment.SetEnvironmentVariable(name, value)
 
@@ -60,4 +60,8 @@ let runPerl arguments =
 
 let testResultDir = Path.Combine(rootFolder, "tests", "TestResults")
 let perlScript = Path.Combine(rootFolder, "tests", "fsharpqa", "testenv", "bin", "runall.pl")
-runPerl [|perlScript; "-resultsroot";testResultDir ;"-ttags:gcc"|]
+
+if not (System.IO.Directory. Exists(testResultDir)) then
+    System.IO.Directory.CreateDirectory(testResultDir) |> ignore
+
+runPerl [|perlScript; "-resultsroot";testResultDir ;"-ttags:help"|]

@@ -992,6 +992,11 @@
         <target state="new">Compress interface and optimization data files ({0} by default)</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsDisableLanguageFeature">
+        <source>Disable a specific language feature by name.</source>
+        <target state="new">Disable a specific language feature by name.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsGetLangVersions">
         <source>Display the allowed values for language version.</source>
         <target state="translated">顯示語言版本的允許值。</target>
@@ -1075,6 +1080,11 @@
       <trans-unit id="optsUnknownSignatureData">
         <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</source>
         <target state="translated">--interfacedata 的 '{0}' 值無效，有效值為: none、file、compress。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageFeature">
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -2025,6 +2035,11 @@
       <trans-unit id="xmlDocMissingParameterName">
         <source>This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</source>
         <target state="translated">此 XML 註解無效: 參數或參數參考沒有 'name' 屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocNotFirstOnLine">
+        <source>XML documentation comments should be the first non-whitespace text on a line.</source>
+        <target state="new">XML documentation comments should be the first non-whitespace text on a line.</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
