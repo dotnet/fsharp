@@ -70,20 +70,22 @@ The feature is gated behind `LanguageFeature.MoreConcreteTiebreaker`:
 ## Test Coverage
 
 The test suite (`tests/FSharp.Compiler.ComponentTests/Conformance/Tiebreakers/TiebreakerTests.fs`) covers:
-- RFC Examples 1-14 (Example 15 deferred due to F# language limitation FS0438)
+- RFC Examples 1-15 (all examples implemented)
 - Edge cases: nested generics, partial concreteness, incomparable types
 - Orthogonal scenarios: byref/Span, extension methods, optional/ParamArray, SRTP
 - Interaction with TDCs (type-directed conversions)
 
-## Known Limitations
+## Implementation Notes
 
-### Example 15: Constraint Specificity (Deferred)
+### Example 15: Constraint Count Comparison
 
-The RFC proposes that `'t :> IComparable<int>` should beat `'t :> IComparable`. However, F# does not allow overloading methods that differ only in generic constraints (FS0438). This is a language limitation, not an implementation gap.
+The RFC specifies that type variables with more constraints should be considered more concrete than type variables with fewer constraints. This is implemented in `OverloadResolutionRules.fs` via the `countTypeParamConstraints` helper function, which counts:
+- Type constraints (`:>`)
+- Struct/reference type constraints
+- Member constraints
+- Nullness/default constraints
 
-### Enhanced FS0041 Error Message (Future Work)
-
-The RFC proposes enhanced error messages that explain WHY types are incomparable. This is a UX enhancement for future work.
+Note: While F# does not allow overloading methods that differ only in generic constraints (FS0438), this comparison is still needed for C# interop where such overloads may exist.
 
 ## Release Notes
 
