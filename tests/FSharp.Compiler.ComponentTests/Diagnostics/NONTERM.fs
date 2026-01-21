@@ -153,7 +153,7 @@ module NONTERM =
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/NONTERM", Includes=[|"quoteExpr01.fs"|])>]
     let ``quoteExpr01_fs`` compilation =
         compilation
-        |> withOptions ["--langversion:5.0"; "--test:ErrorRanges"]
+        |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
         |> withWarningCode 0020
@@ -163,7 +163,7 @@ module NONTERM =
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/NONTERM", Includes=[|"quoteExpr01b.fs"|])>]
     let ``quoteExpr01b_fs`` compilation =
         compilation
-        |> withOptions ["--langversion:5.0"; "--test:ErrorRanges"]
+        |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
         |> withWarningCode 0020
@@ -174,7 +174,7 @@ module NONTERM =
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/NONTERM", Includes=[|"braceExpr01.fs"|])>]
     let ``braceExpr01_fs`` compilation =
         compilation
-        |> withOptions ["--langversion:5.0"; "--test:ErrorRanges"]
+        |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
         |> withErrorCode 0010
@@ -184,7 +184,7 @@ module NONTERM =
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/NONTERM", Includes=[|"braceExpr01b.fs"|])>]
     let ``braceExpr01b_fs`` compilation =
         compilation
-        |> withOptions ["--langversion:5.0"; "--test:ErrorRanges"]
+        |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
         |> withErrorCode 0010
@@ -299,11 +299,11 @@ module NONTERM =
         |> withDiagnosticMessageDoesntMatch "NONTERM"
         |> ignore
 
-    // typedSeqExprBlock01b.fs - Same test with langversion:5.0 --mlcompatibility, verify NONTERM not in message
+    // typedSeqExprBlock01b.fs - Same test with --mlcompatibility, verify NONTERM not in message
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/NONTERM", Includes=[|"typedSeqExprBlock01b.fs"|])>]
     let ``typedSeqExprBlock01b_fs`` compilation =
         compilation
-        |> withOptions ["--langversion:5.0"; "--mlcompatibility"]
+        |> withOptions ["--mlcompatibility"]
         |> typecheck
         |> shouldFail
         |> withErrorCode 3524
