@@ -28,6 +28,7 @@
     <Compile Include="Checker.fs" />
     <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />
+    <Compile Include="BreakpointLocationTests.fs" />
     <Compile Include="AssemblyReaderShim.fs" />
     <Compile Include="ModuleReaderCancellationTests.fs" />
     <Compile Include="EditorTests.fs" />
@@ -53,6 +54,7 @@
     <Compile Include="RangeTests.fs" />
     <Compile Include="TooltipTests.fs" />
     <Compile Include="TokenizerTests.fs" />
+    <Compile Include="QuickParseTests.fs" />
     <Compile Include="CompilerTestHelpers.fs" />
     <Compile Include="ManglingNameOfProvidedTypes.fs" />
     <Compile Include="HashIfExpression.fs" />

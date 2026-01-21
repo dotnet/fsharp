@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #Structs 
-#light
+
 
 // FSB 1281, Indexed Item property on structs with get and set gives System.AccessViolationException in fsi
 

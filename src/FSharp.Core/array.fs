@@ -5,11 +5,9 @@ namespace Microsoft.FSharp.Collections
 //#nowarn "1118" // 'Make' marked 'inline', perhaps because a recursive value was marked 'inline'
 
 open System
-open System.Diagnostics
 open System.Collections.Generic
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
@@ -67,7 +65,7 @@ module Array =
         let array: 'T array =
             Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
-        for i = 0 to Operators.Checked.(-) array.Length 1 do // use checked arithmetic here to satisfy FxCop
+        for i = 0 to Checked.(-) array.Length 1 do // use checked arithmetic here to satisfy FxCop
             array.[i] <- value
 
         array
@@ -891,7 +889,7 @@ module Array =
 
                     if batchCount <> 0 then
                         let batchSize = batchCount * 0x20
-                        System.Array.Copy(src, srcIdx - batchSize, dst, dstIdx, batchSize)
+                        Array.Copy(src, srcIdx - batchSize, dst, dstIdx, batchSize)
                         dstIdx <- dstIdx + batchSize
                         batchCount <- 0
 
@@ -1027,7 +1025,7 @@ module Array =
             if batchCount <> 0 then
                 let srcIdx = maskArray.Length * 0x20
                 let batchSize = batchCount * 0x20
-                System.Array.Copy(src, srcIdx - batchSize, dst, dstIdx, batchSize)
+                Array.Copy(src, srcIdx - batchSize, dst, dstIdx, batchSize)
                 dstIdx <- dstIdx + batchSize
 
             dstIdx
@@ -2215,7 +2213,7 @@ module Array =
         [<CompiledName("TryPick")>]
         let tryPick chooser (array: _ array) =
             checkNonNull "array" array
-            let allChosen = System.Collections.Concurrent.ConcurrentDictionary()
+            let allChosen = ConcurrentDictionary()
 
             let pResult =
                 Parallel.For(
@@ -2258,7 +2256,7 @@ module Array =
                         isChosen.[i] <- true
                         results.[i] <- v
                         count + 1),
-                Action<int>(fun x -> System.Threading.Interlocked.Add(&outputLength, x) |> ignore)
+                Action<int>(fun x -> Interlocked.Add(&outputLength, x) |> ignore)
             )
             |> ignore
 
@@ -2402,7 +2400,7 @@ module Array =
             if array.Length = 0 then
                 LanguagePrimitives.GenericZero
             else
-                array |> reduceBy projection Operators.Checked.(+)
+                array |> reduceBy projection Checked.(+)
 
         [<CompiledName("Sum")>]
         let inline sum (array: ^T array) : ^T =
@@ -2421,8 +2419,8 @@ module Array =
 
         [<CompiledName("AverageBy")>]
         let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T array) : ^U =
-            let sum = array |> reduceBy projection Operators.Checked.(+)
-            LanguagePrimitives.DivideByInt sum (array.Length)
+            let sum = array |> reduceBy projection Checked.(+)
+            LanguagePrimitives.DivideByInt sum array.Length
 
         [<CompiledName("Average")>]
         let inline average (array: 'T array) =
@@ -2460,13 +2458,13 @@ module Array =
             (array: 'T array)
             =
             let counts =
-                new ConcurrentDictionary<_, _>(
+                ConcurrentDictionary<_, _>(
                     concurrencyLevel = maxPartitions,
-                    capacity = Operators.min (array.Length) 1_000,
+                    capacity = Operators.min array.Length 1_000,
                     comparer = comparer
                 )
 
-            let valueFactory = new Func<_, _>(fun _ -> ref 0)
+            let valueFactory = Func<_, _>(fun _ -> ref 0)
 
             let projectedValues =
                 Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
@@ -2493,7 +2491,7 @@ module Array =
             let mutable finalIdx = 0
 
             let finalResultsLookup =
-                new Dictionary<'SafeKey, int ref * 'T array>(capacity = counts.Count, comparer = comparer)
+                Dictionary<'SafeKey, int ref * 'T array>(capacity = counts.Count, comparer = comparer)
 
             for kvp in counts do
                 let arrayForThisGroup =
@@ -2511,7 +2509,7 @@ module Array =
 
                     for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
                         let key = projectedValues[elemIdx]
-                        let (counter, arrayForThisGroup) = finalResultsLookup[key]
+                        let counter, arrayForThisGroup = finalResultsLookup[key]
                         let idxToWrite = Interlocked.Decrement(counter)
                         arrayForThisGroup[idxToWrite] <- array[elemIdx]
             )
@@ -2525,9 +2523,7 @@ module Array =
             // Here we  enforce nan=nan equality to prevent throwing
             if typeof<'Key> = typeof<float> || typeof<'Key> = typeof<float32> then
                 let genericCmp =
-                    HashIdentity.FromFunctions<'Key>
-                        (LanguagePrimitives.GenericHash)
-                        (LanguagePrimitives.GenericEqualityER)
+                    HashIdentity.FromFunctions<'Key> LanguagePrimitives.GenericHash LanguagePrimitives.GenericEqualityER
 
                 groupByImplParallel genericCmp keyf id array
             else
@@ -2587,7 +2583,7 @@ module Array =
                         trueCount + 1
                     else
                         trueCount),
-                Action<int>(fun x -> System.Threading.Interlocked.Add(&trueLength, x) |> ignore)
+                Action<int>(fun x -> Interlocked.Add(&trueLength, x) |> ignore)
             )
             |> ignore
 
@@ -2678,8 +2674,8 @@ module Array =
             while cmpWithPivot rightIdx <= 0 && rightIdx < lastIdx do
                 rightIdx <- rightIdx + 1
 
-            new ArraySegment<_>(orig.Array, offset = orig.Offset, count = leftIdx - orig.Offset + 1),
-            new ArraySegment<_>(orig.Array, offset = rightIdx, count = lastIdx - rightIdx + 1)
+            ArraySegment<_>(orig.Array, offset = orig.Offset, count = leftIdx - orig.Offset + 1),
+            ArraySegment<_>(orig.Array, offset = rightIdx, count = lastIdx - rightIdx + 1)
 
         let partitionIntoTwoUsingComparer
             (cmp: 'T -> 'T -> int)
@@ -2745,7 +2741,7 @@ module Array =
                         sortChunk right (freeWorkers - workersForLeftTask)
                         leftTask.Wait()
 
-            let bigSegment = new ArraySegment<_>(array, 0, array.Length)
+            let bigSegment = ArraySegment<_>(array, 0, array.Length)
             sortChunk bigSegment maxPartitions
 
         let sortInPlaceWithHelper

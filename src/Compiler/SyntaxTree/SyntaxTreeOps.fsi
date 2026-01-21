@@ -47,6 +47,9 @@ val pushUnaryArg: expr: SynExpr -> arg: Ident -> SynExpr
 
 val inline findSynAttribute: attrName: string -> synAttrs: SynAttributes -> bool
 
+[<return: Struct>]
+val (|LetOrUse|_|): expr: SynExpr -> (SynLetOrUse * bool * bool) voption
+
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 [<return: Struct>]
 val (|LongOrSingleIdent|_|):
@@ -153,8 +156,6 @@ val mkSynQMarkSet: m: range -> a: SynExpr -> b: SynExpr -> c: SynExpr -> SynExpr
 //val mkSynDotBrackSliceGet: m:range -> mDot:range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
 
 //val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
-
-val mkSynDotParenGet: mLhs: range -> mDot: range -> a: SynExpr -> b: SynExpr -> SynExpr
 
 val mkSynUnit: m: range -> SynExpr
 
@@ -374,8 +375,7 @@ val (|TypesForTypar|): t: SynType -> SynType list
 [<return: Struct>]
 val (|Get_OrSet_Ident|_|): Ident -> unit voption
 
-val getGetterSetterAccess:
-    SynValSigAccess -> SynMemberKind -> Features.LanguageVersion -> SynAccess option * SynAccess option
+val getGetterSetterAccess: SynValSigAccess -> SynMemberKind -> LanguageVersion -> SynAccess option * SynAccess option
 
 /// Adds SynPat.Or pattern for unfinished empty clause above
 val addEmptyMatchClause: mBar1: range -> mBar2: range -> clauses: SynMatchClause list -> SynMatchClause list

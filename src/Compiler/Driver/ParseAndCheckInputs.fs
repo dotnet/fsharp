@@ -24,7 +24,6 @@ open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.LexerStore
 open FSharp.Compiler.Lexhelp
@@ -54,9 +53,6 @@ let CanonicalizeFilename fileName =
 
 let IsScript fileName =
     FSharpScriptFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
-
-let IsMLCompatFile fileName =
-    FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
 
 // Give a unique name to the different kinds of inputs. Used to correlate signature and implementation files
 //   QualFileNameOfModuleName - files with a single module declaration or an anonymous module
@@ -123,7 +119,7 @@ let ComputeAnonModuleName check defaultNamespace fileName (m: range) =
     pathToSynLid anonymousModuleNameRange (splitNamespace combined)
 
 let FileRequiresModuleOrNamespaceDecl isLast isExe fileName =
-    not (isLast && isExe) && not (IsScript fileName || IsMLCompatFile fileName)
+    not (isLast && isExe) && not (IsScript fileName)
 
 let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) =
     match impl with
@@ -222,7 +218,7 @@ let FinishPreprocessing lexbuf diagnosticOptions isScript submoduleRanges =
 let private collectParsedInputTrivia lexbuf =
     {
         ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
-        WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
+        WarnDirectives = WarnScopes.getDirectiveTrivia lexbuf
         CodeComments =
             let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
@@ -461,23 +457,15 @@ let ParseInput
             else
                 lexer
 
-        if FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-            if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-                errorR (Error(FSComp.SR.buildInvalidSourceFileExtensionML fileName, rangeStartup))
-            else
-                mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML ()) rangeStartup
-
         // Call the appropriate parser - for signature files or implementation files
         if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-            let impl = Parser.implementationFile lexer lexbuf
+            let impl = implementationFile lexer lexbuf
             PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, diagnosticOptions, Set identStore)
         elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-            let intfs = Parser.signatureFile lexer lexbuf
+            let intfs = signatureFile lexer lexbuf
             PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, diagnosticOptions, Set identStore)
-        else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-            error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
         else
-            error (Error(FSComp.SR.buildInvalidSourceFileExtension fileName, rangeStartup))
+            error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
     finally
         // OK, now commit the errors, since the ScopedPragmas will (hopefully) have been scraped
         let filteringDiagnosticsLogger =
@@ -485,7 +473,7 @@ let ParseInput
 
         delayLogger.CommitDelayedDiagnostics filteringDiagnosticsLogger
 
-type Tokenizer = unit -> Parser.token
+type Tokenizer = unit -> token
 
 // Show all tokens in the stream, for testing purposes
 let ShowAllTokensAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
@@ -508,7 +496,7 @@ let ShowAllTokensAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter:
             | _ -> indent
 
         match t with
-        | Parser.EOF _ -> exiter.Exit 0
+        | EOF _ -> exiter.Exit 0
         | _ -> ()
 
         if lexbuf.IsPastEndOfStream then
@@ -517,7 +505,7 @@ let ShowAllTokensAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter:
 // Test one of the parser entry points, just for testing purposes
 let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
     while true do
-        match (Parser.interaction (fun _ -> tokenizer ()) lexbuf) with
+        match (interaction (fun _ -> tokenizer ()) lexbuf) with
         | ParsedScriptInteraction.Definitions(l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
 
     exiter.Exit 0
@@ -569,15 +557,10 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
         // Don't report whitespace from lexer
         let skipWhitespaceTokens = true
 
-        // Set up the initial status for indentation-aware processing
-        let indentationSyntaxStatus =
-            IndentationAwareSyntaxStatus(tcConfig.ComputeIndentationAwareSyntaxInitialStatus fileName, true)
-
         // Set up the initial lexer arguments
         let lexargs =
             mkLexargs (
                 tcConfig.conditionalDefines,
-                indentationSyntaxStatus,
                 lexResourceManager,
                 [],
                 diagnosticsLogger,
@@ -595,7 +578,6 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                     | TokenizeOption.Only ->
                         LexFilter
                             .LexFilter(
-                                indentationSyntaxStatus,
                                 tcConfig.compilingFSharpCore,
                                 Lexer.token lexargs skipWhitespaceTokens,
                                 lexbuf,
@@ -606,7 +588,6 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                     | _ ->
                         LexFilter
                             .LexFilter(
-                                indentationSyntaxStatus,
                                 tcConfig.compilingFSharpCore,
                                 Lexer.token lexargs skipWhitespaceTokens,
                                 lexbuf,
@@ -656,7 +637,9 @@ let checkInputFile (tcConfig: TcConfig) fileName =
         if not (FileSystem.FileExistsShim fileName) then
             error (Error(FSComp.SR.buildCouldNotFindSourceFile fileName, rangeStartup))
     else
-        error (Error(FSComp.SR.buildInvalidSourceFileExtension (SanitizeFileName fileName tcConfig.implicitIncludeDir), rangeStartup))
+        error (
+            Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated (SanitizeFileName fileName tcConfig.implicitIncludeDir), rangeStartup)
+        )
 
 let parseInputStreamAux
     (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream: Stream)
@@ -836,7 +819,7 @@ let ProcessMetaCommandsFromInput
 
                 state
 
-            | ParsedHashDirective(("reference" | "r") as c, [], m) ->
+            | ParsedHashDirective("reference" | "r" as c, [], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashDirectiveNotAllowedInNonScript m)
                 else
@@ -1091,7 +1074,7 @@ let GetInitialTcState (m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcI
             IsFSharp = true
             UsesFSharp20PlusQuotations = false
 #if !NO_TYPEPROVIDERS
-            InvalidateEvent = (Event<_>()).Publish
+            InvalidateEvent = Event<_>().Publish
             IsProviderGenerated = false
             ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
 #endif
@@ -1188,7 +1171,7 @@ let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlob
 
         // Check if we've already seen an implementation for this fragment
         if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-            errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), input.Range))
+            errorR (Error(FSComp.SR.buildImplementationAlreadyGiven qualNameOfFile.Text, input.Range))
 
         let hadSig = rootSigOpt.IsSome
 
@@ -1248,11 +1231,11 @@ let CheckOneInput
 
                 // Check if we've seen this top module signature before.
                 if Zmap.mem qualNameOfFile tcState.tcsRootSigs then
-                    errorR (Error(FSComp.SR.buildSignatureAlreadySpecified (qualNameOfFile.Text), m.StartRange))
+                    errorR (Error(FSComp.SR.buildSignatureAlreadySpecified qualNameOfFile.Text, m.StartRange))
 
                 // Check if the implementation came first in compilation order
                 if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                    errorR (Error(FSComp.SR.buildImplementationAlreadyGivenDetail (qualNameOfFile.Text), m))
+                    errorR (Error(FSComp.SR.buildImplementationAlreadyGivenDetail qualNameOfFile.Text, m))
 
                 // Typecheck the signature file
                 let! tcEnv, sigFileType, createsGeneratedProvidedTypes =
@@ -1299,7 +1282,7 @@ let CheckOneInput
 
                 // Check if we've already seen an implementation for this fragment
                 if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                    errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
+                    errorR (Error(FSComp.SR.buildImplementationAlreadyGiven qualNameOfFile.Text, m))
 
                 let hadSig = rootSigOpt.IsSome
 
@@ -1386,7 +1369,7 @@ let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
     tcState.tcsRootSigs
     |> Zmap.iter (fun qualNameOfFile _ ->
         if not (Zset.contains qualNameOfFile tcState.tcsRootImpls) then
-            errorR (Error(FSComp.SR.buildSignatureWithoutImplementation (qualNameOfFile.Text), qualNameOfFile.Range)))
+            errorR (Error(FSComp.SR.buildSignatureWithoutImplementation qualNameOfFile.Text, qualNameOfFile.Range)))
 
     tcState, declaredImpls, ccuContents
 
@@ -1465,11 +1448,11 @@ let CheckOneInputWithCallback
 
                 // Check if we've seen this top module signature before.
                 if Zmap.mem qualNameOfFile tcState.tcsRootSigs then
-                    errorR (Error(FSComp.SR.buildSignatureAlreadySpecified (qualNameOfFile.Text), m.StartRange))
+                    errorR (Error(FSComp.SR.buildSignatureAlreadySpecified qualNameOfFile.Text, m.StartRange))
 
                 // Check if the implementation came first in compilation order
                 if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                    errorR (Error(FSComp.SR.buildImplementationAlreadyGivenDetail (qualNameOfFile.Text), m))
+                    errorR (Error(FSComp.SR.buildImplementationAlreadyGivenDetail qualNameOfFile.Text, m))
 
                 // Typecheck the signature file
                 let! tcEnv, sigFileType, createsGeneratedProvidedTypes =
@@ -1547,7 +1530,7 @@ let CheckOneInputWithCallback
                         (fun tcState ->
                             // Check if we've already seen an implementation for this fragment
                             if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                                errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
+                                errorR (Error(FSComp.SR.buildImplementationAlreadyGiven qualNameOfFile.Text, m))
 
                             let ccuSigForFile, fsTcState =
                                 AddCheckResultsToTcState
@@ -1786,7 +1769,7 @@ let CheckMultipleInputsUsingGraphMode
                 (idx, friendlyFileName))
             |> Graph.writeMermaidToFile graphFile)
 
-    let _ = ctok // TODO Use it
+    ignore ctok // TODO Use it
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
     // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
@@ -1824,7 +1807,7 @@ let CheckMultipleInputsUsingGraphMode
                 use _ = UseDiagnosticsLogger logger
 
                 let checkForErrors2 () =
-                    priorErrors || (logger.CheckForRealErrorsIgnoringWarnings)
+                    priorErrors || logger.CheckForRealErrorsIgnoringWarnings
 
                 let tcSink = TcResultsSink.NoSink
 

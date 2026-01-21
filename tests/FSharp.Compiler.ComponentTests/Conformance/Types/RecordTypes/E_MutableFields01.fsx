@@ -4,7 +4,7 @@
 
 
 // This is also regression test for FSHARP1.0:3733
-#light
+
 
 [<Measure>] type Kg
 

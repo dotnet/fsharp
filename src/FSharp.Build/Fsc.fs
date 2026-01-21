@@ -42,6 +42,7 @@ type public Fsc() as this =
     let mutable highEntropyVA: bool = false
     let mutable keyFile: string MaybeNull = null
     let mutable langVersion: string MaybeNull = null
+    let mutable disabledLanguageFeatures: ITaskItem[] = [||]
     let mutable noFramework = false
     let mutable noInterfaceData = false
     let mutable noOptimizationData = false
@@ -151,6 +152,9 @@ type public Fsc() as this =
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
 
         builder.AppendSwitchIfNotNull("--langversion:", langVersion)
+
+        for item in disabledLanguageFeatures do
+            builder.AppendSwitchIfNotNull("--disableLanguageFeature:", item.ItemSpec)
 
         // NoFramework
         if noFramework then
@@ -463,6 +467,10 @@ type public Fsc() as this =
         with get () = langVersion
         and set (s) = langVersion <- s
 
+    member _.DisabledLanguageFeatures
+        with get () = disabledLanguageFeatures
+        and set (a) = disabledLanguageFeatures <- a
+
     member _.LCID
         with get () = vslcid
         and set (p) = vslcid <- p
@@ -508,7 +516,7 @@ type public Fsc() as this =
         and set (s) = outputRefAssembly <- s
 
     member _.ParallelCompilation
-        with get () = parallelCompilation |> Option.defaultValue false
+        with get () = parallelCompilation |> Option.defaultValue true
         and set (p) = parallelCompilation <- Some p
 
     // --pathmap <string>: Paths to rewrite when producing deterministic builds

@@ -1,13 +1,21 @@
 ﻿module FSharp.Compiler.Service.Tests.CompletionTests
 
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Test.Assert
+open FSharp.Test.Compiler.Assertions.TextBasedDiagnosticAsserts
 open Xunit
 
 let private assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
-    let itemNames = completionInfo.Items |> Array.map _.NameInCode |> set
+    let itemNames =
+        completionInfo.Items
+        |> Array.map _.NameInCode
+        |> Array.map normalizeNewLines
+        |> set
 
     for name in names do
-        Assert.True(Set.contains name itemNames = contains)
+        let name = normalizeNewLines name
+        Set.contains name itemNames |> shouldEqual contains
 
 let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
     assertItemsWithNames true names completionInfo
@@ -367,7 +375,356 @@ let ``Span appears in completion and is not marked obsolete`` () =
     let info = Checker.getCompletionInfo """
 let test = System.Sp{caret}
 """
-    // Verify that Span appears in completion when typing "System.Sp"
-    // and is not suppressed due to IsByRefLikeAttribute
     assertHasItemWithNames ["Span"] info
 #endif
+
+module Options =
+    let private assertItemWithOptions getOption (options: FSharpCodeCompletionOptions list) name source =
+        options
+        |> List.iter (fun options ->
+            let contains = getOption options
+            let info = Checker.getCompletionInfoWithOptions options source
+            assertItemsWithNames contains [name] info
+        )
+
+    module AllowObsolete =
+        let private allowObsoleteOptions = { FSharpCodeCompletionOptions.Default with SuggestObsoleteSymbols = true }
+        let private disallowObsoleteOptions = { FSharpCodeCompletionOptions.Default with SuggestObsoleteSymbols = false }
+
+        let private assertItemWithOptions =
+            assertItemWithOptions _.SuggestObsoleteSymbols
+
+        let assertItem (name: string) source =
+            assertItemWithOptions [allowObsoleteOptions; disallowObsoleteOptions] name source
+
+        let assertItemAllowed name source =
+            assertItemWithOptions [allowObsoleteOptions] name source
+
+        let assertItemNotAllowed name source =
+            assertItemWithOptions [disallowObsoleteOptions] name source
+
+        [<Fact>]
+        let ``Prop - Instance 01`` () =
+            assertItem "Prop" """
+type T() =
+    [<System.Obsolete>]
+    member this.Prop = 1
+
+T().{caret}
+"""
+
+        [<Fact>]
+        let ``Prop - Instance 02`` () =
+            assertItem "Prop" """
+type T() =
+    [<System.Obsolete>]
+    member this.Prop = 1
+
+let t = T()
+t.{caret}
+"""
+
+        [<Fact>]
+        let ``Prop - Instance 03`` () =
+            assertItem "Prop" """
+type T() =
+    [<System.Obsolete>]
+    member val Prop = 1
+
+T().{caret}
+"""
+
+        [<Fact>]
+        let ``Prop - Static 01`` () =
+            assertItemAllowed "Prop" """
+type T() =
+    [<System.Obsolete>]
+    static member Prop = 1
+
+T.{caret}
+"""
+
+        [<Fact>]
+        let ``Prop - Static 02`` () =
+            assertItemAllowed "Prop" """
+type T() =
+    [<System.Obsolete>]
+    static member val Prop = 1
+
+T.{caret}
+"""
+
+        [<Fact>]
+        let ``Prop - Extension 01`` () =
+            assertItemAllowed "Prop" """
+type System.String with
+    [<System.Obsolete>]
+    member _.Prop = 1
+
+"".{caret}
+"""
+
+        [<Fact>]
+        let ``Prop - Extension 02`` () =
+            assertItemAllowed "Prop" """
+type System.String with
+    [<System.Obsolete>]
+    static member Prop = 1
+
+System.String.{caret}
+"""
+
+        [<Fact>]
+        let ``Method - Instance 01`` () =
+            assertItem "Method" """
+type T() =
+    [<System.Obsolete>]
+    member _.Method() = 1
+
+T().{caret}
+"""
+
+        [<Fact>]
+        let ``Method - Instance 02`` () =
+            assertItem "Method" """
+type T() =
+    [<System.Obsolete>]
+    member _.Method() = 1
+
+let t = T()
+t.{caret}
+"""
+        
+        [<Fact>]
+        let ``Method - Static 01`` () =
+            assertItemAllowed "Method" """
+type T() =
+    [<System.Obsolete>]
+    static member Method() = 1
+
+T.{caret}
+"""
+
+        [<Fact>]
+        let ``Union 01`` () =
+            assertItemAllowed "A" """
+[<System.Obsolete>]
+type T =
+    | A
+
+T.{caret}
+"""
+
+        [<Fact>]
+        let ``Module - Value 01`` () =
+            assertItemAllowed "x" """
+[<System.Obsolete>]
+let x = 1
+
+{caret}
+"""
+        [<Fact>]
+        let ``Module - Value 02`` () =
+            assertItemAllowed "x" """
+[<System.Obsolete>]
+let x = 1
+
+do
+    {caret}
+"""
+        [<Fact>]
+        let ``Module - Value 03`` () =
+            assertItemAllowed "x" """
+module Module1 =
+    [<System.Obsolete>]
+    let x = 1
+
+module Module2 =
+    do Module1.{caret}
+"""
+
+        [<Fact>]
+        let ``Module - Value 04`` () =
+            assertItemAllowed "x" """
+module Module1 =
+    [<System.Obsolete>]
+    let x = 1
+
+module Module2 =
+    open Module1
+    do {caret}
+"""
+     
+        [<Fact>]
+        let ``Module - Value 05`` () =
+            assertItemAllowed "x" """
+[<System.Obsolete>]
+let x = 1
+
+x{caret}
+"""
+        [<Fact>]
+        let ``Module - Value 06`` () =
+            assertItemAllowed "x" """
+[<System.Obsolete>]
+let x = 1
+
+do
+    x{caret}
+"""
+        [<Fact>]
+        let ``Module - Value 07`` () =
+            assertItemAllowed "x" """
+module Module1 =
+    [<System.Obsolete>]
+    let x = 1
+
+module Module2 =
+    do Module1.x{caret}
+"""
+
+        [<Fact>]
+        let ``Module - Value 08`` () =
+            assertItemAllowed "x" """
+module Module1 =
+    [<System.Obsolete>]
+    let x = 1
+
+module Module2 =
+    open Module1
+    do x{caret}
+"""
+
+        [<Fact>]
+        let ``Type 01`` () =
+            assertItemAllowed "T" """
+[<System.Obsolete>]
+type T() =
+    class end
+
+let _: {caret}
+"""
+
+        [<Fact>]
+        let ``Type 02`` () =
+            assertItemAllowed "T" """
+[<System.Obsolete>]
+type T() =
+    class end
+
+{caret}
+"""
+
+        [<Fact>]
+        let ``Type 03`` () =
+            assertItemAllowed "T" """
+[<System.Obsolete>]
+type T() =
+    class end
+
+do {caret}
+"""
+
+        [<Fact>]
+        let ``Record - Field 01`` () =
+            assertItemAllowed "F" """
+type R =
+    { [<System.Obsolete>]
+      F: int }
+
+let r = { {caret} }
+"""
+
+        [<Fact>]
+        let ``Record - Field 02`` () =
+            assertItemAllowed "F" """
+[<System.Obsolete>]
+type R =
+    { F: int }
+
+let r = { {caret} }
+"""
+
+        [<Fact>]
+        let ``Record - Field 03`` () =
+            assertItemAllowed "F" """
+[<System.Obsolete>]
+type R =
+    { F: int }
+
+let r: R = { F = 1 }
+r.{caret}
+"""
+
+        [<Fact>]
+        let ``Exception 01`` () =
+            assertItemAllowed "E" """
+[<System.Obsolete>]
+exception E
+
+{caret}
+"""
+        [<Fact>]
+        let ``Exception 02`` () =
+            assertItemAllowed "E" """
+[<System.Obsolete>]
+exception E
+
+E{caret}
+"""
+
+        [<Fact>]
+        let ``Exception 03`` () =
+            assertItemAllowed "E" """
+[<System.Obsolete>]
+exception E
+
+try () with {caret}
+"""
+
+        [<Fact>]
+        let ``Exception 04`` () =
+            assertItemAllowed "E" """
+[<System.Obsolete>]
+exception E
+
+try () with E{caret}
+"""
+
+
+    module PatternNameSuggestions =
+        let private suggestPatternNames = { FSharpCodeCompletionOptions.Default with SuggestPatternNames = true }
+        let private doNotSuggestPatternNames = { FSharpCodeCompletionOptions.Default with SuggestPatternNames = false }
+
+        let assertItemWithOptions =
+            assertItemWithOptions _.SuggestPatternNames
+
+        let assertItem name source =
+            assertItemWithOptions [suggestPatternNames; doNotSuggestPatternNames] name source
+
+        [<Fact>]
+        let ``Union case field 01`` () =
+            assertItem "named" """
+type U =
+    | A of named: int
+
+match A 1 with
+| A n{caret}
+"""
+
+    module OverrideSuggestions =
+        let private suggestOverrides = { FSharpCodeCompletionOptions.Default with SuggestGeneratedOverrides = true }
+        let private doNotSuggestOverrides = { FSharpCodeCompletionOptions.Default with SuggestGeneratedOverrides = false }
+
+        let assertItemWithOptions =
+            assertItemWithOptions _.SuggestGeneratedOverrides
+
+        let assertItem name source =
+            assertItemWithOptions [suggestOverrides; doNotSuggestOverrides] name source
+
+        [<Fact>]
+        let ``Override 01`` () =
+            assertItem "this.ToString (): string = \n        base.ToString()" """
+type T() =
+    override {caret}
+"""

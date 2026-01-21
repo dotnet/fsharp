@@ -11,14 +11,14 @@ module TypesAndTypeConstraints_IWSAMsAndSRTPs =
     let typesModule realsig =
         FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__,  "Types.fs")))
         |> withName "Types"
-        |> withLangVersion70
+        |> withLangVersion80
         |> withRealInternalSignature realsig
         |> withOptions ["--nowarn:3535"]
 
     let setupCompilation realsig compilation =
         compilation
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withRealInternalSignature realsig
         |> withReferences [typesModule realsig]
 
@@ -117,16 +117,8 @@ let main _ =
     let ``Check static type parameter inference`` code expectedSignature =
         FSharp code
         |> ignoreWarnings
-        |> withLangVersion70
+        |> withLangVersion80
         |> signaturesShouldContain expectedSignature
-
-    [<Fact>]
-    let ``Static type parameter inference in version 6`` () =
-        FSharp """
-        let inline f0 (x: ^T) = x
-        let g0 (x: 'T) = f0 x"""
-        |> withLangVersion60
-        |> signaturesShouldContain "val g0: x: obj -> obj"
 
     [<Theory>]
     [<InlineData("let inline f_StaticProperty<'T when 'T : (static member StaticProperty: int) >() = (^T : (static member StaticProperty: int) ())")>]
@@ -336,8 +328,8 @@ let main _ =
     #if !NETCOREAPP
     [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
     #else   
-    [<InlineData("6.0")>]
-    [<InlineData("7.0")>]
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
     [<Theory>]
     #endif
     let ``Extension method on interface without SAM does not produce a warning`` version =
@@ -366,16 +358,9 @@ let main _ =
     let ``Trait warning or error`` code =
         let errorMessage = "A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments"
 
+        // In F# 8.0+, this is an error (it was a warning in F# 6.0 and became an error in F# 7.0)
         Fsx code
-        |> withLangVersion60
-        |> compile
-        |> shouldFail
-        |> withWarningCode 3532
-        |> withDiagnosticMessage errorMessage
-        |> ignore
-
-        Fsx code
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withErrorCode 3532
@@ -623,7 +608,7 @@ let main _ =
                 let add1 (x: int) = x + 1
             """
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> withOptions ["--nowarn:3535"]
 
     [<InlineData(true)>]        // RealSig
@@ -637,7 +622,7 @@ let main _ =
                 add1(a)
             """
         |> withReferences [library realsig]
-        |> withLangVersion70
+        |> withLangVersion80
         |> withRealInternalSignature realsig
         |> compile
         |> shouldFail
@@ -655,7 +640,7 @@ let main _ =
             """
         |> withRealInternalSignature realsig
         |> withReferences [library realsig]
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
@@ -671,7 +656,7 @@ let main _ =
                 add1(int(a))
             """
         |> withReferences [library realsig]
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -687,7 +672,7 @@ let main _ =
             """
         |> withRealInternalSignature realsig
         |> withReferences [library realsig]
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -709,7 +694,7 @@ let main _ =
                 failwith "Unexpected result"
             """
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -726,7 +711,7 @@ let main _ =
             let inline callX (x: 'T) (y: C) = ((C or ^T): (static member X : 'T * C -> string) (x, y));;
             """
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "Unexpected keyword 'static' in binding"
@@ -754,7 +739,7 @@ let main _ =
                 failwith "Unexpected result"
             """
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -777,7 +762,7 @@ let main _ =
                     static member op_Equality (a, b) = false
             """
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> withName "Potato"
         |> withOptions ["--nowarn:3535"]
 
@@ -797,7 +782,7 @@ let main _ =
             """
         |> withReferences [library2 realsig]
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL [
@@ -833,7 +818,7 @@ let main _ =
             """
         |> withReferences [library2 realsig]
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -859,7 +844,7 @@ let main _ =
             let f (x: 'T when 'T :> IMultiplyOperators<'T,'T,'T>) = x;;
             f 3.0 |> ignore"""
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -908,7 +893,7 @@ let main _ =
 
             let f (x: 'T when {genericType}) = x;;
             f 3.0<potato> |> ignore"""
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withErrorMessage $"The type 'float<potato>' is not compatible with the type '{potatoType}'"
@@ -939,7 +924,7 @@ let main _ =
         """
         |> withNoWarn 3535
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -981,7 +966,7 @@ let main _ =
         """
         |> withNoWarn 3535
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -1009,7 +994,7 @@ let main _ =
         """
         |> withNoWarn 3535
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -1578,4 +1563,192 @@ type T =
 	'abstract IFace.P4: int'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         ]
+
+    // Tests for IWSAM type argument validation (issue #19184)
+    
+    [<FactForNETCOREAPP>]
+    let ``Error when interface with unimplemented static abstract is used as type argument to constrained generic`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+let test<'T when 'T :> ITest>(x: 'T) = 'T.Doot
+
+let t = Test() :> ITest
+let result = test(t)
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3868, Line 12, Col 14, Line 12, Col 21,
+             "The interface 'ITest' cannot be used as a type argument because the static abstract member 'Doot' does not have a most specific implementation in the interface.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``No error when concrete type implementing IWSAM is used as type argument`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+let test<'T when 'T :> ITest>(x: 'T) = 'T.Doot
+
+let t = Test()
+let result = test(t)
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Error when interface with unimplemented static abstract in base interface is used as type argument`` () =
+        Fsx """
+type IBase =
+    static abstract BaseMember : int
+
+type IDerived =
+    inherit IBase
+
+let test<'T when 'T :> IDerived>(x: 'T) = 'T.BaseMember
+
+let t = Unchecked.defaultof<IDerived>
+let result = test(t)
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3868, Line 11, Col 14, Line 11, Col 21,
+             "The interface 'IDerived' cannot be used as a type argument because the static abstract member 'BaseMember' does not have a most specific implementation in the interface.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``No error when interface with static abstract is used with unconstrained generic List`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+// Using interface as type argument to List - this is fine because List doesn't
+// have any constraints that would invoke static abstract members
+let items : ITest list = []
+let items2 = [ Test() :> ITest ]
+let head = List.tryHead items
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``No error when interface with static abstract is used with unconstrained generic Map`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+// Using interface as type argument to Map - this is fine
+let m : Map<string, ITest> = Map.empty
+let m2 = Map.add "key" (Test() :> ITest) m
+let v = Map.tryFind "key" m
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``No error when interface with static abstract is used with Option`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+// Using interface as type argument to Option - this is fine
+let opt : ITest option = None
+let opt2 = Some (Test() :> ITest)
+let opt3 : Option<ITest> = Option.None
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``No error when interface with static abstract is used with generic functions`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+// Using interface with unconstrained generic functions - this is fine
+let t = Test() :> ITest
+let same = id t
+let u = ignore t
+let boxed = box t
+let arr : ITest array = [| t |]
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``No error when interface with static abstract is used with Dictionary`` () =
+        Fsx """
+open System.Collections.Generic
+
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+// Using interface as type argument to Dictionary - this is fine
+let dict = Dictionary<string, ITest>()
+dict.Add("key", Test())
+let v = dict["key"]
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Compile and run succeeds for concrete type with IWSAM constraint`` () =
+        Fsx """
+type ITest =
+    static abstract Doot : int
+
+type Test() =
+    interface ITest with
+        static member Doot = 5
+
+let test<'T when 'T :> ITest>(x: 'T) = 'T.Doot
+
+// This should work - passing concrete type Test()
+let t = Test()
+let result = test(t)
+if result <> 5 then failwith "Expected 5"
+printfn "Success: %d" result
+    """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> compileAndRun
+        |> shouldSucceed
 

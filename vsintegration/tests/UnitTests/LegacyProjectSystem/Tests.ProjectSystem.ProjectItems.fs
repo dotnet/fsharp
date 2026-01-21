@@ -68,7 +68,7 @@ type ProjectItems() =
         this.MakeProjectAndDo(["orig.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "a.fs")
             try
-                File.AppendAllText(absFilePath, "#light")
+                File.AppendAllText(absFilePath, "//")
                 // Note: this is not the same code path as the UI, but it is close
                 project.MoveNewlyAddedFileToBottomOfGroup (fun () ->
                     project.AddNewFileNodeToHierarchy(project,absFilePath) |> ignore)
@@ -85,7 +85,7 @@ type ProjectItems() =
             Directory.CreateDirectory(dir) |> ignore
             let absFilePath = Path.Combine(dir, "a.fs")
             try
-                File.AppendAllText(absFilePath, "#light")
+                File.AppendAllText(absFilePath, "//")
                 // Note: this is not the same code path as the UI, but it is close
                 project.MoveNewlyAddedFileToBottomOfGroup (fun () ->
                     project.AddNewFileNodeToHierarchy(project.FindChild("Folder"),absFilePath) |> ignore)
@@ -100,7 +100,7 @@ type ProjectItems() =
         this.MakeProjectAndDo(["orig1.fs"; "orig2.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "new.fs")
             try
-                File.AppendAllText(absFilePath, "#light")
+                File.AppendAllText(absFilePath, "//")
                 // Note: this is not the same code path as the UI, but it is close
                 let orig1 = TheTests.FindNodeWithCaption(project, "orig1.fs")
                 project.MoveNewlyAddedFileBelow (orig1, fun () ->
@@ -123,7 +123,7 @@ type ProjectItems() =
         this.MakeProjectAndDo(["orig1.fs"; "orig2.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "new.fs")
             try
-                File.AppendAllText(absFilePath, "#light")
+                File.AppendAllText(absFilePath, "//")
                 // Note: this is not the same code path as the UI, but it is close
                 let orig2 = TheTests.FindNodeWithCaption(project, "orig2.fs")
                 project.MoveNewlyAddedFileAbove (orig2, fun () ->
@@ -146,7 +146,7 @@ type ProjectItems() =
         this.MakeProjectAndDo(["orig1.fs"; "orig2.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "new.fs")
             try
-                File.AppendAllText(absFilePath, "#light")
+                File.AppendAllText(absFilePath, "//")
                 // Note: this is not the same code path as the UI, but it is close
                 let orig1 = TheTests.FindNodeWithCaption(project, "orig1.fs")
                 project.MoveNewlyAddedFileAbove (orig1, fun () ->

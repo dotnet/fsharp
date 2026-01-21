@@ -39,7 +39,7 @@ type DependencyManagerInteractiveTests() =
     let getErrors ((_value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
         errors
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``SmokeTest - #r nuget``() =
         let text = """
 #r @"nuget:Newtonsoft.Json, Version=9.0.1"
@@ -50,7 +50,7 @@ type DependencyManagerInteractiveTests() =
         Assert.Equal(typeof<int>, value.ReflectionType)
         Assert.Equal(0, value.ReflectionValue :?> int)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``SmokeTest - #r nuget package not found``() =
         let text = """
 #r @"nuget:System.Collections.Immutable.DoesNotExist, version=1.5.0"
@@ -67,13 +67,16 @@ type DependencyManagerInteractiveTests() =
         let errors = script.Eval(code) |> getErrors
         Assert.Contains(message, errors |> Array.map(fun e -> e.Message))
 *)
-    static member SdkDirOverrideTestData = [|
-        [| None |]
-        [| Path.Combine(__SOURCE_DIRECTORY__, "..", "..", ".dotnet", "sdk")
-        |> Directory.GetDirectories
-        |> Seq.head
-        |> Some |]
-    |]
+    static member SdkDirOverrideTestData =
+        [|
+            yield [| None |]
+            let dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT")
+            if not (isNull dotnetRoot) then
+                yield [| Path.Combine(dotnetRoot, "sdk")
+                      |> Directory.GetDirectories
+                      |> Seq.head
+                      |> Some |]
+        |]
 
     [<Theory>]
     [<MemberData(nameof DependencyManagerInteractiveTests.SdkDirOverrideTestData)>]
@@ -267,7 +270,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
         ()
 
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
         // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
@@ -366,7 +369,7 @@ printfn ""%A"" result
         let value = opt.Value
         Assert.Equal(123, value.ReflectionValue :?> int32)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Use NativeResolver to resolve native dlls.``() =
         // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
@@ -450,7 +453,7 @@ printfn ""%A"" result
         let value = opt.Value
         Assert.Equal(123, value.ReflectionValue :?> int32)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``Use AssemblyResolver to resolve assemblies``() =
         // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
@@ -727,12 +730,14 @@ x |> Seq.iter(fun r ->
     #time ["on"|"off"];;                          // Toggle timing on/off
     #help;;                                       // Display help
     #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;
+    #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'
+    #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
     #clear;;                                      // Clear screen
     #quit;;                                       // Exit
 
   F# Interactive command line options:"""
 
-        use script = new FSharpScript(quiet = false, langVersion = LangVersion.V47)
+        use script = new FSharpScript(quiet = false, langVersion = LangVersion.V80)
 
         use capture = new TestConsole.ExecutionCapture()
         let _opt = script.Eval("#help") |> getValue

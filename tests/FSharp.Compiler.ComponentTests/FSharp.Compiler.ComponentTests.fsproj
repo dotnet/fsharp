@@ -87,6 +87,7 @@
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ComputationExpressions\ComputationExpressions.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
+    <Compile Include="Conformance\Expressions\ObjectExpressions\StructObjectExpression.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\Type-relatedExpressions\Type-relatedExpressions.fs" />
@@ -231,6 +232,7 @@
     <Compile Include="ErrorMessages\AbbreviationTests.fs" />
     <Compile Include="ErrorMessages\NamespaceTests.fs" />
     <Compile Include="ErrorMessages\NameIsBoundMultipleTimesTests.fs" />
+    <Compile Include="ErrorMessages\FSharpDiagnosticTests.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
@@ -262,6 +264,7 @@
     <Compile Include="Language\Nullness\NullableCsharpImportTests.fs" />
     <Compile Include="Language\Nullness\NullableRegressionTests.fs" />
     <Compile Include="Language\Nullness\NullableReferenceTypesTests.fs" />
+    <Compile Include="Language\Nullness\EventNullnessTests.fs" />
     <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
@@ -277,6 +280,8 @@
     <Compile Include="Interop\Literals.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
+    <Compile Include="Scripting\PreferredUiLangTests.fs" />
+    <Compile Include="TypeChecks\TypeRelations.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
     <Compile Include="TypeChecks\Graph\Utils.fs" />
@@ -298,6 +303,7 @@
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />
     <Compile Include="CompilerOptions\fsc\crossoptimize.fs" />
     <Compile Include="CompilerOptions\fsc\debug.fs" />
+    <Compile Include="CompilerOptions\fsc\disableLanguageFeature.fs" />
     <Compile Include="CompilerOptions\fsc\flaterrors.fs" />
     <Compile Include="CompilerOptions\fsc\determinism\determinism.fs" />
     <Compile Include="CompilerOptions\fsc\highentropyva.fs" />
@@ -324,7 +330,6 @@
     <Compile Include="Diagnostics\General.fs" />
     <Compile Include="Diagnostics\Records.fs" />
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
-    <Compile Include="OCamlCompat\OCamlCompat.fs" />
     <Compile Include="Miscellaneous\ListLiterals.fs" />
     <Compile Include="Miscellaneous\SemanticClassificationKeyBuilder.fs" />
     <Compile Include="Miscellaneous\XmlDoc.fs" />

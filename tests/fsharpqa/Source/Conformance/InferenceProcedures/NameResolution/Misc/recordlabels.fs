@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeInference 
-#light
+
 
 // bug 3246
 

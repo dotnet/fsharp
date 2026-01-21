@@ -119,19 +119,19 @@ module MapTree =
         let t2h = height t2
 
         if t2h > t1h + tolerance then (* right is heavier than left *)
-            let t2' = asNode (t2)
+            let t2' = asNode t2
             (* one of the nodes must have height > height t1 + 1 *)
             if height t2'.Left > t1h + 1 then (* balance left: combination *)
-                let t2l = asNode (t2'.Left)
+                let t2l = asNode t2'.Left
                 mk (mk t1 k v t2l.Left) t2l.Key t2l.Value (mk t2l.Right t2'.Key t2'.Value t2'.Right)
             else (* rotate left *)
                 mk (mk t1 k v t2'.Left) t2'.Key t2'.Value t2'.Right
         else if t1h > t2h + tolerance then (* left is heavier than right *)
-            let t1' = asNode (t1)
+            let t1' = asNode t1
             (* one of the nodes must have height > height t2 + 1 *)
             if height t1'.Right > t2h + 1 then
                 (* balance right: combination *)
-                let t1r = asNode (t1'.Right)
+                let t1r = asNode t1'.Right
                 mk (mk t1'.Left t1'.Key t1'.Value t1r.Left) t1r.Key t1r.Value (mk t1r.Right k v t2)
             else
                 mk t1'.Left t1'.Key t1'.Value (mk t1'.Right k v t2)
@@ -531,7 +531,7 @@ module MapTree =
 
     let rec mkFromEnumerator comparer acc (e: IEnumerator<_>) =
         if e.MoveNext() then
-            let (x, y) = e.Current
+            let x, y = e.Current
             mkFromEnumerator comparer (add comparer x y acc) e
         else
             acc
@@ -539,7 +539,7 @@ module MapTree =
     let ofArray comparer (arr: ('Key * 'Value) array) =
         let mutable res = empty
 
-        for (x, y) in arr do
+        for x, y in arr do
             res <- add comparer x y res
 
         res
@@ -635,7 +635,7 @@ module MapTree =
 
         { new IEnumerator<_> with
             member _.Current = current i
-          interface System.Collections.IEnumerator with
+          interface IEnumerator with
               member _.Current = box (current i)
 
               member _.MoveNext() =
@@ -643,7 +643,7 @@ module MapTree =
 
               member _.Reset() =
                   i <- mkIterator m
-          interface System.IDisposable with
+          interface IDisposable with
               member _.Dispose() =
                   ()
         }
@@ -674,18 +674,18 @@ module MapTree =
             else
                 rightmost nd.Right
 
-[<System.Diagnostics.DebuggerTypeProxy(typedefof<MapDebugView<_, _>>)>]
-[<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
+[<DebuggerTypeProxy(typedefof<MapDebugView<_, _>>)>]
+[<DebuggerDisplay("Count = {Count}")>]
 [<Sealed>]
 [<CompiledName("FSharpMap`2")>]
 type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonConditionalOn>] 'Value when 'Key: comparison>
     (comparer: IComparer<'Key>, tree: MapTree<'Key, 'Value>) =
 
-    [<System.NonSerialized>]
+    [<NonSerialized>]
     // This type is logically immutable. This field is only mutated during deserialization.
     let mutable comparer = comparer
 
-    [<System.NonSerialized>]
+    [<NonSerialized>]
     // This type is logically immutable. This field is only mutated during deserialization.
     let mutable tree = tree
 
@@ -727,11 +727,11 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     static member Create(ie: IEnumerable<_>) : Map<'Key, 'Value> =
         let comparer = LanguagePrimitives.FastGenericComparer<'Key>
-        new Map<_, _>(comparer, MapTree.ofSeq comparer ie)
+        Map<_, _>(comparer, MapTree.ofSeq comparer ie)
 
     new(elements: seq<_>) =
         let comparer = LanguagePrimitives.FastGenericComparer<'Key>
-        new Map<_, _>(comparer, MapTree.ofSeq comparer elements)
+        Map<_, _>(comparer, MapTree.ofSeq comparer elements)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member internal m.Comparer = comparer
@@ -837,7 +837,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     static member ofList l : Map<'Key, 'Value> =
         let comparer = LanguagePrimitives.FastGenericComparer<'Key>
-        new Map<_, _>(comparer, MapTree.ofList comparer l)
+        Map<_, _>(comparer, MapTree.ofList comparer l)
 
     member this.ComputeHashCode() =
         let combineHash x y =
@@ -845,7 +845,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
         let mutable res = 0
 
-        for (KeyValue(x, y)) in this do
+        for KeyValue(x, y) in this do
             res <- combineHash res (hash x)
             res <- combineHash res (Unchecked.hash y)
 
@@ -902,7 +902,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
             let mutable res = 0
 
-            for (KeyValue(x, y)) in this do
+            for KeyValue(x, y) in this do
                 res <- combineHash res (comparer.GetHashCode x)
                 res <- combineHash res (comparer.GetHashCode y)
 
@@ -934,17 +934,17 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
         member m.TryGetValue(k, r) =
             m.TryGetValue(k, &r)
 
-        member m.Remove(_) =
+        member m.Remove _ =
             raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
     interface ICollection<KeyValuePair<'Key, 'Value>> with
-        member _.Add(_) =
+        member _.Add _ =
             raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member _.Clear() =
             raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member _.Remove(_) =
+        member _.Remove _ =
             raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member m.Contains x =
@@ -957,7 +957,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
         member m.Count = m.Count
 
-    interface System.IComparable with
+    interface IComparable with
         member m.CompareTo(obj: objnull) =
             match obj with
             | :? Map<'Key, 'Value> as m2 ->
@@ -1045,13 +1045,13 @@ and [<DebuggerDisplay("{keyValue.Value}", Name = "[{keyValue.Key}]", Type = "")>
 
 and KeyCollection<'Key, 'Value when 'Key: comparison>(parent: Map<'Key, 'Value>) =
     interface ICollection<'Key> with
-        member _.Add(_) =
+        member _.Add _ =
             raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member _.Clear() =
             raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member _.Remove(_) =
+        member _.Remove _ =
             raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member _.Contains x =
@@ -1096,13 +1096,13 @@ and KeyCollection<'Key, 'Value when 'Key: comparison>(parent: Map<'Key, 'Value>)
 
 and ValueCollection<'Key, 'Value when 'Key: comparison>(parent: Map<'Key, 'Value>) =
     interface ICollection<'Value> with
-        member _.Add(_) =
+        member _.Add _ =
             raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member _.Clear() =
             raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member _.Remove(_) =
+        member _.Remove _ =
             raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member _.Contains x =
@@ -1256,7 +1256,7 @@ module Map =
     [<CompiledName("OfArray")>]
     let ofArray (elements: ('Key * 'Value) array) =
         let comparer = LanguagePrimitives.FastGenericComparer<'Key>
-        new Map<_, _>(comparer, MapTree.ofArray comparer elements)
+        Map<_, _>(comparer, MapTree.ofArray comparer elements)
 
     [<CompiledName("ToList")>]
     let toList (table: Map<_, _>) =

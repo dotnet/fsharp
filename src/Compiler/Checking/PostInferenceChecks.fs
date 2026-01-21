@@ -19,7 +19,6 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -201,7 +200,7 @@ type cenv =
 
       g: TcGlobals
 
-      amap: Import.ImportMap
+      amap: ImportMap
 
       /// For reading metadata
       infoReader: InfoReader
@@ -531,7 +530,7 @@ let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
-                    errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())), m))
+                    errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, objName()), m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env NoInfo ty
 
@@ -547,7 +546,7 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
-                    let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())) |> snd
+                    let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, objName()) |> snd
                     let warningText = errorText + Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
                     warning(ObsoleteDiagnostic(false, None, Some warningText, None, m))
 
@@ -636,6 +635,24 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
     | Expr.Op (TOp.Coerce, _, [f], _) -> mkArgsForAppliedExpr isBaseCall argsl f
     | _  -> []
 
+/// Check if a type argument is an interface with unimplemented static abstract members
+/// when used with a type parameter that has interface constraints.
+/// See: https://github.com/dotnet/fsharp/issues/19184
+let CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers (cenv: cenv) m (typar: Typar) (typeArg: TType) =
+    if cenv.reportErrors then
+        // Only check if the type parameter has interface constraints
+        let hasInterfaceConstraint =
+            typar.Constraints |> List.exists (function
+                | TyparConstraint.CoercesTo(constraintTy, _) -> isInterfaceTy cenv.g constraintTy
+                | _ -> false)
+
+        if hasInterfaceConstraint && isInterfaceTy cenv.g typeArg then
+            match cenv.infoReader.TryFindUnimplementedStaticAbstractMemberOfType m typeArg with
+            | Some memberName ->
+                let interfaceTypeName = NicePrint.minimalStringOfType cenv.denv typeArg
+                errorR(Error(FSComp.SR.chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument(interfaceTypeName, memberName), m))
+            | None -> ()
+
 /// Check types occurring in the TAST.
 let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
     if cenv.reportErrors then
@@ -682,6 +699,15 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
                         if isByrefTyconRef cenv.g tcref2 then
                             errorR(Error(FSComp.SR.chkNoByrefsOfByrefs(NicePrint.minimalStringOfType cenv.denv ty), m))
                 CheckTypesDeep cenv (visitType, None, None, None, None) cenv.g env tinst
+            
+            // Check for interfaces with unimplemented static abstract members used as type arguments
+            // This only applies when the type parameter has an interface constraint - using interfaces
+            // with unconstrained generics (like List<ITest> or Dictionary<K, ITest>) is fine.
+            // See: https://github.com/dotnet/fsharp/issues/19184
+            if tcref.CanDeref then
+                let typars = tcref.Typars m
+                if typars.Length = tinst.Length then
+                    (typars, tinst) ||> List.iter2 (CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m)
 
         let visitTraitSolution info =
             match info with
@@ -866,7 +892,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (ctxt: PermitB
         let isReturnOfStructThis =
             ctxt.PermitOnlyReturnable &&
             isByrefTy g vref.Type &&
-            (vref.IsMemberThisVal)
+            vref.IsMemberThisVal
 
         if isReturnOfStructThis then
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
@@ -1375,6 +1401,20 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
     let env = { env with isInAppExpr = true }
 
     CheckTypeInstNoByrefs cenv env m tyargs
+    
+    // Check for interfaces with unimplemented static abstract members used as type arguments
+    // See: https://github.com/dotnet/fsharp/issues/19184
+    if not tyargs.IsEmpty then
+        match f with
+        | Expr.Val (vref, _, _) ->
+            match vref.TryDeref with
+            | ValueSome v ->
+                let typars = v.Typars
+                if typars.Length = tyargs.Length then
+                    (typars, tyargs) ||> List.iter2 (CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m)
+            | _ -> ()
+        | _ -> ()
+    
     CheckExprNoByrefs cenv env f
 
     let hasReceiver =
@@ -1908,7 +1948,7 @@ and CheckDecisionTree cenv env dtree =
 
 and CheckDecisionTreeSwitch cenv env (inpExpr, cases, dflt, m) =
     CheckExprPermitByRefLike cenv env inpExpr |> ignore// can be byref for struct union switch
-    for (TCase(discrim, dtree)) in cases do
+    for TCase(discrim, dtree) in cases do
         CheckDecisionTreeTest cenv env m discrim
         CheckDecisionTree cenv env dtree
     dflt |> Option.iter (CheckDecisionTree cenv env)
@@ -2473,7 +2513,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                   setterArgs.Length <> getterArgs.Length)
                 ||
                  (let nargs = pinfo.GetParamTypes(cenv.amap, m).Length
-                  others |> List.exists (fun pinfo2 -> (isNil(pinfo2.GetParamTypes(cenv.amap, m))) <> (nargs = 0)))) then
+                  others |> List.exists (fun pinfo2 -> isNil(pinfo2.GetParamTypes(cenv.amap, m)) <> (nargs = 0)))) then
 
                   errorR(Error(FSComp.SR.chkPropertySameNameIndexer(nm, NicePrint.minimalStringOfType cenv.denv ty), m))
 

@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexicalAnalysis #Operators 
-#light
+
 
 //<Expects id="FS0717" status="error">Unexpected type arguments</Expects>
 

@@ -255,33 +255,14 @@ let keywordsWithDescription: (string * string) list =
 
 let keywordLookup = set (List.map fst keywordsWithDescription)
 
-// Some legacy compat operator names are not encode using op_XYZ and this
-// do not carry sufficient information to distinguish between
-//     let (or) x y = x || y
-//     let ``or`` x y = x || y
-//     let (land) x y = x || y
-//     let ``land`` x y = x || y
-// All are deprecated except 'mod'. All except those two get double-backticks
 let IsUnencodedOpName (name: string) =
     match name with
     | "mod" -> true
     | _ -> false
 
-let IsUnencodedLegacyOpName (name: string) =
-    match name with
-    | "or"
-    | "land"
-    | "lor"
-    | "lsl"
-    | "lsr"
-    | "asr"
-    | "lxor" -> true
-    | _ -> false
-
 let IsIdentifierName (name: string) =
     not (keywordLookup.Contains name)
     && not (IsUnencodedOpName name)
-    && not (IsUnencodedLegacyOpName name)
     && let nameLen = name.Length in
 
        nameLen > 0
@@ -429,7 +410,7 @@ let CompileOpName op =
     match standardOpNames.TryGetValue op with
     | true, x -> x
     | false, _ ->
-        if IsUnencodedOpName op || IsUnencodedLegacyOpName op || IsIdentifierName op then
+        if IsUnencodedOpName op || IsIdentifierName op then
             op
         else
             compileCustomOpName op
@@ -777,8 +758,6 @@ let IsLogicalOpName (logicalName: string) =
 
 let (|Control|Equality|Relational|Indexer|FixedTypes|Other|) opName =
     match opName with
-    | "&"
-    | "or"
     | "&&"
     | "||" -> Control
     | "<>"
@@ -1096,7 +1075,7 @@ module CustomOperations =
 let unassignedTyparName = "?"
 
 let FormatAndOtherOverloadsString remainingOverloads =
-    FSComp.SR.typeInfoOtherOverloads (remainingOverloads)
+    FSComp.SR.typeInfoOtherOverloads remainingOverloads
 
 let GetLongNameFromString x = SplitNamesForILPath x
 

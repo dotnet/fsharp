@@ -1,5 +1,34 @@
 # GitHub Copilot Instructions for F# Compiler
 
+## DEBUGGING MINDSET - CRITICAL
+
+**Your changes are the cause until proven otherwise.**
+
+When encountering test failures or build issues after making changes:
+
+1. **NEVER assume "pre-existing failure"** - This is incorrect 99% of the time
+2. **ALWAYS assume your PR diff caused the issue** - Even if it seems unrelated
+3. **Remember the bootstrap**: The F# compiler compiles itself. If you introduced broken code in earlier commits, even if you "reverted" it later, the bootstrap compiler may be using the broken version
+4. **Clean and rebuild**: When in doubt, `git clean -xfd artifacts` and rebuild from scratch to eliminate bootstrap contamination
+5. **Compare your diff**: Use `git diff <base_commit> HEAD` to see ALL changes in your PR, not just the latest commit
+6. **Verify with original code**: Temporarily revert your changes to confirm tests pass without them
+
+**Forbidden phrases:**
+- "pre-existing issue" 
+- "was already broken"
+- "not related to my changes"
+- "known limitation"
+
+**Required verification before claiming something was already broken:**
+1. Clean build artifacts completely
+2. Checkout the base branch
+3. Build and run the same test
+4. Document the failure with the base branch commit hash
+
+Only after this verification can you legitimately claim a pre-existing issue.
+
+---
+
 ## STRUCTURE YOUR CHANGE (BEFORE EDITING)
 Keep scope tight.  
 General guide:
@@ -32,6 +61,21 @@ Always run the core command. Always verify exit codes. No assumptions.
 ./build.sh -c Release --testcoreclr
 ```
 Non‑zero → classify & stop.
+
+### CRITICAL TEST EXECUTION RULES
+**ALWAYS** run tests before claiming success. **NEVER** mark work complete without verified passing tests.
+
+When running tests, **ALWAYS** report:
+- Total number of tests executed
+- Number passed / failed / skipped
+- Execution duration
+- Example: "Ran 5 tests: 5 passed, 0 failed, 0 skipped. Duration: 4.2 seconds"
+
+**ASSUME YOUR CODE IS THE PROBLEM**: When tests fail, ALWAYS assume your implementation is incorrect FIRST. Only after thorough investigation with evidence should you consider other causes like build issues or test infrastructure problems.
+
+**UNDERSTAND WHAT YOU'RE TESTING**: Before writing tests, understand exactly what behavior the feature controls. Research the codebase to see how the feature is actually used, not just how you think it should work.
+
+**TEST INCREMENTALLY**: After each code change, immediately run the relevant tests to verify the change works as expected. Don't accumulate multiple changes before testing.
 
 ## 2. Bootstrap (Failure Detection Only)
 Two-phase build. No separate bootstrap command.  

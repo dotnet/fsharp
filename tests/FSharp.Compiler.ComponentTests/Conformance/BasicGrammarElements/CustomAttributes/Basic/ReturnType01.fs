@@ -4,7 +4,7 @@
 // Note: the syntax is kind of awkward...
 //<Expects status="success"></Expects>
 
-#light
+
 
 type TestAttribute(x:string) =
     inherit System.Attribute()

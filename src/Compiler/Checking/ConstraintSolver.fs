@@ -80,7 +80,7 @@ open FSharp.Compiler.TypeProviders
 // of the constraint resolution carried out by type checking.
 //------------------------------------------------------------------------- 
    
-let compgenId = mkSynId Range.range0 unassignedTyparName
+let compgenId = mkSynId range0 unassignedTyparName
 
 let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
     Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
@@ -288,7 +288,7 @@ type ConstraintSolverState =
         else
             this.PostInferenceChecksFinal.Add check
 
-    member this.PopPostInferenceCheck (preDefaults) =
+    member this.PopPostInferenceCheck preDefaults =
         if preDefaults then
             this.PostInferenceChecksPreDefaults.RemoveAt(this.PostInferenceChecksPreDefaults.Count-1)
         else
@@ -791,9 +791,9 @@ let SimplifyMeasure g vars ms =
           let nonZeroVar = ListMeasureVarOccsWithNonZeroExponents ms
           let newms =
               ProdMeasures [
-                  for (c, e') in nonZeroCon do
+                  for c, e' in nonZeroCon do
                       Measure.RationalPower (Measure.Const(c, ms.Range), NegRational (DivRational e' e)) 
-                  for (v', e') in nonZeroVar do
+                  for v', e' in nonZeroVar do
                       if typarEq v v' then 
                           newvarExpr 
                       else 
@@ -1056,7 +1056,8 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
-            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))    
+            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc
+                            csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value,m2))    
         // Allow expected of WithNull and actual of WithoutNull except for specially marked APIs (handled above)        
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
@@ -1064,7 +1065,7 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
                 WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2))
             else
                 CompleteD
-        
+
 // nullness1: target
 // nullness2: source
 and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
@@ -1091,16 +1092,17 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
-            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))
+            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc
+                            csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value,m2))
         // Allow target of WithNull and actual of WithoutNull
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then               
-                 WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
+                WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
             else
                 CompleteD
-        
+
 and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty1 ty =
     trackErrors {
         let m = csenv.m
@@ -1323,17 +1325,23 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
                 }
 
         // Catch float<_>=float<1>, float32<_>=float32<1> and decimal<_>=decimal<1> 
-        | (_, TType_app (tc2, [ms2], _)) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2])) ->
+        | _, TType_app (tc2, [ms2], _) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2])) ->
             trackErrors {
                 do! SolveTypeEqualsType csenv ndeep m2 trace None (TType_measure(Measure.One m2)) ms2
                 do! SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
-        | (TType_app (tc1, [ms1], _), _) when (tc1.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc1 [ms1])) ->
+        | TType_app (tc1, [ms1], _), _ when (tc1.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc1 [ms1])) ->
             trackErrors {
                 do! SolveTypeEqualsType csenv ndeep m2 trace None ms1 (TType_measure(Measure.One m2))
                 do! SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
+
+        // Special handling for delegate types - ignore nullness differences
+        // Delegates from C# interfaces without nullable annotations should match F# events
+        // See https://github.com/dotnet/fsharp/issues/18361 and https://github.com/dotnet/fsharp/issues/18349
+        | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 && isDelegateTy g sty1 ->
+            SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
         | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
             trackErrors {
@@ -1543,6 +1551,12 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                 | _ -> return! SolveTypeEqualsType csenv ndeep m2 trace cxsln tag1 tag2
                 }
             | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
+
+        // Special handling for delegate types - ignore nullness differences
+        // Delegates from C# interfaces without nullable annotations should match F# events
+        // See https://github.com/dotnet/fsharp/issues/18361 and https://github.com/dotnet/fsharp/issues/18349
+        | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 && isDelegateTy g sty1 ->
+            SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
 
         | TType_app (tc1, l1, _)  , TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
             trackErrors {            
@@ -2197,7 +2211,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
             let nominalTys = GetNominalSupportOfMemberConstraint csenv nm traitInfo
 
             let minfos =
-                [ for (supportTy, nominalTy) in nominalTys do
+                [ for supportTy, nominalTy in nominalTys do
                     let infos =
                         match traitInfo.MemberFlags.MemberKind with
                         | SynMemberKind.Constructor ->

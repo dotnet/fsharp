@@ -10,7 +10,6 @@ open System.Reflection
 open Internal.Utilities.Library
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.Features
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
@@ -379,7 +378,7 @@ let convNewDataInstrInternal ilg cuspec cidx =
         && cuspecRepr.DiscriminationTechnique cuspec = IntegerTag
     then
         // Structs with fields should be created using maker methods (mkMakerName), only field-less cases are created this way
-        assert (alt.IsNullary)
+        assert alt.IsNullary
         let baseTy = baseTyOfUnionSpec cuspec
         let tagField = [ mkTagFieldType ilg cuspec ]
         [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
@@ -853,7 +852,7 @@ let convAlternativeDef
                         methName,
                         cud.UnionCasesAccessibility,
                         [],
-                        mkILReturn (baseTy),
+                        mkILReturn baseTy,
                         mkMethodBody (
                             true,
                             [],
@@ -1016,7 +1015,7 @@ let convAlternativeDef
 
             (baseMakerMeths @ baseTesterMeths), (baseMakerProps @ baseTesterProps)
 
-        | NoHelpers when not (alt.IsNullary) && cuspecRepr.RepresentAlternativeAsStructValue(cuspec) ->
+        | NoHelpers when not alt.IsNullary && cuspecRepr.RepresentAlternativeAsStructValue(cuspec) ->
             // For non-nullary struct DUs, maker method is used to create their values.
             [ makeNonNullaryMakerMethod () ], []
         | NoHelpers -> [], []
@@ -1329,7 +1328,7 @@ let mkClassUnionDef
                 |> Array.tryFindIndex (fun t -> t.IsNullary)
                 |> Option.defaultValue -1
 
-            let fieldsEmitted = new HashSet<_>()
+            let fieldsEmitted = HashSet<_>()
 
             for cidx, alt in Array.indexed cud.UnionCases do
                 if
@@ -1404,7 +1403,7 @@ let mkClassUnionDef
                                                     mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 2uy ], [])
                                                 | Encoded(method,
                                                           _data,
-                                                          [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 1uy) :: otherElems) ]) ->
+                                                          [ ILAttribElem.Array(elemType, ILAttribElem.Byte 1uy :: otherElems) ]) ->
                                                     mkILCustomAttribMethRef (
                                                         method,
                                                         [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 2uy) :: otherElems) ],

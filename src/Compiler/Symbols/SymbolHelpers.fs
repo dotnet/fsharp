@@ -374,7 +374,7 @@ module internal SymbolHelpers =
               match item  with
               | Item.Trait _ -> true
               | Item.Types(_, _ :: _) -> true
-              | Item.ILField(_) -> true
+              | Item.ILField _ -> true
               | Item.RecdField _ -> true
               | Item.SetterArg _ -> true
               | Item.TypeVar _ -> true
@@ -808,7 +808,7 @@ module internal SymbolHelpers =
                 let typeString = minfo.DeclaringTyconRef |> ticksAndArgCountTextOfTyconRef
                 let paramString =
                     let nGenericParams = minfo.RawMetadata.GenericParams.Length
-                    if nGenericParams > 0 then "``"+(nGenericParams.ToString()) else ""
+                    if nGenericParams > 0 then "``"+nGenericParams.ToString() else ""
                 sprintf "%s.%s%s" typeString minfo.RawMetadata.Name paramString |> Some
 
             | MethInfoWithModifiedReturnType(mi,_) -> getKeywordForMethInfo mi

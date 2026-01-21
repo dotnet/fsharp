@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #Accessibility 
-#light
+
 
 module internal InternalModule =
 
