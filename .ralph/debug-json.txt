@@ -1,0 +1,19 @@
+Original:
+{"overview": "Clean up CLIEvent fix by: (1) resetting branch to main, (2) writing failing tests
+   first (TDD), (3) implementing fix at source using canonical abstractions
+   (CompileAsEvent/IsFSharpEventProperty), (4) updating existing test expectations, (5) adding
+   release notes, (6) final cleanup and validation", "subtasks": [{"id": 1, "name": "Reset & Write
+   Failing Tests", "description": "RESET THE BRANCH: Start fresh from main to avoid bootstrap
+   contamination from previous failed attempts. Then implement TDD - write the failing tests FIRST
+   before any implementation.\n\n1. Reset: `git reset --hard main && git clean -xfd artifacts`\n2.
+   Create test file changes in `tests/FSharp.Compiler.Service.Tests/Symbols.fs` in the `Event`
+   module:\n   - Add test `CLIEvent IsEvent returns true` using {caret} marker approach (not manual
+    coordinates)\n   - Add test `CLIEvent XmlDocSig uses E prefix` using {caret} marker approach\n
+     - Use `Checker.getSymbolUse` helper with {caret} marker\n3. Run tests to confirm they FAIL
+   (this validates the tests are correct)\n\nTest template:\n
+
+Fixed:
+{"overview": "Clean up CLIEvent fix by: (1) resetting branch to main, (2) writing failing tests\n   first (TDD), (3) implementing fix at source using canonical abstractions\n   (CompileAsEvent/IsFSharpEventProperty), (4) updating existing test expectations, (5) adding\n   release notes, (6) final cleanup and validation", "subtasks": [{"id": 1, "name": "Reset & Write\n   Failing Tests", "description": "RESET THE BRANCH: Start fresh from main to avoid bootstrap\n   contamination from previous failed attempts. Then implement TDD - write the failing tests FIRST\n   before any implementation.\n\n1. Reset: `git reset --hard main && git clean -xfd artifacts`\n2.\n   Create test file changes in `tests/FSharp.Compiler.Service.Tests/Symbols.fs` in the `Event`\n   module:\n   - Add test `CLIEvent IsEvent returns true` using {caret} marker approach (not manual\n    coordinates)\n   - Add test `CLIEvent XmlDocSig uses E prefix` using {caret} marker approach\n\n     - Use `Checker.getSymbolUse` helper with {caret} marker\n3. Run tests to confirm they FAIL\n   (this validates the tests are correct)\n\nTest template:\n
+
+Trimmed:
+{"overview": "Clean up CLIEvent fix by: (1) resetting branch to main, (2) writing failing tests\n   first (TDD), (3) implementing fix at source using canonical abstractions\n   (CompileAsEvent/IsFSharpEventProperty), (4) updating existing test expectations, (5) adding\n   release notes, (6) final cleanup and validation", "subtasks": [{"id": 1, "name": "Reset & Write\n   Failing Tests", "description": "RESET THE BRANCH: Start fresh from main to avoid bootstrap\n   contamination from previous failed attempts. Then implement TDD - write the failing tests FIRST\n   before any implementation.\n\n1. Reset: `git reset --hard main && git clean -xfd artifacts`\n2.\n   Create test file changes in `tests/FSharp.Compiler.Service.Tests/Symbols.fs` in the `Event`\n   module:\n   - Add test `CLIEvent IsEvent returns true` using {caret} marker approach (not manual\n    coordinates)\n   - Add test `CLIEvent XmlDocSig uses E prefix` using {caret} marker approach\n\n     - Use `Checker.getSymbolUse` helper with {caret} marker\n3. Run tests to confirm they FAIL\n   (this validates the tests are correct)\n\nTest template:\n"]}}
