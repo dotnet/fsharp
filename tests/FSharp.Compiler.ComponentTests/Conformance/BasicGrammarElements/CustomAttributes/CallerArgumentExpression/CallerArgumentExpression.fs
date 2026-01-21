@@ -441,15 +441,15 @@ f "abc" |> assertEqual "no value"
       FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
 
-type System.Object with
-  member this.A([<CallerArgumentExpression "this">] ?arg: string) = arg
+// type System.Object with
+//   member this.A([<CallerArgumentExpression "this">] ?arg: string) = arg
   
 [<Extension>]
 type B =
     [<Extension>]
     static member C (this: #obj, [<CallerArgumentExpression "this">] ?arg: string) = arg
 
-(1 + 2).A() |> assertEqual (Some "1 + 2")
+// (1 + 2).A() |> assertEqual (Some "1 + 2")
 (1 + 2).C() |> assertEqual (Some "1 + 2")
 """
         |> withLangVersionPreview

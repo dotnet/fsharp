@@ -2490,11 +2490,17 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     | CallerSide _, (CallerFilePath | CallerMemberName) -> errorIfNotStringTy m ty callerInfo
                     | CalleeSide, (CallerFilePath | CallerMemberName) -> errorIfNotOptional g.string_ty "string" m ty callerInfo
                     | CallerSide _, CallerArgumentExpression arg ->
-                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportCallerArgumentExpression m
+                        match tryLanguageFeatureErrorOption g.langVersion LanguageFeature.SupportCallerArgumentExpression m with
+                        | Some e -> informationalWarning e
+                        | None -> ()
+
                         errorIfNotStringTy m ty callerInfo
                         checkArgOfCallerArgumentExpression m arg nameOpt
                     | CalleeSide, CallerArgumentExpression arg ->
-                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportCallerArgumentExpression m
+                        match tryLanguageFeatureErrorOption g.langVersion LanguageFeature.SupportCallerArgumentExpression m with
+                        | Some e -> informationalWarning e
+                        | None -> ()
+
                         errorIfNotOptional g.string_ty "string" m ty callerInfo
                         checkArgOfCallerArgumentExpression m arg nameOpt
                 )
