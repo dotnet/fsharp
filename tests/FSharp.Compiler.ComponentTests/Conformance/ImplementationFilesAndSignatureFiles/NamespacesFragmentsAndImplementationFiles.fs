@@ -236,7 +236,7 @@ module NamespacesGlobal =
         |> shouldSucceed
         |> ignore
 
-    // SOURCE=E_Abbreviation.fsx SCFLAGS="--langversion:5.0 --test:ErrorRanges"
+    // SOURCE=E_Abbreviation.fsx SCFLAGS="--test:ErrorRanges"
     // <Expects status="error" id="FS0883" span="(6,18-6,24)">Invalid namespace, module, type or union case name
     // <Expects status="error" id="FS0053" span="(6,18-6,24)">Discriminated union cases and exception labels must be uppercase identifiers
     [<Fact>]

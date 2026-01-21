@@ -115,7 +115,7 @@ module ObjectConstructors =
         |> withDiagnosticMessageMatches "Interfaces cannot contain definitions of object constructors"
         |> ignore
 
-    // SOURCE=AlternateGenericTypeSyntax01.fs SCFLAGS="--langversion:5.0"
+    // SOURCE=AlternateGenericTypeSyntax01.fs
     // This test uses ML-style type syntax which is no longer supported in modern F#
     // The --mlcompatibility flag has been removed
     [<Fact(Skip = "ML-style type syntax is no longer supported in F# - the --mlcompatibility option was removed")>]

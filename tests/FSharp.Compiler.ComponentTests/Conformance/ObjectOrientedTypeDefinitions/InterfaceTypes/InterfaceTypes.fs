@@ -75,7 +75,7 @@ module InterfaceTypes =
         compilation
         |> getCompilation
         |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:5.0"; "--nowarn:221"]
+        |> withOptions ["--test:ErrorRanges"; "--nowarn:221"]
         |> typecheck
         |> shouldFail
         |> withErrorCode 3360
@@ -85,7 +85,7 @@ module InterfaceTypes =
         compilation
         |> getCompilation
         |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:5.0"; "--nowarn:221"]
+        |> withOptions ["--test:ErrorRanges"; "--nowarn:221"]
         |> typecheck
         |> shouldFail
         |> withErrorCode 3360
@@ -116,7 +116,7 @@ module InterfaceTypes =
         compilation
         |> getCompilation
         |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:5.0"]
+        |> withOptions ["--test:ErrorRanges"]
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
@@ -166,7 +166,7 @@ module InterfaceTypes =
         compilation
         |> getCompilation
         |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:5.0"]
+        |> withOptions ["--test:ErrorRanges"]
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
@@ -176,7 +176,7 @@ module InterfaceTypes =
         compilation
         |> getCompilation
         |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:5.0"]
+        |> withOptions ["--test:ErrorRanges"]
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
@@ -260,7 +260,7 @@ module InterfaceTypes =
         compilation
         |> getCompilation
         |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:5.0"; "--nowarn:221"]
+        |> withOptions ["--test:ErrorRanges"; "--nowarn:221"]
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
@@ -448,7 +448,7 @@ if res = true then 0 else 1
         |> compileExeAndRun
         |> shouldSucceed
 
-    // Original: PRECMD="$CSC_PIPE /t:library MultipleInterfaceInheritanceFromCS.cs" SCFLAGS="-r:MultipleInterfaceInheritanceFromCS.dll --langversion:5.0"
+    // Original: PRECMD="$CSC_PIPE /t:library MultipleInterfaceInheritanceFromCS.cs" SCFLAGS="-r:MultipleInterfaceInheritanceFromCS.dll"
     // F# class inheriting C# type with multiple interface implementations and overriding interface
     [<Fact>]
     let ``ClassConsumeMultipleInterfaceFromCS - F# class inherits C# type and overrides interface`` () =

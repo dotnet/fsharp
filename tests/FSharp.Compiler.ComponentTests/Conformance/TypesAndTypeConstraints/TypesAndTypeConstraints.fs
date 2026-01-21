@@ -101,12 +101,12 @@ module CheckingSyntacticTypes =
         |> withDiagnosticMessageMatches "'new'.+constraint"
         |> ignore
 
-    // SOURCE=DefaultConstructorConstraint02.fs SCFLAGS="--langversion:5.0 --test:ErrorRanges"
+    // SOURCE=DefaultConstructorConstraint02.fs SCFLAGS="--test:ErrorRanges"
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/TypesAndTypeConstraints/CheckingSyntacticTypes", Includes = [| "DefaultConstructorConstraint02.fs" |])>]
     let ``DefaultConstructorConstraint02_fs`` compilation =
         compilation
         |> asExe
-        |> withOptions [ "--langversion:5.0"; "--test:ErrorRanges" ]
+        |> withOptions [ "--test:ErrorRanges" ]
         |> typecheck
         |> shouldFail
         |> withErrorCode 1
@@ -255,12 +255,12 @@ module CheckingSyntacticTypes =
         |> withDiagnosticMessageMatches "someFunc"
         |> ignore
 
-    // SOURCE=E_MemberConstraint02.fs SCFLAGS="--langversion:5.0 --test:ErrorRanges"
+    // SOURCE=E_MemberConstraint02.fs SCFLAGS="--test:ErrorRanges"
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/TypesAndTypeConstraints/CheckingSyntacticTypes", Includes = [| "E_MemberConstraint02.fs" |])>]
     let ``E_MemberConstraint02_fs`` compilation =
         compilation
         |> asExe
-        |> withOptions [ "--langversion:5.0"; "--test:ErrorRanges" ]
+        |> withOptions [ "--test:ErrorRanges" ]
         |> typecheck
         |> shouldFail
         |> withErrorCode 1
@@ -279,12 +279,12 @@ module CheckingSyntacticTypes =
         |> withDiagnosticMessageMatches "Expected 1 expressions"
         |> ignore
 
-    // SOURCE=E_MemberConstraint04.fs SCFLAGS="--langversion:5.0 --test:ErrorRanges --flaterrors"
+    // SOURCE=E_MemberConstraint04.fs SCFLAGS="--test:ErrorRanges --flaterrors"
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/TypesAndTypeConstraints/CheckingSyntacticTypes", Includes = [| "E_MemberConstraint04.fs" |])>]
     let ``E_MemberConstraint04_fs`` compilation =
         compilation
         |> asExe
-        |> withOptions [ "--langversion:5.0"; "--test:ErrorRanges"; "--flaterrors" ]
+        |> withOptions [ "--test:ErrorRanges"; "--flaterrors" ]
         |> typecheck
         |> shouldFail
         |> withErrorCode 1
@@ -300,35 +300,35 @@ module CheckingSyntacticTypes =
     let ``UnmanagedConstraint01_fs`` compilation =
         compilation |> asExe |> compile |> shouldSucceed |> ignore
 
-    // SOURCE=E_UnmanagedConstraint01.fs SCFLAGS="--langversion:5.0 --test:ErrorRanges"
+    // SOURCE=E_UnmanagedConstraint01.fs SCFLAGS="--test:ErrorRanges"
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/TypesAndTypeConstraints/CheckingSyntacticTypes", Includes = [| "E_UnmanagedConstraint01.fs" |])>]
     let ``E_UnmanagedConstraint01_fs`` compilation =
         compilation
         |> asExe
-        |> withOptions [ "--langversion:5.0"; "--test:ErrorRanges" ]
+        |> withOptions [ "--test:ErrorRanges" ]
         |> typecheck
         |> shouldFail
         |> withErrorCode 1
         |> ignore
 
-    // SOURCE=E_EqualityConstraint01.fs SCFLAGS="--langversion:5.0 --test:ErrorRanges"
+    // SOURCE=E_EqualityConstraint01.fs SCFLAGS="--test:ErrorRanges"
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/TypesAndTypeConstraints/CheckingSyntacticTypes", Includes = [| "E_EqualityConstraint01.fs" |])>]
     let ``E_EqualityConstraint01_fs`` compilation =
         compilation
         |> asExe
-        |> withOptions [ "--langversion:5.0"; "--test:ErrorRanges" ]
+        |> withOptions [ "--test:ErrorRanges" ]
         |> typecheck
         |> shouldFail
         |> withErrorCode 1
         |> withDiagnosticMessageMatches "equality"
         |> ignore
 
-    // SOURCE=E_ComparisonConstraint01.fs SCFLAGS="--langversion:5.0 --test:ErrorRanges"
+    // SOURCE=E_ComparisonConstraint01.fs SCFLAGS="--test:ErrorRanges"
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/TypesAndTypeConstraints/CheckingSyntacticTypes", Includes = [| "E_ComparisonConstraint01.fs" |])>]
     let ``E_ComparisonConstraint01_fs`` compilation =
         compilation
         |> asExe
-        |> withOptions [ "--langversion:5.0"; "--test:ErrorRanges" ]
+        |> withOptions [ "--test:ErrorRanges" ]
         |> typecheck
         |> shouldFail
         |> withErrorCode 1
