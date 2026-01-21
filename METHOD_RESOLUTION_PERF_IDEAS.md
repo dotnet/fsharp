@@ -361,7 +361,7 @@ Memory savings per CalledMeth (typical case with no named property args):
 ### Experiment 1: Baseline Profiling
 **Date**: 2026-01-20
 **Description**: Collect baseline traces for untyped vs typed Assert.Equal
-**Method**: Use `tools/perf-repro/` scripts with dotnet-trace
+**Method**: Use `.copilot/skills/perf-tools/` scripts with timing comparison
 
 **Environment**:
 - OS: Windows 11
@@ -381,7 +381,7 @@ Memory savings per CalledMeth (typical case with no named property args):
 **Trace Collection**:
 - Tools installed: dotnet-trace v9.0.706901, dotnet-dump v9.0.706901, dotnet-counters v9.0.706901
 - Traces collected but analysis limited (traces partially broken due to process exit during collection)
-- Speedscope format conversion completed (files at `tools/perf-repro/results/`)
+- Speedscope format conversion completed (files in local results folder)
 
 **Key Findings**:
 1. **No significant slowdown observed**: Untyped vs typed Assert.Equal calls show nearly identical compilation times (1.02x ratio)
@@ -806,4 +806,4 @@ Combined: ~85-95% reduction in full type checking work
 - Key files:
   - `src/Compiler/Checking/ConstraintSolver.fs` - overload resolution
   - `src/Compiler/Checking/MethodCalls.fs` - CalledMeth, argument matching
-  - `tools/perf-repro/` - profiling scripts
+  - `.copilot/skills/perf-tools/` - profiling scripts

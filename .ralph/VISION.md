@@ -1,3 +1,66 @@
+# Reorganize Perf Tools into Skills Folder
+
+## High-Level Goal
+
+✅ **COMPLETED**: Performance profiling tools have been moved and consolidated from `tools/perf-repro/` into `.copilot/skills/perf-tools/`. Scripts have been simplified, duplication eliminated, and the skill's `.md` file is colocated with its scripts.
+
+## Final Structure
+
+```
+.copilot/skills/
+└── perf-tools/
+    ├── PERF_SKILL.md            # Main skill doc
+    ├── PerfTestGenerator.fsx    # Consolidated: generates typed/untyped test projects
+    ├── PerfProfiler.fsx         # Consolidated: profiles compilation with timing
+    ├── RunPerfAnalysis.ps1      # Windows orchestration
+    ├── RunPerfAnalysis.sh       # Unix orchestration
+    └── .gitignore               # Ignore generated outputs
+```
+
+## Key Design Decisions
+
+1. **Consolidate Scripts**: The 3 existing .fsx files have significant overlap - merge AnalyzeTrace.fsx functionality into a simpler model (timing only, no trace analysis - trace analysis was failing anyway).
+
+2. **Simplify**: Remove the dependency on dotnet-trace for the main workflow. The timing-based approach is sufficient and more portable.
+
+3. **Colocate**: Put the skill .md in the same folder as its scripts (`.copilot/skills/perf-tools/`).
+
+4. **Remove Reports**: The PERF_REPORT*.md files are outputs, not source - they belong in generated results, not source control.
+
+5. **Delete tools/perf-repro**: After moving, this folder should be gone entirely.
+
+## What Was Deleted
+
+- `tools/perf-repro/` (entire folder - contents moved and consolidated)
+- `PERFORMANCE_ASSISTANT.md` from repo root (content merged into skill)
+- `.copilot/skills/PERFORMANCE_ASSISTANT.md` (replaced by perf-tools/PERF_SKILL.md)
+
+## Script Audit Notes
+
+### GenerateXUnitPerfTest.fsx
+- **Quality**: Good structure, proper CLI parsing
+- **Issues**: Some redundancy in type generation
+- **Improvements**: Simplify type variant handling, remove unused helpers
+
+### ProfileCompilation.fsx
+- **Quality**: Over-engineered with trace collection that usually fails
+- **Issues**: Fallback logic is convoluted
+- **Improvements**: Remove trace collection, focus on timing-only (simpler and reliable)
+
+### AnalyzeTrace.fsx
+- **Quality**: Mostly generates boilerplate report text
+- **Issues**: Trace analysis never works; just produces template text
+- **Improvements**: Remove entirely - the timing output from ProfileCompilation is sufficient
+
+## Success Criteria
+
+- `tools/perf-repro/` folder is deleted
+- All useful functionality is in `.copilot/skills/perf-tools/`
+- Scripts are shorter, simpler, and validated by sample runs
+- Skill .md is colocated with scripts
+
+---
+
 # Method Resolution Performance Investigation
 
 ## High-Level Goal
@@ -87,9 +150,9 @@ ResolveOverloading
 
 ## Profiling Approach
 
-1. Use existing `tools/perf-repro/` scripts to generate test cases
-2. Collect traces with `dotnet-trace` focusing on ConstraintSolver methods
-3. Analyze hot paths and allocation patterns
+1. Use `.copilot/skills/perf-tools/` scripts to generate test cases
+2. Run timing-based profiling with PerfProfiler.fsx
+3. Analyze timing differences between typed/untyped patterns
 4. Measure baseline, implement hypothesis, measure again
 
 ## Constraints & Gotchas
@@ -99,12 +162,12 @@ ResolveOverloading
 - Some candidates need full type checking even if arguments look incompatible (due to type-directed conversions)
 - Must handle edge cases: param arrays, optional args, named args, generic constraints
 
-## Existing Tooling (from PR #19072)
+## Current Tooling (in `.copilot/skills/perf-tools/`)
 
-- `tools/perf-repro/GenerateXUnitPerfTest.fsx` - generates typed/untyped test projects
-- `tools/perf-repro/ProfileCompilation.fsx` - profiles compilation with dotnet-trace
-- `tools/perf-repro/AnalyzeTrace.fsx` - analyzes trace files
-- `tools/perf-repro/RunPerfAnalysis.ps1` - orchestrates the workflow
+- `PerfTestGenerator.fsx` - generates typed/untyped test projects
+- `PerfProfiler.fsx` - profiles compilation with timing comparison
+- `RunPerfAnalysis.ps1` / `RunPerfAnalysis.sh` - orchestration scripts
+- `PERF_SKILL.md` - skill documentation
 
 ## Success Criteria
 
