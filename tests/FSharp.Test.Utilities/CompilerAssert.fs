@@ -266,10 +266,9 @@ and Compilation =
         targetFramework: TargetFramework *
         CompilationReference list *
         name: string option *
-        outputDirectory: DirectoryInfo option *
-        useRawOptions: bool with
+        outputDirectory: DirectoryInfo option with
 
-        static member Create(source:SourceCodeFileKind, output:CompileOutput, ?options:string array, ?targetFramework:TargetFramework, ?cmplRefs:CompilationReference list, ?name:string, ?outputDirectory: DirectoryInfo, ?useRawOptions: bool) =
+        static member Create(source:SourceCodeFileKind, output:CompileOutput, ?options:string array, ?targetFramework:TargetFramework, ?cmplRefs:CompilationReference list, ?name:string, ?outputDirectory: DirectoryInfo) =
             let options = defaultArg options [||]
             let targetFramework = defaultArg targetFramework TargetFramework.Current
             let cmplRefs = defaultArg cmplRefs []
@@ -277,10 +276,9 @@ and Compilation =
                 match defaultArg name null with
                 | null -> None
                 | n -> Some n
-            let useRawOptions = defaultArg useRawOptions false
-            Compilation([source], output, options, targetFramework, cmplRefs, name, outputDirectory, useRawOptions)
+            Compilation([source], output, options, targetFramework, cmplRefs, name, outputDirectory)
 
-        static member Create(source:string, output:CompileOutput, ?options:string array, ?targetFramework:TargetFramework, ?cmplRefs:CompilationReference list, ?name:string, ?outputDirectory: DirectoryInfo, ?useRawOptions: bool) =
+        static member Create(source:string, output:CompileOutput, ?options:string array, ?targetFramework:TargetFramework, ?cmplRefs:CompilationReference list, ?name:string, ?outputDirectory: DirectoryInfo) =
             let options = defaultArg options [||]
             let targetFramework = defaultArg targetFramework TargetFramework.Current
             let cmplRefs = defaultArg cmplRefs []
@@ -288,20 +286,18 @@ and Compilation =
                 match defaultArg name null with
                 | null -> None
                 | n -> Some n
-            let useRawOptions = defaultArg useRawOptions false
-            Compilation([SourceCodeFileKind.Create("test.fs", source)], output, options, targetFramework, cmplRefs, name, outputDirectory, useRawOptions)
+            Compilation([SourceCodeFileKind.Create("test.fs", source)], output, options, targetFramework, cmplRefs, name, outputDirectory)
 
-        static member Create(fileName:string, source:string, output, ?options, ?targetFramework:TargetFramework, ?cmplRefs, ?name, ?outputDirectory: DirectoryInfo, ?useRawOptions: bool) =
+        static member Create(fileName:string, source:string, output, ?options, ?targetFramework:TargetFramework, ?cmplRefs, ?name, ?outputDirectory: DirectoryInfo) =
             let source = SourceCodeFileKind.Create(fileName, source)
             let options = defaultArg options [||]
             let targetFramework = defaultArg targetFramework TargetFramework.Current
             let cmplRefs = defaultArg cmplRefs []
             let name = defaultArg name null
             let outputDirectory = defaultArg outputDirectory null
-            let useRawOptions = defaultArg useRawOptions false
-            Compilation.Create(source, output, options, targetFramework, cmplRefs, name, outputDirectory, useRawOptions)
+            Compilation.Create(source, output, options, targetFramework, cmplRefs, name, outputDirectory)
 
-        static member CreateFromSources(sources, output, ?options, ?targetFramework, ?cmplRefs, ?name, ?outputDirectory: DirectoryInfo, ?useRawOptions: bool) =
+        static member CreateFromSources(sources, output, ?options, ?targetFramework, ?cmplRefs, ?name, ?outputDirectory: DirectoryInfo) =
             let options = defaultArg options [||]
             let targetFramework = defaultArg targetFramework TargetFramework.Current
             let cmplRefs = defaultArg cmplRefs []
@@ -309,8 +305,7 @@ and Compilation =
                 match defaultArg name null with
                 | null -> None
                 | n -> Some n
-            let useRawOptions = defaultArg useRawOptions false
-            Compilation(sources, output, options, targetFramework, cmplRefs, name, outputDirectory, useRawOptions)
+            Compilation(sources, output, options, targetFramework, cmplRefs, name, outputDirectory)
 
 module CompilerAssertHelpers =
 
@@ -434,7 +429,7 @@ module CompilerAssertHelpers =
     let defaultProjectOptionsForFilePath path (targetFramework: TargetFramework) =
         { defaultProjectOptions targetFramework with SourceFiles = [| path |] }
 
-    let rawCompile outputFilePath isExe options (targetFramework: TargetFramework) (sources: SourceCodeFileKind list) (useRawOptions: bool) =
+    let rawCompile outputFilePath isExe options (targetFramework: TargetFramework) (sources: SourceCodeFileKind list) =
         let args =
             [|
                 yield "fsc.dll"
@@ -442,8 +437,7 @@ module CompilerAssertHelpers =
                     yield item.GetSourceFileName
                 yield "-o:" + outputFilePath
                 yield (if isExe then "--target:exe" else "--target:library")
-                if not useRawOptions then
-                    yield! (defaultProjectOptions targetFramework).OtherOptions
+                yield! (defaultProjectOptions targetFramework).OtherOptions
                 yield! options
              |]
 
@@ -452,7 +446,7 @@ module CompilerAssertHelpers =
         let errors, ex = checker.Compile args |> Async.RunImmediate
         errors, ex, outputFilePath
 
-    let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) (useRawOptions: bool) =
+    let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) =
         let name =
             match nameOpt with
             | Some name -> name
@@ -477,7 +471,7 @@ module CompilerAssertHelpers =
                         File.Copy(sourceFileName, destFileName, true)
                         yield source.WithFileName(destFileName)
             ]
-        rawCompile outputFilePath isExe options targetFramework sources useRawOptions
+        rawCompile outputFilePath isExe options targetFramework sources
 
     let assertErrors libAdjust ignoreWarnings (errors: FSharpDiagnostic []) expectedErrors =
         let errorMessage (error: FSharpDiagnostic) =
@@ -533,22 +527,21 @@ module CompilerAssertHelpers =
                 // On Disk file
                 source
 
-        f (rawCompile outputFilePath isExe options TargetFramework.Current [sourceFile] false)
+        f (rawCompile outputFilePath isExe options TargetFramework.Current [sourceFile])
 
     let rec compileCompilationAux outputDirectory ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * exn option * string) * string list =
 
         let compilationRefs, deps = evaluateReferences outputDirectory ignoreWarnings cmpl
-        let isExe, sources, options, targetFramework, name, useRawOptions =
+        let isExe, sources, options, targetFramework, name =
             match cmpl with
-            | Compilation(sources, output, options, targetFramework, _, name, _, useRawOptions) ->
+            | Compilation(sources, output, options, targetFramework, _, name, _) ->
                 (match output with | Module -> false | Library -> false | Exe -> true),           // isExe
                 sources,
                 options,
                 targetFramework,
-                name,
-                useRawOptions
+                name
 
-        let res = compileDisposable outputDirectory isExe (Array.append options compilationRefs) targetFramework name sources useRawOptions
+        let res = compileDisposable outputDirectory isExe (Array.append options compilationRefs) targetFramework name sources
 
         let deps2 =
             compilationRefs
@@ -560,7 +553,7 @@ module CompilerAssertHelpers =
 
     and evaluateReferences (outputDir:DirectoryInfo) ignoreWarnings (cmpl: Compilation) : string[] * string list =
         match cmpl with
-        | Compilation(_, _, _, _, cmpls, _, _, _) ->
+        | Compilation(_, _, _, _, cmpls, _, _) ->
             let compiledRefs =
                 cmpls
                 |> List.map (fun cmpl ->
