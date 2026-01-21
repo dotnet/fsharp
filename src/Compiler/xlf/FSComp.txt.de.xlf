@@ -187,6 +187,11 @@
         <target state="translated">Für ein generisches Konstrukt muss ein generischer Typparameter als Struktur- oder Verweistyp bekannt sein. Erwägen Sie das Hinzufügen einer Typanmerkung.</target>
         <note />
       </trans-unit>
+      <trans-unit id="csIncomparableConcreteness">
+        <source>Neither candidate is strictly more concrete than the other:\n{0}</source>
+        <target state="new">Neither candidate is strictly more concrete than the other:\n{0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
         <target state="translated">Bekannte Argumenttypen: {0}</target>

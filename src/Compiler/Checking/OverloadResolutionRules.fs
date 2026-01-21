@@ -140,7 +140,10 @@ let explainIncomparableConcreteness (g: TcGlobals) (ty1: TType) (ty2: TType) : (
         let hasPositive = comparisons |> List.exists (fun (_, _, _, c) -> c > 0)
         let hasNegative = comparisons |> List.exists (fun (_, _, _, c) -> c < 0)
         // Incomparable means mixed results: at least one positive AND at least one negative
-        if hasPositive && hasNegative then Some comparisons else None
+        if hasPositive && hasNegative then
+            Some comparisons
+        else
+            None
 
     match sty1, sty2 with
     // Type applications - check if incomparable
@@ -186,8 +189,7 @@ let explainIncomparableMethodConcreteness<'T>
     (ctx: OverloadResolutionContext)
     (meth1: CalledMeth<'T>)
     (meth2: CalledMeth<'T>)
-    : IncomparableConcretenessInfo option
-    =
+    : IncomparableConcretenessInfo option =
     // Only applies when both methods are generic
     if meth1.CalledTyArgs.IsEmpty || meth2.CalledTyArgs.IsEmpty then
         None
@@ -210,7 +212,9 @@ let explainIncomparableMethodConcreteness<'T>
                 let sty2 = stripTyEqns ctx.g ty2
 
                 match sty1, sty2 with
-                | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) when tyconRefEq ctx.g tcref1 tcref2 && args1.Length = args2.Length ->
+                | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) when
+                    tyconRefEq ctx.g tcref1 tcref2 && args1.Length = args2.Length
+                    ->
                     // Compare type arguments of the type application
                     args1
                     |> List.mapi2

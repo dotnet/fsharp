@@ -187,6 +187,11 @@
         <target state="translated">Genel yapı, genel bir tür parametresinin yapı veya başvuru türü olarak bilinmesini gerektirir. Tür ek açıklaması eklemeyi düşünün.</target>
         <note />
       </trans-unit>
+      <trans-unit id="csIncomparableConcreteness">
+        <source>Neither candidate is strictly more concrete than the other:\n{0}</source>
+        <target state="new">Neither candidate is strictly more concrete than the other:\n{0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
         <target state="translated">Bilinen bağımsız değişken türleri: {0}</target>

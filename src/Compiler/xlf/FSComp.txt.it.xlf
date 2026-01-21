@@ -187,6 +187,11 @@
         <target state="translated">Un costrutto generico richiede che un parametro di tipo generico sia noto come tipo riferimento o struct. Provare ad aggiungere un'annotazione di tipo.</target>
         <note />
       </trans-unit>
+      <trans-unit id="csIncomparableConcreteness">
+        <source>Neither candidate is strictly more concrete than the other:\n{0}</source>
+        <target state="new">Neither candidate is strictly more concrete than the other:\n{0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
         <target state="translated">Tipi di argomenti noti: {0}</target>

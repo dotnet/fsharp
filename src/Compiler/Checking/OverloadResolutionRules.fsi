@@ -37,17 +37,18 @@ val explainIncomparableConcreteness: g: TcGlobals -> ty1: TType -> ty2: TType ->
 
 /// Represents why two methods are incomparable under concreteness ordering.
 type IncomparableConcretenessInfo =
-    {
-        Method1Name: string
-        Method1BetterPositions: int list
-        Method2Name: string
-        Method2BetterPositions: int list
-    }
+    { Method1Name: string
+      Method1BetterPositions: int list
+      Method2Name: string
+      Method2BetterPositions: int list }
 
 /// Explain why two CalledMeth objects are incomparable under the concreteness ordering.
 /// Returns Some info when the methods are incomparable due to mixed concreteness results.
 val explainIncomparableMethodConcreteness:
-    ctx: OverloadResolutionContext -> meth1: CalledMeth<'T> -> meth2: CalledMeth<'T> -> IncomparableConcretenessInfo option
+    ctx: OverloadResolutionContext ->
+    meth1: CalledMeth<'T> ->
+    meth2: CalledMeth<'T> ->
+        IncomparableConcretenessInfo option
 
 /// Represents a single tiebreaker rule in overload resolution.
 /// Rules are ordered by priority (lower number = higher priority).

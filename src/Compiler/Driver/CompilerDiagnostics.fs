@@ -987,23 +987,13 @@ type Exception with
                         let formatPositions positions =
                             match positions with
                             | [ p ] -> sprintf "position %d" p
-                            | _ ->
-                                positions
-                                |> List.map string
-                                |> String.concat ", "
-                                |> sprintf "positions %s"
+                            | _ -> positions |> List.map string |> String.concat ", " |> sprintf "positions %s"
 
                         let line1 =
-                            sprintf
-                                "  - %s is more concrete at %s"
-                                info.Method1Name
-                                (formatPositions info.Method1BetterPositions)
+                            sprintf "  - %s is more concrete at %s" info.Method1Name (formatPositions info.Method1BetterPositions)
 
                         let line2 =
-                            sprintf
-                                "  - %s is more concrete at %s"
-                                info.Method2Name
-                                (formatPositions info.Method2BetterPositions)
+                            sprintf "  - %s is more concrete at %s" info.Method2Name (formatPositions info.Method2BetterPositions)
 
                         baseMessage + nl + FSComp.SR.csIncomparableConcreteness (line1 + nl + line2)
                     | None -> baseMessage

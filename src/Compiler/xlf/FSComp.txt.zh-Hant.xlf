@@ -187,6 +187,11 @@
         <target state="translated">泛型建構要求泛型型別參數必須指定為結構或參考型別。請考慮新增型別註解。</target>
         <note />
       </trans-unit>
+      <trans-unit id="csIncomparableConcreteness">
+        <source>Neither candidate is strictly more concrete than the other:\n{0}</source>
+        <target state="new">Neither candidate is strictly more concrete than the other:\n{0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
         <target state="translated">已知的引數類型: {0}</target>

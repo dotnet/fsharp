@@ -187,6 +187,11 @@
         <target state="translated">Una construcción genérica requiere que un parámetro de tipo genérico se conozca como tipo de referencia o estructura. Puede agregar una anotación de tipo.</target>
         <note />
       </trans-unit>
+      <trans-unit id="csIncomparableConcreteness">
+        <source>Neither candidate is strictly more concrete than the other:\n{0}</source>
+        <target state="new">Neither candidate is strictly more concrete than the other:\n{0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
         <target state="translated">Tipos de argumentos conocidos: {0}</target>
