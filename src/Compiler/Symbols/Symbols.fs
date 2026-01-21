@@ -1909,8 +1909,8 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsEvent = 
         match d with 
         | E _ -> true
-        | P p when p.IsFSharpEventProperty -> true  // CLIEvent properties should be considered events
-        | V v when v.IsFSharpEventProperty cenv.g -> true  // CLIEvent properties (ValRef case)
+        | P p when p.IsFSharpEventProperty -> true
+        | V v when v.IsFSharpEventProperty cenv.g -> true
         | _ -> false
 
     member _.EventForFSharpProperty = 

@@ -1020,8 +1020,8 @@ let ``Test project3 all symbols in signature`` () =
         ("property BaseClassPropertySet", ["slot"; "member"; "prop"]);
         ("property BaseClassProperty", ["member"; "prop"; "overridemem"]);
         ("property BaseClassProperty", ["slot"; "member"; "prop"]);
-        ("event BaseClassEvent", ["member"; "event"; "clievent"; "overridemem"]);
-        ("event BaseClassEvent", ["slot"; "member"; "event"; "clievent"]);
+        ("event BaseClassEvent", ["member"; "event"; "overridemem"]);
+        ("event BaseClassEvent", ["slot"; "member"; "event"]);
         ("IFooImpl", ["class"]); ("member .ctor", ["member"; "ctor"]);
         ("member InterfaceMethod", ["member"; "overridemem"; "intfmem"]);
         ("member add_InterfaceEvent", ["member"; "overridemem"; "intfmem"]);
@@ -1231,7 +1231,7 @@ let ``Test project3 all uses of all signature symbols`` () =
            ("file1", ((25, 15), (25, 32)), ["override"], ["slot"; "member"; "prop"]);
            ("file1", ((52, 18), (52, 35)), ["override"], ["slot"; "member"; "prop"])]);
          ("event BaseClassEvent",
-          [("file1", ((29, 15), (29, 29)), ["defn"], ["member"; "event"; "clievent"; "overridemem"])]);
+          [("file1", ((29, 15), (29, 29)), ["defn"], ["member"; "event"; "overridemem"])]);
          ("event BaseClassEvent",
           [("file1", ((24, 13), (24, 27)), ["defn"], ["slot"; "member"; "event"]);
            ("file1", ((29, 15), (29, 29)), ["override"], ["slot"; "member"; "event"]);
