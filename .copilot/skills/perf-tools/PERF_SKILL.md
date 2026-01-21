@@ -1,6 +1,6 @@
 # Performance Profiling Skill
 
-Tools for investigating F# compiler performance issues, especially method resolution.
+Standalone tool for profiling F# compiler performance on overloaded method calls.
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ dotnet fsi PerfProfiler.fsx --total 1500 --output ./results
 
 ### PerfProfiler.fsx
 
-Generates test projects and profiles compilation of typed vs untyped patterns.
+Standalone script that generates xUnit test projects and profiles compilation of typed vs untyped `Assert.Equal` patterns.
 
 ```bash
 dotnet fsi PerfProfiler.fsx --total 1500 --output ./results

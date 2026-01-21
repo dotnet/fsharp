@@ -1,10 +1,13 @@
 #!/usr/bin/env dotnet fsi
 // Profiles F# compilation of typed vs untyped xUnit test projects
 // Usage: dotnet fsi PerfProfiler.fsx --total 1500
+// 
+// This is a standalone script that generates test projects and profiles compilation.
 
 open System
 open System.IO
 open System.Diagnostics
+open System.Text
 
 type Config = { Total: int; Methods: int; Output: string }
 
@@ -18,14 +21,46 @@ let run dir (cmd: string) (args: string) =
     p.WaitForExit()
     (p.ExitCode, out, err)
 
+/// Generates an xUnit test project with Assert.Equal calls
 let generateProject cfg typed =
-    let genScript = Path.Combine(__SOURCE_DIRECTORY__, "PerfTestGenerator.fsx")
     let genDir = Path.Combine(cfg.Output, "generated")
-    let flag = if typed then "--typed" else "--untyped"
-    let (code, _, err) = run "." "dotnet" $"fsi \"{genScript}\" --total {cfg.Total} --methods {cfg.Methods} --output \"{genDir}\" {flag}"
-    if code <> 0 then failwith $"Generation failed: {err}"
     let name = if typed then "XUnitPerfTest.Typed" else "XUnitPerfTest.Untyped"
-    Path.Combine(genDir, name)
+    let projDir = Path.Combine(genDir, name)
+    Directory.CreateDirectory(projDir) |> ignore
+    
+    // Generate .fsproj
+    let fsproj = $"""<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Tests.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" PrivateAssets="all" />
+  </ItemGroup>
+</Project>"""
+    File.WriteAllText(Path.Combine(projDir, $"{name}.fsproj"), fsproj)
+    
+    // Generate Tests.fs
+    let callsPerMethod = cfg.Total / cfg.Methods
+    let sb = StringBuilder()
+    sb.AppendLine("module Tests") |> ignore
+    sb.AppendLine("open Xunit") |> ignore
+    sb.AppendLine() |> ignore
+    
+    for m in 1..cfg.Methods do
+        sb.AppendLine($"[<Fact>]") |> ignore
+        sb.AppendLine($"let ``Test Method {m}`` () =") |> ignore
+        for i in 1..callsPerMethod do
+            let call = if typed then $"Assert.Equal<int>({i}, {i})" else $"Assert.Equal({i}, {i})"
+            sb.AppendLine($"    {call}") |> ignore
+        sb.AppendLine() |> ignore
+    
+    File.WriteAllText(Path.Combine(projDir, "Tests.fs"), sb.ToString())
+    projDir
 
 let profileBuild dir name total =
     printfn "Profiling: %s" name
