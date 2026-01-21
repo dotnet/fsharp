@@ -242,7 +242,7 @@ module NamespacesGlobal =
     [<Fact>]
     let ``E_Abbreviation - global cannot be abbreviated`` () =
         FsxFromPath (resourcePath ++ "E_Abbreviation.fsx")
-        |> withLangVersion50
+        |> withLangVersion80
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldFail

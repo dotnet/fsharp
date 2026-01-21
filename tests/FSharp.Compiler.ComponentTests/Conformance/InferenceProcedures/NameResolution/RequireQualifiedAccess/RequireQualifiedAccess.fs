@@ -101,7 +101,7 @@ module RequireQualifiedAccess =
         compilation
         |> getCompilation
         |> asExe
-        |> withLangVersion60
+        |> withLangVersion80
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed

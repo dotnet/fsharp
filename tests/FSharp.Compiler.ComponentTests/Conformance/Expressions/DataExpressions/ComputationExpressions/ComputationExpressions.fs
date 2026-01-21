@@ -8,42 +8,6 @@ open FSharp.Test.Compiler
 
 module DataExpressions_ComputationExpressions =
 
-    // SOURCE=CombineResults01.fs SCFLAGS=-a --langversion:5.0 --mlcompatibility
-    // SKIP: Uses #indent "off" which is no longer supported
-    [<Theory(Skip = "Uses #indent 'off' syntax which is no longer supported"); FileInlineData("CombineResults01.fs")>]
-    let ``CombineResults01_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asLibrary
-        |> withLangVersion50
-        |> ignoreWarnings
-        |> compile
-        |> shouldSucceed
-
-    // SOURCE=ForLoop01.fs SCFLAGS=--langversion:5.0 --mlcompatibility
-    // Note: --mlcompatibility is no longer supported; using ignoreWarnings instead
-    [<Theory(Skip = "Language version 5.0 is out of support"); FileInlineData("ForLoop01.fs")>]
-    let ``ForLoop01_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withLangVersion50
-        |> ignoreWarnings
-        |> compile
-        |> shouldSucceed
-
-    // SOURCE=Regressions01.fs SCFLAGS=--langversion:5.0 --mlcompatibility
-    // Note: --mlcompatibility is no longer supported; using ignoreWarnings instead
-    [<Theory(Skip = "Language version 5.0 is out of support"); FileInlineData("Regressions01.fs")>]
-    let ``Regressions01_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withLangVersion50
-        |> ignoreWarnings
-        |> compile
-        |> shouldSucceed
-
     // SOURCE=MinMaxValuesInLoop01.fs
     [<Theory; FileInlineData("MinMaxValuesInLoop01.fs")>]
     let ``MinMaxValuesInLoop01_fs`` compilation =
