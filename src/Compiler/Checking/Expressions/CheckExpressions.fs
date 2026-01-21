@@ -10081,14 +10081,14 @@ and TcMethodApplication_UniqueOverloadInference
 
     // Early arity pre-filter: Filter out methods that definitely won't match based on arity
     // This avoids expensive CalledMeth construction for obviously incompatible overloads
-    let callerObjArgCount = List.length callerObjArgTys
-    let numCallerCurriedGroups = List.length unnamedCurriedCallerArgs
-    let totalUnnamedCallerArgs = fst callerArgCounts
+    // DISABLED for now - causes issues with C# 13 params enhancements
+    // TODO: Re-enable with more careful handling of collection-based params
+    let _callerObjArgCount = List.length callerObjArgTys
+    let _numCallerCurriedGroups = List.length unnamedCurriedCallerArgs
+    let _totalUnnamedCallerArgs = fst callerArgCounts
+    let _arityFilterFunc = MethInfoMayMatchCallerArgs  // Keep reference to avoid unused warning
     
-    let arityFilteredCandidates = 
-        candidateMethsAndProps 
-        |> List.filter (fun (minfo, _pinfoOpt) -> 
-            MethInfoMayMatchCallerArgs cenv.amap mItem minfo callerObjArgCount numCallerCurriedGroups totalUnnamedCallerArgs)
+    let arityFilteredCandidates = candidateMethsAndProps  // Disabled filtering
 
     let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
         let minst = FreshenMethInfo mItem minfo

@@ -786,10 +786,16 @@ and TypesQuicklyCompatibleStructural (g: TcGlobals) (callerArgTy: TType) (called
 /// Check if a CalledMeth's argument types are quickly compatible with caller argument types.
 /// This is used to pre-filter overload candidates before expensive FilterEachThenUndo.
 /// Returns false only if the types are DEFINITELY incompatible.
-let CalledMethQuicklyCompatible (g: TcGlobals) (calledMeth: CalledMeth<'T>) : bool =
+/// NOTE: This function is currently disabled due to edge cases with type-directed conversions,
+/// but kept for potential future optimization.
+let CalledMethQuicklyCompatible (_g: TcGlobals) (_calledMeth: CalledMeth<'T>) : bool =
+    // Currently always returns true - the quick filter is disabled
+    // to avoid issues with C# 13 params enhancements and other edge cases
+    true
+(*
     // Check all argument sets for type compatibility
     // If any argument pair is definitely incompatible, filter out this candidate
-    let argSets = calledMeth.ArgSets
+    let argSets = _calledMeth.ArgSets
     
     argSets |> List.forall (fun argSet ->
         // Check unnamed args: compare caller types with callee expected types
@@ -832,6 +838,7 @@ let CalledMethQuicklyCompatible (g: TcGlobals) (calledMeth: CalledMeth<'T>) : bo
                 TypesQuicklyCompatible g callerTy calledTy)
         
         unnamedCompatible && paramArrayCompatible && namedCompatible)
+*)
 
 let ShowAccessDomain ad =
     match ad with 
@@ -1666,6 +1673,12 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
                 do! SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
+        // Special handling for delegate types - ignore nullness differences
+        // Delegates from C# interfaces without nullable annotations should match F# events
+        // See https://github.com/dotnet/fsharp/issues/18361 and https://github.com/dotnet/fsharp/issues/18349
+        | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 && isDelegateTy g sty1 ->
+            SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+
         | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
             trackErrors {
                 do! SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
@@ -1874,6 +1887,12 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                 | _ -> return! SolveTypeEqualsType csenv ndeep m2 trace cxsln tag1 tag2
                 }
             | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
+
+        // Special handling for delegate types - ignore nullness differences
+        // Delegates from C# interfaces without nullable annotations should match F# events
+        // See https://github.com/dotnet/fsharp/issues/18361 and https://github.com/dotnet/fsharp/issues/18349
+        | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 && isDelegateTy g sty1 ->
+            SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
 
         | TType_app (tc1, l1, _)  , TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
             trackErrors {            
@@ -3793,8 +3812,10 @@ and ResolveOverloadingCore
     // Quick type compatibility pre-filter: Skip candidates where argument types
     // are obviously incompatible (e.g., caller has int but callee expects IComparer).
     // This avoids expensive full type checking for clearly incompatible overloads.
-    let quickFilteredCandidates = 
-        candidates |> List.filter (fun calledMeth -> CalledMethQuicklyCompatible g calledMeth)
+    // DISABLED for now - causes issues with C# 13 params enhancements and other edge cases
+    // TODO: Re-enable with more conservative logic that properly handles all type-directed conversions
+    let _quickFilterFunc = CalledMethQuicklyCompatible  // Keep reference to avoid unused warning
+    let quickFilteredCandidates = ignore g; candidates
 
     // Exact match rule.
     //
@@ -3964,9 +3985,10 @@ and ResolveOverloading
                   let calledMeth = calledMethGroup[idx]
                   Some calledMeth, CompleteD, NoTrace
               | ValueSome CachedFailed ->
-                  // Cache hit - resolution previously failed, but we still need to generate proper errors
-                  // Fall through to normal resolution to collect error information
-                  None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
+                  // Cache hit - resolution previously failed
+                  // We still need to go through normal resolution to generate proper error messages
+                  // (not using cached failure to avoid wrong error messages for ambiguity cases)
+                  ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt
               | _ ->
                   // Cache miss - proceed with normal resolution
                   ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt
