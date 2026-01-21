@@ -43,6 +43,8 @@ The tiebreaker is integrated into the `better()` function in `ConstraintSolver.f
 - **After** Rule 12 (prefer non-generic methods)
 - **Before** F# 5.0 optional/ParamArray tiebreaker
 
+**Note on ordering terminology:** The implementation uses internal priority numbers (Rule 13 = "MoreConcrete"), while the F# Language Spec §14.4 uses a different step numbering. The RFC refers to this as "Step 9" which corresponds to its logical position in the specification prose. Both refer to the same rule - this is a documentation vs implementation naming difference, not a bug.
+
 The comparison uses **formal (uninstantiated) parameter types** via `FormalMethodInst`, not the instantiated types from type inference.
 
 ## Implementation Files
@@ -88,13 +90,33 @@ The test suite (`tests/FSharp.Compiler.ComponentTests/Conformance/Tiebreakers/Ti
 
 ### Example 15: Constraint Count Comparison
 
-The RFC specifies that type variables with more constraints should be considered more concrete than type variables with fewer constraints. This is implemented in `OverloadResolutionRules.fs` via the `countTypeParamConstraints` helper function, which counts:
-- Type constraints (`:>`)
-- Struct/reference type constraints
-- Member constraints
-- Nullness/default constraints
+The RFC specifies that type variables with more constraints should be considered more concrete than type variables with fewer constraints. This is implemented in `OverloadResolutionRules.fs` via the `countTypeParamConstraints` helper function, which counts the following 10 constraint types:
+- `CoercesTo` (`:>` subtype constraint)
+- `IsNonNullableStruct` (struct constraint)
+- `IsReferenceType` (class constraint)
+- `MayResolveMember` (member constraint)
+- `RequiresDefaultConstructor` (new() constraint)
+- `IsEnum` (enum constraint)
+- `IsDelegate` (delegate constraint)
+- `IsUnmanaged` (unmanaged constraint)
+- `SupportsComparison` (comparison constraint)
+- `SupportsEquality` (equality constraint)
+
+Constraints NOT counted: `DefaultsTo` (inference-only), `SupportsNull`/`NotSupportsNull` (nullability), `SimpleChoice` (printf-specific), `AllowsRefStruct` (anti-constraint).
 
 Note: While F# does not allow overloading methods that differ only in generic constraints (FS0438), this comparison is still needed for C# interop where such overloads may exist.
+
+### SRTP (Statically Resolved Type Parameters) Exclusion
+
+SRTP type parameters (denoted `^T`) are explicitly excluded from the "more concrete" comparison. This is because:
+1. SRTP uses a fundamentally different constraint resolution mechanism than regular generics
+2. SRTP constraints are resolved at inline expansion time, not at overload resolution time
+3. Comparing SRTP constraints against regular constraints would produce confusing results
+
+The exclusion is implemented in `OverloadResolutionRules.fs` at three levels:
+- **Type variable comparison** (lines 120-121): Skip if either type var is SRTP
+- **Concrete vs type var** (lines 132-133): Skip if the type var is SRTP
+- **Method-level** (lines 580-606): Skip entire comparison if method has SRTP type params or SRTP in formal params
 
 ## Release Notes
 
