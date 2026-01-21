@@ -55,3 +55,28 @@ This file is updated after each sprint completes. Use it to understand what was 
 - ✅ All existing tests pass (93 TiebreakerTests)
 
 ---
+
+## Sprint 3: Format enhanced FS0041 message
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 4: Add test for enhanced diagnostic
+
+**Summary:** Already completed as part of earlier sprints. Verified:
+
+- Test exists in TiebreakerTests.fs lines 252-268: "Example 6 - Incomparable Concreteness - Error message is helpful"
+- Test verifies error contains "Neither candidate is strictly more concrete"
+- Test verifies position-specific explanation "Compare is more concrete at position 1"
+- All 93 TiebreakerTests pass
+
+**DoD Status:**
+- ✅ Build succeeds with 0 errors
+- ✅ New test verifies enhanced FS0041 message for incomparable concreteness
+- ✅ Test passes when run with dotnet test
+- ✅ All existing tests pass (93 TiebreakerTests)
+
+---
