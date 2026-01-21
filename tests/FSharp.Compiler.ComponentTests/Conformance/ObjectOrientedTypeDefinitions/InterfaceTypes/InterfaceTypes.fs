@@ -70,40 +70,6 @@ module InterfaceTypes =
         |> shouldFail
         |> withErrorCode 715
 
-    // Lang version 4.7 error tests - skipped: test framework doesn't correctly apply older langversions
-    [<Theory(Skip = "Test framework doesn't correctly apply langversion:4.7")>]
-    [<FileInlineData("E_MultipleInst01.4.7.fs")>]
-    let ``E_MultipleInst01_4_7_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:4.7"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3350
-
-    [<Theory(Skip = "Test framework doesn't correctly apply langversion:4.7")>]
-    [<FileInlineData("E_MultipleInst04.4.7.fs")>]
-    let ``E_MultipleInst04_4_7_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:4.7"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3350
-
-    [<Theory(Skip = "Test framework doesn't correctly apply langversion:4.7")>]
-    [<FileInlineData("E_MultipleInst07.4.7.fs")>]
-    let ``E_MultipleInst07_4_7_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:4.7"; "--nowarn:221"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3350
-
     [<Theory; FileInlineData("E_MultipleInst07.5.0.fs")>]
     let ``E_MultipleInst07_5_0_fs`` compilation =
         compilation
@@ -114,17 +80,6 @@ module InterfaceTypes =
         |> shouldFail
         |> withErrorCode 3360
 
-    [<Theory(Skip = "Test framework doesn't correctly apply langversion:4.7")>]
-    [<FileInlineData("E_ImplementGenIFaceTwice01_4.7.fs")>]
-    let ``E_ImplementGenIFaceTwice01_4_7_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:4.7"; "--nowarn:221"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3350
-
     [<Theory; FileInlineData("E_ImplementGenIFaceTwice01_5.0.fs")>]
     let ``E_ImplementGenIFaceTwice01_5_0_fs`` compilation =
         compilation
@@ -134,17 +89,6 @@ module InterfaceTypes =
         |> typecheck
         |> shouldFail
         |> withErrorCode 3360
-
-    [<Theory(Skip = "Test framework doesn't correctly apply langversion:4.7")>]
-    [<FileInlineData("E_ImplementGenIFaceTwice02_4.7.fs")>]
-    let ``E_ImplementGenIFaceTwice02_4_7_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withOptions ["--test:ErrorRanges"; "--langversion:4.7"; "--nowarn:221"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3350
 
     // Success tests
 

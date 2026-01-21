@@ -135,17 +135,6 @@ module DataExpressions_ObjectExpressions =
         |> compile
         |> shouldSucceed
 
-    // SOURCE=E_ObjExprWithSameInterface01.4.7.fs SCFLAGS="--langversion:4.7" - error FS3350
-    [<Theory(Skip = "Language version 4.7 is out of support"); FileInlineData("E_ObjExprWithSameInterface01.4.7.fs")>]
-    let ``E_ObjExprWithSameInterface01_47_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withLangVersion47
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3350
-
     // SOURCE=E_ObjExprWithSameInterface01.5.0.fs SCFLAGS="--langversion:5.0" - error FS3361
     [<Theory(Skip = "Language version 5.0 is out of support"); FileInlineData("E_ObjExprWithSameInterface01.5.0.fs")>]
     let ``E_ObjExprWithSameInterface01_50_fs`` compilation =

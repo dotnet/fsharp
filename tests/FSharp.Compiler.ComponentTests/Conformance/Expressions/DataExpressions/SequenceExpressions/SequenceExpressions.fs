@@ -8,42 +8,6 @@ open FSharp.Test.Compiler
 
 module SequenceExpressions =
 
-    // SOURCE=version46/W_IfThenElse01.fs SCFLAGS="--langversion:4.6 --test:ErrorRanges" - error FS0035
-    [<Theory(Skip = "Language version 4.6 is out of support"); FileInlineData("W_IfThenElse01_v46.fs")>]
-    let ``W_IfThenElse01_v46_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withLangVersion46
-        |> compile
-        |> shouldFail
-        |> withErrorCode 35
-        |> withDiagnosticMessageMatches "if.*then.*else"
-
-    // SOURCE=version46/W_IfThenElse02.fs SCFLAGS="--langversion:4.6 --test:ErrorRanges" - error FS0035
-    [<Theory(Skip = "Language version 4.6 is out of support"); FileInlineData("W_IfThenElse02_v46.fs")>]
-    let ``W_IfThenElse02_v46_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withLangVersion46
-        |> compile
-        |> shouldFail
-        |> withErrorCode 35
-        |> withDiagnosticMessageMatches "if.*then.*else"
-
-    // SOURCE=version46/W_IfThenElse03.fs SCFLAGS="--langversion:4.6 --test:ErrorRanges" - error FS0035
-    [<Theory(Skip = "Language version 4.6 is out of support"); FileInlineData("W_IfThenElse03_v46.fs")>]
-    let ``W_IfThenElse03_v46_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withLangVersion46
-        |> compile
-        |> shouldFail
-        |> withErrorCode 35
-        |> withDiagnosticMessageMatches "if.*then.*else"
-
     // SOURCE=version47/W_IfThenElse01.fs - success in 4.7+
     [<Theory; FileInlineData("W_IfThenElse01_v47.fs")>]
     let ``W_IfThenElse01_v47_fs`` compilation =

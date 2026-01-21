@@ -2651,6 +2651,7 @@ module EventDeclarationNormalization =
             let MakeOne (prefix, target) =
                 let declPattern = RenameBindingPattern (fun s -> prefix + s) declPattern
                 let argName = "handler"
+                let mBinding = mBinding.MakeSynthetic()
 
                 // modify the rhs and argument data
                 let bindingRhs, valSynData =
@@ -2662,6 +2663,7 @@ module EventDeclarationNormalization =
                    match rhsExpr with
                    // Detect 'fun () -> e' which results from the compilation of a property getter
                    | SynExpr.Lambda (args=SynSimplePats.SimplePats(pats = []); body=trueRhsExpr; range=m) ->
+                       let m = m.MakeSynthetic()
                        let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, SynLongIdent([ident(target, m)], [], [None]), m)) (SynExpr.Ident (ident(argName, m))) m
 
                        // reconstitute rhsExpr
@@ -7234,6 +7236,13 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
     // Add the object type to the ungeneralizable items
     let env = {env with eUngeneralizableItems = addFreeItemOfTy objTy env.eUngeneralizableItems }
 
+    // Save the enclosing struct context BEFORE EnterFamilyRegion overwrites env.eFamilyType.
+    // This is used later to detect struct instance captures that would generate illegal byref fields.
+    let enclosingStructTyconRefOpt =
+        match env.eFamilyType with
+        | Some tcref when tcref.IsStructOrEnumTycon -> Some tcref
+        | _ -> None
+
     // Object expression members can access protected members of the implemented type
     let env = EnterFamilyRegion tcref env
     let ad = env.AccessRights
@@ -7342,8 +7351,20 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
            errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
 
         // 4. Build the implementation
-        let expr = mkObjExpr(objtyR, baseValOpt, ctorCall, overrides', extraImpls, mWholeExpr)
-        let expr = mkCoerceIfNeeded g realObjTy objtyR expr
+        // Check for struct instance captures that would generate illegal byref fields.
+        // See AnalyzeObjExprStructCaptures and TransformObjExprForStructByrefCaptures for details.
+        let shouldTransform, structCaptures, _ = 
+            AnalyzeObjExprStructCaptures enclosingStructTyconRefOpt ctorCall overrides' extraImpls
+
+        let expr =
+            if not shouldTransform then
+                // No transformation needed - build the object expression directly
+                let expr = mkObjExpr(objtyR, baseValOpt, ctorCall, overrides', extraImpls, mWholeExpr)
+                mkCoerceIfNeeded g realObjTy objtyR expr
+            else
+                // Transform to avoid byref captures
+                TransformObjExprForStructByrefCaptures g mWholeExpr structCaptures objtyR baseValOpt ctorCall overrides' extraImpls realObjTy
+
         expr, tpenv
 
 //-------------------------------------------------------------------------
