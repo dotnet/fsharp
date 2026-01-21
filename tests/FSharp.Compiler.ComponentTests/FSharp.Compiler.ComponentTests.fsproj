@@ -131,6 +131,7 @@
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\InterfaceTypes\InterfaceTypes.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\basic\Basic.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\intrinsic\Intrinsic.fs" />
+    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\optional\Optional.fs" />
     <Compile Include="Conformance\TypeForwarding\TypeForwardingTests.fs" />
     <Compile Include="Conformance\TypeForwarding\NegativeCases.fs" />
     <Compile Include="Conformance\TypeForwarding\TypeForwardingHelpersTests.fs" />

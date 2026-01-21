@@ -17,7 +17,7 @@ module TypeExtensionsIntrinsic =
         |> withAdditionalSourceFile (SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "E_typeext_int002.fs")))
         |> asExe
         |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withErrorCode 854
 
