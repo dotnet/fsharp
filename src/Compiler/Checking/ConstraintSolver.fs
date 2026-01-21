@@ -487,10 +487,12 @@ let tryComputeOverloadCacheKey
     if hasNamedArgs then ValueNone
     else
     
-    // Compute method group hash - use XOR for order-independence
-    let mutable methodGroupHash = 0
+    // Compute method group hash - must be order-dependent since we cache by index
+    // Using hash mixing (multiply + XOR) to create distinct hashes for different orderings
+    let mutable methodGroupHash = 17
     for cmeth in calledMethGroup do
-        methodGroupHash <- methodGroupHash ^^^ computeMethInfoHash cmeth.Method
+        let methHash = computeMethInfoHash cmeth.Method
+        methodGroupHash <- methodGroupHash * 31 + methHash
     
     // Collect type stamps for all caller arguments
     let mutable argStamps = []
