@@ -8,6 +8,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -59,7 +60,7 @@ let aggregateComparisons (comparisons: int list) =
     else 0
 
 /// Count the effective constraints on a type parameter for concreteness comparison.
-/// Counts: CoercesTo (:>), IsNonNullableStruct, IsReferenceType, MayResolveMember, 
+/// Counts: CoercesTo (:>), IsNonNullableStruct, IsReferenceType, MayResolveMember,
 /// RequiresDefaultConstructor, IsEnum, IsDelegate, IsUnmanaged, SupportsComparison, SupportsEquality
 let countTypeParamConstraints (tp: Typar) =
     tp.Constraints
@@ -74,13 +75,36 @@ let countTypeParamConstraints (tp: Typar) =
         | TyparConstraint.IsUnmanaged _ -> 1
         | TyparConstraint.SupportsComparison _ -> 1
         | TyparConstraint.SupportsEquality _ -> 1
-        // Don't count: DefaultsTo (inference-only), SupportsNull, NotSupportsNull (nullability), 
+        // Don't count: DefaultsTo (inference-only), SupportsNull, NotSupportsNull (nullability),
         // SimpleChoice (printf-specific), AllowsRefStruct (anti-constraint)
         | TyparConstraint.DefaultsTo _ -> 0
         | TyparConstraint.SupportsNull _ -> 0
         | TyparConstraint.NotSupportsNull _ -> 0
         | TyparConstraint.SimpleChoice _ -> 0
         | TyparConstraint.AllowsRefStruct _ -> 0)
+
+/// Check if a type parameter is statically resolved (SRTP).
+/// SRTP type parameters use a different constraint solving mechanism and shouldn't
+/// be compared under the "more concrete" ordering.
+let private isStaticallyResolvedTypeParam (tp: Typar) =
+    match tp.StaticReq with
+    | TyparStaticReq.HeadType -> true
+    | TyparStaticReq.None -> false
+
+/// Check if a type contains any SRTP type variables.
+/// Used to skip the MoreConcrete tiebreaker for SRTP-heavy code.
+let rec private containsSRTPTypeVar (g: TcGlobals) (ty: TType) : bool =
+    let sty = stripTyEqns g ty
+
+    match sty with
+    | TType_var(tp, _) -> isStaticallyResolvedTypeParam tp
+    | TType_app(_, args, _) -> args |> List.exists (containsSRTPTypeVar g)
+    | TType_tuple(_, elems) -> elems |> List.exists (containsSRTPTypeVar g)
+    | TType_fun(dom, rng, _) -> containsSRTPTypeVar g dom || containsSRTPTypeVar g rng
+    | TType_anon(_, tys) -> tys |> List.exists (containsSRTPTypeVar g)
+    | TType_forall(_, body) -> containsSRTPTypeVar g body
+    | TType_measure _ -> false
+    | TType_ucase _ -> false
 
 /// Compare types under the "more concrete" partial ordering.
 /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
@@ -90,14 +114,23 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
 
     match sty1, sty2 with
     // Case 1: Both are type variables - compare constraint counts (RFC section-algorithm.md lines 136-146)
+    // Skip SRTP type variables - their constraints have different semantics
     | TType_var(tp1, _), TType_var(tp2, _) ->
-        let c1 = countTypeParamConstraints tp1
-        let c2 = countTypeParamConstraints tp2
-        if c1 > c2 then 1
-        elif c2 > c1 then -1
-        else 0
+        // Don't compare SRTP type parameters - they use different constraint mechanics
+        if isStaticallyResolvedTypeParam tp1 || isStaticallyResolvedTypeParam tp2 then
+            0
+        else
+            let c1 = countTypeParamConstraints tp1
+            let c2 = countTypeParamConstraints tp2
+
+            if c1 > c2 then 1
+            elif c2 > c1 then -1
+            else 0
 
     // Case 2: Type variable vs concrete type - concrete is more concrete
+    // Skip SRTP type variables
+    | TType_var(tp, _), _ when isStaticallyResolvedTypeParam tp -> 0
+    | _, TType_var(tp, _) when isStaticallyResolvedTypeParam tp -> 0
     | TType_var _, _ -> -1
     | _, TType_var _ -> 1
 
@@ -542,26 +575,46 @@ let private moreConcreteRule: TiebreakRule =
                     && not candidate.CalledTyArgs.IsEmpty
                     && not other.CalledTyArgs.IsEmpty
                 then
-                    // Get formal (uninstantiated) parameter types using FormalMethodInst
-                    let formalParams1 =
-                        candidate.Method.GetParamDatas(ctx.amap, ctx.m, candidate.Method.FormalMethodInst)
-                        |> List.concat
+                    // Skip SRTP: Don't apply MoreConcrete tiebreaker when SRTP is involved
+                    // at the method level - check formal method type parameters for SRTP
+                    let hasAnySRTPTypeParams =
+                        candidate.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
+                        || other.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
 
-                    let formalParams2 =
-                        other.Method.GetParamDatas(ctx.amap, ctx.m, other.Method.FormalMethodInst)
-                        |> List.concat
-
-                    if formalParams1.Length = formalParams2.Length then
-                        let comparisons =
-                            List.map2
-                                (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
-                                    compareTypeConcreteness ctx.g ty1 ty2)
-                                formalParams1
-                                formalParams2
-
-                        aggregateComparisons comparisons
-                    else
+                    if hasAnySRTPTypeParams then
                         0
+                    else
+                        // Get formal (uninstantiated) parameter types using FormalMethodInst
+                        let formalParams1 =
+                            candidate.Method.GetParamDatas(ctx.amap, ctx.m, candidate.Method.FormalMethodInst)
+                            |> List.concat
+
+                        let formalParams2 =
+                            other.Method.GetParamDatas(ctx.amap, ctx.m, other.Method.FormalMethodInst)
+                            |> List.concat
+
+                        // Also skip if called type args or formal params contain SRTP type variables
+                        let hasAnySRTPInTypes =
+                            candidate.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
+                            || other.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
+                            || formalParams1
+                               |> List.exists (fun (ParamData(_, _, _, _, _, _, _, ty)) -> containsSRTPTypeVar ctx.g ty)
+                            || formalParams2
+                               |> List.exists (fun (ParamData(_, _, _, _, _, _, _, ty)) -> containsSRTPTypeVar ctx.g ty)
+
+                        if hasAnySRTPInTypes then
+                            0
+                        else if formalParams1.Length = formalParams2.Length then
+                            let comparisons =
+                                List.map2
+                                    (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
+                                        compareTypeConcreteness ctx.g ty1 ty2)
+                                    formalParams1
+                                    formalParams2
+
+                            aggregateComparisons comparisons
+                        else
+                            0
                 else
                     0
     }
