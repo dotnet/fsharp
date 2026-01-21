@@ -66,7 +66,7 @@ The feature is gated behind `LanguageFeature.MoreConcreteTiebreaker`:
 **FS3575** (informational warning, off by default):
 - Reports when the concreteness tiebreaker resolves an ambiguous overload
 - Enable with `--warnon:3575` for debugging/auditing
-- Message: "Overload resolution selected '%s' based on type concreteness..."
+- Message: "Overload resolution selected '%s' based on type concreteness. The more concrete type '%s' was preferred over '%s'. This is an informational message and can be enabled with --warnon:3575."
 
 **FS3576** (informational warning, off by default):
 - Reports each generic overload that was bypassed during tiebreaker resolution
