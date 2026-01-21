@@ -222,3 +222,108 @@ module TypeExtensionsBasic =
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
+
+    // ========== Optional Extension Tests (cross-assembly) ==========
+
+    /// Optional extensions can contain conflicting members as long as they don't get used together
+    [<Fact>]
+    let ``typeext_opt007 - Conflicting extension members in different modules`` () =
+        FSharp """
+namespace NS
+   module M = 
+    type Lib() = class end
+     
+    type Lib with
+      member x.ExtensionMember () = 1
+
+    module N =
+      type Lib with
+        member x.ExtensionMember () = 2
+  
+   module F =
+    let mutable res = true
+    open M
+  
+    let a = new Lib()
+    if not (a.ExtensionMember () = 1) then
+      res <- false
+
+    (if (res) then 0 else 1) |> exit
+        """
+        |> asExe
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
+    /// Regression test for FSHARP1.0:3593
+    /// "Prefer extension members that have been brought into scope by more recent 'open' statements"
+    [<Fact>]
+    let ``typeext_opt008 - Recent open wins for extension resolution`` () =
+        FSharp """
+namespace NS
+  // Type defined at namespace level so both modules can see it
+  type Lib() = class end
+  
+  module M = 
+    type Lib with
+        member x.ExtensionMember () = 1
+
+  module N =
+    type Lib with
+        member x.ExtensionMember () = 2
+  
+  module F =
+    open M
+    open N    // <-- last open wins
+  
+    let a = new Lib()
+    let b = a.ExtensionMember()
+
+    (if b = 2 then 0 else 1) |> exit
+        """
+        |> asExe
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
+    /// Method overrides are not permitted in optional extensions
+    [<Fact>]
+    let ``E_CrossModule01 - Override not permitted in extension`` () =
+        FSharp """
+module M = 
+    type R() = class end
+module U =
+   open M
+   type R with override x.ToString() = "hi"
+ 
+open M
+open U
+let x = R()
+printfn "%A" (x.ToString())
+        """
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 854
+
+    /// Verify that optional extension must be inside a module
+    [<Fact>]
+    let ``E_NotInModule - Extension in namespace not allowed`` () =
+        FSharp """
+namespace NS
+    type Lib() = class end
+namespace NS
+    type Lib with
+    
+    // Extension Methods
+          member x.ExtensionMember () = 1
+  
+    module F =
+      exit 1
+        """
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 644
