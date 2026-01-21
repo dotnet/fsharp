@@ -52,7 +52,8 @@ The comparison uses **formal (uninstantiated) parameter types** via `FormalMetho
 | `src/Compiler/Checking/ConstraintSolver.fs` | Core algorithm: `compareTypeConcreteness`, integration into `better()` |
 | `src/Compiler/Checking/OverloadResolutionRules.fs/fsi` | DSL representation of all 15 overload resolution rules |
 | `src/Compiler/Facilities/LanguageFeatures.fs/fsi` | `LanguageFeature.MoreConcreteTiebreaker` (F# 10.0) |
-| `src/Compiler/FSComp.txt` | Diagnostic FS3575 (tcMoreConcreteTiebreakerUsed) |
+| `src/Compiler/FSComp.txt` | Diagnostic FS3575 (tcMoreConcreteTiebreakerUsed), FS3576 (tcGenericOverloadBypassed) |
+| `src/Compiler/Driver/CompilerDiagnostics.fs` | Off-by-default configuration for FS3575 and FS3576 |
 
 ## Language Feature Flag
 
@@ -65,7 +66,15 @@ The feature is gated behind `LanguageFeature.MoreConcreteTiebreaker`:
 **FS3575** (informational warning, off by default):
 - Reports when the concreteness tiebreaker resolves an ambiguous overload
 - Enable with `--warnon:3575` for debugging/auditing
-- Message: "The concreteness tiebreaker selected the overload with more specific type structure"
+- Message: "Overload resolution selected '%s' based on type concreteness..."
+
+**FS3576** (informational warning, off by default):
+- Reports each generic overload that was bypassed during tiebreaker resolution
+- Enable with `--warnon:3576` for detailed visibility of bypassed candidates
+- Message: "A more generic overload was bypassed: '%s'. The selected overload '%s' was chosen because it has more concrete type parameters."
+- Complements FS3575 by showing all candidates that lost the tiebreaker
+
+Both diagnostics are implemented in `ConstraintSolver.fs` in the `ResolveOverloading` function and provide visibility into the tiebreaker's decision-making process.
 
 ## Test Coverage
 

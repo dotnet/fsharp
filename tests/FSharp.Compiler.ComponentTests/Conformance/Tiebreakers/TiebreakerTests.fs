@@ -2081,3 +2081,80 @@ let result = Example.Invoke(Some([1]))
         |> withWarningCode 3575
         |> withDiagnosticMessageMatches "concreteness"
         |> ignore
+
+    // ============================================================================
+    // FS3576 - Generic Overload Bypassed Diagnostic Tests
+    // ============================================================================
+
+    [<Fact>]
+    let ``Warning 3576 - Off by default`` () =
+        // By default, warning 3576 is off, so no warning should be emitted
+        FSharp """
+module Test
+
+type Example =
+    static member Invoke<'t>(value: Option<'t>) = "generic"
+    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
+
+let result = Example.Invoke(Some([1]))
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3576 - Emitted when enabled and generic overload is bypassed`` () =
+        // When --warnon:3576 is passed, warning should be emitted for bypassed generic overload
+        FSharp """
+module Test
+
+type Example =
+    static member Invoke<'t>(value: Option<'t>) = "generic"
+    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
+
+let result = Example.Invoke(Some([1]))
+        """
+        |> withOptions ["--warnon:3576"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3576
+        |> withDiagnosticMessageMatches "bypassed"
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3576 - Shows bypassed and selected overload names`` () =
+        // FS3576 should show the bypassed overload and the selected one
+        FSharp """
+module Test
+
+type Example =
+    static member Invoke<'t>(value: Option<'t>) = "generic"
+    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
+
+let result = Example.Invoke(Some([1]))
+        """
+        |> withOptions ["--warnon:3576"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3576
+        |> withDiagnosticMessageMatches "Invoke"
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3576 - Multiple bypassed overloads`` () =
+        // When multiple generic overloads are bypassed, FS3576 should be emitted for each
+        FSharp """
+module Test
+
+type Example =
+    static member Process<'t>(value: 't) = "fully generic"
+    static member Process<'t>(value: Option<'t>) = "option generic"
+    static member Process<'t>(value: Option<'t list>) = "most concrete"
+
+let result = Example.Process(Some([1]))
+        """
+        |> withOptions ["--warnon:3576"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3576
+        |> ignore

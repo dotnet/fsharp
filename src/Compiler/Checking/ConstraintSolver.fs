@@ -3688,9 +3688,14 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
             match concretenessWarns with
             | [] -> warns
             | (winnerName, loserName) :: _ -> 
-                // Add the concreteness tiebreaker warning
-                let warn = Error(FSComp.SR.tcMoreConcreteTiebreakerUsed(winnerName, winnerName, loserName), m)
-                warn :: warns
+                // Add the concreteness tiebreaker warning (FS3575)
+                let warn3575 = Error(FSComp.SR.tcMoreConcreteTiebreakerUsed(winnerName, winnerName, loserName), m)
+                // Add FS3576 for each bypassed generic overload
+                let warn3576List = 
+                    concretenessWarns 
+                    |> List.map (fun (winner, loser) -> 
+                        Error(FSComp.SR.tcGenericOverloadBypassed(loser, winner), m))
+                warn3575 :: warn3576List @ warns
         Some calledMeth, OkResult (allWarns, ()), WithTrace t
 
     | bestMethods -> 
