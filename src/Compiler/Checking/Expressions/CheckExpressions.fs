@@ -9834,6 +9834,23 @@ and CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
     | [argAttribs] -> argAttribs = n
     | _ -> false
 
+// TODO: Performance optimization - Arity pre-filter for overload resolution (GitHub issue #18807)
+//
+// This optimization filters MethInfo candidates by arity BEFORE constructing expensive 
+// CalledMeth objects. It was disabled due to edge cases:
+// - C# 13 "params collections" allow more flexible argument passing
+// - Some methods with optional/CallerInfo args were incorrectly filtered
+// - Error messages could be affected by filtering before CalledMeth construction
+//
+// To re-enable:
+// 1. Update to handle C# 13 params collections (ReadOnlySpan<T>, IEnumerable<T>)
+// 2. Be more conservative about filtering - only filter obvious mismatches
+// 3. Ensure error messages remain clear (may need to run filter after CalledMeth for errors)
+// 4. Re-enable the filter in TcMethodApplication_UniqueOverloadInference (line ~10091)
+//
+// Expected benefit: 40-60% reduction in CalledMeth allocations for overloaded methods
+//
+// See: METHOD_RESOLUTION_PERF_IDEAS.md, Idea #1
 /// Lightweight arity pre-filter for MethInfo before expensive CalledMeth construction.
 /// Returns true if the method could potentially match the caller arguments based on arity.
 /// This is conservative - it may return true for methods that later fail IsCandidate,
@@ -10081,14 +10098,17 @@ and TcMethodApplication_UniqueOverloadInference
 
     // Early arity pre-filter: Filter out methods that definitely won't match based on arity
     // This avoids expensive CalledMeth construction for obviously incompatible overloads
-    // DISABLED for now - causes issues with C# 13 params enhancements
-    // TODO: Re-enable with more careful handling of collection-based params
-    let _callerObjArgCount = List.length callerObjArgTys
-    let _numCallerCurriedGroups = List.length unnamedCurriedCallerArgs
-    let _totalUnnamedCallerArgs = fst callerArgCounts
-    let _arityFilterFunc = MethInfoMayMatchCallerArgs  // Keep reference to avoid unused warning
-    
-    let arityFilteredCandidates = candidateMethsAndProps  // Disabled filtering
+    // 
+    // TODO: DISABLED - see MethInfoMayMatchCallerArgs comment for details on re-enabling
+    // When ready to re-enable, uncomment and use:
+    //   let callerObjArgCount = List.length callerObjArgTys
+    //   let numCallerCurriedGroups = List.length unnamedCurriedCallerArgs
+    //   let totalUnnamedCallerArgs = fst callerArgCounts
+    //   let arityFilteredCandidates = 
+    //       candidateMethsAndProps |> List.filter (fun (minfo, _, _) ->
+    //           MethInfoMayMatchCallerArgs amap mMethExpr minfo callerObjArgCount numCallerCurriedGroups totalUnnamedCallerArgs)
+    let _ = MethInfoMayMatchCallerArgs  // Suppress unused warning - function is preserved for future re-enablement
+    let arityFilteredCandidates = candidateMethsAndProps
 
     let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
         let minst = FreshenMethInfo mItem minfo

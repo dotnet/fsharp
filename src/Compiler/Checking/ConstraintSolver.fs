@@ -546,10 +546,19 @@ let tryComputeOverloadCacheKey
                 match tryGetTypeStamp g retTy with
                 | ValueSome stamp -> ValueSome stamp
                 | ValueNone -> 
-                    // Return type has unresolved type variable - use wildcard
-                    // This is safe because overload resolution is primarily driven by argument types
-                    // When the return type is truly constraining, it typically resolves early
-                    ValueSome(struct(-3L, 0L))  // -3L = wildcard return type
+                    // Return type has unresolved type variable
+                    // This is only a problem if any candidate has out args, because out args
+                    // affect the effective return type (method returning bool with out int becomes bool*int)
+                    // For normal overloads (no out args), the return type doesn't affect resolution
+                    let anyHasOutArgs = calledMethGroup |> List.exists (fun cm -> cm.HasOutArgs)
+                    if anyHasOutArgs then
+                        // Don't cache - the expected return type determines which overload to pick
+                        // e.g., c.CheckCooperativeLevel() -> bool vs let a,b = c.CheckCooperativeLevel() -> bool*int
+                        globalOverloadCacheSkippedRetType <- globalOverloadCacheSkippedRetType + 1
+                        ValueNone
+                    else
+                        // Safe to cache with wildcard - return type doesn't affect resolution
+                        ValueSome(struct(-3L, 0L))  // -3L = wildcard return type
             | None -> 
                 // No return type constraint - use a marker value
                 ValueSome(struct(0L, 0L))
@@ -738,6 +747,11 @@ let FilterEachThenUndo f meths =
         | None -> None 
         | Some (warns, res) -> Some (calledMeth, warns, trace, res))
 
+// NOTE: The following TypesQuicklyCompatible and TypesQuicklyCompatibleStructural functions
+// are currently unused - they support the disabled CalledMethQuicklyCompatible optimization.
+// They are preserved for future re-enablement of the quick type compatibility filter.
+// See the TODO comment above CalledMethQuicklyCompatible for details.
+
 /// Quick structural type compatibility check that can reject obviously incompatible types
 /// without full unification. Returns true if types *might* be compatible (conservative),
 /// false only if they are *definitely* incompatible.
@@ -751,7 +765,7 @@ let FilterEachThenUndo f meths =
 /// - If types have the same type constructor, return true (might match after unification)
 /// - If callee type supports type-directed conversions from caller type, return true
 /// - Otherwise, check for structural compatibility
-let rec TypesQuicklyCompatible (g: TcGlobals) (callerArgTy: TType) (calledArgTy: TType) : bool =
+let rec private TypesQuicklyCompatible (g: TcGlobals) (callerArgTy: TType) (calledArgTy: TType) : bool =
     // Strip measurements for comparison
     let callerArgTy = stripTyEqnsA g true callerArgTy
     let calledArgTy = stripTyEqnsA g true calledArgTy
@@ -797,7 +811,7 @@ let rec TypesQuicklyCompatible (g: TcGlobals) (callerArgTy: TType) (calledArgTy:
 /// Structural compatibility check - types must have compatible type constructors
 /// This is a conservative check - it returns true if types *might* be compatible.
 /// It only returns false if types are *definitely* incompatible.
-and TypesQuicklyCompatibleStructural (g: TcGlobals) (callerArgTy: TType) (calledArgTy: TType) : bool =
+and private TypesQuicklyCompatibleStructural (g: TcGlobals) (callerArgTy: TType) (calledArgTy: TType) : bool =
     // If both types are sealed AND different type constructors, they're definitely incompatible
     // (with exceptions for conversions already handled in TypesQuicklyCompatible)
     
@@ -834,62 +848,23 @@ and TypesQuicklyCompatibleStructural (g: TcGlobals) (callerArgTy: TType) (called
         // Be conservative and assume compatibility
         true
 
-/// Check if a CalledMeth's argument types are quickly compatible with caller argument types.
-/// This is used to pre-filter overload candidates before expensive FilterEachThenUndo.
-/// Returns false only if the types are DEFINITELY incompatible.
-/// NOTE: This function is currently disabled due to edge cases with type-directed conversions,
-/// but kept for potential future optimization.
-let CalledMethQuicklyCompatible (_g: TcGlobals) (_calledMeth: CalledMeth<'T>) : bool =
-    // Currently always returns true - the quick filter is disabled
-    // to avoid issues with C# 13 params enhancements and other edge cases
-    true
-(*
-    // Check all argument sets for type compatibility
-    // If any argument pair is definitely incompatible, filter out this candidate
-    let argSets = _calledMeth.ArgSets
-    
-    argSets |> List.forall (fun argSet ->
-        // Check unnamed args: compare caller types with callee expected types
-        // Only check up to the length of the shorter list (extra args handled by param array logic)
-        let unnamedCompatible =
-            let callerArgs = argSet.UnnamedCallerArgs
-            let calledArgs = argSet.UnnamedCalledArgs
-            let minLen = min callerArgs.Length calledArgs.Length
-            let rec checkArgs i =
-                if i >= minLen then true
-                else
-                    let callerTy = callerArgs[i].CallerArgumentType
-                    let calledTy = calledArgs[i].CalledArgumentType
-                    if TypesQuicklyCompatible g callerTy calledTy then
-                        checkArgs (i + 1)
-                    else
-                        false
-            checkArgs 0
-        
-        // Check param array if present: all param array caller args must be compatible with element type
-        let paramArrayCompatible =
-            match argSet.ParamArrayCalledArgOpt with
-            | Some paramArrayArg ->
-                // Get the element type of the param array (array element type)
-                let paramArrayTy = paramArrayArg.CalledArgumentType
-                if isArrayTy g paramArrayTy then
-                    let elemTy = destArrayTy g paramArrayTy
-                    argSet.ParamArrayCallerArgs |> List.forall (fun callerArg ->
-                        TypesQuicklyCompatible g callerArg.CallerArgumentType elemTy)
-                else
-                    // Not an array type? Be conservative
-                    true
-            | None -> true
-        
-        // Check assigned named args
-        let namedCompatible =
-            argSet.AssignedNamedArgs |> List.forall (fun assignedArg ->
-                let callerTy = assignedArg.CallerArg.CallerArgumentType
-                let calledTy = assignedArg.CalledArg.CalledArgumentType
-                TypesQuicklyCompatible g callerTy calledTy)
-        
-        unnamedCompatible && paramArrayCompatible && namedCompatible)
-*)
+// TODO: Performance optimization - Quick type compatibility pre-filter (GitHub issue #18807)
+// 
+// This optimization was implemented but disabled due to edge cases:
+// - C# 13 "params collections" (ReadOnlySpan<T>, IEnumerable<T> params) require special handling
+// - Type-directed conversions (func-to-delegate, nullable unwrapping) need conservative treatment
+// - Some sealed type comparisons were incorrectly filtering valid overloads
+//
+// To re-enable:
+// 1. Update TypesQuicklyCompatible to handle C# 13 params collections
+// 2. Add tests for ReadOnlySpan<T> and IEnumerable<T> params overloads
+// 3. Ensure all type-directed conversions are handled conservatively
+// 4. Re-enable the filter in ResolveOverloading (line ~3877)
+//
+// Expected benefit: 20-40% reduction in FilterEachThenUndo calls for overloaded methods
+// with sealed parameter types (int, string, etc.)
+//
+// See: METHOD_RESOLUTION_PERF_IDEAS.md, Idea #4
 
 let ShowAccessDomain ad =
     match ad with 
@@ -3849,7 +3824,8 @@ and ResolveOverloadingCore
          (cacheKeyOpt: OverloadResolutionCacheKey voption)
          : CalledMeth<Expr> option * OperationResult<unit> * OptionalTrace =
 
-    let g = csenv.g
+    // Note: g is currently unused - it was used by the disabled CalledMethQuicklyCompatible filter.
+    // Uncomment when re-enabling: let g = csenv.g
     let infoReader = csenv.InfoReader
     let m = csenv.m
 
@@ -3863,10 +3839,12 @@ and ResolveOverloadingCore
     // Quick type compatibility pre-filter: Skip candidates where argument types
     // are obviously incompatible (e.g., caller has int but callee expects IComparer).
     // This avoids expensive full type checking for clearly incompatible overloads.
-    // DISABLED for now - causes issues with C# 13 params enhancements and other edge cases
-    // TODO: Re-enable with more conservative logic that properly handles all type-directed conversions
-    let _quickFilterFunc = CalledMethQuicklyCompatible  // Keep reference to avoid unused warning
-    let quickFilteredCandidates = ignore g; candidates
+    // 
+    // TODO: DISABLED - see CalledMethQuicklyCompatible comment for details on re-enabling
+    // When ready to re-enable:
+    //   1. Uncomment: let g = csenv.g (above)
+    //   2. Change 'candidates' to: candidates |> List.filter (CalledMethQuicklyCompatible g)
+    let quickFilteredCandidates = candidates
 
     // Exact match rule.
     //
