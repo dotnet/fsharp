@@ -16,7 +16,7 @@ module internal NullnessShims =
 
     let inline (!!) (x: 'T | null) = Unchecked.nonNull x
 
-    let inline nullSafeEquality (x: MaybeNull<'T>) (y: MaybeNull<'T>) ([<InlineIfLambda>] nonNullEqualityFunc: 'T -> 'T -> bool) =
+    let inline nullSafeEquality (x: 'T | null) (y: 'T | null) ([<InlineIfLambda>] nonNullEqualityFunc: 'T -> 'T -> bool) =
         match x, y with
         | null, null -> true
         | null, _
@@ -32,7 +32,7 @@ module internal NullnessShims =
 #endif
 
     [<return: Struct>]
-    let inline (|NonEmptyString|_|) (x: string MaybeNull) =
+    let inline (|NonEmptyString|_|) (x: string | null) =
         match x with
         | null -> ValueNone
         | "" -> ValueNone

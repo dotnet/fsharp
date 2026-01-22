@@ -167,7 +167,7 @@ type CancellableBuilder() =
                 | Choice2Of2 err -> Cancellable.run ct (handler err)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member inline _.Using(resource: _ MaybeNull, [<InlineIfLambda>] comp) =
+    member inline _.Using(resource: (_ | null), [<InlineIfLambda>] comp) =
         Cancellable(fun ct ->
 
             __debugPoint ""
