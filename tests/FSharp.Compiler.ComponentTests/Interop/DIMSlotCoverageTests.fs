@@ -248,3 +248,112 @@ type C() =
         |> withReferences [csharpPropertyWithDIMGetter]
         |> compile
         |> shouldSucceed
+
+    // =============================================================================
+    // Object Expression Tests
+    // =============================================================================
+
+    /// Test 7: Object expression implementing interface with DIM-covered slot
+    /// Same as Test 1 but using object expression syntax instead of class.
+    [<FactForNETCOREAPP>]
+    let ``Object expression - DIM-covered slot should work`` () =
+        let fsharpSource = """
+module Test
+
+open DIMTest
+
+let obj : IB = 
+    { new IB with
+        member _.M() = 42 }
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpInterfaceWithDIM]
+        |> compile
+        |> shouldSucceed
+
+    /// Test 8: Object expression with explicit override of DIM
+    /// When user wants to override the DIM-covered slot, they must use explicit interface declaration.
+    [<FactForNETCOREAPP>]
+    let ``Object expression - explicit override of DIM requires interface declaration`` () =
+        let fsharpSource = """
+module Test
+
+open DIMTest
+
+// User explicitly wants to override both IB.M and IA.M (not use the DIM)
+let obj : IB = 
+    { new IB with
+        member _.M() = 42
+      interface IA with
+        member _.M() = 100 }
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpInterfaceWithDIM]
+        |> compile
+        |> shouldSucceed
+
+    /// Test 9: Class with explicit override of DIM slot
+    /// User can still explicitly implement the shadowed slot even when DIM is available.
+    [<FactForNETCOREAPP>]
+    let ``Class - explicit override of DIM slot still allowed`` () =
+        let fsharpSource = """
+module Test
+
+open DIMTest
+
+type C() =
+    interface IB with
+        member _.M() = 42
+    // User can explicitly implement IA.M to override the DIM
+    interface IA with
+        member _.M() = 100
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpInterfaceWithDIM]
+        |> compile
+        |> shouldSucceed
+
+    /// Test 10: Object expression with diamond and DIM - object expression syntax
+    [<FactForNETCOREAPP>]
+    let ``Object expression - diamond with single DIM should work`` () =
+        let fsharpSource = """
+module Test
+
+open DiamondSingleDIM
+
+let obj : ID = 
+    { new ID }
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpDiamondSingleDIM]
+        |> compile
+        |> shouldSucceed
+
+    /// Test 11: Pure F# interface hierarchy with object expression should still error
+    /// This ensures object expression path also requires explicit implementation when no DIM exists.
+    /// Note: Object expressions produce error 3213 (matches multiple overloads) rather than 361.
+    [<Fact>]
+    let ``Object expression - Pure F# interface hierarchy should still error`` () =
+        let fsharpSource = """
+module Test
+
+type IA =
+    abstract M : int -> int
+
+type IB =
+    inherit IA
+    abstract M : int -> int
+
+let obj : IB =
+    { new IB with
+        member x.M(y) = y + 3 }
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3213  // "matches multiple overloads of the same method"
