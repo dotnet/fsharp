@@ -31,6 +31,8 @@ Write-Host "Repository path: $repo_path"
 
 # Set environment variable to disable UpdateXlf target (not needed for IL verification)
 $env:UpdateXlfOnBuild = "false"
+# Disable PDB conversion for SymStore (not needed for IL verification)
+$env:PublishWindowsPdb = "false"
 
 # Set configurations to build
 [string[]] $configurations = @("Debug", "Release")
