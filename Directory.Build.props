@@ -18,10 +18,6 @@
    We also disable arcade and reset certain artifacts and compiler paths to use default ones.
    All settings below can be overridden via CLI switches if needed. -->
 
-  <PropertyGroup>
-    <FullAssemblySigningSupported Condition="'$(OS)' != 'Windows_NT'">true</FullAssemblySigningSupported>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service' and '$(BUILDING_USING_DOTNET)' != 'false'">
       <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
   </PropertyGroup>
