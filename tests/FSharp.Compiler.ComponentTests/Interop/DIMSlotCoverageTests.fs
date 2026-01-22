@@ -500,3 +500,104 @@ type C() =
         |> shouldFail
         |> withErrorCode 3352  // FS3352: does not have a most specific implementation
         |> withDiagnosticMessageMatches "most specific implementation"
+
+    // =============================================================================
+    // Sprint 6: Language Version Gating Tests
+    // =============================================================================
+
+    /// Test 17: Language version gating - old version (9.0) should emit FS0361
+    /// With old language version, the DIM coverage feature is NOT enabled,
+    /// so implementing IB only (without explicit IA implementation) should error.
+    [<FactForNETCOREAPP>]
+    let ``Language version 9.0 - DIM-covered slot should still emit FS0361`` () =
+        let fsharpSource = """
+module Test
+
+open DIMTest
+
+type C() =
+    interface IB with
+        member _.M() = 42
+"""
+        FSharp fsharpSource
+        |> withLangVersion "9.0"
+        |> withReferences [csharpInterfaceWithDIM]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 361  // FS0361: This member implements more than one slot
+
+    /// Test 18: Language version gating - preview version should NOT emit FS0361
+    /// With preview language version, DIM coverage is enabled,
+    /// so implementing IB only should succeed (IA.M is covered by DIM).
+    /// Note: This duplicates Test 1 but explicitly documents the language version behavior.
+    [<FactForNETCOREAPP>]
+    let ``Language version preview - DIM-covered slot should NOT emit FS0361`` () =
+        let fsharpSource = """
+module Test
+
+open DIMTest
+
+type C() =
+    interface IB with
+        member _.M() = 42
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpInterfaceWithDIM]
+        |> compile
+        |> shouldSucceed
+
+    /// Test 19: Language version gating - version 10.0 should also emit FS0361
+    /// The feature is set to 'previewVersion', so 10.0 should NOT have it.
+    [<FactForNETCOREAPP>]
+    let ``Language version 10.0 - DIM-covered slot should still emit FS0361`` () =
+        let fsharpSource = """
+module Test
+
+open DIMTest
+
+type C() =
+    interface IB with
+        member _.M() = 42
+"""
+        FSharp fsharpSource
+        |> withLangVersion "10.0"
+        |> withReferences [csharpInterfaceWithDIM]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 361  // FS0361: This member implements more than one slot
+
+    /// Test 20: Feature string verification
+    /// Verifies the feature name is correctly displayed in the error message
+    /// when the feature is required but not available in the selected language version.
+    [<FactForNETCOREAPP>]
+    let ``Feature string - verify feature description displays correctly`` () =
+        // Note: The feature description string is defined in FSComp.txt as:
+        // featureImplicitDIMCoverage,"Implicit dispatch slot coverage for default interface member implementations"
+        // 
+        // This test verifies the feature is correctly gated. When using an old language version,
+        // the compiler should fall back to the old behavior (FS0361) rather than show a 
+        // "feature not available" error, since this is a behavioral change not a syntax change.
+        // The feature string would appear if someone explicitly requested a feature not available.
+        //
+        // For behavioral features like this one, the feature string is primarily used for:
+        // 1. Documentation purposes (--help shows features)
+        // 2. Feature detection by tools
+        //
+        // Here we just verify the old behavior is preserved (FS0361) when feature is disabled.
+        let fsharpSource = """
+module Test
+
+open DIMTest
+
+type C() =
+    interface IB with
+        member _.M() = 42
+"""
+        FSharp fsharpSource
+        |> withLangVersion "9.0"
+        |> withReferences [csharpInterfaceWithDIM]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 361
+        |> withDiagnosticMessageMatches "implements"

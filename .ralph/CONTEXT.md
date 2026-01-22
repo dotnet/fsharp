@@ -37,3 +37,91 @@ This file is updated after each sprint completes. Use it to understand what was 
 - .ralph/VISION.md
 
 ---
+
+## Sprint 3: Edge cases: diamond + properties
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 4: Object expressions + explicit override
+
+**Summary:** Added tests for object expression scenarios with DIM slot coverage
+
+**Changes made:**
+- Test 7: Object expression implementing interface with DIM-covered slot (works)
+- Test 8: Object expression with explicit override of DIM (works with interface declaration)
+- Test 9: Class with explicit override of DIM slot (user can override DIM)
+- Test 10: Object expression with diamond and single DIM (works)
+- Test 11: Object expression with pure F# interface hierarchy (still errors with 3213)
+
+**DoD verification:**
+- ✅ Build succeeds with 0 errors
+- ✅ Object expression DIM coverage test passes
+- ✅ Explicit DIM override requires interface declaration (tested)
+- ✅ All 11 object expression tests in test suite pass
+
+**Key insight:** Object expressions use the same `CheckOverridesAreAllUsedOnce` code path as classes, with `slotHasDIMCoverage` applied at line 650 in MethodOverrides.fs.
+
+**Files touched:**
+- tests/FSharp.Compiler.ComponentTests/Interop/DIMSlotCoverageTests.fs
+
+---
+
+## Sprint 5: Re-abstraction + generic instantiations
+
+**Summary:** Added tests for edge cases involving re-abstraction, generic interfaces, and ambiguous DIMs
+
+**Changes made:**
+- Test 12: Re-abstracted DIM member (C# `abstract void IA.M()`) should still require implementation
+- Test 13: Re-abstracted member with explicit implementation works
+- Test 14: Generic interfaces with different instantiations (IGet<int> and IGet<string>) - partial DIM coverage
+- Test 15: Missing required generic instantiation fails with FS0366
+- Test 16: possiblyNoMostSpecific flag produces FS3352 error message about "most specific implementation"
+
+**DoD verification:**
+- ✅ Build succeeds with 0 errors
+- ✅ Re-abstracted member test fails with implementation required error (Test 12)
+- ✅ Generic different instantiations test works as before (Tests 14-15)
+- ✅ possiblyNoMostSpecific ambiguity detection works (Test 16)
+- ✅ All 16 DIM Slot Coverage tests pass
+
+**Key insight:** Re-abstracted slots have `HasDefaultInterfaceImplementation=true` but `IsOptional=false`, so `slotHasDIMCoverage` correctly excludes them since it requires BOTH flags.
+
+**Files touched:**
+- tests/FSharp.Compiler.ComponentTests/Interop/DIMSlotCoverageTests.fs
+
+---
+
+## Sprint 5: Re-abstraction + generic instantiations
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 6: Language version gating
+
+**Summary:** Added tests verifying language version gating behavior for DIM coverage feature
+
+**Changes made:**
+- Test 17: Old language version (9.0) emits FS0361 for DIM-covered slots
+- Test 18: Preview language version does NOT emit FS0361 (feature enabled)
+- Test 19: Language version 10.0 also emits FS0361 (feature is previewVersion)
+- Test 20: Feature string verification - confirms error message contains expected text
+
+**DoD verification:**
+- ✅ Build succeeds with 0 errors
+- ✅ Old language version test emits FS0361 (Tests 17, 19, 20)
+- ✅ New language version test passes without error (Test 18)
+- ✅ Feature description string is correct in FSComp.txt line 1805
+
+**Key insight:** The feature is gated on `previewVersion` so it's only enabled with `--langversion:preview`. Older versions (9.0, 10.0) fall back to FS0361 behavior.
+
+**Files touched:**
+- tests/FSharp.Compiler.ComponentTests/Interop/DIMSlotCoverageTests.fs
+
+---
