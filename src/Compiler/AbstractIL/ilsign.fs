@@ -347,11 +347,8 @@ type ILStrongNameSigner =
     | KeyContainer of keyContainerName * bool
 
     static member OpenPublicKeyOptions kp p = PublicKeyOptionsSigner(kp, p)
-
     static member OpenPublicKey bytes = PublicKeySigner bytes
-    
     static member OpenKeyPairFile bytes usePublicSign = KeyPair(bytes, usePublicSign)
-    
     static member OpenKeyContainer s usePublicSign = KeyContainer(s, usePublicSign)
 
     member s.IsFullySigned =
@@ -372,7 +369,11 @@ type ILStrongNameSigner =
         | KeyPair (kp, _) -> signerGetPublicKeyForKeyPair kp
         | KeyContainer (kc, _) -> signerGetPublicKeyForKeyContainer kc
 
-   member s.SignatureSize =
+    member s.SignatureSize =
+        let getRoslynSignatureSize (pk: byte array) =
+            let keySize = pk.Length
+            if keySize < 160 then 128 else keySize - 32
+
         let pkSignatureSize pk =
             try
                 signerSignatureSize pk
@@ -385,16 +386,22 @@ type ILStrongNameSigner =
             let pk, _ = pko
             pkSignatureSize pk
         | KeyPair (kp, usePublicSign) -> 
-            let pk = signerGetPublicKeyForKeyPair kp
             if usePublicSign then 
-                let keySize = pk.Length
-                if keySize < 160 then 128 else keySize - 32
+                let pk = signerGetPublicKeyForKeyPair kp
+                getRoslynSignatureSize pk
             else 
+                let pk = signerGetPublicKeyForKeyPair kp
                 pkSignatureSize pk
         | KeyContainer (kc, usePublicSign) -> 
-             let pk = signerGetPublicKeyForKeyContainer kc
              if usePublicSign then 
-                let keySize = pk.Length
-                if keySize < 160 then 128 else keySize - 32
+                let pk = signerGetPublicKeyForKeyContainer kc
+                getRoslynSignatureSize pk
              else 
+                let pk = signerGetPublicKeyForKeyContainer kc
                 pkSignatureSize pk
+
+    member s.SignStream stream =
+        match s with
+        | KeyPair (kp, false) -> signerSignStreamWithKeyPair stream kp
+        | KeyContainer (kc, false) -> signerSignStreamWithKeyContainer stream kc
+        | _ -> ()
