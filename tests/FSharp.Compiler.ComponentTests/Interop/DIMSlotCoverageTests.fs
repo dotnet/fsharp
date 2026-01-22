@@ -40,7 +40,6 @@ namespace DIMTest
     /// Test 1: Simple DIM shadowing case from RFC
     /// C# interface IA with M(), IB : IA with new M() and DIM for IA.M
     /// F# type implementing IB only should compile because IA.M is covered by DIM.
-    /// SPRINT 1: This test expects FAILURE until the ImplicitDIMCoverage feature is implemented.
     [<FactForNETCOREAPP>]
     let ``Simple DIM shadowing - implementing IB only should not require IA implementation`` () =
         let fsharpSource = """
@@ -56,8 +55,7 @@ type C() =
         |> withLangVersionPreview
         |> withReferences [csharpInterfaceWithDIM]
         |> compile
-        |> shouldFail
-        |> withErrorCode 361
+        |> shouldSucceed
 
     /// Test 2: Pure F# interface hierarchy test (no DIM possible)
     /// This should STILL error with FS0361 to prevent regression.
