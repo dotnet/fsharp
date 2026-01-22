@@ -93,3 +93,21 @@
 
 
 
+## Subtask 2 - Implement iteration 1 (2026-01-22 20:04:06)
+- Did not output SUBTASK_COMPLETE
+
+## Subtask 2 - Implement iteration 2 (2026-01-22 20:28:48)
+-    **VERIFY_FAILED**
+
+   The core implementation of `OverloadResolutionPriorityAttribute` support is complete - the
+   pre-filter logic is implemented in `ConstraintSolver.fs` and all 7 ORP tests plus 111 total
+   Tiebreaker tests pass.
+
+   However, **release notes documentation is missing** per VISION.md item 3:
+   - No entry for `OverloadResolutionPriority` support exists in
+   `/docs/release-notes/.Language/preview.md` or
+   `/docs/release-notes/.FSharp.Compiler.Service/11.0.0.md`
+
+## Subtask 3 - Implement iteration 1 (2026-01-22 20:53:09)
+- Did not output SUBTASK_COMPLETE
+

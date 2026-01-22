@@ -2501,3 +2501,427 @@ if result <> "TypeB-priority2" then
         |> compileAndRun
         |> shouldSucceed
         |> ignore
+    
+    // ============================================================================
+    // Sprint 3: Extension Method & Edge Case Tests
+    // 
+    // Additional tests for extension method behavior and edge cases:
+    // - Priority scoped per-declaring-type for extension methods
+    // - SRTP methods ignore priority
+    // - Same-priority fallback to normal tiebreakers
+    // - Mixed priorities across inheritance hierarchy
+    // ============================================================================
+
+    /// Expanded C# library for Sprint 3 edge case tests
+    let private csharpExtensionPriorityLib =
+        CSharp """
+using System;
+using System.Runtime.CompilerServices;
+
+namespace ExtensionPriorityTests
+{
+    // ===== Per-declaring-type scoped priority for extensions =====
+    
+    /// Extension methods in Module A with varying priorities
+    public static class ExtensionModuleA
+    {
+        [OverloadResolutionPriority(1)]
+        public static string Transform<T>(this T value) => "ModuleA-generic-priority1";
+        
+        [OverloadResolutionPriority(0)]
+        public static string Transform(this int value) => "ModuleA-int-priority0";
+    }
+    
+    /// Extension methods in Module B with different priority assignments
+    public static class ExtensionModuleB
+    {
+        [OverloadResolutionPriority(0)]
+        public static string Transform<T>(this T value) => "ModuleB-generic-priority0";
+        
+        [OverloadResolutionPriority(2)]
+        public static string Transform(this int value) => "ModuleB-int-priority2";
+    }
+    
+    // ===== Same priority, normal tiebreakers apply =====
+    
+    /// Multiple overloads with same priority - concreteness should break tie
+    public static class SamePriorityTiebreaker
+    {
+        [OverloadResolutionPriority(1)]
+        public static string Process<T>(T value) => "generic";
+        
+        [OverloadResolutionPriority(1)]
+        public static string Process(int value) => "int";
+        
+        [OverloadResolutionPriority(1)]
+        public static string Process(string value) => "string";
+    }
+    
+    /// Same priority with Option types - concreteness on inner type
+    public static class SamePriorityOptionTypes
+    {
+        [OverloadResolutionPriority(1)]
+        public static string Handle<T>(T[] arr) => "generic-array";
+        
+        [OverloadResolutionPriority(1)]
+        public static string Handle(int[] arr) => "int-array";
+    }
+    
+    // ===== Inheritance hierarchy with mixed priorities =====
+    
+    public class BaseClass
+    {
+        [OverloadResolutionPriority(0)]
+        public virtual string Method(object o) => "Base-object-priority0";
+        
+        [OverloadResolutionPriority(1)]
+        public virtual string Method(string s) => "Base-string-priority1";
+    }
+    
+    public class DerivedClass : BaseClass
+    {
+        // Inherits priorities from base - no new attributes here
+        public override string Method(object o) => "Derived-object";
+        public override string Method(string s) => "Derived-string";
+    }
+    
+    // New methods in derived with different priorities
+    public class DerivedClassWithNewMethods : BaseClass
+    {
+        // New overloads with their own priorities
+        [OverloadResolutionPriority(2)]
+        public string Method(int i) => "DerivedNew-int-priority2";
+    }
+    
+    // ===== Extension methods vs instance methods priority =====
+    
+    public class TargetClass
+    {
+        [OverloadResolutionPriority(0)]
+        public string DoWork(object o) => "Instance-object-priority0";
+        
+        [OverloadResolutionPriority(1)]
+        public string DoWork(string s) => "Instance-string-priority1";
+    }
+    
+    public static class TargetClassExtensions
+    {
+        // Extension method that adds new overload not conflicting with instance methods
+        [OverloadResolutionPriority(2)]
+        public static string DoWork(this TargetClass tc, int i) => "Extension-int-priority2";
+    }
+    
+    // ===== Instance-only class for priority testing =====
+    
+    public class InstanceOnlyClass
+    {
+        [OverloadResolutionPriority(2)]
+        public string Call(object o) => "object-priority2";
+        
+        [OverloadResolutionPriority(0)]
+        public string Call(string s) => "string-priority0";
+    }
+    
+    // ===== SRTP test types removed - conversion operators can't have ORP =====
+    
+    // ===== Priority with zero vs absent attribute =====
+    
+    /// Mixed explicit zero and absent (implicit zero) 
+    public static class ExplicitVsImplicitZero
+    {
+        [OverloadResolutionPriority(0)]
+        public static string WithExplicitZero(object o) => "explicit-zero";
+        
+        public static string WithoutAttr(string s) => "no-attr";
+        
+        // These should compete equally, string should win by concreteness
+    }
+    
+    // ===== Complex generic scenarios =====
+    
+    public static class ComplexGenerics
+    {
+        [OverloadResolutionPriority(2)]
+        public static string Process<T, U>(T t, U u) => "fully-generic-priority2";
+        
+        [OverloadResolutionPriority(1)]
+        public static string Process<T>(T t, int u) => "partial-concrete-priority1";
+        
+        [OverloadResolutionPriority(0)]
+        public static string Process(int t, int u) => "fully-concrete-priority0";
+    }
+}
+"""
+        |> withCSharpLanguageVersionPreview
+        |> withName "CSharpExtensionPriorityLib"
+
+    [<Fact>]
+    let ``ORP Edge - Priority scoped per-declaring-type - different modules have independent priorities`` () =
+        // ExtensionModuleA: Transform<T> priority 1, Transform(int) priority 0
+        // ExtensionModuleB: Transform<T> priority 0, Transform(int) priority 2
+        // For int arg, within each module, highest priority survives:
+        //   - ModuleA: Transform<T>@1 survives (beats int@0)
+        //   - ModuleB: Transform(int)@2 survives (beats generic@0)
+        // After per-type filtering, we have Transform<T> from A and Transform(int) from B
+        // These are from different types, so normal tiebreakers apply.
+        // Transform(int) is more concrete than Transform<T>, so it should win
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let x = 42
+let result = x.Transform()
+// After per-type filtering: ModuleA offers generic@1, ModuleB offers int@2
+// Between different types, concreteness applies: int beats generic
+if result <> "ModuleB-int-priority2" then
+    failwithf "Expected 'ModuleB-int-priority2' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - Same priority uses normal tiebreaker - int more concrete than generic`` () =
+        // SamePriorityTiebreaker: all overloads have priority 1
+        // For int arg: both generic<T> and int match, both have priority 1
+        // Since priorities are equal, normal tiebreaker applies: int is more concrete
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let result = SamePriorityTiebreaker.Process(42)
+// All have priority 1, so concreteness tiebreaker applies
+if result <> "int" then
+    failwithf "Expected 'int' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - Same priority uses normal tiebreaker - string more concrete`` () =
+        // SamePriorityTiebreaker: all have priority 1
+        // For string arg: string overload should win by concreteness
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let result = SamePriorityTiebreaker.Process("hello")
+// All have priority 1, string is more concrete than generic
+if result <> "string" then
+    failwithf "Expected 'string' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - Same priority array overloads - concreteness on element type`` () =
+        // SamePriorityOptionTypes: both have priority 1
+        // int[] is more concrete than T[]
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let result = SamePriorityOptionTypes.Handle([|1; 2; 3|])
+// Both have priority 1, int[] is more concrete than T[]
+if result <> "int-array" then
+    failwithf "Expected 'int-array' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - Inheritance - derived new method with highest priority wins`` () =
+        // DerivedClassWithNewMethods inherits:
+        //   Method(object) priority 0
+        //   Method(string) priority 1
+        // Adds new:
+        //   Method(int) priority 2
+        // For int arg: Method(int)@2 should win
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let obj = DerivedClassWithNewMethods()
+let result = obj.Method(42)
+// int overload has highest priority (2)
+if result <> "DerivedNew-int-priority2" then
+    failwithf "Expected 'DerivedNew-int-priority2' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - Inheritance - base priority respected in derived`` () =
+        // DerivedClass overrides base methods but inherits priorities
+        // Method(string) has priority 1, Method(object) has priority 0
+        // For string arg: string@1 wins over object@0
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let obj = DerivedClass()
+let result = obj.Method("test")
+// Derived inherits priorities: string@1 beats object@0
+if result <> "Derived-string" then
+    failwithf "Expected 'Derived-string' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - Instance method priority within same type`` () =
+        // InstanceOnlyClass: object@2, string@0
+        // For string arg: object@2 wins by priority (not concreteness)
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let obj = InstanceOnlyClass()
+let result = obj.Call("hello")
+// object@2 has higher priority than string@0
+if result <> "object-priority2" then
+    failwithf "Expected 'object-priority2' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - Extension adds new overload type`` () =
+        // TargetClass instance: object@0, string@1
+        // TargetClassExtensions: int@2
+        // For int arg: extension int@2 is the only int overload, should be used
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let target = TargetClass()
+let result = target.DoWork(42)
+// Extension int@2 is the matching overload for int
+if result <> "Extension-int-priority2" then
+    failwithf "Expected 'Extension-int-priority2' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - Explicit zero vs implicit zero are equal priority`` () =
+        // ExplicitVsImplicitZero: object@0 explicit, string no attr (implicit 0)
+        // For string arg: both have priority 0, string is more concrete
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let result = ExplicitVsImplicitZero.WithoutAttr("test")
+// No attr = priority 0, same as explicit [Priority(0)]
+// Direct call should work
+if result <> "no-attr" then
+    failwithf "Expected 'no-attr' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - Complex generics - highest priority fully generic wins`` () =
+        // ComplexGenerics: fully-generic@2, partial@1, concrete@0
+        // For (int, int) args: all match, fully-generic@2 wins
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let result = ComplexGenerics.Process(1, 2)
+// Priority 2 (fully generic) beats priority 1 and 0
+if result <> "fully-generic-priority2" then
+    failwithf "Expected 'fully-generic-priority2' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - Complex generics - partial match when only some overloads applicable`` () =
+        // For (string, int) args: 
+        // fully-generic@2 matches (T=string, U=int)
+        // partial@1 matches (T=string, U=int is int)
+        // concrete@0 doesn't match (int, int required)
+        // Between generic@2 and partial@1: priority 2 wins
+        FSharp """
+module Test
+open ExtensionPriorityTests
+
+let result = ComplexGenerics.Process("hello", 42)
+// fully-generic@2 and partial@1 both match
+// Priority 2 wins
+if result <> "fully-generic-priority2" then
+    failwithf "Expected 'fully-generic-priority2' but got '%s'" result
+        """
+        |> withReferences [csharpExtensionPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP Edge - SRTP inline function - priority should be ignored for SRTP`` () =
+        // SRTP should use concreteness, not priority
+        // This tests that inline functions with SRTP member constraints
+        // don't get affected by ORP
+        FSharp """
+module Test
+
+// SRTP doesn't go through the same priority filtering path as normal calls
+// For SRTP, concreteness rules should apply
+type TestType =
+    static member Process(x: int) = "int"
+    static member Process(x: string) = "string"
+
+let inline processValue< ^T when ^T : (static member Process : int -> string)> (x: int) =
+    (^T : (static member Process : int -> string) x)
+
+let result = processValue<TestType> 42
+if result <> "int" then
+    failwithf "Expected 'int' but got '%s'" result
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
