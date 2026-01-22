@@ -42,7 +42,7 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x00000624][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x0000062D][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.PatternMatchCompilation::isProblematicClause([FSharp.Compiler.Service]FSharp.Compiler.PatternMatchCompilation+MatchClause)][offset 0x00000065][found Byte] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$FSharp.Compiler.PatternMatchCompilation::.cctor()][offset 0x0000001B][found Boolean] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$FSharp.Compiler.PatternMatchCompilation::.cctor()][offset 0x00000015][found Boolean] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.TypeProviders::ValidateExpectedName([FSharp.Compiler.Service]FSharp.Compiler.Text.Range, string[], string, [FSharp.Compiler.Service]FSharp.Compiler.Tainted`1<FSharp.Compiler.TypeProviders+ProvidedType>)][offset 0x000000AD][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Lexhelp::stringBufferAsString([FSharp.Compiler.Service]FSharp.Compiler.IO.ByteBuffer)][offset 0x00000099][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Syntax.PrettyNaming::SplitNamesForILPath(string)][offset 0x00000057][found Char] Unexpected type on the stack.
