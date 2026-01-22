@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs"/>
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullHelpers.fs"/>
     <EmbeddedText Include="$(FSharpSourcesRoot)\Compiler\Facilities\UtilsStrings.txt" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Facilities\CompilerLocation.fs">
       <Link>CompilerLocation.fs</Link>

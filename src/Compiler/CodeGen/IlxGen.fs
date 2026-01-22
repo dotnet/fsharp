@@ -12194,7 +12194,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
                 if hasLiteralAttr then
                     let staticTy = ctxt.LookupTypeRef fspec.DeclaringTypeRef
                     // Checked: This FieldInfo (FieldBuilder) supports GetValue().
-                    (!!staticTy.GetField(fspec.Name)).GetValue(null: obj MaybeNull)
+                    (!!staticTy.GetField(fspec.Name)).GetValue(null: obj | null)
                 else
                     let staticTy = ctxt.LookupTypeRef ilContainerTy.TypeRef
                     // We can't call .Invoke on the ILMethodRef's MethodInfo,

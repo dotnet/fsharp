@@ -3,11 +3,9 @@ namespace Internal.Utilities.Library
 open System
 
 [<AutoOpen>]
-module internal NullnessShims =
+module internal NullHelpers =
 
     let inline isNotNull (x: 'T) = not (isNull x)
-
-    type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
 
     let inline (!!) (x: 'T | null) = Unchecked.nonNull x
 

@@ -172,7 +172,7 @@ type CancellableBuilder() =
 
             __debugPoint ""
 
-            let body = comp resource
+            let body = comp (!!resource)
 
             let compRes =
                 try
