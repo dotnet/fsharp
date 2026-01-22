@@ -1257,6 +1257,32 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetCustomAttrs()
         | _ -> ILAttributes.Empty
 
+    /// Get the OverloadResolutionPriority for this method.
+    /// Returns 0 if the attribute is not present.
+    member x.GetOverloadResolutionPriority() : int =
+        let overloadResolutionPriorityAttributeName =
+            "System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute"
+
+        match x with
+        | ILMeth(_, ilMethInfo, _) ->
+            ilMethInfo.RawMetadata.CustomAttrs.AsArray()
+            |> Array.tryPick (fun attr ->
+                if attr.Method.DeclaringType.TypeRef.FullName = overloadResolutionPriorityAttributeName then
+                    match attr.Elements with
+                    | [ ILAttribElem.Int32 priority ] -> Some priority
+                    | _ -> Some 0
+                else
+                    None)
+            |> Option.defaultValue 0
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.GetOverloadResolutionPriority()
+        | FSMeth _ ->
+            // F#-defined methods with this attribute are rare; IL-based check handles most cases
+            0
+        | DefaultStructCtor _ -> 0
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth _ -> 0
+#endif
+
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member x.GetParamAttribs(amap, m) =
         match x with
