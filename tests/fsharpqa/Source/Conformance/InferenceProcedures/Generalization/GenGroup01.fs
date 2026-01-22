@@ -1,5 +1,5 @@
 // #Conformance #TypeInference 
-#light
+
 
 // Verify you generalization applies to groups of methods at once
 // (Let bindings)

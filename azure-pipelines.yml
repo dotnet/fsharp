@@ -112,7 +112,7 @@ extends:
           - job: Full_Signed
             pool:
               name: NetCore1ESPool-Svc-Internal
-              image: windows.vs2022preview.amd64
+              image: windows.vs2026preview.scout.amd64
             timeoutInMinutes: 300
             templateContext:
               mb:
@@ -148,6 +148,8 @@ extends:
               env:
                   NativeToolsOnMachine: true
                   FSHARP_CACHE_OVERRIDE: 256
+                  FSharp_CacheEvictionImmediate: true
+                  SKIP_VERSION_SUPPORTED_CHECK: 1
             - task: PublishTestResults@2
               displayName: Publish Test Results
               inputs:

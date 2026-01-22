@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #Arrays 
-#light
+
 
 // Verify ability to match a list, array, or record with trailing semicolon
 // (Regression for bug 1190 - minor glitch in record pattern)

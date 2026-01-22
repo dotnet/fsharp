@@ -530,7 +530,6 @@ namespace Microsoft.FSharp.Core
         let inline (+..)   (x:uint64) (y:uint64) = (# "add" x y : uint64 #)
         let inline ( *. )  (x:int64)  (y:int64)  = (# "mul" x y : int64 #)
         let inline ( *.. ) (x:uint64) (y:uint64) = (# "mul" x y : uint64 #)
-        let inline (^)     (x:string) (y:string) = String.Concat(x,y)
         let inline (<<<)   (x:int)    (y:int)    = (# "shl" x y : int #)
         let inline ( * )   (x:int)    (y:int)    = (# "mul" x y : int #)
         let inline (-)     (x:int)    (y:int)    = (# "sub" x y : int #)
@@ -644,10 +643,11 @@ namespace Microsoft.FSharp.Core
             //-------------------------------------------------------------------------
             // Lazy and/or.  Laziness added by the F# compiler.
             
-            let (&) e1 e2 = if e1 then e2 else false
+            [<CompiledName("op_Amp")>]
+            let __obsoleteAnd e1 e2 = if e1 then e2 else false
             let (&&) e1 e2 = if e1 then e2 else false
             [<CompiledName("Or")>]
-            let (or) e1 e2 = if e1 then true else e2
+            let __obsoleteOr e1 e2 = if e1 then true else e2
             let (||) e1 e2 = if e1 then true else e2
             
             //-------------------------------------------------------------------------
@@ -724,7 +724,7 @@ namespace Microsoft.FSharp.Core
 
             // worst case: nothing known about source or destination
             let UnboxGeneric<'T>(source: objnull) = 
-                if notnullPrim(source) or TypeInfo<'T>.TypeInfo <> TypeNullnessSemantics_NullNotLiked then 
+                if notnullPrim(source) || TypeInfo<'T>.TypeInfo <> TypeNullnessSemantics_NullNotLiked then 
                     unboxPrim<'T>(source)
                 else
                     //System.Console.WriteLine("UnboxGeneric, x = {0}, 'T = {1}", x, typeof<'T>)
@@ -4047,7 +4047,7 @@ namespace Microsoft.FSharp.Core
 
         override x.ToString() = 
            // x is non-null, hence Some
-           "Some("^anyToStringShowingNull x.Value^")"
+           String.Concat("Some(", anyToStringShowingNull x.Value, ")")
 
     and 'T option = Option<'T> 
 
@@ -7299,11 +7299,12 @@ namespace Microsoft.FSharp.Core
 namespace Microsoft.FSharp.Control
 
     open System
+    open System.Diagnostics.CodeAnalysis
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
 
     module LazyExtensions = 
-        type Lazy<'T> with
+        type Lazy<[<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)>]'T> with
             [<CompiledName("Create")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             static member Create(creator : unit -> 'T) : Lazy<'T> =
                 let creator = Func<'T>(creator)
@@ -7338,11 +7339,19 @@ namespace Microsoft.FSharp.Control
     open System
     open Microsoft.FSharp.Core
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     type IDelegateEvent<'Delegate when 'Delegate :> Delegate > =
+#else
+    type IDelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate : not null > =
+#endif
         abstract AddHandler: handler:'Delegate -> unit
         abstract RemoveHandler: handler:'Delegate -> unit 
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     type IEvent<'Delegate,'Args when 'Delegate : delegate<'Args,unit> and 'Delegate :> Delegate > =
+#else
+    type IEvent<'Delegate,'Args when 'Delegate : delegate<'Args,unit> and 'Delegate :> Delegate and 'Delegate : not null > =
+#endif
         inherit IDelegateEvent<'Delegate>
         inherit IObservable<'Args>
 

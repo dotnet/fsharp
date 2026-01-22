@@ -1,5 +1,5 @@
 ﻿// #Globalization 
-#light
+
 
 let İIıi = "İIıi"
 let İIıi2 = """İIıi2"""

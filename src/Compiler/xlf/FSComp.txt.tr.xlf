@@ -27,11 +27,6 @@
         <target state="translated">Kaynak dosya '{0}' ({1}/{2} konumunda) derleme listesinde ({3}/{4} konumunda) zaten göründü. Lütfen proje dosyasına yalnızca bir kez eklendiğinden emin olun.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildInvalidSourceFileExtensionML">
-        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="translated">'{0}' kaynak dosyasının dosya uzantısı tanınmadı. Kaynak dosyaların uzantısı .fs, .fsi, .fsx veya .fsscript olmalıdır. Kullanım dışı .ml veya .mli uzantılarını etkinleştirmek için '--langversion:5.0' ve '--mlcompatibility' kullanın.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">'{0}' kaynak dosyasının dosya uzantısı tanınmadı. Kaynak dosyaların uzantısı .fs, .fsi, .fsx veya .fsscript olmalıdır.</target>
@@ -130,6 +125,11 @@
       <trans-unit id="chkInstanceMemberOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
         <target state="translated">Bir tür, hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanıyorsa bu statik olduğu anlamına gelir. Örnek üyelerine izin verilmez.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument">
+        <source>The interface '{0}' cannot be used as a type argument because the static abstract member '{1}' does not have a most specific implementation in the interface.</source>
+        <target state="new">The interface '{0}' cannot be used as a type argument because the static abstract member '{1}' does not have a most specific implementation in the interface.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNotTailRecursive">
@@ -492,11 +492,6 @@
         <target state="translated">RequireQualifiedAccess özniteliğinde küçük harf DU'ya izin ver</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureMLCompatRevisions">
-        <source>ML compatibility revisions</source>
-        <target state="translated">ML uyumluluk düzeltmeleri</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
         <target state="translated">Veri almayan birleşim durumu için desen eşleştirme atma kullanılamaz.</target>
@@ -837,11 +832,6 @@
         <target state="translated">Genişletilmiş dize ilişkilendirmesi bu F# sürümünde desteklenmiyor.</target>
         <note />
       </trans-unit>
-      <trans-unit id="lexIfOCaml">
-        <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
-        <target state="translated">IF-FSHARP/IF-CAML bölgeleri artık desteklenmiyor</target>
-        <note />
-      </trans-unit>
       <trans-unit id="lexInvalidAsciiByteLiteral">
         <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.</source>
         <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.</target>
@@ -947,39 +937,9 @@
         <target state="translated">Veri almayan birleşim durumu için desen atma kullanılamaz.</target>
         <note />
       </trans-unit>
-      <trans-unit id="mlCompatError">
-        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="translated">Bu yapı kullanım dışı. {0}. Bu özelliği '--langversion:5.0' ve '--mlcompatibility' kullanarak etkinleştirebilirsiniz.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatKeyword">
-        <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
-        <target state="translated">Önceki F# sürümlerinde '{0}' ayrılmış bir anahtar sözcüktü ancak bu anahtar sözcük artık kullanımdan kaldırıldı</target>
-        <note />
-      </trans-unit>
       <trans-unit id="mlCompatLightOffNoLongerSupported">
-        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="translated">'#light \"off\"' veya '#indent \"off\"' F# 2.0 sürümünde kullanımdan kaldırıldı ve artık desteklenmiyor</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
-        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="translated">Bir genel tür adından önce '(int, int) Map' gibi parantez içine alınmış birden çok tür parametresi F# 2.0 sürümünde kullanımdan kaldırıldı ve artık desteklenmiyor</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatSigColonNoLongerSupported">
-        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="translated">'module M: sig ... end ' F# 2.0 sürümünde kullanımdan kaldırıldı ve artık desteklenmiyor. ':' karakterini '=' olarak değiştirin, 'sig' ve 'end' ifadelerini kaldırın ve bunların yerine girinti kullanın</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatSigEndNoLongerSupported">
-        <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="translated">'module M = sig ... end ' F# 2.0 sürümünde kullanımdan kaldırıldı ve artık desteklenmiyor. 'sig' ve 'end' ifadelerini kaldırın ve bunların yerine girinti kullanın</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="mlCompatStructEndNoLongerSupported">
-        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
-        <target state="translated">'module M = struct ... end ' F# 2.0 sürümünde kullanımdan kaldırıldı ve artık desteklenmiyor. 'struct' ve 'end' ifadelerini kaldırın ve bunların yerine girinti kullanın</target>
+        <source>The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' is no longer supported</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -1040,6 +1000,11 @@
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
         <target state="translated">Geçersiz başvuru bütünleştirilmiş kodu yolu'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersionOutOfSupport">
+        <source>Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</source>
+        <target state="new">Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">
@@ -2037,6 +2002,11 @@
         <target state="translated">Bu XML açıklaması geçersiz: Parametre veya parametre başvurusu için 'name' özniteliği eksik</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocNotFirstOnLine">
+        <source>XML documentation comments should be the first non-whitespace text on a line.</source>
+        <target state="new">XML documentation comments should be the first non-whitespace text on a line.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
         <target state="translated">Bu XML açıklaması geçersiz: '{0}' çapraz başvurusu çözümlenmemiş</target>
@@ -2145,11 +2115,6 @@
       <trans-unit id="buildCouldNotFindSourceFile">
         <source>Source file '{0}' could not be found</source>
         <target state="translated">Kaynak dosya '{0}' bulunamadı</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildInvalidSourceFileExtension">
-        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx, .fsscript, .ml or .mli.</source>
-        <target state="translated">Dosya uzantısı '{0}' tanınmadı. Kaynak dosyaların uzantısı .fs, .fsi, .fsx, .fsscript, .ml veya .mli olmalıdır.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCouldNotResolveAssembly">
@@ -3690,11 +3655,6 @@
       <trans-unit id="parsEofInVerbatimStringInComment">
         <source>End of file in verbatim string embedded in comment begun at or before here</source>
         <target state="translated">Açıklamaya gömülü tam dizede dosya sonu burada veya daha önce başlatıldı</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsEofInIfOcaml">
-        <source>End of file in IF-OCAML section begun at or before here</source>
-        <target state="translated">IF-OCAML bölümünde dosya sonu burada veya daha önce başlatıldı</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInDirective">
@@ -6112,11 +6072,6 @@
         <target state="translated">Koşullu derleme simgelerini tanımla (Kısa biçimi: -d)</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsMlcompatibility">
-        <source>Ignore ML compatibility warnings</source>
-        <target state="translated">ML uyumluluk uyarılarını yoksay</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsNologo">
         <source>Suppress compiler copyright message</source>
         <target state="translated">Derleyici telif hakkı iletisini gösterme</target>
@@ -6768,8 +6723,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexTabsNotAllowed">
-        <source>TABs are not allowed in F# code unless the #indent \"off\" option is used</source>
-        <target state="translated">#indent \"off\" seçeneği kullanılmadığı sürece F# kodunda SEKMELERE izin verilmez</target>
+        <source>TABs are not allowed in F# code</source>
+        <target state="new">TABs are not allowed in F# code</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidLineNumber">
@@ -6987,11 +6942,6 @@
         <target state="translated">'unmanaged' kısıtlaması olan bir genel yapının bu konumda veya yakınında kullanılmasındaki belirsizlik çözümlenemedi</target>
         <note />
       </trans-unit>
-      <trans-unit id="mlCompatMessage">
-        <source>This construct is for ML compatibility. {0}. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.</source>
-        <target state="translated">Bu yapı ML uyumluluğu içindir. {0}. '--mlcompatibility' veya '--nowarn:62' kullanarak bu uyarıyı devre dışı bırakabilirsiniz.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ilFieldDoesNotHaveValidOffsetForStructureLayout">
         <source>The type '{0}' has been marked as having an Explicit layout, but the field '{1}' has not been marked with the 'FieldOffset' attribute</source>
         <target state="translated">{0}' türünün Açık düzeni olduğu işaretlenmiş, ancak '{1}' alanı 'FieldOffset' özniteliğiyle işaretlenmemiş</target>
@@ -7010,16 +6960,6 @@
       <trans-unit id="parsInvalidPrefixOperatorDefinition">
         <source>Invalid operator definition. Prefix operator definitions must use a valid prefix operator name.</source>
         <target state="translated">Geçersiz işleç tanımı. Ön ek işleç tanımları geçerli bir ön ek işleci adı kullanmalıdır.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCompilingExtensionIsForML">
-        <source>The file extensions '.ml' and '.mli' are for ML compatibility</source>
-        <target state="translated">'.ml' ve '.mli' dosya uzantıları ML uyumluluğu içindir</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexIndentOffForML">
-        <source>Consider using a file with extension '.ml' or '.mli' instead</source>
-        <target state="translated">Bunun yerine uzantısı '.ml' veya '.mli' olan dosya kullanmayı düşünün</target>
         <note />
       </trans-unit>
       <trans-unit id="activePatternIdentIsNotFunctionTyped">
@@ -8538,8 +8478,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOr">
-        <source>Used with Boolean conditions as a Boolean or operator. Equivalent to ||. Also used in member constraints.</source>
-        <target state="translated">Bir Boolean değeri veya işleci olarak Boolean koşullarıyla birlikte kullanılır. Eşdeğeri || simgesidir. Ayrıca üye kısıtlamalarında kullanılır.</target>
+        <source>Used in member constraints.</source>
+        <target state="new">Used in member constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionOverride">

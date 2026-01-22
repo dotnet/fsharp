@@ -324,7 +324,7 @@ module NavigationImpl =
                 |> List.map (fun md ->
                     md.Range,
                     (match md with
-                     | SynMemberDefn.LetBindings(binds, _, _, _) -> List.collect (processBinding false enclosingEntityKind false) binds
+                     | SynMemberDefn.LetBindings(bindings = binds) -> List.collect (processBinding false enclosingEntityKind false) binds
                      | SynMemberDefn.GetSetMember(Some bind, None, _, _)
                      | SynMemberDefn.GetSetMember(None, Some bind, _, _)
                      | SynMemberDefn.Member(bind, _) -> processBinding true enclosingEntityKind false bind
@@ -366,7 +366,7 @@ module NavigationImpl =
             [
                 for decl in decls do
                     match decl with
-                    | SynModuleDecl.Let(_, binds, _) ->
+                    | SynModuleDecl.Let(bindings = binds) ->
                         for bind in binds do
                             yield! processBinding false NavigationEntityKind.Module false bind
                     | _ -> ()
@@ -955,7 +955,7 @@ module NavigateTo =
 
                 for m in synMembers do
                     walkSynMemberDefn m container
-            | SynModuleDecl.Let(_, bindings, _) ->
+            | SynModuleDecl.Let(bindings = bindings) ->
                 for binding in bindings do
                     addBinding binding None container
             | SynModuleDecl.ModuleAbbrev(lhs, _, _) -> addModuleAbbreviation lhs false container
@@ -1023,7 +1023,7 @@ module NavigateTo =
                 Option.iter (fun b -> addBinding b None container) setBinding
             | SynMemberDefn.NestedType(typeDef, _, _) -> walkSynTypeDefn typeDef container
             | SynMemberDefn.ValField(fieldInfo = field) -> addField field false container
-            | SynMemberDefn.LetBindings(bindings, _, _, _) ->
+            | SynMemberDefn.LetBindings(bindings = bindings) ->
                 bindings
                 |> List.iter (fun binding -> addBinding binding (Some NavigableItemKind.Field) container)
             | SynMemberDefn.Open _

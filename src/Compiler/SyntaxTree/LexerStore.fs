@@ -64,6 +64,14 @@ module XmlDocStore =
         let collector = getCollector lexbuf
         collector.CheckInvalidXmlDocPositions()
 
+    let SetLastNonCommentTokenLine (lexbuf: Lexbuf) (line: int) =
+        let collector = getCollector lexbuf
+        collector.SetLastNonCommentTokenLine(line)
+
+    let GetLastNonCommentTokenLine (lexbuf: Lexbuf) =
+        let collector = getCollector lexbuf
+        collector.LastNonCommentTokenLine
+
 //------------------------------------------------------------------------
 // Storage to hold the current accumulated ConditionalDirectiveTrivia, and related types and access functions
 //------------------------------------------------------------------------

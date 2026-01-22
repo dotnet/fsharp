@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #Enums 
-#light
+
 // Test errors related to enums of invalid primitive/built-in types
 
 

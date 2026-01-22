@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 type Person = { Name : string; Age : int }
 

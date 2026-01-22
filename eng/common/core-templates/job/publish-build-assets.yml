@@ -80,7 +80,7 @@ jobs:
     # If it's not devdiv, it's dnceng
     ${{ if ne(variables['System.TeamProject'], 'DevDiv') }}:
       name: NetCore1ESPool-Publishing-Internal
-      image: windows.vs2019.amd64
+      image: windows.vs2022.amd64
       os: windows
   steps:
   - ${{ if eq(parameters.is1ESPipeline, '') }}:
@@ -122,8 +122,9 @@ jobs:
 
     # Populate internal runtime variables.
     - template: /eng/common/templates/steps/enable-internal-sources.yml
-      parameters:
-        legacyCredential: $(dn-bot-dnceng-artifact-feeds-rw)
+      ${{ if eq(variables['System.TeamProject'], 'DevDiv') }}:
+        parameters:
+            legacyCredential: $(dn-bot-dnceng-artifact-feeds-rw)
 
     - template: /eng/common/templates/steps/enable-internal-runtimes.yml
 

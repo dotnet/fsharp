@@ -1,5 +1,5 @@
 // #Regression #Conformance #UnitsOfMeasure 
-#light
+
 
 // Regression for FSB 3432, Arithmetic operations appear not to work on decimals with units of measure.
 

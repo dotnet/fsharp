@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeConstraints 
-#light
+
 
 // FSB 1748, Internal Error: when calling a base member
 
