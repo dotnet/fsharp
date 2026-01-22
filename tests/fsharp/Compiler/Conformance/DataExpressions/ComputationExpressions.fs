@@ -194,7 +194,7 @@ let check msg actual expected = if actual <> expected then failwithf "FAILED %s,
         let lib = applicativeLib opts
         // Adjust the expected errors for the number of lines in the library
         let libLineAdjust = lib |> Seq.filter (fun c -> c = '\n') |> Seq.length
-        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust [| "/langversion:4.7" |] libLineAdjust (lib + source) errors
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust [| "/langversion:8.0" |] libLineAdjust (lib + source) errors
 
     [<Fact>]
     let ``AndBang TraceApplicative`` () =
@@ -268,20 +268,8 @@ check "fewljvwerjlvwe1" ceResult.Value 3
 check "fewljvwerjvwe12" (tracer.GetTrace ()) [|TraceOp.ApplicativeBind2Return; TraceOp.Log "hello!";TraceOp.Log "goodbye!";TraceOp.ApplicativeBindReturn|]
             """
 
-    [<Fact>]
-    let ``AndBang TraceApplicative Disable`` () =
-        ApplicativeLibErrorTestFeatureDisabled includeAll 
-            """
-let tracer = TraceApplicative()
-
-let ceResult : Trace<int> =
-    tracer {
-        let! x = Trace 3
-        and! y = Trace true
-        return if y then x else -1
-    }
-            """
-            [| FSharpDiagnosticSeverity.Error, 3344, (7, 9, 7, 13), "This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature." |]
+    // NOTE: The `AndBang TraceApplicative Disable` test was removed because with langversion 8.0 minimum,
+    // the `and!` feature (introduced in F# 5.0) is always available.
 
     [<Fact>]
     let ``AndBang TraceMultiBindingMonoid`` () =
