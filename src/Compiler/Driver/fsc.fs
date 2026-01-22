@@ -612,9 +612,9 @@ let main1
 
     let inputs, _ =
         (Map.empty, inputs)
-        ||> List.mapFold (fun state (input, x) ->
+        ||> List.mapFold (fun state ((input, sourceTextOpt), x) ->
             let inputT, stateT = DeduplicateParsedInputModuleName state input
-            (inputT, x), stateT)
+            ((inputT, sourceTextOpt), x), stateT)
 
     // Print the AST if requested
     if tcConfig.printAst then
@@ -631,7 +631,7 @@ let main1
 
     let tcConfig =
         (tcConfig, inputs)
-        ||> List.fold (fun z (input, sourceFileDirectory) ->
+        ||> List.fold (fun z ((input, _), sourceFileDirectory) ->
             ApplyMetaCommandsFromInputToTcConfig(z, input, sourceFileDirectory, dependencyProvider))
 
     let tcConfigP = TcConfigProvider.Constant tcConfig

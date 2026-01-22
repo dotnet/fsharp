@@ -3120,6 +3120,7 @@ module internal ParseAndCheckFile =
                         identCapture,
                         Some userOpName
                     )
+                    |> fst
                 with
                 | :? OperationCanceledException -> reraise ()
                 | e ->

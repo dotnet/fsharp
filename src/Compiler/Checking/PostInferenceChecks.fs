@@ -2429,8 +2429,10 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             if numCurriedArgSets > 1 && others |> List.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then
                 errorR(Error(FSComp.SR.chkDuplicateMethodCurried(nm, NicePrint.minimalStringOfType cenv.denv ty), m))
 
+            let paramDatas = minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
+
             if numCurriedArgSets > 1 &&
-               (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
+               (paramDatas
                 |> List.existsSquared (fun (ParamData(isParamArrayArg, _isInArg, isOutArg, optArgInfo, callerInfo, _, reflArgInfo, ty)) ->
                     isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfo <> NoCallerInfo || isByrefLikeTy g m ty)) then
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
@@ -2456,7 +2458,20 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     | ValueSome innerTy -> errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, desiredTyName, NicePrint.minimalStringOfType cenv.denv innerTy), m))
                     | ValueNone -> errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, desiredTyName, NicePrint.minimalStringOfType cenv.denv ty), m))                   
 
-                minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
+                let paramNames = HashSet()
+                paramDatas
+                |> List.iterSquared (fun (ParamData(_, _, _, _, _, nameOpt, _, _)) ->
+                    nameOpt |> Option.iter (fun name -> paramNames.Add name.idText |> ignore))
+
+                let checkArgOfCallerArgumentExpression m arg (nameOpt: Ident option) =
+                    match nameOpt with
+                    | Some ident when arg = ident.idText -> 
+                        warning(Error(FSComp.SR.tcCallerArgumentExpressionSelfReferential(), m))
+                    | _ when not (paramNames.Contains arg) -> 
+                        warning(Error(FSComp.SR.tcCallerArgumentExpressionHasInvalidParameterName(), m))
+                    | _ -> ()
+
+                paramDatas
                 |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, nameOpt, _, ty)) ->
                     ignore isInArg
 
@@ -2474,6 +2489,20 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     | CalleeSide, CallerLineNumber -> errorIfNotOptional g.int32_ty "int" m ty callerInfo
                     | CallerSide _, (CallerFilePath | CallerMemberName) -> errorIfNotStringTy m ty callerInfo
                     | CalleeSide, (CallerFilePath | CallerMemberName) -> errorIfNotOptional g.string_ty "string" m ty callerInfo
+                    | CallerSide _, CallerArgumentExpression arg ->
+                        match tryLanguageFeatureErrorOption g.langVersion LanguageFeature.SupportCallerArgumentExpression m with
+                        | Some e -> informationalWarning e
+                        | None -> ()
+
+                        errorIfNotStringTy m ty callerInfo
+                        checkArgOfCallerArgumentExpression m arg nameOpt
+                    | CalleeSide, CallerArgumentExpression arg ->
+                        match tryLanguageFeatureErrorOption g.langVersion LanguageFeature.SupportCallerArgumentExpression m with
+                        | Some e -> informationalWarning e
+                        | None -> ()
+
+                        errorIfNotOptional g.string_ty "string" m ty callerInfo
+                        checkArgOfCallerArgumentExpression m arg nameOpt
                 )
 
         for pinfo in immediateProps do

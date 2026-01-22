@@ -652,6 +652,11 @@
         <target state="translated">etkin desenler için yapı gösterimi</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportCallerArgumentExpression">
+        <source>Support `CallerArgumentExpression`</source>
+        <target state="new">Support `CallerArgumentExpression`</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
         <source>Support ValueOption as valid type for optional member parameters</source>
         <target state="new">Support ValueOption as valid type for optional member parameters</target>
@@ -1078,8 +1083,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'."featureSupportCallerArgumentExpression,"Support `CallerArgumentExpression`</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'."featureSupportCallerArgumentExpression,"Support `CallerArgumentExpression`</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -1420,6 +1425,26 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Öznitelikler tür uzantılarına uygulanamaz.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionHasInvalidParameterName">
+        <source>The [&lt;CallerArgumentExpression&gt;] on this parameter will have no effect because it's applied with an invalid parameter name.</source>
+        <target state="new">The [&lt;CallerArgumentExpression&gt;] on this parameter will have no effect because it's applied with an invalid parameter name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionIsOverridden">
+        <source>The [&lt;CallerArgumentExpression&gt;] on this parameter will have no effect because it's overridden by the [&lt;{0}&gt;].</source>
+        <target state="new">The [&lt;CallerArgumentExpression&gt;] on this parameter will have no effect because it's overridden by the [&lt;{0}&gt;].</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionSelfReferential">
+        <source>The [&lt;CallerArgumentExpression&gt;] on this parameter will have no effect because it's self-referential.</source>
+        <target state="new">The [&lt;CallerArgumentExpression&gt;] on this parameter will have no effect because it's self-referential.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionWillNotBeApplied">
+        <source>This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3885\"' or '--nowarn:3885'.</source>
+        <target state="new">This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3885\"' or '--nowarn:3885'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

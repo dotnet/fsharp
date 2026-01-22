@@ -324,6 +324,8 @@ type internal TcGlobals =
 
     member attrib_CallerLineNumberAttribute: BuiltinAttribInfo
 
+    member attrib_CallerArgumentExpressionAttribute: BuiltinAttribInfo option
+
     member attrib_CallerMemberNameAttribute: BuiltinAttribInfo
 
     member attrib_ClassAttribute: BuiltinAttribInfo

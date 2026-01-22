@@ -95,6 +95,7 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | SupportCallerArgumentExpression
 
 /// LanguageVersion management
 type LanguageVersion =
