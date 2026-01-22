@@ -3811,6 +3811,8 @@ namespace Microsoft.FSharp.Core
         /// l1 @ l2   //  Evaluates to ['a'; 'b'; 'c'; 'd'; 'e'; 'f']
         /// </code>
         /// </example>
+        ///
+        /// <remarks>This is an O(n) operation, where n is the length of the first list.</remarks>
         /// 
         val (@): list1: 'T list -> list2: 'T list -> 'T list
 
