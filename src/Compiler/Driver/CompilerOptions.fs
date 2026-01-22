@@ -1168,9 +1168,26 @@ let languageFlags tcConfigB =
         CompilerOption(
             "langversion",
             tagLangVersionValues,
-            OptionString(fun switch -> tcConfigB.langVersion <- setLanguageVersion switch),
+            OptionString(fun switch ->
+                let newVersion = setLanguageVersion switch
+                // Preserve disabled features when updating version
+                tcConfigB.langVersion <- newVersion.WithDisabledFeatures(Set.toArray tcConfigB.disabledLanguageFeatures)),
             None,
             Some(FSComp.SR.optsSetLangVersion ())
+        )
+
+        // -disableLanguageFeature:<string>  Disable a specific language feature by name (repeatable)
+        CompilerOption(
+            "disableLanguageFeature",
+            tagString,
+            OptionStringList(fun featureName ->
+                match LanguageVersion.TryParseFeature(featureName) with
+                | Some feature ->
+                    tcConfigB.disabledLanguageFeatures <- Set.add feature tcConfigB.disabledLanguageFeatures
+                    tcConfigB.langVersion <- tcConfigB.langVersion.WithDisabledFeatures(Set.toArray tcConfigB.disabledLanguageFeatures)
+                | None -> error (Error(FSComp.SR.optsUnrecognizedLanguageFeature featureName, rangeCmdArgs))),
+            None,
+            Some(FSComp.SR.optsDisableLanguageFeature ())
         )
 
         CompilerOption(

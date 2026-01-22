@@ -1,6 +1,6 @@
 // #Conformance #TypeConstraints 
-//<Expects status="error" span="(20,11-20,16)" id="FS0001">The type 'S1' does not support the 'comparison' constraint\. For example, it does not support the 'System\.IComparable' interface</Expects>
-//<Expects status="error" span="(21,11-21,16)" id="FS0001">The type 'S2' does not support the 'comparison' constraint because it has the 'NoComparison' attribute</Expects>
+//<Expects status="error" span="(20,11-20,16)" id="FS0193">The type 'S1' does not support the 'comparison' constraint\. For example, it does not support the 'System\.IComparable' interface</Expects>
+//<Expects status="error" span="(21,11-21,16)" id="FS0193">The type 'S2' does not support the 'comparison' constraint because it has the 'NoComparison' attribute</Expects>
 
 open System
 

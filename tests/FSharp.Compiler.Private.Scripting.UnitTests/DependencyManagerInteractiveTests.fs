@@ -730,12 +730,14 @@ x |> Seq.iter(fun r ->
     #time ["on"|"off"];;                          // Toggle timing on/off
     #help;;                                       // Display help
     #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;
+    #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'
+    #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
     #clear;;                                      // Clear screen
     #quit;;                                       // Exit
 
   F# Interactive command line options:"""
 
-        use script = new FSharpScript(quiet = false, langVersion = LangVersion.V47)
+        use script = new FSharpScript(quiet = false, langVersion = LangVersion.V80)
 
         use capture = new TestConsole.ExecutionCapture()
         let _opt = script.Eval("#help") |> getValue

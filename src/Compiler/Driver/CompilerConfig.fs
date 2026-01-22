@@ -637,6 +637,8 @@ type TcConfigBuilder =
 
         mutable langVersion: LanguageVersion
 
+        mutable disabledLanguageFeatures: Set<LanguageFeature>
+
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
@@ -827,6 +829,7 @@ type TcConfigBuilder =
             pathMap = PathMap.empty
             applyLineDirectives = true
             langVersion = LanguageVersion.Default
+            disabledLanguageFeatures = Set.empty
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
             reduceMemoryUsage = reduceMemoryUsage
@@ -1402,6 +1405,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.CloneToBuilder() =
         { data with
             conditionalDefines = data.conditionalDefines
+            disabledLanguageFeatures = data.disabledLanguageFeatures
         }
 
     member tcConfig.ComputeCanContainEntryPoint(sourceFiles: string list) =

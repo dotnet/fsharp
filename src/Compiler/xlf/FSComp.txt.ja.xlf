@@ -987,6 +987,11 @@
         <target state="new">Compress interface and optimization data files ({0} by default)</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsDisableLanguageFeature">
+        <source>Disable a specific language feature by name.</source>
+        <target state="new">Disable a specific language feature by name.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsGetLangVersions">
         <source>Display the allowed values for language version.</source>
         <target state="translated">言語バージョンで許可されている値を表示します。</target>
@@ -1070,6 +1075,11 @@
       <trans-unit id="optsUnknownSignatureData">
         <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</source>
         <target state="translated">--interfacedata の値 '{0}' が無効です。有効な値は none、file、compress です。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageFeature">
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
