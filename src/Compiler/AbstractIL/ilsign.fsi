@@ -14,10 +14,9 @@ open System.IO
 //---------------------------------------------------------------------
 [<Sealed>]
 type ILStrongNameSigner =
-    static member CreatePublicSigner: publicKeyOptions: byte array * publicSign: bool -> ILStrongNameSigner
-    static member CreateKeyPairSigner: keyPair: byte array -> ILStrongNameSigner
-    static member OpenKeyContainer: containerName: string * publicSign: bool -> ILStrongNameSigner
+    static member OpenPublicKeyOptions: byte array -> bool -> ILStrongNameSigner
+    static member OpenPublicKey: byte array -> ILStrongNameSigner
+    static member OpenKeyPairFile: byte array -> bool -> ILStrongNameSigner
+    static member OpenKeyContainer: string -> bool -> ILStrongNameSigner
     member IsFullySigned: bool
-    member PublicKey: byte array
     member SignatureSize: int
-    member SignStream: Stream -> unit
