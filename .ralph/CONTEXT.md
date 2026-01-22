@@ -65,3 +65,41 @@ This file is updated after each sprint completes. Use it to understand what was 
 - `CastingUint` (existing test, fixed namespace)
 
 ---
+
+## Sprint 3: Tuple join and groupBy
+
+**Summary:** Completed in 3 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 4: Tuple select IQueryable
+
+**Summary:** Fixed tuple/multi-value projections in queries to preserve IQueryable type, enabling query composition and async operations like ToListAsync() in Entity Framework Core.
+
+**Issues:** #3782, #15133
+
+**Root cause:** When a query had a tuple projection like `select (p.Id, p.Name)`, the F# query system was:
+1. First using `Queryable.Select` to project to `AnonymousObject` types (mutable tuples)
+2. Then using `Enumerable.Select` + `AsQueryable()` to convert back to F# tuples
+
+The `Enumerable.Select` step broke the IQueryable chain, producing `EnumerableQuery` instead of preserving the original provider's queryable type. This broke Entity Framework Core's ability to translate the query or use async operations.
+
+**Fix:** Changed `TransInnerWithFinalConsume` in Query.fs to use `Queryable.Select` (via `MakeSelect` with `isIQ=true`) when the source is IQueryable, instead of using `Enumerable.Select` + `AsQueryable()`.
+
+**Files touched:**
+- src/FSharp.Core/Query.fs (2 locations fixed)
+- tests/FSharp.Core.UnitTests/FSharp.Core/Microsoft.FSharp.Linq/QueryTests.fs (7 new tests added)
+- docs/release-notes/.FSharp.Core/10.0.300.md (1 new entry)
+
+**Tests added:**
+- `Tuple select preserves IQueryable type - issue 3782`
+- `System.Tuple select preserves IQueryable type`
+- `F# tuple and System.Tuple produce equivalent query behavior`
+- `Tuple select query can be composed with Where - issue 15133`
+- `Tuple select query can be composed with OrderBy - issue 15133`
+- `Record projection query is composable`
+- `Multi-element tuple select preserves all elements for composition`
+
+---

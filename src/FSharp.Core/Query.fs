@@ -1168,14 +1168,13 @@ module Query =
             let isIQ = IsIQueryableTy mutExpr.Type
             assert (IsIEnumerableTy mutExpr.Type || IsIQueryableTy mutExpr.Type)
             let mutElemTy = mutExpr.Type.GetGenericArguments().[0]
-            let mutExpr = if isIQ then Expr.Coerce (mutExpr, MakeIEnumerableTy mutElemTy) else mutExpr
             // Generate "source.Select(fun v -> ...)" (remembering that Select is an extension member, i.e. static)
             let mutVar = new Var("v", mutElemTy)
             let mutToImmutConvExpr = ConvMutableToImmutable conv (Expr.Var mutVar)
-            let immutExpr = MakeSelect (CanEliminate.Yes, false, mutExpr, mutVar, mutToImmutConvExpr)
-            let immutElemTy = mutToImmutConvExpr.Type
-            let immutExprCoerced = if isIQ then MakeAsQueryable(immutElemTy, immutExpr) else immutExpr
-            immutExprCoerced
+            // Use Queryable.Select when source is IQueryable, Enumerable.Select otherwise
+            // This preserves the IQueryable type, enabling query composition and EF Core async ops
+            let immutExpr = MakeSelect (CanEliminate.Yes, isIQ, mutExpr, mutVar, mutToImmutConvExpr)
+            immutExpr
 
         | GroupingConv (immutKeyTy, immutElemTy, conv) ->
 
@@ -1682,14 +1681,12 @@ module Query =
                 immutSource.Type.GetGenericArguments().[0]
             let immutVar = Var("after", immutSourceElemTy)
             let mutVar, mutToImmutSelector = ConvertImmutableConsumerToMutableConsumer sourceConv (immutVar, Expr.Var immutVar)
-            let immutExprEnumerable = MakeSelect(CanEliminate.Yes, false, mutSource, mutVar, mutToImmutSelector)
+            // Determine if we need to use IQueryable-preserving Select
             let mustReturnIQueryable =
                 IsQuerySourceTy immutSourceTy && qTyIsIQueryable (immutSourceTy.GetGenericArguments().[1]) ||
                 IsIQueryableTy immutSourceTy
-            let immutExprFinal =
-                if mustReturnIQueryable then MakeAsQueryable(immutSourceElemTy, immutExprEnumerable)
-                else immutExprEnumerable
-            immutExprFinal
+            // Use Queryable.Select when source should be IQueryable to preserve query composition
+            MakeSelect(CanEliminate.Yes, mustReturnIQueryable, mutSource, mutVar, mutToImmutSelector)
 
     /// Like TransInnerApplicativeAndCommit but (a) assumes the query is nested and (b) throws away the conversion information,
     /// i.e. assumes that the function "(fun immutConsumingVar -> immutConsumingExpr)" is the only consumption of the query.
