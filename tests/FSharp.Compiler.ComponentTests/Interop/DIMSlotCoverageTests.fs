@@ -357,3 +357,146 @@ let obj : IB =
         |> compile
         |> shouldFail
         |> withErrorCode 3213  // "matches multiple overloads of the same method"
+
+    // =============================================================================
+    // Sprint 5: Re-abstraction + Generic Instantiations + possiblyNoMostSpecific
+    // =============================================================================
+
+    /// C# library with re-abstracted member.
+    /// IB inherits from IA, and re-abstracts IA.M by declaring it abstract again.
+    /// This requires an implementation despite having DIM in the hierarchy.
+    let csharpReabstractedMember =
+        CSharp """
+namespace ReabstractTest
+{
+    public interface IA
+    {
+        int M();
+    }
+    
+    public interface IB : IA
+    {
+        // Re-abstraction: explicitly declare IA.M as abstract
+        // This removes any default implementation from the hierarchy
+        abstract int IA.M();
+    }
+}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "ReabstractLib"
+
+    /// Test 12: Re-abstracted DIM member should still require implementation
+    /// When a derived interface re-abstracts a member from the base interface,
+    /// the implementing class must still provide an implementation.
+    [<FactForNETCOREAPP>]
+    let ``Re-abstracted member - should require implementation`` () =
+        let fsharpSource = """
+module Test
+
+open ReabstractTest
+
+type C() =
+    interface IB
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpReabstractedMember]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 366  // FS0366: No implementation was given for interface member
+
+    /// Test 13: Re-abstracted member with explicit implementation should work
+    [<FactForNETCOREAPP>]
+    let ``Re-abstracted member - explicit implementation should work`` () =
+        let fsharpSource = """
+module Test
+
+open ReabstractTest
+
+type C() =
+    interface IA with
+        member _.M() = 42
+    interface IB
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpReabstractedMember]
+        |> compile
+        |> shouldSucceed
+
+    /// C# library with generic interfaces with different instantiations.
+    /// IContainer implements both IGet<int> and IGet<string> - each is separate.
+    let csharpGenericInterfaceInstantiations =
+        CSharp """
+namespace GenericDIMTest
+{
+    public interface IGet<T>
+    {
+        T Get();
+    }
+    
+    public interface IContainer : IGet<int>, IGet<string>
+    {
+        // Provide DIM for IGet<int>.Get only
+        int IGet<int>.Get() => 42;
+        
+        // IGet<string>.Get has no DIM, must be implemented
+    }
+}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "GenericDIMLib"
+
+    /// Test 14: Generic interfaces with different instantiations - partial DIM coverage
+    /// IContainer has DIM for IGet<int> but not IGet<string>.
+    /// The class must implement IGet<string>.Get but can skip IGet<int>.Get.
+    [<FactForNETCOREAPP>]
+    let ``Generic interfaces - different instantiations treated separately`` () =
+        let fsharpSource = """
+module Test
+
+open GenericDIMTest
+
+type C() =
+    interface IContainer with
+        member _.Get() : string = "hello"
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpGenericInterfaceInstantiations]
+        |> compile
+        |> shouldSucceed
+
+    /// Test 15: Generic interfaces - missing required implementation should fail
+    /// If we only implement IGet<int> (covered by DIM) and NOT IGet<string>, it should fail.
+    [<FactForNETCOREAPP>]
+    let ``Generic interfaces - missing required instantiation should fail`` () =
+        let fsharpSource = """
+module Test
+
+open GenericDIMTest
+
+type C() =
+    interface IContainer
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpGenericInterfaceInstantiations]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 366  // FS0366: No implementation was given for interface member
+
+    /// Test 16: possiblyNoMostSpecific flag verification
+    /// This is already covered by Test 5 (Diamond with conflicting DIMs),
+    /// but this test explicitly verifies the error message mentions "no most specific implementation".
+    [<FactForNETCOREAPP>]
+    let ``possiblyNoMostSpecific - ambiguous DIMs produce specific error message`` () =
+        let fsharpSource = """
+module Test
+
+open DiamondConflictDIM
+
+type C() =
+    interface ID
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpDiamondConflictingDIMs]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3352  // FS3352: does not have a most specific implementation
+        |> withDiagnosticMessageMatches "most specific implementation"
