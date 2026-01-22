@@ -2885,6 +2885,8 @@ module List =
     /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomShuffle")>]
     val randomShuffle : source: 'T list -> 'T list
 
@@ -2905,6 +2907,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomShuffleWith")>]
     val randomShuffleWith : random: Random -> source: 'T list -> 'T list
 
@@ -2925,6 +2929,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomShuffleBy")>]
     val randomShuffleBy : randomizer: (unit -> float) -> source: 'T list -> 'T list
 
@@ -2944,6 +2950,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>3</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoice")>]
     val randomChoice : source: 'T list -> 'T
 
@@ -2965,6 +2973,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>3</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoiceWith")>]
     val randomChoiceWith : random: Random -> source: 'T list -> 'T
 
@@ -2986,6 +2996,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>3</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoiceBy")>]
     val randomChoiceBy : randomizer: (unit -> float) -> source: 'T list -> 'T
 
@@ -3007,6 +3019,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n * count) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoices")>]
     val randomChoices : count: int -> source: 'T list -> 'T list
 
@@ -3030,6 +3044,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n * count) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoicesWith")>]
     val randomChoicesWith : random: Random -> count: int -> source: 'T list -> 'T list
 
@@ -3054,6 +3070,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n * count) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoicesBy")>]
     val randomChoicesBy : randomizer: (unit -> float) -> count: int -> source: 'T list -> 'T list
 
@@ -3076,6 +3094,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 2 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomSample")>]
     val randomSample : count: int -> source: 'T list -> 'T list
 
@@ -3100,6 +3120,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 2 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomSampleWith")>]
     val randomSampleWith : random: Random -> count: int -> source: 'T list -> 'T list
 
@@ -3124,5 +3146,7 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 2 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomSampleBy")>]
     val randomSampleBy : randomizer: (unit -> float) -> count: int -> source: 'T list -> 'T list
