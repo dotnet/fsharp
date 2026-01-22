@@ -354,18 +354,14 @@ type ILStrongNameSigner =
     member s.IsFullySigned =
         match s with
         | PublicKeySigner _ -> false
-        | PublicKeyOptionsSigner pko ->
-            let _, usePublicSign = pko
-            not usePublicSign
+        | PublicKeyOptionsSigner (_, usePublicSign) -> not usePublicSign
         | KeyPair (_, usePublicSign) -> not usePublicSign
         | KeyContainer (_, usePublicSign) -> not usePublicSign
 
     member s.PublicKey =
         match s with
         | PublicKeySigner pk -> pk
-        | PublicKeyOptionsSigner pko ->
-            let pk, _ = pko
-            pk
+        | PublicKeyOptionsSigner (pk, _) -> pk
         | KeyPair (kp, _) -> signerGetPublicKeyForKeyPair kp
         | KeyContainer (kc, _) -> signerGetPublicKeyForKeyContainer kc
 
@@ -374,31 +370,17 @@ type ILStrongNameSigner =
             let keySize = pk.Length
             if keySize < 160 then 128 else keySize - 32
 
-        let pkSignatureSize pk =
-            try
-                signerSignatureSize pk
-            with _ ->
-                0x80
-
         match s with
-        | PublicKeySigner pk -> pkSignatureSize pk
-        | PublicKeyOptionsSigner pko ->
-            let pk, _ = pko
-            pkSignatureSize pk
+        | PublicKeySigner pk -> getRoslynSignatureSize pk
+        | PublicKeyOptionsSigner (pk, _) -> getRoslynSignatureSize pk
         | KeyPair (kp, usePublicSign) -> 
-            if usePublicSign then 
-                let pk = signerGetPublicKeyForKeyPair kp
-                getRoslynSignatureSize pk
-            else 
-                let pk = signerGetPublicKeyForKeyPair kp
-                pkSignatureSize pk
-        | KeyContainer (kc, usePublicSign) -> 
-             if usePublicSign then 
-                let pk = signerGetPublicKeyForKeyContainer kc
-                getRoslynSignatureSize pk
-             else 
-                let pk = signerGetPublicKeyForKeyContainer kc
-                pkSignatureSize pk
+            let pk = signerGetPublicKeyForKeyPair kp
+            if usePublicSign then getRoslynSignatureSize pk
+            else signerSignatureSize pk 
+        | KeyContainer (kc, usePublicSign) ->
+            let pk = signerGetPublicKeyForKeyContainer kc
+            if usePublicSign then getRoslynSignatureSize pk
+            else signerSignatureSize pk
 
     member s.SignStream stream =
         match s with
