@@ -101,3 +101,150 @@ type C() =
         |> withReferences [csharpInterfaceWithDIM]
         |> compile
         |> shouldSucceed
+
+    // =============================================================================
+    // Edge Case Tests: Diamond Inheritance
+    // =============================================================================
+
+    /// C# library defining a diamond interface hierarchy with single DIM.
+    /// IB provides a DIM for IA.M, IC does NOT provide a DIM, ID inherits both IB and IC.
+    /// Since IB provides a DIM, ID should be implementable without ambiguity.
+    let csharpDiamondSingleDIM =
+        CSharp """
+namespace DiamondSingleDIM
+{
+    public interface IA
+    {
+        int M();
+    }
+    
+    public interface IB : IA
+    {
+        // Provide default implementation for IA.M
+        int IA.M() => 42;
+    }
+    
+    public interface IC : IA
+    {
+        // No DIM for IA.M - just inherits it
+    }
+    
+    public interface ID : IB, IC
+    {
+        // ID inherits IA.M from both IB and IC paths
+        // IB has a DIM for IA.M, so ID should be implementable
+    }
+}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "DiamondSingleDIMLib"
+
+    /// Test 4: Diamond with single DIM - IB provides DIM, IC does not
+    /// Implementing ID should work because IB provides DIM coverage for IA.M
+    [<FactForNETCOREAPP>]
+    let ``Diamond with single DIM - should work because IB provides DIM`` () =
+        let fsharpSource = """
+module Test
+
+open DiamondSingleDIM
+
+type C() =
+    interface ID
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpDiamondSingleDIM]
+        |> compile
+        |> shouldSucceed
+
+    /// C# library defining a diamond interface hierarchy with conflicting DIMs.
+    /// IB provides DIM1 for IA.M, IC provides DIM2 for IA.M, ID inherits both.
+    /// This should still error because there's no most-specific implementation.
+    let csharpDiamondConflictingDIMs =
+        CSharp """
+namespace DiamondConflictDIM
+{
+    public interface IA
+    {
+        int M();
+    }
+    
+    public interface IB : IA
+    {
+        // Provide default implementation for IA.M
+        int IA.M() => 1;
+    }
+    
+    public interface IC : IA
+    {
+        // Provide DIFFERENT default implementation for IA.M
+        int IA.M() => 2;
+    }
+    
+    public interface ID : IB, IC
+    {
+        // ID inherits conflicting DIMs from IB and IC
+        // This creates ambiguity - no most-specific implementation
+    }
+}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "DiamondConflictDIMLib"
+
+    /// Test 5: Diamond with conflicting DIMs - IB and IC both provide different DIMs
+    /// Implementing ID should fail because there's no most-specific implementation
+    [<FactForNETCOREAPP>]
+    let ``Diamond with conflicting DIMs - should error with no most-specific`` () =
+        let fsharpSource = """
+module Test
+
+open DiamondConflictDIM
+
+type C() =
+    interface ID
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpDiamondConflictingDIMs]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 366  // FS0366: No implementation was given for interface member
+
+    // =============================================================================
+    // Edge Case Tests: Properties with DIM
+    // =============================================================================
+
+    /// C# library defining an interface with a property that has a DIM getter.
+    /// IReadable has a Value getter, IWritable extends with getter+setter and DIM for getter.
+    let csharpPropertyWithDIMGetter =
+        CSharp """
+namespace PropertyDIM
+{
+    public interface IReadable
+    {
+        int Value { get; }
+    }
+    
+    public interface IWritable : IReadable
+    {
+        // New property with getter and setter
+        new int Value { get; set; }
+        
+        // Provide DIM for the IReadable.Value getter
+        int IReadable.Value => this.Value;
+    }
+}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "PropertyDIMLib"
+
+    /// Test 6: Property with DIM getter
+    /// Implementing IWritable should work because the IReadable.Value getter is covered by DIM
+    [<FactForNETCOREAPP>]
+    let ``Property with DIM getter - should work`` () =
+        let fsharpSource = """
+module Test
+
+open PropertyDIM
+
+type C() =
+    let mutable value = 0
+    interface IWritable with
+        member _.Value with get() = value and set(v) = value <- v
+"""
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpPropertyWithDIMGetter]
+        |> compile
+        |> shouldSucceed
