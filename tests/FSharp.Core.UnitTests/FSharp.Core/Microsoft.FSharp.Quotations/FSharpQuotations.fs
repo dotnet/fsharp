@@ -301,3 +301,48 @@ module TestConditionalConstraints =
         // Neither should contain Invoke
         Assert.DoesNotContain(".Invoke(", exprAlpha)
         Assert.DoesNotContain(".Invoke(", exprNonAlpha)
+
+    // Tests for issue #16918 - Array indexing generates GetArray instead of proper array index expression
+    // When array indexing is used in LINQ expressions, it should generate proper array index
+    // expressions that LINQ providers can translate, not GetArray method calls.
+    type ArrayTestUnfold = { c: string }
+    type ArrayTestDoc = { p: string; u: ArrayTestUnfold[] }
+
+    [<Fact>]
+    let ``Array indexing produces ArrayIndex expression not GetArray - issue 16918`` () =
+        // Array access like x.u.[0] should NOT produce GetArray call
+        let q = <@ fun (x: ArrayTestDoc) -> x.u.[0] @>
+        
+        let linqExpr = LeafExpressionConverter.QuotationToExpression q
+        let exprStr = linqExpr.ToString()
+        
+        // Should NOT contain GetArray
+        Assert.DoesNotContain("GetArray", exprStr)
+        // Should produce x.u[0] style array index expression
+        Assert.Contains("[0]", exprStr)
+
+    [<Fact>]
+    let ``Nested array member access produces clean LINQ expression - issue 16918`` () =
+        // x.u[0].c should generate proper expression tree without GetArray
+        let q = <@ fun (x: ArrayTestDoc) -> x.u.[0].c @>
+        
+        let linqExpr = LeafExpressionConverter.QuotationToExpression q
+        let exprStr = linqExpr.ToString()
+        
+        // Should NOT contain GetArray
+        Assert.DoesNotContain("GetArray", exprStr)
+        // Should contain array index
+        Assert.Contains("[0]", exprStr)
+        // Should contain property access
+        Assert.Contains(".c", exprStr)
+
+    [<Fact>]
+    let ``Array indexing with variable index produces clean expression`` () =
+        // Array access with variable index
+        let q = <@ fun (x: int[]) (i: int) -> x.[i] @>
+        
+        let linqExpr = LeafExpressionConverter.QuotationToExpression q
+        let exprStr = linqExpr.ToString()
+        
+        // Should NOT contain GetArray
+        Assert.DoesNotContain("GetArray", exprStr)

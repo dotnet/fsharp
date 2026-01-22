@@ -623,7 +623,7 @@ module LeafExpressionConverter =
             | CheckedConvUInt16Q (_, _, [x]) | CheckedConvUInt32Q (_, _, [x]) | CheckedConvUInt64Q (_, _, [x]) | CheckedConvIntPtrQ (_, _, [x]) -> transConv inp env true x
             | CheckedConvUIntPtrQ (_, _, [x]) -> transConv inp env true x
 
-            | ArrayLookupQ (_, GenericArgs [|_; _; _|], [x1; x2]) ->
+            | ArrayLookupQ (_, GenericArgs [|_|], [x1; x2]) ->
                 Expression.ArrayIndex(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
 
             // Throw away markers inserted to satisfy C#'s design where they pass an argument
