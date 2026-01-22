@@ -1263,32 +1263,9 @@ let result = Example.Process(value)
         |> ignore
 
     // ============================================================================
-    // Constraint and TDC Interaction Tests
-    // RFC section-examples.md Example 15, section-tdc-interaction.md, section-adhoc-rules.md
+    // TDC Interaction Tests
+    // RFC section-tdc-interaction.md, section-adhoc-rules.md
     // ============================================================================
-
-    [<Fact>]
-    let ``Example 15 - Constrained vs unconstrained type variable - constrained wins`` () =
-        // RFC section-examples.md Example 15:
-        // A type variable with more constraints is more concrete than one with fewer constraints.
-        // NOTE: F# does NOT allow defining methods that differ only in generic constraints.
-        // This is a language limitation - FS0438 "Duplicate method" is produced.
-        // The constraint comparison logic exists for C# interop scenarios.
-        FSharp """
-module Test
-
-open System
-
-type Example =
-    static member Compare(value: 't) = "unconstrained"
-    static member Compare(value: 't when 't :> IComparable) = "comparable"
-
-let result = Example.Compare(42)
-        """
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 438 // FS0438: Duplicate method (F# doesn't support constraint-only overloads)
-        |> ignore
 
     [<Fact>]
     let ``Constrained type variable - different wrapper types with constraints allowed`` () =
@@ -1497,29 +1474,6 @@ let result2 = Example.Convert(System.Nullable<int>(42))
         """
         |> typecheck
         |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Constraint - Multiple constraints not yet supported for overloading`` () =
-        // RFC section-examples.md: More constraints = more concrete (PROPOSED)
-        // NOTE: F# does not currently allow overloading based solely on type constraints.
-        // Methods with same name and same parameter structure (differing only in constraints)
-        // are treated as duplicate methods by F#, resulting in FS0438.
-        // This test documents current F# behavior - constraint-based overloading is NOT YET supported.
-        FSharp """
-module Test
-
-open System
-
-type Example =
-    static member Process(value: 't when 't :> IComparable) = "one constraint"
-    static member Process(value: 't when 't :> IComparable and 't :> IFormattable) = "two constraints"
-
-let result = Example.Process(42)
-        """
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 438 // FS0438: Duplicate method (F# doesn't support constraint-only overloads)
         |> ignore
 
     // ============================================================================

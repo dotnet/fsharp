@@ -88,24 +88,6 @@ The test suite (`tests/FSharp.Compiler.ComponentTests/Conformance/Tiebreakers/Ti
 
 ## Implementation Notes
 
-### Example 15: Constraint Count Comparison
-
-The RFC specifies that type variables with more constraints should be considered more concrete than type variables with fewer constraints. This is implemented in `OverloadResolutionRules.fs` via the `countTypeParamConstraints` helper function, which counts the following 10 constraint types:
-- `CoercesTo` (`:>` subtype constraint)
-- `IsNonNullableStruct` (struct constraint)
-- `IsReferenceType` (class constraint)
-- `MayResolveMember` (member constraint)
-- `RequiresDefaultConstructor` (new() constraint)
-- `IsEnum` (enum constraint)
-- `IsDelegate` (delegate constraint)
-- `IsUnmanaged` (unmanaged constraint)
-- `SupportsComparison` (comparison constraint)
-- `SupportsEquality` (equality constraint)
-
-Constraints NOT counted: `DefaultsTo` (inference-only), `SupportsNull`/`NotSupportsNull` (nullability), `SimpleChoice` (printf-specific), `AllowsRefStruct` (anti-constraint).
-
-Note: While F# does not allow overloading methods that differ only in generic constraints (FS0438), this comparison is still needed for C# interop where such overloads may exist.
-
 ### SRTP (Statically Resolved Type Parameters) Exclusion
 
 SRTP type parameters (denoted `^T`) are explicitly excluded from the "more concrete" comparison. This is because:
@@ -113,10 +95,15 @@ SRTP type parameters (denoted `^T`) are explicitly excluded from the "more concr
 2. SRTP constraints are resolved at inline expansion time, not at overload resolution time
 3. Comparing SRTP constraints against regular constraints would produce confusing results
 
-The exclusion is implemented in `OverloadResolutionRules.fs` at three levels:
-- **Type variable comparison** (lines 120-121): Skip if either type var is SRTP
-- **Concrete vs type var** (lines 132-133): Skip if the type var is SRTP
-- **Method-level** (lines 580-606): Skip entire comparison if method has SRTP type params or SRTP in formal params
+The exclusion is implemented in `OverloadResolutionRules.fs` at two levels:
+- **Concrete vs type var**: Skip if the type var is SRTP
+- **Method-level**: Skip entire comparison if method has SRTP type params or SRTP in formal params
+
+### Type Variable Comparison
+
+When both types being compared are type variables, they are treated as equally concrete.
+Note: Neither F# nor C# allows method overloading based solely on generic constraints, so
+comparing constraint counts would be dead code with no practical test coverage.
 
 ## Release Notes
 

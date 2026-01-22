@@ -26,14 +26,33 @@ type OverloadResolutionContext =
         ndeep: int
     }
 
+/// Identifies a tiebreaker rule in overload resolution.
+/// Values are assigned to match the conceptual ordering in F# Language Spec §14.4.
+/// Rules are evaluated in ascending order by their integer value.
+[<RequireQualifiedAccess>]
+type TiebreakRuleId =
+    | NoTDC = 1
+    | LessTDC = 2
+    | NullableTDC = 3
+    | NoWarnings = 4
+    | NoParamArray = 5
+    | PreciseParamArray = 6
+    | NoOutArgs = 7
+    | NoOptionalArgs = 8
+    | UnnamedArgs = 9
+    | PreferNonExtension = 10
+    | ExtensionPriority = 11
+    | PreferNonGeneric = 12
+    | MoreConcrete = 13
+    | NullableOptionalInterop = 14
+    | PropertyOverride = 15
+
 /// Represents a single tiebreaker rule in overload resolution.
-/// Rules are ordered by priority (lower number = higher priority).
+/// Rules are ordered by their TiebreakRuleId (lower value = higher priority).
 type TiebreakRule =
     {
-        /// Rule priority (1 = highest priority). Rules are evaluated in priority order.
-        Priority: int
-        /// Short identifier for the rule
-        Name: string
+        /// Rule identifier. Rules are evaluated in ascending order by this value.
+        Id: TiebreakRuleId
         /// Human-readable description of what the rule does
         Description: string
         /// Comparison function: returns >0 if candidate is better, <0 if other is better, 0 if equal
@@ -58,30 +77,6 @@ let aggregateComparisons (comparisons: int list) =
     if not hasNegative && hasPositive then 1
     elif not hasPositive && hasNegative then -1
     else 0
-
-/// Count the effective constraints on a type parameter for concreteness comparison.
-/// Counts: CoercesTo (:>), IsNonNullableStruct, IsReferenceType, MayResolveMember,
-/// RequiresDefaultConstructor, IsEnum, IsDelegate, IsUnmanaged, SupportsComparison, SupportsEquality
-let countTypeParamConstraints (tp: Typar) =
-    tp.Constraints
-    |> List.sumBy (function
-        | TyparConstraint.CoercesTo _ -> 1
-        | TyparConstraint.IsNonNullableStruct _ -> 1
-        | TyparConstraint.IsReferenceType _ -> 1
-        | TyparConstraint.MayResolveMember _ -> 1
-        | TyparConstraint.RequiresDefaultConstructor _ -> 1
-        | TyparConstraint.IsEnum _ -> 1
-        | TyparConstraint.IsDelegate _ -> 1
-        | TyparConstraint.IsUnmanaged _ -> 1
-        | TyparConstraint.SupportsComparison _ -> 1
-        | TyparConstraint.SupportsEquality _ -> 1
-        // Don't count: DefaultsTo (inference-only), SupportsNull, NotSupportsNull (nullability),
-        // SimpleChoice (printf-specific), AllowsRefStruct (anti-constraint)
-        | TyparConstraint.DefaultsTo _ -> 0
-        | TyparConstraint.SupportsNull _ -> 0
-        | TyparConstraint.NotSupportsNull _ -> 0
-        | TyparConstraint.SimpleChoice _ -> 0
-        | TyparConstraint.AllowsRefStruct _ -> 0)
 
 /// Check if a type parameter is statically resolved (SRTP).
 /// SRTP type parameters use a different constraint solving mechanism and shouldn't
@@ -113,19 +108,10 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     let sty2 = stripTyEqns g ty2
 
     match sty1, sty2 with
-    // Case 1: Both are type variables - compare constraint counts (RFC section-algorithm.md lines 136-146)
-    // Skip SRTP type variables - their constraints have different semantics
-    | TType_var(tp1, _), TType_var(tp2, _) ->
-        // Don't compare SRTP type parameters - they use different constraint mechanics
-        if isStaticallyResolvedTypeParam tp1 || isStaticallyResolvedTypeParam tp2 then
-            0
-        else
-            let c1 = countTypeParamConstraints tp1
-            let c2 = countTypeParamConstraints tp2
-
-            if c1 > c2 then 1
-            elif c2 > c1 then -1
-            else 0
+    // Case 1: Both are type variables - they are equally concrete
+    // Note: Neither F# nor C# allows constraint-only method overloads, so comparing
+    // constraint counts would be dead code. Both type vars are treated as equal.
+    | TType_var _, TType_var _ -> 0
 
     // Case 2: Type variable vs concrete type - concrete is more concrete
     // Skip SRTP type variables
@@ -389,8 +375,7 @@ let private compareArgLists ctx (args1: CalledArg list) (args2: CalledArg list) 
 /// Rule 1: Prefer methods that don't use type-directed conversion
 let private noTDCRule: TiebreakRule =
     {
-        Priority = 1
-        Name = "NoTDC"
+        Id = TiebreakRuleId.NoTDC
         Description = "Prefer methods that don't use type-directed conversion"
         Compare =
             fun _ (_, usesTDC1, _) (_, usesTDC2, _) ->
@@ -406,8 +391,7 @@ let private noTDCRule: TiebreakRule =
 /// Rule 2: Prefer methods that need less type-directed conversion
 let private lessTDCRule: TiebreakRule =
     {
-        Priority = 2
-        Name = "LessTDC"
+        Id = TiebreakRuleId.LessTDC
         Description = "Prefer methods that need less type-directed conversion"
         Compare =
             fun _ (_, usesTDC1, _) (_, usesTDC2, _) ->
@@ -423,8 +407,7 @@ let private lessTDCRule: TiebreakRule =
 /// Rule 3: Prefer methods that only have nullable type-directed conversions
 let private nullableTDCRule: TiebreakRule =
     {
-        Priority = 3
-        Name = "NullableTDC"
+        Id = TiebreakRuleId.NullableTDC
         Description = "Prefer methods that only have nullable type-directed conversions"
         Compare =
             fun _ (_, usesTDC1, _) (_, usesTDC2, _) ->
@@ -440,8 +423,7 @@ let private nullableTDCRule: TiebreakRule =
 /// Rule 4: Prefer methods that don't give "this code is less generic" warnings
 let private noWarningsRule: TiebreakRule =
     {
-        Priority = 4
-        Name = "NoWarnings"
+        Id = TiebreakRuleId.NoWarnings
         Description = "Prefer methods that don't give 'this code is less generic' warnings"
         Compare = fun _ (_, _, warnCount1) (_, _, warnCount2) -> compare (warnCount1 = 0) (warnCount2 = 0)
     }
@@ -449,8 +431,7 @@ let private noWarningsRule: TiebreakRule =
 /// Rule 5: Prefer methods that don't use param array arg
 let private noParamArrayRule: TiebreakRule =
     {
-        Priority = 5
-        Name = "NoParamArray"
+        Id = TiebreakRuleId.NoParamArray
         Description = "Prefer methods that don't use param array arg"
         Compare =
             fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion)
@@ -459,8 +440,7 @@ let private noParamArrayRule: TiebreakRule =
 /// Rule 6: Prefer methods with more precise param array arg type
 let private preciseParamArrayRule: TiebreakRule =
     {
-        Priority = 6
-        Name = "PreciseParamArray"
+        Id = TiebreakRuleId.PreciseParamArray
         Description = "Prefer methods with more precise param array arg type"
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
@@ -473,8 +453,7 @@ let private preciseParamArrayRule: TiebreakRule =
 /// Rule 7: Prefer methods that don't use out args
 let private noOutArgsRule: TiebreakRule =
     {
-        Priority = 7
-        Name = "NoOutArgs"
+        Id = TiebreakRuleId.NoOutArgs
         Description = "Prefer methods that don't use out args"
         Compare = fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.HasOutArgs) (not other.HasOutArgs)
     }
@@ -482,8 +461,7 @@ let private noOutArgsRule: TiebreakRule =
 /// Rule 8: Prefer methods that don't use optional args
 let private noOptionalArgsRule: TiebreakRule =
     {
-        Priority = 8
-        Name = "NoOptionalArgs"
+        Id = TiebreakRuleId.NoOptionalArgs
         Description = "Prefer methods that don't use optional args"
         Compare = fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.HasOptionalArgs) (not other.HasOptionalArgs)
     }
@@ -491,8 +469,7 @@ let private noOptionalArgsRule: TiebreakRule =
 /// Rule 9: Compare regular unnamed args (including extension member object args)
 let private unnamedArgsRule: TiebreakRule =
     {
-        Priority = 9
-        Name = "UnnamedArgs"
+        Id = TiebreakRuleId.UnnamedArgs
         Description = "Compare regular unnamed args using subsumption ordering"
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
@@ -530,8 +507,7 @@ let private unnamedArgsRule: TiebreakRule =
 /// Rule 10: Prefer non-extension methods
 let private preferNonExtensionRule: TiebreakRule =
     {
-        Priority = 10
-        Name = "PreferNonExtension"
+        Id = TiebreakRuleId.PreferNonExtension
         Description = "Prefer non-extension methods over extension methods"
         Compare =
             fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
@@ -540,8 +516,7 @@ let private preferNonExtensionRule: TiebreakRule =
 /// Rule 11: Between extension methods, prefer most recently opened
 let private extensionPriorityRule: TiebreakRule =
     {
-        Priority = 11
-        Name = "ExtensionPriority"
+        Id = TiebreakRuleId.ExtensionPriority
         Description = "Between extension methods, prefer most recently opened"
         Compare =
             fun _ (candidate, _, _) (other, _, _) ->
@@ -554,8 +529,7 @@ let private extensionPriorityRule: TiebreakRule =
 /// Rule 12: Prefer non-generic methods
 let private preferNonGenericRule: TiebreakRule =
     {
-        Priority = 12
-        Name = "PreferNonGeneric"
+        Id = TiebreakRuleId.PreferNonGeneric
         Description = "Prefer non-generic methods over generic methods"
         Compare = fun _ (candidate, _, _) (other, _, _) -> compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
     }
@@ -565,8 +539,7 @@ let private preferNonGenericRule: TiebreakRule =
 /// Only activates when BOTH methods are generic (have type arguments).
 let private moreConcreteRule: TiebreakRule =
     {
-        Priority = 13
-        Name = "MoreConcrete"
+        Id = TiebreakRuleId.MoreConcrete
         Description = "Prefer more concrete type instantiations over more generic ones"
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
@@ -622,8 +595,7 @@ let private moreConcreteRule: TiebreakRule =
 /// Rule 14: F# 5.0 NullableOptionalInterop - compare all args including optional/named
 let private nullableOptionalInteropRule: TiebreakRule =
     {
-        Priority = 14
-        Name = "NullableOptionalInterop"
+        Id = TiebreakRuleId.NullableOptionalInterop
         Description = "F# 5.0 rule - compare all arguments including optional and named"
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
@@ -638,8 +610,7 @@ let private nullableOptionalInteropRule: TiebreakRule =
 /// Rule 15: For properties with partial override, prefer more derived type
 let private propertyOverrideRule: TiebreakRule =
     {
-        Priority = 15
-        Name = "PropertyOverride"
+        Id = TiebreakRuleId.PropertyOverride
         Description = "For properties, prefer more derived type (partial override support)"
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
@@ -657,26 +628,25 @@ let private propertyOverrideRule: TiebreakRule =
 // Public API
 // -------------------------------------------------------------------------
 
-/// Get all tiebreaker rules in priority order.
-/// This includes all existing rules from the better() function plus a placeholder for the new MoreConcrete rule.
+/// Get all tiebreaker rules in priority order (ascending by TiebreakRuleId value).
 let getAllTiebreakRules () : TiebreakRule list =
     [
-        noTDCRule // Priority 1
-        lessTDCRule // Priority 2
-        nullableTDCRule // Priority 3
-        noWarningsRule // Priority 4
-        noParamArrayRule // Priority 5
-        preciseParamArrayRule // Priority 6
-        noOutArgsRule // Priority 7
-        noOptionalArgsRule // Priority 8
-        unnamedArgsRule // Priority 9
-        preferNonExtensionRule // Priority 10
-        extensionPriorityRule // Priority 11
-        preferNonGenericRule // Priority 12
-        moreConcreteRule // Priority 13 (RFC placeholder)
-        nullableOptionalInteropRule // Priority 14
+        noTDCRule
+        lessTDCRule
+        nullableTDCRule
+        noWarningsRule
+        noParamArrayRule
+        preciseParamArrayRule
+        noOutArgsRule
+        noOptionalArgsRule
+        unnamedArgsRule
+        preferNonExtensionRule
+        extensionPriorityRule
+        preferNonGenericRule
+        moreConcreteRule
+        nullableOptionalInteropRule
         propertyOverrideRule
-    ] // Priority 15
+    ]
 
 /// Evaluate all tiebreaker rules to determine which method is better.
 /// Returns >0 if candidate is better, <0 if other is better, 0 if they are equal.
@@ -697,9 +667,9 @@ let evaluateTiebreakRules
     loop rules
 
 /// Check if a specific rule was the deciding factor between two methods.
-/// Returns true if all rules BEFORE the named rule returned 0, and the named rule returned > 0.
+/// Returns true if all rules BEFORE the specified rule returned 0, and the specified rule returned > 0.
 let wasDecidedByRule
-    (ruleName: string)
+    (ruleId: TiebreakRuleId)
     (context: OverloadResolutionContext)
     (winner: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
     (loser: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
@@ -712,8 +682,8 @@ let wasDecidedByRule
         | rule :: rest ->
             let c = rule.Compare context winner loser
 
-            if rule.Name = ruleName then c > 0 // The named rule decided in favor of winner
-            elif c <> 0 then false // An earlier rule decided, so the named rule wasn't the decider
+            if rule.Id = ruleId then c > 0 // The specified rule decided in favor of winner
+            elif c <> 0 then false // An earlier rule decided, so the specified rule wasn't the decider
             else loop rest
 
     loop rules

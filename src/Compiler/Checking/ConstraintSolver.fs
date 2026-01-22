@@ -3659,7 +3659,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         let ctx: OverloadResolutionContext = { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep }
         let winnerWarnCount = List.length winnerWarnings
         let loserWarnCount = List.length loserWarnings
-        if wasDecidedByRule "MoreConcrete" ctx (winner, winnerTDC, winnerWarnCount) (loser, loserTDC, loserWarnCount) then
+        if wasDecidedByRule TiebreakRuleId.MoreConcrete ctx (winner, winnerTDC, winnerWarnCount) (loser, loserTDC, loserWarnCount) then
             Some (winner.Method.DisplayName, loser.Method.DisplayName)
         else
             None

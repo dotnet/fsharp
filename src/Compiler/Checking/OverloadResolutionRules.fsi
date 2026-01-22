@@ -50,14 +50,33 @@ val explainIncomparableMethodConcreteness:
     meth2: CalledMeth<'T> ->
         IncomparableConcretenessInfo option
 
+/// Identifies a tiebreaker rule in overload resolution.
+/// Values are assigned to match the conceptual ordering in F# Language Spec §14.4.
+/// Rules are evaluated in ascending order by their integer value.
+[<RequireQualifiedAccess>]
+type TiebreakRuleId =
+    | NoTDC = 1
+    | LessTDC = 2
+    | NullableTDC = 3
+    | NoWarnings = 4
+    | NoParamArray = 5
+    | PreciseParamArray = 6
+    | NoOutArgs = 7
+    | NoOptionalArgs = 8
+    | UnnamedArgs = 9
+    | PreferNonExtension = 10
+    | ExtensionPriority = 11
+    | PreferNonGeneric = 12
+    | MoreConcrete = 13
+    | NullableOptionalInterop = 14
+    | PropertyOverride = 15
+
 /// Represents a single tiebreaker rule in overload resolution.
-/// Rules are ordered by priority (lower number = higher priority).
+/// Rules are ordered by their TiebreakRuleId (lower value = higher priority).
 type TiebreakRule =
     {
-        /// Rule priority (1 = highest priority). Rules are evaluated in priority order.
-        Priority: int
-        /// Short identifier for the rule
-        Name: string
+        /// Rule identifier. Rules are evaluated in ascending order by this value.
+        Id: TiebreakRuleId
         /// Human-readable description of what the rule does
         Description: string
         /// Comparison function: returns >0 if candidate is better, <0 if other is better, 0 if equal
@@ -68,8 +87,7 @@ type TiebreakRule =
                 -> int
     }
 
-/// Get all tiebreaker rules in priority order.
-/// This includes all existing rules from the better() function plus a placeholder for the new MoreConcrete rule.
+/// Get all tiebreaker rules in priority order (ascending by TiebreakRuleId value).
 val getAllTiebreakRules: unit -> TiebreakRule list
 
 /// Evaluate all tiebreaker rules to determine which method is better.
@@ -81,9 +99,9 @@ val evaluateTiebreakRules:
             int
 
 /// Check if a specific rule was the deciding factor between two methods.
-/// Returns true if all rules BEFORE the named rule returned 0, and the named rule returned > 0.
+/// Returns true if all rules BEFORE the specified rule returned 0, and the specified rule returned > 0.
 val wasDecidedByRule:
-    ruleName: string ->
+    ruleId: TiebreakRuleId ->
     context: OverloadResolutionContext ->
     winner: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
         loser: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
