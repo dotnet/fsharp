@@ -151,6 +151,44 @@ module CacheMetrics =
 
         override _.ToString() = stats.ToString()
 
+/// A listener that captures metrics for all cache instances with a given name.
+/// This is useful for caches that are created per-compilation (e.g., overload resolution cache).
+[<Sealed>]
+type CacheMetricsNameListener(cacheName: string) =
+
+    let stats = CacheMetrics.Stats()
+    let listener = new MeterListener()
+
+    do
+        for instrument in CacheMetrics.allCounters do
+            listener.EnableMeasurementEvents instrument
+
+        listener.SetMeasurementEventCallback(fun instrument v tags _ ->
+            // Match by cache name only (first tag), ignoring cacheId
+            match tags[0].Value with
+            | :? string as name when name = cacheName ->
+                stats.Incr instrument.Name v
+            | _ -> ())
+
+        listener.Start()
+
+    interface IDisposable with
+        member _.Dispose() = listener.Dispose()
+
+    /// Gets the current totals for each metric type.
+    member _.GetTotals() = stats.GetTotals()
+
+    /// Gets the current hit ratio (hits / (hits + misses)).
+    member _.Ratio = stats.Ratio
+
+    /// Gets the total number of cache hits across all instances.
+    member _.Hits = stats.GetTotals().[CacheMetrics.hits.Name]
+
+    /// Gets the total number of cache misses across all instances.
+    member _.Misses = stats.GetTotals().[CacheMetrics.misses.Name]
+
+    override _.ToString() = stats.ToString()
+
 [<RequireQualifiedAccess>]
 type EvictionMode =
     | NoEviction

@@ -4,6 +4,22 @@ open System
 open System.Collections.Generic
 open System.Diagnostics.Metrics
 
+/// A listener that captures metrics for all cache instances with a given name.
+/// This is useful for caches that are created per-compilation (e.g., overload resolution cache).
+[<Sealed>]
+type CacheMetricsNameListener =
+    /// Creates a new listener for caches with the specified name.
+    new: cacheName: string -> CacheMetricsNameListener
+    /// Gets the current totals for each metric type.
+    member GetTotals: unit -> Map<string, int64>
+    /// Gets the current hit ratio (hits / (hits + misses)).
+    member Ratio: float
+    /// Gets the total number of cache hits across all instances.
+    member Hits: int64
+    /// Gets the total number of cache misses across all instances.
+    member Misses: int64
+    interface IDisposable
+
 module internal CacheMetrics =
     /// Global telemetry Meter for all caches. Exposed for testing purposes.
     /// Set FSHARP_OTEL_EXPORT environment variable to enable OpenTelemetry export to external collectors in tests.
