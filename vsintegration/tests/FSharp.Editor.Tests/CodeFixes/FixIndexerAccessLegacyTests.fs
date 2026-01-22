@@ -13,8 +13,8 @@ let private codeFix = LegacyFixAddDotToIndexerAccessCodeFixProvider()
 let ``Fixes FS3217`` () =
     let code =
         """
-let list = [ 1; 2; 3 ]
-let first = list[2]
+let myList = [ 1; 2; 3 ]
+let first = myList[2]
 """
 
     let expected =
@@ -23,11 +23,13 @@ let first = list[2]
                 Message = "Add . for indexer access."
                 FixedCode =
                     """
-let list = [ 1; 2; 3 ]
-let first = list.[2]
+let myList = [ 1; 2; 3 ]
+let first = myList.[2]
 """
             }
 
-    let actual = codeFix |> tryFix code (WithOption "--langversion:5")
+    // The real FS3217 diagnostic spans just the identifier (e.g., "myList"), not "myList[2]"
+    // The codefix expands forward to find '[' then replaces span with "text."
+    let actual = codeFix |> tryFix code (Manual("= myList", "FS3217"))
 
     Assert.Equal(expected, actual)
