@@ -2697,13 +2697,16 @@ let CheckForDuplicateExtensionMemberNames (cenv: cenv) (vals: Val seq) =
                 |> List.groupBy (fun v -> v.MemberApparentEntity.DisplayNameCore)
             
             for (simpleName, members) in groupedBySimpleName do
-                // Check if members extend different fully qualified types
-                let distinctTypes = 
+                // Check if members extend types in different namespaces/modules
+                // Compare compilation paths, not stamps - this allows Expr and Expr<'T> 
+                // (same namespace, different generic arity) while detecting 
+                // System.Threading.Tasks.Task vs MyModule.Task (different namespaces)
+                let distinctNamespacePaths = 
                     members 
-                    |> List.map (fun v -> v.MemberApparentEntity)
-                    |> List.distinctBy (fun tcref -> tcref.Stamp)
+                    |> List.map (fun v -> v.MemberApparentEntity.CompilationPath.MangledPath)
+                    |> List.distinct
                 
-                if distinctTypes.Length > 1 then
+                if distinctNamespacePaths.Length > 1 then
                     // Found extensions for types with same simple name but different fully qualified names
                     // Report error on the second (and subsequent) extensions
                     for v in members |> List.skip 1 do
