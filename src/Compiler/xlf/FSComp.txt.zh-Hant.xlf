@@ -437,6 +437,11 @@
         <target state="translated">從尾端切割</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImplicitDIMCoverage">
+        <source>Implicit dispatch slot coverage for default interface member implementations</source>
+        <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
         <target state="translated">隱含 yield</target>

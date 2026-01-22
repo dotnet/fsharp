@@ -590,11 +590,12 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
 
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
+
         for overrideBy in overrides do 
           if not overrideBy.IsFakeEventProperty then
             let m = overrideBy.Range
-            let relevantVirts = NameMultiMap.find overrideBy.LogicalName dispatchSlotsKeyed
-            let relevantVirts = relevantVirts |> List.map (fun reqdSlot -> reqdSlot.MethodInfo)
+            let relevantSlots = NameMultiMap.find overrideBy.LogicalName dispatchSlotsKeyed
+            let relevantVirts = relevantSlots |> List.map (fun reqdSlot -> reqdSlot.MethodInfo)
 
             match relevantVirts |> List.filter (fun dispatchSlot -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) with
             | [] -> 
@@ -860,24 +861,24 @@ module DispatchSlotChecking =
                           let overrideByInfo = GetTypeMemberOverrideInfo g reqdTy overrideBy
                           let overriddenForThisSlotImplSet = 
                               [ for reqdSlot in NameMultiMap.find overrideByInfo.LogicalName dispatchSlotsKeyed do
-                                    let dispatchSlot = reqdSlot.MethodInfo
-                                    if OverrideImplementsDispatchSlot g amap m dispatchSlot overrideByInfo then 
-                                        if tyconRefEq g overrideByInfo.BoundingTyconRef dispatchSlot.DeclaringTyconRef then 
-                                             match dispatchSlot.ArbitraryValRef with 
-                                             | Some virtMember -> 
-                                                  if virtMember.MemberInfo.Value.IsImplemented then errorR(Error(FSComp.SR.tcDefaultImplementationAlreadyExists(), overrideByInfo.Range))
-                                                  virtMember.MemberInfo.Value.IsImplemented <- true
-                                             | None -> () // not an F# slot
+                                        let dispatchSlot = reqdSlot.MethodInfo
+                                        if OverrideImplementsDispatchSlot g amap m dispatchSlot overrideByInfo then 
+                                            if tyconRefEq g overrideByInfo.BoundingTyconRef dispatchSlot.DeclaringTyconRef then 
+                                                 match dispatchSlot.ArbitraryValRef with 
+                                                 | Some virtMember -> 
+                                                      if virtMember.MemberInfo.Value.IsImplemented then errorR(Error(FSComp.SR.tcDefaultImplementationAlreadyExists(), overrideByInfo.Range))
+                                                      virtMember.MemberInfo.Value.IsImplemented <- true
+                                                 | None -> () // not an F# slot
 
-                                        // Get the slotsig of the overridden method 
-                                        let slotsig = dispatchSlot.GetSlotSig(amap, m)
+                                            // Get the slotsig of the overridden method 
+                                            let slotsig = dispatchSlot.GetSlotSig(amap, m)
 
-                                        // The slotsig from the overridden method is in terms of the type parameters on the parent type of the overriding method,
-                                        // Modify map the slotsig so it is in terms of the type parameters for the overriding method 
-                                        let slotsig = ReparentSlotSigToUseMethodTypars g m overrideBy slotsig
+                                            // The slotsig from the overridden method is in terms of the type parameters on the parent type of the overriding method,
+                                            // Modify map the slotsig so it is in terms of the type parameters for the overriding method 
+                                            let slotsig = ReparentSlotSigToUseMethodTypars g m overrideBy slotsig
                      
-                                        // Record the slotsig via mutation
-                                        yield slotsig ]
+                                            // Record the slotsig via mutation
+                                            yield slotsig ]
                           //if mustOverrideSomething reqdTy overrideBy then 
                           //    assert nonNil overriddenForThisSlotImplSet
                           yield! overriddenForThisSlotImplSet ]
