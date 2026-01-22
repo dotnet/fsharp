@@ -96,6 +96,7 @@ type LanguageFeature =
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
     | MoreConcreteTiebreaker
+    | OverloadResolutionPriority
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -542,6 +542,11 @@
         <target state="translated">объявление открытого типа</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureOverloadResolutionPriority">
+        <source>Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</source>
+        <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
         <source>overloads for custom operations</source>
         <target state="translated">перегрузки для настраиваемых операций</target>

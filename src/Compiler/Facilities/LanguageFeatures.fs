@@ -105,6 +105,7 @@ type LanguageFeature =
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
     | MoreConcreteTiebreaker
+    | OverloadResolutionPriority
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -242,6 +243,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ReturnFromFinal, languageVersion100
                 LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions, languageVersion100
                 LanguageFeature.MoreConcreteTiebreaker, languageVersion100
+                LanguageFeature.OverloadResolutionPriority, languageVersion100
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
@@ -422,6 +424,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
         | LanguageFeature.MoreConcreteTiebreaker -> FSComp.SR.featureMoreConcreteTiebreaker ()
+        | LanguageFeature.OverloadResolutionPriority -> FSComp.SR.featureOverloadResolutionPriority ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
