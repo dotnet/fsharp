@@ -451,7 +451,7 @@ module Seq =
     /// sequence.</summary>
     ///
     /// <remarks>The input function is evaluated each time an IEnumerator for the sequence
-    /// is requested.</remarks>
+    /// is requested. Sequence construction is O(1). Enumeration cost depends on the generated sequence.</remarks>
     ///
     /// <param name="generator">The generating function for the sequence.</param>
     /// <returns>The result sequence.</returns>
@@ -545,6 +545,8 @@ module Seq =
     val splitInto: count: int -> source: seq<'T> -> seq<'T array>
 
     /// <summary>Creates an empty sequence.</summary>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     ///
     /// <returns>An empty sequence.</returns>
     ///
@@ -1869,6 +1871,8 @@ module Seq =
 
     /// <summary>Computes the nth element in the collection.</summary>
     ///
+    /// <remarks>This is an O(n) operation, where n is the index.</remarks>
+    ///
     /// <param name="index">The index of element to retrieve.</param>
     /// <param name="source">The input sequence.</param>
     ///
@@ -2417,7 +2421,7 @@ module Seq =
 
     /// <summary>Returns the sum of the elements in the sequence.</summary>
     ///
-    /// <remarks>The elements are summed using the <c>+</c> operator and <c>Zero</c> property associated with the generated type.</remarks>
+    /// <remarks>The elements are summed using the <c>+</c> operator and <c>Zero</c> property associated with the generated type. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
