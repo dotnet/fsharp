@@ -90,6 +90,13 @@ type RequiredSlot =
         | DefaultInterfaceImplementationSlot(_, _, possiblyNoMostSpecific) -> possiblyNoMostSpecific
         | _ -> false
 
+    /// Checks if this slot has implicit DIM coverage (used when the ImplicitDIMCoverage feature is enabled).
+    /// A slot has DIM coverage when it has a default interface implementation AND is optional (not re-abstracted).
+    member this.HasImplicitDIMCoverage(g: TcGlobals) =
+        g.langVersion.SupportsFeature LanguageFeature.ImplicitDIMCoverage
+        && this.HasDefaultInterfaceImplementation
+        && this.IsOptional
+
     /// Gets the method info.
     member this.MethodInfo =
         match this with
@@ -591,12 +598,6 @@ module DispatchSlotChecking =
 
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
 
-        // Helper to check if a slot has DIM coverage (IsOptional means it's covered by a DIM in the hierarchy)
-        let slotHasDIMCoverage (reqdSlot: RequiredSlot) =
-            g.langVersion.SupportsFeature LanguageFeature.ImplicitDIMCoverage &&
-            reqdSlot.HasDefaultInterfaceImplementation &&
-            reqdSlot.IsOptional
-
         for overrideBy in overrides do 
           if not overrideBy.IsFakeEventProperty then
             let m = overrideBy.Range
@@ -647,7 +648,7 @@ module DispatchSlotChecking =
                                 rs.MethodInfo.LogicalName = dispatchSlot.LogicalName &&
                                 typeEquiv g rs.MethodInfo.ApparentEnclosingType dispatchSlot.ApparentEnclosingType)
                         match correspondingSlot with
-                        | Some slot -> not (slotHasDIMCoverage slot)
+                        | Some slot -> not (slot.HasImplicitDIMCoverage g)
                         | None -> true)
                 
                 match slotsWithoutDIMCoverage |> List.filter (fun dispatchSlot ->
@@ -868,12 +869,6 @@ module DispatchSlotChecking =
 
             with RecoverableException e -> errorRecovery e m
 
-        // Helper to check if a slot has DIM coverage (IsOptional means it's covered by a DIM in the hierarchy)
-        let slotHasDIMCoverageForIL (reqdSlot: RequiredSlot) =
-            g.langVersion.SupportsFeature LanguageFeature.ImplicitDIMCoverage &&
-            reqdSlot.HasDefaultInterfaceImplementation &&
-            reqdSlot.IsOptional
-
         // Now record the full slotsigs of the abstract members implemented by each override.
         // This is used to generate IL MethodImpls in the code generator.
         allImmediateMembersThatMightImplementDispatchSlots |> List.iter (fun overrideBy -> 
@@ -889,7 +884,7 @@ module DispatchSlotChecking =
                           let overriddenForThisSlotImplSet = 
                               [ for reqdSlot in NameMultiMap.find overrideByInfo.LogicalName dispatchSlotsKeyed do
                                         // Skip slots that have DIM coverage (they don't need MethodImpl)
-                                        if not (slotHasDIMCoverageForIL reqdSlot) then
+                                        if not (reqdSlot.HasImplicitDIMCoverage g) then
                                             let dispatchSlot = reqdSlot.MethodInfo
                                             if OverrideImplementsDispatchSlot g amap m dispatchSlot overrideByInfo then 
                                                 if tyconRefEq g overrideByInfo.BoundingTyconRef dispatchSlot.DeclaringTyconRef then 
