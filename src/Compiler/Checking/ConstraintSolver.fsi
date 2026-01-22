@@ -3,6 +3,8 @@
 /// Solves constraints using a mutable constraint-solver state
 module internal FSharp.Compiler.ConstraintSolver
 
+open Internal.Utilities.TypeHashing.StructuralUtilities
+
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
@@ -193,10 +195,10 @@ type OverloadResolutionCacheKey =
     {
         /// Hash combining all method identities in the method group
         MethodGroupHash: int
-        /// Type stamps for each caller argument (only used when all types are fully resolved)
-        ArgTypeStamps: struct (Stamp * Stamp) list
-        /// Type stamp for expected return type (if any), to differentiate calls with different expected types
-        ReturnTypeStamp: struct (Stamp * Stamp) voption
+        /// Type structures for each caller argument (only used when all types are stable)
+        ArgTypeStructures: TypeStructure list
+        /// Type structure for expected return type (if any), to differentiate calls with different expected types
+        ReturnTypeStructure: TypeStructure voption
     }
 
 /// Result of cached overload resolution

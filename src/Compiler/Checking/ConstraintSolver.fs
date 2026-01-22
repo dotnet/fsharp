@@ -47,6 +47,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
+open Internal.Utilities.TypeHashing.StructuralUtilities
 
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
@@ -254,10 +255,10 @@ type OverloadResolutionCacheKey =
     { 
       /// Hash combining all method identities in the method group
       MethodGroupHash: int
-      /// Type stamps for each caller argument (only used when all types are fully resolved)
-      ArgTypeStamps: struct(Stamp * Stamp) list
-      /// Type stamp for expected return type (if any), to differentiate calls with different expected types
-      ReturnTypeStamp: struct(Stamp * Stamp) voption
+      /// Type structures for each caller argument (only used when all types are stable)
+      ArgTypeStructures: TypeStructure list
+      /// Type structure for expected return type (if any), to differentiate calls with different expected types
+      ReturnTypeStructure: TypeStructure voption
     }
 
 /// Result of cached overload resolution
@@ -393,59 +394,13 @@ let MakeConstraintSolverEnv contextInfo css m denv =
 // Overload Resolution Caching Helpers
 //------------------------------------------------------------------------- 
 
-/// Try to get a stable stamp for a type. Returns None if the type contains
-/// unresolved type variables (inference parameters).
-let rec tryGetTypeStamp (g: TcGlobals) (ty: TType) : struct(Stamp * Stamp) voption =
+/// Try to get a stable type structure for caching. 
+/// Only returns stable structures - returns None for unstable or infinite types.
+let tryGetStableTypeStructure (g: TcGlobals) (ty: TType) : TypeStructure voption =
     let ty = stripTyEqns g ty
-    match ty with
-    | TType_app (tcref, tyargs, _) ->
-        // Check that all type arguments are also fully resolved and compute combined stamp
-        let rec getArgsStamp args accum =
-            match args with
-            | [] -> ValueSome accum
-            | arg :: rest ->
-                match tryGetTypeStamp g arg with
-                | ValueSome(struct(s1, s2)) -> 
-                    // Combine stamps: mix in the arg stamps
-                    let newAccum = hash (accum, s1, s2)
-                    getArgsStamp rest (int64 newAccum)
-                | ValueNone -> ValueNone
-        match getArgsStamp tyargs 0L with
-        | ValueSome argsStamp ->
-            // Use enclosing type stamp combined with type args stamp
-            ValueSome(struct(tcref.Stamp, argsStamp))
-        | ValueNone -> ValueNone
-    | TType_tuple (_, tys) ->
-        // Check all tuple elements are resolved and compute combined stamp
-        let rec getElemsStamp elems accum =
-            match elems with
-            | [] -> ValueSome accum
-            | elem :: rest ->
-                match tryGetTypeStamp g elem with
-                | ValueSome(struct(s1, s2)) ->
-                    let newAccum = hash (accum, s1, s2)
-                    getElemsStamp rest (int64 newAccum)
-                | ValueNone -> ValueNone
-        match getElemsStamp tys 0L with
-        | ValueSome elemsStamp ->
-            // Use a special marker for tuples (-1L) with elements stamp
-            ValueSome(struct(-1L, elemsStamp))
-        | ValueNone -> ValueNone
-    | TType_var _ ->
-        // Unresolved type variable - cannot cache
-        ValueNone
-    | TType_fun _ ->
-        // Function types - for simplicity, don't cache these
-        ValueNone
-    | TType_measure _ ->
-        // Measure types - use a special stamp
-        ValueSome(struct(-2L, 0L))
-    | TType_forall _ ->
-        // Polymorphic types - don't cache
-        ValueNone
-    | TType_ucase _ | TType_anon _ ->
-        // These are less common - don't cache for simplicity
-        ValueNone
+    match tryGetTypeStructureOfStrippedType ty with
+    | ValueSome(Stable tokens) -> ValueSome(Stable tokens)
+    | _ -> ValueNone
 
 /// Compute a hash for a method info for caching purposes
 let rec computeMethInfoHash (minfo: MethInfo) : int =
@@ -485,33 +440,33 @@ let tryComputeOverloadCacheKey
         let methHash = computeMethInfoHash cmeth.Method
         methodGroupHash <- methodGroupHash * 31 + methHash
     
-    // Collect type stamps for all caller arguments
-    let mutable argStamps = []
-    let mutable allResolved = true
+    // Collect type structures for all caller arguments
+    let mutable argStructures = []
+    let mutable allStable = true
     
     for argList in callerArgs.Unnamed do
         for callerArg in argList do
             let argTy = callerArg.CallerArgumentType
-            match tryGetTypeStamp g argTy with
-            | ValueSome stamp -> 
-                argStamps <- stamp :: argStamps
+            match tryGetStableTypeStructure g argTy with
+            | ValueSome ts -> 
+                argStructures <- ts :: argStructures
             | ValueNone ->
-                allResolved <- false
+                allStable <- false
     
-    if not allResolved then 
+    if not allStable then 
         ValueNone
     else
-        // Compute return type stamp if present
+        // Compute return type structure if present
         // This is critical for cases like:
         // - c.CheckCooperativeLevel() returning bool (calls no-arg overload)
         // - let a, b = c.CheckCooperativeLevel() (calls byref overload with tuple destructuring)
-        let retTyStamp =
+        let retTyStructure =
             match reqdRetTyOpt with
             | Some overallTy -> 
                 // Extract the underlying TType from OverallTy
                 let retTy = overallTy.Commit
-                match tryGetTypeStamp g retTy with
-                | ValueSome stamp -> ValueSome stamp
+                match tryGetStableTypeStructure g retTy with
+                | ValueSome ts -> ValueSome ts
                 | ValueNone -> 
                     // Return type has unresolved type variable
                     // This is only a problem if any candidate has out args, because out args
@@ -524,18 +479,19 @@ let tryComputeOverloadCacheKey
                         ValueNone
                     else
                         // Safe to cache with wildcard - return type doesn't affect resolution
-                        ValueSome(struct(-3L, 0L))  // -3L = wildcard return type
+                        // Use empty Stable array as marker for "any return type"
+                        ValueSome(Stable [||])
             | None -> 
-                // No return type constraint - use a marker value
-                ValueSome(struct(0L, 0L))
+                // No return type constraint - use empty marker
+                ValueSome(Stable [||])
         
-        match retTyStamp with
+        match retTyStructure with
         | ValueNone -> ValueNone
-        | retStamp ->
+        | retStruct ->
             ValueSome { 
                 MethodGroupHash = methodGroupHash
-                ArgTypeStamps = List.rev argStamps
-                ReturnTypeStamp = retStamp
+                ArgTypeStructures = List.rev argStructures
+                ReturnTypeStructure = retStruct
             }
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
