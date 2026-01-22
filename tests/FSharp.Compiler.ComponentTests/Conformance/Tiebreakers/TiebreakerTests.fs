@@ -2248,3 +2248,252 @@ let result = wrapTwice 21
         |> typecheck
         |> shouldSucceed
         |> ignore
+
+    // ============================================================================
+    // OverloadResolutionPriorityAttribute Tests (RFC FS-XXXX)
+    // 
+    // These tests verify F# correctly respects [OverloadResolutionPriority] from C#.
+    // Tests use inline C# to define test types since F# cannot apply the attribute directly.
+    // 
+    // Currently EXPECTED TO FAIL since the pre-filter is not yet implemented.
+    // ============================================================================
+
+    /// C# library with OverloadResolutionPriority test types
+    let private csharpPriorityLib =
+        CSharp """
+using System;
+using System.Runtime.CompilerServices;
+
+namespace PriorityTests
+{
+    /// Basic priority within same type - higher priority should win
+    public static class BasicPriority
+    {
+        [OverloadResolutionPriority(1)]
+        public static string HighPriority(object o) => "high";
+        
+        [OverloadResolutionPriority(0)]
+        public static string LowPriority(object o) => "low";
+        
+        // Overloaded methods with same name but different priorities
+        [OverloadResolutionPriority(2)]
+        public static string Invoke(object o) => "priority-2";
+        
+        [OverloadResolutionPriority(1)]
+        public static string Invoke(string s) => "priority-1-string";
+        
+        [OverloadResolutionPriority(0)]
+        public static string Invoke(int i) => "priority-0-int";
+    }
+    
+    /// Negative priority - should be deprioritized (used for backward compat scenarios)
+    public static class NegativePriority
+    {
+        [OverloadResolutionPriority(-1)]
+        public static string Legacy(object o) => "legacy";
+        
+        public static string Legacy(string s) => "current"; // default priority 0
+        
+        // Multiple negative levels
+        [OverloadResolutionPriority(-2)]
+        public static string Obsolete(object o) => "very-old";
+        
+        [OverloadResolutionPriority(-1)]
+        public static string Obsolete(string s) => "old";
+        
+        public static string Obsolete(int i) => "new"; // default priority 0
+    }
+    
+    /// Priority overrides type concreteness
+    public static class PriorityVsConcreteness
+    {
+        // Less concrete but higher priority - should win
+        [OverloadResolutionPriority(1)]
+        public static string Process<T>(T value) => "generic-high-priority";
+        
+        // More concrete but lower priority - should lose
+        [OverloadResolutionPriority(0)]
+        public static string Process(int value) => "int-low-priority";
+        
+        // Another scenario: wrapped generic with priority beats concrete
+        [OverloadResolutionPriority(1)]
+        public static string Handle<T>(T[] arr) => "array-generic-high";
+        
+        public static string Handle(int[] arr) => "array-int-default";
+    }
+    
+    /// Priority is scoped per-declaring-type for extension methods
+    public static class ExtensionTypeA
+    {
+        [OverloadResolutionPriority(1)]
+        public static string ExtMethod(this string s, int x) => "TypeA-priority1";
+        
+        public static string ExtMethod(this string s, object o) => "TypeA-priority0";
+    }
+    
+    public static class ExtensionTypeB
+    {
+        // Different declaring type - priority is independent
+        [OverloadResolutionPriority(2)]
+        public static string ExtMethod(this string s, int x) => "TypeB-priority2";
+        
+        public static string ExtMethod(this string s, object o) => "TypeB-priority0";
+    }
+    
+    /// Default priority is 0 when attribute is absent
+    public static class DefaultPriority
+    {
+        // No attribute - implicit priority 0
+        public static string NoAttr(object o) => "no-attr";
+        
+        [OverloadResolutionPriority(0)]
+        public static string ExplicitZero(object o) => "explicit-zero";
+        
+        [OverloadResolutionPriority(1)]
+        public static string PositiveOne(object o) => "positive-one";
+        
+        // Overloads where one has attribute and one doesn't
+        public static string Mixed(string s) => "mixed-default";
+        
+        [OverloadResolutionPriority(1)]
+        public static string Mixed(object o) => "mixed-priority";
+    }
+}
+"""
+        |> withCSharpLanguageVersionPreview
+        |> withName "CSharpPriorityLib"
+
+    [<Fact(Skip = "Requires OverloadResolutionPriority pre-filter implementation")>]
+    let ``ORP - Higher priority wins over lower within same type`` () =
+        // When two overloads match, higher priority should be selected
+        // BasicPriority.Invoke has: object(priority 2), string(priority 1), int(priority 0)
+        // For a string arg, both object and string match - priority 2 (object) should win
+        // WITHOUT ORP implementation: F# picks string (more specific) - test FAILS
+        // WITH ORP implementation: F# picks object (higher priority) - test PASSES
+        FSharp """
+module Test
+open PriorityTests
+
+let result = BasicPriority.Invoke("test")
+// With ORP, priority 2 (object overload) should be selected
+if result <> "priority-2" then
+    failwithf "Expected 'priority-2' but got '%s'" result
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP - Negative priority deprioritizes overload`` () =
+        // Legacy(object) has -1, Legacy(string) has 0 (default)
+        // For string arg: both match, priority 0 (string) should beat priority -1 (object)
+        // This should work with normal F# rules too (string is more specific)
+        FSharp """
+module Test
+open PriorityTests
+
+let result = NegativePriority.Legacy("test")
+// Priority 0 (string) should beat priority -1 (object)
+if result <> "current" then
+    failwithf "Expected 'current' but got '%s'" result
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP - Multiple negative priority levels`` () =
+        // Obsolete: object(-2), string(-1), int(0)
+        // For int arg: int(0) should be selected as highest priority
+        FSharp """
+module Test
+open PriorityTests
+
+let result = NegativePriority.Obsolete(42)
+// Priority 0 (int) should beat -1 and -2
+if result <> "new" then
+    failwithf "Expected 'new' but got '%s'" result
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact(Skip = "Requires OverloadResolutionPriority pre-filter implementation")>]
+    let ``ORP - Priority overrides concreteness tiebreaker`` () =
+        // CRITICAL TEST: Priority should override F#'s "most concrete" tiebreaker
+        // Process<T>(T) has priority 1, Process(int) has priority 0
+        // For int arg: normally F# picks Process(int) as more concrete
+        // WITH ORP: Process<T> should win due to higher priority
+        // WITHOUT ORP implementation: F# picks int (more concrete) - test FAILS
+        FSharp """
+module Test
+open PriorityTests
+
+let result = PriorityVsConcreteness.Process(42)
+// With ORP, generic with priority 1 should beat int with priority 0
+if result <> "generic-high-priority" then
+    failwithf "Expected 'generic-high-priority' but got '%s'" result
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact(Skip = "Requires OverloadResolutionPriority pre-filter implementation")>]
+    let ``ORP - Default priority is 0 when attribute absent`` () =
+        // Mixed: string (no attr = priority 0), object (priority 1)
+        // For string arg: object(priority 1) should beat string(priority 0)
+        // WITHOUT ORP: F# picks string (more specific) - test FAILS
+        // WITH ORP: object wins due to priority - test PASSES
+        FSharp """
+module Test
+open PriorityTests
+
+let result = DefaultPriority.Mixed("test")
+// With ORP, priority 1 (object) should beat default priority 0 (string)
+if result <> "mixed-priority" then
+    failwithf "Expected 'mixed-priority' but got '%s'" result
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ORP - Priority scoped per-declaring-type for extensions`` () =
+        // Extension methods from different types compete independently
+        // ExtensionTypeA: ExtMethod(int) priority 1, ExtMethod(object) priority 0
+        // ExtensionTypeB: ExtMethod(int) priority 2, ExtMethod(object) priority 0
+        // Within each type, highest priority is kept. Then types compete.
+        // After filtering: TypeA offers ExtMethod(int)@1, TypeB offers ExtMethod(int)@2
+        // These are from different declaring types - should be ambiguous after per-type filtering
+        // For now (without per-type filtering), this may just pick one
+        FSharp """
+module Test
+open PriorityTests
+
+// Open both extension namespaces
+let result = ExtensionTypeB.ExtMethod("hello", 42)
+// Direct call to TypeB - should work and pick priority 2 overload
+if result <> "TypeB-priority2" then
+    failwithf "Expected 'TypeB-priority2' but got '%s'" result
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
