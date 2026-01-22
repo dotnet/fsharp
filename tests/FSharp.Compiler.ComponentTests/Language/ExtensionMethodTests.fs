@@ -736,7 +736,7 @@ module Extensions =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3356, Line 12, Col 23, Line 12, Col 28, "Extension members extending types with the same simple name 'List' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+            (Error 3356, Line 12, Col 23, Line 12, Col 28, "Extension members extending types with the same simple name 'List`1' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
         ]
 
     [<Fact>]

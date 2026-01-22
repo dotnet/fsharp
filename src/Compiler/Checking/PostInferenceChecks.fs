@@ -2685,32 +2685,30 @@ let CheckEntityDefns cenv env tycons =
 /// will be emitted into the same IL container type, causing a duplicate member error.
 let CheckForDuplicateExtensionMemberNames (cenv: cenv) (vals: Val seq) =
     if cenv.reportErrors then
-        // Group extension members by the simple name of the type they extend
         let extensionMembers = 
             vals 
             |> Seq.filter (fun v -> v.IsExtensionMember && v.IsMember)
             |> Seq.toList
 
         if not extensionMembers.IsEmpty then
-            let groupedBySimpleName =
+            // Group by LogicalName which includes generic arity suffix (e.g., Expr`1 for Expr<'T>)
+            // This matches how types are compiled to IL, so Expr and Expr<'T> are separate groups
+            let groupedByLogicalName =
                 extensionMembers
-                |> List.groupBy (fun v -> v.MemberApparentEntity.DisplayNameCore)
+                |> List.groupBy (fun v -> v.MemberApparentEntity.LogicalName)
             
-            for (simpleName, members) in groupedBySimpleName do
-                // Check if members extend types in different namespaces/modules
-                // Compare compilation paths, not stamps - this allows Expr and Expr<'T> 
-                // (same namespace, different generic arity) while detecting 
-                // System.Threading.Tasks.Task vs MyModule.Task (different namespaces)
+            for (logicalName, members) in groupedByLogicalName do
+                // Check if members extend types from different namespaces/assemblies
                 let distinctNamespacePaths = 
                     members 
                     |> List.map (fun v -> v.MemberApparentEntity.CompilationPath.MangledPath)
                     |> List.distinct
                 
                 if distinctNamespacePaths.Length > 1 then
-                    // Found extensions for types with same simple name but different fully qualified names
+                    // Found extensions for types with same LogicalName but different fully qualified names
                     // Report error on the second (and subsequent) extensions
                     for v in members |> List.skip 1 do
-                        errorR(Error(FSComp.SR.tcDuplicateExtensionMemberNames(simpleName), v.Range))
+                        errorR(Error(FSComp.SR.tcDuplicateExtensionMemberNames(logicalName), v.Range))
 
 let rec CheckDefnsInModule cenv env mdefs =
     for mdef in mdefs do
