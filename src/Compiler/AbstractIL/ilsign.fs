@@ -332,10 +332,17 @@ type ILStrongNameSigner =
     | KeyPair of keyPair * bool
     | KeyContainer of keyContainerName * bool
 
-    static member OpenPublicKeyOptions kp p = PublicKeyOptionsSigner(kp, p)
+    static member OpenPublicKeyOptions (kp, p) = PublicKeyOptionsSigner(kp, p)
+    
     static member OpenPublicKey bytes = PublicKeySigner bytes
-    static member OpenKeyPairFile bytes usePublicSign = KeyPair(bytes, usePublicSign)
-    static member OpenKeyContainer s usePublicSign = KeyContainer(s, usePublicSign)
+    
+    static member OpenKeyPairFile (bytes, ?usePublicSign) = 
+        let ups = defaultArg usePublicSign true
+        KeyPair(bytes, ups)
+
+    static member OpenKeyContainer (s, ?usePublicSign) = 
+        let ups = defaultArg usePublicSign false
+        KeyContainer(s, ups)
 
     member s.IsFullySigned =
         match s with
