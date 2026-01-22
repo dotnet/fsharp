@@ -141,7 +141,7 @@ type public Fsc() as this =
                  | "EMBEDDED" -> "embedded"
                  | "FULL" -> "full"
                  | _ -> null
-             : string | null)
+            : string | null)
         )
 
         if embedAllSources then
@@ -235,7 +235,7 @@ type public Fsc() as this =
              | "ARM", _, _ -> "arm"
              | "ARM64", _, _ -> "arm64"
              | _ -> null
-             : string | null)
+            : string | null)
         )
 
         // checksumAlgorithm
@@ -248,7 +248,7 @@ type public Fsc() as this =
                  | "SHA1" -> "Sha1"
                  | "SHA256" -> "Sha256"
                  | _ -> null
-             : string | null)
+            : string | null)
         )
 
         // Resources
@@ -287,7 +287,7 @@ type public Fsc() as this =
                  | "WINEXE" -> "winexe"
                  | "MODULE" -> "module"
                  | _ -> null
-             : string | null)
+            : string | null)
         )
 
         // NoWarn
