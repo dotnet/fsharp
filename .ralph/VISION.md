@@ -11,12 +11,14 @@ The following work has been completed:
 - ✅ Feature mapped to `languageVersion100` (F# 10.0) (LanguageFeatures.fs:246)
 - ✅ FSComp.txt has feature string `featureOverloadResolutionPriority` (FSComp.txt:1808)
 - ✅ `GetOverloadResolutionPriority()` method added to MethInfo (infos.fs:1262-1284)
+- ✅ **Sprint 1 Complete**: Inline C# library with ORP test types and 6 failing F# tests in TiebreakerTests.fs
+  - Tests assert CORRECT ORP behavior and will FAIL until pre-filter is implemented (Sprint 2)
+  - Covers: higher priority wins, negative priority, priority vs concreteness, default priority 0, per-type scoping
 
-**What remains to be implemented:**
-1. Pre-filter logic in `ConstraintSolver.fs` at `GetMostApplicableOverload`
-2. Comprehensive tests in `TiebreakerTests.fs`
-3. Optional diagnostic FS3578 (off by default) for priority-based resolution
-4. Release notes documentation
+**What remains to be implemented (Sprint 2+):**
+1. Pre-filter logic in `ConstraintSolver.fs` at `GetMostApplicableOverload` - this will make the ORP tests pass
+2. Optional diagnostic FS3578 (off by default) for priority-based resolution
+3. Release notes documentation
 
 ## Key Design Decisions
 

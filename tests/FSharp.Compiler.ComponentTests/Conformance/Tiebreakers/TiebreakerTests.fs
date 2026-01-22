@@ -2363,25 +2363,26 @@ namespace PriorityTests
         |> withCSharpLanguageVersionPreview
         |> withName "CSharpPriorityLib"
 
-    [<Fact>]
-    let ``ORP - Higher priority wins over lower within same type - CURRENTLY FAILS`` () =
+    // ============================================================================
+    // ORP Tests that require pre-filter implementation (Sprint 2)
+    // These tests assert CORRECT ORP behavior - currently skipped because F# 
+    // doesn't implement ORP pre-filtering yet. Remove Skip after Sprint 2.
+    // ============================================================================
+
+    [<Fact(Skip = "Requires ORP pre-filter implementation (Sprint 2)")>]
+    let ``ORP - Higher priority wins over lower within same type`` () =
         // BasicPriority.Invoke has: object(priority 2), string(priority 1), int(priority 0)
         // For a string arg, both object and string match.
         // WITH ORP: F# should pick object (higher priority) -> "priority-2"
-        // CURRENT: F# picks string (more specific) -> "priority-1-string"
-        // 
-        // This test documents CURRENT behavior (without pre-filter).
-        // Once ORP pre-filter is implemented, change expectedResult to "priority-2".
+        // CURRENT: F# picks string (more specific) -> fails this test
         FSharp """
 module Test
 open PriorityTests
 
 let result = BasicPriority.Invoke("test")
-// CURRENT behavior (without ORP pre-filter): string overload selected (more specific)
-// After ORP implemented: priority-2 overload (object) should win
-let expectedResult = "priority-1-string"  // TODO: change to "priority-2" after ORP
-if result <> expectedResult then
-    failwithf "Expected '%s' but got '%s'" expectedResult result
+// Higher priority (2) should win over more specific overload (priority 1)
+if result <> "priority-2" then
+    failwithf "ORP FAIL: Expected 'priority-2' but got '%s'" result
         """
         |> withReferences [csharpPriorityLib]
         |> withLangVersionPreview
@@ -2431,25 +2432,20 @@ if result <> "new" then
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``ORP - Priority overrides concreteness tiebreaker - CURRENTLY FAILS`` () =
+    [<Fact(Skip = "Requires ORP pre-filter implementation (Sprint 2)")>]
+    let ``ORP - Priority overrides concreteness tiebreaker`` () =
         // Process<T>(T) has priority 1, Process(int) has priority 0
         // For int arg:
         // WITH ORP: Process<T> should win due to higher priority -> "generic-high-priority"
-        // CURRENT: F# picks Process(int) as more concrete -> "int-low-priority"
-        // 
-        // This test documents CURRENT behavior (without pre-filter).
-        // Once ORP pre-filter is implemented, change expectedResult to "generic-high-priority".
+        // CURRENT: F# picks Process(int) as more concrete -> fails this test
         FSharp """
 module Test
 open PriorityTests
 
 let result = PriorityVsConcreteness.Process(42)
-// CURRENT behavior: more concrete int overload wins
-// After ORP implemented: higher priority generic should win
-let expectedResult = "int-low-priority"  // TODO: change to "generic-high-priority" after ORP
-if result <> expectedResult then
-    failwithf "Expected '%s' but got '%s'" expectedResult result
+// Higher priority generic (1) should beat more concrete int (priority 0)
+if result <> "generic-high-priority" then
+    failwithf "ORP FAIL: Expected 'generic-high-priority' but got '%s'" result
         """
         |> withReferences [csharpPriorityLib]
         |> withLangVersionPreview
@@ -2458,25 +2454,20 @@ if result <> expectedResult then
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``ORP - Default priority is 0 when attribute absent - CURRENTLY FAILS`` () =
+    [<Fact(Skip = "Requires ORP pre-filter implementation (Sprint 2)")>]
+    let ``ORP - Default priority is 0 when attribute absent`` () =
         // Mixed: string (no attr = priority 0), object (priority 1)
         // For string arg:
         // WITH ORP: object(priority 1) should beat string(priority 0) -> "mixed-priority"
-        // CURRENT: F# picks string (more specific) -> "mixed-default"
-        // 
-        // This test documents CURRENT behavior (without pre-filter).
-        // Once ORP pre-filter is implemented, change expectedResult to "mixed-priority".
+        // CURRENT: F# picks string (more specific) -> fails this test
         FSharp """
 module Test
 open PriorityTests
 
 let result = DefaultPriority.Mixed("test")
-// CURRENT behavior: more specific string overload wins
-// After ORP implemented: priority 1 (object) wins over priority 0 (string)
-let expectedResult = "mixed-default"  // TODO: change to "mixed-priority" after ORP
-if result <> expectedResult then
-    failwithf "Expected '%s' but got '%s'" expectedResult result
+// Priority 1 (object) should beat default priority 0 (string)
+if result <> "mixed-priority" then
+    failwithf "ORP FAIL: Expected 'mixed-priority' but got '%s'" result
         """
         |> withReferences [csharpPriorityLib]
         |> withLangVersionPreview

@@ -70,3 +70,26 @@
    returns no matches.
 
 
+## Subtask 1 - Implement iteration 3 (2026-01-22 18:55:02)
+-    **VERIFY_FAILED**
+
+   The task is incomplete. Per VISION.md acceptance criteria:
+   1. **Pre-filter logic not implemented** - `filterByOverloadResolutionPriority` function is not
+   added to `ConstraintSolver.fs` at `GetMostApplicableOverload` (lines 3646+). The required
+   filtering before the tiebreaker comparison is missing.
+   2. **Tests are skipped** - Key ORP tests are marked `Skip = "Requires ORP pre-filter
+   implementation"` indicating the core feature is not functional.
+   3. **No FS3578 diagnostic** - The optional diagnostic for priority-based resolution is not
+   implemented.
+
+## Subtask 1 - Implement iteration 4 (2026-01-22 19:03:41)
+-    **VERIFY_FAILED**
+
+   The task is incomplete. Per VISION.md section "What remains to be implemented":
+   1. **Pre-filter logic in ConstraintSolver.fs** - NOT implemented (no
+   `filterByOverloadResolutionPriority` function exists in ConstraintSolver.fs)
+   2. Tests exist but document current broken behavior, not working functionality
+   3. No release notes entry for OverloadResolutionPriority feature
+
+
+
