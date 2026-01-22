@@ -40,7 +40,7 @@ module Seq =
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not be accessed
-    /// concurrently.</remarks>
+    /// concurrently. Sequence construction is O(1). Enumeration is O(n+m), where n and m are the lengths of the sequences.</remarks>
     ///
     /// <param name="source1">The first sequence.</param>
     /// <param name="source2">The second sequence.</param>
@@ -56,15 +56,13 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3; 4 }</c>
     /// </example>
-    ///
-    /// <remarks>Sequence construction is O(1). Enumeration is O(n+m), where n and m are the lengths of the sequences.</remarks>
     [<CompiledName("Append")>]
     val append: source1: seq<'T> -> source2: seq<'T> -> seq<'T>
 
     /// <summary>Returns the average of the elements in the sequence.</summary>
     ///
     /// <remarks>The elements are averaged using the <c>+</c> operator, <c>DivideByInt</c> method and <c>Zero</c> property
-    /// associated with the element type.</remarks>
+    /// associated with the element type. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -86,8 +84,6 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Average")>]
     val inline average:
         source: seq< ^T > -> ^T
@@ -99,7 +95,7 @@ module Seq =
     /// of the sequence.</summary>
     ///
     /// <remarks>The elements are averaged using the <c>+</c> operator, <c>DivideByInt</c> method and <c>Zero</c> property
-    /// associated with the generated type.</remarks>
+    /// associated with the generated type. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="projection">A function applied to transform each element of the sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -128,8 +124,6 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("AverageBy")>]
     val inline averageBy:
         projection: ('T -> ^U) -> source: seq<'T> -> ^U
@@ -159,7 +153,9 @@ module Seq =
     /// The enumerator may be disposed and underlying cache storage released by
     /// converting the returned sequence object to type IDisposable, and calling the Dispose method
     /// on this object. The sequence object may then be re-enumerated and a fresh enumerator will
-    /// be used.</remarks>
+    /// be used.
+    ///
+    /// Caching requires O(k) space for k accessed elements.</remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -177,8 +173,6 @@ module Seq =
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3 }</c>,
     /// and it will not do the calculation again when called.
     /// </example>
-    ///
-    /// <remarks>Caching requires O(k) space for k accessed elements.</remarks>
     [<CompiledName("Cache")>]
     val cache: source: seq<'T> -> seq<'T>
 
@@ -187,7 +181,7 @@ module Seq =
     /// <remarks>The use of this function usually requires a type annotation.
     /// An incorrect type annotation may result in runtime type
     /// errors.
-    /// Individual IEnumerator values generated from the returned sequence should not be accessed concurrently.</remarks>
+    /// Individual IEnumerator values generated from the returned sequence should not be accessed concurrently. Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -201,8 +195,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3 }</c>, explicitly typed as <c>seq&lt;int&gt;</c>.
     /// </example>
-    ///
-    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Cast")>]
     val cast: source: IEnumerable -> seq<'T>
 
@@ -212,7 +204,7 @@ module Seq =
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not
-    /// be accessed concurrently.</remarks>
+    /// be accessed concurrently. Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     ///
     /// <param name="chooser">A function to transform items of type T into options of type U.</param>
     /// <param name="source">The input sequence of type T.</param>
@@ -234,8 +226,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 2 }</c>
     /// </example>
-    ///
-    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Choose")>]
     val choose: chooser: ('T -> 'U option) -> source: seq<'T> -> seq<'U>
 
@@ -270,7 +260,7 @@ module Seq =
     /// <summary>Applies the given function to each element of the sequence and concatenates all the
     /// results.</summary>
     ///
-    /// <remarks>Remember sequence is lazy, effects are delayed until it is enumerated.</remarks>
+    /// <remarks>Remember sequence is lazy, effects are delayed until it is enumerated. Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     ///
     /// <param name="mapping">A function to transform elements of the input sequence into the sequences
     /// that will then be concatenated.</param>
@@ -299,8 +289,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3; 4 }</c>
     /// </example>
-    ///
-    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Collect")>]
     val collect: mapping: ('T -> 'Collection) -> source: seq<'T> -> seq<'U> when 'Collection :> seq<'U>
 
@@ -391,7 +379,7 @@ module Seq =
     /// enumeration.</summary>
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
-    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.</remarks>
+    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently. Sequence construction is O(1). Enumeration is O(n), where n is the total number of elements.</remarks>
     ///
     /// <param name="sources">The input enumeration-of-enumerations.</param>
     ///
@@ -407,8 +395,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3; 4; 5 }</c>
     /// </example>
-    ///
-    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the total number of elements.</remarks>
     [<CompiledName("Concat")>]
     val concat: sources: seq<'Collection> -> seq<'T> when 'Collection :> seq<'T>
 
@@ -436,7 +422,7 @@ module Seq =
     /// <remarks>Note that this function returns a sequence that digests the whole initial sequence as soon as
     /// that sequence is iterated. As a result this function should not be used with
     /// large or infinite sequences. The function makes no assumption on the ordering of the original
-    /// sequence.</remarks>
+    /// sequence. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="projection">A function transforming each item of the input sequence into a key to be
     /// compared against the others.</param>
@@ -456,8 +442,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { ("a", 2); ("b", 1) }</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("CountBy")>]
     val countBy: projection: ('T -> 'Key) -> source: seq<'T> -> seq<'Key * int> when 'Key: equality
 
@@ -528,7 +512,7 @@ module Seq =
     /// <summary>Splits the input sequence into at most <c>count</c> chunks.</summary>
     ///
     /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as that
-    /// sequence is iterated. As a result this function should not be used with large or infinite sequences.</remarks>
+    /// sequence is iterated. As a result this function should not be used with large or infinite sequences. This function consumes the whole input sequence before yielding the first element of the result sequence. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="count">The maximum number of chunks.</param>
     /// <param name="source">The input sequence.</param>
@@ -537,8 +521,6 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
-    ///
-    /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
     ///
     /// <example id="split-into-1">
     /// <code lang="fsharp">
@@ -557,8 +539,6 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SplitInto")>]
     val splitInto: count: int -> source: seq<'T> -> seq<'T array>
 
@@ -581,7 +561,7 @@ module Seq =
     /// <remarks>Note that this function returns a sequence that digests the whole of the first input sequence as soon as
     /// the result sequence is iterated. As a result this function should not be used with
     /// large or infinite sequences in the first parameter. The function makes no assumption on the ordering of the first input
-    /// sequence.</remarks>
+    /// sequence. This is an O(n+m) operation using hash-based exclusion.</remarks>
     ///
     /// <param name="itemsToExclude">A sequence whose elements that also occur in the second sequence will cause those elements to be
     /// removed from the returned sequence.</param>
@@ -600,8 +580,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 2; 4 }</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n+m) operation using hash-based exclusion.</remarks>
     [<CompiledName("Except")>]
     val except: itemsToExclude: seq<'T> -> source: seq<'T> -> seq<'T> when 'T: equality
 
@@ -609,7 +587,7 @@ module Seq =
     ///
     /// <remarks>The predicate is applied to the elements of the input sequence. If any application
     /// returns true then the overall result is true and no further elements are tested.
-    /// Otherwise, false is returned.</remarks>
+    /// Otherwise, false is returned. This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     ///
     /// <param name="predicate">A function to test each item of the input sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -635,8 +613,6 @@ module Seq =
     /// </code>
     /// Evaluates to <c>false</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("Exists")>]
     val exists: predicate: ('T -> bool) -> source: seq<'T> -> bool
 
@@ -645,7 +621,7 @@ module Seq =
     /// <remarks>The predicate is applied to matching elements in the two sequences up to the lesser of the
     /// two lengths of the collections. If any application returns true then the overall result is
     /// true and no further elements are tested. Otherwise, false is returned. If one sequence is shorter than
-    /// the other then the remaining elements of the longer sequence are ignored.</remarks>
+    /// the other then the remaining elements of the longer sequence are ignored. This is an O(n) operation in the worst case, where n is the length of the sequences.</remarks>
     ///
     /// <param name="predicate">A function to test each pair of items from the input sequences.</param>
     /// <param name="source1">The first input sequence.</param>
@@ -674,8 +650,6 @@ module Seq =
     /// </code>
     /// Evaluates to <c>true</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequences.</remarks>
     [<CompiledName("Exists2")>]
     val exists2: predicate: ('T1 -> 'T2 -> bool) -> source1: seq<'T1> -> source2: seq<'T2> -> bool
 
@@ -685,7 +659,7 @@ module Seq =
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
     ///
-    /// Remember sequence is lazy, effects are delayed until it is enumerated.</remarks>
+    /// Remember sequence is lazy, effects are delayed until it is enumerated. Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     ///
     /// <param name="predicate">A function to test whether each item in the input sequence should be included in the output.</param>
     /// <param name="source">The input sequence.</param>
@@ -702,8 +676,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 2; 4 }</c>
     /// </example>
-    ///
-    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Filter")>]
     val filter: predicate: ('T -> bool) -> source: seq<'T> -> seq<'T>
 
@@ -715,7 +687,7 @@ module Seq =
     ///
     /// Remember sequence is lazy, effects are delayed until it is enumerated.
     ///
-    /// A synonym for Seq.filter.</remarks>
+    /// A synonym for Seq.filter. Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     ///
     /// <param name="predicate">A function to test whether each item in the input sequence should be included in the output.</param>
     /// <param name="source">The input sequence.</param>
@@ -730,8 +702,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 2; 4 }</c>
     /// </example>
-    ///
-    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Where")>]
     val where: predicate: ('T -> bool) -> source: seq<'T> -> seq<'T>
 
@@ -771,7 +741,7 @@ module Seq =
     /// <summary>Returns the last element for which the given function returns True.</summary>
     ///
     /// <remarks>This function digests the whole initial sequence as soon as it is called. As a
-    /// result this function should not be used with large or infinite sequences.</remarks>
+    /// result this function should not be used with large or infinite sequences. This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     ///
     /// <param name="predicate">A function to test whether an item in the sequence should be returned.</param>
     /// <param name="source">The input sequence.</param>
@@ -799,8 +769,6 @@ module Seq =
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("FindBack")>]
     val findBack: predicate: ('T -> bool) -> source: seq<'T> -> 'T
 
@@ -839,7 +807,7 @@ module Seq =
     /// <summary>Returns the index of the last element for which the given function returns True.</summary>
     ///
     /// <remarks>This function digests the whole initial sequence as soon as it is called. As a
-    /// result this function should not be used with large or infinite sequences.</remarks>
+    /// result this function should not be used with large or infinite sequences. This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     ///
     /// <param name="predicate">A function to test whether the index of a particular element should be returned.</param>
     /// <param name="source">The input sequence.</param>
@@ -867,8 +835,6 @@ module Seq =
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("FindIndexBack")>]
     val findIndexBack: predicate: ('T -> bool) -> source: seq<'T> -> int
 
@@ -910,7 +876,7 @@ module Seq =
     /// <remarks> The two sequences need not have equal lengths:
     /// when one sequence is exhausted any remaining elements in the other sequence are ignored.
     /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jN</c>
-    /// then computes <c>f (... (f s i0 j0)...) iN jN</c>.</remarks>
+    /// then computes <c>f (... (f s i0 j0)...) iN jN</c>. This is an O(n) operation, where n is the length of the sequences.</remarks>
     ///
     /// <param name="folder">The function to update the state given the input elements.</param>
     /// <param name="state">The initial state.</param>
@@ -936,8 +902,6 @@ module Seq =
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequences.</remarks>
     [<CompiledName("Fold2")>]
     val fold2<'T1, 'T2, 'State> :
         folder: ('State -> 'T1 -> 'T2 -> 'State) -> state: 'State -> source1: seq<'T1> -> source2: seq<'T2> -> 'State
@@ -954,7 +918,7 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
+    /// <remarks>This function consumes the whole input sequence before returning the result. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <example id="foldback-1">
     /// <code lang="fsharp">
@@ -984,8 +948,6 @@ module Seq =
     ///   Text = " 3 -2 -1 0 1" }
     /// </code>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("FoldBack")>]
     val foldBack<'T, 'State> : folder: ('T -> 'State -> 'State) -> source: seq<'T> -> state: 'State -> 'State
 
@@ -1005,7 +967,7 @@ module Seq =
     ///
     /// <remarks>
     /// This function consumes the whole of both inputs sequences before returning the result. As a
-    /// result this function should not be used with large or infinite sequences.
+    /// result this function should not be used with large or infinite sequences. This is an O(n) operation, where n is the length of the sequences.
     /// </remarks>
     ///
     /// <example id="foldback2-1">
@@ -1038,8 +1000,6 @@ module Seq =
     ///   Text = " (-3,1) (-2,2) (-1,3)" }
     /// </code>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequences.</remarks>
     [<CompiledName("FoldBack2")>]
     val foldBack2<'T1, 'T2, 'State> :
         folder: ('T1 -> 'T2 -> 'State -> 'State) -> source1: seq<'T1> -> source2: seq<'T2> -> state: 'State -> 'State
@@ -1048,7 +1008,7 @@ module Seq =
     ///
     /// <remarks>The predicate is applied to the elements of the input sequence. If any application
     /// returns false then the overall result is false and no further elements are tested.
-    /// Otherwise, true is returned.</remarks>
+    /// Otherwise, true is returned. This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     ///
     /// <param name="predicate">A function to test an element of the input sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -1066,8 +1026,6 @@ module Seq =
     /// [1; 2] |> Seq.forall isEven // evaluates to false
     /// </code>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("ForAll")>]
     val forall: predicate: ('T -> bool) -> source: seq<'T> -> bool
 
@@ -1114,7 +1072,7 @@ module Seq =
     /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as
     /// that sequence is iterated. As a result this function should not be used with
     /// large or infinite sequences. The function makes no assumption on the ordering of the original
-    /// sequence.</remarks>
+    /// sequence. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="projection">A function that transforms an element of the sequence into a comparable key.</param>
     /// <param name="source">The input sequence.</param>
@@ -1129,8 +1087,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { (1, seq { 1; 3; 5 }); (0, seq { 2; 4 }) }</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("GroupBy")>]
     val groupBy: projection: ('T -> 'Key) -> source: seq<'T> -> seq<'Key * seq<'T>> when 'Key: equality
 
@@ -1368,7 +1324,7 @@ module Seq =
     /// generated.</summary>
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
-    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.</remarks>
+    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently. This is an O(n) operation, where n is the count.</remarks>
     ///
     /// <param name="count">The maximum number of items to generate for the sequence.</param>
     /// <param name="initializer">A function that generates an item in the sequence from a given index.</param>
@@ -1390,8 +1346,6 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the count.</remarks>
     [<CompiledName("Initialize")>]
     val init: count: int -> initializer: (int -> 'T) -> seq<'T>
 
@@ -1403,7 +1357,7 @@ module Seq =
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
-    /// Iteration can continue up to <c>Int32.MaxValue</c>.</remarks>
+    /// Iteration can continue up to <c>Int32.MaxValue</c>. This is an O(1) operation.</remarks>
     ///
     /// <param name="initializer">A function that generates an item in the sequence from a given index.</param>
     ///
@@ -1415,8 +1369,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 5; 6; 7; 8; ... }</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("InitializeInfinite")>]
     val initInfinite: initializer: (int -> 'T) -> seq<'T>
 
@@ -1588,7 +1540,7 @@ module Seq =
     /// object.</summary>
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
-    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.</remarks>
+    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently. Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     ///
     /// <param name="mapping">A function to transform items from the input sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -1605,8 +1557,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 3; 2 }</c>
     /// </example>
-    ///
-    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Map")>]
     val map: mapping: ('T -> 'U) -> source: seq<'T> -> seq<'U>
 
@@ -1640,7 +1590,7 @@ module Seq =
     /// to each of the elements of the collection. The function is also used to accumulate a final value.</summary>
     ///
     /// <remarks>This function digests the whole initial sequence as soon as it is called. As a result this function should
-    /// not be used with large or infinite sequences.</remarks>
+    /// not be used with large or infinite sequences. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="mapping">The function to transform elements from the input collection and accumulate the final value.</param>
     /// <param name="state">The initial state.</param>
@@ -1666,8 +1616,6 @@ module Seq =
     /// </code>
     /// Evaluates <c>newCharges</c> to <c>seq { In 2; Out 4; In 6 }</c> and <c>balance</c> to <c>2</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("MapFold")>]
     val mapFold<'T, 'State, 'Result> :
         mapping: ('State -> 'T -> 'Result * 'State) -> state: 'State -> source: seq<'T> -> seq<'Result> * 'State
@@ -1676,7 +1624,7 @@ module Seq =
     /// to each of the elements of the collection. The function is also used to accumulate a final value.</summary>
     ///
     /// <remarks>This function digests the whole initial sequence as soon as it is called. As a result this function should
-    /// not be used with large or infinite sequences.</remarks>
+    /// not be used with large or infinite sequences. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="mapping">The function to transform elements from the input collection and accumulate the final value.</param>
     /// <param name="source">The input collection.</param>
@@ -1702,8 +1650,6 @@ module Seq =
     /// </code>
     /// Evaluates <c>newCharges</c> to <c>seq { In 2; Out 4; In 6 }</c> and <c>balance</c> to <c>2</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("MapFoldBack")>]
     val mapFoldBack<'T, 'State, 'Result> :
         mapping: ('T -> 'State -> 'Result * 'State) -> source: seq<'T> -> state: 'State -> seq<'Result> * 'State
@@ -1992,7 +1938,7 @@ module Seq =
     /// <summary>Returns a sequence with all elements permuted according to the
     /// specified permutation.</summary>
     ///
-    /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
+    /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="indexMap">The function that maps input indices to output indices.</param>
     /// <param name="source">The input sequence.</param>
@@ -2010,8 +1956,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 4; 1; 2; 3 }</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Permute")>]
     val permute: indexMap: (int -> int) -> source: seq<'T> -> seq<'T>
 
@@ -2141,7 +2085,7 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
     ///
-    /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
+    /// <remarks>This function consumes the whole input sequence before returning the result. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <example id="reduceback-1">
     /// <code lang="fsharp">
@@ -2151,8 +2095,6 @@ module Seq =
     /// </code>
     /// Evaluates to <c>2431</c>, by computing <c>1 + (3 + (4 + 2 * 10) * 10) * 10</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("ReduceBack")>]
     val reduceBack: reduction: ('T -> 'T -> 'T) -> source: seq<'T> -> 'T
 
@@ -2164,7 +2106,7 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <remarks>This function consumes the whole input sequence before yielding the first element of the reversed sequence.</remarks>
+    /// <remarks>This function consumes the whole input sequence before yielding the first element of the reversed sequence. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <example id="rev-1">
     /// <code lang="fsharp">
@@ -2174,8 +2116,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 2; 1; 0 }</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Reverse")>]
     val rev: source: seq<'T> -> seq<'T>
 
@@ -2334,7 +2274,7 @@ module Seq =
     /// large or infinite sequences.
     ///
     /// The function makes no assumption on the ordering of the original
-    /// sequence and uses a stable sort, that is the original order of equal elements is preserved.</remarks>
+    /// sequence and uses a stable sort, that is the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -2350,8 +2290,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 1 3; 4; 6; 8 }</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Sort")>]
     val sort: source: seq<'T> -> seq<'T> when 'T: comparison
 
@@ -2362,7 +2300,7 @@ module Seq =
     /// large or infinite sequences.
     ///
     /// The function makes no assumption on the ordering of the original
-    /// sequence and uses a stable sort, that is the original order of equal elements is preserved.</remarks>
+    /// sequence and uses a stable sort, that is the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="comparer">The function to compare the collection elements.</param>
     /// <param name="source">The input sequence.</param>
@@ -2382,8 +2320,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { (0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb") }</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SortWith")>]
     val sortWith: comparer: ('T -> 'T -> int) -> source: seq<'T> -> seq<'T>
 
@@ -2395,7 +2331,7 @@ module Seq =
     /// large or infinite sequences.
     ///
     /// The function makes no assumption on the ordering of the original
-    /// sequence and uses a stable sort, that is the original order of equal elements is preserved.</remarks>
+    /// sequence and uses a stable sort, that is the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="projection">A function to transform items of the input sequence into comparable keys.</param>
     /// <param name="source">The input sequence.</param>
@@ -2412,8 +2348,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { "a"; "dd"; "bbb"; "cccc" }</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SortBy")>]
     val sortBy: projection: ('T -> 'Key) -> source: seq<'T> -> seq<'T> when 'Key: comparison
 
@@ -2424,7 +2358,7 @@ module Seq =
     /// large or infinite sequences. The function makes no assumption on the ordering of the original
     /// sequence.
     ///
-    /// This is a stable sort, that is the original order of equal elements is preserved.</remarks>
+    /// This is a stable sort, that is the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -2440,8 +2374,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 8; 6; 4; 3; 1; 1 }</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SortDescending")>]
     val inline sortDescending: source: seq<'T> -> seq<'T> when 'T: comparison
 
@@ -2453,7 +2385,7 @@ module Seq =
     /// large or infinite sequences. The function makes no assumption on the ordering of the original
     /// sequence.
     ///
-    /// This is a stable sort, that is the original order of equal elements is preserved.</remarks>
+    /// This is a stable sort, that is the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="projection">A function to transform items of the input sequence into comparable keys.</param>
     /// <param name="source">The input sequence.</param>
@@ -2470,8 +2402,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { "cccc"; "bbb"; "dd"; "a" }</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SortByDescending")>]
     val inline sortByDescending: projection: ('T -> 'Key) -> source: seq<'T> -> seq<'T> when 'Key: comparison
 
@@ -2496,7 +2426,7 @@ module Seq =
 
     /// <summary>Returns the sum of the results generated by applying the function to each element of the sequence.</summary>
     ///
-    /// <remarks>The generated elements are summed using the <c>+</c> operator and <c>Zero</c> property associated with the generated type.</remarks>
+    /// <remarks>The generated elements are summed using the <c>+</c> operator and <c>Zero</c> property associated with the generated type. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="projection">A function to transform items from the input sequence into the type that will be summed.</param>
     /// <param name="source">The input sequence.</param>
@@ -2511,8 +2441,6 @@ module Seq =
     /// </code>
     /// Evaluates to <c>7</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SumBy")>]
     val inline sumBy:
         projection: ('T -> ^U) -> source: seq<'T> -> ^U
@@ -2546,7 +2474,7 @@ module Seq =
     ///
     /// <remarks>Throws <c>InvalidOperationException</c>
     /// if the count exceeds the number of elements in the sequence. <c>Seq.truncate</c>
-    /// returns as many items as the sequence contains instead of throwing an exception.</remarks>
+    /// returns as many items as the sequence contains instead of throwing an exception. Sequence construction is O(1). Enumeration is O(count).</remarks>
     ///
     /// <param name="count">The number of items to take.</param>
     /// <param name="source">The input sequence.</param>
@@ -2584,8 +2512,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding no results.
     /// </example>
-    ///
-    /// <remarks>Sequence construction is O(1). Enumeration is O(count).</remarks>
     [<CompiledName("Take")>]
     val take: count: int -> source: seq<'T> -> seq<'T>
 
@@ -2688,7 +2614,7 @@ module Seq =
     /// Return None if no such element exists.</summary>
     ///
     /// <remarks>This function digests the whole initial sequence as soon as it is called. As a
-    /// result this function should not be used with large or infinite sequences.</remarks>
+    /// result this function should not be used with large or infinite sequences. This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     ///
     /// <param name="predicate">A function that evaluates to a Boolean when given an item in the sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -2714,8 +2640,6 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("TryFindBack")>]
     val tryFindBack: predicate: ('T -> bool) -> source: seq<'T> -> 'T option
 
@@ -2786,7 +2710,7 @@ module Seq =
     /// that satisfies the given predicate. Return <c>None</c> if no such element exists.</summary>
     ///
     /// <remarks>This function digests the whole initial sequence as soon as it is called. As a
-    /// result this function should not be used with large or infinite sequences.</remarks>
+    /// result this function should not be used with large or infinite sequences. This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     ///
     /// <param name="predicate">A function that evaluates to a Boolean when given an item in the sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -2812,8 +2736,6 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("TryFindIndexBack")>]
     val tryFindIndexBack: predicate: ('T -> bool) -> source: seq<'T> -> int option
 
@@ -2853,7 +2775,7 @@ module Seq =
     ///
     /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as
     /// that sequence is iterated. As a result this function should not be used with
-    /// large or infinite sequences.</remarks>
+    /// large or infinite sequences. This is an O(n*m) operation, where n and m are the dimensions.</remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -2871,8 +2793,6 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence of sequences yielding the same results as <c>[ [10; 11]; [20; 21]; [30; 31] ]</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n*m) operation, where n and m are the dimensions.</remarks>
     [<CompiledName("Transpose")>]
     val transpose: source: seq<'Collection> -> seq<seq<'T>> when 'Collection :> seq<'T>
 
@@ -2922,7 +2842,7 @@ module Seq =
     /// generator, until a None value is returned by the element generator. Each call to the element
     /// generator returns a new residual <c>state</c>.</summary>
     ///
-    /// <remarks>The stream will be recomputed each time an IEnumerator is requested and iterated for the Seq.</remarks>
+    /// <remarks>The stream will be recomputed each time an IEnumerator is requested and iterated for the Seq. This is an O(n) operation, where n is the number of elements generated.</remarks>
     ///
     /// <param name="generator">A function that takes in the current state and returns an option tuple of the next
     /// element of the sequence and the next state value.</param>
@@ -2943,8 +2863,6 @@ module Seq =
     /// </code>
     /// Evaluates to an infinite sequence yielding the results <c>seq { 1I; 2I; 4I; 8I; ... }</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the number of elements generated.</remarks>
     [<CompiledName("Unfold")>]
     val unfold: generator: ('State -> ('T * 'State) option) -> state: 'State -> seq<'T>
 
