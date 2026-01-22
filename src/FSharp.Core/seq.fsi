@@ -3137,6 +3137,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>seq { 0; 2; 4; 3; 1 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomShuffle")>]
     val randomShuffle: source: seq<'T> -> seq<'T>
 
@@ -3158,6 +3160,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>seq { 0; 2; 4; 3; 1 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomShuffleWith")>]
     val randomShuffleWith: random: Random -> source: seq<'T> -> seq<'T>
 
@@ -3178,6 +3182,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>seq { 0; 2; 4; 3; 1 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomShuffleBy")>]
     val randomShuffleBy: randomizer: (unit -> float) -> source: seq<'T> -> seq<'T>
 
@@ -3200,6 +3206,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>3</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomChoice")>]
     val randomChoice: source: seq<'T> -> 'T
 
@@ -3224,6 +3232,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>3</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomChoiceWith")>]
     val randomChoiceWith: random: Random -> source: seq<'T> -> 'T
 
@@ -3249,6 +3259,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>3</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomChoiceBy")>]
     val randomChoiceBy: randomizer: (unit -> float) -> source: seq<'T> -> 'T
 
@@ -3273,6 +3285,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>seq { 3; 1; 3 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomChoices")>]
     val randomChoices: count: int -> source: seq<'T> -> seq<'T>
 
@@ -3299,6 +3313,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>seq { 3; 1; 3 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomChoicesWith")>]
     val randomChoicesWith: random: Random -> count: int -> source: seq<'T> -> seq<'T>
 
@@ -3325,6 +3341,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>seq { 3; 1; 3 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomChoicesBy")>]
     val randomChoicesBy: randomizer: (unit -> float) -> count: int -> source: seq<'T> -> seq<'T>
 
@@ -3350,6 +3368,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>seq { 3; 1; 2 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomSample")>]
     val randomSample: count: int -> source: seq<'T> -> seq<'T>
 
@@ -3377,6 +3397,8 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>seq { 3; 1; 2 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomSampleWith")>]
     val randomSampleWith: random: Random -> count: int -> source: seq<'T> -> seq<'T>
 
@@ -3404,5 +3426,7 @@ module Seq =
     /// </code>
     /// Can evaluate to <c>seq { 3; 1; 2 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomSampleBy")>]
     val randomSampleBy: randomizer: (unit -> float) -> count: int -> source: seq<'T> -> seq<'T>
