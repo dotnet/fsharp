@@ -84,8 +84,6 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Average")>]
     val inline average:
         source: seq< ^T > -> ^T
@@ -2166,7 +2164,7 @@ module Seq =
     ///
     /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as that
     /// sequence is iterated. As a result this function should not be used with large or infinite sequences.
-    /// </remarks>
+    /// This function consumes the whole input sequence before returning the result. This is an O(n) operation, where n is the length of the sequence.</remarks>
     ///
     /// <param name="folder">A function that updates the state with each element from the sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -2193,8 +2191,6 @@ module Seq =
     /// state, <c>3</c> the next state, <c>1</c> the next state, and <c>2</c> the final state, and the states
     /// are produced from back to front.
     /// </example>
-    ///
-    /// <remarks>This function consumes the whole input sequence before returning the result. This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("ScanBack")>]
     val scanBack<'T, 'State> : folder: ('T -> 'State -> 'State) -> source: seq<'T> -> state: 'State -> seq<'State>
 
