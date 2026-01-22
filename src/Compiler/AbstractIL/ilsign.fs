@@ -372,12 +372,11 @@ type ILStrongNameSigner =
         | KeyPair (kp, _) -> signerGetPublicKeyForKeyPair kp
         | KeyContainer (kc, _) -> signerGetPublicKeyForKeyContainer kc
 
-    member s.SignatureSize =
+   member s.SignatureSize =
         let pkSignatureSize pk =
             try
                 signerSignatureSize pk
             with _ ->
-                
                 0x80
 
         match s with
@@ -388,22 +387,14 @@ type ILStrongNameSigner =
         | KeyPair (kp, usePublicSign) -> 
             let pk = signerGetPublicKeyForKeyPair kp
             if usePublicSign then 
-               
-                pk.Length 
+                let keySize = pk.Length
+                if keySize < 160 then 128 else keySize - 32
             else 
                 pkSignatureSize pk
         | KeyContainer (kc, usePublicSign) -> 
              let pk = signerGetPublicKeyForKeyContainer kc
-             if usePublicSign then pk.Length else pkSignatureSize pk
-
-    member s.SignStream stream =
-        match s with
-        | PublicKeySigner _ -> ()
-        | PublicKeyOptionsSigner _ -> ()
-        | KeyPair (kp, usePublicSign) -> 
-            
-            if not usePublicSign then 
-                signerSignStreamWithKeyPair stream kp
-        | KeyContainer (kc, usePublicSign) -> 
-            if not usePublicSign then 
-                signerSignStreamWithKeyContainer stream kc
+             if usePublicSign then 
+                let keySize = pk.Length
+                if keySize < 160 then 128 else keySize - 32
+             else 
+                pkSignatureSize pk
