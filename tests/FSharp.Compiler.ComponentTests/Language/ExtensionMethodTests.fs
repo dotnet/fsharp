@@ -624,3 +624,185 @@ module FSLibConsumer =
             |> withReferences [ producer ]
 
         fsharp2 |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``Static extension members for types with same simple name but different namespaces should error`` () =
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module CompiledExtensions =
+    type System.Threading.Tasks.Task with
+        static member CompiledStaticExtension() = ()
+
+    type Task with
+        static member CompiledStaticExtension() = ()
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3356, Line 11, Col 23, Line 11, Col 46, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+        ]
+
+    [<Fact>]
+    let ``Static extension members for types with same simple name in different modules should succeed`` () =
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module CompiledExtensions1 =
+    type System.Threading.Tasks.Task with
+        static member CompiledStaticExtension() = ()
+
+module CompiledExtensions2 =
+    type Task with
+        static member CompiledStaticExtension() = ()
+            """
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Static extension members with nested module in between should error`` () =
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module CompiledExtensions =
+    // First extension for System.Threading.Tasks.Task
+    type System.Threading.Tasks.Task with
+        static member Extension1() = ()
+
+    // Nested module - this is fine, shouldn't interfere with duplicate check
+    module Nested =
+        let someValue = 42
+        type OtherType = { X: int }
+
+    // Some other definition
+    let someBinding = 10
+
+    // Second extension for local Task type - this should clash with the first
+    type Task with
+        static member Extension2() = ()
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3356, Line 21, Col 23, Line 21, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+        ]
+
+    [<Fact>]
+    let ``Instance extension members for types with same simple name should error`` () =
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module CompiledExtensions =
+    type System.Threading.Tasks.Task with
+        member _.InstanceExtension() = ()
+
+    type Task with
+        member _.InstanceExtension() = ()
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3356, Line 11, Col 18, Line 11, Col 35, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+        ]
+
+    [<Fact>]
+    let ``Extension members on generic types with same simple name should error`` () =
+        Fsx
+            """
+module MyModule
+
+// Define a local List type different from System.Collections.Generic.List
+type List<'T> = { Items: 'T array }
+
+module Extensions =
+    type System.Collections.Generic.List<'T> with
+        static member Count(lst: System.Collections.Generic.List<'T>) = lst.Count
+
+    type List<'T> with
+        static member Count(lst: List<'T>) = lst.Items.Length
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3356, Line 12, Col 23, Line 12, Col 28, "Extension members extending types with the same simple name 'List`1' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+        ]
+
+    [<Fact>]
+    let ``Extension members with different member names but same type simple name should error`` () =
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module CompiledExtensions =
+    type System.Threading.Tasks.Task with
+        static member FirstExtension() = ()
+
+    type Task with
+        static member DifferentName() = ()  // Different member name, but still same simple type name
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3356, Line 11, Col 23, Line 11, Col 36, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+        ]
+
+    [<Fact>]
+    let ``Extensions defined in nested modules should succeed - separate IL containers`` () =
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module OuterModule =
+    module NestedModule1 =
+        type System.Threading.Tasks.Task with
+            static member Extension1() = ()
+
+    module NestedModule2 =
+        type Task with
+            static member Extension2() = ()
+            """
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Multiple extension members for same duplicate type should error per member`` () =
+        // Note: The current implementation reports an error per extension member (not per type)
+        // because each Val has its own range. This is more informative as it shows all problematic locations.
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module CompiledExtensions =
+    type System.Threading.Tasks.Task with
+        static member Extension1() = ()
+        static member Extension2() = ()
+
+    type Task with
+        static member Extension3() = ()
+        static member Extension4() = ()
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3356, Line 9, Col 23, Line 9, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+            (Error 3356, Line 12, Col 23, Line 12, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+            (Error 3356, Line 13, Col 23, Line 13, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+        ]
