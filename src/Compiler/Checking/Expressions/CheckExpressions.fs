@@ -9852,93 +9852,6 @@ and CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
     | [argAttribs] -> argAttribs = n
     | _ -> false
 
-// TODO: Performance optimization - Arity pre-filter for overload resolution (GitHub issue #18807)
-//
-// This optimization filters MethInfo candidates by arity BEFORE constructing expensive 
-// CalledMeth objects. It was disabled due to edge cases:
-// - C# 13 "params collections" allow more flexible argument passing
-// - Some methods with optional/CallerInfo args were incorrectly filtered
-// - Error messages could be affected by filtering before CalledMeth construction
-//
-// To re-enable:
-// 1. Update to handle C# 13 params collections (ReadOnlySpan<T>, IEnumerable<T>)
-// 2. Be more conservative about filtering - only filter obvious mismatches
-// 3. Ensure error messages remain clear (may need to run filter after CalledMeth for errors)
-// 4. Re-enable the filter in TcMethodApplication_UniqueOverloadInference (line ~10091)
-//
-// Expected benefit: 40-60% reduction in CalledMeth allocations for overloaded methods
-//
-// See: METHOD_RESOLUTION_PERF_IDEAS.md, Idea #1
-/// Lightweight arity pre-filter for MethInfo before expensive CalledMeth construction.
-/// Returns true if the method could potentially match the caller arguments based on arity.
-/// This is conservative - it may return true for methods that later fail IsCandidate,
-/// but it should never return false for methods that would pass IsCandidate.
-/// This optimization avoids constructing CalledMeth objects for methods that will definitely
-/// fail arity checks, reducing allocations in overload resolution.
-and MethInfoMayMatchCallerArgs 
-    (amap: ImportMap)
-    (mItem: range)
-    (minfo: MethInfo)
-    (callerObjArgCount: int)         // Number of object/this arguments from caller
-    (numCallerCurriedGroups: int)    // Number of curried argument groups from caller
-    (totalUnnamedCallerArgs: int)    // Total unnamed args (for max check)
-    : bool =
-    
-    // Check 1: Object argument compatibility
-    // For instance methods, caller must provide exactly one object argument
-    // For extension methods, allow 0 or 1 object arguments
-    // For static methods, we don't check - let the normal error reporting handle it
-    // (so we get proper "not an instance method" errors)
-    let objArgOk =
-        if minfo.IsInstance then callerObjArgCount = 1
-        elif minfo.IsExtensionMember then callerObjArgCount <= 1  // Extension methods can be called with or without explicit this
-        else true  // Static methods - let later checking handle mismatch for proper error
-    
-    if not objArgOk then false
-    else
-        let numArgs = minfo.NumArgs
-        let numCalledCurriedGroups = numArgs.Length
-        
-        // Check 2: Curried group count must match for F# curried methods
-        // For single-group methods (most C# methods), this is always 1
-        if numCalledCurriedGroups > 1 && numCalledCurriedGroups <> numCallerCurriedGroups then
-            false
-        else
-            // Check 3: For single-group methods, check argument count compatibility
-            // using actual parameter attributes (optional, param array, caller info)
-            match numArgs with
-            | [calledArgCount] ->
-                // Get parameter attributes to determine if method has param array
-                let paramAttribs = minfo.GetParamAttribs(amap, mItem)
-                match paramAttribs with
-                | [paramList] ->
-                    // Check if method has param array (which can absorb extra args)
-                    let hasParamArray = paramList |> List.exists (fun (ParamAttribs(isParamArrayArg, _, _, _, _, _)) -> isParamArrayArg)
-                    
-                    // Filter based on argument count:
-                    // - Only filter if caller provides too many UNNAMED args (can't be property setters)
-                    // - Don't filter on "too few args" - let later checking give proper error message
-                    // - If has param array, allow any number of extra args
-                    if hasParamArray then
-                        // Param array allows any number of additional args
-                        true
-                    elif totalUnnamedCallerArgs > calledArgCount then
-                        // Too many unnamed args and no param array to absorb them
-                        // Named args might be property setters so we don't count them for max
-                        false
-                    else
-                        true
-                | _ ->
-                    // Unexpected structure, be conservative
-                    true
-            | [] ->
-                // Method takes no arguments - caller must have no unnamed args
-                // (named args might be property setters)
-                totalUnnamedCallerArgs = 0
-            | _ ->
-                // Curried method - we already checked group count above
-                true
-
 and isSimpleFormalArg info =
     let (ParamAttribs(isParamArrayArg, _isInArg, isOutArg, optArgInfo, callerInfo, _reflArgInfo)) = info
     not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && callerInfo = NoCallerInfo
@@ -10114,18 +10027,6 @@ and TcMethodApplication_UniqueOverloadInference
 
     let callerArgs = { Unnamed = unnamedCurriedCallerArgs; Named = namedCurriedCallerArgs }
 
-    // Early arity pre-filter: Filter out methods that definitely won't match based on arity
-    // This avoids expensive CalledMeth construction for obviously incompatible overloads
-    // 
-    // TODO: DISABLED - see MethInfoMayMatchCallerArgs comment for details on re-enabling
-    // When ready to re-enable, uncomment and use:
-    //   let callerObjArgCount = List.length callerObjArgTys
-    //   let numCallerCurriedGroups = List.length unnamedCurriedCallerArgs
-    //   let totalUnnamedCallerArgs = fst callerArgCounts
-    //   let arityFilteredCandidates = 
-    //       candidateMethsAndProps |> List.filter (fun (minfo, _, _) ->
-    //           MethInfoMayMatchCallerArgs amap mMethExpr minfo callerObjArgCount numCallerCurriedGroups totalUnnamedCallerArgs)
-    let _ = MethInfoMayMatchCallerArgs  // Suppress unused warning - function is preserved for future re-enablement
     let arityFilteredCandidates = candidateMethsAndProps
 
     let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
