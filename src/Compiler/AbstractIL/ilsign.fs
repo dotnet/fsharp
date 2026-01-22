@@ -300,20 +300,7 @@ let signStream stream keyBlob =
     let signature = createSignature hash keyBlob KeyType.KeyPair
     patchSignature stream peReader signature
 
-let signatureSize (pk: byte array) =
-    if pk.Length < 25 then
-        raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
 
-    let mutable reader = BlobReader pk
-    reader.ReadBigInteger 12 |> ignore // Skip CLRHeader
-    reader.ReadBigInteger 8 |> ignore // Skip BlobHeader
-    let magic = reader.ReadInt32() // Read magic
-
-    if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then // RSAPubKey.magic
-        raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
-
-    let x = reader.ReadInt32() / 8
-    x
 
 // Returns a CLR Format Blob public key
 let getPublicKeyForKeyPair keyBlob =
@@ -330,7 +317,6 @@ type pubkeyOptions = byte array * bool
 
 let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 
-let signerSignatureSize (pk: pubkey) : int = signatureSize pk
 
 let signerSignStreamWithKeyPair stream keyBlob = signStream stream keyBlob
 
@@ -371,16 +357,15 @@ type ILStrongNameSigner =
             if keySize < 160 then 128 else keySize - 32
 
         match s with
-        | PublicKeySigner pk -> getRoslynSignatureSize pk
-        | PublicKeyOptionsSigner (pk, _) -> getRoslynSignatureSize pk
-        | KeyPair (kp, usePublicSign) -> 
+        | PublicKeySigner pk 
+        | PublicKeyOptionsSigner (pk, _) -> 
+            getRoslynSignatureSize pk
+        | KeyPair (kp, _) -> 
             let pk = signerGetPublicKeyForKeyPair kp
-            if usePublicSign then getRoslynSignatureSize pk
-            else signerSignatureSize pk 
-        | KeyContainer (kc, usePublicSign) ->
+            getRoslynSignatureSize pk
+        | KeyContainer (kc, _) ->
             let pk = signerGetPublicKeyForKeyContainer kc
-            if usePublicSign then getRoslynSignatureSize pk
-            else signerSignatureSize pk
+            getRoslynSignatureSize pk
 
     member s.SignStream stream =
         match s with
