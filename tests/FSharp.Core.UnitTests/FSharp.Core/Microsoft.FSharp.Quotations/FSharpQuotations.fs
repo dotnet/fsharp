@@ -11,6 +11,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 open FSharp.Quotations
 open FSharp.Quotations.Patterns
+open FSharp.Linq.RuntimeHelpers
 
 type E = Microsoft.FSharp.Quotations.Expr;;
 
@@ -260,3 +261,43 @@ module TestConditionalConstraints =
         equate.Invoke (null, [| ThingWithNoEquality.NoEquality ; anotherOne |])
         |> unbox<bool>
         |> Assert.False
+
+    // Tests for issues #11131 and #15648 - anonymous record field ordering
+    // When anonymous records have fields in non-alphabetical order, the LINQ expression
+    // should not contain Invoke patterns that LINQ providers can't translate.
+    [<Fact>]
+    let ``Anonymous record with non-alphabetical field order produces clean LINQ expression - issues 11131 and 15648`` () =
+        // Non-alphabetical order - B before A
+        let q = <@ fun (x: int) -> {| B = x; A = x + 1 |} @>
+        
+        let linqExpr = LeafExpressionConverter.QuotationToExpression q
+        let exprStr = linqExpr.ToString()
+        
+        Assert.DoesNotContain(".Invoke(", exprStr)
+
+    [<Fact>]
+    let ``Nested anonymous record produces clean LINQ expression`` () =
+        // Nested anonymous record with non-alphabetical field order
+        let q = <@ fun (x: int) -> {| Outer = {| B = x; A = x + 1 |} |} @>
+        
+        let linqExpr = LeafExpressionConverter.QuotationToExpression q
+        let exprStr = linqExpr.ToString()
+        
+        Assert.DoesNotContain(".Invoke(", exprStr)
+
+    [<Fact>]
+    let ``Both anonymous record field orders produce equivalent results`` () =
+        // Alphabetical order
+        let qAlpha = <@ fun (x: int) -> {| A = x + 1; B = x |} @>
+        // Non-alphabetical order
+        let qNonAlpha = <@ fun (x: int) -> {| B = x; A = x + 1 |} @>
+        
+        let linqAlpha = LeafExpressionConverter.QuotationToExpression qAlpha
+        let linqNonAlpha = LeafExpressionConverter.QuotationToExpression qNonAlpha
+        
+        let exprAlpha = linqAlpha.ToString()
+        let exprNonAlpha = linqNonAlpha.ToString()
+        
+        // Neither should contain Invoke
+        Assert.DoesNotContain(".Invoke(", exprAlpha)
+        Assert.DoesNotContain(".Invoke(", exprNonAlpha)

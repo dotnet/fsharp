@@ -34,7 +34,7 @@ module LeafExpressionConverter =
         {   varEnv : Map<Var, Expression> }
     let asExpr x = (x :> Expression)
 
-    let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
+    let _instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
 
     let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
 
@@ -770,13 +770,13 @@ module LeafExpressionConverter =
                     |> asExpr
 
         | Let (v, e, b) ->
-            let vP = ConvVarToLinq v
-            let envinner = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
-            let bodyP = ConvExprToLinqInContext envinner b
+            // Instead of generating (v => body).Invoke(e), inline the let binding
+            // by substituting e for v directly in the body. This avoids the Invoke pattern 
+            // that LINQ providers like EF Core cannot translate.
+            // This is safe because the expressions in query contexts are side-effect free.
             let eP = ConvExprToLinqInContext env e
-            let ty = Expression.GetFuncType [| v.Type; b.Type |]
-            let lam = Expression.Lambda(ty, bodyP, [| vP |]) |> asExpr
-            Expression.Call(lam, ty.GetMethod("Invoke", instanceBindingFlags), [| eP |]) |> asExpr
+            let envinner = { varEnv = Map.add v eP env.varEnv }
+            ConvExprToLinqInContext envinner b
 
         | Lambda(v, body) ->
             let vP = ConvVarToLinq v
