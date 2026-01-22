@@ -2273,10 +2273,16 @@ let nonStandardEventError nm m =
 
 /// Find the delegate type that an F# event property implements by looking through the type hierarchy of the type of the property
 /// for the first instantiation of IDelegateEvent.
+/// The delegate type is returned with non-null nullness to avoid spurious nullness warnings when implementing
+/// interface events (e.g., INotifyPropertyChanged.PropertyChanged), since delegate parameters to event handlers
+/// should not be nullable.
 let FindDelegateTypeOfPropertyEvent g amap nm m ty =
     match SearchEntireHierarchyOfType (tyConformsToIDelegateEvent g) g amap m ty with
     | None -> error(nonStandardEventError nm m)
-    | Some ty -> destIDelegateEventType g ty
+    | Some ty -> 
+        let delTy = destIDelegateEventType g ty
+        // Strip any nullness from the delegate type - delegate parameters to events are not nullable
+        replaceNullnessOfTy KnownWithoutNull delTy
 
 
 //-------------------------------------------------------------------------

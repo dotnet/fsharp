@@ -40,7 +40,7 @@ module RecursiveSafetyAnalysis =
             (Error 1118, Line 8, Col 15, Line 8, Col 25, "Failed to inline the value 'test' marked 'inline', perhaps because a recursive value was marked 'inline'")
         ]
 
-    // SOURCE=E_TypeDeclaration01.fs SCFLAGS="--langversion:5.0 --test:ErrorRanges" COMPILE_ONLY=1	# E_TypeDeclaration01.fs
+    // SOURCE=E_TypeDeclaration01.fs SCFLAGS="--langversion:8.0 --test:ErrorRanges" COMPILE_ONLY=1	# E_TypeDeclaration01.fs
     [<Theory; FileInlineData("E_TypeDeclaration01.fs")>]
     let ``E_TypeDeclaration01`` compilation =
         compilation

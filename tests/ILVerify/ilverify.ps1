@@ -27,7 +27,12 @@ Write-Host "Checking whether running on Windows: $IsWindows"
 Write-Host "Repository path: $repo_path"
 
 [string] $script = if ($IsWindows) { Join-Path $repo_path "build.cmd" } else { Join-Path $repo_path "build.sh" }
-[string] $additional_arguments = if ($IsWindows) { "-noVisualStudio" } else { "" }
+[string] $additional_arguments = if ($IsWindows) { "-noVisualStudio -ci -bootstrap" } else { "" }
+
+# Set environment variable to disable UpdateXlf target (not needed for IL verification)
+$env:UpdateXlfOnBuild = "false"
+# Disable PDB conversion for SymStore (not needed for IL verification)
+$env:PublishWindowsPdb = "false"
 
 # Set configurations to build
 [string[]] $configurations = @("Debug", "Release")

@@ -234,8 +234,8 @@ let x = lb {1; 2; if true then 3;}
     [<Theory>]
     [<InlineData("10.0","BindReturn")>]
     [<InlineData("10.0","WithoutBindReturn")>]
-    [<InlineData("4.7","BindReturn")>]   
-    [<InlineData("4.7","WithoutBindReturn")>]  
+    [<InlineData("8.0","BindReturn")>]   
+    [<InlineData("8.0","WithoutBindReturn")>]  
     let ``A CE with BindReturn and Zero can omit else in an if-then return`` (langVersion, bindReturnName) = 
         let code = $"""
 type Builder () =
