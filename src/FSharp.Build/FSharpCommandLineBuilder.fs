@@ -60,7 +60,7 @@ type FSharpCommandLineBuilder() =
         if s <> String.Empty then
             args <- s :: args
 
-    member _.AppendSwitchIfNotNull(switch: string, value: string MaybeNull, ?metadataNames: string[]) =
+    member _.AppendSwitchIfNotNull(switch: string, value: string | null, ?metadataNames: string[]) =
         let metadataNames = defaultArg metadataNames [||]
         builder.AppendSwitchIfNotNull(switch, value)
         let tmp = new CommandLineBuilder()
@@ -84,7 +84,7 @@ type FSharpCommandLineBuilder() =
         | Some false -> this.AppendSwitch($"{switch}-")
         | None -> ()
 
-    member _.AppendSwitchUnquotedIfNotNull(switch: string, value: string MaybeNull) =
+    member _.AppendSwitchUnquotedIfNotNull(switch: string, value: string | null) =
         assert (switch = "") // we only call this method for "OtherFlags"
         // Unfortunately we still need to mimic what cmd.exe does, but only for "OtherFlags".
         let ParseCommandLineArgs (commandLine: string) = // returns list in reverse order
