@@ -88,22 +88,19 @@ The test suite (`tests/FSharp.Compiler.ComponentTests/Conformance/Tiebreakers/Ti
 
 ## Implementation Notes
 
-### SRTP (Statically Resolved Type Parameters) Exclusion
+### SRTP Integration
 
-SRTP type parameters (denoted `^T`) are explicitly excluded from the "more concrete" comparison. This is because:
-1. SRTP uses a fundamentally different constraint resolution mechanism than regular generics
-2. SRTP constraints are resolved at inline expansion time, not at overload resolution time
-3. Comparing SRTP constraints against regular constraints would produce confusing results
+SRTP (statically resolved type parameters) works naturally with the tiebreaker:
 
-The exclusion is implemented in `OverloadResolutionRules.fs` at two levels:
-- **Concrete vs type var**: Skip if the type var is SRTP
-- **Method-level**: Skip entire comparison if method has SRTP type params or SRTP in formal params
+- **At definition time**: SRTP type variables (`^T`) are not compared for concreteness since they represent constraints to be resolved later
+- **At instantiation time**: When the inline function is called with concrete types, those types participate fully in concreteness comparison
+- **Resolution path**: SRTP member constraints use the same `ResolveOverloading` function and all 15 tiebreaker rules apply
+
+The implementation skips comparing `^T` itself (in `compareTypeConcreteness`) but does NOT exclude SRTP methods from the tiebreaker—only the SRTP type variable placeholders are skipped.
 
 ### Type Variable Comparison
 
-When both types being compared are type variables, they are treated as equally concrete.
-Note: Neither F# nor C# allows method overloading based solely on generic constraints, so
-comparing constraint counts would be dead code with no practical test coverage.
+When both types being compared are type variables (`'a` vs `'b`), they are treated as equally concrete (comparison returns 0).
 
 ## Release Notes
 

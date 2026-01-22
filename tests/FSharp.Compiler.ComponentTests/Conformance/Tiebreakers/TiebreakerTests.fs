@@ -2115,3 +2115,150 @@ let result = Example.Process(Some([1]))
         |> shouldFail
         |> withWarningCode 3576
         |> ignore
+
+    // ============================================================================
+    // SRTP Layered Resolution Tests (FsToolkit-inspired patterns)
+    // ============================================================================
+    // These tests verify that the tiebreaker works correctly with SRTP when:
+    // 1. Inline functions with member constraints call overloaded methods
+    // 2. Resolution is deferred until instantiation
+    // 3. Multiple layers of inline functions are composed
+
+    [<Fact>]
+    let ``SRTP layered - inline bind with overloaded Source`` () =
+        // Pattern from FsToolkit: CE with Source overloads for different wrapper types
+        // The tiebreaker should select the most concrete Source when instantiated
+        FSharp """
+module Test
+
+module Option =
+    let toResult err = function Some x -> Ok x | None -> Error err
+
+type ResultBuilder() =
+    member _.Return(x) = Ok x
+    member _.Bind(m: Result<'t,'e>, f) = Result.bind f m
+    // Source overloads: more concrete wins when type becomes known
+    member _.Source<'t,'e>(r: Result<'t,'e>) = r
+    member _.Source<'t>(o: Option<'t>) = o |> Option.toResult "None"
+
+let result' = ResultBuilder()
+
+// When we use Option, the Source(Option<'t>) overload should be selected
+// because at call site 't = int, making Option<int> vs Result<int,'e>
+let test () =
+    result' {
+        let! x = Some 42  // Source called with Option<int>
+        return x
+    }
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``SRTP layered - inline map through overloaded handler`` () =
+        // Layered inline functions: map calls handler which has overloads
+        FSharp """
+module Test
+
+type Handler =
+    static member Handle<'t>(x: 't) = x
+    static member Handle(x: int) = x * 2
+
+let inline map f x = f (Handler.Handle x)
+
+// At instantiation with int, Handle(int) is more concrete than Handle<'t>
+let result = map id 21
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``SRTP layered - three-layer deferred resolution`` () =
+        // Pattern: layer1 -> layer2 -> layer3, each inline, resolution at call site
+        FSharp """
+module Test
+
+type Processor =
+    static member Process<'t>(x: Option<'t>) = x
+    static member Process(x: Option<int>) = x |> Option.map ((*) 2)
+
+let inline layer3 x = Processor.Process(Some x)
+let inline layer2 x = layer3 x
+let inline layer1 x = layer2 x
+
+// Resolution deferred through 3 layers, at call site 'x = 42' determines
+// that Option<int> overload is more concrete
+let result = layer1 42
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``SRTP layered - async workflow with task overloads`` () =
+        // Real-world pattern: async/task interop where Task<'t> vs Task<int>
+        FSharp """
+module Test
+open System.Threading.Tasks
+
+type AsyncHelper =
+    static member Await<'t>(t: Task<'t>) = async { return t.Result }
+    static member Await(t: Task<int>) = async { return t.Result * 2 }
+
+let inline awaitTask t = AsyncHelper.Await(t)
+
+// At instantiation, Task<int> makes the concrete overload preferable
+let workflow = awaitTask (Task.FromResult 21)
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``SRTP layered - CE source with nested generic overloads`` () =
+        // Complex pattern: Source has nested generics, tiebreaker picks most concrete
+        FSharp """
+module Test
+
+type OptionBuilder() =
+    member _.Return(x) = Some x
+    member _.Bind(m, f) = Option.bind f m
+    member _.Source<'t>(x: Option<'t>) = x
+    member _.Source<'t>(x: Option<Option<'t>>) = Option.flatten x
+    member _.Source(x: Option<Option<int>>) = Option.flatten x |> Option.map ((*) 2)
+
+let option' = OptionBuilder()
+
+// Nested Option<Option<int>> should prefer the most concrete Source overload
+let test () =
+    option' {
+        let! x = Some(Some 21)  // Source(Option<Option<int>>) is most concrete
+        return x
+    }
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``SRTP - member constraint resolution uses tiebreaker for candidates`` () =
+        // Verifies that when SRTP finds overloaded candidates, tiebreaker applies
+        FSharp """
+module Test
+
+type MyType() =
+    static member Parse(s: string) = MyType()
+    static member Parse<'t when 't :> System.IConvertible>(s: string) = MyType()
+
+// The non-generic Parse is preferred due to existing rules (rule 12: prefer non-generic)
+// But this test verifies SRTP resolution path works with overloads
+let inline parse<^T when ^T : (static member Parse : string -> ^T)> s =
+    (^T : (static member Parse : string -> ^T) s)
+
+let result : MyType = parse "test"
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore

@@ -203,7 +203,7 @@ type TiebreakRuleId =
 ║  │ Prefer more concrete type instantiations                                    │ ║
 ║  │ Example: Option<int> beats Option<'t>                                       │ ║
 ║  │ ⚠️  Only when BOTH methods are generic                                      │ ║
-║  │ ⚠️  Skipped for SRTP methods                                                │ ║
+║  │ ⚠️  SRTP type vars (^T) skipped in comparison (deferred resolution)         │ ║
 ║  └─────────────────────────────────────────────────────────────────────────────┘ ║
 ║                                        │                                         ║
 ║                                        ▼                                         ║
@@ -239,8 +239,8 @@ type TiebreakRuleId =
 │   ┌─────────────────────────────────────────────────────────────────────────────┐  │
 │   │ ✓ LanguageFeature.MoreConcreteTiebreaker enabled (F# 10.0+)                 │  │
 │   │ ✓ BOTH candidates have non-empty CalledTyArgs (both are generic)            │  │
-│   │ ✓ Neither method has SRTP type parameters                                   │  │
-│   │ ✓ No SRTP type variables in formal parameters                               │  │
+│   │   (SRTP type vars ^T skipped in comparison, but concrete types at           │  │
+│   │    instantiation site still participate)                                    │  │
 │   └─────────────────────────────────────────────────────────────────────────────┘  │
 │                                        │                                            │
 │                                        ▼                                            │
@@ -301,7 +301,7 @@ type TiebreakRuleId =
 │ │        │  │(-1/+1) │  │aggregate │  │aggregate │ │aggregate │ │aggregate │      │
 │ └────────┘  └────────┘  └──────────┘  └──────────┘ └──────────┘ └──────────┘      │
 │                                                                                     │
-│   Note: SRTP type variables (^T) always return 0 (excluded from comparison)        │
+│   Note: SRTP type vars (^T) return 0 in comparison (deferred until instantiation) │
 │                                                                                     │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
