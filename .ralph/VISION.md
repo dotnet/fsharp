@@ -1,98 +1,107 @@
-# Overload Resolution Performance Optimization - Final PR Preparation
+# Vision: Method Overload Resolution Performance Investigation
 
-## High-Level Goal
+## Overview
 
-**Complete and validate the overload resolution performance improvements for GitHub issue #18807.**
+This task investigates and documents performance improvements for method overload resolution in the F# compiler, specifically related to Issue #18807.
 
-The optimization work (Sprints 1-7) has already been implemented and merged into this branch. The remaining work is:
-1. Final build/test validation on Windows
-2. Clean up any residual files that shouldn't be in the PR
-3. Verify the release notes entry is complete
+## Goals
 
-## What Was Already Done (Sprints 1-7)
+1. **Establish baseline performance**: Build the F# compiler from `origin/main` without any optimizations to establish a performance baseline.
 
-### Implemented Optimizations
+2. **Measure and compare**: Create a reproducible test infrastructure to measure method overload resolution performance.
 
-1. **Sprint 3 - Early Arity Filtering** ✅
-   - `MethInfoMayMatchCallerArgs` in `CheckExpressions.fs`
-   - Pre-filters candidates by argument count BEFORE CalledMeth construction
-   - 40-60% reduction in CalledMeth allocations
+3. **Document findings**: Create a comprehensive performance comparison document.
 
-2. **Sprint 4 - Quick Type Compatibility Check** ✅
-   - `TypesQuicklyCompatible`, `CalledMethQuicklyCompatible` in `ConstraintSolver.fs`
-   - Filters sealed type mismatches before full unification
-   - Additional 50-80% filtering for well-typed calls
+## Sprint Structure
 
-3. **Sprint 5 - Lazy Property Setter Resolution** ✅
-   - Deferred `computeAssignedNamedProps` in `MethodCalls.fs`
-   - Avoids expensive property lookups for filtered candidates
-   - 40-60 info-reader calls saved per Assert.Equal
+### Sprint 1: Setup perf test folder
+- Create test infrastructure for measuring overload resolution performance
+- Completed ✅
 
-4. **Sprint 6 - Overload Resolution Caching** ✅
-   - `OverloadResolutionCacheKey/Result` in `ConstraintSolver.fs`
-   - 99.3% cache hit rate for repetitive patterns
-   - ~30% or more speedup for test files with many identical calls
+### Sprint 2: Build baseline compiler
+- Switch to origin/main in the fsharp repo
+- Clean artifacts completely
+- Build the compiler with Build.cmd -c Release
+- Document the baseline commit hash and fsc.dll path
+- Completed ✅
 
-### Test Coverage Added
+**Acceptance Criteria:**
+- [x] fsharp repo is at origin/main commit
+- [x] Build.cmd -c Release completes successfully
+- [x] artifacts\bin\fsc\Release\net10.0\fsc.dll exists
+- [x] Baseline commit hash documented
 
-- `ArityFilteringTest.fs` - Tests arity pre-filter with MockAssert pattern
-- `TypeCompatibilityFilterTest.fs` - Tests sealed type filtering
-- `OverloadCacheTests.fs` - Tests cache hit rate and correctness
+### Sprint 3: Measure baseline perf
+- Configure test project to use baseline fsc.dll
+- Run compilation 5+ times and capture --times output
+- Calculate mean and standard deviation
+- Document results
+- Completed ✅
 
-### Performance Results
+**Acceptance Criteria:**
+- [x] Test project uses baseline fsc.dll (verified via build log)
+- [x] 5+ compilation runs completed
+- [x] --times output captured for each run
+- [x] Mean and standard deviation calculated
+- [x] Results documented in raw form
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Untyped/Typed Ratio | 1.13x | 0.95x | ✅ Overhead eliminated |
-| Untyped compilation | 5.96s | 1.39s | **77% faster** |
-| Typed compilation | 5.29s | 1.46s | **72% faster** |
+**Baseline Performance Results:**
+| Phase | Mean (s) | Std Dev (s) |
+|-------|----------|-------------|
+| **Typecheck** | **2.5785** | **0.1723** |
+| **Total Elapsed** | **7.036** | **0.1768** |
 
-### Release Notes
+### Sprint 4: Build optimized compiler
+- Switch to PR branch (copilot/create-performance-profiling-automation)
+- Clean artifacts completely
+- Build the compiler with Build.cmd -c Release
+- Document the optimized commit hash
+- Completed ✅
 
-Entry added to `docs/release-notes/.FSharp.Compiler.Service/11.0.0.md`:
-```markdown
-* Improve overload resolution performance for heavily overloaded methods (e.g., xUnit Assert.Equal) with early candidate filtering, type compatibility checks, lazy property lookups, and resolution caching. ([Issue #18807](https://github.com/dotnet/fsharp/issues/18807))
-```
+**Acceptance Criteria:**
+- [x] fsharp repo is at PR branch commit (f3f07201028c8a70335ec689f1017ddaae1d9bb1)
+- [x] Build.cmd -c Release completes successfully (0 errors, 0 warnings)
+- [x] artifacts\bin\fsc\Release\net10.0\fsc.dll exists
+- [x] Optimized commit hash documented
 
-## Why Previous Attempt Stalled
+### Sprint 5: Measure optimized perf
+- Configure test project to use optimized fsc.dll
+- Run compilation 5+ times and capture --times output
+- Calculate mean and standard deviation
+- Document results
+- Completed ✅
 
-The previous agent "got stuck" because:
-1. The implementation work was already complete
-2. The .ralph folder was deleted in final cleanup commit
-3. No new VISION.md was created to guide the next steps
-4. The agent started fresh with no context and no tasks defined
+**Acceptance Criteria:**
+- [x] Test project uses optimized fsc.dll (verified via build log)
+- [x] 5+ compilation runs completed
+- [x] --times output captured for each run
+- [x] Mean and standard deviation calculated
+- [x] Results documented in raw form
 
-## Key Design Decisions
+**Optimized Performance Results:**
+| Phase | Mean (s) | Std Dev (s) |
+|-------|----------|-------------|
+| **Typecheck** | **1.8859** | **0.0192** |
+| **Total Elapsed** | **6.258** | **0.123** |
 
-1. **Conservative Type Filtering**: Only filter when types are DEFINITELY incompatible (sealed types)
-2. **Cache Only Concrete Types**: No caching for SRTP, type variables, or named arguments
-3. **Lazy Property Lookups**: Only compute when actually needed (rare)
-4. **No Semantic Changes**: Same overload selected in all cases
+**Performance Improvement:**
+- **Typecheck: 26.9% faster** (2.5785s → 1.8859s, delta: 0.6926s)
+- **Total: 11.1% faster** (7.036s → 6.258s, delta: 0.778s)
 
-## Files Changed (Core Optimizations)
+### Sprint 6+: (Future)
+- Create final performance comparison report
+- Document conclusions
 
-- `src/Compiler/Checking/Expressions/CheckExpressions.fs` - Arity pre-filter
-- `src/Compiler/Checking/ConstraintSolver.fs` - Type filter + caching
-- `src/Compiler/Checking/MethodCalls.fs` - Lazy property resolution
+## Key Information
 
-## Files That May Need Cleanup
+- **Baseline Commit**: `def2b8239e52583fd714992e3c8e4c50813717df`
+- **Optimized Commit**: `f3f07201028c8a70335ec689f1017ddaae1d9bb1`
+- **Baseline fsc.dll**: `artifacts\bin\fsc\Release\net10.0\fsc.dll` (from origin/main)
+- **Optimized fsc.dll**: `artifacts\bin\fsc\Release\net10.0\fsc.dll` (from PR branch)
+- **Test Infrastructure**: `Q:\source\fsharp\overload-perf-test\`
+- **Performance Script**: `Q:\source\fsharp\overload-perf-test\run-baseline-perf.ps1`
+- **Baseline Results**: `Q:\source\fsharp\overload-perf-test\baseline-perf-results.md`
 
-- `METHOD_RESOLUTION_PERF_IDEAS.md` - Internal tracking doc (may not belong in PR)
-- `PERF_COMPARISON.md` - Evidence doc (may not belong in PR)
-- `.copilot/skills/perf-tools/` - Tooling added for profiling (may not belong in PR)
-- `tools/perf-repro/` - May have residual files
+## References
 
-## Constraints
-
-- Must pass all existing tests
-- Must run formatting check (fantomas)
-- Must not introduce new warnings
-- Surface area baseline should already be updated (Sprint 6)
-- This is Windows environment (use Build.cmd, not build.sh)
-
-## Success Criteria
-
-- Build.cmd -c Release succeeds with 0 errors
-- Core overload resolution tests pass
-- No regressions in type checking
-- Branch is ready for PR review
+- Issue: #18807 (Method overload resolution performance)
