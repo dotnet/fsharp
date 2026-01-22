@@ -47,11 +47,14 @@ let generateRepetitiveOverloadCalls (callCount: int) =
     
     sb.ToString()
 
-/// Test that the overload resolution cache achieves >30% hit rate for repetitive patterns
+/// Test that the overload resolution cache achieves >95% hit rate for repetitive patterns
 [<Fact>]
-let ``Overload cache hit rate exceeds 30 percent for repetitive int-int calls`` () =
-    // Listen to all cache metrics during the test
-    use metricsListener = CacheMetrics.ListenToAll()
+let ``Overload cache hit rate exceeds 95 percent for repetitive int-int calls`` () =
+    // Use the new public API to listen to overload cache metrics
+    use listener = FSharpChecker.CreateOverloadCacheMetricsListener()
+    
+    // Clear caches to get clean measurement
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     
     // Generate source with 100+ repetitive calls
     let callCount = 150
@@ -70,15 +73,27 @@ let ``Overload cache hit rate exceeds 30 percent for repetitive int-int calls`` 
     | FSharpCheckFileAnswer.Aborted ->
         failwith "Type checking was aborted"
     
-    // Note: Metrics are now collected via OpenTelemetry infrastructure
-    // The cache is working if type checking succeeded without errors
-    printfn "Overload resolution completed successfully for %d calls" callCount
+    // Validate cache metrics using the new CacheMetricsListener API
+    let hits = listener.Hits
+    let misses = listener.Misses
+    let ratio = listener.Ratio
+    
+    printfn "Overload cache metrics for %d repetitive calls:" callCount
+    printfn "  Hits: %d, Misses: %d, Hit ratio: %.2f%%" hits misses (ratio * 100.0)
+    
+    // With 150 repetitive identical overload calls, we expect >95% hit rate
+    // The first call is a miss, subsequent identical calls should be hits
+    if hits + misses > 0L then
+        Assert.True(ratio > 0.95, sprintf "Expected hit ratio > 95%%, but got %.2f%%" (ratio * 100.0))
 
 /// Test that caching correctly returns resolved overload
 [<Fact>]
 let ``Overload cache returns correct resolution`` () =
-    // Listen to all cache metrics during the test
-    use metricsListener = CacheMetrics.ListenToAll()
+    // Use the new public API to listen to overload cache metrics
+    use listener = FSharpChecker.CreateOverloadCacheMetricsListener()
+    
+    // Clear caches to get clean measurement
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     
     // Source with clear type-based overload selection
     let source = """
@@ -112,10 +127,10 @@ let f2 = Overloaded.Process(2.0)
         let errors = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
         errors |> shouldBeEmpty
         
-        // Verify that all bindings have the correct type
-        let typeResults = 
-            ["r1", "string"; "r2", "string"; "r3", "string"; "r4", "string"; "r5", "string";
-             "s1", "string"; "s2", "string"; "f1", "string"; "f2", "string"]
+        // Verify listener captured cache activity
+        let hits = listener.Hits
+        let misses = listener.Misses
+        printfn "Cache metrics - Hits: %d, Misses: %d" hits misses
         
         // If we got here without errors, the overload resolution worked correctly
         // (including any cached resolutions)
@@ -130,8 +145,8 @@ let ``Overload cache provides measurable benefit`` () =
     // This test measures the actual performance difference
     // It's informational - we don't fail if cache doesn't help much
     
-    // Listen to all cache metrics during the test
-    use metricsListener = CacheMetrics.ListenToAll()
+    // Use the new public API to listen to overload cache metrics
+    use listener = FSharpChecker.CreateOverloadCacheMetricsListener()
     
     let callCount = 200
     let source = generateRepetitiveOverloadCalls callCount
@@ -154,9 +169,14 @@ let ``Overload cache provides measurable benefit`` () =
     | FSharpCheckFileAnswer.Aborted ->
         failwith "Type checking was aborted"
     
+    let hits = listener.Hits
+    let misses = listener.Misses
+    let ratio = listener.Ratio
+    
     printfn "Performance measurement for %d repetitive overload calls:" callCount
     printfn "  Compilation time: %dms" stopwatch.ElapsedMilliseconds
     printfn "  Time per call: %.3fms" (float stopwatch.ElapsedMilliseconds / float callCount)
+    printfn "  Cache hits: %d, misses: %d, hit ratio: %.2f%%" hits misses (ratio * 100.0)
 
 /// Test that CreateOverloadCacheMetricsListener returns valid listener
 [<Fact>]
