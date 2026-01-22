@@ -978,7 +978,11 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
 
                 let currentProcess = Process.GetCurrentProcess()
                 let mainModule = currentProcess.MainModule
-                let processFileName = fileNameWithoutExtension (mainModule ^ _.FileName)
+
+                let processFileName =
+                    match mainModule with
+                    | null -> null
+                    | m -> fileNameWithoutExtension m.FileName
 
                 let commandLineExecutableFileName =
                     try

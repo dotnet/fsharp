@@ -1,67 +1,114 @@
-# Nullable Reference Type Cleanup - Sprint Tracker
+# Nullable Reference Type Cleanup - Task Tracker
 
 **Goal**: Remove NRT shims/hacks/ifdefs now that .NET SDK fully supports nullable reference types.
 
----
-
-## Sprint Progress
-
-- [ ] **Sprint 1**: FSharp.Core `BUILDING_WITH_LKG` Cleanup
-  - Files: `prim-types.fsi` (7 blocks), `prim-types.fs` (2 blocks), `event.fsi` (2 blocks), `event.fs` (2 blocks)
-  - Action: Remove `#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE` conditionals, keep the `#else` branch with `not null` constraints and `IsError=true`
-  - Update surface area baselines
-
-- [ ] **Sprint 2**: FSharpEmbedResourceText.fs Cleanup
-  - Files: `src/FSharp.Build/FSharpEmbedResourceText.fs` (1 block)
-  - Action: Remove `#if BUILDING_WITH_LKG` / `#nowarn "3261"` section
-
-- [ ] **Sprint 3**: MaybeNull Replacement - Utilities Layer (~15 files)
-  - Files: `NullnessShims.fs`, `illib.fs`, `lib.fs`, `lib.fsi`, `FileSystem.fs`, `Activity.fs`, `Cancellable.fs`, `Cancellable.fsi`, `LruCache.fs`
-  - Action: Replace `MaybeNull<'T>` with `'T | null`
-
-- [ ] **Sprint 4**: MaybeNull Replacement - TypedTree Layer (~10 files)
-  - Files: `TypeProviders.fs`, `TypeProviders.fsi`, `tainted.fs`, `tainted.fsi`, `TypedTreeOps.fs`, `TypedTreeOps.fsi`
-  - Action: Replace `MaybeNull<'T>` with `'T | null`
-
-- [ ] **Sprint 5**: MaybeNull Replacement - Compiler Core (~15 files)
-  - Files: `QuickParse.fs`, `QuickParse.fsi`, `import.fs`, `import.fsi`, `MethodCalls.fs`, `AccessibilityLogic.fs`, `infos.fs`, `ilread.fs`, `ilreflect.fs`, `ilsign.fs`, `ilnativeres.fs`, `fsi.fs`, `FxResolver.fs`, `CompilerImports.fs`, `IlxGen.fs`, `SimulatedMSBuildReferenceResolver.fs`, `CompilerLocation.fs`, `DependencyProvider.fsi`
-  - Action: Replace `MaybeNull<'T>` with `'T | null`
-
-- [ ] **Sprint 6**: MaybeNull Replacement - FSharp.Build (~5 files)
-  - Files: `Fsc.fs` (~33 usages), `Fsi.fs` (~11 usages), `FSharpCommandLineBuilder.fs` (~4 usages), `WriteCodeFragment.fs` (~2 usages)
-  - Action: Replace `MaybeNull<'T>` with `'T | null`
-
-- [ ] **Sprint 7**: `(^)` Operator Removal
-  - Files: `NullnessShims.fs` (definition), `fsi.fs` (1 usage at line 981)
-  - Action: Remove operator definition, inline `Option.bind`-style replacement at usage
-
-- [ ] **Sprint 8**: NullnessShims.fs → NullHelpers.fs Rename
-  - Projects: `FSharp.Compiler.Service.fsproj`, `FSharp.Build.fsproj`, `FSharp.DependencyManager.Nuget.fsproj`, `FSharp.VS.FSI.fsproj`, `VisualFSharp.Salsa.fsproj`, `VisualFSharp.UnitTests.fsproj`
-  - Action: Rename file and update all project references
+> ⚠️ **CONSTRAINT DISCOVERED**: `MaybeNull<'T>` cannot be replaced with `'T | null` in `.fsi` signature files due to F# type system nullability coercion differences. The type alias must be kept for API compatibility.
 
 ---
 
-## Summary of Work
+## Completed ✅
 
-| Category | Files | Count | Status |
-|----------|-------|-------|--------|
-| `BUILDING_WITH_LKG` blocks in FSharp.Core | 4 | 13 blocks | Pending |
-| `BUILDING_WITH_LKG` in FSharpEmbedResourceText | 1 | 1 block | Pending |
-| `MaybeNull` usages | ~35 | ~155 | Pending |
-| `(^)` operator | 2 | definition + 1 usage | Pending |
-| File rename | 6 projects | 1 file | Pending |
+- [x] **BUILDING_WITH_LKG blocks removed** (all 13 blocks in FSharp.Core + FSharpEmbedResourceText.fs)
+- [x] **MaybeNull cleanup in Utilities/*.fs** (all .fs files cleaned; .fsi unchanged per constraint)
+- [x] **Sprint 1: MaybeNull cleanup in FSharp.Build** (all 50 usages replaced with `'T | null`)
+
+---
+
+## Sprint 2: MaybeNull Cleanup in Compiler Core (~80 usages)
+
+### TypedTree (26 usages)
+- [ ] `TypeProviders.fs` (22 usages)
+- [ ] `tainted.fs` (2 usages)
+- [ ] `TypedTreeOps.fs` (2 usages)
+
+### Checking (7 usages)
+- [ ] `infos.fs` (3 usages)
+- [ ] `MethodCalls.fs` (2 usages)
+- [ ] `AccessibilityLogic.fs` (1 usage)
+- [ ] `import.fs` (1 usage)
+
+### AbstractIL (8 usages)
+- [ ] `ilreflect.fs` (4 usages)
+- [ ] `ilsign.fs` (2 usages)
+- [ ] `ilnativeres.fs` (1 usage)
+- [ ] `ilread.fs` (1 usage)
+
+### Service (4 usages)
+- [ ] `QuickParse.fs` (4 usages)
+
+### Interactive (7 usages)
+- [ ] `fsi.fs` (7 usages)
+
+### Driver (3 usages)
+- [ ] `FxResolver.fs` (2 usages)
+- [ ] `CompilerImports.fs` (1 usage)
+
+### Facilities (2 usages)
+- [ ] `SimulatedMSBuildReferenceResolver.fs` (1 usage)
+- [ ] `CompilerLocation.fs` (1 usage)
+
+### CodeGen (1 usage)
+- [ ] `IlxGen.fs` (1 usage)
+
+**DoD**: Build succeeds, all tests pass
+
+---
+
+## Sprint 3: Remove `(^)` Operator (Dead Code)
+
+The null-propagation operator is no longer used anywhere in the codebase.
+
+- [ ] Remove `(^)` operator definition from `NullnessShims.fs` (lines 12-15)
+
+**DoD**: Build succeeds, all tests pass
+
+---
+
+## Sprint 4: Rename NullnessShims.fs (Optional Cleanup)
+
+- [ ] Rename `NullnessShims.fs` → `NullHelpers.fs`
+- [ ] Update `FSharp.Compiler.Service.fsproj` reference
+
+**DoD**: Build succeeds, all tests pass
+
+---
+
+## Files That KEEP MaybeNull (.fsi signatures)
+
+These 7 signature files MUST retain `MaybeNull` for API compatibility:
+- `Cancellable.fsi` (1 usage)
+- `TypeProviders.fsi` (18 usages)
+- `tainted.fsi` (3 usages)
+- `TypedTreeOps.fsi` (1 usage)
+- `import.fsi` (1 usage)
+- `QuickParse.fsi` (3 usages)
+- `DependencyProvider.fsi` (3 usages)
+
+---
+
+## Summary
+
+| Category | Count | Status |
+|----------|-------|--------|
+| `BUILDING_WITH_LKG` blocks | 0 | ✅ Done |
+| `MaybeNull` in Utilities/*.fs | 0 | ✅ Done |
+| `MaybeNull` in FSharp.Build | 50 | 🔧 Sprint 1 |
+| `MaybeNull` in Compiler core | ~58 | 🔧 Sprint 2 |
+| `(^)` operator | 1 def | 🔧 Sprint 3 |
+| File rename | 1 file | 🔧 Sprint 4 (optional) |
+| `.fsi` files with MaybeNull | 7 | ⚠️ Keep (constraint) |
 
 ---
 
 ## What Gets Removed
 
-- `MaybeNull` type alias → replaced with `'T | null`
-- `(^)` null-propagation operator → inlined at call site
-- All NRT-related `#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE` conditionals
+- `MaybeNull` usages in `.fs` files → replaced with `'T | null`
+- `(^)` null-propagation operator → removed (dead code)
 
 ## What Stays
 
-- `BUILDING_WITH_LKG` define itself (for future features)
+- `MaybeNull` type alias definition (for .fsi compatibility)
+- `MaybeNull` usages in `.fsi` signature files
 - `!!` operator (widely used)
 - `isNotNull` helper
 - `nullSafeEquality` helper

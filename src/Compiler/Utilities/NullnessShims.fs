@@ -9,11 +9,6 @@ module internal NullnessShims =
 
     type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
 
-    let inline (^) (a: 'a | null) ([<InlineIfLambda>] b: 'a -> 'b) : ('b | null) =
-        match a with
-        | Null -> null
-        | NonNull v -> b v
-
     let inline (!!) (x: 'T | null) = Unchecked.nonNull x
 
     let inline nullSafeEquality (x: 'T | null) (y: 'T | null) ([<InlineIfLambda>] nonNullEqualityFunc: 'T -> 'T -> bool) =

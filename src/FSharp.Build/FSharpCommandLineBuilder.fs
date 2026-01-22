@@ -12,14 +12,6 @@ open Internal.Utilities
 [<assembly: System.CLSCompliant(true)>]
 do ()
 
-// Shim to match nullness checking library support in preview
-[<AutoOpen>]
-module Utils =
-
-    /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
-    /// replacement for 'string?' for example for future FS-1060.
-    type MaybeNull<'T when 'T: not null and 'T: not struct> = 'T | null
-
 type FSharpCommandLineBuilder() =
 
     // In addition to generating a command-line that will be handed to cmd.exe, we also generate
