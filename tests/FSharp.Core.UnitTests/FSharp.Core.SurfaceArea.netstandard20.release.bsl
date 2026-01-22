@@ -217,6 +217,7 @@ Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.ICom
 Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.IComparer`1[T] NonStructural$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]])
 Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.IComparer`1[T] NonStructural[T]()
 Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.IComparer`1[T] Structural[T]()
+Microsoft.FSharp.Collections.FSharpList: Microsoft.FSharp.Collections.FSharpList`1[T] Create[T](System.ReadOnlySpan`1[T])
 Microsoft.FSharp.Collections.FSharpList`1+Tags[T]: Int32 Cons
 Microsoft.FSharp.Collections.FSharpList`1+Tags[T]: Int32 Empty
 Microsoft.FSharp.Collections.FSharpList`1[T]: Boolean Equals(Microsoft.FSharp.Collections.FSharpList`1[T])
@@ -274,6 +275,7 @@ Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.String ToString()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: TValue Item [TKey]
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: TValue get_Item(TKey)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Void .ctor(System.Collections.Generic.IEnumerable`1[System.Tuple`2[TKey,TValue]])
+Microsoft.FSharp.Collections.FSharpSet: Microsoft.FSharp.Collections.FSharpSet`1[T] Create[T](System.ReadOnlySpan`1[T])
 Microsoft.FSharp.Collections.FSharpSet`1[T]: Boolean Contains(T)
 Microsoft.FSharp.Collections.FSharpSet`1[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Collections.FSharpSet`1[T]: Boolean IsEmpty
@@ -750,6 +752,7 @@ Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Delay[TOverall,T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryFinally[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryWith[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
+Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Using[TResource,TOverall,T](TResource, Microsoft.FSharp.Core.FSharpFunc`2[TResource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T] Return[T](T)
 Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority: Boolean TaskBuilderBase.BindDynamic.Static[TOverall,TResult1,TResult2](Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall]] ByRef, System.Threading.Tasks.Task`1[TResult1], Microsoft.FSharp.Core.FSharpFunc`2[TResult1,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],TResult2]])
 Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],TResult2] TaskBuilderBase.Bind[TResult1,TOverall,TResult2](Microsoft.FSharp.Control.TaskBuilderBase, System.Threading.Tasks.Task`1[TResult1], Microsoft.FSharp.Core.FSharpFunc`2[TResult1,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],TResult2]])
@@ -2326,14 +2329,20 @@ Microsoft.FSharp.Linq.QueryRunExtensions.LowPriority: T RunQueryAsValue[T](Micro
 Microsoft.FSharp.Linq.QuerySource`2[T,Q]: System.Collections.Generic.IEnumerable`1[T] Source
 Microsoft.FSharp.Linq.QuerySource`2[T,Q]: System.Collections.Generic.IEnumerable`1[T] get_Source()
 Microsoft.FSharp.Linq.QuerySource`2[T,Q]: Void .ctor(System.Collections.Generic.IEnumerable`1[T])
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`1[T1]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`1[T1]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`1[T1]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`1[T1]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`1[T1]: Void .ctor(T1)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: T2 Item2
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: T2 get_Item2()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: Void .ctor(T1, T2)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T2 Item2
@@ -2341,6 +2350,8 @@ Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T2 get_Item2()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T3 Item3
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T3 get_Item3()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: Void .ctor(T1, T2, T3)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T2 Item2
@@ -2350,6 +2361,8 @@ Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T3 get_Item
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T4 Item4
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T4 get_Item4()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: Void .ctor(T1, T2, T3, T4)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T2 Item2
@@ -2361,6 +2374,8 @@ Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T4 get_I
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T5 Item5
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T5 get_Item5()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: Void .ctor(T1, T2, T3, T4, T5)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T2 Item2
@@ -2374,6 +2389,8 @@ Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T5 ge
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T6 Item6
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T6 get_Item6()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: Void .ctor(T1, T2, T3, T4, T5, T6)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T2 Item2
@@ -2389,6 +2406,8 @@ Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T6
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T7 Item7
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T7 get_Item7()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: Void .ctor(T1, T2, T3, T4, T5, T6, T7)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`8[T1,T2,T3,T4,T5,T6,T7,T8]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`8[T1,T2,T3,T4,T5,T6,T7,T8]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`8[T1,T2,T3,T4,T5,T6,T7,T8]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`8[T1,T2,T3,T4,T5,T6,T7,T8]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`8[T1,T2,T3,T4,T5,T6,T7,T8]: T2 Item2
