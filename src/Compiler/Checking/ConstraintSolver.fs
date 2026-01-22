@@ -3888,9 +3888,12 @@ and ResolveOverloading
                 | Some ttype -> isTyparTy g ttype
                 | None -> false
                 
-            match calledMeth.Method with
+            let minfo = calledMeth.Method
+            match minfo with
             | ILMeth(ilMethInfo= ilMethInfo) when not isStaticConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
                 None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(ilMethInfo.ILName), m)), NoTrace
+            | FSMeth(g, _, vref, _) when not isStaticConstrainedCall && not minfo.IsInstance && isInterfaceTy g minfo.ApparentEnclosingType && vref.IsDispatchSlotMember ->
+                None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(minfo.LogicalName), m)), NoTrace
             | _ -> Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 
@@ -3920,9 +3923,13 @@ and ResolveOverloading
               if cache.TryGetValue(cacheKey, &cachedResult) then
                   match cachedResult with
                   | CachedResolved idx when idx >= 0 && idx < calledMethGroup.Length ->
-                      // Cache hit - return the cached resolved method
+                      // Cache hit - verify the cached method has correct generic arity before using
                       let calledMeth = calledMethGroup[idx]
-                      Some calledMeth, CompleteD, NoTrace
+                      if calledMeth.HasCorrectGenericArity then
+                          Some calledMeth, CompleteD, NoTrace
+                      else
+                          // Cached method doesn't match current call's type args - do normal resolution
+                          ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt
                   | CachedFailed ->
                       // Cache hit - resolution previously failed
                       // We still need to go through normal resolution to generate proper error messages

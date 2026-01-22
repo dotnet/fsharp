@@ -62,6 +62,21 @@ Always run the core command. Always verify exit codes. No assumptions.
 ```
 Non‑zero → classify & stop.
 
+### CRITICAL TEST EXECUTION RULES
+**ALWAYS** run tests before claiming success. **NEVER** mark work complete without verified passing tests.
+
+When running tests, **ALWAYS** report:
+- Total number of tests executed
+- Number passed / failed / skipped
+- Execution duration
+- Example: "Ran 5 tests: 5 passed, 0 failed, 0 skipped. Duration: 4.2 seconds"
+
+**ASSUME YOUR CODE IS THE PROBLEM**: When tests fail, ALWAYS assume your implementation is incorrect FIRST. Only after thorough investigation with evidence should you consider other causes like build issues or test infrastructure problems.
+
+**UNDERSTAND WHAT YOU'RE TESTING**: Before writing tests, understand exactly what behavior the feature controls. Research the codebase to see how the feature is actually used, not just how you think it should work.
+
+**TEST INCREMENTALLY**: After each code change, immediately run the relevant tests to verify the change works as expected. Don't accumulate multiple changes before testing.
+
 ## 2. Bootstrap (Failure Detection Only)
 Two-phase build. No separate bootstrap command.  
 Early proto/tool errors (e.g. "Error building tools") → `BootstrapFailure` (capture key lines). Stop.

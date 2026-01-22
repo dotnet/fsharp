@@ -87,6 +87,7 @@
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ComputationExpressions\ComputationExpressions.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
+    <Compile Include="Conformance\Expressions\ObjectExpressions\StructObjectExpression.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\Type-relatedExpressions\Type-relatedExpressions.fs" />
@@ -302,6 +303,7 @@
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />
     <Compile Include="CompilerOptions\fsc\crossoptimize.fs" />
     <Compile Include="CompilerOptions\fsc\debug.fs" />
+    <Compile Include="CompilerOptions\fsc\disableLanguageFeature.fs" />
     <Compile Include="CompilerOptions\fsc\flaterrors.fs" />
     <Compile Include="CompilerOptions\fsc\determinism\determinism.fs" />
     <Compile Include="CompilerOptions\fsc\highentropyva.fs" />

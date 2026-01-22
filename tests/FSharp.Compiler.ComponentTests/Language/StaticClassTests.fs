@@ -6,17 +6,7 @@ open FSharp.Test.Compiler
 module StaticClassTests =
 
     [<Fact>]
-    let ``Sealed and AbstractClass on a type in lang version70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type T = class end
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type in lang preview`` () =
+    let ``Sealed and AbstractClass on a type`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T = class end
@@ -26,7 +16,7 @@ type T = class end
          |> shouldSucceed
 
     [<Fact>]
-    let ``Sealed and AbstractClass on a type with constructor in lang preview`` () =
+    let ``Sealed and AbstractClass on a type with constructor`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T() = class end
@@ -36,17 +26,7 @@ type T() = class end
          |> shouldSucceed
 
     [<Fact>]
-    let ``Sealed and AbstractClass on a type with constructor in lang version70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type T() = class end
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type with constructor with arguments in lang preview`` () =
+    let ``Sealed and AbstractClass on a type with constructor with arguments`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T(x: int) = class end
@@ -59,17 +39,7 @@ type T(x: int) = class end
          ]
 
     [<Fact>]
-    let ``Sealed and AbstractClass on a type with constructor with arguments in lang version70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type T(x: int) = class end
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-
-    [<Fact>]
-    let ``When Sealed and AbstractClass on a type with additional constructors in lang preview`` () =
+    let ``When Sealed and AbstractClass on a type with additional constructors`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T =
@@ -83,18 +53,7 @@ type T =
          ]
 
     [<Fact>]
-    let ``When Sealed and AbstractClass on a type with additional constructors in lang version70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type T =
-    new () = {}
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-
-    [<Fact>]
-    let ``When Sealed and AbstractClass on a type with a primary(parameters) and additional constructor in lang preview`` () =
+    let ``When Sealed and AbstractClass on a type with a primary(parameters) and additional constructor`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T(x: int) =
@@ -109,29 +68,7 @@ type T(x: int) =
          ]
          
     [<Fact>]
-    let ``When Sealed and AbstractClass on a type with explicit fields and constructor in lang version70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type B =
-    val F : int
-    val mutable G : int
-    new () = { F = 3; G = 3 }
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-    [<Fact>]
-    let ``When Sealed and AbstractClass on a generic type with constructor in lang version70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type ListDebugView<'T>(l: 'T list) = class end
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``When Sealed and AbstractClass on a generic type with constructor in lang preview`` () =
+    let ``When Sealed and AbstractClass on a generic type with constructor`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type ListDebugView<'T>(l: 'T list) = class end
@@ -144,7 +81,7 @@ type ListDebugView<'T>(l: 'T list) = class end
          ]
 
     [<Fact>]
-    let ``When Sealed and AbstractClass on a type with explicit fields and constructor in lang preview`` () =
+    let ``When Sealed and AbstractClass on a type with explicit fields and constructor`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type B =
@@ -162,7 +99,6 @@ type B =
          ]
 
     [<Theory>]
-    [<InlineData("7.0")>]
     [<InlineData("8.0")>]
     [<InlineData("preview")>]
     let ``Mutually recursive type definition that using custom attributes``(langVersion) =
@@ -207,19 +143,7 @@ type B =
         |> shouldSucceed
 
     [<Fact>]
-    let ``Sealed and AbstractClass on a type with instance members in lang version70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type T() =
-    member this.M() = ()
-    static member X = 1
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type with instance members in lang preview`` () =
+    let ``Sealed and AbstractClass on a type with instance members`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T() =
@@ -234,19 +158,7 @@ type T() =
          ]
          
     [<Fact>]
-    let ``Sealed and AbstractClass on a type with static members in lang version70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type T() =
-    static member M() = ()
-    static member X = T.M()
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type with static members in lang preview`` () =
+    let ``Sealed and AbstractClass on a type with static members`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T() =
@@ -258,55 +170,7 @@ type T() =
          |> shouldSucceed
          
     [<Fact>]
-    let ``Sealed and AbstractClass on a type with static and non static let bindings in lang 70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type C() =
-    let a = 1
-    static let x = 1
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type with static and non static recursive let bindings in lang 70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type C() =
-    let rec a = 1
-    static let x = 1
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type with static let bindings in lang 70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type C() =
-    static let a = 1
-    static let x = a
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type with recursive static let bindings in lang 70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type C() =
-    static let rec a = 1
-    static let x = a
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass with static and non static let bindings in lang preview`` () =
+    let ``Sealed and AbstractClass with static and non static let bindings`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type C() =
@@ -321,7 +185,7 @@ type C() =
          ]
          
     [<Fact>]
-    let ``Sealed and AbstractClass with static and non static recursive let bindings in lang preview`` () =
+    let ``Sealed and AbstractClass with static and non static recursive let bindings`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type C() =
@@ -336,7 +200,7 @@ type C() =
          ]
 
     [<Fact>]
-    let ``Sealed and AbstractClass with static let bindings in lang preview`` () =
+    let ``Sealed and AbstractClass with static let bindings`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type C() =
@@ -348,7 +212,7 @@ type C() =
          |> shouldSucceed
          
     [<Fact>]
-    let ``Sealed and AbstractClass with recursive static let bindings in lang preview`` () =
+    let ``Sealed and AbstractClass with recursive static let bindings`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type C() =
@@ -360,37 +224,7 @@ type C() =
          |> shouldSucceed
          
     [<Fact>]
-    let ``Sealed and AbstractClass on a type implementing interface in lang 70`` () =
-        Fsx """
-type MyInterface =
-    abstract member M : unit -> unit
-
-[<Sealed; AbstractClass>]
-type C() =
-    interface MyInterface with
-        member this.M() = ()
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type implicit constructor implementing interface in lang 70`` () =
-        Fsx """
-type MyInterface =
-    abstract member M : unit -> unit
-
-[<Sealed; AbstractClass>]
-type C =
-    interface MyInterface with
-        member this.M() = ()
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type implementing interface in lang preview`` () =
+    let ``Sealed and AbstractClass on a type implementing interface`` () =
         Fsx """
 type MyInterface =
     abstract member M : unit -> unit
@@ -408,7 +242,7 @@ type C() =
          ]
          
     [<Fact>]
-    let ``Sealed and AbstractClass on a type implicit constructor implementing interface in lang preview`` () =
+    let ``Sealed and AbstractClass on a type implicit constructor implementing interface`` () =
         Fsx """
 type MyInterface =
     abstract member M : unit -> unit
@@ -426,35 +260,7 @@ type C =
          ]
          
     [<Fact>]
-    let ``Sealed and AbstractClass on a type implicit constructor declaring abstract members in Lang 70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type T =
-    abstract A : int
-    abstract B : int with get, set
-    abstract C : i:int -> int
-    abstract D : i:int -> int
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-    
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type declaring abstract members in Lang 70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type T() =
-    abstract A : int
-    abstract B : int with get, set
-    abstract C : i:int -> int
-    abstract D : i:int -> int
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type with implicit constructor declaring abstract members in Lang preview`` () =
+    let ``Sealed and AbstractClass on a type implicit constructor declaring abstract members`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T =
@@ -470,7 +276,7 @@ type T =
          ]
          
     [<Fact>]
-    let ``Sealed and AbstractClass on a type declaring abstract members in Lang preview`` () =
+    let ``Sealed and AbstractClass on a type declaring abstract members`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T() =
@@ -490,30 +296,7 @@ type T() =
     #else
     [<Fact>]
     #endif
-    let ``Sealed and AbstractClass on a type implementing an interface with static abstract members in Lang 70`` () =
-        Fsx """
-[<Interface>]
-type InputRetriever<'T when 'T:>InputRetriever<'T>> =
-    static abstract Read: unit -> string
-
-[<AbstractClass;Sealed>]
-type ConsoleRetriever = 
-    interface InputRetriever<ConsoleRetriever> with
-        static member Read() = 
-            stdout.WriteLine("Please enter a value and press enter")
-            stdin.ReadLine()
-        """
-         |> withNoWarn 3535
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
-    let ``Sealed and AbstractClass on a type implicit constructor implementing an interface with static abstract members in Lang preview`` () =
+    let ``Sealed and AbstractClass on a type implementing an interface with static abstract members`` () =
         Fsx """
 [<Interface>]
 type InputRetriever<'T when 'T:>InputRetriever<'T>> =
@@ -536,7 +319,30 @@ type ConsoleRetriever =
     #else
     [<Fact>]
     #endif
-    let ``Sealed and AbstractClass on a type implementing an interface with static abstract members in Lang preview`` () =
+    let ``Sealed and AbstractClass on a type implicit constructor implementing an interface with static abstract members`` () =
+        Fsx """
+[<Interface>]
+type InputRetriever<'T when 'T:>InputRetriever<'T>> =
+    static abstract Read: unit -> string
+
+[<AbstractClass;Sealed>]
+type ConsoleRetriever = 
+    interface InputRetriever<ConsoleRetriever> with
+        static member Read() = 
+            stdout.WriteLine("Please enter a value and press enter")
+            stdin.ReadLine()
+        """
+         |> withNoWarn 3535
+         |> withLangVersion80
+         |> compile
+         |> shouldSucceed
+         
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
+    [<Fact>]
+    #endif
+    let ``Sealed and AbstractClass on a type with explicit constructor implementing an interface with static abstract members`` () =
         Fsx """
 [<Interface>]
 type InputRetriever<'T when 'T:>InputRetriever<'T>> =
@@ -555,43 +361,7 @@ type ConsoleRetriever() =
          |> shouldSucceed
          
     [<Fact>]
-    let ``Sealed and AbstractClass on a type with implicit constructor declaring static explicit field in Lang 70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type T =
-    [<DefaultValue>]
-    static val mutable private F : int
-    [<DefaultValue>]
-    static val mutable private G : int
-    
-    static member Inc() = T.F <- T.F + 1
-    
-    static member Get() = T.F
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type with declaring static explicit field in Lang 70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type T() =
-    [<DefaultValue>]
-    static val mutable private F : int
-    [<DefaultValue>]
-    static val mutable private G : int
-    
-    static member Inc() = T.F <- T.F + 1
-    
-    static member Get() = T.F
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a type with implicit constructor declaring static explicit field in Lang preview`` () =
+    let ``Sealed and AbstractClass on a type with implicit constructor declaring static explicit field`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T =
@@ -609,7 +379,7 @@ type T =
          |> shouldSucceed
          
     [<Fact>]
-    let ``Sealed and AbstractClass on a type with declaring static explicit field in Lang preview`` () =
+    let ``Sealed and AbstractClass on a type declaring static explicit field`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T() =
@@ -627,35 +397,7 @@ type T() =
          |> shouldSucceed
          
     [<Fact>]
-    let ``When Sealed and AbstractClass on a type with non static explicit fields and implicit constructor in lang 70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type B =
-    val F : int
-    val mutable G : int
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-
-    [<Fact>]
-    let ``When Sealed and AbstractClass on a type with non static explicit fields and constructor in lang 70`` () =
-        Fsx """
-[<Sealed; AbstractClass>]
-type B() =
-    val F : int
-    val mutable G : int
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 880, Line 4, Col 9, Line 4, Col 10, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
-             (Error 880, Line 5, Col 17, Line 5, Col 18, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
-         ]
-
-    [<Fact>]
-    let ``When Sealed and AbstractClass on a type with non static explicit fields and implicit constructor in lang preview`` () =
+    let ``When Sealed and AbstractClass on a type with non static explicit fields and implicit constructor`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type B =
@@ -671,7 +413,7 @@ type B =
          ]
          
     [<Fact>]
-    let ``When Sealed and AbstractClass on a type with non static explicit fields and constructor in lang preview`` () =
+    let ``When Sealed and AbstractClass on a type with non static explicit fields and constructor`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type B() =
@@ -689,20 +431,7 @@ type B() =
          ]
     
     [<Fact>]
-    let ``Sealed and AbstractClass on a types with instance member properties on lang version70`` () =
-        Fsx """ 
-[<Sealed; AbstractClass>]
-type T =
-    member _.Item with get i = 3
-    member _.Item1 with set i value = ()
-    member _.Item2 with get i = 3 and set i value = ()
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-
-    [<Fact>]
-    let ``Sealed and AbstractClass on a types with instance member properties on lang preview`` () =
+    let ``Sealed and AbstractClass on a types with instance member properties`` () =
         Fsx """ 
 [<Sealed; AbstractClass>]
 type T =
@@ -720,30 +449,7 @@ type T =
          ]
          
     [<Fact>]
-    let ``Sealed and AbstractClass on types with non static members lang version70`` () =
-        Fsx """ 
-[<Sealed; AbstractClass>]
-type T =
-    abstract A : int
-    abstract B : int with get, set
-    abstract C : i:int -> int
-    abstract D : i:int -> int
-    default _.D i = i + 3
-    member _.E = 3
-    val F : int
-    val mutable G : int
-    member _.H (i, j) = i + j
-    member _.Item with get i = 3 and set i value = ()
-    override _.ToString () = "🙃"
-    new () = { F = 3; G = 3 }
-    new (x, y) = { F = x; G = y }
-        """
-         |> withLangVersion70
-         |> compile
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Sealed and AbstractClass on a types with non static members in lang version preview`` () =
+    let ``Sealed and AbstractClass on types with non static members`` () =
         Fsx """ 
 [<Sealed; AbstractClass>]
 type T =
