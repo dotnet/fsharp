@@ -259,6 +259,8 @@ type OverloadResolutionCacheKey =
       ArgTypeStructures: TypeStructure list
       /// Type structure for expected return type (if any), to differentiate calls with different expected types
       ReturnTypeStructure: TypeStructure voption
+      /// Number of caller-provided type arguments (to distinguish calls with different type instantiations)
+      CallerTyArgCount: int
     }
 
 /// Result of cached overload resolution
@@ -488,10 +490,16 @@ let tryComputeOverloadCacheKey
         match retTyStructure with
         | ValueNone -> ValueNone
         | retStruct ->
+            // Get caller type arg count from first method (all methods in group have same caller type args)
+            let callerTyArgCount = 
+                match calledMethGroup with
+                | cmeth :: _ -> cmeth.NumCallerTyArgs
+                | [] -> 0
             ValueSome { 
                 MethodGroupHash = methodGroupHash
                 ArgTypeStructures = List.rev argStructures
                 ReturnTypeStructure = retStruct
+                CallerTyArgCount = callerTyArgCount
             }
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch

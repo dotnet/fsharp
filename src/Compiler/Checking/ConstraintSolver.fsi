@@ -199,6 +199,8 @@ type OverloadResolutionCacheKey =
         ArgTypeStructures: TypeStructure list
         /// Type structure for expected return type (if any), to differentiate calls with different expected types
         ReturnTypeStructure: TypeStructure voption
+        /// Number of caller-provided type arguments (to distinguish calls with different type instantiations)
+        CallerTyArgCount: int
     }
 
 /// Result of cached overload resolution
