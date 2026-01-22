@@ -1554,3 +1554,72 @@ let y = x :> IEquatable<string> // Should not warn about nullness
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+// Regression for https://github.com/dotnet/fsharp/issues/18488
+// This tests the exact scenario from the issue with obj | null return type
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Match null branch should refine variable to non-null - exact issue scenario`` () =
+    FSharp """module Test
+
+let bar : obj =
+    let getEnvironmentVariable : string -> (obj|null) = fun _ -> null
+
+    match "ENVVAR" |> getEnvironmentVariable with
+    | null -> obj() // return some obj in null case
+    | x -> x // x should be obj, not obj | null - no warning expected
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Regression for https://github.com/dotnet/fsharp/issues/18488
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Match null branch should refine variable to non-null in subsequent branches - type alias`` () =
+    FSharp """module Test
+
+// Type alias for nullable obj
+type objnull = obj | null
+
+let getEnvAliasObj (_: string) : objnull = failwith "stub"
+
+// After matching null case, x should be refined to non-null
+let valueAliasObj =
+    match getEnvAliasObj "ENVVAR" with
+    | null -> "missing"
+    | x -> x.GetType().Name // x should be obj, not obj | null - no warning expected
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Regression for https://github.com/dotnet/fsharp/issues/18488
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Match null branch should refine variable to non-null in subsequent branches - direct nullable type`` () =
+    FSharp """module Test
+
+let getValue () : string | null = failwith "stub"
+
+// After matching null case, x should be refined to non-null
+let result =
+    match getValue () with
+    | null -> "missing"
+    | x -> x.ToUpper() // x should be string, not string | null - no warning expected
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Regression for https://github.com/dotnet/fsharp/issues/18488
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Match null branch should refine variable to non-null - Environment.GetEnvironmentVariable`` () =
+    FSharp """module Test
+
+// Real-world scenario from issue #18488
+let value =
+    match System.Environment.GetEnvironmentVariable "ENVVAR" with
+    | null -> "missing"
+    | x -> x.ToLower() // x should be string, not string | null - no warning expected
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed

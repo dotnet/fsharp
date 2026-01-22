@@ -11,14 +11,14 @@ module TypesAndTypeConstraints_IWSAMsAndSRTPs =
     let typesModule realsig =
         FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__,  "Types.fs")))
         |> withName "Types"
-        |> withLangVersion70
+        |> withLangVersion80
         |> withRealInternalSignature realsig
         |> withOptions ["--nowarn:3535"]
 
     let setupCompilation realsig compilation =
         compilation
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withRealInternalSignature realsig
         |> withReferences [typesModule realsig]
 
@@ -117,16 +117,8 @@ let main _ =
     let ``Check static type parameter inference`` code expectedSignature =
         FSharp code
         |> ignoreWarnings
-        |> withLangVersion70
+        |> withLangVersion80
         |> signaturesShouldContain expectedSignature
-
-    [<Fact>]
-    let ``Static type parameter inference in version 6`` () =
-        FSharp """
-        let inline f0 (x: ^T) = x
-        let g0 (x: 'T) = f0 x"""
-        |> withLangVersion60
-        |> signaturesShouldContain "val g0: x: obj -> obj"
 
     [<Theory>]
     [<InlineData("let inline f_StaticProperty<'T when 'T : (static member StaticProperty: int) >() = (^T : (static member StaticProperty: int) ())")>]
@@ -336,8 +328,8 @@ let main _ =
     #if !NETCOREAPP
     [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
     #else   
-    [<InlineData("6.0")>]
-    [<InlineData("7.0")>]
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
     [<Theory>]
     #endif
     let ``Extension method on interface without SAM does not produce a warning`` version =
@@ -366,16 +358,9 @@ let main _ =
     let ``Trait warning or error`` code =
         let errorMessage = "A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments"
 
+        // In F# 8.0+, this is an error (it was a warning in F# 6.0 and became an error in F# 7.0)
         Fsx code
-        |> withLangVersion60
-        |> compile
-        |> shouldFail
-        |> withWarningCode 3532
-        |> withDiagnosticMessage errorMessage
-        |> ignore
-
-        Fsx code
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withErrorCode 3532
@@ -623,7 +608,7 @@ let main _ =
                 let add1 (x: int) = x + 1
             """
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> withOptions ["--nowarn:3535"]
 
     [<InlineData(true)>]        // RealSig
@@ -637,7 +622,7 @@ let main _ =
                 add1(a)
             """
         |> withReferences [library realsig]
-        |> withLangVersion70
+        |> withLangVersion80
         |> withRealInternalSignature realsig
         |> compile
         |> shouldFail
@@ -655,7 +640,7 @@ let main _ =
             """
         |> withRealInternalSignature realsig
         |> withReferences [library realsig]
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
@@ -671,7 +656,7 @@ let main _ =
                 add1(int(a))
             """
         |> withReferences [library realsig]
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -687,7 +672,7 @@ let main _ =
             """
         |> withRealInternalSignature realsig
         |> withReferences [library realsig]
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -709,7 +694,7 @@ let main _ =
                 failwith "Unexpected result"
             """
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -726,7 +711,7 @@ let main _ =
             let inline callX (x: 'T) (y: C) = ((C or ^T): (static member X : 'T * C -> string) (x, y));;
             """
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "Unexpected keyword 'static' in binding"
@@ -754,7 +739,7 @@ let main _ =
                 failwith "Unexpected result"
             """
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -777,7 +762,7 @@ let main _ =
                     static member op_Equality (a, b) = false
             """
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> withName "Potato"
         |> withOptions ["--nowarn:3535"]
 
@@ -797,7 +782,7 @@ let main _ =
             """
         |> withReferences [library2 realsig]
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL [
@@ -833,7 +818,7 @@ let main _ =
             """
         |> withReferences [library2 realsig]
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -859,7 +844,7 @@ let main _ =
             let f (x: 'T when 'T :> IMultiplyOperators<'T,'T,'T>) = x;;
             f 3.0 |> ignore"""
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -908,7 +893,7 @@ let main _ =
 
             let f (x: 'T when {genericType}) = x;;
             f 3.0<potato> |> ignore"""
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withErrorMessage $"The type 'float<potato>' is not compatible with the type '{potatoType}'"
@@ -939,7 +924,7 @@ let main _ =
         """
         |> withNoWarn 3535
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -981,7 +966,7 @@ let main _ =
         """
         |> withNoWarn 3535
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -1009,7 +994,7 @@ let main _ =
         """
         |> withNoWarn 3535
         |> withRealInternalSignature realsig
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 

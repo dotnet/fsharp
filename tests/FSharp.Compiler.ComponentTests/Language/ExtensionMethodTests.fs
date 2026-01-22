@@ -40,25 +40,6 @@ let f (b:int) = b.PlusOne()
         |> shouldSucceed
         
     [<Fact>]
-    let ``Extension method without toplevel attribute on type lang version 7`` () =
-        Fsx
-            """
-open System.Runtime.CompilerServices
-
-type Foo =
-    [<Extension>]
-    static member PlusOne (a:int) : int = a + 1
-
-let f (b:int) = b.PlusOne()
-            """
-        |> withLangVersion70
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 39, Line 8, Col 19, Line 8, Col 26, "The type 'Int32' does not define the field, constructor or member 'PlusOne'.")
-        ]
-
-    [<Fact>]
     let ``Extension method without toplevel attribute on recursive type`` () =
         Fsx
             """
@@ -113,48 +94,6 @@ namespace Consumer
             |> withReferences [ fsharp ]
 
         csharp |> compile |> shouldSucceed
-        
-    [<Fact>]
-    let ``F# lang version 7 CSharpStyleExtensionMethod consumed in C#`` () =
-        let fsharp =
-            FSharp
-                """
-module Hello
-
-open System.Runtime.CompilerServices
-
-type Foo =
-    [<Extension>]
-    static member PlusOne (a:int) : int = a + 1
-"""
-            |> withLangVersion70
-            |> withName "FSLib"
-
-        let csharp =
-            CSharp
-                """
-namespace Consumer
-{
-    using static Hello.Foo;
-
-    public class Class1
-    {
-        public Class1()
-        {
-            var meh = 1.PlusOne();
-        }
-    }
-}
-"""
-            |> withName "CSLib"
-            |> withReferences [ fsharp ]
-
-        csharp
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 1061, Line 9, Col 25, Line 9, Col 32, "'int' does not contain a definition for 'PlusOne' and no accessible extension method 'PlusOne' accepting a first argument of type 'int' could be found (are you missing a using directive or an assembly reference?)")
-        ]
 
     [<Fact>]
     let ``F# CSharpStyleExtensionMethod in recursive type consumed in C#`` () =
