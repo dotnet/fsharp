@@ -1652,6 +1652,11 @@
         <target state="translated">Die Syntax "expr1[expr2]" ist jetzt für die Indizierung reserviert und mehrdeutig, wenn sie als Argument verwendet wird. Siehe https://aka.ms/fsharp-index-notation. Wenn Sie eine Funktion mit mehreren geschweiften Argumenten aufrufen, fügen Sie ein Leerzeichen dazwischen hinzu, z. B. "someFunction expr1 [expr2]".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverloadResolutionPriorityUsed">
+        <source>Overload resolution selected '{0}' because it has higher OverloadResolutionPriority ({1}) than '{2}' ({3}). This is an informational message and can be enabled with --warnon:3590.</source>
+        <target state="new">Overload resolution selected '{0}' because it has higher OverloadResolutionPriority ({1}) than '{2}' ({3}). This is an informational message and can be enabled with --warnon:3590.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
         <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
         <target state="translated">Diese Außerkraftsetzung akzeptiert ein Tupel anstelle mehrerer Argumente. Fügen Sie der Methodendefinition eine zusätzliche Ebene von Klammern hinzu (z. B. "member _. Foo((x, y))"), oder entfernen Sie Klammern in der abstrakten Methodendeklaration (z. B. "abstract member Foo: 'a * 'b -&gt; 'c").</target>

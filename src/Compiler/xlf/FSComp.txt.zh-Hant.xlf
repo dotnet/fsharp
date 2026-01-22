@@ -1652,6 +1652,11 @@
         <target state="translated">語法 'expr1[expr2]' 現已為編製索引保留，但用作引數時不明確。請參閱 https://aka.ms/fsharp-index-notation。如果要呼叫具有多個調用引數的函式，請在它們之間新增空格，例如 'someFunction expr1 [expr2]'。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverloadResolutionPriorityUsed">
+        <source>Overload resolution selected '{0}' because it has higher OverloadResolutionPriority ({1}) than '{2}' ({3}). This is an informational message and can be enabled with --warnon:3590.</source>
+        <target state="new">Overload resolution selected '{0}' because it has higher OverloadResolutionPriority ({1}) than '{2}' ({3}). This is an informational message and can be enabled with --warnon:3590.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
         <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
         <target state="translated">此覆寫接受一個元組，而不是多個引數。請嘗試在方法定義中新增額外一層括弧 (例如 'member _.Foo((x, y))')，或在抽象方法宣告中移除括弧 (例如 'abstract member Foo: 'a * 'b -&gt; 'c')。</target>

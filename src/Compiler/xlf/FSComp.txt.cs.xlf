@@ -1652,6 +1652,11 @@
         <target state="translated">Syntaxe expr1[expr2] je teď vyhrazena pro indexování a je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction expr1 [expr2].</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverloadResolutionPriorityUsed">
+        <source>Overload resolution selected '{0}' because it has higher OverloadResolutionPriority ({1}) than '{2}' ({3}). This is an informational message and can be enabled with --warnon:3590.</source>
+        <target state="new">Overload resolution selected '{0}' because it has higher OverloadResolutionPriority ({1}) than '{2}' ({3}). This is an informational message and can be enabled with --warnon:3590.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
         <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
         <target state="translated">Toto přepsání přebírá řazenou kolekci členů místo více argumentů. Zkuste do definice metody přidat další vrstvu závorek, např. member _. Foo((x, y)) nebo odeberte závorky v deklaraci abstraktní metody (např. 'abstract member Foo: 'a * 'b -&gt; 'c').</target>

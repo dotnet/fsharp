@@ -2925,3 +2925,98 @@ if result <> "int" then
         |> compileAndRun
         |> shouldSucceed
         |> ignore
+
+    // ============================================================================
+    // FS3590 - OverloadResolutionPriority Diagnostic Tests
+    // ============================================================================
+
+    [<Fact>]
+    let ``Warning 3590 - Off by default`` () =
+        // By default, warning 3590 is off, so no warning should be emitted
+        FSharp """
+module Test
+open PriorityTests
+
+let result = BasicPriority.Invoke("test")
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3590 - Emitted when enabled and priority affects resolution`` () =
+        // When --warnon:3590 is passed, warning should be emitted when priority filtering occurs
+        FSharp """
+module Test
+open PriorityTests
+
+// BasicPriority.Invoke has overloads with different priorities
+// Priority 2 (object) should win over priority 1 (string) and priority 0 (int)
+let result = BasicPriority.Invoke("test")
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> withOptions ["--warnon:3590"]
+        |> compile
+        |> shouldFail
+        |> withWarningCode 3590
+        |> withDiagnosticMessageMatches "OverloadResolutionPriority"
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3590 - Shows winner and loser priority values`` () =
+        // FS3590 should show the winner name, winner priority, loser name, and loser priority
+        FSharp """
+module Test
+open PriorityTests
+
+let result = BasicPriority.Invoke("test")
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> withOptions ["--warnon:3590"]
+        |> compile
+        |> shouldFail
+        |> withWarningCode 3590
+        |> withDiagnosticMessageMatches "Invoke"
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3590 - No warning when no priority difference`` () =
+        // When all applicable overloads have the same priority, no FS3590 warning
+        FSharp """
+module Test
+
+type NoAttrType =
+    static member Invoke(o: obj) = "obj"
+    static member Invoke(s: string) = "string"
+
+// Both have default priority 0, so no priority filtering occurs
+let result = NoAttrType.Invoke("test")
+        """
+        |> withLangVersionPreview
+        |> withOptions ["--warnon:3590"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3590 - Multiple warnings for multiple filtered overloads`` () =
+        // When multiple overloads are filtered out, multiple warnings should be emitted
+        FSharp """
+module Test
+open PriorityTests
+
+// BasicPriority.Invoke("test") should filter out both string (priority 1) and int (priority 0)
+// because object (priority 2) wins
+let result = BasicPriority.Invoke("test")
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> withOptions ["--warnon:3590"]
+        |> compile
+        |> shouldFail
+        |> withWarningCode 3590
+        |> ignore

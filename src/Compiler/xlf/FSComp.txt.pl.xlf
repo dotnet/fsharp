@@ -1652,6 +1652,11 @@
         <target state="translated">Składnia wyrażenia „expr1[expr2]” jest teraz zarezerwowana do indeksowania i jest niejednoznaczna, gdy jest używana jako argument. Zobacz: https://aka.ms/fsharp-index-notation. Jeśli wywołujesz funkcję z wieloma argumentami typu curried, dodaj spację między nimi, np. „someFunction expr1 [expr2]”.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverloadResolutionPriorityUsed">
+        <source>Overload resolution selected '{0}' because it has higher OverloadResolutionPriority ({1}) than '{2}' ({3}). This is an informational message and can be enabled with --warnon:3590.</source>
+        <target state="new">Overload resolution selected '{0}' because it has higher OverloadResolutionPriority ({1}) than '{2}' ({3}). This is an informational message and can be enabled with --warnon:3590.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
         <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
         <target state="translated">To zastąpienie przyjmuje krotki zamiast wielu argumentów. Spróbuj dodać dodatkową warstwę nawiasów w definicji metody (np. „member _. Foo((x, y))”) lub usuń nawiasy w deklaracji metody abstrakcyjnej (np. „abstract member Foo: „a * ”b -&gt; „c”).</target>

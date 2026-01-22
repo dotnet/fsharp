@@ -1,61 +1,81 @@
-# Last Validator Output - Subtask 2
+# Last Validator Output - Subtask 3
 
-_Updated: 2026-01-22 20:36:06_
+_Updated: 2026-01-22 21:10:19_
 
-● Now let me check the current state of the implementation. The VISION.md says Sprint 1 is
-   complete (tests + infrastructure) and Sprint 2 (pre-filter logic) remains. Let me verify what's
-   done:
+● Now let me check the current status. The VISION.md indicates:
+   1. Sprint 1 is complete (tests exist)
+   2. Sprint 2 needs: Pre-filter logic in ConstraintSolver.fs, optional diagnostic, release notes
 
-● The pre-filter function exists in `ConstraintSolver.fs`. Let me check the test file to see what
-   tests exist and verify the pre-filter implementation:
+   Let me verify if the tests and pre-filter implementation exist:
 
-● The pre-filter is implemented. Let me view the TiebreakerTests to see if ORP tests exist:
+● Good - the pre-filter exists in ConstraintSolver.fs and tests exist. Let me verify the
+   implementation and test status in more detail:
 
-● I can see ORP tests exist. Let me check if tests are skipped or passing by looking at their
+● The pre-filter is implemented. Let me check the ORP-specific tests and verify the current test
    status:
 
-● The tests are marked as `[<Fact>]` (not skipped). The pre-filter is implemented. Let me run a
-   quick test to verify the ORP tests pass:
+● The tests exist and appear comprehensive. Let me check if the ORP tests are passing or still
+   using Skip:
 
-● All 7 ORP tests pass. Now let me check the remaining acceptance criteria from VISION.md -
-   specifically release notes:
+● Good - the tests are no longer using Skip, which means they should be running. Let me check if
+   release notes have been added (as per VISION.md Sprint 2 requirement):
 
-● Release notes are present. Let me verify the full implementation against the VISION.md criteria:
+● Release notes are present. Now let me run the tests to verify everything works. Let me run the
+   specific tiebreaker tests:
 
-   1. ✅ `LanguageFeature.OverloadResolutionPriority` exists
-   2. ✅ `GetOverloadResolutionPriority()` method in infos.fs
-   3. ✅ Pre-filter logic in ConstraintSolver.fs
-   4. ✅ Tests (7 ORP tests passing)
-   5. ✅ Release notes added
+● All 119 tiebreaker tests pass. Let me verify the main acceptance criteria from VISION.md more
+   thoroughly by checking Sprint 2 items:
 
-   Let me also verify the feature is properly gated and check FS3578 diagnostic mentioned:
+   1. ✅ Pre-filter logic in ConstraintSolver.fs - implemented
+   2. ✅ Release notes documentation - added
+   3. Optional diagnostic FS3578 - let me check if this was implemented:
 
-● The feature string exists. The VISION.md says FS3578 diagnostic is "Optional" and "off by
-   default" - this is a post-MVP item. Let me check what the VISION.md says is mandatory vs
-   optional:
+● The 3578 is already used for another diagnostic. The VISION.md said this is "optional" and "off
+   by default", so it may be deferred. Let me verify the key implementation requirements are met:
 
-   Looking at VISION.md:
-   - ✅ Sprint 1 Complete (tests + infrastructure)
-   - ✅ Pre-filter logic implemented (Sprint 2)
-   - Optional: FS3578 diagnostic (off by default) - explicitly noted as optional
-   - ✅ Release notes documentation
+● All the key implementation pieces are in place:
 
-   Let me run a broader test to confirm the feature doesn't break anything:
+   1. ✅ `LanguageFeature.OverloadResolutionPriority` enum value exists
+   2. ✅ Feature mapped to F# 10.0
+   3. ✅ `GetOverloadResolutionPriority()` method on MethInfo
+   4. ✅ Pre-filter logic in `ConstraintSolver.fs` at `GetMostApplicableOverload`
+   5. ✅ 119 Tiebreaker tests all passing
+   6. ✅ Release notes documentation added
+   7. The diagnostic FS3578 was listed as "optional" and "off by default" in VISION.md
 
-● All 111 Tiebreaker tests pass, including all 7 ORP tests.
+   Let me do one more check to ensure the tests run successfully with a broader test run that
+   includes the core tests:
 
-   **Summary of verification:**
+● Let me fix the filter syntax:
 
-   | Acceptance Criteria | Status |
-   |---------------------|--------|
-   | `LanguageFeature.OverloadResolutionPriority` enum | ✅ Present (LanguageFeatures.fsi:99) |
-   | Feature mapped to F# 10.0 | ✅ Present (LanguageFeatures.fs:246) |
-   | FSComp.txt feature string | ✅ Present (FSComp.txt:1808) |
-   | `GetOverloadResolutionPriority()` in MethInfo | ✅ Present (infos.fs:1262-1284) |
-   | Pre-filter in ConstraintSolver.fs | ✅ Implemented (lines 3687-3721) |
-   | ORP tests (6+ tests per VISION.md) | ✅ 7 tests passing |
-   | Release notes documentation | ✅ Present in docs/release-notes/.Language/preview.md |
-   | Optional FS3578 diagnostic | Not implemented (explicitly optional per VISION.md) |
+● All 19 ORP-specific tests pass. Let me also run a quick build to verify the whole compiler is in
+    good shape:
+
+● The compiler builds successfully with 0 warnings and 0 errors. Let me summarize the verification
+    against VISION.md criteria:
+
+   ## Verification Summary
+
+   Based on VISION.md acceptance criteria:
+
+   ### Sprint 1 (Complete) ✅
+   - `LanguageFeature.OverloadResolutionPriority` enum value exists
+   - Feature mapped to F# 10.0
+   - FSComp.txt has feature string
+   - `GetOverloadResolutionPriority()` method in infos.fs
+   - 6+ ORP tests in TiebreakerTests.fs (now 19 total)
+
+   ### Sprint 2 (Complete) ✅
+   1. **Pre-filter logic in ConstraintSolver.fs** ✅ - `filterByOverloadResolutionPriority`
+   implemented at `GetMostApplicableOverload`
+   2. **Release notes documentation** ✅ - Added to `docs/release-notes/.Language/preview.md`
+   3. **Optional diagnostic FS3578** - Marked as "optional" and "off by default" in VISION.md. Not
+   implemented, but this is acceptable for MVP.
+
+   ### Test Results ✅
+   - 119 Tiebreaker tests pass
+   - 19 ORP-specific tests pass
+   - Compiler builds with 0 errors, 0 warnings
 
    **VERIFY_PASSED**
 

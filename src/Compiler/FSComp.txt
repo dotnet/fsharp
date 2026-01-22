@@ -1750,6 +1750,7 @@ featureAccessorFunctionShorthand,"underscore dot shorthand for accessor only fun
 3574,pickleFsharpCoreBackwardsCompatible,"Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: %s . Context: \n %s "
 3575,tcMoreConcreteTiebreakerUsed,"Overload resolution selected '%s' based on type concreteness. The more concrete type '%s' was preferred over '%s'. This is an informational message and can be enabled with --warnon:3575."
 3576,tcGenericOverloadBypassed,"A more generic overload was bypassed: '%s'. The selected overload '%s' was chosen because it has more concrete type parameters."
+3590,tcOverloadResolutionPriorityUsed,"Overload resolution selected '%s' because it has higher OverloadResolutionPriority (%d) than '%s' (%d). This is an informational message and can be enabled with --warnon:3590."
 3577,tcOverrideUsesMultipleArgumentsInsteadOfTuple,"This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -> 'c')."
 featureUnmanagedConstraintCsharpInterop,"Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)"
 3578,chkCopyUpdateSyntaxInAnonRecords,"This expression is an anonymous record, use {{|...|}} instead of {{...}}."
