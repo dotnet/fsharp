@@ -991,7 +991,7 @@ let ``Test project3 all symbols in signature`` () =
         ("member set_InterfacePropertySet", ["slot"; "member"; "setter"]);
         ("property InterfacePropertySet", ["slot"; "member"; "prop"]);
         ("property InterfaceProperty", ["slot"; "member"; "prop"]);
-        ("property InterfaceEvent", ["slot"; "member"; "prop"; "clievent"]);
+        ("event InterfaceEvent", ["slot"; "member"; "event"; "clievent"]);
         ("CFoo", ["class"]);
         ("member .ctor", ["member"; "ctor"]);
         ("member AbstractClassMethod", ["slot"; "member"]);
@@ -1002,7 +1002,7 @@ let ``Test project3 all symbols in signature`` () =
         ("member set_AbstractClassPropertySet", ["slot"; "member"; "setter"]);
         ("property AbstractClassPropertySet", ["slot"; "member"; "prop"]);
         ("property AbstractClassProperty", ["slot"; "member"; "prop"]);
-        ("property AbstractClassEvent", ["slot"; "member"; "prop"; "clievent"]);
+        ("event AbstractClassEvent", ["slot"; "member"; "event"; "clievent"]);
         ("CBaseFoo", ["class"]); ("member .ctor", ["member"; "ctor"]);
         ("member BaseClassMethod", ["slot"; "member"]);
         ("member BaseClassMethod", ["member"; "overridemem"]);
@@ -1020,8 +1020,8 @@ let ``Test project3 all symbols in signature`` () =
         ("property BaseClassPropertySet", ["slot"; "member"; "prop"]);
         ("property BaseClassProperty", ["member"; "prop"; "overridemem"]);
         ("property BaseClassProperty", ["slot"; "member"; "prop"]);
-        ("property BaseClassEvent", ["member"; "prop"; "overridemem"]);
-        ("property BaseClassEvent", ["slot"; "member"; "prop"]);
+        ("event BaseClassEvent", ["member"; "event"; "overridemem"]);
+        ("event BaseClassEvent", ["slot"; "member"; "event"]);
         ("IFooImpl", ["class"]); ("member .ctor", ["member"; "ctor"]);
         ("member InterfaceMethod", ["member"; "overridemem"; "intfmem"]);
         ("member add_InterfaceEvent", ["member"; "overridemem"; "intfmem"]);
@@ -1038,7 +1038,7 @@ let ``Test project3 all symbols in signature`` () =
         ("member set_AbstractClassPropertySet", ["member"; "setter"; "overridemem"]);
         ("property AbstractClassPropertySet", ["member"; "prop"; "overridemem"]);
         ("property AbstractClassProperty", ["member"; "prop"; "overridemem"]);
-        ("property AbstractClassEvent", ["member"; "prop"; "clievent"; "overridemem"]);
+        ("event AbstractClassEvent", ["member"; "event"; "clievent"; "overridemem"]);
         ("CBaseFooImpl", ["class"]); ("member .ctor", ["member"; "ctor"]);
         ("member BaseClassMethod", ["member"; "overridemem"]);
         ("member add_BaseClassEvent", ["member"; "add"; "overridemem"]);
@@ -1048,7 +1048,7 @@ let ``Test project3 all symbols in signature`` () =
         ("member set_BaseClassPropertySet", ["member"; "setter"; "overridemem"]);
         ("property BaseClassPropertySet", ["member"; "prop"; "overridemem"]);
         ("property BaseClassProperty", ["member"; "prop"; "overridemem"]);
-        ("property BaseClassEvent", ["member"; "prop"; "clievent"; "overridemem"])]
+        ("event BaseClassEvent", ["member"; "event"; "clievent"; "overridemem"])]
         |> List.iter (fun x ->
             if results |> List.exists (fun y -> x = y) |> not then
                 failwithf "%A does not exist in the collection." x
@@ -1122,10 +1122,10 @@ let ``Test project3 all uses of all signature symbols`` () =
            ("file1", ((61, 20), (61, 37)), ["override"], ["slot"; "member"; "prop"]);
            ("file1", ((76, 23), (76, 44)), [], ["slot"; "member"; "prop"]);
            ("file1", ((34, 20), (34, 37)), ["override"], ["slot"; "member"; "prop"])]);
-         ("property InterfaceEvent",
-          [("file1", ((8, 13), (8, 27)), ["defn"], ["slot"; "member"; "prop"; "clievent"]);
-           ("file1", ((65, 20), (65, 34)), ["override"], ["slot"; "member"; "prop"; "clievent"]);
-           ("file1", ((38, 20), (38, 34)), ["override"], ["slot"; "member"; "prop"; "clievent"])]);
+         ("event InterfaceEvent",
+          [("file1", ((8, 13), (8, 27)), ["defn"], ["slot"; "member"; "event"; "clievent"]);
+           ("file1", ((65, 20), (65, 34)), ["override"], ["slot"; "member"; "event"; "clievent"]);
+           ("file1", ((38, 20), (38, 34)), ["override"], ["slot"; "member"; "event"; "clievent"])]);
          ("CFoo",
           [("file1", ((11, 5), (11, 9)), ["defn"], ["class"]);
            ("file1", ((41, 12), (41, 16)), ["type"], ["class"]);
@@ -1170,10 +1170,10 @@ let ``Test project3 all uses of all signature symbols`` () =
           [("file1", ((12, 13), (12, 34)), ["defn"], ["slot"; "member"; "prop"]);
            ("file1", ((70, 22), (70, 43)), ["override"], ["slot"; "member"; "prop"]);
            ("file1", ((43, 18), (43, 39)), ["override"], ["slot"; "member"; "prop"])]);
-         ("property AbstractClassEvent",
-          [("file1", ((16, 13), (16, 31)), ["defn"], ["slot"; "member"; "prop"; "clievent"]);
-           ("file1", ((74, 22), (74, 40)), ["override"], ["slot"; "member"; "prop"; "clievent"]);
-           ("file1", ((47, 18), (47, 36)), ["override"], ["slot"; "member"; "prop"; "clievent"])]);
+         ("event AbstractClassEvent",
+          [("file1", ((16, 13), (16, 31)), ["defn"], ["slot"; "member"; "event"; "clievent"]);
+           ("file1", ((74, 22), (74, 40)), ["override"], ["slot"; "member"; "event"; "clievent"]);
+           ("file1", ((47, 18), (47, 36)), ["override"], ["slot"; "member"; "event"; "clievent"])]);
          ("CBaseFoo",
           [("file1", ((18, 5), (18, 13)), ["defn"], ["class"]);
            ("file1", ((50, 12), (50, 20)), ["type"], ["class"]);
@@ -1230,12 +1230,12 @@ let ``Test project3 all uses of all signature symbols`` () =
           [("file1", ((20, 13), (20, 30)), ["defn"], ["slot"; "member"; "prop"]);
            ("file1", ((25, 15), (25, 32)), ["override"], ["slot"; "member"; "prop"]);
            ("file1", ((52, 18), (52, 35)), ["override"], ["slot"; "member"; "prop"])]);
-         ("property BaseClassEvent",
-          [("file1", ((29, 15), (29, 29)), ["defn"], ["member"; "prop"; "overridemem"])]);
-         ("property BaseClassEvent",
-          [("file1", ((24, 13), (24, 27)), ["defn"], ["slot"; "member"; "prop"]);
-           ("file1", ((29, 15), (29, 29)), ["override"], ["slot"; "member"; "prop"]);
-           ("file1", ((56, 18), (56, 32)), ["override"], ["slot"; "member"; "prop"])]);
+         ("event BaseClassEvent",
+          [("file1", ((29, 15), (29, 29)), ["defn"], ["member"; "event"; "overridemem"])]);
+         ("event BaseClassEvent",
+          [("file1", ((24, 13), (24, 27)), ["defn"], ["slot"; "member"; "event"]);
+           ("file1", ((29, 15), (29, 29)), ["override"], ["slot"; "member"; "event"]);
+           ("file1", ((56, 18), (56, 32)), ["override"], ["slot"; "member"; "event"])]);
          ("IFooImpl", [("file1", ((31, 5), (31, 13)), ["defn"], ["class"])]);
          ("member .ctor", [("file1", ((31, 5), (31, 13)), ["defn"], ["member"; "ctor"])]);
          ("member InterfaceMethod",
@@ -1268,8 +1268,8 @@ let ``Test project3 all uses of all signature symbols`` () =
           [("file1", ((44, 18), (44, 42)), ["defn"], ["member"; "prop"; "overridemem"])]);
          ("property AbstractClassProperty",
           [("file1", ((43, 18), (43, 39)), ["defn"], ["member"; "prop"; "overridemem"])]);
-         ("property AbstractClassEvent",
-          [("file1", ((47, 18), (47, 36)), ["defn"], ["member"; "prop"; "clievent"; "overridemem"])]);
+         ("event AbstractClassEvent",
+          [("file1", ((47, 18), (47, 36)), ["defn"], ["member"; "event"; "clievent"; "overridemem"])]);
          ("CBaseFooImpl", [("file1", ((49, 5), (49, 17)), ["defn"], ["class"])]);
          ("member .ctor", [("file1", ((49, 5), (49, 17)), ["defn"], ["member"; "ctor"])]);
          ("member BaseClassMethod",
@@ -1288,8 +1288,8 @@ let ``Test project3 all uses of all signature symbols`` () =
           [("file1", ((53, 18), (53, 38)), ["defn"], ["member"; "prop"; "overridemem"])]);
          ("property BaseClassProperty",
           [("file1", ((52, 18), (52, 35)), ["defn"], ["member"; "prop"; "overridemem"])]);
-         ("property BaseClassEvent",
-          [("file1", ((56, 18), (56, 32)), ["defn"], ["member"; "prop"; "clievent"; "overridemem"])])]
+         ("event BaseClassEvent",
+          [("file1", ((56, 18), (56, 32)), ["defn"], ["member"; "event"; "clievent"; "overridemem"])])]
     set allUsesOfAllSymbols - set expected |> shouldEqual Set.empty
     set expected - set allUsesOfAllSymbols |> shouldEqual Set.empty
     (set expected = set allUsesOfAllSymbols) |> shouldEqual true
@@ -4031,13 +4031,13 @@ let ``Test project28 all symbols in signature`` () =
         ("FSharpMemberOrFunctionOrValue", "TestEvent2", "M:M.XmlDocSigTest.TestEvent2(System.Object)");
         ("FSharpMemberOrFunctionOrValue", "add_AnEvent", "M:M.XmlDocSigTest.add_AnEvent(Microsoft.FSharp.Control.FSharpHandler{System.Tuple{M.XmlDocSigTest,System.Object}})");
         ("FSharpMemberOrFunctionOrValue", "AProperty", "P:M.XmlDocSigTest.AProperty");
-        ("FSharpMemberOrFunctionOrValue", "AnEvent", "P:M.XmlDocSigTest.AnEvent");
+        ("FSharpMemberOrFunctionOrValue", "AnEvent", "E:M.XmlDocSigTest.AnEvent");
         ("FSharpMemberOrFunctionOrValue", "AnotherEvent", "P:M.XmlDocSigTest.AnotherEvent");
         ("FSharpMemberOrFunctionOrValue", "AnotherProperty", "P:M.XmlDocSigTest.AnotherProperty");
         ("FSharpMemberOrFunctionOrValue", "remove_AnEvent", "M:M.XmlDocSigTest.remove_AnEvent(Microsoft.FSharp.Control.FSharpHandler{System.Tuple{M.XmlDocSigTest,System.Object}})");
         ("FSharpMemberOrFunctionOrValue", "AnotherProperty", "P:M.XmlDocSigTest.AnotherProperty");
         ("FSharpMemberOrFunctionOrValue", "AnotherEvent", "P:M.XmlDocSigTest.AnotherEvent");
-        ("FSharpMemberOrFunctionOrValue", "AnEvent", "P:M.XmlDocSigTest.AnEvent");
+        ("FSharpMemberOrFunctionOrValue", "AnEvent", "E:M.XmlDocSigTest.AnEvent");
         ("FSharpMemberOrFunctionOrValue", "AProperty", "P:M.XmlDocSigTest.AProperty");
         ("FSharpField", "event1", "P:M.XmlDocSigTest.event1");
         ("FSharpField", "event2", "P:M.XmlDocSigTest.event2");

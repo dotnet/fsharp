@@ -3527,6 +3527,7 @@ let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some
 
 let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> List.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
 let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2, _, _, _, _, _, _)) = match attrOpt with Some (AttribInfo(_, tcref)) -> tyconRefEq g tcref tcref2 | _ -> false
+let CompileAsEvent g attrs = HasFSharpAttribute g g.attrib_CLIEventAttribute attrs
 
 [<return: Struct>]
 let (|ExtractAttribNamedArg|_|) nm args = 
@@ -9074,7 +9075,9 @@ let XmlDocSigOfVal g full path (v: Val) =
                 | SynMemberKind.Member -> "M:", v.CompiledName g.CompilerGlobalState
                 | SynMemberKind.PropertyGetSet 
                 | SynMemberKind.PropertySet
-                | SynMemberKind.PropertyGet -> "P:", v.PropertyName
+                | SynMemberKind.PropertyGet -> 
+                    let prefix = if CompileAsEvent g v.Attribs then "E:" else "P:"
+                    prefix, v.PropertyName
 
             let path = if v.HasDeclaringEntity then prependPath path v.DeclaringEntity.CompiledName else path
 
@@ -9505,8 +9508,6 @@ let ModuleNameIsMangled g attrs =
     match TryFindFSharpInt32Attribute g g.attrib_CompilationRepresentationAttribute attrs with
     | Some flags -> ((flags &&& enum_CompilationRepresentationAttribute_ModuleSuffix) <> 0)
     | _ -> false 
-
-let CompileAsEvent g attrs = HasFSharpAttribute g g.attrib_CLIEventAttribute attrs 
 
 let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberInfo) attrs =
     // All extension members are compiled as static members

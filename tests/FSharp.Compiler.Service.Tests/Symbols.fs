@@ -1286,6 +1286,19 @@ type T() =
             )
 
         Assert.False hasPropertySymbols
+        
+    [<Fact>]
+    let ``CLIEvent is recognized as event`` () =
+        let symbolUse = Checker.getSymbolUse """
+type T() =
+    [<CLIEvent>]
+    member this.Ev{caret}ent = Event<int>().Publish
+"""
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.True mfv.IsEvent
+            Assert.StartsWith("E:", mfv.XmlDocSig)
+        | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
 
     [<Fact>]
     let ``CLIEvent 01 - Synthetic range`` () =
