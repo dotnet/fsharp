@@ -158,3 +158,6 @@ tests/projects/CompilerCompat/local-nuget-packages/
 tests/projects/CompilerCompat/lib-output-*/
 tests/projects/CompilerCompat/**/bin/
 tests/projects/CompilerCompat/**/obj/
+
+# Complexity documentation working folder (not to be committed)
+complexity/
