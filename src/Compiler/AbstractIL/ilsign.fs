@@ -343,23 +343,25 @@ let failWithContainerSigningUnsupportedOnThisPlatform () =
 type ILStrongNameSigner =
     | PublicKeySigner of pubkey
     | PublicKeyOptionsSigner of pubkeyOptions
-    | KeyPair of keyPair
-    | KeyContainer of keyContainerName
+    | KeyPair of keyPair * bool
+    | KeyContainer of keyContainerName * bool
 
     static member OpenPublicKeyOptions kp p = PublicKeyOptionsSigner(kp, p)
 
     static member OpenPublicKey bytes = PublicKeySigner bytes
-    static member OpenKeyPairFile bytes = KeyPair(bytes)
-    static member OpenKeyContainer s = KeyContainer s
+    
+    static member OpenKeyPairFile bytes usePublicSign = KeyPair(bytes, usePublicSign)
+    
+    static member OpenKeyContainer s usePublicSign = KeyContainer(s, usePublicSign)
 
     member s.IsFullySigned =
         match s with
         | PublicKeySigner _ -> false
         | PublicKeyOptionsSigner pko ->
             let _, usePublicSign = pko
-            usePublicSign
-        | KeyPair _ -> true
-        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
+            not usePublicSign
+        | KeyPair (_, usePublicSign) -> not usePublicSign
+        | KeyContainer (_, usePublicSign) -> not usePublicSign
 
     member s.PublicKey =
         match s with
@@ -367,15 +369,15 @@ type ILStrongNameSigner =
         | PublicKeyOptionsSigner pko ->
             let pk, _ = pko
             pk
-        | KeyPair kp -> signerGetPublicKeyForKeyPair kp
-        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
+        | KeyPair (kp, _) -> signerGetPublicKeyForKeyPair kp
+        | KeyContainer (kc, _) -> signerGetPublicKeyForKeyContainer kc
 
     member s.SignatureSize =
         let pkSignatureSize pk =
             try
                 signerSignatureSize pk
-            with exn ->
-                failwith ("A call to StrongNameSignatureSize failed (" + exn.Message + ")")
+            with _ ->
+                
                 0x80
 
         match s with
@@ -383,12 +385,25 @@ type ILStrongNameSigner =
         | PublicKeyOptionsSigner pko ->
             let pk, _ = pko
             pkSignatureSize pk
-        | KeyPair kp -> pkSignatureSize (signerGetPublicKeyForKeyPair kp)
-        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
+        | KeyPair (kp, usePublicSign) -> 
+            let pk = signerGetPublicKeyForKeyPair kp
+            if usePublicSign then 
+               
+                pk.Length 
+            else 
+                pkSignatureSize pk
+        | KeyContainer (kc, usePublicSign) -> 
+             let pk = signerGetPublicKeyForKeyContainer kc
+             if usePublicSign then pk.Length else pkSignatureSize pk
 
     member s.SignStream stream =
         match s with
         | PublicKeySigner _ -> ()
         | PublicKeyOptionsSigner _ -> ()
-        | KeyPair kp -> signerSignStreamWithKeyPair stream kp
-        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
+        | KeyPair (kp, usePublicSign) -> 
+            
+            if not usePublicSign then 
+                signerSignStreamWithKeyPair stream kp
+        | KeyContainer (kc, usePublicSign) -> 
+            if not usePublicSign then 
+                signerSignStreamWithKeyContainer stream kc

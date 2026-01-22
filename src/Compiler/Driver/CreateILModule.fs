@@ -136,9 +136,9 @@ let ValidateKeySigningAttributes (tcConfig: TcConfig, tcGlobals, topAttrs) =
 /// Get the object used to perform strong-name signing
 let GetStrongNameSigner signingInfo =
     let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
-    // REVIEW: favor the container over the key file - C# appears to do this
     match container with
-    | Some container -> Some(ILStrongNameSigner.OpenKeyContainer container)
+    | Some container -> 
+        Some(ILStrongNameSigner.OpenKeyContainer container publicsign)
     | None ->
         match signer with
         | None -> None
@@ -146,7 +146,7 @@ let GetStrongNameSigner signingInfo =
             if publicsign || delaysign then
                 Some(ILStrongNameSigner.OpenPublicKeyOptions bytes publicsign)
             else
-                Some(ILStrongNameSigner.OpenKeyPairFile bytes)
+                Some(ILStrongNameSigner.OpenKeyPairFile bytes publicsign)
 
 //----------------------------------------------------------------------------
 // Building the contents of the finalized IL module
