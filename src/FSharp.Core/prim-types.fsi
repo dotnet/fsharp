@@ -2724,6 +2724,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="tail">The existing list.</param>
         ///
         /// <returns>The list with head appended to the front of tail.</returns>
+        ///
+        /// <remarks>This is an O(1) operation.</remarks>
         static member Cons: head: 'T * tail: 'T list -> 'T list
 
         interface IEnumerable<'T>
