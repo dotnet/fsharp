@@ -3485,9 +3485,12 @@ and ResolveOverloading
                 | Some ttype -> isTyparTy g ttype
                 | None -> false
                 
-            match calledMeth.Method with
+            let minfo = calledMeth.Method
+            match minfo with
             | ILMeth(ilMethInfo= ilMethInfo) when not isStaticConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
                 None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(ilMethInfo.ILName), m)), NoTrace
+            | FSMeth(g, _, vref, _) when not isStaticConstrainedCall && not minfo.IsInstance && isInterfaceTy g minfo.ApparentEnclosingType && vref.IsDispatchSlotMember ->
+                None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(minfo.LogicalName), m)), NoTrace
             | _ -> Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 
