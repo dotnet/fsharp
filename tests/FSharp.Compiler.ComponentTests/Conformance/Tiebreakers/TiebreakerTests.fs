@@ -2369,7 +2369,7 @@ namespace PriorityTests
     // doesn't implement ORP pre-filtering yet. Remove Skip after Sprint 2.
     // ============================================================================
 
-    [<Fact(Skip = "Requires ORP pre-filter implementation (Sprint 2)")>]
+    [<Fact>]
     let ``ORP - Higher priority wins over lower within same type`` () =
         // BasicPriority.Invoke has: object(priority 2), string(priority 1), int(priority 0)
         // For a string arg, both object and string match.
@@ -2432,7 +2432,7 @@ if result <> "new" then
         |> shouldSucceed
         |> ignore
 
-    [<Fact(Skip = "Requires ORP pre-filter implementation (Sprint 2)")>]
+    [<Fact>]
     let ``ORP - Priority overrides concreteness tiebreaker`` () =
         // Process<T>(T) has priority 1, Process(int) has priority 0
         // For int arg:
@@ -2454,7 +2454,7 @@ if result <> "generic-high-priority" then
         |> shouldSucceed
         |> ignore
 
-    [<Fact(Skip = "Requires ORP pre-filter implementation (Sprint 2)")>]
+    [<Fact>]
     let ``ORP - Default priority is 0 when attribute absent`` () =
         // Mixed: string (no attr = priority 0), object (priority 1)
         // For string arg:

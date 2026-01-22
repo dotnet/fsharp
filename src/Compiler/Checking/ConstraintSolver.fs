@@ -3459,7 +3459,10 @@ and ResolveOverloading
         (methodName = "op_Implicit")
 
     // See what candidates we have based on name and arity 
-    let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
+    let candidates = 
+        let candidatesBeforePriorityFilter = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
+        // Apply OverloadResolutionPriority pre-filter before any type checking
+        filterCandidatesByOverloadResolutionPriority g candidatesBeforePriorityFilter
 
     let calledMethOpt, errors, calledMethTrace = 
         match calledMethGroup, candidates with 
@@ -3643,8 +3646,79 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
         // Otherwise pass the overload resolution failure for error printing in CompileOps
         UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
 
+/// Filter candidate methods by OverloadResolutionPriority attribute.
+/// Groups methods by declaring type and keeps only highest-priority within each group.
+/// This is a pre-filter that runs before type checking per the RFC.
+and filterCandidatesByOverloadResolutionPriority (g: TcGlobals) (candidates: list<CalledMeth<Expr>>) : list<CalledMeth<Expr>> =
+    if not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) then
+        candidates
+    else if candidates.Length <= 1 then
+        candidates
+    else
+        // Group methods by declaring type using typeEquiv for comparison
+        let groupByType (meths: list<CalledMeth<Expr>>) : list<list<CalledMeth<Expr>>> =
+            let rec addToGroups (groups: list<list<CalledMeth<Expr>>>) (meth: CalledMeth<Expr>) : list<list<CalledMeth<Expr>>> =
+                let ty = meth.Method.ApparentEnclosingType
+                match groups with
+                | [] -> [[meth]]
+                | ((firstMeth: CalledMeth<Expr>) :: _ as group) :: rest ->
+                    if typeEquiv g ty firstMeth.Method.ApparentEnclosingType then
+                        (meth :: group) :: rest
+                    else
+                        group :: addToGroups rest meth
+                | [] :: rest -> addToGroups rest meth
+            List.fold (fun groups meth -> addToGroups groups meth) [] meths
+        
+        let groups = groupByType candidates
+        
+        groups
+        |> List.collect (fun group ->
+            match group with
+            | [] -> []
+            | _ ->
+                let maxPriority =
+                    group |> List.map (fun (cm: CalledMeth<Expr>) -> cm.Method.GetOverloadResolutionPriority()) |> List.max
+
+                group |> List.filter (fun (cm: CalledMeth<Expr>) -> cm.Method.GetOverloadResolutionPriority() = maxPriority))
+
+/// Filter applicable methods by OverloadResolutionPriority attribute.
+/// Groups methods by declaring type and keeps only highest-priority within each group.
+/// This is a pre-filter that runs before tiebreaker comparison per the RFC.
+and filterByOverloadResolutionPriority (g: TcGlobals) (applicableMeths: list<CalledMeth<'T> * 'W * 'Trace * TypeDirectedConversionUsed>) =
+    if not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) then
+        applicableMeths
+    else
+        // Group methods by declaring type using typeEquiv for comparison
+        // We fold through the list, accumulating groups where types match
+        let groupByType (meths: list<CalledMeth<'T> * 'W * 'Trace * TypeDirectedConversionUsed>) =
+            let rec addToGroups groups (meth: CalledMeth<'T> * 'W * 'Trace * TypeDirectedConversionUsed) =
+                let (cm: CalledMeth<'T>, _, _, _) = meth
+                let ty = cm.Method.ApparentEnclosingType
+                match groups with
+                | [] -> [[meth]]
+                | ((firstMeth: CalledMeth<'T> * 'W * 'Trace * TypeDirectedConversionUsed) :: _ as group) :: rest ->
+                    let (firstCm: CalledMeth<'T>, _, _, _) = firstMeth
+                    if typeEquiv g ty firstCm.Method.ApparentEnclosingType then
+                        (meth :: group) :: rest
+                    else
+                        group :: addToGroups rest meth
+                | [] :: rest -> addToGroups rest meth
+            List.fold (fun groups meth -> addToGroups groups meth) [] meths
+        
+        let groups = groupByType applicableMeths
+        
+        groups
+        |> List.collect (fun group ->
+            let maxPriority =
+                group |> List.map (fun (cm: CalledMeth<'T>, _, _, _) -> cm.Method.GetOverloadResolutionPriority()) |> List.max
+            
+            group |> List.filter (fun (cm: CalledMeth<'T>, _, _, _) -> cm.Method.GetOverloadResolutionPriority() = maxPriority))
+
 and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m =
     let infoReader = csenv.InfoReader
+    
+    // Apply priority pre-filter before tiebreaker comparison
+    let applicableMeths = filterByOverloadResolutionPriority csenv.g applicableMeths
 
     /// Check whether one overload is better than another
     let better (candidate: CalledMeth<_>, candidateWarnings, _, usesTDC1) (other: CalledMeth<_>, otherWarnings, _, usesTDC2) =

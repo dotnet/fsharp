@@ -1265,10 +1265,13 @@ type MethInfo =
 
         match x with
         | ILMeth(_, ilMethInfo, _) ->
-            ilMethInfo.RawMetadata.CustomAttrs.AsArray()
+            let attrs = ilMethInfo.RawMetadata.CustomAttrs.AsArray()
+            attrs
             |> Array.tryPick (fun attr ->
                 if attr.Method.DeclaringType.TypeRef.FullName = overloadResolutionPriorityAttributeName then
-                    match attr.Elements with
+                    // Decode the attribute data - the raw bytes need decoding
+                    let fixedArgs, _ = decodeILAttribData attr
+                    match fixedArgs with
                     | [ ILAttribElem.Int32 priority ] -> Some priority
                     | _ -> Some 0
                 else
