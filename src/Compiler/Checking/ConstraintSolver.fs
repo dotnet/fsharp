@@ -47,6 +47,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
+open Internal.Utilities.TypeHashing
 open Internal.Utilities.TypeHashing.StructuralUtilities
 
 open FSharp.Compiler 
@@ -436,11 +437,11 @@ let tryComputeOverloadCacheKey
     else
     
     // Compute method group hash - must be order-dependent since we cache by index
-    // Using hash mixing (multiply + XOR) to create distinct hashes for different orderings
-    let mutable methodGroupHash = 17
+    // Using combineHash pattern from HashingPrimitives for consistency
+    let mutable methodGroupHash = 0
     for cmeth in calledMethGroup do
         let methHash = computeMethInfoHash cmeth.Method
-        methodGroupHash <- methodGroupHash * 31 + methHash
+        methodGroupHash <- combineHash methodGroupHash methHash
     
     // Collect type structures for all caller arguments
     let mutable argStructures = []
@@ -653,125 +654,6 @@ let FilterEachThenUndo f meths =
         match CheckNoErrorsAndGetWarnings res with 
         | None -> None 
         | Some (warns, res) -> Some (calledMeth, warns, trace, res))
-
-// NOTE: The following TypesQuicklyCompatible and TypesQuicklyCompatibleStructural functions
-// are currently unused - they support the disabled CalledMethQuicklyCompatible optimization.
-// They are preserved for future re-enablement of the quick type compatibility filter.
-// See the TODO comment above CalledMethQuicklyCompatible for details.
-
-/// Quick structural type compatibility check that can reject obviously incompatible types
-/// without full unification. Returns true if types *might* be compatible (conservative),
-/// false only if they are *definitely* incompatible.
-/// 
-/// This is used to pre-filter overload candidates before expensive full type checking.
-/// The check is conservative: it may return true for types that later fail unification,
-/// but it must never return false for types that would succeed unification.
-///
-/// Key rules:
-/// - If either type is a type parameter, return true (could match anything)
-/// - If types have the same type constructor, return true (might match after unification)
-/// - If callee type supports type-directed conversions from caller type, return true
-/// - Otherwise, check for structural compatibility
-let rec private TypesQuicklyCompatible (g: TcGlobals) (callerArgTy: TType) (calledArgTy: TType) : bool =
-    // Strip measurements for comparison
-    let callerArgTy = stripTyEqnsA g true callerArgTy
-    let calledArgTy = stripTyEqnsA g true calledArgTy
-    
-    // Rule 1: Type parameters can match anything - be conservative
-    // This includes checking for TType_var which are inference variables
-    match callerArgTy with
-    | TType_var _ -> true
-    | _ ->
-    match calledArgTy with
-    | TType_var _ -> true
-    | _ ->
-    if isTyparTy g callerArgTy || isTyparTy g calledArgTy then true
-    
-    // Rule 2: If types are equivalent, definitely compatible
-    elif typeEquiv g callerArgTy calledArgTy then true
-    
-    // Rule 3: Check for type-directed conversion cases where types might be compatible
-    // despite having different type constructors
-    
-    // 3a: Function to delegate conversion (caller is function, callee is delegate)
-    elif isFunTy g callerArgTy && isDelegateTy g calledArgTy then true
-    
-    // 3b: Function to LINQ Expression conversion
-    elif isFunTy g callerArgTy && isLinqExpressionTy g calledArgTy then true
-    
-    // 3c: Built-in numeric conversions: int32 -> int64, int32 -> nativeint, int32 -> float64
-    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
-        if typeEquiv g g.int32_ty callerArgTy then
-            if typeEquiv g g.int64_ty calledArgTy || 
-               typeEquiv g g.nativeint_ty calledArgTy ||
-               typeEquiv g g.float_ty calledArgTy then true
-            else TypesQuicklyCompatibleStructural g callerArgTy calledArgTy
-        // 3d: T -> Nullable<T> conversion
-        elif isNullableTy g calledArgTy then
-            let underlyingTy = destNullableTy g calledArgTy
-            TypesQuicklyCompatible g callerArgTy underlyingTy
-        else
-            TypesQuicklyCompatibleStructural g callerArgTy calledArgTy
-    else
-        TypesQuicklyCompatibleStructural g callerArgTy calledArgTy
-
-/// Structural compatibility check - types must have compatible type constructors
-/// This is a conservative check - it returns true if types *might* be compatible.
-/// It only returns false if types are *definitely* incompatible.
-and private TypesQuicklyCompatibleStructural (g: TcGlobals) (callerArgTy: TType) (calledArgTy: TType) : bool =
-    // If both types are sealed AND different type constructors, they're definitely incompatible
-    // (with exceptions for conversions already handled in TypesQuicklyCompatible)
-    
-    // Check for sealed types - if both are sealed and have different type constructors, 
-    // they cannot possibly match
-    let callerSealed = isSealedTy g callerArgTy
-    let calledSealed = isSealedTy g calledArgTy
-    
-    if callerSealed && calledSealed then
-        // Both are sealed types. For them to be compatible, they must have the same head type.
-        // Get the type definition references (if they're app types)
-        match tryTcrefOfAppTy g callerArgTy, tryTcrefOfAppTy g calledArgTy with
-        | ValueSome tcref1, ValueSome tcref2 ->
-            // Same type definition? Then compatible (type args might differ but that's for full checking)
-            tyconRefEq g tcref1 tcref2
-        | ValueNone, ValueNone ->
-            // Neither is an app type (e.g., both are tuple types, both are function types, etc.)
-            // Check structural compatibility for non-app sealed types
-            match callerArgTy, calledArgTy with
-            | TType_tuple(_, elems1), TType_tuple(_, elems2) -> 
-                // Tuples must have same arity to be compatible
-                elems1.Length = elems2.Length
-            | TType_app(_, args1, _), TType_app(_, args2, _) when isArrayTy g callerArgTy && isArrayTy g calledArgTy ->
-                // Arrays must have same rank
-                args1.Length = args2.Length
-            | TType_fun _, TType_fun _ -> true  // Functions - conservatively compatible
-            | _ -> true  // Unknown sealed types - be conservative
-        | _ -> 
-            // Mixed case: one is app type, one is not - different kinds, likely incompatible
-            // But be conservative in case of implicit conversions
-            true
-    else
-        // At least one is not sealed (could be an interface, abstract class, etc.)
-        // Be conservative and assume compatibility
-        true
-
-// TODO: Performance optimization - Quick type compatibility pre-filter (GitHub issue #18807)
-// 
-// This optimization was implemented but disabled due to edge cases:
-// - C# 13 "params collections" (ReadOnlySpan<T>, IEnumerable<T> params) require special handling
-// - Type-directed conversions (func-to-delegate, nullable unwrapping) need conservative treatment
-// - Some sealed type comparisons were incorrectly filtering valid overloads
-//
-// To re-enable:
-// 1. Update TypesQuicklyCompatible to handle C# 13 params collections
-// 2. Add tests for ReadOnlySpan<T> and IEnumerable<T> params overloads
-// 3. Ensure all type-directed conversions are handled conservatively
-// 4. Re-enable the filter in ResolveOverloading (line ~3877)
-//
-// Expected benefit: 20-40% reduction in FilterEachThenUndo calls for overloaded methods
-// with sealed parameter types (int, string, etc.)
-//
-// See: METHOD_RESOLUTION_PERF_IDEAS.md, Idea #4
 
 let ShowAccessDomain ad =
     match ad with 
@@ -3731,8 +3613,6 @@ and ResolveOverloadingCore
          (cacheKeyOpt: OverloadResolutionCacheKey voption)
          : CalledMeth<Expr> option * OperationResult<unit> * OptionalTrace =
 
-    // Note: g is currently unused - it was used by the disabled CalledMethQuicklyCompatible filter.
-    // Uncomment when re-enabling: let g = csenv.g
     let infoReader = csenv.InfoReader
     let m = csenv.m
 
@@ -3743,22 +3623,12 @@ and ResolveOverloadingCore
         isOpConversion ||
         candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs) 
 
-    // Quick type compatibility pre-filter: Skip candidates where argument types
-    // are obviously incompatible (e.g., caller has int but callee expects IComparer).
-    // This avoids expensive full type checking for clearly incompatible overloads.
-    // 
-    // TODO: DISABLED - see CalledMethQuicklyCompatible comment for details on re-enabling
-    // When ready to re-enable:
-    //   1. Uncomment: let g = csenv.g (above)
-    //   2. Change 'candidates' to: candidates |> List.filter (CalledMethQuicklyCompatible g)
-    let quickFilteredCandidates = candidates
-
     // Exact match rule.
     //
     // See what candidates we have based on current inferred type information 
     // and exact matches of argument types. 
     let exactMatchCandidates =
-        quickFilteredCandidates |> FilterEachThenUndo (fun newTrace calledMeth ->
+        candidates |> FilterEachThenUndo (fun newTrace calledMeth ->
               let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
               let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
               CanMemberSigsMatchUpToCheck 
@@ -3788,7 +3658,7 @@ and ResolveOverloadingCore
       // Now determine the applicable methods.
       // Subsumption on arguments is allowed.
       let applicable =
-          quickFilteredCandidates |> FilterEachThenUndo (fun newTrace candidate ->
+          candidates |> FilterEachThenUndo (fun newTrace candidate ->
               let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
               let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) candidate
               CanMemberSigsMatchUpToCheck 
