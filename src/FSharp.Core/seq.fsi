@@ -30,6 +30,8 @@ module Seq =
     /// seq { (1, 3); (1, 4); (2, 3); (2, 4) }
     /// </code>
     /// </example>
+    ///
+    /// <remarks>Enumeration is O(n*m), where n and m are the lengths of the sequences.</remarks>
     [<CompiledName("AllPairs")>]
     val allPairs: source1: seq<'T1> -> source2: seq<'T2> -> seq<'T1 * 'T2>
 
@@ -54,6 +56,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3; 4 }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n+m), where n and m are the lengths of the sequences.</remarks>
     [<CompiledName("Append")>]
     val append: source1: seq<'T> -> source2: seq<'T> -> seq<'T>
 
@@ -82,6 +86,8 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Average")>]
     val inline average:
         source: seq< ^T > -> ^T
@@ -122,6 +128,8 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("AverageBy")>]
     val inline averageBy:
         projection: ('T -> ^U) -> source: seq<'T> -> ^U
@@ -169,6 +177,8 @@ module Seq =
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3 }</c>,
     /// and it will not do the calculation again when called.
     /// </example>
+    ///
+    /// <remarks>Caching requires O(k) space for k accessed elements.</remarks>
     [<CompiledName("Cache")>]
     val cache: source: seq<'T> -> seq<'T>
 
@@ -191,6 +201,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3 }</c>, explicitly typed as <c>seq&lt;int&gt;</c>.
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Cast")>]
     val cast: source: IEnumerable -> seq<'T>
 
@@ -222,6 +234,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 2 }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Choose")>]
     val choose: chooser: ('T -> 'U option) -> source: seq<'T> -> seq<'U>
 
@@ -248,6 +262,8 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("ChunkBySize")>]
     val chunkBySize: chunkSize: int -> source: seq<'T> -> seq<'T array>
 
@@ -283,6 +299,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3; 4 }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Collect")>]
     val collect: mapping: ('T -> 'Collection) -> source: seq<'T> -> seq<'U> when 'Collection :> seq<'U>
 
@@ -364,6 +382,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>-1</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(min(n,m)) operation, where n and m are the lengths of the sequences.</remarks>
     [<CompiledName("CompareWith")>]
     val compareWith: comparer: ('T -> 'T -> int) -> source1: seq<'T> -> source2: seq<'T> -> int
 
@@ -387,6 +407,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3; 4; 5 }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the total number of elements.</remarks>
     [<CompiledName("Concat")>]
     val concat: sources: seq<'Collection> -> seq<'T> when 'Collection :> seq<'T>
 
@@ -434,6 +456,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { ("a", 2); ("b", 1) }</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("CountBy")>]
     val countBy: projection: ('T -> 'Key) -> source: seq<'T> -> seq<'Key * int> when 'Key: equality
 
@@ -472,6 +496,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 3 }</c>
     /// </example>
+    ///
+    /// <remarks>This operation requires O(k) space where k is the number of distinct elements seen.</remarks>
     [<CompiledName("Distinct")>]
     val distinct: source: seq<'T> -> seq<'T> when 'T: equality
 
@@ -494,6 +520,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { { Bar = 1 }; { Bar = 2 }; { Bar = 3 } }</c>
     /// </example>
+    ///
+    /// <remarks>This operation requires O(k) space where k is the number of distinct keys seen.</remarks>
     [<CompiledName("DistinctBy")>]
     val distinctBy: projection: ('T -> 'Key) -> source: seq<'T> -> seq<'T> when 'Key: equality
 
@@ -529,6 +557,8 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SplitInto")>]
     val splitInto: count: int -> source: seq<'T> -> seq<'T array>
 
@@ -570,6 +600,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 2; 4 }</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n+m) operation using hash-based exclusion.</remarks>
     [<CompiledName("Except")>]
     val except: itemsToExclude: seq<'T> -> source: seq<'T> -> seq<'T> when 'T: equality
 
@@ -603,6 +635,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>false</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("Exists")>]
     val exists: predicate: ('T -> bool) -> source: seq<'T> -> bool
 
@@ -640,6 +674,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>true</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequences.</remarks>
     [<CompiledName("Exists2")>]
     val exists2: predicate: ('T1 -> 'T2 -> bool) -> source1: seq<'T1> -> source2: seq<'T2> -> bool
 
@@ -666,6 +702,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 2; 4 }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Filter")>]
     val filter: predicate: ('T -> bool) -> source: seq<'T> -> seq<'T>
 
@@ -692,6 +730,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 2; 4 }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Where")>]
     val where: predicate: ('T -> bool) -> source: seq<'T> -> seq<'T>
 
@@ -723,6 +763,8 @@ module Seq =
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("Find")>]
     val find: predicate: ('T -> bool) -> source: seq<'T> -> 'T
 
@@ -757,6 +799,8 @@ module Seq =
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("FindBack")>]
     val findBack: predicate: ('T -> bool) -> source: seq<'T> -> 'T
 
@@ -787,6 +831,8 @@ module Seq =
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("FindIndex")>]
     val findIndex: predicate: ('T -> bool) -> source: seq<'T> -> int
 
@@ -821,6 +867,8 @@ module Seq =
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("FindIndexBack")>]
     val findIndexBack: predicate: ('T -> bool) -> source: seq<'T> -> int
 
@@ -851,6 +899,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>2</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Fold")>]
     val fold<'T, 'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> source: seq<'T> -> 'State
 
@@ -886,6 +936,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequences.</remarks>
     [<CompiledName("Fold2")>]
     val fold2<'T1, 'T2, 'State> :
         folder: ('State -> 'T1 -> 'T2 -> 'State) -> state: 'State -> source1: seq<'T1> -> source2: seq<'T2> -> 'State
@@ -932,6 +984,8 @@ module Seq =
     ///   Text = " 3 -2 -1 0 1" }
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("FoldBack")>]
     val foldBack<'T, 'State> : folder: ('T -> 'State -> 'State) -> source: seq<'T> -> state: 'State -> 'State
 
@@ -984,6 +1038,8 @@ module Seq =
     ///   Text = " (-3,1) (-2,2) (-1,3)" }
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequences.</remarks>
     [<CompiledName("FoldBack2")>]
     val foldBack2<'T1, 'T2, 'State> :
         folder: ('T1 -> 'T2 -> 'State -> 'State) -> source1: seq<'T1> -> source2: seq<'T2> -> state: 'State -> 'State
@@ -1010,6 +1066,8 @@ module Seq =
     /// [1; 2] |> Seq.forall isEven // evaluates to false
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("ForAll")>]
     val forall: predicate: ('T -> bool) -> source: seq<'T> -> bool
 
@@ -1044,6 +1102,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>false</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequences.</remarks>
     [<CompiledName("ForAll2")>]
     val forall2: predicate: ('T1 -> 'T2 -> bool) -> source1: seq<'T1> -> source2: seq<'T2> -> bool
 
@@ -1069,6 +1129,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { (1, seq { 1; 3; 5 }); (0, seq { 2; 4 }) }</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("GroupBy")>]
     val groupBy: projection: ('T -> 'Key) -> source: seq<'T> -> seq<'Key * seq<'T>> when 'Key: equality
 
@@ -1096,6 +1158,8 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("Head")>]
     val head: source: seq<'T> -> 'T
 
@@ -1120,6 +1184,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("TryHead")>]
     val tryHead: source: seq<'T> -> 'T option
 
@@ -1145,6 +1211,8 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Last")>]
     val last: source: seq<'T> -> 'T
 
@@ -1170,6 +1238,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("TryLast")>]
     val tryLast: source: seq<'T> -> 'T option
 
@@ -1206,6 +1276,8 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("ExactlyOne")>]
     val exactlyOne: source: seq<'T> -> 'T
 
@@ -1241,6 +1313,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("TryExactlyOne")>]
     val tryExactlyOne: source: seq<'T> -> 'T option
 
@@ -1265,6 +1339,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>false</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("IsEmpty")>]
     val isEmpty: source: seq<'T> -> bool
 
@@ -1314,6 +1390,8 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the count.</remarks>
     [<CompiledName("Initialize")>]
     val init: count: int -> initializer: (int -> 'T) -> seq<'T>
 
@@ -1337,6 +1415,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 5; 6; 7; 8; ... }</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("InitializeInfinite")>]
     val initInfinite: initializer: (int -> 'T) -> seq<'T>
 
@@ -1367,6 +1447,8 @@ module Seq =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the index.</remarks>
     [<CompiledName("Item")>]
     val item: index: int -> source: seq<'T> -> 'T
 
@@ -1389,6 +1471,8 @@ module Seq =
     /// </code>
     /// in the console.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Iterate")>]
     val iter: action: ('T -> unit) -> source: seq<'T> -> unit
 
@@ -1415,6 +1499,8 @@ module Seq =
     /// </code>
     /// in the console.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("IterateIndexed")>]
     val iteri: action: (int -> 'T -> unit) -> source: seq<'T> -> unit
 
@@ -1442,6 +1528,8 @@ module Seq =
     /// </code>
     /// in the console.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequences.</remarks>
     [<CompiledName("Iterate2")>]
     val iter2: action: ('T1 -> 'T2 -> unit) -> source1: seq<'T1> -> source2: seq<'T2> -> unit
 
@@ -1470,6 +1558,8 @@ module Seq =
     /// </code>
     /// in the console.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequences.</remarks>
     [<CompiledName("IterateIndexed2")>]
     val iteri2: action: (int -> 'T1 -> 'T2 -> unit) -> source1: seq<'T1> -> source2: seq<'T2> -> unit
 
@@ -1515,6 +1605,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 3; 2 }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Map")>]
     val map: mapping: ('T -> 'U) -> source: seq<'T> -> seq<'U>
 
@@ -1539,6 +1631,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 'a'; 'd'; 'o' }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequences.</remarks>
     [<CompiledName("Map2")>]
     val map2: mapping: ('T1 -> 'T2 -> 'U) -> source1: seq<'T1> -> source2: seq<'T2> -> seq<'U>
 
@@ -1572,6 +1666,8 @@ module Seq =
     /// </code>
     /// Evaluates <c>newCharges</c> to <c>seq { In 2; Out 4; In 6 }</c> and <c>balance</c> to <c>2</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("MapFold")>]
     val mapFold<'T, 'State, 'Result> :
         mapping: ('State -> 'T -> 'Result * 'State) -> state: 'State -> source: seq<'T> -> seq<'Result> * 'State
@@ -1606,6 +1702,8 @@ module Seq =
     /// </code>
     /// Evaluates <c>newCharges</c> to <c>seq { In 2; Out 4; In 6 }</c> and <c>balance</c> to <c>2</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("MapFoldBack")>]
     val mapFoldBack<'T, 'State, 'Result> :
         mapping: ('T -> 'State -> 'Result * 'State) -> source: seq<'T> -> state: 'State -> seq<'Result> * 'State
@@ -1634,6 +1732,8 @@ module Seq =
     /// Evaluates to a sequence yielding the same results as <c>seq { "all"; "the"; "time" } </c>
     /// </example>
     ///
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequences.</remarks>
     [<CompiledName("Map3")>]
     val map3:
         mapping: ('T1 -> 'T2 -> 'T3 -> 'U) -> source1: seq<'T1> -> source2: seq<'T2> -> source3: seq<'T3> -> seq<'U>
@@ -1657,6 +1757,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 10; 11; 12 }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("MapIndexed")>]
     val mapi: mapping: (int -> 'T -> 'U) -> source: seq<'T> -> seq<'U>
 
@@ -1682,6 +1784,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { (0, 'a'); (1, 'd'); (2, 'o') }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequences.</remarks>
     [<CompiledName("MapIndexed2")>]
     val mapi2: mapping: (int -> 'T1 -> 'T2 -> 'U) -> source1: seq<'T1> -> source2: seq<'T2> -> seq<'U>
 
@@ -1711,6 +1815,8 @@ module Seq =
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Max")>]
     val inline max: source: seq<'T> -> 'T when 'T: comparison
 
@@ -1741,6 +1847,8 @@ module Seq =
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("MaxBy")>]
     val inline maxBy: projection: ('T -> 'U) -> source: seq<'T> -> 'T when 'U: comparison
 
@@ -1770,6 +1878,8 @@ module Seq =
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Min")>]
     val inline min: source: seq<'T> -> 'T when 'T: comparison
 
@@ -1800,6 +1910,8 @@ module Seq =
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("MinBy")>]
     val inline minBy: projection: ('T -> 'U) -> source: seq<'T> -> 'T when 'U: comparison
 
@@ -1832,6 +1944,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 2; 5 }</c>.
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the array.</remarks>
     [<CompiledName("OfArray")>]
     val ofArray: source: 'T array -> seq<'T>
 
@@ -1870,6 +1984,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { (1, 2); (2, 3); (3, 4) }</c>.
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Pairwise")>]
     val pairwise: source: seq<'T> -> seq<'T * 'T>
 
@@ -1894,6 +2010,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 4; 1; 2; 3 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Permute")>]
     val permute: indexMap: (int -> int) -> source: seq<'T> -> seq<'T>
 
@@ -1927,6 +2045,8 @@ module Seq =
     /// Throws <c>KeyNotFoundException</c>.
     /// </example>
     ///
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("Pick")>]
     val pick: chooser: ('T -> 'U option) -> source: seq<'T> -> 'U
 
@@ -1960,6 +2080,8 @@ module Seq =
     /// </code>
     /// Throws an <c>InvalidCastException</c>.
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("ReadOnly")>]
     val readonly: source: seq<'T> -> seq<'T>
 
@@ -1985,6 +2107,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>1342</c>, by computing <c>((1 * 10 + 3) * 10 + 4) * 10 + 2</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Reduce")>]
     val reduce: reduction: ('T -> 'T -> 'T) -> source: seq<'T> -> 'T
 
@@ -2027,6 +2151,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>2431</c>, by computing <c>1 + (3 + (4 + 2 * 10) * 10) * 10</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("ReduceBack")>]
     val reduceBack: reduction: ('T -> 'T -> 'T) -> source: seq<'T> -> 'T
 
@@ -2048,6 +2174,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 2; 1; 0 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Reverse")>]
     val rev: source: seq<'T> -> seq<'T>
 
@@ -2077,6 +2205,8 @@ module Seq =
     /// Evaluates to a sequence yielding the same results as <c>seq { 0; 1; -1; 2 }</c>. Note <c>0</c> is the initial
     /// state, <c>1</c> the next state, <c>-1</c> the next state, and <c>2</c> the final state.
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Scan")>]
     val scan<'T, 'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> source: seq<'T> -> seq<'State>
 
@@ -2126,6 +2256,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 7 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("Singleton")>]
     val singleton: value: 'T -> seq<'T>
 
@@ -2167,6 +2299,8 @@ module Seq =
     /// </code>
     /// Evaluates a sequence yielding the same results as <c>seq { "a"; "b"; "c"; "d" }</c>.
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the count.</remarks>
     [<CompiledName("Skip")>]
     val skip: count: int -> source: seq<'T> -> seq<'T>
 
@@ -2188,6 +2322,8 @@ module Seq =
     /// </code>
     /// Evaluates a sequence yielding the same results as <c>seq { "bbb"; "cc"; "d" }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("SkipWhile")>]
     val skipWhile: predicate: ('T -> bool) -> source: seq<'T> -> seq<'T>
 
@@ -2214,6 +2350,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 1; 1 3; 4; 6; 8 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("Sort")>]
     val sort: source: seq<'T> -> seq<'T> when 'T: comparison
 
@@ -2244,6 +2382,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { (0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb") }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SortWith")>]
     val sortWith: comparer: ('T -> 'T -> int) -> source: seq<'T> -> seq<'T>
 
@@ -2272,6 +2412,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { "a"; "dd"; "bbb"; "cccc" }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SortBy")>]
     val sortBy: projection: ('T -> 'Key) -> source: seq<'T> -> seq<'T> when 'Key: comparison
 
@@ -2298,6 +2440,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 8; 6; 4; 3; 1; 1 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SortDescending")>]
     val inline sortDescending: source: seq<'T> -> seq<'T> when 'T: comparison
 
@@ -2326,6 +2470,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { "cccc"; "bbb"; "dd"; "a" }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n log n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SortByDescending")>]
     val inline sortByDescending: projection: ('T -> 'Key) -> source: seq<'T> -> seq<'T> when 'Key: comparison
 
@@ -2365,6 +2511,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>7</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("SumBy")>]
     val inline sumBy:
         projection: ('T -> ^U) -> source: seq<'T> -> ^U
@@ -2389,6 +2537,8 @@ module Seq =
     /// Evaluates to a sequence yielding the same results as <c>seq { "bb"; "ccc" }</c>
     /// </example>
     ///
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Tail")>]
     val tail: source: seq<'T> -> seq<'T>
 
@@ -2434,6 +2584,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding no results.
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(count).</remarks>
     [<CompiledName("Take")>]
     val take: count: int -> source: seq<'T> -> seq<'T>
 
@@ -2455,6 +2607,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { "a"; "bb" }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("TakeWhile")>]
     val takeWhile: predicate: ('T -> bool) -> source: seq<'T> -> seq<'T>
 
@@ -2493,6 +2647,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>[ 1; 2; 5 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("ToList")>]
     val toList: source: seq<'T> -> 'T list
 
@@ -2523,6 +2679,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("TryFind")>]
     val tryFind: predicate: ('T -> bool) -> source: seq<'T> -> 'T option
 
@@ -2556,6 +2714,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("TryFindBack")>]
     val tryFindBack: predicate: ('T -> bool) -> source: seq<'T> -> 'T option
 
@@ -2586,6 +2746,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("TryFindIndex")>]
     val tryFindIndex: predicate: ('T -> bool) -> source: seq<'T> -> int option
 
@@ -2615,6 +2777,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the index.</remarks>
     [<CompiledName("TryItem")>]
     val tryItem: index: int -> source: seq<'T> -> 'T option
 
@@ -2648,6 +2812,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("TryFindIndexBack")>]
     val tryFindIndexBack: predicate: ('T -> bool) -> source: seq<'T> -> int option
 
@@ -2678,6 +2844,8 @@ module Seq =
     /// </code>
     /// Evaluates to <c>None</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the sequence.</remarks>
     [<CompiledName("TryPick")>]
     val tryPick: chooser: ('T -> 'U option) -> source: seq<'T> -> 'U option
 
@@ -2703,6 +2871,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence of sequences yielding the same results as <c>[ [10; 11]; [20; 21]; [30; 31] ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n*m) operation, where n and m are the dimensions.</remarks>
     [<CompiledName("Transpose")>]
     val transpose: source: seq<'Collection> -> seq<seq<'T>> when 'Collection :> seq<'T>
 
@@ -2741,6 +2911,8 @@ module Seq =
     /// </code>
     /// Evaluates to the empty sequence.
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(count).</remarks>
     [<CompiledName("Truncate")>]
     val truncate: count: int -> source: seq<'T> -> seq<'T>
 
@@ -2771,6 +2943,8 @@ module Seq =
     /// </code>
     /// Evaluates to an infinite sequence yielding the results <c>seq { 1I; 2I; 4I; 8I; ... }</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of elements generated.</remarks>
     [<CompiledName("Unfold")>]
     val unfold: generator: ('State -> ('T * 'State) option) -> state: 'State -> seq<'T>
 
@@ -2792,6 +2966,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence of arrays yielding the results <c>seq { [| 1; 2; 3 |]; [| 2; 3; 4 |]; [| 3; 4; 5 |] }</c>
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequence.</remarks>
     [<CompiledName("Windowed")>]
     val windowed: windowSize: int -> source: seq<'T> -> seq<'T array>
 
@@ -2815,6 +2991,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { (1, "one"); (2, "two") }</c>.
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequences.</remarks>
     [<CompiledName("Zip")>]
     val zip: source1: seq<'T1> -> source2: seq<'T2> -> seq<'T1 * 'T2>
 
@@ -2840,6 +3018,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { (1, "one", "I"); (2, "two", "II") }</c>.
     /// </example>
+    ///
+    /// <remarks>Sequence construction is O(1). Enumeration is O(n), where n is the length of the sequences.</remarks>
     [<CompiledName("Zip3")>]
     val zip3: source1: seq<'T1> -> source2: seq<'T2> -> source3: seq<'T3> -> seq<'T1 * 'T2 * 'T3>
 
@@ -2877,6 +3057,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 0; 3 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the index.</remarks>
     [<CompiledName("RemoveManyAt")>]
     val removeManyAt: index: int -> count: int -> source: seq<'T> -> seq<'T>
 
@@ -2915,6 +3097,8 @@ module Seq =
     /// </code>
     /// Evaluates to a sequence yielding the same results as <c>seq { 0; 9; 1; 2 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the index.</remarks>
     [<CompiledName("InsertAt")>]
     val insertAt: index: int -> value: 'T -> source: seq<'T> -> seq<'T>
 
