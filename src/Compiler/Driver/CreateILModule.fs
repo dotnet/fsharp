@@ -146,7 +146,7 @@ let GetStrongNameSigner signingInfo =
             if publicsign || delaysign then
                 Some(ILStrongNameSigner.OpenPublicKeyOptions bytes publicsign)
             else
-                Some(ILStrongNameSigner.OpenKeyPairFile bytes true)
+                Some(ILStrongNameSigner.OpenKeyPairFile bytes publicsign)
 
 //----------------------------------------------------------------------------
 // Building the contents of the finalized IL module
