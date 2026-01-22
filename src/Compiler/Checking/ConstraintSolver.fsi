@@ -15,19 +15,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-/// Get the total number of overload cache hits across all compilations (for testability)
-val GetOverloadCacheHits: unit -> int
-
-/// Get the total number of overload cache misses across all compilations (for testability)
-val GetOverloadCacheMisses: unit -> int
-
-/// Get diagnostics for why cache key computation may be failing (for debugging tests)
-/// Returns: (attempts, skippedCondition, skippedNamed, skippedArgType, skippedRetType)
-val GetOverloadCacheDiagnostics: unit -> int * int * int * int * int
-
-/// Reset the overload cache counters (for testability)
-val ResetOverloadCacheCounters: unit -> unit
-
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =
@@ -244,16 +231,6 @@ type ConstraintSolverState =
         PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
         WarnWhenUsingWithoutNullOnAWithNullTarget: string option
-
-        /// Cache for overload resolution results
-        OverloadResolutionCache:
-            System.Collections.Generic.Dictionary<OverloadResolutionCacheKey, OverloadResolutionCacheResult>
-
-        /// Counter for cache hits (for profiling)
-        mutable OverloadCacheHits: int
-
-        /// Counter for cache misses (for profiling)
-        mutable OverloadCacheMisses: int
     }
 
     static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
