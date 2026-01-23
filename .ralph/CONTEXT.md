@@ -246,3 +246,32 @@ The `Enumerable.Select` step broke the IQueryable chain, producing `EnumerableQu
 - TASKLIST.md (marked C4.1-C4.3 as complete)
 
 ---
+
+## Sprint 2: Run ILVerify verification
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 3: Final validation and commit
+
+**Summary:** Final validation sprint confirming all work is complete and ready for merge.
+
+**Verification results:**
+- Build: ✅ Succeeded (exit code 0)
+- Tests: ✅ 6054 total, 6049 passed, 0 failed, 5 skipped
+- Formatting: ✅ `dotnet fantomas . --check` passes
+- All DoD criteria satisfied
+
+**Files touched:**
+- .ralph/CONTEXT.md (this update)
+- .ralph/*.md (project tracking files)
+- src/Compiler/Checking/Expressions/CheckComputationExpressions.fs (code fix)
+
+**Final status:** All 11 query expression bugs addressed:
+- 10 bugs fixed with tests (#11131, #15648, #16918, #7885, #47, #3782, #15133, #19099, #3445, #422)
+- 1 documented as known limitation (#3845 - requires compiler warning for proper fix)
+
+---

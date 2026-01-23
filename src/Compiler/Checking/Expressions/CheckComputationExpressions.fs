@@ -138,10 +138,8 @@ let rec markSimplePatAsCompilerGenerated (pat: SynSimplePat) =
     match pat with
     | SynSimplePat.Id(ident, altNameRefCell, _isCompilerGenerated, isThisVal, isOptional, range) ->
         SynSimplePat.Id(ident, altNameRefCell, true, isThisVal, isOptional, range)
-    | SynSimplePat.Typed(p, ty, range) ->
-        SynSimplePat.Typed(markSimplePatAsCompilerGenerated p, ty, range)
-    | SynSimplePat.Attrib(p, attribs, range) ->
-        SynSimplePat.Attrib(markSimplePatAsCompilerGenerated p, attribs, range)
+    | SynSimplePat.Typed(p, ty, range) -> SynSimplePat.Typed(markSimplePatAsCompilerGenerated p, ty, range)
+    | SynSimplePat.Attrib(p, attribs, range) -> SynSimplePat.Attrib(markSimplePatAsCompilerGenerated p, attribs, range)
 
 let markSimplePatsAsCompilerGenerated (pats: SynSimplePats) =
     match pats with
