@@ -141,3 +141,31 @@ The `Enumerable.Select` step broke the IQueryable chain, producing `EnumerableQu
 - `headOrDefault with tuple and no match returns null - issue 3845 known limitation`
 
 ---
+
+## Sprint 6: FS1182 false positive (Issue #422)
+
+**Summary:** Investigated and documented as known limitation. The issue is more complex than initially scoped.
+
+**Issue:** #422
+
+**Root cause:** Query expressions translate `for x in source do ...` into lambdas, creating two separate sets of Vals for the same pattern:
+1. varSpace Vals (created for query variable space tracking)
+2. Lambda Vals (created during typechecking of generated code)
+
+The FS1182 warning fires for Lambda Vals that aren't directly referenced, even though the variable is logically "used" via varSpace.
+
+**Attempted fixes:**
+- Marking varSpace Vals as referenced in `addVarsToVarSpace` - doesn't work because Lambda Vals are different objects
+- Marking varSpace Vals as referenced in helper functions - same issue
+
+**Proper solution:** Requires deeper compiler changes (Val sharing, query-specific warning suppression, or modified typechecking).
+
+**Workaround:** Users can prefix query variables with underscore (e.g., `for _x in source do select 1`).
+
+**Current status:** Documented as known limitation in VISION.md. The warning is off by default (only appears with `--warnon:1182`).
+
+**Files touched:**
+- .ralph/VISION.md (added detailed documentation of Issue #422)
+- tests/FSharp.Compiler.ComponentTests/CompilerOptions/fsc/warnon/warnon.fs (added documentation comment, kept passing tests)
+
+---

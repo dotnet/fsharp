@@ -100,6 +100,23 @@ TEST_UPDATE_BSL=1 dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compile
 - **Proper solution**: Compiler warning when T doesn't admit null (Option A from design decisions). This requires changes to CheckComputationExpressions.fs, not FSharp.Core.
 - **Current status**: Documented as known limitation with test demonstrating the behavior.
 
+### Issue #422: FS1182 false positive in query expressions
+- **Problem**: When using `--warnon:1182`, query expressions like `for x in source do where (x > 2) select 1` incorrectly report that `x` is unused, even though it's used in the `where` clause.
+- **Root cause**: Query expression translation creates two separate sets of Vals for the same pattern:
+  1. **varSpace Vals**: Created in `addVarsToVarSpace` via `TcMatchPattern` for tracking the query variable space
+  2. **Lambda Vals**: Created when the generated `SynMatchClause` is typechecked
+  
+  These are different Val objects even though they have the same name. The varSpace Vals are used to build synthetic expressions (e.g., `yield x`), but the FS1182 warning is about the Lambda Vals which may not be directly referenced.
+- **Attempted fixes**:
+  1. Marking varSpace Vals as referenced in `addVarsToVarSpace` - doesn't work because Lambda Vals are different objects
+  2. Marking varSpace Vals as referenced in `mkExprForVarSpace`/`mkSimplePatForVarSpace`/`mkPatForVarSpace` - same issue
+- **Proper solution**: Requires deeper changes to query expression typechecking:
+  - Option A: Share Vals between varSpace and the generated lambdas (avoid typechecking the pattern twice)
+  - Option B: Mark Lambda Vals as referenced based on matching names with varSpace Vals
+  - Option C: Add query-specific context to suppress FS1182 for query pattern bindings
+- **Workaround**: Users can prefix query variables with underscore (e.g., `for _x in source do select 1`)
+- **Current status**: Documented as known limitation. The warning is off by default and only appears with `--warnon:1182`.
+
 ### LINQ Expression Pattern Handlers
 - When adding new handlers to `ConvExprToLinqInContext`, ensure the LINQ Expression equivalent exists:
   - Sequential → Expression.Block

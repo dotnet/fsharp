@@ -144,3 +144,46 @@ type System.Int32 with
         |> compile
         |> shouldSucceed
         |> ignore
+
+    // Issue #422: FS1182 false positive in query expressions
+    // This is a known limitation documented in VISION.md.
+    // The issue is that query expressions translate `for x in source do ...`
+    // into lambdas with fresh variable bindings. The warning fires for the
+    // lambda parameter when the variable is used in projection lambdas
+    // (like `where (x > 2)`) but not in the final `select`.
+    // A proper fix requires deeper changes to how query pattern bindings
+    // are typechecked, potentially sharing Vals between varSpace and the
+    // generated lambdas.
+    //
+    // Workaround: Users can prefix unused query variables with underscore,
+    // e.g., `for _x in source do select 1`
+    [<Fact>]
+    let ``Query expression variable with underscore prefix should not warn FS1182`` () =
+        FSharp """
+module Test
+
+let result = 
+    query { for _x in [1;2;3] do
+            select 1 }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Query expression variable used in select should not warn FS1182`` () =
+        FSharp """
+module Test
+
+let result = 
+    query { for x in [1;2;3] do
+            where (x > 2)
+            select x }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
