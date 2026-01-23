@@ -215,3 +215,34 @@ The `Enumerable.Select` step broke the IQueryable chain, producing `EnumerableQu
 **Files touched:** Check git log for details.
 
 ---
+
+## Sprint 3: Final validation & formatting
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 1: Update TASKLIST checkboxes
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 2: ILVerify verification
+
+**Summary:** Ran ILVerify on all FSharp.Core and FSharp.Compiler.Service configurations. All IL verification passed with no baseline updates needed.
+
+**Verification results:**
+- FSharp.Core Debug/Release netstandard2.0 - ✅ matches baseline
+- FSharp.Core Debug/Release netstandard2.1 - ✅ matches baseline
+- FSharp.Compiler.Service Debug/Release netstandard2.0 - ✅ matches baseline
+- FSharp.Compiler.Service Debug/Release net10.0 - ✅ matches baseline
+
+**Files touched:**
+- TASKLIST.md (marked C4.1-C4.3 as complete)
+
+---
