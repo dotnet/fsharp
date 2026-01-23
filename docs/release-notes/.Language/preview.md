@@ -1,6 +1,7 @@
 ### Added
 
-* Simplify implementation of interface hierarchies with equally named abstract slots: when a derived interface provides a Default Interface Member (DIM) implementation for a base interface slot, F# no longer requires explicit interface declarations for the DIM-covered slot. (RFC FS-1336, [Language suggestion #1430](https://github.com/fsharp/fslang-suggestions/issues/1430), [PR #NNNNN](https://github.com/dotnet/fsharp/pull/NNNNN))
+* Simplify implementation of interface hierarchies with equally named abstract slots: when a derived interface provides a Default Interface Member (DIM) implementation for a base interface slot, F# no longer requires explicit interface declarations for the DIM-covered slot. (RFC FS-1336, [Language suggestion #1430](https://github.com/fsharp/fslang-suggestions/issues/1430), [PR #19241
+](https://github.com/dotnet/fsharp/pull/19241))
 * Better generic unmanaged structs handling. ([Language suggestion #692](https://github.com/fsharp/fslang-suggestions/issues/692), [PR #12154](https://github.com/dotnet/fsharp/pull/12154))
 * Deprecate places where `seq` can be omitted. ([Language suggestion #1033](https://github.com/fsharp/fslang-suggestions/issues/1033), [PR #17772](https://github.com/dotnet/fsharp/pull/17772))
 * Added type conversions cache, only enabled for compiler runs ([PR#17668](https://github.com/dotnet/fsharp/pull/17668))
