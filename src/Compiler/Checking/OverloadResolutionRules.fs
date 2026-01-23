@@ -55,6 +55,9 @@ type TiebreakRule =
         Id: TiebreakRuleId
         /// Human-readable description of what the rule does
         Description: string
+        /// Optional LanguageFeature required for this rule to be active.
+        /// If Some, the rule is skipped when the feature is not supported.
+        RequiredFeature: LanguageFeature option
         /// Comparison function: returns >0 if candidate is better, <0 if other is better, 0 if equal
         Compare:
             OverloadResolutionContext
@@ -377,6 +380,7 @@ let private noTDCRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NoTDC
         Description = "Prefer methods that don't use type-directed conversion"
+        RequiredFeature = None
         Compare =
             fun _ (_, usesTDC1, _) (_, usesTDC2, _) ->
                 compare
@@ -393,6 +397,7 @@ let private lessTDCRule: TiebreakRule =
     {
         Id = TiebreakRuleId.LessTDC
         Description = "Prefer methods that need less type-directed conversion"
+        RequiredFeature = None
         Compare =
             fun _ (_, usesTDC1, _) (_, usesTDC2, _) ->
                 compare
@@ -409,6 +414,7 @@ let private nullableTDCRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NullableTDC
         Description = "Prefer methods that only have nullable type-directed conversions"
+        RequiredFeature = None
         Compare =
             fun _ (_, usesTDC1, _) (_, usesTDC2, _) ->
                 compare
@@ -425,6 +431,7 @@ let private noWarningsRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NoWarnings
         Description = "Prefer methods that don't give 'this code is less generic' warnings"
+        RequiredFeature = None
         Compare = fun _ (_, _, warnCount1) (_, _, warnCount2) -> compare (warnCount1 = 0) (warnCount2 = 0)
     }
 
@@ -433,6 +440,7 @@ let private noParamArrayRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NoParamArray
         Description = "Prefer methods that don't use param array arg"
+        RequiredFeature = None
         Compare =
             fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion)
     }
@@ -442,6 +450,7 @@ let private preciseParamArrayRule: TiebreakRule =
     {
         Id = TiebreakRuleId.PreciseParamArray
         Description = "Prefer methods with more precise param array arg type"
+        RequiredFeature = None
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
                 if candidate.UsesParamArrayConversion && other.UsesParamArrayConversion then
@@ -455,6 +464,7 @@ let private noOutArgsRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NoOutArgs
         Description = "Prefer methods that don't use out args"
+        RequiredFeature = None
         Compare = fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.HasOutArgs) (not other.HasOutArgs)
     }
 
@@ -463,6 +473,7 @@ let private noOptionalArgsRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NoOptionalArgs
         Description = "Prefer methods that don't use optional args"
+        RequiredFeature = None
         Compare = fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.HasOptionalArgs) (not other.HasOptionalArgs)
     }
 
@@ -471,6 +482,7 @@ let private unnamedArgsRule: TiebreakRule =
     {
         Id = TiebreakRuleId.UnnamedArgs
         Description = "Compare regular unnamed args using subsumption ordering"
+        RequiredFeature = None
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
                 if candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs then
@@ -509,6 +521,7 @@ let private preferNonExtensionRule: TiebreakRule =
     {
         Id = TiebreakRuleId.PreferNonExtension
         Description = "Prefer non-extension methods over extension methods"
+        RequiredFeature = None
         Compare =
             fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
     }
@@ -518,6 +531,7 @@ let private extensionPriorityRule: TiebreakRule =
     {
         Id = TiebreakRuleId.ExtensionPriority
         Description = "Between extension methods, prefer most recently opened"
+        RequiredFeature = None
         Compare =
             fun _ (candidate, _, _) (other, _, _) ->
                 if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then
@@ -531,6 +545,7 @@ let private preferNonGenericRule: TiebreakRule =
     {
         Id = TiebreakRuleId.PreferNonGeneric
         Description = "Prefer non-generic methods over generic methods"
+        RequiredFeature = None
         Compare = fun _ (candidate, _, _) (other, _, _) -> compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
     }
 
@@ -541,13 +556,10 @@ let private moreConcreteRule: TiebreakRule =
     {
         Id = TiebreakRuleId.MoreConcrete
         Description = "Prefer more concrete type instantiations over more generic ones"
+        RequiredFeature = Some LanguageFeature.MoreConcreteTiebreaker
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
-                if
-                    ctx.g.langVersion.SupportsFeature(LanguageFeature.MoreConcreteTiebreaker)
-                    && not candidate.CalledTyArgs.IsEmpty
-                    && not other.CalledTyArgs.IsEmpty
-                then
+                if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
                     // Skip SRTP: Don't apply MoreConcrete tiebreaker when SRTP is involved
                     // at the method level - check formal method type parameters for SRTP
                     let hasAnySRTPTypeParams =
@@ -597,6 +609,7 @@ let private nullableOptionalInteropRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NullableOptionalInterop
         Description = "F# 5.0 rule - compare all arguments including optional and named"
+        RequiredFeature = None
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
                 if ctx.g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) then
@@ -612,6 +625,7 @@ let private propertyOverrideRule: TiebreakRule =
     {
         Id = TiebreakRuleId.PropertyOverride
         Description = "For properties, prefer more derived type (partial override support)"
+        RequiredFeature = None
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
                 match
@@ -648,6 +662,12 @@ let getAllTiebreakRules () : TiebreakRule list =
         propertyOverrideRule
     ]
 
+/// Helper to check if a rule's required feature is supported
+let private isRuleEnabled (context: OverloadResolutionContext) (rule: TiebreakRule) =
+    match rule.RequiredFeature with
+    | None -> true
+    | Some feature -> context.g.langVersion.SupportsFeature(feature)
+
 /// Evaluate all tiebreaker rules to determine which method is better.
 /// Returns >0 if candidate is better, <0 if other is better, 0 if they are equal.
 let evaluateTiebreakRules
@@ -661,8 +681,11 @@ let evaluateTiebreakRules
         match rules with
         | [] -> 0
         | rule :: rest ->
-            let c = rule.Compare context candidate other
-            if c <> 0 then c else loop rest
+            if isRuleEnabled context rule then
+                let c = rule.Compare context candidate other
+                if c <> 0 then c else loop rest
+            else
+                loop rest
 
     loop rules
 
@@ -680,10 +703,13 @@ let wasDecidedByRule
         match rules with
         | [] -> false
         | rule :: rest ->
-            let c = rule.Compare context winner loser
+            if isRuleEnabled context rule then
+                let c = rule.Compare context winner loser
 
-            if rule.Id = ruleId then c > 0 // The specified rule decided in favor of winner
-            elif c <> 0 then false // An earlier rule decided, so the specified rule wasn't the decider
-            else loop rest
+                if rule.Id = ruleId then c > 0 // The specified rule decided in favor of winner
+                elif c <> 0 then false // An earlier rule decided, so the specified rule wasn't the decider
+                else loop rest
+            else
+                loop rest
 
     loop rules

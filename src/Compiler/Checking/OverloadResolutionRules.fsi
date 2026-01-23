@@ -4,6 +4,7 @@
 /// This module provides a structured representation of all rules used in method overload resolution.
 module internal FSharp.Compiler.OverloadResolutionRules
 
+open FSharp.Compiler.Features
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.Text
 open FSharp.Compiler.TcGlobals
@@ -79,6 +80,9 @@ type TiebreakRule =
         Id: TiebreakRuleId
         /// Human-readable description of what the rule does
         Description: string
+        /// Optional LanguageFeature required for this rule to be active.
+        /// If Some, the rule is skipped when the feature is not supported.
+        RequiredFeature: LanguageFeature option
         /// Comparison function: returns >0 if candidate is better, <0 if other is better, 0 if equal
         Compare:
             OverloadResolutionContext
