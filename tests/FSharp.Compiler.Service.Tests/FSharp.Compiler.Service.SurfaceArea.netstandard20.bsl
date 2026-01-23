@@ -5080,6 +5080,54 @@ FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiEvaluati
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiValue
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+Settings
+FSharp.Compiler.Symbols.DocCommentIdKind+Tags: Int32 Event
+FSharp.Compiler.Symbols.DocCommentIdKind+Tags: Int32 Field
+FSharp.Compiler.Symbols.DocCommentIdKind+Tags: Int32 Method
+FSharp.Compiler.Symbols.DocCommentIdKind+Tags: Int32 Namespace
+FSharp.Compiler.Symbols.DocCommentIdKind+Tags: Int32 Property
+FSharp.Compiler.Symbols.DocCommentIdKind+Tags: Int32 Type
+FSharp.Compiler.Symbols.DocCommentIdKind+Tags: Int32 Unknown
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean Equals(FSharp.Compiler.Symbols.DocCommentIdKind)
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean Equals(FSharp.Compiler.Symbols.DocCommentIdKind, System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean Equals(System.Object)
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean IsEvent
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean IsField
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean IsMethod
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean IsNamespace
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean IsProperty
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean IsType
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean IsUnknown
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean get_IsEvent()
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean get_IsField()
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean get_IsMethod()
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean get_IsNamespace()
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean get_IsProperty()
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean get_IsType()
+FSharp.Compiler.Symbols.DocCommentIdKind: Boolean get_IsUnknown()
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind Event
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind Field
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind Method
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind Namespace
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind Property
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind Type
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind Unknown
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind get_Event()
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind get_Field()
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind get_Method()
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind get_Namespace()
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind get_Property()
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind get_Type()
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind get_Unknown()
+FSharp.Compiler.Symbols.DocCommentIdKind: FSharp.Compiler.Symbols.DocCommentIdKind+Tags
+FSharp.Compiler.Symbols.DocCommentIdKind: Int32 CompareTo(FSharp.Compiler.Symbols.DocCommentIdKind)
+FSharp.Compiler.Symbols.DocCommentIdKind: Int32 CompareTo(System.Object)
+FSharp.Compiler.Symbols.DocCommentIdKind: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.Symbols.DocCommentIdKind: Int32 GetHashCode()
+FSharp.Compiler.Symbols.DocCommentIdKind: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.DocCommentIdKind: Int32 Tag
+FSharp.Compiler.Symbols.DocCommentIdKind: Int32 get_Tag()
+FSharp.Compiler.Symbols.DocCommentIdKind: System.String ToString()
 FSharp.Compiler.Symbols.FSharpAbstractParameter: Boolean IsInArg
 FSharp.Compiler.Symbols.FSharpAbstractParameter: Boolean IsOptionalArg
 FSharp.Compiler.Symbols.FSharpAbstractParameter: Boolean IsOutArg
@@ -5942,6 +5990,54 @@ FSharp.Compiler.Symbols.FSharpXmlDoc: Int32 GetHashCode(System.Collections.IEqua
 FSharp.Compiler.Symbols.FSharpXmlDoc: Int32 Tag
 FSharp.Compiler.Symbols.FSharpXmlDoc: Int32 get_Tag()
 FSharp.Compiler.Symbols.FSharpXmlDoc: System.String ToString()
+FSharp.Compiler.Symbols.ParsedDocCommentId+Field: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_typePath()
+FSharp.Compiler.Symbols.ParsedDocCommentId+Field: Microsoft.FSharp.Collections.FSharpList`1[System.String] typePath
+FSharp.Compiler.Symbols.ParsedDocCommentId+Field: System.String fieldName
+FSharp.Compiler.Symbols.ParsedDocCommentId+Field: System.String get_fieldName()
+FSharp.Compiler.Symbols.ParsedDocCommentId+Member: FSharp.Compiler.Symbols.DocCommentIdKind get_kind()
+FSharp.Compiler.Symbols.ParsedDocCommentId+Member: FSharp.Compiler.Symbols.DocCommentIdKind kind
+FSharp.Compiler.Symbols.ParsedDocCommentId+Member: Int32 genericArity
+FSharp.Compiler.Symbols.ParsedDocCommentId+Member: Int32 get_genericArity()
+FSharp.Compiler.Symbols.ParsedDocCommentId+Member: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_typePath()
+FSharp.Compiler.Symbols.ParsedDocCommentId+Member: Microsoft.FSharp.Collections.FSharpList`1[System.String] typePath
+FSharp.Compiler.Symbols.ParsedDocCommentId+Member: System.String get_memberName()
+FSharp.Compiler.Symbols.ParsedDocCommentId+Member: System.String memberName
+FSharp.Compiler.Symbols.ParsedDocCommentId+Tags: Int32 Field
+FSharp.Compiler.Symbols.ParsedDocCommentId+Tags: Int32 Member
+FSharp.Compiler.Symbols.ParsedDocCommentId+Tags: Int32 None
+FSharp.Compiler.Symbols.ParsedDocCommentId+Tags: Int32 Type
+FSharp.Compiler.Symbols.ParsedDocCommentId+Type: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_path()
+FSharp.Compiler.Symbols.ParsedDocCommentId+Type: Microsoft.FSharp.Collections.FSharpList`1[System.String] path
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean Equals(FSharp.Compiler.Symbols.ParsedDocCommentId)
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean Equals(FSharp.Compiler.Symbols.ParsedDocCommentId, System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean Equals(System.Object)
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean IsField
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean IsMember
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean IsNone
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean IsType
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean get_IsField()
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean get_IsMember()
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean get_IsNone()
+FSharp.Compiler.Symbols.ParsedDocCommentId: Boolean get_IsType()
+FSharp.Compiler.Symbols.ParsedDocCommentId: FSharp.Compiler.Symbols.ParsedDocCommentId NewField(Microsoft.FSharp.Collections.FSharpList`1[System.String], System.String)
+FSharp.Compiler.Symbols.ParsedDocCommentId: FSharp.Compiler.Symbols.ParsedDocCommentId NewMember(Microsoft.FSharp.Collections.FSharpList`1[System.String], System.String, Int32, FSharp.Compiler.Symbols.DocCommentIdKind)
+FSharp.Compiler.Symbols.ParsedDocCommentId: FSharp.Compiler.Symbols.ParsedDocCommentId NewType(Microsoft.FSharp.Collections.FSharpList`1[System.String])
+FSharp.Compiler.Symbols.ParsedDocCommentId: FSharp.Compiler.Symbols.ParsedDocCommentId None
+FSharp.Compiler.Symbols.ParsedDocCommentId: FSharp.Compiler.Symbols.ParsedDocCommentId get_None()
+FSharp.Compiler.Symbols.ParsedDocCommentId: FSharp.Compiler.Symbols.ParsedDocCommentId+Field
+FSharp.Compiler.Symbols.ParsedDocCommentId: FSharp.Compiler.Symbols.ParsedDocCommentId+Member
+FSharp.Compiler.Symbols.ParsedDocCommentId: FSharp.Compiler.Symbols.ParsedDocCommentId+Tags
+FSharp.Compiler.Symbols.ParsedDocCommentId: FSharp.Compiler.Symbols.ParsedDocCommentId+Type
+FSharp.Compiler.Symbols.ParsedDocCommentId: Int32 CompareTo(FSharp.Compiler.Symbols.ParsedDocCommentId)
+FSharp.Compiler.Symbols.ParsedDocCommentId: Int32 CompareTo(System.Object)
+FSharp.Compiler.Symbols.ParsedDocCommentId: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.Symbols.ParsedDocCommentId: Int32 GetHashCode()
+FSharp.Compiler.Symbols.ParsedDocCommentId: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.ParsedDocCommentId: Int32 Tag
+FSharp.Compiler.Symbols.ParsedDocCommentId: Int32 get_Tag()
+FSharp.Compiler.Symbols.ParsedDocCommentId: System.String ToString()
+FSharp.Compiler.Symbols.XmlDocSigParser: FSharp.Compiler.Symbols.ParsedDocCommentId parseDocCommentId(System.String)
 FSharp.Compiler.Syntax.DebugPointAtBinding+Tags: Int32 NoneAtDo
 FSharp.Compiler.Syntax.DebugPointAtBinding+Tags: Int32 NoneAtInvisible
 FSharp.Compiler.Syntax.DebugPointAtBinding+Tags: Int32 NoneAtLet
