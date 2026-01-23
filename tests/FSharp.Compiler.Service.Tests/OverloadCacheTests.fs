@@ -4,6 +4,7 @@
 module FSharp.Compiler.Service.Tests.OverloadCacheTests
 
 open System
+open System.IO
 open System.Text
 open Xunit
 open FSharp.Compiler.CodeAnalysis
@@ -12,6 +13,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Caches
 open FSharp.Test.Assert
 open FSharp.Compiler.Service.Tests.Common
+open TestFramework
 
 /// Generate F# source code with many identical overloaded method calls
 let generateRepetitiveOverloadCalls (callCount: int) =
@@ -60,18 +62,13 @@ let ``Overload cache hit rate exceeds 95 percent for repetitive int-int calls`` 
     let callCount = 150
     let source = generateRepetitiveOverloadCalls callCount
     
-    // Type check the file
-    use file = new TempFile("fs", source)
-    let checkOptions, _ = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString source) |> Async.RunImmediate
-    let parseResults, checkResults = checker.ParseAndCheckFileInProject(file.Name, 0, SourceText.ofString source, checkOptions) |> Async.RunImmediate
+    // Type check the file using the cross-platform helper
+    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
+    let parseResults, checkResults = parseAndCheckScript (file, source)
     
     // Verify no errors
-    match checkResults with
-    | FSharpCheckFileAnswer.Succeeded results ->
-        let errors = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-        errors |> shouldBeEmpty
-    | FSharpCheckFileAnswer.Aborted ->
-        failwith "Type checking was aborted"
+    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    errors |> shouldBeEmpty
     
     // Validate cache metrics using the new CacheMetricsListener API
     let hits = listener.Hits
@@ -119,26 +116,20 @@ let f1 = Overloaded.Process(1.0)
 let f2 = Overloaded.Process(2.0)
 """
     
-    use file = new TempFile("fs", source)
-    let checkOptions, _ = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString source) |> Async.RunImmediate
-    let parseResults, checkResults = checker.ParseAndCheckFileInProject(file.Name, 0, SourceText.ofString source, checkOptions) |> Async.RunImmediate
+    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
+    let parseResults, checkResults = parseAndCheckScript (file, source)
     
-    match checkResults with
-    | FSharpCheckFileAnswer.Succeeded results ->
-        let errors = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-        errors |> shouldBeEmpty
-        
-        // Verify listener captured cache activity
-        let hits = listener.Hits
-        let misses = listener.Misses
-        printfn "Cache metrics - Hits: %d, Misses: %d" hits misses
-        
-        // If we got here without errors, the overload resolution worked correctly
-        // (including any cached resolutions)
-        printfn "All overload resolutions succeeded"
-        
-    | FSharpCheckFileAnswer.Aborted ->
-        failwith "Type checking was aborted"
+    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    errors |> shouldBeEmpty
+    
+    // Verify listener captured cache activity
+    let hits = listener.Hits
+    let misses = listener.Misses
+    printfn "Cache metrics - Hits: %d, Misses: %d" hits misses
+    
+    // If we got here without errors, the overload resolution worked correctly
+    // (including any cached resolutions)
+    printfn "All overload resolutions succeeded"
 
 /// Test that overload resolution with type inference variables works correctly
 /// This is a safety test - types with inference variables should not be cached incorrectly
@@ -167,19 +158,13 @@ let explicitInt: string = Overloaded.Process(100)
 let explicitString: string = Overloaded.Process("world")
 """
     
-    use file = new TempFile("fs", source)
-    let checkOptions, _ = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString source) |> Async.RunImmediate
-    let parseResults, checkResults = checker.ParseAndCheckFileInProject(file.Name, 0, SourceText.ofString source, checkOptions) |> Async.RunImmediate
+    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
+    let parseResults, checkResults = parseAndCheckScript (file, source)
     
-    match checkResults with
-    | FSharpCheckFileAnswer.Succeeded results ->
-        let errors = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-        errors |> shouldBeEmpty
-        // All resolutions should work correctly - no incorrect cache hits
-        printfn "Type inference overload resolution succeeded"
-        
-    | FSharpCheckFileAnswer.Aborted ->
-        failwith "Type checking was aborted"
+    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    errors |> shouldBeEmpty
+    // All resolutions should work correctly - no incorrect cache hits
+    printfn "Type inference overload resolution succeeded"
 
 /// Test that nested generic types with inference variables are handled correctly
 [<Fact>]
@@ -206,18 +191,12 @@ let r4 = Processor.Handle({ Value = 123 })
 let r5 = Processor.Handle({ Value = "world" })
 """
     
-    use file = new TempFile("fs", source)
-    let checkOptions, _ = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString source) |> Async.RunImmediate
-    let parseResults, checkResults = checker.ParseAndCheckFileInProject(file.Name, 0, SourceText.ofString source, checkOptions) |> Async.RunImmediate
+    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
+    let parseResults, checkResults = parseAndCheckScript (file, source)
     
-    match checkResults with
-    | FSharpCheckFileAnswer.Succeeded results ->
-        let errors = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-        errors |> shouldBeEmpty
-        printfn "Nested generic overload resolution succeeded"
-        
-    | FSharpCheckFileAnswer.Aborted ->
-        failwith "Type checking was aborted"
+    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    errors |> shouldBeEmpty
+    printfn "Nested generic overload resolution succeeded"
 
 /// Test that out args with type inference don't cause incorrect caching
 [<Fact>]
@@ -241,18 +220,12 @@ let b = Int32.TryParse("2")
 let c = Int32.TryParse("3")
 """
     
-    use file = new TempFile("fs", source)
-    let checkOptions, _ = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString source) |> Async.RunImmediate
-    let parseResults, checkResults = checker.ParseAndCheckFileInProject(file.Name, 0, SourceText.ofString source, checkOptions) |> Async.RunImmediate
+    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
+    let parseResults, checkResults = parseAndCheckScript (file, source)
     
-    match checkResults with
-    | FSharpCheckFileAnswer.Succeeded results ->
-        let errors = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-        errors |> shouldBeEmpty
-        printfn "Out args overload resolution succeeded"
-        
-    | FSharpCheckFileAnswer.Aborted ->
-        failwith "Type checking was aborted"
+    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    errors |> shouldBeEmpty
+    printfn "Out args overload resolution succeeded"
 
 /// Test that type abbreviations are handled correctly in caching
 [<Fact>]
@@ -282,18 +255,12 @@ let r5 = Processor.Handle(myIntList)
 let r6 = Processor.Handle([4; 5; 6])
 """
     
-    use file = new TempFile("fs", source)
-    let checkOptions, _ = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString source) |> Async.RunImmediate
-    let parseResults, checkResults = checker.ParseAndCheckFileInProject(file.Name, 0, SourceText.ofString source, checkOptions) |> Async.RunImmediate
+    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
+    let parseResults, checkResults = parseAndCheckScript (file, source)
     
-    match checkResults with
-    | FSharpCheckFileAnswer.Succeeded results ->
-        let errors = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-        errors |> shouldBeEmpty
-        printfn "Type abbreviation overload resolution succeeded"
-        
-    | FSharpCheckFileAnswer.Aborted ->
-        failwith "Type checking was aborted"
+    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    errors |> shouldBeEmpty
+    printfn "Type abbreviation overload resolution succeeded"
 
 /// Test that rigid generic type parameters enable cache hits
 /// This is crucial for patterns like Assert.Equal<'T>('T, 'T)
@@ -330,24 +297,18 @@ let d3 = Assert.Equal<string>("x", "y")
 let d4 = Assert.Equal<string>("z", "w")
 """
     
-    use file = new TempFile("fs", source)
-    let checkOptions, _ = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString source) |> Async.RunImmediate
-    let parseResults, checkResults = checker.ParseAndCheckFileInProject(file.Name, 0, SourceText.ofString source, checkOptions) |> Async.RunImmediate
+    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
+    let parseResults, checkResults = parseAndCheckScript (file, source)
     
-    match checkResults with
-    | FSharpCheckFileAnswer.Succeeded results ->
-        let errors = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-        errors |> shouldBeEmpty
-        
-        let hits = listener.Hits
-        let misses = listener.Misses
-        printfn "Generic overload cache metrics - Hits: %d, Misses: %d" hits misses
-        
-        // We expect cache hits for repeated patterns with the same generic structure
-        Assert.True(hits > 0L, "Expected cache hits for generic patterns")
-        
-    | FSharpCheckFileAnswer.Aborted ->
-        failwith "Type checking was aborted"
+    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    errors |> shouldBeEmpty
+    
+    let hits = listener.Hits
+    let misses = listener.Misses
+    printfn "Generic overload cache metrics - Hits: %d, Misses: %d" hits misses
+    
+    // We expect cache hits for repeated patterns with the same generic structure
+    Assert.True(hits > 0L, "Expected cache hits for generic patterns")
 
 /// Test that inference variables (flexible typars) are NOT cached
 /// but correctly resolved
@@ -374,15 +335,9 @@ let y2 = Overloaded.Process("b")
 let y3 = Overloaded.Process("c")
 """
     
-    use file = new TempFile("fs", source)
-    let checkOptions, _ = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString source) |> Async.RunImmediate
-    let parseResults, checkResults = checker.ParseAndCheckFileInProject(file.Name, 0, SourceText.ofString source, checkOptions) |> Async.RunImmediate
+    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
+    let parseResults, checkResults = parseAndCheckScript (file, source)
     
-    match checkResults with
-    | FSharpCheckFileAnswer.Succeeded results ->
-        let errors = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-        errors |> shouldBeEmpty
-        printfn "Inference variable overload resolution succeeded"
-        
-    | FSharpCheckFileAnswer.Aborted ->
-        failwith "Type checking was aborted"
+    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    errors |> shouldBeEmpty
+    printfn "Inference variable overload resolution succeeded"
