@@ -322,6 +322,12 @@ let signerSignStreamWithKeyPair stream keyBlob = signStream stream keyBlob
 
 let failWithContainerSigningUnsupportedOnThisPlatform () =
     failwith (FSComp.SR.containerSigningUnsupportedOnThisPlatform () |> snd)
+
+let signerGetPublicKeyForKeyContainer (_: keyContainerName) : pubkey = 
+    failWithContainerSigningUnsupportedOnThisPlatform ()
+
+let signerSignStreamWithKeyContainer (_: Stream) (_: keyContainerName) = 
+    failWithContainerSigningUnsupportedOnThisPlatform ()
     
 //---------------------------------------------------------------------
 // Strong name signing
@@ -333,15 +339,11 @@ type ILStrongNameSigner =
     | KeyContainer of keyContainerName * bool
 
     static member OpenPublicKeyOptions (kp, p) = PublicKeyOptionsSigner(kp, p)
-
     static member ExtractPublicKey bytes = getPublicKeyForKeyPair bytes
-    
     static member OpenPublicKey bytes = PublicKeySigner bytes
-    
     static member OpenKeyPairFile (bytes, ?usePublicSign) = 
         let ups = defaultArg usePublicSign true
         KeyPair(bytes, ups)
-
     static member OpenKeyContainer (s, ?usePublicSign) = 
         let ups = defaultArg usePublicSign false
         KeyContainer(s, ups)
@@ -361,20 +363,22 @@ type ILStrongNameSigner =
         | KeyContainer (kc, _) -> signerGetPublicKeyForKeyContainer kc
 
     member s.SignatureSize =
-        let getRoslynSignatureSize (pk: byte array) =
-            let keySize = pk.Length
-            if keySize < 160 then 128 else keySize - 32
+        let calculatePreciseSignatureSize (pk: byte array) =
+            try
+                if pk.Length < 25 then 128 
+                else
+                    let mutable reader = BlobReader pk
+                    reader.ReadBigInteger 12 |> ignore
+                    reader.ReadBigInteger 8 |> ignore
+                    let bitLen = reader.ReadInt32()
+                    bitLen / 8
+            with _ -> 128
 
         match s with
         | PublicKeySigner pk 
-        | PublicKeyOptionsSigner (pk, _) -> 
-            getRoslynSignatureSize pk
-        | KeyPair (kp, _) -> 
-            let pk = signerGetPublicKeyForKeyPair kp
-            getRoslynSignatureSize pk
-        | KeyContainer (kc, _) ->
-            let pk = signerGetPublicKeyForKeyContainer kc
-            getRoslynSignatureSize pk
+        | PublicKeyOptionsSigner (pk, _) -> calculatePreciseSignatureSize pk
+        | KeyPair (kp, _) -> calculatePreciseSignatureSize (signerGetPublicKeyForKeyPair kp)
+        | KeyContainer (kc, _) -> calculatePreciseSignatureSize (signerGetPublicKeyForKeyContainer kc)
 
     member s.SignStream stream =
         match s with
