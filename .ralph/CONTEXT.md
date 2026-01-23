@@ -32,3 +32,17 @@ This file is updated after each sprint completes. Use it to understand what was 
 - tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.SurfaceArea.netstandard20.bsl
 
 ---
+
+## Sprint 3: Add Hits/Misses convenience members
+
+**Summary:** NO-OP - Sprint 2 already added `Hits` and `Misses` properties to `CacheMetricsListener`.
+
+**Verified:**
+- `member _.Hits` exists in Caches.fs (line 170)
+- `member _.Misses` exists in Caches.fs (line 173)
+- Corresponding signatures in Caches.fsi (lines 29-30)
+- OverloadCacheTests use these properties and pass (4/4 tests)
+
+**Files touched:** None (already complete from Sprint 2)
+
+---
