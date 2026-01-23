@@ -126,7 +126,9 @@ type BlobReader =
     val mutable _blob: byte array
     val mutable _offset: int
     new(blob: byte array) = { _blob = blob; _offset = 0 }
-
+    
+    member x.Offset with get() = x._offset and set(v) = x._offset <- v
+    
     member x.ReadInt32() : int =
         let offset = x._offset
         x._offset <- offset + 4
@@ -145,7 +147,8 @@ type BlobReader =
 let RSAParametersFromBlob blob keyType =
     let mutable reader = BlobReader blob
 
-    if reader.ReadInt32() <> 0x00000207 && keyType = KeyType.KeyPair then
+    let header = reader.ReadInt32()
+    if header <> 0x00000206 && header <> 0x00000207 && keyType = KeyType.KeyPair then
         raise (CryptographicException(getResourceString (FSComp.SR.ilSignPrivateKeyExpected ())))
 
     reader.ReadInt32() |> ignore // ALG_ID
@@ -301,41 +304,25 @@ let signStream stream keyBlob =
     patchSignature stream peReader signature
 
 let signatureSize (pk: byte array) =
-    if pk.Length < 25 then
-        raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
-
-    try
-        use rsa = RSA.Create()
-
-        try
-            rsa.ImportParameters(RSAParametersFromBlob pk KeyType.Public)
-        with _ ->
-            rsa.ImportParameters(RSAParametersFromBlob pk KeyType.KeyPair)
-
-        rsa.KeySize / 8
-    with _ ->
-        let mutable reader = BlobReader pk
-        reader.ReadBigInteger 12 |> ignore
-        reader.ReadBigInteger 8 |> ignore
-        let magic = reader.ReadInt32()
-
-        if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then
-            raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
-
-        let x = reader.ReadInt32() / 8
-        x
-// Returns a CLR Format Blob public key
-let getPublicKeyForKeyPair keyBlob =
-    use rsa = RSA.Create()
-    rsa.ImportParameters(RSAParametersFromBlob keyBlob KeyType.KeyPair)
-    let rsaParameters = rsa.ExportParameters false
-    toCLRKeyBlob rsaParameters CALG_RSA_KEYX
-
+    if pk.Length < 20 then 0
+    else
+        let reader = BlobReader pk
+        reader.Offset <- 12
+        let bitLen = reader.ReadInt32()
+        let modulusLength = bitLen / 8
+        
+        if modulusLength < 160 then 128 else modulusLength - 32
 // Key signing
 type keyContainerName = string
 type keyPair = byte array
 type pubkey = byte array
 type pubkeyOptions = byte array * bool
+
+let getPublicKeyForKeyPair keyBlob =
+    use rsa = RSA.Create()
+    rsa.ImportParameters(RSAParametersFromBlob keyBlob KeyType.KeyPair)
+    let rsaParameters = rsa.ExportParameters false
+    toCLRKeyBlob rsaParameters CALG_RSA_KEYX
 
 let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 
@@ -381,11 +368,7 @@ type ILStrongNameSigner =
 
     member s.SignatureSize =
         let pkSignatureSize pk =
-            try
-                signerSignatureSize pk
-            with exn ->
-                failwith ("A call to StrongNameSignatureSize failed (" + exn.Message + ")")
-                0x80
+            signerSignatureSize pk
 
         match s with
         | PublicKeySigner pk -> pkSignatureSize pk
