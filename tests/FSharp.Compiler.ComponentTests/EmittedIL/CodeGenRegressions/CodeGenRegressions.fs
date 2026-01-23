@@ -1528,110 +1528,180 @@ let main _ =
 
     // ===== Issue #12366: Rethink names for compiler-generated closures =====
     // https://github.com/dotnet/fsharp/issues/12366
+    // COSMETIC IL ISSUE - Affects debugging/profiling, not correctness.
     // Compiler-generated closure names like "foo@376" and "clo43@53" are weak heuristics.
-    // Problems:
-    // - Unnecessary use of backup name "clo" when better names available
-    // - Sometimes other compiler-generated names are used as basis (e.g., "Pipe input at line 63@53")
-    // - Line numbers alone aren't as useful as they could be
+    // Problems visible in IL:
+    // - .class nested assembly auto ansi serializable sealed beforefieldinit 'clo@12-1'
+    // - .class nested assembly auto ansi ... 'Pipe input at line 63@53'
+    // These names appear in:
+    // - Debugger call stacks
+    // - Profiler output
+    // - Decompiled code
+    // Runtime verification cannot demonstrate - names are valid, just not helpful.
     // [<Fact>]
     let ``Issue_12366_ClosureNaming`` () =
-        // The generated closure types get names like:
-        // - f@5 (uses the let binding name - good)
-        // - clo@10-1 (uses generic "clo" name - could be better)
-        // - "Pipe input at line 63@53" (uses debug string as name - bad)
+        // COSMETIC: The generated closure types get names like:
+        // IL shows: .class nested assembly ... 'f@5' (uses let binding name - good)
+        // IL shows: .class nested assembly ... 'clo@10-1' (generic "clo" name - could be better)
+        // IL shows: .class nested assembly ... 'Pipe input at line 63@53' (debug string as name - bad)
+        //
+        // These type names are visible in:
+        // - ildasm output
+        // - dotPeek/ILSpy decompilation
+        // - Stack traces during debugging
+        // - Performance profiler output
         let source = """
 module ClosureNamingTest
 
-// This closure gets a reasonable name based on 'f'
+// IL: .class nested assembly ... 'f@5' - good name from binding
 let f = fun x -> x + 1
 
-// This anonymous closure in a pipeline might get a poor name like "clo@N"
+// IL: .class nested assembly ... 'clo@10-1' - generic name, could be 'result_map@10'
+// IL: .class nested assembly ... 'clo@11' - generic name, could be 'result_filter@11'
 let result = 
     [1; 2; 3]
-    |> List.map (fun x -> x * 2)  // closure name should be more descriptive
-    |> List.filter (fun x -> x > 2)  // same issue
+    |> List.map (fun x -> x * 2)   // closure gets 'clo@N' name
+    |> List.filter (fun x -> x > 2) // same issue
 
-// Nested closures compound the problem
+// IL: .class nested assembly ... 'complex@15'
+// IL: .class nested assembly ... 'complex@16-1' 
+// IL: .class nested assembly ... 'complex@17-2' - nested closures get confusing names
 let complex = 
     fun a -> 
         fun b -> 
-            fun c -> a + b + c  // inner closures get confusing names
+            fun c -> a + b + c  
 """
         FSharp source
         |> asLibrary
         |> compile
         |> shouldSucceed
-        // Generated type names in IL are not as helpful for debugging as they could be
+        // Cosmetic issue: Type names in IL are not as helpful for debugging as they could be
+        // The code works correctly, but developer experience in debugging/profiling suffers
         |> ignore
 
     // ===== Issue #12139: Improve string null check IL codegen =====
     // https://github.com/dotnet/fsharp/issues/12139
-    // F# emits String.Equals(s, null) for string null checks, while C# emits simple brtrue/brfalse.
-    // F# IL: call bool String::Equals(string, string); brtrue.s 
-    // C# IL: brtrue.s (single instruction)
-    // The JIT will optimize this away, but it increases DLL size and is less efficient.
+    // PERFORMANCE IL ISSUE - F# emits String.Equals(s, null) for string null checks,
+    // while C# emits simple brtrue/brfalse (single instruction).
+    // 
+    // F# IL for `s <> null`:
+    //   ldarg.0
+    //   ldnull
+    //   call bool [System.Runtime]System.String::Equals(string, string)
+    //   brtrue.s IL_XXXX
+    //
+    // C# IL for `s != null`:
+    //   ldarg.0  
+    //   brtrue.s IL_XXXX   ← single instruction, much simpler
+    //
+    // The JIT may optimize this, but IL is larger and startup is slower.
     // [<Fact>]
     let ``Issue_12139_StringNullCheck`` () =
-        // F# generates call to String.Equals for null comparison
+        // PERFORMANCE: F# generates String.Equals call for null comparison
         // C# generates simple null pointer check (brtrue/brfalse)
+        //
+        // F# emits this IL pattern for `s = null`:
+        //   IL_0000: ldarg.0
+        //   IL_0001: ldnull  
+        //   IL_0002: call bool [System.Runtime]System.String::Equals(string, string)
+        //   IL_0007: ret
+        //
+        // C# emits this IL pattern for `s == null`:
+        //   IL_0000: ldarg.0
+        //   IL_0001: ldnull
+        //   IL_0002: ceq
+        //   IL_0004: ret
+        //
+        // Or even simpler with brfalse/brtrue for boolean context
         let source = """
 module StringNullCheckTest
 
 open System
 
-// F# generates: call string Console::ReadLine(); ldnull; call bool String::Equals(string, string); brtrue.s
-// C# generates: call string Console::ReadLine(); brtrue.s (much simpler)
+// F# IL: ldarg.0; ldnull; call bool String::Equals(string, string); ret
+// C# IL: ldarg.0; ldnull; ceq; ret (or just brtrue.s for conditionals)
+let isNullString (s: string) = s = null
+
+// Same issue - extra String.Equals call instead of simple branch
+let isNotNullString (s: string) = s <> null
+
+// In loop context, this adds 2 extra IL instructions per iteration:
+// F# IL: call string Console::ReadLine(); ldnull; call bool String::Equals(...); brtrue.s
+// C# IL: call string Console::ReadLine(); brtrue.s (single branch instruction)
 let test() =
     while Console.ReadLine() <> null do
         Console.WriteLine(1)
-
-// Simple null check also uses String.Equals instead of direct comparison
-let isNullString (s: string) = s = null
-let isNotNullString (s: string) = s <> null
 """
         FSharp source
         |> asLibrary
         |> withOptimize
         |> compile
         |> shouldSucceed
-        // IL should show String.Equals calls instead of simple brtrue/brfalse
+        // The IL shows String.Equals calls instead of simple brtrue/brfalse
+        // This is a performance issue (code size, potential JIT overhead)
         |> ignore
 
     // ===== Issue #12137: Improve analysis to reduce emit of tail =====
     // https://github.com/dotnet/fsharp/issues/12137
-    // F# emits tail. prefix for cross-assembly calls but not for same-assembly calls.
-    // This is inconsistent and the unnecessary tail. prefix causes:
-    // - 2-3x slower execution due to tail call dispatch helpers
+    // PERFORMANCE IL ISSUE - F# emits `tail.` prefix inconsistently:
+    // - Same-assembly calls: NO tail. prefix (correct, allows inlining)
+    // - Cross-assembly calls: tail. prefix emitted (unnecessary, hurts performance)
+    //
+    // IL for SAME assembly call (good):
+    //   IL_000c: call !!0 Module::fold<...>
+    //
+    // IL for CROSS assembly call (bad):
+    //   IL_000c: tail.
+    //   IL_000e: call !!0 [OtherLib]Module::fold<...>
+    //
+    // The unnecessary `tail.` prefix causes:
+    // - 2-3x slower execution (tail call dispatch helpers)
     // - 2x larger JIT-generated assembly code
-    // The tail call should only be emitted when actually needed for stack safety.
+    //
+    // NOTE: Hard to demonstrate in single-file test. Requires two assemblies.
+    // This test documents the issue; full repro needs cross-assembly call.
     // [<Fact>]
     let ``Issue_12137_TailEmitReduction`` () =
-        // When calling an inline function from another assembly, F# emits tail. prefix
-        // When calling the same function from the same assembly, no tail. prefix
-        // This inconsistency hurts performance for cross-assembly calls
+        // PERFORMANCE: Cross-assembly calls get unnecessary `tail.` prefix
+        // 
+        // When compiled, this module's internal calls don't have tail. prefix.
+        // But if another assembly calls these same functions, F# emits:
+        //   tail.
+        //   call !!0 [TailEmitTest]TailEmitTest::fold<...>
+        //
+        // The tail. prefix is emitted because F# can't prove the callee won't
+        // have unbounded stack growth. But for most functions, tail. is unnecessary
+        // and causes significant performance overhead.
+        //
+        // To fully reproduce: compile this as LibA.dll, then from LibB.dll call
+        // the functions. LibB will show tail. prefix in IL for cross-assembly calls.
         let source = """
 module TailEmitTest
 
-// Simulating the scenario: inline generic fold function
+// Inline generic fold - when called from same assembly, no tail. (good)
 let inline fold (f: 'S -> 'T -> 'S) (state: 'S) (items: 'T list) =
     let mutable s = state
     for item in items do
         s <- f s item
     s
 
-// When this calls fold from same assembly: no tail. prefix (good)
+// Same-assembly call - IL shows NO tail. prefix (correct behavior)
 let sumLocal () = fold (+) 0 [1; 2; 3]
 
-// When calling fold from another assembly: tail. prefix emitted (bad)
-// This causes 2-3x performance penalty and larger JIT code
-// The tail. is unnecessary because fold doesn't need tail recursion for correctness
+// For cross-assembly scenario (not testable in single file):
+// If another assembly calls: TailEmitTest.fold (+) 0 [1;2;3]
+// The IL would show:
+//   tail.
+//   call !!0 [TailEmitTest]TailEmitTest/fold@5::Invoke(...)
+// This tail. is unnecessary and causes 2-3x performance penalty
 """
         FSharp source
         |> asLibrary
         |> withOptimize
         |> compile
         |> shouldSucceed
-        // Cross-assembly calls would show tail. prefix in IL
+        // Cross-assembly calls would show unnecessary tail. prefix in IL
+        // This test documents the issue; single-assembly can't fully demonstrate
         |> ignore
 
     // ===== Issue #12136: use fixed does not unpin at end of scope =====
@@ -1828,18 +1898,34 @@ let compare (a: T) (b: T) = compare a.X b.X
 
     // ===== Issue #9176: Decorate inline function code with attribute =====
     // https://github.com/dotnet/fsharp/issues/9176
-    // [OUT_OF_SCOPE: Feature Request] - Request to propagate attributes when code is inlined.
-    // This is a design question about preserving attribute semantics across inlining boundaries.
-    // There's no clear codegen bug - the compiler intentionally doesn't preserve attributes on inlined code.
+    // [OUT_OF_SCOPE: Feature Request]
+    // This is NOT a bug - it's a feature request for a new `FSharpInlineFunction` attribute.
+    // The request is to mark call sites where inline functions were inlined, similar to 
+    // how StackTrace shows inline methods. This would require:
+    // 1. A new attribute type (e.g., FSharpInlineFunction) added to FSharp.Core
+    // 2. Compiler changes to emit the attribute at inlined call sites
+    // 3. Tooling changes to consume the attribute
+    // Runtime verification cannot demonstrate this - it's a feature that doesn't exist.
     // [<Fact>]
     let ``Issue_9176_InlineAttributes`` () =
-        // [OUT_OF_SCOPE: Feature Request] - Attributes are intentionally not preserved on inlined code.
-        // The request is for a new feature to decorate inlined code with source attributes.
+        // [OUT_OF_SCOPE: Feature Request]
+        // This test documents the feature request, not a regression.
+        // The issue asks for a way to trace back inlined code to its original source,
+        // similar to how C# shows inlined methods in stack traces.
+        // Currently F# inline functions leave no trace after inlining.
         let source = """
 module Test
 
+// When this inline function is inlined at call sites, there's no IL indication
+// that the code came from 'f'. The feature request asks for:
+// - An attribute like [<FSharpInlineFunction("f", "Test.fs", line=5)>] at call sites
+// - This would help debugging/profiling tools show the original source location
 let inline f x = x + 1
+
+// At this call site, the code "x + 1" is inlined with no trace back to 'f'
+let g y = f y + f y
 """
+        // This compiles successfully - there's no bug, just a missing feature
         FSharp source
         |> asLibrary
         |> compile

@@ -2163,7 +2163,7 @@ The module initialization code for mutually recursive non-function values genera
 
 **Link:** https://github.com/dotnet/fsharp/issues/12366
 
-**Category:** Cosmetic
+**Category:** Cosmetic (IL Quality Issue)
 
 ### Minimal Repro
 
@@ -2180,30 +2180,57 @@ let complex =
 let result = [1;2;3] |> List.map (fun x -> x * 2)
 ```
 
-Generated closure types get names like:
-- `f@5` (uses let binding name - good)
-- `clo@10-1` (uses generic "clo" - could be better)
-- `Pipe input at line 63@53` (uses debug string as name - bad)
+### IL Output Shows Poor Type Names
+
+```il
+// Good: Uses the let binding name
+.class nested assembly auto ansi serializable sealed beforefieldinit 'f@5'
+
+// Poor: Uses generic "clo" backup name  
+.class nested assembly auto ansi serializable sealed beforefieldinit 'clo@10-1'
+
+// Bad: Uses debug string as type name
+.class nested assembly auto ansi serializable sealed beforefieldinit 'Pipe input at line 63@53'
+```
+
+These type names are visible in:
+- **ildasm** and **dotPeek/ILSpy** decompilation output
+- **Stack traces** during debugging
+- **Performance profiler** output
+- **Exception messages** containing type names
+
+### Why Runtime Verification Is Insufficient
+
+Runtime tests cannot verify this issue because:
+1. The code **executes correctly** regardless of closure type names
+2. Type names are **cosmetic metadata** not affecting program behavior
+3. Verifying type names requires **IL inspection** (e.g., `ildasm` output)
 
 ### Expected Behavior
+
 Generated closure types should have meaningful, consistent names useful for debugging and profiling.
 
 ### Actual Behavior
+
 The naming heuristic is weak:
 - Unnecessary use of backup name "clo" when better names are available
 - Sometimes compiler-generated debug strings are used as type names
-- Line numbers appended but could be more informative (`@line365` format)
+- Line numbers appended but could be more informative
 
 ### Test Location
+
 `CodeGenRegressions.fs` → `Issue_12366_ClosureNaming`
 
 ### Analysis
+
 The closure naming heuristic in IlxGen tries to use the let identifier being bound, but often falls back to generic names. After pipeline debugging was added, some closures get names based on debug strings.
 
 ### Fix Location
+
 - `src/Compiler/CodeGen/IlxGen.fs` - closure type naming logic
 
 ### Risks
+
 - Low: Cosmetic change only, but may affect tooling that parses type names
 
 ---
@@ -2214,50 +2241,80 @@ The closure naming heuristic in IlxGen tries to use the let identifier being bou
 
 **Link:** https://github.com/dotnet/fsharp/issues/12139
 
-**Category:** Performance
+**Category:** Performance (IL Code Size)
 
 ### Minimal Repro
 
 ```fsharp
 open System
 
+// Simple null check function
+let isNullString (s: string) = s = null
+let isNotNullString (s: string) = s <> null
+
+// Null check in loop
 let test() =
     while Console.ReadLine() <> null do
         Console.WriteLine(1)
 ```
 
-F# IL:
+### IL Comparison: F# vs C#
+
+**F# IL for `s = null`:**
 ```il
-IL_0000: call string Console::ReadLine()
-IL_0005: ldnull
-IL_0006: call bool String::Equals(string, string)  ← Calls String.Equals
-IL_000b: brtrue.s IL_0015
+IL_0000: ldarg.0
+IL_0001: ldnull
+IL_0002: call bool [System.Runtime]System.String::Equals(string, string)  ← Extra method call
+IL_0007: ret
 ```
 
-C# IL (more efficient):
+**C# IL for `s == null` (optimal):**
 ```il
-IL_0008: call string Console::ReadLine()
-IL_000d: brtrue.s IL_0002   ← Simple null check
+IL_0000: ldarg.0
+IL_0001: ldnull
+IL_0002: ceq       ← Simple comparison instruction
+IL_0004: ret
 ```
+
+**Or in boolean context, C# uses:**
+```il
+IL_0000: ldarg.0
+IL_0001: brtrue.s IL_0005   ← Single branch instruction
+```
+
+### Why Runtime Verification Is Insufficient
+
+Runtime tests cannot verify this issue because:
+1. Both patterns produce **identical runtime results** (`true`/`false`)
+2. The JIT may **optimize away** the String.Equals call at runtime
+3. The issue is about **IL code size** and **JIT overhead**, not correctness
+4. Verification requires **IL inspection** comparing instruction counts
 
 ### Expected Behavior
-String null checks should use simple `brtrue`/`brfalse` instructions like C#.
+
+String null checks should use simple `brtrue`/`brfalse` or `ceq` instructions like C#.
 
 ### Actual Behavior
+
 F# emits `call String.Equals(string, string)` for null comparisons, which:
-- Increases DLL size
+- Increases DLL size (extra call instruction + null push)
 - Requires more JIT work (though JIT can optimize it away)
+- Is inconsistent with C# output for the same pattern
 
 ### Test Location
+
 `CodeGenRegressions.fs` → `Issue_12139_StringNullCheck`
 
 ### Analysis
+
 F# treats `s = null` as a structural equality check and emits `String.Equals` call, while C# recognizes null comparisons specially and emits simple pointer comparisons.
 
 ### Fix Location
+
 - `src/Compiler/CodeGen/IlxGen.fs` or `src/Compiler/Optimize/Optimizer.fs` - recognize string null patterns
 
 ### Risks
+
 - Low: IL optimization only, semantics unchanged
 
 ---
@@ -2268,43 +2325,64 @@ F# treats `s = null` as a structural equality check and emits `String.Equals` ca
 
 **Link:** https://github.com/dotnet/fsharp/issues/12137
 
-**Category:** Performance
+**Category:** Performance (Cross-Assembly IL Issue)
 
 ### Minimal Repro
 
 When calling inline functions from another assembly, F# emits `tail.` prefix:
-```il
-// Calling GSeq.fold from SAME assembly - no tail (good)
-IL_000c: call !!0 Tailcalls/GSeq::fold<...>
 
-// Calling GSeq.fold from ANOTHER assembly - tail prefix (bad)
-IL_000c: tail.
-IL_000e: call !!0 [Lib.FSharp]GSeq::fold<...>
+**Same assembly call (good - no tail. prefix):**
+```il
+IL_000c: call !!0 Module::fold<int32, int32>(...)
 ```
 
+**Cross-assembly call (bad - unnecessary tail. prefix):**
+```il
+IL_000c: tail.
+IL_000e: call !!0 [OtherLib]Module::fold<int32, int32>(...)
+```
+
+### Why Runtime Verification Is Insufficient
+
+Runtime tests cannot fully verify this issue because:
+1. Both patterns produce **identical runtime results**
+2. The issue requires **two separate assemblies** to manifest
+3. Single-file tests cannot demonstrate cross-assembly calls
+4. The `tail.` prefix affects **performance** (2-3x slower) but not correctness
+5. Verification requires **IL inspection** of cross-assembly call sites
+
 ### Expected Behavior
+
 The `tail.` prefix should only be emitted when necessary for stack safety in recursive scenarios.
 
 ### Actual Behavior
+
 F# emits `tail.` prefix inconsistently:
 - Same-assembly calls: no `tail.` prefix (correct)
-- Cross-assembly calls: `tail.` prefix emitted (unnecessary)
+- Cross-assembly calls: `tail.` prefix emitted (unnecessary in most cases)
 
 The unnecessary `tail.` causes:
 - 2-3x slower execution due to tail call dispatch helpers
 - 2x larger JIT-generated assembly code
+- Prevents certain JIT optimizations (inlining)
 
 ### Test Location
+
 `CodeGenRegressions.fs` → `Issue_12137_TailEmitReduction`
 
+Note: The test documents the issue but cannot fully reproduce it because cross-assembly calls require compiling and referencing a separate assembly.
+
 ### Analysis
+
 The tail call analysis doesn't have enough information about cross-assembly inline functions to determine that tail calls aren't needed. This results in conservative emission of `tail.` prefix which hurts performance.
 
 ### Fix Location
+
 - `src/Compiler/CodeGen/IlxGen.fs` - tail call emission logic
 
 ### Risks
-- Low: Performance optimization, but must ensure stack safety isn't compromised
+
+- Low: Performance optimization, but must ensure stack safety isn't compromised for truly recursive scenarios
 
 ---
 
@@ -2607,32 +2685,80 @@ Generated IComparable implementation could be more efficient.
 
 **Category:** Feature Request (OUT_OF_SCOPE)
 
-**Note:** This is a feature request, not a codegen bug. The compiler intentionally doesn't preserve attributes on inlined code. The request is for a new feature to propagate source attributes across inlining boundaries.
+**Note:** This is a FEATURE REQUEST, not a codegen bug. The compiler intentionally doesn't preserve attributes on inlined code. The request is for a **new feature** to add source tracking attributes to inlined code.
+
+### Requested Feature
+
+The issue requests a new `FSharpInlineFunction` attribute (or similar) that would be emitted at call sites where inline functions are expanded. This would enable:
+
+1. **Debugging**: Stack traces could show the original inline function name
+2. **Profiling**: Performance tools could attribute time to the original function
+3. **Code coverage**: Coverage tools could track back to inline function definitions
 
 ### Minimal Repro
 
 ```fsharp
-[<MyAttribute>]
+// Current behavior: when 'f' is inlined, there's no trace of it in IL
 let inline f x = x + 1
+
+// At this call site, the inlined code has no indication it came from 'f'
+let g y = f y + f y
 ```
 
-### Expected Behavior
-Attribute preserved on inlined code locations.
+### Current IL (no inline tracking):
+```il
+.method public static int32 g(int32 y) cil managed
+{
+    IL_0000: ldarg.0
+    IL_0001: ldc.i4.1
+    IL_0002: add        // ← This is 'f y' but no indication of 'f'
+    IL_0003: ldarg.0
+    IL_0004: ldc.i4.1
+    IL_0005: add        // ← This is 'f y' again
+    IL_0006: add
+    IL_0007: ret
+}
+```
 
-### Actual Behavior
-Attributes are intentionally not preserved when code is inlined. This is current design, not a bug.
+### Requested IL (with tracking attribute):
+```il
+.method public static int32 g(int32 y) cil managed
+{
+    [FSharpInlineFunction("f", "Module.fs", line=3)]  // ← Requested feature
+    IL_0000: ldarg.0
+    IL_0001: ldc.i4.1
+    IL_0002: add
+    // ...
+}
+```
+
+### Why Runtime Verification Is Insufficient
+
+This cannot be verified at runtime because:
+1. **It's a feature that doesn't exist** - there's no bug to reproduce
+2. The current behavior is **intentional design**, not a regression
+3. The request is for **new metadata** in IL, not a behavior change
 
 ### Test Location
+
 `CodeGenRegressions.fs` → `Issue_9176_InlineAttributes`
 
+The test is marked `[OUT_OF_SCOPE: Feature Request]` because it documents a feature request, not a bug.
+
 ### Analysis
-This is a design question about whether attributes should be propagated to inlined call sites. Currently the compiler doesn't do this intentionally.
+
+This is a design question about whether attributes should be propagated to inlined call sites. Currently the compiler doesn't do this intentionally. Implementing this would require:
+1. A new attribute type in FSharp.Core
+2. Compiler changes to track inlining provenance
+3. Tooling updates to consume the attribute
 
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs`
+
+- `src/Compiler/CodeGen/IlxGen.fs` - would need to emit new attributes during inlining
 
 ### Risks
-- Low: Attribute preservation
+
+- Low: This is additive metadata, would not affect existing behavior
 
 ---
 
