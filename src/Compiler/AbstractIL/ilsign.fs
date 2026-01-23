@@ -306,24 +306,24 @@ let signatureSize (pk: byte array) =
 
     try
         use rsa = RSA.Create()
+
         try
             rsa.ImportParameters(RSAParametersFromBlob pk KeyType.Public)
         with _ ->
             rsa.ImportParameters(RSAParametersFromBlob pk KeyType.KeyPair)
-        
+
         rsa.KeySize / 8
     with _ ->
         let mutable reader = BlobReader pk
-        reader.ReadBigInteger 12 |> ignore 
-        reader.ReadBigInteger 8 |> ignore 
-        let magic = reader.ReadInt32() 
+        reader.ReadBigInteger 12 |> ignore
+        reader.ReadBigInteger 8 |> ignore
+        let magic = reader.ReadInt32()
 
-        if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then 
+        if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then
             raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
 
         let x = reader.ReadInt32() / 8
         x
-
 // Returns a CLR Format Blob public key
 let getPublicKeyForKeyPair keyBlob =
     use rsa = RSA.Create()
