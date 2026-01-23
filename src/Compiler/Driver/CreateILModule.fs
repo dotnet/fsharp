@@ -138,16 +138,15 @@ let GetStrongNameSigner signingInfo =
     let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
     match container with
     | Some container -> 
-        Some(ILStrongNameSigner.OpenKeyContainer (container, publicsign))
+        Some(ILStrongNameSigner.OpenKeyContainer (container, publicsign || delaysign))
     | None ->
         match signer with
         | None -> None
         | Some bytes ->
             if publicsign || delaysign then
-                let publicKey = ILStrongNameSigner.ExtractPublicKey bytes
-                Some(ILStrongNameSigner.OpenPublicKeyOptions(publicKey, publicsign))
+                Some(ILStrongNameSigner.OpenKeyPairFile(bytes, usePublicSign=true))
             else
-                Some(ILStrongNameSigner.OpenKeyPairFile(bytes, publicsign))
+                Some(ILStrongNameSigner.OpenKeyPairFile(bytes, usePublicSign=false))
 
 //----------------------------------------------------------------------------
 // Building the contents of the finalized IL module
