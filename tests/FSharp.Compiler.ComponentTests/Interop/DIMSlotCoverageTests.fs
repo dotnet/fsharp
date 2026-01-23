@@ -6,9 +6,6 @@ open FSharp.Test.Compiler
 open FSharp.Test
 
 /// Tests for implicit DIM (Default Interface Method) slot coverage feature.
-/// This feature allows F# types to implement interfaces where some slots
-/// are covered by DIMs in the interface hierarchy, without explicitly
-/// implementing the covered slots.
 module ``DIM Slot Coverage Tests`` =
 
     let withCSharpLanguageVersion (ver: CSharpLanguageVersion) (cUnit: CompilationUnit) : CompilationUnit =
@@ -16,588 +13,185 @@ module ``DIM Slot Coverage Tests`` =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
-    /// C# library defining an interface hierarchy with DIM coverage.
-    /// IB inherits from IA, re-declares M(), and provides a DIM for IA.M.
-    let csharpInterfaceWithDIM =
+    let dimTestLib =
         CSharp """
-namespace DIMTest
-{
-    public interface IA
-    {
-        int M();
-    }
-    
-    public interface IB : IA
-    {
-        // Re-declare M with same signature (shadowing)
-        new int M();
-        
-        // Provide default implementation for IA.M
-        int IA.M() => this.M() + 100;
-    }
-}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "DIMLib"
+namespace DIMTest {
+    public interface IA { int M(); }
+    public interface IB : IA { new int M(); int IA.M() => this.M() + 100; }
+}
+namespace DiamondSingleDIM {
+    public interface IA { int M(); }
+    public interface IB : IA { int IA.M() => 42; }
+    public interface IC : IA { }
+    public interface ID : IB, IC { }
+}
+namespace DiamondConflictDIM {
+    public interface IA { int M(); }
+    public interface IB : IA { int IA.M() => 1; }
+    public interface IC : IA { int IA.M() => 2; }
+    public interface ID : IB, IC { }
+}
+namespace PropertyDIM {
+    public interface IReadable { int Value { get; } }
+    public interface IWritable : IReadable { new int Value { get; set; } int IReadable.Value => this.Value; }
+}
+namespace ReabstractTest {
+    public interface IA { int M(); }
+    public interface IB : IA { abstract int IA.M(); }
+}
+namespace GenericDIMTest {
+    public interface IGet<T> { T Get(); }
+    public interface IContainer : IGet<int>, IGet<string> { int IGet<int>.Get() => 42; }
+}
+        """
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8
+        |> withName "DIMTestLib"
 
-    /// Test 1: Simple DIM shadowing case from RFC
-    /// C# interface IA with M(), IB : IA with new M() and DIM for IA.M
-    /// F# type implementing IB only should compile because IA.M is covered by DIM.
     [<FactForNETCOREAPP>]
-    let ``Simple DIM shadowing - implementing IB only should not require IA implementation`` () =
-        let fsharpSource = """
+    let ``DIM shadowing - IB-only implementation succeeds with preview`` () =
+        FSharp """
 module Test
-
 open DIMTest
-
 type C() =
     interface IB with
         member _.M() = 42
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpInterfaceWithDIM]
-        |> compile
-        |> shouldSucceed
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
 
-    /// Test 2: Pure F# interface hierarchy test (no DIM possible)
-    /// This should STILL error with FS0361 to prevent regression.
-    /// F# interfaces cannot have DIMs, so shadowing always needs explicit implementation.
     [<Fact>]
-    let ``Pure F# interface hierarchy without DIM should still error`` () =
-        let fsharpSource = """
+    let ``Pure F# interface hierarchy errors without DIM`` () =
+        FSharp """
 module Test
-
-type IA =
-    abstract M : int -> int
-
-type IB =
-    inherit IA
-    abstract M : int -> int
-
+type IA = abstract M : int -> int
+type IB = inherit IA
+          abstract M : int -> int
 type C() =
     interface IB with
         member x.M(y) = y + 3
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 361
+        |> withLangVersionPreview |> compile |> shouldFail |> withErrorCode 361
 
-    /// Test 3: Verify baseline behavior - explicit implementation works
     [<FactForNETCOREAPP>]
-    let ``Explicit interface implementation for both IA and IB works`` () =
-        let fsharpSource = """
+    let ``Explicit implementation of both IA and IB works`` () =
+        FSharp """
 module Test
-
 open DIMTest
-
 type C() =
-    interface IA with
-        member _.M() = 100
-    interface IB with
-        member _.M() = 42
+    interface IA with member _.M() = 100
+    interface IB with member _.M() = 42
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpInterfaceWithDIM]
-        |> compile
-        |> shouldSucceed
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
 
-    // =============================================================================
-    // Edge Case Tests: Diamond Inheritance
-    // =============================================================================
-
-    /// C# library defining a diamond interface hierarchy with single DIM.
-    /// IB provides a DIM for IA.M, IC does NOT provide a DIM, ID inherits both IB and IC.
-    /// Since IB provides a DIM, ID should be implementable without ambiguity.
-    let csharpDiamondSingleDIM =
-        CSharp """
-namespace DiamondSingleDIM
-{
-    public interface IA
-    {
-        int M();
-    }
-    
-    public interface IB : IA
-    {
-        // Provide default implementation for IA.M
-        int IA.M() => 42;
-    }
-    
-    public interface IC : IA
-    {
-        // No DIM for IA.M - just inherits it
-    }
-    
-    public interface ID : IB, IC
-    {
-        // ID inherits IA.M from both IB and IC paths
-        // IB has a DIM for IA.M, so ID should be implementable
-    }
-}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "DiamondSingleDIMLib"
-
-    /// Test 4: Diamond with single DIM - IB provides DIM, IC does not
-    /// Implementing ID should work because IB provides DIM coverage for IA.M
     [<FactForNETCOREAPP>]
-    let ``Diamond with single DIM - should work because IB provides DIM`` () =
-        let fsharpSource = """
+    let ``Diamond with single DIM succeeds`` () =
+        FSharp """
 module Test
-
 open DiamondSingleDIM
-
-type C() =
-    interface ID
+type C() = interface ID
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpDiamondSingleDIM]
-        |> compile
-        |> shouldSucceed
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
 
-    /// C# library defining a diamond interface hierarchy with conflicting DIMs.
-    /// IB provides DIM1 for IA.M, IC provides DIM2 for IA.M, ID inherits both.
-    /// This should still error because there's no most-specific implementation.
-    let csharpDiamondConflictingDIMs =
-        CSharp """
-namespace DiamondConflictDIM
-{
-    public interface IA
-    {
-        int M();
-    }
-    
-    public interface IB : IA
-    {
-        // Provide default implementation for IA.M
-        int IA.M() => 1;
-    }
-    
-    public interface IC : IA
-    {
-        // Provide DIFFERENT default implementation for IA.M
-        int IA.M() => 2;
-    }
-    
-    public interface ID : IB, IC
-    {
-        // ID inherits conflicting DIMs from IB and IC
-        // This creates ambiguity - no most-specific implementation
-    }
-}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "DiamondConflictDIMLib"
-
-    /// Test 5: Diamond with conflicting DIMs - IB and IC both provide different DIMs
-    /// Implementing ID should fail because there's no most-specific implementation
     [<FactForNETCOREAPP>]
-    let ``Diamond with conflicting DIMs - should error with no most-specific`` () =
-        let fsharpSource = """
+    let ``Diamond with conflicting DIMs errors with FS3352`` () =
+        FSharp """
 module Test
-
 open DiamondConflictDIM
-
-type C() =
-    interface ID
+type C() = interface ID
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpDiamondConflictingDIMs]
-        |> compile
-        |> shouldFail
-        |> withErrorCode 366  // FS0366: No implementation was given for interface member
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile
+        |> shouldFail |> withErrorCode 3352 |> withDiagnosticMessageMatches "most specific implementation"
 
-    // =============================================================================
-    // Edge Case Tests: Properties with DIM
-    // =============================================================================
-
-    /// C# library defining an interface with a property that has a DIM getter.
-    /// IReadable has a Value getter, IWritable extends with getter+setter and DIM for getter.
-    let csharpPropertyWithDIMGetter =
-        CSharp """
-namespace PropertyDIM
-{
-    public interface IReadable
-    {
-        int Value { get; }
-    }
-    
-    public interface IWritable : IReadable
-    {
-        // New property with getter and setter
-        new int Value { get; set; }
-        
-        // Provide DIM for the IReadable.Value getter
-        int IReadable.Value => this.Value;
-    }
-}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "PropertyDIMLib"
-
-    /// Test 6: Property with DIM getter
-    /// Implementing IWritable should work because the IReadable.Value getter is covered by DIM
     [<FactForNETCOREAPP>]
-    let ``Property with DIM getter - should work`` () =
-        let fsharpSource = """
+    let ``Property with DIM getter succeeds`` () =
+        FSharp """
 module Test
-
 open PropertyDIM
-
 type C() =
     let mutable value = 0
     interface IWritable with
         member _.Value with get() = value and set(v) = value <- v
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpPropertyWithDIMGetter]
-        |> compile
-        |> shouldSucceed
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
 
-    // =============================================================================
-    // Object Expression Tests
-    // =============================================================================
-
-    /// Test 7: Object expression implementing interface with DIM-covered slot
-    /// Same as Test 1 but using object expression syntax instead of class.
     [<FactForNETCOREAPP>]
-    let ``Object expression - DIM-covered slot should work`` () =
-        let fsharpSource = """
+    let ``Object expression with DIM succeeds`` () =
+        FSharp """
 module Test
-
 open DIMTest
-
-let obj : IB = 
-    { new IB with
-        member _.M() = 42 }
+let obj : IB = { new IB with member _.M() = 42 }
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpInterfaceWithDIM]
-        |> compile
-        |> shouldSucceed
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
 
-    /// Test 8: Object expression with explicit override of DIM
-    /// When user wants to override the DIM-covered slot, they must use explicit interface declaration.
     [<FactForNETCOREAPP>]
-    let ``Object expression - explicit override of DIM requires interface declaration`` () =
-        let fsharpSource = """
+    let ``Object expression explicit DIM override succeeds`` () =
+        FSharp """
 module Test
-
 open DIMTest
-
-// User explicitly wants to override both IB.M and IA.M (not use the DIM)
-let obj : IB = 
-    { new IB with
-        member _.M() = 42
-      interface IA with
-        member _.M() = 100 }
+let obj : IB = { new IB with member _.M() = 42
+                 interface IA with member _.M() = 100 }
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpInterfaceWithDIM]
-        |> compile
-        |> shouldSucceed
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
 
-    /// Test 9: Class with explicit override of DIM slot
-    /// User can still explicitly implement the shadowed slot even when DIM is available.
     [<FactForNETCOREAPP>]
-    let ``Class - explicit override of DIM slot still allowed`` () =
-        let fsharpSource = """
+    let ``Object expression diamond with DIM succeeds`` () =
+        FSharp """
 module Test
-
-open DIMTest
-
-type C() =
-    interface IB with
-        member _.M() = 42
-    // User can explicitly implement IA.M to override the DIM
-    interface IA with
-        member _.M() = 100
-"""
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpInterfaceWithDIM]
-        |> compile
-        |> shouldSucceed
-
-    /// Test 10: Object expression with diamond and DIM - object expression syntax
-    [<FactForNETCOREAPP>]
-    let ``Object expression - diamond with single DIM should work`` () =
-        let fsharpSource = """
-module Test
-
 open DiamondSingleDIM
-
-let obj : ID = 
-    { new ID }
+let obj : ID = { new ID }
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpDiamondSingleDIM]
-        |> compile
-        |> shouldSucceed
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
 
-    /// Test 11: Pure F# interface hierarchy with object expression should still error
-    /// This ensures object expression path also requires explicit implementation when no DIM exists.
-    /// Note: Object expressions produce error 3213 (matches multiple overloads) rather than 361.
     [<Fact>]
-    let ``Object expression - Pure F# interface hierarchy should still error`` () =
-        let fsharpSource = """
+    let ``Object expression pure F# hierarchy errors`` () =
+        FSharp """
 module Test
-
-type IA =
-    abstract M : int -> int
-
-type IB =
-    inherit IA
-    abstract M : int -> int
-
-let obj : IB =
-    { new IB with
-        member x.M(y) = y + 3 }
+type IA = abstract M : int -> int
+type IB = inherit IA
+          abstract M : int -> int
+let obj : IB = { new IB with member x.M(y) = y + 3 }
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3213  // "matches multiple overloads of the same method"
+        |> withLangVersionPreview |> compile |> shouldFail |> withErrorCode 3213
 
-    // =============================================================================
-    // Sprint 5: Re-abstraction + Generic Instantiations + possiblyNoMostSpecific
-    // =============================================================================
-
-    /// C# library with re-abstracted member.
-    /// IB inherits from IA, and re-abstracts IA.M by declaring it abstract again.
-    /// This requires an implementation despite having DIM in the hierarchy.
-    let csharpReabstractedMember =
-        CSharp """
-namespace ReabstractTest
-{
-    public interface IA
-    {
-        int M();
-    }
-    
-    public interface IB : IA
-    {
-        // Re-abstraction: explicitly declare IA.M as abstract
-        // This removes any default implementation from the hierarchy
-        abstract int IA.M();
-    }
-}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "ReabstractLib"
-
-    /// Test 12: Re-abstracted DIM member should still require implementation
-    /// When a derived interface re-abstracts a member from the base interface,
-    /// the implementing class must still provide an implementation.
     [<FactForNETCOREAPP>]
-    let ``Re-abstracted member - should require implementation`` () =
-        let fsharpSource = """
+    let ``Re-abstracted member requires implementation`` () =
+        FSharp """
 module Test
-
 open ReabstractTest
+type C() = interface IB
+"""
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile
+        |> shouldFail |> withErrorCode 366
 
+    [<FactForNETCOREAPP>]
+    let ``Re-abstracted with explicit implementation succeeds`` () =
+        FSharp """
+module Test
+open ReabstractTest
 type C() =
+    interface IA with member _.M() = 42
     interface IB
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpReabstractedMember]
-        |> compile
-        |> shouldFail
-        |> withErrorCode 366  // FS0366: No implementation was given for interface member
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
 
-    /// Test 13: Re-abstracted member with explicit implementation should work
     [<FactForNETCOREAPP>]
-    let ``Re-abstracted member - explicit implementation should work`` () =
-        let fsharpSource = """
+    let ``Generic interfaces partial DIM coverage`` () =
+        FSharp """
 module Test
-
-open ReabstractTest
-
-type C() =
-    interface IA with
-        member _.M() = 42
-    interface IB
-"""
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpReabstractedMember]
-        |> compile
-        |> shouldSucceed
-
-    /// C# library with generic interfaces with different instantiations.
-    /// IContainer implements both IGet<int> and IGet<string> - each is separate.
-    let csharpGenericInterfaceInstantiations =
-        CSharp """
-namespace GenericDIMTest
-{
-    public interface IGet<T>
-    {
-        T Get();
-    }
-    
-    public interface IContainer : IGet<int>, IGet<string>
-    {
-        // Provide DIM for IGet<int>.Get only
-        int IGet<int>.Get() => 42;
-        
-        // IGet<string>.Get has no DIM, must be implemented
-    }
-}""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8 |> withName "GenericDIMLib"
-
-    /// Test 14: Generic interfaces with different instantiations - partial DIM coverage
-    /// IContainer has DIM for IGet<int> but not IGet<string>.
-    /// The class must implement IGet<string>.Get but can skip IGet<int>.Get.
-    [<FactForNETCOREAPP>]
-    let ``Generic interfaces - different instantiations treated separately`` () =
-        let fsharpSource = """
-module Test
-
 open GenericDIMTest
-
 type C() =
     interface IContainer with
         member _.Get() : string = "hello"
 """
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpGenericInterfaceInstantiations]
-        |> compile
-        |> shouldSucceed
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
 
-    /// Test 15: Generic interfaces - missing required implementation should fail
-    /// If we only implement IGet<int> (covered by DIM) and NOT IGet<string>, it should fail.
     [<FactForNETCOREAPP>]
-    let ``Generic interfaces - missing required instantiation should fail`` () =
-        let fsharpSource = """
+    let ``Language version 9.0 requires explicit implementation`` () =
+        FSharp """
 module Test
-
-open GenericDIMTest
-
-type C() =
-    interface IContainer
-"""
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpGenericInterfaceInstantiations]
-        |> compile
-        |> shouldFail
-        |> withErrorCode 366  // FS0366: No implementation was given for interface member
-
-    /// Test 16: possiblyNoMostSpecific flag verification
-    /// This is already covered by Test 5 (Diamond with conflicting DIMs),
-    /// but this test explicitly verifies the error message mentions "no most specific implementation".
-    [<FactForNETCOREAPP>]
-    let ``possiblyNoMostSpecific - ambiguous DIMs produce specific error message`` () =
-        let fsharpSource = """
-module Test
-
-open DiamondConflictDIM
-
-type C() =
-    interface ID
-"""
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpDiamondConflictingDIMs]
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3352  // FS3352: does not have a most specific implementation
-        |> withDiagnosticMessageMatches "most specific implementation"
-
-    // =============================================================================
-    // Sprint 6: Language Version Gating Tests
-    // =============================================================================
-
-    /// Test 17: Language version gating - old version (9.0) should emit FS0361
-    /// With old language version, the DIM coverage feature is NOT enabled,
-    /// so implementing IB only (without explicit IA implementation) should error.
-    [<FactForNETCOREAPP>]
-    let ``Language version 9.0 - DIM-covered slot should still emit FS0361`` () =
-        let fsharpSource = """
-module Test
-
 open DIMTest
-
 type C() =
     interface IB with
         member _.M() = 42
 """
-        FSharp fsharpSource
-        |> withLangVersion "9.0"
-        |> withReferences [csharpInterfaceWithDIM]
-        |> compile
-        |> shouldFail
-        |> withErrorCode 361  // FS0361: This member implements more than one slot
-
-    /// Test 18: Language version gating - preview version should NOT emit FS0361
-    /// With preview language version, DIM coverage is enabled,
-    /// so implementing IB only should succeed (IA.M is covered by DIM).
-    /// Note: This duplicates Test 1 but explicitly documents the language version behavior.
-    [<FactForNETCOREAPP>]
-    let ``Language version preview - DIM-covered slot should NOT emit FS0361`` () =
-        let fsharpSource = """
-module Test
-
-open DIMTest
-
-type C() =
-    interface IB with
-        member _.M() = 42
-"""
-        FSharp fsharpSource
-        |> withLangVersionPreview
-        |> withReferences [csharpInterfaceWithDIM]
-        |> compile
-        |> shouldSucceed
-
-    /// Test 19: Language version gating - version 10.0 should also emit FS0361
-    /// The feature is set to 'previewVersion', so 10.0 should NOT have it.
-    [<FactForNETCOREAPP>]
-    let ``Language version 10.0 - DIM-covered slot should still emit FS0361`` () =
-        let fsharpSource = """
-module Test
-
-open DIMTest
-
-type C() =
-    interface IB with
-        member _.M() = 42
-"""
-        FSharp fsharpSource
-        |> withLangVersion "10.0"
-        |> withReferences [csharpInterfaceWithDIM]
-        |> compile
-        |> shouldFail
-        |> withErrorCode 361  // FS0361: This member implements more than one slot
-
-    /// Test 20: Feature string verification
-    /// Verifies the feature name is correctly displayed in the error message
-    /// when the feature is required but not available in the selected language version.
-    [<FactForNETCOREAPP>]
-    let ``Feature string - verify feature description displays correctly`` () =
-        // Note: The feature description string is defined in FSComp.txt as:
-        // featureImplicitDIMCoverage,"Implicit dispatch slot coverage for default interface member implementations"
-        // 
-        // This test verifies the feature is correctly gated. When using an old language version,
-        // the compiler should fall back to the old behavior (FS0361) rather than show a 
-        // "feature not available" error, since this is a behavioral change not a syntax change.
-        // The feature string would appear if someone explicitly requested a feature not available.
-        //
-        // For behavioral features like this one, the feature string is primarily used for:
-        // 1. Documentation purposes (--help shows features)
-        // 2. Feature detection by tools
-        //
-        // Here we just verify the old behavior is preserved (FS0361) when feature is disabled.
-        let fsharpSource = """
-module Test
-
-open DIMTest
-
-type C() =
-    interface IB with
-        member _.M() = 42
-"""
-        FSharp fsharpSource
-        |> withLangVersion "9.0"
-        |> withReferences [csharpInterfaceWithDIM]
-        |> compile
-        |> shouldFail
-        |> withErrorCode 361
-        |> withDiagnosticMessageMatches "implements"
+        |> withLangVersion "9.0" |> withReferences [dimTestLib] |> compile
+        |> shouldFail |> withErrorCode 361
