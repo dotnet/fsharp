@@ -1391,11 +1391,9 @@ module Query =
                 // MakeEmpty expects the element type, not the collection type.
                 // Extract the element type to create a properly typed empty sequence.
                 let tType = t.Type
-                let elemTy = 
-                    if tType.IsGenericType then 
-                        tType.GetGenericArguments().[0]
-                    else 
-                        tType
+                // t.Type must be IQueryable<elemTy> or IEnumerable<elemTy> - always generic.
+                // Fail fast if not, rather than silently producing wrong types.
+                let elemTy = tType.GetGenericArguments().[0]
                 TransInnerResult.Other(Expr.IfThenElse (g, t, MakeEmpty elemTy)), tConv
             | _ ->
                 if check then raise (NotSupportedException (SR.GetString(SR.unsupportedIfThenElse)) )
