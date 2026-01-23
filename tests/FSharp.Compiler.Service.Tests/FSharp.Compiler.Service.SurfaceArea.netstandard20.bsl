@@ -2011,15 +2011,18 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
-FSharp.Compiler.Caches.CacheMetricsNameListener: Double Ratio
-FSharp.Compiler.Caches.CacheMetricsNameListener: Double get_Ratio()
-FSharp.Compiler.Caches.CacheMetricsNameListener: Int64 Hits
-FSharp.Compiler.Caches.CacheMetricsNameListener: Int64 Misses
-FSharp.Compiler.Caches.CacheMetricsNameListener: Int64 get_Hits()
-FSharp.Compiler.Caches.CacheMetricsNameListener: Int64 get_Misses()
-FSharp.Compiler.Caches.CacheMetricsNameListener: Microsoft.FSharp.Collections.FSharpMap`2[System.String,System.Int64] GetTotals()
-FSharp.Compiler.Caches.CacheMetricsNameListener: System.String ToString()
-FSharp.Compiler.Caches.CacheMetricsNameListener: Void .ctor(System.String)
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Double Ratio
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Double get_Ratio()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 Hits
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 Misses
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 get_Hits()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 get_Misses()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Microsoft.FSharp.Collections.FSharpMap`2[System.String,System.Int64] GetTotals()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: System.String ToString()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Void .ctor(System.String)
+FSharp.Compiler.Caches.CacheMetrics: FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener
+FSharp.Compiler.Caches.CacheMetrics: System.Diagnostics.Metrics.Meter Meter
+FSharp.Compiler.Caches.CacheMetrics: System.Diagnostics.Metrics.Meter get_Meter()
 FSharp.Compiler.Cancellable: Boolean HasCancellationToken
 FSharp.Compiler.Cancellable: Boolean get_HasCancellationToken()
 FSharp.Compiler.Cancellable: System.Threading.CancellationToken Token
@@ -2121,7 +2124,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] Dependen
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean UsesTransparentCompiler
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean get_UsesTransparentCompiler()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.Caches.CacheMetricsNameListener CreateOverloadCacheMetricsListener()
+FSharp.Compiler.CodeAnalysis.FSharpChecker: CacheMetricsListener CreateOverloadCacheMetricsListener()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.DocumentSource], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Instance
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Instance()

@@ -624,7 +624,7 @@ type FSharpChecker
     static member Instance = globalInstance.Force()
 
     static member CreateOverloadCacheMetricsListener() =
-        new CacheMetricsNameListener("overloadResolutionCache")
+        new CacheMetrics.CacheMetricsListener("overloadResolutionCache")
 
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 

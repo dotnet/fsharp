@@ -511,8 +511,8 @@ type public FSharpChecker =
     /// This captures metrics from all overload resolution cache instances across all compilations.
     /// The listener should be created before the compilation starts to capture all metrics.
     /// </summary>
-    /// <returns>A CacheMetricsNameListener that tracks hits, misses, and other metrics for the overload resolution cache.</returns>
-    static member CreateOverloadCacheMetricsListener: unit -> CacheMetricsNameListener
+    /// <returns>A CacheMetricsListener that tracks hits, misses, and other metrics for the overload resolution cache.</returns>
+    static member CreateOverloadCacheMetricsListener: unit -> CacheMetrics.CacheMetricsListener
 
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
