@@ -2708,29 +2708,43 @@ False positive warning for tuple patterns.
 ### Minimal Repro
 
 ```fsharp
+open System
+open System.Reflection
+
+// Abstract type with [<Obsolete>] on abstract event accessors
 [<AbstractClass>]
-type T() =
-    [<Obsolete>]
-    abstract member Prop : int
+type AbstractWithEvent() =
+    [<Obsolete("This event is deprecated")>]
+    [<CLIEvent>]
+    abstract member MyEvent : IEvent<EventHandler, EventArgs>
+
+[<EntryPoint>]
+let main _ =
+    let abstractType = typeof<AbstractWithEvent>
+    let abstractAddMethod = abstractType.GetMethod("add_MyEvent")
+    
+    printfn "add_MyEvent.IsSpecialName = %b" abstractAddMethod.IsSpecialName
+    // Bug: Prints "false" instead of "true"
+    if abstractAddMethod.IsSpecialName then 0 else 1
 ```
 
 ### Expected Behavior
-Property accessors have specialname flag.
+Abstract event accessors (`add_MyEvent`, `remove_MyEvent`) have `IsSpecialName = true` in reflection, matching concrete implementations.
 
 ### Actual Behavior
-Obsolete attribute causes missing specialname.
+Abstract event accessors have `IsSpecialName = false`, breaking Reflection-based tools like Moq that rely on this flag to identify event accessors.
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_5834_ObsoleteSpecialname`
 
 ### Analysis
-Attribute handling interferes with property metadata.
+When generating abstract event accessors (especially with attributes like `[<Obsolete>]`), the F# compiler doesn't set the `specialname` IL flag. Concrete event accessors get this flag correctly. This breaks Moq and other reflection-based libraries that check `method.IsSpecialName` to identify event accessors.
 
 ### Fix Location
 - `src/Compiler/CodeGen/IlxGen.fs`
 
 ### Risks
-- Low: Metadata fix
+- Low: Metadata fix, should be additive
 
 ---
 
@@ -2777,29 +2791,48 @@ Type import doesn't preserve custom modifiers.
 ### Minimal Repro
 
 ```fsharp
-exception MyException of data: string
+open System.IO
+open System.Runtime.Serialization.Formatters.Binary
 
-let ex = MyException("test")
-// Serialize and deserialize
+exception Foo of x:string * y:int
+
+let clone (x : 'T) =
+    let bf = new BinaryFormatter()
+    let m = new MemoryStream()
+    bf.Serialize(m, x)
+    m.Position <- 0L
+    bf.Deserialize(m) :?> 'T
+
+let original = Foo("value", 42)
+let cloned = clone original
+// cloned is Foo(null, 0) instead of Foo("value", 42)
+
+match cloned with
+| Foo(x, y) -> printfn "x='%s', y=%d" (if isNull x then "null" else x) y
+// Prints: x='null', y=0
 ```
 
 ### Expected Behavior
-Exception fields survive serialization roundtrip.
+Exception fields survive serialization roundtrip: `Foo("value", 42)` → serialize → deserialize → `Foo("value", 42)`.
 
 ### Actual Behavior
-Fields are lost after deserialization.
+Exception fields are lost after deserialization: `Foo("value", 42)` → serialize → deserialize → `Foo(null, 0)`.
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_878_ExceptionSerialization`
 
 ### Analysis
-GetObjectData not correctly implemented for exceptions with fields.
+F# exception types inherit from `System.Exception` which uses `ISerializable`. The compiler must generate:
+1. A `GetObjectData` override that calls `base.GetObjectData()` then adds field values via `info.AddValue()`
+2. A `(SerializationInfo, StreamingContext)` constructor that calls base then reads fields via `info.GetValue()`
+
+Currently, F# generates only the constructor shell without reading the field values.
 
 ### Fix Location
 - `src/Compiler/CodeGen/IlxGen.fs`
 
 ### Risks
-- Low: Serialization fix
+- Low: Serialization fix, additive change to generated code
 
 ---
 

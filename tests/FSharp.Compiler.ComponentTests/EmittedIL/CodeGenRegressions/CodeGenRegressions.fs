@@ -1867,22 +1867,61 @@ let f (x, y) = x + y
 
     // ===== Issue #5834: Obsolete on abstract generates accessors without specialname =====
     // https://github.com/dotnet/fsharp/issues/5834
-    // Obsolete attribute causes missing specialname on property accessors.
+    // Abstract event accessors don't get the specialname IL flag, breaking Reflection-based tools.
+    // This becomes problematic when [<Obsolete>] or other attributes are involved.
     // [<Fact>]
     let ``Issue_5834_ObsoleteSpecialname`` () =
         let source = """
 module Test
 
 open System
+open System.Reflection
 
+// Abstract type with [<Obsolete>] on abstract event accessors
 [<AbstractClass>]
-type T() =
-    abstract member Prop : int
+type AbstractWithEvent() =
+    [<Obsolete("This event is deprecated")>]
+    [<CLIEvent>]
+    abstract member MyEvent : IEvent<EventHandler, EventArgs>
+
+// Concrete type for comparison - event accessors should have specialname
+type ConcreteWithEvent() =
+    let evt = new Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    member this.MyEvent = evt.Publish
+
+[<EntryPoint>]
+let main _ =
+    let abstractType = typeof<AbstractWithEvent>
+    let concreteType = typeof<ConcreteWithEvent>
+    
+    // Check abstract event accessors
+    let abstractAddMethod = abstractType.GetMethod("add_MyEvent")
+    let abstractRemoveMethod = abstractType.GetMethod("remove_MyEvent")
+    
+    // Check concrete event accessors (for comparison)
+    let concreteAddMethod = concreteType.GetMethod("add_MyEvent")
+    
+    printfn "AbstractWithEvent.add_MyEvent.IsSpecialName = %b" abstractAddMethod.IsSpecialName
+    printfn "AbstractWithEvent.remove_MyEvent.IsSpecialName = %b" abstractRemoveMethod.IsSpecialName
+    printfn "ConcreteWithEvent.add_MyEvent.IsSpecialName = %b" concreteAddMethod.IsSpecialName
+    
+    // Bug: Abstract event accessors should have IsSpecialName = true, but they don't
+    if not abstractAddMethod.IsSpecialName || not abstractRemoveMethod.IsSpecialName then
+        printfn "BUG: Abstract event accessors missing specialname flag"
+        printfn "Expected: IsSpecialName = true"
+        printfn "Actual: IsSpecialName = false"
+        1
+    else
+        printfn "SUCCESS: All event accessors have specialname"
+        0
 """
         FSharp source
-        |> asLibrary
+        |> asExe
         |> compile
         |> shouldSucceed
+        |> run
+        |> shouldSucceed // This will fail - abstract event accessors have IsSpecialName = false - bug exists
         |> ignore
 
     // ===== Issue #5464: F# ignores custom modifiers modreq/modopt =====
@@ -1903,18 +1942,53 @@ let f x = x + 1
 
     // ===== Issue #878: Serialization of F# exception variants doesn't serialize fields =====
     // https://github.com/dotnet/fsharp/issues/878
-    // Exception fields are lost after deserialization.
+    // Exception fields are lost after deserialization when using BinaryFormatter.
+    // The F# compiler doesn't generate proper GetObjectData override or deserialization constructor.
     // [<Fact>]
     let ``Issue_878_ExceptionSerialization`` () =
         let source = """
 module Test
 
-exception MyException of data: string
+open System
+open System.IO
+open System.Runtime.Serialization.Formatters.Binary
 
-let ex = MyException("test")
+// Define F# exception with multiple fields
+exception Foo of x:string * y:int
+
+// Clone an object via BinaryFormatter serialization roundtrip
+let clone (x : 'T) =
+    let bf = new BinaryFormatter()
+    let m = new MemoryStream()
+    bf.Serialize(m, x)
+    m.Position <- 0L
+    bf.Deserialize(m) :?> 'T
+
+[<EntryPoint>]
+let main _ =
+    let original = Foo("value", 42)
+    let cloned = clone original
+    
+    // Extract fields from cloned exception
+    // Bug: After deserialization, fields become null/0 instead of "value"/42
+    match cloned with
+    | Foo(x, y) ->
+        printfn "Original: x='value', y=42"
+        printfn "Cloned: x='%s', y=%d" (if isNull x then "null" else x) y
+        if x = "value" && y = 42 then
+            printfn "SUCCESS: Fields survived serialization"
+            0
+        else
+            printfn "BUG: Fields lost during serialization (expected x='value', y=42)"
+            1
+    | _ -> 
+        printfn "Unexpected exception type"
+        1
 """
         FSharp source
-        |> asLibrary
+        |> asExe
         |> compile
         |> shouldSucceed
+        |> run
+        |> shouldSucceed // This will fail - fields are null/0 after deserialization - bug exists
         |> ignore
