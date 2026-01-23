@@ -2426,27 +2426,69 @@ unmanaged constraint metadata may not match C# expectations.
 ### Minimal Repro
 
 ```fsharp
-type T() =
-    let mutable x = 42
+open System.Runtime.CompilerServices
+
+type Test =
+    [<DefaultValue>]
+    val mutable X : int
+    new() = { }
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let test() =
+    Test(X = 1)
 ```
 
 ### Expected Behavior
-Efficient field initialization in IL.
+
+The IL should use the efficient `dup` pattern:
+
+```il
+.method public static class Program/Test test() cil managed noinlining
+{
+  .maxstack  4
+  IL_0xxx:  newobj     instance void Program/Test::.ctor()
+  IL_0xxx:  dup                                // Use dup - no locals needed
+  IL_0xxx:  ldc.i4.1
+  IL_0xxx:  stfld      int32 Program/Test::X
+  IL_0xxx:  ret
+}
+```
 
 ### Actual Behavior
-More instructions than necessary for initialization.
+
+The IL uses unnecessary locals with stloc/ldloc pattern:
+
+```il
+.method public static class Program/Test test() cil managed noinlining
+{
+  .maxstack  4
+  .locals init (class Program/Test V_0)        // Unnecessary local
+  IL_0000:  newobj     instance void Program/Test::.ctor()
+  IL_0005:  stloc.0                            // Store to local
+  IL_0006:  ldloc.0                            // Load from local
+  IL_0007:  ldc.i4.1
+  IL_0008:  stfld      int32 Program/Test::X
+  IL_000d:  ldloc.0                            // Load from local again
+  IL_000e:  ret
+}
+```
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_11556_FieldInitializers`
 
 ### Analysis
-Field initialization could be more efficient.
+
+The inefficiency comes from the code generator emitting a local variable to hold the newly constructed object reference, when it could simply use `dup` to duplicate the stack value. This results in:
+- Extra `.locals init` declaration
+- More instructions (stloc.0, ldloc.0, ldloc.0 vs single dup)
+- Larger code size
+- Slightly worse JIT performance
 
 ### Fix Location
 - `src/Compiler/CodeGen/IlxGen.fs`
 
 ### Risks
-- Low: IL optimization
+- Low: IL optimization only, no semantic change
 
 ---
 
@@ -2758,39 +2800,76 @@ When generating abstract event accessors (especially with attributes like `[<Obs
 
 **Category:** C# Interop
 
-### Minimal Repro
+**[IL_LEVEL_ISSUE: Requires C# interop to demonstrate]**
+
+### Root Cause
+
+The F# compiler strips custom modifiers during type import:
 
 ```fsharp
-// Requires a C# assembly with modreq/modopt modifiers
-// For example, a method with 'in' parameter:
-// C#: void Foo(in ReadOnlyStruct s) { }
-// The 'in' keyword adds modreq(IsReadOnlyAttribute)
+| ILType.Modified(_,_,ty) ->
+    // All custom modifiers are ignored
+    ImportILType env m tinst ty
+```
 
-// F# code consuming this:
-[<Struct>]
-type ReadOnlyStruct = { Value: int }
+### What Are modreq/modopt?
 
-// When calling the C# method from F#, the modreq is stripped
-let passStruct (s: ReadOnlyStruct) = s.Value
+Custom modifiers are IL metadata that modify types without changing their CLR type:
+- **modreq (required)**: The modifier MUST be understood (e.g., `IsReadOnlyAttribute` for C# `in` parameters)
+- **modopt (optional)**: The modifier MAY be ignored (e.g., `IsVolatile` for `volatile` fields)
+
+### Example - C# 'in' Parameter
+
+```csharp
+// C# source:
+public void Process(in ReadOnlyStruct value) { }
+
+// Compiled IL signature:
+.method public hidebysig instance void Process(
+    [in] valuetype ReadOnlyStruct& modreq([netstandard]System.Runtime.InteropServices.InAttribute) value
+) cil managed
 ```
 
 ### Expected Behavior
-modreq/modopt from C# types (e.g., `in` parameters, `volatile` fields) are preserved when consumed by F#.
+
+When F# calls this C# method, the IL should preserve the modreq:
+
+```il
+call instance void [CSharpLib]CSharpLib::Process(
+    valuetype ReadOnlyStruct& modreq([System.Runtime]System.Runtime.InteropServices.InAttribute))
+```
 
 ### Actual Behavior
-Custom modifiers are stripped from the metadata when F# reads C# assemblies. The IL emitted by F# doesn't include the modifiers that were present in the C# source.
+
+F# strips the modreq from the emitted IL:
+
+```il
+call instance void [CSharpLib]CSharpLib::Process(
+    valuetype ReadOnlyStruct&)  // NO modreq!
+```
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_5464_CustomModifiers`
 
 ### Analysis
-Full reproduction requires a multi-language test: C# library with modreq/modopt modifiers (e.g., `in` parameters, `volatile` fields) consumed from F#. The F# compiler's type import doesn't preserve these custom modifiers.
+
+Full reproduction requires a multi-language test:
+1. C# library with `in` parameters or `volatile` fields (which have modreq/modopt)
+2. F# code that consumes it
+3. IL verification that the modifier is present/absent
+
+The bug causes:
+- F# cannot distinguish C# `in` from `ref` parameters
+- C++/CLI interop is broken (C++ heavily uses custom modifiers)
+- Violation of ECMA CLI specification
+
+This is fundamentally a cross-assembly issue that cannot be demonstrated in a single F# source file.
 
 ### Fix Location
 - `src/Compiler/AbstractIL/ilwrite.fs`
 
 ### Risks
-- Medium: C++ interop relies on custom modifiers
+- Medium: C++/CLI interop relies heavily on custom modifiers
 
 ---
 

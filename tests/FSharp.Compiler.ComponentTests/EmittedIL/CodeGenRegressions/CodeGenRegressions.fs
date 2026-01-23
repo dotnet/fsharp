@@ -1696,20 +1696,81 @@ let inline test<'T when 'T : unmanaged> (x: 'T) = x
 
     // ===== Issue #11556: Better IL output for property/field initializers =====
     // https://github.com/dotnet/fsharp/issues/11556
-    // Field initialization could be more efficient.
+    // [IL_LEVEL_ISSUE: Performance optimization for field initialization]
+    //
+    // The F# compiler emits inefficient IL for property/field initializers using
+    // unnecessary local variables and stloc/ldloc patterns where a simpler `dup`
+    // instruction could be used.
+    //
+    // CURRENT (INEFFICIENT) IL PATTERN:
+    // ```
+    // .method public static class Program/Test test() cil managed noinlining
+    // {
+    //   .maxstack  4
+    //   .locals init (class Program/Test V_0)       // <-- Unnecessary local
+    //   IL_0000:  newobj     instance void Program/Test::.ctor()
+    //   IL_0005:  stloc.0                            // <-- Store to local
+    //   IL_0006:  ldloc.0                            // <-- Load from local
+    //   IL_0007:  ldc.i4.1
+    //   IL_0008:  stfld      int32 Program/Test::X
+    //   IL_000d:  ldloc.0                            // <-- Load from local again
+    //   IL_000e:  ret
+    // }
+    // ```
+    //
+    // EXPECTED (EFFICIENT) IL PATTERN:
+    // ```
+    // .method public static class Program/Test test() cil managed noinlining
+    // {
+    //   .maxstack  4
+    //   IL_0xxx:  newobj     instance void Program/Test::.ctor()
+    //   IL_0xxx:  dup                                // <-- Use dup instead of locals
+    //   IL_0xxx:  ldc.i4.1
+    //   IL_0xxx:  stfld      int32 Program/Test::X
+    //   IL_0xxx:  ret
+    // }
+    // ```
+    //
+    // Benefits of the efficient pattern:
+    // - No locals required (.locals init is eliminated)
+    // - Fewer instructions (dup vs stloc+ldloc+ldloc)
+    // - Smaller code size
+    // - Better JIT performance
+    //
     // [<Fact>]
     let ``Issue_11556_FieldInitializers`` () =
+        // This test demonstrates the inefficient IL pattern. The actual repro
+        // from the GitHub issue shows the suboptimal code generation clearly.
         let source = """
-module Test
+module Program
 
-type T() =
-    let mutable x = 42
-    member _.X = x
+open System.Runtime.CompilerServices
+
+type Test =
+    [<DefaultValue>]
+    val mutable X : int
+    new() = { }
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let test() =
+    Test(X = 1)
+
+[<EntryPoint>]
+let main _ =
+    let t = test()
+    printfn "X = %d" t.X
+    0
 """
+        // This compiles successfully but produces suboptimal IL.
+        // The test() function uses stloc.0/ldloc.0 pattern instead of dup.
+        // To verify the bug, inspect IL output and confirm .locals init exists.
         FSharp source
-        |> asLibrary
+        |> asExe
         |> compile
         |> shouldSucceed
+        // IL Verification: The emitted IL for test() will have:
+        // - .locals init (class Program/Test V_0)  <-- THIS IS THE INEFFICIENCY
+        // - stloc.0 / ldloc.0 pattern instead of dup
         |> ignore
 
     // ===== Issue #11132: TypeloadException delegate with voidptr parameter =====
@@ -1899,44 +1960,93 @@ let main _ =
 
     // ===== Issue #5464: F# ignores custom modifiers modreq/modopt =====
     // https://github.com/dotnet/fsharp/issues/5464
+    // [IL_LEVEL_ISSUE: Requires C# interop to demonstrate]
+    //
     // Custom modifiers (modreq/modopt) from C# types are stripped when consumed by F#.
-    // When F# calls a C# method with 'in' parameters or volatile fields, the modifiers are lost.
-    // This means F# code doesn't respect the semantics these modifiers are meant to enforce.
+    // This is a violation of the ECMA spec for CLI metadata.
+    //
+    // ROOT CAUSE (from GitHub issue):
+    // ```fsharp
+    // | ILType.Modified(_,_,ty) ->
+    //     // All custom modifiers are ignored
+    //     ImportILType env m tinst ty
+    // ```
+    //
+    // WHAT modreq/modopt ARE:
+    // Custom modifiers are IL metadata that modify types without changing their CLR type.
+    // - modreq (required): The modifier MUST be understood (e.g., IsReadOnlyAttribute for 'in')
+    // - modopt (optional): The modifier MAY be ignored (e.g., IsVolatile for volatile fields)
+    //
+    // EXAMPLE - C# WITH 'in' PARAMETER:
+    // ```csharp
+    // // C# source:
+    // public void Process(in ReadOnlyStruct value) { }
+    //
+    // // Compiled IL:
+    // .method public hidebysig instance void Process(
+    //     [in] valuetype ReadOnlyStruct& modreq([netstandard]System.Runtime.InteropServices.InAttribute) value
+    // ) cil managed
+    // ```
+    //
+    // WHAT F# DOES WRONG:
+    // When F# imports this type, it discards the modreq(InAttribute), treating the
+    // parameter as just `valuetype ReadOnlyStruct&`. This means:
+    // - F# cannot distinguish 'in' from 'ref' in C# signatures  
+    // - F# may call methods incorrectly or fail to enforce readonly semantics
+    // - C++/CLI interop (which heavily uses modreq) is broken
+    //
+    // WHY THIS TEST CANNOT FULLY REPRODUCE THE BUG:
+    // Full reproduction requires:
+    // 1. A C# assembly compiled with 'in' parameters or 'volatile' fields
+    // 2. F# code that references that assembly
+    // 3. IL inspection showing the modreq is stripped on the F# side
+    //
+    // This is fundamentally a cross-assembly C#/F# test that cannot be demonstrated
+    // in a single F# source file.
+    //
     // [<Fact>]
     let ``Issue_5464_CustomModifiers`` () =
-        // The bug: When C# declares a method with 'in' parameter (which has modreq(IsReadOnlyAttribute)),
-        // F# strips the modifier when emitting calls. To properly test this requires:
-        // 1. A C# library with 'in' parameters or volatile fields (which have modreq/modopt)
-        // 2. F# code that consumes it
-        // 3. IL verification that the modifier is present/absent
-        //
-        // Simplified demonstration: F# doesn't emit modifiers even on its own readonly structs
-        // when passed by reference (though this is intentional behavior, not a bug per se).
-        // The real issue is cross-language: C# modifiers are stripped when F# reads the metadata.
+        // This test is a placeholder demonstrating the STRUCTURE of what would trigger the bug.
+        // The actual bug manifests only when:
+        // 1. Compiling a C# library with 'in' parameters or volatile fields
+        // 2. Having F# consume that library
+        // 3. Inspecting the IL emitted by F# to confirm modreq is missing
         let source = """
 module Test
 
-// Simulating the scenario: F# code that would interact with C# 'in' parameters
-// The actual bug requires a C# assembly with modreq/modopt modifiers
+// Demonstration of the scenario (not the actual bug reproduction):
+// If we had a C# library with:
+//   public class CSharpLib {
+//       public void Process(in ReadOnlyStruct s) { }
+//   }
+//
+// And then in F#:
+//   let lib = CSharpLib()
+//   let s = { Value = 42 }
+//   lib.Process(&s)  // <-- The IL for this call would be missing modreq
+//
+// The IL that SHOULD be emitted:
+//   call instance void [CSharpLib]CSharpLib::Process(
+//       valuetype ReadOnlyStruct& modreq([System.Runtime]System.Runtime.InteropServices.InAttribute))
+//
+// The IL that F# ACTUALLY emits:
+//   call instance void [CSharpLib]CSharpLib::Process(
+//       valuetype ReadOnlyStruct&)  // <-- NO modreq!
 
 [<Struct>]
 type ReadOnlyStruct = { Value: int }
 
-// In a proper repro, calling a C# method like:
-// void Foo(in ReadOnlyStruct s) - the 'in' has modreq(IsReadOnlyAttribute)
-// F# calling Foo would emit IL without the modreq
-
-let passStruct (s: ReadOnlyStruct) = s.Value
-
-// The IL for passStruct doesn't show modreq because F# doesn't emit them
-// When consuming C# 'in' parameters, F# strips the modifiers from the signature
+// This function compiles fine in F#, but if it were calling a C# 'in' method,
+// the emitted IL would be missing the modreq modifier.
+let processStruct (s: ReadOnlyStruct) = s.Value
 """
         FSharp source
         |> asLibrary
         |> compile
         |> shouldSucceed
-        // Note: Full reproduction requires multi-language test with C# assembly containing
-        // modreq/modopt modifiers (e.g., 'in' parameters, volatile fields) consumed from F#
+        // NOTE: This test passes because we're not actually exercising the C# interop path.
+        // The bug only manifests when F# imports a C# assembly with modreq/modopt modifiers.
+        // Full test would require a multi-project C#/F# test setup.
         |> ignore
 
     // ===== Issue #878: Serialization of F# exception variants doesn't serialize fields =====
