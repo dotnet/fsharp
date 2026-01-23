@@ -543,6 +543,7 @@ module StructuralUtilities =
                     // Solved type variable - mark unstable because Trace.Undo could revert the solution
                     if not r.IsFromError then
                         ctx.Stable <- false
+
                     emitTType ctx ty
                 | None ->
                     if out.Count < 256 then
@@ -554,6 +555,7 @@ module StructuralUtilities =
                             // Flexible/Anon unsolved type variable - unstable, could be solved later
                             if not r.IsFromError then
                                 ctx.Stable <- false
+
                             out.Add(TypeToken.Unsolved typarId)
 
             | TType_measure m -> emitMeasure ctx m
