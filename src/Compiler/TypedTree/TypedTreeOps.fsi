@@ -2362,6 +2362,8 @@ val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
 val TryFindILAttributeOpt: BuiltinAttribInfo option -> ILAttributes -> bool
 
+val TryDecodeILAttributeOpt: BuiltinAttribInfo option -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+
 val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 
 val IsMatchingFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attrib -> bool
@@ -2383,6 +2385,8 @@ val TryFindFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> s
 val TryFindLocalizedFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
 
 val TryFindFSharpInt32Attribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> int32 option
+
+val TryFindFSharpInt32AttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> int32 option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///

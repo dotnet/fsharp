@@ -3459,17 +3459,10 @@ and ResolveOverloading
         (methodName = "op_Implicit")
 
     // See what candidates we have based on name and arity 
-    let candidates, priorityFilterInfo =
-        let candidatesBeforePriorityFilter =
-            calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
-        // Apply OverloadResolutionPriority pre-filter before any type checking
-        filterCandidatesByOverloadResolutionPriority g candidatesBeforePriorityFilter
-
-    // Create warnings for priority filtering (FS3590)
-    let priorityWarnings =
-        priorityFilterInfo
-        |> List.map (fun (winnerName, winnerPriority, loserName, loserPriority) ->
-            Error(FSComp.SR.tcOverloadResolutionPriorityUsed (winnerName, winnerPriority, loserName, loserPriority), m))
+    let candidates =
+        calledMethGroup 
+        |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
+        |> filterByOverloadResolutionPriority g (fun cm -> cm.Method)
 
     let calledMethOpt, errors, calledMethTrace = 
         match calledMethGroup, candidates with 
@@ -3489,8 +3482,7 @@ and ResolveOverloading
             | ILMeth(ilMethInfo= ilMethInfo) when not isStaticConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
                 None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(ilMethInfo.ILName), m)), NoTrace
             | _ ->
-                // Include priority warnings when single candidate is selected
-                Some calledMeth, (if priorityWarnings.IsEmpty then CompleteD else OkResult(priorityWarnings, ())), NoTrace
+                Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 
             None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
@@ -3576,11 +3568,10 @@ and ResolveOverloading
                 None, ErrorD err, NoTrace
 
             | [(calledMeth, warns, t, _usesTDC)] ->
-                // Include priority warnings in the result
-                Some calledMeth, OkResult(priorityWarnings @ warns, ()), WithTrace t
+                Some calledMeth, OkResult(warns, ()), WithTrace t
 
             | applicableMeths -> 
-                GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx priorityWarnings m
+                GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
@@ -3656,166 +3647,13 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
         // Otherwise pass the overload resolution failure for error printing in CompileOps
         UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
 
-/// Filter candidate methods by OverloadResolutionPriority attribute.
-/// Groups methods by declaring type and keeps only highest-priority within each group.
-/// This is a pre-filter that runs before type checking per the RFC.
-/// Returns (filteredCandidates, priorityFilterInfo) where priorityFilterInfo contains
-/// info about methods filtered out due to lower priority for diagnostic purposes.
-and filterCandidatesByOverloadResolutionPriority
-    (g: TcGlobals)
-    (candidates: list<CalledMeth<Expr>>)
-    : list<CalledMeth<Expr>> * list<string * int * string * int>
-    =
-    if not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) then
-        (candidates, [])
-    else if candidates.Length <= 1 then
-        (candidates, [])
-    else
-        // Group methods by declaring type using typeEquiv for comparison
-        let groupByType (meths: list<CalledMeth<Expr>>) : list<list<CalledMeth<Expr>>> =
-            let rec addToGroups
-                (groups: list<list<CalledMeth<Expr>>>)
-                (meth: CalledMeth<Expr>)
-                : list<list<CalledMeth<Expr>>>
-                =
-                let ty = meth.Method.ApparentEnclosingType
-
-                match groups with
-                | [] -> [ [ meth ] ]
-                | ((firstMeth: CalledMeth<Expr>) :: _ as group) :: rest ->
-                    if typeEquiv g ty firstMeth.Method.ApparentEnclosingType then
-                        (meth :: group) :: rest
-                    else
-                        group :: addToGroups rest meth
-                | [] :: rest -> addToGroups rest meth
-
-            List.fold (fun groups meth -> addToGroups groups meth) [] meths
-
-        let groups = groupByType candidates
-
-        // Track priority filtering info for diagnostics: (winnerName, winnerPriority, loserName, loserPriority)
-        let mutable priorityFilterInfo: list<string * int * string * int> = []
-
-        let filtered =
-            groups
-            |> List.collect (fun group ->
-                match group with
-                | [] -> []
-                | _ ->
-                    let maxPriority =
-                        group
-                        |> List.map (fun (cm: CalledMeth<Expr>) -> cm.Method.GetOverloadResolutionPriority())
-                        |> List.max
-
-                    let winners =
-                        group
-                        |> List.filter (fun (cm: CalledMeth<Expr>) -> cm.Method.GetOverloadResolutionPriority() = maxPriority)
-
-                    let losers =
-                        group
-                        |> List.filter (fun (cm: CalledMeth<Expr>) -> cm.Method.GetOverloadResolutionPriority() < maxPriority)
-
-                    // Record priority filter info for each loser
-                    match winners with
-                    | winnerCm :: _ ->
-                        for loserCm in losers do
-                            let winnerName = winnerCm.Method.DisplayName
-                            let winnerPriority = winnerCm.Method.GetOverloadResolutionPriority()
-                            let loserName = loserCm.Method.DisplayName
-                            let loserPriority = loserCm.Method.GetOverloadResolutionPriority()
-
-                            priorityFilterInfo <-
-                                (winnerName, winnerPriority, loserName, loserPriority) :: priorityFilterInfo
-                    | [] -> ()
-
-                    winners)
-
-        (filtered, priorityFilterInfo)
-
-/// Filter applicable methods by OverloadResolutionPriority attribute.
-/// Groups methods by declaring type and keeps only highest-priority within each group.
-/// This is a pre-filter that runs before tiebreaker comparison per the RFC.
-/// Returns (filteredMethods, priorityFilterInfo) where priorityFilterInfo contains
-/// info about methods filtered out due to lower priority for diagnostic purposes.
-and filterByOverloadResolutionPriority
-    (g: TcGlobals)
-    (applicableMeths: list<CalledMeth<'T> * 'W * 'Trace * TypeDirectedConversionUsed>)
-    : (list<CalledMeth<'T> * 'W * 'Trace * TypeDirectedConversionUsed> * list<string * int * string * int>)
-    =
-    if not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) then
-        (applicableMeths, [])
-    else
-        // Group methods by declaring type using typeEquiv for comparison
-        // We fold through the list, accumulating groups where types match
-        let groupByType (meths: list<CalledMeth<'T> * 'W * 'Trace * TypeDirectedConversionUsed>) =
-            let rec addToGroups groups (meth: CalledMeth<'T> * 'W * 'Trace * TypeDirectedConversionUsed) =
-                let (cm: CalledMeth<'T>, _, _, _) = meth
-                let ty = cm.Method.ApparentEnclosingType
-
-                match groups with
-                | [] -> [ [ meth ] ]
-                | ((firstMeth: CalledMeth<'T> * 'W * 'Trace * TypeDirectedConversionUsed) :: _ as group) :: rest ->
-                    let (firstCm: CalledMeth<'T>, _, _, _) = firstMeth
-
-                    if typeEquiv g ty firstCm.Method.ApparentEnclosingType then
-                        (meth :: group) :: rest
-                    else
-                        group :: addToGroups rest meth
-                | [] :: rest -> addToGroups rest meth
-
-            List.fold (fun groups meth -> addToGroups groups meth) [] meths
-
-        let groups = groupByType applicableMeths
-
-        // Track priority filtering info for diagnostics: (winnerName, winnerPriority, loserName, loserPriority)
-        let mutable priorityFilterInfo: list<string * int * string * int> = []
-
-        let filtered =
-            groups
-            |> List.collect (fun group ->
-                let maxPriority =
-                    group
-                    |> List.map (fun (cm: CalledMeth<'T>, _, _, _) -> cm.Method.GetOverloadResolutionPriority())
-                    |> List.max
-
-                let winners =
-                    group
-                    |> List.filter (fun (cm: CalledMeth<'T>, _, _, _) -> cm.Method.GetOverloadResolutionPriority() = maxPriority)
-
-                let losers =
-                    group
-                    |> List.filter (fun (cm: CalledMeth<'T>, _, _, _) -> cm.Method.GetOverloadResolutionPriority() < maxPriority)
-
-                // Record priority filter info for each loser
-                match winners with
-                | (winnerCm: CalledMeth<'T>, _, _, _) :: _ ->
-                    for (loserCm: CalledMeth<'T>, _, _, _) in losers do
-                        let winnerName = winnerCm.Method.DisplayName
-                        let winnerPriority = winnerCm.Method.GetOverloadResolutionPriority()
-                        let loserName = loserCm.Method.DisplayName
-                        let loserPriority = loserCm.Method.GetOverloadResolutionPriority()
-                        priorityFilterInfo <- (winnerName, winnerPriority, loserName, loserPriority) :: priorityFilterInfo
-                | [] -> ()
-
-                winners)
-
-        (filtered, priorityFilterInfo)
-
-and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx incomingPriorityWarnings m =
+and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m =
     let infoReader = csenv.InfoReader
 
     // Apply priority pre-filter before tiebreaker comparison
-    let applicableMeths, priorityFilterInfo =
-        filterByOverloadResolutionPriority csenv.g applicableMeths
-
-    // Create warnings for any additional priority filtering done here
-    let localPriorityWarnings =
-        priorityFilterInfo
-        |> List.map (fun (winnerName, winnerPriority, loserName, loserPriority) ->
-            Error(FSComp.SR.tcOverloadResolutionPriorityUsed (winnerName, winnerPriority, loserName, loserPriority), m))
-
-    // Combine incoming and local priority warnings
-    let allPriorityWarnings = incomingPriorityWarnings @ localPriorityWarnings
+    let applicableMeths = 
+        applicableMeths
+        |> filterByOverloadResolutionPriority csenv.g (fun (cm, _, _, _) -> cm.Method)
 
     /// Check whether one overload is better than another
     let better (candidate: CalledMeth<_>, candidateWarnings, _, usesTDC1) (other: CalledMeth<_>, otherWarnings, _, usesTDC2) =
@@ -3861,7 +3699,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
         let allWarns =
             match concretenessWarns with
-            | [] -> allPriorityWarnings @ warns
+            | [] -> warns
             | (winnerName, loserName) :: _ ->
                 // Add the concreteness tiebreaker warning (FS3575)
                 let warn3575 =
@@ -3871,7 +3709,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
                     concretenessWarns
                     |> List.map (fun (winner, loser) -> Error(FSComp.SR.tcGenericOverloadBypassed (loser, winner), m))
 
-                warn3575 :: warn3576List @ allPriorityWarnings @ warns
+                warn3575 :: warn3576List @ warns
 
         Some calledMeth, OkResult(allWarns, ()), WithTrace t
 

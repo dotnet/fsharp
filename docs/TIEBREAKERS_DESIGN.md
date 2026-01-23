@@ -105,7 +105,6 @@ When both types being compared are type variables (`'a` vs `'b`), they are treat
 ## Release Notes
 
 - Language: `docs/release-notes/.Language/preview.md`
-- Compiler Service: `docs/release-notes/.FSharp.Compiler.Service/11.0.0.md`
 
 ## References
 

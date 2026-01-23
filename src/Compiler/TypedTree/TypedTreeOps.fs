@@ -3566,6 +3566,11 @@ let TryFindFSharpInt32Attribute g nm attrs =
     match TryFindFSharpAttribute g nm attrs with
     | Some(Attrib(_, _, [ AttribInt32Arg b ], _, _, _, _)) -> Some b
     | _ -> None
+
+let TryFindFSharpInt32AttributeOpt g nmOpt attrs =
+    match nmOpt with
+    | Some nm -> TryFindFSharpInt32Attribute g nm attrs
+    | None -> None
     
 let TryFindFSharpStringAttribute g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
@@ -3587,6 +3592,11 @@ let TryFindILAttributeOpt attr attrs =
     match attr with
     | Some (AttribInfo (atref, _)) -> HasILAttribute atref attrs
     | _ -> false
+
+let TryDecodeILAttributeOpt attr attrs =
+    match attr with
+    | Some (AttribInfo (atref, _)) -> TryDecodeILAttribute atref attrs
+    | _ -> None
 
 let IsILAttrib  (AttribInfo (builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
     

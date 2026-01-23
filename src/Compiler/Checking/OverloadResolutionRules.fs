@@ -713,3 +713,35 @@ let wasDecidedByRule
                 loop rest
 
     loop rules
+
+// -------------------------------------------------------------------------
+// OverloadResolutionPriority Pre-Filter (RFC: .NET 9 attribute)
+// -------------------------------------------------------------------------
+
+/// Apply OverloadResolutionPriority pre-filter to a list of candidates.
+/// Groups methods by declaring type and keeps only highest-priority within each group.
+let filterByOverloadResolutionPriority<'T>
+    (g: TcGlobals)
+    (getMeth: 'T -> MethInfo)
+    (candidates: 'T list)
+    : 'T list
+    =
+    // Early exits - no allocations for common cases
+    if not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) then candidates
+    elif candidates.Length <= 1 then candidates
+    elif not (candidates |> List.exists (fun c -> (getMeth c).GetOverloadResolutionPriority() <> 0)) then candidates
+    else
+        // Slow path: compute priority once per candidate, group by declaring type, keep highest priority per group
+        candidates
+        |> List.map (fun c -> 
+            let m = getMeth c 
+            let stamp = (tcrefOfAppTy g m.ApparentEnclosingType).Stamp
+            (c, stamp, m.GetOverloadResolutionPriority()))
+        |> List.groupBy (fun (_, stamp, _) -> stamp)
+        |> List.collect (fun (_, group) ->
+            let _, _, maxPrio = 
+                group 
+                |> List.maxBy (fun (_, _, prio) -> prio)
+            group 
+            |> List.filter (fun (_, _, prio) -> prio = maxPrio) 
+            |> List.map (fun (c, _, _) -> c))

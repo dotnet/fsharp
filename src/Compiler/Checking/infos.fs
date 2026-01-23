@@ -1258,29 +1258,17 @@ type MethInfo =
         | _ -> ILAttributes.Empty
 
     /// Get the OverloadResolutionPriority for this method.
-    /// Returns 0 if the attribute is not present.
+    /// Returns 0 if the attribute is not present or if targeting a runtime without the attribute.
     member x.GetOverloadResolutionPriority() : int =
-        let overloadResolutionPriorityAttributeName =
-            "System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute"
-
         match x with
-        | ILMeth(_, ilMethInfo, _) ->
-            let attrs = ilMethInfo.RawMetadata.CustomAttrs.AsArray()
-            attrs
-            |> Array.tryPick (fun attr ->
-                if attr.Method.DeclaringType.TypeRef.FullName = overloadResolutionPriorityAttributeName then
-                    // Decode the attribute data - the raw bytes need decoding
-                    let fixedArgs, _ = decodeILAttribData attr
-                    match fixedArgs with
-                    | [ ILAttribElem.Int32 priority ] -> Some priority
-                    | _ -> Some 0
-                else
-                    None)
+        | ILMeth(g, ilMethInfo, _) ->
+            match TryDecodeILAttributeOpt g.attrib_OverloadResolutionPriorityAttribute ilMethInfo.RawMetadata.CustomAttrs with
+            | Some ([ ILAttribElem.Int32 priority ], _) -> priority
+            | _ -> 0
+        | FSMeth(g, _, vref, _) ->
+            TryFindFSharpInt32AttributeOpt g g.attrib_OverloadResolutionPriorityAttribute vref.Attribs 
             |> Option.defaultValue 0
         | MethInfoWithModifiedReturnType(mi, _) -> mi.GetOverloadResolutionPriority()
-        | FSMeth _ ->
-            // F#-defined methods with this attribute are rare; IL-based check handles most cases
-            0
         | DefaultStructCtor _ -> 0
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> 0

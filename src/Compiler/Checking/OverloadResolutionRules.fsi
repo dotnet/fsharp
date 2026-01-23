@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.OverloadResolutionRules
 
 open FSharp.Compiler.Features
+open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.Text
 open FSharp.Compiler.TcGlobals
@@ -110,3 +111,15 @@ val wasDecidedByRule:
     winner: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
         loser: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
             bool
+
+// -------------------------------------------------------------------------
+// OverloadResolutionPriority Pre-Filter
+// -------------------------------------------------------------------------
+
+/// Apply OverloadResolutionPriority pre-filter to a list of candidates.
+/// Groups methods by declaring type and keeps only highest-priority within each group.
+val filterByOverloadResolutionPriority<'T> :
+    g: TcGlobals ->
+    getMeth: ('T -> MethInfo) ->
+    candidates: 'T list ->
+        'T list
