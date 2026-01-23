@@ -58,3 +58,15 @@
    described in "Current State" section of VISION.md.
 
 
+## Subtask 1 - Review iteration 1 (2026-01-23 21:11:42)
+-    **VERIFY_FAILED**
+
+   The task is **not complete**. According to the VISION.md, the goal is to fix all 62 documented
+   codegen bugs. Currently:
+   - Only **1 test** (Issue #18319) has been fixed
+   - **61 tests** remain to be fixed (the document mentions 62 original tests with 1 fixed = 61
+   remaining, but there appear to be 62 still commented meaning there may be 63 total tests)
+
+   The campaign is approximately **1.6% complete** (1 of 62 issues fixed). The vast majority of the
+    work remains to be done.
+

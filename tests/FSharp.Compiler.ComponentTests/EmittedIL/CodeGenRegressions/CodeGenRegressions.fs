@@ -198,8 +198,9 @@ type C = delegate of [<System.Runtime.CompilerServices.CallerMemberName>] ?name:
     // ===== Issue #18815: Can't define extensions for two same named types =====
     // https://github.com/dotnet/fsharp/issues/18815
     // Defining extensions for two types with the same simple name in a single module
-    // causes a compilation error about duplicate entry in method table.
-    // [<Fact>]
+    // used to cause a compilation error about duplicate entry in method table.
+    // FIXED: Extension method names now include fully qualified extended type name.
+    [<Fact>]
     let ``Issue_18815_DuplicateExtensionMethodNames`` () =
         let source = """
 module Compiled
@@ -216,7 +217,7 @@ module CompiledExtensions =
         FSharp source
         |> asLibrary
         |> compile
-        |> shouldSucceed // This will fail with FS2014 duplicate entry - bug exists
+        |> shouldSucceed
         |> ignore
 
     // ===== Issue #18753: Inlining in CEs prevented by DU constructor in CE block =====

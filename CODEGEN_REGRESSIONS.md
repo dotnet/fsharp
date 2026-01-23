@@ -437,6 +437,18 @@ The extension method naming scheme uses the simple type name without qualificati
 ### Risks
 - Low: Fix should use fully qualified type name in extension method table key
 
+### UPDATE (2026-01-23)
+**Status: FIXED** - Extension methods now use fully qualified type names.
+
+The fix modifies `ComputeStorageForFSharpFunctionOrFSharpExtensionMember` in `IlxGen.fs` to:
+- For extension members, prefix the method name with the fully qualified path of the extended type
+- Format: `Namespace$SubNamespace$TypeName.MethodName` (using `$` as path separator for IL safety)
+- Example: `System$Threading$Tasks$Task.CompiledStaticExtension` vs `Compiled$Task.CompiledStaticExtension`
+
+This ensures extension methods for types with the same simple name but different namespaces get unique IL method names, preventing the duplicate entry error.
+
+Also removed the blocking check from `PostInferenceChecks.fs` that was emitting FS3356 as a workaround.
+
 ---
 
 ## Issue #18753

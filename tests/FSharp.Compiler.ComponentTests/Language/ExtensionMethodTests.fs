@@ -626,7 +626,9 @@ module FSLibConsumer =
         fsharp2 |> compile |> shouldSucceed
 
     [<Fact>]
-    let ``Static extension members for types with same simple name but different namespaces should error`` () =
+    let ``Static extension members for types with same simple name but different namespaces should succeed`` () =
+        // Fixed in https://github.com/dotnet/fsharp/issues/18815
+        // Extension methods now use fully qualified type names in their IL method names
         Fsx
             """
 module Compiled
@@ -641,10 +643,7 @@ module CompiledExtensions =
         static member CompiledStaticExtension() = ()
             """
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3356, Line 11, Col 23, Line 11, Col 46, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
-        ]
+        |> shouldSucceed
 
     [<Fact>]
     let ``Static extension members for types with same simple name in different modules should succeed`` () =
@@ -666,7 +665,9 @@ module CompiledExtensions2 =
         |> shouldSucceed
 
     [<Fact>]
-    let ``Static extension members with nested module in between should error`` () =
+    let ``Static extension members with nested module in between should succeed`` () =
+        // Fixed in https://github.com/dotnet/fsharp/issues/18815
+        // Extension methods now use fully qualified type names in their IL method names
         Fsx
             """
 module Compiled
@@ -678,7 +679,7 @@ module CompiledExtensions =
     type System.Threading.Tasks.Task with
         static member Extension1() = ()
 
-    // Nested module - this is fine, shouldn't interfere with duplicate check
+    // Nested module - this is fine, shouldn't interfere
     module Nested =
         let someValue = 42
         type OtherType = { X: int }
@@ -686,18 +687,17 @@ module CompiledExtensions =
     // Some other definition
     let someBinding = 10
 
-    // Second extension for local Task type - this should clash with the first
+    // Second extension for local Task type - no longer clashes due to qualified names
     type Task with
         static member Extension2() = ()
             """
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3356, Line 21, Col 23, Line 21, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
-        ]
+        |> shouldSucceed
 
     [<Fact>]
-    let ``Instance extension members for types with same simple name should error`` () =
+    let ``Instance extension members for types with same simple name should succeed`` () =
+        // Fixed in https://github.com/dotnet/fsharp/issues/18815
+        // Extension methods now use fully qualified type names in their IL method names
         Fsx
             """
 module Compiled
@@ -712,13 +712,12 @@ module CompiledExtensions =
         member _.InstanceExtension() = ()
             """
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3356, Line 11, Col 18, Line 11, Col 35, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
-        ]
+        |> shouldSucceed
 
     [<Fact>]
-    let ``Extension members on generic types with same simple name should error`` () =
+    let ``Extension members on generic types with same simple name should succeed`` () =
+        // Fixed in https://github.com/dotnet/fsharp/issues/18815
+        // Extension methods now use fully qualified type names in their IL method names
         Fsx
             """
 module MyModule
@@ -734,13 +733,12 @@ module Extensions =
         static member Count(lst: List<'T>) = lst.Items.Length
             """
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3356, Line 12, Col 23, Line 12, Col 28, "Extension members extending types with the same simple name 'List`1' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
-        ]
+        |> shouldSucceed
 
     [<Fact>]
-    let ``Extension members with different member names but same type simple name should error`` () =
+    let ``Extension members with different member names but same type simple name should succeed`` () =
+        // Fixed in https://github.com/dotnet/fsharp/issues/18815
+        // Extension methods now use fully qualified type names in their IL method names
         Fsx
             """
 module Compiled
@@ -752,13 +750,10 @@ module CompiledExtensions =
         static member FirstExtension() = ()
 
     type Task with
-        static member DifferentName() = ()  // Different member name, but still same simple type name
+        static member DifferentName() = ()  // Different member name, no longer conflicts
             """
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3356, Line 11, Col 23, Line 11, Col 36, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
-        ]
+        |> shouldSucceed
 
     [<Fact>]
     let ``Extensions defined in nested modules should succeed - separate IL containers`` () =
@@ -781,9 +776,9 @@ module OuterModule =
         |> shouldSucceed
 
     [<Fact>]
-    let ``Multiple extension members for same duplicate type should error per member`` () =
-        // Note: The current implementation reports an error per extension member (not per type)
-        // because each Val has its own range. This is more informative as it shows all problematic locations.
+    let ``Multiple extension members for same duplicate type should succeed`` () =
+        // Fixed in https://github.com/dotnet/fsharp/issues/18815
+        // Extension methods now use fully qualified type names in their IL method names
         Fsx
             """
 module Compiled
@@ -800,9 +795,4 @@ module CompiledExtensions =
         static member Extension4() = ()
             """
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3356, Line 9, Col 23, Line 9, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
-            (Error 3356, Line 12, Col 23, Line 12, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
-            (Error 3356, Line 13, Col 23, Line 13, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
-        ]
+        |> shouldSucceed

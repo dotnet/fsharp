@@ -241,3 +241,56 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Progress:** 1 of 62 tests fixed
 
 ---
+
+## Sprint 1: Fix #18956 Decimal InvalidProgram
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 2: Fix #18140 Callvirt ValueType
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 3: Fix #17692 Duplicate Param Name
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 4: Fix #18868 CallerFilePath Delegates
+
+**Summary:** Verified that the contradictory error message bug (FS1246 "string but applied to string") was already fixed. Updated test to verify correct behavior.
+
+**Issue Details:**
+- The original bug was a contradictory error message when using CallerFilePath on non-optional delegate parameters
+- The fix was already in place - non-optional CallerInfo now correctly reports FS1247 "can only be applied to optional arguments"
+- Optional parameters (`?a: string`) with CallerInfo compile successfully
+
+**DoD Verification:**
+- ✅ Build succeeds with 0 errors
+- ✅ Issue_18868_CallerInfoInDelegates test passes when [<Fact>] uncommented
+- ✅ All 5 CodeGenRegressions tests pass (no regressions)
+- ✅ CODEGEN_REGRESSIONS.md updated with UPDATE note for #18868
+
+**Files modified:**
+- `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs` - Updated test
+- `CODEGEN_REGRESSIONS.md` - Added UPDATE note
+
+---
+
+## Sprint 4: Fix #18868 CallerFilePath Delegates
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
