@@ -242,8 +242,8 @@ type LanguageVersion(versionText) =
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
                 LanguageFeature.ReturnFromFinal, languageVersion100
                 LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions, languageVersion100
-                LanguageFeature.MoreConcreteTiebreaker, languageVersion100
-                LanguageFeature.OverloadResolutionPriority, languageVersion100
+                LanguageFeature.MoreConcreteTiebreaker, previewVersion
+                LanguageFeature.OverloadResolutionPriority, previewVersion
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work

@@ -127,6 +127,7 @@ type Example =
 // Resolves to wrapped - Option<'t> is more concrete than bare 't
 let result = Example.Process(Some 42)
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -205,6 +206,7 @@ type Example =
 // Resolves to int ok - Result<int, 'error> is more concrete
 let result = Example.Process(Ok 42 : Result<int, exn>)
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -223,6 +225,7 @@ type Example =
 // Resolves to string error - Result<'ok, string> is more concrete
 let result = Example.Handle(Ok "test" : Result<string, string>)
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -335,6 +338,7 @@ let createFromTask () =
     let result = ValueTaskFactory.Create(task)
     result
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -400,6 +404,7 @@ let example () =
     let source : Async<Result<int, string>> = async { return Ok 42 }
     asyncResult.Source(source)
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -497,6 +502,7 @@ let b = Builder()
 // Result<int, string> prefers the Result overload
 let result = b.Source(Ok 42 : Result<int, string>)
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -1121,6 +1127,7 @@ let example () =
     let source : Async<Result<int, string>> = async { return Ok 42 }
     asyncResult.Source(source)
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -2015,6 +2022,7 @@ type Example =
 
 let result = Example.Invoke(Some([1]))
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -2032,6 +2040,7 @@ type Example =
 
 let result = Example.Invoke(Some([1]))
         """
+        |> withLangVersionPreview
         |> withOptions ["--warnon:3575"]
         |> typecheck
         |> shouldFail
@@ -2055,6 +2064,7 @@ type Example =
 
 let result = Example.Invoke(Some([1]))
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -2071,6 +2081,7 @@ type Example =
 
 let result = Example.Invoke(Some([1]))
         """
+        |> withLangVersionPreview
         |> withOptions ["--warnon:3576"]
         |> typecheck
         |> shouldFail
@@ -2090,6 +2101,7 @@ type Example =
 
 let result = Example.Invoke(Some([1]))
         """
+        |> withLangVersionPreview
         |> withOptions ["--warnon:3576"]
         |> typecheck
         |> shouldFail
@@ -2110,6 +2122,7 @@ type Example =
 
 let result = Example.Process(Some([1]))
         """
+        |> withLangVersionPreview
         |> withOptions ["--warnon:3576"]
         |> typecheck
         |> shouldFail
