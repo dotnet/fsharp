@@ -1065,7 +1065,7 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
                 WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2))
             else
                 CompleteD
-        
+
 // nullness1: target
 // nullness2: source
 and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
@@ -1099,10 +1099,10 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then               
-                 WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
+                WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
             else
                 CompleteD
-        
+
 and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty1 ty =
     trackErrors {
         let m = csenv.m
@@ -1337,6 +1337,12 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
                 do! SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
+        // Special handling for delegate types - ignore nullness differences
+        // Delegates from C# interfaces without nullable annotations should match F# events
+        // See https://github.com/dotnet/fsharp/issues/18361 and https://github.com/dotnet/fsharp/issues/18349
+        | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 && isDelegateTy g sty1 ->
+            SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+
         | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
             trackErrors {
                 do! SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
@@ -1545,6 +1551,12 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                 | _ -> return! SolveTypeEqualsType csenv ndeep m2 trace cxsln tag1 tag2
                 }
             | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
+
+        // Special handling for delegate types - ignore nullness differences
+        // Delegates from C# interfaces without nullable annotations should match F# events
+        // See https://github.com/dotnet/fsharp/issues/18361 and https://github.com/dotnet/fsharp/issues/18349
+        | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 && isDelegateTy g sty1 ->
+            SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
 
         | TType_app (tc1, l1, _)  , TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
             trackErrors {            
@@ -3473,9 +3485,12 @@ and ResolveOverloading
                 | Some ttype -> isTyparTy g ttype
                 | None -> false
                 
-            match calledMeth.Method with
+            let minfo = calledMeth.Method
+            match minfo with
             | ILMeth(ilMethInfo= ilMethInfo) when not isStaticConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
                 None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(ilMethInfo.ILName), m)), NoTrace
+            | FSMeth(g, _, vref, _) when not isStaticConstrainedCall && not minfo.IsInstance && isInterfaceTy g minfo.ApparentEnclosingType && vref.IsDispatchSlotMember ->
+                None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(minfo.LogicalName), m)), NoTrace
             | _ -> Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 

@@ -556,7 +556,7 @@ type FrameworkImportsCache(size) =
         // for each cached project.  So here we create a new tcGlobals, with the existing framework values
         // and updated realsig and langversion
         let tcGlobals =
-            if tcGlobals.langVersion.SpecifiedVersion <> tcConfig.langVersion.SpecifiedVersion
+            if tcGlobals.langVersion <> tcConfig.langVersion
                 || tcGlobals.realsig <> tcConfig.realsig then
                     TcGlobals(
                         tcGlobals.compilingFSharpCore,

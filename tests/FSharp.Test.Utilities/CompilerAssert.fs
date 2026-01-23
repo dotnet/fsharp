@@ -636,7 +636,7 @@ module CompilerAssertHelpers =
         "tfm": "net10.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
-            "version": "7.0"
+            "version": "10.0.0"
         }
     }
 }"""
