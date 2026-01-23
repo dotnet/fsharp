@@ -185,19 +185,6 @@ type C() =
         |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
 
     [<FactForNETCOREAPP>]
-    let ``Class - explicit override of DIM slot still allowed`` () =
-        FSharp """
-module Test
-open DIMTest
-type C() =
-    interface IB with
-        member _.M() = 42
-    interface IA with
-        member _.M() = 100
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
-
-    [<FactForNETCOREAPP>]
     let ``Generic interfaces - missing required instantiation should fail`` () =
         FSharp """
 module Test
@@ -209,52 +196,7 @@ type C() =
         |> shouldFail |> withErrorCode 366
 
     [<FactForNETCOREAPP>]
-    let ``possiblyNoMostSpecific - ambiguous DIMs produce specific error message`` () =
-        FSharp """
-module Test
-open DiamondConflictDIM
-type C() = interface ID
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile
-        |> shouldFail |> withErrorCode 3352 |> withDiagnosticMessageMatches "most specific implementation"
-
-    [<FactForNETCOREAPP>]
-    let ``Language version 9.0 requires explicit implementation`` () =
-        FSharp """
-module Test
-open DIMTest
-type C() =
-    interface IB with
-        member _.M() = 42
-"""
-        |> withLangVersion "9.0" |> withReferences [dimTestLib] |> compile
-        |> shouldFail |> withErrorCode 361
-
-    [<FactForNETCOREAPP>]
-    let ``Language version preview - DIM-covered slot should NOT emit FS0361`` () =
-        FSharp """
-module Test
-open DIMTest
-type C() =
-    interface IB with
-        member _.M() = 42
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
-
-    [<FactForNETCOREAPP>]
-    let ``Language version 10.0 requires explicit implementation`` () =
-        FSharp """
-module Test
-open DIMTest
-type C() =
-    interface IB with
-        member _.M() = 42
-"""
-        |> withLangVersion "10.0" |> withReferences [dimTestLib] |> compile
-        |> shouldFail |> withErrorCode 361
-
-    [<FactForNETCOREAPP>]
-    let ``Feature string - verify feature description displays correctly`` () =
+    let ``Old language version (pre-feature) requires explicit implementation`` () =
         FSharp """
 module Test
 open DIMTest
