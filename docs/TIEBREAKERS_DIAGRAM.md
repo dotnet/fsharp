@@ -237,7 +237,7 @@ type TiebreakRuleId =
 │                                                                                     │
 │   Entry Conditions:                                                                 │
 │   ┌─────────────────────────────────────────────────────────────────────────────┐  │
-│   │ ✓ LanguageFeature.MoreConcreteTiebreaker enabled (F# 10.0+)                 │  │
+│   │ ✓ LanguageFeature.MoreConcreteTiebreaker enabled (--langversion:preview)    │  │
 │   │ ✓ BOTH candidates have non-empty CalledTyArgs (both are generic)            │  │
 │   │   (SRTP type vars ^T skipped in comparison, but concrete types at           │  │
 │   │    instantiation site still participate)                                    │  │

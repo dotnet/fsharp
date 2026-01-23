@@ -18,7 +18,7 @@ Without this tiebreaker, F# produces FS0041 (ambiguous overload) errors that for
 
 ### Type Concreteness Comparison
 
-The `compareTypeConcreteness` function in `ConstraintSolver.fs` recursively compares two types and returns:
+The `compareTypeConcreteness` function in `OverloadResolutionRules.fs` recursively compares two types and returns:
 - `1` if the first type is more concrete
 - `-1` if the second type is more concrete
 - `0` if they are equally concrete or incomparable
@@ -39,7 +39,7 @@ The `compareTypeConcreteness` function in `ConstraintSolver.fs` recursively comp
 
 ### Integration Point
 
-The tiebreaker is integrated into the `better()` function in `ConstraintSolver.fs`, positioned:
+The tiebreaker is integrated via `evaluateTiebreakRules` (called from `better()` in `ConstraintSolver.fs`), positioned:
 - **After** Rule 12 (prefer non-generic methods)
 - **Before** F# 5.0 optional/ParamArray tiebreaker
 
@@ -51,17 +51,17 @@ The comparison uses **formal (uninstantiated) parameter types** via `FormalMetho
 
 | File | Purpose |
 |------|---------|
-| `src/Compiler/Checking/ConstraintSolver.fs` | Core algorithm: `compareTypeConcreteness`, integration into `better()` |
-| `src/Compiler/Checking/OverloadResolutionRules.fs/fsi` | DSL representation of all 15 overload resolution rules |
-| `src/Compiler/Facilities/LanguageFeatures.fs/fsi` | `LanguageFeature.MoreConcreteTiebreaker` (F# 10.0) |
+| `src/Compiler/Checking/ConstraintSolver.fs` | Integration point: `better()` calls `evaluateTiebreakRules`, emits FS3575/FS3576 warnings |
+| `src/Compiler/Checking/OverloadResolutionRules.fs/fsi` | Core algorithm: `compareTypeConcreteness`, DSL for all 15 tiebreaker rules |
+| `src/Compiler/Facilities/LanguageFeatures.fs/fsi` | `LanguageFeature.MoreConcreteTiebreaker` (preview) |
 | `src/Compiler/FSComp.txt` | Diagnostic FS3575 (tcMoreConcreteTiebreakerUsed), FS3576 (tcGenericOverloadBypassed) |
 | `src/Compiler/Driver/CompilerDiagnostics.fs` | Off-by-default configuration for FS3575 and FS3576 |
 
 ## Language Feature Flag
 
 The feature is gated behind `LanguageFeature.MoreConcreteTiebreaker`:
-- Enabled in F# 10.0 (stable)
-- Can be enabled in earlier language versions with `--langversion:preview`
+- Currently available only in preview (`--langversion:preview`)
+- Not yet enabled in any stable F# language version
 
 ## Diagnostics
 
