@@ -18,18 +18,18 @@ a.Equals(b)  // Was: false, Now: true
 
 ## Expression Tree Structure Changes 🟡
 
-### Let-bindings inlined
+### Let-bindings use Block instead of Lambda.Invoke
 
 ```fsharp
 <@ let x = 1 in x + 1 @>
 // Was: Lambda(x => x+1).Invoke(1)
-// Now: Add(1, 1)
+// Now: Block({ x = 1; x + 1 })
 ```
 
 **Migration:** If you detected let-bindings via `Lambda.Invoke`:
 ```csharp
 // Old: if (node.Method.Name == "Invoke" && node.Object is LambdaExpression)
-// New: Let-bindings are inlined; process at F# quotation level if needed
+// New: if (node.NodeType == ExpressionType.Block)
 ```
 
 ### Array access uses ArrayIndex
