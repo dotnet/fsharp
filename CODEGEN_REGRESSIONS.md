@@ -2234,6 +2234,20 @@ The module initialization code for mutually recursive non-function values genera
 ### Risks
 - Medium: Initialization order changes could break existing code that accidentally depends on current behavior
 
+### UPDATE (FIXED)
+
+**Status:** Fixed (for simple `let rec ... and ...` cases)
+
+The simple case of `let rec one = ... and two = ...` was fixed by PR #12395. The test now
+verifies that mutually recursive record values with forward references are correctly initialized.
+
+**Note:** There is still an edge case with `module rec` and intermediate modules between bindings
+that remains unfixed (see issue #12384 comments). This edge case is documented but the main
+use case reported in the issue is now working correctly.
+
+**Test:** `Issue_12384_MutRecInitOrder` - Uncommented `[<Fact>]`, verifies mutual recursion
+initialization works at runtime.
+
 ---
 
 ## Issue #12366

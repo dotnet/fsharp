@@ -1508,16 +1508,16 @@ let thisIsNotInlined () = ofArray [|0..100|] |>> fold (+) 0
         // The decompiled IL would show closures for thisIsNotInlined but not for thisIsInlined*
         |> ignore
 
-    // ===== Issue #12384: Mutually recursive values intermediate module wrong init =====
+    // ===== Issue #12384: Mutually recursive values wrong init =====
     // https://github.com/dotnet/fsharp/issues/12384
-    // Mutually recursive non-function values are not initialized correctly.
-    // The first value in the binding group has null for its recursive references,
-    // while the second value is initialized correctly.
-    // Single self-referencing values work correctly.
-    // [<Fact>]
+    // Mutually recursive non-function values were not initialized correctly.
+    // The first value in the binding group had null for its recursive references,
+    // while the second value was initialized correctly.
+    // FIXED by PR #12395: Simple let rec ... and ... now works correctly.
+    // NOTE: The edge case with module rec and intermediate modules is still open.
+    [<Fact>]
     let ``Issue_12384_MutRecInitOrder`` () =
-        // BUG: one.Next and one.Prev are null, but two is correctly initialized
-        // This should either work correctly or be rejected at compile time.
+        // Test case from issue - simple mutual recursion with let rec ... and ...
         let source = """
 module MutRecInitTest
 
@@ -1526,26 +1526,29 @@ type Node = { Next: Node; Prev: Node; Value: int }
 // Single self-reference works correctly
 let rec zero = { Next = zero; Prev = zero; Value = 0 }
 
-// BUG: Mutual recursion fails - 'one' has null references
+// Mutual recursion with let rec ... and ... (fixed by PR #12395)
 let rec one = { Next = two; Prev = two; Value = 1 }
 and two = { Next = one; Prev = one; Value = 2 }
 
-// At runtime:
-// one = { Next = null; Prev = null; Value = 1 }  // WRONG - should reference two
-// two = { Next = one; Prev = one; Value = 2 }    // Correct
-
 [<EntryPoint>]
 let main _ =
-    // This would show the bug: one.Next is null instead of two
-    printfn "%A" one
-    printfn "%A" two
-    0
+    // Verify all references are correct
+    let zeroOk = obj.ReferenceEquals(zero.Next, zero) && obj.ReferenceEquals(zero.Prev, zero)
+    let oneNextOk = obj.ReferenceEquals(one.Next, two)
+    let onePrevOk = obj.ReferenceEquals(one.Prev, two)
+    let twoNextOk = obj.ReferenceEquals(two.Next, one)
+    let twoPrevOk = obj.ReferenceEquals(two.Prev, one)
+    
+    if zeroOk && oneNextOk && onePrevOk && twoNextOk && twoPrevOk then
+        0
+    else
+        failwith (sprintf "Mutual recursion initialization failed: zero=%b one.Next=%b one.Prev=%b two.Next=%b two.Prev=%b" 
+                         zeroOk oneNextOk onePrevOk twoNextOk twoPrevOk)
 """
         FSharp source
         |> asExe
-        |> compile
+        |> compileAndRun
         |> shouldSucceed
-        // Bug manifests at runtime - one.Next and one.Prev are null
         |> ignore
 
     // ===== Issue #12366: Rethink names for compiler-generated closures =====
