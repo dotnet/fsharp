@@ -22,7 +22,7 @@ module internal FSharpEnvironment =
 
     let FSharpProductName = UtilsStrings.SR.buildProductName (FSharpBannerVersion)
 
-    let versionOf<'t> : MaybeNull<string> =
+    let versionOf<'t> : (string | null) =
         match typeof<'t>.Assembly.GetName().Version with
         | null -> null
         | v -> v.ToString()

@@ -206,6 +206,7 @@
     <Compile Include="ErrorMessages\ClassesTests.fs" />
     <Compile Include="ErrorMessages\ConstructorTests.fs" />
     <Compile Include="ErrorMessages\DontSuggestTests.fs" />
+    <Compile Include="ErrorMessages\DuplicateExtensionMemberTests.fs" />
     <Compile Include="ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
     <Compile Include="ErrorMessages\InvalidLiteralTests.fs" />
     <Compile Include="ErrorMessages\InvalidNumericLiteralTests.fs" />

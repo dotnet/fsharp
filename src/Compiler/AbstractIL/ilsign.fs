@@ -171,7 +171,7 @@ let RSAParametersFromBlob blob keyType =
     key.D <- reader.ReadBigInteger byteLen
     key
 
-let validateRSAField (field: byte array MaybeNull) expected (name: string) =
+let validateRSAField (field: byte array | null) expected (name: string) =
     match field with
     | Null -> ()
     | NonNull field ->
@@ -237,7 +237,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
 
             buffer
 
-        let safeArrayRev (buffer: _ MaybeNull) =
+        let safeArrayRev (buffer: _ | null) =
             match buffer with
             | Null -> Array.empty<byte>
             | NonNull buffer -> buffer |> Array.rev

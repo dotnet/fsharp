@@ -180,7 +180,7 @@ module QuickParse =
                         let pos = r + MagicalAdjustmentConstant
                         Some(ident, pos, false))
 
-    let GetCompleteIdentifierIslandImpl (lineStr: string MaybeNull) (index: int) : (string * int * bool) option =
+    let GetCompleteIdentifierIslandImpl (lineStr: string | null) (index: int) : (string * int * bool) option =
         match lineStr with
         | Null -> None
         | NonNull lineStr -> GetCompleteIdentifierIslandImplAux lineStr index
@@ -208,7 +208,7 @@ module QuickParse =
     /// a call to `DeclItemsForNamesAtPosition` for intellisense. This will
     /// allow us to use find the correct qualified items rather than resorting
     /// to the more expensive and less accurate environment lookup.
-    let GetCompleteIdentifierIsland (tolerateJustAfter: bool) (lineStr: string MaybeNull) (index: int) : (string * int * bool) option =
+    let GetCompleteIdentifierIsland (tolerateJustAfter: bool) (lineStr: string | null) (index: int) : (string * int * bool) option =
         if String.IsNullOrEmpty lineStr then
             None
         else
@@ -274,7 +274,7 @@ module QuickParse =
             let result = InResidue(index, index)
             result
 
-    let GetPartialLongName (lineStr: string MaybeNull, index: int) =
+    let GetPartialLongName (lineStr: string | null, index: int) =
         match lineStr with
         | Null -> defaultName
         | NonNull lineStr -> GetPartialLongNameAux(lineStr, index)
@@ -429,7 +429,7 @@ module QuickParse =
                     QualifyingIdents = plid
                 }
 
-    let GetPartialLongNameEx (lineStr: string MaybeNull, index: int) : PartialLongName =
+    let GetPartialLongNameEx (lineStr: string | null, index: int) : PartialLongName =
         match lineStr with
         | Null -> PartialLongName.Empty(index)
         | NonNull lineStr -> GetPartialLongNameExAux(lineStr, index)

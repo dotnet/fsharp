@@ -3,20 +3,13 @@ namespace Internal.Utilities.Library
 open System
 
 [<AutoOpen>]
-module internal NullnessShims =
+module internal NullHelpers =
 
     let inline isNotNull (x: 'T) = not (isNull x)
 
-    type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
-
-    let inline (^) (a: 'a | null) ([<InlineIfLambda>] b: 'a -> 'b) : ('b | null) =
-        match a with
-        | Null -> null
-        | NonNull v -> b v
-
     let inline (!!) (x: 'T | null) = Unchecked.nonNull x
 
-    let inline nullSafeEquality (x: MaybeNull<'T>) (y: MaybeNull<'T>) ([<InlineIfLambda>] nonNullEqualityFunc: 'T -> 'T -> bool) =
+    let inline nullSafeEquality (x: 'T | null) (y: 'T | null) ([<InlineIfLambda>] nonNullEqualityFunc: 'T -> 'T -> bool) =
         match x, y with
         | null, null -> true
         | null, _
@@ -32,7 +25,7 @@ module internal NullnessShims =
 #endif
 
     [<return: Struct>]
-    let inline (|NonEmptyString|_|) (x: string MaybeNull) =
+    let inline (|NonEmptyString|_|) (x: string | null) =
         match x with
         | null -> ValueNone
         | "" -> ValueNone

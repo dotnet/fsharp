@@ -1621,6 +1621,7 @@ featureLowerSimpleMappingsInComprehensionsToFastLoops,"Lowers [for x in xs -> f 
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3355,tcNotAnIndexerNamedIndexingNotYetEnabled,"The value '%s' is not a function and does not support index notation."
 3355,tcNotAnIndexerIndexingNotYetEnabled,"This expression is not a function and does not support index notation."
+3356,tcDuplicateExtensionMemberNames,"Extension members extending types with the same simple name '%s' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules."
 3360,typrelInterfaceWithConcreteAndVariable,"'%s' cannot implement the interface '%s' with the two instantiations '%s' and '%s' because they may unify."
 3361,typrelInterfaceWithConcreteAndVariableObjectExpression,"You cannot implement the interface '%s' with the two instantiations '%s' and '%s' because they may unify."
 featureInterfacesWithMultipleGenericInstantiation,"interfaces with multiple generic instantiation"
