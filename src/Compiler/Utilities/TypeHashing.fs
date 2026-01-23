@@ -538,17 +538,22 @@ module StructuralUtilities =
                         ctx.TyparMap.[r.Stamp] <- idx
                         idx
 
-                // Solved may become unsolved, in case of Trace.Undo.
-                if not r.IsFromError then
-                    ctx.Stable <- false
-
                 match r.Solution with
-                | Some ty -> emitTType ctx ty
+                | Some ty ->
+                    // Solved type variable - mark unstable because Trace.Undo could revert the solution
+                    if not r.IsFromError then
+                        ctx.Stable <- false
+                    emitTType ctx ty
                 | None ->
                     if out.Count < 256 then
                         if r.Rigidity = TyparRigidity.Rigid then
+                            // Rigid unsolved type variable - STABLE for caching purposes
+                            // The alpha-normalized typarId ensures consistent cache keys
                             out.Add(TypeToken.Rigid typarId)
                         else
+                            // Flexible/Anon unsolved type variable - unstable, could be solved later
+                            if not r.IsFromError then
+                                ctx.Stable <- false
                             out.Add(TypeToken.Unsolved typarId)
 
             | TType_measure m -> emitMeasure ctx m
