@@ -940,6 +940,14 @@ With `DefaultAugmentation(false)`, F# shouldn't generate default `.None` propert
 - Low: Should properly respect DefaultAugmentation attribute
 - Note: This pattern is used in FSharp.Core for FSharpOption
 
+### UPDATE (2026-01-23)
+
+**Status: FIXED**
+
+The issue was in the `tdefDiscards` logic in `IlxGen.fs`. When `DefaultAugmentation(false)` is used (`NoHelpers`), the compiler still generates `get_<CaseName>` methods for nullary union cases (e.g., `get_None`). However, if the user also defines a static member with the same name (e.g., `static member None`), the user-defined getter was not being discarded, causing duplicate method entries.
+
+**Fix:** Added a case for `NoHelpers` in `tdefDiscards` that discards user-defined methods/properties when they would clash with compiler-generated ones for nullary cases. This is similar to how `AllHelpers` handles `get_Is*` methods.
+
 ---
 
 ## Issue #16546

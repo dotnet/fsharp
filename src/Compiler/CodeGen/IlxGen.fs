@@ -11825,7 +11825,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 || (cuinfo.HasHelpers = SpecialFSharpOptionHelpers
                                     && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))
                                 || (cuinfo.HasHelpers = AllHelpers
-                                    && (md.Name.StartsWith("get_Is") && not (tdef2.Methods.FindByName(md.Name).IsEmpty)))),
+                                    && (md.Name.StartsWith("get_Is") && not (tdef2.Methods.FindByName(md.Name).IsEmpty)))
+                                // For NoHelpers (DefaultAugmentation(false)), nullary cases generate get_<CaseName> methods.
+                                // If a user defines a property with the same name, discard the user-defined getter.
+                                || (cuinfo.HasHelpers = NoHelpers
+                                    && md.Name.StartsWith("get_")
+                                    && not (tdef2.Methods.FindByName(md.Name).IsEmpty))),
 
                             (fun (pd: ILPropertyDef) ->
                                 (cuinfo.HasHelpers = SpecialFSharpListHelpers
@@ -11833,7 +11838,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 || (cuinfo.HasHelpers = SpecialFSharpOptionHelpers
                                     && (pd.Name = "Value" || pd.Name = "None"))
                                 || (cuinfo.HasHelpers = AllHelpers
-                                    && (pd.Name.StartsWith("Is") && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty))))
+                                    && (pd.Name.StartsWith("Is") && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
+                                // For NoHelpers (DefaultAugmentation(false)), nullary cases generate properties.
+                                // If a user defines a property with the same name, discard the user-defined one.
+                                || (cuinfo.HasHelpers = NoHelpers
+                                    && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
                         )
 
                     tdef2, tdefDiscards

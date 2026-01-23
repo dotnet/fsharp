@@ -565,7 +565,7 @@ let isA = match x with CaseA _ -> true | _ -> false
     // https://github.com/dotnet/fsharp/issues/16565
     // Defining a DU with DefaultAugmentation(false) and a static member with the same name
     // as a union case causes "duplicate entry in method table" error.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_16565_DefaultAugmentationFalseDuplicateEntry`` () =
         let source = """
 module Test
