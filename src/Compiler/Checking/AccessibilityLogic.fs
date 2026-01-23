@@ -374,7 +374,7 @@ let IsPropInfoAccessible g amap m ad = function
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
             let a = tppi.PUntaint((fun ppi -> 
-                let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo MaybeNull) =
+                let tryGetILAccessForProvidedMethodBase (mi : (ProvidedMethodInfo | null)) =
                     match mi with
                     | Null -> None
                     | NonNull mi -> 

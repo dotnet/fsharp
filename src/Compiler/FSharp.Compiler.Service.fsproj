@@ -101,7 +101,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Utilities\NullnessShims.fs" />
+    <Compile Include="Utilities\NullHelpers.fs" />
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
