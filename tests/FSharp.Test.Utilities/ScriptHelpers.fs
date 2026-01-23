@@ -60,6 +60,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     member this.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
         let originalCulture = Thread.CurrentThread.CurrentCulture
+        let originalUICulture = Thread.CurrentThread.CurrentUICulture
         Thread.CurrentThread.CurrentCulture <- Option.defaultValue Globalization.CultureInfo.InvariantCulture desiredCulture
 
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
@@ -69,6 +70,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
                 fsi.EvalInteractionNonThrowing(code, cancellationToken)
 
         Thread.CurrentThread.CurrentCulture <- originalCulture
+        Thread.CurrentThread.CurrentUICulture <- originalUICulture
 
         match ch with
         | Choice1Of2 v -> Ok(v), errors
