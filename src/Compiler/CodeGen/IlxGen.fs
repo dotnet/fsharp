@@ -5453,6 +5453,7 @@ and GenILCall
     (virt, valu, newobj, valUseFlags, isDllImport, ilMethRef: ILMethodRef, enclArgTys, methArgTys, argExprs, returnTys, m)
     sequel
     =
+    let g = cenv.g
     let hasByrefArg = ilMethRef.ArgTypes |> List.exists IsILTypeByref
 
     let isSuperInit =
@@ -5504,6 +5505,21 @@ and GenILCall
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMethSpec.DeclaringType ]) mkLdarg0
 
     GenExprs cenv cgbuf eenv argExprs
+
+    // When calling methods on value types via callvirt (e.g., calling System.Object.GetHashCode on a struct),
+    // we need to use the constrained. prefix to produce valid IL. See ECMA-335 and issue #18140.
+    let ccallInfo =
+        match ccallInfo with
+        | Some _ -> ccallInfo
+        | None when useICallVirt && not (List.isEmpty argExprs) ->
+            let objArgExpr = List.head argExprs
+            let objArgTy = tyOfExpr g objArgExpr
+            // Check if the object argument is a value type (struct) - if so, we need constrained call
+            if isStructTy g objArgTy then
+                Some objArgTy
+            else
+                None
+        | None -> None
 
     let il =
         if newobj then

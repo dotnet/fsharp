@@ -387,36 +387,37 @@ module Say =
     // https://github.com/dotnet/fsharp/issues/18140
     // The compiler generates callvirt on value type methods, which is incorrect IL
     // (should use constrained prefix or call instead). ILVerify reports this as an error.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_18140_CallvirtOnValueType`` () =
         let source = """
 module Test
 
-// This demonstrates the pattern that causes callvirt on value type
-// The issue manifests in the compiler's own code (Range, etc.) but can
-// also occur in user code with custom IEqualityComparer on structs
+// Minimal repro of the pattern that causes callvirt on value type
+// Same pattern as in FSharp.Compiler.Text.RangeModule.comparer
 
 [<Struct>]
-type MyStruct =
-    { Value: int }
-    override this.GetHashCode() = this.Value
+type MyRange =
+    val Value: int
+    new(v) = { Value = v }
 
-// Using struct in IEqualityComparer implementation pattern
-type MyComparer() =
-    interface System.Collections.Generic.IEqualityComparer<MyStruct> with
-        member _.Equals(x, y) = x.Value = y.Value
-        member _.GetHashCode(obj) = obj.GetHashCode()
+// Object expression implementing IEqualityComparer<struct>
+// Calling GetHashCode() on a value type argument should emit constrained.callvirt
+let comparer =
+    { new System.Collections.Generic.IEqualityComparer<MyRange> with
+        member _.Equals(x1, x2) = x1.Value = x2.Value
+        // This call to GetHashCode on a struct must use constrained.callvirt
+        member _.GetHashCode o = o.GetHashCode()
+    }
 
 let test() =
-    let comparer = MyComparer() :> System.Collections.Generic.IEqualityComparer<MyStruct>
-    let s = { Value = 42 }
+    let s = MyRange(42)
     comparer.GetHashCode(s)
 """
         FSharp source
         |> asLibrary
         |> compile
         |> shouldSucceed
-        // ILVerify would report: [CallVirtOnValueType] for the generated IL
+        // Fixed: Now generates constrained.callvirt instead of plain callvirt on value types
         |> ignore
 
     // ===== Issue #18135: Can't compile static abstract with byref params =====

@@ -653,13 +653,15 @@ F# 9 generates `.Is*` properties for each DU case. The normalization logic for g
 ```fsharp
 // Pattern that triggers callvirt on value type
 [<Struct>]
-type MyStruct =
-    { Value: int }
-    override this.GetHashCode() = this.Value
+type MyRange =
+    val Value: int
+    new(v) = { Value = v }
 
-type MyComparer() =
-    interface System.Collections.Generic.IEqualityComparer<MyStruct> with
-        member _.GetHashCode(obj) = obj.GetHashCode()
+let comparer =
+    { new System.Collections.Generic.IEqualityComparer<MyRange> with
+        member _.Equals(x1, x2) = x1.Value = x2.Value
+        member _.GetHashCode o = o.GetHashCode()  // callvirt on struct
+    }
 ```
 
 ### Expected Behavior
@@ -683,6 +685,14 @@ When calling interface-implemented methods on struct types, the compiler emits `
 ### Risks
 - Low: Using proper `constrained.` prefix or `call` instruction is more correct
 - Benefits: Cleaner IL that passes ILVerify
+
+### UPDATE
+**Fixed:** In `GenILCall`, when emitting a `callvirt` instruction on an instance method where the first 
+argument (the `this` pointer) is a value type, the compiler now uses `I_callconstraint` instead of 
+plain `I_callvirt`. This adds the required `constrained.` prefix before `callvirt` to produce valid IL 
+per ECMA-335. The fix checks if `ccallInfo` is `None` but `useICallVirt` is true and the first argument
+is a struct type - if so, it creates constrained call info with that type. This ensures correct IL is 
+emitted for patterns like `obj.GetHashCode()` where `obj` is a value type implementing IEqualityComparer.
 
 ---
 
