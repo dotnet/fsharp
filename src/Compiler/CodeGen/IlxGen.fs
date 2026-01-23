@@ -3338,7 +3338,10 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
                 | Const.Double _ -> Some g.ilg.typ_Double
                 | Const.Single _ -> Some g.ilg.typ_Single
                 | Const.Char _ -> Some g.ilg.typ_Char
-                | Const.String _ | Const.Unit | Const.Zero | Const.Decimal _ -> None
+                | Const.String _
+                | Const.Unit
+                | Const.Zero
+                | Const.Decimal _ -> None
 
             let emitInt64Constant underlyingTy i =
                 // see https://github.com/dotnet/fsharp/pull/3620
@@ -3371,12 +3374,11 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
             | Const.Zero -> GenDefaultValue cenv cgbuf eenv (ty, m)
             | Const.Decimal _ -> failwith "unreachable"
 
-            // Box if the declared type is a reference type (e.g., ValueType, Object) 
+            // Box if the declared type is a reference type (e.g., ValueType, Object)
             // but the constant is a value type. See https://github.com/dotnet/fsharp/issues/18319
             match underlyingIlTyOpt, ilTy with
-            | Some _, ILType.Value _ -> ()  // No boxing needed, declared type is also a value type
-            | Some underlyingIlTy, _ ->
-                CG.EmitInstr cgbuf (pop 1) (Push [ ilTy ]) (I_box underlyingIlTy)
+            | Some _, ILType.Value _ -> () // No boxing needed, declared type is also a value type
+            | Some underlyingIlTy, _ -> CG.EmitInstr cgbuf (pop 1) (Push [ ilTy ]) (I_box underlyingIlTy)
             | None, _ -> ()
 
         GenSequel cenv eenv.cloc cgbuf sequel
@@ -10007,6 +10009,9 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
         // Don't use shadow locals for things like functions which are not compiled as static values/properties
         && (not eenv.realsig)
         && IsCompiledAsStaticProperty cenv.g v
+        // Don't use shadow locals for literal values - they are inlined or stored directly in static fields
+        // See https://github.com/dotnet/fsharp/issues/18956
+        && Option.isNone v.LiteralValue
 
     let optShadowLocal, eenv =
         if useShadowLocal then

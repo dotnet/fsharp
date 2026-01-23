@@ -116,7 +116,8 @@ type Class() =
     // https://github.com/dotnet/fsharp/issues/18956
     // A [<Literal>] decimal constant causes System.InvalidProgramException in debug builds
     // due to incorrect locals initialization in the generated IL.
-    // [<Fact>]
+    // FIX: Exclude literal values from shadow local allocation in AllocValReprWithinExpr
+    [<Fact>]
     let ``Issue_18956_DecimalConstantInvalidProgram`` () =
         let source = """
 module A =
@@ -134,7 +135,7 @@ let main args =
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // This will fail with InvalidProgramException in debug - bug exists
+        |> shouldSucceed // Fixed: No longer throws InvalidProgramException after excluding literals from shadow local allocation
         |> ignore
 
     // ===== Issue #18953: Implicit Action/Func conversion captures extra expressions =====

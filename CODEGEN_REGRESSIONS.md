@@ -288,6 +288,20 @@ Debug builds emit `.locals init` with different maxstack compared to Release. Th
 ### Risks
 - Low: Fix should align Debug and Release codegen for decimal literals
 
+### UPDATE: Fixed
+
+**Root Cause:** In Debug mode, the compiler creates "shadow locals" for static properties to enable better debugging. However, for `[<Literal>]` values (including decimal literals), the shadow local was allocated but never initialized. For decimal literals specifically, the static field initialization code was emitted, but the shadow local storage was never written to, resulting in invalid IL.
+
+**Fix:** Added condition to exclude literal values from shadow local allocation in `AllocValReprWithinExpr`:
+```fsharp
+&& Option.isNone v.LiteralValue
+```
+
+This prevents the creation of uninitialized shadow locals for literal values, which don't need debugging locals since they are either inlined (for primitive types) or stored directly in static fields (for decimal).
+
+**Files Modified:**
+- `src/Compiler/CodeGen/IlxGen.fs` - Added literal exclusion to `useShadowLocal` condition
+
 ---
 
 ## Issue #18953
