@@ -82,3 +82,52 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Files touched:** Check git log for details.
 
 ---
+
+## Sprint 4: Diagnostic & Release Notes
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 1: Move features to preview
+
+**Summary:** Completed in 7 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 2: Add
+   RequiredFeature to TiebreakRule
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 3: LangVersion Latest Tests
+
+**Summary:** Completed - 8 tests verifying feature gating under langversion=latest
+
+**Tests Added:**
+1. `LangVersion Latest - Non-generic overload preferred over generic - existing behavior`
+2. `LangVersion Latest - Non-extension method preferred over extension - existing behavior`
+3. `LangVersion Latest - MoreConcrete disabled - fully generic vs wrapped generic remains ambiguous`
+4. `LangVersion Latest - MoreConcrete disabled - array generic vs bare generic remains ambiguous`
+5. `LangVersion Latest - ORP attribute ignored - higher priority does not win`
+6. `LangVersion Latest - ORP attribute ignored - negative priority has no effect`
+7. `LangVersion Latest - ORP attribute ignored - priority does not override concreteness`
+8. `LangVersion Latest - default langversion behaves same as explicit latest`
+
+**DoD Verification:**
+- ✅ At least 6 new tests in LangVersion Latest section (8 tests)
+- ✅ Tests verify existing rules work under langversion=latest
+- ✅ Tests verify MoreConcrete is disabled under langversion=latest (FS0041 for generic ambiguity)
+- ✅ Tests verify ORP is disabled under langversion=latest (attribute ignored)
+- ✅ All 132 tests pass
+- ✅ Build succeeds
+
+---

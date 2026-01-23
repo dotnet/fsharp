@@ -3033,3 +3033,179 @@ let result = BasicPriority.Invoke("test")
         |> shouldFail
         |> withWarningCode 3590
         |> ignore
+
+    // ============================================================================
+    // LangVersion Latest Tests
+    // 
+    // These tests verify behavior under langversion=latest (or default langversion).
+    // Under latest:
+    // - Existing rules (non-generic preferred, non-extension preferred) still work
+    // - MoreConcrete tiebreaker is DISABLED (expect FS0041 ambiguity)
+    // - OverloadResolutionPriority attribute is silently IGNORED
+    // ============================================================================
+
+    [<Fact>]
+    let ``LangVersion Latest - Non-generic overload preferred over generic - existing behavior`` () =
+        // This is existing F# behavior that works regardless of langversion
+        // Non-generic overload is always preferred when directly applicable
+        FSharp """
+module Test
+
+type Example =
+    static member Process(value: 't) = "generic"
+    static member Process(value: int) = "int"
+
+let result = Example.Process(42)
+        """
+        |> withLangVersion "latest"
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``LangVersion Latest - Non-extension method preferred over extension - existing behavior`` () =
+        // Existing F# behavior: instance/static methods on the type beat extension methods
+        FSharp """
+module Test
+
+type MyType() =
+    member this.Invoke(x: int) = "instance"
+
+module Extensions =
+    type MyType with
+        member this.Invoke(x: obj) = "extension"
+
+open Extensions
+
+let t = MyType()
+let result = t.Invoke(42)
+        """
+        |> withLangVersion "latest"
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``LangVersion Latest - MoreConcrete disabled - fully generic vs wrapped generic remains ambiguous`` () =
+        // Under langversion=latest, MoreConcrete tiebreaker is disabled
+        // 't vs Option<'t> - BOTH are generic, so PreferNonGeneric doesn't help
+        // Only MoreConcrete can resolve this, so without it we get FS0041
+        FSharp """
+module Test
+
+type Example =
+    static member Process(value: 't) = "fully generic"
+    static member Process(value: Option<'t>) = "wrapped"
+
+// Without MoreConcrete: ambiguous, expect FS0041
+// Both methods are generic, and wrapped Option<'t> is more concrete
+let result = Example.Process(Some 42)
+        """
+        |> withLangVersion "latest"
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
+
+    [<Fact>]
+    let ``LangVersion Latest - MoreConcrete disabled - array generic vs bare generic remains ambiguous`` () =
+        // Under langversion=latest, MoreConcrete tiebreaker is disabled
+        // 't vs 't array - BOTH are generic, so PreferNonGeneric doesn't help
+        FSharp """
+module Test
+
+type Example =
+    static member Handle(value: 't) = "bare"
+    static member Handle(value: 't array) = "array"
+
+// Without MoreConcrete: ambiguous, expect FS0041
+let result = Example.Handle([|1; 2; 3|])
+        """
+        |> withLangVersion "latest"
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
+
+    [<Fact>]
+    let ``LangVersion Latest - ORP attribute ignored - higher priority does not win`` () =
+        // Under langversion=latest, OverloadResolutionPriority is silently ignored
+        // Normal tiebreaker rules apply - string (more specific) should beat object
+        FSharp """
+module Test
+open PriorityTests
+
+// BasicPriority: object has priority 2, string has priority 1, int has priority 0
+// Under latest: ORP is ignored, so string is picked (more specific than object)
+let result = BasicPriority.Invoke("test")
+if result <> "priority-1-string" then
+    failwithf "Expected 'priority-1-string' (string) but got '%s' - ORP should be ignored" result
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersion "latest"
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``LangVersion Latest - ORP attribute ignored - negative priority has no effect`` () =
+        // Under langversion=latest, OverloadResolutionPriority is silently ignored
+        // Even negative priority doesn't deprioritize - normal rules apply
+        FSharp """
+module Test
+open PriorityTests
+
+// NegativePriority.Legacy: object has priority -1, string has priority 0 (default)
+// Under latest: ORP is ignored, so normal rules apply - string is more specific
+let result = NegativePriority.Legacy("test")
+// Should still pick string since it's more specific than object
+if result <> "current" then
+    failwithf "Expected 'current' (string) but got '%s'" result
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersion "latest"
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``LangVersion Latest - ORP attribute ignored - priority does not override concreteness`` () =
+        // Under langversion=latest, ORP is ignored AND MoreConcrete is disabled
+        // For Process(int) vs Process<T>(T), both are applicable for int
+        // Process(int) is non-generic so should be preferred by existing rules
+        FSharp """
+module Test
+open PriorityTests
+
+// PriorityVsConcreteness: Process<T>(T) has priority 1, Process(int) has priority 0
+// Under latest: ORP is ignored. Non-generic Process(int) should win over generic.
+let result = PriorityVsConcreteness.Process(42)
+if result <> "int-low-priority" then
+    failwithf "Expected 'int-low-priority' (int) but got '%s' - ORP should be ignored" result
+        """
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersion "latest"
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``LangVersion Latest - default langversion behaves same as explicit latest`` () =
+        // Verify that omitting langversion flag gives same behavior as latest
+        // Non-generic still preferred, MoreConcrete disabled
+        FSharp """
+module Test
+
+type Example =
+    static member Process(value: 't) = "generic"
+    static member Process(value: int) = "int"
+
+// Non-generic int should be preferred (existing rule)
+let result = Example.Process(42)
+        """
+        |> typecheck // no langversion flag = default = latest
+        |> shouldSucceed
+        |> ignore
