@@ -38,6 +38,17 @@ module LeafExpressionConverter =
 
     let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
 
+    /// Determines if a property access on a derived union case type needs to be coerced to the declaring type.
+    /// This handles the case where a property is defined on a specific union case type that inherits from the union type.
+    let getUnionCaseCoercionType (objOpt: Expr option) (declaringType: Type) =
+        if objOpt.IsSome && 
+           FSharpType.IsUnion declaringType && 
+           not (isNull declaringType.BaseType) &&
+           FSharpType.IsUnion declaringType.BaseType then
+            Some declaringType
+        else
+            None
+
     let equivHeadTypes (ty1:Type) (ty2:Type) =
         isNamedType(ty1) &&
         if ty1.IsGenericType then
@@ -475,11 +486,7 @@ module LeafExpressionConverter =
              build arg.Type argP n
 
         | PropertyGet(objOpt, propInfo, args) ->
-            let coerceTo =
-                if objOpt.IsSome && FSharpType.IsUnion propInfo.DeclaringType && FSharpType.IsUnion propInfo.DeclaringType.BaseType then
-                    Some propInfo.DeclaringType
-                else
-                    None
+            let coerceTo = getUnionCaseCoercionType objOpt propInfo.DeclaringType
             match args with
             | [] ->
                 Expression.Property(ConvObjArg env objOpt coerceTo, propInfo) |> asExpr
@@ -821,14 +828,7 @@ module LeafExpressionConverter =
 
         // Issue #19099: Handle PropertySet (obj.prop <- value) expressions
         | PropertySet(objOpt, propInfo, args, value) ->
-            let coerceTo =
-                if objOpt.IsSome && 
-                   FSharpType.IsUnion propInfo.DeclaringType && 
-                   not (isNull propInfo.DeclaringType.BaseType) &&
-                   FSharpType.IsUnion propInfo.DeclaringType.BaseType then
-                    Some propInfo.DeclaringType
-                else
-                    None
+            let coerceTo = getUnionCaseCoercionType objOpt propInfo.DeclaringType
             let valueP = ConvExprToLinqInContext env value
             match args with
             | [] ->
@@ -958,25 +958,23 @@ module LeafExpressionConverter =
        | Value (obj, _) -> obj
        | _ ->
        let ty = e.Type
+       // Helper to compile and invoke a delegate, re-raising inner exceptions
+       let compileAndInvoke (delegateExpr: Expr) =
+           let linqExpr = ConvExprToLinq delegateExpr :?> LambdaExpression
+           let d = linqExpr.Compile()
+           try
+               d.DynamicInvoke [| box () |]
+           with :? TargetInvocationException as exn ->
+               raise exn.InnerException
+
        // Issue #19099: Handle unit/void return types by wrapping in an Action instead of Func
        // When the expression returns unit, the LINQ expression will have type System.Void which cannot
        // be a return type of Func<unit, unit>. We use Action<unit> instead and return box().
        if ty = typeof<unit> then
            let unitVar = new Var("unit", typeof<unit>)
-           let e = Expr.NewDelegate (typeof<Action<unit>>, [unitVar], e)
-           let linqExpr = (ConvExprToLinq e :?> LambdaExpression)
-           let d = linqExpr.Compile ()
-           try
-               d.DynamicInvoke [| box () |] |> ignore
-               box ()
-           with :? TargetInvocationException as exn ->
-               raise exn.InnerException
+           compileAndInvoke (Expr.NewDelegate(typeof<Action<unit>>, [unitVar], e)) |> ignore
+           box ()
        else
-           let e = Expr.NewDelegate (Expression.GetFuncType([|typeof<unit>; ty |]), [new Var("unit", typeof<unit>)], e)
-           let linqExpr = (ConvExprToLinq e:?> LambdaExpression)
-           let d = linqExpr.Compile ()
-           try
-               d.DynamicInvoke [| box () |]
-           with :? TargetInvocationException as exn ->
-               raise exn.InnerException
+           let unitVar = new Var("unit", typeof<unit>)
+           compileAndInvoke (Expr.NewDelegate(Expression.GetFuncType([|typeof<unit>; ty|]), [unitVar], e))
 #endif
