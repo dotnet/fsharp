@@ -1386,8 +1386,17 @@ module Query =
         | IfThenElse (g, t, e) ->
             match MacroExpand e with
             | ZeroOnElseBranch ->
-                let t, tConv = TransInnerAndCommit CanEliminate.Yes check t
-                TransInnerResult.Other(Expr.IfThenElse (g, t, MakeEmpty t.Type)), tConv
+                let (t: Expr), tConv = TransInnerAndCommit CanEliminate.Yes check t
+                // Issue #3445: The result type 't.Type' is IQueryable<elemTy> or IEnumerable<elemTy>.
+                // MakeEmpty expects the element type, not the collection type.
+                // Extract the element type to create a properly typed empty sequence.
+                let tType = t.Type
+                let elemTy = 
+                    if tType.IsGenericType then 
+                        tType.GetGenericArguments().[0]
+                    else 
+                        tType
+                TransInnerResult.Other(Expr.IfThenElse (g, t, MakeEmpty elemTy)), tConv
             | _ ->
                 if check then raise (NotSupportedException (SR.GetString(SR.unsupportedIfThenElse)) )
                 TransInnerResult.Other e, NoConv

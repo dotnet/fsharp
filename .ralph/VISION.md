@@ -93,7 +93,20 @@ TEST_UPDATE_BSL=1 dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compile
 
 ## Lessons Learned
 
-*(To be filled in during implementation)*
+### Issue #3845: headOrDefault with non-nullable types
+- **Problem**: `headOrDefault` returns `null` for empty sequences when T is a reference type (including F# tuples). Accessing tuple fields on null causes NRE.
+- **Root cause**: LINQ's `FirstOrDefault()` returns `default(T)` which is `null` for reference types.
+- **Attempted fix**: Cannot be fixed in FSharp.Core alone because the return type is `'T`, and for reference types `Unchecked.defaultof<'T>` is `null`.
+- **Proper solution**: Compiler warning when T doesn't admit null (Option A from design decisions). This requires changes to CheckComputationExpressions.fs, not FSharp.Core.
+- **Current status**: Documented as known limitation with test demonstrating the behavior.
+
+### LINQ Expression Pattern Handlers
+- When adding new handlers to `ConvExprToLinqInContext`, ensure the LINQ Expression equivalent exists:
+  - Sequential → Expression.Block
+  - VarSet → Expression.Assign 
+  - FieldSet → Expression.Assign(Expression.Field(...))
+  - PropertySet → Expression.Assign(Expression.Property(...))
+- For void-returning expressions, use `Action<_>` delegates instead of `Func<_, _>`.
 
 ---
 

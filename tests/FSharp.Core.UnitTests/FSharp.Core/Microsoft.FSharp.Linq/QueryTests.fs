@@ -9,6 +9,7 @@ open System
 open System.Linq
 open Xunit
 open Microsoft.FSharp.Linq
+open Microsoft.FSharp.Linq.RuntimeHelpers
 
 /// Test data for query tests
 module TestData =
@@ -364,3 +365,120 @@ type QueryTupleSelectTests() =
         Assert.True(result.Length > 0)
         for (_, _, _, deptId) in result do
             Assert.Equal(1, deptId)
+
+
+/// Tests for EvaluateQuotation edge cases - Issue #19099
+type EvaluateQuotationEdgeCaseTests() =
+    
+    /// Issue #19099: EvaluateQuotation should handle Sequential expressions
+    [<Fact>]
+    member _.``EvaluateQuotation handles Sequential expressions - issue 19099``() =
+        // Test sequential expression: (ignore 1; 42) - evaluates first expr for side effects, returns second
+        let result = LeafExpressionConverter.EvaluateQuotation <@ ignore 1; 42 @>
+        Assert.Equal(42, result :?> int)
+    
+    /// Issue #19099: EvaluateQuotation should handle void method calls (unit return)
+    [<Fact>]
+    member _.``EvaluateQuotation handles void method calls - issue 19099``() =
+        // This should not throw - it should execute and return unit
+        let result = LeafExpressionConverter.EvaluateQuotation <@ System.Console.Write("") @>
+        Assert.Equal(box (), result)
+    
+    /// Issue #19099: EvaluateQuotation should handle unit-returning expressions
+    [<Fact>]
+    member _.``EvaluateQuotation handles unit return - issue 19099``() =
+        // Test that unit-returning expressions work (previously failed with System.Void issue)
+        let result = LeafExpressionConverter.EvaluateQuotation <@ ignore 1; () @>
+        Assert.Equal(box (), result)
+
+
+/// Tests for conditional without else branch in queries - Issue #3445
+type QueryConditionalTests() =
+    
+    /// Issue #3445: Query with if-then (no else) should compile and run
+    [<Fact>]
+    member _.``Query with if-then no else compiles and runs - issue 3445``() =
+        // This was throwing: Type mismatch when building 'cond'
+        let result = 
+            query { 
+                for i in [1; 2; 3].AsQueryable() do
+                if i > 1 then 
+                    select i 
+            } |> Seq.toList
+        
+        Assert.Equal(2, result.Length)
+        Assert.Contains(2, result)
+        Assert.Contains(3, result)
+    
+    /// Issue #3445: Query with if-then (no else) with false condition returns empty
+    [<Fact>]
+    member _.``Query with if-then no else with false condition returns empty - issue 3445``() =
+        let result = 
+            query { 
+                for i in [1; 2; 3].AsQueryable() do
+                if false then 
+                    select i 
+            } |> Seq.toList
+        
+        Assert.Empty(result)
+    
+    /// Issue #3445: Query with complex conditional filter
+    [<Fact>]
+    member _.``Query with complex if-then condition works - issue 3445``() =
+        let data = TestData.people.AsQueryable()
+        let result = 
+            query { 
+                for p in data do
+                if p.Age > 25 && p.DepartmentId = 1 then 
+                    select p.Name
+            } |> Seq.toList
+        
+        // Alice (30, dept 1) matches; Bob (25, dept 1) doesn't (not >25)
+        Assert.Single(result) |> ignore
+        Assert.Contains("Alice", result)
+
+
+/// Tests for headOrDefault with tuples - Issue #3845
+/// Note: This issue requires a compiler warning for proper fix.
+/// These tests document the current behavior.
+type QueryHeadOrDefaultTests() =
+    
+    /// headOrDefault returns null for empty sequence with reference type
+    [<Fact>]
+    member _.``headOrDefault with empty sequence returns default``() =
+        let data = [1; 2; 3].AsQueryable()
+        let result = 
+            query { 
+                for x in data do
+                where (x > 100)
+                headOrDefault
+            }
+        // For int (value type), default is 0
+        Assert.Equal(0, result)
+    
+    /// headOrDefault with matching element returns that element
+    [<Fact>]
+    member _.``headOrDefault with matching element returns first match``() =
+        let data = [1; 2; 3].AsQueryable()
+        let result = 
+            query { 
+                for x in data do
+                where (x > 1)
+                headOrDefault
+            }
+        Assert.Equal(2, result)
+    
+    /// Document: headOrDefault with tuple and no match returns null
+    /// This test documents the known limitation (issue #3845)
+    [<Fact>]
+    member _.``headOrDefault with tuple and no match returns null - issue 3845 known limitation``() =
+        let data = [(1, "a"); (2, "b")].AsQueryable()
+        let result = 
+            query { 
+                for x in data do
+                where (fst x > 100)
+                headOrDefault
+            }
+        // The result is null (default for reference type tuple)
+        // Accessing .Item1/.Item2 would cause NRE - this is the known issue
+        Assert.True(obj.ReferenceEquals(null, result))

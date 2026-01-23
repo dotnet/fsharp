@@ -103,3 +103,41 @@ The `Enumerable.Select` step broke the IQueryable chain, producing `EnumerableQu
 - `Multi-element tuple select preserves all elements for composition`
 
 ---
+
+## Sprint 4: Tuple select IQueryable
+
+**Summary:** Completed in 8 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 5: EvaluateQuotation and edge cases
+
+**Summary:** Fixed edge cases in quotation evaluation and query conditionals.
+
+**Issues:** #19099, #3445 (full fix); #3845 (documented as known limitation - requires compiler warning)
+
+**Root causes fixed:**
+- #19099: ConvExprToLinqInContext was missing handlers for Sequential, VarSet, FieldSet, PropertySet patterns. EvaluateQuotation was using Func<unit, ty> but when ty is unit, LINQ's System.Void can't be a return type.
+- #3445: TransInner's IfThenElse handler was passing `t.Type` (IQueryable<T>) to MakeEmpty when it should pass the element type T.
+- #3845: headOrDefault with tuple returns null for empty sequences. Accessing tuple fields on null causes NRE. This requires a compiler warning for proper fix (per VISION.md Option A) - documented as known limitation.
+
+**Files touched:**
+- src/FSharp.Core/Linq.fs (added Sequential, VarSet, FieldSet, PropertySet handlers; fixed EvaluateQuotation for unit return)
+- src/FSharp.Core/Query.fs (fixed IfThenElse to extract element type)
+- tests/FSharp.Core.UnitTests/FSharp.Core/Microsoft.FSharp.Linq/QueryTests.fs (9 new tests)
+- docs/release-notes/.FSharp.Core/10.0.300.md (2 new entries)
+
+**Tests added:**
+- `EvaluateQuotation handles Sequential expressions - issue 19099`
+- `EvaluateQuotation handles void method calls - issue 19099`
+- `EvaluateQuotation handles unit return - issue 19099`
+- `Query with if-then no else compiles and runs - issue 3445`
+- `Query with if-then no else with false condition returns empty - issue 3445`
+- `Query with complex if-then condition works - issue 3445`
+- `headOrDefault with empty sequence returns default`
+- `headOrDefault with matching element returns first match`
+- `headOrDefault with tuple and no match returns null - issue 3845 known limitation`
+
+---
