@@ -822,7 +822,10 @@ module LeafExpressionConverter =
         // Issue #19099: Handle PropertySet (obj.prop <- value) expressions
         | PropertySet(objOpt, propInfo, args, value) ->
             let coerceTo =
-                if objOpt.IsSome && FSharpType.IsUnion propInfo.DeclaringType && FSharpType.IsUnion propInfo.DeclaringType.BaseType then
+                if objOpt.IsSome && 
+                   FSharpType.IsUnion propInfo.DeclaringType && 
+                   not (isNull propInfo.DeclaringType.BaseType) &&
+                   FSharpType.IsUnion propInfo.DeclaringType.BaseType then
                     Some propInfo.DeclaringType
                 else
                     None
