@@ -435,6 +435,21 @@ type EvaluateQuotationEdgeCaseTests() =
         let arr = [| 1; 2; 3 |]
         let result = LeafExpressionConverter.EvaluateQuotation <@ arr.[0] <- 10; arr.[0] @>
         Assert.Equal(10, result :?> int)
+    
+    /// Q3.5: EvaluateQuotation should handle deeply nested let bindings
+    /// This tests the let-binding inlining logic doesn't break with deep nesting
+    [<Fact>]
+    member _.``EvaluateQuotation handles deeply nested let bindings``() =
+        // Test: let a = x in let b = a in let c = b in c
+        let result = LeafExpressionConverter.EvaluateQuotation <@ let a = 42 in let b = a in let c = b in c @>
+        Assert.Equal(42, result :?> int)
+    
+    /// Q3.5: Additional test for deeply nested let with computation at each level
+    [<Fact>]
+    member _.``EvaluateQuotation handles deeply nested let with computation``() =
+        // Test with actual computation at each level
+        let result = LeafExpressionConverter.EvaluateQuotation <@ let a = 1 in let b = a + 1 in let c = b + 1 in let d = c + 1 in d @>
+        Assert.Equal(4, result :?> int)
 
 
 /// Tests for conditional without else branch in queries - Issue #3445
