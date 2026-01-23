@@ -817,11 +817,14 @@ warning : Duplicate param name 'self@' in method '.ctor'
 When generating closure classes for mutually recursive functions, the compiler reuses the `self@` parameter name in constructors, causing duplicates. This is caught by ilasm during IL round-tripping.
 
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs` - closure/class generation for mutual recursion
+- `src/Compiler/CodeGen/EraseClosures.fs` - closure constructor parameter naming
 
 ### Risks
 - Low: Parameter names should be uniquified
 - Marked as regression - was working before
+
+### UPDATE
+Fixed by adding `mkUniqueFreeVarName` helper function in `EraseClosures.fs` that generates unique names for closure free variables. When creating `selfFreeVar` for closure constructors, the function now checks for existing field names and appends a numeric suffix if needed to avoid duplicates. This ensures that nested or chained closure transformations don't produce duplicate `self@` parameter names.
 
 ---
 

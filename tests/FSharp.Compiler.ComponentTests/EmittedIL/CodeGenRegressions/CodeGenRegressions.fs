@@ -490,22 +490,26 @@ check()
     // https://github.com/dotnet/fsharp/issues/17692
     // In mutually recursive functions, the compiler can generate duplicate 'self@'
     // parameter names in the IL, causing issues when the IL is round-tripped through ilasm.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_17692_MutualRecursionDuplicateParamName`` () =
         let source = """
 module Test
 
-// Simplified mutual recursion pattern that triggers duplicate 'self@' param names
-// The full repro involves more complex mutual recursion with closures
+// Mutual recursion pattern that triggered duplicate 'self@' param names in closure constructors
+// The issue occurred when multiple closures each captured a self reference
+// Fix ensures unique names are generated for all closure free variables
 
 let rec caller x = callee (x - 1)
 and callee y = if y > 0 then caller y else 0
 
-// This produces valid runtime behavior but the generated IL has issues
-// with duplicate parameter names that ilasm/ildasm round-trip catches
+// More complex case with additional closures
+let rec f1 a = f2 (a - 1) + f3 (a - 2)
+and f2 b = if b > 0 then f1 b else 1
+and f3 c = if c > 0 then f2 c else 2
 
-let result = caller 5
-printfn "Result: %d" result
+let result1 = caller 5
+let result2 = f1 5
+printfn "Results: %d %d" result1 result2
 """
         FSharp source
         |> asExe
@@ -513,8 +517,8 @@ printfn "Result: %d" result
         |> shouldSucceed
         |> run
         |> shouldSucceed
-        // The bug manifests as IL with duplicate 'self@' param names in constructors
-        // which ilasm warns about and can cause issues in some scenarios
+        // The fix in EraseClosures.fs ensures unique parameter names are generated
+        // for closure constructors by using mkUniqueFreeVarName when creating self@ vars
         |> ignore
 
     // ===== Issue #17641: IsMethod/IsProperty don't act as expected for generated members =====

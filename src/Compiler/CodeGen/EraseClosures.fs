@@ -392,6 +392,19 @@ let mkILFreeVarForParam (p: ILParameter) =
 
 let mkILLocalForFreeVar (p: IlxClosureFreeVar) = mkILLocal p.fvType None
 
+/// Generate a unique name for a free variable that doesn't conflict with existing field names.
+/// This is used to avoid duplicate parameter names in closure constructors, especially in
+/// mutual recursion scenarios (see issue #17692).
+let mkUniqueFreeVarName (baseName: string) (existingFields: IlxClosureFreeVar[]) =
+    let existingNames = existingFields |> Array.map (fun fv -> fv.fvName) |> Set.ofArray
+    let rec findUnique n =
+        let candidate = if n = 0 then baseName else baseName + string n
+        if Set.contains candidate existingNames then
+            findUnique (n + 1)
+        else
+            candidate
+    findUnique 0
+
 let mkILCloFldSpecs _cenv flds =
     flds |> Array.map (fun fv -> (fv.fvName, fv.fvType)) |> Array.toList
 
@@ -490,7 +503,8 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let laterGenericParams = td.GenericParams @ addedGenParams
 
                 let selfFreeVar =
-                    mkILFreeVar (CompilerGeneratedName("self" + string nowFields.Length), true, nowCloSpec.ILType)
+                    let baseName = CompilerGeneratedName("self" + string nowFields.Length)
+                    mkILFreeVar (mkUniqueFreeVarName baseName nowFields, true, nowCloSpec.ILType)
 
                 let laterFields = Array.append nowFields [| selfFreeVar |]
                 let laterCloRef = IlxClosureRef(laterTypeRef, laterStruct, laterFields)
@@ -612,7 +626,8 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let laterGenericParams = td.GenericParams
                 // Number each argument left-to-right, adding one to account for the "this" pointer
                 let selfFreeVar =
-                    mkILFreeVar (CompilerGeneratedName "self", true, nowCloSpec.ILType)
+                    let baseName = CompilerGeneratedName "self"
+                    mkILFreeVar (mkUniqueFreeVarName baseName nowFields, true, nowCloSpec.ILType)
 
                 let argToFreeVarMap =
                     (0, selfFreeVar)
