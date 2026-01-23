@@ -5672,10 +5672,13 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m moduleContents extraAttribs =
                     // the defaults will be propagated to the new type variable. 
                     ApplyTyparDefaultAtPriority denvAtEnd cenv.css priority tp)
 
-        // OK, now apply defaults for any unsolved TyparStaticReq.HeadType 
+        // OK, now apply defaults for any unsolved TyparStaticReq.HeadType or typars with SRTP (MayResolveMember) constraints
+        // Note: We also check for MayResolveMember constraints because some SRTP typars may not have StaticReq set
+        // (this can happen when the typar is involved in an SRTP constraint but isn't the "head type" itself)
         unsolved |> List.iter (fun tp ->     
             if not tp.IsSolved then 
-                if (tp.StaticReq <> TyparStaticReq.None) then
+                let hasSRTPConstraint = tp.Constraints |> List.exists (function TyparConstraint.MayResolveMember _ -> true | _ -> false)
+                if (tp.StaticReq <> TyparStaticReq.None) || hasSRTPConstraint then
                     ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
     with RecoverableException exn ->
         errorRecovery exn m

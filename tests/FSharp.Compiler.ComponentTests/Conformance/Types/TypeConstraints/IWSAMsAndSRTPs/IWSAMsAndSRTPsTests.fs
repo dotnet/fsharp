@@ -1752,6 +1752,42 @@ printfn "Success: %d" result
         |> compileAndRun
         |> shouldSucceed
 
+    // Regression test for GitHub issue #18344 and FSharpPlus curryN pattern
+    // This tests that SRTP typars with MayResolveMember constraints are properly solved
+    // even when StaticReq is None
+    [<Fact>]
+    let ``SRTP curryN-style pattern should compile without value restriction error`` () =
+        FSharp """
+module CurryNTest
+
+open System
+
+// Minimal reproduction of the FSharpPlus curryN pattern
+type Curry =
+    static member inline Invoke f =
+        let inline call_2 (a: ^a, b: ^b) = ((^a or ^b) : (static member Curry: _*_ -> _) b, a)
+        call_2 (Unchecked.defaultof<Curry>, Unchecked.defaultof<'t>) (f: 't -> 'r) : 'args
+    
+    static member Curry (_: Tuple<'t1>        , _: Curry) = fun f t1                   -> f (Tuple<_> t1)
+    static member Curry ((_, _)               , _: Curry) = fun f t1 t2                -> f (t1, t2)
+    static member Curry ((_, _, _)            , _: Curry) = fun f t1 t2 t3             -> f (t1, t2, t3)
+
+let inline curryN f = Curry.Invoke f
+
+// Test functions
+let f1  (x: Tuple<_>) = [x.Item1]
+let f2  (x, y)    = [x + y]
+let f3  (x, y, z) = [x + y + z]
+
+// These should compile without value restriction error (regression test for #18344)
+let _x1 = curryN f1 100
+let _x2 = curryN f2 1 2
+let _x3 = curryN f3 1 2 3
+    """
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
     // Tests for issue #19231: Invoking static abstract member on interface type should be rejected
     let private iwsamWarnings = [ "--nowarn:3536" ; "--nowarn:3535" ]
 

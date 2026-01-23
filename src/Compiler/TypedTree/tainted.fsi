@@ -78,10 +78,10 @@ type internal Tainted<'T> =
     member PApplyWithProvider: ('T * ITypeProvider -> 'U) * range: range -> Tainted<'U>
 
     /// Apply an operation that returns an array. Unwrap array. Any exception will be attributed to the type provider with an error located at the given range.  String is method name of thing-returning-array, to diagnostically attribute if it is null
-    member PApplyArray: ('T -> 'U[] MaybeNull) * string * range: range -> Tainted<'U>[]
+    member PApplyArray: ('T -> ('U[] | null)) * string * range: range -> Tainted<'U>[]
 
     /// Apply an operation that returns an array. Filter the array. Unwrap array. Any exception will be attributed to the type provider with an error located at the given range.  String is method name of thing-returning-array, to diagnostically attribute if it is null
-    member PApplyFilteredArray: ('T -> 'U[] MaybeNull) * ('U -> bool) * string * range: range -> Tainted<'U>[]
+    member PApplyFilteredArray: ('T -> ('U[] | null)) * ('U -> bool) * string * range: range -> Tainted<'U>[]
 
     /// Apply an operation that returns an option. Unwrap option. Any exception will be attributed to the type provider with an error located at the given range
     member PApplyOption: ('T -> 'U option) * range: range -> Tainted<'U> option
@@ -104,7 +104,7 @@ type internal Tainted<'T> =
 module internal Tainted =
 
     /// Test whether the tainted value is null
-    val (|Null|NonNull|): Tainted<'T MaybeNull> -> Choice<unit, Tainted<'T>> when 'T: not null and 'T: not struct
+    val (|Null|NonNull|): Tainted<('T | null)> -> Choice<unit, Tainted<'T>> when 'T: not null and 'T: not struct
 
     /// Test whether the tainted value equals given value.
     /// Failure in call to equality operation will be blamed on type provider of first operand

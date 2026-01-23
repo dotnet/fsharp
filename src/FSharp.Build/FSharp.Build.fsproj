@@ -33,7 +33,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
-    <Compile Include="..\Compiler\Utilities\NullnessShims.fs" />
+    <Compile Include="..\Compiler\Utilities\NullHelpers.fs" />
     <EmbeddedText Include="FSBuild.txt" />
     <EmbeddedText Include="..\Compiler\Facilities\UtilsStrings.txt" />
     <Compile Include="..\Compiler\Facilities\CompilerLocation.fs" />

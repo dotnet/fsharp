@@ -34,7 +34,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeProviders
 #endif
 
-let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
+let inline compareBy (x: 'T | null) (y: 'T | null) ([<InlineIfLambda>]func: 'T -> 'K)  = 
     match x,y with
     | null,null -> 0
     | null,_ -> -1
@@ -6446,22 +6446,30 @@ and allEntitiesOfModDef mdef =
                   yield! allEntitiesOfModDef def
     }
 
-and allValsOfModDef mdef = 
+and allValsOfModDefWithOption processNested mdef = 
     seq { match mdef with 
           | TMDefRec(_, _, tycons, mbinds, _) -> 
               yield! abstractSlotValsOfTycons tycons 
               for mbind in mbinds do 
                 match mbind with 
                 | ModuleOrNamespaceBinding.Binding bind -> yield bind.Var
-                | ModuleOrNamespaceBinding.Module(_, def) -> yield! allValsOfModDef def
+                | ModuleOrNamespaceBinding.Module(_, def) -> 
+                    if processNested then
+                        yield! allValsOfModDefWithOption processNested def
           | TMDefLet(bind, _) -> 
               yield bind.Var
           | TMDefDo _ -> ()
           | TMDefOpens _ -> ()
           | TMDefs defs -> 
               for def in defs do 
-                  yield! allValsOfModDef def
+                  yield! allValsOfModDefWithOption processNested def
     }
+
+and allValsOfModDef mdef = 
+    allValsOfModDefWithOption true mdef
+
+and allTopLevelValsOfModDef mdef = 
+    allValsOfModDefWithOption false mdef
 
 and copyAndRemapModDef ctxt compgen tmenv mdef =
     let tycons = allEntitiesOfModDef mdef |> List.ofSeq
@@ -8284,7 +8292,7 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = !! typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
-let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull option = 
+let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : (string | null) option = 
     if isTypeProviderAssemblyAttr cattr then 
         let params_, _args = decodeILAttribData cattr 
         match params_ with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
