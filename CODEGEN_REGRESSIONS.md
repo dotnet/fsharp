@@ -3136,6 +3136,13 @@ Currently, F# generates only the constructor shell without reading the field val
 ### Risks
 - Low: Serialization fix, additive change to generated code
 
+### UPDATE (FIXED)
+Fixed by modifying `GenExnDef` in IlxGen.fs to generate proper serialization support:
+1. Modified the serialization constructor to restore fields by calling `info.GetValue("fieldName", typeof<fieldType>)` for each exception field
+2. Added a `GetObjectData` override that calls `base.GetObjectData(info, context)` and then `info.AddValue("fieldName", this.field)` for each field
+
+The test now verifies the IL generation contains both the GetObjectData method and the serialization constructor with proper field handling. Note: BinaryFormatter is removed in .NET 10+, so runtime verification is not possible; the test validates IL structure instead.
+
 ---
 
 ## Contributing
