@@ -47,16 +47,30 @@ namespace GenericDIMTest {
         |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8
         |> withName "DIMTestLib"
 
+    // Helper: Generate F# code that opens a namespace and implements an interface
+    let fsharpImplementingInterface ns typeBody =
+        FSharp $"""
+module Test
+open {ns}
+{typeBody}
+"""
+
+    // Helper: Compile with DIM support (preview + reference to C# lib) and expect success
+    let shouldCompileWithDIM libRef source =
+        source |> withLangVersionPreview |> withReferences [libRef] |> compile |> shouldSucceed
+
+    // Helper: Compile with DIM support and expect failure with specific error code
+    let shouldFailWithDIM libRef errorCode source =
+        source |> withLangVersionPreview |> withReferences [libRef] |> compile |> shouldFail |> withErrorCode errorCode
+
+    // Helper: Compile with old language version and expect failure (tests feature gating)
+    let shouldFailWithoutFeature libRef langVersion errorCode source =
+        source |> withLangVersion langVersion |> withReferences [libRef] |> compile |> shouldFail |> withErrorCode errorCode
+
     [<FactForNETCOREAPP>]
     let ``DIM shadowing - IB-only implementation succeeds with preview`` () =
-        FSharp """
-module Test
-open DIMTest
-type C() =
-    interface IB with
-        member _.M() = 42
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
+        fsharpImplementingInterface "DIMTest" "type C() = interface IB with member _.M() = 42"
+        |> shouldCompileWithDIM dimTestLib
 
     [<Fact>]
     let ``Pure F# interface hierarchy errors without DIM`` () =
@@ -65,81 +79,50 @@ module Test
 type IA = abstract M : int -> int
 type IB = inherit IA
           abstract M : int -> int
-type C() =
-    interface IB with
-        member x.M(y) = y + 3
+type C() = interface IB with member x.M(y) = y + 3
 """
         |> withLangVersionPreview |> compile |> shouldFail |> withErrorCode 361
 
     [<FactForNETCOREAPP>]
     let ``Explicit implementation of both IA and IB works`` () =
-        FSharp """
-module Test
-open DIMTest
-type C() =
+        fsharpImplementingInterface "DIMTest" """type C() =
     interface IA with member _.M() = 100
-    interface IB with member _.M() = 42
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
+    interface IB with member _.M() = 42"""
+        |> shouldCompileWithDIM dimTestLib
 
     [<FactForNETCOREAPP>]
     let ``Diamond with single DIM succeeds`` () =
-        FSharp """
-module Test
-open DiamondSingleDIM
-type C() = interface ID
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
+        fsharpImplementingInterface "DiamondSingleDIM" "type C() = interface ID"
+        |> shouldCompileWithDIM dimTestLib
 
     [<FactForNETCOREAPP>]
     let ``Diamond with conflicting DIMs errors with FS3352`` () =
-        FSharp """
-module Test
-open DiamondConflictDIM
-type C() = interface ID
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile
-        |> shouldFail |> withErrorCode 3352 |> withDiagnosticMessageMatches "most specific implementation"
+        fsharpImplementingInterface "DiamondConflictDIM" "type C() = interface ID"
+        |> shouldFailWithDIM dimTestLib 3352
+        |> withDiagnosticMessageMatches "most specific implementation"
 
     [<FactForNETCOREAPP>]
     let ``Property with DIM getter succeeds`` () =
-        FSharp """
-module Test
-open PropertyDIM
-type C() =
+        fsharpImplementingInterface "PropertyDIM" """type C() =
     let mutable value = 0
-    interface IWritable with
-        member _.Value with get() = value and set(v) = value <- v
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
+    interface IWritable with member _.Value with get() = value and set(v) = value <- v"""
+        |> shouldCompileWithDIM dimTestLib
 
     [<FactForNETCOREAPP>]
     let ``Object expression with DIM succeeds`` () =
-        FSharp """
-module Test
-open DIMTest
-let obj : IB = { new IB with member _.M() = 42 }
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
+        fsharpImplementingInterface "DIMTest" "let obj : IB = { new IB with member _.M() = 42 }"
+        |> shouldCompileWithDIM dimTestLib
 
     [<FactForNETCOREAPP>]
     let ``Object expression explicit DIM override succeeds`` () =
-        FSharp """
-module Test
-open DIMTest
-let obj : IB = { new IB with member _.M() = 42
-                 interface IA with member _.M() = 100 }
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
+        fsharpImplementingInterface "DIMTest" """let obj : IB = { new IB with member _.M() = 42
+                 interface IA with member _.M() = 100 }"""
+        |> shouldCompileWithDIM dimTestLib
 
     [<FactForNETCOREAPP>]
     let ``Object expression diamond with DIM succeeds`` () =
-        FSharp """
-module Test
-open DiamondSingleDIM
-let obj : ID = { new ID }
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
+        fsharpImplementingInterface "DiamondSingleDIM" "let obj : ID = { new ID }"
+        |> shouldCompileWithDIM dimTestLib
 
     [<Fact>]
     let ``Object expression pure F# hierarchy errors`` () =
@@ -154,55 +137,29 @@ let obj : IB = { new IB with member x.M(y) = y + 3 }
 
     [<FactForNETCOREAPP>]
     let ``Re-abstracted member requires implementation`` () =
-        FSharp """
-module Test
-open ReabstractTest
-type C() = interface IB
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile
-        |> shouldFail |> withErrorCode 366
+        fsharpImplementingInterface "ReabstractTest" "type C() = interface IB"
+        |> shouldFailWithDIM dimTestLib 366
 
     [<FactForNETCOREAPP>]
     let ``Re-abstracted with explicit implementation succeeds`` () =
-        FSharp """
-module Test
-open ReabstractTest
-type C() =
+        fsharpImplementingInterface "ReabstractTest" """type C() =
     interface IA with member _.M() = 42
-    interface IB
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
+    interface IB"""
+        |> shouldCompileWithDIM dimTestLib
 
     [<FactForNETCOREAPP>]
     let ``Generic interfaces partial DIM coverage`` () =
-        FSharp """
-module Test
-open GenericDIMTest
-type C() =
-    interface IContainer with
-        member _.Get() : string = "hello"
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile |> shouldSucceed
+        fsharpImplementingInterface "GenericDIMTest" """type C() =
+    interface IContainer with member _.Get() : string = "hello" """
+        |> shouldCompileWithDIM dimTestLib
 
     [<FactForNETCOREAPP>]
     let ``Generic interfaces - missing required instantiation should fail`` () =
-        FSharp """
-module Test
-open GenericDIMTest
-type C() =
-    interface IContainer
-"""
-        |> withLangVersionPreview |> withReferences [dimTestLib] |> compile
-        |> shouldFail |> withErrorCode 366
+        fsharpImplementingInterface "GenericDIMTest" "type C() = interface IContainer"
+        |> shouldFailWithDIM dimTestLib 366
 
     [<FactForNETCOREAPP>]
     let ``Old language version (pre-feature) requires explicit implementation`` () =
-        FSharp """
-module Test
-open DIMTest
-type C() =
-    interface IB with
-        member _.M() = 42
-"""
-        |> withLangVersion "9.0" |> withReferences [dimTestLib] |> compile
-        |> shouldFail |> withErrorCode 361 |> withDiagnosticMessageMatches "implements"
+        fsharpImplementingInterface "DIMTest" "type C() = interface IB with member _.M() = 42"
+        |> shouldFailWithoutFeature dimTestLib "9.0" 361
+        |> withDiagnosticMessageMatches "implements"
