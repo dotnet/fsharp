@@ -1997,6 +1997,11 @@
         <target state="translated">Dieser XML-Kommentar ist ungültig: mehrere Dokumentationseinträge für Parameter "{0}".</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocIncludeError">
+        <source>XML documentation include error: {0}</source>
+        <target state="new">XML documentation include error: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
         <source>This XML comment is invalid: unknown parameter '{0}'</source>
         <target state="translated">Dieser XML-Kommentar ist ungültig: unbekannter Parameter "{0}".</target>

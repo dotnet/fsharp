@@ -275,6 +275,8 @@
     <Compile Include="SyntaxTree\UnicodeLexing.fs" />
     <Compile Include="SyntaxTree\XmlDoc.fsi" />
     <Compile Include="SyntaxTree\XmlDoc.fs" />
+    <Compile Include="SyntaxTree\XmlDocIncludeExpander.fsi" />
+    <Compile Include="SyntaxTree\XmlDocIncludeExpander.fs" />
     <Compile Include="SyntaxTree\SyntaxTrivia.fsi" />
     <Compile Include="SyntaxTree\SyntaxTrivia.fs" />
     <Compile Include="SyntaxTree\SyntaxTree.fsi" />

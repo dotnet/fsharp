@@ -2074,3 +2074,61 @@ Actual:
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
+
+    let withXmlDoc (cUnit: CompilationUnit) : CompilationUnit =
+        // The XML doc file path will be derived from the DLL output path
+        match cUnit with
+        | FS fs ->
+            let outputDir =
+                match fs.OutputDirectory with
+                | Some di -> di
+                | None -> createTemporaryDirectory()
+            
+            let baseName = defaultArg fs.Name "output"
+            let xmlPath = Path.Combine(outputDir.FullName, baseName + ".xml")
+            
+            FS { fs with 
+                    OutputDirectory = Some outputDir
+                    Options = fs.Options @ [ $"--doc:{xmlPath}" ]
+               }
+        | _ -> failwith "withXmlDoc is only supported for F#"
+
+    let private verifyXmlDocWith (verifyFn: string -> string list -> unit) (texts: string list) (result: CompilationResult) : CompilationResult =
+        match result with
+        | CompilationResult.Failure _ -> failwith "Cannot verify XML doc on failed compilation"
+        | CompilationResult.Success output ->
+            match output.OutputPath with
+            | None -> failwith "No output path available"
+            | Some dllPath ->
+                let dir = Path.GetDirectoryName(dllPath)
+                // Try to find the XML file - could be named after the assembly or "output.xml"
+                let dllBaseName = Path.GetFileNameWithoutExtension(dllPath)
+                let xmlPath1 = Path.Combine(dir, dllBaseName + ".xml")
+                let xmlPath2 = Path.Combine(dir, "output.xml")
+                
+                let xmlPath =
+                    if File.Exists xmlPath1 then xmlPath1
+                    elif File.Exists xmlPath2 then xmlPath2
+                    else failwith $"XML doc file not found: tried {xmlPath1} and {xmlPath2}"
+                
+                let content = File.ReadAllText(xmlPath)
+                verifyFn content texts
+                result
+
+    let verifyXmlDocContains (expectedTexts: string list) (result: CompilationResult) : CompilationResult =
+        verifyXmlDocWith
+            (fun content texts ->
+                for expected in texts do
+                    if not (content.Contains(expected)) then
+                        failwith $"XML doc missing: '{expected}'\n\nActual:\n{content}")
+            expectedTexts
+            result
+
+    let verifyXmlDocNotContains (unexpectedTexts: string list) (result: CompilationResult) : CompilationResult =
+        verifyXmlDocWith
+            (fun content texts ->
+                for unexpected in texts do
+                    if content.Contains(unexpected) then
+                        failwith $"XML doc should not contain: '{unexpected}'")
+            unexpectedTexts
+            result

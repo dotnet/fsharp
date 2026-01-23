@@ -1675,6 +1675,7 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3392,containerDeprecated,"The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead."
 3393,containerSigningUnsupportedOnThisPlatform,"Key container signing is not supported on this platform."
 3394,parsNewExprMemberAccess,"This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'"
+3395,xmlDocIncludeError,"XML documentation include error: %s"
 3395,tcImplicitConversionUsedForMethodArg,"This expression uses the implicit conversion '%s' to convert type '%s' to type '%s'."
 3396,tcLiteralAttributeCannotUseActivePattern,"A [<Literal>] declaration cannot use an active pattern for its identifier"
 3397,tcUnitToObjSubsumption,"This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime. This warning may be disabled using '#nowarn \"3397\"."
