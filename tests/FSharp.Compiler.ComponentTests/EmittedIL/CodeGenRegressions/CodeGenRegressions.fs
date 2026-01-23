@@ -909,11 +909,13 @@ let main args =
 
     // ===== Issue #15467: Include language version in compiled metadata =====
     // https://github.com/dotnet/fsharp/issues/15467
-    // [OUT_OF_SCOPE: Feature Request] - Request to embed language version in compiled DLLs
+    // [OUT_OF_SCOPE: FEATURE REQUEST] - Request to embed language version in compiled DLLs
     // for better error messages when older compilers read newer assemblies.
-    // [<Fact>]
+    // This is NOT a codegen bug - it's a request for new metadata embedding functionality.
+    // Test documents the feature request by verifying current behavior compiles correctly.
+    [<Fact>]
     let ``Issue_15467_LanguageVersionInMetadata`` () =
-        // [OUT_OF_SCOPE: Feature Request] - No codegen bug to test.
+        // [OUT_OF_SCOPE: FEATURE REQUEST] - This test documents the feature request, not a bug.
         let source = """
 module Test
 
@@ -1007,10 +1009,12 @@ let main args =
 
     // ===== Issue #15092: Should we generate DebuggerProxies in release code? =====
     // https://github.com/dotnet/fsharp/issues/15092
-    // [OUT_OF_SCOPE: Feature Request] - Design question about eliding DebuggerProxy types in release builds.
-    // [<Fact>]
+    // [OUT_OF_SCOPE: FEATURE REQUEST] - Design question about eliding DebuggerProxy types in release builds.
+    // This is NOT a codegen bug - it's a request to optionally reduce binary size.
+    // Test documents the feature request by verifying current behavior compiles and runs correctly.
+    [<Fact>]
     let ``Issue_15092_DebuggerProxiesInRelease`` () =
-        // [OUT_OF_SCOPE: Feature Request] - No codegen bug to test. Design question about binary size optimization.
+        // [OUT_OF_SCOPE: FEATURE REQUEST] - Documents design question, not a bug.
         let source = """
 module Test
 
@@ -1180,10 +1184,12 @@ module BugInReleaseConfig =
 
     // ===== Issue #14392: OpenApi Swashbuckle support =====
     // https://github.com/dotnet/fsharp/issues/14392
-    // [OUT_OF_SCOPE: Feature Request] - Not a codegen bug. Request for better OpenAPI/Swashbuckle support.
-    // [<Fact>]
+    // [OUT_OF_SCOPE: FEATURE REQUEST] - Not a codegen bug. Request for better OpenAPI/Swashbuckle support.
+    // This is NOT a codegen bug - it's a request for improved OpenAPI tooling interoperability.
+    // Test documents the feature request by verifying F# records compile correctly.
+    [<Fact>]
     let ``Issue_14392_OpenApiSupport`` () =
-        // [OUT_OF_SCOPE: Feature Request] - No codegen bug to test.
+        // [OUT_OF_SCOPE: FEATURE REQUEST] - Documents tooling request, not a codegen bug.
         let source = """
 module Test
 
@@ -1302,10 +1308,12 @@ let test () =
 
     // ===== Issue #13223: FSharp.Build support for reference assemblies =====
     // https://github.com/dotnet/fsharp/issues/13223
-    // [OUT_OF_SCOPE: Feature Request] - Not a codegen bug. Request for FSharp.Build reference assembly support.
-    // [<Fact>]
+    // [OUT_OF_SCOPE: FEATURE REQUEST] - Not a codegen bug. Request for FSharp.Build reference assembly support.
+    // This is NOT a codegen bug - it's a request for FSharp.Build tooling enhancement.
+    // Test documents the feature request by verifying basic compilation works correctly.
+    [<Fact>]
     let ``Issue_13223_ReferenceAssemblies`` () =
-        // [OUT_OF_SCOPE: Feature Request] - No codegen bug to test.
+        // [OUT_OF_SCOPE: FEATURE REQUEST] - Documents build tooling request, not a codegen bug.
         let source = """
 module Test
 
@@ -1912,18 +1920,17 @@ let compare (a: T) (b: T) = compare a.X b.X
 
     // ===== Issue #9176: Decorate inline function code with attribute =====
     // https://github.com/dotnet/fsharp/issues/9176
-    // [OUT_OF_SCOPE: Feature Request]
+    // [OUT_OF_SCOPE: FEATURE REQUEST]
     // This is NOT a bug - it's a feature request for a new `FSharpInlineFunction` attribute.
     // The request is to mark call sites where inline functions were inlined, similar to 
     // how StackTrace shows inline methods. This would require:
     // 1. A new attribute type (e.g., FSharpInlineFunction) added to FSharp.Core
     // 2. Compiler changes to emit the attribute at inlined call sites
     // 3. Tooling changes to consume the attribute
-    // Runtime verification cannot demonstrate this - it's a feature that doesn't exist.
-    // [<Fact>]
+    // Test documents the feature request by verifying inline functions work correctly.
+    [<Fact>]
     let ``Issue_9176_InlineAttributes`` () =
-        // [OUT_OF_SCOPE: Feature Request]
-        // This test documents the feature request, not a regression.
+        // [OUT_OF_SCOPE: FEATURE REQUEST] - Documents the feature request, not a regression.
         // The issue asks for a way to trace back inlined code to its original source,
         // similar to how C# shows inlined methods in stack traces.
         // Currently F# inline functions leave no trace after inlining.

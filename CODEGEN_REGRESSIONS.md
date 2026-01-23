@@ -1293,6 +1293,10 @@ Each F# DLL should contain language version info in custom attributes or pickle 
 - Low: Adding metadata is backward compatible
 - Improves user experience when using mixed tooling versions
 
+### UPDATE (Sprint 7)
+**Status:** OUT_OF_SCOPE - Test Passes
+**Action:** Uncommented `[<Fact>]` attribute. Test now runs and passes, documenting that this is a feature request rather than a codegen bug. The test verifies that F# code compiles correctly - the feature request is about adding *additional* metadata, not fixing existing behavior.
+
 ---
 
 ## Issue #15352
@@ -1406,6 +1410,10 @@ F# generates helper types for better debugging experience. In release builds, th
 ### Risks
 - Low: Could be opt-in via compiler flag
 - Trade-off between binary size and production debugging capability
+
+### UPDATE (Sprint 7)
+**Status:** OUT_OF_SCOPE - Test Passes
+**Action:** Uncommented `[<Fact>]` attribute. Test now runs and passes, documenting that this is a design question/feature request rather than a codegen bug. Current behavior (generating DebuggerProxies in release) is intentional and works correctly.
 
 ---
 
@@ -1669,6 +1677,10 @@ This is a feature request, not a bug. F# types may need additional metadata or a
 ### Risks
 - Low: Feature request, not a regression
 
+### UPDATE (Sprint 7)
+**Status:** OUT_OF_SCOPE - Test Passes
+**Action:** Uncommented `[<Fact>]` attribute. Test now runs and passes, documenting that this is a tooling interoperability feature request rather than a codegen bug. F# records compile correctly - the request is about improved OpenAPI tooling support.
+
 ---
 
 ## Issue #14321
@@ -1853,6 +1865,10 @@ This is a build tooling feature request, not a compiler codegen bug. Requires MS
 
 ### Risks
 - Low: Build tooling feature
+
+### UPDATE (Sprint 7)
+**Status:** OUT_OF_SCOPE - Test Passes
+**Action:** Uncommented `[<Fact>]` attribute. Test now runs and passes, documenting that this is a FSharp.Build tooling feature request rather than a codegen bug. Compilation works correctly - the request is about MSBuild task improvements for reference assembly workflows.
 
 ---
 
@@ -2822,6 +2838,10 @@ This is a design question about whether attributes should be propagated to inlin
 ### Risks
 
 - Low: This is additive metadata, would not affect existing behavior
+
+### UPDATE (Sprint 7)
+**Status:** OUT_OF_SCOPE - Test Passes
+**Action:** Uncommented `[<Fact>]` attribute. Test now runs and passes, documenting that this is a feature request for new inline tracking metadata rather than a codegen bug. Inline functions work correctly - the request is about adding source provenance attributes at inlined call sites.
 
 ---
 
