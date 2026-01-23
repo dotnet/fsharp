@@ -773,22 +773,16 @@ module LeafExpressionConverter =
                     |> asExpr
 
         | Let (v, e, b) ->
-            // For mutable variables, we need a proper ParameterExpression that can be assigned to
-            if v.IsMutable then
-                let vP = ConvVarToLinq v
-                let eP = ConvExprToLinqInContext env e
-                let envinner = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
-                let bodyP = ConvExprToLinqInContext envinner b
-                // Create a block with the variable declaration, initial assignment, and body
-                Expression.Block([| vP |], Expression.Assign(vP, eP), bodyP) |> asExpr
-            else
-                // Instead of generating (v => body).Invoke(e), inline the let binding
-                // by substituting e for v directly in the body. This avoids the Invoke pattern 
-                // that LINQ providers like EF Core cannot translate.
-                // This is safe because the expressions in query contexts are side-effect free.
-                let eP = ConvExprToLinqInContext env e
-                let envinner = { varEnv = Map.add v eP env.varEnv }
-                ConvExprToLinqInContext envinner b
+            // Use Expression.Block to properly scope the variable. This:
+            // 1. Evaluates the expression exactly once (preserving reference semantics)
+            // 2. Avoids Lambda.Invoke which EF Core cannot translate
+            // 3. Works for both mutable and immutable variables
+            let vP = ConvVarToLinq v
+            let eP = ConvExprToLinqInContext env e
+            let envinner = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
+            let bodyP = ConvExprToLinqInContext envinner b
+            // Create a block with the variable declaration, initial assignment, and body
+            Expression.Block([| vP |], Expression.Assign(vP, eP), bodyP) |> asExpr
 
         | Lambda(v, body) ->
             let vP = ConvVarToLinq v
