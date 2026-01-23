@@ -767,8 +767,7 @@ let (|ConstNeedsDefaultCase|_|) c =
 ///   - Compact integer switches become a single switch.  Non-compact integer
 ///     switches, string switches and floating point switches are treated in the
 ///     same way as DecisionTreeTest.IsInst.
-let rec BuildSwitch inpExprOpt g expr edges dflt m =
-    if verbose then dprintf "--> BuildSwitch@%a, #edges = %A, dflt.IsSome = %A\n" outputRange m (List.length edges) (Option.isSome dflt)
+let rec BuildSwitch inpExprOpt g isNullFiltered expr edges dflt m =
     match edges, dflt with
     | [], None      -> failwith "internal error: no edges and no default"
     | [], Some dflt -> dflt
@@ -780,11 +779,13 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     // In this case the 'expr' already holds the result of the 'isinst' test.
 
     | TCase(DecisionTreeTest.IsInst _, success) :: edges, dflt  when Option.isSome inpExprOpt ->
-        TDSwitch(expr, [TCase(DecisionTreeTest.IsNull, BuildSwitch None g expr edges dflt m)], Some success, m)
+        TDSwitch(expr, [TCase(DecisionTreeTest.IsNull, BuildSwitch None g false expr edges dflt m)], Some success, m)
 
     // isnull and isinst tests
     | TCase((DecisionTreeTest.IsNull | DecisionTreeTest.IsInst _), _) as edge :: edges, dflt  ->
-        TDSwitch(expr, [edge], Some (BuildSwitch None g expr edges dflt m), m)
+        // After an IsNull test, in the fallthrough branch (Some), we know the value is not null
+        let nullFiltered = match edge with TCase(DecisionTreeTest.IsNull, _) -> true | _ -> isNullFiltered
+        TDSwitch(expr, [edge], Some (BuildSwitch None g nullFiltered expr edges dflt m), m)
 
     // All these should also always have default cases
     | TCase(DecisionTreeTest.Const ConstNeedsDefaultCase, _) :: _, None ->
@@ -799,7 +800,17 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
                     match discrim with
                     | DecisionTreeTest.ArrayLength(n, _)       ->
                         let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
-                        mkLetBind m bind (mkLazyAnd g m (mkNonNullTest g m vExpr) (mkILAsmCeq g m (mkLdlen g m vExpr) (mkInt g m n)))
+                        // Skip null check if we're in a null-filtered context
+                        let test = mkILAsmCeq g m (mkLdlen g m vExpr) (mkInt g m n)
+                        let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
+                        mkLetBind m bind finalTest
+                    | DecisionTreeTest.Const (Const.String "")  ->
+                        // Optimize empty string check to use null-safe length check
+                        let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
+                        let test = mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)
+                        // Skip null check if we're in a null-filtered context
+                        let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
+                        mkLetBind m bind finalTest
                     | DecisionTreeTest.Const (Const.String _ as c)  ->
                         mkCallEqualsOperator g m g.string_ty testexpr (Expr.Const (c, m, g.string_ty))
                     | DecisionTreeTest.Const (Const.Decimal _ as c)  ->
@@ -1152,7 +1163,7 @@ let CompilePatternBasic
                     // OK, build the whole tree and whack on the binding if any
                     let finalDecisionTree =
                         let inpExprToSwitch = (match inpExprOpt with Some vExpr -> vExpr | None -> GetSubExprOfInput subexpr)
-                        let tree = BuildSwitch inpExprOpt g inpExprToSwitch simulSetOfCases defaultTreeOpt mMatch
+                        let tree = BuildSwitch inpExprOpt g false inpExprToSwitch simulSetOfCases defaultTreeOpt mMatch
                         match bindOpt with
                         | None -> tree
                         | Some bind -> TDBind (bind, tree)
