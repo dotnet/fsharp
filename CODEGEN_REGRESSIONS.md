@@ -26,6 +26,16 @@ This document tracks known code generation bugs in the F# compiler that have doc
 | [#16565](#issue-16565) | DefaultAugmentation(false) duplicate entry | Compile Error | IlxGen.fs | Low |
 | [#16546](#issue-16546) | Debug build recursive reference null | Wrong Behavior | IlxGen.fs | Medium |
 | [#16378](#issue-16378) | DU logging allocations | Performance | IlxGen.fs | Low |
+| [#16362](#issue-16362) | Extension methods generate C# incompatible names | C# Interop | IlxGen.fs | Low |
+| [#16292](#issue-16292) | Debug SRTP mutable struct incorrect codegen | Wrong Behavior | IlxGen.fs | Medium |
+| [#16245](#issue-16245) | Span IL gen produces 2 get_Item calls | Performance | IlxGen.fs | Low |
+| [#16037](#issue-16037) | Tuple pattern in lambda suboptimal | Performance | Optimizer.fs | Low |
+| [#15627](#issue-15627) | Async before EntryPoint hangs program | Wrong Behavior | IlxGen.fs | Medium |
+| [#15467](#issue-15467) | Include language version in metadata | Feature Request | ilwrite.fs | Low |
+| [#15352](#issue-15352) | User code gets CompilerGeneratedAttribute | Incorrect Attribute | IlxGen.fs | Low |
+| [#15326](#issue-15326) | InlineIfLambda delegates not inlined | Optimization | Optimizer.fs | Low |
+| [#15092](#issue-15092) | DebuggerProxies in release builds | Feature Request | IlxGen.fs | Low |
+| [#14712](#issue-14712) | Signature generation uses System.Int32 | Cosmetic | NicePrint.fs | Low |
 
 ---
 
@@ -903,6 +913,404 @@ When F# DU values are boxed for logging methods that accept `obj`, the runtime u
 ### Risks
 - Low: Performance improvement with no semantic change
 - May require changes to how DUs implement IFormattable or similar
+
+---
+
+## Issue #16362
+
+**Title:** Extension methods with CompiledName generate C# incompatible names
+
+**Link:** https://github.com/dotnet/fsharp/issues/16362
+
+**Category:** C# Interop Issue
+
+### Minimal Repro
+
+```fsharp
+type Exception with
+    member ex.Reraise() = raise ex
+```
+
+### Expected Behavior
+Extension method generates a C#-compatible name, or emits a warning suggesting to use `[<CompiledName>]`.
+
+### Actual Behavior
+Generated extension method name is "Exception.Reraise" which contains a dot - not valid C# syntax and doesn't appear in C# autocomplete.
+
+### Test Location
+`CodeGenRegressions.fs` → `Issue_16362_ExtensionMethodCompiledName`
+
+### Analysis
+F# style extension methods generate compiled names using the pattern `TypeName.MethodName`, but the dot character is not valid in C# method identifiers, breaking interop.
+
+### Fix Location
+- `src/Compiler/CodeGen/IlxGen.fs` - extension method naming
+
+### Risks
+- Low: Could generate different names or emit a warning
+- Workaround exists: use `[<CompiledName>]` attribute
+
+---
+
+## Issue #16292
+
+**Title:** Incorrect codegen for Debug build with SRTP and mutable struct
+
+**Link:** https://github.com/dotnet/fsharp/issues/16292
+
+**Category:** Wrong Runtime Behavior (Debug only)
+
+### Minimal Repro
+
+```fsharp
+let inline forEach<'C, 'E, 'I
+                        when 'C: (member GetEnumerator: unit -> 'I)
+                        and  'I: struct
+                        and  'I: (member MoveNext: unit -> bool)
+                        and  'I: (member Current : 'E) >
+        ([<InlineIfLambda>] f: 'E -> unit) (container: 'C) =
+    let mutable iter = container.GetEnumerator()
+    while iter.MoveNext() do
+        f iter.Current
+
+let showIt (buffer: ReadOnlySequence<byte>) =
+    buffer |> forEach (fun segment -> ())
+```
+
+### Expected Behavior
+Both Debug and Release builds iterate correctly.
+
+### Actual Behavior
+In Debug builds, the struct enumerator is copied in each loop iteration, so `MoveNext()` mutates the copy instead of the original. The loop either hangs (infinite) or produces wrong results.
+
+### Test Location
+`CodeGenRegressions.fs` → `Issue_16292_SrtpDebugMutableStructEnumerator`
+
+### Analysis
+The Debug codegen creates an additional local for the enumerator and reinitializes it each iteration from the original (unmutated) copy. This pattern is common with `ReadOnlySequence<T>` and other BCL types.
+
+### Fix Location
+- `src/Compiler/CodeGen/IlxGen.fs` - mutable struct SRTP codegen in debug mode
+
+### Risks
+- Medium: Debug/Release behavior difference is critical
+- Workaround: Use Release mode or avoid SRTP with mutable structs
+
+---
+
+## Issue #16245
+
+**Title:** Span IL gen produces 2 get_Item calls
+
+**Link:** https://github.com/dotnet/fsharp/issues/16245
+
+**Category:** Performance (Suboptimal IL)
+
+### Minimal Repro
+
+```fsharp
+let incrementSpan (span: Span<byte>) =
+    for i = 0 to span.Length - 1 do
+        span[i] <- span[i] + 1uy
+```
+
+### Expected Behavior
+Single `get_Item` call, add, single `set_Item` call.
+
+### Actual Behavior
+Two `System.Span`1::get_Item(int32)` method calls are generated.
+
+### Test Location
+`CodeGenRegressions.fs` → `Issue_16245_SpanDoubleGetItem`
+
+### Analysis
+When incrementing a span element, the compiler reads the element once for the right side of the assignment and once for the address to store to. Should instead use a single ref and modify in place.
+
+### Fix Location
+- `src/Compiler/CodeGen/IlxGen.fs` - Span indexer codegen
+
+### Risks
+- Low: Performance improvement only
+- Workaround: Use `incv &span[i]` pattern
+
+---
+
+## Issue #16037
+
+**Title:** Suboptimal code generated when pattern matching tuple in lambda parameter
+
+**Link:** https://github.com/dotnet/fsharp/issues/16037
+
+**Category:** Performance (Extra Allocations)
+
+### Minimal Repro
+
+```fsharp
+let data = Map.ofList [ "1", (true, 1) ]
+
+// Suboptimal - 2 FSharpFunc classes, 136 bytes allocated
+let foldWithPattern () =
+    (data, []) ||> Map.foldBack (fun _ (x, _) state -> x :: state)
+
+// Optimal - 1 FSharpFunc class, 64 bytes allocated
+let foldWithFst () =
+    (data, []) ||> Map.foldBack (fun _ v state -> fst v :: state)
+```
+
+### Expected Behavior
+Both patterns should generate equivalent code with similar allocation.
+
+### Actual Behavior
+Pattern matching in lambda parameter generates extra closure classes, ~50% slower with 2x memory allocation.
+
+### Test Location
+`CodeGenRegressions.fs` → `Issue_16037_TuplePatternLambdaSuboptimal`
+
+### Analysis
+When pattern matching in a lambda parameter, the compiler generates an intermediate wrapper function instead of direct tuple element access.
+
+### Fix Location
+- `src/Compiler/Optimize/Optimizer.fs` - lambda pattern optimization
+
+### Risks
+- Low: Pure optimization, no semantic change
+- Workaround: Use `fst`/`snd` or match in function body
+
+---
+
+## Issue #15627
+
+**Title:** Program stuck when using async/task before EntryPoint
+
+**Link:** https://github.com/dotnet/fsharp/issues/15627
+
+**Category:** Wrong Runtime Behavior (Hang)
+
+### Minimal Repro
+
+```fsharp
+open System.IO
+
+let deployPath = Path.GetFullPath "deploy"
+
+printfn "1"
+
+async {
+     printfn "2 %s" deployPath
+}
+|> Async.RunSynchronously
+
+[<EntryPoint>]
+let main args =
+    printfn "3"
+    0
+```
+
+### Expected Behavior
+Prints 1, 2, 3 and exits.
+
+### Actual Behavior
+Prints 1, then hangs indefinitely. The async never completes.
+
+### Test Location
+`CodeGenRegressions.fs` → `Issue_15627_AsyncBeforeEntryPointHangs`
+
+### Analysis
+When there's an `[<EntryPoint>]` function, module-level initialization including async operations may deadlock due to module initialization ordering and threading issues.
+
+### Fix Location
+- `src/Compiler/CodeGen/IlxGen.fs` - module initialization with EntryPoint
+
+### Risks
+- Medium: Module initialization ordering is complex
+- Workaround: Move async inside EntryPoint or remove EntryPoint
+
+---
+
+## Issue #15467
+
+**Title:** Include info about language version into compiled metadata
+
+**Link:** https://github.com/dotnet/fsharp/issues/15467
+
+**Category:** Feature Request (Metadata)
+
+### Minimal Repro
+
+N/A - This is a feature request, not a bug.
+
+### Expected Behavior
+Compiled F# assemblies should include the F# language version in metadata. When an older compiler encounters a newer DLL, it can give a specific error like "Tooling must support F# 7 or higher".
+
+### Actual Behavior
+Generic pickle errors that don't tell the user what action to take.
+
+### Test Location
+`CodeGenRegressions.fs` → `Issue_15467_LanguageVersionInMetadata`
+
+### Analysis
+Each F# DLL should contain language version info in custom attributes or pickle format so older compilers can give actionable error messages.
+
+### Fix Location
+- `src/Compiler/AbstractIL/ilwrite.fs` - metadata emission
+- `src/Compiler/TypedTree/TypedTreePickle.fs` - pickle format
+
+### Risks
+- Low: Adding metadata is backward compatible
+- Improves user experience when using mixed tooling versions
+
+---
+
+## Issue #15352
+
+**Title:** Some user defined symbols started to get CompilerGeneratedAttribute
+
+**Link:** https://github.com/dotnet/fsharp/issues/15352
+
+**Category:** Incorrect Attribute
+
+### Minimal Repro
+
+```fsharp
+type T() =
+    let f x = x + 1
+```
+
+The method `f` gets `[<CompilerGenerated>]` attribute in IL, but it's user-written code.
+
+### Expected Behavior
+User-defined methods should not have `CompilerGeneratedAttribute`.
+
+### Actual Behavior
+Private let-bound functions in classes get `CompilerGeneratedAttribute`, which is misleading for debuggers and reflection tools.
+
+### Test Location
+`CodeGenRegressions.fs` → `Issue_15352_UserCodeCompilerGeneratedAttribute`
+
+### Analysis
+The attribute is probably being added because the method is "hidden" or has internal accessibility, but the semantic is wrong - it's still user-written code.
+
+### Fix Location
+- `src/Compiler/CodeGen/IlxGen.fs` - attribute generation for class members
+
+### Risks
+- Low: Removing incorrect attribute shouldn't break anything
+- May affect debugging experience (positively - debugger will step into these)
+
+---
+
+## Issue #15326
+
+**Title:** Delegates aren't getting inlined in certain cases when using InlineIfLambda
+
+**Link:** https://github.com/dotnet/fsharp/issues/15326
+
+**Category:** Optimization Regression
+
+### Minimal Repro
+
+```fsharp
+type SystemAction<'a when 'a: struct and 'a :> IConvertible> = 
+    delegate of byref<'a> -> unit
+
+let inline doAction (span: Span<'a>) ([<InlineIfLambda>] action: SystemAction<'a>) =
+    for i = 0 to span.Length - 1 do
+        let batch = &span[i]
+        action.Invoke &batch
+
+doAction (array.AsSpan()) (SystemAction(fun batch -> batch <- batch + 1))
+```
+
+### Expected Behavior
+The delegate should be inlined as it was in .NET 7 Preview 4.
+
+### Actual Behavior
+The delegate is not inlined in .NET 7 Preview 5 and later - a closure is generated.
+
+### Test Location
+`CodeGenRegressions.fs` → `Issue_15326_InlineIfLambdaDelegateRegression`
+
+### Analysis
+Regression introduced between Preview 4 and Preview 5. The `InlineIfLambda` attribute is not being respected for custom delegates with certain constraints.
+
+### Fix Location
+- `src/Compiler/Optimize/Optimizer.fs` - InlineIfLambda handling
+
+### Risks
+- Low: Restoring previous behavior
+- Marked as regression - fix should be straightforward
+
+---
+
+## Issue #15092
+
+**Title:** Should we generate DebuggerProxies in release code?
+
+**Link:** https://github.com/dotnet/fsharp/issues/15092
+
+**Category:** Feature Request (Binary Size)
+
+### Minimal Repro
+
+N/A - This is a design question about whether DebuggerProxy types should be elided in release builds.
+
+### Expected Behavior
+Consider not generating DebuggerProxy types in release builds to reduce binary size.
+
+### Actual Behavior
+DebuggerProxy types are always generated, even in optimized release builds where debugging is less common.
+
+### Test Location
+`CodeGenRegressions.fs` → `Issue_15092_DebuggerProxiesInRelease`
+
+### Analysis
+F# generates helper types for better debugging experience. In release builds, these add to binary size but may not be needed if the assembly won't be debugged.
+
+### Fix Location
+- `src/Compiler/CodeGen/IlxGen.fs` - DebuggerProxy generation
+
+### Risks
+- Low: Could be opt-in via compiler flag
+- Trade-off between binary size and production debugging capability
+
+---
+
+## Issue #14712
+
+**Title:** Signature file generation should use F# Core alias
+
+**Link:** https://github.com/dotnet/fsharp/issues/14712
+
+**Category:** Cosmetic (Signature Files)
+
+### Minimal Repro
+
+```fsharp
+type System.Int32 with
+    member i.PlusPlus () = i + 1
+    member i.PlusPlusPlus () : int = i + 1 + 1
+```
+
+Generates signature with `System.Int32` for `PlusPlus` but `int` for `PlusPlusPlus`.
+
+### Expected Behavior
+Generated signature files should consistently use F# type aliases (`int`, `string`, etc.) instead of BCL names (`System.Int32`, `System.String`).
+
+### Actual Behavior
+Inferred types use BCL names, explicit type annotations use F# aliases.
+
+### Test Location
+`CodeGenRegressions.fs` → `Issue_14712_SignatureFileTypeAlias`
+
+### Analysis
+The signature file generator doesn't normalize types to their F# aliases when printing inferred types.
+
+### Fix Location
+- `src/Compiler/Checking/NicePrint.fs` or signature file generation
+
+### Risks
+- Low: Cosmetic change only
+- Workaround: Always add explicit type annotations
 
 ---
 

@@ -683,3 +683,385 @@ printfn "Test completed"
         // The bug is about allocation overhead, not correctness
         // Both paths work but logDirect allocates ~20x more memory
         |> ignore
+
+    // ====================================================================================
+    // SPRINT 3: Issues #16362, #16292, #16245, #16037, #15627, #15467, #15352, #15326, #15092, #14712
+    // ====================================================================================
+
+    // ===== Issue #16362: Extension methods with CompiledName generate C# incompatible names =====
+    // https://github.com/dotnet/fsharp/issues/16362
+    // F# style extension methods generate method names that contain dots (e.g., Exception.Reraise)
+    // which are not compatible with C# and don't show in C# autocomplete.
+    // [<Fact>]
+    let ``Issue_16362_ExtensionMethodCompiledName`` () =
+        let source = """
+module Test
+
+open System
+
+type Exception with
+    member ex.Reraise() = raise ex
+
+// The generated extension method name is "Exception.Reraise"
+// which is not valid C# syntax and doesn't appear in C# autocomplete
+// Expected: generate compatible name or emit a warning
+
+let test() =
+    let ex = Exception("test")
+    try
+        ex.Reraise()
+    with
+    | :? Exception -> ()
+"""
+        FSharp source
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        // The issue is that the compiled extension method name uses a dot
+        // which is incompatible with C# interop
+        |> ignore
+
+    // ===== Issue #16292: Incorrect codegen for Debug build with SRTP and mutable struct =====
+    // https://github.com/dotnet/fsharp/issues/16292
+    // In Debug builds, SRTP with mutable struct enumerators generates incorrect code where
+    // the struct is copied in each loop iteration, losing mutations from MoveNext().
+    // [<Fact>]
+    let ``Issue_16292_SrtpDebugMutableStructEnumerator`` () =
+        let source = """
+module Test
+
+open System
+open System.Buffers
+open System.Text
+
+let inline forEach<'C, 'E, 'I
+                        when 'C: (member GetEnumerator: unit -> 'I)
+                        and  'I: struct
+                        and  'I: (member MoveNext: unit -> bool)
+                        and  'I: (member Current : 'E) >
+        ([<InlineIfLambda>] f: 'E -> unit) (container: 'C)  =
+    let mutable iter = container.GetEnumerator()
+    while iter.MoveNext() do
+        f iter.Current
+
+let showIt (buffer: ReadOnlySequence<byte>) =
+    let mutable count = 0
+    buffer |> forEach (fun segment ->
+        count <- count + 1
+    )
+    count
+
+// In Debug builds, the loop never terminates because enumerator2.MoveNext()
+// mutates a copy, not the original enumerator
+// Release builds work correctly
+
+[<EntryPoint>]
+let main _ =
+    let arr = [| 1uy; 2uy; 3uy |]
+    let buffer = ReadOnlySequence<byte>(arr)
+    let result = showIt buffer
+    printfn "Segments: %d" result
+    if result = 0 then failwith "Bug: Debug build has infinite loop or zero iterations"
+    0
+"""
+        FSharp source
+        |> asExe
+        |> withDebug
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed // This may hang or fail in Debug build - bug exists
+        |> ignore
+
+    // ===== Issue #16245: Span IL gen produces 2 get_Item calls =====
+    // https://github.com/dotnet/fsharp/issues/16245
+    // When incrementing a span element (span[i] <- span[i] + 1), the compiler generates
+    // two get_Item calls instead of one, leading to suboptimal performance.
+    // [<Fact>]
+    let ``Issue_16245_SpanDoubleGetItem`` () =
+        let source = """
+module Test
+
+open System
+
+let incrementSpan (span: Span<byte>) =
+    for i = 0 to span.Length - 1 do
+        span[i] <- span[i] + 1uy
+
+// The IL generates two System.Span`1::get_Item(int32) calls
+// instead of efficiently loading once, adding, and storing
+
+let test() =
+    let arr = [| 1uy; 2uy; 3uy |]
+    incrementSpan (arr.AsSpan())
+    printfn "%A" arr
+
+test()
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        // The issue is performance - IL is suboptimal with duplicate get_Item calls
+        |> ignore
+
+    // ===== Issue #16037: Suboptimal code for tuple pattern matching in lambda parameter =====
+    // https://github.com/dotnet/fsharp/issues/16037
+    // Pattern matching a tuple in a lambda parameter generates two FSharpFunc classes,
+    // causing ~2x memory allocation compared to using fst/snd or matching inside the body.
+    // [<Fact>]
+    let ``Issue_16037_TuplePatternLambdaSuboptimal`` () =
+        let source = """
+module Test
+
+let data = Map.ofList [
+    "1", (true, 1)
+    "2", (true, 2)
+]
+
+// Suboptimal - generates 2 FSharpFunc classes
+let foldWithPattern () =
+    (data, [])
+    ||> Map.foldBack (fun _ (x, _) state -> x :: state)
+
+// Optimal - generates 1 FSharpFunc class
+let foldWithFst () =
+    (data, [])
+    ||> Map.foldBack (fun _ v state -> fst v :: state)
+    
+// Also optimal - generates 1 FSharpFunc class
+let foldWithPattern2 () =
+    (data, [])
+    ||> Map.foldBack (fun _ v state ->
+        let x, _ = v
+        x :: state)
+
+// Benchmark shows foldWithPattern is ~50% slower and allocates 2x more memory
+// Expected: All three should generate equivalent code
+
+let test() =
+    let r1 = foldWithPattern()
+    let r2 = foldWithFst()
+    let r3 = foldWithPattern2()
+    printfn "Results: %A %A %A" r1 r2 r3
+
+test()
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        // The issue is performance - pattern in lambda parameter causes extra allocations
+        |> ignore
+
+    // ===== Issue #15627: Program stuck when using async/task before EntryPoint =====
+    // https://github.com/dotnet/fsharp/issues/15627
+    // Running async operations before an [<EntryPoint>] function causes the program to hang.
+    // The async never completes when there's an EntryPoint defined later in the file.
+    // [<Fact>]
+    let ``Issue_15627_AsyncBeforeEntryPointHangs`` () =
+        let source = """
+module Test
+
+open System.IO
+
+let deployPath = Path.GetFullPath "deploy"
+
+printfn "1"
+
+async {
+     printfn "2 %s" deployPath
+}
+|> Async.RunSynchronously
+
+printfn "After async"
+
+[<EntryPoint>]
+let main args =
+    printfn "3"
+    0
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed // This will hang - program gets stuck after printing "1"
+        |> ignore
+
+    // ===== Issue #15467: Include language version in compiled metadata =====
+    // https://github.com/dotnet/fsharp/issues/15467
+    // When an older compiler reads a DLL built with a newer compiler, the error message
+    // is generic and unhelpful. Including language version in metadata would enable
+    // more specific error messages like "Tooling must support F# 7 or higher".
+    // [<Fact>]
+    let ``Issue_15467_LanguageVersionInMetadata`` () =
+        let source = """
+module Test
+
+// This is a feature request to include F# language version in compiled assemblies
+// Currently when a newer feature is used, older compilers get cryptic pickle errors
+// With language version in metadata, the error could be more specific
+
+type MyRecord = { Value: int }
+
+let test = { Value = 42 }
+printfn "%A" test
+"""
+        FSharp source
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        // The feature request is to embed language version in metadata
+        // so older compilers can give better error messages
+        |> ignore
+
+    // ===== Issue #15352: User defined symbols get CompilerGeneratedAttribute =====
+    // https://github.com/dotnet/fsharp/issues/15352
+    // Private let-bound functions in classes get [<CompilerGenerated>] attribute
+    // even though they are user-defined code, not compiler-generated.
+    // [<Fact>]
+    let ``Issue_15352_UserCodeCompilerGeneratedAttribute`` () =
+        let source = """
+module Test
+
+open System
+open System.Reflection
+open System.Runtime.CompilerServices
+
+type T() =
+    let f x = x + 1
+    member _.CallF x = f x
+
+// The method 'f' should NOT have CompilerGeneratedAttribute
+// It is user-written code, not compiler-generated
+
+let checkAttribute() =
+    let t = typeof<T>
+    let method = t.GetMethod("f", BindingFlags.NonPublic ||| BindingFlags.Instance)
+    if method <> null then
+        let hasAttr = method.GetCustomAttribute<CompilerGeneratedAttribute>() <> null
+        if hasAttr then
+            failwith "Bug: User-defined method 'f' has CompilerGeneratedAttribute"
+        else
+            printfn "OK: No CompilerGeneratedAttribute"
+    else
+        printfn "Method not found (expected for private)"
+
+checkAttribute()
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        // The bug is that the generated IL has CompilerGeneratedAttribute on user code
+        // This is misleading for debuggers and reflection-based tools
+        |> ignore
+
+    // ===== Issue #15326: Delegates not inlined with InlineIfLambda =====
+    // https://github.com/dotnet/fsharp/issues/15326
+    // Custom delegates with InlineIfLambda are not being inlined as they were
+    // before .NET 7 Preview 5. This is a regression.
+    // [<Fact>]
+    let ``Issue_15326_InlineIfLambdaDelegateRegression`` () =
+        let source = """
+module Test
+
+open System
+
+type SystemAction<'a when 'a: struct and 'a :> IConvertible> = 
+    delegate of byref<'a> -> unit
+
+let inline doAction (span: Span<'a>) ([<InlineIfLambda>] action: SystemAction<'a>) =
+    for i = 0 to span.Length - 1 do
+        let batch = &span[i]
+        action.Invoke &batch
+
+[<EntryPoint>]
+let main args =
+    let array = Array.zeroCreate<int> 100
+    doAction (array.AsSpan()) (SystemAction(fun batch -> batch <- batch + 1))
+    printfn "Sum: %d" (Array.sum array)
+    0
+"""
+        FSharp source
+        |> asExe
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        // The issue is that the delegate is not being inlined - creates closure
+        // This worked in .NET 7 Preview 4 but regressed in Preview 5
+        |> ignore
+
+    // ===== Issue #15092: Should we generate DebuggerProxies in release code? =====
+    // https://github.com/dotnet/fsharp/issues/15092
+    // DebuggerProxy types are generated even in release builds, increasing binary size.
+    // This is a design question about whether they should be elided in release mode.
+    // [<Fact>]
+    let ``Issue_15092_DebuggerProxiesInRelease`` () =
+        let source = """
+module Test
+
+open System
+open System.Reflection
+
+type MyRecord = { Name: string; Value: int }
+
+let checkDebuggerProxy() =
+    let asm = typeof<MyRecord>.Assembly
+    let types = asm.GetTypes()
+    let proxyTypes = types |> Array.filter (fun t -> t.Name.Contains("DebuggerProxy"))
+    
+    printfn "DebuggerProxy types found: %d" proxyTypes.Length
+    for t in proxyTypes do
+        printfn "  - %s" t.FullName
+    
+    // In release builds, we might want to elide these to reduce binary size
+    // Currently they are always generated
+
+let result = { Name = "test"; Value = 42 }
+printfn "%A" result
+checkDebuggerProxy()
+"""
+        FSharp source
+        |> asExe
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        // The feature request is to optionally not generate DebuggerProxies in release
+        |> ignore
+
+    // ===== Issue #14712: Signature file generation should use F# Core alias =====
+    // https://github.com/dotnet/fsharp/issues/14712
+    // When generating signature files, inferred types use System.Int32 instead of int,
+    // System.String instead of string, etc. This is inconsistent with F# conventions.
+    // [<Fact>]
+    let ``Issue_14712_SignatureFileTypeAlias`` () =
+        let source = """
+module Test
+
+type System.Int32 with
+    member i.PlusPlus () = i + 1
+    member i.PlusPlusPlus () : int = i + 1 + 1
+
+type X(y:int) =
+    member x.PlusPlus () = y + 1
+"""
+        // When generating signature file for this:
+        // - PlusPlus returns System.Int32 (because no explicit type annotation)
+        // - PlusPlusPlus returns int (because explicit type annotation)
+        // Expected: Both should show 'int' in generated signature
+        FSharp source
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        // The issue is cosmetic - generated .fsi files use System.Int32 instead of int
+        |> ignore

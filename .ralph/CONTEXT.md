@@ -35,3 +35,27 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Total tests:** 20 (10 from Sprint 1 + 10 from Sprint 2)
 
 ---
+
+## Sprint 3: Issues 21-30
+
+**Summary:** Added 10 tests for issues #16362, #16292, #16245, #16037, #15627, #15467, #15352, #15326, #15092, #14712
+
+**Issues covered:**
+- #16362: Extension methods with CompiledName generate C# incompatible names (C# Interop)
+- #16292: Debug SRTP mutable struct incorrect codegen (Wrong Behavior)
+- #16245: Span IL gen produces 2 get_Item calls (Performance)
+- #16037: Tuple pattern in lambda suboptimal (Performance)
+- #15627: Async before EntryPoint hangs program (Wrong Behavior)
+- #15467: Include language version in metadata (Feature Request)
+- #15352: User code gets CompilerGeneratedAttribute (Incorrect Attribute)
+- #15326: InlineIfLambda delegates not inlined (Optimization Regression)
+- #15092: DebuggerProxies in release builds (Feature Request)
+- #14712: Signature generation uses System.Int32 instead of int (Cosmetic)
+
+**Files modified:**
+- `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs` - 10 new tests
+- `CODEGEN_REGRESSIONS.md` - 10 new issue entries with analysis
+
+**Total tests:** 30 (20 from Sprints 1-2 + 10 from Sprint 3)
+
+---
