@@ -12,7 +12,7 @@ open System.IO
 //---------------------------------------------------------------------
 // Strong name signing
 //---------------------------------------------------------------------
-[<Sealed>]
+[<NoEquality; NoComparison>]
 type ILStrongNameSigner =
     | PublicKeySigner of byte array
     | PublicKeyOptionsSigner of (byte array * bool)
