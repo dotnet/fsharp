@@ -332,56 +332,69 @@ let signerSignStreamWithKeyContainer (_: Stream) (_: keyContainerName) =
 //---------------------------------------------------------------------
 // Strong name signing
 //---------------------------------------------------------------------
-type ILStrongNameSigner =
-    | PublicKeySigner of pubkey
-    | PublicKeyOptionsSigner of pubkeyOptions
-    | KeyPair of keyPair * bool
-    | KeyContainer of keyContainerName * bool
+type internal SignerData =
+    | PublicKeySigner of byte array
+    | PublicKeyOptionsSigner of byte array * bool
+    | KeyPair of byte array * bool
+    | KeyContainer of string * bool
 
-    static member OpenPublicKeyOptions (kp, p) = PublicKeyOptionsSigner(kp, p)
-    static member ExtractPublicKey bytes = getPublicKeyForKeyPair bytes
-    static member OpenPublicKey bytes = PublicKeySigner bytes
+[<Sealed>]
+type ILStrongNameSigner private (data: SignerData) =
+
+    static member OpenPublicKeyOptions (pk, p) = 
+        ILStrongNameSigner(PublicKeyOptionsSigner(pk, p))
+
+    static member ExtractPublicKey bytes = 
+        signerGetPublicKeyForKeyPair bytes
+
+    static member OpenPublicKey bytes = 
+        ILStrongNameSigner(PublicKeySigner bytes)
+
     static member OpenKeyPairFile (bytes, ?usePublicSign) = 
-        let ups = defaultArg usePublicSign true
-        KeyPair(bytes, ups)
+        let ups = defaultArg usePublicSign false
+        ILStrongNameSigner(KeyPair(bytes, ups))
+
     static member OpenKeyContainer (s, ?usePublicSign) = 
         let ups = defaultArg usePublicSign false
-        KeyContainer(s, ups)
+        ILStrongNameSigner(KeyContainer(s, ups))
 
-    member s.IsFullySigned =
-        match s with
+    member _.IsFullySigned =
+        match data with
         | PublicKeySigner _ -> false
         | PublicKeyOptionsSigner (_, usePublicSign) -> not usePublicSign
         | KeyPair (_, usePublicSign) -> not usePublicSign
         | KeyContainer (_, usePublicSign) -> not usePublicSign
 
-    member s.PublicKey =
-        match s with
+    member _.PublicKey =
+        match data with
         | PublicKeySigner pk -> pk
         | PublicKeyOptionsSigner (pk, _) -> pk
         | KeyPair (kp, _) -> signerGetPublicKeyForKeyPair kp
         | KeyContainer (kc, _) -> signerGetPublicKeyForKeyContainer kc
 
-    member s.SignatureSize =
-        let calculatePreciseSignatureSize (pk: byte array) =
-            try
-                if pk.Length < 25 then 128 
-                else
-                    let mutable reader = BlobReader pk
-                    reader.ReadBigInteger 12 |> ignore
-                    reader.ReadBigInteger 8 |> ignore
-                    let bitLen = reader.ReadInt32()
-                    bitLen / 8
-            with _ -> 128
+    member _.SignatureSize =
+        let calculateFromRaw (pk: byte array) =
+            if pk = null || pk.Length < 25 then 128 
+            else
+                try
+                    let bitLen = 
+                        int pk.[12] 
+                        ||| (int pk.[13] <<< 8) 
+                        ||| (int pk.[14] <<< 16) 
+                        ||| (int pk.[15] <<< 24)
+                    
+                    if bitLen > 0 && bitLen % 8 = 0 then bitLen / 8 
+                    else 128
+                with _ -> 128
 
-        match s with
+        match data with
         | PublicKeySigner pk 
-        | PublicKeyOptionsSigner (pk, _) -> calculatePreciseSignatureSize pk
-        | KeyPair (kp, _) -> calculatePreciseSignatureSize (signerGetPublicKeyForKeyPair kp)
-        | KeyContainer (kc, _) -> calculatePreciseSignatureSize (signerGetPublicKeyForKeyContainer kc)
+        | PublicKeyOptionsSigner (pk, _) -> calculateFromRaw pk
+        | KeyPair (kp, _) -> calculateFromRaw kp 
+        | KeyContainer (kc, _) -> calculateFromRaw (signerGetPublicKeyForKeyContainer kc)
 
-    member s.SignStream stream =
-        match s with
+    member _.SignStream stream =
+        match data with
         | KeyPair (kp, false) -> signerSignStreamWithKeyPair stream kp
         | KeyContainer (kc, false) -> signerSignStreamWithKeyContainer stream kc
         | _ -> ()
