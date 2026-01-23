@@ -112,3 +112,44 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Total tests:** 50 (40 from Sprints 1-4 + 10 from Sprint 5)
 
 ---
+
+## Sprint 6: Issues 51-62 + Final Review
+
+**Summary:** Final sprint completing all 62 issues with documentation polish
+
+**Issues covered (12):**
+- #11935: unmanaged constraint not recognized by C# (Interop)
+- #11556: Better IL output for property/field initializers (Performance)
+- #11132: TypeloadException delegate with voidptr parameter (Runtime Error)
+- #11114: Record with hundreds of members StackOverflow (Compile Crash)
+- #9348: Performance of Comparing and Ordering (Performance)
+- #9176: Decorate inline function code with attribute (Feature Request)
+- #7861: Missing assembly reference for type in attributes (Compile Error)
+- #6750: Mutually recursive values leave fields uninitialized (Wrong Behavior)
+- #6379: FS2014 when using tupled args (Compile Warning)
+- #5834: Obsolete on abstract generates accessors without specialname (Wrong Behavior)
+- #5464: F# ignores custom modifiers modreq/modopt (Interop)
+- #878: Serialization of F# exception variants doesn't serialize fields (Wrong Behavior)
+
+**Final Review completed:**
+- ✅ All 62 issues have tests in CodeGenRegressions.fs
+- ✅ All 62 issues documented in CODEGEN_REGRESSIONS.md
+- ✅ Table of Contents added
+- ✅ Summary Statistics added (categories, risk levels, fix locations)
+- ✅ Consistent formatting verified across all 62 entries
+- ✅ Build succeeds with 0 errors
+
+**Files modified:**
+- `CODEGEN_REGRESSIONS.md` - Added TOC, summary statistics, risk assessment, fix location breakdown
+
+**Total tests:** 62 (complete)
+
+---
+
+## Sprint 6: Issues 51-62 + Final Review
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---

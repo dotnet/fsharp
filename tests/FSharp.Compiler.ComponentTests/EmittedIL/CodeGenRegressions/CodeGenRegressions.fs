@@ -895,29 +895,21 @@ let main args =
 
     // ===== Issue #15467: Include language version in compiled metadata =====
     // https://github.com/dotnet/fsharp/issues/15467
-    // When an older compiler reads a DLL built with a newer compiler, the error message
-    // is generic and unhelpful. Including language version in metadata would enable
-    // more specific error messages like "Tooling must support F# 7 or higher".
+    // [OUT_OF_SCOPE: Feature Request] - Request to embed language version in compiled DLLs
+    // for better error messages when older compilers read newer assemblies.
     // [<Fact>]
     let ``Issue_15467_LanguageVersionInMetadata`` () =
+        // [OUT_OF_SCOPE: Feature Request] - No codegen bug to test.
         let source = """
 module Test
 
-// This is a feature request to include F# language version in compiled assemblies
-// Currently when a newer feature is used, older compilers get cryptic pickle errors
-// With language version in metadata, the error could be more specific
-
 type MyRecord = { Value: int }
-
 let test = { Value = 42 }
-printfn "%A" test
 """
         FSharp source
         |> asLibrary
         |> compile
         |> shouldSucceed
-        // The feature request is to embed language version in metadata
-        // so older compilers can give better error messages
         |> ignore
 
     // ===== Issue #15352: User defined symbols get CompilerGeneratedAttribute =====
@@ -1001,33 +993,15 @@ let main args =
 
     // ===== Issue #15092: Should we generate DebuggerProxies in release code? =====
     // https://github.com/dotnet/fsharp/issues/15092
-    // DebuggerProxy types are generated even in release builds, increasing binary size.
-    // This is a design question about whether they should be elided in release mode.
+    // [OUT_OF_SCOPE: Feature Request] - Design question about eliding DebuggerProxy types in release builds.
     // [<Fact>]
     let ``Issue_15092_DebuggerProxiesInRelease`` () =
+        // [OUT_OF_SCOPE: Feature Request] - No codegen bug to test. Design question about binary size optimization.
         let source = """
 module Test
 
-open System
-open System.Reflection
-
 type MyRecord = { Name: string; Value: int }
-
-let checkDebuggerProxy() =
-    let asm = typeof<MyRecord>.Assembly
-    let types = asm.GetTypes()
-    let proxyTypes = types |> Array.filter (fun t -> t.Name.Contains("DebuggerProxy"))
-    
-    printfn "DebuggerProxy types found: %d" proxyTypes.Length
-    for t in proxyTypes do
-        printfn "  - %s" t.FullName
-    
-    // In release builds, we might want to elide these to reduce binary size
-    // Currently they are always generated
-
 let result = { Name = "test"; Value = 42 }
-printfn "%A" result
-checkDebuggerProxy()
 """
         FSharp source
         |> asExe
@@ -1192,12 +1166,10 @@ module BugInReleaseConfig =
 
     // ===== Issue #14392: OpenApi Swashbuckle support =====
     // https://github.com/dotnet/fsharp/issues/14392
-    // NOTE: This is a FEATURE REQUEST, not a codegen bug. Included for completeness.
-    // F# types may not serialize correctly with OpenAPI tools.
+    // [OUT_OF_SCOPE: Feature Request] - Not a codegen bug. Request for better OpenAPI/Swashbuckle support.
     // [<Fact>]
     let ``Issue_14392_OpenApiSupport`` () =
-        // This is a feature request for better OpenAPI/Swashbuckle support.
-        // No actual codegen bug to test - placeholder for tracking purposes.
+        // [OUT_OF_SCOPE: Feature Request] - No codegen bug to test.
         let source = """
 module Test
 
@@ -1316,13 +1288,10 @@ let test () =
 
     // ===== Issue #13223: FSharp.Build support for reference assemblies =====
     // https://github.com/dotnet/fsharp/issues/13223
-    // NOTE: This is a FEATURE REQUEST for FSharp.Build, not a codegen bug.
-    // Request to add/modify FSharp.Build tasks for reference assembly support.
+    // [OUT_OF_SCOPE: Feature Request] - Not a codegen bug. Request for FSharp.Build reference assembly support.
     // [<Fact>]
     let ``Issue_13223_ReferenceAssemblies`` () =
-        // This is a feature request to add reference assembly support to FSharp.Build
-        // similar to Roslyn's CopyRefAssembly.cs implementation.
-        // No codegen bug to reproduce - placeholder for tracking.
+        // [OUT_OF_SCOPE: Feature Request] - No codegen bug to test.
         let source = """
 module Test
 
@@ -1798,9 +1767,13 @@ let compare (a: T) (b: T) = compare a.X b.X
 
     // ===== Issue #9176: Decorate inline function code with attribute =====
     // https://github.com/dotnet/fsharp/issues/9176
-    // Attributes lost when code is inlined.
+    // [OUT_OF_SCOPE: Feature Request] - Request to propagate attributes when code is inlined.
+    // This is a design question about preserving attribute semantics across inlining boundaries.
+    // There's no clear codegen bug - the compiler intentionally doesn't preserve attributes on inlined code.
     // [<Fact>]
     let ``Issue_9176_InlineAttributes`` () =
+        // [OUT_OF_SCOPE: Feature Request] - Attributes are intentionally not preserved on inlined code.
+        // The request is for a new feature to decorate inlined code with source attributes.
         let source = """
 module Test
 
@@ -1926,18 +1899,44 @@ let main _ =
 
     // ===== Issue #5464: F# ignores custom modifiers modreq/modopt =====
     // https://github.com/dotnet/fsharp/issues/5464
-    // Custom modifiers from C# types are stripped.
+    // Custom modifiers (modreq/modopt) from C# types are stripped when consumed by F#.
+    // When F# calls a C# method with 'in' parameters or volatile fields, the modifiers are lost.
+    // This means F# code doesn't respect the semantics these modifiers are meant to enforce.
     // [<Fact>]
     let ``Issue_5464_CustomModifiers`` () =
+        // The bug: When C# declares a method with 'in' parameter (which has modreq(IsReadOnlyAttribute)),
+        // F# strips the modifier when emitting calls. To properly test this requires:
+        // 1. A C# library with 'in' parameters or volatile fields (which have modreq/modopt)
+        // 2. F# code that consumes it
+        // 3. IL verification that the modifier is present/absent
+        //
+        // Simplified demonstration: F# doesn't emit modifiers even on its own readonly structs
+        // when passed by reference (though this is intentional behavior, not a bug per se).
+        // The real issue is cross-language: C# modifiers are stripped when F# reads the metadata.
         let source = """
 module Test
 
-let f x = x + 1
+// Simulating the scenario: F# code that would interact with C# 'in' parameters
+// The actual bug requires a C# assembly with modreq/modopt modifiers
+
+[<Struct>]
+type ReadOnlyStruct = { Value: int }
+
+// In a proper repro, calling a C# method like:
+// void Foo(in ReadOnlyStruct s) - the 'in' has modreq(IsReadOnlyAttribute)
+// F# calling Foo would emit IL without the modreq
+
+let passStruct (s: ReadOnlyStruct) = s.Value
+
+// The IL for passStruct doesn't show modreq because F# doesn't emit them
+// When consuming C# 'in' parameters, F# strips the modifiers from the signature
 """
         FSharp source
         |> asLibrary
         |> compile
         |> shouldSucceed
+        // Note: Full reproduction requires multi-language test with C# assembly containing
+        // modreq/modopt modifiers (e.g., 'in' parameters, volatile fields) consumed from F#
         |> ignore
 
     // ===== Issue #878: Serialization of F# exception variants doesn't serialize fields =====

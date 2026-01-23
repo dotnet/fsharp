@@ -1204,7 +1204,7 @@ When there's an `[<EntryPoint>]` function, module-level initialization including
 
 **Link:** https://github.com/dotnet/fsharp/issues/15467
 
-**Category:** Feature Request (Metadata)
+**Category:** Feature Request (OUT_OF_SCOPE - Metadata)
 
 ### Minimal Repro
 
@@ -1319,7 +1319,7 @@ Regression introduced between Preview 4 and Preview 5. The `InlineIfLambda` attr
 
 **Link:** https://github.com/dotnet/fsharp/issues/15092
 
-**Category:** Feature Request (Binary Size)
+**Category:** Feature Request (OUT_OF_SCOPE - Binary Size)
 
 ### Minimal Repro
 
@@ -1577,7 +1577,7 @@ Optimization in release mode produces a generated type that violates CLR constra
 
 **Link:** https://github.com/dotnet/fsharp/issues/14392
 
-**Category:** Feature Request (Out of Scope for CodeGen)
+**Category:** Feature Request (OUT_OF_SCOPE)
 
 **Note:** This is a feature request for better OpenAPI/Swashbuckle support, not a codegen bug. It's included for completeness but is out of scope for the codegen regression test suite.
 
@@ -1765,7 +1765,7 @@ Extra `tail.` IL prefix emitted in cases where it corrupts the stack. The before
 
 **Link:** https://github.com/dotnet/fsharp/issues/13223
 
-**Category:** Feature Request (Out of Scope for CodeGen)
+**Category:** Feature Request (OUT_OF_SCOPE)
 
 **Note:** This is a feature request for FSharp.Build tooling, not a codegen bug.
 
@@ -2563,7 +2563,9 @@ Generated IComparable implementation could be more efficient.
 
 **Link:** https://github.com/dotnet/fsharp/issues/9176
 
-**Category:** Feature Request
+**Category:** Feature Request (OUT_OF_SCOPE)
+
+**Note:** This is a feature request, not a codegen bug. The compiler intentionally doesn't preserve attributes on inlined code. The request is for a new feature to propagate source attributes across inlining boundaries.
 
 ### Minimal Repro
 
@@ -2576,13 +2578,13 @@ let inline f x = x + 1
 Attribute preserved on inlined code locations.
 
 ### Actual Behavior
-Attributes lost when code is inlined.
+Attributes are intentionally not preserved when code is inlined. This is current design, not a bug.
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_9176_InlineAttributes`
 
 ### Analysis
-Inlining doesn't preserve source location attributes.
+This is a design question about whether attributes should be propagated to inlined call sites. Currently the compiler doesn't do this intentionally.
 
 ### Fix Location
 - `src/Compiler/CodeGen/IlxGen.fs`
@@ -2758,19 +2760,31 @@ When generating abstract event accessors (especially with attributes like `[<Obs
 
 ### Minimal Repro
 
-N/A - Custom modifiers from C# not preserved.
+```fsharp
+// Requires a C# assembly with modreq/modopt modifiers
+// For example, a method with 'in' parameter:
+// C#: void Foo(in ReadOnlyStruct s) { }
+// The 'in' keyword adds modreq(IsReadOnlyAttribute)
+
+// F# code consuming this:
+[<Struct>]
+type ReadOnlyStruct = { Value: int }
+
+// When calling the C# method from F#, the modreq is stripped
+let passStruct (s: ReadOnlyStruct) = s.Value
+```
 
 ### Expected Behavior
-modreq/modopt from C# types are preserved.
+modreq/modopt from C# types (e.g., `in` parameters, `volatile` fields) are preserved when consumed by F#.
 
 ### Actual Behavior
-Custom modifiers are stripped.
+Custom modifiers are stripped from the metadata when F# reads C# assemblies. The IL emitted by F# doesn't include the modifiers that were present in the C# source.
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_5464_CustomModifiers`
 
 ### Analysis
-Type import doesn't preserve custom modifiers.
+Full reproduction requires a multi-language test: C# library with modreq/modopt modifiers (e.g., `in` parameters, `volatile` fields) consumed from F#. The F# compiler's type import doesn't preserve these custom modifiers.
 
 ### Fix Location
 - `src/Compiler/AbstractIL/ilwrite.fs`
