@@ -153,3 +153,50 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Files touched:** Check git log for details.
 
 ---
+
+## Sprint 1: Fix
+    #878 + #5834 tests
+
+**Summary:** Completed in 3 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 2: Fix #5464 + #11556 tests
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 3: Fix #9176 +
+    #12366 + #12137 + #12139
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 4: Add OUT_OF_SCOPE markers
+
+**Summary:** Verified that all 5 feature request tests already have OUT_OF_SCOPE markers from previous work.
+
+**Issues verified:**
+- #14392: OpenApi Swashbuckle support - [OUT_OF_SCOPE: Feature Request]
+- #13223: FSharp.Build reference assemblies - [OUT_OF_SCOPE: Feature Request]  
+- #9176: Inline function attribute - [OUT_OF_SCOPE: Feature Request]
+- #15467: Include language version in metadata - [OUT_OF_SCOPE: Feature Request]
+- #15092: DebuggerProxies in release builds - [OUT_OF_SCOPE: Feature Request]
+
+**DoD verification:**
+- ✅ Build succeeds with 0 errors
+- ✅ All 5 feature request tests have [OUT_OF_SCOPE: Feature Request] markers
+- ✅ CODEGEN_REGRESSIONS.md summary table shows Feature Request | 5
+- ✅ Test file comments explain why each is not a codegen bug
+
+**Files touched:** None (work already completed in Sprint 3)
+
+---
