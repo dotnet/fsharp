@@ -59,3 +59,32 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Total tests:** 30 (20 from Sprints 1-2 + 10 from Sprint 3)
 
 ---
+
+## Sprint 4: Issues 31-40
+
+**Summary:** Improved 10 tests for issues #14707, #14706, #14508, #14492, #14392, #14321, #13468, #13447, #13223, #13218
+
+**Issues covered:**
+- #14707: Signature files become unusable with wildcards (Signature Generation)
+- #14706: Signature generation WhereTyparSubtypeOfType (Signature Generation)
+- #14508: nativeptr in interfaces leads to TypeLoadException (Runtime Error)
+- #14492: Release config TypeLoadException with inline constraints (Runtime Error)
+- #14392: OpenApi Swashbuckle support (Feature Request - OUT OF SCOPE)
+- #14321: DU constructors and IWSAM names conflict (Compile Error)
+- #13468: outref compiled as byref (Wrong IL Metadata)
+- #13447: Extra tail instruction corrupts stack (Runtime Crash)
+- #13223: FSharp.Build reference assemblies (Feature Request - OUT OF SCOPE)
+- #13218: Compilation performance 13000 members (Performance - NOT CODEGEN BUG)
+
+**Non-codegen issues noted:**
+- #14392: Feature request for OpenAPI/Swashbuckle interop
+- #13223: Feature request for FSharp.Build reference assembly support
+- #13218: Compilation performance issue, not a codegen bug
+
+**Files modified:**
+- `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs` - 10 tests updated with accurate repros
+- `CODEGEN_REGRESSIONS.md` - 10 issue entries updated with detailed analysis
+
+**Total tests:** 62 (all issues from 6 sprints)
+
+---
