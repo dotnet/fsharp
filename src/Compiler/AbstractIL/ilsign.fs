@@ -304,16 +304,25 @@ let signatureSize (pk: byte array) =
     if pk.Length < 25 then
         raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
 
-    let mutable reader = BlobReader pk
-    reader.ReadBigInteger 12 |> ignore // Skip CLRHeader
-    reader.ReadBigInteger 8 |> ignore // Skip BlobHeader
-    let magic = reader.ReadInt32() // Read magic
+    try
+        use rsa = RSA.Create()
+        try
+            rsa.ImportParameters(RSAParametersFromBlob pk KeyType.Public)
+        with _ ->
+            rsa.ImportParameters(RSAParametersFromBlob pk KeyType.KeyPair)
+        
+        rsa.KeySize / 8
+    with _ ->
+        let mutable reader = BlobReader pk
+        reader.ReadBigInteger 12 |> ignore 
+        reader.ReadBigInteger 8 |> ignore 
+        let magic = reader.ReadInt32() 
 
-    if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then // RSAPubKey.magic
-        raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
+        if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then 
+            raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
 
-    let x = reader.ReadInt32() / 8
-    x
+        let x = reader.ReadInt32() / 8
+        x
 
 // Returns a CLR Format Blob public key
 let getPublicKeyForKeyPair keyBlob =
