@@ -198,3 +198,20 @@ The `Enumerable.Select` step broke the IQueryable chain, producing `EnumerableQu
 **Files touched:** Check git log for details.
 
 ---
+
+## Sprint 1: Mutation tests T1.1-T1.4
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 2: Nested let binding test
+   Q3.5
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---

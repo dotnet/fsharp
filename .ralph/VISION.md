@@ -120,6 +120,62 @@ TEST_UPDATE_BSL=1 dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compile
 
 ---
 
+## Remaining Work per TASKLIST.md
+
+### Completed Implementations (9 of 11 bugs fixed)
+| Issue | Status | Tests |
+|-------|--------|-------|
+| #11131 | ✅ Fixed | ✅ Has tests |
+| #15648 | ✅ Fixed (dup of #11131) | ✅ Has tests |
+| #16918 | ✅ Fixed | ✅ Has 3 tests |
+| #7885 | ✅ Fixed | ✅ Has tests |
+| #47 | ✅ Fixed | ✅ Has tests |
+| #3782 | ✅ Fixed | ✅ Has tests |
+| #15133 | ✅ Fixed (related to #3782) | ✅ Has tests |
+| #19099 | ✅ Fixed | ⚠️ Missing T1.1-T1.4 per TASKLIST |
+| #3445 | ✅ Fixed | ✅ Has tests |
+| #422 | ✅ Fixed | ✅ Has 5 tests |
+| #3845 | ⚠️ Known limitation | ✅ Documented |
+
+### TASKLIST.md Gaps to Address
+
+**Week 1 Missing Tests (T1.1-T1.4 for #19099):**
+- T1.1: VarSet test - `<@ let mutable x = 1; x <- 2; x @>`
+- T1.2: FieldSet test - mutable field assignment
+- T1.3: PropertySet test - settable property assignment
+- T1.4: Indexed PropertySet test - array index assignment
+
+**Week 1 Tests Complete (already covered):**
+- T1.5-T1.9: Anonymous record/field order tests (covered by Sprint 1)
+- T1.10-T1.11: groupBy tuple tests (covered by Sprint 3)
+
+**Week 2: Implementation Gaps (I2.1-I2.7):**
+- I2.1-I2.5: #3845 - Already documented as known limitation requiring compiler warning
+- I2.6-I2.7: Field order verification - Already fixed in Sprint 1
+
+**Week 3: Code Quality (Q3.1-Q3.6):**
+- Q3.1-Q3.3: Hash combining deduplication - LOW PRIORITY (code works, 8 copies is acceptable for sealed internal types)
+- Q3.4: Comment explaining let-binding inlining - Would be nice but not critical
+- Q3.5: Deeply nested let test - Should add
+- Q3.6: Perf verification - Not blocking
+
+**Week 4: Compatibility Verification (C4.1-C4.9):**
+- C4.1: ILVerify - Should run
+- C4.2-C4.3: Binary compat - AnonymousObject API is documented
+- C4.4-C4.6: Source compat - Already tested in Sprint 4
+- C4.7-C4.9: Regression tests - Need full test run
+
+**Week 5: Integration & Polish (D5.1-V5.7):**
+- D5.1: Release notes - ✅ Complete for all fixed issues
+- D5.2: Code comments - Would be nice
+- D5.3: DEVGUIDE update - Not needed (no architecture change)
+- V5.4: Coding standards - Should verify
+- V5.5: Formatting - Should run
+- V5.6: Surface area baselines - Already updated
+- V5.7: Issue reference in tests - ✅ All issues have tests referencing issue numbers
+
+---
+
 ## Sprint Execution Notes
 
 Each sprint produces a **tested, verified increment**. The agent will:
