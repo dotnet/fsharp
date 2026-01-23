@@ -169,6 +169,28 @@ The `Enumerable.Select` step broke the IQueryable chain, producing `EnumerableQu
 
 ---
 
+## Sprint: Mutation Tests T1.1-T1.4 for Issue #19099
+
+**Summary:** Added 4 missing EvaluateQuotation tests for mutation patterns per TASKLIST.md.
+
+**Issue:** #19099
+
+**Tests added:**
+- T1.1: `EvaluateQuotation handles VarSet - issue 19099` - Tests `<@ let mutable x = 1 in x <- 2; x @>` returns 2
+- T1.2: `EvaluateQuotation handles FieldSet - issue 19099` - Tests mutable field assignment
+- T1.3: `EvaluateQuotation handles PropertySet - issue 19099` - Tests settable property assignment  
+- T1.4: `EvaluateQuotation handles indexed PropertySet - issue 19099` - Tests `arr.[0] <- value`
+
+**Fix required:** Modified `Let` handling in `ConvExprToLinqInContext` (Linq.fs) to create a proper `ParameterExpression` for mutable variables instead of inlining. This allows `VarSet` (x <- value) to work since LINQ's `Expression.Assign` requires a writeable left-hand side.
+
+**Files touched:**
+- src/FSharp.Core/Linq.fs (modified Let case for mutable variables)
+- tests/FSharp.Core.UnitTests/FSharp.Core/Microsoft.FSharp.Linq/QueryTests.fs (4 new tests + helper types)
+
+**Test results:** 7 EvaluateQuotation tests pass (3 existing + 4 new)
+
+---
+
 ## Sprint 5: EvaluateQuotation and edge cases
 
 **Summary:** Completed in 4 iterations
