@@ -3849,7 +3849,7 @@ module Array =
 
         /// <summary>Returns the greatest of all elements of the array, compared via Operators.max.</summary>
         ///
-    /// <remarks>Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
+        /// <remarks>Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
         ///
         /// <param name="array">The input array.</param>
         ///
@@ -3880,7 +3880,7 @@ module Array =
 
         /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
         ///
-    /// <remarks>Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
+        /// <remarks>Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
         ///
         /// <param name="projection">The function to transform the elements into a type supporting comparison.</param>
         /// <param name="array">The input array.</param>
@@ -3912,7 +3912,7 @@ module Array =
 
         /// <summary>Returns the smallest of all elements of the array, compared via Operators.min.</summary>
         ///
-    /// <remarks>Throws ArgumentException for empty arrays This is an O(n) operation, where n is the length of the array.</remarks>
+        /// <remarks>Throws ArgumentException for empty arrays This is an O(n) operation, where n is the length of the array.</remarks>
         ///
         /// <param name="array">The input array.</param>
         ///
@@ -3943,7 +3943,7 @@ module Array =
 
         /// <summary>Returns the lowest of all elements of the array, compared via Operators.min on the function result.</summary>
         ///
-    /// <remarks>Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
+        /// <remarks>Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
         ///
         /// <param name="projection">The function to transform the elements into a type supporting comparison.</param>
         /// <param name="array">The input array.</param>
@@ -3989,8 +3989,8 @@ module Array =
         /// </code>
         /// Evaluates to <c>11</c>.
         /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the array.</remarks>
+        ///
+        /// <remarks>This is an O(n) operation, where n is the length of the array.</remarks>
         [<CompiledName("Sum")>]
         val inline sum:
             array: ^T array -> ^T when ^T: (static member (+): ^T * ^T -> ^T) and ^T: (static member Zero: ^T)
@@ -4464,8 +4464,8 @@ module Array =
         /// </code>
         /// After evaluation <c>array</c> contains <c>[| 1; 1; 3; 4; 6; 8 |]</c>.
         /// </example>
-    ///
-    /// <remarks>This is an O(n log n) operation, modifying the array in place.</remarks>
+        ///
+        /// <remarks>This is an O(n log n) operation, modifying the array in place.</remarks>
         [<CompiledName("SortInPlace")>]
         val sortInPlace: array: 'T array -> unit when 'T: comparison
 
