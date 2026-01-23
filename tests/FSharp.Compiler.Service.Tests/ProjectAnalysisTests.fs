@@ -2161,9 +2161,11 @@ let ``Test Project12 all symbols`` () =
             ("val op_Range", "(..)", "file1", ((5, 28), (5, 30)), [], ["val"]);
             ("val i", "i", "file1", ((5, 21), (5, 22)), ["defn"], []);
             ("val op_Equality", "(=)", "file1", ((6, 26), (6, 27)), [], ["val"]);
-            ("val i", "i", "file1", ((6, 24), (6, 25)), [], []);
-            ("val i", "i", "file1", ((7, 25), (7, 26)), [], []);
-            ("val i", "i", "file1", ((7, 27), (7, 28)), [], []);
+            // Note: Query variable usages in where/select lambdas are now marked as
+            // compiler-generated to suppress false FS1182 warnings. See Issue #422 fix.
+            ("val i", "i", "file1", ((6, 24), (6, 25)), [], ["compgen"]);
+            ("val i", "i", "file1", ((7, 25), (7, 26)), [], ["compgen"]);
+            ("val i", "i", "file1", ((7, 27), (7, 28)), [], ["compgen"]);
             ("val x2", "x2", "file1", ((5, 4), (5, 6)), ["defn"], ["val"]);
             ("ComputationExpressions", "ComputationExpressions", "file1",
              ((2, 7), (2, 29)), ["defn"], ["module"])|]

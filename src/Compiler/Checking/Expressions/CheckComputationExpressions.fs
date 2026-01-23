@@ -123,10 +123,30 @@ let mkSimplePatForVarSpace m (patvs: Val list) =
     let spats =
         match patvs with
         | [] -> []
-        | [ v ] -> [ mkSynSimplePatVar false v.Id ]
-        | vs -> vs |> List.map (fun v -> mkSynSimplePatVar false v.Id)
+        // Use mkSynCompGenSimplePatVar to mark these synthetic lambda parameters as compiler-generated.
+        // This prevents false FS1182 warnings for query variables that are logically used in query clauses.
+        // See Issue #422.
+        | [ v ] -> [ mkSynCompGenSimplePatVar v.Id ]
+        | vs -> vs |> List.map (fun v -> mkSynCompGenSimplePatVar v.Id)
 
     SynSimplePats.SimplePats(spats, [], m)
+
+/// Mark all SynSimplePat.Id nodes in a SynSimplePats as compiler-generated.
+/// This is used to prevent false FS1182 warnings for join/groupJoin/zip patterns
+/// that are used in synthetic lambdas for key selectors.
+let rec markSimplePatAsCompilerGenerated (pat: SynSimplePat) =
+    match pat with
+    | SynSimplePat.Id(ident, altNameRefCell, _isCompilerGenerated, isThisVal, isOptional, range) ->
+        SynSimplePat.Id(ident, altNameRefCell, true, isThisVal, isOptional, range)
+    | SynSimplePat.Typed(p, ty, range) ->
+        SynSimplePat.Typed(markSimplePatAsCompilerGenerated p, ty, range)
+    | SynSimplePat.Attrib(p, attribs, range) ->
+        SynSimplePat.Attrib(markSimplePatAsCompilerGenerated p, attribs, range)
+
+let markSimplePatsAsCompilerGenerated (pats: SynSimplePats) =
+    match pats with
+    | SynSimplePats.SimplePats(patList, commaRanges, range) ->
+        SynSimplePats.SimplePats(patList |> List.map markSimplePatAsCompilerGenerated, commaRanges, range)
 
 let mkPatForVarSpace m (patvs: Val list) =
     match patvs with
@@ -1063,10 +1083,12 @@ let rec TryTranslateComputationExpression
                     | None -> varSpace
 
                 let firstSourceSimplePats, later1 =
-                    SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat
+                    let pats, later = SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat
+                    markSimplePatsAsCompilerGenerated pats, later
 
                 let secondSourceSimplePats, later2 =
-                    SimplePatsOfPat cenv.synArgNameGenerator secondSourcePat
+                    let pats, later = SimplePatsOfPat cenv.synArgNameGenerator secondSourcePat
+                    markSimplePatsAsCompilerGenerated pats, later
 
                 if Option.isSome later1 then
                     errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, firstSourcePat.Range))
@@ -1152,7 +1174,8 @@ let rec TryTranslateComputationExpression
                         // groupJoin
                         | Some secondResultPat, Some relExpr when customOperationIsLikeGroupJoin ceenv nm ->
                             let secondResultSimplePats, later3 =
-                                SimplePatsOfPat cenv.synArgNameGenerator secondResultPat
+                                let pats, later = SimplePatsOfPat cenv.synArgNameGenerator secondResultPat
+                                markSimplePatsAsCompilerGenerated pats, later
 
                             if Option.isSome later3 then
                                 errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, secondResultPat.Range))
