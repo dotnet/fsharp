@@ -322,7 +322,7 @@ let signerSignStreamWithKeyPair stream keyBlob = signStream stream keyBlob
 
 let failWithContainerSigningUnsupportedOnThisPlatform () =
     failwith (FSComp.SR.containerSigningUnsupportedOnThisPlatform () |> snd)
-
+    
 //---------------------------------------------------------------------
 // Strong name signing
 //---------------------------------------------------------------------
@@ -333,6 +333,8 @@ type ILStrongNameSigner =
     | KeyContainer of keyContainerName * bool
 
     static member OpenPublicKeyOptions (kp, p) = PublicKeyOptionsSigner(kp, p)
+
+    static member ExtractPublicKey bytes = getPublicKeyForKeyPair bytes
     
     static member OpenPublicKey bytes = PublicKeySigner bytes
     
