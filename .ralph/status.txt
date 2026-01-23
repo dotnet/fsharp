@@ -1,15 +1,20 @@
-Updated: 2026-01-23 19:51:21
-Elapsed: 00:08:54
+Updated: 2026-01-23 21:07:26
+Elapsed: 00:12:19
 Message: Sprint 1: Implement iteration 2
 
 Product Backlog:
-  [1] Fix
-    #878 + #5834 tests: Running Implement iter 2 [DoD: 5 items] [8.9min...]
-  [2] Fix #5464 + #11556 tests: Todo [DoD: 5 items]
-  [3] Fix #9176 +
-    #12366 + #12137 + #12139: Todo [DoD: 5 items]
-  [4] Add OUT_OF_SCOPE markers: Todo [DoD: 4 items]
-  [5] Verify 10 tests + final sync: Todo [DoD: 5 items]
+  [1] Fix #18319 Literal box: Running Implement iter 2 [DoD: 5 items] [12.3min...]
+  [2] Fix #18956 Decimal debug: Todo [DoD: 5 items]
+  [3] Fix #18140
+   Callvirt valuetype: Todo [DoD: 5 items]
+  [4] Fix #17692 Param naming: Todo [DoD: 5 items]
+  [5] Fix #18815 Extension names: Todo [DoD: 5 items]
+  [6] Handle feature requests: Todo [DoD: 5 items]
+  [7] Fix #16565 DefaultAugmentation: Todo [DoD: 5 items]
+  [8] Fix #18868
+   CallerFilePath: Todo [DoD: 5 items]
+  [9] Fix #18125 StructLayout: Todo [DoD: 5 items]
+  [10] Assess remaining issues: Todo [DoD: 4 items]
 
-Agent PID: 20849
-Agent Started: 19:47:59
+Agent PID: 37322
+Agent Started: 21:04:03

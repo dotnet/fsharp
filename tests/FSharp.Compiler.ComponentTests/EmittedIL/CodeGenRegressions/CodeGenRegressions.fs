@@ -335,7 +335,8 @@ printfn "Test placeholder for Issue 18374 - requires inline IL for full repro"
     // https://github.com/dotnet/fsharp/issues/18319
     // Using a constant expression upcasted to a less-specific type (e.g., ValueType) generates
     // IL that's missing the box instruction, causing InvalidProgramException at runtime.
-    // [<Fact>]
+    // UPDATE: Fixed by adding box instruction emission for literal upcasts. Test uncommented, now passes.
+    [<Fact>]
     let ``Issue_18319_LiteralUpcastMissingBox`` () =
         let source = """
 module Test
@@ -353,7 +354,7 @@ let main _ =
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // This will fail with InvalidProgramException - missing box instruction
+        |> shouldSucceed
         |> ignore
 
     // ===== Issue #18263: DU .Is* properties causing compile time error =====

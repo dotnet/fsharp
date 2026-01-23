@@ -545,6 +545,8 @@ F# catches `System.Object` but then unconditionally casts to `Exception`, which 
 
 **Category:** Invalid IL (InvalidProgramException)
 
+**Status:** ✅ FIXED
+
 ### Minimal Repro
 
 ```fsharp
@@ -577,6 +579,9 @@ When a literal value is assigned to a variable of a less-specific type (e.g., `i
 ### Risks
 - Low: Fix should emit box instruction when literal type differs from declared type
 - Alternative: Disallow such upcasts in literal expressions at compile time
+
+### Fix Applied
+* **UPDATE:** Fixed by adding box instruction emission for literal upcasts in `GenConstant`. When the declared type is a reference type (e.g., `System.ValueType`, `System.Object`) but the constant is a value type, the compiler now emits a `box` instruction after loading the constant value. Test uncommented, now passes.
 
 ---
 

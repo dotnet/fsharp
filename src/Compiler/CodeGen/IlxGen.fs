@@ -3320,36 +3320,64 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
         match TryEliminateDesugaredConstants g m c with
         | Some e -> GenExpr cenv cgbuf eenv e Continue
         | None ->
-            let emitInt64Constant i =
+            // Get the underlying IL type of the constant value for boxing purposes
+            // See https://github.com/dotnet/fsharp/issues/18319
+            let underlyingIlTyOpt =
+                match c with
+                | Const.Bool _ -> Some g.ilg.typ_Bool
+                | Const.SByte _ -> Some g.ilg.typ_SByte
+                | Const.Int16 _ -> Some g.ilg.typ_Int16
+                | Const.Int32 _ -> Some g.ilg.typ_Int32
+                | Const.Int64 _ -> Some g.ilg.typ_Int64
+                | Const.IntPtr _ -> Some g.ilg.typ_IntPtr
+                | Const.Byte _ -> Some g.ilg.typ_Byte
+                | Const.UInt16 _ -> Some g.ilg.typ_UInt16
+                | Const.UInt32 _ -> Some g.ilg.typ_UInt32
+                | Const.UInt64 _ -> Some g.ilg.typ_UInt64
+                | Const.UIntPtr _ -> Some g.ilg.typ_UIntPtr
+                | Const.Double _ -> Some g.ilg.typ_Double
+                | Const.Single _ -> Some g.ilg.typ_Single
+                | Const.Char _ -> Some g.ilg.typ_Char
+                | Const.String _ | Const.Unit | Const.Zero | Const.Decimal _ -> None
+
+            let emitInt64Constant underlyingTy i =
                 // see https://github.com/dotnet/fsharp/pull/3620
                 // and https://github.com/dotnet/fsharp/issue/8683
                 // and https://github.com/dotnet/roslyn/blob/98f12bb/src/Compilers/Core/Portable/CodeGen/ILBuilderEmit.cs#L679
                 if i >= int64 Int32.MinValue && i <= int64 Int32.MaxValue then
-                    CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdcInt32 (int32 i); AI_conv DT_I8 ]
+                    CG.EmitInstrs cgbuf (pop 0) (Push [ underlyingTy ]) [ mkLdcInt32 (int32 i); AI_conv DT_I8 ]
                 elif i >= int64 UInt32.MinValue && i <= int64 UInt32.MaxValue then
-                    CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdcInt32 (int32 i); AI_conv DT_U8 ]
+                    CG.EmitInstrs cgbuf (pop 0) (Push [ underlyingTy ]) [ mkLdcInt32 (int32 i); AI_conv DT_U8 ]
                 else
-                    CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (iLdcInt64 i)
+                    CG.EmitInstr cgbuf (pop 0) (Push [ underlyingTy ]) (iLdcInt64 i)
 
             match c with
             | Const.Bool b -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Bool ]) (mkLdcInt32 (if b then 1 else 0))
-            | Const.SByte i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int32 i))
-            | Const.Int16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int32 i))
-            | Const.Int32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 i)
-            | Const.Int64 i -> emitInt64Constant i
-            | Const.IntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ iLdcInt64 i; AI_conv DT_I ]
-            | Const.Byte i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int32 i))
-            | Const.UInt16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int32 i))
-            | Const.UInt32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int32 i))
-            | Const.UInt64 i -> emitInt64Constant (int64 i)
-            | Const.UIntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ iLdcInt64 (int64 i); AI_conv DT_U ]
-            | Const.Double f -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (AI_ldc(DT_R8, ILConst.R8 f))
-            | Const.Single f -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (AI_ldc(DT_R4, ILConst.R4 f))
-            | Const.Char c -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int c))
+            | Const.SByte i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_SByte ]) (mkLdcInt32 (int32 i))
+            | Const.Int16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int16 ]) (mkLdcInt32 (int32 i))
+            | Const.Int32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 i)
+            | Const.Int64 i -> emitInt64Constant g.ilg.typ_Int64 i
+            | Const.IntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) [ iLdcInt64 i; AI_conv DT_I ]
+            | Const.Byte i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Byte ]) (mkLdcInt32 (int32 i))
+            | Const.UInt16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_UInt16 ]) (mkLdcInt32 (int32 i))
+            | Const.UInt32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_UInt32 ]) (mkLdcInt32 (int32 i))
+            | Const.UInt64 i -> emitInt64Constant g.ilg.typ_UInt64 (int64 i)
+            | Const.UIntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ g.ilg.typ_UIntPtr ]) [ iLdcInt64 (int64 i); AI_conv DT_U ]
+            | Const.Double f -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Double ]) (AI_ldc(DT_R8, ILConst.R8 f))
+            | Const.Single f -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Single ]) (AI_ldc(DT_R4, ILConst.R4 f))
+            | Const.Char c -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Char ]) (mkLdcInt32 (int c))
             | Const.String s -> GenString cenv cgbuf s
             | Const.Unit -> GenUnit cenv eenv m cgbuf
             | Const.Zero -> GenDefaultValue cenv cgbuf eenv (ty, m)
             | Const.Decimal _ -> failwith "unreachable"
+
+            // Box if the declared type is a reference type (e.g., ValueType, Object) 
+            // but the constant is a value type. See https://github.com/dotnet/fsharp/issues/18319
+            match underlyingIlTyOpt, ilTy with
+            | Some _, ILType.Value _ -> ()  // No boxing needed, declared type is also a value type
+            | Some underlyingIlTy, _ ->
+                CG.EmitInstr cgbuf (pop 1) (Push [ ilTy ]) (I_box underlyingIlTy)
+            | None, _ -> ()
 
         GenSequel cenv eenv.cloc cgbuf sequel
     | Some sq ->

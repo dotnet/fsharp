@@ -200,3 +200,44 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Files touched:** None (work already completed in Sprint 3)
 
 ---
+
+## Sprint 4: Add OUT_OF_SCOPE markers
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 5: Verify 10 tests + final sync
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 1 (Bugfix): Fix Issue #18319 - Literal upcast missing box instruction
+
+**Summary:** Fixed the first codegen bug. When a literal value is assigned to a less-specific type (e.g., `int` to `ValueType`), the compiler now correctly emits a `box` instruction.
+
+**Fix applied:**
+- Modified `src/Compiler/CodeGen/IlxGen.fs` in `GenConstant` function
+- Added logic to track the underlying IL type of constant values
+- After emitting the constant, if the declared type is a reference type (e.g., ValueType, Object) but the constant is a value type, emit a `box` instruction
+
+**DoD Verification:**
+- ✅ Build succeeds with 0 errors
+- ✅ Issue_18319_LiteralUpcastMissingBox test passes when uncommented
+- ✅ Full CodeGenRegressions test suite builds
+- ✅ CODEGEN_REGRESSIONS.md updated with fix note
+- ✅ No regressions (972 EmittedIL tests passed, 0 failed, 2 skipped)
+
+**Files modified:**
+- `src/Compiler/CodeGen/IlxGen.fs` - Added box instruction emission for literal upcasts
+- `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs` - Uncommented [<Fact>] for Issue_18319
+- `CODEGEN_REGRESSIONS.md` - Updated with fix note
+
+**Progress:** 1 of 62 tests fixed
+
+---

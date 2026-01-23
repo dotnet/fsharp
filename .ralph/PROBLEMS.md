@@ -46,3 +46,15 @@
       - `#5464` - Still just `let f x = x + 1` with no IL check for modreq/modopt
       - `#9176` - Still just `let inline f x = x + 1` with no marker/explanation
 
+## Subtask 1 - Implement iteration 1 (2026-01-23 21:04:03)
+-    **VERIFY_FAILED**
+
+   The task is not complete. According to VISION.md, all 62 codegen regression tests should have
+   their `[<Fact>]` attributes uncommented after being fixed. Currently:
+   - 62 tests remain with `// [<Fact>]` (commented out)
+   - Only 1 test has `[<Fact>]` uncommented
+
+   No progress has been made on fixing the codegen bugs - the task is at the starting point as
+   described in "Current State" section of VISION.md.
+
+

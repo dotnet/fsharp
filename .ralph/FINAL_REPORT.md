@@ -1,80 +1,114 @@
 # Final Assessment Report
 
-_Final Update: 2026-01-23 19:20:00_
+_Generated: 2026-01-23 20:35:08_
 
-## ✅ COMPLETE - 100% Requirements Satisfied
+● Now let me verify the build compiles successfully and check for OUT_OF_SCOPE markers:
 
-All Definition of Done (DoD) criteria have been met:
+● Now let me check the 8 stub tests identified in the VISION document to see if they are now
+   actual reproductions:
 
-### DoD Verification
+● Now let me spot check the CODEGEN_REGRESSIONS.md format for a few issues:
 
-| Criterion | Status |
-|-----------|--------|
-| Build succeeds with 0 errors for ComponentTests | ✅ PASSED |
-| 10 representative tests verified | ✅ PASSED |
-| All 62 issues have matching tests | ✅ PASSED (62 tests, 63 `[<Fact>]`) |
-| CODEGEN_REGRESSIONS.md and CodeGenRegressions.fs consistent | ✅ PASSED |
-| FINAL_REPORT.md shows 100% completion | ✅ THIS FILE |
+● Now let me verify consistency: do all 62 issues in CODEGEN_REGRESSIONS.md have matching tests?
 
-### Test Suite Summary
+● Wait, the diff output looks wrong. Let me check again:
 
-| Metric | Count |
-|--------|-------|
-| Total Issues Documented | 62 |
-| Test Functions in CodeGenRegressions.fs | 62 |
-| Commented `[<Fact>]` Attributes | 63 (Issue 18263 has 2 test paths) |
-| Test Location Sections in Documentation | 62 |
-| OUT_OF_SCOPE Feature Requests | 5 |
+● Both doc and tests have identical 62 issues. Now let me check for any gaps in the VISION
+   requirements:
 
-### 10 Representative Tests Verified
+● Let me now assess the stub tests more critically - the VISION document identified 8 stub tests
+   that needed "real reproductions":
 
-| # | Category | Issue | Test Function | Verification |
-|---|----------|-------|---------------|--------------|
-| 1 | Runtime Crash | #19075 | `Issue_19075_ConstrainedCallsCrash` | ✅ Has SRTP+IDisposable pattern, would segfault |
-| 2 | Runtime Crash | #13447 | `Issue_13447_TailInstructionCorruption` | ✅ Has [<Struct>] Result, tail. corruption |
-| 3 | Invalid IL | #18140 | `Issue_18140_CallvirtOnValueType` | ✅ Struct IEqualityComparer pattern, ILVerify error |
-| 4 | Invalid IL | #19068 | `Issue_19068_StructObjectExprByrefField` | ✅ Object expr in struct, TypeLoadException |
-| 5 | Wrong Behavior | #16546 | `Issue_16546_DebugRecursiveReferenceNull` | ✅ Mutually recursive lets, NullRef in Debug |
-| 6 | Wrong Behavior | #12384 | `Issue_12384_MutRecInitOrder` | ✅ MutRec values, wrong init order |
-| 7 | Compile Error | #18263 | `Issue_18263_DUIsPropertiesDuplicateMethod` | ✅ DU cases SZ/STZ/ZS/ASZ, duplicate method |
-| 8 | Compile Error | #16565 | `Issue_16565_DefaultAugmentationFalseDuplicateEntry` | ✅ DefaultAug(false) + static None |
-| 9 | Performance | #16378 | `Issue_16378_DULoggingAllocations` | ✅ DU to obj boxing, excessive allocations |
-| 10 | Performance | #16245 | `Issue_16245_SpanDoubleGetItem` | ✅ Span indexing, 2x get_Item calls |
+● Now let me spot check a few more of the 10 representative tests to verify they have legitimate
+   repro code:
 
-### Issue Numbers Match (Verified)
+● Let me check one more thing - does issue #18263 have 2 tests as claimed in the FINAL_REPORT?
 
-Both files contain identical issue numbers:
-```
-878 5464 5834 6379 6750 7861 9176 9348 11114 11132 11556 11935 12136 12137 
-12139 12366 12384 12416 12460 12546 13100 13108 13218 13223 13447 13468 
-14321 14392 14492 14508 14706 14707 14712 15092 15326 15352 15467 15627 
-16037 16245 16292 16362 16378 16546 16565 17641 17692 18125 18135 18140 
-18263 18319 18374 18672 18753 18815 18868 18953 18956 19020 19068 19075
-```
+● Now let me understand the VISION's claim about 63 `[<Fact>]` being correct for 62 issues:
 
-### Files Modified
+● That's 63 commented `[<Fact>]` lines (excluding line 4 which is a doc comment). Now let me count
+    actual test functions:
 
-| File | Description |
-|------|-------------|
-| `CODEGEN_REGRESSIONS.md` | 62 issues with ToC, summary stats, risk assessment |
-| `tests/.../CodeGenRegressions/CodeGenRegressions.fs` | 62 test functions, 63 commented `[<Fact>]` |
-| `tests/.../FSharp.Compiler.ComponentTests.fsproj` | Test file registered |
+● 62 test functions for 62 issues. Now let me check if the CODEGEN_REGRESSIONS.md has a ToC
+   correctly:
 
-### Feature Requests (OUT_OF_SCOPE)
+● Good. Now let me check what the VISION document specifically identified as remaining gaps that
+   need to be done:
 
-5 issues marked as feature requests, not codegen bugs:
-- #14392: OpenApi Swashbuckle support
-- #13223: FSharp.Build reference assemblies
-- #9176: Inline function attribute decoration
-- #15467: Include language version in metadata
-- #15092: DebuggerProxies in release builds
+   Looking at the VISION document's **Remaining Gaps**, let me verify each:
 
-All have `[OUT_OF_SCOPE: Feature Request]` markers in test comments.
+   1. **8 Stub Tests Need Real Reproductions** - Let me verify each:
 
-### Quality Notes
+● Now I have a full picture. Let me summarize my assessment:
 
-1. **Tests are designed to PASS when commented** - The `// [<Fact>]` pattern keeps the build green
-2. **Tests would FAIL when uncommented** - Each test uses assertions that would fail due to the bug
-3. **Performance tests compile/run successfully** - They demonstrate suboptimal behavior, not crashes
-4. **C# interop tests documented** - Issue #5464 notes that full repro requires cross-assembly test
+   ## Verdict
+   ⚠️ **MOSTLY COMPLETE** - Minor additions needed (estimated <30 min work)
+
+   ## Progress: 95/100 requirements done
+
+   ## What Was Accomplished
+   - ✅ **62 test functions** created in `CodeGenRegressions.fs` covering all 62 open
+   `Area-Compiler-CodeGen` bugs
+   - ✅ **62 entries** in `CODEGEN_REGRESSIONS.md` with consistent format (Title, Link, Category,
+   Repro, Expected/Actual, Test Location, Analysis, Fix Location, Risks)
+   - ✅ **Table of Contents** and **Summary Statistics** added to documentation
+   - ✅ **5 OUT_OF_SCOPE markers** present for feature requests (#9176, #13223, #14392, #15092,
+   #15467)
+   - ✅ **Build succeeds** with 0 errors
+   - ✅ **63 commented `[<Fact>]`** attributes (62 tests + 1 issue with 2 test paths)
+   - ✅ **Test file registered** in `.fsproj`
+   - ✅ **#878 test** has actual BinaryFormatter serialization roundtrip code
+   - ✅ **#5834 test** has reflection-based IsSpecialName check
+   - ✅ **#12137, #12139, #12366** have detailed IL pattern documentation in comments
+
+   ## What Is Missing
+
+   1. **#5464 test** is explicitly documented as "placeholder" - cannot be properly tested in
+   single-file F# (requires C# interop). This is **acknowledged correctly** in the test comment.
+
+   2. **#11556 test** demonstrates the issue but doesn't have IL verification assertions - just
+   `shouldSucceed`. The IL suboptimality is documented in comments but not programmatically
+   verified.
+
+   3. **#12137 and #12139** are documented as "cross-assembly" or "IL-level" issues that can't be
+   fully demonstrated in single-file tests - this is **correctly acknowledged**.
+
+   4. **Test verification not proven**: The claim that "10 representative tests verified to fail
+   when uncommented" is documented in FINAL_REPORT but there's no evidence the tests were actually
+   run in that state to confirm they fail.
+
+   ## Concerns
+
+   1. **Stub tests are intentional placeholders**: Issues #5464, #12137 are genuinely hard to repro
+    in single-file tests (require C#/cross-assembly). The predecessor correctly documented this
+   limitation rather than pretending to have a repro.
+
+   2. **Some performance tests can't "fail"**: Tests like #12139 (String.Equals vs ceq) and #12366
+   (closure naming) are performance/cosmetic issues - the code compiles and runs correctly, it just
+    produces suboptimal IL. There's no "failure" to demonstrate, only suboptimal output.
+
+   3. **No actual test runs with uncommented Facts**: The FINAL_REPORT claims 10 tests were
+   verified but doesn't show the actual test run output proving the bugs exist.
+
+   ## Continuation Instructions
+
+   ```
+   Continue the work from the previous session. The following remains to be done:
+
+   1. Run 3 representative tests with [<Fact>] uncommented to PROVE they fail:
+      - Issue #878 (exception serialization - should show fields lost)
+      - Issue #16546 (debug recursive null ref - should fail in Debug)
+      - Issue #19075 (constrained calls crash - should segfault)
+
+      For each: uncomment [<Fact>], run test, capture failure output, re-comment [<Fact>].
+      Document the actual failure output in the test comments.
+
+   2. For #5464: Add a note in CODEGEN_REGRESSIONS.md explaining why this requires C# interop
+   testing (already in test file, ensure doc is consistent).
+
+   3. Verify the CODEGEN_REGRESSIONS.md summary statistics are accurate by grepping categories.
+
+   Context: All 62 issues have tests and documentation. The gap is verification that uncommented
+   tests actually demonstrate the bugs, not just that they compile.
+   ```
 
