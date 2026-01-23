@@ -367,6 +367,20 @@ type QueryTupleSelectTests() =
             Assert.Equal(1, deptId)
 
 
+/// Helper types for mutation tests
+module MutationTestHelpers =
+    /// Type with a mutable field for FieldSet testing
+    type TypeWithMutableField() =
+        [<DefaultValue>]
+        val mutable Field: int
+    
+    /// Type with a settable property for PropertySet testing
+    type TypeWithSettableProperty() =
+        let mutable value = 0
+        member this.Prop
+            with get() = value
+            and set(v) = value <- v
+
 /// Tests for EvaluateQuotation edge cases - Issue #19099
 type EvaluateQuotationEdgeCaseTests() =
     
@@ -390,6 +404,37 @@ type EvaluateQuotationEdgeCaseTests() =
         // Test that unit-returning expressions work (previously failed with System.Void issue)
         let result = LeafExpressionConverter.EvaluateQuotation <@ ignore 1; () @>
         Assert.Equal(box (), result)
+    
+    /// Issue #19099 T1.1: EvaluateQuotation should handle VarSet (mutable variable assignment)
+    [<Fact>]
+    member _.``EvaluateQuotation handles VarSet - issue 19099``() =
+        // Test mutable variable assignment: let mutable x = 1; x <- 2; x should return 2
+        let result = LeafExpressionConverter.EvaluateQuotation <@ let mutable x = 1 in x <- 2; x @>
+        Assert.Equal(2, result :?> int)
+    
+    /// Issue #19099 T1.2: EvaluateQuotation should handle FieldSet (mutable field assignment)
+    [<Fact>]
+    member _.``EvaluateQuotation handles FieldSet - issue 19099``() =
+        // Test mutable field assignment
+        let obj = MutationTestHelpers.TypeWithMutableField()
+        let result = LeafExpressionConverter.EvaluateQuotation <@ obj.Field <- 42; obj.Field @>
+        Assert.Equal(42, result :?> int)
+    
+    /// Issue #19099 T1.3: EvaluateQuotation should handle PropertySet (settable property assignment)
+    [<Fact>]
+    member _.``EvaluateQuotation handles PropertySet - issue 19099``() =
+        // Test settable property assignment
+        let obj = MutationTestHelpers.TypeWithSettableProperty()
+        let result = LeafExpressionConverter.EvaluateQuotation <@ obj.Prop <- 99; obj.Prop @>
+        Assert.Equal(99, result :?> int)
+    
+    /// Issue #19099 T1.4: EvaluateQuotation should handle indexed PropertySet (array index assignment)
+    [<Fact>]
+    member _.``EvaluateQuotation handles indexed PropertySet - issue 19099``() =
+        // Test array index assignment: arr.[0] <- value
+        let arr = [| 1; 2; 3 |]
+        let result = LeafExpressionConverter.EvaluateQuotation <@ arr.[0] <- 10; arr.[0] @>
+        Assert.Equal(10, result :?> int)
 
 
 /// Tests for conditional without else branch in queries - Issue #3445
