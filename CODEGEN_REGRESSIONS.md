@@ -1803,7 +1803,7 @@ Suspected O(n²) or worse algorithm when processing let bindings. The difference
 
 ## Issue #13108
 
-**Title:** Static linking FS2009 warnings
+**Title:** Static linking: Understanding FS2009 warnings
 
 **Link:** https://github.com/dotnet/fsharp/issues/13108
 
@@ -1811,27 +1811,40 @@ Suspected O(n²) or worse algorithm when processing let bindings. The difference
 
 ### Minimal Repro
 
-```fsharp
-// Static linking scenario with duplicate type references
+```bash
+# Clone VsVim and build with static linking
+git clone https://github.com/VsVim/VsVim
+cd src/VimCore
+dotnet build
+```
+
+When static linking with `--standalone` flag, the following warnings appear:
+```
+FSC : warning FS2009: Ignoring mixed managed/unmanaged assembly 'System.Configuration.ConfigurationManager' during static linking
+FSC : warning FS2009: Ignoring mixed managed/unmanaged assembly 'System.Security.Permissions' during static linking
 ```
 
 ### Expected Behavior
-Static linking should not produce spurious warnings.
+- Static linking should not produce spurious FS2009 warnings for referenced assemblies
+- There should be documentation on what FS2009 means and how to mitigate it
 
 ### Actual Behavior
-FS2009 warnings about referenced types.
+- FS2009 warnings are emitted for assemblies that reference native code
+- No documentation available on how to address these warnings
+- Unclear if warnings indicate real problems or can be safely ignored
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_13108_StaticLinkingWarnings`
 
 ### Analysis
-Type forwarding during static linking produces false warnings.
+When FSharp.Core or other assemblies are statically linked into a DLL (using `--standalone`), the compiler emits FS2009 warnings for any referenced assemblies that have mixed managed/unmanaged code. The warning message provides no guidance on how to resolve the issue.
 
 ### Fix Location
-- `src/Compiler/AbstractIL/ilwrite.fs`
+- `src/Compiler/AbstractIL/ilwrite.fs` - static linking warning logic
+- Documentation for FS2009 warning
 
 ### Risks
-- Low: Warning suppression
+- Low: Warning message improvement only
 
 ---
 
@@ -1846,26 +1859,52 @@ Type forwarding during static linking produces false warnings.
 ### Minimal Repro
 
 ```bash
+# Compile with x64 platform
 fsc --platform:x64 Program.fs
+
+# Examine PE headers
+dumpbin /headers obj/Debug/net6.0/program.dll
+```
+
+F# output (incorrect):
+```
+FILE HEADER VALUES
+            8664 machine (x64)
+             12E characteristics
+                   Executable
+                   Line numbers stripped
+                   Symbols stripped
+                   Application can handle large (>2GB) addresses
+                   32 bit word machine    ← WRONG for x64
+```
+
+C# output (correct):
+```
+FILE HEADER VALUES
+            8664 machine (x64)
+              22 characteristics
+                   Executable
+                   Application can handle large (>2GB) addresses
 ```
 
 ### Expected Behavior
-PE header shows 64-bit characteristics.
+PE header should NOT have the "32 bit word machine" (IMAGE_FILE_32BIT_MACHINE, 0x100) characteristic flag set when targeting x64.
 
 ### Actual Behavior
-PE header has 32-bit characteristic flag set.
+F# sets characteristics 0x12E which includes the 32-bit flag (0x100).
+C# correctly sets characteristics 0x22 without the 32-bit flag.
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_13100_PlatformCharacteristic`
 
 ### Analysis
-Platform flag translation to PE characteristics is incorrect.
+The PE writer incorrectly sets IMAGE_FILE_32BIT_MACHINE flag in the file characteristics when writing x64 binaries.
 
 ### Fix Location
-- `src/Compiler/AbstractIL/ilwrite.fs`
+- `src/Compiler/AbstractIL/ilwrite.fs` - PE characteristics calculation
 
 ### Risks
-- Low: Metadata-only fix
+- Low: Metadata-only change to PE header flags
 
 ---
 
@@ -1880,32 +1919,53 @@ Platform flag translation to PE characteristics is incorrect.
 ### Minimal Repro
 
 ```fsharp
-let test (x: 'a) : obj = box x
+module Foo
+
+let foo (ob: obj) = box(fun () -> ob.ToString()) :?> (unit -> string)
+
+// BUG: This allocates TWO closures
+let go() = foo "hi"
+
+// WORKAROUND: Explicit boxing avoids the extra closure
+let goFixed() = foo(box "hi")
+```
+
+Decompiled C# shows the extraneous wrapper closure:
+```csharp
+internal sealed class go@5 : FSharpFunc
+{
+    public FSharpFunc clo1;  // Wraps the real closure
+
+    public override string Invoke(Unit arg10)
+    {
+        return clo1.Invoke(arg10);  // Just forwards the call
+    }
+}
 ```
 
 ### Expected Behavior
-Simple box instruction emitted.
+A single closure should be allocated - the one that captures `ob` and calls `ToString()`.
 
 ### Actual Behavior
-Creates unnecessary closure around boxing operation.
+Two closures are allocated: the real closure AND a wrapper closure that just forwards calls to the first one.
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_12546_BoxingClosure`
 
 ### Analysis
-Optimizer doesn't eliminate closure for simple boxing.
+When implicit boxing occurs at the call site, the compiler generates an extra closure wrapper instead of directly using the allocated closure. This doubles allocations unnecessarily.
 
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs`
+- `src/Compiler/CodeGen/IlxGen.fs` - closure generation for boxed arguments
 
 ### Risks
-- Low: Performance optimization
+- Low: Performance optimization only
 
 ---
 
 ## Issue #12460
 
-**Title:** F# C# Version info values different
+**Title:** F# and C# produce Version info values differently
 
 **Link:** https://github.com/dotnet/fsharp/issues/12460
 
@@ -1913,31 +1973,38 @@ Optimizer doesn't eliminate closure for simple boxing.
 
 ### Minimal Repro
 
-N/A - Version metadata comparison between F# and C# assemblies.
+Compile equivalent projects with F# and C#, then compare version resources:
+
+Observed differences:
+- F# project output misses `Internal Name` value in version resources
+- `Product Version` format differs: C# produces `1.0.0`, F# produces `1.0.0.0`
 
 ### Expected Behavior
-Version info should match conventions used by C#.
+Version info metadata should match conventions used by C# for consistency:
+- Include `Internal Name` in version resources  
+- Use 3-part version format (`1.0.0`) for Product Version
 
 ### Actual Behavior
-Some version metadata fields differ from C# conventions.
+- `Internal Name` field is missing in F# assemblies
+- `Product Version` shows 4-part format (`1.0.0.0`) instead of 3-part
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_12460_VersionInfoDifference`
 
 ### Analysis
-PE version info fields use different defaults than C#.
+The PE version info resources generated by F# differ from C# conventions. This can cause inconsistencies when examining assembly properties or when tooling expects C# conventions.
 
 ### Fix Location
-- `src/Compiler/AbstractIL/ilwrite.fs`
+- `src/Compiler/AbstractIL/ilwrite.fs` - PE version resource generation
 
 ### Risks
-- Low: Metadata compatibility
+- Low: Metadata-only change for consistency with C#
 
 ---
 
 ## Issue #12416
 
-**Title:** Optimization inlining inconsistent with piping
+**Title:** Optimization inlining applied inconsistently with piping
 
 **Link:** https://github.com/dotnet/fsharp/issues/12416
 
@@ -1946,34 +2013,60 @@ PE version info fields use different defaults than C#.
 ### Minimal Repro
 
 ```fsharp
-let inline f x = x + 1
-let test1 = f 42        // inlines
-let test2 = 42 |> f     // may not inline
+type 'T PushStream = ('T -> bool) -> bool
+
+let inline ofArray (vs : _ array) : _ PushStream = fun ([<InlineIfLambda>] r) ->
+  let mutable i = 0
+  while i < vs.Length && r vs.[i] do i <- i + 1
+  i = vs.Length
+
+let inline fold ([<InlineIfLambda>] f) z ([<InlineIfLambda>] ps : _ PushStream) =
+  let mutable s = z
+  let _ = ps (fun v -> s <- f s v; true)
+  s
+
+let inline (|>>) ([<InlineIfLambda>] v) ([<InlineIfLambda>] f) = f v
+
+let values = [|0..10000|]
+
+// THIS INLINES - values stored in let binding
+let thisIsInlined () = ofArray values |>> fold (+) 0
+
+// THIS ALSO INLINES - array in intermediate binding
+let thisIsInlined2 () = 
+  let vs = [|0..10000|]
+  ofArray vs |>> fold (+) 0
+
+// BUG: THIS DOES NOT INLINE - array literal inline
+let thisIsNotInlined () = ofArray [|0..10000|] |>> fold (+) 0
 ```
 
 ### Expected Behavior
-Both forms should inline identically.
+All three functions should have identical inlined code - the only difference is where the array comes from.
 
 ### Actual Behavior
-Piped form may not inline as well.
+- `thisIsInlined` and `thisIsInlined2` have fully inlined loops
+- `thisIsNotInlined` generates closure classes and virtual calls
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_12416_PipeInlining`
 
 ### Analysis
-Optimizer treats piped calls differently from direct calls.
+`InlineIfLambda` inlining depends on whether the argument is a let-bound variable or an inline expression. When the argument is computed inline (like `[|0..10000|]`), the optimizer fails to inline the lambda.
+
+**Workaround**: Store arguments in intermediate let bindings before passing to `InlineIfLambda` functions.
 
 ### Fix Location
-- `src/Compiler/Optimize/Optimizer.fs`
+- `src/Compiler/Optimize/Optimizer.fs` - InlineIfLambda argument handling
 
 ### Risks
-- Low: Optimization consistency
+- Low: Optimization improvement only
 
 ---
 
 ## Issue #12384
 
-**Title:** Mutually recursive values intermediate module wrong init
+**Title:** Mutually recursive non-function values not initialized correctly
 
 **Link:** https://github.com/dotnet/fsharp/issues/12384
 
@@ -1982,28 +2075,46 @@ Optimizer treats piped calls differently from direct calls.
 ### Minimal Repro
 
 ```fsharp
-module A =
-    let rec x = y + 1
-    and y = 0
+type Node = { Next: Node; Prev: Node; Value: int }
+
+// Single self-reference works correctly
+let rec zero = { Next = zero; Prev = zero; Value = 0 }
+
+// BUG: Mutual recursion - 'one' has null references
+let rec one = { Next = two; Prev = two; Value = 1 }
+and two = { Next = one; Prev = one; Value = 2 }
+
+printfn "%A" one
+printfn "%A" two
 ```
 
 ### Expected Behavior
-Mutually recursive values initialize correctly.
+Either:
+- Correctly initialize both mutually recursive values
+- Reject the code at compile time as invalid
 
 ### Actual Behavior
-Incorrect initialization order in some mutual recursion scenarios.
+Code compiles without warnings. At runtime:
+```
+{ Next = null; Prev = null; Value = 1 }     ← one is WRONG
+{ Next = { Next = null; Prev = null; Value = 1 }
+  Prev = { Next = null; Prev = null; Value = 1 }
+  Value = 2 }                                ← two correctly references one
+```
+
+`one.Next` and `one.Prev` are null instead of referencing `two`.
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_12384_MutRecInitOrder`
 
 ### Analysis
-Module initialization code generated in wrong order.
+The module initialization code for mutually recursive non-function values generates incorrect IL. The first binding in the group (`one`) is initialized before the second binding (`two`) is created, so references to `two` become null. Single self-referencing values work because they can reference themselves.
 
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs`
+- `src/Compiler/CodeGen/IlxGen.fs` - mutual recursion initialization order
 
 ### Risks
-- Medium: Initialization order is subtle
+- Medium: Initialization order changes could break existing code that accidentally depends on current behavior
 
 ---
 
@@ -2019,25 +2130,42 @@ Module initialization code generated in wrong order.
 
 ```fsharp
 let f = fun x -> x + 1
+
+// Nested closures get confusing names
+let complex = 
+    fun a -> 
+        fun b -> 
+            fun c -> a + b + c
+
+// Pipeline closures may get "Pipe input at line 63@53" names
+let result = [1;2;3] |> List.map (fun x -> x * 2)
 ```
 
+Generated closure types get names like:
+- `f@5` (uses let binding name - good)
+- `clo@10-1` (uses generic "clo" - could be better)
+- `Pipe input at line 63@53` (uses debug string as name - bad)
+
 ### Expected Behavior
-Generated closure types have meaningful names.
+Generated closure types should have meaningful, consistent names useful for debugging and profiling.
 
 ### Actual Behavior
-Names like `clo@12-1` are not helpful for debugging.
+The naming heuristic is weak:
+- Unnecessary use of backup name "clo" when better names are available
+- Sometimes compiler-generated debug strings are used as type names
+- Line numbers appended but could be more informative (`@line365` format)
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_12366_ClosureNaming`
 
 ### Analysis
-Closure naming scheme could be more descriptive.
+The closure naming heuristic in IlxGen tries to use the let identifier being bound, but often falls back to generic names. After pipeline debugging was added, some closures get names based on debug strings.
 
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs`
+- `src/Compiler/CodeGen/IlxGen.fs` - closure type naming logic
 
 ### Risks
-- Low: Cosmetic/debugging improvement
+- Low: Cosmetic change only, but may affect tooling that parses type names
 
 ---
 
@@ -2052,32 +2180,52 @@ Closure naming scheme could be more descriptive.
 ### Minimal Repro
 
 ```fsharp
-let isNull (s: string) = isNull s
+open System
+
+let test() =
+    while Console.ReadLine() <> null do
+        Console.WriteLine(1)
+```
+
+F# IL:
+```il
+IL_0000: call string Console::ReadLine()
+IL_0005: ldnull
+IL_0006: call bool String::Equals(string, string)  ← Calls String.Equals
+IL_000b: brtrue.s IL_0015
+```
+
+C# IL (more efficient):
+```il
+IL_0008: call string Console::ReadLine()
+IL_000d: brtrue.s IL_0002   ← Simple null check
 ```
 
 ### Expected Behavior
-Efficient null check IL.
+String null checks should use simple `brtrue`/`brfalse` instructions like C#.
 
 ### Actual Behavior
-More instructions than necessary for null checks.
+F# emits `call String.Equals(string, string)` for null comparisons, which:
+- Increases DLL size
+- Requires more JIT work (though JIT can optimize it away)
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_12139_StringNullCheck`
 
 ### Analysis
-String null checks could use more efficient IL patterns.
+F# treats `s = null` as a structural equality check and emits `String.Equals` call, while C# recognizes null comparisons specially and emits simple pointer comparisons.
 
 ### Fix Location
-- `src/Compiler/Optimize/Optimizer.fs`
+- `src/Compiler/CodeGen/IlxGen.fs` or `src/Compiler/Optimize/Optimizer.fs` - recognize string null patterns
 
 ### Risks
-- Low: IL optimization
+- Low: IL optimization only, semantics unchanged
 
 ---
 
 ## Issue #12137
 
-**Title:** Improve analysis to reduce emit of tail
+**Title:** Improve analysis to reduce emit of tail.
 
 **Link:** https://github.com/dotnet/fsharp/issues/12137
 
@@ -2085,34 +2233,45 @@ String null checks could use more efficient IL patterns.
 
 ### Minimal Repro
 
-```fsharp
-let f x = x + 1
-let g x = f x  // tail. prefix not needed here
+When calling inline functions from another assembly, F# emits `tail.` prefix:
+```il
+// Calling GSeq.fold from SAME assembly - no tail (good)
+IL_000c: call !!0 Tailcalls/GSeq::fold<...>
+
+// Calling GSeq.fold from ANOTHER assembly - tail prefix (bad)
+IL_000c: tail.
+IL_000e: call !!0 [Lib.FSharp]GSeq::fold<...>
 ```
 
 ### Expected Behavior
-Don't emit tail. prefix when not beneficial.
+The `tail.` prefix should only be emitted when necessary for stack safety in recursive scenarios.
 
 ### Actual Behavior
-Unnecessary tail. prefixes emitted.
+F# emits `tail.` prefix inconsistently:
+- Same-assembly calls: no `tail.` prefix (correct)
+- Cross-assembly calls: `tail.` prefix emitted (unnecessary)
+
+The unnecessary `tail.` causes:
+- 2-3x slower execution due to tail call dispatch helpers
+- 2x larger JIT-generated assembly code
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_12137_TailEmitReduction`
 
 ### Analysis
-Tail call analysis could be more precise.
+The tail call analysis doesn't have enough information about cross-assembly inline functions to determine that tail calls aren't needed. This results in conservative emission of `tail.` prefix which hurts performance.
 
 ### Fix Location
-- `src/Compiler/Optimize/Optimizer.fs`
+- `src/Compiler/CodeGen/IlxGen.fs` - tail call emission logic
 
 ### Risks
-- Low: Performance optimization
+- Low: Performance optimization, but must ensure stack safety isn't compromised
 
 ---
 
 ## Issue #12136
 
-**Title:** use fixed does not unpin at end of scope
+**Title:** "use fixed" construct does not unpin at end of scope
 
 **Link:** https://github.com/dotnet/fsharp/issues/12136
 
@@ -2121,29 +2280,65 @@ Tail call analysis could be more precise.
 ### Minimal Repro
 
 ```fsharp
-let test (arr: byte[]) =
-    use ptr = fixed arr
-    // ptr should be unpinned at end of scope
-    ()
+let used<'T>(t: 'T): unit = ignore t
+
+let test(array: int[]): unit =
+    do
+        use pin = fixed &array.[0]
+        used pin
+    used 1  // BUG: array is still pinned here!
+```
+
+F# IL - no cleanup at scope end:
+```il
+.locals init ([1] int32& pinned)
+IL_0007: stloc.1
+// ... use pin ...
+IL_0012: ldc.i4.1        // ← No cleanup of pinned local
+IL_0013: call void Main::used(!!0)
+```
+
+C# IL - properly unpins at scope end:
+```il
+.locals init ([1] int32& pinned)
+// ... use pin ...
+IL_0010: ldc.i4.0
+IL_0011: conv.u
+IL_0012: stloc.1        // ← Clears pinned local
+// ... rest of code ...
 ```
 
 ### Expected Behavior
-Pinned pointer is unpinned when scope ends.
+The pinned local should be set to null/zero at the end of the `use fixed` scope, so the GC can move the array.
 
 ### Actual Behavior
-Pin may not be released correctly.
+The pinned variable remains set until function returns, keeping the array pinned longer than necessary. This:
+- Prevents GC from moving the array during other operations
+- Confuses decompilers which expect proper scope cleanup
+
+**Workaround**: Put the fixed block in a separate function:
+```fsharp
+let testFixed (array: int[]) : unit =
+    let doBlock() =
+        use pin = fixed &array.[0]
+        used pin
+    doBlock()
+    used 1  // Now array is correctly unpinned
+```
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_12136_FixedUnpin`
 
 ### Analysis
-`use fixed` cleanup code may not execute correctly.
+The `use fixed` construct generates a pinned local variable but doesn't emit cleanup code at the end of the scope. C# emits `ldc.i4.0; conv.u; stloc` to clear the pinned local, while F# does not.
+
+See also #10832 where this caused confusion about whether F# pins correctly.
 
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs`
+- `src/Compiler/CodeGen/IlxGen.fs` - fixed statement codegen
 
 ### Risks
-- Medium: Memory pinning affects GC
+- Medium: Memory pinning affects GC behavior; must ensure correctness
 
 ---
 

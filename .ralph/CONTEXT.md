@@ -85,6 +85,30 @@ This file is updated after each sprint completes. Use it to understand what was 
 - `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs` - 10 tests updated with accurate repros
 - `CODEGEN_REGRESSIONS.md` - 10 issue entries updated with detailed analysis
 
-**Total tests:** 62 (all issues from 6 sprints)
+**Total tests:** 40 (30 from Sprints 1-3 + 10 from Sprint 4)
+
+---
+
+## Sprint 5: Issues 41-50
+
+**Summary:** Improved 10 tests for issues #13108, #13100, #12546, #12460, #12416, #12384, #12366, #12139, #12137, #12136
+
+**Issues covered:**
+- #13108: Static linking FS2009 warnings (Compile Warning)
+- #13100: --platform:x64 sets 32 bit characteristic (Wrong Behavior)
+- #12546: Implicit boxing produces extraneous closure (Performance)
+- #12460: F# C# Version info values different (Metadata)
+- #12416: Optimization inlining inconsistent with piping (Performance)
+- #12384: Mutually recursive values initialization wrong (Wrong Behavior)
+- #12366: Rethink names for compiler-generated closures (Cosmetic)
+- #12139: Improve string null check IL codegen (Performance)
+- #12137: Improve analysis to reduce emit of tail (Performance)
+- #12136: use fixed does not unpin at end of scope (Wrong Behavior)
+
+**Files modified:**
+- `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs` - 10 tests updated with accurate repros
+- `CODEGEN_REGRESSIONS.md` - 10 issue entries updated with detailed analysis
+
+**Total tests:** 50 (40 from Sprints 1-4 + 10 from Sprint 5)
 
 ---

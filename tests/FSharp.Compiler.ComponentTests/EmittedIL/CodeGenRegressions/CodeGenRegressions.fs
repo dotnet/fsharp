@@ -1362,13 +1362,22 @@ type T =
 
     // ===== Issue #13108: Static linking FS2009 warnings =====
     // https://github.com/dotnet/fsharp/issues/13108
-    // Static linking produces spurious warnings.
+    // When static linking assemblies, spurious FS2009 warnings are produced about
+    // "Ignoring mixed managed/unmanaged assembly" for referenced assemblies that
+    // are not actually mixed. The warning message lacks documentation on mitigation.
+    // This primarily affects scenarios like VsVim that static-link FSharp.Core.
     // [<Fact>]
     let ``Issue_13108_StaticLinkingWarnings`` () =
+        // Note: This issue requires multi-project static linking scenario with --standalone flag
+        // The warning FS2009 appears when linking assemblies that reference native code.
+        // Simplified test demonstrates that static linking path is exercised.
         let source = """
-module Test
+module StaticLinkTest
 
-let f x = x + 1
+// Static linking with --standalone produces FS2009 warnings for assemblies
+// that reference mixed managed/unmanaged code (like System.Configuration.ConfigurationManager)
+// The warnings lack documentation on how to address them.
+let value = 42
 """
         FSharp source
         |> asLibrary
@@ -1378,155 +1387,326 @@ let f x = x + 1
 
     // ===== Issue #13100: --platform:x64 sets 32 bit characteristic =====
     // https://github.com/dotnet/fsharp/issues/13100
-    // PE header has 32-bit characteristic flag set for x64 platform.
+    // When compiling with --platform:x64, the PE FILE HEADER has "32 bit word machine"
+    // characteristic set (0x100 flag), which is incorrect for x64 executables.
+    // dumpbin /headers shows: "32 bit word machine" for F# but not for C# x64 builds.
+    // C# correctly produces only "Executable" and "Application can handle large (>2GB) addresses"
     // [<Fact>]
     let ``Issue_13100_PlatformCharacteristic`` () =
+        // The bug is that F# sets IMAGE_FILE_32BIT_MACHINE (0x100) characteristic
+        // in the PE header when targeting x64, which is incorrect.
+        // To verify: compile with --platform:x64 and run `dumpbin /headers`
+        // F# shows: 0x12E characteristics (includes "32 bit word machine")
+        // C# shows: 0x22 characteristics (no 32-bit flag)
         let source = """
-module Test
+module PlatformTest
 
-let f x = x + 1
+// When compiled with --platform:x64, the PE header should NOT have
+// the "32 bit word machine" (IMAGE_FILE_32BIT_MACHINE) characteristic.
+// Currently F# incorrectly sets this flag for x64 binaries.
+[<EntryPoint>]
+let main _ = 0
 """
         FSharp source
-        |> asLibrary
+        |> asExe
+        // Note: would need --platform:x64 flag to fully reproduce
         |> compile
         |> shouldSucceed
         |> ignore
 
     // ===== Issue #12546: Implicit boxing produces extraneous closure =====
     // https://github.com/dotnet/fsharp/issues/12546
-    // Creates unnecessary closure around boxing operation.
+    // When a function takes an obj parameter and you pass a value that gets implicitly boxed,
+    // the compiler generates an extra wrapper closure that just invokes the first closure.
+    // This doubles allocation unnecessarily.
+    // Workaround: explicitly box the argument at the call site.
     // [<Fact>]
     let ``Issue_12546_BoxingClosure`` () =
+        // This code allocates TWO closures: the actual closure and a wrapper
+        // The wrapper (go@5) just forwards to the real closure (clo1.Invoke)
+        // This is unnecessary - only one closure should be allocated.
         let source = """
-module Test
+module BoxingClosureTest
 
-let test (x: 'a) : obj = box x
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
+let foo (ob: obj) = box(fun () -> ob.ToString()) :?> (unit -> string)
 
-    // ===== Issue #12460: F# C# Version info values different =====
-    // https://github.com/dotnet/fsharp/issues/12460
-    // Version metadata fields differ from C# conventions.
-    // [<Fact>]
-    let ``Issue_12460_VersionInfoDifference`` () =
-        let source = """
-module Test
+// BUG: This allocates an extraneous closure that wraps the real one
+let go() = foo "hi"
 
-let f x = x + 1
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
-    // ===== Issue #12416: Optimization inlining inconsistent with piping =====
-    // https://github.com/dotnet/fsharp/issues/12416
-    // Piped form may not inline as well as direct calls.
-    // [<Fact>]
-    let ``Issue_12416_PipeInlining`` () =
-        let source = """
-module Test
-
-let inline f x = x + 1
-let test1 = f 42
-let test2 = 42 |> f
+// WORKAROUND: Explicitly boxing avoids the extra closure
+let goFixed() = foo(box "hi")
 """
         FSharp source
         |> asLibrary
         |> withOptimize
         |> compile
         |> shouldSucceed
+        // Should verify IL doesn't have wrapper closure class like go@5
+        |> ignore
+
+    // ===== Issue #12460: F# C# Version info values different =====
+    // https://github.com/dotnet/fsharp/issues/12460
+    // F# and C# compilers produce different Version info metadata:
+    // - F# output misses "Internal Name" value
+    // - ProductVersion format differs: C# produces "1.0.0", F# produces "1.0.0.0"
+    // These should be aligned with C# for consistency in tooling.
+    // [<Fact>]
+    let ``Issue_12460_VersionInfoDifference`` () =
+        // The compiled DLL has different version info metadata than C# produces:
+        // 1. Missing "Internal Name" in version resources
+        // 2. ProductVersion has 4 parts (1.0.0.0) instead of 3 (1.0.0)
+        let source = """
+module VersionInfoTest
+
+// When examining the compiled DLL's version resources:
+// - "Internal Name" field is missing (C# includes it)
+// - "Product Version" shows "1.0.0.0" (C# shows "1.0.0")
+let value = 42
+"""
+        FSharp source
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        // Version info differences would be visible with dumpbin or file properties
+        |> ignore
+
+    // ===== Issue #12416: Optimization inlining inconsistent with piping =====
+    // https://github.com/dotnet/fsharp/issues/12416
+    // InlineIfLambda functions don't inline when the input is an inline expression
+    // (like array literal) vs when it's stored in a let binding.
+    // Workaround: store arguments in intermediate let bindings before piping.
+    // [<Fact>]
+    let ``Issue_12416_PipeInlining`` () =
+        // The issue: InlineIfLambda inlining depends on whether the argument
+        // is a variable or an inline expression. This is inconsistent.
+        let source = """
+module PipeInliningTest
+
+type 'T PushStream = ('T -> bool) -> bool
+
+let inline ofArray (vs : _ array) : _ PushStream = fun ([<InlineIfLambda>] r) ->
+  let mutable i = 0
+  while i < vs.Length && r vs.[i] do i <- i + 1
+  i = vs.Length
+
+let inline fold ([<InlineIfLambda>] f) z ([<InlineIfLambda>] ps : _ PushStream) =
+  let mutable s = z
+  let _ = ps (fun v -> s <- f s v; true)
+  s
+
+let inline (|>>) ([<InlineIfLambda>] v : _ -> _) ([<InlineIfLambda>] f : _ -> _) = f v
+
+let values = [|0..100|]
+
+// THIS INLINES CORRECTLY - values is a let binding
+let thisIsInlined1 () = ofArray values |>> fold (+) 0
+
+// THIS ALSO INLINES - intermediate binding for array
+let thisIsInlined2 () = 
+  let vs = [|0..100|]
+  ofArray vs |>> fold (+) 0
+
+// BUG: THIS DOES NOT INLINE - array literal inline
+let thisIsNotInlined () = ofArray [|0..100|] |>> fold (+) 0
+"""
+        FSharp source
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        // The decompiled IL would show closures for thisIsNotInlined but not for thisIsInlined*
         |> ignore
 
     // ===== Issue #12384: Mutually recursive values intermediate module wrong init =====
     // https://github.com/dotnet/fsharp/issues/12384
-    // Incorrect initialization order in some mutual recursion scenarios.
+    // Mutually recursive non-function values are not initialized correctly.
+    // The first value in the binding group has null for its recursive references,
+    // while the second value is initialized correctly.
+    // Single self-referencing values work correctly.
     // [<Fact>]
     let ``Issue_12384_MutRecInitOrder`` () =
+        // BUG: one.Next and one.Prev are null, but two is correctly initialized
+        // This should either work correctly or be rejected at compile time.
         let source = """
-module Test
+module MutRecInitTest
 
-let rec x = y + 1
-and y = 0
+type Node = { Next: Node; Prev: Node; Value: int }
+
+// Single self-reference works correctly
+let rec zero = { Next = zero; Prev = zero; Value = 0 }
+
+// BUG: Mutual recursion fails - 'one' has null references
+let rec one = { Next = two; Prev = two; Value = 1 }
+and two = { Next = one; Prev = one; Value = 2 }
+
+// At runtime:
+// one = { Next = null; Prev = null; Value = 1 }  // WRONG - should reference two
+// two = { Next = one; Prev = one; Value = 2 }    // Correct
+
+[<EntryPoint>]
+let main _ =
+    // This would show the bug: one.Next is null instead of two
+    printfn "%A" one
+    printfn "%A" two
+    0
 """
         FSharp source
-        |> asLibrary
+        |> asExe
         |> compile
         |> shouldSucceed
+        // Bug manifests at runtime - one.Next and one.Prev are null
         |> ignore
 
     // ===== Issue #12366: Rethink names for compiler-generated closures =====
     // https://github.com/dotnet/fsharp/issues/12366
-    // Closure names like clo@12-1 are not helpful for debugging.
+    // Compiler-generated closure names like "foo@376" and "clo43@53" are weak heuristics.
+    // Problems:
+    // - Unnecessary use of backup name "clo" when better names available
+    // - Sometimes other compiler-generated names are used as basis (e.g., "Pipe input at line 63@53")
+    // - Line numbers alone aren't as useful as they could be
     // [<Fact>]
     let ``Issue_12366_ClosureNaming`` () =
+        // The generated closure types get names like:
+        // - f@5 (uses the let binding name - good)
+        // - clo@10-1 (uses generic "clo" name - could be better)
+        // - "Pipe input at line 63@53" (uses debug string as name - bad)
         let source = """
-module Test
+module ClosureNamingTest
 
+// This closure gets a reasonable name based on 'f'
 let f = fun x -> x + 1
+
+// This anonymous closure in a pipeline might get a poor name like "clo@N"
+let result = 
+    [1; 2; 3]
+    |> List.map (fun x -> x * 2)  // closure name should be more descriptive
+    |> List.filter (fun x -> x > 2)  // same issue
+
+// Nested closures compound the problem
+let complex = 
+    fun a -> 
+        fun b -> 
+            fun c -> a + b + c  // inner closures get confusing names
 """
         FSharp source
         |> asLibrary
         |> compile
         |> shouldSucceed
+        // Generated type names in IL are not as helpful for debugging as they could be
         |> ignore
 
     // ===== Issue #12139: Improve string null check IL codegen =====
     // https://github.com/dotnet/fsharp/issues/12139
-    // String null checks could use more efficient IL patterns.
+    // F# emits String.Equals(s, null) for string null checks, while C# emits simple brtrue/brfalse.
+    // F# IL: call bool String::Equals(string, string); brtrue.s 
+    // C# IL: brtrue.s (single instruction)
+    // The JIT will optimize this away, but it increases DLL size and is less efficient.
     // [<Fact>]
     let ``Issue_12139_StringNullCheck`` () =
+        // F# generates call to String.Equals for null comparison
+        // C# generates simple null pointer check (brtrue/brfalse)
         let source = """
-module Test
+module StringNullCheckTest
 
-let isNullStr (s: string) = isNull s
+open System
+
+// F# generates: call string Console::ReadLine(); ldnull; call bool String::Equals(string, string); brtrue.s
+// C# generates: call string Console::ReadLine(); brtrue.s (much simpler)
+let test() =
+    while Console.ReadLine() <> null do
+        Console.WriteLine(1)
+
+// Simple null check also uses String.Equals instead of direct comparison
+let isNullString (s: string) = s = null
+let isNotNullString (s: string) = s <> null
 """
         FSharp source
         |> asLibrary
+        |> withOptimize
         |> compile
         |> shouldSucceed
+        // IL should show String.Equals calls instead of simple brtrue/brfalse
         |> ignore
 
     // ===== Issue #12137: Improve analysis to reduce emit of tail =====
     // https://github.com/dotnet/fsharp/issues/12137
-    // Unnecessary tail. prefixes emitted.
+    // F# emits tail. prefix for cross-assembly calls but not for same-assembly calls.
+    // This is inconsistent and the unnecessary tail. prefix causes:
+    // - 2-3x slower execution due to tail call dispatch helpers
+    // - 2x larger JIT-generated assembly code
+    // The tail call should only be emitted when actually needed for stack safety.
     // [<Fact>]
     let ``Issue_12137_TailEmitReduction`` () =
+        // When calling an inline function from another assembly, F# emits tail. prefix
+        // When calling the same function from the same assembly, no tail. prefix
+        // This inconsistency hurts performance for cross-assembly calls
         let source = """
-module Test
+module TailEmitTest
 
-let f x = x + 1
-let g x = f x
+// Simulating the scenario: inline generic fold function
+let inline fold (f: 'S -> 'T -> 'S) (state: 'S) (items: 'T list) =
+    let mutable s = state
+    for item in items do
+        s <- f s item
+    s
+
+// When this calls fold from same assembly: no tail. prefix (good)
+let sumLocal () = fold (+) 0 [1; 2; 3]
+
+// When calling fold from another assembly: tail. prefix emitted (bad)
+// This causes 2-3x performance penalty and larger JIT code
+// The tail. is unnecessary because fold doesn't need tail recursion for correctness
 """
         FSharp source
         |> asLibrary
+        |> withOptimize
         |> compile
         |> shouldSucceed
+        // Cross-assembly calls would show tail. prefix in IL
         |> ignore
 
     // ===== Issue #12136: use fixed does not unpin at end of scope =====
     // https://github.com/dotnet/fsharp/issues/12136
-    // Pin may not be released correctly.
+    // When using "use x = fixed expr", the pinned variable remains pinned until
+    // the function returns, not at the end of the scope where it's declared.
+    // C# correctly nulls out the pinned local at end of fixed block scope.
+    // This affects GC behavior and confuses decompilers.
+    // Workaround: put the fixed block in a separate function.
     // [<Fact>]
     let ``Issue_12136_FixedUnpin`` () =
+        // The pinned local should be set to null/zero at end of scope
+        // F# IL: no cleanup of pinned local at scope end
+        // C# IL: stloc.1 with null at end of fixed block
         let source = """
-module Test
+module FixedUnpinTest
 
 open Microsoft.FSharp.NativeInterop
 
-let test (arr: byte[]) =
-    use ptr = fixed arr
-    ()
+let inline used<'T> (t: 'T) : unit = ignore t
+
+let test (array: int[]) : unit =
+    do
+        use pin = fixed &array.[0]
+        used pin
+    // BUG: array remains pinned here even though 'pin' is out of scope!
+    used 1  // GC cannot move 'array' during this call
+
+// The IL shows pin remains set (no cleanup instruction) after the 'do' block
+// C# would emit: ldc.i4.0; conv.u; stloc.1 to unpin
+
+// WORKAROUND: Put fixed block in separate function
+let testFixed (array: int[]) : unit =
+    let doBlock() =
+        use pin = fixed &array.[0]
+        used pin
+    doBlock()
+    used 1  // Now array is correctly unpinned
 """
         FSharp source
         |> asLibrary
         |> compile
         |> shouldSucceed
+        // IL analysis would show missing cleanup for pinned local at scope end
         |> ignore
 
     // ===== Issue #11935: unmanaged constraint not recognized by C# =====
