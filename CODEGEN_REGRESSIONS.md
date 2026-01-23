@@ -2,6 +2,45 @@
 
 This document tracks known code generation bugs in the F# compiler that have documented test cases but are not yet fixed. Each issue has a corresponding test in `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs` with its `[<Fact>]` attribute commented out.
 
+## Table of Contents
+
+- [Summary Statistics](#summary-statistics)
+- [Summary Table](#summary-table)
+- [Issue Details](#issue-19075) (62 issues documented)
+- [Contributing](#contributing)
+
+## Summary Statistics
+
+| Metric | Count |
+|--------|-------|
+| **Total Issues** | 62 |
+| **Wrong Behavior** | 13 |
+| **Performance/Optimization** | 12 |
+| **Compile Error/Warning/Crash** | 12 |
+| **Invalid IL** | 6 |
+| **Feature Request** | 5 |
+| **Runtime Crash/Error** | 4 |
+| **Interop (C#/Other)** | 3 |
+| **Other (Cosmetic/Metadata/API/Attribute)** | 7 |
+
+### Risk Assessment
+
+| Risk Level | Count |
+|------------|-------|
+| **High** | 0 |
+| **Medium** | 17 |
+| **Low** | 45 |
+
+### Primary Fix Locations
+
+| Component | Count |
+|-----------|-------|
+| `IlxGen.fs` | 38 |
+| `ilwrite.fs` | 7 |
+| `Optimizer.fs` | 7 |
+| `NicePrint.fs` | 3 |
+| Other | 7 |
+
 ## Summary Table
 
 | Issue | Title | Category | Fix Location | Risk |
