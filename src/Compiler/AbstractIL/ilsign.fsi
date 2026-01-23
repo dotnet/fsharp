@@ -14,11 +14,12 @@ open System.IO
 //---------------------------------------------------------------------
 [<Sealed>]
 type ILStrongNameSigner =
-    static member OpenPublicKeyOptions: byte array -> bool -> ILStrongNameSigner 
+    static member OpenPublicKeyOptions: byte array * bool -> ILStrongNameSigner 
     static member OpenPublicKey: byte array -> ILStrongNameSigner
-    static member OpenKeyPairFile: byte array -> ILStrongNameSigner
-    static member OpenKeyContainer: string -> ILStrongNameSigner
+    static member OpenKeyPairFile: byte array * bool option -> ILStrongNameSigner 
+    static member OpenKeyContainer: string * bool option -> ILStrongNameSigner
+    static member ExtractPublicKey: byte array -> byte array
     member IsFullySigned: bool
     member PublicKey: byte array
     member SignatureSize: int
-    member SignStream: Stream -> unit
+    member SignStream: System.IO.Stream -> unit
