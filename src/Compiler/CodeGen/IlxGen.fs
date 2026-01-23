@@ -10799,6 +10799,10 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         | SynMemberKind.Constructor
         | SynMemberKind.Member ->
             let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttrs)
+            // Add SpecialName for generated event accessors (Issue #5834)
+            let mdef =
+                if vref.Deref.val_flags.IsGeneratedEventVal then mdef.WithSpecialName else mdef
+
             [ mdef ], [], []
         | SynMemberKind.PropertyGetSet -> error (Error(FSComp.SR.ilUnexpectedGetSetAnnotation (), m))
         | SynMemberKind.PropertySet

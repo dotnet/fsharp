@@ -2010,7 +2010,7 @@ let f (x, y) = x + y
     // https://github.com/dotnet/fsharp/issues/5834
     // Abstract event accessors don't get the specialname IL flag, breaking Reflection-based tools.
     // This becomes problematic when [<Obsolete>] or other attributes are involved.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_5834_ObsoleteSpecialname`` () =
         let source = """
 module Test

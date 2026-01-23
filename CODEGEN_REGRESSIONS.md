@@ -2999,6 +2999,15 @@ When generating abstract event accessors (especially with attributes like `[<Obs
 ### Risks
 - Low: Metadata fix, should be additive
 
+### UPDATE (FIXED)
+
+**Root Cause:** In `GenAbstractBinding`, when processing abstract [<CLIEvent>] members, the typechecker generates separate `add_` and `remove_` ValRefs with `MemberKind.Member`. These go through the `SynMemberKind.Member` case which didn't check for `IsGeneratedEventVal` to apply the SpecialName flag.
+
+**Fix:** Added a check in the `SynMemberKind.Member` case of `GenAbstractBinding` to apply `WithSpecialName` when `vref.Deref.val_flags.IsGeneratedEventVal` is true. This matches the existing behavior for concrete event accessors at line 9682.
+
+**Files Modified:**
+- `src/Compiler/CodeGen/IlxGen.fs` - Added SpecialName for generated abstract event accessors
+
 ---
 
 ## Issue #5464
