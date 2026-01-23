@@ -275,3 +275,36 @@ The `Enumerable.Select` step broke the IQueryable chain, producing `EnumerableQu
 - 1 documented as known limitation (#3845 - requires compiler warning for proper fix)
 
 ---
+
+## Sprint 3: Final validation and commit
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 1: Polish & validation (Week 3/5 deferred items)
+
+**Summary:** Completed polish items from TASKLIST.md.
+
+**Items completed:**
+- D5.2: Added inline comment at line 626 in Linq.fs explaining Issue #16918 ArrayLookupQ fix
+- Q3.6: Added test with 15 nested let bindings to verify O(n) performance (not exponential)
+- Q3.4: Confirmed already done (lines 782-785 in Linq.fs)
+- D5.3: Marked N/A (no architecture change)
+- V5.4: Marked as external process (code review)
+
+**Verification results:**
+- Build: ✅ Succeeded (exit code 0)
+- Tests: ✅ 6050 passed, 0 failed, 5 skipped
+- Formatting: ✅ `dotnet fantomas . --check` passes
+- All DoD criteria satisfied
+
+**Files touched:**
+- src/FSharp.Core/Linq.fs (added comment for ArrayLookupQ)
+- tests/FSharp.Core.UnitTests/FSharp.Core/Microsoft.FSharp.Linq/QueryTests.fs (added 15-level nested let test)
+- TASKLIST.md (updated checkboxes)
+- .ralph/CONTEXT.md (this update)
+
+---

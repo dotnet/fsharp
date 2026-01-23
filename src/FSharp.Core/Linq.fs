@@ -623,6 +623,9 @@ module LeafExpressionConverter =
             | CheckedConvUInt16Q (_, _, [x]) | CheckedConvUInt32Q (_, _, [x]) | CheckedConvUInt64Q (_, _, [x]) | CheckedConvIntPtrQ (_, _, [x]) -> transConv inp env true x
             | CheckedConvUIntPtrQ (_, _, [x]) -> transConv inp env true x
 
+            // Issue #16918: ArrayLookupQ pattern expects GenericArgs [|_|] (1 type param) not [|_; _; _|] (3 params)
+            // because GetArray only has 1 type parameter. This enables proper Expression.ArrayIndex generation
+            // that LINQ providers can translate, instead of falling through to method call handling.
             | ArrayLookupQ (_, GenericArgs [|_|], [x1; x2]) ->
                 Expression.ArrayIndex(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
 

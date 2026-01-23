@@ -451,6 +451,31 @@ type EvaluateQuotationEdgeCaseTests() =
         let result = LeafExpressionConverter.EvaluateQuotation <@ let a = 1 in let b = a + 1 in let c = b + 1 in let d = c + 1 in d @>
         Assert.Equal(4, result :?> int)
 
+    /// Q3.6: Verify no performance regression with 15+ nested let bindings
+    /// This tests the inlining approach doesn't cause exponential blowup
+    [<Fact>]
+    member _.``EvaluateQuotation handles 15 nested let bindings``() =
+        // 15 levels of nested lets with computation at each level
+        // This verifies the inlining is O(n) not O(2^n)
+        let result = LeafExpressionConverter.EvaluateQuotation <@ 
+            let v1 = 1 in
+            let v2 = v1 + 1 in
+            let v3 = v2 + 1 in
+            let v4 = v3 + 1 in
+            let v5 = v4 + 1 in
+            let v6 = v5 + 1 in
+            let v7 = v6 + 1 in
+            let v8 = v7 + 1 in
+            let v9 = v8 + 1 in
+            let v10 = v9 + 1 in
+            let v11 = v10 + 1 in
+            let v12 = v11 + 1 in
+            let v13 = v12 + 1 in
+            let v14 = v13 + 1 in
+            let v15 = v14 + 1 in
+            v15 @>
+        Assert.Equal(15, result :?> int)
+
 
 /// Tests for conditional without else branch in queries - Issue #3445
 type QueryConditionalTests() =

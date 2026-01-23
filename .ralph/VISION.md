@@ -195,9 +195,28 @@ All 11 bugs have been addressed:
 
 All tests pass, formatting passes, surface area baselines updated, release notes complete.
 
-### Remaining Work from TASKLIST.md
-The TASKLIST.md checkboxes haven't been updated to reflect actual work done. Additionally:
-- Q3.1-Q3.3: Hash combining deduplication (deferred as acceptable tech debt)
-- Q3.4: Comment for let-binding inlining 
-- C4.1-C4.3: ILVerify run and API documentation
-- D5.2: Inline code comments
+### Remaining Work from TASKLIST.md (Completed 2026-01-23)
+
+All critical work is complete. The following items remain unchecked but are intentionally deferred:
+- Q3.4: Comment for let-binding inlining - "Would be nice but not critical"
+- Q3.6: Perf verification - "Not blocking; existing tests cover functional correctness"
+- D5.2: Inline code comments - "Would be nice but not critical"
+- D5.3: DEVGUIDE.md update - "Not needed - no architecture change"
+- V5.4: Code review - External process, not a code task
+
+**Project Status: COMPLETE** - All 11 bugs addressed, branch ready for PR.
+
+---
+
+## Phase 2: Deferred Polish Items (2026-01-23)
+
+The following items were previously marked as "would be nice but not critical" and deferred:
+
+### Items Now Addressed
+- **Q3.4**: Comment explaining let-binding inlining safety - **ALREADY DONE** (lines 782-785 in Linq.fs)
+- **D5.2**: Inline code comments for ArrayLookupQ fix - **TO ADD** (line 626 in Linq.fs)
+- **Q3.6**: Perf verification for nested let bindings - **TO VERIFY** (run test with 10+ nesting)
+
+### Items Remaining Deferred
+- **D5.3**: DEVGUIDE.md update - Not needed (no architecture change)
+- **V5.4**: Code review - External process, not automatable
