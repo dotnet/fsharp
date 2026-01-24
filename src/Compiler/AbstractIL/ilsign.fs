@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
@@ -126,9 +126,7 @@ type BlobReader =
     val mutable _blob: byte array
     val mutable _offset: int
     new(blob: byte array) = { _blob = blob; _offset = 0 }
-    
-    member x.Offset with get() = x._offset and set(v) = x._offset <- v
-    
+
     member x.ReadInt32() : int =
         let offset = x._offset
         x._offset <- offset + 4
@@ -147,8 +145,7 @@ type BlobReader =
 let RSAParametersFromBlob blob keyType =
     let mutable reader = BlobReader blob
 
-    let header = reader.ReadInt32()
-    if header <> 0x00000206 && header <> 0x00000207 && keyType = KeyType.KeyPair then
+    if reader.ReadInt32() <> 0x00000207 && keyType = KeyType.KeyPair then
         raise (CryptographicException(getResourceString (FSComp.SR.ilSignPrivateKeyExpected ())))
 
     reader.ReadInt32() |> ignore // ALG_ID
@@ -304,25 +301,43 @@ let signStream stream keyBlob =
     patchSignature stream peReader signature
 
 let signatureSize (pk: byte array) =
-    if pk.Length < 20 then 0
+    if isNull (box pk) || pk.Length < 16 then
+        0
     else
         let reader = BlobReader pk
-        reader.Offset <- 12
-        let bitLen = reader.ReadInt32()
-        let modulusLength = bitLen / 8
-        
-        if modulusLength < 160 then 128 else modulusLength - 32
-// Key signing
-type keyContainerName = string
-type keyPair = byte array
-type pubkey = byte array
-type pubkeyOptions = byte array * bool
 
+        let tryReadBitLen (offset: int) =
+            if pk.Length >= offset + 12 then
+                reader._offset <- offset
+                let magic = reader.ReadInt32()
+
+                if magic = RSA_PUB_MAGIC || magic = RSA_PRIV_MAGIC then
+                    let bitLen = reader.ReadInt32()
+                    Some bitLen
+                else
+                    None
+            else
+                None
+
+        match tryReadBitLen 8 with
+        | Some bitLen -> (bitLen / 8 + 7) &&& ~~~7
+        | None ->
+            match tryReadBitLen 20 with
+            | Some bitLen -> (bitLen / 8 + 7) &&& ~~~7
+            | None -> 128
+
+// Returns a CLR Format Blob public key
 let getPublicKeyForKeyPair keyBlob =
     use rsa = RSA.Create()
     rsa.ImportParameters(RSAParametersFromBlob keyBlob KeyType.KeyPair)
     let rsaParameters = rsa.ExportParameters false
     toCLRKeyBlob rsaParameters CALG_RSA_KEYX
+
+// Key signing
+type keyContainerName = string
+type keyPair = byte array
+type pubkey = byte array
+type pubkeyOptions = byte array * bool
 
 let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 
@@ -368,7 +383,11 @@ type ILStrongNameSigner =
 
     member s.SignatureSize =
         let pkSignatureSize pk =
-            signerSignatureSize pk
+            try
+                signerSignatureSize pk
+            with exn ->
+                failwith ("A call to StrongNameSignatureSize failed (" + exn.Message + ")")
+                0x80
 
         match s with
         | PublicKeySigner pk -> pkSignatureSize pk
