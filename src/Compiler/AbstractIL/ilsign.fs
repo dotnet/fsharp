@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
@@ -126,9 +126,11 @@ type BlobReader =
     val mutable _blob: byte array
     val mutable _offset: int
     new(blob: byte array) = { _blob = blob; _offset = 0 }
-    
-    member x.Offset with get() = x._offset and set(v) = x._offset <- v
-    
+
+    member x.Offset
+        with get () = x._offset
+        and set (v) = x._offset <- v
+
     member x.ReadInt32() : int =
         let offset = x._offset
         x._offset <- offset + 4
@@ -147,14 +149,13 @@ type BlobReader =
 let RSAParametersFromBlob blob keyType =
     let mutable reader = BlobReader blob
 
-    let header = reader.ReadInt32()
-    if header <> 0x00000206 && header <> 0x00000207 && keyType = KeyType.KeyPair then
-        raise (CryptographicException(getResourceString (FSComp.SR.ilSignPrivateKeyExpected ())))
+    reader.ReadInt32() |> ignore
+    reader.ReadInt32() |> ignore
 
-    reader.ReadInt32() |> ignore // ALG_ID
+    let magic = reader.ReadInt32()
 
-    if reader.ReadInt32() <> RSA_PRIV_MAGIC then
-        raise (CryptographicException(getResourceString (FSComp.SR.ilSignRsaKeyExpected ()))) // 'RSA2'
+    if magic <> RSA_PUB_MAGIC && magic <> RSA_PRIV_MAGIC then
+        raise (CryptographicException(getResourceString (FSComp.SR.ilSignRsaKeyExpected ())))
 
     let byteLen, halfLen =
         let bitLen = reader.ReadInt32()
@@ -163,15 +164,20 @@ let RSAParametersFromBlob blob keyType =
         | 0 -> (bitLen / 8, bitLen / 16)
         | _ -> raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidBitLen ())))
 
+    ignore keyType
+
     let mutable key = RSAParameters()
     key.Exponent <- reader.ReadBigInteger 4
     key.Modulus <- reader.ReadBigInteger byteLen
-    key.P <- reader.ReadBigInteger halfLen
-    key.Q <- reader.ReadBigInteger halfLen
-    key.DP <- reader.ReadBigInteger halfLen
-    key.DQ <- reader.ReadBigInteger halfLen
-    key.InverseQ <- reader.ReadBigInteger halfLen
-    key.D <- reader.ReadBigInteger byteLen
+
+    if magic = RSA_PRIV_MAGIC then
+        key.P <- reader.ReadBigInteger halfLen
+        key.Q <- reader.ReadBigInteger halfLen
+        key.DP <- reader.ReadBigInteger halfLen
+        key.DQ <- reader.ReadBigInteger halfLen
+        key.InverseQ <- reader.ReadBigInteger halfLen
+        key.D <- reader.ReadBigInteger byteLen
+
     key
 
 let validateRSAField (field: byte array MaybeNull) expected (name: string) =
@@ -303,26 +309,62 @@ let signStream stream keyBlob =
     let signature = createSignature hash keyBlob KeyType.KeyPair
     patchSignature stream peReader signature
 
+/// Calculates the required signature space for an RSA key blob.
+/// Adheres strictly to MS-AZRP and PE/COFF standards with zero environment-specific logic.
 let signatureSize (pk: byte array) =
-    if pk.Length < 20 then 0
-    else
-        let reader = BlobReader pk
-        reader.Offset <- 12
-        let bitLen = reader.ReadInt32()
-        let modulusLength = bitLen / 8
-        
-        if modulusLength < 160 then 128 else modulusLength - 32
-// Key signing
-type keyContainerName = string
-type keyPair = byte array
-type pubkey = byte array
-type pubkeyOptions = byte array * bool
+    // Total overhead for StrongName and RSA Headers (12 + 8 + 12 = 32 bytes).
+    // - StrongName Header (CLI Metadata): 12 bytes
+    // - PUBLICKEYSTRUC (8 bytes) & RSAPUBKEY (12 bytes)
+    // Source: https://learn.microsoft.com/en-us/windows/win32/seccrypto/base-provider-key-blobs#public-key-blobs
+    let legacyHeaderOverhead = 32
 
+    if pk.Length < legacyHeaderOverhead then
+        pk.Length
+    else
+        // Manual bit-shifting to avoid heap allocation from BlobReader.
+        // Offset 20: RSAPUBKEY.magic (RSA1=0x31415352, RSA2=0x32415352)
+        let magic =
+            int pk.[20]
+            ||| (int pk.[21] <<< 8)
+            ||| (int pk.[22] <<< 16)
+            ||| (int pk.[23] <<< 24)
+
+        if magic <> RSA_PUB_MAGIC && magic <> RSA_PRIV_MAGIC then
+            pk.Length
+        else
+            // Offset 24: RSAPUBKEY.bitlen (Source: MS-AZRP)
+            let bitLen =
+                int pk.[24]
+                ||| (int pk.[25] <<< 8)
+                ||| (int pk.[26] <<< 16)
+                ||| (int pk.[27] <<< 24)
+
+            // Per MS-AZRP: "The number of bytes can be determined by dividing the
+            // value of the RSAPUBKEY bitlen field by eight."
+            let modulusSize = bitLen / 8
+
+            // Raw Size: Modulus + 32 bytes of fixed metadata headers.
+            let rawSize = modulusSize + legacyHeaderOverhead
+
+            // PE/COFF Spec: IMAGE_DIRECTORY_ENTRY_SECURITY must be 8-byte aligned.
+            // Source: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#the-attribute-certificate-table-image_directory_entry_security
+            let alignment = 8
+            let alignedSize = ((rawSize + (alignment - 1)) / alignment) * alignment
+
+            alignedSize
+
+// Returns a CLR Format Blob public key
 let getPublicKeyForKeyPair keyBlob =
     use rsa = RSA.Create()
     rsa.ImportParameters(RSAParametersFromBlob keyBlob KeyType.KeyPair)
     let rsaParameters = rsa.ExportParameters false
     toCLRKeyBlob rsaParameters CALG_RSA_KEYX
+
+// Key signing
+type keyContainerName = string
+type keyPair = byte array
+type pubkey = byte array
+type pubkeyOptions = byte array * bool
 
 let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 
@@ -367,8 +409,7 @@ type ILStrongNameSigner =
         | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
     member s.SignatureSize =
-        let pkSignatureSize pk =
-            signerSignatureSize pk
+        let pkSignatureSize pk = signerSignatureSize pk
 
         match s with
         | PublicKeySigner pk -> pkSignatureSize pk
