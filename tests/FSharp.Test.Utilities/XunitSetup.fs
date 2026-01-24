@@ -6,6 +6,11 @@ open Xunit
 // This replaces the OneTimeSetup.EnsureInitialized() call that was done in FSharpXunitFramework
 module private XUnitInit =
     let private ensureInitialized = lazy (
+#if !NETCOREAPP
+        // On .NET Framework, we need the assembly resolver for finding assemblies
+        // that might be in different locations (e.g., when FSI loads assemblies)
+        AssemblyResolver.addResolver()
+#endif
         TestConsole.install()
     )
     
