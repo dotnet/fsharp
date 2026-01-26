@@ -75,6 +75,102 @@ type PrintfTests() =
         Assert.AreEqual("      7B", sprintf "%*X"  8 123  )
         Assert.AreEqual("7B      ", sprintf "%-*X" 8 123  ) 
         
+    // test cases for https://github.com/dotnet/fsharp/issues/15557
+    [<Fact>]
+    member this.``sign flag - positive and negative one``() =
+        test "%f"  +1.0         "1.000000"
+        test "%f"  -1.0         "-1.000000"
+        test "%+f" +1.0         "+1.000000"
+        test "%+f" -1.0         "-1.000000"
+        
+        test "%f"  +1.0f        "1.000000"
+        test "%f"  -1.0f        "-1.000000"
+        test "%+f" +1.0f        "+1.000000"
+        test "%+f" -1.0f        "-1.000000"
+        
+        test "%f"  +1.0M        "1.000000"
+        test "%f"  -1.0M        "-1.000000"
+        test "%+f" +1.0M        "+1.000000"
+        test "%+f" -1.0M        "-1.000000"
+            
+    [<Fact>]
+    member this.``sign flag - positive and negative zero``() =
+        test "%f"  +0.0         "0.000000"
+        test "%f"  -0.0         "0.000000"
+        test "%+f" +0.0         "+0.000000"
+        test "%+f" -0.0         "+0.000000"
+        
+        test "%f"  +0.0f        "0.000000"
+        test "%f"  -0.0f        "0.000000"
+        test "%+f" +0.0f        "+0.000000"
+        test "%+f" -0.0f        "+0.000000"
+        
+        test "%f"  +0.0M        "0.000000"
+        test "%f"  -0.0M        "0.000000"
+        test "%+f" +0.0M        "+0.000000"
+        test "%+f" -0.0M        "+0.000000"
+    
+    [<Fact>]
+    member this.``sign flag - very small positive and negative numbers``() =
+        test "%f"  -0.0000001   "0.000000"
+        // TODO: should this output -0.000000 or +0.000000? See https://github.com/dotnet/fsharp/pull/18147#issuecomment-2546220183
+        // test "%+f" -0.0000001   "+0.000000"
+        
+        test "%f"  -0.0000001f  "0.000000"
+        // see previous comment
+        // test "%+f" -0.0000001f  "+0.000000"
+        
+        test "%f"  -0.0000001M  "0.000000"
+        // see previous comment
+        // test "%+f" -0.0000001M  "+0.000000"
+    
+    [<Fact>]
+    member this.``sign flag - infinity``() =
+        test "%f"  +infinity    "Infinity"
+        test "%f"  -infinity    "-Infinity"
+        test "%+f" +infinity    "Infinity"
+        test "%+f" -infinity    "-Infinity"
+        
+        test "%f"  +infinityf   "Infinity"
+        test "%f"  -infinityf   "-Infinity"
+        test "%+f" +infinityf   "Infinity"
+        test "%+f" -infinityf   "-Infinity"
+
+    [<Fact>]
+    member this.``sign flag - NaN``() =
+        test "%f"  +nan         "NaN"
+        test "%f"  -nan         "NaN"
+        test "%+f" +nan         "NaN"
+        test "%+f" -nan         "NaN"
+        
+        test "%f"  +nanf        "NaN"
+        test "%f"  -nanf        "NaN"
+        test "%+f" +nanf        "NaN"
+        test "%+f" -nanf        "NaN"
+    
+    // test cases for https://github.com/dotnet/fsharp/issues/15558 (same root cause as #15557; listing for completeness)
+    [<Fact>]
+    member this.``zero padding - positive and negative one`` () =
+        test "%010.3f" +1.0  "000001.000"
+        test "%010.3f" -1.0  "-00001.000"
+        
+        test "%010.3f" +1.0f "000001.000"
+        test "%010.3f" -1.0f "-00001.000"
+        
+        test "%010.3f" +1.0M "000001.000"
+        test "%010.3f" -1.0M "-00001.000"
+    
+    [<Fact>]
+    member this.``zero padding - positive and negative zero`` () =
+        test "%010.3f" +0.0         "000000.000"
+        test "%010.3f" -0.0         "000000.000"
+        
+        test "%010.3f" +0.0f        "000000.000"
+        test "%010.3f" -0.0f        "000000.000"
+        
+        test "%010.3f" +0.0M        "000000.000"
+        test "%010.3f" -0.0M        "000000.000"
+    
     [<Fact>]
     member _.``union case formatting`` () =
         Assert.AreEqual("CaseOne", sprintf "%A" CaseOne)
