@@ -513,20 +513,14 @@ module Command =
     let exec dir envVars (redirect:RedirectInfo) path args =
 
         let inputWriter sources (writer: StreamWriter) =
-            let pipeFile name = async {
-                let path = Commands.getfullpath dir name
+            let path = Commands.getfullpath dir sources
+            try
                 use reader = File.OpenRead (path)
-                use ms = new MemoryStream()
-                do! reader.CopyToAsync (ms) |> (Async.AwaitIAsyncResult >> Async.Ignore)
-                ms.Position <- 0L
-                try
-                    do! ms.CopyToAsync(writer.BaseStream) |> (Async.AwaitIAsyncResult >> Async.Ignore)
-                    do! writer.FlushAsync() |> (Async.AwaitIAsyncResult >> Async.Ignore)
-                with
-                | :? System.IO.IOException -> //input closed is ok if process is closed
-                    ()
-                }
-            sources |> pipeFile |> Async.RunSynchronously
+                reader.CopyTo(writer.BaseStream)
+                writer.BaseStream.Flush()
+            with
+            | :? System.IO.IOException -> //input closed is ok if process is closed
+                ()
 
         let inF fCont cmdArgs =
             match redirect.Input with
