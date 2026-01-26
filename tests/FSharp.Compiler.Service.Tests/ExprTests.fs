@@ -3694,3 +3694,506 @@ let validate pred msg value : Validated<'a> =
     else Error [msg]
 """
     ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_tuple - DU case with tuple containing generic param`` () =
+    // The tuple ('a * int) creates a TType_tuple. hasConditionalTypar must recurse into it.
+    let source = """
+module M
+
+type WithTuple<'a> =
+    | TupleCase of 'a * int
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_tuple - DU case with nested tuple containing generic param`` () =
+    // Nested tuples: ('a * (int * string))
+    let source = """
+module M
+
+type WithNestedTuple<'a> =
+    | NestedTupleCase of 'a * (int * string)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_tuple - DU case with generic param in second position`` () =
+    // (int * 'a) - generic param not in first position
+    let source = """
+module M
+
+type TupleSecondPos<'a> =
+    | Case of int * 'a
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_tuple - DU case with multiple generics in tuple`` () =
+    // ('a * 'b * 'c) - multiple generic params in tuple
+    let source = """
+module M
+
+type MultiGenericTuple<'a, 'b, 'c> =
+    | Case of 'a * 'b * 'c
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_tuple - struct tuple containing generic param`` () =
+    // struct ('a * int) creates a struct TType_tuple
+    let source = """
+module M
+
+type WithStructTuple<'a> =
+    | StructTupleCase of struct ('a * int)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_tuple - record with tuple field containing generic`` () =
+    let source = """
+module M
+
+type RecordWithTuple<'a> = { Pair: 'a * int; Name: string }
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_fun - DU case with function type containing generic param in domain`` () =
+    // ('a -> int) creates a TType_fun with generic in domain position
+    let source = """
+module M
+
+type WithFunDomain<'a> =
+    | FunCase of ('a -> int)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_fun - DU case with function type containing generic param in range`` () =
+    // (int -> 'a) creates a TType_fun with generic in range position
+    let source = """
+module M
+
+type WithFunRange<'a> =
+    | FunCase of (int -> 'a)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_fun - DU case with function type containing generic in both positions`` () =
+    // ('a -> 'b) creates a TType_fun with generics in both positions
+    let source = """
+module M
+
+type WithFunBoth<'a, 'b> =
+    | FunCase of ('a -> 'b)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_fun - DU case with nested function type`` () =
+    // ('a -> int -> string) - curried function
+    let source = """
+module M
+
+type WithNestedFun<'a> =
+    | FunCase of ('a -> int -> string)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_fun - DU case with higher-order function`` () =
+    // (('a -> int) -> string) - function taking a function
+    let source = """
+module M
+
+type WithHigherOrderFun<'a> =
+    | FunCase of (('a -> int) -> string)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_fun - record with function field`` () =
+    let source = """
+module M
+
+type RecordWithFun<'a> = { Transform: 'a -> string; Id: int }
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_anon - DU case with anonymous record containing generic param`` () =
+    // {| Value: 'a |} creates a TType_anon
+    let source = """
+module M
+
+type WithAnon<'a> =
+    | AnonCase of {| Value: 'a |}
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_anon - DU case with anonymous record multiple fields`` () =
+    // {| First: 'a; Second: 'b |} with multiple generic params
+    let source = """
+module M
+
+type WithAnonMultiple<'a, 'b> =
+    | AnonCase of {| First: 'a; Second: 'b; Fixed: int |}
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_anon - DU case with nested anonymous record`` () =
+    // {| Inner: {| Value: 'a |} |} - nested anon records
+    let source = """
+module M
+
+type WithNestedAnon<'a> =
+    | AnonCase of {| Inner: {| Value: 'a |} |}
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_anon - struct anonymous record containing generic`` () =
+    let source = """
+module M
+
+type WithStructAnon<'a> =
+    | StructAnonCase of struct {| Value: 'a |}
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_anon - record with anonymous record field`` () =
+    let source = """
+module M
+
+type RecordWithAnon<'a> = { Anon: {| Data: 'a |}; Name: string }
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - mixed TType_tuple and TType_fun`` () =
+    // ('a * int) -> string - tuple in function domain
+    let source = """
+module M
+
+type MixedTupleFun<'a> =
+    | Case of (('a * int) -> string)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - mixed TType_fun in TType_tuple`` () =
+    // ('a -> int) * string - function in tuple
+    let source = """
+module M
+
+type MixedFunTuple<'a> =
+    | Case of (('a -> int) * string)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - mixed TType_anon in TType_tuple`` () =
+    // {| V: 'a |} * int - anon record in tuple
+    let source = """
+module M
+
+type MixedAnonTuple<'a> =
+    | Case of ({| V: 'a |} * int)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - mixed TType_tuple in TType_anon`` () =
+    // {| Pair: 'a * int |} - tuple in anon record
+    let source = """
+module M
+
+type MixedTupleAnon<'a> =
+    | Case of {| Pair: 'a * int |}
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - deeply nested combination`` () =
+    // Complex nesting of tuple, function, and anon record
+    let source = """
+module M
+
+type DeeplyNested<'a, 'b> =
+    | Case of {| Transform: ('a * int) -> {| Result: 'b |}; Pair: 'a * 'b |}
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic param wrapped in list inside tuple`` () =
+    // ('a list * int) - TType_app inside TType_tuple
+    let source = """
+module M
+
+type ListInTuple<'a> =
+    | Case of 'a list * int
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic param wrapped in option inside function`` () =
+    // ('a option -> int) - TType_app inside TType_fun
+    let source = """
+module M
+
+type OptionInFun<'a> =
+    | Case of ('a option -> int)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic param wrapped in array inside anon record`` () =
+    // {| Items: 'a array |} - TType_app inside TType_anon
+    let source = """
+module M
+
+type ArrayInAnon<'a> =
+    | Case of {| Items: 'a array |}
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - TType_ucase - DU containing another DU with generic`` () =
+    // Outer DU case contains an inner DU instantiated with the generic param
+    let source = """
+module M
+
+type Inner<'a> =
+    | InnerCase of 'a
+
+type Outer<'a> =
+    | OuterCase of Inner<'a> * int
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - triple nested generic in tuple`` () =
+    // ((('a * int) * string) * bool) - deeply nested tuple
+    let source = """
+module M
+
+type TripleNestedTuple<'a> =
+    | Case of ((('a * int) * string) * bool)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic at leaf of complex function type`` () =
+    // int -> string -> bool -> 'a - generic only at the end
+    let source = """
+module M
+
+type FunWithGenericAtEnd<'a> =
+    | Case of (int -> string -> bool -> 'a)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - struct DU with tuple case`` () =
+    let source = """
+module M
+
+[<Struct>]
+type StructWithTuple<'a> =
+    | Case of item1: 'a * item2: int
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - struct record with tuple field`` () =
+    let source = """
+module M
+
+[<Struct>]
+type StructRecordWithTuple<'a> = { Pair: 'a * int }
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - struct record with function field`` () =
+    let source = """
+module M
+
+[<Struct>]
+type StructRecordWithFun<'a> = { Transform: 'a -> int }
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - multiple DU cases with different tuple shapes`` () =
+    let source = """
+module M
+
+type MultiCaseTuples<'a, 'b> =
+    | Case1 of 'a * int
+    | Case2 of int * 'b
+    | Case3 of 'a * 'b * string
+    | Case4 of ('a * int) * ('b * string)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - DU with both explicit constraint and tuple`` () =
+    // One param has comparison, one doesn't; both appear in tuples
+    let source = """
+module M
+
+type MixedConstraintsTuple<'a, 'b when 'a : comparison> =
+    | Case of 'a * 'b * int
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - recursive DU with tuple`` () =
+    let source = """
+module M
+
+type Tree<'a> =
+    | Leaf of 'a
+    | Node of Tree<'a> * Tree<'a>
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - mutually recursive DUs with tuples`` () =
+    let source = """
+module M
+
+type Expr<'a> =
+    | Const of 'a
+    | Binary of Expr<'a> * Op<'a> * Expr<'a>
+
+and Op<'a> =
+    | Add
+    | Custom of ('a * 'a -> 'a)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic class with method returning tuple`` () =
+    let source = """
+module M
+
+type Container<'a>(value: 'a) =
+    member _.GetWithIndex(i: int) : 'a * int = (value, i)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic interface implementation in object expression with tuple`` () =
+    let source = """
+module M
+
+type IPair<'a> =
+    abstract GetPair: unit -> 'a * int
+
+let makePair (x: 'a) =
+    { new IPair<'a> with
+        member _.GetPair() = (x, 42) }
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - Choice type with tuple`` () =
+    // F# Choice types are common and may trigger the bug
+    let source = """
+module M
+
+type MyChoice<'a, 'b> =
+    | Choice1 of 'a * int
+    | Choice2 of 'b * string
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - Result-like type with tuple in error case`` () =
+    let source = """
+module M
+
+type Outcome<'ok, 'err> =
+    | Success of 'ok
+    | Failure of 'err * string  // error with message
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - async-like wrapper with tuple`` () =
+    let source = """
+module M
+
+type Delayed<'a> =
+    | Immediate of 'a
+    | Deferred of (unit -> 'a) * int  // thunk with delay
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - event type with handler function`` () =
+    let source = """
+module M
+
+type Event<'a> =
+    | Event of handler: ('a -> unit) * name: string
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - validation type with function`` () =
+    let source = """
+module M
+
+type Validator<'a> =
+    | Validator of validate: ('a -> bool) * errorMsg: string
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - codec type with encode and decode functions`` () =
+    let source = """
+module M
+
+type Codec<'a> =
+    | Codec of encode: ('a -> string) * decode: (string -> 'a option)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - state monad-like type`` () =
+    let source = """
+module M
+
+type State<'s, 'a> =
+    | State of run: ('s -> 'a * 's)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - reader monad-like type`` () =
+    let source = """
+module M
+
+type Reader<'env, 'a> =
+    | Reader of run: ('env -> 'a)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - writer monad-like type with tuple`` () =
+    let source = """
+module M
+
+type Writer<'w, 'a> =
+    | Writer of value: 'a * log: 'w list
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
