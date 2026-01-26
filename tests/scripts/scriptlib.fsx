@@ -147,16 +147,12 @@ module Scripting =
             cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
 
             cmdArgs.RedirectInput |> Option.iter (fun input -> 
-               async {
                 let inputWriter = p.StandardInput
-                do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
                 input inputWriter
-                do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
-                inputWriter.Dispose ()
-               } 
-               |> Async.Start)
+                inputWriter.Flush()
+                inputWriter.Dispose())
 
-            p.WaitForExit() 
+            p.WaitForExit()
 
             printf $"{string out}"
             eprintf $"{string err}"
