@@ -513,20 +513,30 @@ module Command =
     let exec dir envVars (redirect:RedirectInfo) path args =
 
         let inputWriter sources (writer: StreamWriter) =
-            let pipeFile name = async {
-                let path = Commands.getfullpath dir name
+            let path = Commands.getfullpath dir sources
+            eprintfn "[DIAG] inputWriter: sources='%s', resolved path='%s'" sources path
+            eprintfn "[DIAG] inputWriter: file exists=%b" (File.Exists path)
+            if File.Exists path then
+                let fileInfo = FileInfo(path)
+                eprintfn "[DIAG] inputWriter: file size=%d bytes" fileInfo.Length
+            try
                 use reader = File.OpenRead (path)
-                use ms = new MemoryStream()
-                do! reader.CopyToAsync (ms) |> (Async.AwaitIAsyncResult >> Async.Ignore)
-                ms.Position <- 0L
-                try
-                    do! ms.CopyToAsync(writer.BaseStream) |> (Async.AwaitIAsyncResult >> Async.Ignore)
-                    do! writer.FlushAsync() |> (Async.AwaitIAsyncResult >> Async.Ignore)
-                with
-                | :? System.IO.IOException -> //input closed is ok if process is closed
-                    ()
-                }
-            sources |> pipeFile |> Async.RunSynchronously
+                eprintfn "[DIAG] inputWriter: opened file, stream length=%d" reader.Length
+                let content = Array.zeroCreate<byte> (int reader.Length)
+                let bytesRead = reader.Read(content, 0, content.Length)
+                eprintfn "[DIAG] inputWriter: read %d bytes from file" bytesRead
+                eprintfn "[DIAG] inputWriter: file content (first 100 chars): '%s'" (System.Text.Encoding.UTF8.GetString(content, 0, min 100 bytesRead))
+                eprintfn "[DIAG] inputWriter: writer.BaseStream type=%s, CanWrite=%b" (writer.BaseStream.GetType().Name) writer.BaseStream.CanWrite
+                writer.BaseStream.Write(content, 0, bytesRead)
+                eprintfn "[DIAG] inputWriter: wrote %d bytes to BaseStream" bytesRead
+                writer.BaseStream.Flush()
+                eprintfn "[DIAG] inputWriter: flushed BaseStream"
+            with
+            | :? System.IO.IOException as ex ->
+                eprintfn "[DIAG] inputWriter: IOException caught: %s" ex.Message
+            | ex ->
+                eprintfn "[DIAG] inputWriter: Unexpected exception: %s - %s" (ex.GetType().Name) ex.Message
+                reraise()
 
         let inF fCont cmdArgs =
             match redirect.Input with

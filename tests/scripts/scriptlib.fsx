@@ -148,11 +148,23 @@ module Scripting =
 
             cmdArgs.RedirectInput |> Option.iter (fun input -> 
                 let inputWriter = p.StandardInput
+                eprintfn "[DIAG] scriptlib: About to write stdin, inputWriter.Encoding=%s" inputWriter.Encoding.EncodingName
+                eprintfn "[DIAG] scriptlib: inputWriter.BaseStream type=%s, CanWrite=%b" (inputWriter.BaseStream.GetType().Name) inputWriter.BaseStream.CanWrite
+                eprintfn "[DIAG] scriptlib: Process HasExited=%b before stdin write" p.HasExited
                 input inputWriter
+                eprintfn "[DIAG] scriptlib: Finished calling input callback"
+                eprintfn "[DIAG] scriptlib: Process HasExited=%b after stdin write" p.HasExited
                 inputWriter.Flush()
-                inputWriter.Dispose())
+                eprintfn "[DIAG] scriptlib: Flushed inputWriter"
+                inputWriter.Dispose()
+                eprintfn "[DIAG] scriptlib: Disposed inputWriter (stdin closed)")
 
             p.WaitForExit()
+
+            eprintfn "[DIAG] scriptlib: Process exited with code %d" p.ExitCode
+            eprintfn "[DIAG] scriptlib: stdout length=%d, stderr length=%d" out.Length err.Length
+            if err.Length > 0 then
+                eprintfn "[DIAG] scriptlib: stderr content (first 500 chars): %s" (err.ToString().Substring(0, min 500 err.Length))
 
             printf $"{string out}"
             eprintf $"{string err}"
