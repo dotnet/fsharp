@@ -2441,12 +2441,14 @@ let ``Test Project15 all symbols`` () =
 
         |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project15.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su)
 
+    // Note: h on lines 7 and 8 are secondary bindings in Or patterns and are classified
+    // as Use (empty), not Binding (["defn"]), per fix for https://github.com/dotnet/fsharp/issues/5546
     allUsesOfAllSymbols |> shouldEqual
           [|("val x", "x", "file1", ((4, 6), (4, 7)), ["defn"]);
             ("val x", "x", "file1", ((5, 10), (5, 11)), []);
             ("val h", "h", "file1", ((6, 7), (6, 8)), ["defn"]);
-            ("val h", "h", "file1", ((7, 10), (7, 11)), ["defn"]);
-            ("val h", "h", "file1", ((8, 13), (8, 14)), ["defn"]);
+            ("val h", "h", "file1", ((7, 10), (7, 11)), []);    // Or pattern secondary binding -> Use
+            ("val h", "h", "file1", ((8, 13), (8, 14)), []);    // Or pattern secondary binding -> Use
             ("val h", "h", "file1", ((8, 19), (8, 20)), []);
             ("val f", "f", "file1", ((4, 4), (4, 5)), ["defn"]);
             ("UnionPatterns", "UnionPatterns", "file1", ((2, 7), (2, 20)), ["defn"])|]
