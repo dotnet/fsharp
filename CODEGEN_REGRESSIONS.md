@@ -78,7 +78,7 @@ This document tracks known code generation bugs in the F# compiler that have doc
 | [#14707](#issue-14707) | Signature files become unusable | Compile Error | NicePrint.fs | Medium |
 | [#14706](#issue-14706) | Signature generation WhereTyparSubtypeOfType | Compile Error | NicePrint.fs | Low |
 | [#14508](#issue-14508) | nativeptr in interfaces leads to runtime errors | Runtime Error | IlxGen.fs | Medium |
-| [#14492](#issue-14492) | Incorrect program in release config | Invalid IL | IlxGen.fs | Medium |
+| [#14492](#issue-14492) | Incorrect program in release config | Invalid IL | EraseClosures.fs | Medium | ✅ FIXED |
 | [#14392](#issue-14392) | OpenApi Swashbuckle support | Feature Request | N/A | Low |
 | [#14321](#issue-14321) | Build fails reusing names DU constructors and IWSAM | Compile Error | NameResolution.fs | Low |
 | [#13468](#issue-13468) | outref parameter compiled as byref | Wrong Behavior | IlxGen.fs | Medium |
@@ -1722,9 +1722,9 @@ let inline tee f x =
 let memoizeLatestRef (f: 'a -> 'b) =
     let cell = ref None
     let f' (x: 'a) =
-        match !cell with
+        match cell.Value with
         | Some (x', value) when refEquals x' x -> value
-        | _ -> f x |> tee (fun y -> cell := Some (x, y))
+        | _ -> f x |> tee (fun y -> cell.Value <- Some (x, y))
     f'
 
 let f: string -> string = memoizeLatestRef id
@@ -1743,8 +1743,15 @@ Program runs correctly in release mode, printing "ok".
 ### Analysis
 Optimization in release mode produces a generated type that violates CLR constraints. The inline function with `'a : not struct` constraint interacts poorly with closure generation.
 
+**Root Cause:** When a closure is generated for an inline function that has constraints (e.g., `'a : not struct`), the closure inherits from `FSharpTypeFunc` and overrides the `Specialize<'T>` method. The base method has NO constraints on `'T`, but the generated override was including the constraints from the inline function's type parameters. The CLR requires that override methods cannot have different constraints than the base method.
+
+**Fix:** Strip all constraints from type parameters when generating the `Specialize` method override in `EraseClosures.fs`. Type safety is already enforced at the F# call site by the type checker.
+
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs`
+- `src/Compiler/CodeGen/EraseClosures.fs` (line ~565)
+
+### UPDATE (FIXED)
+Fixed by stripping constraints (`HasReferenceTypeConstraint`, `HasNotNullableValueTypeConstraint`, `HasDefaultConstructorConstraint`, `HasAllowsRefStruct`, and type `Constraints`) from the `ILGenericParameterDef` when generating the `Specialize` method override. This ensures the override matches the unconstrained base method signature while F# type safety is preserved at call sites.
 
 ### Risks
 - Medium: Release-specific bugs affect production code

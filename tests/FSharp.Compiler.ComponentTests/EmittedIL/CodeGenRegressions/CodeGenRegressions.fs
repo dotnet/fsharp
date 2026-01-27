@@ -1160,7 +1160,8 @@ type Working<'T when 'T : unmanaged>() =
     // https://github.com/dotnet/fsharp/issues/14492
     // TypeLoadException in release config: "Method 'Specialize' on type 'memoizeLatestRef@...'
     // tried to implicitly override a method with weaker type parameter constraints."
-    // [<Fact>]
+    // FIXED: Strip constraints from type parameters when generating Specialize method override.
+    [<Fact>]
     let ``Issue_14492_ReleaseConfigError`` () =
         // The bug: inline function with 'not struct' constraint + memoization causes
         // TypeLoadException at runtime in Release mode
@@ -1176,9 +1177,9 @@ let inline tee f x =
 let memoizeLatestRef (f: 'a -> 'b) =
     let cell = ref None
     let f' (x: 'a) =
-        match !cell with
+        match cell.Value with
         | Some (x', value) when refEquals x' x -> value
-        | _ -> f x |> tee (fun y -> cell := Some (x, y))
+        | _ -> f x |> tee (fun y -> cell.Value <- Some (x, y))
     f'
 
 module BugInReleaseConfig = 

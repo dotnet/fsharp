@@ -559,12 +559,28 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                 let convil = convILMethodBody (Some nowCloSpec, boxReturnTy) clo.cloCode.Value
 
+                // When overriding FSharpTypeFunc.Specialize<'T>, we must strip all constraints from the
+                // type parameters. The base method Specialize<'T> has no constraints, and the CLR requires
+                // that override methods cannot have different constraints than the base method.
+                // Type safety is already enforced at the F# call site by the type checker.
+                // See https://github.com/dotnet/fsharp/issues/14492
+                let specializeGenParams =
+                    addedGenParams
+                    |> List.map (fun gp ->
+                        { gp with
+                            Constraints = []
+                            HasReferenceTypeConstraint = false
+                            HasNotNullableValueTypeConstraint = false
+                            HasDefaultConstructorConstraint = false
+                            HasAllowsRefStruct = false
+                        })
+
                 let nowApplyMethDef =
                     mkILGenericVirtualMethod (
                         "Specialize",
                         ILCallingConv.Instance,
                         ILMemberAccess.Public,
-                        addedGenParams (* method is generic over added ILGenericParameterDefs *) ,
+                        specializeGenParams (* method is generic over added ILGenericParameterDefs, with constraints stripped *) ,
                         [],
                         mkILReturn cenv.ilg.typ_Object,
                         MethodBody.IL(notlazy convil)
