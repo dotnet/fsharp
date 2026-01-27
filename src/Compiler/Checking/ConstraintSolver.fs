@@ -445,7 +445,7 @@ let rec computeMethInfoHash (minfo: MethInfo) : int =
         computeMethInfoHash original
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(_, mb, _, _) ->
-        hash (mb.PUntaint((fun m -> m.Name), range0))
+        hash (mb.PUntaint((fun m -> m.Name, (nonNull<ProvidedType> m.DeclaringType).FullName |> string), range0))
 #endif
 
 /// Try to compute a cache key for overload resolution.
