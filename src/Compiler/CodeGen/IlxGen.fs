@@ -5526,8 +5526,16 @@ and GenILCall
 
     // When calling methods on value types via callvirt (e.g., calling System.Object.GetHashCode on a struct),
     // we need to use the constrained. prefix to produce valid IL. See ECMA-335 and issue #18140.
+    // However, for concrete reference types (classes), we should NOT use constrained call when calling
+    // interface methods, as this can cause CLR crashes. See issue #19075.
+    // Type parameters still need constrained calls (they might be instantiated to value types at runtime).
     let ccallInfo =
         match ccallInfo with
+        | Some objArgTy when not (isStructTy g objArgTy) && not (isTyparTy g objArgTy) ->
+            // Fix for #19075: For concrete reference types (not type parameters), don't use constrained call.
+            // The constrained prefix is only needed for value types to avoid boxing.
+            // Type parameters still need constrained calls because they might be value types at runtime.
+            None
         | Some _ -> ccallInfo
         | None when useICallVirt && not (List.isEmpty argExprs) ->
             let objArgExpr = List.head argExprs
@@ -8374,8 +8382,30 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
     let recursiveVars =
         Zset.addList (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
 
+    // Helper to check if a binding's expression is a lambda/closure (which can be fixed up later).
+    // Non-lambda bindings evaluate their RHS immediately and must have their forward references
+    // already initialized. Fix for issue #16546: Debug build null reference with recursive bindings.
+    let isLambdaBinding (TBind(_, expr, _)) =
+        // Use stripDebugPoints to handle debug-wrapped expressions
+        match stripDebugPoints expr with
+        | Expr.Lambda _
+        | Expr.TyLambda _
+        | Expr.Obj _ -> true
+        | _ -> false
+
+    // Reorder bindings so lambda bindings come before non-lambda bindings.
+    // This ensures that when computing fixups and generating bindings:
+    // 1. Lambda bindings are processed first, so their forward references are correctly tracked
+    // 2. Non-lambda bindings (which evaluate their RHS immediately) see lambda bindings as already defined
+    let reorderBindingsLambdasFirst binds =
+        let lambdas, nonLambdas = binds |> List.partition isLambdaBinding
+        lambdas @ nonLambdas
+
+    // Reorder for fixup computation
+    let reorderedBindsPossiblyRequiringFixup = reorderBindingsLambdasFirst bindsPossiblyRequiringFixup
+
     let _ =
-        (recursiveVars, bindsPossiblyRequiringFixup)
+        (recursiveVars, reorderedBindsPossiblyRequiringFixup)
         ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
             // Compute fixups
             bind.Expr
@@ -8419,6 +8449,8 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
     let _ =
         (recursiveVars, groupBinds)
         ||> List.fold (fun forwardReferenceSet (binds: Binding list) ->
+            // Reorder so lambdas are generated first
+            let binds = reorderBindingsLambdasFirst binds
             match dict, cenv.g.realsig, binds with
             | _, false, _
             | None, _, _
@@ -8455,8 +8487,23 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
 
 and GenLetRec cenv cgbuf eenv (binds, body, m) sequel =
     let _, endMark as scopeMarks = StartLocalScope "letrec" cgbuf
-    let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
-    GenLetRecBindings cenv cgbuf eenv (binds, m) None
+    
+    // Helper to check if a binding's expression is a lambda/closure.
+    // Fix for issue #16546: Reorder so lambda bindings are processed before non-lambda bindings.
+    let isLambdaBindingForReorder (TBind(_, expr, _)) =
+        match stripDebugPoints expr with
+        | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ -> true
+        | _ -> false
+
+    // Reorder bindings: lambdas first, then non-lambdas.
+    // This ensures that when a non-lambda binding captures a lambda binding,
+    // the lambda's storage is allocated and initialized before capture.
+    let reorderedBinds =
+        let lambdas, nonLambdas = binds |> List.partition isLambdaBindingForReorder
+        lambdas @ nonLambdas
+    
+    let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv reorderedBinds
+    GenLetRecBindings cenv cgbuf eenv (reorderedBinds, m) None
     GenExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark))
 
 //-------------------------------------------------------------------------

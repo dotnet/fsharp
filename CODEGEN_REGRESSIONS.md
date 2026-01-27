@@ -160,6 +160,19 @@ callvirt instance void [System.Runtime]System.IDisposable::Dispose()
 - Medium: Changes to constrained call generation could affect other SRTP scenarios
 - Need careful testing of all SRTP with interface constraint combinations
 
+### UPDATE (FIXED)
+
+The issue was caused by the compiler generating a constrained call prefix for reference types when calling interface methods through SRTP resolution. 
+
+When an SRTP member constraint resolves to an interface method, the compiler records a `PossibleConstrainedCall` flag with the concrete type. During code generation, this flag was used to emit a `constrained.` prefix even for concrete reference types (classes).
+
+**Root Cause:** The constrained prefix is only semantically necessary for value types (to avoid boxing) and for type parameters (which might be value types at runtime). For concrete reference types, the constrained prefix just dereferences the managed pointer and does a virtual call. However, when combined with interface method dispatch for classes like `MemoryStream` (which inherits `IDisposable` from `Stream`), this can cause CLR crashes.
+
+**Fix:** In `GenILCall` (IlxGen.fs), we now check if the constrained call target is a concrete reference type (not a struct and not a type parameter). If it is, we skip the constrained prefix and use a regular `callvirt` instead. Type parameters still use constrained calls because they might be instantiated to value types at runtime.
+
+**Changes:**
+- `src/Compiler/CodeGen/IlxGen.fs` - Added check in `GenILCall` to skip constrained prefix for concrete reference types (classes)
+
 ---
 
 ## Issue #19068
@@ -1019,12 +1032,66 @@ Works in both Debug and Release builds.
 ### Analysis
 In Debug mode, the initialization order of mutually recursive bindings differs from Release. When `paramParse` captures `parse`, it captures null in Debug mode.
 
+**Root Cause Investigation (Sprint 6):**
+The issue originates in the type checker's `EliminateInitializationGraphs` function (CheckExpressions.fs), not in IlxGen. When forward references are detected, the type checker inserts Lazy wrappers:
+
+```fsharp
+// Original:
+let rec paramParse = tryParam parse and parse node = ...
+
+// After type checker:
+let rec paramParse_thunk = fun () -> tryParam parse   // Captures parse
+        paramParse_lazy = Lazy.Create(paramParse_thunk)
+        paramParse = paramParse_lazy.Force()
+and parse node = ...  // Captures paramParse as Lazy
+```
+
+Reordering in IlxGen is insufficient because:
+1. The Lazy wrappers are already inserted
+2. The thunk closure captures `parse` during its creation (when `parse` is null)
+3. The fixup mechanism correctly updates the thunk's field, but the structure is different from the workaround
+
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs` - recursive binding initialization order in Debug mode
+- `src/Compiler/Checking/Expressions/CheckExpressions.fs` - `EliminateInitializationGraphs` function
+- Would require reordering bindings BEFORE checking for forward references
+
+**KNOWN LIMITATION:** This issue requires a type checker fix that is beyond simple code generator changes.
+
+### Workaround
+Reorder bindings in source code so lambdas come before non-lambdas:
+```fsharp
+// GOOD - lambda first:
+let rec parse node = ... and paramParse = tryParam parse
+
+// BAD - non-lambda first:  
+let rec paramParse = tryParam parse and parse node = ...
+```
 
 ### Risks
-- Medium: Changing initialization order could affect other mutual recursion scenarios
-- Workaround: Reorder bindings so referenced binding comes first
+- High: Type checker changes require careful consideration of all mutual recursion scenarios
+
+### UPDATE (KNOWN_LIMITATION)
+
+**Status:** KNOWN_LIMITATION - Requires type checker fix beyond scope of codegen bugfix campaign
+
+This issue cannot be fixed at the code generator level. The root cause is in the type checker's `EliminateInitializationGraphs` function (CheckExpressions.fs), which inserts Lazy wrappers for forward-referenced bindings. By the time IlxGen processes the code, the structure is fundamentally different from the workaround case.
+
+**Attempts made (5+):**
+1. Reordering in `GenLetRec` before `AllocStorageForBinds`
+2. Reordering in `GenLetRecBindings` for fixup computation
+3. Reordering in generation phase
+4. Debug tracing of fixup mechanism (verified correct execution)
+5. Analysis of closure structures (confirmed Lazy wrappers are the problem)
+
+**Why unfixable at codegen level:**
+- The Lazy wrappers are inserted by the type checker before IlxGen sees the code
+- The thunk closure captures `parse` during creation when `parse` local is null
+- Fixups correctly update closure fields but the structure is fundamentally different
+- The workaround case (source reordering) avoids Lazy wrappers entirely
+
+**Documented workaround:** Reorder bindings in source code so lambdas appear before non-lambdas that depend on them.
+
+**Future work:** Would require changes to `EliminateInitializationGraphs` in CheckExpressions.fs to reorder bindings BEFORE checking for forward references.
 
 ---
 

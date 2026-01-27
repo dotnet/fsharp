@@ -15,7 +15,7 @@ module CodeGenRegressions =
     // https://github.com/dotnet/fsharp/issues/19075
     // The combination of SRTP with IDisposable constraint and constrained call generates
     // invalid IL that causes a CLR crash (segfault) at runtime.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_19075_ConstrainedCallsCrash`` () =
         let source = """
 module Dispose
@@ -599,6 +599,16 @@ and 'T option = Option<'T>
     // https://github.com/dotnet/fsharp/issues/16546
     // When using mutually recursive let bindings in a certain order, the Debug build
     // produces a NullReferenceException while Release works correctly.
+    // 
+    // KNOWN LIMITATION: This issue requires a fix in the type checker (EliminateInitializationGraphs)
+    // to reorder bindings before inserting Lazy wrappers. The code generator reordering in IlxGen.fs
+    // is insufficient because by that point, the type checker has already inserted Lazy wrappers.
+    // 
+    // WORKAROUND: Reorder the bindings in source code so the lambda comes before the non-lambda:
+    //   let rec parse node = ... and paramParse = tryParam parse
+    // instead of:
+    //   let rec paramParse = tryParam parse and parse node = ...
+    // 
     // [<Fact>]
     let ``Issue_16546_DebugRecursiveReferenceNull`` () =
         let source = """
@@ -640,10 +650,11 @@ let main args =
         FSharp source
         |> asExe
         |> withDebug
+        |> withNoOptimize  // Required to trigger the bug - Debug symbols + no optimizations
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // This will fail with NullReferenceException in Debug - bug exists
+        |> shouldSucceed // NOT YET FIXED: Still throws NullReferenceException - requires type checker fix
         |> ignore
 
     // ===== Issue #16378: Significant allocations logging F# types =====
