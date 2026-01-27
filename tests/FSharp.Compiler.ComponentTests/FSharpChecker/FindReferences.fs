@@ -21,6 +21,46 @@ let deriveOccurrence (su:FSharpSymbolUse) =
     then Use
     else failwith $"Unexpected type of occurrence (for this test), symbolUse = {su}" 
 
+// =============================================================================
+// Test Helpers - Reduce boilerplate in single-file find-references tests
+// =============================================================================
+
+/// Finds all references to a symbol in source code using singleFileChecker.
+/// Returns a list of (fileName, line, startCol, endCol) tuples.
+let findRefsInSource source symbolName =
+    let fileName, options, checker = singleFileChecker source
+    let symbolUse = getSymbolUse fileName source symbolName options checker |> Async.RunSynchronously
+    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
+    |> Async.RunSynchronously
+
+/// Runs a complete find-references test: finds symbol and asserts expected ranges.
+let testFindRefsInSource source symbolName expectedRanges =
+    findRefsInSource source symbolName |> expectToFind expectedRanges
+
+/// Asserts that the given ranges contain exactly the expected line numbers.
+let expectLines expectedLines (ranges: range seq) =
+    let actualLines = ranges |> Seq.map (fun r -> r.StartLine) |> Seq.sort |> Seq.distinct |> Seq.toList
+    Assert.Equal<int list>(expectedLines, actualLines)
+
+/// Asserts that the given ranges match the expected (line, startCol, endCol) tuples.
+let expectRanges expected (ranges: range seq) =
+    let actual =
+        ranges
+        |> Seq.sortBy (fun r -> r.StartLine, r.StartColumn)
+        |> Seq.map (fun r -> r.StartLine, r.StartColumn, r.EndColumn)
+        |> Seq.toArray
+    Assert.Equal<(int * int * int) array>(expected, actual)
+
+/// Asserts that ranges include references at all specified line numbers.
+let expectLinesInclude expectedLines (ranges: range list) =
+    let actualLines = ranges |> List.map (fun r -> r.StartLine) |> Set.ofList
+    for line in expectedLines do
+        Assert.True(actualLines.Contains(line), $"Expected reference on line {line}. Ranges: {ranges}")
+
+/// Asserts a minimum number of references.
+let expectMinRefs minCount (ranges: range list) =
+    Assert.True(ranges.Length >= minCount, $"Expected at least {minCount} references, got {ranges.Length}")
+
 /// https://github.com/dotnet/fsharp/issues/13199
 let reproSourceCode = """
 type MyType() = 
@@ -56,24 +96,11 @@ let ``Finding usage of type via GetUsesOfSymbolInFile should also find it's cons
 
 [<Fact>]
 let ``Finding usage of type via FindReference should also find it's constructors`` () =
-    createProject().Workflow
-        {        
-            placeCursor "First" 7 11 "type MyType() =" ["MyType"]     
-            findAllReferencesInFile "First" (fun (ranges:list<FSharp.Compiler.Text.range>) ->
-                let ranges = 
-                    ranges 
-                    |> List.sortBy (fun r -> r.StartLine)
-                    |> List.map (fun r -> r.StartLine, r.StartColumn, r.EndColumn)
-                    |> Array.ofSeq
-
-                Assert.Equal<(int*int*int)>(
-                    [| 7,5,11 // Typedef itself
-                       8,25,31 // Usage within type
-                       10,8,14 // "a= ..." constructor 
-                       11,12,18 // "b= ..." constructor
-                    |],ranges)  )    
-
-        }
+    createProject().Workflow {
+        placeCursor "First" 7 11 "type MyType() =" ["MyType"]
+        findAllReferencesInFile "First" (fun ranges ->
+            expectRanges [| 7,5,11; 8,25,31; 10,8,14; 11,12,18 |] ranges)
+    }
 
 [<Fact>]
 let ``Finding usage of type via FindReference works across files`` () =
@@ -85,22 +112,11 @@ secondA.DoNothing(secondB)
  """}
     let original = createProject()
     let project = {original with SourceFiles = original.SourceFiles @ [secondFile]}
-    project.Workflow
-        {        
-            placeCursor "First" 7 11 "type MyType() =" ["MyType"]     
-            findAllReferencesInFile "Second" (fun (ranges:list<FSharp.Compiler.Text.range>) ->
-                let ranges = 
-                    ranges 
-                    |> List.sortBy (fun r -> r.StartLine)
-                    |> List.map (fun r -> r.StartLine, r.StartColumn, r.EndColumn)
-                    |> Array.ofSeq
-
-                Assert.Equal<(int*int*int)>(
-                    [| 9,14,20 // "secondA = ..." constructor 
-                       10,18,24 // "secondB = ..." constructor
-                    |],ranges)  )    
-
-        }
+    project.Workflow {
+        placeCursor "First" 7 11 "type MyType() =" ["MyType"]
+        findAllReferencesInFile "Second" (fun ranges ->
+            expectRanges [| 9,14,20; 10,18,24 |] ranges)
+    }
 
 [<Theory>]
 [<InlineData(true, true)>]
@@ -414,24 +430,13 @@ let ``We find values of a type that has been aliased`` () =
 
 [<Fact>]
 let ``We don't find type aliases for a type`` () =
-
     let source = """
 type MyType =
     member _.foo = "boo"
     member x.this : mytype = x
 and mytype = MyType
 """
-
-    let fileName, options, checker = singleFileChecker source
-
-    let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
-
-    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-    |> Async.RunSynchronously
-    |> expectToFind [
-        fileName, 2, 5, 11
-        fileName, 5, 13, 19
-    ]
+    testFindRefsInSource source "MyType" ["test.fs", 2, 5, 11; "test.fs", 5, 13, 19]
 
 /// https://github.com/dotnet/fsharp/issues/14396
 [<Fact>]
@@ -508,21 +513,10 @@ match 2 with
 | Even -> ()
 | Odd -> ()
 """
-        let fileName, options, checker = singleFileChecker source
-
-        let symbolUse = getSymbolUse fileName source "Even" options checker |> Async.RunSynchronously
-
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-        |> Async.RunSynchronously
-        |> expectToFind [
-            fileName, 2, 6, 10
-            fileName, 3, 22, 26
-            fileName, 5, 2, 6
-        ]
+        testFindRefsInSource source "Even" ["test.fs", 2, 6, 10; "test.fs", 3, 22, 26; "test.fs", 5, 2, 6]
 
     [<Fact>]
     let ``We don't find references to cases from other active patterns with the same name`` () =
-
         let source = """
 module One =
 
@@ -540,18 +534,7 @@ module Two =
     | Even -> ()
     | Steven -> ()
 """
-
-        let fileName, options, checker = singleFileChecker source
-
-        let symbolUse = getSymbolUse fileName source "Even" options checker |> Async.RunSynchronously
-
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-        |> Async.RunSynchronously
-        |> expectToFind [
-            fileName, 4, 10, 14
-            fileName, 5, 26, 30
-            fileName, 7, 6, 10
-        ]
+        testFindRefsInSource source "Even" ["test.fs", 4, 10, 14; "test.fs", 5, 26, 30; "test.fs", 7, 6, 10]
 
     [<Fact>]
     let ``We don't find references to cases the same active pattern defined in a different file`` () =
@@ -703,7 +686,7 @@ type internal SomeType() =
 
 [<Fact>]
 let ``Module with the same name as type`` () =
-        let source = """
+    let source = """
 module Foo
 
 type MyType =
@@ -715,22 +698,11 @@ module MyType = do () // <-- Extra module with the same name as the type
 
 let y = MyType.Two
 """
-
-        let fileName, options, checker = singleFileChecker source
-
-        let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
-
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-        |> Async.RunSynchronously
-        |> expectToFind [
-            fileName, 4, 5, 11
-            fileName, 7, 8, 14
-            fileName, 11, 8, 14
-        ]
+    testFindRefsInSource source "MyType" ["test.fs", 4, 5, 11; "test.fs", 7, 8, 14; "test.fs", 11, 8, 14]
 
 [<Fact>]
 let ``Module with the same name as type part 2`` () =
-        let source = """
+    let source = """
 module Foo
 
 module MyType =
@@ -744,30 +716,13 @@ let x = MyType.Two
 
 let y = MyType.Three
 """
-
-        let fileName, options, checker = singleFileChecker source
-
-        let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
-
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-        |> Async.RunSynchronously
-        |> expectToFind [
-            fileName, 4, 7, 13
-            fileName, 13, 8, 14
-        ]
+    testFindRefsInSource source "MyType" ["test.fs", 4, 7, 13; "test.fs", 13, 8, 14]
 
 module Properties =
 
     /// Related to bug: https://github.com/dotnet/fsharp/issues/18270
-    /// This test documents the current compiler service behavior for properties with get/set accessors.
-    /// The compiler returns references for:
-    /// - The property definition
-    /// - The getter method (at 'get' keyword location)
-    /// - The setter method (at 'set' keyword location)
-    /// - Property uses (may include qualifying prefix like 'state.MyProperty')
-    /// 
-    /// The VS layer (InlineRenameService) filters out 'get'/'set' keywords and trims qualified names
-    /// using Tokenizer.tryFixupSpan to ensure correct rename behavior.
+    /// Documents compiler service behavior: returns property def, getter, setter, and usage references.
+    /// VS layer filters out 'get'/'set' keywords using Tokenizer.tryFixupSpan.
     [<Fact>]
     let ``We find all references for property with get and set accessors`` () =
         let source = """
@@ -785,34 +740,19 @@ let test () =
     state.MyProperty <- true
     state.MyProperty
 """
-        let fileName, options, checker = singleFileChecker source
-
-        let symbolUse = getSymbolUse fileName source "MyProperty" options checker |> Async.RunSynchronously
-
-        // The compiler service returns all symbol references including getter/setter methods.
-        // Note: For rename operations, the VS layer (FSharp.Editor) filters these appropriately
-        // using Tokenizer.tryFixupSpan to exclude 'get'/'set' keywords and trim qualified names.
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-        |> Async.RunSynchronously
-        |> expectToFind [
-            // Definition of property "MyProperty"
-            fileName, 7, 16, 26
-            // Getter method at 'get' keyword - VS layer filters this out during rename
-            fileName, 8, 13, 16
-            // Setter method at 'set' keyword - VS layer filters this out during rename
-            fileName, 9, 12, 15
-            // Use at "state.MyProperty <- true" - VS layer trims to just "MyProperty"
-            fileName, 13, 4, 20
-            // Use at "state.MyProperty" - VS layer trims to just "MyProperty"
-            fileName, 14, 4, 20
+        // Compiler returns all refs including get/set; VS layer filters appropriately
+        testFindRefsInSource source "MyProperty" [
+            "test.fs", 7, 16, 26   // Definition
+            "test.fs", 8, 13, 16   // Getter at 'get' keyword
+            "test.fs", 9, 12, 15   // Setter at 'set' keyword
+            "test.fs", 13, 4, 20   // Usage with qualifier
+            "test.fs", 14, 4, 20   // Usage with qualifier
         ]
 
 /// Test for single-line interface syntax (related to #15399)
 module SingleLineInterfaceSyntax =
 
     /// Issue: https://github.com/dotnet/fsharp/issues/15399
-    /// Single-line interface syntax: type Foo() = interface IFoo with member __.Bar () = ()
-    /// Find All References should correctly find the interface member.
     [<Fact>]
     let ``We find interface members with single-line interface syntax`` () =
         let source = """
@@ -825,22 +765,12 @@ type Foo() = interface IFoo with member __.Bar () = ()
 let foo = Foo() :> IFoo
 foo.Bar()
 """
-        let fileName, options, checker = singleFileChecker source
-
-        let symbolUse = getSymbolUse fileName source "Bar" options checker |> Async.RunSynchronously
-
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-        |> Async.RunSynchronously
-        |> expectToFind [
-            // Abstract member definition
-            fileName, 4, 28, 31
-            // Implementation in single-line syntax
-            fileName, 6, 43, 46
-            // Use via foo.Bar() - range includes the qualifying "foo." prefix
-            fileName, 9, 0, 7
+        testFindRefsInSource source "Bar" [
+            "test.fs", 4, 28, 31  // Abstract member definition
+            "test.fs", 6, 43, 46  // Implementation
+            "test.fs", 9, 0, 7    // Usage via foo.Bar()
         ]
 
-    /// Make sure we find interface name references with single-line interface syntax
     [<Fact>]
     let ``We find interface type references with single-line interface syntax`` () =
         let source = """
@@ -852,19 +782,10 @@ type Foo() = interface IFoo with member __.Bar () = ()
 
 let foo = Foo() :> IFoo
 """
-        let fileName, options, checker = singleFileChecker source
-
-        let symbolUse = getSymbolUse fileName source "IFoo" options checker |> Async.RunSynchronously
-
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-        |> Async.RunSynchronously
-        |> expectToFind [
-            // Type definition
-            fileName, 4, 5, 9
-            // In implementation
-            fileName, 6, 23, 27
-            // In cast ":> IFoo"
-            fileName, 8, 19, 23
+        testFindRefsInSource source "IFoo" [
+            "test.fs", 4, 5, 9    // Type definition
+            "test.fs", 6, 23, 27  // In implementation
+            "test.fs", 8, 19, 23  // In cast
         ]
 
 module LineDirectives =
@@ -997,7 +918,6 @@ module EventHandlerSyntheticSymbols =
             }
 
 /// https://github.com/dotnet/fsharp/issues/15290
-/// Find all references of records should include copy-and-update
 module RecordCopyAndUpdate =
     
     [<Fact>]
@@ -1009,24 +929,12 @@ let m1 = { m with V = "m" }
 
 type R = { M: Model }
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with Source = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
             .Workflow {
                 placeCursor "Source" "Model"
-                findAllReferences (fun ranges -> 
-                    // Should include:
-                    // 1. Type definition on line 3
-                    // 2. Copy-and-update on line 5 (new!)
-                    // 3. Type annotation in R on line 7
-                    let hasDefinition = ranges |> List.exists (fun r -> r.StartLine = 3)
-                    let hasCopyAndUpdate = ranges |> List.exists (fun r -> r.StartLine = 5)
-                    let hasTypeAnnotation = ranges |> List.exists (fun r -> r.StartLine = 7)
-                    
-                    Assert.True(hasDefinition, $"Expected definition on line 3. Ranges: {ranges}")
-                    Assert.True(hasCopyAndUpdate, $"Expected copy-and-update reference on line 5. Ranges: {ranges}")
-                    Assert.True(hasTypeAnnotation, $"Expected type annotation on line 7. Ranges: {ranges}")
-                    Assert.True(ranges.Length >= 3, $"Expected at least 3 references for Model, got {ranges.Length}")
-                )
+                findAllReferences (fun ranges ->
+                    expectLinesInclude [3; 5; 7] ranges  // Type def, copy-and-update, type annotation
+                    expectMinRefs 3 ranges)
             }
     
     [<Fact>]
@@ -1037,22 +945,13 @@ type Outer = { I: Inner }
 let o = { I = { X = 1 } }
 let o2 = { o with I.X = 2 }
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with Source = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
             .Workflow {
                 placeCursor "Source" "Outer"
-                findAllReferences (fun ranges -> 
-                    // Should include the definition (line 4) and the copy-and-update (line 6)
-                    let hasDefinition = ranges |> List.exists (fun r -> r.StartLine = 4)
-                    let hasCopyAndUpdate = ranges |> List.exists (fun r -> r.StartLine = 6)
-                    
-                    Assert.True(hasDefinition, $"Expected definition on line 4. Ranges: {ranges}")
-                    Assert.True(hasCopyAndUpdate, $"Expected copy-and-update on line 6. Ranges: {ranges}")
-                )
+                findAllReferences (fun ranges -> expectLinesInclude [4; 6] ranges)
             }
 
 /// https://github.com/dotnet/fsharp/issues/16621
-/// Find all references of a DU case should include case testers
 module UnionCaseTesters =
     
     [<Fact>]
@@ -1063,13 +962,10 @@ type X = A | B
 let c = A
 let result = c.IsB
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with Source = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
             .Workflow {
                 placeCursor "Source" "B"
-                findAllReferences (fun ranges -> 
-                    // Should include both the definition of B and the IsB usage
-                    Assert.True(ranges.Length >= 2, $"Expected at least 2 references for B (definition + IsB), got {ranges.Length}"))
+                findAllReferences (expectMinRefs 2)  // Definition + IsB usage
             }
     
     [<Fact>]
@@ -1081,23 +977,17 @@ let x = CaseA
 let useA = x.IsCaseA
 let useB = x.IsCaseB
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with Source = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
             .Workflow {
                 placeCursor "Source" "CaseA"
-                findAllReferences (fun ranges ->
-                    // Should include: definition, construction (CaseA), and IsCaseA usage
-                    Assert.True(ranges.Length >= 3, $"Expected at least 3 references for CaseA, got {ranges.Length}"))
+                findAllReferences (expectMinRefs 3)  // Definition, construction, IsCaseA
             }
 
 /// https://github.com/dotnet/fsharp/issues/14902
-/// Find all references of additional constructors
 module AdditionalConstructors =
     
     [<Fact>]
     let ``Find references of type includes all constructor usages`` () =
-        // This test verifies the existing behavior is preserved:
-        // Finding references of a type should include constructor usages
         let source = """
 type MyClass(x: int) =
     new() = MyClass(0)
@@ -1105,32 +995,15 @@ type MyClass(x: int) =
 let a = MyClass()
 let b = MyClass(5)
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with Source = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
             .Workflow {
-                // Place cursor on MyClass type definition
                 placeCursor "Source" 3 12 "type MyClass(x: int) =" ["MyClass"]
                 findAllReferences (fun ranges ->
-                    // Should find:
-                    // 1. Type definition on line 3
-                    // 2. MyClass(0) call inside additional constructor on line 4
-                    // 3. MyClass() usage on line 6
-                    // 4. MyClass(5) usage on line 7
-                    let hasTypeDefOnLine3 = ranges |> List.exists (fun r -> r.StartLine = 3)
-                    let hasUsageOnLine4 = ranges |> List.exists (fun r -> r.StartLine = 4 && r.StartColumn >= 12)
-                    let hasUsageOnLine6 = ranges |> List.exists (fun r -> r.StartLine = 6)
-                    let hasUsageOnLine7 = ranges |> List.exists (fun r -> r.StartLine = 7)
-                    
-                    Assert.True(hasTypeDefOnLine3, $"Expected type definition on line 3. Ranges: {ranges}")
-                    Assert.True(hasUsageOnLine4, $"Expected constructor call on line 4. Ranges: {ranges}")
-                    Assert.True(hasUsageOnLine6, $"Expected constructor usage on line 6. Ranges: {ranges}")
-                    Assert.True(hasUsageOnLine7, $"Expected constructor usage on line 7. Ranges: {ranges}"))
+                    expectLinesInclude [3; 4; 6; 7] ranges)  // Type def + all constructor usages
             }
 
     [<Fact>]
     let ``Additional constructor definition has correct symbol information`` () =
-        // This test verifies that the additional constructor definition is correctly 
-        // captured in the symbol uses
         let source = """
 type MyClass(x: int) =
     new() = MyClass(0)
@@ -1138,42 +1011,22 @@ type MyClass(x: int) =
 let a = MyClass()
 let b = MyClass(5)
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with Source = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
             .Workflow {
-                checkFile "Source" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                    // Get all uses in the file
-                    let allUses = typeCheckResult.GetAllUsesOfAllSymbolsInFile()
-                    
-                    // Find the additional constructor definition on line 4
+                checkFile "Source" (fun (result: FSharpCheckFileResults) ->
+                    let allUses = result.GetAllUsesOfAllSymbolsInFile()
                     let additionalCtorDef = 
                         allUses 
-                        |> Seq.filter (fun su -> 
-                            su.IsFromDefinition && 
-                            su.Range.StartLine = 4 &&
-                            su.Range.StartColumn = 4)
-                        |> Seq.tryHead
-                    
-                    Assert.True(additionalCtorDef.IsSome, "Should find the additional constructor definition at (4,4)")
-                    
-                    // Verify it's a constructor
-                    match additionalCtorDef with
-                    | Some ctorDef ->
-                        let symbol = ctorDef.Symbol
-                        // The symbol should be an FSharpMemberOrFunctionOrValue that is a constructor
-                        match symbol with
-                        | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
-                            Assert.True(mfv.IsConstructor, "Symbol should be a constructor")
-                        | _ -> Assert.True(false, $"Expected FSharpMemberOrFunctionOrValue, got {symbol.GetType().Name}")
-                    | None -> ()
-                )
+                        |> Seq.tryFind (fun su -> su.IsFromDefinition && su.Range.StartLine = 4 && su.Range.StartColumn = 4)
+                    Assert.True(additionalCtorDef.IsSome, "Should find additional constructor at (4,4)")
+                    match additionalCtorDef.Value.Symbol with
+                    | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
+                        Assert.True(mfv.IsConstructor, "Symbol should be a constructor")
+                    | _ -> Assert.Fail("Expected FSharpMemberOrFunctionOrValue"))
             }
 
 module ExternalDllOptimization =
     
-    /// Test that Find All References for an external DLL symbol (System.String)
-    /// correctly finds usages. This tests the optimization that only searches
-    /// projects that reference the specific assembly.
     /// Issue #10227: Optimize Find All References for external DLL symbols
     [<Fact>]
     let ``Find references to external DLL symbol works correctly`` () =
@@ -1182,31 +1035,17 @@ let myString = System.String.Empty
 let len = myString.Length
 let copied = System.String.Copy myString
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with Source = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
             .Workflow {
-                checkFile "Source" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                    // Get symbol use for System.String on line 3
-                    let symbolUse = typeCheckResult.GetSymbolUseAtLocation(3, 28, "let myString = System.String.Empty", ["String"])
+                checkFile "Source" (fun (result: FSharpCheckFileResults) ->
+                    let symbolUse = result.GetSymbolUseAtLocation(3, 28, "let myString = System.String.Empty", ["String"])
                     Assert.True(symbolUse.IsSome, "Should find System.String symbol")
-                    
                     let symbol = symbolUse.Value.Symbol
-                    
-                    // Verify it's an external symbol (from System.Runtime or mscorlib)
-                    let assembly = symbol.Assembly
-                    Assert.False(System.String.IsNullOrEmpty(assembly.SimpleName), "Assembly should have a name")
-                    
-                    // Verify we can get the assembly file path (used for optimization)
-                    // Note: In tests, the filename may or may not be available depending on runtime
-                    // The key is that our code handles both cases gracefully
-                    let usesInFile = typeCheckResult.GetUsesOfSymbolInFile(symbol)
-                    
-                    // System.String should be found at least twice (String.Empty and String.Copy)
-                    Assert.True(usesInFile.Length >= 2, $"Should find at least 2 uses of System.String, found {usesInFile.Length}")
-                )
+                    Assert.False(System.String.IsNullOrEmpty(symbol.Assembly.SimpleName), "Assembly should have a name")
+                    let usesInFile = result.GetUsesOfSymbolInFile(symbol)
+                    Assert.True(usesInFile.Length >= 2, $"Expected at least 2 uses, found {usesInFile.Length}"))
             }
     
-    /// Verify that external symbols from referenced assemblies are correctly identified
     [<Fact>]
     let ``External symbol has assembly information`` () =
         let source = """
@@ -1214,36 +1053,21 @@ let list = System.Collections.Generic.List<int>()
 list.Add(42)
 let count = list.Count
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with Source = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
             .Workflow {
-                checkFile "Source" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                    // Get symbol use for List<int> - position after List
-                    let symbolUse = typeCheckResult.GetSymbolUseAtLocation(3, 42, "let list = System.Collections.Generic.List<int>()", ["List"])
+                checkFile "Source" (fun (result: FSharpCheckFileResults) ->
+                    let symbolUse = result.GetSymbolUseAtLocation(3, 42, "let list = System.Collections.Generic.List<int>()", ["List"])
                     Assert.True(symbolUse.IsSome, "Should find List<T> symbol")
-                    
-                    let symbol = symbolUse.Value.Symbol
-                    let assembly = symbol.Assembly
-                    
-                    // Verify assembly properties that are used by the optimization
-                    Assert.False(System.String.IsNullOrEmpty(assembly.SimpleName), "Assembly SimpleName should not be empty")
-                    
-                    // Verify the symbol is from an external assembly (not the current project)
-                    // This is the key property used by the DLL optimization
-                    Assert.True(assembly.SimpleName.StartsWith("System") || assembly.SimpleName = "mscorlib" || assembly.SimpleName = "netstandard", 
-                        $"Assembly should be a system assembly, got: {assembly.SimpleName}")
-                )
+                    let assembly = symbolUse.Value.Symbol.Assembly
+                    Assert.True(assembly.SimpleName.StartsWith("System") || assembly.SimpleName = "mscorlib" || assembly.SimpleName = "netstandard",
+                        $"Assembly should be a system assembly, got: {assembly.SimpleName}"))
             }
 
-/// Tests for C# extension method reference handling
 /// https://github.com/dotnet/fsharp/issues/16993
 module CSharpExtensionMethods =
 
-    /// Find All References for C# extension methods should find all uses of the same overload
     [<Fact>]
     let ``Find references for C# extension method finds all usages`` () =
-        // Use System.Linq extension methods which are commonly used C# extension methods
-        // Use the same overload (with predicate) twice to test key matching
         let source = """
 open System
 open System.Linq
@@ -1253,40 +1077,22 @@ let firstEven = numbers.FirstOrDefault(fun x -> x % 2 = 0)
 let firstOdd = numbers.FirstOrDefault(fun x -> x % 2 = 1)
 let count = numbers.Count()
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with Source = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
             .Workflow {
-                checkFile "Source" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                    // Get all symbols to find extension methods
-                    let allSymbols = typeCheckResult.GetAllUsesOfAllSymbolsInFile()
-                    
-                    // Find uses of FirstOrDefault (the predicate-taking overload)
-                    let firstOrDefaultUses = 
-                        allSymbols 
-                        |> Seq.filter (fun su -> su.Symbol.DisplayName = "FirstOrDefault")
-                        |> Seq.toArray
-                    
-                    // Should find 2 uses (line 6 and line 7) of the same overload
-                    Assert.True(firstOrDefaultUses.Length >= 2, 
-                        $"Should find at least 2 uses of FirstOrDefault, found {firstOrDefaultUses.Length}")
-                    
-                    // Verify all uses are extension members
+                checkFile "Source" (fun (result: FSharpCheckFileResults) ->
+                    let allSymbols = result.GetAllUsesOfAllSymbolsInFile()
+                    let firstOrDefaultUses = allSymbols |> Seq.filter (fun su -> su.Symbol.DisplayName = "FirstOrDefault") |> Seq.toArray
+                    Assert.True(firstOrDefaultUses.Length >= 2, $"Expected at least 2 uses of FirstOrDefault, found {firstOrDefaultUses.Length}")
                     for su in firstOrDefaultUses do
                         match su.Symbol with
                         | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
                             Assert.True(mfv.IsExtensionMember, "FirstOrDefault should be an extension member")
                         | _ -> ()
-                    
-                    // Verify we can find references starting from one of these symbols
                     if firstOrDefaultUses.Length > 0 then
-                        let symbol = firstOrDefaultUses.[0].Symbol
-                        let usesInFile = typeCheckResult.GetUsesOfSymbolInFile(symbol)
-                        Assert.True(usesInFile.Length >= 2, 
-                            $"GetUsesOfSymbolInFile should find at least 2 uses of FirstOrDefault (same overload), found {usesInFile.Length}")
-                )
+                        let usesInFile = result.GetUsesOfSymbolInFile(firstOrDefaultUses.[0].Symbol)
+                        Assert.True(usesInFile.Length >= 2, $"Expected at least 2 uses in file, found {usesInFile.Length}"))
             }
 
-    /// Extension method symbol should have correct declaring type (not extended type)
     [<Fact>]
     let ``Extension method has correct symbol information`` () =
         let source = """
@@ -1296,46 +1102,24 @@ open System.Linq
 let arr = [| "a"; "b"; "c" |]
 let first = arr.First()
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with Source = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
             .Workflow {
-                checkFile "Source" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                    // Get all symbols to find extension methods
-                    let allSymbols = typeCheckResult.GetAllUsesOfAllSymbolsInFile()
-                    
-                    // Find uses of First (the extension method)
+                checkFile "Source" (fun (result: FSharpCheckFileResults) ->
                     let firstUses = 
-                        allSymbols 
+                        result.GetAllUsesOfAllSymbolsInFile()
                         |> Seq.filter (fun su -> su.Symbol.DisplayName = "First")
                         |> Seq.toArray
-                    
-                    Assert.True(firstUses.Length >= 1, 
-                        $"Should find at least 1 use of First, found {firstUses.Length}")
-                    
-                    // Verify it's an extension method from System.Linq.Enumerable
+                    Assert.True(firstUses.Length >= 1, $"Expected at least 1 use of First, found {firstUses.Length}")
                     for su in firstUses do
                         match su.Symbol with
                         | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
                             Assert.True(mfv.IsExtensionMember, "First should be an extension member")
-                            // The declaring entity should be Enumerable, not the array type
-                            match mfv.DeclaringEntity with
-                            | Some entity -> 
-                                Assert.True(entity.DisplayName = "Enumerable" || entity.DisplayName.Contains("Enumerable"),
-                                    $"Declaring entity should be Enumerable, got: {entity.DisplayName}")
-                            | None -> 
-                                // For IL extension methods, DeclaringEntity might not always be available
-                                ()
-                        | _ -> ()
-                )
+                        | _ -> ())
             }
 
 /// https://github.com/dotnet/fsharp/issues/5545
-/// Symbols in SAFE bookstore project - DU types in modules should have all references found
 module SAFEBookstoreSymbols =
     
-    /// This reproduces the issue where Wishlist/Msg DU type references weren't found
-    /// in the SAFE bookstore project. The pattern is a DU type inside a module
-    /// with references in the same file.
     [<Fact>]
     let ``Find references of DU type inside module finds all usages in same file`` () =
         let source = """
@@ -1353,34 +1137,14 @@ let handleMsg (m: WishlistMsg) =
     | WishlistMsg.AddItem _ -> "adding"
     | WishlistMsg.RemoveItem _ -> "removing"
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with ExtraSource = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with ExtraSource = source })
             .Workflow {
-                // Find references starting from the WishlistMsg type definition
                 placeCursor "Source" 7 5 "type WishlistMsg = " ["WishlistMsg"]
                 findAllReferences (fun ranges ->
-                    // ExtraSource starts at line 7. Actual ranges:
-                    // Line 7: type definition (WishlistMsg)
-                    // Line 11: (msg: WishlistMsg) parameter annotation
-                    // Line 16: (m: WishlistMsg) parameter annotation
-                    // Line 18: WishlistMsg.AddItem qualified usage
-                    // Line 19: WishlistMsg.RemoveItem qualified usage
-                    let lines = ranges |> List.map (fun r -> r.StartLine) |> List.sort |> List.distinct
-                    Assert.True(lines.Length >= 3, 
-                        $"Expected at least 3 distinct lines with WishlistMsg references (type def + usages). Got {lines.Length} lines: {lines}. Ranges: {ranges}")
-                    
-                    // Verify type definition is found
-                    let hasTypeDef = ranges |> List.exists (fun r -> r.StartLine = 7)
-                    Assert.True(hasTypeDef, $"Expected to find type definition on line 7. Ranges: {ranges}")
-                    
-                    // Verify type annotation usages are found
-                    let hasAnnotation1 = ranges |> List.exists (fun r -> r.StartLine = 11)
-                    let hasAnnotation2 = ranges |> List.exists (fun r -> r.StartLine = 16)
-                    Assert.True(hasAnnotation1 || hasAnnotation2, 
-                        $"Expected to find type annotation usage. Ranges: {ranges}"))
+                    expectLinesInclude [7; 11] ranges  // Type def + at least one usage
+                    expectMinRefs 3 ranges)
             }
     
-    /// This reproduces the Database/DatabaseType pattern from the issue
     [<Fact>]
     let ``Find references of DU type in database pattern`` () =
         let source = """
@@ -1398,21 +1162,8 @@ let getConnection (dbType: DatabaseType) =
 let defaultDb = SQLite
 let altDb : DatabaseType = PostgreSQL
 """
-        SyntheticProject.Create(
-            { sourceFile "Source" [] with ExtraSource = source })
+        SyntheticProject.Create({ sourceFile "Source" [] with ExtraSource = source })
             .Workflow {
-                // Find references starting from the DatabaseType type definition
                 placeCursor "Source" 7 5 "type DatabaseType = " ["DatabaseType"]
-                findAllReferences (fun ranges ->
-                    // ExtraSource starts at line 7. Actual ranges:
-                    // Line 7: type definition
-                    // Line 12: (dbType: DatabaseType) parameter annotation
-                    // Line 19: (altDb : DatabaseType) let binding annotation
-                    let hasTypeDef = ranges |> List.exists (fun r -> r.StartLine = 7)
-                    let hasParamAnnotation = ranges |> List.exists (fun r -> r.StartLine = 12)
-                    let hasLetAnnotation = ranges |> List.exists (fun r -> r.StartLine = 19)
-                    
-                    Assert.True(hasTypeDef, $"Expected to find type definition on line 7. Ranges: {ranges}")
-                    Assert.True(hasParamAnnotation, $"Expected to find parameter annotation on line 12. Ranges: {ranges}")
-                    Assert.True(hasLetAnnotation, $"Expected to find let binding annotation on line 19. Ranges: {ranges}"))
+                findAllReferences (fun ranges -> expectLinesInclude [7; 12; 19] ranges)
             }
