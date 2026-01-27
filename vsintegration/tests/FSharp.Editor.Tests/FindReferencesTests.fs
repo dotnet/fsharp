@@ -207,7 +207,7 @@ module FindReferences =
             failwith $"Expected 1 definition but found {foundDefinitions.Count}"
 
         // Should find 2 references (the two uses in Second file)
-        // The 'get' and 'set' keywords should NOT be included as references
-        // (they are filtered out by Tokenizer.tryFixupSpan)
+        // The 'get' and 'set' keywords are filtered out by Tokenizer.tryFixupSpan
+        // in FindUsagesService.onSymbolFound
         if foundReferences.Count <> 2 then
             failwith $"Expected 2 references but found {foundReferences.Count}"
