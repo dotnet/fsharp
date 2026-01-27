@@ -2874,29 +2874,67 @@ The inefficiency comes from the code generator emitting a local variable to hold
 
 **Category:** Runtime Error
 
+**Status:** ✅ FIXED
+
 ### Minimal Repro
 
 ```fsharp
 type MyDelegate = delegate of voidptr -> unit
+
+let method (ptr: voidptr) = ()
+
+// This function returns a delegate - triggers the bug
+let getDelegate (m: voidptr -> unit) : MyDelegate = MyDelegate(m)
+
+let test() =
+    let d = getDelegate method  // TypeLoadException here
+    d.Invoke(IntPtr.Zero.ToPointer())
 ```
 
 ### Expected Behavior
 Delegate with voidptr parameter works.
 
 ### Actual Behavior
-TypeLoadException at runtime.
+TypeLoadException at runtime:
+```
+System.TypeLoadException: 'The generic type 'Microsoft.FSharp.Core.FSharpFunc`2' was used with an invalid instantiation in assembly 'FSharp.Core...'
+```
+
+### Root Cause
+When generating the type for a function taking or returning voidptr (e.g., `voidptr -> unit`), the compiler generates `FSharpFunc<voidptr, unit>`. However, `voidptr` is represented as `void*` in IL, and `void*` cannot be used as a generic type argument in CLI - it's an invalid instantiation.
+
+This affects:
+1. Function types containing voidptr in closures
+2. Closure classes that inherit from `FSharpFunc<voidptr, ...>`
+3. Delegate creation functions that take voidptr functions as parameters
+
+### Fix
+The fix is applied at multiple levels:
+
+1. **EraseClosures.fs** (primary fix):
+   - Added `fixVoidPtrForGenericArg` helper to convert `void*` to `IntPtr`
+   - Modified `mkILFuncTy` to fix type arguments when creating FSharpFunc types
+   - Modified `typ_Func` to fix type arguments for multi-arg FSharpFunc types
+   - Modified `mkMethSpecForMultiApp` to fix type instantiation
+   - Modified closure generation (CASE 2b) to use fixed parameter types for the Invoke method
+
+2. **IlxGen.fs** (additional safety):
+   - Modified `GenTypeArgAux` to convert `void*` to `IntPtr` when generating generic type arguments
+
+The fix converts `voidptr` (`ILType.Ptr ILType.Void`) to `nativeint` (`ILType.Value IntPtr`) in all FSharpFunc type instantiations. This is ABI-compatible since both are pointer-sized values that can be passed interchangeably at the IL level.
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_11132_VoidptrDelegate`
 
-### Analysis
-Delegate IL generation incorrect for voidptr parameters.
+### UPDATE (FIXED)
+Fix applied in `EraseClosures.fs` and `IlxGen.fs` to handle the CLI limitation that `void*` cannot be a generic type argument. The fix converts `voidptr` to `nativeint` (IntPtr) in FSharpFunc type instantiations and closure method signatures.
 
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs`
+- `src/Compiler/CodeGen/EraseClosures.fs` - `mkILFuncTy`, `typ_Func`, `mkMethSpecForMultiApp`, closure generation
+- `src/Compiler/CodeGen/IlxGen.fs` - `GenTypeArgAux` function
 
 ### Risks
-- Medium: Delegate generation
+- Low: Only affects voidptr in FSharpFunc contexts, which was previously always broken
 
 ---
 

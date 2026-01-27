@@ -1939,16 +1939,36 @@ let main _ =
     // ===== Issue #11132: TypeloadException delegate with voidptr parameter =====
     // https://github.com/dotnet/fsharp/issues/11132
     // TypeLoadException at runtime for delegates with voidptr.
-    // [<Fact>]
+    // FIX: void* cannot be used as a generic type argument in CLI.
+    // Solution: Convert voidptr to nativeint (IntPtr) in GenTypeArgAux when generating
+    // type arguments for FSharpFunc generic instantiation.
+    [<Fact>]
     let ``Issue_11132_VoidptrDelegate`` () =
         let source = """
 module Test
+#nowarn "9"
 
-type MyDelegate = delegate of nativeint -> unit
+open System
+
+type MyDelegate = delegate of voidptr -> unit
+
+let method (ptr: voidptr) = ()
+
+// This function returns a delegate - this is what triggers the bug
+// because it creates FSharpFunc<voidptr, MyDelegate>
+let getDelegate (m: voidptr -> unit) : MyDelegate = MyDelegate(m)
+
+let test() =
+    let d = getDelegate method
+    d.Invoke(IntPtr.Zero.ToPointer())
+
+// Execute to verify no TypeLoadException
+do test()
 """
         FSharp source
-        |> asLibrary
-        |> compile
+        |> asExe
+        |> withOptimize
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 

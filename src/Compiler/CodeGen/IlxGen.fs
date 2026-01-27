@@ -634,7 +634,14 @@ type PtrsOK =
     | PtrTypesNotOK
 
 let rec GenTypeArgAux cenv m tyenv tyarg =
-    GenTypeAux cenv m tyenv VoidNotOK PtrTypesNotOK tyarg
+    let ilTy = GenTypeAux cenv m tyenv VoidNotOK PtrTypesNotOK tyarg
+    // void* (voidptr) cannot be used as a generic type argument in CLI.
+    // Convert it to nativeint (IntPtr) which is ABI-compatible.
+    // See https://github.com/dotnet/fsharp/issues/11132
+    // Note: Primary fix is in EraseClosures.fs, but we also fix here for safety
+    match ilTy with
+    | ILType.Ptr ILType.Void -> cenv.g.ilg.typ_IntPtr
+    | _ -> ilTy
 
 and GenTypeArgsAux cenv m tyenv tyargs =
     List.map (GenTypeArgAux cenv m tyenv) (DropErasedTyargs tyargs)

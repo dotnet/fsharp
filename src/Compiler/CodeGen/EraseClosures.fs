@@ -152,7 +152,26 @@ let newIlxPubCloEnv (ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFi
 
 let mkILTyFuncTy cenv = cenv.mkILTyFuncTy
 
+// Helper to convert void* (voidptr) to IntPtr (nativeint) since void* cannot be a generic type argument in CLI
+// See https://github.com/dotnet/fsharp/issues/11132
+let private fixVoidPtrForGenericArg (ilg: ILGlobals) ty =
+    match ty with
+    | ILType.Ptr ILType.Void -> ilg.typ_IntPtr
+    | _ -> ty
+
+// Fix parameter type for FSharpFunc methods
+let private fixILParamForFunc (ilg: ILGlobals) (p: ILParameter) =
+    match p.Type with
+    | ILType.Ptr ILType.Void -> { p with Type = ilg.typ_IntPtr }
+    | _ -> p
+
+// Fix parameters list for FSharpFunc methods
+let private fixILParamsForFunc (ilg: ILGlobals) (ps: ILParameter list) =
+    ps |> List.map (fixILParamForFunc ilg)
+
 let mkILFuncTy cenv dty rty =
+    let dty = fixVoidPtrForGenericArg cenv.ilg dty
+    let rty = fixVoidPtrForGenericArg cenv.ilg rty
     mkILBoxedTy cenv.tref_Func[0] [ dty; rty ]
 
 let mkILCurriedFuncTy cenv dtys rty =
@@ -167,6 +186,9 @@ let typ_Func cenv (dtys: ILType list) rty =
         else
             mkFuncTypeRef cenv.ilg.fsharpCoreAssemblyScopeRef n
 
+    // Fix void* types in type arguments - see https://github.com/dotnet/fsharp/issues/11132
+    let dtys = dtys |> List.map (fixVoidPtrForGenericArg cenv.ilg)
+    let rty = fixVoidPtrForGenericArg cenv.ilg rty
     mkILBoxedTy tref (dtys @ [ rty ])
 
 let rec mkTyOfApps cenv apps =
@@ -189,6 +211,9 @@ let mkMethSpecForMultiApp cenv (argTys: ILType list, retTy) =
     let n = argTys.Length
     let formalArgTys = List.mapi (fun i _ -> ILType.TypeVar(uint16 i)) argTys
     let formalRetTy = ILType.TypeVar(uint16 n)
+    // Fix void* types in type arguments - see https://github.com/dotnet/fsharp/issues/11132
+    let argTys = argTys |> List.map (fixVoidPtrForGenericArg cenv.ilg)
+    let retTy = fixVoidPtrForGenericArg cenv.ilg retTy
     let inst = argTys @ [ retTy ]
 
     if n = 1 then
@@ -707,7 +732,10 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
             else
                 // CASE 2b - Build an Invoke method
 
-                let nowEnvParentClass = typ_Func cenv (typesOfILParams nowParams) nowReturnTy
+                // Fix void* types to IntPtr for FSharpFunc compatibility (Issue #11132)
+                let fixedNowParams = fixILParamsForFunc cenv.ilg nowParams
+                let fixedNowReturnTy = fixVoidPtrForGenericArg cenv.ilg nowReturnTy
+                let nowEnvParentClass = typ_Func cenv (typesOfILParams fixedNowParams) fixedNowReturnTy
 
                 let cloTypeDef =
                     let convil = convILMethodBody (Some nowCloSpec, None) clo.cloCode.Value
@@ -716,8 +744,8 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         mkILNonGenericVirtualInstanceMethod (
                             "Invoke",
                             ILMemberAccess.Public,
-                            nowParams,
-                            mkILReturn nowReturnTy,
+                            fixedNowParams,
+                            mkILReturn fixedNowReturnTy,
                             MethodBody.IL(notlazy convil)
                         )
 
