@@ -15,6 +15,15 @@ open FSharp.Test.Assert
 open FSharp.Compiler.Service.Tests.Common
 open TestFramework
 
+/// Parse and type-check source code, asserting no errors.
+/// Returns the checkResults for further validation.
+let checkSourceHasNoErrors (source: string) =
+    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
+    let _, checkResults = parseAndCheckScript (file, source)
+    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    errors |> shouldBeEmpty
+    checkResults
+
 /// Generate F# source code with many identical overloaded method calls
 let generateRepetitiveOverloadCalls (callCount: int) =
     let sb = StringBuilder()
@@ -62,13 +71,8 @@ let ``Overload cache hit rate exceeds 95 percent for repetitive int-int calls`` 
     let callCount = 150
     let source = generateRepetitiveOverloadCalls callCount
     
-    // Type check the file using the cross-platform helper
-    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
-    let parseResults, checkResults = parseAndCheckScript (file, source)
-    
-    // Verify no errors
-    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-    errors |> shouldBeEmpty
+    // Type check the file and verify no errors
+    checkSourceHasNoErrors source |> ignore
     
     // Validate cache metrics using the new CacheMetricsListener API
     let hits = listener.Hits
@@ -116,11 +120,7 @@ let f1 = Overloaded.Process(1.0)
 let f2 = Overloaded.Process(2.0)
 """
     
-    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
-    let parseResults, checkResults = parseAndCheckScript (file, source)
-    
-    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-    errors |> shouldBeEmpty
+    checkSourceHasNoErrors source |> ignore
     
     // Verify listener captured cache activity
     let hits = listener.Hits
@@ -158,11 +158,7 @@ let explicitInt: string = Overloaded.Process(100)
 let explicitString: string = Overloaded.Process("world")
 """
     
-    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
-    let parseResults, checkResults = parseAndCheckScript (file, source)
-    
-    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-    errors |> shouldBeEmpty
+    checkSourceHasNoErrors source |> ignore
     // All resolutions should work correctly - no incorrect cache hits
     printfn "Type inference overload resolution succeeded"
 
@@ -191,11 +187,7 @@ let r4 = Processor.Handle({ Value = 123 })
 let r5 = Processor.Handle({ Value = "world" })
 """
     
-    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
-    let parseResults, checkResults = parseAndCheckScript (file, source)
-    
-    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-    errors |> shouldBeEmpty
+    checkSourceHasNoErrors source |> ignore
     printfn "Nested generic overload resolution succeeded"
 
 /// Test that out args with type inference don't cause incorrect caching
@@ -220,11 +212,7 @@ let b = Int32.TryParse("2")
 let c = Int32.TryParse("3")
 """
     
-    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
-    let parseResults, checkResults = parseAndCheckScript (file, source)
-    
-    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-    errors |> shouldBeEmpty
+    checkSourceHasNoErrors source |> ignore
     printfn "Out args overload resolution succeeded"
 
 /// Test that type abbreviations are handled correctly in caching
@@ -255,11 +243,7 @@ let r5 = Processor.Handle(myIntList)
 let r6 = Processor.Handle([4; 5; 6])
 """
     
-    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
-    let parseResults, checkResults = parseAndCheckScript (file, source)
-    
-    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-    errors |> shouldBeEmpty
+    checkSourceHasNoErrors source |> ignore
     printfn "Type abbreviation overload resolution succeeded"
 
 /// Test that rigid generic type parameters work correctly in overload resolution
@@ -297,11 +281,7 @@ let d3 = Assert.Equal<string>("x", "y")
 let d4 = Assert.Equal<string>("z", "w")
 """
     
-    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
-    let parseResults, checkResults = parseAndCheckScript (file, source)
-    
-    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-    errors |> shouldBeEmpty
+    checkSourceHasNoErrors source |> ignore
     
     let hits = listener.Hits
     let misses = listener.Misses
@@ -337,9 +317,5 @@ let y2 = Overloaded.Process("b")
 let y3 = Overloaded.Process("c")
 """
     
-    let file = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
-    let parseResults, checkResults = parseAndCheckScript (file, source)
-    
-    let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-    errors |> shouldBeEmpty
+    checkSourceHasNoErrors source |> ignore
     printfn "Inference variable overload resolution succeeded"
