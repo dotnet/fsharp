@@ -2,9 +2,11 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.IO
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
@@ -16,6 +18,22 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open CancellableTasks
 
 module internal SymbolHelpers =
+    /// Gets projects that reference a specific assembly file.
+    /// Used to optimize Find All References for external DLL symbols.
+    let private getProjectsReferencingAssembly (assemblyFilePath: string) (solution: Solution) =
+        let assemblyFileName = Path.GetFileName(assemblyFilePath)
+
+        solution.Projects
+        |> Seq.filter (fun project ->
+            project.MetadataReferences
+            |> Seq.exists (fun metaRef ->
+                match metaRef with
+                | :? PortableExecutableReference as peRef when not (isNull peRef.FilePath) ->
+                    let refFileName = Path.GetFileName(peRef.FilePath)
+                    String.Equals(refFileName, assemblyFileName, StringComparison.OrdinalIgnoreCase)
+                | _ -> false))
+        |> Seq.toList
+
     /// Used for local code fixes in a document, e.g. to rename local parameters
     let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int) =
         asyncMaybe {
@@ -148,8 +166,21 @@ module internal SymbolHelpers =
                         |> List.distinct
                     | Some(SymbolScope.Projects(scopeProjects, true)) -> scopeProjects
                     // The symbol is declared in .NET framework, an external assembly or in a C# project within the solution.
-                    // In order to find all its usages we have to check all F# projects.
-                    | _ -> Seq.toList currentDocument.Project.Solution.Projects
+                    // Optimization: Only search projects that reference the specific assembly
+                    | None ->
+                        match symbolUse.Symbol.Assembly.FileName with
+                        | Some assemblyPath ->
+                            let referencingProjects =
+                                getProjectsReferencingAssembly assemblyPath currentDocument.Project.Solution
+
+                            if List.isEmpty referencingProjects then
+                                // Fallback to all projects if no specific references found
+                                Seq.toList currentDocument.Project.Solution.Projects
+                            else
+                                referencingProjects
+                        | None ->
+                            // No assembly file path available, search all projects
+                            Seq.toList currentDocument.Project.Solution.Projects
 
                 do! getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound)
         }

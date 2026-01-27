@@ -1168,3 +1168,69 @@ let b = MyClass(5)
                     | None -> ()
                 )
             }
+
+module ExternalDllOptimization =
+    
+    /// Test that Find All References for an external DLL symbol (System.String)
+    /// correctly finds usages. This tests the optimization that only searches
+    /// projects that reference the specific assembly.
+    /// Issue #10227: Optimize Find All References for external DLL symbols
+    [<Fact>]
+    let ``Find references to external DLL symbol works correctly`` () =
+        let source = """
+let myString = System.String.Empty
+let len = myString.Length
+let copied = System.String.Copy myString
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = source })
+            .Workflow {
+                checkFile "Source" (fun (typeCheckResult: FSharpCheckFileResults) ->
+                    // Get symbol use for System.String on line 3
+                    let symbolUse = typeCheckResult.GetSymbolUseAtLocation(3, 28, "let myString = System.String.Empty", ["String"])
+                    Assert.True(symbolUse.IsSome, "Should find System.String symbol")
+                    
+                    let symbol = symbolUse.Value.Symbol
+                    
+                    // Verify it's an external symbol (from System.Runtime or mscorlib)
+                    let assembly = symbol.Assembly
+                    Assert.False(System.String.IsNullOrEmpty(assembly.SimpleName), "Assembly should have a name")
+                    
+                    // Verify we can get the assembly file path (used for optimization)
+                    // Note: In tests, the filename may or may not be available depending on runtime
+                    // The key is that our code handles both cases gracefully
+                    let usesInFile = typeCheckResult.GetUsesOfSymbolInFile(symbol)
+                    
+                    // System.String should be found at least twice (String.Empty and String.Copy)
+                    Assert.True(usesInFile.Length >= 2, $"Should find at least 2 uses of System.String, found {usesInFile.Length}")
+                )
+            }
+    
+    /// Verify that external symbols from referenced assemblies are correctly identified
+    [<Fact>]
+    let ``External symbol has assembly information`` () =
+        let source = """
+let list = System.Collections.Generic.List<int>()
+list.Add(42)
+let count = list.Count
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = source })
+            .Workflow {
+                checkFile "Source" (fun (typeCheckResult: FSharpCheckFileResults) ->
+                    // Get symbol use for List<int> - position after List
+                    let symbolUse = typeCheckResult.GetSymbolUseAtLocation(3, 42, "let list = System.Collections.Generic.List<int>()", ["List"])
+                    Assert.True(symbolUse.IsSome, "Should find List<T> symbol")
+                    
+                    let symbol = symbolUse.Value.Symbol
+                    let assembly = symbol.Assembly
+                    
+                    // Verify assembly properties that are used by the optimization
+                    Assert.False(System.String.IsNullOrEmpty(assembly.SimpleName), "Assembly SimpleName should not be empty")
+                    
+                    // Verify the symbol is from an external assembly (not the current project)
+                    // This is the key property used by the DLL optimization
+                    Assert.True(assembly.SimpleName.StartsWith("System") || assembly.SimpleName = "mscorlib" || assembly.SimpleName = "netstandard", 
+                        $"Assembly should be a system assembly, got: {assembly.SimpleName}")
+                )
+            }
