@@ -780,6 +780,17 @@ The metadata writer cannot locate the method definition for static abstract memb
 - Low: Fix should correctly handle byref modifiers in IWSAM signatures
 - Workaround: Use `Span<T>` instead of byref
 
+### UPDATE (FIXED)
+**Fixed** in `MethodDefKey.Equals` in `ilwrite.fs`. The root cause was a signature mismatch when looking 
+up method definitions for static abstract interface member implementations with `inref`/`outref`/`byref` 
+parameters. Interface slot signatures include an `ILType.Modified` wrapper (for `InAttribute`/`OutAttribute`) 
+around the byref type, but the method implementation's parameter types don't have this wrapper. The fix 
+extends `compareILTypes` to:
+1. Recursively handle `ILType.Byref`, `ILType.Ptr`, `ILType.Array`, and `ILType.Modified` wrappers
+2. Use `EqualsWithPrimaryScopeRef` for proper scope-aware type reference comparison
+3. Handle the asymmetric case where `Modified` is present on one side but not the other by comparing the 
+   inner types directly
+
 ---
 
 ## Issue #18125

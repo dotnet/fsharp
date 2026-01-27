@@ -432,10 +432,12 @@ let test() =
     // https://github.com/dotnet/fsharp/issues/18135
     // Static abstract interface members with byref parameters (inref, outref, byref)
     // fail to compile with a cryptic FS2014 error about MethodDefNotFound.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_18135_StaticAbstractByrefParams`` () =
         let source = """
 module Test
+
+#nowarn "3535"
 
 [<Interface>]
 type I =
@@ -454,7 +456,7 @@ f<T>()
         FSharp source
         |> asExe
         |> compile
-        |> shouldSucceed // This will fail with FS2014 MethodDefNotFound - bug exists
+        |> shouldSucceed
         |> ignore
 
     // ===== Issue #18125: Wrong StructLayoutAttribute.Size for struct unions =====

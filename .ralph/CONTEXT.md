@@ -476,3 +476,43 @@ Added check in `SynMemberKind.Member` case of `GenAbstractBinding` to apply `Wit
 - `CODEGEN_REGRESSIONS.md` - Added UPDATE (FIXED) note
 
 ---
+
+## Sprint 3: Fix
+   #14321 DU IWSAM Names
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 4: Fix #18135 Static Abstract Byref Params
+
+**Summary:** Fixed static abstract interface members with byref parameters (inref/outref/byref) failing with FS2014 MethodDefNotFound.
+
+**Issue Details:**
+- When a static abstract interface method has parameters with inref/outref/byref types, the compiler emitted FS2014 error during IL writing
+- Root cause: Method signature lookup failed because interface slot signatures include `ILType.Modified` wrappers (for InAttribute/OutAttribute) around byref types, but implementation methods don't have these wrappers
+- The `MethodDefKey.Equals` comparison only handled `ILType.Value` specially, causing signature mismatches
+
+**Fix Applied:**
+- Extended `compareILTypes` in `MethodDefKey.Equals` (ilwrite.fs) to:
+  1. Recursively handle `ILType.Byref`, `ILType.Ptr`, `ILType.Array`, and `ILType.Modified` wrappers
+  2. Use `EqualsWithPrimaryScopeRef` for proper scope-aware type reference comparison  
+  3. Handle asymmetric cases where `Modified` is present on one side but not the other
+
+**DoD Verification:**
+- ✅ Build succeeds with 0 errors
+- ✅ Issue_18135_StaticAbstractByrefParams test passes
+- ✅ All 19 CodeGenRegressions tests pass
+- ✅ No regressions in IWSAM tests (204 passed)
+- ✅ No regressions in EmittedIL tests (990 passed, 2 skipped)
+- ✅ CODEGEN_REGRESSIONS.md updated with UPDATE (FIXED) note
+- ✅ Code audit: Consistent byref handling across member types - fix correctly handles all IL type wrappers
+
+**Files modified:**
+- `src/Compiler/AbstractIL/ilwrite.fs` - Extended MethodDefKey.compareILTypes
+- `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs` - Uncommented [<Fact>], added #nowarn
+- `CODEGEN_REGRESSIONS.md` - Added UPDATE (FIXED) note
+
+---
