@@ -23,6 +23,15 @@ let inline isScriptFile (filePath: string) =
     String.Equals(ext, ".fsx", StringComparison.OrdinalIgnoreCase)
     || String.Equals(ext, ".fsscript", StringComparison.OrdinalIgnoreCase)
 
+/// Checks if the file path ends with an F# source file extension ('.fs', '.fsi', '.fsx', or '.fsscript')
+let inline isFSharpSourceFile (filePath: string) =
+    let ext = Path.GetExtension filePath
+
+    String.Equals(ext, ".fs", StringComparison.OrdinalIgnoreCase)
+    || String.Equals(ext, ".fsi", StringComparison.OrdinalIgnoreCase)
+    || String.Equals(ext, ".fsx", StringComparison.OrdinalIgnoreCase)
+    || String.Equals(ext, ".fsscript", StringComparison.OrdinalIgnoreCase)
+
 type internal ISetThemeColors =
     abstract member SetColors: unit -> unit
 
