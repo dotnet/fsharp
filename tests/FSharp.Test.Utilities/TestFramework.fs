@@ -512,30 +512,40 @@ module Command =
 
     let exec dir envVars (redirect:RedirectInfo) path args =
 
+        // Only log for the specific test we're investigating (load-script with pipescr)
+        let shouldLog = (dir:string).Contains("load-script")
+        
+        // Diagnostic logging function that writes to both stderr and a file
+        let diagLog msg =
+            if shouldLog then
+                eprintfn "%s" msg
+                let diagFile = Path.Combine(Path.GetTempPath(), "fsharp_stdin_diag.log")
+                File.AppendAllText(diagFile, msg + Environment.NewLine)
+
         let inputWriter sources (writer: StreamWriter) =
             let path = Commands.getfullpath dir sources
-            eprintfn "[DIAG] inputWriter: sources='%s', resolved path='%s'" sources path
-            eprintfn "[DIAG] inputWriter: file exists=%b" (File.Exists path)
+            diagLog (sprintf "[DIAG] inputWriter: dir='%s', sources='%s', resolved path='%s'" dir sources path)
+            diagLog (sprintf "[DIAG] inputWriter: file exists=%b" (File.Exists path))
             if File.Exists path then
                 let fileInfo = FileInfo(path)
-                eprintfn "[DIAG] inputWriter: file size=%d bytes" fileInfo.Length
+                diagLog (sprintf "[DIAG] inputWriter: file size=%d bytes" fileInfo.Length)
             try
                 use reader = File.OpenRead (path)
-                eprintfn "[DIAG] inputWriter: opened file, stream length=%d" reader.Length
+                diagLog (sprintf "[DIAG] inputWriter: opened file, stream length=%d" reader.Length)
                 let content = Array.zeroCreate<byte> (int reader.Length)
                 let bytesRead = reader.Read(content, 0, content.Length)
-                eprintfn "[DIAG] inputWriter: read %d bytes from file" bytesRead
-                eprintfn "[DIAG] inputWriter: file content (first 100 chars): '%s'" (System.Text.Encoding.UTF8.GetString(content, 0, min 100 bytesRead))
-                eprintfn "[DIAG] inputWriter: writer.BaseStream type=%s, CanWrite=%b" (writer.BaseStream.GetType().Name) writer.BaseStream.CanWrite
+                diagLog (sprintf "[DIAG] inputWriter: read %d bytes from file" bytesRead)
+                diagLog (sprintf "[DIAG] inputWriter: file content (first 100 chars): '%s'" (System.Text.Encoding.UTF8.GetString(content, 0, min 100 bytesRead)))
+                diagLog (sprintf "[DIAG] inputWriter: writer.BaseStream type=%s, CanWrite=%b" (writer.BaseStream.GetType().Name) writer.BaseStream.CanWrite)
                 writer.BaseStream.Write(content, 0, bytesRead)
-                eprintfn "[DIAG] inputWriter: wrote %d bytes to BaseStream" bytesRead
+                diagLog (sprintf "[DIAG] inputWriter: wrote %d bytes to BaseStream" bytesRead)
                 writer.BaseStream.Flush()
-                eprintfn "[DIAG] inputWriter: flushed BaseStream"
+                diagLog (sprintf "[DIAG] inputWriter: flushed BaseStream")
             with
             | :? System.IO.IOException as ex ->
-                eprintfn "[DIAG] inputWriter: IOException caught: %s" ex.Message
+                diagLog (sprintf "[DIAG] inputWriter: IOException caught: %s" ex.Message)
             | ex ->
-                eprintfn "[DIAG] inputWriter: Unexpected exception: %s - %s" (ex.GetType().Name) ex.Message
+                diagLog (sprintf "[DIAG] inputWriter: Unexpected exception: %s - %s" (ex.GetType().Name) ex.Message)
                 reraise()
 
         let inF fCont cmdArgs =
