@@ -473,7 +473,7 @@ let tryComputeOverloadCacheKey
     // Collect type structures for caller object arguments (the 'this' argument)
     // This is critical for extension methods where the 'this' type determines the overload
     // e.g., GItem1 on Tuple<T1,T2> vs Tuple<T1,T2,T3> vs Tuple<T1,T2,T3,T4>
-    let mutable objArgStructures = []
+    let objArgStructures = ResizeArray()
     let mutable allStable = true
     
     match calledMethGroup with
@@ -481,7 +481,7 @@ let tryComputeOverloadCacheKey
         for objArgTy in cmeth.CallerObjArgTys do
             match tryGetStableTypeStructure g objArgTy with
             | ValueSome ts -> 
-                objArgStructures <- ts :: objArgStructures
+                objArgStructures.Add(ts)
             | ValueNone ->
                 allStable <- false
     | [] -> ()
@@ -491,14 +491,14 @@ let tryComputeOverloadCacheKey
     else
     
     // Collect type structures for all caller arguments
-    let mutable argStructures = []
+    let argStructures = ResizeArray()
     
     for argList in callerArgs.Unnamed do
         for callerArg in argList do
             let argTy = callerArg.CallerArgumentType
             match tryGetStableTypeStructure g argTy with
             | ValueSome ts -> 
-                argStructures <- ts :: argStructures
+                argStructures.Add(ts)
             | ValueNone ->
                 allStable <- false
     
@@ -544,8 +544,8 @@ let tryComputeOverloadCacheKey
                 | [] -> 0
             ValueSome { 
                 MethodGroupHash = methodGroupHash
-                ObjArgTypeStructures = List.rev objArgStructures
-                ArgTypeStructures = List.rev argStructures
+                ObjArgTypeStructures = Seq.toList objArgStructures
+                ArgTypeStructures = Seq.toList argStructures
                 ReturnTypeStructure = retStruct
                 CallerTyArgCount = callerTyArgCount
             }

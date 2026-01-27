@@ -28,3 +28,21 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Files touched:** src/Compiler/Checking/ConstraintSolver.fs
 
 ---
+
+## Sprint 3: ResizeArray pattern fix
+
+**Summary:** Replaced mutable list + prepend + List.rev pattern with ResizeArray in `tryComputeOverloadCacheKey` (lines 476-551):
+- Changed `objArgStructures` from `mutable list` to `ResizeArray()`
+- Changed `argStructures` from `mutable list` to `ResizeArray()`
+- Use `.Add()` instead of prepending with `::`
+- Use `Seq.toList` instead of `List.rev` for conversion
+
+**DoD verification:**
+- Build: 0 errors, 0 warnings
+- Tests: 8 OverloadCache tests passed (all frameworks)
+- Formatting: fantomas --check passes
+- List.rev calls eliminated
+
+**Files touched:** src/Compiler/Checking/ConstraintSolver.fs
+
+---
