@@ -1468,8 +1468,20 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
     | Some _ when not vspec.IsCompilerGenerated && shouldNotifySink vspec ->
         let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec)
         CallEnvSink cenv.tcSink (vspec.Range, nenv, env.eAccessRights)
-        let item = Item.Value(mkLocalValRef vspec)
+        let vref = mkLocalValRef vspec
+        let item = Item.Value(vref)
         CallNameResolutionSink cenv.tcSink (vspec.Range, nenv, item, emptyTyparInst, ItemOccurrence.Binding, env.eAccessRights)
+        
+        // For active patterns in signature files, also report each case as Item.ActivePatternResult
+        // so that Find All References can find them. In implementation files, this is done during 
+        // TcLetBinding, but signature files don't go through that path.
+        if inSig then
+            match TryGetActivePatternInfo vref with
+            | Some apinfo ->
+                apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag, tagRange) ->
+                    let apItem = Item.ActivePatternResult(apinfo, vspec.TauType, i, tagRange)
+                    CallNameResolutionSink cenv.tcSink (tagRange, nenv, apItem, emptyTyparInst, ItemOccurrence.Binding, env.eAccessRights))
+            | None -> ()
     | _ -> ()
 
     vspec
