@@ -1483,7 +1483,7 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
         let item = Item.Value(vref)
         CallNameResolutionSink cenv.tcSink (vspec.Range, nenv, item, emptyTyparInst, ItemOccurrence.Binding, env.eAccessRights)
         
-        // For active patterns in signature files, also report each case as Item.ActivePatternResult
+        // (#14969, #19173) For active patterns in signature files, also report each case as Item.ActivePatternResult
         // so that Find All References can find them. In implementation files, this is done during 
         // TcLetBinding, but signature files don't go through that path.
         if inSig then

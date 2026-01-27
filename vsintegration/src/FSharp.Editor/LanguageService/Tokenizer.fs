@@ -995,7 +995,7 @@ module internal Tokenizer =
             | -1
             | 0 -> span
             | index -> TextSpan(span.Start + index, text.Length - index)
-        // Operators can contain '.' (e.g., "-.-") - don't split them
+        // (#17221) Operators can contain '.' (e.g., "-.-") - don't split them
         elif FSharp.Compiler.Syntax.PrettyNaming.IsOperatorDisplayName text then
             span
         else
@@ -1004,14 +1004,14 @@ module internal Tokenizer =
             | 0 -> span
             | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
-    /// Check if the text at the given span is a property accessor keyword (get/set).
-    /// These should be excluded from rename operations since they are keywords, not identifiers.
+    // (#18270) Check if the text at the given span is a property accessor keyword (get/set).
+    // These should be excluded from rename operations since they are keywords, not identifiers.
     let private isPropertyAccessorKeyword (sourceText: SourceText, span: TextSpan) : bool =
         let text = sourceText.GetSubText(span).ToString()
         text = "get" || text = "set"
 
-    /// Try to fix invalid span. Returns ValueNone if the span should be excluded from rename operations
-    /// (e.g., property accessor keywords like 'get' or 'set').
+    // (#18270) Try to fix invalid span. Returns ValueNone if the span should be excluded from rename operations
+    // (e.g., property accessor keywords like 'get' or 'set').
     let tryFixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan voption =
         let fixedSpan = fixupSpan (sourceText, span)
 

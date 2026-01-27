@@ -18,8 +18,8 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open CancellableTasks
 
 module internal SymbolHelpers =
-    /// Gets projects that reference a specific assembly file.
-    /// Used to optimize Find All References for external DLL symbols.
+    // (#10227) Gets projects that reference a specific assembly file.
+    // Used to optimize Find All References for external DLL symbols by filtering to only relevant projects.
     let private getProjectsReferencingAssembly (assemblyFilePath: string) (solution: Solution) =
         let assemblyFileName = Path.GetFileName(assemblyFilePath)
 

@@ -2248,7 +2248,7 @@ let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, 
     | Some currentSink -> 
         currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, false)
 
-        // For union case testers (e.g., IsB property), also register a reference to the underlying union case
+        // (#16621) For union case testers (e.g., IsB property), also register a reference to the underlying union case
         // This ensures "Find All References" on a union case includes usages of its tester property
         match item with
         | Item.Property(info = pinfo :: _) when pinfo.IsUnionCaseTester ->
@@ -2277,7 +2277,7 @@ let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, ite
     | Some currentSink -> 
         currentSink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, false)
 
-        // For union case testers (e.g., IsB property), also register a reference to the underlying union case
+        // (#16621) For union case testers (e.g., IsB property), also register a reference to the underlying union case
         match item with
         | Item.Property(info = pinfo :: _) when pinfo.IsUnionCaseTester ->
             let logicalName = pinfo.GetterMethod.LogicalName
@@ -2301,7 +2301,7 @@ let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item,
     | Some currentSink -> 
         currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, true)
 
-        // For union case testers (e.g., IsB property), also register a reference to the underlying union case
+        // (#16621) For union case testers (e.g., IsB property), also register a reference to the underlying union case
         match item with
         | Item.Property(info = pinfo :: _) when pinfo.IsUnionCaseTester ->
             let logicalName = pinfo.GetterMethod.LogicalName
