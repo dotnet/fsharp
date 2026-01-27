@@ -195,6 +195,9 @@ type OverloadResolutionCacheKey =
     {
         /// Hash combining all method identities in the method group
         MethodGroupHash: int
+        /// Type structures for caller object arguments (the 'this' argument for instance/extension methods)
+        /// This is critical for extension methods where the 'this' type determines the overload
+        ObjArgTypeStructures: TypeStructure list
         /// Type structures for each caller argument (only used when all types are stable)
         ArgTypeStructures: TypeStructure list
         /// Type structure for expected return type (if any), to differentiate calls with different expected types

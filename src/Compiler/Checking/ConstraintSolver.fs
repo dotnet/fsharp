@@ -256,6 +256,9 @@ type OverloadResolutionCacheKey =
     { 
       /// Hash combining all method identities in the method group
       MethodGroupHash: int
+      /// Type structures for caller object arguments (the 'this' argument for instance/extension methods)
+      /// This is critical for extension methods where the 'this' type determines the overload
+      ObjArgTypeStructures: TypeStructure list
       /// Type structures for each caller argument (only used when all types are stable)
       ArgTypeStructures: TypeStructure list
       /// Type structure for expected return type (if any), to differentiate calls with different expected types
@@ -443,9 +446,28 @@ let tryComputeOverloadCacheKey
         let methHash = computeMethInfoHash cmeth.Method
         methodGroupHash <- combineHash methodGroupHash methHash
     
+    // Collect type structures for caller object arguments (the 'this' argument)
+    // This is critical for extension methods where the 'this' type determines the overload
+    // e.g., GItem1 on Tuple<T1,T2> vs Tuple<T1,T2,T3> vs Tuple<T1,T2,T3,T4>
+    let mutable objArgStructures = []
+    let mutable allStable = true
+    
+    match calledMethGroup with
+    | cmeth :: _ ->
+        for objArgTy in cmeth.CallerObjArgTys do
+            match tryGetStableTypeStructure g objArgTy with
+            | ValueSome ts -> 
+                objArgStructures <- ts :: objArgStructures
+            | ValueNone ->
+                allStable <- false
+    | [] -> ()
+    
+    if not allStable then 
+        ValueNone
+    else
+    
     // Collect type structures for all caller arguments
     let mutable argStructures = []
-    let mutable allStable = true
     
     for argList in callerArgs.Unnamed do
         for callerArg in argList do
@@ -498,6 +520,7 @@ let tryComputeOverloadCacheKey
                 | [] -> 0
             ValueSome { 
                 MethodGroupHash = methodGroupHash
+                ObjArgTypeStructures = List.rev objArgStructures
                 ArgTypeStructures = List.rev argStructures
                 ReturnTypeStructure = retStruct
                 CallerTyArgCount = callerTyArgCount
