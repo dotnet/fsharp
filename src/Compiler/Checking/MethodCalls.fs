@@ -1305,7 +1305,19 @@ let BuildObjCtorCall (g: TcGlobals) m =
 /// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
 let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, delInvokeMeth: MethInfo, delArgTys, delFuncExpr, delFuncTy, m) =
     let slotsig = delInvokeMeth.GetSlotSig(amap, m)
-    let delArgVals, expr = 
+    
+    // Check if the expression is a simple value reference (no side effects when evaluated multiple times)
+    // If not, we need to bind it to a local to ensure single evaluation (Fix for #18953)
+    // Note: ExprValWithPossibleTypeInst handles both Expr.Val and type-instantiated values like f<int>
+    let needsBinding = 
+        match delFuncExpr with
+        | Expr.Val _ -> false  // Simple value reference - no side effects
+        | Expr.Lambda _ -> false  // Lambda expressions are values
+        | Expr.TyLambda _ -> false  // Type lambdas are values
+        | Expr.App (Expr.Val _, _, _, [], _) -> false  // Value with type instantiation only (e.g., ignore<unit>) - no side effects
+        | _ -> true  // All other expressions (applications with args, etc.) may have side effects
+    
+    let delArgVals, expr, wrapperOpt = 
         let valReprInfo = ValReprInfo([], List.replicate (max 1 (List.length delArgTys)) ValReprInfo.unnamedTopArg, ValReprInfo.unnamedRetVal)
 
         // Try to pull apart an explicit lambda and use it directly 
@@ -1321,6 +1333,14 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
         
             if List.exists (isByrefTy g) delArgTys then
                     error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(delArgTys.Length), m)) 
+
+            // If the expression needs binding, create a local variable to capture the result once
+            let funcExprToUse, funcTyToUse, wrapper =
+                if needsBinding then
+                    let v, ve = mkCompGenLocal m "delegateFunc" delFuncTy
+                    ve, delFuncTy, Some (fun body -> mkCompGenLet m v delFuncExpr body)
+                else
+                    delFuncExpr, delFuncTy, None
 
             let delFuncArgNamesIfFeatureEnabled =
                 match delFuncExpr with
@@ -1350,15 +1370,20 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
                         | h :: t -> [exprForVal m h; mkRefTupledVars g m t] 
                     | None -> 
                         if isNil delArgTys then [mkUnit g m] else List.map (exprForVal m) delArgVals
-                mkApps g ((delFuncExpr, delFuncTy), [], args, m)
-            delArgVals, expr
+                mkApps g ((funcExprToUse, funcTyToUse), [], args, m)
+            delArgVals, expr, wrapper
             
         | Some _ -> 
             let _, _, _, vsl, body, _ = IteratedAdjustLambdaToMatchValReprInfo g amap valReprInfo delFuncExpr
-            List.concat vsl, body
+            List.concat vsl, body, None
             
     let meth = TObjExprMethod(slotsig, [], [], [delArgVals], expr, m)
-    mkObjExpr(delegateTy, None, BuildObjCtorCall g m, [meth], [], m)
+    let delegateExpr = mkObjExpr(delegateTy, None, BuildObjCtorCall g m, [meth], [], m)
+    
+    // Apply the wrapper if needed to ensure single evaluation of the source expression
+    match wrapperOpt with
+    | Some wrapper -> wrapper delegateExpr
+    | None -> delegateExpr
 
 let CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgExpr delegateTy =    
     let (SigOfFunctionForDelegate(delInvokeMeth, delArgTys, _, _)) = GetSigOfFunctionForDelegate infoReader delegateTy m ad

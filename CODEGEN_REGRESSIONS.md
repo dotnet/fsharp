@@ -49,7 +49,7 @@ This document tracks known code generation bugs in the F# compiler that have doc
 | [#19068](#issue-19068) | Struct object expression generates byref field | Invalid IL | IlxGen.fs | Low |
 | [#19020](#issue-19020) | [<return:>] not respected on class members | Missing Attribute | IlxGen.fs | Low |
 | [#18956](#issue-18956) | Decimal [<Literal>] InvalidProgramException in Debug | Invalid IL | IlxGen.fs | Low |
-| [#18953](#issue-18953) | Action/Func conversion captures extra expressions | Wrong Behavior | TypeRelations.fs | Medium |
+| [#18953](#issue-18953) | Action/Func conversion captures extra expressions | ✅ FIXED | MethodCalls.fs | Medium |
 | [#18868](#issue-18868) | CallerFilePath in delegates error | Compile Error | CheckDeclarations.fs | Low |
 | [#18815](#issue-18815) | Duplicate extension method names | Compile Error | IlxGen.fs | Low |
 | [#18753](#issue-18753) | CE inlining prevented by DU constructor | Optimization | Optimizer.fs | Low |
@@ -362,10 +362,32 @@ x (y ())  // Prints "one time" TWICE instead of once
 The implicit conversion from F# function to delegate re-captures the entire expression instead of capturing the result.
 
 ### Fix Location
-- `src/Compiler/Checking/TypeRelations.fs` or `src/Compiler/Checking/CheckExpressions.fs` - implicit delegate conversion
+- `src/Compiler/Checking/MethodCalls.fs` - `BuildNewDelegateExpr` function
 
 ### Risks
 - Medium: Changing conversion semantics could affect existing code relying on current (buggy) behavior
+
+### UPDATE (FIXED 2026-01-27)
+
+**Root Cause:** In `BuildNewDelegateExpr`, when an expression like `y()` (not an explicit lambda) is converted to a delegate, the expression was used directly in the delegate body. This caused the expression to be re-evaluated on each delegate invocation.
+
+**Fix Applied:** Added logic to detect non-value expressions (function applications, etc.) and bind them to a local variable before constructing the delegate. This ensures:
+1. Simple value references (e.g., `f` where `f` is a variable) work as before
+2. Lambda expressions work as before (they're values)
+3. Function applications like `y()` are evaluated once and the result is captured
+
+**Code Change:**
+```fsharp
+// Check if the expression needs binding (not a simple value)
+let needsBinding = 
+    match delFuncExpr with
+    | Expr.Val _ -> false  // Simple value reference
+    | Expr.Lambda _ -> false  // Lambda expressions are values
+    | Expr.TyLambda _ -> false  // Type lambdas are values
+    | _ -> true  // Applications, etc. may have side effects
+
+// If needed, create: let delegateFunc = <expr> in <delegate using delegateFunc>
+```
 
 ---
 

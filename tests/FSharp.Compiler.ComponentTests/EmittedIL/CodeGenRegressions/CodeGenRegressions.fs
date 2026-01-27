@@ -143,7 +143,8 @@ let main args =
     // https://github.com/dotnet/fsharp/issues/18953
     // When implicitly converting an F# function to Action/Func, the conversion incorrectly
     // re-evaluates expressions that should only be evaluated once.
-    // [<Fact>]
+    // FIX: Added binding in BuildNewDelegateExpr (MethodCalls.fs) to capture expression result once
+    [<Fact>]
     let ``Issue_18953_ActionFuncCapturesExtraExpressions`` () =
         let source = """
 module Test
@@ -161,7 +162,7 @@ let y () =
 x (y ())
 
 // Expected: callCount = 1 (y() called once)
-// Actual: callCount = 2 (y() called twice due to incorrect conversion)
+// Actual (before fix): callCount = 2 (y() called twice due to incorrect conversion)
 if callCount <> 1 then
     failwithf "Expected 1 call, got %d" callCount
 """
@@ -170,7 +171,7 @@ if callCount <> 1 then
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // This will fail - y() is called twice - bug exists
+        |> shouldSucceed // Fixed: y() is now called once, as expected
         |> ignore
 
     // ===== Issue #18868: Error using [<CallerFilePath>] with caller info in delegates =====
