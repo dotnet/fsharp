@@ -202,6 +202,16 @@ When an object expression inside a struct depends on the containing type's value
 - Low: Fix would change closure capture strategy for object expressions in structs
 - Workaround exists: bind constructor args to variables first
 
+### UPDATE (FIXED)
+
+Fixed in IlxGen.fs by:
+1. Adding `GenGetFreeVarForClosure` helper function that properly handles byref-typed free variables
+2. Modifying `GenFreevar` to strip byref types when generating closure field types (byref fields are not valid in classes)
+3. When loading byref-typed free variables for closure capture, the value is now dereferenced (copied) using `ldobj` instruction
+4. Applied fix consistently to object expressions, lambda closures, sequence expressions, and delegates
+
+The fix ensures that when capturing values through a byref reference (like struct `this` pointers), the actual value is copied into the closure instead of trying to store a byref reference.
+
 ---
 
 ## Issue #19020

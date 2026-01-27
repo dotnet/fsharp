@@ -1,109 +1,77 @@
-# Vision: CodeGen Regression Bugfix Campaign - Phase 2
+# Vision: CodeGen Regression Bugfix Campaign - Phase 3
 
 ## High-Level Goal
 
-Fix all 62 documented codegen bugs in the F# compiler, enabling all tests in `CodeGenRegressions.fs` to pass with their `[<Fact>]` attributes uncommented.
+Fix all remaining 47 pending codegen bugs (of 62 total) in the F# compiler, enabling all tests in `CodeGenRegressions.fs` to pass with their `[<Fact>]` attributes uncommented.
 
-## Current State (Phase 2 Start)
+## Current State (Phase 3 Start - 2026-01-27)
 
-- **62 tests** exist in `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs`
-- **1 test fixed** (Issue #18319 - Literal upcast missing box instruction) - Uncommented and passing
-- **61 tests** have `// [<Fact>]` (commented out) to avoid CI failure
-- **5 tests** are Feature Requests (OUT_OF_SCOPE) - need rewritten tests documenting limitations
-- All issues documented in `CODEGEN_REGRESSIONS.md`
+- **62 tests** in `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs`
+- **15 tests PASSING** with `[<Fact>]` uncommented (24% complete):
+  - 10 actual bug fixes
+  - 5 Feature Request tests marked OUT_OF_SCOPE (documentation tests)
+- **47 tests PENDING** with `// [<Fact>]` commented out (76% remaining)
 
-### Fixed Issues (1 of 62)
-| Issue | Description | Status |
-|-------|-------------|--------|
-| #18319 | Literal upcast missing box instruction | ✅ Fixed |
+### Fixed Issues (10 of 62 bugs)
+| Issue | Description | Fix Type |
+|-------|-------------|----------|
+| #18956 | Decimal InvalidProgram in Debug | IlxGen.fs - exclude literals from shadow local |
+| #18868 | CallerFilePath Delegates | Already fixed in compiler |
+| #18815 | Duplicate Extension Names | IlxGen.fs - fully qualified type prefix |
+| #18319 | Literal upcast missing box | IlxGen.fs - box instruction |
+| #18140 | Callvirt on value type | IlxGen.fs - constrained.callvirt |
+| #17692 | Mutual recursion duplicate param | EraseClosures.fs - unique param names |
+| #16565 | DefaultAugmentation duplicate entry | IlxGen.fs - method table dedup |
+| #12384 | Mutually recursive values init | Fixed initialization order |
+| #5834 | Obsolete SpecialName | IlxGen.fs - SpecialName for events |
+| #878 | Exception serialization | IlxGen.fs - serialize exception fields |
 
 ### OUT_OF_SCOPE Issues (5 - Feature Requests)
-| Issue | Description | Action Needed |
-|-------|-------------|---------------|
-| #15467 | Include language version in metadata | Rewrite test to pass |
-| #15092 | DebuggerProxies in release builds | Rewrite test to pass |
-| #14392 | OpenApi Swashbuckle support | Rewrite test to pass |
-| #13223 | FSharp.Build reference assemblies | Rewrite test to pass |
-| #9176 | Decorate inline function with attribute | Rewrite test to pass |
+These are properly tested as "documents current behavior" - not bugs:
+- #15467, #15092, #14392, #13223, #9176
 
-## Approach for Bug Fixes
+### Pending Issues by Category (47 remaining)
 
-### Prioritization Strategy
+| Category | Issues | Priority |
+|----------|--------|----------|
+| **Runtime Crash/Invalid IL** (5) | #19075, #19068, #14508, #14492, #13447 | CRITICAL |
+| **Compile Error** (7) | #18263, #18135, #14321, #7861, #6379, #14707, #14706 | HIGH |
+| **Wrong Behavior** (10) | #18953, #18672, #18374, #16546, #16292, #15627, #13468, #13100, #12136, #6750 | MEDIUM |
+| **Performance** (14) | #18753, #16378, #16245, #16037, #15326, #13218, #12546, #12416, #12366, #12139, #12137, #11556, #9348 | LOW |
+| **Interop/Cosmetic/Other** (11) | #19020, #18125, #17641, #16362, #15352, #14712, #13108, #12460, #11935, #11132, #11114, #5464 | CASE-BY-CASE |
 
-1. **Low Risk + Simple Fix Location** → Fix first
-2. **Invalid IL issues** → High priority (cause runtime failures)
-3. **Compile Error issues** → Medium priority
-4. **Performance issues** → Lower priority
-5. **Cross-module changes** → Most complex, fix carefully
+## Sprint Strategy
 
-### Category Breakdown
+1. **ONE issue per sprint** - keeps risk manageable
+2. **Prioritize by severity**: Runtime crashes > Compile errors > Wrong behavior > Performance
+3. **Surgical fixes only**: Minimal changes, no refactoring
+4. **Full test suite verification** after each fix
+5. **Document in CODEGEN_REGRESSIONS.md** with UPDATE note
 
-| Category | Count | Priority |
-|----------|-------|----------|
-| Invalid IL | 6 | HIGH - Runtime failures |
-| Runtime Crash/Error | 4 | HIGH - Program crashes |
-| Compile Error/Warning | 12 | MEDIUM - Blocks compilation |
-| Wrong Behavior | 13 | MEDIUM - Incorrect results |
-| Performance | 12 | LOW - Optimization only |
-| Feature Request | 5 | N/A - OUT_OF_SCOPE |
-| Interop (C#/Other) | 3 | MEDIUM |
-| Other | 7 | Case-by-case |
+## External Code Auditor Responsibilities
 
-### Sprint Strategy
+After each bugfix sprint, verify:
+1. **Code duplication audit**: No copy-paste patterns, reuse existing helpers
+2. **Reinventing the wheel audit**: Use existing compiler infrastructure
+3. **Proper layer placement audit**: Fix goes in correct module (IlxGen, Optimizer, etc.)
+4. **Fix-feels-like-a-hack audit**: Fix addresses root cause, not symptoms
+5. **Unnecessary allocations audit**: No new allocations in hot paths
 
-Each sprint:
-1. Pick ONE issue from highest priority unfixed category
-2. Analyze the issue deeply
-3. Implement minimal surgical fix
-4. Uncomment `[<Fact>]` attribute
-5. Run test to verify it passes
-6. Run full test suite to check regressions
-7. Update CODEGEN_REGRESSIONS.md with UPDATE note
-8. Document approach for future reference
+## Lessons Learned from Previous Fixes
 
-## Constraints
-
-1. **Surgical Changes Only**: Each fix must be minimal and non-invasive
-2. **No Breaking Changes**: Existing working code must continue to work
-3. **One Issue Per Sprint**: Reduces risk and keeps work manageable
-4. **Full Test Suite Must Pass**: After each sprint
-
-## Proven-to-Work Fix: Issue #18319
-
-The fix for #18319 shows the pattern to follow:
-- Location: `src/Compiler/CodeGen/IlxGen.fs` in `GenConstant`
-- Pattern: Track underlying IL type, emit `box` instruction when needed
-- Test: Uncommented, passing in CI
-
-## Next Priority Issues
-
-Based on category and risk assessment, the next issues to tackle are:
-
-### Invalid IL / Runtime Crash Issues (6+4 = 10)
-- #18956 - Decimal constant InvalidProgramException (Low risk)
-- #18140 - Callvirt on value type ILVerify error (Low risk)  
-- #17692 - Mutual recursion duplicate param name (Low risk)
-- #19068 - Struct object expression byref field (Low risk)
-- #19075 - Constrained calls crash (Medium risk)
-- #14492 - Release config TypeLoadException (Medium risk)
-
-### Compile Error Issues (12)
-- #18868 - CallerFilePath in delegates (Low risk)
-- #18815 - Duplicate extension method names (Low risk)
-- #16565 - DefaultAugmentation duplicate entry (Low risk)
-- #18263 - DU .Is* properties duplicate (Medium risk)
-
-## Lessons Learned
-
-1. Box instruction fix was surgical - added ~30 lines to GenConstant
-2. Fix pattern: Identify exact codegen site, add conditional logic
-3. Tests verify the fix works without regression
-4. Update doc with UPDATE note documenting the fix
+| Fix | Pattern Used | Key Insight |
+|-----|-------------|-------------|
+| #18956 | Exclude from condition | Literal values shouldn't get shadow locals |
+| #18815 | Qualify names | Extension methods need fully qualified type prefix |
+| #18319 | Add missing IL instruction | Box instruction for value-to-ref conversion |
+| #18140 | Use constrained prefix | Value type method calls need constrained.callvirt |
+| #17692 | Unique naming | Closures need globally unique parameter names |
 
 ## Unfixable Criteria
 
-An issue is only unfixable if:
-1. 5+ different approaches have been tried and documented
-2. Each approach causes regressions in existing tests
-3. The fix conflicts with fundamental F# semantics
-4. Clear evidence provided in CODEGEN_REGRESSIONS.md
+An issue is only declared unfixable if:
+1. **5+ different approaches** have been tried and documented
+2. Each approach causes **regressions in existing tests**
+3. The fix **conflicts with fundamental F# semantics** (e.g., language spec)
+4. Clear evidence provided in CODEGEN_REGRESSIONS.md with full reasoning
+5. Issue may be reclassified as "design limitation" with documentation

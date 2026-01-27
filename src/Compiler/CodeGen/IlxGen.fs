@@ -6496,7 +6496,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloinfo.cloWitnessInfos
 
     for fv in cloinfo.cloFreeVars do
-        GenGetLocalVal cenv cgbuf eenvouter m fv None
+        GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
 
     CG.EmitInstr
         cgbuf
@@ -6587,7 +6587,7 @@ and GenSequenceExpr
                          if stateVarsSet.Contains fv then
                              GenDefaultValue cenv cgbuf eenv (fv.Type, m)
                          else
-                             GenGetLocalVal cenv cgbuf eenv m fv None
+                             GenGetFreeVarForClosure cenv cgbuf eenv m fv
 
                      CG.EmitInstr
                          cgbuf
@@ -6699,7 +6699,7 @@ and GenSequenceExpr
         if stateVarsSet.Contains fv then
             GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
         else
-            GenGetLocalVal cenv cgbuf eenvouter m fv None
+            GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
 
     CG.EmitInstr cgbuf (pop ilCloAllFreeVars.Length) (Push [ ilCloRetTyOuter ]) (I_newobj(ilxCloSpec.Constructor, None))
     GenSequel cenv eenvouter.cloc cgbuf sequel
@@ -6932,7 +6932,9 @@ and GenClosureAlloc cenv (cgbuf: CodeGenBuffer) eenv (cloinfo, m) =
         CG.EmitInstr cgbuf (pop 0) (Push [ EraseClosures.mkTyOfLambdas cenv.ilxPubCloEnv cloinfo.ilCloLambdas ]) (mkNormalLdsfld fspec)
     else
         GenWitnessArgsFromWitnessInfos cenv cgbuf eenv m cloinfo.cloWitnessInfos
-        GenGetLocalVals cenv cgbuf eenv m cloinfo.cloFreeVars
+
+        for fv in cloinfo.cloFreeVars do
+            GenGetFreeVarForClosure cenv cgbuf eenv m fv
 
         CG.EmitInstr
             cgbuf
@@ -6961,7 +6963,17 @@ and GenFreevar cenv m eenvouter tyenvinner (fv: Val) =
     | Method _
     | Null -> error (InternalError("GenFreevar: compiler error: unexpected unrealized value", fv.Range))
 #endif
-    | _ -> GenType cenv m tyenvinner fv.Type
+    | _ ->
+        // Fix for issue #19068: byref fields are not valid in classes.
+        // When capturing a value from a struct (which may be accessed by reference),
+        // we must capture the underlying value type, not a byref.
+        let ty =
+            if isByrefTy g fv.Type then
+                destByrefTy g fv.Type
+            else
+                fv.Type
+
+        GenType cenv m tyenvinner ty
 
 and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames expr =
     let g = cenv.g
@@ -7322,7 +7334,9 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
             IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloAllFreeVars), ctxtGenericArgsForDelegee, false)
 
         GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
-        GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
+
+        for fv in cloFreeVars do
+            GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
 
         CG.EmitInstr
             cgbuf
@@ -9896,8 +9910,16 @@ and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage storeSeq
         CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdarg0; mkNormalLdfld ilField ]
         CommitGetStorageSequel cenv cgbuf eenv m ty localCloInfo storeSequel
 
-and GenGetLocalVals cenv cgbuf eenvouter m fvs =
-    List.iter (fun v -> GenGetLocalVal cenv cgbuf eenvouter m v None) fvs
+/// Load free variables for closure capture, handling byref types by copying the underlying value.
+/// Fix for issue #19068: byref fields are not valid in classes, so we must copy the value.
+and GenGetFreeVarForClosure cenv cgbuf eenv m (fv: Val) =
+    let g = cenv.g
+    GenGetLocalVal cenv cgbuf eenv m fv None
+    // If the free variable has a byref type, dereference it to copy the value
+    if isByrefTy g fv.Type then
+        let underlyingTy = destByrefTy g fv.Type
+        let ilUnderlyingTy = GenType cenv m eenv.tyenv underlyingTy
+        CG.EmitInstr cgbuf (pop 1) (Push [ ilUnderlyingTy ]) (mkNormalLdobj ilUnderlyingTy)
 
 and GenGetLocalVal cenv cgbuf eenv m (vspec: Val) storeSequel =
     GenGetStorageAndSequel cenv cgbuf eenv m (vspec.Type, GenTypeOfVal cenv eenv vspec) (StorageForVal m vspec eenv) storeSequel

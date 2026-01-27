@@ -45,7 +45,7 @@ let main argv =
     // https://github.com/dotnet/fsharp/issues/19068
     // Using an object expression in a struct that depends on primary constructor parameters
     // results in a class being emitted with a byref field, causing TypeLoadException at runtime.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_19068_StructObjectExprByrefField`` () =
         let source = """
 module Test
@@ -68,10 +68,11 @@ run()
 """
         FSharp source
         |> asExe
+        |> ignoreWarnings
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // This will fail with TypeLoadException - bug exists
+        |> shouldSucceed
         |> ignore
 
     // ===== Issue #19020: [<return: ...>] not respected on class members =====

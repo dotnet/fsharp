@@ -294,3 +294,111 @@ This file is updated after each sprint completes. Use it to understand what was 
 **Files touched:** Check git log for details.
 
 ---
+
+## Sprint 5: Fix #18815 Duplicate Extension
+   Names
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 6: Fix #16565 DefaultAugmentation Duplicate
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 7: Handle 5 OUT_OF_SCOPE Tests
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 8: Fix #878 Exception
+   Serialization
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 9: Fix #5834 Obsolete Specialname
+
+**Summary:** Fixed abstract event accessors missing SpecialName flag
+
+**Issue Details:**
+- Abstract [<CLIEvent>] members generate add_/remove_ accessor methods that were missing the SpecialName IL flag
+- This broke Reflection-based tools (like Moq) that rely on IsSpecialName to identify event accessors
+- Concrete event accessors correctly received the flag, but abstract ones did not
+
+**Root Cause:**
+The typechecker generates add_/remove_ members with MemberKind.Member for abstract CLI events. These went through the SynMemberKind.Member case in GenAbstractBinding, which didn't check for IsGeneratedEventVal to apply SpecialName.
+
+**Fix Applied:**
+Added check in `SynMemberKind.Member` case of `GenAbstractBinding` to apply `WithSpecialName` when `vref.Deref.val_flags.IsGeneratedEventVal` is true.
+
+**DoD Verification:**
+- ✅ Build succeeds with 0 errors
+- ✅ Issue_5834_ObsoleteSpecialname test passes when [<Fact>] uncommented
+- ✅ Abstract event accessors have IsSpecialName=true
+- ✅ CODEGEN_REGRESSIONS.md updated with UPDATE note for #5834
+- ✅ All 985 EmittedIL tests pass (no regressions)
+
+**Files modified:**
+- `src/Compiler/CodeGen/IlxGen.fs` - Added SpecialName for generated abstract event accessors
+- `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs` - Uncommented [<Fact>]
+- `CODEGEN_REGRESSIONS.md` - Added UPDATE (FIXED) note
+
+---
+
+## Sprint 9: Fix #5834 Obsolete Specialname
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 10: Fix #12384 MutRec Init Order
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 11: Fix #19068 Struct ObjExpr Byref
+
+**Summary:** Fixed object expressions in struct types generating invalid IL with byref fields.
+
+**Issue Details:**
+- When an object expression is created inside a struct member method and references values from the struct's constructor parameters or fields, the compiler was generating invalid IL with byref fields in closure classes
+- Byref fields are not valid in classes per CLI rules, causing TypeLoadException at runtime
+
+**Fix Applied:**
+- Added `GenGetFreeVarForClosure` helper function in IlxGen.fs to properly handle byref-typed free variables
+- Modified `GenFreevar` to strip byref types when generating closure field types
+- When loading byref-typed free variables for closure capture, the value is now dereferenced (copied) using `ldobj` instruction
+- Applied fix consistently to object expressions, lambda closures, sequence expressions, and delegates
+
+**DoD Verification:**
+- ✅ Build succeeds with 0 errors
+- ✅ Issue_19068_StructObjectExprByrefField test passes
+- ✅ All 16 CodeGenRegressions tests pass
+- ✅ No regressions in EmittedIL tests (987 passed, 2 skipped)
+- ✅ CODEGEN_REGRESSIONS.md updated with UPDATE (FIXED) note
+- ✅ Code audit: No duplication (reused GenGetLocalVal), proper layer (IlxGen.fs), no hack
+
+**Files modified:**
+- `src/Compiler/CodeGen/IlxGen.fs` - Added GenGetFreeVarForClosure, modified GenFreevar
+- `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs` - Uncommented [<Fact>]
+- `CODEGEN_REGRESSIONS.md` - Added UPDATE (FIXED) note
+
+---
