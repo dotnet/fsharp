@@ -1815,6 +1815,15 @@ IL generation doesn't preserve `out` semantics when implementing interfaces from
 
 **Category:** Runtime Crash (Stack Corruption)
 
+### UPDATE (FIXED)
+
+The bug was that when `NativePtr.stackalloc` (which emits `localloc` IL instruction) was used in a function, subsequent calls could incorrectly receive a `tail.` prefix. Since `localloc` allocates memory on the stack frame, and `tail.` releases the stack frame before the callee runs, passing stack-allocated memory (via Span or byref) to a tail call would cause the callee to access released memory - resulting in stack corruption.
+
+**Fix:** Added tracking in `CodeGenBuffer` to detect when `I_localloc` instruction is emitted. The `CanTailcall` function now checks `HasStackAllocatedLocals()` and suppresses tail calls when any localloc has been used in the current method. This is a safe, conservative fix that ensures stack-allocated memory remains valid for the duration of any subsequent calls.
+
+**Changed files:**
+- `src/Compiler/CodeGen/IlxGen.fs` - Added `hasStackAllocatedLocals` tracking and check in `CanTailcall`
+
 ### Minimal Repro
 
 The full repro requires complex code. See: https://github.com/kerams/repro/

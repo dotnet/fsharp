@@ -1273,37 +1273,39 @@ type T() =
 
     // ===== Issue #13447: Extra tail instruction corrupts stack =====
     // https://github.com/dotnet/fsharp/issues/13447
-    // In Release mode with [<Struct>] on a Result type, extra tail. instruction
-    // causes wrong values to be written (stack corruption).
-    // Workaround: remove [<Struct>] or add () at end of affected function.
-    // [<Fact>]
+    // When NativePtr.stackalloc is used (which emits localloc), the stack memory may be
+    // passed to called functions via Span or byref. If a tail. prefix is emitted on such
+    // calls, the stack frame is released before the callee accesses the memory, causing
+    // corruption. The fix suppresses tail calls when localloc has been used in the method.
+    [<Fact>]
     let ``Issue_13447_TailInstructionCorruption`` () =
-        // The bug: complex interaction of [<Struct>] Result + certain function patterns
-        // causes an extra tail. instruction that corrupts stack
-        // The repro requires specific code from external repo, simplified here
+        // Verify that tail. is NOT emitted when localloc (NativePtr.stackalloc) is used.
+        // The bug was that tail. prefix on calls following localloc corrupts stack memory.
         let source = """
 module Test
+open System
+open Microsoft.FSharp.NativeInterop
 
-// The actual bug requires complex interaction with:
-// - [<Struct>] on a Result type
-// - Specific function patterns that trigger extra tail. prefix
-// - Running in Release mode
-// See: https://github.com/kerams/repro/ for full repro
+#nowarn "9" // Uses of this construct may result in the generation of unverifiable .NET IL code
 
 [<Struct>]
 type MyResult<'T, 'E> = 
     | Ok of value: 'T 
     | Error of error: 'E
 
-let writeString (value: string) : MyResult<unit, string> =
-    Ok ()
-    // BUG: without trailing `()` here, an extra tail. instruction is emitted
-    // causing stack corruption
+// Helper that uses stackalloc and passes the span to another function
+let useStackAlloc () : MyResult<int, string> =
+    let ptr = NativePtr.stackalloc<byte> 100
+    let span = Span<byte>(NativePtr.toVoidPtr ptr, 100)
+    span.[0] <- 42uy
+    // This call should NOT have tail. prefix since localloc was used
+    Ok (int span.[0])
 
+// Verify compilation succeeds without stack corruption
 let test () =
-    match writeString "test" with
-    | Ok () -> printfn "Success"
-    | Error e -> printfn "Error: %s" e
+    match useStackAlloc () with
+    | Ok v -> v
+    | Error _ -> -1
 """
         FSharp source
         |> asLibrary

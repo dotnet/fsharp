@@ -2508,6 +2508,11 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     let mutable hasDebugPoints = false
     let mutable anyDocument = None // we collect an arbitrary document in order to emit the header FeeFee if needed
 
+    /// Track whether localloc (NativePtr.stackalloc) has been used.
+    /// When localloc is used, we must not emit tail calls since the stack memory
+    /// may be passed to the callee and must remain valid. See issue #13447.
+    let mutable hasStackAllocatedLocals = false
+
     let codeLabelToPC: Dictionary<ILCodeLabel, int> = Dictionary<_, _>(10)
 
     let codeLabelToCodeLabel: Dictionary<ILCodeLabel, ILCodeLabel> =
@@ -2566,11 +2571,15 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     member cgbuf.EmitInstr(pops, pushes, i) =
         cgbuf.DoPops pops
         cgbuf.DoPushes pushes
+        // Track localloc for tail call suppression (issue #13447)
+        if i = I_localloc then hasStackAllocatedLocals <- true
         codebuf.Add i
 
     member cgbuf.EmitInstrs(pops, pushes, is) =
         cgbuf.DoPops pops
         cgbuf.DoPushes pushes
+        // Track localloc for tail call suppression (issue #13447)
+        if is |> List.exists (fun i -> i = I_localloc) then hasStackAllocatedLocals <- true
         is |> List.iter codebuf.Add
 
     member private _.EnsureNopBetweenDebugPoints() =
@@ -2702,6 +2711,11 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     /// Check if any locals have been allocated as pinned/fixed
     member _.HasPinnedLocals() =
         locals |> Seq.exists (fun (_, _, isFixed, _) -> isFixed)
+
+    /// Check if localloc (NativePtr.stackalloc) has been used in this method.
+    /// When true, tail calls should be suppressed as stack-allocated memory
+    /// may be passed to the callee. See issue #13447.
+    member _.HasStackAllocatedLocals() = hasStackAllocatedLocals
 
     member _.Close() =
 
@@ -4538,7 +4552,10 @@ and CanTailcall
     // Can't tailcall with a struct object arg since it involves a byref
     // Can't tailcall with a .NET 2.0 generic constrained call since it involves a byref
     // Can't tailcall when there are pinned locals since the stack frame must remain alive
+    // Can't tailcall when localloc (NativePtr.stackalloc) has been used since the stack memory
+    // may be passed to the callee via Span or byref and must remain valid. See issue #13447.
     let hasPinnedLocals = cgbuf.HasPinnedLocals()
+    let hasStackAllocatedLocals = cgbuf.HasStackAllocatedLocals()
 
     if
         not hasStructObjArg
@@ -4549,6 +4566,7 @@ and CanTailcall
         && not isSelfInit
         && not makesNoCriticalTailcalls
         && not hasPinnedLocals
+        && not hasStackAllocatedLocals
         &&
 
         // We can tailcall even if we need to generate "unit", as long as we're about to throw the value away anyway as par of the return.
