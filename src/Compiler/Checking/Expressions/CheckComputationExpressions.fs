@@ -126,27 +126,25 @@ let mkSimplePatForVarSpace m (patvs: Val list) =
     let spats = patvs |> List.map (fun v -> mkSynCompGenSimplePatVar v.Id)
     SynSimplePats.SimplePats(spats, [], m)
 
-/// Mark all SynSimplePat.Id nodes in a SynSimplePats as compiler-generated.
-/// This is used to prevent false FS1182 warnings for join/groupJoin/zip patterns
-/// that are used in synthetic lambdas for key selectors.
-let rec markSimplePatAsCompilerGenerated (pat: SynSimplePat) =
-    match pat with
-    | SynSimplePat.Id(ident, altNameRefCell, _isCompilerGenerated, isThisVal, isOptional, range) ->
-        SynSimplePat.Id(ident, altNameRefCell, true, isThisVal, isOptional, range)
-    | SynSimplePat.Typed(p, ty, range) -> SynSimplePat.Typed(markSimplePatAsCompilerGenerated p, ty, range)
-    | SynSimplePat.Attrib(p, attribs, range) -> SynSimplePat.Attrib(markSimplePatAsCompilerGenerated p, attribs, range)
-
-let markSimplePatsAsCompilerGenerated (pats: SynSimplePats) =
-    match pats with
-    | SynSimplePats.SimplePats(patList, commaRanges, range) ->
-        SynSimplePats.SimplePats(patList |> List.map markSimplePatAsCompilerGenerated, commaRanges, range)
-
 /// Like SimplePatsOfPat but marks all patterns as compiler-generated.
 /// Used for synthetic lambdas in query join/groupJoin/zip where the patterns
-/// are logically used but would otherwise trigger false FS1182 warnings.
+/// are logically used but would otherwise trigger false FS1182 warnings (Issue #422).
 let SimplePatsOfPatCompilerGenerated synArgNameGenerator pat =
+    let rec markPat (p: SynSimplePat) =
+        match p with
+        | SynSimplePat.Id(ident, altNameRefCell, _, isThisVal, isOptional, range) ->
+            SynSimplePat.Id(ident, altNameRefCell, true, isThisVal, isOptional, range)
+        | SynSimplePat.Typed(p, ty, range) -> SynSimplePat.Typed(markPat p, ty, range)
+        | SynSimplePat.Attrib(p, attribs, range) -> SynSimplePat.Attrib(markPat p, attribs, range)
+
     let pats, later = SimplePatsOfPat synArgNameGenerator pat
-    markSimplePatsAsCompilerGenerated pats, later
+
+    let markedPats =
+        match pats with
+        | SynSimplePats.SimplePats(patList, commaRanges, range) ->
+            SynSimplePats.SimplePats(patList |> List.map markPat, commaRanges, range)
+
+    markedPats, later
 
 let mkPatForVarSpace m (patvs: Val list) =
     match patvs with
