@@ -8,13 +8,13 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| FindAllReferences Bugs | 6 | Pending |
-| FindAllReferences Feature Improvements | 2 | Pending |
-| FindAllReferences Feature Requests | 3 | Pending |
-| RenameSymbol Bugs | 5 | Pending |
-| RenameSymbol Feature Improvements | 1 | Pending |
-| RenameSymbol Feature Requests | 1 | Pending |
-| **Total** | **18** | **Pending** |
+| FindAllReferences Bugs | 6 | 5 Fixed, 1 Open (#5545) |
+| FindAllReferences Feature Improvements | 2 | Fixed |
+| FindAllReferences Feature Requests | 3 | Fixed |
+| RenameSymbol Bugs | 5 | 3 Fixed, 2 VS Layer Issues |
+| RenameSymbol Feature Improvements | 1 | Fixed |
+| RenameSymbol Feature Requests | 1 | Deferred (#4760) |
+| **Total** | **18** | **14 Fixed, 4 Open/Deferred** |
 
 ---
 
@@ -25,8 +25,8 @@ Both rename and find all references share problems with active patterns due to h
 
 | Issue | Title | Type | Labels | Status |
 |-------|-------|------|--------|--------|
-| [#19173](https://github.com/dotnet/fsharp/issues/19173) | FindBackgroundReferencesInFile for TransparentCompiler not returning Partial/Active Pattern Values | Bug | Area-LangService-FindAllReferences | [ ] |
-| [#14969](https://github.com/dotnet/fsharp/issues/14969) | Finding references / renaming doesn't work for active patterns in signature files | Bug | Impact-Medium, Area-LangService-FindAllReferences | [ ] |
+| [#19173](https://github.com/dotnet/fsharp/issues/19173) | FindBackgroundReferencesInFile for TransparentCompiler not returning Partial/Active Pattern Values | Bug | Area-LangService-FindAllReferences | [x] |
+| [#14969](https://github.com/dotnet/fsharp/issues/14969) | Finding references / renaming doesn't work for active patterns in signature files | Bug | Impact-Medium, Area-LangService-FindAllReferences | [x] |
 
 **Root Cause:** Active patterns are written to `ItemKeyStore` as `Item.Value` with no case information. In signature files, they don't get proper `SymbolUse` entries.
 
@@ -41,8 +41,8 @@ Operators have special naming and parsing requirements that cause rename problem
 
 | Issue | Title | Type | Labels | Status |
 |-------|-------|------|--------|--------|
-| [#17221](https://github.com/dotnet/fsharp/issues/17221) | Support / fix replacing reference (Refactor -> Rename) of F# operator | Feature Improvement | Area-LangService-RenameSymbol | [ ] |
-| [#14057](https://github.com/dotnet/fsharp/issues/14057) | In Visual Studio: Renaming operator with `.` only renames right of `.` | Bug | Impact-Medium, Area-VS-Editor, Area-LangService-RenameSymbol | [ ] |
+| [#17221](https://github.com/dotnet/fsharp/issues/17221) | Support / fix replacing reference (Refactor -> Rename) of F# operator | Feature Improvement | Area-LangService-RenameSymbol | [x] |
+| [#14057](https://github.com/dotnet/fsharp/issues/14057) | In Visual Studio: Renaming operator with `.` only renames right of `.` | Bug | Impact-Medium, Area-VS-Editor, Area-LangService-RenameSymbol | [x] |
 
 **Root Cause:** Operator symbol handling in `Tokenizer.fixupSpan` and `Tokenizer.isValidNameForSymbol` doesn't handle all operator cases correctly.
 
@@ -59,8 +59,8 @@ Properties with get/set accessors have incorrect rename behavior.
 
 | Issue | Title | Type | Labels | Status |
 |-------|-------|------|--------|--------|
-| [#18270](https://github.com/dotnet/fsharp/issues/18270) | Renaming property renames get and set keywords use braking the code | Bug | Impact-Medium, Area-LangService-RenameSymbol | [ ] |
-| [#15399](https://github.com/dotnet/fsharp/issues/15399) | Interface renaming works weirdly in some edge cases | Bug | Impact-Medium, Area-LangService-RenameSymbol, Tracking-External | [ ] |
+| [#18270](https://github.com/dotnet/fsharp/issues/18270) | Renaming property renames get and set keywords use braking the code | Bug | Impact-Medium, Area-LangService-RenameSymbol | [x] |
+| [#15399](https://github.com/dotnet/fsharp/issues/15399) | Interface renaming works weirdly in some edge cases | Bug | Impact-Medium, Area-LangService-RenameSymbol, Tracking-External | [ ] VS Layer |
 
 **Root Cause:** The range returned for property symbols includes the accessor keywords (`get`/`set`), not just the property name.
 
@@ -76,9 +76,9 @@ Properties with get/set accessors have incorrect rename behavior.
 
 | Issue | Title | Type | Labels | Status |
 |-------|-------|------|--------|--------|
-| [#5546](https://github.com/dotnet/fsharp/issues/5546) | Get all symbols: all symbols in SynPat.Or patterns considered bindings | Bug | Impact-Low, Area-LangService-FindAllReferences | [ ] |
-| [#5545](https://github.com/dotnet/fsharp/issues/5545) | Symbols are not always found in SAFE bookstore project | Bug | Impact-Low, Area-LangService-FindAllReferences | [ ] |
-| [#4136](https://github.com/dotnet/fsharp/issues/4136) | Symbols API: GetAllUsesOfAllSymbolsInFile contains generated handler value for events | Bug | Impact-Low, Area-LangService-FindAllReferences | [ ] |
+| [#5546](https://github.com/dotnet/fsharp/issues/5546) | Get all symbols: all symbols in SynPat.Or patterns considered bindings | Bug | Impact-Low, Area-LangService-FindAllReferences | [x] |
+| [#5545](https://github.com/dotnet/fsharp/issues/5545) | Symbols are not always found in SAFE bookstore project | Bug | Impact-Low, Area-LangService-FindAllReferences | [ ] Not Investigated |
+| [#4136](https://github.com/dotnet/fsharp/issues/4136) | Symbols API: GetAllUsesOfAllSymbolsInFile contains generated handler value for events | Bug | Impact-Low, Area-LangService-FindAllReferences | [x] |
 
 **Root Cause:** Name resolution captures incorrect or synthetic symbols in certain patterns.
 
@@ -94,8 +94,8 @@ Properties with get/set accessors have incorrect rename behavior.
 
 | Issue | Title | Type | Labels | Status |
 |-------|-------|------|--------|--------|
-| [#9928](https://github.com/dotnet/fsharp/issues/9928) | Find References doesn't work if #line directives are used | Bug | Impact-Medium, Area-LangService-FindAllReferences | [ ] |
-| [#16394](https://github.com/dotnet/fsharp/issues/16394) | Roslyn crashes F# rename when F# project contains `cshtml` file | Bug | Impact-Low, Area-LangService-RenameSymbol | [ ] |
+| [#9928](https://github.com/dotnet/fsharp/issues/9928) | Find References doesn't work if #line directives are used | Bug | Impact-Medium, Area-LangService-FindAllReferences | [x] |
+| [#16394](https://github.com/dotnet/fsharp/issues/16394) | Roslyn crashes F# rename when F# project contains `cshtml` file | Bug | Impact-Low, Area-LangService-RenameSymbol | [x] |
 
 **Root Cause:** Range remapping for `#line` directives not handled; Roslyn interop issues with generated files.
 
@@ -111,9 +111,9 @@ Properties with get/set accessors have incorrect rename behavior.
 
 | Issue | Title | Type | Labels | Status |
 |-------|-------|------|--------|--------|
-| [#14902](https://github.com/dotnet/fsharp/issues/14902) | Finding references of additional constructors in VS | Feature Request | Area-LangService-FindAllReferences | [ ] |
-| [#15290](https://github.com/dotnet/fsharp/issues/15290) | Find all references of records should include copy-and-update and construction | Feature Improvement | Area-LangService-FindAllReferences | [ ] |
-| [#16621](https://github.com/dotnet/fsharp/issues/16621) | Find all references of a DU case should include case testers | Feature Request | Area-LangService-FindAllReferences, help wanted | [ ] |
+| [#14902](https://github.com/dotnet/fsharp/issues/14902) | Finding references of additional constructors in VS | Feature Request | Area-LangService-FindAllReferences | [x] |
+| [#15290](https://github.com/dotnet/fsharp/issues/15290) | Find all references of records should include copy-and-update and construction | Feature Improvement | Area-LangService-FindAllReferences | [x] |
+| [#16621](https://github.com/dotnet/fsharp/issues/16621) | Find all references of a DU case should include case testers | Feature Request | Area-LangService-FindAllReferences, help wanted | [x] |
 
 **Root Cause:** Implicit constructions and testers are not captured as symbol uses.
 
@@ -129,7 +129,7 @@ Properties with get/set accessors have incorrect rename behavior.
 
 | Issue | Title | Type | Labels | Status |
 |-------|-------|------|--------|--------|
-| [#10227](https://github.com/dotnet/fsharp/issues/10227) | [VS] Find-all references on symbol from referenced DLL optimization | Feature Request | Area-LangService-FindAllReferences | [ ] |
+| [#10227](https://github.com/dotnet/fsharp/issues/10227) | [VS] Find-all references on symbol from referenced DLL optimization | Feature Request | Area-LangService-FindAllReferences | [x] |
 
 **Root Cause:** When searching for external DLL symbols, all projects are checked. Should only check projects referencing that DLL.
 
@@ -141,9 +141,9 @@ Properties with get/set accessors have incorrect rename behavior.
 
 | Issue | Title | Type | Labels | Status |
 |-------|-------|------|--------|--------|
-| [#15721](https://github.com/dotnet/fsharp/issues/15721) | Renaming works weirdly for disposable types | Bug | Impact-Medium, Area-LangService-RenameSymbol | [ ] |
-| [#16993](https://github.com/dotnet/fsharp/issues/16993) | Go to definition and Find References not working for C# extension method `AsMemory()` in this repo | Feature Improvement | Area-LangService-FindAllReferences, Area-LangService-Navigation | [ ] |
-| [#4760](https://github.com/dotnet/fsharp/issues/4760) | Rename does not work in strings | Feature Request | Area-LangService-RenameSymbol | [ ] |
+| [#15721](https://github.com/dotnet/fsharp/issues/15721) | Renaming works weirdly for disposable types | Bug | Impact-Medium, Area-LangService-RenameSymbol | [ ] VS Layer |
+| [#16993](https://github.com/dotnet/fsharp/issues/16993) | Go to definition and Find References not working for C# extension method `AsMemory()` in this repo | Feature Improvement | Area-LangService-FindAllReferences, Area-LangService-Navigation | [x] |
+| [#4760](https://github.com/dotnet/fsharp/issues/4760) | Rename does not work in strings | Feature Request | Area-LangService-RenameSymbol | [ ] Deferred |
 
 ---
 
@@ -153,28 +153,28 @@ Properties with get/set accessors have incorrect rename behavior.
 
 #### FindAllReferences Bugs
 
-- [ ] **#19173** - FindBackgroundReferencesInFile for TransparentCompiler not returning Partial/Active Pattern Values
+- [x] **#19173** - FindBackgroundReferencesInFile for TransparentCompiler not returning Partial/Active Pattern Values
   - **Type:** Bug
   - **Impact:** TransparentCompiler path broken for active patterns
   - **Likely Cause:** Active pattern cases not properly written to ItemKeyStore in TransparentCompiler
   - **Likely Fix:** Fix `ComputeItemKeyStore` in TransparentCompiler.fs or active pattern capture
   - **Test:** Add test comparing BackgroundCompiler vs TransparentCompiler for active patterns
 
-- [ ] **#14969** - Finding references / renaming doesn't work for active patterns in signature files
+- [x] **#14969** - Finding references / renaming doesn't work for active patterns in signature files
   - **Type:** Bug
   - **Impact:** Medium - active patterns in .fsi files not found
   - **Likely Cause:** Active patterns stored as single `Item.Value` without case info
   - **Likely Fix:** Modify `ItemKeyStoreBuilder.writeActivePatternCase` to handle signature files
   - **Test:** Existing test at FindReferences.fs:579-593 shows issue
 
-- [ ] **#9928** - Find References doesn't work if #line directives are used
+- [x] **#9928** - Find References doesn't work if #line directives are used
   - **Type:** Bug
   - **Impact:** Medium - generated code scenarios broken
   - **Likely Cause:** Range not remapped for #line directives
   - **Likely Fix:** Handle range remapping in ItemKeyStore or service layer
   - **Test:** Add test with #line directive
 
-- [ ] **#5546** - Get all symbols: all symbols in SynPat.Or patterns considered bindings
+- [x] **#5546** - Get all symbols: all symbols in SynPat.Or patterns considered bindings
   - **Type:** Bug
   - **Impact:** Low - incorrect IsFromDefinition classification
   - **Likely Cause:** Both sides of Or pattern marked as bindings
@@ -188,7 +188,7 @@ Properties with get/set accessors have incorrect rename behavior.
   - **Likely Fix:** Investigate and fix caching/ordering
   - **Test:** Need repro project
 
-- [ ] **#4136** - Symbols API: GetAllUsesOfAllSymbolsInFile contains generated handler value for events
+- [x] **#4136** - Symbols API: GetAllUsesOfAllSymbolsInFile contains generated handler value for events
   - **Type:** Bug
   - **Impact:** Low - synthetic symbols appearing
   - **Likely Cause:** Generated `handler` value not filtered
@@ -197,14 +197,14 @@ Properties with get/set accessors have incorrect rename behavior.
 
 #### RenameSymbol Bugs
 
-- [ ] **#18270** - Renaming property renames get and set keywords use braking the code
+- [x] **#18270** - Renaming property renames get and set keywords use braking the code
   - **Type:** Bug
   - **Impact:** Medium - property rename breaks code
   - **Likely Cause:** Range includes get/set keywords
   - **Likely Fix:** Fix range calculation in Tokenizer.fixupSpan
   - **Test:** Add property with get/set rename test
 
-- [ ] **#16394** - Roslyn crashes F# rename when F# project contains `cshtml` file
+- [x] **#16394** - Roslyn crashes F# rename when F# project contains `cshtml` file
   - **Type:** Bug
   - **Impact:** Low - Roslyn interop crash
   - **Likely Cause:** Generated .cshtml files not handled
@@ -225,7 +225,7 @@ Properties with get/set accessors have incorrect rename behavior.
   - **Likely Fix:** Fix interface member symbol resolution
   - **Test:** Add interface rename edge case tests
 
-- [ ] **#14057** - In Visual Studio: Renaming operator with `.` only renames right of `.`
+- [x] **#14057** - In Visual Studio: Renaming operator with `.` only renames right of `.`
   - **Type:** Bug
   - **Impact:** Medium - operator rename broken
   - **Likely Cause:** Tokenizer splits on `.` incorrectly
@@ -236,19 +236,19 @@ Properties with get/set accessors have incorrect rename behavior.
 
 ### FEATURE IMPROVEMENTS (Priority: Second)
 
-- [ ] **#17221** - Support / fix replacing reference (Refactor -> Rename) of F# operator
+- [x] **#17221** - Support / fix replacing reference (Refactor -> Rename) of F# operator
   - **Type:** Feature Improvement
   - **Current:** Operators cannot be renamed to other operators
   - **Needed:** Allow renaming operators with proper validation
   - **Likely Fix:** Update `Tokenizer.isValidNameForSymbol` for operators
 
-- [ ] **#16993** - Go to definition and Find References not working for C# extension method `AsMemory()` in this repo
+- [x] **#16993** - Go to definition and Find References not working for C# extension method `AsMemory()` in this repo
   - **Type:** Feature Improvement
   - **Current:** C# extension methods not found
   - **Needed:** Cross-language extension method support
   - **Likely Fix:** Enhance symbol resolution for IL extension methods
 
-- [ ] **#15290** - Find all references of records should include copy-and-update and construction
+- [x] **#15290** - Find all references of records should include copy-and-update and construction
   - **Type:** Feature Improvement
   - **Current:** `{ x with Field = value }` not found
   - **Needed:** Capture implicit record constructor usage
@@ -258,19 +258,19 @@ Properties with get/set accessors have incorrect rename behavior.
 
 ### FEATURE REQUESTS (Priority: Third)
 
-- [ ] **#16621** - Find all references of a DU case should include case testers
+- [x] **#16621** - Find all references of a DU case should include case testers
   - **Type:** Feature Request
   - **Current:** `A.IsB` not found as reference to B
   - **Needed:** Include case testers in references
   - **Likely Fix:** Capture tester usage in name resolution
 
-- [ ] **#14902** - Finding references of additional constructors in VS
+- [x] **#14902** - Finding references of additional constructors in VS
   - **Type:** Feature Request
   - **Current:** `new()` constructor uses not found from `new` keyword
   - **Needed:** Associate additional constructor uses with constructor definition
   - **Likely Fix:** Enhance constructor symbol resolution
 
-- [ ] **#10227** - [VS] Find-all references on symbol from referenced DLL optimization
+- [x] **#10227** - [VS] Find-all references on symbol from referenced DLL optimization
   - **Type:** Feature Request
   - **Current:** All projects searched for external symbols
   - **Needed:** Only search projects that reference the DLL
