@@ -506,17 +506,16 @@
       IL_003b:  ldloc.0
       IL_003c:  stloc.s    V_4
       IL_003e:  ldloca.s   V_4
-      IL_0040:  constrained. [runtime]System.Enum
-      IL_0046:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_004b:  stloc.3
-      IL_004c:  ldloc.3
-      IL_004d:  brtrue.s   IL_0055
+      IL_0040:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_0045:  stloc.3
+      IL_0046:  ldloc.3
+      IL_0047:  brtrue.s   IL_004f
 
-      IL_004f:  ldstr      ""
-      IL_0054:  ret
+      IL_0049:  ldstr      ""
+      IL_004e:  ret
 
-      IL_0055:  ldloc.3
-      IL_0056:  ret
+      IL_004f:  ldloc.3
+      IL_0050:  ret
     } 
 
   } 
@@ -535,7 +534,6 @@
   } 
 
 } 
-
 
 
 

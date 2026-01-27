@@ -69,9 +69,10 @@
     .maxstack  4
     .locals init (int32 V_0,
              class [runtime]System.Exception V_1,
-             class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> V_2,
-             string V_3,
-             class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_4)
+             object V_2,
+             class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> V_3,
+             string V_4,
+             class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_5)
     .try
     {
       IL_0000:  nop
@@ -84,42 +85,50 @@
     }  
     catch [runtime]System.Object 
     {
-      IL_0012:  castclass  [runtime]System.Exception
-      IL_0017:  stloc.1
-      IL_0018:  ldloc.1
-      IL_0019:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> [FSharp.Core]Microsoft.FSharp.Core.Operators::FailurePattern(class [runtime]System.Exception)
-      IL_001e:  stloc.2
-      IL_001f:  ldloc.2
-      IL_0020:  brfalse.s  IL_0056
+      IL_0012:  stloc.2
+      IL_0013:  ldloc.2
+      IL_0014:  isinst     [runtime]System.Exception
+      IL_0019:  dup
+      IL_001a:  brtrue.s   IL_0023
 
-      IL_0022:  ldloc.2
-      IL_0023:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
-      IL_0028:  ldstr      "hello"
-      IL_002d:  call       bool [netstandard]System.String::Equals(string,
+      IL_001c:  pop
+      IL_001d:  ldloc.2
+      IL_001e:  newobj     instance void [runtime]System.Runtime.CompilerServices.RuntimeWrappedException::.ctor(object)
+      IL_0023:  stloc.1
+      IL_0024:  ldloc.1
+      IL_0025:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> [FSharp.Core]Microsoft.FSharp.Core.Operators::FailurePattern(class [runtime]System.Exception)
+      IL_002a:  stloc.3
+      IL_002b:  ldloc.3
+      IL_002c:  brfalse.s  IL_0063
+
+      IL_002e:  ldloc.3
+      IL_002f:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
+      IL_0034:  ldstr      "hello"
+      IL_0039:  call       bool [netstandard]System.String::Equals(string,
                                                                    string)
-      IL_0032:  brfalse.s  IL_0056
+      IL_003e:  brfalse.s  IL_0063
 
-      IL_0034:  ldloc.2
-      IL_0035:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
-      IL_003a:  stloc.3
-      IL_003b:  ldstr      "World"
-      IL_0040:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_0045:  stloc.s    V_4
-      IL_0047:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-      IL_004c:  ldloc.s    V_4
-      IL_004e:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+      IL_0040:  ldloc.3
+      IL_0041:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
+      IL_0046:  stloc.s    V_4
+      IL_0048:  ldstr      "World"
+      IL_004d:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_0052:  stloc.s    V_5
+      IL_0054:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+      IL_0059:  ldloc.s    V_5
+      IL_005b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_0053:  pop
-      IL_0054:  leave.s    IL_0061
+      IL_0060:  pop
+      IL_0061:  leave.s    IL_006e
 
-      IL_0056:  rethrow
-      IL_0058:  ldnull
-      IL_0059:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
-      IL_005e:  pop
-      IL_005f:  leave.s    IL_0061
+      IL_0063:  rethrow
+      IL_0065:  ldnull
+      IL_0066:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
+      IL_006b:  pop
+      IL_006c:  leave.s    IL_006e
 
     }  
-    IL_0061:  ret
+    IL_006e:  ret
   } 
 
 } 
@@ -136,7 +145,6 @@
   } 
 
 } 
-
 
 
 

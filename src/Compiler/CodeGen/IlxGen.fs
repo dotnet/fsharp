@@ -4787,6 +4787,52 @@ and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
 // Generate try expressions
 //--------------------------------------------------------------------------
 
+/// Emit IL code to cast a caught object to Exception, wrapping non-Exception objects
+/// in RuntimeWrappedException. This handles the case where CIL or other languages
+/// throw objects that don't derive from Exception (Issue #18374).
+///
+/// IL pattern:
+///   // Stack: [object]
+///   stloc.s temp
+///   ldloc.s temp
+///   isinst System.Exception
+///   dup
+///   brtrue.s done
+///   pop
+///   ldloc.s temp
+///   newobj RuntimeWrappedException(object)
+///   done:
+///   // Stack: [Exception]
+and EmitCastOrWrapNonExceptionThrow (cenv: cenv) (cgbuf: CodeGenBuffer) =
+    let g = cenv.g
+    let iltyp_RuntimeWrappedException = g.iltyp_RuntimeWrappedException
+
+    // Allocate a temporary local to store the caught object
+    let tempLocal = cgbuf.AllocLocal([], g.ilg.typ_Object, false, true) |> uint16
+
+    // Generate labels for branching
+    let afterWrap = CG.GenerateDelayMark cgbuf "afterWrap"
+
+    // Store the caught object
+    CG.EmitInstr cgbuf (pop 1) Push0 (I_stloc tempLocal)
+
+    // Load and check if it's already an Exception
+    CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Object ]) (I_ldloc tempLocal)
+    CG.EmitInstr cgbuf (pop 1) (Push [ g.iltyp_Exception ]) (I_isinst g.iltyp_Exception)
+    CG.EmitInstr cgbuf (pop 0) (Push [ g.iltyp_Exception ]) AI_dup
+
+    // If non-null (is Exception), jump to done
+    CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp(BI_brtrue, afterWrap.CodeLabel))
+
+    // Pop the null result, load the object, wrap in RuntimeWrappedException
+    CG.EmitInstr cgbuf (pop 1) Push0 AI_pop
+    CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Object ]) (I_ldloc tempLocal)
+    let rweCtorSpec = mkILCtorMethSpecForTy(iltyp_RuntimeWrappedException, [ g.ilg.typ_Object ])
+    CG.EmitInstr cgbuf (pop 1) (Push [ iltyp_RuntimeWrappedException ]) (I_newobj(rweCtorSpec, None))
+
+    // Done - stack now has Exception (or RuntimeWrappedException which extends Exception)
+    CG.SetMarkToHere cgbuf afterWrap
+
 and GenTry cenv cgbuf eenv scopeMarks (e1, m, resultTy, spTry) =
     let g = cenv.g
 
@@ -4932,7 +4978,8 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
                 let _, eenvinner =
                     AllocLocalVal cenv cgbuf valForFilter eenvinner None (startOfFilter, afterFilter)
 
-                CG.EmitInstr cgbuf (pop 1) (Push [ g.iltyp_Exception ]) (I_castclass g.iltyp_Exception)
+                // Handle non-Exception objects by wrapping in RuntimeWrappedException (Issue #18374)
+                EmitCastOrWrapNonExceptionThrow cenv cgbuf
 
                 GenStoreVal cgbuf eenvinner valForFilter.Range valForFilter
 
@@ -4953,7 +5000,8 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
                 let _, eenvinner =
                     AllocLocalVal cenv cgbuf valForHandler eenvinner None (startOfHandler, afterHandler)
 
-                CG.EmitInstr cgbuf (pop 1) (Push [ g.iltyp_Exception ]) (I_castclass g.iltyp_Exception)
+                // Handle non-Exception objects by wrapping in RuntimeWrappedException (Issue #18374)
+                EmitCastOrWrapNonExceptionThrow cenv cgbuf
                 GenStoreVal cgbuf eenvinner valForHandler.Range valForHandler
 
                 let exitSequel = LeaveHandler(false, whereToSaveOpt, afterHandler, true)
@@ -4974,7 +5022,8 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
                 let _, eenvinner =
                     AllocLocalVal cenv cgbuf valForHandler eenvinner None (startOfHandler, afterHandler)
 
-                CG.EmitInstr cgbuf (pop 1) (Push [ g.iltyp_Exception ]) (I_castclass g.iltyp_Exception)
+                // Handle non-Exception objects by wrapping in RuntimeWrappedException (Issue #18374)
+                EmitCastOrWrapNonExceptionThrow cenv cgbuf
 
                 GenStoreVal cgbuf eenvinner m valForHandler
 

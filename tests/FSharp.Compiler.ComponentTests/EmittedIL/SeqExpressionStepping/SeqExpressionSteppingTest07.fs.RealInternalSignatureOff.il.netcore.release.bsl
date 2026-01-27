@@ -739,7 +739,8 @@
     .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
              class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
              class [runtime]System.Exception V_2,
-             class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> V_3)
+             object V_3,
+             class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> V_4)
     IL_0000:  ldc.i4.0
     IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest7::r@4
     IL_0006:  ldstr      "res = %A"
@@ -750,38 +751,46 @@
     {
       IL_0016:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> SeqExpressionSteppingTest7::f<int32>()
       IL_001b:  stloc.1
-      IL_001c:  leave.s    IL_004b
+      IL_001c:  leave.s    IL_0059
 
     }  
     catch [runtime]System.Object 
     {
-      IL_001e:  castclass  [runtime]System.Exception
-      IL_0023:  stloc.2
-      IL_0024:  ldloc.2
-      IL_0025:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> [FSharp.Core]Microsoft.FSharp.Core.Operators::FailurePattern(class [runtime]System.Exception)
-      IL_002a:  stloc.3
-      IL_002b:  ldloc.3
-      IL_002c:  brfalse.s  IL_0040
+      IL_001e:  stloc.3
+      IL_001f:  ldloc.3
+      IL_0020:  isinst     [runtime]System.Exception
+      IL_0025:  dup
+      IL_0026:  brtrue.s   IL_002f
 
-      IL_002e:  call       int32 SeqExpressionSteppingTest7::get_r()
-      IL_0033:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-      IL_0038:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+      IL_0028:  pop
+      IL_0029:  ldloc.3
+      IL_002a:  newobj     instance void [runtime]System.Runtime.CompilerServices.RuntimeWrappedException::.ctor(object)
+      IL_002f:  stloc.2
+      IL_0030:  ldloc.2
+      IL_0031:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> [FSharp.Core]Microsoft.FSharp.Core.Operators::FailurePattern(class [runtime]System.Exception)
+      IL_0036:  stloc.s    V_4
+      IL_0038:  ldloc.s    V_4
+      IL_003a:  brfalse.s  IL_004e
+
+      IL_003c:  call       int32 SeqExpressionSteppingTest7::get_r()
+      IL_0041:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+      IL_0046:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_003d:  stloc.1
-      IL_003e:  leave.s    IL_004b
+      IL_004b:  stloc.1
+      IL_004c:  leave.s    IL_0059
 
-      IL_0040:  rethrow
-      IL_0042:  ldnull
-      IL_0043:  unbox.any  class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>
-      IL_0048:  stloc.1
-      IL_0049:  leave.s    IL_004b
+      IL_004e:  rethrow
+      IL_0050:  ldnull
+      IL_0051:  unbox.any  class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>
+      IL_0056:  stloc.1
+      IL_0057:  leave.s    IL_0059
 
     }  
-    IL_004b:  ldloc.0
-    IL_004c:  ldloc.1
-    IL_004d:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_0052:  pop
-    IL_0053:  ret
+    IL_0059:  ldloc.0
+    IL_005a:  ldloc.1
+    IL_005b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0060:  pop
+    IL_0061:  ret
   } 
 
 } 

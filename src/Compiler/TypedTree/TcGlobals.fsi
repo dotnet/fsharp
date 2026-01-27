@@ -750,6 +750,8 @@ type internal TcGlobals =
 
     member iltyp_Exception: FSharp.Compiler.AbstractIL.IL.ILType
 
+    member iltyp_RuntimeWrappedException: FSharp.Compiler.AbstractIL.IL.ILType
+
     member iltyp_IAsyncResult: FSharp.Compiler.AbstractIL.IL.ILType
 
     member iltyp_IComparable: FSharp.Compiler.AbstractIL.IL.ILType

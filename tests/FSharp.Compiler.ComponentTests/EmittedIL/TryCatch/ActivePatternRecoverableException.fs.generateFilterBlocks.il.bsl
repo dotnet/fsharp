@@ -58,70 +58,88 @@
     .maxstack  4
     .locals init (int32 V_0,
              class [runtime]System.Exception V_1,
-             valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception> V_2,
-             class [runtime]System.Exception V_3,
+             object V_2,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception> V_3,
              class [runtime]System.Exception V_4,
-             valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception> V_5,
-             class [runtime]System.Exception V_6)
+             class [runtime]System.Exception V_5,
+             object V_6,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception> V_7,
+             class [runtime]System.Exception V_8)
     .try
     {
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  div
       IL_0003:  stloc.0
-      IL_0004:  leave.s    IL_005f
+      IL_0004:  leave      IL_007e
 
     }  
     filter
     {
-      IL_0006:  castclass  [runtime]System.Exception
-      IL_000b:  stloc.1
-      IL_000c:  ldloc.1
-      IL_000d:  call       valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception> ActivePatternTestCase::'|RecoverableException|_|'(class [runtime]System.Exception)
-      IL_0012:  stloc.2
-      IL_0013:  ldloca.s   V_2
-      IL_0015:  call       instance int32 valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception>::get_Tag()
-      IL_001a:  ldc.i4.1
-      IL_001b:  bne.un.s   IL_0028
+      IL_0009:  stloc.2
+      IL_000a:  ldloc.2
+      IL_000b:  isinst     [runtime]System.Exception
+      IL_0010:  dup
+      IL_0011:  brtrue.s   IL_001a
 
-      IL_001d:  ldloca.s   V_2
-      IL_001f:  call       instance !0 valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception>::get_Item()
-      IL_0024:  stloc.3
-      IL_0025:  ldc.i4.1
-      IL_0026:  br.s       IL_0029
+      IL_0013:  pop
+      IL_0014:  ldloc.2
+      IL_0015:  newobj     instance void [runtime]System.Runtime.CompilerServices.RuntimeWrappedException::.ctor(object)
+      IL_001a:  stloc.1
+      IL_001b:  ldloc.1
+      IL_001c:  call       valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception> ActivePatternTestCase::'|RecoverableException|_|'(class [runtime]System.Exception)
+      IL_0021:  stloc.3
+      IL_0022:  ldloca.s   V_3
+      IL_0024:  call       instance int32 valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception>::get_Tag()
+      IL_0029:  ldc.i4.1
+      IL_002a:  bne.un.s   IL_0038
 
-      IL_0028:  ldc.i4.0
-      IL_0029:  endfilter
+      IL_002c:  ldloca.s   V_3
+      IL_002e:  call       instance !0 valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception>::get_Item()
+      IL_0033:  stloc.s    V_4
+      IL_0035:  ldc.i4.1
+      IL_0036:  br.s       IL_0039
+
+      IL_0038:  ldc.i4.0
+      IL_0039:  endfilter
     }  
     {  
-      IL_002b:  castclass  [runtime]System.Exception
-      IL_0030:  stloc.s    V_4
-      IL_0032:  ldloc.s    V_4
-      IL_0034:  call       valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception> ActivePatternTestCase::'|RecoverableException|_|'(class [runtime]System.Exception)
-      IL_0039:  stloc.s    V_5
-      IL_003b:  ldloca.s   V_5
-      IL_003d:  call       instance int32 valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception>::get_Tag()
-      IL_0042:  ldc.i4.1
-      IL_0043:  bne.un.s   IL_0054
+      IL_003b:  stloc.s    V_6
+      IL_003d:  ldloc.s    V_6
+      IL_003f:  isinst     [runtime]System.Exception
+      IL_0044:  dup
+      IL_0045:  brtrue.s   IL_004f
 
-      IL_0045:  ldloca.s   V_5
-      IL_0047:  call       instance !0 valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception>::get_Item()
-      IL_004c:  stloc.s    V_6
-      IL_004e:  ldarg.0
-      IL_004f:  ldarg.1
-      IL_0050:  add
-      IL_0051:  stloc.0
-      IL_0052:  leave.s    IL_005f
+      IL_0047:  pop
+      IL_0048:  ldloc.s    V_6
+      IL_004a:  newobj     instance void [runtime]System.Runtime.CompilerServices.RuntimeWrappedException::.ctor(object)
+      IL_004f:  stloc.s    V_5
+      IL_0051:  ldloc.s    V_5
+      IL_0053:  call       valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception> ActivePatternTestCase::'|RecoverableException|_|'(class [runtime]System.Exception)
+      IL_0058:  stloc.s    V_7
+      IL_005a:  ldloca.s   V_7
+      IL_005c:  call       instance int32 valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception>::get_Tag()
+      IL_0061:  ldc.i4.1
+      IL_0062:  bne.un.s   IL_0073
 
-      IL_0054:  rethrow
-      IL_0056:  ldnull
-      IL_0057:  unbox.any  [runtime]System.Int32
-      IL_005c:  stloc.0
-      IL_005d:  leave.s    IL_005f
+      IL_0064:  ldloca.s   V_7
+      IL_0066:  call       instance !0 valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<class [runtime]System.Exception>::get_Item()
+      IL_006b:  stloc.s    V_8
+      IL_006d:  ldarg.0
+      IL_006e:  ldarg.1
+      IL_006f:  add
+      IL_0070:  stloc.0
+      IL_0071:  leave.s    IL_007e
+
+      IL_0073:  rethrow
+      IL_0075:  ldnull
+      IL_0076:  unbox.any  [runtime]System.Int32
+      IL_007b:  stloc.0
+      IL_007c:  leave.s    IL_007e
 
     }  
-    IL_005f:  ldloc.0
-    IL_0060:  ret
+    IL_007e:  ldloc.0
+    IL_007f:  ret
   } 
 
 } 
@@ -138,7 +156,6 @@
   } 
 
 } 
-
 
 
 

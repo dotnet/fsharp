@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -59,34 +49,43 @@
     
     .maxstack  4
     .locals init (class [runtime]System.Exception V_0,
-             class [runtime]System.Exception V_1,
-             class [runtime]System.Exception V_2)
+             object V_1,
+             class [runtime]System.Exception V_2,
+             class [runtime]System.Exception V_3)
     .try
     {
       IL_0000:  nop
-      IL_0001:  leave.s    IL_001c
+      IL_0001:  leave.s    IL_0028
 
     }  
     catch [runtime]System.Object 
     {
-      IL_0003:  castclass  [runtime]System.Exception
-      IL_0008:  stloc.0
-      IL_0009:  ldloc.0
-      IL_000a:  stloc.1
-      IL_000b:  ldloc.1
-      IL_000c:  callvirt   instance int32 [runtime]System.Object::GetHashCode()
-      IL_0011:  ldc.i4.0
-      IL_0012:  ceq
-      IL_0014:  brfalse.s  IL_001a
+      IL_0003:  stloc.1
+      IL_0004:  ldloc.1
+      IL_0005:  isinst     [runtime]System.Exception
+      IL_000a:  dup
+      IL_000b:  brtrue.s   IL_0014
 
-      IL_0016:  ldloc.0
-      IL_0017:  stloc.2
-      IL_0018:  leave.s    IL_001c
+      IL_000d:  pop
+      IL_000e:  ldloc.1
+      IL_000f:  newobj     instance void [runtime]System.Runtime.CompilerServices.RuntimeWrappedException::.ctor(object)
+      IL_0014:  stloc.0
+      IL_0015:  ldloc.0
+      IL_0016:  stloc.2
+      IL_0017:  ldloc.2
+      IL_0018:  callvirt   instance int32 [runtime]System.Object::GetHashCode()
+      IL_001d:  ldc.i4.0
+      IL_001e:  ceq
+      IL_0020:  brfalse.s  IL_0026
 
-      IL_001a:  leave.s    IL_001c
+      IL_0022:  ldloc.0
+      IL_0023:  stloc.3
+      IL_0024:  leave.s    IL_0028
+
+      IL_0026:  leave.s    IL_0028
 
     }  
-    IL_001c:  ret
+    IL_0028:  ret
   } 
 
 } 
@@ -108,7 +107,6 @@
   } 
 
 } 
-
 
 
 

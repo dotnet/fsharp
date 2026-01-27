@@ -69,7 +69,8 @@
     .maxstack  4
     .locals init (int32 V_0,
              class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1,
-             class [runtime]System.Exception V_2)
+             class [runtime]System.Exception V_2,
+             object V_3)
     .try
     {
       IL_0000:  nop
@@ -83,25 +84,33 @@
       IL_0018:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_001d:  pop
-      IL_001e:  leave.s    IL_003f
+      IL_001e:  leave.s    IL_004b
 
     }  
     catch [runtime]System.Object 
     {
-      IL_0020:  castclass  [runtime]System.Exception
-      IL_0025:  stloc.2
-      IL_0026:  ldstr      "World"
-      IL_002b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_0030:  stloc.1
-      IL_0031:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-      IL_0036:  ldloc.1
-      IL_0037:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+      IL_0020:  stloc.3
+      IL_0021:  ldloc.3
+      IL_0022:  isinst     [runtime]System.Exception
+      IL_0027:  dup
+      IL_0028:  brtrue.s   IL_0031
+
+      IL_002a:  pop
+      IL_002b:  ldloc.3
+      IL_002c:  newobj     instance void [runtime]System.Runtime.CompilerServices.RuntimeWrappedException::.ctor(object)
+      IL_0031:  stloc.2
+      IL_0032:  ldstr      "World"
+      IL_0037:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_003c:  stloc.1
+      IL_003d:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+      IL_0042:  ldloc.1
+      IL_0043:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_003c:  pop
-      IL_003d:  leave.s    IL_003f
+      IL_0048:  pop
+      IL_0049:  leave.s    IL_004b
 
     }  
-    IL_003f:  ret
+    IL_004b:  ret
   } 
 
 } 
@@ -118,7 +127,6 @@
   } 
 
 } 
-
 
 
 

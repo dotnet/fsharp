@@ -128,6 +128,8 @@ let tname_IComparable = "System.IComparable"
 [<Literal>]
 let tname_Exception = "System.Exception"
 [<Literal>]
+let tname_RuntimeWrappedException = "System.Runtime.CompilerServices.RuntimeWrappedException"
+[<Literal>]
 let tname_Missing = "System.Reflection.Missing"
 [<Literal>]
 let tname_FormattableString = "System.FormattableString"
@@ -1454,6 +1456,7 @@ type TcGlobals(
   member val iltyp_IAsyncResult = findSysILTypeRef tname_IAsyncResult |> mkILNonGenericBoxedTy
   member val iltyp_IComparable = findSysILTypeRef tname_IComparable |> mkILNonGenericBoxedTy
   member val iltyp_Exception = findSysILTypeRef tname_Exception |> mkILNonGenericBoxedTy
+  member val iltyp_RuntimeWrappedException = findSysILTypeRef tname_RuntimeWrappedException |> mkILNonGenericBoxedTy
   member val iltyp_ValueType = findSysILTypeRef tname_ValueType |> mkILNonGenericBoxedTy
   member val iltyp_RuntimeFieldHandle = findSysILTypeRef tname_RuntimeFieldHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy

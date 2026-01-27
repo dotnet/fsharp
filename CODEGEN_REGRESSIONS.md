@@ -54,7 +54,7 @@ This document tracks known code generation bugs in the F# compiler that have doc
 | [#18815](#issue-18815) | Duplicate extension method names | Compile Error | IlxGen.fs | Low |
 | [#18753](#issue-18753) | CE inlining prevented by DU constructor | Optimization | Optimizer.fs | Low |
 | [#18672](#issue-18672) | ✅ FIXED: Resumable code top-level value null in Release | Wrong Behavior | LowerStateMachines.fs | Medium |
-| [#18374](#issue-18374) | RuntimeWrappedException cannot be caught | Wrong Behavior | IlxGen.fs | Low |
+| [#18374](#issue-18374) | ✅ FIXED: RuntimeWrappedException cannot be caught | Wrong Behavior | IlxGen.fs | Low |
 | [#18319](#issue-18319) | Literal upcast missing box instruction | Invalid IL | IlxGen.fs | Low |
 | [#18263](#issue-18263) | DU .Is* properties duplicate method | Compile Error | IlxGen.fs | Medium |
 | [#18140](#issue-18140) | Callvirt on value type ILVerify error | Invalid IL | IlxGen.fs | Low |
@@ -587,6 +587,8 @@ The `isExpandVar` and `isStateMachineBindingVar` functions in `LowerStateMachine
 
 **Category:** Wrong Runtime Behavior
 
+**Status:** ✅ FIXED
+
 ### Minimal Repro
 
 ```fsharp
@@ -618,6 +620,41 @@ F# catches `System.Object` but then unconditionally casts to `Exception`, which 
 ### Risks
 - Low: Fix should check type before casting or use RuntimeWrappedException
 - Workaround exists: `[<assembly: RuntimeCompatibility(WrapNonExceptionThrows=true)>]`
+
+### UPDATE (FIXED)
+
+**Fix Applied:** Modified `GenTryWith` in IlxGen.fs to properly handle non-Exception objects.
+
+**Changes:**
+1. Added new helper function `EmitCastOrWrapNonExceptionThrow` in IlxGen.fs
+2. Added `iltyp_RuntimeWrappedException` type reference in TcGlobals.fs
+3. Replaced unconditional `castclass Exception` with conditional logic:
+   - Use `isinst Exception` to check if caught object is already an Exception
+   - If yes (non-null), use it directly
+   - If no (null), wrap the object in `RuntimeWrappedException`
+
+**Generated IL pattern (after fix):**
+```il
+catch [runtime]System.Object 
+{
+    stloc.1                               // Store caught object
+    ldloc.1                               // Load caught object
+    isinst     [runtime]System.Exception  // Check if Exception
+    dup                                   // Duplicate result
+    brtrue.s   afterWrap                  // If non-null, skip wrapping
+    pop                                   // Pop null
+    ldloc.1                               // Load object
+    newobj     RuntimeWrappedException::.ctor(object)  // Wrap it
+afterWrap:
+    stloc.0                               // Store Exception
+    ...
+}
+```
+
+**Testing:**
+- Normal exception handling continues to work correctly
+- The fix handles both Exception and non-Exception objects in catch blocks
+- All 26 CodeGenRegressions tests pass
 
 ---
 

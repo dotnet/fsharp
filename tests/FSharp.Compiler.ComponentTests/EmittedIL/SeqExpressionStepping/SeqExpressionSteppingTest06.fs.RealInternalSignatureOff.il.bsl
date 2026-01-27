@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -223,7 +213,8 @@
         
         .maxstack  6
         .locals init (class [runtime]System.Exception V_0,
-                 class [runtime]System.Exception V_1)
+                 class [runtime]System.Exception V_1,
+                 object V_2)
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
         IL_0006:  ldc.i4.5
@@ -233,7 +224,7 @@
         IL_0011:  br.s       IL_0019
 
         IL_0013:  nop
-        IL_0014:  br         IL_009e
+        IL_0014:  br         IL_00aa
 
         IL_0019:  nop
         .try
@@ -294,28 +285,36 @@
           IL_0085:  ldarg.0
           IL_0086:  ldc.i4.0
           IL_0087:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::current
-          IL_008c:  leave.s    IL_0098
+          IL_008c:  leave.s    IL_00a4
 
         }  
         catch [runtime]System.Object 
         {
-          IL_008e:  castclass  [runtime]System.Exception
-          IL_0093:  stloc.1
-          IL_0094:  ldloc.1
-          IL_0095:  stloc.0
-          IL_0096:  leave.s    IL_0098
+          IL_008e:  stloc.2
+          IL_008f:  ldloc.2
+          IL_0090:  isinst     [runtime]System.Exception
+          IL_0095:  dup
+          IL_0096:  brtrue.s   IL_009f
+
+          IL_0098:  pop
+          IL_0099:  ldloc.2
+          IL_009a:  newobj     instance void [runtime]System.Runtime.CompilerServices.RuntimeWrappedException::.ctor(object)
+          IL_009f:  stloc.1
+          IL_00a0:  ldloc.1
+          IL_00a1:  stloc.0
+          IL_00a2:  leave.s    IL_00a4
 
         }  
-        IL_0098:  nop
-        IL_0099:  br         IL_0000
+        IL_00a4:  nop
+        IL_00a5:  br         IL_0000
 
-        IL_009e:  ldloc.0
-        IL_009f:  brfalse.s  IL_00a3
+        IL_00aa:  ldloc.0
+        IL_00ab:  brfalse.s  IL_00af
 
-        IL_00a1:  ldloc.0
-        IL_00a2:  throw
+        IL_00ad:  ldloc.0
+        IL_00ae:  throw
 
-        IL_00a3:  ret
+        IL_00af:  ret
       } 
 
       .method public strict virtual instance bool get_CheckClose() cil managed
@@ -469,7 +468,6 @@
   } 
 
 } 
-
 
 
 

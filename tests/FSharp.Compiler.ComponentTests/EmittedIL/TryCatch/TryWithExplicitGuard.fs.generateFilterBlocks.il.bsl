@@ -39,88 +39,106 @@
     .maxstack  4
     .locals init (int32 V_0,
              class [runtime]System.Exception V_1,
-             class [runtime]System.Exception V_2,
-             class [runtime]System.Type V_3,
+             object V_2,
+             class [runtime]System.Exception V_3,
              class [runtime]System.Type V_4,
-             class [runtime]System.Exception V_5,
+             class [runtime]System.Type V_5,
              class [runtime]System.Exception V_6,
              class [runtime]System.Exception V_7,
-             class [runtime]System.Type V_8,
-             class [runtime]System.Type V_9,
-             class [runtime]System.Exception V_10)
+             object V_8,
+             class [runtime]System.Exception V_9,
+             class [runtime]System.Type V_10,
+             class [runtime]System.Type V_11,
+             class [runtime]System.Exception V_12)
     .try
     {
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  div
       IL_0003:  stloc.0
-      IL_0004:  leave      IL_007d
+      IL_0004:  leave      IL_009a
 
     }  
     filter
     {
-      IL_0009:  castclass  [runtime]System.Exception
-      IL_000e:  stloc.1
-      IL_000f:  ldloc.1
-      IL_0010:  stloc.2
-      IL_0011:  ldloc.2
-      IL_0012:  callvirt   instance class [runtime]System.Type [runtime]System.Exception::GetType()
-      IL_0017:  stloc.3
-      IL_0018:  ldtoken    [runtime]System.OperationCanceledException
-      IL_001d:  call       class [netstandard]System.Type [netstandard]System.Type::GetTypeFromHandle(valuetype [netstandard]System.RuntimeTypeHandle)
-      IL_0022:  stloc.s    V_4
-      IL_0024:  ldloc.3
-      IL_0025:  ldloc.s    V_4
-      IL_0027:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<class [runtime]System.Type>(!!0,
-                                                                                                                                                         !!0)
-      IL_002c:  ldc.i4.0
-      IL_002d:  ceq
-      IL_002f:  brfalse.s  IL_0037
+      IL_0009:  stloc.2
+      IL_000a:  ldloc.2
+      IL_000b:  isinst     [runtime]System.Exception
+      IL_0010:  dup
+      IL_0011:  brtrue.s   IL_001a
 
-      IL_0031:  ldloc.1
-      IL_0032:  stloc.s    V_5
-      IL_0034:  ldc.i4.1
-      IL_0035:  br.s       IL_0038
+      IL_0013:  pop
+      IL_0014:  ldloc.2
+      IL_0015:  newobj     instance void [runtime]System.Runtime.CompilerServices.RuntimeWrappedException::.ctor(object)
+      IL_001a:  stloc.1
+      IL_001b:  ldloc.1
+      IL_001c:  stloc.3
+      IL_001d:  ldloc.3
+      IL_001e:  callvirt   instance class [runtime]System.Type [runtime]System.Exception::GetType()
+      IL_0023:  stloc.s    V_4
+      IL_0025:  ldtoken    [runtime]System.OperationCanceledException
+      IL_002a:  call       class [netstandard]System.Type [netstandard]System.Type::GetTypeFromHandle(valuetype [netstandard]System.RuntimeTypeHandle)
+      IL_002f:  stloc.s    V_5
+      IL_0031:  ldloc.s    V_4
+      IL_0033:  ldloc.s    V_5
+      IL_0035:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<class [runtime]System.Type>(!!0,
+                                                                                                                                                               !!0)
+      IL_003a:  ldc.i4.0
+      IL_003b:  ceq
+      IL_003d:  brfalse.s  IL_0045
 
-      IL_0037:  ldc.i4.0
-      IL_0038:  endfilter
+      IL_003f:  ldloc.1
+      IL_0040:  stloc.s    V_6
+      IL_0042:  ldc.i4.1
+      IL_0043:  br.s       IL_0046
+
+      IL_0045:  ldc.i4.0
+      IL_0046:  endfilter
     }  
     {  
-      IL_003a:  castclass  [runtime]System.Exception
-      IL_003f:  stloc.s    V_6
-      IL_0041:  ldloc.s    V_6
-      IL_0043:  stloc.s    V_7
-      IL_0045:  ldloc.s    V_7
-      IL_0047:  callvirt   instance class [runtime]System.Type [runtime]System.Exception::GetType()
-      IL_004c:  stloc.s    V_8
-      IL_004e:  ldtoken    [runtime]System.OperationCanceledException
-      IL_0053:  call       class [netstandard]System.Type [netstandard]System.Type::GetTypeFromHandle(valuetype [netstandard]System.RuntimeTypeHandle)
-      IL_0058:  stloc.s    V_9
-      IL_005a:  ldloc.s    V_8
-      IL_005c:  ldloc.s    V_9
-      IL_005e:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<class [runtime]System.Type>(!!0,
-                                                                                                                                                         !!0)
-      IL_0063:  ldc.i4.0
-      IL_0064:  ceq
-      IL_0066:  brfalse.s  IL_0072
+      IL_0048:  stloc.s    V_8
+      IL_004a:  ldloc.s    V_8
+      IL_004c:  isinst     [runtime]System.Exception
+      IL_0051:  dup
+      IL_0052:  brtrue.s   IL_005c
 
-      IL_0068:  ldloc.s    V_6
-      IL_006a:  stloc.s    V_10
-      IL_006c:  ldarg.0
-      IL_006d:  ldarg.1
-      IL_006e:  add
-      IL_006f:  stloc.0
-      IL_0070:  leave.s    IL_007d
+      IL_0054:  pop
+      IL_0055:  ldloc.s    V_8
+      IL_0057:  newobj     instance void [runtime]System.Runtime.CompilerServices.RuntimeWrappedException::.ctor(object)
+      IL_005c:  stloc.s    V_7
+      IL_005e:  ldloc.s    V_7
+      IL_0060:  stloc.s    V_9
+      IL_0062:  ldloc.s    V_9
+      IL_0064:  callvirt   instance class [runtime]System.Type [runtime]System.Exception::GetType()
+      IL_0069:  stloc.s    V_10
+      IL_006b:  ldtoken    [runtime]System.OperationCanceledException
+      IL_0070:  call       class [netstandard]System.Type [netstandard]System.Type::GetTypeFromHandle(valuetype [netstandard]System.RuntimeTypeHandle)
+      IL_0075:  stloc.s    V_11
+      IL_0077:  ldloc.s    V_10
+      IL_0079:  ldloc.s    V_11
+      IL_007b:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<class [runtime]System.Type>(!!0,
+                                                                                                                                                               !!0)
+      IL_0080:  ldc.i4.0
+      IL_0081:  ceq
+      IL_0083:  brfalse.s  IL_008f
 
-      IL_0072:  rethrow
-      IL_0074:  ldnull
-      IL_0075:  unbox.any  [runtime]System.Int32
-      IL_007a:  stloc.0
-      IL_007b:  leave.s    IL_007d
+      IL_0085:  ldloc.s    V_7
+      IL_0087:  stloc.s    V_12
+      IL_0089:  ldarg.0
+      IL_008a:  ldarg.1
+      IL_008b:  add
+      IL_008c:  stloc.0
+      IL_008d:  leave.s    IL_009a
+
+      IL_008f:  rethrow
+      IL_0091:  ldnull
+      IL_0092:  unbox.any  [runtime]System.Int32
+      IL_0097:  stloc.0
+      IL_0098:  leave.s    IL_009a
 
     }  
-    IL_007d:  ldloc.0
-    IL_007e:  ret
+    IL_009a:  ldloc.0
+    IL_009b:  ret
   } 
 
 } 
@@ -137,7 +155,6 @@
   } 
 
 } 
-
 
 
 
