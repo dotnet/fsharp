@@ -163,8 +163,9 @@ type internal InlineRenameInfo
                                     for symbolUse in symbolUses do
                                         match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
                                         | ValueSome span ->
-                                            let textSpan = Tokenizer.fixupSpan (sourceText, span)
-                                            yield FSharpInlineRenameLocation(document, textSpan)
+                                            match Tokenizer.tryFixupSpan (sourceText, span) with
+                                            | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
+                                            | ValueNone -> () // Skip property accessor keywords (get/set)
                                         | ValueNone -> ()
                                 |]
                         }

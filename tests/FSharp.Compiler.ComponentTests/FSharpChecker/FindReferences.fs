@@ -735,3 +735,54 @@ let y = MyType.Three
             fileName, 4, 7, 13
             fileName, 13, 8, 14
         ]
+
+module Properties =
+
+    /// Related to bug: https://github.com/dotnet/fsharp/issues/18270
+    /// This test documents the current compiler service behavior for properties with get/set accessors.
+    /// The compiler returns references for:
+    /// - The property definition
+    /// - The getter method (at 'get' keyword location)
+    /// - The setter method (at 'set' keyword location)
+    /// - Property uses (may include qualifying prefix like 'state.MyProperty')
+    /// 
+    /// The VS layer (InlineRenameService) filters out 'get'/'set' keywords and trims qualified names
+    /// using Tokenizer.tryFixupSpan to ensure correct rename behavior.
+    [<Fact>]
+    let ``We find all references for property with get and set accessors`` () =
+        let source = """
+module Foo
+
+type IterationState<'T> = {
+    BackingField : bool ref
+} with
+    member this.MyProperty
+        with get () = this.BackingField.Value
+        and set v = this.BackingField.Value <- v
+
+let test () =
+    let state = { BackingField = ref false }
+    state.MyProperty <- true
+    state.MyProperty
+"""
+        let fileName, options, checker = singleFileChecker source
+
+        let symbolUse = getSymbolUse fileName source "MyProperty" options checker |> Async.RunSynchronously
+
+        // The compiler service returns all symbol references including getter/setter methods.
+        // Note: For rename operations, the VS layer (FSharp.Editor) filters these appropriately
+        // using Tokenizer.tryFixupSpan to exclude 'get'/'set' keywords and trim qualified names.
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
+        |> Async.RunSynchronously
+        |> expectToFind [
+            // Definition of property "MyProperty"
+            fileName, 7, 16, 26
+            // Getter method at 'get' keyword - VS layer filters this out during rename
+            fileName, 8, 13, 16
+            // Setter method at 'set' keyword - VS layer filters this out during rename
+            fileName, 9, 12, 15
+            // Use at "state.MyProperty <- true" - VS layer trims to just "MyProperty"
+            fileName, 13, 4, 20
+            // Use at "state.MyProperty" - VS layer trims to just "MyProperty"
+            fileName, 14, 4, 20
+        ]
