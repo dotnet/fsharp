@@ -938,3 +938,60 @@ let use1 = Thing + 1
             // Use at #line 102 (original line 6)
             "generated.fs", 102, 11, 16
         ]
+
+module OrPatternSymbolResolution =
+    
+    /// https://github.com/dotnet/fsharp/issues/5546
+    /// In SynPat.Or patterns (e.g., | x | x), both bindings were incorrectly marked
+    /// as Binding occurrences. The second (and subsequent) occurrences should be Use.
+    [<Fact>]
+    let ``Or pattern second binding is classified as Use not Binding`` () =
+        SyntheticProject.Create(
+            { sourceFile "OrPattern" [] with 
+                ExtraSource = "let test input = match input with | x | x -> x" })
+            .Workflow {        
+                checkFile "OrPattern" (fun (typeCheckResult: FSharpCheckFileResults) ->
+                    // Get all symbol uses for the variable 'x'
+                    let allSymbols = typeCheckResult.GetAllUsesOfAllSymbolsInFile()
+                    
+                    // Find the uses of 'x' in the pattern
+                    let xUses = 
+                        allSymbols 
+                        |> Seq.filter (fun su -> su.Symbol.DisplayName = "x")
+                        |> Seq.sortBy (fun su -> su.Range.StartLine, su.Range.StartColumn)
+                        |> Seq.toArray
+                    
+                    // Should have 3 occurrences: first binding (Def), second binding (Use), and usage in body (Use)
+                    Assert.True(xUses.Length >= 2, $"Expected at least 2 uses of 'x', got {xUses.Length}")
+                    
+                    // First occurrence should be definition
+                    Assert.True(xUses.[0].IsFromDefinition, "First 'x' in Or pattern should be a definition")
+                    
+                    // Second occurrence should be use, not definition (#5546)
+                    Assert.True(xUses.[1].IsFromUse, "Second 'x' in Or pattern should be a use, not a definition"))
+            }
+
+module EventHandlerSyntheticSymbols =
+    
+    /// https://github.com/dotnet/fsharp/issues/4136
+    /// Events with [<CLIEvent>] generate synthetic 'handler' values that should not
+    /// appear in GetAllUsesOfAllSymbolsInFile results.
+    [<Fact>]
+    let ``Event handler synthetic symbols are filtered from references`` () =
+        SyntheticProject.Create(
+            { sourceFile "EventTest" [] with 
+                ExtraSource = "open System\ntype MyClass() =\n    let event = new Event<EventHandler, EventArgs>()\n    [<CLIEvent>]\n    member this.SelectionChanged = event.Publish" })
+            .Workflow {        
+                checkFile "EventTest" (fun (typeCheckResult: FSharpCheckFileResults) ->
+                    let allSymbols = typeCheckResult.GetAllUsesOfAllSymbolsInFile()
+                    
+                    // Check that no synthetic 'handler' values are exposed
+                    let handlerUses = 
+                        allSymbols 
+                        |> Seq.filter (fun su -> su.Symbol.DisplayName = "handler")
+                        |> Seq.toArray
+                    
+                    // The synthetic 'handler' argument should be filtered out
+                    Assert.True(handlerUses.Length = 0, 
+                        $"Expected no 'handler' symbols (synthetic event handler values should be filtered), got {handlerUses.Length}"))
+            }
