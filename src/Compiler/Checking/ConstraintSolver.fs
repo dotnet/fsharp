@@ -47,11 +47,14 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
+open Internal.Utilities.TypeHashing
+open Internal.Utilities.TypeHashing.StructuralUtilities
 
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.Caches
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Import
@@ -79,6 +82,8 @@ open FSharp.Compiler.TypeProviders
 // compilation environment, which currently corresponds to the scope
 // of the constraint resolution carried out by type checking.
 //------------------------------------------------------------------------- 
+
+
    
 let compgenId = mkSynId range0 unassignedTyparName
 
@@ -246,7 +251,70 @@ exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType
 
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
-type ConstraintSolverState = 
+/// Cache key for overload resolution: combines method group identity with caller argument types and return type
+type OverloadResolutionCacheKey =
+    { 
+      /// Hash combining all method identities in the method group
+      MethodGroupHash: int
+      /// Type structures for caller object arguments (the 'this' argument for instance/extension methods)
+      /// This is critical for extension methods where the 'this' type determines the overload
+      ObjArgTypeStructures: TypeStructure list
+      /// Type structures for each caller argument (only used when all types are stable)
+      ArgTypeStructures: TypeStructure list
+      /// Type structure for expected return type (if any), to differentiate calls with different expected types
+      ReturnTypeStructure: TypeStructure voption
+      /// Number of caller-provided type arguments (to distinguish calls with different type instantiations)
+      CallerTyArgCount: int
+    }
+
+/// Result of cached overload resolution
+[<Struct>]
+type OverloadResolutionCacheResult =
+    /// Resolution succeeded - index of the resolved method in the original calledMethGroup list
+    | CachedResolved of methodIndex: int
+    /// Resolution failed (no matching overload)
+    | CachedFailed
+
+/// Gets a per-TcGlobals overload resolution cache.
+/// Uses WeakMap to tie cache lifetime to TcGlobals (per-compilation isolation).
+let getOverloadResolutionCache =
+    let factory (g: TcGlobals) =
+        let options =
+            match g.compilationMode with
+            | CompilationMode.OneOff -> 
+                Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
+            | _ -> 
+                { Caches.CacheOptions.getDefault HashIdentity.Structural with 
+                    TotalCapacity = 4096
+                    HeadroomPercentage = 50 }
+        new Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>(options, "overloadResolutionCache")
+    Extras.WeakMap.getOrCreate factory
+
+/// Stores an overload resolution result in the cache.
+/// For successful resolutions, finds the method's index in calledMethGroup and stores CachedResolved.
+/// For failures, stores CachedFailed.
+let inline storeCacheResult
+    (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>)
+    (cacheKeyOpt: OverloadResolutionCacheKey voption)
+    (calledMethGroup: CalledMeth<_> list)
+    (calledMethOpt: CalledMeth<_> voption)
+    =
+    match cacheKeyOpt with
+    | ValueSome cacheKey ->
+        let result =
+            match calledMethOpt with
+            | ValueSome calledMeth ->
+                calledMethGroup
+                |> List.tryFindIndex (fun cm -> obj.ReferenceEquals(cm, calledMeth))
+                |> Option.map CachedResolved
+            | ValueNone -> Some CachedFailed
+
+        match result with
+        | Some res -> cache.TryAdd(cacheKey, res) |> ignore
+        | None -> ()
+    | ValueNone -> ()
+
+type ConstraintSolverState =
     { 
       g: TcGlobals
 
@@ -280,7 +348,7 @@ type ConstraintSolverState =
           TcVal = tcVal
           PostInferenceChecksPreDefaults = ResizeArray()
           PostInferenceChecksFinal = ResizeArray()
-          WarnWhenUsingWithoutNullOnAWithNullTarget = None } 
+          WarnWhenUsingWithoutNullOnAWithNullTarget = None }
 
     member this.PushPostInferenceCheck (preDefaults, check) =
         if preDefaults then
@@ -352,11 +420,141 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       ExtraRigidTypars = emptyFreeTypars
     }
 
+//-------------------------------------------------------------------------
+// Overload Resolution Caching Helpers
+//------------------------------------------------------------------------- 
+
+/// Try to get a stable type structure for caching. 
+/// Only returns stable structures - returns None for unstable or infinite types.
+let tryGetStableTypeStructure (g: TcGlobals) (ty: TType) : TypeStructure voption =
+    let ty = stripTyEqns g ty
+    match tryGetTypeStructureOfStrippedType ty with
+    | ValueSome(Stable tokens) -> ValueSome(Stable tokens)
+    | _ -> ValueNone
+
+/// Compute a hash for a method info for caching purposes
+let rec computeMethInfoHash (minfo: MethInfo) : int =
+    match minfo with
+    | FSMeth(_, _, vref, _) ->
+        hash (vref.Stamp, vref.LogicalName)
+    | ILMeth(_, ilMethInfo, _) ->
+        hash (ilMethInfo.ILName, ilMethInfo.DeclaringTyconRef.Stamp)
+    | DefaultStructCtor(_, _) ->
+        hash "DefaultStructCtor"
+    | MethInfoWithModifiedReturnType(original, _) ->
+        computeMethInfoHash original
+#if !NO_TYPEPROVIDERS
+    | ProvidedMeth(_, mb, _, _) ->
+        hash (mb.PUntaint((fun m -> m.Name, (nonNull<ProvidedType> m.DeclaringType).FullName |> string), range0))
+#endif
+
+/// Try to compute a cache key for overload resolution.
+/// Returns None if the resolution cannot be cached (e.g., unresolved type variables).
+let tryComputeOverloadCacheKey 
+        (g: TcGlobals) 
+        (calledMethGroup: CalledMeth<'T> list)
+        (callerArgs: CallerArgs<'T>)
+        (reqdRetTyOpt: OverallTy option)
+        : OverloadResolutionCacheKey voption =
+    
+    // Don't cache if there are named arguments (simplifies key computation)
+    let hasNamedArgs = callerArgs.Named |> List.exists (fun namedList -> not (List.isEmpty namedList))
+    if hasNamedArgs then 
+        ValueNone
+    else
+    
+    // Compute method group hash - must be order-dependent since we cache by index
+    // Using combineHash pattern from HashingPrimitives for consistency
+    let mutable methodGroupHash = 0
+    for cmeth in calledMethGroup do
+        let methHash = computeMethInfoHash cmeth.Method
+        methodGroupHash <- combineHash methodGroupHash methHash
+    
+    // Collect type structures for caller object arguments (the 'this' argument)
+    // This is critical for extension methods where the 'this' type determines the overload
+    // e.g., GItem1 on Tuple<T1,T2> vs Tuple<T1,T2,T3> vs Tuple<T1,T2,T3,T4>
+    let objArgStructures = ResizeArray()
+    let mutable allStable = true
+    
+    match calledMethGroup with
+    | cmeth :: _ ->
+        for objArgTy in cmeth.CallerObjArgTys do
+            match tryGetStableTypeStructure g objArgTy with
+            | ValueSome ts -> 
+                objArgStructures.Add(ts)
+            | ValueNone ->
+                allStable <- false
+    | [] -> ()
+    
+    if not allStable then 
+        ValueNone
+    else
+    
+    // Collect type structures for all caller arguments
+    let argStructures = ResizeArray()
+    
+    for argList in callerArgs.Unnamed do
+        for callerArg in argList do
+            let argTy = callerArg.CallerArgumentType
+            match tryGetStableTypeStructure g argTy with
+            | ValueSome ts -> 
+                argStructures.Add(ts)
+            | ValueNone ->
+                allStable <- false
+    
+    if not allStable then 
+        ValueNone
+    else
+        // Compute return type structure if present
+        // This is critical for cases like:
+        // - c.CheckCooperativeLevel() returning bool (calls no-arg overload)
+        // - let a, b = c.CheckCooperativeLevel() (calls byref overload with tuple destructuring)
+        let retTyStructure =
+            match reqdRetTyOpt with
+            | Some overallTy -> 
+                // Extract the underlying TType from OverallTy
+                let retTy = overallTy.Commit
+                match tryGetStableTypeStructure g retTy with
+                | ValueSome ts -> ValueSome ts
+                | ValueNone -> 
+                    // Return type has unresolved type variable
+                    // This is only a problem if any candidate has out args, because out args
+                    // affect the effective return type (method returning bool with out int becomes bool*int)
+                    // For normal overloads (no out args), the return type doesn't affect resolution
+                    let anyHasOutArgs = calledMethGroup |> List.exists (fun cm -> cm.HasOutArgs)
+                    if anyHasOutArgs then
+                        // Don't cache - the expected return type determines which overload to pick
+                        // e.g., c.CheckCooperativeLevel() -> bool vs let a,b = c.CheckCooperativeLevel() -> bool*int
+                        ValueNone
+                    else
+                        // Safe to cache with wildcard - return type doesn't affect resolution
+                        // Use empty Stable array as marker for "any return type"
+                        ValueSome(Stable [||])
+            | None -> 
+                // No return type constraint - use empty marker
+                ValueSome(Stable [||])
+        
+        match retTyStructure with
+        | ValueNone -> ValueNone
+        | retStruct ->
+            // Get caller type arg count from first method (all methods in group have same caller type args)
+            let callerTyArgCount = 
+                match calledMethGroup with
+                | cmeth :: _ -> cmeth.NumCallerTyArgs
+                | [] -> 0
+            ValueSome { 
+                MethodGroupHash = methodGroupHash
+                ObjArgTypeStructures = Seq.toList objArgStructures
+                ArgTypeStructures = Seq.toList argStructures
+                ReturnTypeStructure = retStruct
+                CallerTyArgCount = callerTyArgCount
+            }
+
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
 /// infinite equations such as 
 ///    'a = 'a list
 let rec occursCheck g un ty = 
-    match stripTyEqns g ty with 
+    match stripTyEqns g ty with
     | TType_ucase(_, l)
     | TType_app (_, l, _) 
     | TType_anon(_, l)
@@ -3445,9 +3643,116 @@ and AssumeMethodSolvesTrait (csenv: ConstraintSolverEnv) (cx: TraitConstraintInf
     | _ -> 
         None
 
+/// Core implementation of overload resolution (extracted for caching)
+and ResolveOverloadingCore 
+         (csenv: ConstraintSolverEnv)
+         _trace  // Currently unused - may be used for future improvements
+         methodName
+         ndeep
+         cx
+         (callerArgs: CallerArgs<Expr>)
+         ad
+         (calledMethGroup: CalledMeth<Expr> list)
+         (candidates: CalledMeth<Expr> list)
+         permitOptArgs
+         (reqdRetTyOpt: OverallTy option)
+         isOpConversion
+         (cacheKeyOpt: OverloadResolutionCacheKey voption)
+         (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>)
+         : CalledMeth<Expr> option * OperationResult<unit> * OptionalTrace =
+
+    let infoReader = csenv.InfoReader
+    let m = csenv.m
+
+    // Always take the return type into account for
+    //    -- op_Explicit, op_Implicit
+    //    -- candidate method sets that potentially use tupling of unfilled out args
+    let alwaysCheckReturn =
+        isOpConversion ||
+        candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs) 
+
+    // Exact match rule.
+    //
+    // See what candidates we have based on current inferred type information 
+    // and exact matches of argument types. 
+    let exactMatchCandidates =
+        candidates |> FilterEachThenUndo (fun newTrace calledMeth ->
+              let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+              let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
+              CanMemberSigsMatchUpToCheck 
+                  csenv 
+                  permitOptArgs 
+                  alwaysCheckReturn
+                  (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
+                  (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
+                  (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
+                  (ArgsEquivOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome)  // args exact
+                  reqdRetTyOpt 
+                  calledMeth)
+
+    match exactMatchCandidates with
+    | [(calledMeth, warns, _, _usesTDC)] ->
+        storeCacheResult cache cacheKeyOpt calledMethGroup (ValueSome calledMeth)
+        Some calledMeth, OkResult (warns, ()), NoTrace
+
+    | _ -> 
+      // Now determine the applicable methods.
+      // Subsumption on arguments is allowed.
+      let applicable =
+          candidates |> FilterEachThenUndo (fun newTrace candidate ->
+              let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+              let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) candidate
+              CanMemberSigsMatchUpToCheck 
+                  csenv 
+                  permitOptArgs
+                  alwaysCheckReturn
+                  (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
+                  (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
+                  (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
+                  (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome candidate)  // args can subsume
+                  reqdRetTyOpt 
+                  candidate)
+
+      match applicable with 
+      | [] ->
+          // OK, we failed. Collect up the errors from overload resolution and the possible overloads
+          storeCacheResult cache cacheKeyOpt calledMethGroup ValueNone
+
+          let errors =
+              candidates 
+              |> List.choose (fun calledMeth -> 
+                      match CollectThenUndo (fun newTrace -> 
+                                   let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+                                   let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
+                                   CanMemberSigsMatchUpToCheck 
+                                       csenv 
+                                       permitOptArgs
+                                       alwaysCheckReturn
+                                       (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln) 
+                                       (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m)
+                                       (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
+                                       (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
+                                       reqdRetTyOpt 
+                                       calledMeth) with 
+                      | OkResult _ -> None
+                      | ErrorResult(_warnings, exn) ->
+                          Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
+
+          let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (NoOverloadsFound (methodName, errors, cx)) m
+
+          None, ErrorD err, NoTrace
+
+      | [(calledMeth, warns, t, _usesTDC)] ->
+          storeCacheResult cache cacheKeyOpt calledMethGroup (ValueSome calledMeth)
+          Some calledMeth, OkResult (warns, ()), WithTrace t
+
+      | applicableMeths -> 
+          // Multiple applicable methods - use most applicable overload rules to find the best one
+          GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m cacheKeyOpt cache
+
 // Resolve the overloading of a method 
 // This is used after analyzing the types of arguments 
-and ResolveOverloading 
+and ResolveOverloading
          (csenv: ConstraintSolverEnv) 
          trace           // The undo trace, if any
          methodName      // The name of the method being called, for error reporting
@@ -3461,7 +3766,6 @@ and ResolveOverloading
          : CalledMeth<Expr> option * OperationResult<unit>
      =
     let g = csenv.g
-    let infoReader = csenv.InfoReader
     let m    = csenv.m
 
     let isOpConversion =
@@ -3501,86 +3805,46 @@ and ResolveOverloading
             
         | _, _ -> 
 
-          // Always take the return type into account for
-          //    -- op_Explicit, op_Implicit
-          //    -- candidate method sets that potentially use tupling of unfilled out args
-          let alwaysCheckReturn =
-              isOpConversion ||
-              candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs) 
+          // Try to use cached overload resolution result for repetitive patterns
+          // Only cache when:
+          // - NOT doing op_Explicit/op_Implicit conversions
+          // - NOT doing trait constraint (SRTP) resolution (cx is None)
+          // - Have multiple candidates
+          let cacheKeyOpt = 
+              if not isOpConversion && cx.IsNone && candidates.Length > 1 then
+                  tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt
+              else
+                  ValueNone
 
-          // Exact match rule.
-          //
-          // See what candidates we have based on current inferred type information 
-          // and exact matches of argument types. 
-          let exactMatchCandidates =
-              candidates |> FilterEachThenUndo (fun newTrace calledMeth -> 
-                    let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-                    let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
-                    CanMemberSigsMatchUpToCheck 
-                        csenv 
-                        permitOptArgs 
-                        alwaysCheckReturn
-                        (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
-                        (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
-                        (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
-                        (ArgsEquivOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome)  // args exact
-                        reqdRetTyOpt 
-                        calledMeth)
-
-          match exactMatchCandidates with
-          | [(calledMeth, warns, _, _usesTDC)] ->
-               Some calledMeth, OkResult (warns, ()), NoTrace
-
-          | _ -> 
-            // Now determine the applicable methods.
-            // Subsumption on arguments is allowed.
-            let applicable =
-                candidates |> FilterEachThenUndo (fun newTrace candidate -> 
-                    let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-                    let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) candidate
-                    CanMemberSigsMatchUpToCheck 
-                        csenv 
-                        permitOptArgs
-                        alwaysCheckReturn
-                        (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
-                        (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
-                        (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
-                        (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome candidate)  // args can subsume
-                        reqdRetTyOpt 
-                        candidate)
-
-            match applicable with 
-            | [] ->
-                // OK, we failed. Collect up the errors from overload resolution and the possible overloads
-                let errors = 
-                    candidates 
-                    |> List.choose (fun calledMeth -> 
-                            match CollectThenUndo (fun newTrace -> 
-                                         let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-                                         let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
-                                         CanMemberSigsMatchUpToCheck 
-                                             csenv 
-                                             permitOptArgs
-                                             alwaysCheckReturn
-                                             (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln) 
-                                             (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m)
-                                             (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
-                                             (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
-                                             reqdRetTyOpt 
-                                             calledMeth) with 
-                            | OkResult _ -> None
-                            | ErrorResult(_warnings, exn) ->
-                                Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
-
-                let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (NoOverloadsFound (methodName, errors, cx)) m
-
-                None, ErrorD err, NoTrace
-
-            | [(calledMeth, warns, t, _usesTDC)] ->
-                Some calledMeth, OkResult (warns, ()), WithTrace t
-
-            | applicableMeths -> 
-                GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m
+          // Check cache for existing result
+          let cache = getOverloadResolutionCache g
+          match cacheKeyOpt with
+          | ValueSome cacheKey ->
+              let mutable cachedResult = Unchecked.defaultof<OverloadResolutionCacheResult>
+              if cache.TryGetValue(cacheKey, &cachedResult) then
+                  match cachedResult with
+                  | CachedResolved idx when idx >= 0 && idx < calledMethGroup.Length ->
+                      // Cache hit - verify the cached method has correct generic arity before using
+                      let calledMeth = calledMethGroup[idx]
+                      if calledMeth.HasCorrectGenericArity then
+                          Some calledMeth, CompleteD, NoTrace
+                      else
+                          // Cached method doesn't match current call's type args - do normal resolution
+                          ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
+                  | CachedFailed ->
+                      // Cache hit - resolution previously failed
+                      // We still need to go through normal resolution to generate proper error messages
+                      // (not using cached failure to avoid wrong error messages for ambiguity cases)
+                      ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
+                  | _ ->
+                      // Cache miss - proceed with normal resolution
+                      ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
+              else
+                  // Cache miss - proceed with normal resolution
+                  ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
+          | ValueNone ->
+              // Cannot cache - proceed with normal resolution
+              ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion ValueNone cache
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
@@ -3656,7 +3920,7 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
         // Otherwise pass the overload resolution failure for error printing in CompileOps
         UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
 
-and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m =
+and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m (cacheKeyOpt: OverloadResolutionCacheKey voption) (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>) =
     let g = csenv.g
     let infoReader = csenv.InfoReader
     /// Compare two things by the given predicate. 
@@ -3841,9 +4105,10 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     match bestMethods with 
     | [(calledMeth, warns, t, _)] ->
+        storeCacheResult cache cacheKeyOpt calledMethGroup (ValueSome calledMeth)
         Some calledMeth, OkResult (warns, ()), WithTrace t
 
-    | bestMethods -> 
+    | bestMethods ->
         let methods = 
             let getMethodSlotsAndErrors methodSlot errors =
                 [ match errors with
@@ -4149,7 +4414,7 @@ let CreateCodegenState tcVal g amap =
       InfoReader = InfoReader(g, amap)
       PostInferenceChecksPreDefaults = ResizeArray() 
       PostInferenceChecksFinal = ResizeArray()
-      WarnWhenUsingWithoutNullOnAWithNullTarget = None}
+      WarnWhenUsingWithoutNullOnAWithNullTarget = None }
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) =
@@ -4245,7 +4510,7 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               InfoReader = InfoReader(g, amap)
               PostInferenceChecksPreDefaults = ResizeArray() 
               PostInferenceChecksFinal = ResizeArray()
-              WarnWhenUsingWithoutNullOnAWithNullTarget = None}
+              WarnWhenUsingWithoutNullOnAWithNullTarget = None }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let minst = FreshenMethInfo m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with

@@ -4,19 +4,31 @@ open System
 open System.Collections.Generic
 open System.Diagnostics.Metrics
 
-module internal CacheMetrics =
+module CacheMetrics =
     /// Global telemetry Meter for all caches. Exposed for testing purposes.
     /// Set FSHARP_OTEL_EXPORT environment variable to enable OpenTelemetry export to external collectors in tests.
     val Meter: Meter
-    val ListenToAll: unit -> IDisposable
-    val StatsToString: unit -> string
-    val CaptureStatsAndWriteToConsole: unit -> IDisposable
+    val internal ListenToAll: unit -> IDisposable
+    val internal StatsToString: unit -> string
+    val internal CaptureStatsAndWriteToConsole: unit -> IDisposable
 
-    /// A local listener that can be created for a specific Cache instance to get its metrics. For testing purposes only.
-    [<Class>]
-    type internal CacheMetricsListener =
-        member Ratio: float
+    /// A listener that captures cache metrics.
+    /// Can match by cache name only (aggregating across all instances) or by exact cache tags.
+    /// When created with just a cache name, it aggregates metrics across all cache instances with that name.
+    /// When created with cache tags (internal), it matches both name and cacheId exactly.
+    [<Sealed>]
+    type CacheMetricsListener =
+        /// Creates a listener that matches by cache name only (aggregates metrics across all instances with that name).
+        /// This is useful for caches that are created per-compilation (e.g., overload resolution cache).
+        new: cacheName: string -> CacheMetricsListener
+        /// Gets the current totals for each metric type.
         member GetTotals: unit -> Map<string, int64>
+        /// Gets the current hit ratio (hits / (hits + misses)).
+        member Ratio: float
+        /// Gets the total number of cache hits.
+        member Hits: int64
+        /// Gets the total number of cache misses.
+        member Misses: int64
         interface IDisposable
 
 [<RequireQualifiedAccess; NoComparison>]
