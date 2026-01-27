@@ -290,6 +290,30 @@ let getOverloadResolutionCache =
         new Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>(options, "overloadResolutionCache")
     Extras.WeakMap.getOrCreate factory
 
+/// Stores an overload resolution result in the cache.
+/// For successful resolutions, finds the method's index in calledMethGroup and stores CachedResolved.
+/// For failures, stores CachedFailed.
+let inline storeCacheResult
+    (g: TcGlobals)
+    (cacheKeyOpt: OverloadResolutionCacheKey voption)
+    (calledMethGroup: CalledMeth<_> list)
+    (calledMethOpt: CalledMeth<_> voption)
+    =
+    match cacheKeyOpt with
+    | ValueSome cacheKey ->
+        let result =
+            match calledMethOpt with
+            | ValueSome calledMeth ->
+                calledMethGroup
+                |> List.tryFindIndex (fun cm -> obj.ReferenceEquals(cm, calledMeth))
+                |> Option.map CachedResolved
+            | ValueNone -> Some CachedFailed
+
+        match result with
+        | Some res -> (getOverloadResolutionCache g).TryAdd(cacheKey, res) |> ignore
+        | None -> ()
+    | ValueNone -> ()
+
 type ConstraintSolverState =
     { 
       g: TcGlobals
@@ -3667,14 +3691,7 @@ and ResolveOverloadingCore
 
     match exactMatchCandidates with
     | [(calledMeth, warns, _, _usesTDC)] ->
-        // Store successful result in cache
-        match cacheKeyOpt with
-        | ValueSome cacheKey ->
-            let idx = calledMethGroup |> List.tryFindIndex (fun cm -> System.Object.ReferenceEquals(cm, calledMeth))
-            match idx with
-            | Some i -> (getOverloadResolutionCache csenv.SolverState.g).TryAdd(cacheKey, CachedResolved i) |> ignore
-            | None -> ()
-        | ValueNone -> ()
+        storeCacheResult csenv.SolverState.g cacheKeyOpt calledMethGroup (ValueSome calledMeth)
         Some calledMeth, OkResult (warns, ()), NoTrace
 
     | _ -> 
@@ -3698,12 +3715,9 @@ and ResolveOverloadingCore
       match applicable with 
       | [] ->
           // OK, we failed. Collect up the errors from overload resolution and the possible overloads
-          // Store failure in cache
-          match cacheKeyOpt with
-          | ValueSome cacheKey -> (getOverloadResolutionCache csenv.SolverState.g).TryAdd(cacheKey, CachedFailed) |> ignore
-          | ValueNone -> ()
-          
-          let errors = 
+          storeCacheResult csenv.SolverState.g cacheKeyOpt calledMethGroup ValueNone
+
+          let errors =
               candidates 
               |> List.choose (fun calledMeth -> 
                       match CollectThenUndo (fun newTrace -> 
@@ -3728,14 +3742,7 @@ and ResolveOverloadingCore
           None, ErrorD err, NoTrace
 
       | [(calledMeth, warns, t, _usesTDC)] ->
-          // Store successful result in cache
-          match cacheKeyOpt with
-          | ValueSome cacheKey ->
-              let idx = calledMethGroup |> List.tryFindIndex (fun cm -> System.Object.ReferenceEquals(cm, calledMeth))
-              match idx with
-              | Some i -> (getOverloadResolutionCache csenv.SolverState.g).TryAdd(cacheKey, CachedResolved i) |> ignore
-              | None -> ()
-          | ValueNone -> ()
+          storeCacheResult csenv.SolverState.g cacheKeyOpt calledMethGroup (ValueSome calledMeth)
           Some calledMeth, OkResult (warns, ()), WithTrace t
 
       | applicableMeths -> 
@@ -4097,14 +4104,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     match bestMethods with 
     | [(calledMeth, warns, t, _)] ->
-        // Store successful result in cache - we found a unique best method
-        match cacheKeyOpt with
-        | ValueSome cacheKey ->
-            let idx = calledMethGroup |> List.tryFindIndex (fun cm -> System.Object.ReferenceEquals(cm, calledMeth))
-            match idx with
-            | Some i -> (getOverloadResolutionCache csenv.SolverState.g).TryAdd(cacheKey, CachedResolved i) |> ignore
-            | None -> ()
-        | ValueNone -> ()
+        storeCacheResult csenv.SolverState.g cacheKeyOpt calledMethGroup (ValueSome calledMeth)
         Some calledMeth, OkResult (warns, ()), WithTrace t
 
     | bestMethods ->
