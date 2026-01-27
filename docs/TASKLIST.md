@@ -8,13 +8,13 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| FindAllReferences Bugs | 6 | 5 Fixed, 1 Open (#5545) |
+| FindAllReferences Bugs | 6 | 6 Fixed |
 | FindAllReferences Feature Improvements | 2 | Fixed |
 | FindAllReferences Feature Requests | 3 | Fixed |
 | RenameSymbol Bugs | 5 | 3 Fixed, 2 VS Layer Issues |
 | RenameSymbol Feature Improvements | 1 | Fixed |
 | RenameSymbol Feature Requests | 1 | Deferred (#4760) |
-| **Total** | **18** | **14 Fixed, 4 Open/Deferred** |
+| **Total** | **18** | **15 Fixed, 3 Open/Deferred** |
 
 ---
 
@@ -77,7 +77,7 @@ Properties with get/set accessors have incorrect rename behavior.
 | Issue | Title | Type | Labels | Status |
 |-------|-------|------|--------|--------|
 | [#5546](https://github.com/dotnet/fsharp/issues/5546) | Get all symbols: all symbols in SynPat.Or patterns considered bindings | Bug | Impact-Low, Area-LangService-FindAllReferences | [x] |
-| [#5545](https://github.com/dotnet/fsharp/issues/5545) | Symbols are not always found in SAFE bookstore project | Bug | Impact-Low, Area-LangService-FindAllReferences | [ ] Not Investigated |
+| [#5545](https://github.com/dotnet/fsharp/issues/5545) | Symbols are not always found in SAFE bookstore project | Bug | Impact-Low, Area-LangService-FindAllReferences | [x] Fixed by other changes |
 | [#4136](https://github.com/dotnet/fsharp/issues/4136) | Symbols API: GetAllUsesOfAllSymbolsInFile contains generated handler value for events | Bug | Impact-Low, Area-LangService-FindAllReferences | [x] |
 
 **Root Cause:** Name resolution captures incorrect or synthetic symbols in certain patterns.
@@ -181,12 +181,11 @@ Properties with get/set accessors have incorrect rename behavior.
   - **Likely Fix:** Fix in NameResolution.fs symbol capture
   - **Test:** Add test for SynPat.Or patterns
 
-- [ ] **#5545** - Symbols are not always found in SAFE bookstore project
+- [x] **#5545** - Symbols are not always found in SAFE bookstore project
   - **Type:** Bug
   - **Impact:** Low - intermittent missing references
-  - **Likely Cause:** Race condition or caching issue
-  - **Likely Fix:** Investigate and fix caching/ordering
-  - **Test:** Need repro project
+  - **Resolution:** Fixed by other changes in this PR. Tests confirm DU types in the same file now have all references found correctly.
+  - **Test:** `SAFEBookstoreSymbols` module in FindReferences.fs
 
 - [x] **#4136** - Symbols API: GetAllUsesOfAllSymbolsInFile contains generated handler value for events
   - **Type:** Bug

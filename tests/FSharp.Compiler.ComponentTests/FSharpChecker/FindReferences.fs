@@ -1328,3 +1328,91 @@ let first = arr.First()
                         | _ -> ()
                 )
             }
+
+/// https://github.com/dotnet/fsharp/issues/5545
+/// Symbols in SAFE bookstore project - DU types in modules should have all references found
+module SAFEBookstoreSymbols =
+    
+    /// This reproduces the issue where Wishlist/Msg DU type references weren't found
+    /// in the SAFE bookstore project. The pattern is a DU type inside a module
+    /// with references in the same file.
+    [<Fact>]
+    let ``Find references of DU type inside module finds all usages in same file`` () =
+        let source = """
+type WishlistMsg = 
+    | AddItem of string
+    | RemoveItem of int
+
+let update (msg: WishlistMsg) state =
+    match msg with
+    | AddItem item -> item :: state
+    | RemoveItem idx -> state
+
+let handleMsg (m: WishlistMsg) = 
+    match m with
+    | WishlistMsg.AddItem _ -> "adding"
+    | WishlistMsg.RemoveItem _ -> "removing"
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with ExtraSource = source })
+            .Workflow {
+                // Find references starting from the WishlistMsg type definition
+                placeCursor "Source" 7 5 "type WishlistMsg = " ["WishlistMsg"]
+                findAllReferences (fun ranges ->
+                    // ExtraSource starts at line 7. Actual ranges:
+                    // Line 7: type definition (WishlistMsg)
+                    // Line 11: (msg: WishlistMsg) parameter annotation
+                    // Line 16: (m: WishlistMsg) parameter annotation
+                    // Line 18: WishlistMsg.AddItem qualified usage
+                    // Line 19: WishlistMsg.RemoveItem qualified usage
+                    let lines = ranges |> List.map (fun r -> r.StartLine) |> List.sort |> List.distinct
+                    Assert.True(lines.Length >= 3, 
+                        $"Expected at least 3 distinct lines with WishlistMsg references (type def + usages). Got {lines.Length} lines: {lines}. Ranges: {ranges}")
+                    
+                    // Verify type definition is found
+                    let hasTypeDef = ranges |> List.exists (fun r -> r.StartLine = 7)
+                    Assert.True(hasTypeDef, $"Expected to find type definition on line 7. Ranges: {ranges}")
+                    
+                    // Verify type annotation usages are found
+                    let hasAnnotation1 = ranges |> List.exists (fun r -> r.StartLine = 11)
+                    let hasAnnotation2 = ranges |> List.exists (fun r -> r.StartLine = 16)
+                    Assert.True(hasAnnotation1 || hasAnnotation2, 
+                        $"Expected to find type annotation usage. Ranges: {ranges}"))
+            }
+    
+    /// This reproduces the Database/DatabaseType pattern from the issue
+    [<Fact>]
+    let ``Find references of DU type in database pattern`` () =
+        let source = """
+type DatabaseType = 
+    | SQLite
+    | PostgreSQL
+    | MSSQL
+
+let getConnection (dbType: DatabaseType) =
+    match dbType with
+    | SQLite -> "sqlite://..."
+    | PostgreSQL -> "postgresql://..."
+    | MSSQL -> "mssql://..."
+
+let defaultDb = SQLite
+let altDb : DatabaseType = PostgreSQL
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with ExtraSource = source })
+            .Workflow {
+                // Find references starting from the DatabaseType type definition
+                placeCursor "Source" 7 5 "type DatabaseType = " ["DatabaseType"]
+                findAllReferences (fun ranges ->
+                    // ExtraSource starts at line 7. Actual ranges:
+                    // Line 7: type definition
+                    // Line 12: (dbType: DatabaseType) parameter annotation
+                    // Line 19: (altDb : DatabaseType) let binding annotation
+                    let hasTypeDef = ranges |> List.exists (fun r -> r.StartLine = 7)
+                    let hasParamAnnotation = ranges |> List.exists (fun r -> r.StartLine = 12)
+                    let hasLetAnnotation = ranges |> List.exists (fun r -> r.StartLine = 19)
+                    
+                    Assert.True(hasTypeDef, $"Expected to find type definition on line 7. Ranges: {ranges}")
+                    Assert.True(hasParamAnnotation, $"Expected to find parameter annotation on line 12. Ranges: {ranges}")
+                    Assert.True(hasLetAnnotation, $"Expected to find let binding annotation on line 19. Ranges: {ranges}"))
+            }
