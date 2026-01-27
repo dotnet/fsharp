@@ -34,8 +34,6 @@ module LeafExpressionConverter =
         {   varEnv : Map<Var, Expression> }
     let asExpr x = (x :> Expression)
 
-    let _instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
-
     let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
 
     /// Determines if a property access on a derived union case type needs to be coerced to the declaring type.
