@@ -803,3 +803,63 @@ let test () =
             // Use at "state.MyProperty" - VS layer trims to just "MyProperty"
             fileName, 14, 4, 20
         ]
+
+/// Test for single-line interface syntax (related to #15399)
+module SingleLineInterfaceSyntax =
+
+    /// Issue: https://github.com/dotnet/fsharp/issues/15399
+    /// Single-line interface syntax: type Foo() = interface IFoo with member __.Bar () = ()
+    /// Find All References should correctly find the interface member.
+    [<Fact>]
+    let ``We find interface members with single-line interface syntax`` () =
+        let source = """
+module Foo
+
+type IFoo = abstract member Bar : unit -> unit
+
+type Foo() = interface IFoo with member __.Bar () = ()
+
+let foo = Foo() :> IFoo
+foo.Bar()
+"""
+        let fileName, options, checker = singleFileChecker source
+
+        let symbolUse = getSymbolUse fileName source "Bar" options checker |> Async.RunSynchronously
+
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
+        |> Async.RunSynchronously
+        |> expectToFind [
+            // Abstract member definition
+            fileName, 4, 28, 31
+            // Implementation in single-line syntax
+            fileName, 6, 43, 46
+            // Use via foo.Bar() - range includes the qualifying "foo." prefix
+            fileName, 9, 0, 7
+        ]
+
+    /// Make sure we find interface name references with single-line interface syntax
+    [<Fact>]
+    let ``We find interface type references with single-line interface syntax`` () =
+        let source = """
+module Foo
+
+type IFoo = abstract member Bar : unit -> unit
+
+type Foo() = interface IFoo with member __.Bar () = ()
+
+let foo = Foo() :> IFoo
+"""
+        let fileName, options, checker = singleFileChecker source
+
+        let symbolUse = getSymbolUse fileName source "IFoo" options checker |> Async.RunSynchronously
+
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
+        |> Async.RunSynchronously
+        |> expectToFind [
+            // Type definition
+            fileName, 4, 5, 9
+            // In implementation
+            fileName, 6, 23, 27
+            // In cast ":> IFoo"
+            fileName, 8, 19, 23
+        ]
