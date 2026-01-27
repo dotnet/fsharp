@@ -777,7 +777,18 @@ module AttributeTargets =
 let ForNewConstructors tcSink (env: TcEnv) mObjTy methodName meths =
     let origItem = Item.CtorGroup(methodName, meths)
     let callSink (item, minst) = CallMethodGroupNameResolutionSink tcSink (mObjTy, env.NameEnv, item, origItem, minst, ItemOccurrence.Use, env.AccessRights)
-    let sendToSink minst refinedMeths = callSink (Item.CtorGroup(methodName, refinedMeths), minst)
+    let sendToSink minst refinedMeths = 
+        callSink (Item.CtorGroup(methodName, refinedMeths), minst)
+        // For F# constructors, also register the constructor as Item.Value so that
+        // Find All References from the constructor definition can find this usage.
+        // This addresses issue #14902 - additional constructors need their usages found.
+        for meth in refinedMeths do
+            match meth with
+            | FSMeth(_, _, vref, _) when vref.IsConstructor ->
+                // Use a slightly shifted range (start column + 1) to avoid being filtered as duplicate
+                let shiftedRange = Range.mkRange mObjTy.FileName (Position.mkPos mObjTy.StartLine (mObjTy.StartColumn + 1)) mObjTy.End
+                CallNameResolutionSink tcSink (shiftedRange, env.NameEnv, Item.Value vref, minst, ItemOccurrence.Use, env.AccessRights)
+            | _ -> ()
     match meths with
     | [] ->
         AfterResolution.DoNothing

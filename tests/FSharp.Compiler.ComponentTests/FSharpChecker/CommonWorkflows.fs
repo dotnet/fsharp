@@ -154,7 +154,9 @@ let GetAllUsesOfAllSymbols() =
             return checkProjectResults.GetAllUsesOfAllSymbols()
         } |> Async.RunSynchronously
 
-    if result.Length <> 79 then failwith $"Expected 81 symbolUses, got {result.Length}:\n%A{result}"
+    // Count updated from 79 to 80 due to issue #14902 fix: additional constructor usages
+    // are now also registered as Item.Value to support Find All References from constructor definitions
+    if result.Length <> 80 then failwith $"Expected 80 symbolUses, got {result.Length}:\n%A{result}"
 
 [<Fact>]
 let ``We don't lose subsequent diagnostics when there's error in one file`` () =

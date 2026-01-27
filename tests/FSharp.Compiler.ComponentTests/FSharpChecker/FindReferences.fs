@@ -1089,3 +1089,82 @@ let useB = x.IsCaseB
                     // Should include: definition, construction (CaseA), and IsCaseA usage
                     Assert.True(ranges.Length >= 3, $"Expected at least 3 references for CaseA, got {ranges.Length}"))
             }
+
+/// https://github.com/dotnet/fsharp/issues/14902
+/// Find all references of additional constructors
+module AdditionalConstructors =
+    
+    [<Fact>]
+    let ``Find references of type includes all constructor usages`` () =
+        // This test verifies the existing behavior is preserved:
+        // Finding references of a type should include constructor usages
+        let source = """
+type MyClass(x: int) =
+    new() = MyClass(0)
+
+let a = MyClass()
+let b = MyClass(5)
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = source })
+            .Workflow {
+                // Place cursor on MyClass type definition
+                placeCursor "Source" 3 12 "type MyClass(x: int) =" ["MyClass"]
+                findAllReferences (fun ranges ->
+                    // Should find:
+                    // 1. Type definition on line 3
+                    // 2. MyClass(0) call inside additional constructor on line 4
+                    // 3. MyClass() usage on line 6
+                    // 4. MyClass(5) usage on line 7
+                    let hasTypeDefOnLine3 = ranges |> List.exists (fun r -> r.StartLine = 3)
+                    let hasUsageOnLine4 = ranges |> List.exists (fun r -> r.StartLine = 4 && r.StartColumn >= 12)
+                    let hasUsageOnLine6 = ranges |> List.exists (fun r -> r.StartLine = 6)
+                    let hasUsageOnLine7 = ranges |> List.exists (fun r -> r.StartLine = 7)
+                    
+                    Assert.True(hasTypeDefOnLine3, $"Expected type definition on line 3. Ranges: {ranges}")
+                    Assert.True(hasUsageOnLine4, $"Expected constructor call on line 4. Ranges: {ranges}")
+                    Assert.True(hasUsageOnLine6, $"Expected constructor usage on line 6. Ranges: {ranges}")
+                    Assert.True(hasUsageOnLine7, $"Expected constructor usage on line 7. Ranges: {ranges}"))
+            }
+
+    [<Fact>]
+    let ``Additional constructor definition has correct symbol information`` () =
+        // This test verifies that the additional constructor definition is correctly 
+        // captured in the symbol uses
+        let source = """
+type MyClass(x: int) =
+    new() = MyClass(0)
+
+let a = MyClass()
+let b = MyClass(5)
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = source })
+            .Workflow {
+                checkFile "Source" (fun (typeCheckResult: FSharpCheckFileResults) ->
+                    // Get all uses in the file
+                    let allUses = typeCheckResult.GetAllUsesOfAllSymbolsInFile()
+                    
+                    // Find the additional constructor definition on line 4
+                    let additionalCtorDef = 
+                        allUses 
+                        |> Seq.filter (fun su -> 
+                            su.IsFromDefinition && 
+                            su.Range.StartLine = 4 &&
+                            su.Range.StartColumn = 4)
+                        |> Seq.tryHead
+                    
+                    Assert.True(additionalCtorDef.IsSome, "Should find the additional constructor definition at (4,4)")
+                    
+                    // Verify it's a constructor
+                    match additionalCtorDef with
+                    | Some ctorDef ->
+                        let symbol = ctorDef.Symbol
+                        // The symbol should be an FSharpMemberOrFunctionOrValue that is a constructor
+                        match symbol with
+                        | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
+                            Assert.True(mfv.IsConstructor, "Symbol should be a constructor")
+                        | _ -> Assert.True(false, $"Expected FSharpMemberOrFunctionOrValue, got {symbol.GetType().Name}")
+                    | None -> ()
+                )
+            }
