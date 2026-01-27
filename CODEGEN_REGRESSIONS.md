@@ -671,6 +671,9 @@ F# 9 generates `.Is*` properties for each DU case. The normalization logic for g
 - Medium: Need to ensure unique property names while maintaining backward compatibility
 - Workaround: Use language version 8 or rename cases
 
+### Fix Applied
+* **UPDATE (FIXED):** Issue no longer reproduces on current main branch. The reported error occurred in VS 17.12 with msbuild, but `dotnet build` worked correctly even at the time of the report. The issue appears to have been related to an older compiler version or a specific VS/msbuild configuration. The current compiler correctly generates unique `.Is*` properties for all DU cases (`.IsSZ`, `.IsSTZ`, `.IsZS`, `.IsASZ`). Test uncommented and passes.
+
 ---
 
 ## Issue #18140

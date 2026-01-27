@@ -370,7 +370,7 @@ let main _ =
     // https://github.com/dotnet/fsharp/issues/18263
     // When DU case names share prefixes that produce identical .Is* property names after
     // normalization, compilation fails with "duplicate entry in method table".
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_18263_DUIsPropertiesDuplicateMethod`` () =
         let source = """
 namespace FSharpClassLibrary
