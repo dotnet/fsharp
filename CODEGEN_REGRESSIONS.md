@@ -1743,6 +1743,8 @@ IL generation creates duplicate property entries when DU case name matches IWSAM
 ### Risks
 - Low: Name conflict resolution in edge case
 
+* **UPDATE (FIXED):** Fixed by extending the `tdefDiscards` logic in `IlxGen.fs` (around line 11846). For DU types with `AllHelpers`, the compiler now collects nullary case names and discards IWSAM implementation properties/methods that would conflict with the generated DU case properties. When a nullary DU case has the same name as an IWSAM member implementation, the IWSAM implementation property is discarded since it is semantically equivalent to the DU case property (both return the nullary case value).
+
 ---
 
 ## Issue #13468

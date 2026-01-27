@@ -1208,29 +1208,32 @@ let dto = { Name = "test"; Value = 42 }
     // https://github.com/dotnet/fsharp/issues/14321
     // When a DU case name matches an IWSAM member name, build fails with:
     // "duplicate entry 'Overheated' in property table"
-    // [<Fact>]
+    // FIX: The compiler now correctly discards IWSAM implementation properties that 
+    // would conflict with nullary DU case properties (they are semantically equivalent).
+    [<Fact>]
     let ``Issue_14321_DuAndIWSAMNames`` () =
-        // The bug: DU constructor names that match IWSAM member names cause
-        // "duplicate entry 'X' in property table" error at build time
+        // The fix: DU constructor names that match IWSAM member names no longer cause
+        // "duplicate entry 'X' in property table" error. The IWSAM implementation property
+        // is correctly discarded since it would be identical to the DU case property.
         let source = """
 module Test
 
-type SensorReadings = int
+#nowarn "3535"  // IWSAM warning
 
 type EngineError<'e> =
     static abstract Overheated : 'e
     static abstract LowOil : 'e
 
-// BUG: If we use 'Overheated' and 'LowOil' (without '2' suffix) for DU cases,
-// we get: "duplicate entry 'Overheated' in property table"
+// Previously caused: "duplicate entry 'Overheated' in property table"
+// Now works: The DU case properties and IWSAM implementations coexist correctly
 type CarError =
-    | Overheated2  // Workaround: Using '2' suffix to avoid name conflict
-    | LowOil2
-    | DeviceNotPaired2
+    | Overheated  // Same name as IWSAM member - now works!
+    | LowOil
+    | DeviceNotPaired
 
     interface EngineError<CarError> with
-        static member Overheated = Overheated2
-        static member LowOil = LowOil2
+        static member Overheated = Overheated
+        static member LowOil = LowOil
 """
         FSharp source
         |> asLibrary

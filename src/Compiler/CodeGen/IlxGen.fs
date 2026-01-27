@@ -5515,10 +5515,7 @@ and GenILCall
             let objArgExpr = List.head argExprs
             let objArgTy = tyOfExpr g objArgExpr
             // Check if the object argument is a value type (struct) - if so, we need constrained call
-            if isStructTy g objArgTy then
-                Some objArgTy
-            else
-                None
+            if isStructTy g objArgTy then Some objArgTy else None
         | None -> None
 
     let il =
@@ -10823,7 +10820,10 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
             let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttrs)
             // Add SpecialName for generated event accessors (Issue #5834)
             let mdef =
-                if vref.Deref.val_flags.IsGeneratedEventVal then mdef.WithSpecialName else mdef
+                if vref.Deref.val_flags.IsGeneratedEventVal then
+                    mdef.WithSpecialName
+                else
+                    mdef
 
             [ mdef ], [], []
         | SynMemberKind.PropertyGetSet -> error (Error(FSComp.SR.ilUnexpectedGetSetAnnotation (), m))
@@ -11843,6 +11843,16 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     //
                     // Also discard the F#-compiler supplied implementation of the Empty, IsEmpty, Value and None properties.
 
+                    // For AllHelpers, nullary cases generate static properties with the case name (e.g., "Overheated")
+                    // We need to discard user-defined properties/methods that would conflict with these generated ones.
+                    let nullaryCaseNames =
+                        if cuinfo.HasHelpers = AllHelpers then
+                            cuinfo.UnionCases
+                            |> Array.choose (fun alt -> if alt.IsNullary then Some alt.Name else None)
+                            |> Set.ofArray
+                        else
+                            Set.empty
+
                     let tdefDiscards =
                         Some(
                             (fun (md: ILMethodDef) ->
@@ -11852,6 +11862,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))
                                 || (cuinfo.HasHelpers = AllHelpers
                                     && (md.Name.StartsWith("get_Is") && not (tdef2.Methods.FindByName(md.Name).IsEmpty)))
+                                // For AllHelpers, nullary cases generate get_<CaseName> methods.
+                                // If a user defines a property with the same name (e.g., IWSAM implementation), discard the user-defined getter.
+                                || (cuinfo.HasHelpers = AllHelpers
+                                    && md.Name.StartsWith("get_")
+                                    && nullaryCaseNames.Contains(md.Name.Substring(4))
+                                    && not (tdef2.Methods.FindByName(md.Name).IsEmpty))
                                 // For NoHelpers (DefaultAugmentation(false)), nullary cases generate get_<CaseName> methods.
                                 // If a user defines a property with the same name, discard the user-defined getter.
                                 || (cuinfo.HasHelpers = NoHelpers
@@ -11865,6 +11881,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     && (pd.Name = "Value" || pd.Name = "None"))
                                 || (cuinfo.HasHelpers = AllHelpers
                                     && (pd.Name.StartsWith("Is") && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
+                                // For AllHelpers, nullary cases generate static properties with the case name.
+                                // If a user defines a property with the same name (e.g., IWSAM implementation), discard the user-defined one.
+                                || (cuinfo.HasHelpers = AllHelpers
+                                    && nullaryCaseNames.Contains(pd.Name)
+                                    && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty))
                                 // For NoHelpers (DefaultAugmentation(false)), nullary cases generate properties.
                                 // If a user defines a property with the same name, discard the user-defined one.
                                 || (cuinfo.HasHelpers = NoHelpers
@@ -12005,9 +12026,26 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                             yield I_ldstr ilPropName
                             // Load the Type object for the field type using ldtoken + GetTypeFromHandle
                             yield I_ldtoken(ILToken.ILType ilPropType)
-                            yield mkNormalCall (mkILNonGenericStaticMethSpecInTy (g.ilg.typ_Type, "GetTypeFromHandle", [ g.iltyp_RuntimeTypeHandle ], g.ilg.typ_Type))
+
+                            yield
+                                mkNormalCall (
+                                    mkILNonGenericStaticMethSpecInTy (
+                                        g.ilg.typ_Type,
+                                        "GetTypeFromHandle",
+                                        [ g.iltyp_RuntimeTypeHandle ],
+                                        g.ilg.typ_Type
+                                    )
+                                )
                             // Call info.GetValue(name, type) which returns object
-                            yield mkNormalCallvirt (mkILNonGenericInstanceMethSpecInTy (serializationInfoType, "GetValue", [ g.ilg.typ_String; g.ilg.typ_Type ], g.ilg.typ_Object))
+                            yield
+                                mkNormalCallvirt (
+                                    mkILNonGenericInstanceMethSpecInTy (
+                                        serializationInfoType,
+                                        "GetValue",
+                                        [ g.ilg.typ_String; g.ilg.typ_Type ],
+                                        g.ilg.typ_Object
+                                    )
+                                )
                             // Unbox/cast to field type
                             yield
                                 if ilPropType.IsNominal && ilPropType.Boxity = ILBoxity.AsValue then
@@ -12059,7 +12097,15 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                             if ilPropType.IsNominal && ilPropType.Boxity = ILBoxity.AsValue then
                                 yield I_box ilPropType
                             // Call info.AddValue(name, value)
-                            yield mkNormalCallvirt (mkILNonGenericInstanceMethSpecInTy (serializationInfoType, "AddValue", [ g.ilg.typ_String; g.ilg.typ_Object ], ILType.Void))
+                            yield
+                                mkNormalCallvirt (
+                                    mkILNonGenericInstanceMethSpecInTy (
+                                        serializationInfoType,
+                                        "AddValue",
+                                        [ g.ilg.typ_String; g.ilg.typ_Object ],
+                                        ILType.Void
+                                    )
+                                )
                     ]
 
                 let ilInstrsForGetObjectData =
@@ -12068,7 +12114,14 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         mkLdarg0
                         mkLdarg 1us
                         mkLdarg 2us
-                        mkNormalCall (mkILNonGenericInstanceMethSpecInTy (g.iltyp_Exception, "GetObjectData", [ serializationInfoType; streamingContextType ], ILType.Void))
+                        mkNormalCall (
+                            mkILNonGenericInstanceMethSpecInTy (
+                                g.iltyp_Exception,
+                                "GetObjectData",
+                                [ serializationInfoType; streamingContextType ],
+                                ILType.Void
+                            )
+                        )
                     ]
                     @ ilInstrsToSaveFields
                     |> nonBranchingInstrsToCode
