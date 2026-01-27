@@ -1681,6 +1681,24 @@ IL generation for nativeptr in interface methods is incorrect.
 ### Risks
 - Medium: Native pointer handling requires care
 
+### UPDATE (FIXED)
+
+**Root Cause:** When generating MethodImpl for interface implementations, there was a signature mismatch between the `Overrides` (interface method) and `OverrideBy` (implementing method) signatures.
+
+The issue:
+1. `GenFormalSlotsig` generated the interface slot signature using abstract type parameters. For `nativeptr<'T>` where `'T` is a type param, the pointer conversion to `T*` was skipped (because `freeInTypes` found the type param).
+2. `GenActualSlotsig` generated the implementing method signature after instantiating types. For `nativeptr<int>`, the pointer conversion was applied, resulting in `int*`.
+3. The IL signatures mismatched: interface method returned `nativeint`, implementing method returned `int*`.
+
+**Fix:** Modified `GenActualSlotsig` in `IlxGen.fs` to detect when the slot signature contains `nativeptr<'T>` with interface class type parameters that are being instantiated with concrete types. When this condition is met, the implementing method signature is generated with an environment that includes the interface type parameters, which prevents the nativeptr-to-pointer conversion and maintains consistency with `GenFormalSlotsig`.
+
+**Key Changes:**
+- Added `containsNativePtrWithTypar` helper to check if a type contains `nativeptr<'T>` with type parameters from a given set
+- Modified `GenActualSlotsig` to use `EnvForTypars ctps eenv` when the slot has nativeptr with interface type parameters that are instantiated to concrete types
+- This ensures both `Overrides` and `OverrideBy` signatures use `nativeint` representation
+
+**Location:** `src/Compiler/CodeGen/IlxGen.fs` → `GenActualSlotsig` and `containsNativePtrWithTypar` functions
+
 ---
 
 ## Issue #14492

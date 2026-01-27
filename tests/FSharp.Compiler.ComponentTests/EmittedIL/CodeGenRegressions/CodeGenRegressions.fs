@@ -1126,7 +1126,7 @@ type ConstructB =
     // Implementing a generic interface with nativeptr<'T> member in a non-generic type
     // causes TypeLoadException: "Signature of the body and declaration in a method
     // implementation do not match."
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_14508_NativeptrInInterfaces`` () =
         // The bug: non-generic type implementing generic interface with nativeptr causes
         // runtime TypeLoadException due to IL signature mismatch

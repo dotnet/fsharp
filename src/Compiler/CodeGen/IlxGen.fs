@@ -5909,6 +5909,28 @@ and GenFormalReturnType m cenv eenvFormal returnTy : ILReturn =
 and instSlotParam inst (TSlotParam(nm, ty, inFlag, fl2, fl3, attrs)) =
     TSlotParam(nm, instType inst ty, inFlag, fl2, fl3, attrs)
 
+/// Check if a type contains nativeptr with a type parameter from the given set.
+/// Used to determine if nativeptr conversion should be skipped in implementing method signatures.
+and containsNativePtrWithTypar (g: TcGlobals) (typars: Typar list) ty =
+    let rec check ty =
+        let ty = stripTyEqns g ty
+        match ty with
+        | TType_app(tcref, tinst, _) when tyconRefEq g g.nativeptr_tcr tcref ->
+            // Check if any type in tinst is a type parameter from our set
+            tinst |> List.exists (fun t ->
+                match stripTyEqns g t with
+                | TType_var(tp, _) -> typars |> List.exists (fun tp2 -> tp.Stamp = tp2.Stamp)
+                | _ -> false)
+        | TType_app(_, tinst, _) -> tinst |> List.exists check
+        | TType_fun(d, r, _) -> check d || check r
+        | TType_tuple(_, tys) -> tys |> List.exists check
+        | TType_anon(_, tys) -> tys |> List.exists check
+        | TType_forall(_, t) -> check t
+        | TType_var _ -> false
+        | TType_measure _ -> false
+        | TType_ucase _ -> false
+    check ty
+
 and GenActualSlotsig
     m
     cenv
@@ -5917,14 +5939,39 @@ and GenActualSlotsig
     methTyparsOfOverridingMethod
     (methodParams: Val list)
     =
+    let g = cenv.g
     let ilSlotParams = List.concat ilSlotParams
 
+    let interfaceTypeArgs = argsOfAppTy g ty
+
     let instForSlotSig =
-        mkTyparInst (ctps @ mtps) (argsOfAppTy cenv.g ty @ generalizeTypars methTyparsOfOverridingMethod)
+        mkTyparInst (ctps @ mtps) (interfaceTypeArgs @ generalizeTypars methTyparsOfOverridingMethod)
+
+    // Check if the interface type arguments are all concrete (no free type variables from implementing class).
+    // AND if the original slot signature contains nativeptr with interface type parameters.
+    // If both conditions are met, we should NOT convert nativeptr to pointer type in the implementing method,
+    // to match the formal slot signature (which also doesn't convert due to free type vars).
+    // See https://github.com/dotnet/fsharp/issues/14508
+    let interfaceTypeArgsAreConcrete =
+        not ctps.IsEmpty && (freeInTypes CollectTypars interfaceTypeArgs).FreeTypars.IsEmpty
+
+    let slotHasNativePtrWithCtps =
+        interfaceTypeArgsAreConcrete &&
+        (ilSlotParams |> List.exists (fun (TSlotParam(_, ty, _, _, _, _)) -> containsNativePtrWithTypar g ctps ty) ||
+         ilSlotRetTy |> Option.exists (containsNativePtrWithTypar g ctps))
+
+    // When the slot has nativeptr with type params that are instantiated to concrete types,
+    // use an environment with those type params so that nativeptr conversion is skipped
+    // (preserving consistency with GenFormalSlotsig).
+    let eenvForSlotGen =
+        if slotHasNativePtrWithCtps then
+            EnvForTypars ctps eenv
+        else
+            eenv
 
     let ilParams =
         ilSlotParams
-        |> List.map (instSlotParam instForSlotSig >> GenSlotParam m cenv eenv)
+        |> List.map (instSlotParam instForSlotSig >> GenSlotParam m cenv eenvForSlotGen)
 
     // Use the better names if available
     let ilParams =
@@ -5935,7 +5982,7 @@ and GenActualSlotsig
             ilParams
 
     let ilRetTy =
-        GenReturnType cenv m eenv.tyenv (Option.map (instType instForSlotSig) ilSlotRetTy)
+        GenReturnType cenv m eenvForSlotGen.tyenv (Option.map (instType instForSlotSig) ilSlotRetTy)
 
     let iLRet = mkILReturn ilRetTy
 
@@ -5943,7 +5990,7 @@ and GenActualSlotsig
         match ilSlotRetTy with
         | None -> iLRet
         | Some t ->
-            match GenAdditionalAttributesForTy cenv.g t with
+            match GenAdditionalAttributesForTy g t with
             | [] -> iLRet
             | attrs -> iLRet.WithCustomAttrs(mkILCustomAttrs attrs)
 
