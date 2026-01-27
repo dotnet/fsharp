@@ -1275,8 +1275,23 @@ In Debug builds, the struct enumerator is copied in each loop iteration, so `Mov
 ### Analysis
 The Debug codegen creates an additional local for the enumerator and reinitializes it each iteration from the original (unmutated) copy. This pattern is common with `ReadOnlySequence<T>` and other BCL types.
 
+### UPDATE (KNOWN_LIMITATION)
+Investigation revealed this is a complex issue involving interaction between:
+1. `mkExprAddrOfExprAux` in TypedTreeOps.fs - creates defensive copies for struct method calls
+2. Debug point (`Expr.DebugPoint`) wrappers around expressions in debug builds
+3. Inlining of functions with mutable struct locals
+4. SRTP trait resolution via `GenWitnessExpr` in MethodCalls.fs
+
+Attempted fixes:
+- Stripping debug points before pattern matching in `mkExprAddrOfExprAux`
+- Stripping debug points from receiver in `GenWitnessExpr`
+
+Neither approach resolved the issue. Further investigation needed to understand exact expression structure after inlining with `InlineIfLambda`.
+
+**Workaround:** Use `--optimize+` (Release mode) or avoid SRTP with mutable struct enumerators in Debug builds.
+
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs` - mutable struct SRTP codegen in debug mode
+- Requires deeper investigation of TypedTreeOps.fs, MethodCalls.fs, and possibly IlxGen.fs
 
 ### Risks
 - Medium: Debug/Release behavior difference is critical

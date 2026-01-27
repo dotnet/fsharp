@@ -1,20 +1,22 @@
-Updated: 2026-01-27 13:07:44
-Elapsed: 00:19:22
-Message: Sprint 1: Implement iteration 1
+Updated: 2026-01-27 21:36:22
+Elapsed: 03:58:51
+Message: Sprint 7: Implement iteration 1
 
 Product Backlog:
-  [1] Fix #19068 Struct ObjExpr Byref: Running Implement iter 1 [DoD: 6 items] [19.4min...]
-  [2] Fix #18263 DU Is* Duplicate: Todo [DoD: 6 items]
-  [3] Fix
-   #14321 DU IWSAM Names: Todo [DoD: 6 items]
-  [4] Fix #18135
-   Static Abstract Byref: Todo [DoD: 6 items]
-  [5] Fix #13447 Tail
-   Corruption: Todo [DoD: 6 items]
-  [6] Fix #16546 Debug RecRef Null: Todo [DoD: 6 items]
-  [7] Fix #19020 Return Attribute: Todo [DoD: 6 items]
-  [8] Fix
-   #18125 StructLayout Size: Todo [DoD: 6 items]
+  [1] Fix #19075 CLR Crash: Done (3 iters) [DoD: ✅7/❌0] [39.5min]
+  [2] Fix #14508 nativeptr TypeLoad: Done (2 iters) [DoD: ✅6/❌0] [43.7min]
+  [3] Fix #14492 Release TypeLoad: Done (2 iters) [DoD: ✅6/❌0] [15.7min]
+  [4] Fix #18953
+   Action/Func capture: Done (2 iters) [DoD: ✅6/❌0] [13.9min]
+  [5] Fix #18672 Resumable code null: Done (2 iters) [DoD: ✅6/❌0] [16.9min]
+  [6] Fix #18374
+   RuntimeWrappedException: Done (2 iters) [DoD: ✅6/❌0] [24.1min]
+  [7] Fix #16292 Debug SRTP struct: Running Implement iter 1 [DoD: 6 items] [85.2min...]
+  [8] Fix #15627 Async
+   EntryPoint hang: Todo [DoD: 6 items]
+  [9] Fix #13468
+   outref as byref: Todo [DoD: 6 items]
+  [10] Fix #19020 return attribute: Todo [DoD: 6 items]
 
-Agent PID: 6645
-Agent Started: 12:48:22
+Agent PID: 93237
+Agent Started: 20:11:12

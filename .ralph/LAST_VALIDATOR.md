@@ -1,48 +1,98 @@
-# Last Validator Output - Subtask 0
+# Last Validator Output - Subtask 6
 
-_Updated: 2026-01-24 00:43:28_
+_Updated: 2026-01-27 20:11:12_
 
-● Now let me check the current state of the tests and what progress has been made:
+✓ Read CODEGEN_REGRESSIONS.md
+   └ 1 line read
 
-● Let me check how many tests are uncommented (actively running) vs commented out:
+✓ Grep "Issue_18374_RuntimeWrappedExceptionCannotBeCaught" (/Users/tomasgrosup/code/fsharp)
+   └ 6 lines found
 
-● The VISION.md states:
-   - Goal: Fix all 62 documented codegen bugs, enabling all tests to pass with `[<Fact>]`
-   uncommented
-   - Current state per VISION.md: 1 test fixed, 61 tests commented out, 5 tests are OUT_OF_SCOPE
+✓ Read tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs
+   lines 335-375
+   └ 46 lines read
 
-   Current state from file:
-   - **15 tests** have `[<Fact>]` uncommented (active)
-   - **47 tests** have `// [<Fact>]` commented out
+✓ Grep "18374" (/Users/tomasgrosup/code/fsharp/CODEGEN_REGRESSIONS.md)
+   └ 39 lines found
 
-   Let me verify that the 15 uncommented tests actually pass:
+● Good, I can see:
+   1. The test exists and has `[<Fact>]` (not commented out)
+   2. The documentation in CODEGEN_REGRESSIONS.md shows it as "✅ FIXED"
 
-● The 15 uncommented tests pass. Now let me assess the completion status:
+   Now let me check the IlxGen.fs fix and run the tests to verify everything works:
 
-   **Goal from VISION.md**: Fix all 62 documented codegen bugs
+✓ Grep "RuntimeWrappedException" (/Users/tomasgrosup/code/fsharp/src/Compiler/CodeGen/IlxGen.fs)
+   └ 129 lines found
 
-   **Current State**:
-   - 15 tests uncommented and passing (14 more than the initial 1)
-   - 47 tests still commented out
-   - 5 tests are marked as OUT_OF_SCOPE (feature requests)
+● The fix is implemented in IlxGen.fs with the `EmitCastOrWrapNonExceptionThrow` function. Now let
+    me run the tests to verify everything works:
 
-   **Calculation**:
-   - Total tests: 62
-   - OUT_OF_SCOPE: 5 (not expected to be fixed per VISION.md - they need test rewrites, not fixes)
-   - Remaining to fix: 62 - 5 = 57 bugs to fix
-   - Currently fixed (uncommented & passing): 15
-   - Still to fix: 47
+✓ Run Issue_18374 test
+   $ cd /Users/tomasgrosup/code/fsharp && dotnet test
+   tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj --filter
+   "FullyQualifiedName~Issue_18374_RuntimeWrappedExceptionCannotBeCaught" -c Release --no-build -v
+   n 2>&1 | head -50
+    └ 43 lines...
 
-   **Completion**: 15 out of 57 fixable tests (26%) are done
+● The specific test passes. Now let me run all CodeGenRegressions tests to verify other tests
+   still pass:
 
-   VERIFY_FAILED
+✓ Run all CodeGenRegressions tests
+   $ cd /Users/tomasgrosup/code/fsharp && dotnet test
+   tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj --filter
+   "FullyQualifiedName~CodeGenRegressions" -c Release --no-build -v n 2>&1 | tail -30
+    └ 31 lines...
 
-   **Task is incomplete**: According to VISION.md, the goal is to fix all 62 codegen bugs (or at
-   minimum, the 57 that are not OUT_OF_SCOPE). Currently:
-   - **15 tests are fixed** and passing with `[<Fact>]` uncommented
-   - **47 tests still have `// [<Fact>]`** commented out and need to be fixed
-   - Progress is ~26% complete (15/57 fixable bugs)
+● All 26 CodeGenRegressions tests pass. Now let me verify the CODEGEN_REGRESSIONS.md has proper
+   documentation for this fix:
 
-   The remaining 47 issues need to be addressed following the sprint strategy outlined in
-   VISION.md, prioritizing Invalid IL and Runtime Crash issues first.
+✓ Check issue 18374 documentation
+   $ cd /Users/tomasgrosup/code/fsharp && sed -n '/## Issue #18374/,/## Issue #18319/p'
+   CODEGEN_REGRESSIONS.md | head -70
+    └ 71 lines...
+
+● The documentation is comprehensive. Let me also verify there's no code duplication by checking
+   if `EmitCastOrWrapNonExceptionThrow` is the only place handling this logic:
+
+✓ Grep "EmitCastOrWrapNonExceptionThrow"
+ (/Users/tomasgrosup/code/fsharp/src/Compiler/CodeGen/IlxGen.fs)
+   └ 1 file found
+
+✓ Grep "EmitCastOrWrapNonExceptionThrow"
+ (/Users/tomasgrosup/code/fsharp/src/Compiler/CodeGen/IlxGen.fs)
+   └ 4 lines found
+
+● There is 1 definition and 3 call sites (no duplication - the function is reused in 3 places
+   where catch handlers are generated). Let me verify the build succeeds:
+
+✓ Verify build succeeds
+   $ cd /Users/tomasgrosup/code/fsharp && dotnet build
+   src/Compiler/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj -c Release -v q 2>&1 | tail
+   -10
+    └ 3 lines...
+
+✓ Find compiler project
+   $ cd /Users/tomasgrosup/code/fsharp && find src/Compiler -name "FSharp.Compiler*.fsproj"
+   2>/dev/null | head -5
+    └ 2 lines...
+
+✓ Verify build succeeds
+   $ cd /Users/tomasgrosup/code/fsharp && dotnet build src/Compiler/FSharp.Compiler.Service.fsproj
+   -c Release -v q 2>&1 | tail -10
+    └ 6 lines...
+
+● All verification checks have passed. Let me summarize:
+
+   ## VERIFY_PASSED
+
+   **Sprint 6: Fix #18374 RuntimeWrappedException - Verification Results:**
+
+   | DoD Criterion | Status |
+   |--------------|--------|
+   | Build succeeds with 0 errors | ✅ Build succeeded (0 warnings, 0 errors) |
+   | Issue_18374_RuntimeWrappedExceptionCannotBeCaught test passes | ✅ 1 test passed |
+   | All other CodeGenRegressions tests still pass | ✅ 26/26 tests passed |
+   | CODEGEN_REGRESSIONS.md updated | ✅ Comprehensive documentation with Status: ✅ FIXED |
+   | No code duplication | ✅ Single `EmitCastOrWrapNonExceptionThrow` function reused 3x |
+   | Fix properly handles RuntimeWrappedException | ✅ Uses isinst + wrap pattern in IlxGen.fs |
 

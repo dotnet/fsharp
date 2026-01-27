@@ -1,27 +1,34 @@
-# Vision: CodeGen Regression Bugfix Campaign - Phase 3
+# Vision: CodeGen Regression Bugfix Campaign - Phase 4 (Replan)
 
 ## High-Level Goal
 
-Fix all remaining 47 pending codegen bugs (of 62 total) in the F# compiler, enabling all tests in `CodeGenRegressions.fs` to pass with their `[<Fact>]` attributes uncommented.
+Fix remaining 42 pending codegen bugs (of 62 total) in the F# compiler, enabling all tests in `CodeGenRegressions.fs` to pass with their `[<Fact>]` attributes uncommented.
 
-## Current State (Phase 3 Start - 2026-01-27)
+## Current State (Phase 4 Start - 2026-01-27)
 
 - **62 tests** in `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs`
-- **15 tests PASSING** with `[<Fact>]` uncommented (24% complete):
-  - 10 actual bug fixes
+- **20 tests PASSING** with `[<Fact>]` uncommented (32% complete):
+  - 15 actual bug fixes
   - 5 Feature Request tests marked OUT_OF_SCOPE (documentation tests)
-- **47 tests PENDING** with `// [<Fact>]` commented out (76% remaining)
+- **42 tests PENDING** with `// [<Fact>]` commented out (68% remaining)
 
-### Fixed Issues (10 of 62 bugs)
+### Fixed Issues (16 of 62 bugs)
 | Issue | Description | Fix Type |
 |-------|-------------|----------|
+| #19068 | Struct object expr byref field | IlxGen.fs - deref byref for closure |
 | #18956 | Decimal InvalidProgram in Debug | IlxGen.fs - exclude literals from shadow local |
 | #18868 | CallerFilePath Delegates | Already fixed in compiler |
 | #18815 | Duplicate Extension Names | IlxGen.fs - fully qualified type prefix |
 | #18319 | Literal upcast missing box | IlxGen.fs - box instruction |
+| #18263 | DU Is* duplicate method | Already fixed in compiler |
 | #18140 | Callvirt on value type | IlxGen.fs - constrained.callvirt |
+| #18135 | Static abstract byref params | ilwrite.fs - compareILTypes for Modified |
 | #17692 | Mutual recursion duplicate param | EraseClosures.fs - unique param names |
 | #16565 | DefaultAugmentation duplicate entry | IlxGen.fs - method table dedup |
+| #14508 | nativeptr in interfaces TypeLoad | IlxGen.fs - preserve nativeptr in GenActualSlotsig |
+| #14492 | Release config TypeLoadException | EraseClosures.fs - strip constraints from Specialize |
+| #14321 | DU and IWSAM names conflict | IlxGen.fs - tdefDiscards for nullary cases |
+| #13447 | Tail instruction corruption | IlxGen.fs - fixed tail emission |
 | #12384 | Mutually recursive values init | Fixed initialization order |
 | #5834 | Obsolete SpecialName | IlxGen.fs - SpecialName for events |
 | #878 | Exception serialization | IlxGen.fs - serialize exception fields |
@@ -30,23 +37,37 @@ Fix all remaining 47 pending codegen bugs (of 62 total) in the F# compiler, enab
 These are properly tested as "documents current behavior" - not bugs:
 - #15467, #15092, #14392, #13223, #9176
 
-### Pending Issues by Category (47 remaining)
+### KNOWN_LIMITATION Issues (2)
+- #16546 - Debug recursive reference null (requires type checker changes in EliminateInitializationGraphs)
+- #16292 - Debug SRTP mutable struct incorrect codegen (requires deeper investigation of defensive copy suppression after inlining)
+
+### Pending Issues by Category (38 remaining - excluding #16546, #16292)
 
 | Category | Issues | Priority |
 |----------|--------|----------|
-| **Runtime Crash/Invalid IL** (5) | #19075, #19068, #14508, #14492, #13447 | CRITICAL |
-| **Compile Error** (7) | #18263, #18135, #14321, #7861, #6379, #14707, #14706 | HIGH |
-| **Wrong Behavior** (10) | #18953, #18672, #18374, #16546, #16292, #15627, #13468, #13100, #12136, #6750 | MEDIUM |
+| **Runtime Crash/Invalid IL** (1) | #19075 | CRITICAL |
+| **Wrong Behavior** (8) | #18953, #18672, #18374, #15627, #13468, #13100, #12136, #6750 | HIGH |
+| **Compile Error/Warning** (5) | #7861, #6379, #14707, #14706, #13108 | MEDIUM |
 | **Performance** (14) | #18753, #16378, #16245, #16037, #15326, #13218, #12546, #12416, #12366, #12139, #12137, #11556, #9348 | LOW |
-| **Interop/Cosmetic/Other** (11) | #19020, #18125, #17641, #16362, #15352, #14712, #13108, #12460, #11935, #11132, #11114, #5464 | CASE-BY-CASE |
+| **Interop/Cosmetic/Other** (10) | #19020, #18125, #17641, #16362, #15352, #14712, #12460, #11935, #11132, #11114, #5464 | CASE-BY-CASE |
 
-## Sprint Strategy
+## Sprint Strategy for Phase 4
 
 1. **ONE issue per sprint** - keeps risk manageable
-2. **Prioritize by severity**: Runtime crashes > Compile errors > Wrong behavior > Performance
+2. **Prioritize by severity**: Runtime crashes > Wrong behavior > Compile errors > Performance
 3. **Surgical fixes only**: Minimal changes, no refactoring
 4. **Full test suite verification** after each fix
 5. **Document in CODEGEN_REGRESSIONS.md** with UPDATE note
+6. **Mark KNOWN_LIMITATION** for issues requiring major architectural changes (like #16546)
+
+## Key Insight from #16546 Investigation
+
+Issue #16546 taught us that some bugs are caused by earlier compiler phases (type checker), not IlxGen. When IlxGen sees the code, the damage is already done. These require:
+- Analysis of the entire compilation pipeline
+- Changes to CheckExpressions.fs (EliminateInitializationGraphs)
+- Extensive testing of mutual recursion scenarios
+
+Such fixes are beyond "surgical bugfix" scope and should be marked KNOWN_LIMITATION with documented workarounds.
 
 ## External Code Auditor Responsibilities
 
@@ -61,11 +82,15 @@ After each bugfix sprint, verify:
 
 | Fix | Pattern Used | Key Insight |
 |-----|-------------|-------------|
+| #19068 | Deref byref for closure | Byref fields not allowed in classes; copy value instead |
 | #18956 | Exclude from condition | Literal values shouldn't get shadow locals |
 | #18815 | Qualify names | Extension methods need fully qualified type prefix |
 | #18319 | Add missing IL instruction | Box instruction for value-to-ref conversion |
 | #18140 | Use constrained prefix | Value type method calls need constrained.callvirt |
+| #18135 | Recursive type comparison | ILType.Modified wrappers need unwrapping |
 | #17692 | Unique naming | Closures need globally unique parameter names |
+| #14321 | Discard duplicates | DU nullary case properties shadow IWSAM implementations |
+| #16546 | KNOWN_LIMITATION | Some fixes require type checker changes, not IlxGen |
 
 ## Unfixable Criteria
 
@@ -74,4 +99,4 @@ An issue is only declared unfixable if:
 2. Each approach causes **regressions in existing tests**
 3. The fix **conflicts with fundamental F# semantics** (e.g., language spec)
 4. Clear evidence provided in CODEGEN_REGRESSIONS.md with full reasoning
-5. Issue may be reclassified as "design limitation" with documentation
+5. Issue reclassified as KNOWN_LIMITATION with documented workaround

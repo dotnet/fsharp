@@ -798,6 +798,8 @@ let test() =
     // https://github.com/dotnet/fsharp/issues/16292
     // In Debug builds, SRTP with mutable struct enumerators generates incorrect code where
     // the struct is copied in each loop iteration, losing mutations from MoveNext().
+    // [KNOWN_LIMITATION: Requires deeper investigation of how defensive copy suppression
+    // interacts with debug point wrapping after inlining. Workaround: Use Release mode.]
     // [<Fact>]
     let ``Issue_16292_SrtpDebugMutableStructEnumerator`` () =
         let source = """
@@ -840,6 +842,7 @@ let main _ =
         FSharp source
         |> asExe
         |> withDebug
+        |> withNoOptimize  // Critical: must disable optimizations to reproduce the bug
         |> compile
         |> shouldSucceed
         |> run
