@@ -515,12 +515,10 @@ module Command =
         // Only log for the specific test we're investigating (load-script with pipescr)
         let shouldLog = (dir:string).Contains("load-script")
         
-        // Diagnostic logging function that writes to both stderr and a file
+        // Diagnostic logging function - use printfn so it appears in stdout (which IS captured)
         let diagLog msg =
             if shouldLog then
-                eprintfn "%s" msg
-                let diagFile = Path.Combine(Path.GetTempPath(), "fsharp_stdin_diag.log")
-                File.AppendAllText(diagFile, msg + Environment.NewLine)
+                printfn "%s" msg
 
         let inputWriter sources (writer: StreamWriter) =
             let path = Commands.getfullpath dir sources
@@ -550,8 +548,12 @@ module Command =
 
         let inF fCont cmdArgs =
             match redirect.Input with
-            | None -> fCont cmdArgs
-            | Some(RedirectInput l) -> fCont { cmdArgs with RedirectInput = Some (inputWriter l) }
+            | None -> 
+                diagLog "[DIAG] inF: redirect.Input is None"
+                fCont cmdArgs
+            | Some(RedirectInput l) -> 
+                diagLog (sprintf "[DIAG] inF: redirect.Input is Some(RedirectInput '%s')" l)
+                fCont { cmdArgs with RedirectInput = Some (inputWriter l) }
 
         let openWrite rt =
             let fullpath = Commands.getfullpath dir

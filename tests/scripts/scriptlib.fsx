@@ -149,12 +149,10 @@ module Scripting =
             cmdArgs.RedirectOutput |> Option.iter (fun _ -> p.BeginOutputReadLine())
             cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
 
-            // Diagnostic logging function that writes to both stderr and a file
+            // Diagnostic logging function - use printfn so it appears in stdout (which IS captured)
             let diagLog msg =
                 if shouldLog then
-                    eprintfn "%s" msg
-                    let diagFile = Path.Combine(Path.GetTempPath(), "fsharp_stdin_diag.log")
-                    File.AppendAllText(diagFile, msg + Environment.NewLine)
+                    printfn "%s" msg
 
             cmdArgs.RedirectInput |> Option.iter (fun input -> 
                 let inputWriter = p.StandardInput
