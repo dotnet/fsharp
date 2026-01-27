@@ -120,15 +120,10 @@ let mkExprForVarSpace m (patvs: Val list) =
     | vs -> SynExpr.Tuple(false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id))), [], m)
 
 let mkSimplePatForVarSpace m (patvs: Val list) =
-    let spats =
-        match patvs with
-        | [] -> []
-        // Use mkSynCompGenSimplePatVar to mark these synthetic lambda parameters as compiler-generated.
-        // This prevents false FS1182 warnings for query variables that are logically used in query clauses.
-        // See Issue #422.
-        | [ v ] -> [ mkSynCompGenSimplePatVar v.Id ]
-        | vs -> vs |> List.map (fun v -> mkSynCompGenSimplePatVar v.Id)
-
+    // Use mkSynCompGenSimplePatVar to mark these synthetic lambda parameters as compiler-generated.
+    // This prevents false FS1182 warnings for query variables that are logically used in query clauses.
+    // See Issue #422.
+    let spats = patvs |> List.map (fun v -> mkSynCompGenSimplePatVar v.Id)
     SynSimplePats.SimplePats(spats, [], m)
 
 /// Mark all SynSimplePat.Id nodes in a SynSimplePats as compiler-generated.
