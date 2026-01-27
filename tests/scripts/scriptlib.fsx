@@ -107,8 +107,10 @@ module Scripting =
             let exePath = path |> processExePath workDir
             let processInfo = new ProcessStartInfo(exePath, arguments)
             
-            // Only log for the specific test we're investigating (load-script)
-            let shouldLog = (workDir:string).Contains("load-script")
+            // Write diagnostics to a file in the working directory - bypasses TestConsole
+            let diagLogFile = Path.Combine(workDir, "fsi_stdin_diag.log")
+            let diagLog msg = 
+                try File.AppendAllText(diagLogFile, msg + Environment.NewLine) with _ -> ()
             
             processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
             processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
@@ -144,36 +146,26 @@ module Scripting =
             cmdArgs.RedirectInput
             |> Option.iter (fun _ -> p.StartInfo.RedirectStandardInput <- true)
 
+            diagLog (sprintf "[PROC] Starting process: %s %s" exePath arguments)
+            diagLog (sprintf "[PROC] RedirectInput=%b" cmdArgs.RedirectInput.IsSome)
+            
             p.Start() |> ignore
 
             cmdArgs.RedirectOutput |> Option.iter (fun _ -> p.BeginOutputReadLine())
             cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
 
-            // Diagnostic logging function - use printfn so it appears in stdout (which IS captured)
-            let diagLog msg =
-                if shouldLog then
-                    printfn "%s" msg
-
             cmdArgs.RedirectInput |> Option.iter (fun input -> 
+                diagLog "[PROC] About to write to stdin"
                 let inputWriter = p.StandardInput
-                diagLog (sprintf "[DIAG] scriptlib: workDir='%s', exePath='%s'" workDir exePath)
-                diagLog (sprintf "[DIAG] scriptlib: About to write stdin, inputWriter.Encoding=%s" inputWriter.Encoding.EncodingName)
-                diagLog (sprintf "[DIAG] scriptlib: inputWriter.BaseStream type=%s, CanWrite=%b" (inputWriter.BaseStream.GetType().Name) inputWriter.BaseStream.CanWrite)
-                diagLog (sprintf "[DIAG] scriptlib: Process HasExited=%b before stdin write" p.HasExited)
                 input inputWriter
-                diagLog "[DIAG] scriptlib: Finished calling input callback"
-                diagLog (sprintf "[DIAG] scriptlib: Process HasExited=%b after stdin write" p.HasExited)
+                diagLog "[PROC] Finished input callback, flushing"
                 inputWriter.Flush()
-                diagLog "[DIAG] scriptlib: Flushed inputWriter"
                 inputWriter.Dispose()
-                diagLog "[DIAG] scriptlib: Disposed inputWriter (stdin closed)")
+                diagLog "[PROC] Stdin disposed (EOF sent)")
 
             p.WaitForExit()
             
-            diagLog (sprintf "[DIAG] scriptlib: Process exited with code %d" p.ExitCode)
-            diagLog (sprintf "[DIAG] scriptlib: stdout length=%d, stderr length=%d" out.Length err.Length)
-            if err.Length > 0 then
-                diagLog (sprintf "[DIAG] scriptlib: stderr content (first 500 chars): %s" (err.ToString().Substring(0, min 500 err.Length)))
+            diagLog (sprintf "[PROC] Process exited with code %d" p.ExitCode)
 
             printf $"{string out}"
             eprintf $"{string err}"

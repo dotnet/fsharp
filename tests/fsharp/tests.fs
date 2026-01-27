@@ -1108,17 +1108,24 @@ module CoreTests =
         normalizePaths stdoutPath
         normalizePaths stderrPath
 
+        // Include diagnostic log in failure message if it exists
+        let diagLogPath = Path.Combine(cfg.Directory, "fsi_stdin_diag.log")
+        let diagContent = 
+            if File.Exists diagLogPath then 
+                sprintf "\n\n=== FSI STDIN DIAGNOSTIC LOG ===\n%s\n=== END DIAGNOSTIC LOG ===" (File.ReadAllText diagLogPath)
+            else "\n\n=== NO DIAGNOSTIC LOG FILE FOUND ==="
+
         let diffs = fsdiff cfg stdoutPath stdoutBaseline
 
         match diffs with
         | "" -> ()
-        | _ -> failwithf "'%s' and '%s' differ; %A" stdoutPath stdoutBaseline diffs
+        | _ -> failwithf "'%s' and '%s' differ; %A%s" stdoutPath stdoutBaseline diffs diagContent
 
         let diffs2 = fsdiff cfg stderrPath stderrBaseline
 
         match diffs2 with
         | "" -> ()
-        | _ -> failwithf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2
+        | _ -> failwithf "'%s' and '%s' differ; %A%s" stderrPath stderrBaseline diffs2 diagContent
 #endif
 
 

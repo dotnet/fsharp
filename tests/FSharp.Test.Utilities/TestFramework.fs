@@ -512,47 +512,34 @@ module Command =
 
     let exec dir envVars (redirect:RedirectInfo) path args =
 
-        // Only log for the specific test we're investigating (load-script with pipescr)
-        let shouldLog = (dir:string).Contains("load-script")
-        
-        // Diagnostic logging function - use printfn so it appears in stdout (which IS captured)
-        let diagLog msg =
-            if shouldLog then
-                printfn "%s" msg
+        // Write diagnostics to a file in the test directory - bypasses TestConsole redirection
+        let diagLogFile = Path.Combine(dir, "fsi_stdin_diag.log")
+        let diagLog msg = 
+            try File.AppendAllText(diagLogFile, msg + Environment.NewLine) with _ -> ()
 
         let inputWriter sources (writer: StreamWriter) =
             let path = Commands.getfullpath dir sources
-            diagLog (sprintf "[DIAG] inputWriter: dir='%s', sources='%s', resolved path='%s'" dir sources path)
-            diagLog (sprintf "[DIAG] inputWriter: file exists=%b" (File.Exists path))
-            if File.Exists path then
-                let fileInfo = FileInfo(path)
-                diagLog (sprintf "[DIAG] inputWriter: file size=%d bytes" fileInfo.Length)
+            diagLog (sprintf "[STDIN] inputWriter called: sources='%s' resolved='%s' exists=%b" sources path (File.Exists path))
             try
                 use reader = File.OpenRead (path)
-                diagLog (sprintf "[DIAG] inputWriter: opened file, stream length=%d" reader.Length)
                 let content = Array.zeroCreate<byte> (int reader.Length)
                 let bytesRead = reader.Read(content, 0, content.Length)
-                diagLog (sprintf "[DIAG] inputWriter: read %d bytes from file" bytesRead)
-                diagLog (sprintf "[DIAG] inputWriter: file content (first 100 chars): '%s'" (System.Text.Encoding.UTF8.GetString(content, 0, min 100 bytesRead)))
-                diagLog (sprintf "[DIAG] inputWriter: writer.BaseStream type=%s, CanWrite=%b" (writer.BaseStream.GetType().Name) writer.BaseStream.CanWrite)
+                diagLog (sprintf "[STDIN] Read %d bytes from file, writing to stdin" bytesRead)
                 writer.BaseStream.Write(content, 0, bytesRead)
-                diagLog (sprintf "[DIAG] inputWriter: wrote %d bytes to BaseStream" bytesRead)
                 writer.BaseStream.Flush()
-                diagLog (sprintf "[DIAG] inputWriter: flushed BaseStream")
+                diagLog "[STDIN] Successfully wrote and flushed to stdin"
             with
-            | :? System.IO.IOException as ex ->
-                diagLog (sprintf "[DIAG] inputWriter: IOException caught: %s" ex.Message)
-            | ex ->
-                diagLog (sprintf "[DIAG] inputWriter: Unexpected exception: %s - %s" (ex.GetType().Name) ex.Message)
+            | :? System.IO.IOException as ex -> 
+                diagLog (sprintf "[STDIN] IOException: %s" ex.Message)
+            | ex -> 
+                diagLog (sprintf "[STDIN] Exception: %s - %s" (ex.GetType().Name) ex.Message)
                 reraise()
 
         let inF fCont cmdArgs =
             match redirect.Input with
-            | None -> 
-                diagLog "[DIAG] inF: redirect.Input is None"
-                fCont cmdArgs
+            | None -> fCont cmdArgs
             | Some(RedirectInput l) -> 
-                diagLog (sprintf "[DIAG] inF: redirect.Input is Some(RedirectInput '%s')" l)
+                diagLog (sprintf "[STDIN] inF: redirect.Input = Some('%s')" l)
                 fCont { cmdArgs with RedirectInput = Some (inputWriter l) }
 
         let openWrite rt =
