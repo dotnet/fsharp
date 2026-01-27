@@ -1234,3 +1234,97 @@ let count = list.Count
                         $"Assembly should be a system assembly, got: {assembly.SimpleName}")
                 )
             }
+
+/// Tests for C# extension method reference handling
+/// https://github.com/dotnet/fsharp/issues/16993
+module CSharpExtensionMethods =
+
+    /// Find All References for C# extension methods should find all uses of the same overload
+    [<Fact>]
+    let ``Find references for C# extension method finds all usages`` () =
+        // Use System.Linq extension methods which are commonly used C# extension methods
+        // Use the same overload (with predicate) twice to test key matching
+        let source = """
+open System
+open System.Linq
+
+let numbers = [| 1; 2; 3; 4; 5 |]
+let firstEven = numbers.FirstOrDefault(fun x -> x % 2 = 0)
+let firstOdd = numbers.FirstOrDefault(fun x -> x % 2 = 1)
+let count = numbers.Count()
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = source })
+            .Workflow {
+                checkFile "Source" (fun (typeCheckResult: FSharpCheckFileResults) ->
+                    // Get all symbols to find extension methods
+                    let allSymbols = typeCheckResult.GetAllUsesOfAllSymbolsInFile()
+                    
+                    // Find uses of FirstOrDefault (the predicate-taking overload)
+                    let firstOrDefaultUses = 
+                        allSymbols 
+                        |> Seq.filter (fun su -> su.Symbol.DisplayName = "FirstOrDefault")
+                        |> Seq.toArray
+                    
+                    // Should find 2 uses (line 6 and line 7) of the same overload
+                    Assert.True(firstOrDefaultUses.Length >= 2, 
+                        $"Should find at least 2 uses of FirstOrDefault, found {firstOrDefaultUses.Length}")
+                    
+                    // Verify all uses are extension members
+                    for su in firstOrDefaultUses do
+                        match su.Symbol with
+                        | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
+                            Assert.True(mfv.IsExtensionMember, "FirstOrDefault should be an extension member")
+                        | _ -> ()
+                    
+                    // Verify we can find references starting from one of these symbols
+                    if firstOrDefaultUses.Length > 0 then
+                        let symbol = firstOrDefaultUses.[0].Symbol
+                        let usesInFile = typeCheckResult.GetUsesOfSymbolInFile(symbol)
+                        Assert.True(usesInFile.Length >= 2, 
+                            $"GetUsesOfSymbolInFile should find at least 2 uses of FirstOrDefault (same overload), found {usesInFile.Length}")
+                )
+            }
+
+    /// Extension method symbol should have correct declaring type (not extended type)
+    [<Fact>]
+    let ``Extension method has correct symbol information`` () =
+        let source = """
+open System
+open System.Linq
+
+let arr = [| "a"; "b"; "c" |]
+let first = arr.First()
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = source })
+            .Workflow {
+                checkFile "Source" (fun (typeCheckResult: FSharpCheckFileResults) ->
+                    // Get all symbols to find extension methods
+                    let allSymbols = typeCheckResult.GetAllUsesOfAllSymbolsInFile()
+                    
+                    // Find uses of First (the extension method)
+                    let firstUses = 
+                        allSymbols 
+                        |> Seq.filter (fun su -> su.Symbol.DisplayName = "First")
+                        |> Seq.toArray
+                    
+                    Assert.True(firstUses.Length >= 1, 
+                        $"Should find at least 1 use of First, found {firstUses.Length}")
+                    
+                    // Verify it's an extension method from System.Linq.Enumerable
+                    for su in firstUses do
+                        match su.Symbol with
+                        | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
+                            Assert.True(mfv.IsExtensionMember, "First should be an extension member")
+                            // The declaring entity should be Enumerable, not the array type
+                            match mfv.DeclaringEntity with
+                            | Some entity -> 
+                                Assert.True(entity.DisplayName = "Enumerable" || entity.DisplayName.Contains("Enumerable"),
+                                    $"Declaring entity should be Enumerable, got: {entity.DisplayName}")
+                            | None -> 
+                                // For IL extension methods, DeclaringEntity might not always be available
+                                ()
+                        | _ -> ()
+                )
+            }

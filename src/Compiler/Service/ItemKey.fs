@@ -533,7 +533,12 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
                 ilMethInfo.ILMethodRef.ArgTypes |> List.iter writeILType
                 writeILType ilMethInfo.ILMethodRef.ReturnType
                 writeString ilMethInfo.ILName
-                writeType false ilMethInfo.ApparentEnclosingType
+                // For C# extension methods, use the declaring type (e.g., Enumerable) not the apparent type (e.g., Array)
+                // This ensures consistent keys between different usages of the same extension method (#16993)
+                if ilMethInfo.IsILExtensionMethod then
+                    writeEntityRef ilMethInfo.DeclaringTyconRef
+                else
+                    writeType false ilMethInfo.ApparentEnclosingType
             | _ ->
                 writeString ItemKeyTags.itemValueMember
                 writeEntityRef info.DeclaringTyconRef
