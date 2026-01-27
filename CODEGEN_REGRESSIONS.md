@@ -53,7 +53,7 @@ This document tracks known code generation bugs in the F# compiler that have doc
 | [#18868](#issue-18868) | CallerFilePath in delegates error | Compile Error | CheckDeclarations.fs | Low |
 | [#18815](#issue-18815) | Duplicate extension method names | Compile Error | IlxGen.fs | Low |
 | [#18753](#issue-18753) | CE inlining prevented by DU constructor | Optimization | Optimizer.fs | Low |
-| [#18672](#issue-18672) | Resumable code top-level value null in Release | Wrong Behavior | IlxGen.fs/StateMachine | Medium |
+| [#18672](#issue-18672) | ✅ FIXED: Resumable code top-level value null in Release | Wrong Behavior | LowerStateMachines.fs | Medium |
 | [#18374](#issue-18374) | RuntimeWrappedException cannot be caught | Wrong Behavior | IlxGen.fs | Low |
 | [#18319](#issue-18319) | Literal upcast missing box instruction | Invalid IL | IlxGen.fs | Low |
 | [#18263](#issue-18263) | DU .Is* properties duplicate method | Compile Error | IlxGen.fs | Medium |
@@ -566,14 +566,16 @@ Top-level CE values return null in Release mode.
 `CodeGenRegressions.fs` → `Issue_18672_ResumableCodeTopLevelValue`
 
 ### Analysis
-The state machine initialization for top-level values differs between Debug and Release, with Release failing to properly initialize the state machine data.
+The `isExpandVar` and `isStateMachineBindingVar` functions in `LowerStateMachines.fs` had a restriction `not v.IsCompiledAsTopLevel` that prevented top-level values from being compiled as state machines. This caused the compiler to fall back to dynamic code paths, which didn't work correctly for custom resumable code CEs.
+
+**UPDATE (FIXED):** Fixed by PR #18817 which removed the top-level restriction in `LowerStateMachines.fs`. The fix was simple - removing `&& not v.IsCompiledAsTopLevel` from both `isExpandVar` and `isStateMachineBindingVar` functions.
 
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs` or state machine compilation code
+- `src/Compiler/Optimize/LowerStateMachines.fs` - Removed top-level restriction from `isExpandVar` and `isStateMachineBindingVar`
 
 ### Risks
 - Medium: Resumable code/state machine compilation is complex
-- Workaround exists: wrap in a class member
+- Workaround exists: wrap in a class member (no longer needed after fix)
 
 ---
 

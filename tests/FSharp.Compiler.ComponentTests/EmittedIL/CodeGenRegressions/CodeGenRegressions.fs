@@ -290,26 +290,43 @@ let test2 () =
     // https://github.com/dotnet/fsharp/issues/18672
     // When a CE using resumable code is created as a top-level value, it works in Debug
     // but returns null in Release mode.
-    // [<Fact>]
+    // UPDATE: Fixed by removing top-level restriction in LowerStateMachines.fs (PR #18817).
+    // The isExpandVar and isStateMachineBindingVar functions no longer exclude top-level values.
+    [<Fact>]
     let ``Issue_18672_ResumableCodeTopLevelValue`` () =
-        // This test requires the full resumable code infrastructure which is complex
-        // For now we document that the bug exists - see issue for full repro
+        // Test that top-level task CE values work correctly in Release mode.
+        // The bug was that state machines at module level returned null because
+        // the compiler refused to statically compile them (falling back to dynamic path).
         let source = """
 module Test
 
-// Simplified test case - the actual bug requires resumable code infrastructure
-// See https://github.com/dotnet/fsharp/issues/18672 for full repro
+// Top-level state machine - this is the scenario that was broken
+let topLevelTask = task { return "result from top-level" }
 
-// The issue is that top-level CE values using resumable code return null in Release mode
-// but work correctly in Debug mode
+// For comparison: class member should also work
+type Container() =
+    member val TaskInClass = task { return "result from class" }
 
-printfn "Test placeholder for Issue 18672"
+[<EntryPoint>]
+let main _ =
+    let classResult = Container().TaskInClass.Result
+    let topLevelResult = topLevelTask.Result
+    
+    if topLevelResult <> "result from top-level" then
+        printfn "BUG: Top-level task returned: %A" topLevelResult
+        1
+    elif classResult <> "result from class" then
+        printfn "BUG: Class task returned: %A" classResult  
+        1
+    else
+        printfn "SUCCESS: Both top-level and class state machines work correctly"
+        0
 """
         FSharp source
         |> asExe
-        |> compile
+        |> withOptimize  // Release mode - this is where the bug manifested
+        |> compileExeAndRun
         |> shouldSucceed
-        |> ignore
 
     // ===== Issue #18374: RuntimeWrappedException cannot be caught =====
     // https://github.com/dotnet/fsharp/issues/18374
