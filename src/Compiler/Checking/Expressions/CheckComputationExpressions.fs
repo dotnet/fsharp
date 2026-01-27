@@ -141,6 +141,13 @@ let markSimplePatsAsCompilerGenerated (pats: SynSimplePats) =
     | SynSimplePats.SimplePats(patList, commaRanges, range) ->
         SynSimplePats.SimplePats(patList |> List.map markSimplePatAsCompilerGenerated, commaRanges, range)
 
+/// Like SimplePatsOfPat but marks all patterns as compiler-generated.
+/// Used for synthetic lambdas in query join/groupJoin/zip where the patterns
+/// are logically used but would otherwise trigger false FS1182 warnings.
+let SimplePatsOfPatCompilerGenerated synArgNameGenerator pat =
+    let pats, later = SimplePatsOfPat synArgNameGenerator pat
+    markSimplePatsAsCompilerGenerated pats, later
+
 let mkPatForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynPat.Const(SynConst.Unit, m)
@@ -1076,12 +1083,10 @@ let rec TryTranslateComputationExpression
                     | None -> varSpace
 
                 let firstSourceSimplePats, later1 =
-                    let pats, later = SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat
-                    markSimplePatsAsCompilerGenerated pats, later
+                    SimplePatsOfPatCompilerGenerated cenv.synArgNameGenerator firstSourcePat
 
                 let secondSourceSimplePats, later2 =
-                    let pats, later = SimplePatsOfPat cenv.synArgNameGenerator secondSourcePat
-                    markSimplePatsAsCompilerGenerated pats, later
+                    SimplePatsOfPatCompilerGenerated cenv.synArgNameGenerator secondSourcePat
 
                 if Option.isSome later1 then
                     errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, firstSourcePat.Range))
@@ -1167,8 +1172,7 @@ let rec TryTranslateComputationExpression
                         // groupJoin
                         | Some secondResultPat, Some relExpr when customOperationIsLikeGroupJoin ceenv nm ->
                             let secondResultSimplePats, later3 =
-                                let pats, later = SimplePatsOfPat cenv.synArgNameGenerator secondResultPat
-                                markSimplePatsAsCompilerGenerated pats, later
+                                SimplePatsOfPatCompilerGenerated cenv.synArgNameGenerator secondResultPat
 
                             if Option.isSome later3 then
                                 errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, secondResultPat.Range))
