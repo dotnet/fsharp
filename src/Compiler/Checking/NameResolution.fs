@@ -2245,17 +2245,79 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
 let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, false)
+    | Some currentSink -> 
+        currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, false)
+
+        // For union case testers (e.g., IsB property), also register a reference to the underlying union case
+        // This ensures "Find All References" on a union case includes usages of its tester property
+        match item with
+        | Item.Property(info = pinfo :: _) when pinfo.IsUnionCaseTester ->
+            // The getter method's logical name is "get_IsB" for a tester of case B
+            let logicalName = pinfo.GetterMethod.LogicalName
+            // Extract case name: "get_IsB" -> "B"
+            if logicalName.StartsWithOrdinal("get_Is") then
+                let caseName = logicalName.Substring(6) // Remove "get_Is" prefix
+                let tcref = pinfo.ApparentEnclosingTyconRef
+                match tcref.GetUnionCaseByName caseName with
+                | Some ucase ->
+                    let ucref = tcref.MakeNestedUnionCaseRef ucase
+                    let ucinfo = UnionCaseInfo([], ucref)
+                    let ucItem = Item.UnionCase(ucinfo, false)
+                    // Use a slightly shifted range to avoid duplicate filtering in ItemKeyStore
+                    // Shift start by 1 column to distinguish from the property reference
+                    let shiftedStart = Position.mkPos m.StartLine (m.StartColumn + 1)
+                    let shiftedRange = Range.withStart shiftedStart m
+                    currentSink.NotifyNameResolution(shiftedRange.End, ucItem, emptyTyparInst, occurrenceType, nenv, ad, shiftedRange, false)
+                | None -> ()
+        | _ -> ()
 
 let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, false)
+    | Some currentSink -> 
+        currentSink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, false)
+
+        // For union case testers (e.g., IsB property), also register a reference to the underlying union case
+        match item with
+        | Item.Property(info = pinfo :: _) when pinfo.IsUnionCaseTester ->
+            let logicalName = pinfo.GetterMethod.LogicalName
+            if logicalName.StartsWithOrdinal("get_Is") then
+                let caseName = logicalName.Substring(6)
+                let tcref = pinfo.ApparentEnclosingTyconRef
+                match tcref.GetUnionCaseByName caseName with
+                | Some ucase ->
+                    let ucref = tcref.MakeNestedUnionCaseRef ucase
+                    let ucinfo = UnionCaseInfo([], ucref)
+                    let ucItem = Item.UnionCase(ucinfo, false)
+                    let shiftedStart = Position.mkPos m.StartLine (m.StartColumn + 1)
+                    let shiftedRange = Range.withStart shiftedStart m
+                    currentSink.NotifyNameResolution(shiftedRange.End, ucItem, emptyTyparInst, occurrenceType, nenv, ad, shiftedRange, false)
+                | None -> ()
+        | _ -> ()
 
 let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, true)
+    | Some currentSink -> 
+        currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, true)
+
+        // For union case testers (e.g., IsB property), also register a reference to the underlying union case
+        match item with
+        | Item.Property(info = pinfo :: _) when pinfo.IsUnionCaseTester ->
+            let logicalName = pinfo.GetterMethod.LogicalName
+            if logicalName.StartsWithOrdinal("get_Is") then
+                let caseName = logicalName.Substring(6)
+                let tcref = pinfo.ApparentEnclosingTyconRef
+                match tcref.GetUnionCaseByName caseName with
+                | Some ucase ->
+                    let ucref = tcref.MakeNestedUnionCaseRef ucase
+                    let ucinfo = UnionCaseInfo([], ucref)
+                    let ucItem = Item.UnionCase(ucinfo, false)
+                    let shiftedStart = Position.mkPos m.StartLine (m.StartColumn + 1)
+                    let shiftedRange = Range.withStart shiftedStart m
+                    currentSink.NotifyNameResolution(shiftedRange.End, ucItem, emptyTyparInst, occurrenceType, nenv, ad, shiftedRange, false)
+                | None -> ()
+        | _ -> ()
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =

@@ -7830,6 +7830,12 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                 let gtyp = mkWoNullAppTy tcref tinst
                 UnifyTypes cenv env mWholeExpr overallTy gtyp
 
+                // For copy-and-update expressions, register the record type as a reference
+                // so that "Find All References" on the record type includes copy-and-update usages
+                if hasOrigExpr then
+                    let item = Item.Types(tcref.DisplayName, [gtyp])
+                    CallNameResolutionSink cenv.tcSink (mWholeExpr, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
+
                 [ for n, v in fldsList do
                     match v with
                     | Some v -> yield n, v

@@ -995,3 +995,97 @@ module EventHandlerSyntheticSymbols =
                     Assert.True(handlerUses.Length = 0, 
                         $"Expected no 'handler' symbols (synthetic event handler values should be filtered), got {handlerUses.Length}"))
             }
+
+/// https://github.com/dotnet/fsharp/issues/15290
+/// Find all references of records should include copy-and-update
+module RecordCopyAndUpdate =
+    
+    [<Fact>]
+    let ``Find references of record type includes copy-and-update`` () =
+        let source = """
+type Model = { V: string; I: int }
+let m = { V = ""; I = 0 }
+let m1 = { m with V = "m" }
+
+type R = { M: Model }
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = source })
+            .Workflow {
+                placeCursor "Source" "Model"
+                findAllReferences (fun ranges -> 
+                    // Should include:
+                    // 1. Type definition on line 3
+                    // 2. Copy-and-update on line 5 (new!)
+                    // 3. Type annotation in R on line 7
+                    let hasDefinition = ranges |> List.exists (fun r -> r.StartLine = 3)
+                    let hasCopyAndUpdate = ranges |> List.exists (fun r -> r.StartLine = 5)
+                    let hasTypeAnnotation = ranges |> List.exists (fun r -> r.StartLine = 7)
+                    
+                    Assert.True(hasDefinition, $"Expected definition on line 3. Ranges: {ranges}")
+                    Assert.True(hasCopyAndUpdate, $"Expected copy-and-update reference on line 5. Ranges: {ranges}")
+                    Assert.True(hasTypeAnnotation, $"Expected type annotation on line 7. Ranges: {ranges}")
+                    Assert.True(ranges.Length >= 3, $"Expected at least 3 references for Model, got {ranges.Length}")
+                )
+            }
+    
+    [<Fact>]
+    let ``Find references of record type includes copy-and-update with nested fields`` () =
+        let source = """
+type Inner = { X: int }
+type Outer = { I: Inner }
+let o = { I = { X = 1 } }
+let o2 = { o with I.X = 2 }
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = source })
+            .Workflow {
+                placeCursor "Source" "Outer"
+                findAllReferences (fun ranges -> 
+                    // Should include the definition (line 4) and the copy-and-update (line 6)
+                    let hasDefinition = ranges |> List.exists (fun r -> r.StartLine = 4)
+                    let hasCopyAndUpdate = ranges |> List.exists (fun r -> r.StartLine = 6)
+                    
+                    Assert.True(hasDefinition, $"Expected definition on line 4. Ranges: {ranges}")
+                    Assert.True(hasCopyAndUpdate, $"Expected copy-and-update on line 6. Ranges: {ranges}")
+                )
+            }
+
+/// https://github.com/dotnet/fsharp/issues/16621
+/// Find all references of a DU case should include case testers
+module UnionCaseTesters =
+    
+    [<Fact>]
+    let ``Find references of union case B includes IsB usage`` () =
+        let source = """
+type X = A | B
+
+let c = A
+let result = c.IsB
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = source })
+            .Workflow {
+                placeCursor "Source" "B"
+                findAllReferences (fun ranges -> 
+                    // Should include both the definition of B and the IsB usage
+                    Assert.True(ranges.Length >= 2, $"Expected at least 2 references for B (definition + IsB), got {ranges.Length}"))
+            }
+    
+    [<Fact>]
+    let ``Find references of union case A includes IsA usage`` () =
+        let source = """
+type MyUnion = CaseA | CaseB of int
+
+let x = CaseA
+let useA = x.IsCaseA
+let useB = x.IsCaseB
+"""
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = source })
+            .Workflow {
+                placeCursor "Source" "CaseA"
+                findAllReferences (fun ranges ->
+                    // Should include: definition, construction (CaseA), and IsCaseA usage
+                    Assert.True(ranges.Length >= 3, $"Expected at least 3 references for CaseA, got {ranges.Length}"))
+            }
