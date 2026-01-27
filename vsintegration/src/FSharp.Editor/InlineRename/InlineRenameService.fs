@@ -63,7 +63,8 @@ type internal InlineRenameLocationSet
             let replacementText =
                 match symbolKind with
                 | LexerSymbolKind.GenericTypeParameter
-                | LexerSymbolKind.StaticallyResolvedTypeParameter -> replacementText
+                | LexerSymbolKind.StaticallyResolvedTypeParameter
+                | LexerSymbolKind.Operator -> replacementText
                 | _ -> FSharpKeywords.NormalizeIdentifierBackticks replacementText
 
             let replacementTextValid =

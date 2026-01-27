@@ -184,6 +184,23 @@ let foo x = x ++ 4""" })
             ])
         }
 
+/// https://github.com/dotnet/fsharp/issues/14057
+/// Operators with '.' should be found correctly (not split on '.')
+[<Fact>]
+let ``We find operators with dot character`` () =
+    SyntheticProject.Create(
+        { sourceFile "First" [] with ExtraSource = "let (-.-) x y = x + y" },
+        { sourceFile "Second" [] with ExtraSource = """
+open ModuleFirst
+let foo x = x -.- 4""" })
+        .Workflow {
+            placeCursor "Second" 8 17 "let foo x = x -.- 4" ["-.-"]
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 6, 5, 8
+                "FileSecond.fs", 8, 14, 17
+            ])
+        }
+
 [<Theory>]
 [<InlineData("First")>]
 [<InlineData("Second")>]

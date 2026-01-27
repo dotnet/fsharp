@@ -995,6 +995,9 @@ module internal Tokenizer =
             | -1
             | 0 -> span
             | index -> TextSpan(span.Start + index, text.Length - index)
+        // Operators can contain '.' (e.g., "-.-") - don't split them
+        elif FSharp.Compiler.Syntax.PrettyNaming.IsOperatorDisplayName text then
+            span
         else
             match text.LastIndexOf '.' with
             | -1
