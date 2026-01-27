@@ -1010,8 +1010,19 @@ module internal Tokenizer =
         let text = sourceText.GetSubText(span).ToString()
         text = "get" || text = "set"
 
-    // (#18270) Try to fix invalid span. Returns ValueNone if the span should be excluded from rename operations
-    // (e.g., property accessor keywords like 'get' or 'set').
+    /// (#18270) Try to fix invalid span. Returns ValueNone if the span should be excluded from
+    /// rename/find-references operations (e.g., property accessor keywords like 'get' or 'set').
+    ///
+    /// USAGE PATTERN:
+    /// - Use `tryFixupSpan` for Find All References and Rename operations to filter out
+    ///   property accessor keywords that the compiler incorrectly reports as symbol locations.
+    /// - Use `fixupSpan` only for semantic classification (syntax coloring) where get/set
+    ///   keywords still need to be highlighted.
+    ///
+    /// Example:
+    ///   match Tokenizer.tryFixupSpan (sourceText, span) with
+    ///   | ValueSome fixedSpan -> // Process the span
+    ///   | ValueNone -> ()        // Skip property accessor keywords
     let tryFixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan voption =
         let fixedSpan = fixupSpan (sourceText, span)
 

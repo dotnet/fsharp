@@ -76,8 +76,10 @@ module FSharpFindUsagesService =
 
                                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                                 | ValueSome span ->
-                                    let span = Tokenizer.fixupSpan (sourceText, span)
-                                    return Some(FSharpDocumentSpan(doc, span))
+                                    // (#18270) Use tryFixupSpan to filter out property accessor keywords (get/set)
+                                    match Tokenizer.tryFixupSpan (sourceText, span) with
+                                    | ValueSome fixedSpan -> return Some(FSharpDocumentSpan(doc, fixedSpan))
+                                    | ValueNone -> return None
                                 | ValueNone -> return None
                             }
                     }
