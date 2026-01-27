@@ -235,7 +235,8 @@ type ItemKeyStore(mmf: MemoryMappedFile, length, tcGlobals, debugStore) =
                 let keyString2 = this.ReadKeyString &reader
 
                 if keyString1.SequenceEqual keyString2 then
-                    results.Add m
+                    // Apply line directives to get the correct file/line for generated code (#9928)
+                    results.Add(m.ApplyLineDirectives())
 
             results :> range seq
 

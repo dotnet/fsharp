@@ -1,7 +1,10 @@
 ﻿module FSharpChecker.FindReferences
 
+open System.Threading.Tasks
 open Xunit
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+open FSharp.Compiler.Text
 open FSharp.Test.ProjectGeneration
 open FSharp.Test.ProjectGeneration.Helpers
 
@@ -862,4 +865,76 @@ let foo = Foo() :> IFoo
             fileName, 6, 23, 27
             // In cast ":> IFoo"
             fileName, 8, 19, 23
+        ]
+
+module LineDirectives =
+
+    open System
+
+    /// A variant of singleFileChecker that allows a custom filename
+    /// to avoid test isolation issues with LineDirectives.store
+    let singleFileCheckerWithName (fileName: string) source =
+        let getSource _ fn =
+            FSharpFileSnapshot(
+              FileName = fn,
+              Version = "1",
+              GetSource = fun () -> source |> SourceTextNew.ofString |> Task.FromResult )
+            |> async.Return
+
+        let checker = FSharpChecker.Create(
+            keepAllBackgroundSymbolUses = false,
+            enableBackgroundItemKeyStoreAndSemanticClassification = true,
+            enablePartialTypeChecking = true,
+            captureIdentifiersWhenParsing = true,
+            useTransparentCompiler = true)
+
+        let options =
+            let baseOptions, _ =
+                checker.GetProjectOptionsFromScript(
+                    fileName,
+                    SourceText.ofString "",
+                    assumeDotNetFramework = false
+                )
+                |> Async.RunSynchronously
+
+            { baseOptions with
+                ProjectFileName = "project"
+                ProjectId = None
+                SourceFiles = [|fileName|]
+                IsIncompleteTypeCheckEnvironment = false
+                UseScriptResolutionRules = false
+                LoadTime = DateTime()
+                UnresolvedReferences = None
+                OriginalLoadReferences = []
+                Stamp = None }
+
+        let snapshot = FSharpProjectSnapshot.FromOptions(options, getSource) |> Async.RunSynchronously
+
+        fileName, snapshot, checker
+
+    /// https://github.com/dotnet/fsharp/issues/9928
+    /// Find All References should work correctly with #line directives.
+    /// When #line is used, the returned ranges should be the remapped ranges
+    /// (the "fake" file name and line numbers from the directive).
+    [<Fact>]
+    let ``Find references works with #line directives`` () =
+        let source = """
+module Foo
+#line 100 "generated.fs"
+let Thing = 42
+
+let use1 = Thing + 1
+"""
+        // Use a unique filename to avoid test isolation issues with LineDirectives.store
+        let fileName, options, checker = singleFileCheckerWithName "lineDirectivesTest.fs" source
+
+        let symbolUse = getSymbolUse fileName source "Thing" options checker |> Async.RunSynchronously
+
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
+        |> Async.RunSynchronously
+        |> expectToFind [
+            // Definition at #line 100 (original line 4)
+            "generated.fs", 100, 4, 9
+            // Use at #line 102 (original line 6)
+            "generated.fs", 102, 11, 16
         ]
