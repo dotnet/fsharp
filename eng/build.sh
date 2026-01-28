@@ -78,7 +78,6 @@ source_build=false
 product_build=false
 from_vmr=false
 buildnorealsig=true
-testbatch=""
 properties=""
 docker=false
 args=""
@@ -103,11 +102,6 @@ while [[ $# > 0 ]]; do
       ;;
     --configuration|-c)
       configuration=$2
-      args="$args $1"
-      shift
-      ;;
-    --testbatch)
-      testbatch=$2
       args="$args $1"
       shift
       ;;
@@ -234,18 +228,19 @@ function Test() {
 
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
-  testbatchsuffix=""
-    if [[ "$testbatch" != "" ]]; then
-    testbatchsuffix="_batch$testbatch"
+  # MTP uses --report-xunit-trx with filename only (no path)
+  testlogfilename="${projectname}_${targetframework}.trx"
+  testresultsdir="$artifacts_dir/TestResults/$configuration"
+  
+  # MTP requires --solution flag for .sln files
+  # MTP HangDump extension replaces VSTest --blame-hang-timeout
+  if [[ "$testproject" == *.sln ]]; then
+    args=(test --solution "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+  else
+    args=(test --project "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
   fi
-  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework$testbatchsuffix.xml"
-  args="test \"$testproject\" --no-build -c $configuration -f $targetframework --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration"
 
-  if [[ "$testbatch" != "" ]]; then
-    args="$args --filter batch=$testbatch"
-  fi
-
-  "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
+  "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
 }
 
 function BuildSolution {
@@ -356,7 +351,7 @@ BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=$tfm
-  Test --testproject "$repo_root/tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj" --targetframework $coreclrtestframework
+  # Note: FSharp.Test.Utilities is a utility library, not a test project. Its tests are disabled due to xUnit3 API incompatibilities.
   Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework

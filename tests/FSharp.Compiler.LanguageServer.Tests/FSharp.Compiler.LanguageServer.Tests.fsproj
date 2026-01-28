@@ -2,11 +2,13 @@
 
 	<PropertyGroup>
 		<TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
-		<IsPackable>false</IsPackable>
-		<GenerateProgramFile>false</GenerateProgramFile>
+		<!-- xUnit3 requires test projects to be executable -->
+		<OutputType>Exe</OutputType>
 		<IsTestProject>true</IsTestProject>
+		<IsPackable>false</IsPackable>
+		<!-- Let xUnit3 generate the entry point -->
+		<GenerateProgramFile>false</GenerateProgramFile>
 		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-		<UnitTestType>xunit</UnitTestType>
 		<ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
 		<Optimize>false</Optimize>
 		<Tailcalls>false</Tailcalls>
@@ -16,21 +18,7 @@
 
 	<ItemGroup>
 		<Compile Include="Protocol.fs" />
-		<Compile Include="Program.fs" />
 	</ItemGroup>
-
-	<!--<ItemGroup>
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.0" />
-		<PackageReference Include="xunit" Version="2.4.2" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
-		<PackageReference Include="coverlet.collector" Version="6.0.0">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
-	</ItemGroup>-->
 
 	<ItemGroup>
 		<Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />

@@ -228,3 +228,40 @@ To get an idea of how long it may take, or how much coffee you'll need while wai
 | `-testVS` | 13 min | ? |
 
 * This is the build time when a previous build with the same configuration succeeded, and without `-ci` present, which always rebuilds the solution. With `-norestore` the build part can go down to about 10-20 seconds, before tests are being run
+
+## Test Infrastructure
+
+### Current Testing Framework
+
+The F# repository uses **xUnit 2.9.0** for unit testing with the following key components:
+
+- **xUnit**: 2.9.0 (test framework)
+- **xUnit Runner**: 2.8.2 (test execution)
+- **FsCheck**: 2.16.5 (property-based testing)
+- **Microsoft.NET.Test.Sdk**: 17.11.1 (test platform integration)
+
+### Custom Test Utilities
+
+The repository includes custom xUnit extensions in `tests/FSharp.Test.Utilities/` to enhance test capabilities:
+
+- **Console output capture**: Each test case captures and reports its console output
+- **Parallel test execution**: Internal parallelization of test classes and theory cases
+- **Batch traits**: Tests are tagged with batch numbers for CI multi-agent testing (use `--filter batch=N`)
+- **Custom data attributes**: `DirectoryAttribute` for file-based test discovery
+
+### Test Configuration
+
+Test execution behavior is controlled by `xunit.runner.json` files in each test project:
+
+```json
+{
+  "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
+  "parallelizeAssembly": true,
+  "parallelizeTestCollections": true,
+  "maxParallelThreads": 4
+}
+```
+
+### Future Migration to xUnit3
+
+**Note**: The test infrastructure is prepared for migration to xUnit3 when it becomes stable. Currently, xUnit3 is in preview and not suitable for production use. Configuration files have been updated to the xUnit3 schema format (backward compatible with xUnit2). For detailed migration planning, see `XUNIT3_MIGRATION_STATUS.md`.
