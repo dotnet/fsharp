@@ -2259,3 +2259,108 @@ but here has type
          |> asFsx
          |> runFsi
          |> shouldSucceed
+
+    // =====================================================================
+    // Issue #422: FS1182 false positive in query expressions
+    // The fix marks synthetic lambda parameters in query translation as 
+    // compiler-generated, which prevents the FS1182 warning from firing.
+    // =====================================================================
+
+    [<Fact>]
+    let ``Query expression variable with underscore prefix should not warn FS1182 - issue 422`` () =
+        FSharp """
+module Test
+
+let result = 
+    query { for _x in [1;2;3] do
+            select 1 }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Query expression variable used in select should not warn FS1182 - issue 422`` () =
+        FSharp """
+module Test
+
+let result = 
+    query { for x in [1;2;3] do
+            where (x > 2)
+            select x }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Query variable used in where does not trigger FS1182 - issue 422`` () =
+        FSharp """
+module Test
+
+let result = 
+    query { for x in [1;2;3;4;5] do
+            where (x > 0)
+            select 1 }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Query variable used in let binding does not trigger FS1182 - issue 422`` () =
+        FSharp """
+module Test
+
+let result = 
+    query { for x in [1;2;3] do
+            let y = x * 2
+            select y }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Join variable used in select does not trigger FS1182 - issue 422`` () =
+        FSharp """
+module Test
+
+let data1 = [1;2;3]
+let data2 = [(1, "one"); (2, "two"); (3, "three")]
+
+let result = 
+    query { for x in data1 do
+            join (y, name) in data2 on (x = y)
+            select name }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Multiple query variables in nested for do not trigger FS1182 - issue 422`` () =
+        FSharp """
+module Test
+
+let result = 
+    query { for a in [1;2;3] do
+            for b in [4;5;6] do
+            where (a < b)
+            select (a + b) }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
