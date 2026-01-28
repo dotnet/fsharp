@@ -512,21 +512,44 @@ module Command =
 
     let exec dir envVars (redirect:RedirectInfo) path args =
 
+        // Diagnostic logging to file - same location as scriptlib.fsx uses
+        let diagLogFile = Path.Combine(dir, "fsi_stdin_diag.log")
+        let diagLog msg = 
+            let timestamp = DateTime.Now.ToString("HH:mm:ss.fff")
+            try File.AppendAllText(diagLogFile, sprintf "[%s] %s%s" timestamp msg Environment.NewLine) with _ -> ()
+
         let inputWriter sources (writer: StreamWriter) =
             let pipeFile name = async {
                 let path = Commands.getfullpath dir name
+                diagLog (sprintf "[inputWriter] pipeFile called: name='%s' resolved='%s'" name path)
+                diagLog (sprintf "[inputWriter] File.Exists=%b" (File.Exists path))
                 use reader = File.OpenRead (path)
+                let fileLength = reader.Length
+                diagLog (sprintf "[inputWriter] File opened, length=%d bytes" fileLength)
                 use ms = new MemoryStream()
                 do! reader.CopyToAsync (ms) |> (Async.AwaitIAsyncResult >> Async.Ignore)
+                diagLog (sprintf "[inputWriter] Copied to MemoryStream, ms.Length=%d" ms.Length)
+                ms.Position <- 0L
+                // Log content being written (first 200 chars)
+                let contentPreview = 
+                    use sr = new StreamReader(new MemoryStream(ms.ToArray()))
+                    let s = sr.ReadToEnd()
+                    if s.Length > 200 then s.Substring(0, 200) + "..." else s
+                diagLog (sprintf "[inputWriter] Content to write: [%s]" (contentPreview.Replace("\r", "\\r").Replace("\n", "\\n")))
                 ms.Position <- 0L
                 try
+                    diagLog (sprintf "[inputWriter] writer.BaseStream.CanWrite=%b" writer.BaseStream.CanWrite)
                     do! ms.CopyToAsync(writer.BaseStream) |> (Async.AwaitIAsyncResult >> Async.Ignore)
+                    diagLog "[inputWriter] CopyToAsync completed"
                     do! writer.FlushAsync() |> (Async.AwaitIAsyncResult >> Async.Ignore)
+                    diagLog "[inputWriter] FlushAsync completed"
                 with
-                | :? System.IO.IOException -> //input closed is ok if process is closed
-                    ()
+                | :? System.IO.IOException as ex -> 
+                    diagLog (sprintf "[inputWriter] IOException (may be OK if process closed): %s" ex.Message)
                 }
+            diagLog (sprintf "[inputWriter] Starting pipeFile for '%s'" sources)
             sources |> pipeFile |> Async.RunSynchronously
+            diagLog "[inputWriter] pipeFile completed"
 
         let inF fCont cmdArgs =
             match redirect.Input with

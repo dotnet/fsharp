@@ -109,6 +109,16 @@ module Scripting =
             let exePath = path |> processExePath workDir
             let processInfo = new ProcessStartInfo(exePath, arguments)
             
+            // Diagnostic logging to file - bypasses all console redirection
+            let diagLogFile = Path.Combine(workDir, "fsi_stdin_diag.log")
+            let diagLog msg = 
+                let timestamp = DateTime.Now.ToString("HH:mm:ss.fff")
+                try File.AppendAllText(diagLogFile, sprintf "[%s] %s%s" timestamp msg Environment.NewLine) with _ -> ()
+            
+            diagLog (sprintf "=== Process.exec START === exe=%s args=%s" exePath arguments)
+            diagLog (sprintf "RedirectInput=%b RedirectOutput=%b RedirectError=%b" 
+                cmdArgs.RedirectInput.IsSome cmdArgs.RedirectOutput.IsSome cmdArgs.RedirectError.IsSome)
+            
             processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
             processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             
@@ -143,25 +153,41 @@ module Scripting =
             cmdArgs.RedirectInput
             |> Option.iter (fun _ -> p.StartInfo.RedirectStandardInput <- true)
 
+            diagLog "Starting process..."
             p.Start() |> ignore
+            diagLog (sprintf "Process started: PID=%d" p.Id)
 
             cmdArgs.RedirectOutput |> Option.iter (fun _ -> p.BeginOutputReadLine())
             cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
+            diagLog "Async output readers started"
 
+            // HYPOTHESIS TEST: Write stdin SYNCHRONOUSLY, not with Async.Start
+            // The original Async.Start was fire-and-forget and might not complete before WaitForExit
             cmdArgs.RedirectInput |> Option.iter (fun input -> 
-               async {
+                diagLog "Writing to stdin (synchronously)..."
+                diagLog (sprintf "Process.HasExited=%b BEFORE stdin write" p.HasExited)
                 let inputWriter = p.StandardInput
-                do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
-                input inputWriter
-                do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
-                inputWriter.Dispose ()
-               } 
-               |> Async.Start)
+                diagLog (sprintf "StandardInput.BaseStream.CanWrite=%b" inputWriter.BaseStream.CanWrite)
+                try
+                    input inputWriter  // This is the callback that writes the actual content
+                    diagLog "Input callback completed, flushing..."
+                    inputWriter.Flush()
+                    diagLog "Flush completed, disposing (sends EOF)..."
+                    inputWriter.Dispose()
+                    diagLog (sprintf "Stdin closed. Process.HasExited=%b AFTER stdin write" p.HasExited)
+                with ex ->
+                    diagLog (sprintf "EXCEPTION during stdin write: %s - %s" (ex.GetType().Name) ex.Message)
+            )
 
+            diagLog "Calling WaitForExit..."
             p.WaitForExit()
+            diagLog (sprintf "WaitForExit returned. ExitCode=%d" p.ExitCode)
+            
             // Second WaitForExit call ensures async output handlers (OutputDataReceived/ErrorDataReceived) complete.
             // See: https://learn.microsoft.com/dotnet/api/system.diagnostics.process.waitforexit
             p.WaitForExit()
+            diagLog (sprintf "Second WaitForExit returned. stdout.Length=%d stderr.Length=%d" out.Length err.Length)
+            diagLog "=== Process.exec END ==="
 
             printf $"{string out}"
             eprintf $"{string err}"
