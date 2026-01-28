@@ -1459,7 +1459,7 @@ let value = 42
     // characteristic set (0x100 flag), which is incorrect for x64 executables.
     // dumpbin /headers shows: "32 bit word machine" for F# but not for C# x64 builds.
     // C# correctly produces only "Executable" and "Application can handle large (>2GB) addresses"
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_13100_PlatformCharacteristic`` () =
         // The bug is that F# sets IMAGE_FILE_32BIT_MACHINE (0x100) characteristic
         // in the PE header when targeting x64, which is incorrect.
@@ -1469,17 +1469,23 @@ let value = 42
         let source = """
 module PlatformTest
 
-// When compiled with --platform:x64, the PE header should NOT have
-// the "32 bit word machine" (IMAGE_FILE_32BIT_MACHINE) characteristic.
-// Currently F# incorrectly sets this flag for x64 binaries.
 [<EntryPoint>]
 let main _ = 0
 """
+        // Test that x64 platform does NOT have Bit32Machine characteristic
         FSharp source
         |> asExe
-        // Note: would need --platform:x64 flag to fully reproduce
+        |> withPlatform ExecutionPlatform.X64
         |> compile
         |> shouldSucceed
+        |> withPeReader (fun rdr -> 
+            let characteristics = rdr.PEHeaders.CoffHeader.Characteristics
+            // Should have LargeAddressAware (0x20)
+            if not (characteristics.HasFlag(System.Reflection.PortableExecutable.Characteristics.LargeAddressAware)) then
+                failwith $"x64 binary should have LargeAddressAware flag. Found: {characteristics}"
+            // Should NOT have Bit32Machine (0x100)
+            if characteristics.HasFlag(System.Reflection.PortableExecutable.Characteristics.Bit32Machine) then
+                failwith $"x64 binary should NOT have Bit32Machine flag. Found: {characteristics}")
         |> ignore
 
     // ===== Issue #12546: Implicit boxing produces extraneous closure =====

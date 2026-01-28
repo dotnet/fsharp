@@ -86,7 +86,7 @@ This document tracks known code generation bugs in the F# compiler that have doc
 | [#13223](#issue-13223) | FSharp.Build support for reference assemblies | Feature Request | FSharp.Build | Low |
 | [#13218](#issue-13218) | Compilation time 13000 static member vs let | Performance | Optimizer.fs | Low |
 | [#13108](#issue-13108) | Static linking FS2009 warnings | Compile Warning | ilwrite.fs | Low |
-| [#13100](#issue-13100) | --platform:x64 sets 32 bit characteristic | Wrong Behavior | ilwrite.fs | Low |
+| [#13100](#issue-13100) | --platform:x64 sets 32 bit characteristic | Wrong Behavior | ilwrite.fs | Low | ✅ FIXED |
 | [#12546](#issue-12546) | Implicit boxing produces extraneous closure | Performance | IlxGen.fs | Low |
 | [#12460](#issue-12460) | F# C# Version info values different | Metadata | ilwrite.fs | Low |
 | [#12416](#issue-12416) | Optimization inlining inconsistent with piping | Performance | Optimizer.fs | Low |
@@ -2243,6 +2243,8 @@ When FSharp.Core or other assemblies are statically linked into a DLL (using `--
 
 **Category:** Wrong Behavior
 
+**UPDATE (FIXED):** The issue is now fixed. The PE header generation in `ilwrite.fs` correctly sets `IMAGE_FILE_LARGE_ADDRESS_AWARE` (0x20) for 64-bit platforms and only sets `IMAGE_FILE_32BIT_MACHINE` (0x100) for 32-bit platforms. The test verifies that x64 binaries have `LargeAddressAware` flag and do NOT have `Bit32Machine` flag.
+
 ### Minimal Repro
 
 ```bash
@@ -2253,19 +2255,7 @@ fsc --platform:x64 Program.fs
 dumpbin /headers obj/Debug/net6.0/program.dll
 ```
 
-F# output (incorrect):
-```
-FILE HEADER VALUES
-            8664 machine (x64)
-             12E characteristics
-                   Executable
-                   Line numbers stripped
-                   Symbols stripped
-                   Application can handle large (>2GB) addresses
-                   32 bit word machine    ← WRONG for x64
-```
-
-C# output (correct):
+F# output (now correct):
 ```
 FILE HEADER VALUES
             8664 machine (x64)
@@ -2277,15 +2267,21 @@ FILE HEADER VALUES
 ### Expected Behavior
 PE header should NOT have the "32 bit word machine" (IMAGE_FILE_32BIT_MACHINE, 0x100) characteristic flag set when targeting x64.
 
-### Actual Behavior
-F# sets characteristics 0x12E which includes the 32-bit flag (0x100).
-C# correctly sets characteristics 0x22 without the 32-bit flag.
+### Actual Behavior (FIXED)
+F# now correctly sets characteristics without the 32-bit flag for x64 builds.
+The code in `ilwrite.fs` correctly handles platform-specific characteristics:
+```fsharp
+let iMachineCharacteristic = 
+    match modul.Platform with 
+    | Some IA64 | Some AMD64 | Some ARM64 -> 0x20  // LargeAddressAware
+    | _ -> 0x0100  // Bit32Machine (for x86, ARM, and default)
+```
 
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_13100_PlatformCharacteristic`
 
 ### Analysis
-The PE writer incorrectly sets IMAGE_FILE_32BIT_MACHINE flag in the file characteristics when writing x64 binaries.
+The PE writer correctly sets `IMAGE_FILE_LARGE_ADDRESS_AWARE` (0x20) for 64-bit platforms (AMD64, IA64, ARM64) and `IMAGE_FILE_32BIT_MACHINE` (0x100) for 32-bit platforms (X86, ARM, and the default AnyCPU case).
 
 ### Fix Location
 - `src/Compiler/AbstractIL/ilwrite.fs` - PE characteristics calculation
