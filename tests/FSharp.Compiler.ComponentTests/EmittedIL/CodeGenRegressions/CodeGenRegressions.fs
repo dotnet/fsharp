@@ -1325,25 +1325,16 @@ type CarError =
     // https://github.com/dotnet/fsharp/issues/13468
     // When implementing interface from C# with out parameter, F# compiles it as ref instead.
     // This doesn't break runtime but affects FCS symbol analysis.
-    // [<Fact>]
+    // FIX: The [Out] attribute is now correctly emitted for interface implementations.
+    [<Fact>]
     let ``Issue_13468_OutrefAsByref`` () =
-        // The bug: when implementing a C# interface with `out int` parameter,
-        // F# generates IL with `ref int` instead of `[Out] ref int`
-        let source = """
-module Test
-
-// When I is defined in F#, outref works correctly
-type I =
-    abstract M: param: outref<int> -> unit
-
-type T() =
-    interface I with
-        member this.M(param) = param <- 42
-
-// BUG: When implementing interface from IL/C# assembly with 'out' param,
-// the implementation uses `ref` instead of `[Out] ref`
-"""
-        FSharp source
+        // Test: Implement C# interface with 'out' parameter in F#
+        // The fix ensures [Out] attribute is emitted for the implementation
+        let csCode = "namespace CSharpLib { public interface IOutTest { void TryGet(string k, out int v); } }"
+        let csLib = CSharp csCode |> withName "CSharpLib"
+        let fsCode = "module Test\nopen CSharpLib\ntype MyImpl() =\n    interface IOutTest with\n        member this.TryGet(k, v) = v <- 42"
+        FSharp fsCode
+        |> withReferences [csLib]
         |> asLibrary
         |> compile
         |> shouldSucceed

@@ -81,7 +81,7 @@ This document tracks known code generation bugs in the F# compiler that have doc
 | [#14492](#issue-14492) | Incorrect program in release config | Invalid IL | EraseClosures.fs | Medium | ✅ FIXED |
 | [#14392](#issue-14392) | OpenApi Swashbuckle support | Feature Request | N/A | Low |
 | [#14321](#issue-14321) | Build fails reusing names DU constructors and IWSAM | Compile Error | NameResolution.fs | Low |
-| [#13468](#issue-13468) | outref parameter compiled as byref | Wrong Behavior | IlxGen.fs | Medium |
+| [#13468](#issue-13468) | outref parameter compiled as byref | Wrong Behavior | IlxGen.fs | Medium | ✅ FIXED |
 | [#13447](#issue-13447) | Extra tail instruction corrupts stack | Runtime Crash | IlxGen.fs | Medium |
 | [#13223](#issue-13223) | FSharp.Build support for reference assemblies | Feature Request | FSharp.Build | Low |
 | [#13218](#issue-13218) | Compilation time 13000 static member vs let | Performance | Optimizer.fs | Low |
@@ -1982,6 +1982,8 @@ IL generation creates duplicate property entries when DU case name matches IWSAM
 
 **Category:** Wrong IL Metadata
 
+**Status:** ✅ FIXED
+
 ### Minimal Repro
 
 ```fsharp
@@ -2017,6 +2019,22 @@ IL generation doesn't preserve `out` semantics when implementing interfaces from
 
 ### Fix Location
 - `src/Compiler/CodeGen/IlxGen.fs`
+
+### UPDATE (FIXED)
+**Fixed** in `GenParams` and `GenMethodForBinding` in `IlxGen.fs`. The root cause was that when generating 
+IL parameters for interface implementation methods, the compiler only checked the F# type (`isOutByrefTy`) 
+and F# attributes (`[<Out>]`) but did not consider the slot signature's parameter flags from the interface 
+being implemented.
+
+The fix:
+1. Added a new optional parameter `slotSigParamFlags` to `GenParams` that carries the `(isIn, isOut)` flags 
+   from the interface's slot signature parameters.
+2. In `GenMethodForBinding`, when implementing an interface (`v.ImplementedSlotSigs` is not empty), extract 
+   the slot parameter flags from `slotsig.FormalParams` and pass them to `GenParams`.
+3. In `GenParams`, merge the slot signature's out flag with the F# type's out flag using logical OR.
+
+This ensures that when implementing a C# interface with `out` parameters, the F# implementation correctly 
+emits `[out]` in the IL metadata, making C# interop and FCS symbol analysis work correctly.
 
 ### Risks
 - Medium: Affects C# interop for out parameters
