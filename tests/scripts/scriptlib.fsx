@@ -9,6 +9,7 @@ open System
 open System.IO
 open System.Text
 open System.Diagnostics
+open System.Threading
 
 [<AutoOpen>]
 module Scripting =
@@ -107,11 +108,6 @@ module Scripting =
             let exePath = path |> processExePath workDir
             let processInfo = new ProcessStartInfo(exePath, arguments)
             
-            // Write diagnostics to a file in the working directory - bypasses TestConsole
-            let diagLogFile = Path.Combine(workDir, "fsi_stdin_diag.log")
-            let diagLog msg = 
-                try File.AppendAllText(diagLogFile, msg + Environment.NewLine) with _ -> ()
-            
             processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
             processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             
@@ -146,26 +142,35 @@ module Scripting =
             cmdArgs.RedirectInput
             |> Option.iter (fun _ -> p.StartInfo.RedirectStandardInput <- true)
 
-            diagLog (sprintf "[PROC] Starting process: %s %s" exePath arguments)
-            diagLog (sprintf "[PROC] RedirectInput=%b" cmdArgs.RedirectInput.IsSome)
+            // Use ManualResetEvent to track when async output reading is complete
+            let outputDone = new ManualResetEvent(not cmdArgs.RedirectOutput.IsSome)
+            let errorDone = new ManualResetEvent(not cmdArgs.RedirectError.IsSome)
             
             p.Start() |> ignore
 
-            cmdArgs.RedirectOutput |> Option.iter (fun _ -> p.BeginOutputReadLine())
-            cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
+            cmdArgs.RedirectOutput |> Option.iter (fun _ -> 
+                p.OutputDataReceived.Add(fun ea ->
+                    // null data signals EOF - all output has been read
+                    if isNull ea.Data then outputDone.Set() |> ignore)
+                p.BeginOutputReadLine())
+            cmdArgs.RedirectError |> Option.iter (fun _ ->
+                p.ErrorDataReceived.Add(fun ea ->
+                    // null data signals EOF - all error output has been read
+                    if isNull ea.Data then errorDone.Set() |> ignore) 
+                p.BeginErrorReadLine())
 
             cmdArgs.RedirectInput |> Option.iter (fun input -> 
-                diagLog "[PROC] About to write to stdin"
                 let inputWriter = p.StandardInput
                 input inputWriter
-                diagLog "[PROC] Finished input callback, flushing"
                 inputWriter.Flush()
-                inputWriter.Dispose()
-                diagLog "[PROC] Stdin disposed (EOF sent)")
+                inputWriter.Dispose())
 
             p.WaitForExit()
             
-            diagLog (sprintf "[PROC] Process exited with code %d" p.ExitCode)
+            // Wait for async output readers to complete (EOF signals are sent when streams close)
+            // This ensures all output has been captured before we return
+            outputDone.WaitOne() |> ignore
+            errorDone.WaitOne() |> ignore
 
             printf $"{string out}"
             eprintf $"{string err}"

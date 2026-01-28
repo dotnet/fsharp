@@ -32,3 +32,15 @@
 **Error**: MailboxProcessor race condition tests crashing test host
 **Root Cause**: Without the custom `FSharpXunitFramework`, `TestConsole.install()` was never being called. This caused issues with test execution since the console redirection infrastructure was not initialized.
 **Fix Applied**: Added static initialization to `NotThreadSafeResourceCollection` class and `XUnitSetup` module to ensure `TestConsole.install()` is called before tests run.
+
+### 8. German Culture Leak in TransparentCompiler CI Leg ✅ RESOLVED
+**Error**: Tests expecting English error messages received German messages instead (e.g., "Dieser Ausdruck sollte den folgenden Typ aufweisen" instead of "This expression was expected to have type")
+**Affected CI Leg**: Only `WindowsCompressedMetadata transparent_compiler_release`
+**Root Cause**: `PreferredUiLangTests` runs FSI sessions with `--preferreduilang:de-DE`, which sets both `Thread.CurrentThread.CurrentUICulture` and the static `GraphNode.culture` variable to German. Neither was restored after the FSI session completed. The bug only manifested on the `transparent_compiler_release` leg because:
+- **BackgroundCompiler** (used without `TEST_TRANSPARENT_COMPILER`) calls `GraphNode.SetPreferredUILang(tcConfig.preferredUiLang)` during `CheckOneFile`, which resets culture based on project options (typically `--preferreduilang:en-US`), masking the leak
+- **TransparentCompiler** (used with `TEST_TRANSPARENT_COMPILER=1`) does NOT call `SetPreferredUILang`, so the German culture persists permanently in `GraphNode.culture` and affects all subsequent async computations
+
+**Fix Applied**: 
+- `CompilerAssert.RunScriptWithOptionsAndReturnResult`: Added try/finally to save/restore both `CurrentUICulture` and `GraphNode.culture`
+- `ScriptHelpers.FSharpScript.Eval`: Added save/restore for `CurrentUICulture`
+- `BuildGraph.fsi`: Exposed `GraphNode.culture` mutable field to allow test utilities to save/restore it
