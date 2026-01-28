@@ -304,6 +304,10 @@ type ArrayModule2() =
         // len = 0
         CheckThrowsArgumentException(fun() -> Array.maxBy funcInt (Array.empty<int>) |> ignore)
         
+        // returns first maximal element
+        let max = Array.maxBy fst [|1, "a"; 2, "b"; 3, "c"; 2, "d"; 3, "e"; 1, "f" |]
+        if snd max <> "c" then Assert.Fail()
+        
         ()
 
     [<Fact>]
@@ -347,6 +351,10 @@ type ArrayModule2() =
         
         // len = 0
         CheckThrowsArgumentException(fun () -> Array.minBy funcInt (Array.empty<int>) |> ignore)
+        
+        // returns first minimal element
+        let max = Array.minBy fst [|3, "a"; 2, "b"; 1, "c"; 2, "d"; 1, "e"; 3, "f" |]
+        if snd max <> "c" then Assert.Fail()
         
         ()
         
