@@ -30,6 +30,8 @@ module Scripting =
             p.BeginOutputReadLine()
             p.BeginErrorReadLine()
             p.WaitForExit()
+            // Second WaitForExit ensures async output handlers complete
+            p.WaitForExit()
             p.ExitCode
         else
             0
@@ -156,7 +158,10 @@ module Scripting =
                } 
                |> Async.Start)
 
-            p.WaitForExit() 
+            p.WaitForExit()
+            // Second WaitForExit call ensures async output handlers (OutputDataReceived/ErrorDataReceived) complete.
+            // See: https://learn.microsoft.com/dotnet/api/system.diagnostics.process.waitforexit
+            p.WaitForExit()
 
             printf $"{string out}"
             eprintf $"{string err}"
