@@ -1387,6 +1387,8 @@ When pattern matching in a lambda parameter, the compiler generates an intermedi
 
 **Category:** Wrong Runtime Behavior (Hang)
 
+**Status:** ⚠️ KNOWN_LIMITATION - Type Initializer Deadlock
+
 ### Minimal Repro
 
 ```fsharp
@@ -1416,15 +1418,61 @@ Prints 1, then hangs indefinitely. The async never completes.
 ### Test Location
 `CodeGenRegressions.fs` → `Issue_15627_AsyncBeforeEntryPointHangs`
 
-### Analysis
-When there's an `[<EntryPoint>]` function, module-level initialization including async operations may deadlock due to module initialization ordering and threading issues.
+### Root Cause Analysis
+
+**Deadlock Mechanism:**
+1. When `[<EntryPoint>]` is present, module-level initialization code runs in a `.cctor` (static class constructor)
+2. The CLR uses a type initialization lock for `.cctor` execution - only one thread can enter
+3. Async code spawns a threadpool thread
+4. The async thread tries to access `deployPath` (a static field in the same type)
+5. Accessing a static field triggers type initialization, which waits for the `.cctor` to complete
+6. The `.cctor` is waiting for `Async.RunSynchronously` to complete
+7. **Deadlock!**
+
+**Why it works without `[<EntryPoint>]`:**
+Without an explicit entry point, F# generates an implicit `main@()` method that contains all initialization code directly. There's no `.cctor`, so no type initialization lock.
+
+**Why a fix is complex:**
+A fix would require rearchitecting how F# generates module initialization code:
+- Change from `.cctor` to a regular static method for explicit entry points
+- Ensure proper initialization ordering for nested modules
+- Handle all edge cases with field initialization and lazy initialization
+
+### Workarounds
+
+1. **Move async inside EntryPoint:**
+```fsharp
+[<EntryPoint>]
+let main args =
+    async { printfn "2 %s" deployPath }
+    |> Async.RunSynchronously
+    0
+```
+
+2. **Remove `[<EntryPoint>]` (use implicit entry point):**
+```fsharp
+let deployPath = Path.GetFullPath "deploy"
+async { printfn "2 %s" deployPath }
+|> Async.RunSynchronously
+printfn "Done"
+```
+
+3. **Move captured variable inside async:**
+```fsharp
+async {
+    let deployPath = Path.GetFullPath "deploy"
+    printfn "2 %s" deployPath
+}
+|> Async.RunSynchronously
+```
 
 ### Fix Location
 - `src/Compiler/CodeGen/IlxGen.fs` - module initialization with EntryPoint
+- Would require significant changes to `GenImplFile` and related functions
 
 ### Risks
-- Medium: Module initialization ordering is complex
-- Workaround: Move async inside EntryPoint or remove EntryPoint
+- High: Changing module initialization is complex and affects all F# programs
+- Workarounds available for affected users
 
 ---
 

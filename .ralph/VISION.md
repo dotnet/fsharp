@@ -1,24 +1,28 @@
-# Vision: CodeGen Regression Bugfix Campaign - Phase 4 (Replan)
+# Vision: CodeGen Regression Bugfix Campaign - Phase 5 (Replan)
 
 ## High-Level Goal
 
-Fix remaining 42 pending codegen bugs (of 62 total) in the F# compiler, enabling all tests in `CodeGenRegressions.fs` to pass with their `[<Fact>]` attributes uncommented.
+Fix remaining 36 pending codegen bugs (of 62 total) in the F# compiler, enabling all tests in `CodeGenRegressions.fs` to pass with their `[<Fact>]` attributes uncommented.
 
-## Current State (Phase 4 Start - 2026-01-27)
+## Current State (Phase 5 Start - 2026-01-27)
 
 - **62 tests** in `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs`
-- **20 tests PASSING** with `[<Fact>]` uncommented (32% complete):
-  - 15 actual bug fixes
+- **26 tests PASSING** with `[<Fact>]` uncommented (42% complete):
+  - 21 actual bug fixes
   - 5 Feature Request tests marked OUT_OF_SCOPE (documentation tests)
-- **42 tests PENDING** with `// [<Fact>]` commented out (68% remaining)
+- **36 tests PENDING** with `// [<Fact>]` commented out (58% remaining)
 
-### Fixed Issues (16 of 62 bugs)
+### Fixed Issues (21 of 62 bugs)
 | Issue | Description | Fix Type |
 |-------|-------------|----------|
+| #19075 | CLR crash constrained calls | IlxGen.fs - skip constrained for reference types |
 | #19068 | Struct object expr byref field | IlxGen.fs - deref byref for closure |
 | #18956 | Decimal InvalidProgram in Debug | IlxGen.fs - exclude literals from shadow local |
+| #18953 | Action/Func captures extra | MethodCalls.fs - bind expression result once |
 | #18868 | CallerFilePath Delegates | Already fixed in compiler |
 | #18815 | Duplicate Extension Names | IlxGen.fs - fully qualified type prefix |
+| #18672 | Resumable code top-level null | LowerStateMachines.fs - removed top-level restriction |
+| #18374 | RuntimeWrappedException catch | IlxGen.fs - proper exception wrapping |
 | #18319 | Literal upcast missing box | IlxGen.fs - box instruction |
 | #18263 | DU Is* duplicate method | Already fixed in compiler |
 | #18140 | Callvirt on value type | IlxGen.fs - constrained.callvirt |
@@ -37,19 +41,22 @@ Fix remaining 42 pending codegen bugs (of 62 total) in the F# compiler, enabling
 These are properly tested as "documents current behavior" - not bugs:
 - #15467, #15092, #14392, #13223, #9176
 
-### KNOWN_LIMITATION Issues (2)
+### KNOWN_LIMITATION Issues (3)
 - #16546 - Debug recursive reference null (requires type checker changes in EliminateInitializationGraphs)
 - #16292 - Debug SRTP mutable struct incorrect codegen (requires deeper investigation of defensive copy suppression after inlining)
+- #15627 - Async before EntryPoint hangs (CLR type initializer lock deadlock; requires rearchitecting module initialization)
 
-### Pending Issues by Category (38 remaining - excluding #16546, #16292)
+### Pending Issues by Category (35 remaining)
 
-| Category | Issues | Priority |
-|----------|--------|----------|
-| **Runtime Crash/Invalid IL** (1) | #19075 | CRITICAL |
-| **Wrong Behavior** (8) | #18953, #18672, #18374, #15627, #13468, #13100, #12136, #6750 | HIGH |
-| **Compile Error/Warning** (5) | #7861, #6379, #14707, #14706, #13108 | MEDIUM |
-| **Performance** (14) | #18753, #16378, #16245, #16037, #15326, #13218, #12546, #12416, #12366, #12139, #12137, #11556, #9348 | LOW |
-| **Interop/Cosmetic/Other** (10) | #19020, #18125, #17641, #16362, #15352, #14712, #12460, #11935, #11132, #11114, #5464 | CASE-BY-CASE |
+| Category | Count | Issues |
+|----------|-------|--------|
+| **Wrong Behavior** | 4 | #13468, #13100, #12136, #6750 |
+| **Performance** | 15 | #18753, #16378, #16245, #16037, #15326, #13218, #12546, #12416, #12366, #12139, #12137, #11556, #9348 |
+| **Compile Error/Warning** | 5 | #7861, #6379, #14707, #14706, #13108 |
+| **Runtime Error** | 2 | #11132, #11114 |
+| **Interop/Metadata** | 6 | #18125, #17641, #16362, #15352, #12460, #11935, #5464 |
+| **Signature Gen/Cosmetic** | 3 | #14712, #19020 |
+| **KNOWN_LIMITATION** | 3 | #16546, #16292, #15627 |
 
 ## Sprint Strategy for Phase 4
 
