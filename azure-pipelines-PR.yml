@@ -436,11 +436,6 @@ stages:
                 _configuration: Release
                 _testKind: testCoreclr
                 transparentCompiler: # Empty display name part.
-              fsharpqa_release:
-                _configuration: Release
-                _testKind: testFSharpQA
-                FSharp_CacheEvictionImmediate: true
-                transparentCompiler:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
@@ -481,7 +476,7 @@ stages:
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
-            condition: succeededOrFailed() # ne(variables['_testKind'], 'testFSharpQA')
+            condition: succeededOrFailed()
           - task: PublishBuildArtifacts@1
             displayName: Publish Tests BinLog
             condition: always()
