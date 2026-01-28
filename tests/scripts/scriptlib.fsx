@@ -9,7 +9,6 @@ open System
 open System.IO
 open System.Text
 open System.Diagnostics
-open System.Threading
 
 [<AutoOpen>]
 module Scripting =
@@ -142,35 +141,22 @@ module Scripting =
             cmdArgs.RedirectInput
             |> Option.iter (fun _ -> p.StartInfo.RedirectStandardInput <- true)
 
-            // Use ManualResetEvent to track when async output reading is complete
-            let outputDone = new ManualResetEvent(not cmdArgs.RedirectOutput.IsSome)
-            let errorDone = new ManualResetEvent(not cmdArgs.RedirectError.IsSome)
-            
             p.Start() |> ignore
 
-            cmdArgs.RedirectOutput |> Option.iter (fun _ -> 
-                p.OutputDataReceived.Add(fun ea ->
-                    // null data signals EOF - all output has been read
-                    if isNull ea.Data then outputDone.Set() |> ignore)
-                p.BeginOutputReadLine())
-            cmdArgs.RedirectError |> Option.iter (fun _ ->
-                p.ErrorDataReceived.Add(fun ea ->
-                    // null data signals EOF - all error output has been read
-                    if isNull ea.Data then errorDone.Set() |> ignore) 
-                p.BeginErrorReadLine())
+            cmdArgs.RedirectOutput |> Option.iter (fun _ -> p.BeginOutputReadLine())
+            cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
 
             cmdArgs.RedirectInput |> Option.iter (fun input -> 
+               async {
                 let inputWriter = p.StandardInput
+                do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
                 input inputWriter
-                inputWriter.Flush()
-                inputWriter.Dispose())
+                do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
+                inputWriter.Dispose ()
+               } 
+               |> Async.Start)
 
-            p.WaitForExit()
-            
-            // Wait for async output readers to complete (EOF signals are sent when streams close)
-            // This ensures all output has been captured before we return
-            outputDone.WaitOne() |> ignore
-            errorDone.WaitOne() |> ignore
+            p.WaitForExit() 
 
             printf $"{string out}"
             eprintf $"{string err}"

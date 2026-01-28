@@ -98,10 +98,8 @@
   </ItemGroup>
 
   <!-- xUnit3 configuration for this test project (MTP mode) -->
-  <!-- MTP requires the config file to be named [AssemblyName].testconfig.json in the output directory -->
   <ItemGroup>
     <Content Include="testconfig.json">
-      <Link>$(AssemblyName).testconfig.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
