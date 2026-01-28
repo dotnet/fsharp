@@ -94,7 +94,7 @@ This document tracks known code generation bugs in the F# compiler that have doc
 | [#12366](#issue-12366) | Rethink names for compiler-generated closures | Cosmetic | IlxGen.fs | Low |
 | [#12139](#issue-12139) | Improve string null check IL codegen | Performance | Optimizer.fs | Low |
 | [#12137](#issue-12137) | Improve analysis to reduce emit of tail | Performance | Optimizer.fs | Low |
-| [#12136](#issue-12136) | use fixed does not unpin at end of scope | Wrong Behavior | IlxGen.fs | Medium |
+| [#12136](#issue-12136) | use fixed does not unpin at end of scope | KNOWN_LIMITATION | IlxGen.fs | Medium |
 | [#11935](#issue-11935) | unmanaged constraint not recognized by C# | Interop | IlxGen.fs | Low |
 | [#11556](#issue-11556) | Better IL output for property/field initializers | Performance | IlxGen.fs | Low |
 | [#11132](#issue-11132) | TypeloadException delegate with voidptr parameter | Runtime Error | IlxGen.fs | Medium |
@@ -2752,6 +2752,25 @@ The tail call analysis doesn't have enough information about cross-assembly inli
 
 **Category:** Wrong Behavior
 
+### UPDATE (KNOWN_LIMITATION)
+
+**Status:** This issue requires significant changes to the code generator and is marked as KNOWN_LIMITATION.
+
+**Why it's complex:** The `use fixed` expression is elaborated by the type checker as:
+```fsharp
+let pin = 
+    let pinnedByref = &array.[0]  // inner binding with IsFixed = true
+    conv.i pinnedByref            // inner body
+// outer body continues here
+```
+
+The `IsFixed` flag is set on the **inner** `pinnedByref` variable, not on the outer `pin` variable. This makes it difficult to emit cleanup code at the correct scope end (the outer scope), because by the time we process the outer binding, we can't easily detect that it contains a pinned local.
+
+A proper fix would require:
+1. Tracking pinned locals across scope boundaries during code generation
+2. Emitting unpin code at ALL exit points from the outer scope (including early returns and branches)
+3. Updating ~23 existing FixedBindings baseline tests
+
 ### Minimal Repro
 
 ```fsharp
@@ -2764,41 +2783,21 @@ let test(array: int[]): unit =
     used 1  // BUG: array is still pinned here!
 ```
 
-F# IL - no cleanup at scope end:
-```il
-.locals init ([1] int32& pinned)
-IL_0007: stloc.1
-// ... use pin ...
-IL_0012: ldc.i4.1        // ← No cleanup of pinned local
-IL_0013: call void Main::used(!!0)
-```
-
-C# IL - properly unpins at scope end:
-```il
-.locals init ([1] int32& pinned)
-// ... use pin ...
-IL_0010: ldc.i4.0
-IL_0011: conv.u
-IL_0012: stloc.1        // ← Clears pinned local
-// ... rest of code ...
-```
-
 ### Expected Behavior
 The pinned local should be set to null/zero at the end of the `use fixed` scope, so the GC can move the array.
 
 ### Actual Behavior
-The pinned variable remains set until function returns, keeping the array pinned longer than necessary. This:
-- Prevents GC from moving the array during other operations
-- Confuses decompilers which expect proper scope cleanup
+The pinned variable remains set until function returns, keeping the array pinned longer than necessary.
 
-**Workaround**: Put the fixed block in a separate function:
+### Workaround
+Put the fixed block in a separate function:
 ```fsharp
 let testFixed (array: int[]) : unit =
     let doBlock() =
         use pin = fixed &array.[0]
         used pin
-    doBlock()
-    used 1  // Now array is correctly unpinned
+    doBlock()  // Function returns, so pinned local is implicitly cleaned
+    used 1     // Now array is correctly unpinned
 ```
 
 ### Test Location
@@ -2810,10 +2809,10 @@ The `use fixed` construct generates a pinned local variable but doesn't emit cle
 See also #10832 where this caused confusion about whether F# pins correctly.
 
 ### Fix Location
-- `src/Compiler/CodeGen/IlxGen.fs` - fixed statement codegen
+- `src/Compiler/CodeGen/IlxGen.fs` - Would need to track pinned locals across scope boundaries
 
 ### Risks
-- Medium: Memory pinning affects GC behavior; must ensure correctness
+- Medium: Memory pinning affects GC behavior; workaround available
 
 ---
 

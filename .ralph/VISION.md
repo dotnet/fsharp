@@ -41,22 +41,23 @@ Fix remaining 36 pending codegen bugs (of 62 total) in the F# compiler, enabling
 These are properly tested as "documents current behavior" - not bugs:
 - #15467, #15092, #14392, #13223, #9176
 
-### KNOWN_LIMITATION Issues (3)
+### KNOWN_LIMITATION Issues (4)
 - #16546 - Debug recursive reference null (requires type checker changes in EliminateInitializationGraphs)
 - #16292 - Debug SRTP mutable struct incorrect codegen (requires deeper investigation of defensive copy suppression after inlining)
 - #15627 - Async before EntryPoint hangs (CLR type initializer lock deadlock; requires rearchitecting module initialization)
+- #12136 - use fixed does not unpin at end of scope (requires tracking pinned locals across scope boundaries during code generation)
 
-### Pending Issues by Category (35 remaining)
+### Pending Issues by Category (34 remaining)
 
 | Category | Count | Issues |
 |----------|-------|--------|
-| **Wrong Behavior** | 4 | #13468, #13100, #12136, #6750 |
+| **Wrong Behavior** | 3 | #13468, #13100, #6750 |
 | **Performance** | 15 | #18753, #16378, #16245, #16037, #15326, #13218, #12546, #12416, #12366, #12139, #12137, #11556, #9348 |
 | **Compile Error/Warning** | 5 | #7861, #6379, #14707, #14706, #13108 |
 | **Runtime Error** | 2 | #11132, #11114 |
 | **Interop/Metadata** | 6 | #18125, #17641, #16362, #15352, #12460, #11935, #5464 |
 | **Signature Gen/Cosmetic** | 3 | #14712, #19020 |
-| **KNOWN_LIMITATION** | 3 | #16546, #16292, #15627 |
+| **KNOWN_LIMITATION** | 4 | #16546, #16292, #15627, #12136 |
 
 ## Sprint Strategy for Phase 4
 

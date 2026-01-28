@@ -1,55 +1,83 @@
-# Replan Request for Issue #16292
-
-## Current Status
-The investigation of Issue #16292 (Debug SRTP mutable struct incorrect codegen) has revealed that the fix is more complex than initially anticipated.
+# Sprint 5 REPLAN: Issue #12136 - Fixed Unpin
 
 ## Investigation Summary
 
-### Root Cause Analysis
-1. In Debug mode with `--optimize-`, when a SRTP trait call is made on a mutable struct local (`iter.MoveNext()`), the compiler creates a defensive copy of the struct.
+Issue #12136 requires emitting cleanup code (`ldc.i4.0; conv.u; stloc`) at the end of `use fixed` scopes to zero out pinned locals, allowing the GC to move previously pinned objects.
 
-2. The defensive copy logic is in `mkExprAddrOfExprAux` in `TypedTreeOps.fs`. When the function can't recognize that an expression is a mutable local that can be addressed directly, it falls through to the catch-all case that creates `copyOfStruct`.
+## Root Cause Analysis
 
-3. Initially suspected: `Expr.DebugPoint` wrappers around expressions prevent pattern matching on `Expr.Val`.
+The `use fixed` expression is elaborated by the type checker as:
+```fsharp
+use pin = fixed &array.[0]
+// becomes:
+let pin =
+    let pinnedByref = &array.[0]  // inner binding with IsFixed = true
+    conv.i pinnedByref            // inner body
+// outer body continues here
+```
 
-4. Fix attempted: Call `stripDebugPoints` before pattern matching in `mkExprAddrOfExprAux`.
+The `IsFixed` flag is set on the **inner** `pinnedByref` variable, not on the outer `pin` variable.
 
-5. Result: Test still hangs - fix not working.
+## Fix Attempt
 
-### Hypotheses for Why Fix Isn't Working
+The attempted fix:
+1. Extended `EndLocalScope` sequel to carry an optional pinned local index
+2. Modified `GenSequelEndScopes` to emit unpin instructions
+3. Checked `v.IsFixed` when processing let bindings
 
-1. **Expression Structure**: The receiver expression may not be a simple `Expr.Val` - it could be wrapped in additional layers (Let bindings, applications, etc.) that my fix doesn't handle.
+**Problem**: The check `v.IsFixed` in `Expr.Let` only detects the inner binding (`pinnedByref`), not the outer binding (`pin`). This causes:
+1. Unpin code to be emitted at the end of the **inner** scope (too early)
+2. Dead code generation in conditional branches
+3. Breaking 23 existing `EmittedIL.FixedBindings` tests
 
-2. **Variable Mutation During Inlining**: The inline function's local variable may be copied/renamed during inlining in a way that changes its `IsMutable` property.
+## Why This Is Complex
 
-3. **Different Code Path**: The defensive copy may be created in a different location, not in `mkExprAddrOfExprAux`.
+The proper fix requires one of these approaches:
 
-4. **Test Infrastructure**: The test may be using a cached/old version of the compiler.
+### Approach 1: Track Pinned Locals Across Scopes
+- When processing RHS of a binding, track any pinned locals allocated
+- Associate those pinned locals with the outer scope
+- Emit unpin at the outer scope end
+- **Complexity**: Requires modifying `GenBindingRhs` to return allocated pinned locals
 
-## Proposed Next Steps
+### Approach 2: Modify Type Checker Elaboration
+- Change how `use fixed` is elaborated so the outer binding has `IsFixed = true`
+- Would require changes in `CheckExpressions.fs`
+- **Complexity**: Could affect semantics and other parts of the compiler
 
-### Option A: Deeper Investigation
-1. Add diagnostic logging to `mkExprAddrOfExprAux` to see what expressions are being passed.
-2. Check the exact expression structure after inlining.
-3. Trace through `MustTakeAddressOfVal` to verify it returns `true` for the receiver.
-
-### Option B: Alternative Fix Location
-1. Look at IlxGen.fs more closely for where the trait call is generated.
-2. Check if there's a way to fix this at the IL generation level.
-3. Look at how the optimizer handles this (it works in Release mode).
-
-### Option C: Mark as KNOWN_LIMITATION
-If after further investigation the fix proves too risky or complex:
-1. Document the issue as a known limitation
-2. Provide workaround: Use `--optimize+` or avoid SRTP with mutable structs in Debug builds
+### Approach 3: Post-Processing IL
+- After generating IL, scan for pinned locals that aren't zeroed at scope end
+- Insert cleanup instructions
+- **Complexity**: Significant changes to IL emission pipeline
 
 ## Recommendation
-Continue investigation with Option A to understand the exact expression structure. If that doesn't reveal the issue within 1-2 more sprints, consider Option C.
 
-## Time Spent So Far
-- Initial investigation: ~1 hour
-- First fix attempt: ~30 minutes
-- Debugging fix attempt: ~1 hour
-- Documentation: ~15 minutes
+This fix requires 2-3 sprints to implement properly:
 
-Total: ~3 hours
+**Sprint A**: Modify `GenBindingRhs` and `GenBindingAfterDebugPoint` to return a list of pinned local indices allocated during RHS generation. Thread this information to the outer scope.
+
+**Sprint B**: Emit unpin code for all pinned locals when their associated outer scope ends. Handle multiple exit points (returns, branches).
+
+**Sprint C**: Update all ~23 FixedBindings baseline tests, verify no regressions.
+
+## Current State
+
+- The `EndLocalScope` sequel type has been extended but the detection logic is incomplete
+- Existing tests are broken
+- The test for #12136 passes because it doesn't verify IL patterns
+
+## Temporary Workaround
+
+Users can work around this issue by placing the fixed block in a separate function:
+```fsharp
+let testFixed (array: int[]) : unit =
+    let doBlock() =
+        use pin = fixed &array.[0]
+        used pin
+    doBlock()  // Function returns, so pinned local is implicitly cleaned
+    used 1     // Array is now unpinned
+```
+
+## Request
+
+Mark issue #12136 as KNOWN_LIMITATION and schedule follow-up sprints to implement the proper fix.

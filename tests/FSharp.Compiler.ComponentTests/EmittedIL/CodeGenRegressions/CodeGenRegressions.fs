@@ -1814,46 +1814,47 @@ let sumLocal () = fold (+) 0 [1; 2; 3]
 
     // ===== Issue #12136: use fixed does not unpin at end of scope =====
     // https://github.com/dotnet/fsharp/issues/12136
-    // When using "use x = fixed expr", the pinned variable remains pinned until
+    // [KNOWN_LIMITATION]
+    //
+    // PROBLEM: When using "use x = fixed expr", the pinned variable remains pinned until
     // the function returns, not at the end of the scope where it's declared.
     // C# correctly nulls out the pinned local at end of fixed block scope.
     // This affects GC behavior and confuses decompilers.
-    // Workaround: put the fixed block in a separate function.
-    // [<Fact>]
+    //
+    // WHY IT'S COMPLEX: The `use fixed` expression is elaborated by the type checker as:
+    //   let pin = let pinnedByref = &array.[0] in conv.i pinnedByref
+    // The IsFixed flag is on the inner 'pinnedByref' variable, not the outer 'pin'.
+    // This makes it difficult to emit cleanup at the correct scope end.
+    //
+    // WORKAROUND: Put the fixed block in a separate function:
+    //   let doBlock() = use pin = fixed &array.[0]; used pin
+    //   doBlock(); used 1  // Array is correctly unpinned after doBlock returns
+    //
+    // This test verifies the workaround compiles correctly.
+    // [<Fact>]  // Commented out - workaround only, not a fix
     let ``Issue_12136_FixedUnpin`` () =
-        // The pinned local should be set to null/zero at end of scope
-        // F# IL: no cleanup of pinned local at scope end
-        // C# IL: stloc.1 with null at end of fixed block
+        // Test the workaround: put fixed block in separate function
         let source = """
 module FixedUnpinTest
+
+#nowarn "9"  // Suppress unverifiable IL warning for fixed
 
 open Microsoft.FSharp.NativeInterop
 
 let inline used<'T> (t: 'T) : unit = ignore t
 
-let test (array: int[]) : unit =
-    do
-        use pin = fixed &array.[0]
-        used pin
-    // BUG: array remains pinned here even though 'pin' is out of scope!
-    used 1  // GC cannot move 'array' during this call
-
-// The IL shows pin remains set (no cleanup instruction) after the 'do' block
-// C# would emit: ldc.i4.0; conv.u; stloc.1 to unpin
-
-// WORKAROUND: Put fixed block in separate function
+// WORKAROUND: Put the fixed block in a separate function
 let testFixed (array: int[]) : unit =
     let doBlock() =
         use pin = fixed &array.[0]
         used pin
-    doBlock()
-    used 1  // Now array is correctly unpinned
+    doBlock()  // Function returns, so pinned local is implicitly cleaned
+    used 1     // Now array is correctly unpinned
 """
         FSharp source
         |> asLibrary
         |> compile
         |> shouldSucceed
-        // IL analysis would show missing cleanup for pinned local at scope end
         |> ignore
 
     // ===== Issue #11935: unmanaged constraint not recognized by C# =====
