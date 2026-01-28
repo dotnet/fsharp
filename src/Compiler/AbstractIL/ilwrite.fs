@@ -2883,6 +2883,7 @@ let rec GenTypeDefPass3 enc cenv (tdef: ILTypeDef) =
         // ClassLayout entry if needed
         match tdef.Layout with
         | ILTypeDefLayout.Auto -> ()
+        | ILTypeDefLayout.Extended -> ()  // No ClassLayout row for Extended; bits are in TypeAttributes
         | ILTypeDefLayout.Sequential layout | ILTypeDefLayout.Explicit layout ->
             if Option.isSome layout.Pack || Option.isSome layout.Size then
                 AddUnsharedRow cenv TableNames.ClassLayout

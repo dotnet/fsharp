@@ -11564,60 +11564,64 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             tdef
 
                     let tdLayout, tdEncoding =
-                        match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
-                        | Some(Attrib(_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
-                            let decoder = AttributeDecoder namedArgs
-                            let ilPack = decoder.FindInt32 "Pack" 0x0
-                            let ilSize = decoder.FindInt32 "Size" 0x0
+                        // Check for ExtendedLayoutAttribute first
+                        if HasFSharpAttributeOpt g g.attrib_ExtendedLayoutAttribute_opt tycon.Attribs then
+                            ILTypeDefLayout.Extended, ILDefaultPInvokeEncoding.Ansi
+                        else
+                            match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
+                            | Some(Attrib(_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
+                                let decoder = AttributeDecoder namedArgs
+                                let ilPack = decoder.FindInt32 "Pack" 0x0
+                                let ilSize = decoder.FindInt32 "Size" 0x0
 
-                            let tdEncoding =
-                                match (decoder.FindInt32 "CharSet" 0x0) with
-                                (* enumeration values for System.Runtime.InteropServices.CharSet taken from mscorlib.il *)
-                                | 0x03 -> ILDefaultPInvokeEncoding.Unicode
-                                | 0x04 -> ILDefaultPInvokeEncoding.Auto
-                                | _ -> ILDefaultPInvokeEncoding.Ansi
+                                let tdEncoding =
+                                    match (decoder.FindInt32 "CharSet" 0x0) with
+                                    (* enumeration values for System.Runtime.InteropServices.CharSet taken from mscorlib.il *)
+                                    | 0x03 -> ILDefaultPInvokeEncoding.Unicode
+                                    | 0x04 -> ILDefaultPInvokeEncoding.Auto
+                                    | _ -> ILDefaultPInvokeEncoding.Ansi
 
-                            let layoutInfo =
-                                if ilPack = 0x0 && ilSize = 0x0 then
-                                    { Size = None; Pack = None }
+                                let layoutInfo =
+                                    if ilPack = 0x0 && ilSize = 0x0 then
+                                        { Size = None; Pack = None }
+                                    else
+                                        {
+                                            Size = Some ilSize
+                                            Pack = Some(uint16 ilPack)
+                                        }
+
+                                let tdLayout =
+                                    match layoutKind with
+                                    (* enumeration values for System.Runtime.InteropServices.LayoutKind taken from mscorlib.il *)
+                                    | 0x0 -> ILTypeDefLayout.Sequential layoutInfo
+                                    | 0x2 -> ILTypeDefLayout.Explicit layoutInfo
+                                    | _ -> ILTypeDefLayout.Auto
+
+                                tdLayout, tdEncoding
+                            | Some(Attrib(_, _, _, _, _, _, m)) ->
+                                errorR (Error(FSComp.SR.ilStructLayoutAttributeCouldNotBeDecoded (), m))
+                                ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
+
+                            | _ when
+                                (match ilTypeDefKind with
+                                 | HasFlag ILTypeDefAdditionalFlags.ValueType -> true
+                                 | _ -> false)
+                                ->
+
+                                // All structs are sequential by default
+                                // Structs with no instance fields get size 1, pack 0
+                                if
+                                    tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic)
+                                    ||
+                                    // Reflection emit doesn't let us emit 'pack' and 'size' for generic structs.
+                                    // In that case we generate a dummy field instead
+                                    (cenv.options.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty)
+                                then
+                                    ILTypeDefLayout.Sequential { Size = None; Pack = None }, ILDefaultPInvokeEncoding.Ansi
                                 else
-                                    {
-                                        Size = Some ilSize
-                                        Pack = Some(uint16 ilPack)
-                                    }
+                                    ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }, ILDefaultPInvokeEncoding.Ansi
 
-                            let tdLayout =
-                                match layoutKind with
-                                (* enumeration values for System.Runtime.InteropServices.LayoutKind taken from mscorlib.il *)
-                                | 0x0 -> ILTypeDefLayout.Sequential layoutInfo
-                                | 0x2 -> ILTypeDefLayout.Explicit layoutInfo
-                                | _ -> ILTypeDefLayout.Auto
-
-                            tdLayout, tdEncoding
-                        | Some(Attrib(_, _, _, _, _, _, m)) ->
-                            errorR (Error(FSComp.SR.ilStructLayoutAttributeCouldNotBeDecoded (), m))
-                            ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
-
-                        | _ when
-                            (match ilTypeDefKind with
-                             | HasFlag ILTypeDefAdditionalFlags.ValueType -> true
-                             | _ -> false)
-                            ->
-
-                            // All structs are sequential by default
-                            // Structs with no instance fields get size 1, pack 0
-                            if
-                                tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic)
-                                ||
-                                // Reflection emit doesn't let us emit 'pack' and 'size' for generic structs.
-                                // In that case we generate a dummy field instead
-                                (cenv.options.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty)
-                            then
-                                ILTypeDefLayout.Sequential { Size = None; Pack = None }, ILDefaultPInvokeEncoding.Ansi
-                            else
-                                ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }, ILDefaultPInvokeEncoding.Ansi
-
-                        | _ -> ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
+                            | _ -> ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
 
                     // if the type's layout is Explicit, ensure that each field has a valid offset
                     let validateExplicit (fdef: ILFieldDef) =
@@ -11641,6 +11645,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     match tdLayout with
                     | ILTypeDefLayout.Explicit _ -> List.iter validateExplicit ilFieldDefs
                     | ILTypeDefLayout.Sequential _ -> List.iter validateSequential ilFieldDefs
+                    | ILTypeDefLayout.Extended -> List.iter validateSequential ilFieldDefs // Extended layout also disallows FieldOffset
                     | _ -> ()
 
                     let tdef =

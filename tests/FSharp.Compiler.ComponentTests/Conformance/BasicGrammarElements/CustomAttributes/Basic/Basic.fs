@@ -380,6 +380,81 @@ module CustomAttributes_Basic =
         """
         ]
 
+
+    // SOURCE=ExtendedLayout.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ExtendedLayout.fs"|])>]
+    let ``ExtendedLayout_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=ExtendedLayout_IL.fs - Verify IL has correct TypeAttributes
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ExtendedLayout_IL.fs"|])>]
+    let ``ExtendedLayout_IL_fs`` compilation =
+        compilation
+        |> asLibrary
+        |> withOptions ["--nowarn:988"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            """
+  .class public extended ansi sealed beforefieldinit Test.MyExtendedStruct
+         extends [runtime]System.ValueType
+  {
+    .custom instance void System.Runtime.InteropServices.ExtendedLayoutAttribute::.ctor(valuetype System.Runtime.InteropServices.ExtendedLayoutKind) = ( 01 00 00 00 00 00 00 00 )
+    .field public int32 X
+    .field public float64 Y
+            """
+        ]
+
+    // SOURCE=E_ExtendedLayout_OnClass.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExtendedLayout_OnClass.fs"|])>]
+    let ``E_ExtendedLayout_OnClass_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3881, Line 6, Col 6, Line 6, Col 18, "Only structs may be given the 'ExtendedLayoutAttribute'")
+
+    // SOURCE=E_ExtendedLayout_OnInterface.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExtendedLayout_OnInterface.fs"|])>]
+    let ``E_ExtendedLayout_OnInterface_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3881, Line 6, Col 6, Line 6, Col 23, "Only structs may be given the 'ExtendedLayoutAttribute'")
+
+    // SOURCE=E_ExtendedLayout_OnDelegate.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExtendedLayout_OnDelegate.fs"|])>]
+    let ``E_ExtendedLayout_OnDelegate_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3881, Line 6, Col 6, Line 6, Col 21, "Only structs may be given the 'ExtendedLayoutAttribute'")
+
+    // SOURCE=E_ExtendedLayout_WithStructLayout.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExtendedLayout_WithStructLayout.fs"|])>]
+    let ``E_ExtendedLayout_WithStructLayout_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3879, Line 8, Col 6, Line 8, Col 24, "The attributes 'StructLayoutAttribute' and 'ExtendedLayoutAttribute' cannot be used together on the same type")
+
+    // SOURCE=E_ExtendedLayout_FieldOffset.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExtendedLayout_FieldOffset.fs"|])>]
+    let ``E_ExtendedLayout_FieldOffset_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1211, Line 10, Col 9, Line 10, Col 24, "The FieldOffset attribute can only be placed on members of types marked with the StructLayout(LayoutKind.Explicit)")
+
+    // SOURCE=E_StructLayout_Extended.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayout_Extended.fs"|])>]
+    let ``E_StructLayout_Extended_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3882, Line 6, Col 16, Line 6, Col 37, "LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.")
+
     [<Fact>]
     let ``StructLayoutAttribute has size=1 for struct DUs with no instance fields`` () =
         Fsx """
