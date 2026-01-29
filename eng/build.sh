@@ -83,7 +83,8 @@ properties=""
 docker=false
 args=""
 
-tfm="net10.0" # This needs to be changed every time it's bumped by arcade/us.
+# Read product TFM from centralized source of truth
+tfm=$(cat "$scriptroot/productTfm.txt" | tr -d '[:space:]')
 
 BuildCategory=""
 BuildMessage=""
