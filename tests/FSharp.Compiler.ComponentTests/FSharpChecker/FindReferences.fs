@@ -61,6 +61,18 @@ let expectLinesInclude expectedLines (ranges: range list) =
 let expectMinRefs minCount (ranges: range list) =
     Assert.True(ranges.Length >= minCount, $"Expected at least {minCount} references, got {ranges.Length}")
 
+/// Shorthand for simple find-all-references tests with SyntheticProject.
+let testFindAllRefs source symbolName assertion =
+    SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
+        .Workflow {
+            placeCursor "Source" symbolName
+            findAllReferences assertion
+        }
+
+/// Shorthand for find-all-references tests expecting minimum count.
+let testFindAllRefsMin source symbolName minCount =
+    testFindAllRefs source symbolName (expectMinRefs minCount)
+
 /// https://github.com/dotnet/fsharp/issues/13199
 let reproSourceCode = """
 type MyType() = 
@@ -929,13 +941,9 @@ let m1 = { m with V = "m" }
 
 type R = { M: Model }
 """
-        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
-            .Workflow {
-                placeCursor "Source" "Model"
-                findAllReferences (fun ranges ->
-                    expectLinesInclude [3; 5; 7] ranges  // Type def, copy-and-update, type annotation
-                    expectMinRefs 3 ranges)
-            }
+        testFindAllRefs source "Model" (fun ranges ->
+            expectLinesInclude [3; 5; 7] ranges
+            expectMinRefs 3 ranges)
     
     [<Fact>]
     let ``Find references of record type includes copy-and-update with nested fields`` () =
@@ -945,11 +953,7 @@ type Outer = { I: Inner }
 let o = { I = { X = 1 } }
 let o2 = { o with I.X = 2 }
 """
-        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
-            .Workflow {
-                placeCursor "Source" "Outer"
-                findAllReferences (fun ranges -> expectLinesInclude [4; 6] ranges)
-            }
+        testFindAllRefs source "Outer" (expectLinesInclude [4; 6])
 
 /// https://github.com/dotnet/fsharp/issues/16621
 module UnionCaseTesters =
@@ -962,11 +966,7 @@ type X = A | B
 let c = A
 let result = c.IsB
 """
-        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
-            .Workflow {
-                placeCursor "Source" "B"
-                findAllReferences (expectMinRefs 2)  // Definition + IsB usage
-            }
+        testFindAllRefsMin source "B" 2  // Definition + IsB usage
     
     [<Fact>]
     let ``Find references of union case A includes IsA usage`` () =
@@ -977,11 +977,7 @@ let x = CaseA
 let useA = x.IsCaseA
 let useB = x.IsCaseB
 """
-        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
-            .Workflow {
-                placeCursor "Source" "CaseA"
-                findAllReferences (expectMinRefs 3)  // Definition, construction, IsCaseA
-            }
+        testFindAllRefsMin source "CaseA" 3  // Definition, construction, IsCaseA
 
 /// https://github.com/dotnet/fsharp/issues/14902
 module AdditionalConstructors =
