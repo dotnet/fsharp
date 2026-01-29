@@ -2,7 +2,8 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System.Composition
+open System
+open System.ComponentModel.Composition
 open System.Collections.Immutable
 open System.Collections.Generic
 open System.Threading
@@ -12,9 +13,12 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
+open Microsoft.VisualStudio.Shell
 open FSharp.Compiler.Diagnostics
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open Microsoft.VisualStudio.Settings
+open Microsoft.Internal.VisualStudio.Shell.Interop
 
 [<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
 type internal DiagnosticsType =
@@ -22,10 +26,30 @@ type internal DiagnosticsType =
     | Semantic
 
 [<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>)>]
-type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
+type internal FSharpDocumentDiagnosticAnalyzer
+    [<ImportingConstructor>]
+    (
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
+    ) =
 
-    let shouldProduceDiagnostics (document: Document) =
-        document.Project.Solution.GetFSharpExtensionConfig().ShouldProduceDiagnostics()
+    //let settingsReader : Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsReader =
+    let produceDiagnostic =
+        let settingsManager = serviceProvider.GetService(typeof<SVsUnifiedSettingsManager>) :?> Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager
+        let reader = settingsManager.GetReader()
+        let settingValue = reader.GetValueOrThrow<string>("fsharp.getDiagnosticsFrom")
+        match settingValue with
+        | "both"
+        | "old" -> true
+        | "unset"
+        | "lsp" -> false
+        | _ -> failwithf "Unexpected value for 'fsharp.getDiagnosticsFrom': %s" settingValue
+
+
+    let shouldProduceDiagnostics (_document: Document) =
+        //let value = settingsReader.GetValueOrThrow<string>("fsharp.getDiagnosticsFrom")
+        // TODO XXX cast it to enum?
+        produceDiagnostic
+
 
     static let diagnosticEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with

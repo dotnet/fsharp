@@ -32,24 +32,12 @@ namespace FSharp.VisualStudio.Extension
             ExtensionChoice,
             defaultValue: UNSET)
         {
-            Description = "%Which extension should be used to provide diagnostics%",
-        };
-
-        [VisualStudioContribution]
-        public static Setting.Enum GetSemanticHighlightingFrom { get; } = new(
-            "getSemanticHighlightingFrom",
-            "%FSharpSettings.GetSemanticHighlightingFrom%",
-            FSharpCategory,
-            ExtensionChoice,
-            defaultValue: UNSET)
-        {
-            Description = "%Which extension should be used to provide semantic highlighting%",
+            Description = "%FSharpSettings.GetDiagnosticsFrom.Description%",
         };
 
         public static Setting<string>[] AllStringSettings { get; } =
         [
             GetDiagnosticsFrom,
-            GetSemanticHighlightingFrom,
         ];
     }
 }

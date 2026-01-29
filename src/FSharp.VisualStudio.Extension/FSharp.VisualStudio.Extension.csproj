@@ -7,16 +7,18 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>12</LangVersion>
 		<NeutralLanguage>en-US</NeutralLanguage>
+		<CreateVsixContainer>false</CreateVsixContainer>
+		<AssemblyVSIXSubPath>LSPComponent</AssemblyVSIXSubPath>
 		<!-- The VisualStudio.Extensibility preview packages are available from the azure-public/vside/msft_consumption feed -->
 
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.13.39620" />
-		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.13.39620" />
+		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.14.40313" />
+		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.40313" />
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" Version="17.13.9" />
-		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
-		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.13.2" />
+		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.14.143" />
+		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" />
 		<!--<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.ClientExtensions" Version="0.1.718-beta" />
 		<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.Collector" Version="0.1.718-beta" />
 		<PackageReference Include="OpenTelemetry" Version="1.11.2" />

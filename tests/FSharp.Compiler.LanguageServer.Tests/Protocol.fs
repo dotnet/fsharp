@@ -155,34 +155,6 @@ let ``Basic server workflow`` () =
     }
 
 [<Fact>]
-let ``Full semantic tokens`` () =
-
-    task {
-        let! client = initializeLanguageServer None
-        let workspace = client.Workspace
-        let contentOnDisk = "let x = 1"
-        let fileOnDisk = sourceFileOnDisk contentOnDisk
-        let _projectIdentifier =
-            workspace.Projects.AddOrUpdate(ProjectConfig.Create(), [ fileOnDisk.LocalPath ])
-        do!
-            client.JsonRpc.NotifyAsync(
-                Methods.TextDocumentDidOpenName,
-                DidOpenTextDocumentParams(
-                    TextDocument = TextDocumentItem(Uri = fileOnDisk, LanguageId = "F#", Version = 1, Text = contentOnDisk)
-                )
-            )
-        let! semanticTokensResponse =
-            client.JsonRpc.InvokeAsync<SemanticTokens>(
-                Methods.TextDocumentSemanticTokensFullName,
-                SemanticTokensParams(TextDocument = TextDocumentIdentifier(Uri = fileOnDisk))
-            )
-
-        let expected = [| 0; 0; 0; 1; 0; 0; 0; 3; 15; 0; 0; 4; 1; 17; 0; 0; 4; 1; 19; 0 |]
-
-        Assert.Equal<int array>(expected, semanticTokensResponse.Data)
-    }
-
-[<Fact>]
 let ``Shutdown and exit`` () =
     task {
         let! client = initializeLanguageServer None
