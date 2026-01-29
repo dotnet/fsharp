@@ -191,6 +191,18 @@ module Scripting =
             // See: https://learn.microsoft.com/dotnet/api/system.diagnostics.process.waitforexit
             p.WaitForExit()
             diagLog (sprintf "Second WaitForExit returned. stdout.Length=%d stderr.Length=%d" out.Length err.Length)
+
+            // Log stdout content - useful for understanding what FSI actually outputs
+            if out.Length > 0 && out.Length < 200 then
+                let stdoutContent = string out
+                diagLog (sprintf "[STDOUT] %s" (stdoutContent.Replace("\r", "\\r").Replace("\n", "\\n")))
+
+            // Log stderr content if there is any - this may contain FSI error messages
+            if err.Length > 0 then
+                let stderrContent = string err
+                let truncated = if stderrContent.Length > 500 then stderrContent.Substring(0, 500) + "..." else stderrContent
+                diagLog (sprintf "[STDERR] %s" (truncated.Replace("\r", "\\r").Replace("\n", "\\n")))
+
             diagLog "=== Process.exec END ==="
 
             printf $"{string out}"

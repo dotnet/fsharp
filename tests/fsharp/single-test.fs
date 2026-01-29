@@ -293,7 +293,16 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         use _cleanup = (cleanUpFSharpCore cfg)
         let sources = extraSources |> List.filter (fileExists cfg)
 
-        fsiStdinCheckPassed cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
+        try
+            fsiStdinCheckPassed cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
+        with ex ->
+            // Include diagnostic log in failure message
+            let diagLogPath = Path.Combine(cfg.Directory, "fsi_stdin_diag.log")
+            let diagContent = 
+                if File.Exists diagLogPath then 
+                    sprintf "\n\n=== FSI STDIN DIAGNOSTIC LOG ===\n%s\n=== END DIAGNOSTIC LOG ===" (File.ReadAllText diagLogPath)
+                else "\n\n=== NO DIAGNOSTIC LOG FILE FOUND ==="
+            failwithf "%s%s" ex.Message diagContent
 
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
