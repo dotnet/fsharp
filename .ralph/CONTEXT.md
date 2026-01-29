@@ -82,3 +82,54 @@ This file is updated after each sprint completes. Use it to understand what was 
 - When TFM changes in eng/productTfm.txt, the list will automatically update
 
 ---
+
+## Sprint 4: Product code: Update CompilerLocation.fs
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 5: Test utilities: Add productTfm constant
+
+**Summary:** Added productTfm constant to TestFramework.fs and updated all test utility files to use it instead of hardcoded 'net10.0'
+
+**Files touched:**
+- tests/FSharp.Test.Utilities/TestFramework.fs - added productTfm constant reading from eng/productTfm.txt, updated dotnetArchitecture
+- tests/FSharp.Test.Utilities/CompilerAssert.fs - uses productTfm in runtimeconfig generation
+- tests/FSharp.Test.Utilities/ProjectGeneration.fs - uses productTfm in fsproj template
+- tests/FSharp.Test.Utilities/Utilities.fs - uses productTfm for target framework
+
+**Verification:**
+- dotnet build tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj succeeds
+- No hardcoded 'net10.0' in any of the four files (except documentation comment)
+- Test utilities compile successfully
+
+---
+
+## Sprint 5: Test utilities: Add
+  productTfm constant
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 6: Test files: Update remaining test references
+
+**Summary:** Updated test files to use centralized TFM via TestFramework.productTfm
+
+**Files touched:**
+- tests/fsharp/single-test.fs - replaced 3 occurrences of "net10.0" with productTfm
+- tests/FSharp.Compiler.Private.Scripting.UnitTests/DependencyManagerInteractiveTests.fs - replaced 18 occurrences of "net10.0" with TestFramework.productTfm
+
+**Verification:**
+- dotnet build tests/fsharp/FSharpSuite.Tests.fsproj succeeds with 0 errors
+- dotnet build tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj succeeds with 0 errors
+- No hardcoded 'net10.0' in single-test.fs
+- No hardcoded 'net10.0' in DependencyManagerInteractiveTests.fs
+- Remaining net10.0 in tests/ are only in: utility scripts, MSBuild config files, comments, and notebooks (not functional test code)
+
+---
