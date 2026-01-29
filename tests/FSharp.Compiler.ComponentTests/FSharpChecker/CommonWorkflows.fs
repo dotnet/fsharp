@@ -154,7 +154,7 @@ let GetAllUsesOfAllSymbols() =
             return checkProjectResults.GetAllUsesOfAllSymbols()
         } |> Async.RunSynchronously
 
-    // Count is 80 due to constructor usages registered as both CtorGroup and Value
+    // #14902: Count is 80 due to constructor double registration
     if result.Length <> 80 then failwith $"Expected 80 symbolUses, got {result.Length}:\n%A{result}"
 
 [<Fact>]

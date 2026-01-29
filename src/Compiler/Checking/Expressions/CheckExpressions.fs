@@ -779,7 +779,7 @@ let ForNewConstructors tcSink (env: TcEnv) mObjTy methodName meths =
     let callSink (item, minst) = CallMethodGroupNameResolutionSink tcSink (mObjTy, env.NameEnv, item, origItem, minst, ItemOccurrence.Use, env.AccessRights)
     let sendToSink minst refinedMeths = 
         callSink (Item.CtorGroup(methodName, refinedMeths), minst)
-        // For F# constructors, also register as Item.Value for Find All References.
+        // #14902: Also register as Item.Value for Find All References
         for meth in refinedMeths do
             match meth with
             | FSMeth(_, _, vref, _) when vref.IsConstructor ->
