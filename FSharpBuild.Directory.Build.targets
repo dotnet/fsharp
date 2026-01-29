@@ -73,6 +73,8 @@
       <_BuildPropertyLines Include="module internal FSharp.BuildProperties" />
       <_BuildPropertyLines Include="let fsProductVersion = &quot;$(FSPRODUCTVERSION)&quot;" />
       <_BuildPropertyLines Include="let fsLanguageVersion = &quot;$(FSLANGUAGEVERSION)&quot;" />
+      <_BuildPropertyLines Include="let fsProductTfm = &quot;$(FSharpNetCoreProductDefaultTargetFramework)&quot;" />
+      <_BuildPropertyLines Include="let fsProductTfmMajorVersion = &quot;$(FSharpNetCoreProductMajorVersion)&quot;" />
     </ItemGroup>
 
     <MakeDir
