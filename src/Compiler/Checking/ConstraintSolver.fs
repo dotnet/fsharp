@@ -290,30 +290,6 @@ let getOverloadResolutionCache =
         new Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>(options, "overloadResolutionCache")
     Extras.WeakMap.getOrCreate factory
 
-/// Stores an overload resolution result in the cache.
-/// For successful resolutions, finds the method's index in calledMethGroup and stores CachedResolved.
-/// For failures, stores CachedFailed.
-let inline storeCacheResult
-    (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>)
-    (cacheKeyOpt: OverloadResolutionCacheKey voption)
-    (calledMethGroup: CalledMeth<_> list)
-    (calledMethOpt: CalledMeth<_> voption)
-    =
-    match cacheKeyOpt with
-    | ValueSome cacheKey ->
-        let result =
-            match calledMethOpt with
-            | ValueSome calledMeth ->
-                calledMethGroup
-                |> List.tryFindIndex (fun cm -> obj.ReferenceEquals(cm, calledMeth))
-                |> Option.map CachedResolved
-            | ValueNone -> Some CachedFailed
-
-        match result with
-        | Some res -> cache.TryAdd(cacheKey, res) |> ignore
-        | None -> ()
-    | ValueNone -> ()
-
 type ConstraintSolverState =
     { 
       g: TcGlobals
@@ -556,6 +532,60 @@ let tryComputeOverloadCacheKey
                 CallerTyArgCount = callerTyArgCount
             }
 
+/// Stores an overload resolution result in the cache.
+/// For successful resolutions, finds the method's index in calledMethGroup and stores CachedResolved.
+/// For failures, stores CachedFailed.
+/// 
+/// Also computes and stores under an "after" key if types were solved during resolution.
+/// This allows future calls with already-solved types to hit the cache directly.
+let inline storeCacheResult
+    (g: TcGlobals)
+    (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>)
+    (cacheKeyOpt: OverloadResolutionCacheKey voption)
+    (calledMethGroup: CalledMeth<'T> list)
+    (callerArgs: CallerArgs<'T>)
+    (reqdRetTyOpt: OverallTy option)
+    (calledMethOpt: CalledMeth<'T> voption)
+    =
+    match cacheKeyOpt with
+    | ValueSome cacheKey ->
+        let result =
+            match calledMethOpt with
+            | ValueSome calledMeth ->
+                calledMethGroup
+                |> List.tryFindIndex (fun cm -> obj.ReferenceEquals(cm, calledMeth))
+                |> Option.map CachedResolved
+            | ValueNone -> Some CachedFailed
+
+        match result with
+        | Some res -> 
+            // Store under the "before" key
+            cache.TryAdd(cacheKey, res) |> ignore
+            
+            // Compute "after" key - types may have been solved during resolution
+            // If different from "before" key, store under that too for future hits
+            match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt with
+            | ValueSome afterKey when afterKey <> cacheKey ->
+                cache.TryAdd(afterKey, res) |> ignore
+            | _ -> ()
+        | None -> ()
+    | ValueNone -> 
+        // Even if we couldn't compute a "before" key (unstable types),
+        // try to compute an "after" key now that types may be solved
+        match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt with
+        | ValueSome afterKey ->
+            let result =
+                match calledMethOpt with
+                | ValueSome calledMeth ->
+                    calledMethGroup
+                    |> List.tryFindIndex (fun cm -> obj.ReferenceEquals(cm, calledMeth))
+                    |> Option.map CachedResolved
+                | ValueNone -> Some CachedFailed
+            match result with
+            | Some res -> cache.TryAdd(afterKey, res) |> ignore
+            | None -> ()
+        | ValueNone -> ()
+
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
 /// infinite equations such as 
 ///    'a = 'a list
@@ -566,7 +596,7 @@ let rec occursCheck g un ty =
     | TType_anon(_, l)
     | TType_tuple (_, l) -> List.exists (occursCheck g un) l
     | TType_fun (domainTy, rangeTy, _) -> occursCheck g un domainTy || occursCheck g un rangeTy
-    | TType_var (r, _) ->  typarEq un r 
+    | TType_var (r, _) ->  typarEq un r
     | TType_forall (_, tau) -> occursCheck g un tau
     | _ -> false 
 
@@ -3698,7 +3728,7 @@ and ResolveOverloadingCore
 
     match exactMatchCandidates with
     | [(calledMeth, warns, _, _usesTDC)] ->
-        storeCacheResult cache cacheKeyOpt calledMethGroup (ValueSome calledMeth)
+        storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs reqdRetTyOpt (ValueSome calledMeth)
         Some calledMeth, OkResult (warns, ()), NoTrace
 
     | _ -> 
@@ -3722,7 +3752,7 @@ and ResolveOverloadingCore
       match applicable with 
       | [] ->
           // OK, we failed. Collect up the errors from overload resolution and the possible overloads
-          storeCacheResult cache cacheKeyOpt calledMethGroup ValueNone
+          storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs reqdRetTyOpt ValueNone
 
           let errors =
               candidates 
@@ -3749,7 +3779,7 @@ and ResolveOverloadingCore
           None, ErrorD err, NoTrace
 
       | [(calledMeth, warns, t, _usesTDC)] ->
-          storeCacheResult cache cacheKeyOpt calledMethGroup (ValueSome calledMeth)
+          storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs reqdRetTyOpt (ValueSome calledMeth)
           Some calledMeth, OkResult (warns, ()), WithTrace t
 
       | applicableMeths -> 
@@ -4111,7 +4141,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     match bestMethods with 
     | [(calledMeth, warns, t, _)] ->
-        storeCacheResult cache cacheKeyOpt calledMethGroup (ValueSome calledMeth)
+        storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs reqdRetTyOpt (ValueSome calledMeth)
         Some calledMeth, OkResult (warns, ()), WithTrace t
 
     | bestMethods ->
