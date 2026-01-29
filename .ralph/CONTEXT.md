@@ -133,3 +133,32 @@ This file is updated after each sprint completes. Use it to understand what was 
 - Remaining net10.0 in tests/ are only in: utility scripts, MSBuild config files, comments, and notebooks (not functional test code)
 
 ---
+
+## Sprint 6: Test files: Update remaining test references (Iteration 3)
+
+**Summary:** Updated all remaining functional test files to use centralized TFM
+
+**Files touched:**
+- tests/EndToEndBuildTests/BasicProvider/TestBasicProvider.cmd - reads TFM from productTfm.txt
+- tests/EndToEndBuildTests/ComboProvider/TestComboProvider.cmd - reads TFM from productTfm.txt
+- tests/AheadOfTime/Equality/Equality.fsproj - uses $(FSharpNetCoreProductDefaultTargetFramework)
+- tests/AheadOfTime/Trimming/FSharpMetadataResource_Trimming_Test/FSharpMetadataResource_Trimming_Test.fsproj - uses TFM property
+- tests/AheadOfTime/Trimming/SelfContained_Trimming_Test/SelfContained_Trimming_Test.fsproj - uses TFM property
+- tests/AheadOfTime/Trimming/StaticLinkedFSharpCore_Trimming_Test/StaticLinkedFSharpCore_Trimming_Test.fsproj - uses TFM property
+- tests/fsharp/SDKTests/tests/FSharpCoreVersionTest.props - reads TFM from productTfm.txt
+- tests/scripts/identifierAnalysisByType.fsx - documented as dev utility (F# scripts can't read files at compile time)
+
+**Verification:**
+- dotnet build tests/fsharp/FSharpSuite.Tests.fsproj succeeds with 0 errors
+- grep for 'net10.0' in tests/ returns only: comments, baselines, notebooks, and documented utility scripts
+- No functional test code has hardcoded 'net10.0'
+
+---
+
+## Sprint 6: Test files: Update remaining test references
+
+**Summary:** Completed in 4 iterations
+
+**Files touched:** Check git log for details.
+
+---
