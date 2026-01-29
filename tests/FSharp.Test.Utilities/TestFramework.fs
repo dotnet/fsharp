@@ -273,6 +273,13 @@ let requireFile dir path =
 let SCRIPT_ROOT = __SOURCE_DIRECTORY__
 let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
 
+/// The product target framework moniker, read from eng/productTfm.txt
+let productTfm =
+    let tfmFilePath = repoRoot ++ "eng" ++ "productTfm.txt"
+    if not (File.Exists tfmFilePath) then
+        failwithf "productTfm.txt file not found at %s" tfmFilePath
+    File.ReadAllText(tfmFilePath).Trim()
+
 let loadVersionsProps () =
     let versionsPropsPath = repoRoot ++ "eng" ++ "Versions.props"
     if not (File.Exists versionsPropsPath) then
@@ -298,7 +305,7 @@ let config configurationName envVars =
     let fsharpCoreArchitecture = "netstandard2.0"
     let fsharpBuildArchitecture = "netstandard2.0"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
-    let dotnetArchitecture = "net10.0"
+    let dotnetArchitecture = productTfm
 #if NET472
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"
