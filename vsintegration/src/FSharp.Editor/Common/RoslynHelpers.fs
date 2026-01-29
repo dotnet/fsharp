@@ -53,6 +53,14 @@ module internal RoslynHelpers =
             //Assert.Exception(e)
             ValueNone
 
+    /// #18270: Converts F# range to Roslyn TextSpan with editor-specific filtering.
+    /// Filters out property accessor keywords (get/set) that should not appear in
+    /// Find All References or Rename operations.
+    let TryFSharpRangeToTextSpanForEditor (sourceText: SourceText, range: range) : TextSpan voption =
+        match TryFSharpRangeToTextSpan(sourceText, range) with
+        | ValueSome span -> Tokenizer.tryFixupSpan(sourceText, span)
+        | ValueNone -> ValueNone
+
     let TextSpanToFSharpRange (fileName: string, textSpan: TextSpan, sourceText: SourceText) : range =
         let startLine = sourceText.Lines.GetLineFromPosition textSpan.Start
         let endLine = sourceText.Lines.GetLineFromPosition textSpan.End

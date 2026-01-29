@@ -48,7 +48,6 @@ type internal RenameParamToMatchSignatureCodeFixProvider [<ImportingConstructor>
                     let! symbolUses = getSymbolUsesOfSymbolAtLocationInDocument (context.Document, context.Span.Start)
                     let symbolUses = symbolUses |> Option.defaultValue [||]
 
-                    // #18270
                     let changes =
                         [
                             for symbolUse in symbolUses do

@@ -120,7 +120,6 @@ type internal InlineRenameInfo
         ImmutableArray.Create(new FSharpInlineRenameLocation(document, triggerSpan))
 
     override _.GetReferenceEditSpan(location, cancellationToken) =
-
         let text =
             if location.Document = document then
                 sourceText
@@ -128,10 +127,7 @@ type internal InlineRenameInfo
                 let textTask = getDocumentText location.Document
                 CancellableTask.runSynchronously cancellationToken textTask
 
-        // #18270
-        match Tokenizer.tryFixupSpan (text, location.TextSpan) with
-        | ValueSome span -> span
-        | ValueNone -> location.TextSpan
+        Tokenizer.fixupSpan (text, location.TextSpan)
 
     override _.GetConflictEditSpan(location, replacementText, cancellationToken) =
         let text =
@@ -165,11 +161,8 @@ type internal InlineRenameInfo
                             return
                                 [|
                                     for symbolUse in symbolUses do
-                                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
-                                        | ValueSome span ->
-                                            match Tokenizer.tryFixupSpan (sourceText, span) with
-                                            | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
-                                            | ValueNone -> () // Skip property accessor keywords (get/set)
+                                        match RoslynHelpers.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse) with
+                                        | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
                                         | ValueNone -> ()
                                 |]
                         }
@@ -222,7 +215,7 @@ type internal InlineRenameService [<ImportingConstructor>] () =
                     match span with
                     | ValueNone -> return Unchecked.defaultof<_>
                     | ValueSome span ->
-                        // #18270
+                        // #18270: Abort if user clicked on get/set keyword
                         match Tokenizer.tryFixupSpan (sourceText, span) with
                         | ValueNone -> return Unchecked.defaultof<_>
                         | ValueSome triggerSpan ->

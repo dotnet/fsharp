@@ -35,7 +35,6 @@ module FSharpFindUsagesService =
             | Some declRange, _ when Range.equals declRange symbolUse -> ()
             | _, ValueNone -> ()
             | _, ValueSome textSpan ->
-                // #18270
                 match Tokenizer.tryFixupSpan (sourceText, textSpan) with
                 | ValueNone -> ()
                 | ValueSome fixedSpan ->
@@ -74,12 +73,8 @@ module FSharpFindUsagesService =
                                 let! cancellationToken = CancellableTask.getCancellationToken ()
                                 let! sourceText = doc.GetTextAsync(cancellationToken)
 
-                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
-                                | ValueSome span ->
-                                    // #18270
-                                    match Tokenizer.tryFixupSpan (sourceText, span) with
-                                    | ValueSome fixedSpan -> return Some(FSharpDocumentSpan(doc, fixedSpan))
-                                    | ValueNone -> return None
+                                match RoslynHelpers.TryFSharpRangeToTextSpanForEditor(sourceText, range) with
+                                | ValueSome fixedSpan -> return Some(FSharpDocumentSpan(doc, fixedSpan))
                                 | ValueNone -> return None
                             }
                     }
