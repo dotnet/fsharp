@@ -2,45 +2,39 @@
 <Dependencies>
   <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="887f3d5a26e1001ee2777afde10cadcacb8cc735" BarId="297286" />
   <ProductDependencies>
-    <Dependency Name="Microsoft.Build" Version="18.1.0-preview-25515-01">
+    <Dependency Name="Microsoft.Build" Version="18.4.0-preview-26078-07">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>5e273ccd45ba73d9db9b34fceaf9a110412e64e8</Sha>
+      <Sha>211a2e16732bc787fcb8f1c0e2b4f5de897b597c</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="18.1.0-preview-25515-01">
+    <Dependency Name="Microsoft.Build.Framework" Version="18.4.0-preview-26078-07">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>5e273ccd45ba73d9db9b34fceaf9a110412e64e8</Sha>
+      <Sha>211a2e16732bc787fcb8f1c0e2b4f5de897b597c</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.1.0-preview-25515-01">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.4.0-preview-26078-07">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>5e273ccd45ba73d9db9b34fceaf9a110412e64e8</Sha>
+      <Sha>211a2e16732bc787fcb8f1c0e2b4f5de897b597c</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.1.0-preview-25515-01">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.4.0-preview-26078-07">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>5e273ccd45ba73d9db9b34fceaf9a110412e64e8</Sha>
+      <Sha>211a2e16732bc787fcb8f1c0e2b4f5de897b597c</Sha>
     </Dependency>
-    <Dependency Name="System.Reflection.Metadata" Version="9.0.0">
+    <Dependency Name="System.Reflection.Metadata" Version="9.0.9">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
     </Dependency>
-    <Dependency Name="System.ComponentModel.Composition" Version="9.0.0">
+    <Dependency Name="System.ComponentModel.Composition" Version="9.0.9">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
     </Dependency>
-    <Dependency Name="System.Composition" Version="9.0.0">
+    <Dependency Name="System.Composition" Version="9.0.9">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
     </Dependency>
-    <Dependency Name="System.Collections.Immutable" Version="9.0.0">
+    <Dependency Name="System.Collections.Immutable" Version="9.0.9">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
     </Dependency>
-    <Dependency Name="System.Threading.Tasks.Dataflow" Version="9.0.0">
+    <Dependency Name="System.Threading.Tasks.Dataflow" Version="9.0.9">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
     </Dependency>
-    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="9.0.0">
+    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="9.0.9">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
     </Dependency>
     <Dependency Name="Microsoft.CodeAnalysis" Version="5.0.0-2.25480.7">
       <Uri>https://github.com/dotnet/roslyn</Uri>

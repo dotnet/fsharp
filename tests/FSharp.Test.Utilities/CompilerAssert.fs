@@ -31,34 +31,49 @@ open System.Collections.Immutable
 #if !NETCOREAPP
 module AssemblyResolver =
 
+    open System.Collections.Generic
+
     let probingPaths = [|
         AppDomain.CurrentDomain.BaseDirectory
         Path.GetDirectoryName(typeof<FactForDESKTOPAttribute>.Assembly.Location)
     |]
 
+    // Add a static HashSet to track currently resolving assemblies
+    let private resolvingAssemblies = HashSet<string>()
+
     let addResolver () =
         AppDomain.CurrentDomain.add_AssemblyResolve(fun h args ->
-            let found () =
-                (probingPaths ) |> Seq.tryPick(fun p ->
-                    try
-                        let name = AssemblyName(args.Name)
-                        let codebase = Path.GetFullPath(Path.Combine(p, name.Name))
-                        if File.Exists(codebase + ".dll") then
-                            name.CodeBase <- codebase  + ".dll"
-                            name.CultureInfo <- Unchecked.defaultof<CultureInfo>
-                            name.Version <- Unchecked.defaultof<Version>
-                            Some (name)
-                        elif File.Exists(codebase + ".exe") then
-                                name.CodeBase <- codebase + ".exe"
-                                name.CultureInfo <- Unchecked.defaultof<CultureInfo>
-                                name.Version <- Unchecked.defaultof<Version>
-                                Some (name)
-                        else None
-                    with | _ -> None
-                    )
-            match found() with
-            | None -> Unchecked.defaultof<Assembly>
-            | Some name -> Assembly.Load(name) )
+            let assemblyName = args.Name
+            // Prevent recursion: skip if already resolving this assembly
+            if resolvingAssemblies.Contains(assemblyName) then
+                null
+            else
+                try
+                    resolvingAssemblies.Add(assemblyName) |> ignore
+                    let found () =
+                        (probingPaths ) |> Seq.tryPick(fun p ->
+                            try
+                                let name = AssemblyName(args.Name)
+                                let codebase = Path.GetFullPath(Path.Combine(p, name.Name))
+                                if File.Exists(codebase + ".dll") then
+                                    name.CodeBase <- codebase  + ".dll"
+                                    name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                                    name.Version <- Unchecked.defaultof<Version>
+                                    Some (name)
+                                elif File.Exists(codebase + ".exe") then
+                                    name.CodeBase <- codebase + ".exe"
+                                    name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                                    name.Version <- Unchecked.defaultof<Version>
+                                    Some (name)
+                                else None
+                            with | _ -> None
+                        )
+                    match found() with
+                    | None -> null
+                    | Some name -> Assembly.Load(name)
+                finally
+                    resolvingAssemblies.Remove(assemblyName) |> ignore
+        )
 #endif
 
 type ExecutionOutcome = 
