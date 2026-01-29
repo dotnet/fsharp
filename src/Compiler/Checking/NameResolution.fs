@@ -2241,19 +2241,19 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
     | None -> ()
     | Some sink -> sink.NotifyEnvWithScope(scopem, nenv, ad)
 
-// (#16621) Helper to register union case tester properties as references to their underlying union case.
+// (#16621) Register union case tester properties as references to their underlying union case.
 // For union case testers (e.g., IsB property), this ensures "Find All References" on a union case
 // includes usages of its tester property. Uses a shifted range to avoid duplicate filtering in ItemKeyStore.
-let private registerUnionCaseTesterIfApplicable
-    (currentSink: ITypecheckResultsSink)
+let RegisterUnionCaseTesterForProperty
+    (sink: TcResultsSink)
     (m: range)
     (nenv: NameResolutionEnv)
-    (item: Item)
+    (pinfos: PropInfo list)
     (occurrenceType: ItemOccurrence)
     (ad: AccessorDomain)
     =
-    match item with
-    | Item.Property(info = pinfo :: _) when pinfo.IsUnionCaseTester ->
+    match sink.CurrentSink, pinfos with
+    | Some currentSink, (pinfo :: _) when pinfo.IsUnionCaseTester ->
         let logicalName = pinfo.GetterMethod.LogicalName
 
         if PrettyNaming.IsUnionCaseTesterPropertyName logicalName then
@@ -2278,21 +2278,18 @@ let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, 
     | None -> ()
     | Some currentSink ->
         currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, false)
-        registerUnionCaseTesterIfApplicable currentSink m nenv item occurrenceType ad
 
 let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some currentSink ->
         currentSink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, false)
-        registerUnionCaseTesterIfApplicable currentSink m nenv item occurrenceType ad
 
 let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some currentSink ->
         currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, true)
-        registerUnionCaseTesterIfApplicable currentSink m nenv item occurrenceType ad
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
