@@ -128,11 +128,10 @@ type internal InlineRenameInfo
                 let textTask = getDocumentText location.Document
                 CancellableTask.runSynchronously cancellationToken textTask
 
-        // (#18270) Use tryFixupSpan for consistency. Property accessor keywords should already
-        // be filtered by FindRenameLocationsAsync, but we use tryFixupSpan for safety.
+        // #18270
         match Tokenizer.tryFixupSpan (text, location.TextSpan) with
         | ValueSome span -> span
-        | ValueNone -> location.TextSpan // Fallback (shouldn't happen)
+        | ValueNone -> location.TextSpan
 
     override _.GetConflictEditSpan(location, replacementText, cancellationToken) =
         let text =
@@ -223,8 +222,7 @@ type internal InlineRenameService [<ImportingConstructor>] () =
                     match span with
                     | ValueNone -> return Unchecked.defaultof<_>
                     | ValueSome span ->
-                        // (#18270) Use tryFixupSpan to filter out property accessor keywords (get/set).
-                        // Attempting to rename a get/set keyword should abort (return default).
+                        // #18270
                         match Tokenizer.tryFixupSpan (sourceText, span) with
                         | ValueNone -> return Unchecked.defaultof<_>
                         | ValueSome triggerSpan ->

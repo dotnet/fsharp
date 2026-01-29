@@ -48,7 +48,7 @@ type internal RenameParamToMatchSignatureCodeFixProvider [<ImportingConstructor>
                     let! symbolUses = getSymbolUsesOfSymbolAtLocationInDocument (context.Document, context.Span.Start)
                     let symbolUses = symbolUses |> Option.defaultValue [||]
 
-                    // (#18270) Use tryFixupSpan to filter out property accessor keywords (get/set)
+                    // #18270
                     let changes =
                         [
                             for symbolUse in symbolUses do
@@ -56,7 +56,7 @@ type internal RenameParamToMatchSignatureCodeFixProvider [<ImportingConstructor>
 
                                 match Tokenizer.tryFixupSpan (sourceText, span) with
                                 | ValueSome textSpan -> yield TextChange(textSpan, replacement)
-                                | ValueNone -> () // Skip property accessor keywords
+                                | ValueNone -> ()
                         ]
 
                     return

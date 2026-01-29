@@ -35,9 +35,9 @@ module FSharpFindUsagesService =
             | Some declRange, _ when Range.equals declRange symbolUse -> ()
             | _, ValueNone -> ()
             | _, ValueSome textSpan ->
-                // Filter out property accessor keywords (get/set) using tryFixupSpan
+                // #18270
                 match Tokenizer.tryFixupSpan (sourceText, textSpan) with
-                | ValueNone -> () // Skip property accessor keywords
+                | ValueNone -> ()
                 | ValueSome fixedSpan ->
                     if allReferences then
                         let definitionItem =
@@ -76,7 +76,7 @@ module FSharpFindUsagesService =
 
                                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                                 | ValueSome span ->
-                                    // (#18270) Use tryFixupSpan to filter out property accessor keywords (get/set)
+                                    // #18270
                                     match Tokenizer.tryFixupSpan (sourceText, span) with
                                     | ValueSome fixedSpan -> return Some(FSharpDocumentSpan(doc, fixedSpan))
                                     | ValueNone -> return None
