@@ -535,22 +535,22 @@ module StructuralUtilities =
             | TType_var(r, n) ->
                 emitNullness ctx n
 
-                let typarId =
-                    match ctx.TyparMap.TryGetValue r.Stamp with
-                    | true, idx -> idx
-                    | _ ->
-                        let idx = ctx.TyparMap.Count
-                        ctx.TyparMap.[r.Stamp] <- idx
-                        idx
-
                 match r.Solution with
                 | Some ty ->
-                    // Solved type variable - mark unstable because Trace.Undo could revert the solution
-                    if not r.IsFromError then
-                        ctx.Stable <- false
-
+                    // Solved type variable - the solution is stable for caching purposes
+                    // because the cache key is computed BEFORE FilterEachThenUndo runs.
+                    // Any solutions in caller arg types were established before overload
+                    // resolution and won't be reverted by Trace.Undo in this context.
                     emitTType ctx ty
                 | None ->
+                    let typarId =
+                        match ctx.TyparMap.TryGetValue r.Stamp with
+                        | true, idx -> idx
+                        | _ ->
+                            let idx = ctx.TyparMap.Count
+                            ctx.TyparMap.[r.Stamp] <- idx
+                            idx
+
                     if out.Count < MaxTokenCount then
                         if r.Rigidity = TyparRigidity.Rigid then
                             // Rigid unsolved type variable - STABLE for caching purposes
