@@ -53,3 +53,32 @@ This file is updated after each sprint completes. Use it to understand what was 
 - TFM file reading works correctly: `cat eng/productTfm.txt | tr -d '[:space:]'` returns "net10.0"
 
 ---
+
+## Sprint 3: Scripts: Update
+  PowerShell and Bash scripts
+
+**Summary:** Completed in 2 iterations
+
+**Files touched:** Check git log for details.
+
+---
+
+## Sprint 4: Product code: Update CompilerLocation.fs
+
+**Summary:** Updated toolingCompatibleVersions in CompilerLocation.fs to dynamically generate TFM list from FSharp.BuildProperties.fsProductTfmMajorVersion instead of hardcoded values.
+
+**Files touched:**
+- src/Compiler/Facilities/CompilerLocation.fs - replaced hardcoded TFM list with computed list
+
+**Changes Made:**
+- The list now generates TFMs from `fsProductTfmMajorVersion` (e.g., 10) down to 5
+- Legacy netcoreapp/netstandard versions are appended after the computed list
+- Fallback to major version 10 if parsing fails
+
+**Verification:**
+- dotnet build src/Compiler/FSharp.Compiler.Service.fsproj succeeds
+- No hardcoded 'net10.0' or 'net11.0' in CompilerLocation.fs
+- Uses FSharp.BuildProperties.fsProductTfmMajorVersion at line 128
+- When TFM changes in eng/productTfm.txt, the list will automatically update
+
+---
