@@ -18,21 +18,6 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open CancellableTasks
 
 module internal SymbolHelpers =
-    // (#10227) Gets projects that reference a specific assembly file.
-    // Used to optimize Find All References for external DLL symbols by filtering to only relevant projects.
-    let private getProjectsReferencingAssembly (assemblyFilePath: string) (solution: Solution) =
-        let assemblyFileName = Path.GetFileName(assemblyFilePath)
-
-        solution.Projects
-        |> Seq.filter (fun project ->
-            project.MetadataReferences
-            |> Seq.exists (fun metaRef ->
-                match metaRef with
-                | :? PortableExecutableReference as peRef when not (isNull peRef.FilePath) ->
-                    let refFileName = Path.GetFileName(peRef.FilePath)
-                    String.Equals(refFileName, assemblyFileName, StringComparison.OrdinalIgnoreCase)
-                | _ -> false))
-        |> Seq.toList
 
     /// Used for local code fixes in a document, e.g. to rename local parameters
     let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int) =
@@ -171,15 +156,13 @@ module internal SymbolHelpers =
                         match symbolUse.Symbol.Assembly.FileName with
                         | Some assemblyPath ->
                             let referencingProjects =
-                                getProjectsReferencingAssembly assemblyPath currentDocument.Project.Solution
+                                ProjectFiltering.getProjectsReferencingAssembly assemblyPath currentDocument.Project.Solution
 
                             if List.isEmpty referencingProjects then
-                                // Fallback to all projects if no specific references found
                                 Seq.toList currentDocument.Project.Solution.Projects
                             else
                                 referencingProjects
                         | None ->
-                            // No assembly file path available, search all projects
                             Seq.toList currentDocument.Project.Solution.Projects
 
                 do! getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound)
