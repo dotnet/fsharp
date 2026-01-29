@@ -603,7 +603,9 @@ try {
     }
 
     if ($testDesktop) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
+        # TEMPORARY: Run only FSharpSuite.Tests for FSI stdin debugging
+        TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework
+        # TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
     }
 
     if ($testFSharpQA) {

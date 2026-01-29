@@ -553,8 +553,7 @@ stages:
           - checkout: self
             clean: true
 
-          # TEMPORARY: Build without tests, then run only failing FSI stdin tests for debugging
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
@@ -563,11 +562,6 @@ stages:
               NativeToolsOnMachine: true
               SKIP_VERSION_SUPPORTED_CHECK: 1
             displayName: Build
-
-          - script: dotnet test --project tests\fsharp\FSharpSuite.Tests.fsproj -c Release -f net472 --no-build --filter-method *load-script* --filter-method *fsi-reference* --filter-method *fsiAndModifiers* --filter-method *printing* --filter-method *libtest-FSI_NETFX_STDIN* --filter-method "*helloWorld fsi*" --report-xunit-trx --report-xunit-trx-filename "FSharpSuite_stdin_tests.trx" --results-directory "$(Build.SourcesDirectory)\artifacts\TestResults\Release" --hangdump --hangdump-timeout 5m --hangdump-type Full
-            displayName: Run FSI stdin tests only
-            env:
-              SKIP_VERSION_SUPPORTED_CHECK: 1
 
           - task: PublishTestResults@2
             displayName: Publish Test Results

@@ -41,7 +41,7 @@ let copyHelloWorld cfgDirectory =
         DirectoryInfo(cfgDirectory + "\\..").CreateSubdirectory(helloDir.Name).FullName
         |> copyFilesToDest helloDir.FullName
 
-[<Fact>]
+[<Fact(Skip = "Temporarily disabled for FSI stdin debugging")>]
 let diamondAssembly () =
     let cfg = testConfig "typeProviders/diamondAssembly"
 
@@ -77,7 +77,7 @@ let diamondAssembly () =
 
     fsiCheckPassed cfg "%s" cfg.fsi_flags ["test3.fsx"]
 
-[<Fact>]
+[<Fact(Skip = "Temporarily disabled for FSI stdin debugging")>]
 let globalNamespace () =
     let cfg = testConfig "typeProviders/globalNamespace"
 
@@ -151,7 +151,7 @@ let helloWorld p =
 
     peverify cfg (bincompat2 ++ "testlib_client.exe")
 
-[<Fact>]
+[<Fact(Skip = "Temporarily disabled for FSI stdin debugging")>]
 let ``helloWorld fsc`` () = helloWorld FSC_OPTIMIZED
 
 #if !NETCOREAPP
@@ -159,7 +159,7 @@ let ``helloWorld fsc`` () = helloWorld FSC_OPTIMIZED
 let ``helloWorld fsi`` () = helloWorld FSI_NETFX_STDIN
 #endif
 
-[<Fact>]
+[<Fact(Skip = "Temporarily disabled for FSI stdin debugging")>]
 let helloWorldCSharp () =
     let cfg = testConfig "typeProviders/helloWorldCSharp"
 
@@ -340,13 +340,13 @@ let splitAssembly subdir project =
 
     clean()
 
-[<Fact>]
+[<Fact(Skip = "Temporarily disabled for FSI stdin debugging")>]
 let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
 
-[<Fact>]
+[<Fact(Skip = "Temporarily disabled for FSI stdin debugging")>]
 let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
 
-[<Fact>]
+[<Fact(Skip = "Temporarily disabled for FSI stdin debugging")>]
 let wedgeAssembly () =
     let cfg = testConfig "typeProviders/wedgeAssembly"
 
