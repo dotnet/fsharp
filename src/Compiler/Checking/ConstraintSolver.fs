@@ -424,13 +424,19 @@ let MakeConstraintSolverEnv contextInfo css m denv =
 // Overload Resolution Caching Helpers
 //------------------------------------------------------------------------- 
 
-/// Try to get a stable type structure for caching. 
-/// Only returns stable structures - returns None for unstable or infinite types.
-let tryGetStableTypeStructure (g: TcGlobals) (ty: TType) : TypeStructure voption =
+/// Try to get a type structure for caching in the overload resolution context.
+/// In this context, we accept both Stable and Unstable structures because:
+/// 1. The cache key is computed BEFORE FilterEachThenUndo runs
+/// 2. Caller argument types were resolved before overload resolution
+/// 3. Any solved typars in those types won't be reverted by Trace.Undo
+/// Returns None only for infinite types.
+let tryGetTypeStructureForOverloadCache (g: TcGlobals) (ty: TType) : TypeStructure voption =
     let ty = stripTyEqns g ty
     match tryGetTypeStructureOfStrippedType ty with
     | ValueSome(Stable tokens) -> ValueSome(Stable tokens)
-    | _ -> ValueNone
+    | ValueSome(Unstable tokens) -> ValueSome(Stable tokens)  // Treat as stable in this context
+    | ValueSome PossiblyInfinite -> ValueNone
+    | ValueNone -> ValueNone
 
 /// Compute a hash for a method info for caching purposes
 let rec computeMethInfoHash (minfo: MethInfo) : int =
@@ -479,7 +485,7 @@ let tryComputeOverloadCacheKey
     match calledMethGroup with
     | cmeth :: _ ->
         for objArgTy in cmeth.CallerObjArgTys do
-            match tryGetStableTypeStructure g objArgTy with
+            match tryGetTypeStructureForOverloadCache g objArgTy with
             | ValueSome ts -> 
                 objArgStructures.Add(ts)
             | ValueNone ->
@@ -496,7 +502,7 @@ let tryComputeOverloadCacheKey
     for argList in callerArgs.Unnamed do
         for callerArg in argList do
             let argTy = callerArg.CallerArgumentType
-            match tryGetStableTypeStructure g argTy with
+            match tryGetTypeStructureForOverloadCache g argTy with
             | ValueSome ts -> 
                 argStructures.Add(ts)
             | ValueNone ->
@@ -514,7 +520,7 @@ let tryComputeOverloadCacheKey
             | Some overallTy -> 
                 // Extract the underlying TType from OverallTy
                 let retTy = overallTy.Commit
-                match tryGetStableTypeStructure g retTy with
+                match tryGetTypeStructureForOverloadCache g retTy with
                 | ValueSome ts -> ValueSome ts
                 | ValueNone -> 
                     // Return type has unresolved type variable

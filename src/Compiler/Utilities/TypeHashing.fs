@@ -535,32 +535,25 @@ module StructuralUtilities =
             | TType_var(r, n) ->
                 emitNullness ctx n
 
-                match r.Solution with
-                | Some ty ->
-                    // Solved type variable - the solution is stable for caching purposes
-                    // because the cache key is computed BEFORE FilterEachThenUndo runs.
-                    // Any solutions in caller arg types were established before overload
-                    // resolution and won't be reverted by Trace.Undo in this context.
-                    emitTType ctx ty
-                | None ->
-                    let typarId =
-                        match ctx.TyparMap.TryGetValue r.Stamp with
-                        | true, idx -> idx
-                        | _ ->
-                            let idx = ctx.TyparMap.Count
-                            ctx.TyparMap.[r.Stamp] <- idx
-                            idx
+                let typarId =
+                    match ctx.TyparMap.TryGetValue r.Stamp with
+                    | true, idx -> idx
+                    | _ ->
+                        let idx = ctx.TyparMap.Count
+                        ctx.TyparMap.[r.Stamp] <- idx
+                        idx
 
+                // Solved may become unsolved, in case of Trace.Undo.
+                if not r.IsFromError then
+                    ctx.Stable <- false
+
+                match r.Solution with
+                | Some ty -> emitTType ctx ty
+                | None ->
                     if out.Count < MaxTokenCount then
                         if r.Rigidity = TyparRigidity.Rigid then
-                            // Rigid unsolved type variable - STABLE for caching purposes
-                            // The alpha-normalized typarId ensures consistent cache keys
                             out.Add(TypeToken.Rigid typarId)
                         else
-                            // Flexible/Anon unsolved type variable - unstable, could be solved later
-                            if not r.IsFromError then
-                                ctx.Stable <- false
-
                             out.Add(TypeToken.Unsolved typarId)
 
             | TType_measure m -> emitMeasure ctx m
