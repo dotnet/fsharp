@@ -47,7 +47,7 @@ $env:PublishWindowsPdb = "false"
 # List projects to verify, with TFMs
 $projects = @{
     "FSharp.Core" = @($default_tfm, "netstandard2.1")
-    "FSharp.Compiler.Service" = @($default_tfm, "net10.0")
+    "FSharp.Compiler.Service" = @($default_tfm)
 }
 
 # Check ilverify can run
