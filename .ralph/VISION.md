@@ -1,110 +1,128 @@
-# Vision: CodeGen Regression Bugfix Campaign - Phase 5 (Replan)
+# F# Codegen Bug Fix Campaign - FOCUSED SCOPE
 
-## High-Level Goal
+## Goal
 
-Fix remaining 36 pending codegen bugs (of 62 total) in the F# compiler, enabling all tests in `CodeGenRegressions.fs` to pass with their `[<Fact>]` attributes uncommented.
+Fix **24 doable codegen bugs** out of 62 total issues, focusing on issues that:
+- Can be fixed with surgical changes to IlxGen.fs, ilwrite.fs, Optimizer.fs, or NicePrint.fs
+- Don't require type checker modifications
+- Don't require multi-sprint architectural changes
+- Have clear reproduction cases and expected behavior
 
-## Current State (Phase 5 Start - 2026-01-27)
+## Current Progress (2026-01-29)
 
-- **62 tests** in `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs`
-- **26 tests PASSING** with `[<Fact>]` uncommented (42% complete):
-  - 21 actual bug fixes
-  - 5 Feature Request tests marked OUT_OF_SCOPE (documentation tests)
-- **36 tests PENDING** with `// [<Fact>]` commented out (58% remaining)
+- ✅ **26 issues FIXED** (21 actual fixes + 5 OUT_OF_SCOPE feature requests)
+- ✅ **4 issues marked KNOWN_LIMITATION** (require major architectural work)
+- 🎯 **24 issues REMAINING** (doable with surgical fixes)
+- ⏭️ **8 issues DEFERRED** (require type checker changes or multi-sprint work)
 
-### Fixed Issues (21 of 62 bugs)
-| Issue | Description | Fix Type |
-|-------|-------------|----------|
-| #19075 | CLR crash constrained calls | IlxGen.fs - skip constrained for reference types |
-| #19068 | Struct object expr byref field | IlxGen.fs - deref byref for closure |
-| #18956 | Decimal InvalidProgram in Debug | IlxGen.fs - exclude literals from shadow local |
-| #18953 | Action/Func captures extra | MethodCalls.fs - bind expression result once |
-| #18868 | CallerFilePath Delegates | Already fixed in compiler |
-| #18815 | Duplicate Extension Names | IlxGen.fs - fully qualified type prefix |
-| #18672 | Resumable code top-level null | LowerStateMachines.fs - removed top-level restriction |
-| #18374 | RuntimeWrappedException catch | IlxGen.fs - proper exception wrapping |
-| #18319 | Literal upcast missing box | IlxGen.fs - box instruction |
-| #18263 | DU Is* duplicate method | Already fixed in compiler |
-| #18140 | Callvirt on value type | IlxGen.fs - constrained.callvirt |
-| #18135 | Static abstract byref params | ilwrite.fs - compareILTypes for Modified |
-| #17692 | Mutual recursion duplicate param | EraseClosures.fs - unique param names |
-| #16565 | DefaultAugmentation duplicate entry | IlxGen.fs - method table dedup |
-| #14508 | nativeptr in interfaces TypeLoad | IlxGen.fs - preserve nativeptr in GenActualSlotsig |
-| #14492 | Release config TypeLoadException | EraseClosures.fs - strip constraints from Specialize |
-| #14321 | DU and IWSAM names conflict | IlxGen.fs - tdefDiscards for nullary cases |
-| #13447 | Tail instruction corruption | IlxGen.fs - fixed tail emission |
-| #12384 | Mutually recursive values init | Fixed initialization order |
-| #5834 | Obsolete SpecialName | IlxGen.fs - SpecialName for events |
-| #878 | Exception serialization | IlxGen.fs - serialize exception fields |
+**Total: 26 + 4 + 24 + 8 = 62 issues**
 
-### OUT_OF_SCOPE Issues (5 - Feature Requests)
-These are properly tested as "documents current behavior" - not bugs:
-- #15467, #15092, #14392, #13223, #9176
+---
 
-### KNOWN_LIMITATION Issues (4)
-- #16546 - Debug recursive reference null (requires type checker changes in EliminateInitializationGraphs)
-- #16292 - Debug SRTP mutable struct incorrect codegen (requires deeper investigation of defensive copy suppression after inlining)
-- #15627 - Async before EntryPoint hangs (CLR type initializer lock deadlock; requires rearchitecting module initialization)
-- #12136 - use fixed does not unpin at end of scope (requires tracking pinned locals across scope boundaries during code generation)
+## 24 DOABLE Issues (Grouped by Area)
 
-### Pending Issues by Category (34 remaining)
+### Group A: Metadata & Attributes (8 issues - EASY)
 
-| Category | Count | Issues |
-|----------|-------|--------|
-| **Wrong Behavior** | 3 | #13468, #13100, #6750 |
-| **Performance** | 15 | #18753, #16378, #16245, #16037, #15326, #13218, #12546, #12416, #12366, #12139, #12137, #11556, #9348 |
-| **Compile Error/Warning** | 5 | #7861, #6379, #14707, #14706, #13108 |
-| **Runtime Error** | 2 | #11132, #11114 |
-| **Interop/Metadata** | 6 | #18125, #17641, #16362, #15352, #12460, #11935, #5464 |
-| **Signature Gen/Cosmetic** | 3 | #14712, #19020 |
-| **KNOWN_LIMITATION** | 4 | #16546, #16292, #15627, #12136 |
+**IlxGen.fs - Metadata/Attributes (4 issues)**
+1. [#19020](https://github.com/dotnet/fsharp/issues/19020) - `[<return:>]` not respected on class members
+2. [#18125](https://github.com/dotnet/fsharp/issues/18125) - Wrong StructLayoutAttribute.Size for struct unions  
+3. [#15352](https://github.com/dotnet/fsharp/issues/15352) - User symbols get CompilerGeneratedAttribute incorrectly
+4. [#11935](https://github.com/dotnet/fsharp/issues/11935) - `unmanaged` constraint not recognized by C#
 
-## Sprint Strategy for Phase 4
+**ilwrite.fs - Interop/Metadata (4 issues)**
+5. [#13108](https://github.com/dotnet/fsharp/issues/13108) - Static linking FS2009 warnings
+6. [#12460](https://github.com/dotnet/fsharp/issues/12460) - F# and C# produce Version info differently
+7. [#7861](https://github.com/dotnet/fsharp/issues/7861) - Missing assembly reference for types in attributes
+8. [#5464](https://github.com/dotnet/fsharp/issues/5464) - F# ignores custom modifiers modreq/modopt
 
-1. **ONE issue per sprint** - keeps risk manageable
-2. **Prioritize by severity**: Runtime crashes > Wrong behavior > Compile errors > Performance
-3. **Surgical fixes only**: Minimal changes, no refactoring
-4. **Full test suite verification** after each fix
-5. **Document in CODEGEN_REGRESSIONS.md** with UPDATE note
-6. **Mark KNOWN_LIMITATION** for issues requiring major architectural changes (like #16546)
+**Why EASY:** Simple metadata/attribute additions or corrections. No complex logic.
 
-## Key Insight from #16546 Investigation
+---
 
-Issue #16546 taught us that some bugs are caused by earlier compiler phases (type checker), not IlxGen. When IlxGen sees the code, the damage is already done. These require:
-- Analysis of the entire compilation pipeline
-- Changes to CheckExpressions.fs (EliminateInitializationGraphs)
-- Extensive testing of mutual recursion scenarios
+### Group B: Cosmetic Fixes (4 issues - EASY)
 
-Such fixes are beyond "surgical bugfix" scope and should be marked KNOWN_LIMITATION with documented workarounds.
+**NicePrint.fs - Signature Generation (2 issues)**
+9. [#14712](https://github.com/dotnet/fsharp/issues/14712) - Signature generation should use F# Core alias
+10. [#14706](https://github.com/dotnet/fsharp/issues/14706) - Signature generation WhereTyparSubtypeOfType
 
-## External Code Auditor Responsibilities
+**IlxGen.fs - Naming (1 issue)**
+11. [#12366](https://github.com/dotnet/fsharp/issues/12366) - Rethink names for compiler-generated closures
 
-After each bugfix sprint, verify:
-1. **Code duplication audit**: No copy-paste patterns, reuse existing helpers
-2. **Reinventing the wheel audit**: Use existing compiler infrastructure
-3. **Proper layer placement audit**: Fix goes in correct module (IlxGen, Optimizer, etc.)
-4. **Fix-feels-like-a-hack audit**: Fix addresses root cause, not symptoms
-5. **Unnecessary allocations audit**: No new allocations in hot paths
+**Symbols.fs - API (1 issue)**
+12. [#17641](https://github.com/dotnet/fsharp/issues/17641) - IsMethod/IsProperty incorrect for generated members
 
-## Lessons Learned from Previous Fixes
+**Why EASY:** Don't change semantics, just improve naming/output quality.
 
-| Fix | Pattern Used | Key Insight |
-|-----|-------------|-------------|
-| #19068 | Deref byref for closure | Byref fields not allowed in classes; copy value instead |
-| #18956 | Exclude from condition | Literal values shouldn't get shadow locals |
-| #18815 | Qualify names | Extension methods need fully qualified type prefix |
-| #18319 | Add missing IL instruction | Box instruction for value-to-ref conversion |
-| #18140 | Use constrained prefix | Value type method calls need constrained.callvirt |
-| #18135 | Recursive type comparison | ILType.Modified wrappers need unwrapping |
-| #17692 | Unique naming | Closures need globally unique parameter names |
-| #14321 | Discard duplicates | DU nullary case properties shadow IWSAM implementations |
-| #16546 | KNOWN_LIMITATION | Some fixes require type checker changes, not IlxGen |
+---
 
-## Unfixable Criteria
+### Group C: Performance - IlxGen (6 issues - MEDIUM)
 
-An issue is only declared unfixable if:
-1. **5+ different approaches** have been tried and documented
-2. Each approach causes **regressions in existing tests**
-3. The fix **conflicts with fundamental F# semantics** (e.g., language spec)
-4. Clear evidence provided in CODEGEN_REGRESSIONS.md with full reasoning
-5. Issue reclassified as KNOWN_LIMITATION with documented workaround
+13. [#16378](https://github.com/dotnet/fsharp/issues/16378) - DU logging causes significant allocations
+14. [#16362](https://github.com/dotnet/fsharp/issues/16362) - Extension methods with CompiledName C# incompatible
+15. [#16245](https://github.com/dotnet/fsharp/issues/16245) - Span IL gen produces 2 get_Item calls
+16. [#12546](https://github.com/dotnet/fsharp/issues/12546) - Implicit boxing produces extraneous closure
+17. [#11556](https://github.com/dotnet/fsharp/issues/11556) - Better IL output for property/field initializers
+18. [#9348](https://github.com/dotnet/fsharp/issues/9348) - Performance of Comparing and Ordering
+
+**Why MEDIUM:** IL generation optimizations, localized to IlxGen.fs.
+
+---
+
+### Group D: Performance - Optimizer (6 issues - MEDIUM)
+
+19. [#18753](https://github.com/dotnet/fsharp/issues/18753) - CE inlining prevented by DU constructor  
+20. [#16037](https://github.com/dotnet/fsharp/issues/16037) - Tuple pattern in lambda suboptimal
+21. [#15326](https://github.com/dotnet/fsharp/issues/15326) - InlineIfLambda delegates not inlined
+22. [#12416](https://github.com/dotnet/fsharp/issues/12416) - Optimization inlining inconsistent with piping
+23. [#12139](https://github.com/dotnet/fsharp/issues/12139) - Improve string null check IL codegen
+24. [#12137](https://github.com/dotnet/fsharp/issues/12137) - Reduce emit of `tail.` prefix
+
+**Why MEDIUM:** Optimizer pass improvements, localized to Optimizer.fs.
+
+---
+
+## DEFERRED Issues (8 issues)
+
+### Known Limitations (4 issues - require architectural changes)
+- [#12136](https://github.com/dotnet/fsharp/issues/12136) - `use fixed` does not unpin (requires scope tracking)
+- [#16292](https://github.com/dotnet/fsharp/issues/16292) - SRTP debug mutable struct (requires defensive copy analysis)
+- [#16546](https://github.com/dotnet/fsharp/issues/16546) - Debug recursive reference null (requires type checker)
+- [#15627](https://github.com/dotnet/fsharp/issues/15627) - Async before EntryPoint hangs (CLR deadlock)
+
+### Out of Scope (1 issue)
+- [#13218](https://github.com/dotnet/fsharp/issues/13218) - Compilation time performance (not codegen)
+
+### Requires Type Checker (3 issues - beyond surgical scope)
+- [#14707](https://github.com/dotnet/fsharp/issues/14707) - Signature files become unusable
+- [#6379](https://github.com/dotnet/fsharp/issues/6379) - FS2014 when using tupled args
+- [#11114](https://github.com/dotnet/fsharp/issues/11114) - Record StackOverflow
+- [#6750](https://github.com/dotnet/fsharp/issues/6750) - Mutually recursive values uninitialized
+
+---
+
+## Strategy
+
+### Phase 1: Quick Wins (Groups A + B = 12 issues)
+Start with EASY metadata, attribute, and cosmetic fixes.
+
+### Phase 2: Performance (Groups C + D = 12 issues)  
+Move to MEDIUM performance and optimization issues.
+
+### Principles
+1. **One issue at a time** - Full test verification between fixes
+2. **Surgical changes** - Minimal edits (< 50 lines per issue)
+3. **Quick abandon** - If harder than expected, mark DEFERRED
+4. **Document fixes** - Update CODEGEN_REGRESSIONS.md
+
+---
+
+## File Map
+
+- **Tests:** `tests/FSharp.Compiler.ComponentTests/EmittedIL/CodeGenRegressions/CodeGenRegressions.fs`
+- **Docs:** `CODEGEN_REGRESSIONS.md`
+- **Code:**
+  - `src/Compiler/CodeGen/IlxGen.fs` (14 issues)
+  - `src/Compiler/CodeGen/ilwrite.fs` (4 issues)
+  - `src/Compiler/Optimize/Optimizer.fs` (6 issues)
+  - `src/Compiler/Driver/NicePrint.fs` (2 issues)
+  - `src/Compiler/Symbols/Symbols.fs` (1 issue)
