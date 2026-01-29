@@ -320,3 +320,55 @@ let y3 = Overloaded.Process("c")
     
     checkSourceHasNoErrors source |> ignore
     printfn "Inference variable overload resolution succeeded"
+
+/// Test that type subsumption with solved generic parameters works correctly
+/// This test exercises the TypeSubsumptionCache which also uses TypeHashing.
+/// The change to treat solved typars as stable affects both caches.
+[<Fact>]
+let ``Type subsumption with solved generic parameters works correctly`` () =
+    let source = """
+open System.Collections.Generic
+
+// Define a base class hierarchy
+type Animal() = class end
+type Dog() = inherit Animal()
+type Cat() = inherit Animal()
+
+// Define overloads that require type subsumption checks
+type Zoo =
+    static member Accept(animals: IEnumerable<Animal>) = "animals"
+    static member Accept(dogs: IList<Dog>) = "dogs"  // More specific
+    static member Accept(x: obj) = "obj"
+
+// Test with solved generic type parameters
+let dogs: IList<Dog> = [Dog(); Dog()] |> ResizeArray :> IList<Dog>
+let animals: IEnumerable<Animal> = [Animal(); Dog(); Cat()] |> Seq.ofList
+
+// Overload resolution requires subsumption checks
+let r1 = Zoo.Accept(dogs)     // Should pick IList<Dog> overload
+let r2 = Zoo.Accept(animals)  // Should pick IEnumerable<Animal> overload
+let r3 = Zoo.Accept(42)       // Should pick obj overload
+
+// Multiple calls with same types - subsumption cache should work
+let d1 = Zoo.Accept(dogs)
+let d2 = Zoo.Accept(dogs)
+let d3 = Zoo.Accept(dogs)
+
+let a1 = Zoo.Accept(animals)
+let a2 = Zoo.Accept(animals)
+let a3 = Zoo.Accept(animals)
+
+// With inline inference - solved typars
+let inline testWith<'T when 'T :> Animal>(items: seq<'T>) =
+    Zoo.Accept(items)
+
+let dogSeq = [Dog(); Dog()] |> Seq.ofList
+let catSeq = [Cat(); Cat()] |> Seq.ofList
+
+// These involve type subsumption with solved type parameters
+let t1 = testWith dogSeq
+let t2 = testWith catSeq
+"""
+    
+    checkSourceHasNoErrors source |> ignore
+    printfn "Type subsumption with solved generics succeeded"
