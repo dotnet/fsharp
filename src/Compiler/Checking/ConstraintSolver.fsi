@@ -3,14 +3,13 @@
 /// Solves constraints using a mutable constraint-solver state
 module internal FSharp.Compiler.ConstraintSolver
 
-open Internal.Utilities.TypeHashing.StructuralUtilities
-
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.OverloadResolutionCache
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -189,30 +188,6 @@ exception ArgDoesNotMatchError of
 
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
-
-/// Cache key for overload resolution: combines method group identity with caller argument types and return type
-type OverloadResolutionCacheKey =
-    {
-        /// Hash combining all method identities in the method group
-        MethodGroupHash: int
-        /// Type structures for caller object arguments (the 'this' argument for instance/extension methods)
-        /// This is critical for extension methods where the 'this' type determines the overload
-        ObjArgTypeStructures: TypeStructure list
-        /// Type structures for each caller argument (only used when all types are stable)
-        ArgTypeStructures: TypeStructure list
-        /// Type structure for expected return type (if any), to differentiate calls with different expected types
-        ReturnTypeStructure: TypeStructure voption
-        /// Number of caller-provided type arguments (to distinguish calls with different type instantiations)
-        CallerTyArgCount: int
-    }
-
-/// Result of cached overload resolution
-[<Struct>]
-type OverloadResolutionCacheResult =
-    /// Resolution succeeded - index of the resolved method in the original calledMethGroup list
-    | CachedResolved of methodIndex: int
-    /// Resolution failed (no matching overload)
-    | CachedFailed
 
 type ConstraintSolverState =
     {
