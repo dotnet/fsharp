@@ -2254,12 +2254,10 @@ let private registerUnionCaseTesterIfApplicable
     =
     match item with
     | Item.Property(info = pinfo :: _) when pinfo.IsUnionCaseTester ->
-        // The getter method's logical name is "get_IsB" for a tester of case B
         let logicalName = pinfo.GetterMethod.LogicalName
 
-        // Extract case name: "get_IsB" -> "B"
-        if logicalName.StartsWithOrdinal("get_Is") then
-            let caseName = logicalName.Substring(6) // Remove "get_Is" prefix
+        if PrettyNaming.IsUnionCaseTesterPropertyName logicalName then
+            let caseName = logicalName.Substring(PrettyNaming.unionCaseTesterPropertyPrefixLength)
             let tcref = pinfo.ApparentEnclosingTyconRef
 
             match tcref.GetUnionCaseByName caseName with
