@@ -491,7 +491,7 @@ let ``Test project1 all uses of all symbols`` () =
                 "file2", ((18, 6), (18, 18)), ["class"]);
                ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
                 "file2", ((18, 6), (18, 18)), ["member"]);
-               // (#14902) F# constructor usages now also register as Item.Value
+               // Also registered as Item.Value
                ("``.ctor``", "Microsoft.FSharp.Core.``.ctor``", "file2",
                 ((18, 7), (18, 18)), ["member"]);
                ("x", "N.D3.x", "file2", ((19, 16), (19, 17)),
@@ -556,7 +556,7 @@ let ``Test project1 all uses of all symbols`` () =
                ("M", "M", "file2", ((38, 22), (38, 23)), ["module"]);
                ("C", "M.C", "file2", ((38, 22), (38, 25)), ["class"]);
                ("C", "M.C", "file2", ((38, 22), (38, 25)), ["member"; "ctor"]);
-               // (#14902) F# constructor usages now also register as Item.Value
+               // Also registered as Item.Value
                ("``.ctor``", "M.C.``.ctor``", "file2", ((38, 23), (38, 25)), ["member"; "ctor"]);
                ("mmmm1", "N.mmmm1", "file2", ((38, 4), (38, 9)), ["val"]);
                ("M", "M", "file2", ((39, 12), (39, 13)), ["module"]);
@@ -564,7 +564,7 @@ let ``Test project1 all uses of all symbols`` () =
                ("M", "M", "file2", ((39, 28), (39, 29)), ["module"]);
                ("CAbbrev", "M.CAbbrev", "file2", ((39, 28), (39, 37)), ["abbrev"]);
                ("C", "M.C", "file2", ((39, 28), (39, 37)), ["member"; "ctor"]);
-               // (#14902) F# constructor usages now also register as Item.Value
+               // Also registered as Item.Value
                ("``.ctor``", "M.C.``.ctor``", "file2", ((39, 29), (39, 37)), ["member"; "ctor"]);
                ("mmmm2", "N.mmmm2", "file2", ((39, 4), (39, 9)), ["val"]);
                ("N", "N", "file2", ((1, 7), (1, 8)), ["module"])]
@@ -2383,7 +2383,7 @@ let ``Test Project14 all symbols`` () =
           [|
             ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
             ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
-            // (#14902) F# constructor usages now also register as Item.Value
+            // Also registered as Item.Value
             ("member .ctor", "``.ctor``", "file1", ((4, 3), (4, 8)), []);
             ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
             ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
@@ -2542,13 +2542,13 @@ let ``Test Project16 all symbols`` () =
     allUsesOfAllSymbols |> shouldEqual
           [|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
-            // (#14902) F# constructor usages now also register as Item.Value
+            // Also registered as Item.Value
             ("member .ctor", "``.ctor``", "sig1", ((8, 7), (8, 11)), [], ["member"]);
             ("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
             ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
-            // (#14902) F# constructor usages now also register as Item.Value
+            // Also registered as Item.Value
             ("member .ctor", "``.ctor``", "sig1", ((12, 7), (12, 11)), [], ["member"]);
             ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
@@ -5111,7 +5111,7 @@ let ``Test Project40 all symbols`` () =
             ("f", ((4, 4), (4, 5)), ["val"]);
             ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
             ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
-            // (#14902) F# constructor usages now also register as Item.Value
+            // Also registered as Item.Value
             ("``.ctor``", ((6, 3), (6, 27)), ["member"]);
             ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
             ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);

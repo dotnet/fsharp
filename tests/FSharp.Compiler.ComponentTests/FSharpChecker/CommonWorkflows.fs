@@ -154,8 +154,7 @@ let GetAllUsesOfAllSymbols() =
             return checkProjectResults.GetAllUsesOfAllSymbols()
         } |> Async.RunSynchronously
 
-    // Count updated from 79 to 80 due to issue #14902 fix: additional constructor usages
-    // are now also registered as Item.Value to support Find All References from constructor definitions
+    // Count is 80 due to constructor usages registered as both CtorGroup and Value
     if result.Length <> 80 then failwith $"Expected 80 symbolUses, got {result.Length}:\n%A{result}"
 
 [<Fact>]
