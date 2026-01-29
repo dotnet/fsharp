@@ -119,6 +119,10 @@ module Scripting =
             diagLog (sprintf "RedirectInput=%b RedirectOutput=%b RedirectError=%b" 
                 cmdArgs.RedirectInput.IsSome cmdArgs.RedirectOutput.IsSome cmdArgs.RedirectError.IsSome)
             
+            // Log console state of test process (parent) - helps diagnose MTP console inheritance
+            diagLog (sprintf "[CONSOLE] IsInputRedirected=%b IsOutputRedirected=%b IsErrorRedirected=%b" 
+                Console.IsInputRedirected Console.IsOutputRedirected Console.IsErrorRedirected)
+            
             processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
             processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             
