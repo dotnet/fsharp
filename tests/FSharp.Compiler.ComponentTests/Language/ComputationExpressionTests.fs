@@ -2262,50 +2262,31 @@ but here has type
 
     // =====================================================================
     // Issue #422: FS1182 false positive in query expressions
-    // The fix marks synthetic lambda parameters in query translation as 
-    // compiler-generated, which prevents the FS1182 warning from firing.
+    // 
+    // PROBLEM: Variables used in 'where', 'let', or other query clauses were
+    // incorrectly flagged as unused.
+    //
+    // FIX: Mark synthetic lambda parameters in query translation as 
+    // compiler-generated, preventing false FS1182 warnings.
     // =====================================================================
-
-    [<Fact>]
-    let ``Query expression variable with underscore prefix should not warn FS1182 - issue 422`` () =
-        FSharp """
-module Test
-
-let result = 
-    query { for _x in [1;2;3] do
-            select 1 }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Query expression variable used in select should not warn FS1182 - issue 422`` () =
-        FSharp """
-module Test
-
-let result = 
-    query { for x in [1;2;3] do
-            where (x > 2)
-            select x }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
 
     [<Fact>]
     let ``Query variable used in where does not trigger FS1182 - issue 422`` () =
         FSharp """
 module Test
+let result = query { for x in [1;2;3] do where (x > 0); select 1 }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
-let result = 
-    query { for x in [1;2;3;4;5] do
-            where (x > 0)
-            select 1 }
+    [<Fact>]
+    let ``Query variable used in select does not trigger FS1182 - issue 422`` () =
+        FSharp """
+module Test
+let result = query { for x in [1;2;3] do where (x > 2); select x }
         """
         |> withOptions ["--warnon:FS1182"]
         |> asLibrary
@@ -2317,11 +2298,7 @@ let result =
     let ``Query variable used in let binding does not trigger FS1182 - issue 422`` () =
         FSharp """
 module Test
-
-let result = 
-    query { for x in [1;2;3] do
-            let y = x * 2
-            select y }
+let result = query { for x in [1;2;3] do let y = x * 2 in select y }
         """
         |> withOptions ["--warnon:FS1182"]
         |> asLibrary
@@ -2330,17 +2307,12 @@ let result =
         |> ignore
 
     [<Fact>]
-    let ``Join variable used in select does not trigger FS1182 - issue 422`` () =
+    let ``Join variables used in on clause do not trigger FS1182 - issue 422`` () =
         FSharp """
 module Test
-
 let data1 = [1;2;3]
 let data2 = [(1, "one"); (2, "two"); (3, "three")]
-
-let result = 
-    query { for x in data1 do
-            join (y, name) in data2 on (x = y)
-            select name }
+let result = query { for x in data1 do join (y, name) in data2 on (x = y); select name }
         """
         |> withOptions ["--warnon:FS1182"]
         |> asLibrary
@@ -2352,12 +2324,19 @@ let result =
     let ``Multiple query variables in nested for do not trigger FS1182 - issue 422`` () =
         FSharp """
 module Test
+let result = query { for a in [1;2;3] do for b in [4;5;6] do where (a < b); select (a + b) }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
-let result = 
-    query { for a in [1;2;3] do
-            for b in [4;5;6] do
-            where (a < b)
-            select (a + b) }
+    [<Fact>]
+    let ``Query variable with underscore prefix does not trigger FS1182 - issue 422`` () =
+        FSharp """
+module Test
+let result = query { for _x in [1;2;3] do select 1 }
         """
         |> withOptions ["--warnon:FS1182"]
         |> asLibrary
@@ -2366,31 +2345,25 @@ let result =
         |> ignore
 
     // =====================================================================
-    // Verify FS1182 IS still reported for genuinely unused variables in queries
+    // FS1182 works correctly for non-query-loop variables
     // =====================================================================
 
     [<Fact>]
-    let ``Query with unused variable in select scope still warns FS1182`` () =
+    let ``Unused let binding inside query select triggers FS1182`` () =
         FSharp """
 module Test
-
-let result = 
-    query { for x in [1;2;3] do
-            select (
-                let unused = 42
-                x) }
+let result = query { for x in [1;2;3] do select (let unused = 42 in x) }
         """
         |> withOptions ["--warnon:FS1182"]
         |> asLibrary
         |> compile
-        |> withSingleDiagnostic (Warning 1182, Line 7, Col 21, Line 7, Col 27, "The value 'unused' is unused")
+        |> withSingleDiagnostic (Warning 1182, Line 3, Col 54, Line 3, Col 60, "The value 'unused' is unused")
         |> ignore
 
     [<Fact>]
-    let ``Local unused variable in function with query still warns FS1182`` () =
+    let ``Unused local variable in function with query triggers FS1182`` () =
         FSharp """
 module Test
-
 let f () =
     let unused = 42
     query { for x in [1;2;3] do select x }
@@ -2398,5 +2371,34 @@ let f () =
         |> withOptions ["--warnon:FS1182"]
         |> asLibrary
         |> compile
-        |> withSingleDiagnostic (Warning 1182, Line 5, Col 9, Line 5, Col 15, "The value 'unused' is unused")
+        |> withSingleDiagnostic (Warning 1182, Line 4, Col 9, Line 4, Col 15, "The value 'unused' is unused")
+        |> ignore
+
+    // =====================================================================
+    // KNOWN LIMITATION: Genuinely unused query loop variables
+    //
+    // Query loop variables (for x in ...) CANNOT trigger FS1182 even when
+    // genuinely unused in user code. This is due to implementation details:
+    // query translation internally references all loop variables via Yield.
+    //
+    // IMPACT: Dead code in queries goes undetected. Users will not be warned
+    // about query variables they could remove.
+    //
+    // A proper fix would require tracking "user references" separately from
+    // "compiler-generated references". Contributions welcome!
+    // See: https://github.com/dotnet/fsharp/issues/422
+    // =====================================================================
+
+    [<Fact>]
+    let ``KNOWN LIMITATION - Genuinely unused query loop variable does not trigger FS1182`` () =
+        // This test documents current behavior, NOT desired behavior.
+        // Ideally, 'x' should produce FS1182 since it's unused in user code.
+        FSharp """
+module Test
+let result = query { for x in [1;2;3] do select 1 }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed  // BUG: Should warn about unused 'x', but doesn't due to internal Yield reference
         |> ignore
