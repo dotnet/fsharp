@@ -406,11 +406,31 @@ let MakeConstraintSolverEnv contextInfo css m denv =
 /// 2. Caller argument types were resolved before overload resolution
 /// 3. Any solved typars in those types won't be reverted by Trace.Undo
 /// Returns None only for infinite types.
+/// Check if a token array contains any Unsolved tokens (flexible unsolved typars)
+let private hasUnsolvedTokens (tokens: TypeToken[]) =
+    tokens |> Array.exists (function TypeToken.Unsolved _ -> true | _ -> false)
+
+/// Try to get a type structure for caching in the overload resolution context.
+/// 
+/// In this context, we accept Unstable structures that are unstable ONLY because
+/// of solved typars (not unsolved flexible typars). This is safe because:
+/// 1. The cache key is computed BEFORE FilterEachThenUndo runs
+/// 2. Caller argument types were resolved before overload resolution
+/// 3. Solved typars in those types won't be reverted by Trace.Undo
+/// 
+/// We reject structures containing Unsolved tokens because unsolved flexible typars
+/// could resolve to different types in different contexts, leading to wrong cache hits.
 let tryGetTypeStructureForOverloadCache (g: TcGlobals) (ty: TType) : TypeStructure voption =
     let ty = stripTyEqns g ty
     match tryGetTypeStructureOfStrippedType ty with
     | ValueSome(Stable tokens) -> ValueSome(Stable tokens)
-    | ValueSome(Unstable tokens) -> ValueSome(Stable tokens)  // Treat as stable in this context
+    | ValueSome(Unstable tokens) ->
+        // Only accept Unstable if it doesn't contain flexible unsolved typars
+        // Unstable due to solved typars is safe; Unstable due to unsolved is not
+        if hasUnsolvedTokens tokens then
+            ValueNone  // Reject - contains unsolved flexible typars
+        else
+            ValueSome(Stable tokens)  // Accept - unstable only due to solved typars
     | ValueSome PossiblyInfinite -> ValueNone
     | ValueNone -> ValueNone
 
