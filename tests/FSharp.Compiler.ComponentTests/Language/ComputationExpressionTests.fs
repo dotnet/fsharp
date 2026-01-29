@@ -2364,3 +2364,39 @@ let result =
         |> compile
         |> shouldSucceed
         |> ignore
+
+    // =====================================================================
+    // Verify FS1182 IS still reported for genuinely unused variables in queries
+    // =====================================================================
+
+    [<Fact>]
+    let ``Query with unused variable in select scope still warns FS1182`` () =
+        FSharp """
+module Test
+
+let result = 
+    query { for x in [1;2;3] do
+            select (
+                let unused = 42
+                x) }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> withSingleDiagnostic (Warning 1182, Line 7, Col 21, Line 7, Col 27, "The value 'unused' is unused")
+        |> ignore
+
+    [<Fact>]
+    let ``Local unused variable in function with query still warns FS1182`` () =
+        FSharp """
+module Test
+
+let f () =
+    let unused = 42
+    query { for x in [1;2;3] do select x }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> withSingleDiagnostic (Warning 1182, Line 5, Col 9, Line 5, Col 15, "The value 'unused' is unused")
+        |> ignore
