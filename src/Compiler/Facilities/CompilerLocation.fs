@@ -122,21 +122,25 @@ module internal FSharpEnvironment =
                 "netstandard2.0"
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
+            // Generate TFM list dynamically from fsProductTfmMajorVersion down to net5.0,
+            // followed by legacy netcoreapp and netstandard versions
+            let majorVersion =
+                match Int32.TryParse(FSharp.BuildProperties.fsProductTfmMajorVersion) with
+                | true, v -> v
+                | false, _ -> 10 // Fallback if parsing fails
+
             [|
-                "net11.0"
-                "net10.0"
-                "net9.0"
-                "net8.0"
-                "net7.0"
-                "net6.0"
-                "net5.0"
-                "netcoreapp3.1"
-                "netcoreapp3.0"
-                "netstandard2.1"
-                "netcoreapp2.2"
-                "netcoreapp2.1"
-                "netcoreapp2.0"
-                "netstandard2.0"
+                // Generate net{N}.0 from current major version down to 5
+                for v in majorVersion .. -1 .. 5 do
+                    yield $"net{v}.0"
+                // Legacy netcoreapp and netstandard versions
+                yield "netcoreapp3.1"
+                yield "netcoreapp3.0"
+                yield "netstandard2.1"
+                yield "netcoreapp2.2"
+                yield "netcoreapp2.1"
+                yield "netcoreapp2.0"
+                yield "netstandard2.0"
             |]
         else
             Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
