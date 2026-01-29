@@ -141,8 +141,7 @@ let SimplePatsOfPatCompilerGenerated synArgNameGenerator pat =
 
     let markedPats =
         match pats with
-        | SynSimplePats.SimplePats(patList, commaRanges, range) ->
-            SynSimplePats.SimplePats(patList |> List.map markPat, commaRanges, range)
+        | SynSimplePats.SimplePats(patList, commaRanges, range) -> SynSimplePats.SimplePats(patList |> List.map markPat, commaRanges, range)
 
     markedPats, later
 
