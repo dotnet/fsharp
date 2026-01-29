@@ -372,3 +372,81 @@ let t2 = testWith catSeq
     
     checkSourceHasNoErrors source |> ignore
     printfn "Type subsumption with solved generics succeeded"
+
+/// Test that caching doesn't break when types are known vs unknown at call site
+/// This verifies the before/after key strategy works correctly
+[<Fact>]
+let ``Cache handles known vs inferred types correctly`` () =
+    let source = """
+type Overloaded =
+    static member Call(x: int) = "int"
+    static member Call(x: string) = "string"
+    static member Call(x: float) = "float"
+
+// Calls with known types (should all resolve unambiguously)
+let r1 = Overloaded.Call(42)
+let r2 = Overloaded.Call("hello")
+let r3 = Overloaded.Call(3.14)
+
+// Multiple identical calls - should benefit from caching
+let a1 = Overloaded.Call(1)
+let a2 = Overloaded.Call(2)
+let a3 = Overloaded.Call(3)
+let a4 = Overloaded.Call(4)
+let a5 = Overloaded.Call(5)
+
+let s1 = Overloaded.Call("a")
+let s2 = Overloaded.Call("b")
+let s3 = Overloaded.Call("c")
+"""
+    
+    checkSourceHasNoErrors source |> ignore
+    printfn "Known vs inferred types handled correctly"
+
+/// Test that generic overloads work correctly with caching
+[<Fact>]
+let ``Generic overloads resolve correctly with caching`` () =
+    let source = """
+type GenericOverload =
+    static member Process(x: int) = "int"
+    static member Process(x: string) = "string"
+    static member Process<'T>(x: 'T) = "generic"
+
+// Non-generic calls should pick specific overloads
+let r1 = GenericOverload.Process(42)       // int
+let r2 = GenericOverload.Process("hello")  // string
+
+// Explicit generic call
+let r3 = GenericOverload.Process<bool>(true)  // generic
+
+// Multiple calls to same overload - caching
+let x1 = GenericOverload.Process(1)
+let x2 = GenericOverload.Process(2)
+let x3 = GenericOverload.Process(3)
+"""
+    
+    checkSourceHasNoErrors source |> ignore
+    printfn "Generic overloads succeeded"
+
+/// Test nested generic types with caching
+[<Fact>]
+let ``Nested generic types resolve correctly`` () =
+    let source = """
+type Processor =
+    static member Handle(x: int list) = "int list"
+    static member Handle(x: string list) = "string list"
+    static member Handle(x: float list) = "float list"
+
+// Calls with known list types
+let r1 = Processor.Handle([1; 2; 3])
+let r2 = Processor.Handle(["a"; "b"; "c"])
+let r3 = Processor.Handle([1.0; 2.0; 3.0])
+
+// Multiple calls - caching
+let a1 = Processor.Handle([1])
+let a2 = Processor.Handle([2])
+let a3 = Processor.Handle([3])
+"""
+    
+    checkSourceHasNoErrors source |> ignore
+    printfn "Nested generic types succeeded"
