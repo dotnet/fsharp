@@ -55,7 +55,6 @@ param (
     [switch]$testCompilerService,
     [switch]$testCompilerComponentTests,
     [switch]$testFSharpCore,
-    [switch]$testFSharpQA,
     [switch]$testIntegration,
     [switch]$testScripting,
     [switch]$testVs,
@@ -116,7 +115,6 @@ function Print-Usage() {
     Write-Host "  -testDesktop                  Run tests against full .NET Framework"
     Write-Host "  -testCoreClr                  Run tests against CoreCLR"
     Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
-    Write-Host "  -testFSharpQA                 Run F# Cambridge tests"
     Write-Host "  -testIntegration              Run F# integration tests"
     Write-Host "  -testScripting                Run Scripting tests"
     Write-Host "  -testVs                       Run F# editor unit tests"
@@ -162,7 +160,6 @@ function Process-Arguments() {
     if ($testAll) {
         $script:testDesktop = $True
         $script:testCoreClr = $True
-        $script:testFSharpQA = $True
         $script:testIntegration = $True
         $script:testVs = $True
         $script:testAOT = $True
@@ -171,7 +168,6 @@ function Process-Arguments() {
     if ($testAllButIntegration) {
         $script:testDesktop = $True
         $script:testCoreClr = $True
-        $script:testFSharpQA = $True
         $script:testIntegration = $False
         $script:testVs = $True
         $script:testAOT = $True
@@ -180,7 +176,6 @@ function Process-Arguments() {
     if($testAllButIntegrationAndAot) {
         $script:testDesktop = $True
         $script:testCoreClr = $True
-        $script:testFSharpQA = $True
         $script:testIntegration = $False
         $script:testVs = $True
         $script:testEditor = $True
@@ -200,7 +195,6 @@ function Process-Arguments() {
         $script:testDesktop = $False
         $script:testCoreClr = $False
         $script:testFSharpCore = $False
-        $script:testFSharpQA = $False
         $script:testIntegration = $False
         $script:testVs = $False
         $script:testpack = $False
@@ -546,13 +540,6 @@ try {
 
     $nativeTools = InitializeNativeTools
 
-    if (-not (Test-Path variable:NativeToolsOnMachine)) {
-        $env:PERL5Path = Join-Path $nativeTools "perl\5.38.2.2\perl\bin\perl.exe"
-        write-host "variable:NativeToolsOnMachine = unset or false"
-        $nativeTools
-        write-host "Path = $env:PERL5Path"
-    }
-
     $dotnetPath = InitializeDotNetCli
     $env:DOTNET_ROOT = "$dotnetPath"
     Get-Item -Path Env:
@@ -607,33 +594,6 @@ try {
 
     if ($testDesktop) {
         TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
-    }
-
-    if ($testFSharpQA) {
-        Push-Location "$RepoRoot\tests\fsharpqa\source"
-        $nugetPackages = Get-PackagesDir
-        $resultsRoot = "$ArtifactsDir\TestResults\$configuration"
-        $resultsLog = "test-net40-fsharpqa-results.log"
-        $errorLog = "test-net40-fsharpqa-errors.log"
-        $failLog = "test-net40-fsharpqa-errors"
-        Create-Directory $resultsRoot
-        UpdatePath
-        $env:HOSTED_COMPILER = 1
-        $env:CSC_PIPE = "$nugetPackages\Microsoft.Net.Compilers\4.3.0-1.22220.8\tools\csc.exe"
-        $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\$script:desktopTargetFramework\FSharp.Core.dll"
-        $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
-        $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
-
-        if (-not (Test-Path variable:NativeToolsOnMachine)) {
-            Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
-        }
-        else
-        {
-            Exec-Console "perl.exe" """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
-        }
-
-        write-host "Exec-Console finished"
-        Pop-Location
     }
 
     if ($testFSharpCore) {
