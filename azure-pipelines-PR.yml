@@ -96,9 +96,8 @@ stages:
         helixRepo: dotnet/fsharp
         jobs:
           # Determinism, we want to run it only in PR builds
-          # TEMPORARY: Disabled for FSI stdin debugging
         - job: Determinism_Debug
-          condition: false # eq(variables['Build.Reason'], 'PullRequest')
+          condition: eq(variables['Build.Reason'], 'PullRequest')
           variables:
           - name: _SignType
             value: Test
@@ -139,9 +138,7 @@ stages:
             condition: not(succeeded())
 
           # Check FSComp.txt error code sorting and code formatting
-          # TEMPORARY: Disabled for FSI stdin debugging
         - job: CheckCodeFormatting
-          condition: false
           pool:
             vmImage: $(UbuntuMachineQueueName)
           steps:
@@ -168,9 +165,7 @@ stages:
         # NOTE: The check now runs on all branches (not just release),
         #       because we want to catch cases when version is desynched and we didn't update it.
         #       It is also helping the release notes automation to be up to date with packages versions.
-        # TEMPORARY: Disabled for FSI stdin debugging
         - job: Check_Published_Package_Versions
-          condition: false
           pool:
             vmImage: $(UbuntuMachineQueueName)
           strategy:
@@ -221,9 +216,7 @@ stages:
         helixRepo: dotnet/fsharp
         jobs:
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         - job: WindowsLangVersionPreview
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -259,9 +252,7 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         - job: WindowsNoRealsig_testCoreclr
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -308,9 +299,7 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
-        # TEMPORARY: Disabled for FSI stdin debugging  
         - job: WindowsNoRealsig_testDesktop
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -357,9 +346,7 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         - job: WindowsStrictIndentation
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -395,9 +382,7 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         - job: WindowsNoStrictIndentation
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -433,10 +418,8 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         # Windows With Compressed Metadata
         - job: WindowsCompressedMetadata
-          condition: false
           variables:
           - name: XUNIT_LOGS
             value: $(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)
@@ -557,11 +540,11 @@ stages:
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3
+              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
               SKIP_VERSION_SUPPORTED_CHECK: 1
-            displayName: Build
+            displayName: Build / Test
 
           - task: PublishTestResults@2
             displayName: Publish Test Results
@@ -611,10 +594,8 @@ stages:
             continueOnError: true
             condition: failed()
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         # Mock official build
         - job: MockOfficial
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -624,10 +605,8 @@ stages:
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         # Linux
         - job: Linux
-          condition: false
           pool:
             vmImage: $(UbuntuMachineQueueName)
           timeoutInMinutes: 120
@@ -671,10 +650,8 @@ stages:
             continueOnError: true
             condition: failed()
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         # MacOS
         - job: MacOS
-          condition: false
           pool:
             vmImage: macos-latest
           timeoutInMinutes: 120
@@ -719,10 +696,8 @@ stages:
             continueOnError: true
             condition: failed()
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         # End to end build
         - job: EndToEndBuildTests
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -777,10 +752,8 @@ stages:
         # Run Build with Fsharp Experimental Features
         # Possible change: --times:$(Build.SourcesDirectory)/artifacts/log/Release/compiler_timing.csv
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         # Plain FCS build Windows
         - job: Plain_Build_Windows
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -798,10 +771,8 @@ stages:
             continueOnError: false
             condition: always()
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         # Plain FCS build Linux
         - job: Plain_Build_Linux
-          condition: false
           pool:
             vmImage: $(UbuntuMachineQueueName)
           variables:
@@ -818,10 +789,8 @@ stages:
             continueOnError: false
             condition: always()
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         # Plain FCS build Mac
         - job: Plain_Build_MacOS
-          condition: false
           pool:
             vmImage: macos-latest
           variables:
@@ -838,10 +807,8 @@ stages:
             continueOnError: false
             condition: always()
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         # Build and run fast benchmarks
         - job: Benchmarks
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -856,10 +823,8 @@ stages:
             continueOnError: true
             condition: always()
 
-        # TEMPORARY: Disabled for FSI stdin debugging
         # Test trimming on Windows
         - job: Build_And_Test_AOT_Windows
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -900,9 +865,7 @@ stages:
               artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
             continueOnError: true
             condition: always()
-        # TEMPORARY: Disabled for FSI stdin debugging
         - job: ILVerify
-          condition: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -928,21 +891,20 @@ stages:
   #-------------------------------------------------------------------------------------------------------------------#
   #                              F# Compiler Regression Tests                                                         #
   #-------------------------------------------------------------------------------------------------------------------#
-  # TEMPORARY: Disabled for FSI stdin debugging
-  #- ${{ if eq(variables['System.TeamProject'], 'public') }}:
-  #  - template: /eng/templates/regression-test-jobs.yml
-  #    parameters:
-  #      testMatrix:
-  #      - repo: marklam/SlowBuildRepro
-  #        commit: bbe2dec4d0379b5d7d0480997858c30d442fbb42
-  #        buildScript: dotnet build
-  #        displayName: UMX_Slow_Repro        
-  #      - repo: fsprojects/FSharpPlus
-  #        commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
-  #        buildScript: build.cmd
-  #        displayName: FSharpPlus_Windows
-  #      - repo: fsprojects/FSharpPlus
-  #        commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
-  #        buildScript: build.sh
-  #        displayName: FSharpPlus_Linux
-  #        useVmImage: $(UbuntuMachineQueueName)
+  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
+    - template: /eng/templates/regression-test-jobs.yml
+      parameters:
+        testMatrix:
+        - repo: marklam/SlowBuildRepro
+          commit: bbe2dec4d0379b5d7d0480997858c30d442fbb42
+          buildScript: dotnet build
+          displayName: UMX_Slow_Repro        
+        - repo: fsprojects/FSharpPlus
+          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          buildScript: build.cmd
+          displayName: FSharpPlus_Windows
+        - repo: fsprojects/FSharpPlus
+          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          buildScript: build.sh
+          displayName: FSharpPlus_Linux
+          useVmImage: $(UbuntuMachineQueueName)
