@@ -41,7 +41,7 @@ let copyHelloWorld cfgDirectory =
         DirectoryInfo(cfgDirectory + "\\..").CreateSubdirectory(helloDir.Name).FullName
         |> copyFilesToDest helloDir.FullName
 
-[<Fact(Skip = "Skipped by request: only helloWorld test should run")>]
+[<Fact>]
 let diamondAssembly () =
     let cfg = testConfig "typeProviders/diamondAssembly"
 
@@ -77,7 +77,7 @@ let diamondAssembly () =
 
     fsiCheckPassed cfg "%s" cfg.fsi_flags ["test3.fsx"]
 
-[<Fact(Skip = "Skipped by request: only helloWorld test should run")>]
+[<Fact>]
 let globalNamespace () =
     let cfg = testConfig "typeProviders/globalNamespace"
 
@@ -159,7 +159,7 @@ let ``helloWorld fsc`` () = helloWorld FSC_OPTIMIZED
 let ``helloWorld fsi`` () = helloWorld FSI_NETFX_STDIN
 #endif
 
-[<Fact(Skip = "Skipped by request: only helloWorld test should run")>]
+[<Fact>]
 let helloWorldCSharp () =
     let cfg = testConfig "typeProviders/helloWorldCSharp"
 
@@ -237,7 +237,7 @@ let singleNegTest name =
 
         SingleTest.singleNegTest cfg name
 
-[<Theory(Skip = "Skipped by request: only helloWorld test should run")>]
+[<Theory>]
 [<InlineData("neg1")>]
 [<InlineData("neg2")>]
 [<InlineData("neg2c")>]
@@ -340,13 +340,13 @@ let splitAssembly subdir project =
 
     clean()
 
-[<Fact(Skip = "Skipped by request: only helloWorld test should run")>]
+[<Fact>]
 let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
 
-[<Fact(Skip = "Skipped by request: only helloWorld test should run")>]
+[<Fact>]
 let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
 
-[<Fact(Skip = "Skipped by request: only helloWorld test should run")>]
+[<Fact>]
 let wedgeAssembly () =
     let cfg = testConfig "typeProviders/wedgeAssembly"
 
