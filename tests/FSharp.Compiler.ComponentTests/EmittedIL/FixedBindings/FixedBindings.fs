@@ -9,49 +9,10 @@ open FSharp.Test.Utilities
 open FSharp.Test.Compiler
 
 module FixedBindings =
-    [<Theory>]
-    [<InlineData("7.0")>]
-    let ``Pin naked string`` langVersion =
-        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedString.fs")
-        |> withLangVersion langVersion
-        |> withNoWarn 9
-        |> compile
-        |> verifyIL ["""
-   .method public static char  pinIt(string str) cil managed
-   {
-     
-     .maxstack  5
-     .locals init (native int V_0,
-              string pinned V_1)
-     IL_0000:  ldarg.0
-     IL_0001:  stloc.1
-     IL_0002:  ldarg.0
-     IL_0003:  brfalse.s  IL_000f
-
-     IL_0005:  ldarg.0
-     IL_0006:  conv.i
-     IL_0007:  call       int32 [runtime]System.Runtime.CompilerServices.RuntimeHelpers::get_OffsetToStringData()
-     IL_000c:  add
-     IL_000d:  br.s       IL_0010
-
-     IL_000f:  ldarg.0
-     IL_0010:  stloc.0
-     IL_0011:  ldloc.0
-     IL_0012:  ldc.i4.0
-     IL_0013:  conv.i
-     IL_0014:  sizeof     [runtime]System.Char
-     IL_001a:  mul
-     IL_001b:  add
-     IL_001c:  ldobj      [runtime]System.Char
-     IL_0021:  ret
-   } """ ]
-
-    [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin naked array`` langVersion = 
+    [<Fact>]
+    let ``Pin naked array`` () = 
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedArray.fs")
-        |> withLangVersion langVersion
+        |> withLangVersionPreview
         |> withNoWarn 9
         |> compile
         |> verifyIL ["""
@@ -93,12 +54,10 @@ module FixedBindings =
     IL_002e:  ret
   } """ ]
 
-    [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin address of record field`` langVersion = 
+    [<Fact>]
+    let ``Pin address of record field`` () = 
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfRecordField.fs")
-        |> withLangVersion langVersion
+        |> withLangVersionPreview
         |> withNoWarn 9
         |> compileExeAndRun
         |> verifyIL ["""
@@ -124,12 +83,10 @@ module FixedBindings =
     IL_001a:  ret
   } """ ]
 
-    [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin address of explicit field on this`` langVersion = 
+    [<Fact>]
+    let ``Pin address of explicit field on this`` () = 
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfExplicitFieldOnThis.fs")
-        |> withLangVersion langVersion
+        |> withLangVersionPreview
         |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
@@ -157,12 +114,10 @@ module FixedBindings =
       IL_001a:  ret
     } """ ]
         
-    [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin address of array element`` langVersion =
+    [<Fact>]
+    let ``Pin address of array element`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfArrayElement.fs")
-        |> withLangVersion langVersion
+        |> withLangVersionPreview
         |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed

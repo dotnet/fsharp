@@ -58,12 +58,12 @@ type internal FxResolver
             let mutable errorslock = obj
             let mutable outputlock = obj
 
-            let outputDataReceived (message: string MaybeNull) =
+            let outputDataReceived (message: string | null) =
                 match message with
                 | Null -> ()
                 | NonNull message -> lock outputlock (fun () -> outputList.Add(message))
 
-            let errorDataReceived (message: string MaybeNull) =
+            let errorDataReceived (message: string | null) =
                 match message with
                 | Null -> ()
                 | NonNull message -> lock errorslock (fun () -> errorsList.Add(message))
@@ -412,7 +412,7 @@ type internal FxResolver
 
         match runningTfmOpt with
         | Some tfm -> tfm
-        | _ -> if isRunningOnCoreClr then "net10.0" else "net472"
+        | _ -> if isRunningOnCoreClr then "net11.0" else "net472"
 
     let trySdkRefsPackDirectory =
         lazy

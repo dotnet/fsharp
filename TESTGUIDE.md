@@ -20,7 +20,6 @@ build -testCompiler -c Release
 build -testCompilerService -c Release
 build -testCompilerComponentTests -c Release
 build -testCambridge -c Release -ci -nobl
-build -testFSharpQA -c Release -ci -nobl
 build -testFSharpCore -c Release
 build -testScripting -c Release
 build -testVs -c Release
@@ -36,7 +35,6 @@ build -testAll -c Release
 | testCoreClr  | Linux/Mac/Windows | Runs all .NetStandard and .NETCore tests in 64 bit processes, this includes tests from other groups |
 | testFSharpCore | Windows | Runs all test for FSharp.Core.dll |
 | testCambridge | Windows | Runs the Cambridge suite tests |
-| testFSharpQA  | Windows | Runs the FSharpQA tests, requires Perl |
 | testVS        | Windows + VS | Runs all VS integration tests |
 | testAOT       | Windows | Run AOT/Trimming tests |
 | testCompiler  | Windows | Runs a few quick compiler tests |
@@ -68,7 +66,6 @@ build -testCoreClr -c Release
 
 The following testsets open other windows and may interfere with you using your workstation, or change focus while you're doing something else:
 
-* FSharpQA
 * Cambridge
 
 ### Running tests online in CI
@@ -86,9 +83,8 @@ Finding the logs in the online CI results can be tricky, a small video can be fo
 
 ## Prerequisites
 
-The prerequisites are the same as for building the `FSharp.sln`, plus, at a minimum:
+The prerequisites are the same as for building the `FSharp.sln`, plus:
 
-* An installation of Perl, required for running FSharpQA tests
 * Run `git clean -xdf -e .vs` before running tests when:
   * Making changes to the lexer or parser
   * Between switching git branches
@@ -100,13 +96,11 @@ The F# tests are split as follows:
 
 * [FSharp Suite](tests/fsharp) - Older suite with broad coverage of mainline compiler and runtime scenarios.
 
-* [FSharpQA Suite](tests/fsharpqa/Source) - Broad and deep coverage of a variety of compiler, runtime, and syntax scenarios.
-
 * [FSharp.Core.UnitTests](tests/FSharp.Core.UnitTests) - Validation of the core F# types and the public surface area of `FSharp.Core.dll`.
 
 * [FSharp.Compiler.Service.Tests](tests/FSharp.Compiler.Service.Tests) - Validation of compiler internals.
 
-* [FSharp.Compiler.ComponentTests](tests/FSharp.Compiler.ComponentTests) - Validation of compiler APIs.
+* [FSharp.Compiler.ComponentTests](tests/FSharp.Compiler.ComponentTests) - Validation of compiler APIs and language conformance. This is the primary test suite for compiler functionality.
 
 * [VisualFSharp.UnitTests](vsintegration/tests/unittests) - Validation of a wide range of behaviors in the F# Visual Studio project system and language service (including the legacy one).
 
@@ -125,39 +119,12 @@ If the compilation and execution encounter no errors, the test is considered to 
 
 There are also negative tests checking code expected to fail compilation. See note about baseline under "Other Tips" below for tests checking expectations against "baseline" (.bsl) files.
 
-### FSharpQA Suite
-
-The FSharpQA suite relies on [Perl](http://www.perl.org/get.html), StrawberryPerl package from https://strawberryperl.com.
-
-These tests use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `.\build` script, see [usage examples](#quick-start-running-tests).
-
-Tests are grouped in folders per area. Each folder contains a number of source code files and a single `env.lst` file. The `env.lst` file defines a series of test cases, one per line.
-
-Each test case runs an optional "pre command," compiles a given set of source files using given flags, optionally runs the resulting binary, then optionally runs a final "post command".
-
-If all of these steps complete without issue, the test is considered to have passed.
-
-Read more at [tests/fsharpqa/readme.md](tests/fsharpqa/readme.md).
-
-#### Test lists
-
-For the FSharpQA suite, the list of test areas and their associated "tags" is stored at
-
-```shell
-tests\fsharpqa\source\test.lst   // FSharpQA suite
-```
-
-Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specified, all tests will be run.
-
-If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN") and adjust `ttags` [run.fsharpqa.test.fsx script](tests/fsharpqa/run.fsharpqa.test.fsx) and run it.
-
 ### Logs and output
 
 All test execution logs and result files will be dropped into the `tests\TestResults` folder, and have file names matching
 
 ```shell
     net40-fsharp-suite-*.*
-    net40-fsharpqa-suite-*.*
     net40-compilerunit-suite-*.*
     net40-coreunit-suite-*.*
     vs-ideunit-suite-*.*
@@ -192,11 +159,7 @@ If you have the `VisualFSharp.sln` open, or if you recently debugged it through 
 
 ### Finding the logs on CI
 
-Finding the proper logs in the CI system can be daunting, this video shows you where to look once you have an open PR. It shows you how to get the `FsharpQA` logs, but the same method applies to getting any other test logs.
-
-![b51e0ea3-e12b-4ee8-b26a-3b98c11dae33](https://user-images.githubusercontent.com/16015770/91355183-1a6ff900-e7ee-11ea-8fb4-e3627cc9b811.gif)
-
-The console output of the CI runs do not contain output of the FSharpQA tests, but for most other tests the console output contains enough info and can be found by clicking <kbd>Raw output</kbd> in the CI window, or clicking <kbd>download logs</kbd>:
+Finding the proper logs in the CI system can be daunting. The console output contains enough info for most tests and can be found by clicking <kbd>Raw output</kbd> in the CI window, or clicking <kbd>download logs</kbd>:
 
 ![download logs](https://user-images.githubusercontent.com/6309070/89307267-b9596900-d625-11ea-86e9-a1657ce2a368.png)
 
@@ -233,20 +196,13 @@ Some tests are known to fail on these older branches when run using one of the `
 * Adding the `-norestore` flag to the commandline speeds up the build part a little bit.
 * When using the `-ci` flag (mandatory for some testsets), adding the `-nobl` flag prevents creating the binary log files.
 
-Some tests run in parallel by default, or use a hosted compiler to speed things up:
-
-* The FSharp and FSharpQA suites will run test cases in parallel by default. You can comment out the relevant line (look for `PARALLEL_ARG`) to disable this.
-* By default, tests from the FSharpQA suite are run using a persistent, hosted version of the compiler. This speeds up test execution, as there is no need for the `fsc.exe` process to spin up repeatedly. To disable this, uncomment the relevant line (look for `HOSTED_COMPILER`).
-
 ## Solving common errors
 
 The following are common errors that users have encountered while running tests on their system.
 
 ### Error that a file cannot be accessed
 
-The build often leaves dangling processes like `HostedCompilerServer.exe`, `VBCSCompiler.exe` or `MSBuild.exe`. In [Process Explorer](https://learn.microsoft.com/sysinternals/downloads/process-explorer) you can see these processes having no parent process anymore. You can also use this to kill such processes. A typical error looks like and contains the process IDs (here 23152, 25252 and 24704):
-
-> C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(4364,5): error MSB3026: Could not copy "D:\Projects\FSharp\artifacts\bin\FSharp.Core\Debug\net45\FSharp.Core.dll" to "D:\Projects\FSharp\tests\fsharpqa\testenv\bin\FSharp.Core.dll". Beginning retry 1 in 1000ms. The process cannot access the file 'D:\Projects\FSharp\tests\fsharpqa\testenv\bin\FSharp.Core.dll' because it is being used by another process. The file is locked by: "HostedCompilerServer (23152), HostedCompilerServer (25252), HostedCompilerServer (24704)" [D:\Projects\OpenSource\FSharp\tests\fsharpqa\testenv\src\ILComparer\ILComparer.fsproj]
+The build often leaves dangling processes like `VBCSCompiler.exe` or `MSBuild.exe`. In [Process Explorer](https://learn.microsoft.com/sysinternals/downloads/process-explorer) you can see these processes having no parent process anymore. You can also use this to kill such processes.
 
 ### StackOverflow exception
 
@@ -266,7 +222,6 @@ To get an idea of how long it may take, or how much coffee you'll need while wai
 | `-testDesktop` | 5 min | ? |
 | `-testCoreClr` | 36 min | ? |
 | `-testCambridge` | 72 min | 35 min |
-| `-testFSharpQA`  | 13 min | ? |
 | `-testCompiler` | 30 seconds | n/a |
 | `-testFSharpCore` | 2 min | ? |
 | `-testScripting` | 2 min | 1.5 min |

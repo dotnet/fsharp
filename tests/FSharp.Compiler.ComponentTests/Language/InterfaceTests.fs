@@ -48,21 +48,6 @@ if I<int>.Echo 42 <> 42 || I<int>.Prop <> 0 || not (isNull I<string>.Prop) then
     |> shouldSucceed
 
 [<Fact>]
-let ``Concrete static members are not allowed in interfaces in lang version70``() =
-    FSharp """
-[<Interface>]
-type I<'T> =
-    static member Echo (x: 'T) = x
-    static member Prop = Unchecked.defaultof<'T>
-    """
-    |> withLangVersion70
-    |> typecheck
-    |> shouldFail
-    |> withDiagnostics [
-        (Error 3350, Line 4, Col 19, Line 4, Col 23, "Feature 'Static members in interfaces' is not available in F# 7.0. Please use language version 8.0 or greater.")
-    ]
-
-[<Fact>]
 let ``Concrete static members are allowed in interfaces as intrinsics in lang version80``() =
     FSharp """
 [<Interface>]

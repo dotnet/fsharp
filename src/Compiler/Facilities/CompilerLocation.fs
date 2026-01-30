@@ -22,7 +22,7 @@ module internal FSharpEnvironment =
 
     let FSharpProductName = UtilsStrings.SR.buildProductName (FSharpBannerVersion)
 
-    let versionOf<'t> : MaybeNull<string> =
+    let versionOf<'t> : (string | null) =
         match typeof<'t>.Assembly.GetName().Version with
         | null -> null
         | v -> v.ToString()
@@ -123,6 +123,7 @@ module internal FSharpEnvironment =
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [|
+                "net11.0"
                 "net10.0"
                 "net9.0"
                 "net8.0"

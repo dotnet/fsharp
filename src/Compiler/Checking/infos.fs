@@ -341,7 +341,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
 type ILFieldInit with
 
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-    static member FromProvidedObj m (v: obj MaybeNull) =
+    static member FromProvidedObj m (v: obj | null) =
         match v with
         | Null -> ILFieldInit.Null
         | NonNull v ->
@@ -393,8 +393,8 @@ let OptionalArgInfoOfProvidedParameter (amap: ImportMap) m (provParam : Tainted<
         NotOptional
 
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo MaybeNull) err = 
-    match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase MaybeNull)),m) with 
+let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> (ProvidedMethodInfo | null)) err = 
+    match mi.PApply((fun mi -> (get mi :> (ProvidedMethodBase | null))),m) with 
     | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull mi.DeclaringType).Name), m)), m))
     | Tainted.NonNull meth -> meth
 
@@ -1516,7 +1516,7 @@ type ILFieldInfo =
         match x with
         | ILFieldInfo(tinfo, _) -> tinfo.TypeInstOfRawMetadata
 #if !NO_TYPEPROVIDERS
-        | ProvidedField _ -> [] /// GENERIC TYPE PROVIDERS
+        | ProvidedField _ -> [] // GENERIC TYPE PROVIDERS
 #endif
 
      /// Get the name of the field
@@ -2273,10 +2273,16 @@ let nonStandardEventError nm m =
 
 /// Find the delegate type that an F# event property implements by looking through the type hierarchy of the type of the property
 /// for the first instantiation of IDelegateEvent.
+/// The delegate type is returned with non-null nullness to avoid spurious nullness warnings when implementing
+/// interface events (e.g., INotifyPropertyChanged.PropertyChanged), since delegate parameters to event handlers
+/// should not be nullable.
 let FindDelegateTypeOfPropertyEvent g amap nm m ty =
     match SearchEntireHierarchyOfType (tyConformsToIDelegateEvent g) g amap m ty with
     | None -> error(nonStandardEventError nm m)
-    | Some ty -> destIDelegateEventType g ty
+    | Some ty -> 
+        let delTy = destIDelegateEventType g ty
+        // Strip any nullness from the delegate type - delegate parameters to events are not nullable
+        replaceNullnessOfTy KnownWithoutNull delTy
 
 
 //-------------------------------------------------------------------------

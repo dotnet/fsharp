@@ -86,6 +86,7 @@
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ComputationExpressions\ComputationExpressions.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
+    <Compile Include="Conformance\Expressions\ObjectExpressions\StructObjectExpression.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\Type-relatedExpressions\Type-relatedExpressions.fs" />
@@ -204,6 +205,7 @@
     <Compile Include="ErrorMessages\ClassesTests.fs" />
     <Compile Include="ErrorMessages\ConstructorTests.fs" />
     <Compile Include="ErrorMessages\DontSuggestTests.fs" />
+    <Compile Include="ErrorMessages\DuplicateExtensionMemberTests.fs" />
     <Compile Include="ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
     <Compile Include="ErrorMessages\InvalidLiteralTests.fs" />
     <Compile Include="ErrorMessages\InvalidNumericLiteralTests.fs" />
@@ -262,6 +264,7 @@
     <Compile Include="Language\Nullness\NullableCsharpImportTests.fs" />
     <Compile Include="Language\Nullness\NullableRegressionTests.fs" />
     <Compile Include="Language\Nullness\NullableReferenceTypesTests.fs" />
+    <Compile Include="Language\Nullness\EventNullnessTests.fs" />
     <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
@@ -300,6 +303,7 @@
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />
     <Compile Include="CompilerOptions\fsc\crossoptimize.fs" />
     <Compile Include="CompilerOptions\fsc\debug.fs" />
+    <Compile Include="CompilerOptions\fsc\disableLanguageFeature.fs" />
     <Compile Include="CompilerOptions\fsc\flaterrors.fs" />
     <Compile Include="CompilerOptions\fsc\determinism\determinism.fs" />
     <Compile Include="CompilerOptions\fsc\highentropyva.fs" />

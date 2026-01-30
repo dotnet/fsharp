@@ -14,8 +14,8 @@ type EscapedValue = { Escaped: string; Raw: string }
 
 type WriteCodeFragment() as this =
     inherit Task()
-    let mutable _outputDirectory: ITaskItem MaybeNull = null
-    let mutable _outputFile: ITaskItem MaybeNull = null
+    let mutable _outputDirectory: ITaskItem | null = null
+    let mutable _outputFile: ITaskItem | null = null
     let mutable _language: string = ""
     let mutable _assemblyAttributes: ITaskItem[] = [||]
 
