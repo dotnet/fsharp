@@ -51,11 +51,13 @@ let getOverloadResolutionCache =
         let options =
             match g.compilationMode with
             | CompilationMode.OneOff ->
-                Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
+                Caches.CacheOptions.getDefault HashIdentity.Structural
+                |> Caches.CacheOptions.withNoEviction
             | _ ->
                 { Caches.CacheOptions.getDefault HashIdentity.Structural with
                     TotalCapacity = 4096
-                    HeadroomPercentage = 50 }
+                    HeadroomPercentage = 50
+                }
 
         new Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>(options, "overloadResolutionCache")
 
@@ -63,16 +65,19 @@ let getOverloadResolutionCache =
 
 /// Check if a token array contains any Unsolved tokens (flexible unsolved typars)
 let private hasUnsolvedTokens (tokens: TypeToken[]) =
-    tokens |> Array.exists (function TypeToken.Unsolved _ -> true | _ -> false)
+    tokens
+    |> Array.exists (function
+        | TypeToken.Unsolved _ -> true
+        | _ -> false)
 
 /// Try to get a type structure for caching in the overload resolution context.
-/// 
+///
 /// In this context, we accept Unstable structures that are unstable ONLY because
 /// of solved typars (not unsolved flexible typars). This is safe because:
 /// 1. The cache key is computed BEFORE FilterEachThenUndo runs
 /// 2. Caller argument types were resolved before overload resolution
 /// 3. Solved typars in those types won't be reverted by Trace.Undo
-/// 
+///
 /// We reject structures containing Unsolved tokens because unsolved flexible typars
 /// could resolve to different types in different contexts, leading to wrong cache hits.
 let tryGetTypeStructureForOverloadCache (g: TcGlobals) (ty: TType) : TypeStructure voption =
@@ -110,8 +115,7 @@ let tryComputeOverloadCacheKey
     (callerArgs: CallerArgs<'T>)
     (reqdRetTyOpt: TType option)
     (anyHasOutArgs: bool)
-    : OverloadResolutionCacheKey voption
-    =
+    : OverloadResolutionCacheKey voption =
 
     // Don't cache if there are named arguments (simplifies key computation)
     let hasNamedArgs =
@@ -209,8 +213,7 @@ let tryComputeOverloadCacheKey
 let computeCacheResult
     (calledMethGroup: CalledMeth<'T> list)
     (calledMethOpt: CalledMeth<'T> voption)
-    : OverloadResolutionCacheResult option
-    =
+    : OverloadResolutionCacheResult option =
     match calledMethOpt with
     | ValueSome calledMeth ->
         calledMethGroup
@@ -221,7 +224,7 @@ let computeCacheResult
 /// Stores an overload resolution result in the cache.
 /// For successful resolutions, finds the method's index in calledMethGroup and stores CachedResolved.
 /// For failures, stores CachedFailed.
-/// 
+///
 /// Also computes and stores under an "after" key if types were solved during resolution.
 /// This allows future calls with already-solved types to hit the cache directly.
 let storeCacheResult

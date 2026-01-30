@@ -43,20 +43,20 @@ val getOverloadResolutionCache: (TcGlobals -> Cache<OverloadResolutionCacheKey, 
 val computeMethInfoHash: MethInfo -> int
 
 /// Try to get a type structure for caching in the overload resolution context.
-/// 
+///
 /// In this context, we accept Unstable structures that are unstable ONLY because
 /// of solved typars (not unsolved flexible typars). This is safe because:
 /// 1. The cache key is computed BEFORE FilterEachThenUndo runs
 /// 2. Caller argument types were resolved before overload resolution
 /// 3. Solved typars in those types won't be reverted by Trace.Undo
-/// 
+///
 /// We reject structures containing Unsolved tokens because unsolved flexible typars
 /// could resolve to different types in different contexts, leading to wrong cache hits.
 val tryGetTypeStructureForOverloadCache: g: TcGlobals -> ty: TType -> TypeStructure voption
 
 /// Try to compute a cache key for overload resolution.
 /// Returns None if the resolution cannot be cached (e.g., unresolved type variables, named arguments).
-/// 
+///
 /// Parameters:
 /// - g: TcGlobals
 /// - calledMethGroup: The list of candidate methods
@@ -69,18 +69,18 @@ val tryComputeOverloadCacheKey:
     callerArgs: CallerArgs<'T> ->
     reqdRetTyOpt: TType option ->
     anyHasOutArgs: bool ->
-    OverloadResolutionCacheKey voption
+        OverloadResolutionCacheKey voption
 
 /// Compute cache result from resolution outcome
 val computeCacheResult:
     calledMethGroup: CalledMeth<'T> list ->
     calledMethOpt: CalledMeth<'T> voption ->
-    OverloadResolutionCacheResult option
+        OverloadResolutionCacheResult option
 
 /// Stores an overload resolution result in the cache.
 /// For successful resolutions, finds the method's index in calledMethGroup and stores CachedResolved.
 /// For failures, stores CachedFailed.
-/// 
+///
 /// Also computes and stores under an "after" key if types were solved during resolution.
 /// This allows future calls with already-solved types to hit the cache directly.
 val storeCacheResult:
@@ -92,4 +92,4 @@ val storeCacheResult:
     reqdRetTyOpt: TType option ->
     anyHasOutArgs: bool ->
     calledMethOpt: CalledMeth<'T> voption ->
-    unit
+        unit
