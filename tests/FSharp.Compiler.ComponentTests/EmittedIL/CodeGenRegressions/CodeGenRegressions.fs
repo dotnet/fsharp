@@ -857,6 +857,19 @@ let main args =
     // https://github.com/dotnet/fsharp/issues/16378
     // Logging F# discriminated union values using Console.Logger causes ~20x more
     // memory allocation compared to serializing them first due to excessive boxing/allocations.
+    //
+    // ROOT CAUSE: F# types (DU, records) use a reflection-based ToString() implementation
+    // (see Microsoft.FSharp.Core.PrintfImpl). When DU values are passed to logging APIs
+    // expecting obj, the ToString() call triggers heavy reflection allocation (~20-36KB).
+    // C# record types with hand-written ToString() only allocate ~1-2KB.
+    //
+    // POTENTIAL FIX: Generate specialized ToString() methods at compile time for F# types
+    // instead of using reflection. This would be a significant change affecting:
+    // - TypedTree generation
+    // - AugmentWithHashCompare module (where ToString is implemented)
+    // - Potential breaking changes in ToString() output format
+    //
+    // WORKAROUND: Implement custom SerializeError() methods that return simple strings.
     [<Fact>]
     let ``Issue_16378_DULoggingAllocations`` () =
         let source = """
@@ -868,6 +881,7 @@ open System
 // When F# DU values are passed to logging methods that expect obj,
 // the compiler generates excessive allocations compared to what's needed
 
+[<NoComparison>]
 type StoreError =
     | Exception of exn
     | ErrorDuringReadingChannelFromDatabase of channel: string
@@ -887,11 +901,11 @@ let sampleNotFound = NotFound(Guid.NewGuid())
 // The difference is due to how F# boxes and formats the DU
 
 let logDirect() =
-    // This path causes excessive allocations
+    // This path causes excessive allocations through reflection-based ToString
     String.Format("Error: {0}", sampleNotFound) |> ignore
 
 let logSerialized() =
-    // This path has minimal allocations
+    // This path has minimal allocations using custom serialization
     String.Format("Error: {0}", sampleNotFound.SerializeError()) |> ignore
 
 logDirect()
@@ -910,6 +924,7 @@ printfn "Test completed"
                 Assert.Contains("logDirect", actualIL)
                 Assert.Contains("logSerialized", actualIL)
                 // The issue is about allocation overhead when DU is boxed for logging
+                // After fix: Generate specialized ToString() that doesn't use reflection
                 Assert.Contains("box", actualIL)
             | None -> failwith "No output path"
         | _ -> failwith "Compilation failed"
@@ -1897,6 +1912,15 @@ let main _ = 0
     // the compiler generates an extra wrapper closure that just invokes the first closure.
     // This doubles allocation unnecessarily.
     // Workaround: explicitly box the argument at the call site.
+    //
+    // ROOT CAUSE: The AdjustPossibleSubsumptionExpr function in TypedTreeOps.fs creates wrapper
+    // lambdas when coercing between function types with different argument types. When calling
+    // a function that takes obj with a string argument, the string->obj coercion triggers 
+    // subsumption adjustment which wraps the result in an extra closure.
+    //
+    // The fix would need to optimize AdjustPossibleSubsumptionExpr to recognize when the argument
+    // coercion is a simple box (concrete type to obj) and avoid generating the wrapper lambda
+    // in that case. This is complex because the subsumption logic is also used for quotations.
     [<Fact>]
     let ``Issue_12546_BoxingClosure`` () =
         // This code allocates TWO closures: the actual closure and a wrapper
@@ -1915,7 +1939,7 @@ let goFixed() = foo(box "hi")
 """
         let result = FSharp source |> asLibrary |> withOptimize |> compile |> shouldSucceed
         
-        // Verify the IL shows closure generation
+        // Verify the IL shows the closure generation patterns
         match result with
         | CompilationResult.Success s ->
             match s.OutputPath with
@@ -1924,8 +1948,10 @@ let goFixed() = foo(box "hi")
                 // Document the current behavior: extra closure generation
                 Assert.Contains("go", actualIL)
                 Assert.Contains("goFixed", actualIL)
-                // The issue is about extra closure allocation
-                Assert.Contains("Invoke", actualIL)
+                // The issue is about extra closure allocation - verify closure classes exist
+                Assert.Contains("FSharpFunc", actualIL)
+                // After fix: The wrapper closure class (go@5 pattern) should not be present
+                // when the argument is implicitly boxed.
             | None -> failwith "No output path"
         | _ -> failwith "Compilation failed"
 
