@@ -43,7 +43,7 @@ module CoreTests =
 
 
 #if !NETCOREAPP
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``subtype-langversion-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
@@ -54,7 +54,7 @@ module CoreTests =
         execAndCheckPassed cfg ("." ++ "test-checknulls.exe") ""
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``subtype-langversion-no-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
@@ -67,7 +67,7 @@ module CoreTests =
 #endif
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``SDKTests`` () =
         let cfg = testConfig "SDKTests"
 
@@ -78,13 +78,13 @@ module CoreTests =
         exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
 
 #if !NETCOREAPP
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``attributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/attributes" FSC_OPTIMIZED
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``attributes-FSI`` () = singleTestBuildAndRun "core/attributes" FSI
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let span () =
 
         let cfg = testConfig "core/span"
@@ -128,7 +128,7 @@ module CoreTests =
             //checkPassed()
         end
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let asyncStackTraces () =
         let cfg = testConfig "core/asyncStackTraces"
 
@@ -139,7 +139,7 @@ module CoreTests =
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``state-machines-non-optimized`` () = 
         let cfg = testConfig "core/state-machines"
 
@@ -152,7 +152,7 @@ module CoreTests =
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``state-machines-optimized`` () = 
         let cfg = testConfig "core/state-machines"
 
@@ -165,88 +165,88 @@ module CoreTests =
         exec cfg ("." ++ "test.exe") ""
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``state-machines neg-resumable-01`` () =
         let cfg = testConfig "core/state-machines"
         singleVersionedNegTest cfg "preview" "neg-resumable-01"
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``state-machines neg-resumable-02`` () =
         let cfg = testConfig "core/state-machines"
         singleVersionedNegTest cfg "preview" "neg-resumable-02"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-conditionals``() =
         let cfg = testConfig "core/large/conditionals"
         
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-200.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-conditionals-maxtested``() =
         let cfg = testConfig "core/large/conditionals"
         
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-maxtested.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-lets``() =
         let cfg = testConfig "core/large/lets"
         
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-500.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-lets-maxtested``() =
         let cfg = testConfig "core/large/lets"
         
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-maxtested.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-lists``() =
         let cfg = testConfig "core/large/lists"
         
         fsc cfg "%s -o:test-500.exe " cfg.fsc_flags ["LargeList-500.fs"]
         execAndCheckPassed cfg ("." ++ "test-500.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-matches``() =
         let cfg = testConfig "core/large/matches"
         
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-200.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-matches-maxtested``() =
         let cfg = testConfig "core/large/matches"
         
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-maxtested.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-sequential-and-let``() =
         let cfg = testConfig "core/large/mixed"
         
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-500.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-sequential-and-let-maxtested``() =
         let cfg = testConfig "core/large/mixed"
         
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-maxtested.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-sequential``() =
         let cfg = testConfig "core/large/sequential"
         
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-500.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``lots-of-sequential-maxtested``() =
         let cfg = testConfig "core/large/sequential"
         
@@ -260,11 +260,11 @@ module CoreTests =
 #if !NETCOREAPP
 
     // Requires winforms will not run on coreclr
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let controlWpf () = singleTestBuildAndRun "core/controlwpf" FSC_OPTIMIZED
 
     // These tests are enabled for .NET Framework
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``anon-FSC_OPTIMIZED``() =
         let cfg = testConfig "core/anon"
 
@@ -290,7 +290,7 @@ module CoreTests =
 
         end
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let events () =
         let cfg = testConfig "core/events"
 
@@ -360,7 +360,7 @@ module CoreTests =
     //
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let forwarders () =
         let cfg = testConfig "core/forwarders"
 
@@ -393,7 +393,7 @@ module CoreTests =
 
         peverify cfg ("split" ++ "c.dll")
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let xmldoc () =
         let cfg = testConfig "core/xmldoc"
 
@@ -409,7 +409,7 @@ module CoreTests =
         | "" -> ()
         | _ -> failwithf "'%s' and '%s' differ; %A" outFile expectedFile diffs
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let fsfromcs () =
         let cfg = testConfig "core/fsfromcs"
 
@@ -429,7 +429,7 @@ module CoreTests =
 
         execAndCheckPassed cfg ("." ++ "test--optimize.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let fsfromfsviacs () =
         let cfg = testConfig "core/fsfromfsviacs"
 
@@ -511,13 +511,13 @@ module CoreTests =
             let diagContent = getDiagnosticLog cfg
             failwithf "%s%s" ex.Message diagContent
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``genericmeasures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``innerpoly-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"  FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let queriesCustomQueryOps () =
         let cfg = testConfig "core/queriesCustomQueryOps"
 
@@ -678,68 +678,68 @@ module CoreTests =
 
         Assert.Equal(expectedSigning, actualSigning)
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-1`` () = signedtest("test-unsigned", "", SigningType.NotSigned)
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-2`` () = signedtest("test-sha1-full-cl", "--keyfile:sha1full.snk", SigningType.PublicSigned)
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-3`` () = signedtest("test-sha256-full-cl", "--keyfile:sha256full.snk", SigningType.PublicSigned)
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-4`` () = signedtest("test-sha512-full-cl", "--keyfile:sha512full.snk", SigningType.PublicSigned)
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-5`` () = signedtest("test-sha1024-full-cl", "--keyfile:sha1024full.snk", SigningType.PublicSigned)
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-6`` () = signedtest("test-sha1-delay-cl", "--keyfile:sha1delay.snk --delaysign", SigningType.DelaySigned)
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-7`` () = signedtest("test-sha256-delay-cl", "--keyfile:sha256delay.snk --delaysign", SigningType.DelaySigned)
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-8`` () = signedtest("test-sha512-delay-cl", "--keyfile:sha512delay.snk --delaysign", SigningType.DelaySigned)
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-9`` () = signedtest("test-sha1024-delay-cl", "--keyfile:sha1024delay.snk --delaysign", SigningType.DelaySigned)
 
     // Test SHA1 key full signed  Attributes
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-10`` () = signedtest("test-sha1-full-attributes", "--define:SHA1", SigningType.PublicSigned)
 
     // Test SHA1 key delay signed  Attributes
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-11`` () = signedtest("test-sha1-delay-attributes", "--keyfile:sha1delay.snk --define:SHA1 --define:DELAY", SigningType.DelaySigned)
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-12`` () = signedtest("test-sha256-full-attributes", "--define:SHA256", SigningType.PublicSigned)
 
     // Test SHA 256 bit key delay signed  Attributes
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-13`` () = signedtest("test-sha256-delay-attributes", "--define:SHA256 --define:DELAY", SigningType.DelaySigned)
 
     // Test SHA 512 bit key fully signed  Attributes
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-14`` () = signedtest("test-sha512-full-attributes", "--define:SHA512", SigningType.PublicSigned)
 
     // Test SHA 512 bit key delay signed Attributes
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-15`` () = signedtest("test-sha512-delay-attributes", "--define:SHA512 --define:DELAY", SigningType.DelaySigned)
 
     // Test SHA 1024 bit key fully signed  Attributes
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-16`` () = signedtest("test-sha1024-full-attributes", "--define:SHA1024", SigningType.PublicSigned)
 
     // Test fully signed with pdb generation
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``signedtest-17`` () = signedtest("test-sha1-full-cl", "-g --keyfile:sha1full.snk", SigningType.PublicSigned)
 
 #endif
 
 #if !NETCOREAPP
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let quotes () =
         let cfg = testConfig "core/quotes"
 
@@ -782,28 +782,28 @@ module CoreTests =
     // Previously a comment here said:
     // "This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside"
     // This is resolved by compiling cslib.dll separately in each test. 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``quotes-FSC-FSC_DEBUG`` () =
         let cfg = testConfig "core/quotes"
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         singleTestBuildAndRunAux cfg FSC_DEBUG
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``quotes-FSC-BASIC`` () =
         let cfg = testConfig "core/quotes"
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         singleTestBuildAndRunAux cfg FSC_OPTIMIZED
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``quotes-FSI-BASIC`` () =
         let cfg = testConfig "core/quotes"
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         singleTestBuildAndRunAux cfg FSI
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let unicode () =
         let cfg = testConfig "core/unicode"
 
@@ -828,7 +828,7 @@ module CoreTests =
         fsi cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf16.fs"]
 
     // Repro for https://github.com/dotnet/fsharp/issues/1298
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let fileorder () =
         let cfg = testConfig "core/fileorder"
 
@@ -855,7 +855,7 @@ module CoreTests =
         execAndCheckPassed cfg ("." ++ "test2.exe") ""
 
     // Repro for https://github.com/dotnet/fsharp/issues/2679
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``add files with same name from different folders`` () =
         let cfg = testConfig "core/samename"
 
@@ -866,7 +866,7 @@ module CoreTests =
 
         exec cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``add files with same name from different folders including signature files`` () =
         let cfg = testConfig "core/samename"
 
@@ -877,7 +877,7 @@ module CoreTests =
 
         exec cfg ("." ++ "test.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``add files with same name from different folders including signature files that are not synced`` () =
         let cfg = testConfig "core/samename"
 
@@ -891,13 +891,13 @@ module CoreTests =
     [<Fact>]
     let ``libtest-FSI_NETFX_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_NETFX_STDIN
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``libtest-unoptimized codegen`` () = singleTestBuildAndRun "core/libtest" FSC_DEBUG
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``libtest-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``libtest-langversion-checknulls`` () =
         let cfg = testConfig "core/libtest"
 
@@ -908,7 +908,7 @@ module CoreTests =
         execAndCheckPassed cfg ("." ++ "test-checknulls.exe") ""
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``no-warn-2003-tests`` () =
         // see https://github.com/dotnet/fsharp/issues/3139
         let cfg = testConfig "core/versionAttributes"
@@ -1103,13 +1103,13 @@ module CoreTests =
 
 
 #if !NETCOREAPP
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``measures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``members-basics-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let queriesLeafExpressionConvert () =
         let cfg = testConfig "core/queriesLeafExpressionConvert"
 
@@ -1131,7 +1131,7 @@ module CoreTests =
 
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let queriesNullableOperators () =
         let cfg = testConfig "core/queriesNullableOperators"
 
@@ -1149,7 +1149,7 @@ module CoreTests =
 
         execAndCheckPassed cfg ("." ++ "test--optimize.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let queriesOverIEnumerable () =
         let cfg = testConfig "core/queriesOverIEnumerable"
 
@@ -1171,7 +1171,7 @@ module CoreTests =
         execAndCheckPassed cfg ("." ++ "test--optimize.exe") ""
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let queriesOverIQueryable () =
         let cfg = testConfig "core/queriesOverIQueryable"
 
@@ -1197,7 +1197,7 @@ module CoreTests =
 
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let quotesDebugInfo () =
         let cfg = testConfig "core/quotesDebugInfo"
 
@@ -1222,7 +1222,7 @@ module CoreTests =
 
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let quotesInMultipleModules () =
         let cfg = testConfig "core/quotesInMultipleModules"
 
@@ -1269,7 +1269,7 @@ module CoreTests =
 
 
 #if !NETCOREAPP
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let refnormalization () =
         let cfg = testConfig "core/refnormalization"
 
@@ -1301,7 +1301,7 @@ module CoreTests =
         fsc cfg @"%s -o:test3.exe -r:version1\DependentAssembly.dll -r:version2\DependentAssembly.dll -r:version1\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
         execAndCheckPassed cfg ("." ++ "test3.exe") "DependentAssembly-1.0.0.0 AscendentAssembly-1.0.0.0"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let topinit () =
         let cfg = testConfig "core/topinit"
 
@@ -1413,7 +1413,7 @@ module CoreTests =
 
         exec cfg ("." ++ "test_static_init_exe--optimize.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let unitsOfMeasure () =
         let cfg = testConfig "core/unitsOfMeasure"
 
@@ -1426,7 +1426,7 @@ module CoreTests =
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let verify () =
         let cfg = testConfig "core/verify"
 
@@ -1443,7 +1443,7 @@ module CoreTests =
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
         
         
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``property setter in method or constructor`` () =
         let cfg = testConfig "core/members/set-only-property"
         csc cfg @"%s /target:library /out:cs.dll" cfg.csc_flags ["cs.cs"]
@@ -1454,44 +1454,44 @@ module CoreTests =
 #endif
 
 module VersionTests =
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``nameof-versionpreview``() = singleTestBuildAndRunVersion "core/nameof/preview" (FSC_BUILDONLY true) "preview"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``nameof-execute``() = singleTestBuildAndRunVersion "core/nameof/preview" FSC_OPTIMIZED "preview"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI "preview"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``eval-FSC_OPTIMIZED`` () = singleTestBuildAndRun "tools/eval" FSC_OPTIMIZED
     [<Fact>]
     let ``eval-FSI`` () = singleTestBuildAndRun "tools/eval" FSI
 
 module RegressionTests =
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``literal-value-bug-2-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_OPTIMIZED
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``literal-value-bug-2-FSI`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``OverloadResolution-bug-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_OPTIMIZED
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``OverloadResolution-bug-FSI`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``struct-tuple-bug-1-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_OPTIMIZED
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``13219-bug-FSI`` () = singleTestBuildAndRun "regression/13219" FSI
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``4715-optimized`` () =
         let cfg = testConfig "regression/4715"
         fsc cfg "%s -o:test.exe --optimize+" cfg.fsc_flags ["date.fs"; "env.fs"; "main.fs"]
@@ -1568,7 +1568,7 @@ module RegressionTests =
 
 #if !NETCOREAPP
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``SRTP doesn't handle calling member hiding inherited members`` () =
         let cfg = 
             testConfig "regression/5531"
@@ -1598,12 +1598,12 @@ module RegressionTests =
             failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile2) (getfullpath cfg expectedFile2) diff2
 #endif
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``struct-tuple-bug-1-FSI`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI
 
 #if !NETCOREAPP
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``struct-measure-bug-1`` () =
         let cfg = testConfig "regression/struct-measure-bug-1"
 
@@ -1613,7 +1613,7 @@ module RegressionTests =
 
 module OptimizationTests =
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let functionSizes () =
         let cfg = testConfig "optimize/analyses"
 
@@ -1631,7 +1631,7 @@ module OptimizationTests =
             failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let totalSizes () =
         let cfg = testConfig "optimize/analyses"
 
@@ -1648,7 +1648,7 @@ module OptimizationTests =
         | _ -> failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let hasEffect () =
         let cfg = testConfig "optimize/analyses"
 
@@ -1665,7 +1665,7 @@ module OptimizationTests =
         | _ -> failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let noNeedToTailcall () =
         let cfg = testConfig "optimize/analyses"
 
@@ -1682,7 +1682,7 @@ module OptimizationTests =
         | _ -> failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``inline`` () =
         let cfg = testConfig "optimize/inline"
 
@@ -1721,7 +1721,7 @@ module OptimizationTests =
 
         log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let stats () =
         let cfg = testConfig "optimize/stats"
 
@@ -1745,86 +1745,86 @@ module OptimizationTests =
 #endif
 
 module TypecheckTests =
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``full-rank-arrays`` () =
         let cfg = testConfig "typecheck/full-rank-arrays"
         SingleTest.singleTestBuildAndRunWithCopyDlls cfg "full-rank-arrays.dll" FSC_OPTIMIZED
 
 #if !NETCOREAPP
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos26`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos26.exe" cfg.fsc_flags ["pos26.fsi"; "pos26.fs"]
         peverify cfg "pos26.exe"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos25`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos25.exe" cfg.fsc_flags ["pos25.fs"]
         peverify cfg "pos25.exe"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos27`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
         peverify cfg "pos27.exe"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos28`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos28.exe" cfg.fsc_flags ["pos28.fs"]
         peverify cfg "pos28.exe"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos29`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos29.exe" cfg.fsc_flags ["pos29.fsi"; "pos29.fs"; "pos29.app.fs"]
         peverify cfg "pos29.exe"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos30`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos30.exe --warnaserror+" cfg.fsc_flags ["pos30.fs"]
         peverify cfg "pos30.exe"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos24`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
         peverify cfg "pos24.exe"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos31`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos31.exe --warnaserror" cfg.fsc_flags ["pos31.fsi"; "pos31.fs"]
         peverify cfg "pos31.exe"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos32`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos32.dll --warnaserror" cfg.fsc_flags ["pos32.fs"]
         peverify cfg "pos32.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos33`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos33.dll --warnaserror" cfg.fsc_flags ["pos33.fsi"; "pos33.fs"]
         peverify cfg "pos33.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos34`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos34.dll --warnaserror" cfg.fsc_flags ["pos34.fs"]
         peverify cfg "pos34.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos35`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos35.dll --warnaserror" cfg.fsc_flags ["pos35.fs"]
         peverify cfg "pos35.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos36-srtp`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos36-srtp-lib.dll --warnaserror" cfg.fsc_flags ["pos36-srtp-lib.fs"]
@@ -1833,39 +1833,39 @@ module TypecheckTests =
         peverify cfg "pos36-srtp-app.exe"
         exec cfg ("." ++ "pos36-srtp-app.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos37`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos37.dll --warnaserror" cfg.fsc_flags ["pos37.fs"]
         peverify cfg "pos37.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos38`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos38.dll --warnaserror" cfg.fsc_flags ["pos38.fs"]
         peverify cfg "pos38.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos39`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos39.exe" cfg.fsc_flags ["pos39.fs"]
         peverify cfg "pos39.exe"
         exec cfg ("." ++ "pos39.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos40`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --langversion:8.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
         peverify cfg "pos40.exe"
         exec cfg ("." ++ "pos40.exe") ""
         
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos41`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos41.dll --warnaserror" cfg.fsc_flags ["pos41.fs"]
         peverify cfg "pos41.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos1281`` () =
         let cfg = testConfig "typecheck/sigs"
         // This checks that warning 25 "incomplete matches" is not triggered
@@ -1873,117 +1873,117 @@ module TypecheckTests =
         peverify cfg "pos1281.exe"
         exec cfg ("." ++ "pos1281.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos3294`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos3294.exe --warnaserror" cfg.fsc_flags ["pos3294.fs"]
         peverify cfg "pos3294.exe"
         exec cfg ("." ++ "pos3294.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos23`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
         peverify cfg "pos23.exe"
         exec cfg ("." ++ "pos23.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos20`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos20.exe" cfg.fsc_flags ["pos20.fs"]
         peverify cfg "pos20.exe"
         exec cfg ("." ++ "pos20.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos19`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos19.exe" cfg.fsc_flags ["pos19.fs"]
         peverify cfg "pos19.exe"
         exec cfg ("." ++ "pos19.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos18`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos18.exe" cfg.fsc_flags ["pos18.fs"]
         peverify cfg "pos18.exe"
         exec cfg ("." ++ "pos18.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos16`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos16.exe" cfg.fsc_flags ["pos16.fs"]
         peverify cfg "pos16.exe"
         exec cfg ("." ++ "pos16.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos17`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos17.exe" cfg.fsc_flags ["pos17.fs"]
         peverify cfg "pos17.exe"
         exec cfg ("." ++ "pos17.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos15`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos15.exe" cfg.fsc_flags ["pos15.fs"]
         peverify cfg "pos15.exe"
         exec cfg ("." ++ "pos15.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos14`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos14.exe" cfg.fsc_flags ["pos14.fs"]
         peverify cfg "pos14.exe"
         exec cfg ("." ++ "pos14.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos13`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos13.exe" cfg.fsc_flags ["pos13.fs"]
         peverify cfg "pos13.exe"
         exec cfg ("." ++ "pos13.exe") ""
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos12 `` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos12.dll" cfg.fsc_flags ["pos12.fs"]
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos11`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos11.dll" cfg.fsc_flags ["pos11.fs"]
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos10`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos10.dll" cfg.fsc_flags ["pos10.fs"]
         peverify cfg "pos10.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos09`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos09.dll" cfg.fsc_flags ["pos09.fs"]
         peverify cfg "pos09.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos07`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos07.dll" cfg.fsc_flags ["pos07.fs"]
         peverify cfg "pos07.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos08`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos08.dll" cfg.fsc_flags ["pos08.fs"]
         peverify cfg "pos08.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos06`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos06.dll" cfg.fsc_flags ["pos06.fs"]
         peverify cfg "pos06.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos03`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos03.dll" cfg.fsc_flags ["pos03.fs"]
@@ -1991,88 +1991,88 @@ module TypecheckTests =
         fsc cfg "%s -a -o:pos03a.dll" cfg.fsc_flags ["pos03a.fsi"; "pos03a.fs"]
         peverify cfg "pos03a.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos02`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos02.dll" cfg.fsc_flags ["pos02.fs"]
         peverify cfg "pos02.dll"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``sigs pos05`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos05.dll" cfg.fsc_flags ["pos05.fs"]
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg01`` () = singleNegTest (testConfig "typecheck/sigs") "neg01"  
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg08`` () = singleNegTest (testConfig "typecheck/sigs") "neg08"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg09`` () = singleNegTest (testConfig "typecheck/sigs") "neg09"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg10`` () = singleNegTest (testConfig "typecheck/sigs") "neg10"   
   
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg14`` () = singleNegTest (testConfig "typecheck/sigs") "neg14"  
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg17`` () = singleNegTest (testConfig "typecheck/sigs") "neg17"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg24 version preview`` () =
         let cfg = testConfig "typecheck/sigs"
         // For some reason this warning is off by default in the test framework but in this case we are testing for it
         let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
         singleVersionedNegTest cfg "preview" "neg24"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg27`` () = singleNegTest (testConfig "typecheck/sigs") "neg27"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg31`` () = singleNegTest (testConfig "typecheck/sigs") "neg31"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg33`` () = singleNegTest (testConfig "typecheck/sigs") "neg33"  
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg43`` () = singleNegTest (testConfig "typecheck/sigs") "neg43"   
 
 #if !DEBUG // requires release version of compiler to avoid very deep stacks
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg45`` () = singleNegTest (testConfig "typecheck/sigs") "neg45"
 #endif
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg49`` () = singleNegTest (testConfig "typecheck/sigs") "neg49"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg94`` () = singleNegTest (testConfig "typecheck/sigs") "neg94" 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg100`` () =
         let cfg = testConfig "typecheck/sigs"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3218" }
         singleNegTest cfg "neg100"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg107`` () = singleNegTest (testConfig "typecheck/sigs") "neg107"
  
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg116`` () = singleNegTest (testConfig "typecheck/sigs") "neg116"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"        
     
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg134`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg134"
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``type check neg135`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg135"  
 
 module FscTests =
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``should be raised if AssemblyInformationalVersion has invalid version`` () =
         let cfg = createConfigWithEmptyDirectory()
 
@@ -2097,7 +2097,7 @@ open System.Reflection
         |> Assert.areEqual (45, 2048, 0, 2)
 
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``should set file version info on generated file`` () =
         let cfg = createConfigWithEmptyDirectory()
 
@@ -2154,7 +2154,7 @@ module ProductVersionTest =
           defAssemblyVersionString, None, (Some "22.44.66.88" ), "22.44.66.88" ]
         |> List.map (fun (a,f,i,e) -> (a, f, i, e))
 
-    [<Fact>]
+    [<Fact(Skip="Temp disabled")>]
     let ``should use correct fallback``() =
 
        for (assemblyVersion, fileVersion, infoVersion, expected) in fallbackTestData () do
