@@ -1120,12 +1120,14 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, implS
              // For extension members, use the fully qualified type path to avoid name collisions
              // when extending types with the same simple name but different namespaces.
              // See https://github.com/dotnet/fsharp/issues/18815
+             // Use '$' instead of '.' to ensure C#-compatible method names.
+             // See https://github.com/dotnet/fsharp/issues/16362
              let mangledPath = tcref.CompilationPath.MangledPath
              let typeName = tcref.LogicalName
              let tname = (mangledPath @ [ typeName ]) |> String.concat "$"
-             let text = tname + "." + logicalName
-             let text = if memberFlags.MemberKind <> SynMemberKind.Constructor && memberFlags.MemberKind <> SynMemberKind.ClassConstructor && not memberFlags.IsInstance then text + ".Static" else text
-             let text = if memberFlags.IsOverrideOrExplicitImpl then text + ".Override" else text
+             let text = tname + "$" + logicalName
+             let text = if memberFlags.MemberKind <> SynMemberKind.Constructor && memberFlags.MemberKind <> SynMemberKind.ClassConstructor && not memberFlags.IsInstance then text + "$Static" else text
+             let text = if memberFlags.IsOverrideOrExplicitImpl then text + "$Override" else text
              text
         elif not intfSlotTys.IsEmpty then
             // interface implementation
@@ -12281,7 +12283,31 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
 
     // Check the attributes on the declaration
-    let bindingAttribs = TcAttributes cenv env attrTgt bindingSynAttribs
+    let allBindingAttribs = TcAttributes cenv env attrTgt bindingSynAttribs
+
+    // Rotate [<return:...>] from binding to return value (similar to TcNormalizedBinding)
+    // This ensures return: attributes are emitted on the return value, not the method itself.
+    // See https://github.com/dotnet/fsharp/issues/19020
+    let _rotRetSynAttrs, bindingAttribs, valSynInfo =
+        if allBindingAttribs.Length <> bindingSynAttribs.Length then
+            // Do not rotate if some attrs fail to typecheck
+            [], allBindingAttribs, valSynInfo
+        else
+            let rotRetSynAttrs, valAttribs =
+                allBindingAttribs
+                |> List.zip bindingSynAttribs
+                |> List.partition (function
+                    | _, Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0
+                    | _ -> false)
+                |> fun (r, v) -> (List.map fst r, List.map snd v)
+            // Patch valSynInfo to include the rotated return attributes
+            let valSynInfo =
+                match rotRetSynAttrs with
+                | [] -> valSynInfo
+                | synAttr :: _ ->
+                    let (SynValInfo(args, SynArgInfo(attrs, opt, retId))) = valSynInfo
+                    SynValInfo(args, SynArgInfo({ Attributes = rotRetSynAttrs; Range = synAttr.Range } :: attrs, opt, retId))
+            rotRetSynAttrs, valAttribs, valSynInfo
 
     // Allocate the type inference variable for the inferred type
     let ty = NewInferenceType g
