@@ -10,6 +10,9 @@ open System.Xml.Linq
 open Scripting
 open Xunit
 open FSharp.Compiler.IO
+#if !NETCOREAPP
+open System.Runtime.InteropServices
+#endif
 
 let getShortId() = Guid.NewGuid().ToString().[..7]
 
@@ -518,6 +521,14 @@ module Command =
             let timestamp = DateTime.Now.ToString("HH:mm:ss.fff")
             try File.AppendAllText(diagLogFile, sprintf "[%s] %s%s" timestamp msg Environment.NewLine) with _ -> ()
 
+#if !NETCOREAPP
+        let ensureConsole () =
+            if Scripting.ConsoleHost.GetConsoleWindow() = IntPtr.Zero then
+                Scripting.ConsoleHost.AllocConsole() |> ignore
+#else
+        let ensureConsole () = ()
+#endif
+
         let inputWriter sources (writer: StreamWriter) =
             let pipeFile name = async {
                 let path = Commands.getfullpath dir name
@@ -591,6 +602,8 @@ module Command =
 
         let exec cmdArgs =
             printfn "%s" (logExec dir path args redirect)
+            if cmdArgs.RedirectInput.IsSome then
+                ensureConsole()
             Process.exec cmdArgs dir envVars path args
 
         { RedirectOutput = None; RedirectError = None; RedirectInput = None }

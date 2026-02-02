@@ -15,6 +15,24 @@ module Scripting =
 
     let isNullOrEmpty s = String.IsNullOrEmpty s
 
+    module ConsoleHost =
+#if !NETCOREAPP
+        open System.Runtime.InteropServices
+
+        [<DllImport("kernel32.dll")>]
+        extern IntPtr GetConsoleWindow()
+
+        [<DllImport("kernel32.dll", SetLastError=true)>]
+        extern bool AllocConsole()
+
+        let ensureConsole () =
+            if GetConsoleWindow() = IntPtr.Zero then
+                AllocConsole() |> ignore
+#endif
+#if NETCOREAPP
+        let ensureConsole () = ()
+#endif
+
     let executeProcess fileName arguments =
         let processWriteMessage (chan:TextWriter) (message:string) =
             if message <> null then 
@@ -114,6 +132,9 @@ module Scripting =
             let diagLog msg = 
                 let timestamp = DateTime.Now.ToString("HH:mm:ss.fff")
                 try File.AppendAllText(diagLogFile, sprintf "[%s] %s%s" timestamp msg Environment.NewLine) with _ -> ()
+
+            if cmdArgs.RedirectInput.IsSome then
+                ConsoleHost.ensureConsole()
             
             diagLog (sprintf "=== Process.exec START === exe=%s args=%s" exePath arguments)
             diagLog (sprintf "RedirectInput=%b RedirectOutput=%b RedirectError=%b" 
