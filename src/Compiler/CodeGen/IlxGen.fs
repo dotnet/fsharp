@@ -2959,6 +2959,72 @@ let ComputeDebugPointForBinding g bind =
 // Generate expressions
 //-------------------------------------------------------------------------
 
+/// Try to recognize pattern: let v = ctorCall in (fieldSets on v; v)
+/// This pattern is generated for object construction with named field initialization like Test(X = 1)
+/// Returns Some (boundVar, rhsExpr, fieldSets) if the pattern matches
+let TryRecognizeCtorWithFieldSets (g: TcGlobals) expr =
+    match expr with
+    | Expr.Let(TBind(boundVar, rhsExpr, _), body, _, _) when boundVar.IsCompilerGenerated ->
+        // Check if RHS is a constructor call
+        // Could be: TOp.ILCall with isCtor=true, or Expr.App with Expr.Val that IsConstructor
+        let isCtorCall =
+            match stripExpr rhsExpr with
+            | Expr.Op(TOp.ILCall(_, _, _, isCtor, _, _, _, _, _, _, _), _, _, _) -> isCtor
+            | Expr.App(Expr.Val(vref, _, _), _, _, _, _) -> vref.IsConstructor
+            | _ -> false
+        
+        if not isCtorCall then None
+        else
+            // Collect field sets and check if final expression is just the bound variable
+            // The body has structure: Expr.Sequential(Expr.Sequential(unit, fieldSet1), Expr.Val(v))
+            let boundVarRef = mkLocalValRef boundVar
+            
+            // Helper to check if an expression is just unit
+            let isUnitExpr e =
+                match stripExpr e with
+                | Expr.Const(Const.Unit, _, _) -> true
+                | _ -> false
+            
+            // Helper to check if expression is a field set on our bound variable
+            let tryExtractFieldSet e =
+                match stripExpr e with
+                | Expr.Op(TOp.ValFieldSet fref, tyargs, [Expr.Val(vref, _, _); valueExpr], m) 
+                    when valRefEq g vref boundVarRef ->
+                    Some (fref, tyargs, valueExpr, m)
+                | _ -> None
+            
+            // Flatten nested sequentials and collect field sets
+            let rec flatten expr =
+                match stripExpr expr with
+                | Expr.Sequential(e1, e2, NormalSeq, _) ->
+                    flatten e1 @ flatten e2
+                | e -> [e]
+            
+            let flattened = flatten body
+            
+            // All but the last should be unit or field sets on our variable
+            // The last should be Expr.Val of our variable
+            let rec processExprs acc = function
+                | [] -> None
+                | [last] ->
+                    match stripExpr last with
+                    | Expr.Val(vref, _, _) when valRefEq g vref boundVarRef ->
+                        Some (List.rev acc)
+                    | _ -> None
+                | e :: rest ->
+                    if isUnitExpr e then
+                        processExprs acc rest
+                    else
+                        match tryExtractFieldSet e with
+                        | Some fieldSet -> processExprs (fieldSet :: acc) rest
+                        | None -> None
+            
+            match processExprs [] flattened with
+            | Some fieldSets when not (List.isEmpty fieldSets) ->
+                Some (boundVar, rhsExpr, fieldSets)
+            | _ -> None
+    | _ -> None
+
 let rec GenExpr cenv cgbuf eenv (expr: Expr) sequel =
     cenv.stackGuard.Guard
     <| fun () ->
@@ -3542,16 +3608,36 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
         if preSteps && GenExprPreSteps cenv cgbuf eenv expr sequel then
             contf Fake
         else
+            // Try to optimize: let v = ctorCall in (fieldSets on v; v)
+            // Use 'dup' instead of 'stloc/ldloc' pattern for better IL
+            match TryRecognizeCtorWithFieldSets cenv.g expr with
+            | Some (_boundVar, ctorExpr, fieldSets) ->
+                // Generate the constructor call - leaves object on stack
+                GenExpr cenv cgbuf eenv ctorExpr Continue
+                
+                // For each field set, dup the object reference first (we need one copy for the return)
+                let ilObjTy = GenType cenv expr.Range eenv.tyenv (tyOfExpr cenv.g ctorExpr)
+                fieldSets |> List.iteri (fun _i (fref, tyargs, valueExpr, m) ->
+                    // Dup the object - we need one copy for stfld and one for return/next field
+                    CG.EmitInstr cgbuf (pop 0) (Push [ ilObjTy ]) AI_dup
+                    // Now generate: <obj on stack>; value; stfld
+                    GenExpr cenv cgbuf eenv valueExpr Continue
+                    GenFieldStore false cenv cgbuf eenv (fref, tyargs, m) discard)
+                
+                // Object reference is still on the stack from the last dup, apply sequel
+                GenSequel cenv eenv.cloc cgbuf sequel
+                contf Fake
+            | None ->
+                // Default case: use local variable
+                // This case implemented here to get a guaranteed tailcall
+                // Make sure we generate the debug point outside the scope of the variable
+                let startMark, endMark as scopeMarks = StartDelayedLocalScope "let" cgbuf
+                let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
+                GenDebugPointForBind cenv cgbuf bind
+                GenBindingAfterDebugPoint cenv cgbuf eenv bind false (Some startMark)
 
-            // This case implemented here to get a guaranteed tailcall
-            // Make sure we generate the debug point outside the scope of the variable
-            let startMark, endMark as scopeMarks = StartDelayedLocalScope "let" cgbuf
-            let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
-            GenDebugPointForBind cenv cgbuf bind
-            GenBindingAfterDebugPoint cenv cgbuf eenv bind false (Some startMark)
-
-            // Generate the body
-            GenLinearExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark)) true contf
+                // Generate the body
+                GenLinearExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark)) true contf
 
     | Expr.Match(spBind, _exprm, tree, targets, m, ty) ->
         // Process the debug point and see if there's a replacement technique to process this expression
