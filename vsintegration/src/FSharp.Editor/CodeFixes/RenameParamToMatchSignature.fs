@@ -53,9 +53,9 @@ type internal RenameParamToMatchSignatureCodeFixProvider [<ImportingConstructor>
                             for symbolUse in symbolUses do
                                 let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.Range)
 
-                                match Tokenizer.tryFixupSpan (sourceText, span) with
-                                | ValueSome textSpan -> yield TextChange(textSpan, replacement)
-                                | ValueNone -> ()
+                                match span with
+                                | Tokenizer.FixedSpan sourceText textSpan -> TextChange(textSpan, replacement)
+                                | _ -> ()
                         ]
 
                     return

@@ -208,20 +208,18 @@ type internal InlineRenameService [<ImportingConstructor>] () =
                     )
 
                 match symbolUse with
-                | None -> return Unchecked.defaultof<_>
+                | None ->
+                    return Unchecked.defaultof<_>
                 | Some symbolUse ->
-                    let span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
-
-                    match span with
-                    | ValueNone -> return Unchecked.defaultof<_>
-                    | ValueSome span ->
+                    match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
+                    | ValueNone ->
+                        return Unchecked.defaultof<_>
+                    | ValueSome (Tokenizer.FixedSpan sourceText triggerSpan) ->
+                        let result =
+                            InlineRenameInfo(document, triggerSpan, sourceText, symbol, symbolUse, checkFileResults, ct)
+                        return result :> FSharpInlineRenameInfo
+                    | _ ->
                         // #18270: Abort if user clicked on get/set keyword
-                        match Tokenizer.tryFixupSpan (sourceText, span) with
-                        | ValueNone -> return Unchecked.defaultof<_>
-                        | ValueSome triggerSpan ->
-                            let result =
-                                InlineRenameInfo(document, triggerSpan, sourceText, symbol, symbolUse, checkFileResults, ct)
-
-                            return result :> FSharpInlineRenameInfo
+                        return Unchecked.defaultof<_>
         }
         |> CancellableTask.start cancellationToken

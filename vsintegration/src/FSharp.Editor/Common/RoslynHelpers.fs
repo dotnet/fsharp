@@ -58,8 +58,8 @@ module internal RoslynHelpers =
     /// Find All References or Rename operations.
     let TryFSharpRangeToTextSpanForEditor (sourceText: SourceText, range: range) : TextSpan voption =
         match TryFSharpRangeToTextSpan(sourceText, range) with
-        | ValueSome span -> Tokenizer.tryFixupSpan(sourceText, span)
-        | ValueNone -> ValueNone
+        | ValueSome (Tokenizer.FixedSpan sourceText fixedSpan) -> ValueSome fixedSpan
+        | _ -> ValueNone
 
     let TextSpanToFSharpRange (fileName: string, textSpan: TextSpan, sourceText: SourceText) : range =
         let startLine = sourceText.Lines.GetLineFromPosition textSpan.Start

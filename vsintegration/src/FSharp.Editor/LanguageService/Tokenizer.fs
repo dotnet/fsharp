@@ -1010,9 +1010,10 @@ module internal Tokenizer =
         let text = sourceText.GetSubText(span).ToString()
         text = "get" || text = "set"
 
-    /// #18270: Filters out property accessor keywords (get/set) from rename/find-references.
-    /// Returns ValueNone if the span should be excluded.
-    let tryFixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan voption =
+    /// #18270: Parameterized active pattern that applies fixupSpan and filters out
+    /// property accessor keywords (get/set) from rename/find-references.
+    /// Usage: match textSpan with FixedSpan sourceText fixedSpan -> ...
+    let (|FixedSpan|_|) (sourceText: SourceText) (span: TextSpan) : TextSpan voption =
         let fixedSpan = fixupSpan (sourceText, span)
 
         if isPropertyAccessorKeyword (sourceText, fixedSpan) then
