@@ -4682,6 +4682,10 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.AnonRecd(isStruct, args, m) ->
         TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m
 
+    | SynType.AnonTtUnion(_, _) ->
+        // TODO Anonymous type-tagged union
+        failwith "Anonymous type-tagged unions not implemented yet"
+
     | SynType.Fun(argType = domainTy; returnType = resultTy) ->
         TcFunctionType cenv newOk checkConstraints occ env tpenv domainTy resultTy
 

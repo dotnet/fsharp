@@ -866,6 +866,8 @@ module SyntaxTraversal =
                 | SynType.StaticConstantNull _
                 | SynType.Anon _
                 | SynType.AnonRecd _
+                // TODO: Anonymous type-tagged union
+                | SynType.AnonTtUnion _
                 | SynType.LongIdent _
                 | SynType.Var _
                 | SynType.StaticConstant _

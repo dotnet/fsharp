@@ -729,6 +729,8 @@ module ParsedInput =
             | SynType.StaticConstantNull _
             | SynType.Anon _
             | SynType.AnonRecd _
+            // TODO: Anonymous type-tagged union
+            | SynType.AnonTtUnion _
             | SynType.LongIdent _
             | SynType.Var _
             | SynType.StaticConstant _
@@ -2069,6 +2071,8 @@ module ParsedInput =
             | SynType.StaticConstantNull _
             | SynType.Anon _
             | SynType.AnonRecd _
+            // TODO: Anonymous type-tagged union
+            | SynType.AnonTtUnion _
             | SynType.Var _
             | SynType.StaticConstant _
             | SynType.FromParseError _ -> ()
