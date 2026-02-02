@@ -122,21 +122,34 @@ module internal FSharpEnvironment =
                 "netstandard2.0"
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
+            // Detect the running runtime major version from RuntimeInformation.FrameworkDescription
+            // e.g., ".NET 8.0.1" -> 8, ".NET 15.0.0" -> 15
+            // This allows a compiler built for net10.0 to load type providers for net15.0 when running on .NET 15
+            let runningMajorVersion =
+                let desc = RuntimeInformation.FrameworkDescription
+                let arr = desc.Split([| ' ' |], 3)
+                match arr with
+                | [| ".NET"; version |] | [| ".NET"; version; _ |] when not (version = "Core" || version = "Framework" || version = "Native") ->
+                    match version.Split('.') with
+                    | [| major; _; _ |] | [| major; _ |] | [| major |] ->
+                        match Int32.TryParse(major) with
+                        | true, v -> v
+                        | false, _ -> 10
+                    | _ -> 10
+                | _ -> 10
+
             [|
-                "net11.0"
-                "net10.0"
-                "net9.0"
-                "net8.0"
-                "net7.0"
-                "net6.0"
-                "net5.0"
-                "netcoreapp3.1"
-                "netcoreapp3.0"
-                "netstandard2.1"
-                "netcoreapp2.2"
-                "netcoreapp2.1"
-                "netcoreapp2.0"
-                "netstandard2.0"
+                // Generate net{N}.0 from running runtime version down to 5
+                for v in runningMajorVersion .. -1 .. 5 do
+                    yield $"net{v}.0"
+                // Legacy netcoreapp and netstandard versions
+                yield "netcoreapp3.1"
+                yield "netcoreapp3.0"
+                yield "netstandard2.1"
+                yield "netcoreapp2.2"
+                yield "netcoreapp2.1"
+                yield "netcoreapp2.0"
+                yield "netstandard2.0"
             |]
         else
             Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")

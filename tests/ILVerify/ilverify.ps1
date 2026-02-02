@@ -41,13 +41,14 @@ $env:PublishWindowsPdb = "false"
 [string[]] $ignore_errors = @() # @("StackUnexpected", "UnmanagedPointer", "StackByRef", "ReturnPtrToStack", "ExpectedNumericType", "StackUnderflow")
 
 [string] $default_tfm = "netstandard2.0"
+[string] $product_tfm = (Get-Content (Join-Path $repo_path "eng/productTfm.txt")).Trim()
 
 [string] $artifacts_bin_path = Join-Path (Join-Path $repo_path "artifacts") "bin"
 
 # List projects to verify, with TFMs
 $projects = @{
     "FSharp.Core" = @($default_tfm, "netstandard2.1")
-    "FSharp.Compiler.Service" = @($default_tfm, "net10.0")
+    "FSharp.Compiler.Service" = @($default_tfm, $product_tfm)
 }
 
 # Check ilverify can run

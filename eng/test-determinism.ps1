@@ -404,7 +404,7 @@ try {
 
   $script:bootstrap = $true
   $script:bootstrapConfiguration = "Proto"
-  $script:fsharpNetCoreProductTfm = "net10.0"
+  $script:fsharpNetCoreProductTfm = (Get-Content "$PSScriptRoot/productTfm.txt").Trim()
   $script:bootstrapTfm = $script:fsharpNetCoreProductTfm
 
   $bootstrapDir = Make-BootstrapBuild
