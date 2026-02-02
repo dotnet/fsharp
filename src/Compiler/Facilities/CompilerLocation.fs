@@ -125,8 +125,19 @@ module internal FSharpEnvironment =
             let productMajor = FSharp.BuildProperties.fsProductTfmMajorVersion
             let runningMajor = Environment.Version.Major
 
-            [| for v in max productMajor runningMajor .. -1 .. 5 -> $"net{v}.0"
-               yield "netcoreapp3.1"; "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netcoreapp2.0"; "netstandard2.0" |]
+            [|
+                for v in max productMajor runningMajor .. -1 .. 5 -> $"net{v}.0"
+                yield!
+                    [|
+                        "netcoreapp3.1"
+                        "netcoreapp3.0"
+                        "netstandard2.1"
+                        "netcoreapp2.2"
+                        "netcoreapp2.1"
+                        "netcoreapp2.0"
+                        "netstandard2.0"
+                    |]
+            |]
         else
             Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
             [| "netstandard2.0" |]
