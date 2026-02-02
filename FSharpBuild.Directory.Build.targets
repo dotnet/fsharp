@@ -74,7 +74,7 @@
       <_BuildPropertyLines Include="let fsProductVersion = &quot;$(FSPRODUCTVERSION)&quot;" />
       <_BuildPropertyLines Include="let fsLanguageVersion = &quot;$(FSLANGUAGEVERSION)&quot;" />
       <_BuildPropertyLines Include="let fsProductTfm = &quot;$(FSharpNetCoreProductDefaultTargetFramework)&quot;" />
-      <_BuildPropertyLines Include="let fsProductTfmMajorVersion = &quot;$(FSharpNetCoreProductMajorVersion)&quot;" />
+      <_BuildPropertyLines Include="let fsProductTfmMajorVersion : int = $(FSharpNetCoreProductMajorVersion)" />
     </ItemGroup>
 
     <MakeDir
