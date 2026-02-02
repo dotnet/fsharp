@@ -6752,6 +6752,9 @@ atomTypeOrAnonRecdType:
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
        SynType.AnonRecd(isStruct, flds2, rhs parseState 1) }
 
+  | anonTtUnionType
+    { SynType.AnonTtUnion ($1,(rhs parseState 1, $1 |> List.map(fun (SynAnonTtUnionCase(range = m)) -> m)) ||> List.fold unionRanges) }
+
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 atomType:
@@ -6830,6 +6833,28 @@ atomType:
   | appTypeCon DOT ends_coming_soon_or_recover
      { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedNameAfterToken())
        $1 }
+
+/* The core of an anonymous type-tagged union type definition */
+anonTtUnionType:
+  | LPAREN attrAnonTtUnionCaseDecl barAndgrabXmlDoc attrAnonTtUnionCaseDecls rparen
+      {
+        let (nextXmlDoc, _) = $3
+        ($2 (grabXmlDoc(parseState, [], 1))) :: $4 nextXmlDoc
+      }
+
+attrAnonTtUnionCaseDecls:
+  | attrAnonTtUnionCaseDecl barAndgrabXmlDoc attrAnonTtUnionCaseDecls
+    {
+      (fun xmlDoc ->
+        let (nextXmlDoc, _) = $2
+        $1 xmlDoc :: $3 nextXmlDoc
+      )
+    }
+  | attrAnonTtUnionCaseDecl { (fun xmlDoc -> [ $1 xmlDoc ]) }
+
+/* The core of an anonymous type-tagged union case definition */
+attrAnonTtUnionCaseDecl:
+  | typ { let mDecl = rhs parseState 3 in (fun xmlDoc -> SynAnonTtUnionCase ($1, xmlDoc, mDecl)) }
 
 typeArgsNoHpaDeprecated:
   | typeArgsActual
