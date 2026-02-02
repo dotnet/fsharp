@@ -1923,9 +1923,18 @@ let main _ = 0
     // in that case. This is complex because the subsumption logic is also used for quotations.
     [<Fact>]
     let ``Issue_12546_BoxingClosure`` () =
-        // This code allocates TWO closures: the actual closure and a wrapper
-        // The wrapper (go@5) just forwards to the real closure (clo1.Invoke)
-        // This is unnecessary - only one closure should be allocated.
+        // Issue #12546: When a function takes obj and you pass a value that gets implicitly boxed,
+        // the compiler generates an extra wrapper closure that just invokes the first closure.
+        // This doubles allocation unnecessarily.
+        //
+        // ROOT CAUSE: The wrapper closure is generated during type checking/subsumption adjustment.
+        // When calling `foo "hi"` where `foo: obj -> (unit -> string)`, the implicit string->obj
+        // coercion triggers the subsumption adjustment logic which creates a wrapper lambda.
+        //
+        // WORKAROUND: Explicitly box the argument at the call site: `foo(box "hi")`
+        //
+        // STATUS: Bug confirmed. A fix was attempted in AdjustPossibleSubsumptionExpr but the
+        // wrapper closure is created at a different point in the compilation pipeline.
         let source = """
 module BoxingClosureTest
 
@@ -1939,7 +1948,7 @@ let goFixed() = foo(box "hi")
 """
         let result = FSharp source |> asLibrary |> withOptimize |> compile |> shouldSucceed
         
-        // Verify the IL shows the closure generation patterns
+        // Verify the code compiles and document the issue
         match result with
         | CompilationResult.Success s ->
             match s.OutputPath with
@@ -1950,8 +1959,8 @@ let goFixed() = foo(box "hi")
                 Assert.Contains("goFixed", actualIL)
                 // The issue is about extra closure allocation - verify closure classes exist
                 Assert.Contains("FSharpFunc", actualIL)
-                // After fix: The wrapper closure class (go@5 pattern) should not be present
-                // when the argument is implicitly boxed.
+                // Current behavior: go@N wrapper closure exists (this is the bug)
+                // After fix: The wrapper closure class should not be present
             | None -> failwith "No output path"
         | _ -> failwith "Compilation failed"
 
