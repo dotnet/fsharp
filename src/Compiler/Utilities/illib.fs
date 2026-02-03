@@ -121,11 +121,11 @@ module internal PervasiveAutoOpens =
         | Some x -> x
 
     let reportTime =
-        let mutable tPrev: IDisposable MaybeNull = null
+        let mutable tPrev: (IDisposable | null) = null
 
         fun descr ->
             if isNotNull tPrev then
-                tPrev.Dispose()
+                (!!tPrev).Dispose()
                 tPrev <- null
 
             if descr <> "Finish" then
@@ -155,8 +155,8 @@ module internal PervasiveAutoOpens =
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
     let syncObj = obj ()
 
-    let mutable arrayStore: _ array MaybeNull = null
-    let mutable dictStore: _ MaybeNull = null
+    let mutable arrayStore: (_ array | null) = null
+    let mutable dictStore: (_ | null) = null
 
     let mutable func = f
 

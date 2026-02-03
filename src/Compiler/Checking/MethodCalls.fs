@@ -1871,7 +1871,7 @@ module ProvidedMethodCalls =
              allArgs: Exprs,
              paramVars: Tainted<ProvidedVar>[],
              g, amap, mut, isProp, isSuperInit, m,
-             expr: Tainted<ProvidedExpr MaybeNull>) = 
+             expr: Tainted<(ProvidedExpr | null)>) = 
 
         let varConv =
             // note: Assuming the size based on paramVars
@@ -1881,8 +1881,8 @@ module ProvidedMethodCalls =
                 dict.Add(v, (None, e))
             dict
 
-        let rec exprToExprAndWitness top (ea: Tainted<ProvidedExpr MaybeNull>) =
-            let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)), m))
+        let rec exprToExprAndWitness top (ea: Tainted<(ProvidedExpr | null)>) =
+            let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> match etree with null -> "<null>" | e -> e.UnderlyingExpressionString), m)), m))
             match ea with
             | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation), m))
             | Tainted.NonNull ea ->

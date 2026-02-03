@@ -7339,19 +7339,11 @@ namespace Microsoft.FSharp.Control
     open System
     open Microsoft.FSharp.Core
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    type IDelegateEvent<'Delegate when 'Delegate :> Delegate > =
-#else
     type IDelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate : not null > =
-#endif
         abstract AddHandler: handler:'Delegate -> unit
         abstract RemoveHandler: handler:'Delegate -> unit 
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    type IEvent<'Delegate,'Args when 'Delegate : delegate<'Args,unit> and 'Delegate :> Delegate > =
-#else
     type IEvent<'Delegate,'Args when 'Delegate : delegate<'Args,unit> and 'Delegate :> Delegate and 'Delegate : not null > =
-#endif
         inherit IDelegateEvent<'Delegate>
         inherit IObservable<'Args>
 

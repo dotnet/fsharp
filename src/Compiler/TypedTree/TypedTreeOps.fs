@@ -34,7 +34,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeProviders
 #endif
 
-let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
+let inline compareBy (x: 'T | null) (y: 'T | null) ([<InlineIfLambda>]func: 'T -> 'K)  = 
     match x,y with
     | null,null -> 0
     | null,_ -> -1
@@ -8292,7 +8292,7 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = !! typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
-let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull option = 
+let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : (string | null) option = 
     if isTypeProviderAssemblyAttr cattr then 
         let params_, _args = decodeILAttribData cattr 
         match params_ with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
