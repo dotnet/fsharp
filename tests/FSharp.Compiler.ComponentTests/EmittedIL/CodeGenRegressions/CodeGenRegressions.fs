@@ -2056,7 +2056,7 @@ let value = 42
     // InlineIfLambda functions don't inline when the input is an inline expression
     // (like array literal) vs when it's stored in a let binding.
     // Workaround: store arguments in intermediate let bindings before piping.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_12416_PipeInlining`` () =
         // The issue: InlineIfLambda inlining depends on whether the argument
         // is a variable or an inline expression. This is inconsistent.
@@ -2266,7 +2266,7 @@ let outermost x =
     //   brtrue.s IL_XXXX   ← single instruction, much simpler
     //
     // The JIT may optimize this, but IL is larger and startup is slower.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_12139_StringNullCheck`` () =
         // PERFORMANCE: F# generates String.Equals call for null comparison
         // C# generates simple null pointer check (brtrue/brfalse)
@@ -2331,7 +2331,7 @@ let test() =
     //
     // NOTE: Hard to demonstrate in single-file test. Requires two assemblies.
     // This test documents the issue; full repro needs cross-assembly call.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_12137_TailEmitReduction`` () =
         // PERFORMANCE: Cross-assembly calls get unnecessary `tail.` prefix
         // 
