@@ -525,6 +525,11 @@ module Command =
         let ensureConsole () =
             if Scripting.ConsoleHost.GetConsoleWindow() = IntPtr.Zero then
                 Scripting.ConsoleHost.AllocConsole() |> ignore
+            // Set UTF-8 encoding for console input/output to ensure FSI receives UTF-8 data.
+            // This is needed because on net472 ProcessStartInfo.StandardInputEncoding is unavailable,
+            // so the spawned process inherits the console's encoding settings.
+            Console.InputEncoding <- Text.UTF8Encoding(false)
+            Console.OutputEncoding <- Text.UTF8Encoding(false)
 #else
         let ensureConsole () = ()
 #endif
@@ -534,35 +539,23 @@ module Command =
                 let path = Commands.getfullpath dir name
                 diagLog (sprintf "[inputWriter] pipeFile called: name='%s' resolved='%s'" name path)
                 diagLog (sprintf "[inputWriter] File.Exists=%b" (File.Exists path))
-                use reader = File.OpenRead (path)
-                let fileLength = reader.Length
-                diagLog (sprintf "[inputWriter] File opened, length=%d bytes" fileLength)
-                use ms = new MemoryStream()
-                do! reader.CopyToAsync (ms) |> (Async.AwaitIAsyncResult >> Async.Ignore)
-                diagLog (sprintf "[inputWriter] Copied to MemoryStream, ms.Length=%d" ms.Length)
-                ms.Position <- 0L
                 
-                // Strip UTF-8 BOM if present (EF BB BF). FSI expects UTF-8 without BOM.
-                // On net472, StandardInputEncoding can't be set, so we write raw UTF-8 bytes
-                // directly to BaseStream, but must strip the BOM to avoid "unexpected character" errors.
-                let bytes = ms.ToArray()
-                let startOffset, contentLength =
-                    if bytes.Length >= 3 && bytes.[0] = 0xEFuy && bytes.[1] = 0xBBuy && bytes.[2] = 0xBFuy then
-                        diagLog "[inputWriter] UTF-8 BOM detected, stripping it"
-                        3, bytes.Length - 3
-                    else
-                        0, bytes.Length
+                // Read file content as text using UTF-8 (the standard encoding for F# source files)
+                let! content = async {
+                    use reader = new StreamReader(path, Text.Encoding.UTF8, detectEncodingFromByteOrderMarks = true)
+                    return! reader.ReadToEndAsync() |> Async.AwaitTask
+                }
+                diagLog (sprintf "[inputWriter] File read, content.Length=%d chars" content.Length)
                 
                 // Log content being written (first 200 chars)
-                let contentPreview = 
-                    use sr = new StreamReader(new MemoryStream(bytes, startOffset, contentLength))
-                    let s = sr.ReadToEnd()
-                    if s.Length > 200 then s.Substring(0, 200) + "..." else s
+                let contentPreview = if content.Length > 200 then content.Substring(0, 200) + "..." else content
                 diagLog (sprintf "[inputWriter] Content to write: [%s]" (contentPreview.Replace("\r", "\\r").Replace("\n", "\\n")))
                 
+                // Write using the StreamWriter which now uses UTF-8 encoding (set in ensureConsole).
+                // The StreamWriter handles encoding the Unicode string to UTF-8 bytes.
                 try
-                    diagLog (sprintf "[inputWriter] writer.BaseStream.CanWrite=%b" writer.BaseStream.CanWrite)
-                    do! writer.BaseStream.WriteAsync(bytes, startOffset, contentLength) |> (Async.AwaitIAsyncResult >> Async.Ignore)
+                    diagLog (sprintf "[inputWriter] writer.Encoding=%s" writer.Encoding.EncodingName)
+                    do! writer.WriteAsync(content) |> Async.AwaitTask
                     diagLog "[inputWriter] WriteAsync completed"
                     do! writer.FlushAsync() |> (Async.AwaitIAsyncResult >> Async.Ignore)
                     diagLog "[inputWriter] FlushAsync completed"
