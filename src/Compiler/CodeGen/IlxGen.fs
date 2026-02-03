@@ -2994,13 +2994,15 @@ let TryRecognizeCtorWithFieldSets (g: TcGlobals) expr =
                 | _ -> None
             
             // Flatten nested sequentials and collect field sets
-            let rec flatten expr =
+            // Use an accumulator with List.rev to avoid O(n²) list concatenation
+            let rec flattenAcc expr acc =
                 match stripExpr expr with
                 | Expr.Sequential(e1, e2, NormalSeq, _) ->
-                    flatten e1 @ flatten e2
-                | e -> [e]
+                    // Process right first, then left, to get correct order after rev
+                    flattenAcc e1 (flattenAcc e2 acc)
+                | e -> e :: acc
             
-            let flattened = flatten body
+            let flattened = flattenAcc body []
             
             // All but the last should be unit or field sets on our variable
             // The last should be Expr.Val of our variable
