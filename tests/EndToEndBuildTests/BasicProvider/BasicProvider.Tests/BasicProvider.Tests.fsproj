@@ -3,6 +3,7 @@
   <PropertyGroup>
     <!-- xUnit3 requires test projects to be executable -->
     <OutputType>Exe</OutputType>
+    <DisableImplicitNamespace>true</DisableImplicitNamespace>
     <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">net10.0</TargetFramework>
     <TargetFramework Condition=" '$(TestTargetFramework)' != '' ">$(TestTargetFramework)</TargetFramework>
     <IsPackable>false</IsPackable>
