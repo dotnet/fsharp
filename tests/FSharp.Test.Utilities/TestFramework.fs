@@ -541,17 +541,29 @@ module Command =
                 do! reader.CopyToAsync (ms) |> (Async.AwaitIAsyncResult >> Async.Ignore)
                 diagLog (sprintf "[inputWriter] Copied to MemoryStream, ms.Length=%d" ms.Length)
                 ms.Position <- 0L
+                
+                // Strip UTF-8 BOM if present (EF BB BF). FSI expects UTF-8 without BOM.
+                // On net472, StandardInputEncoding can't be set, so we write raw UTF-8 bytes
+                // directly to BaseStream, but must strip the BOM to avoid "unexpected character" errors.
+                let bytes = ms.ToArray()
+                let startOffset, contentLength =
+                    if bytes.Length >= 3 && bytes.[0] = 0xEFuy && bytes.[1] = 0xBBuy && bytes.[2] = 0xBFuy then
+                        diagLog "[inputWriter] UTF-8 BOM detected, stripping it"
+                        3, bytes.Length - 3
+                    else
+                        0, bytes.Length
+                
                 // Log content being written (first 200 chars)
                 let contentPreview = 
-                    use sr = new StreamReader(new MemoryStream(ms.ToArray()))
+                    use sr = new StreamReader(new MemoryStream(bytes, startOffset, contentLength))
                     let s = sr.ReadToEnd()
                     if s.Length > 200 then s.Substring(0, 200) + "..." else s
                 diagLog (sprintf "[inputWriter] Content to write: [%s]" (contentPreview.Replace("\r", "\\r").Replace("\n", "\\n")))
-                ms.Position <- 0L
+                
                 try
                     diagLog (sprintf "[inputWriter] writer.BaseStream.CanWrite=%b" writer.BaseStream.CanWrite)
-                    do! ms.CopyToAsync(writer.BaseStream) |> (Async.AwaitIAsyncResult >> Async.Ignore)
-                    diagLog "[inputWriter] CopyToAsync completed"
+                    do! writer.BaseStream.WriteAsync(bytes, startOffset, contentLength) |> (Async.AwaitIAsyncResult >> Async.Ignore)
+                    diagLog "[inputWriter] WriteAsync completed"
                     do! writer.FlushAsync() |> (Async.AwaitIAsyncResult >> Async.Ignore)
                     diagLog "[inputWriter] FlushAsync completed"
                 with
@@ -655,9 +667,16 @@ let fileExists cfg fileName = Commands.fileExists cfg.Directory fileName |> Opti
 // For stdin-based FSI invocations, we prepend --readline- to disable console key processing.
 // This forces FSI to read from stdin via TextReader.ReadLine() instead of using console readline.
 // This is needed because xUnit v3/MTP may run tests without an attached console, which breaks FSI's console detection.
-let fsiStdin cfg stdinPath flags sources = Commands.fsi (execStdin cfg stdinPath) cfg.FSI ("--readline- " + flags) sources
-let fsiStdinCheckPassed cfg stdinPath flags sources = Commands.fsi (execStdinCheckPassed cfg stdinPath) cfg.FSI ("--readline- " + flags) sources
-let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath flags sources = Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI ("--readline- " + flags) sources
+// On net472, we also set --fsi-server-input-codepage 65001 (UTF-8) because ProcessStartInfo.StandardInputEncoding
+// is unavailable, and Console.InputEncoding defaults to the system's OEM code page instead of UTF-8.
+#if !NETCOREAPP
+let private fsiStdinFlags flags = "--readline- --fsi-server-input-codepage 65001 " + flags
+#else
+let private fsiStdinFlags flags = "--readline- " + flags
+#endif
+let fsiStdin cfg stdinPath flags sources = Commands.fsi (execStdin cfg stdinPath) cfg.FSI (fsiStdinFlags flags) sources
+let fsiStdinCheckPassed cfg stdinPath flags sources = Commands.fsi (execStdinCheckPassed cfg stdinPath) cfg.FSI (fsiStdinFlags flags) sources
+let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath flags sources = Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI (fsiStdinFlags flags) sources
 let rm cfg x = Commands.rm cfg.Directory x
 let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
