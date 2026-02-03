@@ -919,3 +919,19 @@ stages:
           buildScript: build.sh
           displayName: FsharpPlus_Net10_Linux
           useVmImage: $(UbuntuMachineQueueName)
+        - repo: TheAngryByrd/IcedTasks
+          commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
+          buildScript: dotnet build src/IcedTasks/IcedTasks.fsproj -c Release
+          displayName: IcedTasks_Build
+        - repo: TheAngryByrd/IcedTasks
+          commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
+          buildScript: dotnet test tests/IcedTasks.Tests/IcedTasks.Tests.fsproj -c Release
+          displayName: IcedTasks_Test
+        - repo: demystifyfp/FsToolkit.ErrorHandling
+          commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
+          buildScript: dotnet build FsToolkit.ErrorHandling.sln -c Release
+          displayName: FsToolkit_ErrorHandling_Build
+        - repo: demystifyfp/FsToolkit.ErrorHandling
+          commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
+          buildScript: dotnet test tests/FsToolkit.ErrorHandling.Tests/FsToolkit.ErrorHandling.Tests.fsproj -c Release
+          displayName: FsToolkit_ErrorHandling_Test
