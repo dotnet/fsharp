@@ -34,7 +34,7 @@ module FSharpFindUsagesService =
             match declarationRange, RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
             | Some declRange, _ when Range.equals declRange symbolUse -> ()
             | _, ValueNone -> ()
-            | _, ValueSome textSpan when not allReferences -> ()
+            | _, ValueSome _ when not allReferences -> ()
             | _, ValueSome textSpan ->
                 match textSpan with
                 | Tokenizer.FixedSpan sourceText fixedSpan ->

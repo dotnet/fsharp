@@ -142,6 +142,10 @@ module internal SymbolHelpers =
             | scope ->
                 let projectsToCheck =
                     match scope with
+                    | Some(SymbolScope.CurrentDocument)
+                    | Some(SymbolScope.SignatureAndImplementation) ->
+                        // For current document or signature/implementation, just search current project
+                        [ currentDocument.Project ]
                     | Some(SymbolScope.Projects(scopeProjects, false)) ->
                         [
                             for scopeProject in scopeProjects do
