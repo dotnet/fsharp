@@ -162,8 +162,7 @@ module internal SymbolHelpers =
                                 Seq.toList currentDocument.Project.Solution.Projects
                             else
                                 referencingProjects
-                        | None ->
-                            Seq.toList currentDocument.Project.Solution.Projects
+                        | None -> Seq.toList currentDocument.Project.Solution.Projects
 
                 do! getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound)
         }

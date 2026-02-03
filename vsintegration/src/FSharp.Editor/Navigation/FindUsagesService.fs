@@ -35,24 +35,26 @@ module FSharpFindUsagesService =
             | Some declRange, _ when Range.equals declRange symbolUse -> ()
             | _, ValueNone -> ()
             | _, ValueSome textSpan when not allReferences -> ()
-            | _, ValueSome (Tokenizer.FixedSpan sourceText fixedSpan) ->
-                let definitionItem =
-                    if isExternal then
-                        externalDefinitionItem
-                    else
-                        definitionItems
-                        |> Array.tryFind (snd >> (=) doc.Project.FilePath)
-                        |> Option.map (fun (definitionItem, _) -> definitionItem)
-                        |> Option.defaultValue externalDefinitionItem
+            | _, ValueSome textSpan ->
+                match textSpan with
+                | Tokenizer.FixedSpan sourceText fixedSpan ->
+                    let definitionItem =
+                        if isExternal then
+                            externalDefinitionItem
+                        else
+                            definitionItems
+                            |> Array.tryFind (snd >> (=) doc.Project.FilePath)
+                            |> Option.map (fun (definitionItem, _) -> definitionItem)
+                            |> Option.defaultValue externalDefinitionItem
 
-                let referenceItem =
-                    FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, fixedSpan))
-                // REVIEW: OnReferenceFoundAsync is throwing inside Roslyn, putting a try/with so find-all refs doesn't fail.
-                try
-                    do! onReferenceFoundAsync referenceItem
-                with _ ->
-                    ()
-            | _ -> ()
+                    let referenceItem =
+                        FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, fixedSpan))
+                    // REVIEW: OnReferenceFoundAsync is throwing inside Roslyn, putting a try/with so find-all refs doesn't fail.
+                    try
+                        do! onReferenceFoundAsync referenceItem
+                    with _ ->
+                        ()
+                | _ -> ()
         }
 
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
