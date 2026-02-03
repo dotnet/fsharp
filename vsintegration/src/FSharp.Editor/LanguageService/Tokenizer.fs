@@ -1021,6 +1021,17 @@ module internal Tokenizer =
         else
             ValueSome fixedSpan
 
+    /// #18270: Converts F# range to Roslyn TextSpan with editor-specific filtering.
+    /// Filters out property accessor keywords (get/set) that should not appear in
+    /// Find All References or Rename operations.
+    let TryFSharpRangeToTextSpanForEditor (sourceText: SourceText, range: range) : TextSpan voption =
+        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
+        | ValueSome textSpan ->
+            match textSpan with
+            | FixedSpan sourceText fixedSpan -> ValueSome fixedSpan
+            | _ -> ValueNone
+        | _ -> ValueNone
+
     let isDoubleBacktickIdent (s: string) =
         let doubledDelimiter = 2 * doubleBackTickDelimiter.Length
 

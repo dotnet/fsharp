@@ -73,7 +73,7 @@ module FSharpFindUsagesService =
                                 let! cancellationToken = CancellableTask.getCancellationToken ()
                                 let! sourceText = doc.GetTextAsync(cancellationToken)
 
-                                match RoslynHelpers.TryFSharpRangeToTextSpanForEditor(sourceText, range) with
+                                match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, range) with
                                 | ValueSome fixedSpan -> return Some(FSharpDocumentSpan(doc, fixedSpan))
                                 | ValueNone -> return None
                             }

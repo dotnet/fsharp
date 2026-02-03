@@ -161,7 +161,7 @@ type internal InlineRenameInfo
                             return
                                 [|
                                     for symbolUse in symbolUses do
-                                        match RoslynHelpers.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse) with
+                                        match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse) with
                                         | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
                                         | ValueNone -> ()
                                 |]
