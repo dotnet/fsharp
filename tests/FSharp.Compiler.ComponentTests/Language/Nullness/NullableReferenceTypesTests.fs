@@ -1861,3 +1861,112 @@ type List<'T when 'T : comparison> with
         Error 957, Line 5, Col 6, Line 5, Col 10, "One or more of the declared type parameters for this type extension have a missing or wrong type constraint not matching the original type constraints on 'List<_>'"
         Error 340, Line 1, Col 1, Line 1, Col 1, "The signature and implementation are not compatible because the declaration of the type parameter 'T' requires a constraint of the form 'T: comparison"
     ]
+
+// https://github.com/dotnet/fsharp/issues/18034
+// FSharpPlus monad CE breaks with FS0001 when nullness enabled  
+// The issue is that SRTP Delay member resolution fails to find the member when
+// the constraint solving involves nullness annotations on obj type parameters
+[<Fact>]
+let ``Computation expression with SRTP Delay should work with nullness`` () =
+    FSharp """module TestModule
+
+// Simplified version - just testing that using Result with a CE and nullness works
+type ResultBuilder() =
+    member _.Return(x: 'T) : Result<'T,'E> = Ok x
+    member _.Bind(m: Result<'T,'E>, f: 'T -> Result<'U,'E>) : Result<'U,'E> = Result.bind f m
+    member _.Delay(f: unit -> Result<'T,'E>) : Result<'T,'E> = f()
+    member _.Zero() : Result<unit, 'E> = Ok ()
+
+let result = ResultBuilder()
+
+type SomeRecordWrapper = { Value: int }
+
+let repro () : Result<SomeRecordWrapper, string> =
+    result {
+        let! parsed = Ok 42
+        return { Value = parsed }
+    }
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// https://github.com/dotnet/fsharp/issues/18034
+// Test the SRTP-based Delay pattern used by FSharpPlus with nullness enabled
+// The monad builder uses SRTP to resolve Delay at compile time
+[<Fact>]
+let ``FSharpPlus-style SRTP Delay without nullness should work`` () =
+    FSharp """module TestModule
+
+open System.Runtime.InteropServices
+
+// SRTP Delay helper - similar to FSharpPlus pattern
+type Delay =
+    static member inline Delay(call: unit -> Result<'T,'E>, _output: Result<'T,'E>, [<Optional>]_mthd: obj) : Result<'T,'E> = call()
+
+// Use (^R or Delay) to search both the type and the Delay helper
+let inline invokeDelay (call: unit -> ^R) : ^R =
+    ((^R or Delay) : (static member Delay : (unit -> ^R) * ^R * obj -> ^R) call, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+
+type MonadBuilder() =
+    member inline _.Return(x: 'T) : Result<'T,'E> = Ok x
+    member inline _.ReturnFrom(x: Result<'T,'E>) : Result<'T,'E> = x
+    member inline _.Bind(m: Result<'T,'E>, f: 'T -> Result<'U,'E>) : Result<'U,'E> = Result.bind f m
+    member inline _.Delay(body: unit -> ^R) : ^R = invokeDelay body
+    member inline _.Zero() : Result<unit,'E> = Ok ()
+
+let monad = MonadBuilder()
+
+type SomeRecordWrapper = { Value: int }
+
+// This should compile without nullness
+let repro () : Result<SomeRecordWrapper, string> =
+    monad {
+        let! parsed = Ok 42
+        return { Value = parsed }
+    }
+"""
+    |> asLibrary
+    |> withOptions ["--nowarn:64"]  // Suppress "This construct causes code to be less generic" warning
+    |> typecheck  // Without nullness
+    |> shouldSucceed
+
+// https://github.com/dotnet/fsharp/issues/18034
+// Test the SRTP-based Delay pattern used by FSharpPlus with nullness enabled
+// The monad builder uses SRTP to resolve Delay at compile time
+[<Fact>]
+let ``FSharpPlus-style SRTP Delay with nullness should work`` () =
+    FSharp """module TestModule
+
+open System.Runtime.InteropServices
+
+// SRTP Delay helper - similar to FSharpPlus pattern
+type Delay =
+    static member inline Delay(call: unit -> Result<'T,'E>, _output: Result<'T,'E>, [<Optional>]_mthd: obj) : Result<'T,'E> = call()
+
+// Use (^R or Delay) to search both the type and the Delay helper
+let inline invokeDelay (call: unit -> ^R) : ^R =
+    ((^R or Delay) : (static member Delay : (unit -> ^R) * ^R * obj -> ^R) call, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+
+type MonadBuilder() =
+    member inline _.Return(x: 'T) : Result<'T,'E> = Ok x
+    member inline _.ReturnFrom(x: Result<'T,'E>) : Result<'T,'E> = x
+    member inline _.Bind(m: Result<'T,'E>, f: 'T -> Result<'U,'E>) : Result<'U,'E> = Result.bind f m
+    member inline _.Delay(body: unit -> ^R) : ^R = invokeDelay body
+    member inline _.Zero() : Result<unit,'E> = Ok ()
+
+let monad = MonadBuilder()
+
+type SomeRecordWrapper = { Value: int }
+
+// This should compile with nullness enabled
+let repro () : Result<SomeRecordWrapper, string> =
+    monad {
+        let! parsed = Ok 42
+        return { Value = parsed }
+    }
+"""
+    |> asLibrary
+    |> withOptions ["--nowarn:64"]  // Suppress "This construct causes code to be less generic" warning
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
