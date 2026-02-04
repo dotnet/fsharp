@@ -10822,22 +10822,9 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
             | TPat_conjs(patterns,_) -> patterns |> List.forall handlesNull
             | _ -> false
 
-        // Check if a type is a nullable reference type (can have null stripped from it)
+        // Check if a type is a nullable reference type
         let isNullableRefType ty =
             isAppTy cenv.g ty && not (isStructTy cenv.g ty)
-
-        // For a position to contribute to null elimination, other nullable positions must be wild.
-        // This prevents false elimination in cases like (null,null) where we don't know which position
-        // caused the mismatch in subsequent clauses.
-        let canEliminateFromPosition pats tys idx =
-            let pat = List.item idx pats
-            let ty = List.item idx tys
-            if not (handlesNull pat) then false
-            elif not (isNullableRefType ty) then false
-            else
-                // Check all other positions: they must be wild or on non-nullable types
-                pats |> List.indexed |> List.forall (fun (i, p) ->
-                    i = idx || isWild p || not (isNullableRefType (List.item i tys)))
 
         let rec eliminateNull (ty:TType) (p:Pattern)  =
             match p with
@@ -10846,15 +10833,34 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
             | TPat_disjs(patterns,_) -> (ty,patterns) ||> List.fold eliminateNull
             | TPat_tuple (_,pats,_,_) ->
                 match stripTyparEqns ty with
-                // For tuples, eliminate nullness for each element that explicitly handles null,
-                // provided other nullable positions are wild (so we know which position was non-null).
+                // For tuples, we can only eliminate null from a position if:
+                // 1. The position handles null (has null pattern)
+                // 2. All OTHER positions that are nullable ref types must be wild
+                //    (because if another nullable position is non-wild, we can't tell
+                //     which position the null came from)
                 | TType_tuple(ti,tys) when tys.Length = pats.Length ->
+                    // Pre-compute which positions are nullable and non-wild
+                    let positionInfo = 
+                        List.map2 (fun pat ty -> 
+                            let nullable = isNullableRefType ty
+                            let wild = isWild pat
+                            let handlesnull = handlesNull pat
+                            (nullable, wild, handlesnull)) pats tys
+                    
+                    // Count nullable non-wild positions
+                    let nullableNonWildCount = 
+                        positionInfo |> List.count (fun (nullable, wild, _) -> nullable && not wild)
+                    
+                    // For each position, check if it can have null eliminated
                     let newTys = 
-                        tys |> List.mapi (fun idx ty ->
-                            if canEliminateFromPosition pats tys idx then
-                                eliminateNull ty (List.item idx pats)
+                        List.map2 (fun (nullable, wild, handlesnull) (pat, ty) ->
+                            // Can eliminate if:
+                            // - position handles null AND
+                            // - it's the only nullable non-wild position (others are wild or non-nullable)
+                            if handlesnull && nullable && not wild && nullableNonWildCount = 1 then
+                                eliminateNull ty pat
                             else
-                                ty)
+                                ty) positionInfo (List.zip pats tys)
                     TType_tuple(ti, newTys)
                 | _ -> ty
             | _ -> ty

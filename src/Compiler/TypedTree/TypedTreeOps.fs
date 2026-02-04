@@ -9241,17 +9241,6 @@ let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
     | Some true -> g.knownWithNull
     | _ -> g.knownWithoutNull
 
-/// Gets the explicit nullness annotation on a type without combining with intrinsic nullness.
-/// This allows checking if a specific expression/value was explicitly marked as non-null,
-/// independent of what the type definition allows.
-let explicitNullnessOfTy g ty =
-    ty
-    |> stripTyEqns g
-    |> function
-        | TType_app(_, _, nullness) -> nullness
-        | TType_fun (_, _, nullness) | TType_var (_, nullness) -> nullness
-        | _ -> g.knownWithoutNull
-
 let nullnessOfTy g ty =
     ty
     |> stripTyEqns g
@@ -9344,12 +9333,19 @@ let TypeHasAllowNull (tcref:TyconRef) g m =
 
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
-    let sty = stripTyparEqns ty
+    let sty = stripTyEqns g ty
+    
+    // Get explicit nullness annotation directly from the stripped type (avoiding redundant strip call)
+    let explicitNullness = 
+        match sty with
+        | TType_app(_, _, nullness) -> nullness
+        | TType_fun (_, _, nullness) | TType_var (_, nullness) -> nullness
+        | _ -> g.knownWithoutNull
     
     // Check the explicit nullness annotation first - if the expression was explicitly marked 
     // as non-null (e.g., constructor result), it should take precedence over type-level 
     // attributes like AllowNullLiteral. But always check for ': null' constraint.
-    match (explicitNullnessOfTy g sty).Evaluate() with 
+    match explicitNullness.Evaluate() with 
     | NullnessInfo.WithoutNull -> 
         // Explicitly non-null - but still check for ': null' constraint on type parameters
         (GetTyparTyIfSupportsNull g ty).IsSome
