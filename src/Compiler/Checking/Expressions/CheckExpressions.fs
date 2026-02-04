@@ -8755,8 +8755,6 @@ and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, it
         TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed
 
     | Item.Property (nm, pinfos, _) ->
-        // (#16621) Register union case tester properties
-        NameResolution.RegisterUnionCaseTesterForProperty cenv.tcSink mItem env.NameEnv pinfos ItemOccurrence.Use env.eAccessRights
         TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem afterResolution staticTyOpt delayed
 
     | Item.ILField finfo ->
@@ -9603,8 +9601,6 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
     | Item.Property (nm, pinfos, _) ->
         // Instance property
         if isNil pinfos then error (InternalError ("Unexpected error: empty property list", mItem))
-        // (#16621) Register union case tester properties
-        NameResolution.RegisterUnionCaseTesterForProperty cenv.tcSink mItem env.NameEnv pinfos ItemOccurrence.Use env.eAccessRights
         // if there are both intrinsics and extensions in pinfos, intrinsics will be listed first.
         // by looking at List.Head we are letting the intrinsics determine indexed/non-indexed
         let pinfo = List.head pinfos
