@@ -127,9 +127,8 @@ let mkExprForVarSpace m (patvs: Val list) =
             m
         )
 
-// Use compiler-generated patterns to avoid FS1182 for varSpace lambda parameters
 let mkSimplePatForVarSpace m (patvs: Val list) =
-    SynSimplePats.SimplePats(List.map (fun (v: Val) -> mkSynCompGenSimplePatVar v.Id) patvs, [], m)
+    SynSimplePats.SimplePats(List.map (fun (v: Val) -> mkSynSimplePatVar false v.Id) patvs, [], m)
 
 let mkPatForVarSpace m (patvs: Val list) =
     match patvs with
