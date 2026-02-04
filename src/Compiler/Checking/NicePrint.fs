@@ -984,6 +984,9 @@ module PrintTypes =
         | TType_app (tc, args, _) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
             layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
 
+        // TODO: Anonymous type-tagged union
+        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+
         // Layout a type application
         | TType_ucase (UnionCaseRef(tc, _), args) ->
             let prefix, denv = usePrefix denv tc

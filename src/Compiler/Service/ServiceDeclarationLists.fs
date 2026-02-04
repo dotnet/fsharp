@@ -516,6 +516,9 @@ module DeclarationListHelpers =
         | Item.UnqualifiedType []
         | Item.ModuleOrNamespaces []
         | Item.CustomOperation (_, _, None) ->  ToolTipElement.None
+        
+        // TODO: Anonymous type-tagged union
+        | Item.Types (_, [TType_anon_tt_union _]) -> failwith "Anonymous type-tagged unions not implemented yet"
 
     /// Format the structured version of a tooltip for an item
     let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item symbol width =

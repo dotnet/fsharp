@@ -867,6 +867,9 @@ let rec SimplifyMeasuresInType g resultFirst (generalizable, generalized as para
     | TType_anon (_,l)
     | TType_tuple (_, l) -> SimplifyMeasuresInTypes g param l
 
+    // TODO: Anonymous type-tagged union
+    | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+
     | TType_fun (domainTy, rangeTy, _) ->
         if resultFirst then
             SimplifyMeasuresInTypes g param [rangeTy;domainTy]
@@ -916,6 +919,8 @@ let rec GetMeasureVarGcdInType v ty =
     | TType_var _   -> ZeroRational
     | TType_forall (_, tau) -> GetMeasureVarGcdInType v tau
     | TType_measure unt -> MeasureVarExponent v unt
+    // TODO: Anonymous type-tagged union
+    | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
 
 and GetMeasureVarGcdInTypes v tys =
     match tys with

@@ -94,6 +94,9 @@ module internal XmlDocSignatures =
 
         | TType_anon(anonInfo, tinst) -> sprintf "%s%s" anonInfo.ILTypeRef.FullName (tyargsEnc g (gtpsType, gtpsMethod) tinst)
 
+        // TODO: Anonymous type-tagged union
+        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+
         | TType_tuple(tupInfo, tys) ->
             if evalTupInfoIsStruct tupInfo then
                 sprintf "System.ValueTuple%s" (tyargsEnc g (gtpsType, gtpsMethod) tys)
@@ -456,6 +459,10 @@ module internal NullnessAnalysis =
                 | TType_anon(tys = tys) ->
                     let inner = tys |> List.collect (fun t -> hasWithNullAnyWhere t false)
                     if alreadyWrappedInOuterWithNull then ty :: inner else inner
+
+                // TODO: Anonymous type-tagged union
+                | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+
                 | TType_fun(d, r, _) -> (hasWithNullAnyWhere d false) @ (hasWithNullAnyWhere r false)
 
                 | TType_forall _ -> []

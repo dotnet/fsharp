@@ -1634,6 +1634,9 @@ module internal DebugPrint =
                     (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys)
             )
 
+        // TODO: Anonymous type-tagged union
+        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+
         | TType_measure unt ->
 #if DEBUG
             leftL (tagText "{")

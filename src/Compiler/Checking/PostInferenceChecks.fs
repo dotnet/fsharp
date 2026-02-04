@@ -428,6 +428,9 @@ let rec CheckTypeDeep<'V when 'V :> ITypeVisitor and 'V: struct>
 
     | TType_measure _ -> ()
 
+    // TODO: Anonymous type-tagged union
+    | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+    
     | TType_app (tcref, tinst, _) ->
         v.VisitTyconRef(typeInstParent, tcref)
 

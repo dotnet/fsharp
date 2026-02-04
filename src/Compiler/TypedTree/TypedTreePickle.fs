@@ -2521,6 +2521,9 @@ let _ =
             p_ucref uc st
             p_tys tinst st
 
+        // TODO: Anonymous type-tagged union
+        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+
         // p_byte 8 taken by TType_tuple above
         | TType_anon(anonInfo, l) ->
             p_byte 9 st

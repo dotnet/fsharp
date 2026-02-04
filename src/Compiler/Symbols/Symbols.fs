@@ -3168,6 +3168,8 @@ type FSharpType(cenv, ty:TType) =
             | TType_fun (domainTy, rangeTy, _) -> 10500 + hashType domainTy + hashType rangeTy
             | TType_measure _ -> 10600
             | TType_anon (_,l1) -> 10800 + List.sumBy hashType l1
+            // TODO: Anonymous type-tagged union
+            | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
         hashType ty
 
     member _.Format(context: FSharpDisplayContext) =

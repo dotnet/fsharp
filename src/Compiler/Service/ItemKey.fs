@@ -337,6 +337,9 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             writeString anonInfo.ILTypeRef.BasicQualifiedName
             tinst |> List.iter (writeType false)
 
+        // TODO: Anonymous type-tagged union
+        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+
         | TType_fun(domainTy, rangeTy, _) ->
             writeString ItemKeyTags.typeFunction
             writeType false domainTy

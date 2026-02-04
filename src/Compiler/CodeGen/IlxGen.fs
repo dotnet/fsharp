@@ -724,6 +724,9 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
 
         GenILTyAppAux cenv m tyenv (tref, boxity, None) tinst
 
+    // TODO: Anonymous type-tagged union
+    | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+
     | TType_ucase(ucref, args) ->
         let cuspec, idx = GenUnionCaseSpec cenv m tyenv ucref args
         GetILTypeForAlternative cuspec idx

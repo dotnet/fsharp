@@ -231,6 +231,9 @@ module internal TypeRemapping =
             else
                 TType_anon(AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfoR, anonInfo.SortedIds), lR)
 
+        // TODO: Anonymous type-tagged union
+        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+
         | TType_tuple(tupInfo, l) as ty ->
             let tupInfoR = remapTupInfoAux tyenv tupInfo
             let lR = remapTypesAux tyenv l
