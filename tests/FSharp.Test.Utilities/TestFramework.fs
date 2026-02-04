@@ -657,13 +657,9 @@ let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Command
 let getfullpath cfg = Commands.getfullpath cfg.Directory
 let fileExists cfg fileName = Commands.fileExists cfg.Directory fileName |> Option.isSome
 
-// For stdin-based FSI invocations, we prepend --readline- to disable console key processing.
-// This forces FSI to read from stdin via TextReader.ReadLine() instead of using console readline.
-// This is needed because xUnit v3/MTP may run tests without an attached console, which breaks FSI's console detection.
-let private fsiStdinFlags flags = "--readline- " + flags
-let fsiStdin cfg stdinPath flags sources = Commands.fsi (execStdin cfg stdinPath) cfg.FSI (fsiStdinFlags flags) sources
-let fsiStdinCheckPassed cfg stdinPath flags sources = Commands.fsi (execStdinCheckPassed cfg stdinPath) cfg.FSI (fsiStdinFlags flags) sources
-let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath flags sources = Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI (fsiStdinFlags flags) sources
+let fsiStdin cfg stdinPath flags sources = Commands.fsi (execStdin cfg stdinPath) cfg.FSI flags sources
+let fsiStdinCheckPassed cfg stdinPath flags sources = Commands.fsi (execStdinCheckPassed cfg stdinPath) cfg.FSI flags sources
+let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath flags sources = Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI flags sources
 let rm cfg x = Commands.rm cfg.Directory x
 let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
