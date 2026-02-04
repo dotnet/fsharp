@@ -1162,6 +1162,25 @@ let typarConstraintsAEquiv g aenv c1 c2 = typarConstraintsAEquivAux EraseNone g 
 
 let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
 
+/// Check if declaredTypars are compatible with reqTypars for a type extension.
+/// Allows declaredTypars to have NotSupportsNull constraints even if reqTypars don't have them.
+/// This supports the scenario where a type extension declares `'T : not null` on a type
+/// whose original definition allows nullable type arguments (e.g., ILookup<TKey, TElement>).
+let typarsAEquivWithAddedNotNullConstraintsAllowed g (aenv: TypeEquivEnv) (reqTypars: Typars) (declaredTypars: Typars) =
+    List.length reqTypars = List.length declaredTypars &&
+    let aenv = aenv.BindEquivTypars reqTypars declaredTypars
+    (reqTypars, declaredTypars) ||> List.forall2 (fun reqTp declTp ->
+        reqTp.StaticReq = declTp.StaticReq &&
+        // All constraints in reqTypar must be present in declaredTypar
+        reqTp.Constraints |> List.forall (fun reqCx ->
+            declTp.Constraints |> List.exists (fun declCx -> typarConstraintsAEquivAux EraseNone g aenv reqCx declCx)) &&
+        // All constraints in declaredTypar must be present in reqTypar,
+        // EXCEPT for NotSupportsNull which is allowed to be extra in declaredTypar
+        declTp.Constraints |> List.forall (fun declCx ->
+            match declCx with
+            | TyparConstraint.NotSupportsNull _ -> true // Always allow NotSupportsNull in declared
+            | _ -> reqTp.Constraints |> List.exists (fun reqCx -> typarConstraintsAEquivAux EraseNone g aenv reqCx declCx)))
+
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
 let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.EmptyIgnoreNulls m1 m2

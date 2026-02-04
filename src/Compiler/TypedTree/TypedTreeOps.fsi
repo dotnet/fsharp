@@ -941,6 +941,10 @@ val typarConstraintsAEquiv: TcGlobals -> TypeEquivEnv -> TyparConstraint -> Typa
 
 val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 
+/// Check if declaredTypars are compatible with reqTypars for a type extension.
+/// Allows declaredTypars to have NotSupportsNull constraints even if reqTypars don't have them.
+val typarsAEquivWithAddedNotNullConstraintsAllowed: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
+
 val typeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
 val typeAEquiv: TcGlobals -> TypeEquivEnv -> TType -> TType -> bool

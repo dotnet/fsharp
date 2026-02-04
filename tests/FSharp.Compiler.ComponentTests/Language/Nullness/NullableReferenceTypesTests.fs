@@ -1790,3 +1790,35 @@ let result = consumeNonNull nullableValue
         // Warning only on the call, not on the binding - the binding explicitly uses "MyClass | null"
         Error 3261, Line 11, Col 29, Line 11, Col 42, "Nullness warning: The type 'MyClass | null' supports 'null' but a non-null type is expected."
     ]
+
+// Regression test for https://github.com/dotnet/fsharp/issues/18334
+[<Fact>]
+let ``Type extension with not null constraint on ILookup should compile - Regression18334`` () =
+    FSharp """module TestModule
+open System.Collections.Generic
+open System.Linq
+
+type ILookup<'Key, 'Value when 'Key : not null> with
+    static member Empty = Seq.empty<KeyValuePair<'Key,'Value>>.ToLookup((fun kv -> kv.Key), (fun kv -> kv.Value))
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Ensure that arbitrary constraints (other than 'not null') are still rejected on type extensions
+[<Fact>]
+let ``Type extension with comparison constraint on List should fail`` () =
+    FSharp """module TestModule
+open System.Collections.Generic
+
+// List<T> has no constraints, so adding 'comparison' should fail
+type List<'T when 'T : comparison> with
+    static member Sorted (lst: List<'T>) = lst |> Seq.sort |> List
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 957, Line 5, Col 6, Line 5, Col 10, "One or more of the declared type parameters for this type extension have a missing or wrong type constraint not matching the original type constraints on 'List<_>'"
+        Error 340, Line 1, Col 1, Line 1, Col 1, "The signature and implementation are not compatible because the declaration of the type parameter 'T' requires a constraint of the form 'T: comparison"
+    ]
