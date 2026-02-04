@@ -660,10 +660,10 @@ let fileExists cfg fileName = Commands.fileExists cfg.Directory fileName |> Opti
 // For stdin-based FSI invocations, we prepend --readline- to disable console key processing.
 // This forces FSI to read from stdin via TextReader.ReadLine() instead of using console readline.
 // This is needed because xUnit v3/MTP may run tests without an attached console, which breaks FSI's console detection.
-// On net472, we also set --fsi-server-input-codepage 65001 (UTF-8) because ProcessStartInfo.StandardInputEncoding
+// On net472, we also set --fsi-server-input-codepage:65001 (UTF-8) because ProcessStartInfo.StandardInputEncoding
 // is unavailable, and Console.InputEncoding defaults to the system's OEM code page instead of UTF-8.
 #if !NETCOREAPP
-let private fsiStdinFlags flags = "--readline- --fsi-server-input-codepage 65001 " + flags
+let private fsiStdinFlags flags = "--readline- --fsi-server-input-codepage:65001 " + flags
 #else
 let private fsiStdinFlags flags = "--readline- " + flags
 #endif
