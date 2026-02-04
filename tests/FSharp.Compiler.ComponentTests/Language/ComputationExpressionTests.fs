@@ -2260,18 +2260,8 @@ but here has type
          |> runFsi
          |> shouldSucceed
 
-    // =====================================================================
-    // Issue #422: FS1182 false positive in query expressions
-    // 
-    // PROBLEM: Variables used in 'where', 'let', or other query clauses were
-    // incorrectly flagged as unused.
-    //
-    // FIX: Mark synthetic lambda parameters in query translation as 
-    // compiler-generated, preventing false FS1182 warnings.
-    // =====================================================================
-
     [<Fact>]
-    let ``Query variable used in where does not trigger FS1182 - issue 422`` () =
+    let ``Query variable used in where does not trigger FS1182`` () =
         FSharp """
 module Test
 let result = query { for x in [1;2;3] do where (x > 0); select 1 }
@@ -2283,7 +2273,7 @@ let result = query { for x in [1;2;3] do where (x > 0); select 1 }
         |> ignore
 
     [<Fact>]
-    let ``Query variable used in select does not trigger FS1182 - issue 422`` () =
+    let ``Query variable used in select does not trigger FS1182`` () =
         FSharp """
 module Test
 let result = query { for x in [1;2;3] do where (x > 2); select x }
@@ -2295,7 +2285,7 @@ let result = query { for x in [1;2;3] do where (x > 2); select x }
         |> ignore
 
     [<Fact>]
-    let ``Query variable used in let binding does not trigger FS1182 - issue 422`` () =
+    let ``Query variable used in let binding does not trigger FS1182`` () =
         FSharp """
 module Test
 let result = query { for x in [1;2;3] do let y = x * 2 in select y }
@@ -2307,7 +2297,7 @@ let result = query { for x in [1;2;3] do let y = x * 2 in select y }
         |> ignore
 
     [<Fact>]
-    let ``Join variables used in on clause do not trigger FS1182 - issue 422`` () =
+    let ``Join variables used in on clause do not trigger FS1182`` () =
         FSharp """
 module Test
 let data1 = [1;2;3]
@@ -2321,7 +2311,7 @@ let result = query { for x in data1 do join (y, name) in data2 on (x = y); selec
         |> ignore
 
     [<Fact>]
-    let ``Multiple query variables in nested for do not trigger FS1182 - issue 422`` () =
+    let ``Multiple query variables in nested for do not trigger FS1182`` () =
         FSharp """
 module Test
 let result = query { for a in [1;2;3] do for b in [4;5;6] do where (a < b); select (a + b) }
@@ -2333,66 +2323,7 @@ let result = query { for a in [1;2;3] do for b in [4;5;6] do where (a < b); sele
         |> ignore
 
     [<Fact>]
-    let ``Query variable with underscore prefix does not trigger FS1182 - issue 422`` () =
-        FSharp """
-module Test
-let result = query { for _x in [1;2;3] do select 1 }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
-    // =====================================================================
-    // FS1182 works correctly for non-query-loop variables
-    // =====================================================================
-
-    [<Fact>]
-    let ``Unused let binding inside query select triggers FS1182`` () =
-        FSharp """
-module Test
-let result = query { for x in [1;2;3] do select (let unused = 42 in x) }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> withSingleDiagnostic (Warning 1182, Line 3, Col 54, Line 3, Col 60, "The value 'unused' is unused")
-        |> ignore
-
-    [<Fact>]
-    let ``Unused local variable in function with query triggers FS1182`` () =
-        FSharp """
-module Test
-let f () =
-    let unused = 42
-    query { for x in [1;2;3] do select x }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> withSingleDiagnostic (Warning 1182, Line 4, Col 9, Line 4, Col 15, "The value 'unused' is unused")
-        |> ignore
-
-    // =====================================================================
-    // KNOWN LIMITATION: Genuinely unused query loop variables
-    //
-    // Query loop variables (for x in ...) CANNOT trigger FS1182 even when
-    // genuinely unused in user code. This is due to implementation details:
-    // query translation internally references all loop variables via Yield.
-    //
-    // IMPACT: Dead code in queries goes undetected. Users will not be warned
-    // about query variables they could remove.
-    //
-    // A proper fix would require tracking "user references" separately from
-    // "compiler-generated references". Contributions welcome!
-    // See: https://github.com/dotnet/fsharp/issues/422
-    // =====================================================================
-
-    [<Fact>]
-    let ``KNOWN LIMITATION - Genuinely unused query loop variable does not trigger FS1182`` () =
-        // This test documents current behavior, NOT desired behavior.
-        // Ideally, 'x' should produce FS1182 since it's unused in user code.
+    let ``Genuinely unused query loop variable warns FS1182`` () =
         FSharp """
 module Test
 let result = query { for x in [1;2;3] do select 1 }
@@ -2400,5 +2331,37 @@ let result = query { for x in [1;2;3] do select 1 }
         |> withOptions ["--warnon:FS1182"]
         |> asLibrary
         |> compile
-        |> shouldSucceed  // BUG: Should warn about unused 'x', but doesn't due to internal Yield reference
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 1182, Line 3, Col 26, Line 3, Col 27, "The value 'x' is unused")
+
+    [<Fact>]
+    let ``Unused variable in select scope warns FS1182`` () =
+        FSharp """
+module Test
+
+let result = 
+    query { for x in [1;2;3] do
+            select (
+                let unused = 42
+                x) }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> withSingleDiagnostic (Warning 1182, Line 7, Col 21, Line 7, Col 27, "The value 'unused' is unused")
+        |> ignore
+
+    [<Fact>]
+    let ``Local unused variable in function with query warns FS1182`` () =
+        FSharp """
+module Test
+
+let f () =
+    let unused = 42
+    query { for x in [1;2;3] do select x }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> withSingleDiagnostic (Warning 1182, Line 5, Col 9, Line 5, Col 15, "The value 'unused' is unused")
         |> ignore

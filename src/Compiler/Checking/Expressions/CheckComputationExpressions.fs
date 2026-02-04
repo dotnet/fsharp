@@ -113,43 +113,55 @@ let mkSourceExprConditional isFromSource callExpr sourceMethInfo builderValName 
 let inline mkSynLambda p e m =
     SynExpr.Lambda(false, false, p, e, None, m, SynExprLambdaTrivia.Zero)
 
+// Use synthetic ranges so compiler-generated varSpace refs don't mark vals as referenced for FS1182
 let mkExprForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynExpr.Const(SynConst.Unit, m)
-    | [ v ] -> SynExpr.Ident v.Id
-    | vs -> SynExpr.Tuple(false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id))), [], m)
+    | [ v ] -> SynExpr.Ident(Ident(v.Id.idText, v.Id.idRange.MakeSynthetic()))
+    | vs ->
+        SynExpr.Tuple(
+            false,
+            (vs
+             |> List.map (fun v -> SynExpr.Ident(Ident(v.Id.idText, v.Id.idRange.MakeSynthetic())))),
+            [],
+            m
+        )
 
+// Use compiler-generated patterns to avoid FS1182 for varSpace lambda parameters
 let mkSimplePatForVarSpace m (patvs: Val list) =
-    // Use mkSynCompGenSimplePatVar to mark these synthetic lambda parameters as compiler-generated.
-    // This prevents false FS1182 warnings for query variables that are logically used in query clauses.
-    // See Issue #422.
-    let spats = patvs |> List.map (fun v -> mkSynCompGenSimplePatVar v.Id)
-    SynSimplePats.SimplePats(spats, [], m)
-
-/// Like SimplePatsOfPat but marks all patterns as compiler-generated.
-/// Used for synthetic lambdas in query join/groupJoin/zip where the patterns
-/// are logically used but would otherwise trigger false FS1182 warnings (Issue #422).
-let SimplePatsOfPatCompilerGenerated synArgNameGenerator pat =
-    let rec markPat (p: SynSimplePat) =
-        match p with
-        | SynSimplePat.Id(ident, altNameRefCell, _, isThisVal, isOptional, range) ->
-            SynSimplePat.Id(ident, altNameRefCell, true, isThisVal, isOptional, range)
-        | SynSimplePat.Typed(p, ty, range) -> SynSimplePat.Typed(markPat p, ty, range)
-        | SynSimplePat.Attrib(p, attribs, range) -> SynSimplePat.Attrib(markPat p, attribs, range)
-
-    let pats, later = SimplePatsOfPat synArgNameGenerator pat
-
-    let markedPats =
-        match pats with
-        | SynSimplePats.SimplePats(patList, commaRanges, range) -> SynSimplePats.SimplePats(patList |> List.map markPat, commaRanges, range)
-
-    markedPats, later
+    SynSimplePats.SimplePats(List.map (fun (v: Val) -> mkSynCompGenSimplePatVar v.Id) patvs, [], m)
 
 let mkPatForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynPat.Const(SynConst.Unit, m)
     | [ v ] -> mkSynPatVar None v.Id
     | vs -> SynPat.Tuple(false, (vs |> List.map (fun x -> mkSynPatVar None x.Id)), [], m)
+
+/// Transfer HasBeenReferenced across query lambda Vals with the same name.
+/// In queries, multiple lambdas may have Vals with the same name (for, where, join).
+/// If any is referenced by user code, mark all as referenced to avoid FS1182 false positives.
+let transferVarSpaceReferences (expr: Expr) =
+    let addVal (v: Val) m = NameMultiMap.add v.LogicalName v m
+
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF z e ->
+                    let z =
+                        match e with
+                        | Expr.Lambda(_, _, _, argVals, _, _, _) -> (z, argVals) ||> List.fold (fun m v -> addVal v m)
+                        | _ -> z
+
+                    noInterceptF z e
+            valBindingSiteIntercept = fun z (_, v) -> addVal v z
+        }
+
+    let valsByName = FoldExpr folder NameMultiMap.empty expr
+
+    // If any Val with a name is referenced, mark all Vals with that name as referenced
+    for KeyValue(_, vals) in valsByName do
+        if vals |> List.exists _.HasBeenReferenced then
+            vals |> List.iter _.SetHasBeenReferenced()
 
 let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
@@ -1080,10 +1092,10 @@ let rec TryTranslateComputationExpression
                     | None -> varSpace
 
                 let firstSourceSimplePats, later1 =
-                    SimplePatsOfPatCompilerGenerated cenv.synArgNameGenerator firstSourcePat
+                    SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat
 
                 let secondSourceSimplePats, later2 =
-                    SimplePatsOfPatCompilerGenerated cenv.synArgNameGenerator secondSourcePat
+                    SimplePatsOfPat cenv.synArgNameGenerator secondSourcePat
 
                 if Option.isSome later1 then
                     errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, firstSourcePat.Range))
@@ -1169,7 +1181,7 @@ let rec TryTranslateComputationExpression
                         // groupJoin
                         | Some secondResultPat, Some relExpr when customOperationIsLikeGroupJoin ceenv nm ->
                             let secondResultSimplePats, later3 =
-                                SimplePatsOfPatCompilerGenerated cenv.synArgNameGenerator secondResultPat
+                                SimplePatsOfPat cenv.synArgNameGenerator secondResultPat
 
                             if Option.isSome later3 then
                                 errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, secondResultPat.Range))
@@ -1286,12 +1298,19 @@ let rec TryTranslateComputationExpression
             requireBuilderMethod "For" ceenv mFor mFor
 
             // Add the variables to the query variable space, on demand
+            let syntheticPat =
+                match pat with
+                | SynPat.Named(synIdent, isThisVal, access, m) -> SynPat.Named(synIdent, isThisVal, access, m.MakeSynthetic())
+                | SynPat.LongIdent(lid, idOpt, typarDecls, argPats, access, m) ->
+                    SynPat.LongIdent(lid, idOpt, typarDecls, argPats, access, m.MakeSynthetic())
+                | _ -> pat
+
             let varSpace =
                 addVarsToVarSpace varSpace (fun _mCustomOp env ->
                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
 
                     let _, _, vspecs, envinner, _ =
-                        TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv pat None TcTrueMatchClause.No
+                        TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv syntheticPat None TcTrueMatchClause.No
 
                     vspecs, envinner)
 
@@ -3084,6 +3103,10 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let lambdaExpr, tpenv =
         TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
+
+    // For queries, transfer HasBeenReferenced from compiler-generated varSpace Vals to user Vals
+    if isQuery then
+        transferVarSpaceReferences lambdaExpr
 
     // beta-var-reduce to bind the builder using a 'let' binding
     let coreExpr =
