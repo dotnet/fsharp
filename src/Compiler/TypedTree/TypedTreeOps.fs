@@ -9222,6 +9222,17 @@ let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
     | Some true -> g.knownWithNull
     | _ -> g.knownWithoutNull
 
+/// Gets the explicit nullness annotation on a type without combining with intrinsic nullness.
+/// This allows checking if a specific expression/value was explicitly marked as non-null,
+/// independent of what the type definition allows.
+let explicitNullnessOfTy g ty =
+    ty
+    |> stripTyEqns g
+    |> function
+        | TType_app(_, _, nullness) -> nullness
+        | TType_fun (_, _, nullness) | TType_var (_, nullness) -> nullness
+        | _ -> g.knownWithoutNull
+
 let nullnessOfTy g ty =
     ty
     |> stripTyEqns g
@@ -9316,19 +9327,24 @@ let TypeHasAllowNull (tcref:TyconRef) g m =
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
     
-    // Check if the type has AllowNullLiteral
-    (match tryTcrefOfAppTy g sty with 
-     | ValueSome tcref -> TypeHasAllowNull tcref g m
-     | _ -> false) 
-    ||
-    // Check if the type has a nullness annotation
-    (match (nullnessOfTy g sty).Evaluate() with 
-     | NullnessInfo.AmbivalentToNull -> false
-     | NullnessInfo.WithoutNull -> false
-     | NullnessInfo.WithNull -> true)
-    ||
-    // Check if the type has a ': null' constraint
-    (GetTyparTyIfSupportsNull g ty).IsSome
+    // Check the explicit nullness annotation first - if the expression was explicitly marked 
+    // as non-null (e.g., constructor result), it should take precedence over type-level 
+    // attributes like AllowNullLiteral. But always check for ': null' constraint.
+    match (explicitNullnessOfTy g sty).Evaluate() with 
+    | NullnessInfo.WithoutNull -> 
+        // Explicitly non-null - but still check for ': null' constraint on type parameters
+        (GetTyparTyIfSupportsNull g ty).IsSome
+    | NullnessInfo.WithNull -> 
+        // Explicitly nullable
+        true
+    | NullnessInfo.AmbivalentToNull ->
+        // Ambivalent - check type definition for AllowNullLiteral
+        (match tryTcrefOfAppTy g sty with 
+         | ValueSome tcref -> TypeHasAllowNull tcref g m
+         | _ -> false) 
+        ||
+        // Check if the type has a ': null' constraint
+        (GetTyparTyIfSupportsNull g ty).IsSome
 
 /// The pre-nullness logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =

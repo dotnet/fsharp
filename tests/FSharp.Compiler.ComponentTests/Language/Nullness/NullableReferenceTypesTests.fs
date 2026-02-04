@@ -1513,7 +1513,7 @@ let v3WithNull = f3 (null: obj | null)
               Error 3261, Line 7, Col 14, Line 7, Col 33, "Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 8, Col 14, Line 8, Col 20, "Nullness warning: The type ''a option' uses 'null' as a representation value but a non-null type is expected."
               Error 3261, Line 10, Col 11, Line 10, Col 15, "Nullness warning: The type 'obj' does not support 'null'."
-              Error 3261, Line 11, Col 35, Line 11, Col 37, "Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 11, Col 11, Line 11, Col 15, "Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 13, Col 22, Line 13, Col 38, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
 
 
@@ -1748,3 +1748,45 @@ let result = bar |> foo "mr"
     |> shouldFail
     // The error should point to 'bar' which is at Col 14 on Line 6
     |> withDiagnostics [Error 3261, Line 6, Col 14, Line 6, Col 17, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
+
+// Regression for https://github.com/dotnet/fsharp/issues/18021
+// Passing a non-null constructor instance of an AllowNullLiteral type to a generic API should not warn
+[<Fact>]
+let ``AllowNullLiteral type constructor call does not produce false positive - issue 18021`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyClass() = class end
+
+// This should work - constructor result is non-null
+let x : MyClass = MyClass()
+
+// Assigning to a non-null annotated binding should also work
+let y : MyClass = MyClass()
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Additional test for issue #18021 - verify that nullable variables still warn
+[<Fact>]
+let ``AllowNullLiteral type variable still warns when passed to non-null API - issue 18021`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyClass() = class end
+
+// Generic function that expects a non-null value
+let consumeNonNull<'T when 'T : not null> (value: 'T) = value
+
+// This SHOULD warn - nullableValue could be null
+let nullableValue : MyClass | null = null
+let result = consumeNonNull nullableValue
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        // Warning only on the call, not on the binding - the binding explicitly uses "MyClass | null"
+        Error 3261, Line 11, Col 29, Line 11, Col 42, "Nullness warning: The type 'MyClass | null' supports 'null' but a non-null type is expected."
+    ]
