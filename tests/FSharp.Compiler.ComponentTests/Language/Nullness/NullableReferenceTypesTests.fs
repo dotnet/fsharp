@@ -696,6 +696,75 @@ let ``ToString override warns if it returns nullable`` (myTypeDef) =
     |> shouldFail
     |> withDiagnosticMessage "With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function."
 
+// Regression test for https://github.com/dotnet/fsharp/issues/17539
+// UoM types should use ToString from the underlying type (e.g. Int32.ToString) not ValueType.ToString
+[<Fact>]
+let ``ToString on int with UoM is not nullable`` () =
+    FSharp """module MyLibrary
+
+[<Measure>]
+type mykg
+
+let onlyWantNotNullString(x:string) = ()
+
+let processInt (x:int<mykg>) =
+    onlyWantNotNullString(x.ToString())
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Additional edge cases for #17539 - other value types with UoM
+[<Fact>]
+let ``ToString on float with UoM is not nullable`` () =
+    FSharp """module MyLibrary
+
+[<Measure>]
+type mykg
+
+let onlyWantNotNullString(x:string) = ()
+
+let processFloat (x:float<mykg>) =
+    onlyWantNotNullString(x.ToString())
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``ToString on decimal with UoM is not nullable`` () =
+    FSharp """module MyLibrary
+
+[<Measure>]
+type mykg
+
+let onlyWantNotNullString(x:string) = ()
+
+let processDecimal (x:decimal<mykg>) =
+    onlyWantNotNullString(x.ToString())
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``ToString on UoM type alias is not nullable`` () =
+    FSharp """module MyLibrary
+
+[<Measure>]
+type mykg
+
+type mykgalias = int<mykg>
+
+let onlyWantNotNullString(x:string) = ()
+
+let processAlias (x:mykgalias) =
+    onlyWantNotNullString(x.ToString())
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
 [<Fact>]
 let ``Printing a nullable string should pass`` () = 
     FSharp """module MyLibrary
