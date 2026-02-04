@@ -113,6 +113,7 @@
     <Compile Include="Conformance\PatternMatching\DynamicTypeTest\DynamicTypeTest.fs" />
     <Compile Include="Conformance\PatternMatching\Expression\Expression.fs" />
     <Compile Include="Conformance\PatternMatching\Named\Named.fs" />
+    <Compile Include="Conformance\PatternMatching\ActivePattern18425.fs" />
     <Compile Include="Conformance\PatternMatching\Null\Null.fs" />
     <Compile Include="Conformance\PatternMatching\Record\Record.fs" />
     <Compile Include="Conformance\PatternMatching\SimpleConstant\SimpleConstant.fs" />
