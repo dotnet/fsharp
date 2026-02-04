@@ -8631,7 +8631,45 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                            || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
                     | _ -> env
 
-                TcExprFlex2 cenv domainTy env false tpenv synArg
+                // For pipe operator expressions like "bar |> foo", if a nullness error occurs,
+                // we want to report it on "bar" (the piped value) rather than "foo" (the function).
+                // Detect if leftExpr is a partial application of the pipe operator.
+                let pipeArgRangeOpt =
+                    match leftExpr with
+                    | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [pipedArg], _))
+                         when valRefEq g vref g.piperight_vref 
+                           || valRefEq g vref g.piperight2_vref
+                           || valRefEq g vref g.piperight3_vref -> 
+                            Some pipedArg.Range
+                    | _ -> None
+
+                match pipeArgRangeOpt with
+                | Some pipeArgRange ->
+                    // Use a custom diagnostics logger to intercept nullness warnings 
+                    // and re-emit them with the pipe argument range
+                    let adjustNullnessWarningRange (exn: exn) : exn =
+                        match exn with
+                        | ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, n1, n2, _m, m2) ->
+                            ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, n1, n2, pipeArgRange, m2)
+                        | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, n1, n2, _m, m2) ->
+                            ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, n1, n2, pipeArgRange, m2)
+                        | ConstraintSolverNullnessWarningWithType(denv, ty, n, _m, m2) ->
+                            ConstraintSolverNullnessWarningWithType(denv, ty, n, pipeArgRange, m2)
+                        | ConstraintSolverNullnessWarning(msg, _m, m2) ->
+                            ConstraintSolverNullnessWarning(msg, pipeArgRange, m2)
+                        | _ -> exn
+                    
+                    let parentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                    use _ = UseTransformedDiagnosticsLogger (fun _ ->
+                        { new DiagnosticsLogger("PipeNullnessRangeAdjuster") with
+                            member _.DiagnosticSink(diagnostic) = 
+                                let adjusted = { diagnostic with Exception = adjustNullnessWarningRange diagnostic.Exception }
+                                parentLogger.DiagnosticSink(adjusted)
+                            member _.ErrorCount = parentLogger.ErrorCount
+                        })
+                    TcExprFlex2 cenv domainTy env false tpenv synArg
+                | None ->
+                    TcExprFlex2 cenv domainTy env false tpenv synArg
 
             let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed

@@ -1730,3 +1730,21 @@ let testCorrectInference : string option -> int = whatever
     |> ignoreWarnings  // We expect a warning about passing nullable to work, but that's not the issue we're testing
     |> compile
     |> shouldSucceed
+
+// Regression for https://github.com/dotnet/fsharp/issues/18013
+// When using |> with nullable argument, error should show on LHS (the nullable value)
+// not on RHS (the function being applied)
+[<Fact>]
+let ``Pipe operator error location points to nullable argument - issue 18013`` () =
+    FSharp """module Test
+
+let foo a b = "hello" + a + b
+let bar : string | null = "test"
+// Error should be on 'bar' (the nullable value), not on 'foo "mr"' (the function)
+let result = bar |> foo "mr"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    // The error should point to 'bar' which is at Col 14 on Line 6
+    |> withDiagnostics [Error 3261, Line 6, Col 14, Line 6, Col 17, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
