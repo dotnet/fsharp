@@ -2288,6 +2288,10 @@ let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, ite
     | None -> ()
     | Some currentSink ->
         currentSink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, false)
+        // (#16621) For union case tester properties, also register the underlying union case
+        match item with
+        | Item.Property(_, pinfos, _) -> RegisterUnionCaseTesterForProperty sink m nenv pinfos occurrenceType ad
+        | _ -> ()
 
 let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
