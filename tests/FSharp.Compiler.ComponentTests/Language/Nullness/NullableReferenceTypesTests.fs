@@ -908,6 +908,45 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
     |> shouldFail
     |> withErrorCode 3261
 
+// Regression test for https://github.com/dotnet/fsharp/issues/19042
+// Multi-match tuple should eliminate null even when other tuple elements have non-wildcard patterns
+[<Fact>]
+let ``Eliminate tuple null with non-wildcard patterns on other elements - Issue 19042`` () = 
+    FSharp """module MyLibrary
+
+let test (s: string) = ()
+
+let main () =
+    let x = true
+    let y: string | null = ""
+    match x, y with
+    | true, _ -> ()
+    | false, null -> ()
+    | false, s -> test s  // s should be string, not string|null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Additional test: multiple nullable elements in tuple with mixed patterns
+[<Fact>]
+let ``Eliminate tuple null from multiple elements with non-wildcard patterns`` () = 
+    FSharp """module MyLibrary
+
+let test (s: string) (t: string) = ()
+
+let main () =
+    let x: string | null = ""
+    let y: string | null = ""
+    match x, y with
+    | null, _ -> ()
+    | _, null -> ()
+    | s, t -> test s t  // both s and t should be string
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
 [<Fact>]
 let ``Eliminate aliased nullness after matching`` () = 
     FSharp $"""module MyLibrary

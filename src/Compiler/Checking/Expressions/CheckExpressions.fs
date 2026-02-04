@@ -10813,6 +10813,32 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
             | TPat_tuple (_,pats,_,_) -> pats |> List.forall isWild
             | _ -> false
 
+        // Check if a pattern definitively handles the null case for a type element
+        let rec handlesNull (p:Pattern) =
+            match p with
+            | TPat_null _ -> true
+            | TPat_as (p,_,_) -> handlesNull p
+            | TPat_disjs(patterns,_) -> patterns |> List.exists handlesNull
+            | TPat_conjs(patterns,_) -> patterns |> List.forall handlesNull
+            | _ -> false
+
+        // Check if a type is a nullable reference type (can have null stripped from it)
+        let isNullableRefType ty =
+            isAppTy cenv.g ty && not (isStructTy cenv.g ty)
+
+        // For a position to contribute to null elimination, other nullable positions must be wild.
+        // This prevents false elimination in cases like (null,null) where we don't know which position
+        // caused the mismatch in subsequent clauses.
+        let canEliminateFromPosition pats tys idx =
+            let pat = List.item idx pats
+            let ty = List.item idx tys
+            if not (handlesNull pat) then false
+            elif not (isNullableRefType ty) then false
+            else
+                // Check all other positions: they must be wild or on non-nullable types
+                pats |> List.indexed |> List.forall (fun (i, p) ->
+                    i = idx || isWild p || not (isNullableRefType (List.item i tys)))
+
         let rec eliminateNull (ty:TType) (p:Pattern)  =
             match p with
             | TPat_null _ -> removeNull ty
@@ -10820,9 +10846,16 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
             | TPat_disjs(patterns,_) -> (ty,patterns) ||> List.fold eliminateNull
             | TPat_tuple (_,pats,_,_) ->
                 match stripTyparEqns ty with
-                // In a tuple of size N, if 1 elem is matched for null and N-1 are wild => subsequent clauses can strip nullness
-                | TType_tuple(ti,tys) when tys.Length = pats.Length && (pats |> List.count (isWild >> not)) = 1 ->
-                    TType_tuple(ti, List.map2 eliminateNull tys pats)
+                // For tuples, eliminate nullness for each element that explicitly handles null,
+                // provided other nullable positions are wild (so we know which position was non-null).
+                | TType_tuple(ti,tys) when tys.Length = pats.Length ->
+                    let newTys = 
+                        tys |> List.mapi (fun idx ty ->
+                            if canEliminateFromPosition pats tys idx then
+                                eliminateNull ty (List.item idx pats)
+                            else
+                                ty)
+                    TType_tuple(ti, newTys)
                 | _ -> ty
             | _ -> ty
         match whenExprOpt with
