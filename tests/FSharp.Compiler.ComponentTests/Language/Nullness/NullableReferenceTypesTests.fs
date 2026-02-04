@@ -1692,3 +1692,41 @@ let value =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+// Regression for https://github.com/dotnet/fsharp/issues/17727
+// Option.toObj should infer input as 'T option, not '(T|null) option'
+[<Fact>]
+let ``Option.toObj infers input as non-nullable option - issue 17727`` () =
+    // Null-agnostic library (compiled without --checknulls)
+    let nullAgnosticLib =
+        FSharp """
+module NullAgnosticLib
+
+// This function expects a non-null string in null-agnostic context
+// In null-agnostic mode, 'string' can accept both nullable and non-nullable values
+let work (x: string) = x.Length
+        """ 
+        |> withName "NullAgnosticLib"
+
+    // Null-aware code referencing the null-agnostic library
+    // The issue is that 'x' in 'whatever' should be inferred as 'string option'
+    // not '(string|null) option'. The nullable output of toObj shouldn't flow back.
+    FSharp """
+module NullAwareCode
+
+open NullAgnosticLib
+
+// The type of 'x' should be inferred as 'string option' not '(string|null) option'
+let whatever x =
+    work (Option.toObj x)
+
+// This annotation should work - if x were inferred as (string|null) option,
+// this line would fail to compile
+let testCorrectInference : string option -> int = whatever
+    """
+    |> asLibrary
+    |> withReferences [nullAgnosticLib]
+    |> withCheckNulls
+    |> ignoreWarnings  // We expect a warning about passing nullable to work, but that's not the issue we're testing
+    |> compile
+    |> shouldSucceed
