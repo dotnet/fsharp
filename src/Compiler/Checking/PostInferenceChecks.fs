@@ -294,7 +294,6 @@ let LimitVal cenv (v: Val) limit =
         cenv.limitVals[v.Stamp] <- limit
 
 let BindVal cenv env (v: Val) =
-    //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
 
@@ -315,7 +314,10 @@ let BindVal cenv env (v: Val) =
        not v.HasBeenReferenced &&
        (not v.IsCompiledAsTopLevel || topLevelBindingHiddenBySignatureFile ()) &&
        not (v.DisplayName.StartsWithOrdinal("_")) &&
-       not v.IsCompilerGenerated then
+       not v.IsCompilerGenerated &&
+       // Don't warn for variables with synthetic ranges - these are compiler-generated
+       // rebinding patterns in query/CE translation. See https://github.com/dotnet/fsharp/issues/422
+       not v.Range.IsSynthetic then
 
         if v.IsCtorThisVal then
             warning (Error(FSComp.SR.chkUnusedThisVariable v.DisplayName, v.Range))

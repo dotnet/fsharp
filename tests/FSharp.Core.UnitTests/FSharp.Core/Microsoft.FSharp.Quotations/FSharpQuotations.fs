@@ -11,6 +11,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 open FSharp.Quotations
 open FSharp.Quotations.Patterns
+open FSharp.Linq.RuntimeHelpers
 
 type E = Microsoft.FSharp.Quotations.Expr;;
 
@@ -260,3 +261,88 @@ module TestConditionalConstraints =
         equate.Invoke (null, [| ThingWithNoEquality.NoEquality ; anotherOne |])
         |> unbox<bool>
         |> Assert.False
+
+    // Tests for issues #11131 and #15648 - anonymous record field ordering
+    // When anonymous records have fields in non-alphabetical order, the LINQ expression
+    // should not contain Invoke patterns that LINQ providers can't translate.
+    [<Fact>]
+    let ``Anonymous record with non-alphabetical field order produces clean LINQ expression - issues 11131 and 15648`` () =
+        // Non-alphabetical order - B before A
+        let q = <@ fun (x: int) -> {| B = x; A = x + 1 |} @>
+        
+        let linqExpr = LeafExpressionConverter.QuotationToExpression q
+        let exprStr = linqExpr.ToString()
+        
+        Assert.DoesNotContain(".Invoke(", exprStr)
+
+    [<Fact>]
+    let ``Nested anonymous record produces clean LINQ expression`` () =
+        // Nested anonymous record with non-alphabetical field order
+        let q = <@ fun (x: int) -> {| Outer = {| B = x; A = x + 1 |} |} @>
+        
+        let linqExpr = LeafExpressionConverter.QuotationToExpression q
+        let exprStr = linqExpr.ToString()
+        
+        Assert.DoesNotContain(".Invoke(", exprStr)
+
+    [<Fact>]
+    let ``Both anonymous record field orders produce equivalent results`` () =
+        // Alphabetical order
+        let qAlpha = <@ fun (x: int) -> {| A = x + 1; B = x |} @>
+        // Non-alphabetical order
+        let qNonAlpha = <@ fun (x: int) -> {| B = x; A = x + 1 |} @>
+        
+        let linqAlpha = LeafExpressionConverter.QuotationToExpression qAlpha
+        let linqNonAlpha = LeafExpressionConverter.QuotationToExpression qNonAlpha
+        
+        let exprAlpha = linqAlpha.ToString()
+        let exprNonAlpha = linqNonAlpha.ToString()
+        
+        // Neither should contain Invoke
+        Assert.DoesNotContain(".Invoke(", exprAlpha)
+        Assert.DoesNotContain(".Invoke(", exprNonAlpha)
+
+    // Tests for issue #16918 - Array indexing generates GetArray instead of proper array index expression
+    // When array indexing is used in LINQ expressions, it should generate proper array index
+    // expressions that LINQ providers can translate, not GetArray method calls.
+    type ArrayTestUnfold = { c: string }
+    type ArrayTestDoc = { p: string; u: ArrayTestUnfold[] }
+
+    [<Fact>]
+    let ``Array indexing produces ArrayIndex expression not GetArray - issue 16918`` () =
+        // Array access like x.u.[0] should NOT produce GetArray call
+        let q = <@ fun (x: ArrayTestDoc) -> x.u.[0] @>
+        
+        let linqExpr = LeafExpressionConverter.QuotationToExpression q
+        let exprStr = linqExpr.ToString()
+        
+        // Should NOT contain GetArray
+        Assert.DoesNotContain("GetArray", exprStr)
+        // Should produce x.u[0] style array index expression
+        Assert.Contains("[0]", exprStr)
+
+    [<Fact>]
+    let ``Nested array member access produces clean LINQ expression - issue 16918`` () =
+        // x.u[0].c should generate proper expression tree without GetArray
+        let q = <@ fun (x: ArrayTestDoc) -> x.u.[0].c @>
+        
+        let linqExpr = LeafExpressionConverter.QuotationToExpression q
+        let exprStr = linqExpr.ToString()
+        
+        // Should NOT contain GetArray
+        Assert.DoesNotContain("GetArray", exprStr)
+        // Should contain array index
+        Assert.Contains("[0]", exprStr)
+        // Should contain property access
+        Assert.Contains(".c", exprStr)
+
+    [<Fact>]
+    let ``Array indexing with variable index produces clean expression`` () =
+        // Array access with variable index
+        let q = <@ fun (x: int[]) (i: int) -> x.[i] @>
+        
+        let linqExpr = LeafExpressionConverter.QuotationToExpression q
+        let exprStr = linqExpr.ToString()
+        
+        // Should NOT contain GetArray
+        Assert.DoesNotContain("GetArray", exprStr)
