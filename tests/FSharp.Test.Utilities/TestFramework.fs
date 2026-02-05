@@ -523,8 +523,6 @@ module Command =
 
 #if !NETCOREAPP
         let ensureConsole () =
-            if Scripting.ConsoleHost.GetConsoleWindow() = IntPtr.Zero then
-                Scripting.ConsoleHost.AllocConsole() |> ignore
             // Set UTF-8 encoding for console input/output to ensure FSI receives UTF-8 data.
             // This is needed because on net472 ProcessStartInfo.StandardInputEncoding is unavailable,
             // so the spawned process inherits the console's encoding settings.
