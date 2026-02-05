@@ -125,7 +125,7 @@ jobs:
         dotnet msbuild -version
         Write-Host ""
         Write-Host "F# Compiler artifacts available:"
-        $productTfm = (Get-Content "$(Build.SourcesDirectory)/eng/productTfm.txt").Trim()
+        $productTfm = (dotnet msbuild "$(Pipeline.Workspace)/Props/TargetFrameworks.props" --getProperty:FSharpNetCoreProductDefaultTargetFramework).Trim()
         Get-ChildItem "$(Pipeline.Workspace)/FSharpCompiler/bin/fsc/Release/$productTfm" -Name -ErrorAction SilentlyContinue
         Write-Host ""
         Write-Host "F# Core available:"

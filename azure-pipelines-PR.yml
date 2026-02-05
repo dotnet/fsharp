@@ -722,11 +722,11 @@ stages:
             condition: succeeded()
 
           - pwsh: |
-              # Stage UseLocalCompiler props and productTfm.txt together
+              # Stage UseLocalCompiler props and TargetFrameworks.props together
               $stagingDir = "$(Build.SourcesDirectory)/UseLocalCompilerPropsStaging"
               New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
               Copy-Item "$(Build.SourcesDirectory)/UseLocalCompiler.Directory.Build.props" -Destination $stagingDir
-              Copy-Item "$(Build.SourcesDirectory)/eng/productTfm.txt" -Destination $stagingDir
+              Copy-Item "$(Build.SourcesDirectory)/eng/TargetFrameworks.props" -Destination $stagingDir
               Write-Host "Staged files for UseLocalCompilerProps artifact:"
               Get-ChildItem $stagingDir -Name
             displayName: Stage UseLocalCompiler props files
