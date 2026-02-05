@@ -1,17 +1,16 @@
 <Project>
+  <!-- Import target frameworks from single source of truth.
+       For regression tests: TargetFrameworks.props is co-located with this props file.
+       For local usage: use eng/TargetFrameworks.props relative to this file's directory. -->
+  <Import Project="$(MSBuildThisFileDirectory)TargetFrameworks.props" Condition="Exists('$(MSBuildThisFileDirectory)TargetFrameworks.props')" />
+  <Import Project="$(MSBuildThisFileDirectory)eng/TargetFrameworks.props" Condition="!Exists('$(MSBuildThisFileDirectory)TargetFrameworks.props')" />
+
   <PropertyGroup>
     <LoadLocalFSharpBuild Condition="'$(LoadLocalFSharpBuild)' == ''">False</LoadLocalFSharpBuild>
     
     <LocalFSharpCompilerConfiguration Condition="'$(LocalFSharpCompilerConfiguration)' == ''">Release</LocalFSharpCompilerConfiguration>
 
     <LocalFSharpCompilerPath Condition=" '$(LocalFSharpCompilerPath)' == '' ">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
-
-    <!-- Define FSharpNetCoreProductDefaultTargetFramework by reading from productTfm.txt.
-         For regression tests: productTfm.txt is co-located with this props file.
-         For local usage: use eng/productTfm.txt relative to this file's directory. -->
-    <_UseLocalCompilerProductTfmPath Condition="Exists('$(MSBuildThisFileDirectory)productTfm.txt')">$(MSBuildThisFileDirectory)productTfm.txt</_UseLocalCompilerProductTfmPath>
-    <_UseLocalCompilerProductTfmPath Condition="'$(_UseLocalCompilerProductTfmPath)' == ''">$(MSBuildThisFileDirectory)eng/productTfm.txt</_UseLocalCompilerProductTfmPath>
-    <FSharpNetCoreProductDefaultTargetFramework Condition="'$(FSharpNetCoreProductDefaultTargetFramework)' == ''">$([System.IO.File]::ReadAllText('$(_UseLocalCompilerProductTfmPath)').Trim())</FSharpNetCoreProductDefaultTargetFramework>
 
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>

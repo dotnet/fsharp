@@ -2,11 +2,8 @@
 
   <Import Project="$(FSharpRepositoryPath)\eng\Versions.props" />
   
-  <!-- Read TFM from centralized source -->
-  <PropertyGroup>
-    <FSharpNetCoreProductDefaultTargetFramework>$([System.IO.File]::ReadAllText('$(FSharpRepositoryPath)\eng\productTfm.txt').Trim())</FSharpNetCoreProductDefaultTargetFramework>
-    <FSharpNetCoreProductMajorVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(FSharpNetCoreProductDefaultTargetFramework)', '^net(\d+)\.0$', '$1'))</FSharpNetCoreProductMajorVersion>
-  </PropertyGroup>
+  <!-- Import target frameworks from single source of truth -->
+  <Import Project="$(FSharpRepositoryPath)\eng\TargetFrameworks.props" />
 
   <PropertyGroup>
     <TargetFramework Condition="'$(TargetFramework)' == ''">$(FSharpNetCoreProductDefaultTargetFramework)</TargetFramework>

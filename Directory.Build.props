@@ -1,15 +1,14 @@
 <Project>
 
+  <!-- Import target frameworks from single source of truth -->
+  <Import Project="$(MSBuildThisFileDirectory)eng/TargetFrameworks.props" />
+
   <PropertyGroup>
     <PackageProjectUrl>https://github.com/dotnet/fsharp</PackageProjectUrl>
     <RepositoryUrl>https://github.com/dotnet/fsharp</RepositoryUrl>
     <LangVersion Condition="'$(FSharpLangVersion)' != ''">$(FSharpLangVersion)</LangVersion>
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
-    <!-- Read product TFM from single source of truth file -->
-    <FSharpNetCoreProductDefaultTargetFramework>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)eng/productTfm.txt').Trim())</FSharpNetCoreProductDefaultTargetFramework>
-    <!-- Derive major version by stripping 'net' prefix and '.0' suffix (e.g., net10.0 -> 10) -->
-    <FSharpNetCoreProductMajorVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(FSharpNetCoreProductDefaultTargetFramework)', '^net(\d+)\.0$', '$1'))</FSharpNetCoreProductMajorVersion>
     <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildSourceOnly)</IgnoreMibc>
     <!-- When building the .NET product, there's no need to publish Windows PDBs. Any conversion to Windows PDBs will be done during staging, if necessary. -->
     <PublishWindowsPdb Condition="'$(DotNetBuild)' == 'true'">false</PublishWindowsPdb>

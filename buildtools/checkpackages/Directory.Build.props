@@ -1,7 +1,8 @@
 <Project>
+    <!-- Import target frameworks from single source of truth -->
+    <Import Project="$(MSBuildThisFileDirectory)..\..\eng\TargetFrameworks.props" />
+
     <PropertyGroup>
-        <!-- Read product TFM from single source of truth file -->
-        <FSharpNetCoreProductDefaultTargetFramework>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\eng\productTfm.txt').Trim())</FSharpNetCoreProductDefaultTargetFramework>
         <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <CachePath>$(MSBuildProjectDirectory)\..\..\artifacts\tmp\$([System.Guid]::NewGuid())</CachePath>
         <BaseIntermediateOutputPath>$(CachePath)\obj\</BaseIntermediateOutputPath>
