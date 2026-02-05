@@ -2579,14 +2579,18 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
         cgbuf.DoPops pops
         cgbuf.DoPushes pushes
         // Track localloc for tail call suppression (issue #13447)
-        if i = I_localloc then hasStackAllocatedLocals <- true
+        if i = I_localloc then
+            hasStackAllocatedLocals <- true
+
         codebuf.Add i
 
     member cgbuf.EmitInstrs(pops, pushes, is) =
         cgbuf.DoPops pops
         cgbuf.DoPushes pushes
         // Track localloc for tail call suppression (issue #13447)
-        if is |> List.exists (fun i -> i = I_localloc) then hasStackAllocatedLocals <- true
+        if is |> List.exists (fun i -> i = I_localloc) then
+            hasStackAllocatedLocals <- true
+
         is |> List.iter codebuf.Add
 
     member private _.EnsureNopBetweenDebugPoints() =
@@ -2958,74 +2962,6 @@ let ComputeDebugPointForBinding g bind =
 //-------------------------------------------------------------------------
 // Generate expressions
 //-------------------------------------------------------------------------
-
-/// Try to recognize pattern: let v = ctorCall in (fieldSets on v; v)
-/// This pattern is generated for object construction with named field initialization like Test(X = 1)
-/// Returns Some (boundVar, rhsExpr, fieldSets) if the pattern matches
-let TryRecognizeCtorWithFieldSets (g: TcGlobals) expr =
-    match expr with
-    | Expr.Let(TBind(boundVar, rhsExpr, _), body, _, _) when boundVar.IsCompilerGenerated ->
-        // Check if RHS is a constructor call
-        // Could be: TOp.ILCall with isCtor=true, or Expr.App with Expr.Val that IsConstructor
-        let isCtorCall =
-            match stripExpr rhsExpr with
-            | Expr.Op(TOp.ILCall(_, _, _, isCtor, _, _, _, _, _, _, _), _, _, _) -> isCtor
-            | Expr.App(Expr.Val(vref, _, _), _, _, _, _) -> vref.IsConstructor
-            | _ -> false
-        
-        if not isCtorCall then None
-        else
-            // Collect field sets and check if final expression is just the bound variable
-            // The body has structure: Expr.Sequential(Expr.Sequential(unit, fieldSet1), Expr.Val(v))
-            let boundVarRef = mkLocalValRef boundVar
-            
-            // Helper to check if an expression is just unit
-            let isUnitExpr e =
-                match stripExpr e with
-                | Expr.Const(Const.Unit, _, _) -> true
-                | _ -> false
-            
-            // Helper to check if expression is a field set on our bound variable
-            let tryExtractFieldSet e =
-                match stripExpr e with
-                | Expr.Op(TOp.ValFieldSet fref, tyargs, [Expr.Val(vref, _, _); valueExpr], m) 
-                    when valRefEq g vref boundVarRef ->
-                    Some (fref, tyargs, valueExpr, m)
-                | _ -> None
-            
-            // Flatten nested sequentials and collect field sets
-            // Use an accumulator with List.rev to avoid O(n²) list concatenation
-            let rec flattenAcc expr acc =
-                match stripExpr expr with
-                | Expr.Sequential(e1, e2, NormalSeq, _) ->
-                    // Process right first, then left, to get correct order after rev
-                    flattenAcc e1 (flattenAcc e2 acc)
-                | e -> e :: acc
-            
-            let flattened = flattenAcc body []
-            
-            // All but the last should be unit or field sets on our variable
-            // The last should be Expr.Val of our variable
-            let rec processExprs acc = function
-                | [] -> None
-                | [last] ->
-                    match stripExpr last with
-                    | Expr.Val(vref, _, _) when valRefEq g vref boundVarRef ->
-                        Some (List.rev acc)
-                    | _ -> None
-                | e :: rest ->
-                    if isUnitExpr e then
-                        processExprs acc rest
-                    else
-                        match tryExtractFieldSet e with
-                        | Some fieldSet -> processExprs (fieldSet :: acc) rest
-                        | None -> None
-            
-            match processExprs [] flattened with
-            | Some fieldSets when not (List.isEmpty fieldSets) ->
-                Some (boundVar, rhsExpr, fieldSets)
-            | _ -> None
-    | _ -> None
 
 let rec GenExpr cenv cgbuf eenv (expr: Expr) sequel =
     cenv.stackGuard.Guard
@@ -3610,36 +3546,15 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
         if preSteps && GenExprPreSteps cenv cgbuf eenv expr sequel then
             contf Fake
         else
-            // Try to optimize: let v = ctorCall in (fieldSets on v; v)
-            // Use 'dup' instead of 'stloc/ldloc' pattern for better IL
-            match TryRecognizeCtorWithFieldSets cenv.g expr with
-            | Some (_boundVar, ctorExpr, fieldSets) ->
-                // Generate the constructor call - leaves object on stack
-                GenExpr cenv cgbuf eenv ctorExpr Continue
-                
-                // For each field set, dup the object reference first (we need one copy for the return)
-                let ilObjTy = GenType cenv expr.Range eenv.tyenv (tyOfExpr cenv.g ctorExpr)
-                fieldSets |> List.iteri (fun _i (fref, tyargs, valueExpr, m) ->
-                    // Dup the object - we need one copy for stfld and one for return/next field
-                    CG.EmitInstr cgbuf (pop 0) (Push [ ilObjTy ]) AI_dup
-                    // Now generate: <obj on stack>; value; stfld
-                    GenExpr cenv cgbuf eenv valueExpr Continue
-                    GenFieldStore false cenv cgbuf eenv (fref, tyargs, m) discard)
-                
-                // Object reference is still on the stack from the last dup, apply sequel
-                GenSequel cenv eenv.cloc cgbuf sequel
-                contf Fake
-            | None ->
-                // Default case: use local variable
-                // This case implemented here to get a guaranteed tailcall
-                // Make sure we generate the debug point outside the scope of the variable
-                let startMark, endMark as scopeMarks = StartDelayedLocalScope "let" cgbuf
-                let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
-                GenDebugPointForBind cenv cgbuf bind
-                GenBindingAfterDebugPoint cenv cgbuf eenv bind false (Some startMark)
+            // This case implemented here to get a guaranteed tailcall
+            // Make sure we generate the debug point outside the scope of the variable
+            let startMark, endMark as scopeMarks = StartDelayedLocalScope "let" cgbuf
+            let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
+            GenDebugPointForBind cenv cgbuf bind
+            GenBindingAfterDebugPoint cenv cgbuf eenv bind false (Some startMark)
 
-                // Generate the body
-                GenLinearExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark)) true contf
+            // Generate the body
+            GenLinearExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark)) true contf
 
     | Expr.Match(spBind, _exprm, tree, targets, m, ty) ->
         // Process the debug point and see if there's a replacement technique to process this expression
@@ -4922,7 +4837,10 @@ and EmitCastOrWrapNonExceptionThrow (cenv: cenv) (cgbuf: CodeGenBuffer) =
     // Pop the null result, load the object, wrap in RuntimeWrappedException
     CG.EmitInstr cgbuf (pop 1) Push0 AI_pop
     CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Object ]) (I_ldloc tempLocal)
-    let rweCtorSpec = mkILCtorMethSpecForTy(iltyp_RuntimeWrappedException, [ g.ilg.typ_Object ])
+
+    let rweCtorSpec =
+        mkILCtorMethSpecForTy (iltyp_RuntimeWrappedException, [ g.ilg.typ_Object ])
+
     CG.EmitInstr cgbuf (pop 1) (Push [ iltyp_RuntimeWrappedException ]) (I_newobj(rweCtorSpec, None))
 
     // Done - stack now has Exception (or RuntimeWrappedException which extends Exception)
@@ -6058,10 +5976,12 @@ and instSlotParam inst (TSlotParam(nm, ty, inFlag, fl2, fl3, attrs)) =
 and containsNativePtrWithTypar (g: TcGlobals) (typars: Typar list) ty =
     let rec check ty =
         let ty = stripTyEqns g ty
+
         match ty with
         | TType_app(tcref, tinst, _) when tyconRefEq g g.nativeptr_tcr tcref ->
             // Check if any type in tinst is a type parameter from our set
-            tinst |> List.exists (fun t ->
+            tinst
+            |> List.exists (fun t ->
                 match stripTyEqns g t with
                 | TType_var(tp, _) -> typars |> List.exists (fun tp2 -> tp.Stamp = tp2.Stamp)
                 | _ -> false)
@@ -6073,6 +5993,7 @@ and containsNativePtrWithTypar (g: TcGlobals) (typars: Typar list) ty =
         | TType_var _ -> false
         | TType_measure _ -> false
         | TType_ucase _ -> false
+
     check ty
 
 and GenActualSlotsig
@@ -6097,12 +6018,14 @@ and GenActualSlotsig
     // to match the formal slot signature (which also doesn't convert due to free type vars).
     // See https://github.com/dotnet/fsharp/issues/14508
     let interfaceTypeArgsAreConcrete =
-        not ctps.IsEmpty && (freeInTypes CollectTypars interfaceTypeArgs).FreeTypars.IsEmpty
+        not ctps.IsEmpty
+        && (freeInTypes CollectTypars interfaceTypeArgs).FreeTypars.IsEmpty
 
     let slotHasNativePtrWithCtps =
-        interfaceTypeArgsAreConcrete &&
-        (ilSlotParams |> List.exists (fun (TSlotParam(_, ty, _, _, _, _)) -> containsNativePtrWithTypar g ctps ty) ||
-         ilSlotRetTy |> Option.exists (containsNativePtrWithTypar g ctps))
+        interfaceTypeArgsAreConcrete
+        && (ilSlotParams
+            |> List.exists (fun (TSlotParam(_, ty, _, _, _, _)) -> containsNativePtrWithTypar g ctps ty)
+            || ilSlotRetTy |> Option.exists (containsNativePtrWithTypar g ctps))
 
     // When the slot has nativeptr with type params that are instantiated to concrete types,
     // use an environment with those type params so that nativeptr conversion is skipped
@@ -8593,7 +8516,8 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
         Zset.addList (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
 
     // Reorder for fixup computation
-    let reorderedBindsPossiblyRequiringFixup = reorderBindingsLambdasFirst bindsPossiblyRequiringFixup
+    let reorderedBindsPossiblyRequiringFixup =
+        reorderBindingsLambdasFirst bindsPossiblyRequiringFixup
 
     let _ =
         (recursiveVars, reorderedBindsPossiblyRequiringFixup)
@@ -8642,6 +8566,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
         ||> List.fold (fun forwardReferenceSet (binds: Binding list) ->
             // Reorder so lambdas are generated first
             let binds = reorderBindingsLambdasFirst binds
+
             match dict, cenv.g.realsig, binds with
             | _, false, _
             | None, _, _
@@ -8678,12 +8603,12 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
 
 and GenLetRec cenv cgbuf eenv (binds, body, m) sequel =
     let _, endMark as scopeMarks = StartLocalScope "letrec" cgbuf
-    
+
     // Reorder bindings: lambdas first, then non-lambdas.
     // This ensures that when a non-lambda binding captures a lambda binding,
     // the lambda's storage is allocated and initialized before capture.
     let reorderedBinds = reorderBindingsLambdasFirst binds
-    
+
     let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv reorderedBinds
     GenLetRecBindings cenv cgbuf eenv (reorderedBinds, m) None
     GenExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark))
@@ -9710,6 +9635,7 @@ and GenMethodForBinding
         match v.ImplementedSlotSigs with
         | slotsig :: _ ->
             let slotParams = slotsig.FormalParams |> List.concat
+
             slotParams
             |> List.map (fun (TSlotParam(_, _, inFlag, outFlag, _, _)) -> (inFlag, outFlag))
             |> Some
