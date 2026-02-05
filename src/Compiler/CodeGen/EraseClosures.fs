@@ -152,7 +152,11 @@ let newIlxPubCloEnv (ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFi
 
 let mkILTyFuncTy cenv = cenv.mkILTyFuncTy
 
-// Helper to convert void* (voidptr) to IntPtr (nativeint) since void* cannot be a generic type argument in CLI
+// Helper to convert void* (voidptr) to IntPtr (nativeint) for FSharpFunc type arguments.
+// While CLI allows void* in many generic contexts (e.g., List<void*>, Dictionary<void*, T>),
+// FSharpFunc generic instantiation with void* causes TypeLoadException at runtime.
+// This is the ONLY location where void*->IntPtr conversion is needed because all FSharpFunc
+// type construction flows through EraseClosures (mkILFuncTy, typ_Func, mkMethSpecForMultiApp).
 // See https://github.com/dotnet/fsharp/issues/11132
 let private fixVoidPtrForGenericArg (ilg: ILGlobals) ty =
     match ty with
@@ -166,8 +170,7 @@ let private fixILParamForFunc (ilg: ILGlobals) (p: ILParameter) =
     | _ -> p
 
 // Fix parameters list for FSharpFunc methods
-let private fixILParamsForFunc (ilg: ILGlobals) (ps: ILParameter list) =
-    ps |> List.map (fixILParamForFunc ilg)
+let private fixILParamsForFunc (ilg: ILGlobals) (ps: ILParameter list) = ps |> List.map (fixILParamForFunc ilg)
 
 let mkILFuncTy cenv dty rty =
     let dty = fixVoidPtrForGenericArg cenv.ilg dty
@@ -422,12 +425,15 @@ let mkILLocalForFreeVar (p: IlxClosureFreeVar) = mkILLocal p.fvType None
 /// mutual recursion scenarios (see issue #17692).
 let mkUniqueFreeVarName (baseName: string) (existingFields: IlxClosureFreeVar[]) =
     let existingNames = existingFields |> Array.map (fun fv -> fv.fvName) |> Set.ofArray
+
     let rec findUnique n =
         let candidate = if n = 0 then baseName else baseName + string n
+
         if Set.contains candidate existingNames then
             findUnique (n + 1)
         else
             candidate
+
     findUnique 0
 
 let mkILCloFldSpecs _cenv flds =
@@ -735,7 +741,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 // Fix void* types to IntPtr for FSharpFunc compatibility (Issue #11132)
                 let fixedNowParams = fixILParamsForFunc cenv.ilg nowParams
                 let fixedNowReturnTy = fixVoidPtrForGenericArg cenv.ilg nowReturnTy
-                let nowEnvParentClass = typ_Func cenv (typesOfILParams fixedNowParams) fixedNowReturnTy
+
+                let nowEnvParentClass =
+                    typ_Func cenv (typesOfILParams fixedNowParams) fixedNowReturnTy
 
                 let cloTypeDef =
                     let convil = convILMethodBody (Some nowCloSpec, None) clo.cloCode.Value
