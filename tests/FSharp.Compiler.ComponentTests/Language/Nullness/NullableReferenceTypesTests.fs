@@ -1970,3 +1970,109 @@ let repro () : Result<SomeRecordWrapper, string> =
     |> withOptions ["--nowarn:64"]  // Suppress "This construct causes code to be less generic" warning
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+// Test case from QUALITY_FINDINGS.md - verify tuple null elimination with restricting non-nullable pattern
+// When a non-nullable element has a non-wildcard pattern that restricts the match,
+// the behavior should correctly handle null elimination.
+[<Fact>]
+let ``Tuple null elimination with restricting non-nullable int pattern`` () =
+    // This test verifies the behavior of tuple null elimination when a non-nullable element
+    // has a non-wildcard pattern. In this case:
+    // - x is string | null
+    // - y is int (non-nullable)
+    // - First branch: (null, _) handles the null case for x
+    // - Second branch: (s, 5) restricts y to 5
+    // - Third branch: (s, _) is the fallthrough
+    //
+    // The current logic counts "nullableNonWildCount" - positions that are nullable AND non-wild.
+    // Position 0 (x): nullable=true, wild=false (it's 's'), handlesnull=false -> counted
+    // Position 1 (y): nullable=false (int is not nullable), so doesn't count
+    // nullableNonWildCount = 1, so null CAN be eliminated from position 0
+    //
+    // This is CORRECT behavior because:
+    // - The first branch (null, _) exhaustively handles x=null
+    // - When we reach (s, 5), x cannot be null (it was already handled)
+    // - The int pattern 5 restricting y doesn't affect the nullness of x
+    FSharp """module MyLibrary
+
+let test (s: string) = ()
+
+let main () =
+    let x: string | null = null
+    let y: int = 5
+    match x, y with
+    | null, _ -> ()
+    | s, 5 -> test s  // s should be string, not string|null - null was handled above
+    | s, _ -> test s  // s should be string here too
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Edge case: multiple branches handling null before binding
+// After both null-handling branches, subsequent branches should see non-null type
+// Mirrors the structure of Issue 19042 but with nullable in FIRST position
+[<Fact>]
+let ``Tuple null elimination with nullable first position`` () =
+    FSharp """module MyLibrary
+
+let test (s: string) = ()
+
+let main () =
+    let x: string | null = null
+    let y: int = 5
+    match x, y with
+    | null, _ -> ()  // handles x=null for all y
+    | s, _ -> test s  // s should be string here - null was handled above
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Edge case: when first branch restricts with non-nullable int pattern, null is still eliminated
+// This documents current behavior where null elimination happens based on nullableNonWildCount=1
+// even when a non-nullable position has a restricting pattern
+[<Fact>]
+let ``Tuple null elimination with restricting int pattern causes warning on subsequent null pattern`` () =
+    FSharp """module MyLibrary
+
+let test (s: string) = ()
+
+let main () =
+    let x: string | null = null
+    let y: int = 5
+    match x, y with
+    | null, 0 -> ()  // handles x=null for y=0 - eliminates null from x even though y=0 restricts!
+    | null, _ -> ()  // This null pattern is now on non-null type - generates warning
+    | s, _ -> test s  // s is now string (non-null)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        // The second null pattern is matching on a non-null type after null was eliminated by first clause
+        Error 3261, Line 10, Col 7, Line 10, Col 11, "Nullness warning: The type 'System.String' does not support 'null'."
+    ]
+
+// Edge case: TWO nullable elements where only one handles null
+// This tests the nonWildCount > 1 case
+[<Fact>]
+let ``Tuple null elimination blocked when multiple nullable elements are non-wild`` () =
+    FSharp """module MyLibrary
+
+let test (s: string) (t: string) = ()
+
+let main () =
+    let x: string | null = null
+    let y: string | null = null
+    match x, y with
+    | null, _ -> ()       // handles x=null, nonWildCount=1, so x's null is eliminated
+    | s, t -> test s t    // s is now non-null, but t is still nullable!
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        // t should produce a warning because it's still nullable (only x had null eliminated)
+        Error 3261, Line 10, Col 22, Line 10, Col 23, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+    ]
