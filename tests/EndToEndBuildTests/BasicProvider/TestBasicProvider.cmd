@@ -10,10 +10,8 @@ setlocal
 set __scriptpath=%~dp0
 set configuration=Debug
 
-rem Read TFM from centralized source
-set /p PRODUCT_TFM=<"%__scriptpath%..\..\..\eng\productTfm.txt"
-rem Trim whitespace
-for /f "tokens=* delims= " %%a in ("%PRODUCT_TFM%") do set PRODUCT_TFM=%%a
+rem Read TFM from centralized source using MSBuild
+for /f "usebackq delims=" %%a in (`dotnet msbuild "%__scriptpath%..\..\..\eng\TargetFrameworks.props" --getProperty:FSharpNetCoreProductDefaultTargetFramework`) do set PRODUCT_TFM=%%a
 
 :parseargs
 if "%1" == "" goto argsdone
