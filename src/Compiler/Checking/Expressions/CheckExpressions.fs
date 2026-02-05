@@ -8631,8 +8631,19 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                            || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
                     | _ -> env
 
-                // For pipe operator expressions like "bar |> foo", if a nullness error occurs,
-                // we want to report it on "bar" (the piped value) rather than "foo" (the function).
+                // WORKAROUND for issue #18013: Pipe operator error location
+                // 
+                // When using "bar |> foo" with a nullable bar, the constraint solver reports the error 
+                // at the location of "foo" (the function being applied) rather than "bar" (the nullable value).
+                // This is because TcExprFlex2 is called with synArg (the function), not the piped value.
+                //
+                // This workaround intercepts nullness diagnostics and rewrites their source ranges to 
+                // point at the piped argument. A proper fix would thread range context through the 
+                // constraint solver, but that's a larger refactoring.
+                //
+                // NOTE: If new ConstraintSolverNullnessWarning* exception types are added, they must be
+                // added to adjustNullnessWarningRange below or they won't get proper range adjustment.
+                //
                 // Detect if leftExpr is a partial application of the pipe operator.
                 let pipeArgRangeOpt =
                     match leftExpr with

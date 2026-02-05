@@ -551,23 +551,13 @@ type CalledMeth<'T>
     =
     let g = infoReader.g
     
-    // Helper to check if a type is a measureable type (like int<kg>) whose underlying type is a value type.
-    // For such types, ToString() should return string, not string|null.
-    // See https://github.com/dotnet/fsharp/issues/17539
-    let isMeasureableValueType ty =
-        match stripTyEqns g ty with
-        | TType_app(tcref, _, _) when tcref.IsMeasureableReprTycon ->
-            let erasedTy = stripTyEqnsAndMeasureEqns g ty
-            isStructTy g erasedTy
-        | _ -> false
-
     let minfo =
         match callerObjArgTys,minfo with
         | objTy :: [], ILMeth _ when             
             g.checkNullness 
             && minfo.DisplayName = "ToString"
             && minfo.IsNullary
-            && (isAnonRecdTy g objTy || isRecdTy g objTy || isUnionTy g objTy || isMeasureableValueType objTy)
+            && (isAnonRecdTy g objTy || isRecdTy g objTy || isUnionTy g objTy || isMeasureableValueType g objTy)
             && (  typeEquiv g g.obj_ty_noNulls minfo.ApparentEnclosingAppType
                || typeEquiv g g.system_Value_ty minfo.ApparentEnclosingAppType)  -> 
                 MethInfoWithModifiedReturnType(minfo, g.string_ty)

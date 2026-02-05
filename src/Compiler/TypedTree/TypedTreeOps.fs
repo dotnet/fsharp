@@ -1162,11 +1162,16 @@ let typarConstraintsAEquiv g aenv c1 c2 = typarConstraintsAEquivAux EraseNone g 
 
 let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
 
-/// Check if declaredTypars are compatible with reqTypars for a type extension.
-/// Allows declaredTypars to have NotSupportsNull constraints even if reqTypars don't have them.
-/// This supports the scenario where a type extension declares `'T : not null` on a type
-/// whose original definition allows nullable type arguments (e.g., ILookup<TKey, TElement>).
-let typarsAEquivWithAddedNotNullConstraintsAllowed g (aenv: TypeEquivEnv) (reqTypars: Typars) (declaredTypars: Typars) =
+/// Constraints that may be present in an implementation/extension but not required by a signature/base type.
+/// Used in type extension checks and signature conformance.
+let isConstraintAllowedAsExtra cx =
+    match cx with
+    | TyparConstraint.NotSupportsNull _ -> true
+    | _ -> false
+
+/// Check type parameter equivalence with optional extra constraint allowance.
+/// allowExtraInDecl: predicate for constraints allowed in declaredTypars but not in reqTypars
+let typarsAEquivWithFilter g (aenv: TypeEquivEnv) (reqTypars: Typars) (declaredTypars: Typars) allowExtraInDecl =
     List.length reqTypars = List.length declaredTypars &&
     let aenv = aenv.BindEquivTypars reqTypars declaredTypars
     (reqTypars, declaredTypars) ||> List.forall2 (fun reqTp declTp ->
@@ -1175,11 +1180,16 @@ let typarsAEquivWithAddedNotNullConstraintsAllowed g (aenv: TypeEquivEnv) (reqTy
         reqTp.Constraints |> List.forall (fun reqCx ->
             declTp.Constraints |> List.exists (fun declCx -> typarConstraintsAEquivAux EraseNone g aenv reqCx declCx)) &&
         // All constraints in declaredTypar must be present in reqTypar,
-        // EXCEPT for NotSupportsNull which is allowed to be extra in declaredTypar
+        // EXCEPT those allowed by the filter
         declTp.Constraints |> List.forall (fun declCx ->
-            match declCx with
-            | TyparConstraint.NotSupportsNull _ -> true // Always allow NotSupportsNull in declared
-            | _ -> reqTp.Constraints |> List.exists (fun reqCx -> typarConstraintsAEquivAux EraseNone g aenv reqCx declCx)))
+            allowExtraInDecl declCx || reqTp.Constraints |> List.exists (fun reqCx -> typarConstraintsAEquivAux EraseNone g aenv reqCx declCx)))
+
+/// Check if declaredTypars are compatible with reqTypars for a type extension.
+/// Allows declaredTypars to have NotSupportsNull constraints even if reqTypars don't have them.
+/// This supports the scenario where a type extension declares `'T : not null` on a type
+/// whose original definition allows nullable type arguments (e.g., ILookup<TKey, TElement>).
+let typarsAEquivWithAddedNotNullConstraintsAllowed g aenv reqTypars declaredTypars =
+    typarsAEquivWithFilter g aenv reqTypars declaredTypars isConstraintAllowedAsExtra
 
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
@@ -2051,6 +2061,16 @@ let isStructTy g ty =
         isStructTyconRef tcref
     | _ -> 
         isStructAnonRecdTy g ty || isStructTupleTy g ty
+
+/// Check if a type is a measureable type (like int<kg>) whose underlying type is a value type.
+/// For such types, methods like ToString() should return string, not string|null.
+/// See https://github.com/dotnet/fsharp/issues/17539
+let isMeasureableValueType g ty =
+    match stripTyEqns g ty with
+    | TType_app(tcref, _, _) when tcref.IsMeasureableReprTycon ->
+        let erasedTy = stripTyEqnsAndMeasureEqns g ty
+        isStructTy g erasedTy
+    | _ -> false
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&

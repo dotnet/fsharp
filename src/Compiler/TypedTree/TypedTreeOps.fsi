@@ -941,6 +941,12 @@ val typarConstraintsAEquiv: TcGlobals -> TypeEquivEnv -> TyparConstraint -> Typa
 
 val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 
+/// Constraints that may be present in an implementation/extension but not required by a signature/base type.
+val isConstraintAllowedAsExtra: TyparConstraint -> bool
+
+/// Check type parameter equivalence with optional extra constraint allowance.
+val typarsAEquivWithFilter: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> (TyparConstraint -> bool) -> bool
+
 /// Check if declaredTypars are compatible with reqTypars for a type extension.
 /// Allows declaredTypars to have NotSupportsNull constraints even if reqTypars don't have them.
 val typarsAEquivWithAddedNotNullConstraintsAllowed: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
@@ -1772,6 +1778,9 @@ val isStructTyconRef: TyconRef -> bool
 
 /// Determine if a type is a struct type
 val isStructTy: TcGlobals -> TType -> bool
+
+/// Check if a type is a measureable type (like int<kg>) whose underlying type is a value type.
+val isMeasureableValueType: TcGlobals -> TType -> bool
 
 val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
 
