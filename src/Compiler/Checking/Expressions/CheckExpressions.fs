@@ -10822,8 +10822,9 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
             | TPat_conjs(patterns,_) -> patterns |> List.forall handlesNull
             | _ -> false
 
-        // Check if a type is a nullable reference type
-        let isNullableRefType ty =
+        // Check if a type is a non-struct application type (class, interface, etc.)
+        // Note: This checks type structure, not nullness. A non-struct app type CAN be nullable.
+        let isNonStructAppTy ty =
             isAppTy cenv.g ty && not (isStructTy cenv.g ty)
 
         let rec eliminateNull (ty:TType) (p:Pattern)  =
@@ -10842,7 +10843,7 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
                     // Pre-compute which positions are nullable and non-wild
                     let positionInfo = 
                         List.map2 (fun pat ty -> 
-                            let nullable = isNullableRefType ty
+                            let nullable = isNonStructAppTy ty
                             let wild = isWild pat
                             let handlesnull = handlesNull pat
                             (nullable, wild, handlesnull)) pats tys
@@ -10853,14 +10854,14 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
                     
                     // For each position, check if it can have null eliminated
                     let newTys = 
-                        List.map2 (fun (nullable, wild, handlesnull) (pat, ty) ->
+                        List.map3 (fun (nullable, wild, handlesnull) pat ty ->
                             // Can eliminate if:
                             // - position handles null AND
                             // - it's the only nullable non-wild position (others are wild or non-nullable)
                             if handlesnull && nullable && not wild && nullableNonWildCount = 1 then
                                 eliminateNull ty pat
                             else
-                                ty) positionInfo (List.zip pats tys)
+                                ty) positionInfo pats tys
                     TType_tuple(ti, newTys)
                 | _ -> ty
             | _ -> ty

@@ -698,49 +698,19 @@ let ``ToString override warns if it returns nullable`` (myTypeDef) =
 
 // Regression test for https://github.com/dotnet/fsharp/issues/17539
 // UoM types should use ToString from the underlying type (e.g. Int32.ToString) not ValueType.ToString
-[<Fact>]
-let ``ToString on int with UoM is not nullable`` () =
-    FSharp """module MyLibrary
+[<Theory>]
+[<InlineData("int", "processInt")>]
+[<InlineData("float", "processFloat")>]
+[<InlineData("decimal", "processDecimal")>]
+let ``ToString on value type with UoM is not nullable`` (valueType: string, funcName: string) =
+    FSharp $"""module MyLibrary
 
 [<Measure>]
 type mykg
 
 let onlyWantNotNullString(x:string) = ()
 
-let processInt (x:int<mykg>) =
-    onlyWantNotNullString(x.ToString())
-"""
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldSucceed
-
-// Additional edge cases for #17539 - other value types with UoM
-[<Fact>]
-let ``ToString on float with UoM is not nullable`` () =
-    FSharp """module MyLibrary
-
-[<Measure>]
-type mykg
-
-let onlyWantNotNullString(x:string) = ()
-
-let processFloat (x:float<mykg>) =
-    onlyWantNotNullString(x.ToString())
-"""
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldSucceed
-
-[<Fact>]
-let ``ToString on decimal with UoM is not nullable`` () =
-    FSharp """module MyLibrary
-
-[<Measure>]
-type mykg
-
-let onlyWantNotNullString(x:string) = ()
-
-let processDecimal (x:decimal<mykg>) =
+let {funcName} (x:{valueType}<mykg>) =
     onlyWantNotNullString(x.ToString())
 """
     |> asLibrary
