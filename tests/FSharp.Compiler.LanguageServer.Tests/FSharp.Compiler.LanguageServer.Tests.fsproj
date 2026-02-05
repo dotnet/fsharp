@@ -4,7 +4,6 @@
 		<TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
 		<!-- xUnit3 requires test projects to be executable -->
 		<OutputType>Exe</OutputType>
-		<IsTestProject>true</IsTestProject>
 		<IsPackable>false</IsPackable>
 		<!-- Let xUnit3 generate the entry point -->
 		<GenerateProgramFile>false</GenerateProgramFile>

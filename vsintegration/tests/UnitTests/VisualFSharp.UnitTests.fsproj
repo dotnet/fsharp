@@ -5,7 +5,6 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <OutputType>Exe</OutputType>
-    <IsTestProject>true</IsTestProject>
     <NoWarn>$(NoWarn);44;58;75;3005</NoWarn>
     <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>

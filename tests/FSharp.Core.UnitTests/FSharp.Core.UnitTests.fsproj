@@ -7,7 +7,7 @@
     <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <!-- xUnit3 requires test projects to be executable -->
     <OutputType>Exe</OutputType>
-    <IsTestProject>true</IsTestProject>
+
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
     <PackageId>Microsoft.FSharp.Core.UnitTests</PackageId>
     <PackageVersion>$(FSCoreUnitTestsPackageVersion)</PackageVersion>
