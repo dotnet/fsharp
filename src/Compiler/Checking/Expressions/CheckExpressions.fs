@@ -1117,17 +1117,10 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, implS
 
     let compiledName =
         if isExtrinsic then
-             // For extension members, use the fully qualified type path to avoid name collisions
-             // when extending types with the same simple name but different namespaces.
-             // See https://github.com/dotnet/fsharp/issues/18815
-             // Use '$' instead of '.' to ensure C#-compatible method names.
-             // See https://github.com/dotnet/fsharp/issues/16362
-             let mangledPath = tcref.CompilationPath.MangledPath
-             let typeName = tcref.LogicalName
-             let tname = (mangledPath @ [ typeName ]) |> String.concat "$"
-             let text = tname + "$" + logicalName
-             let text = if memberFlags.MemberKind <> SynMemberKind.Constructor && memberFlags.MemberKind <> SynMemberKind.ClassConstructor && not memberFlags.IsInstance then text + "$Static" else text
-             let text = if memberFlags.IsOverrideOrExplicitImpl then text + "$Override" else text
+             let tname = tcref.LogicalName
+             let text = tname + "." + logicalName
+             let text = if memberFlags.MemberKind <> SynMemberKind.Constructor && memberFlags.MemberKind <> SynMemberKind.ClassConstructor && not memberFlags.IsInstance then text + ".Static" else text
+             let text = if memberFlags.IsOverrideOrExplicitImpl then text + ".Override" else text
              text
         elif not intfSlotTys.IsEmpty then
             // interface implementation

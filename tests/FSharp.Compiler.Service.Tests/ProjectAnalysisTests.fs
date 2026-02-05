@@ -3324,9 +3324,9 @@ let ``Test Project23 property`` () =
         |> Array.toList
 
     extensionPropsRelated  |> shouldEqual
-          [("Impl.Getter", "System.Int32", "System$Int32$get_Zero$Static", "Impl.Getter",
+          [("Impl.Getter", "System.Int32", "Int32.get_Zero.Static", "Impl.Getter",
             ["member"; "prop"; "extmem"]);
-           ("Impl.Getter", "System.Int32", "System$Int32$get_Value", "Impl.Getter",
+           ("Impl.Getter", "System.Int32", "Int32.get_Value", "Impl.Getter",
             ["member"; "prop"; "extmem"])]
 
     allSymbolsUses

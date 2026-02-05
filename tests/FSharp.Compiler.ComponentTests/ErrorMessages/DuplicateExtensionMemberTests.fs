@@ -8,9 +8,7 @@ open FSharp.Test.Compiler
 module ``Duplicate Extension Members`` =
 
     [<Fact>]
-    let ``Same type name from different namespaces should succeed``() =
-        // Fixed in https://github.com/dotnet/fsharp/issues/18815
-        // Extension methods now use fully qualified type names in their IL method names
+    let ``Same type name from different namespaces should error``() =
         FSharp """
 namespace NS1
 
@@ -30,7 +28,8 @@ module Extensions =
         member x.Bar() = 2
         """
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withDiagnosticMessageMatches "Extension members extending types with the same simple name 'Task'"
 
     [<Fact>]
     let ``Generic and non-generic types with same base name should be allowed``() =
@@ -54,9 +53,7 @@ module Extensions =
         |> shouldSucceed
 
     [<Fact>]
-    let ``Same generic type name from different namespaces should succeed``() =
-        // Fixed in https://github.com/dotnet/fsharp/issues/18815
-        // Extension methods now use fully qualified type names in their IL method names
+    let ``Same generic type name from different namespaces should error``() =
         FSharp """
 namespace NS1
 
@@ -76,7 +73,8 @@ module Extensions =
         member x.Bar() = 2
         """
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withDiagnosticMessageMatches "Extension members extending types with the same simple name 'Container`1'"
 
     [<Fact>]
     let ``Extensions on same type should be allowed``() =
