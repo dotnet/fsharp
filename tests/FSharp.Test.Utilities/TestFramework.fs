@@ -273,12 +273,8 @@ let requireFile dir path =
 let SCRIPT_ROOT = __SOURCE_DIRECTORY__
 let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
 
-/// The product target framework moniker, read from eng/productTfm.txt
-let productTfm =
-    let tfmFilePath = repoRoot ++ "eng" ++ "productTfm.txt"
-    if not (File.Exists tfmFilePath) then
-        failwithf "productTfm.txt file not found at %s" tfmFilePath
-    File.ReadAllText(tfmFilePath).Trim()
+/// The product target framework moniker, from FSharp.BuildProperties (generated during build)
+let productTfm = FSharp.BuildProperties.fsProductTfm
 
 let loadVersionsProps () =
     let versionsPropsPath = repoRoot ++ "eng" ++ "Versions.props"
