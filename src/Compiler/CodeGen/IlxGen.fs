@@ -8480,6 +8480,25 @@ and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFi
     GenExpr cenv cgbuf eenv e2 Continue
     CG.EmitInstr cgbuf (pop 2) Push0 (mkNormalStfld (mkILFieldSpec (ilField.FieldRef, ilxCloSpec.ILType)))
 
+/// Helper to check if a binding's expression is a lambda/closure (which can be fixed up later).
+/// Non-lambda bindings evaluate their RHS immediately and must have their forward references
+/// already initialized. Fix for issue #16546: Debug build null reference with recursive bindings.
+and isLambdaBinding (TBind(_, expr, _)) =
+    // Use stripDebugPoints to handle debug-wrapped expressions
+    match stripDebugPoints expr with
+    | Expr.Lambda _
+    | Expr.TyLambda _
+    | Expr.Obj _ -> true
+    | _ -> false
+
+/// Reorder bindings so lambda bindings come before non-lambda bindings.
+/// This ensures that when computing fixups and generating bindings:
+/// 1. Lambda bindings are processed first, so their forward references are correctly tracked
+/// 2. Non-lambda bindings (which evaluate their RHS immediately) see lambda bindings as already defined
+and reorderBindingsLambdasFirst binds =
+    let lambdas, nonLambdas = binds |> List.partition isLambdaBinding
+    lambdas @ nonLambdas
+
 /// Generate letrec bindings
 and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (dict: Dictionary<Stamp, ILTypeRef> option) =
 
@@ -8573,25 +8592,6 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
     let recursiveVars =
         Zset.addList (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
 
-    // Helper to check if a binding's expression is a lambda/closure (which can be fixed up later).
-    // Non-lambda bindings evaluate their RHS immediately and must have their forward references
-    // already initialized. Fix for issue #16546: Debug build null reference with recursive bindings.
-    let isLambdaBinding (TBind(_, expr, _)) =
-        // Use stripDebugPoints to handle debug-wrapped expressions
-        match stripDebugPoints expr with
-        | Expr.Lambda _
-        | Expr.TyLambda _
-        | Expr.Obj _ -> true
-        | _ -> false
-
-    // Reorder bindings so lambda bindings come before non-lambda bindings.
-    // This ensures that when computing fixups and generating bindings:
-    // 1. Lambda bindings are processed first, so their forward references are correctly tracked
-    // 2. Non-lambda bindings (which evaluate their RHS immediately) see lambda bindings as already defined
-    let reorderBindingsLambdasFirst binds =
-        let lambdas, nonLambdas = binds |> List.partition isLambdaBinding
-        lambdas @ nonLambdas
-
     // Reorder for fixup computation
     let reorderedBindsPossiblyRequiringFixup = reorderBindingsLambdasFirst bindsPossiblyRequiringFixup
 
@@ -8679,19 +8679,10 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
 and GenLetRec cenv cgbuf eenv (binds, body, m) sequel =
     let _, endMark as scopeMarks = StartLocalScope "letrec" cgbuf
     
-    // Helper to check if a binding's expression is a lambda/closure.
-    // Fix for issue #16546: Reorder so lambda bindings are processed before non-lambda bindings.
-    let isLambdaBindingForReorder (TBind(_, expr, _)) =
-        match stripDebugPoints expr with
-        | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ -> true
-        | _ -> false
-
     // Reorder bindings: lambdas first, then non-lambdas.
     // This ensures that when a non-lambda binding captures a lambda binding,
     // the lambda's storage is allocated and initialized before capture.
-    let reorderedBinds =
-        let lambdas, nonLambdas = binds |> List.partition isLambdaBindingForReorder
-        lambdas @ nonLambdas
+    let reorderedBinds = reorderBindingsLambdasFirst binds
     
     let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv reorderedBinds
     GenLetRecBindings cenv cgbuf eenv (reorderedBinds, m) None
