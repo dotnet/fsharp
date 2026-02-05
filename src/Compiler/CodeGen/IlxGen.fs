@@ -5580,16 +5580,9 @@ and GenILCall
 
     // When calling methods on value types via callvirt (e.g., calling System.Object.GetHashCode on a struct),
     // we need to use the constrained. prefix to produce valid IL. See ECMA-335 and issue #18140.
-    // However, for concrete reference types (classes), we should NOT use constrained call when calling
-    // interface methods, as this can cause CLR crashes. See issue #19075.
-    // Type parameters still need constrained calls (they might be instantiated to value types at runtime).
+    // Note: The fix for #19075 was reverted as it caused test crashes.
     let ccallInfo =
         match ccallInfo with
-        | Some objArgTy when not (isStructTy g objArgTy) && not (isTyparTy g objArgTy) ->
-            // Fix for #19075: For concrete reference types (not type parameters), don't use constrained call.
-            // The constrained prefix is only needed for value types to avoid boxing.
-            // Type parameters still need constrained calls because they might be value types at runtime.
-            None
         | Some _ -> ccallInfo
         | None when useICallVirt && not (List.isEmpty argExprs) ->
             let objArgExpr = List.head argExprs

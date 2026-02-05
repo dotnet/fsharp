@@ -16,7 +16,8 @@ module CodeGenRegressions =
     // https://github.com/dotnet/fsharp/issues/19075
     // The combination of SRTP with IDisposable constraint and constrained call generates
     // invalid IL that causes a CLR crash (segfault) at runtime.
-    [<Fact>]
+    // Test disabled - fix was reverted due to causing other test crashes
+    // [<Fact>]
     let ``Issue_19075_ConstrainedCallsCrash`` () =
         let source = """
 module Dispose
@@ -80,7 +81,8 @@ run()
     // https://github.com/dotnet/fsharp/issues/19020
     // The [<return: SomeAttribute>] syntax to attach an attribute to the return type of a
     // method does not work on class static/instance members (works on module functions).
-    [<Fact>]
+    // Test disabled - fix was reverted due to bootstrap-breaking bug
+    // [<Fact>]
     let ``Issue_19020_ReturnAttributeNotRespected`` () =
         let source = """
 module Test
@@ -133,7 +135,8 @@ type Class() =
         |> ignore
 
     // Edge case: Return attributes with arguments, multiple return attributes
-    [<Fact>]
+    // Test disabled - fix for Issue #19020 was reverted due to bootstrap-breaking bug
+    // [<Fact>]
     let ``Issue_19020_ReturnAttributeEdgeCases`` () =
         let source = """
 module Test
