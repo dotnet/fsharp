@@ -83,8 +83,8 @@ properties=""
 docker=false
 args=""
 
-# Read product TFM from centralized source of truth
-tfm=$(cat "$scriptroot/productTfm.txt" | tr -d '[:space:]')
+# Read product TFM from centralized source of truth using MSBuild
+tfm=$("$scriptroot/common/dotnet.sh" msbuild "$scriptroot/TargetFrameworks.props" --getProperty:FSharpNetCoreProductDefaultTargetFramework 2>/dev/null | tr -d '[:space:]')
 
 BuildCategory=""
 BuildMessage=""
