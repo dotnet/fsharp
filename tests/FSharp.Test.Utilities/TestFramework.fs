@@ -10,9 +10,6 @@ open System.Xml.Linq
 open Scripting
 open Xunit
 open FSharp.Compiler.IO
-#if !NETCOREAPP
-open System.Runtime.InteropServices
-#endif
 
 let getShortId() = Guid.NewGuid().ToString().[..7]
 
