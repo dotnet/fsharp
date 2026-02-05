@@ -41,7 +41,8 @@ $env:PublishWindowsPdb = "false"
 [string[]] $ignore_errors = @() # @("StackUnexpected", "UnmanagedPointer", "StackByRef", "ReturnPtrToStack", "ExpectedNumericType", "StackUnderflow")
 
 [string] $default_tfm = "netstandard2.0"
-[string] $product_tfm = (Get-Content (Join-Path $repo_path "eng/productTfm.txt")).Trim()
+# Read product TFM from centralized source of truth via MSBuild
+[string] $product_tfm = (& (Join-Path $repo_path "eng/common/dotnet.ps1") msbuild (Join-Path $repo_path "eng/TargetFrameworks.props") --getProperty:FSharpNetCoreProductDefaultTargetFramework).Trim()
 
 [string] $artifacts_bin_path = Join-Path (Join-Path $repo_path "artifacts") "bin"
 

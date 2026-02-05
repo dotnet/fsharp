@@ -82,9 +82,8 @@ $BuildCategory = ""
 $BuildMessage = ""
 
 $desktopTargetFramework = "net472"
-# Read product TFM from centralized source of truth
-$productTfmPath = Join-Path $PSScriptRoot "productTfm.txt"
-$coreclrTargetFramework = (Get-Content $productTfmPath -Raw).Trim()
+# Read product TFM from centralized source of truth via MSBuild
+$coreclrTargetFramework = (& $PSScriptRoot/common/dotnet.ps1 msbuild $PSScriptRoot/TargetFrameworks.props --getProperty:FSharpNetCoreProductDefaultTargetFramework).Trim()
 
 # Set defaults for bootstrapTfm and fsharpNetCoreProductTfm if not provided
 if ($bootstrapTfm -eq "") {
