@@ -12283,31 +12283,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
 
     // Check the attributes on the declaration
-    let allBindingAttribs = TcAttributes cenv env attrTgt bindingSynAttribs
-
-    // Rotate [<return:...>] from binding to return value (similar to TcNormalizedBinding)
-    // This ensures return: attributes are emitted on the return value, not the method itself.
-    // See https://github.com/dotnet/fsharp/issues/19020
-    let _rotRetSynAttrs, bindingAttribs, valSynInfo =
-        if allBindingAttribs.Length <> bindingSynAttribs.Length then
-            // Do not rotate if some attrs fail to typecheck
-            [], allBindingAttribs, valSynInfo
-        else
-            let rotRetSynAttrs, valAttribs =
-                allBindingAttribs
-                |> List.zip bindingSynAttribs
-                |> List.partition (function
-                    | _, Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0
-                    | _ -> false)
-                |> fun (r, v) -> (List.map fst r, List.map snd v)
-            // Patch valSynInfo to include the rotated return attributes
-            let valSynInfo =
-                match rotRetSynAttrs with
-                | [] -> valSynInfo
-                | synAttr :: _ ->
-                    let (SynValInfo(args, SynArgInfo(attrs, opt, retId))) = valSynInfo
-                    SynValInfo(args, SynArgInfo({ Attributes = rotRetSynAttrs; Range = synAttr.Range } :: attrs, opt, retId))
-            rotRetSynAttrs, valAttribs, valSynInfo
+    let bindingAttribs = TcAttributes cenv env attrTgt bindingSynAttribs
 
     // Allocate the type inference variable for the inferred type
     let ty = NewInferenceType g
