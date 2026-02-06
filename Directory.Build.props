@@ -68,6 +68,12 @@
 
   <Import Project="FSharpBuild.Directory.Build.props" Condition=" '$(FSharpTestCompilerVersion)' == '' " />
 
+  <!-- Source-build override: Arcade SDK (imported above) provides $(NetCurrent).
+       Cannot live in eng/TargetFrameworks.props because it's imported before Arcade. -->
+  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
+    <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
+  </PropertyGroup>
+
   <!-- It's important we set TFM before this, since FSharpTests.Directory.Build.props uses it.
        TODO(vlza): this build props looks outdated, since we only use $(FSharpTestCompilerVersion) in TP tests or cambridge suite (which we slowly want to migrate to xUnit).
                    We probably should remove or revisit it. -->

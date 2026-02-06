@@ -12,7 +12,6 @@
   <PropertyGroup>
     <!-- Default target framework for F# products - only set if not already provided -->
     <FSharpNetCoreProductTargetFramework Condition="'$(FSharpNetCoreProductTargetFramework)' == ''">net10.0</FSharpNetCoreProductTargetFramework>
-    <FSharpNetCoreProductTargetFramework Condition="'$(DotNetBuildSourceOnly)' == 'true'">$(NetCurrent)</FSharpNetCoreProductTargetFramework>
 
     <!-- Derive major version by stripping 'net' prefix and '.0' suffix (e.g., net10.0 -> 10) -->
     <FSharpNetCoreProductMajorVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(FSharpNetCoreProductTargetFramework)', '^net(\d+)\.0$', '$1'))</FSharpNetCoreProductMajorVersion>
