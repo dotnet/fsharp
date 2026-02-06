@@ -162,7 +162,7 @@
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
     <MicrosoftTestPlatformVersion>17.14.1</MicrosoftTestPlatformVersion>
-    <MicrosoftTestingExtensionsHangDumpVersion>1.5.1</MicrosoftTestingExtensionsHangDumpVersion>
+    <MicrosoftTestingExtensionsHangDumpVersion>2.0.2</MicrosoftTestingExtensionsHangDumpVersion>
     <NewtonsoftJsonVersion>13.0.3</NewtonsoftJsonVersion>
     <XunitVersion>3.2.2</XunitVersion>
     <XunitRunnerConsoleVersion>3.2.2</XunitRunnerConsoleVersion>
