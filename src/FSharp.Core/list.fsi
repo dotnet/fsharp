@@ -2232,7 +2232,7 @@ module List =
     /// <summary>Returns the first N elements of the list.</summary>
     /// <remarks>Throws <c>InvalidOperationException</c>
     /// if the count exceeds the number of elements in the list. <c>List.truncate</c>
-    /// returns as many items as the list contains instead of throwing an exception. This is an O(n) operation, where n is the number of elements to take.</remarks>
+    /// returns as many items as the list contains instead of throwing an exception. This is an O(count) operation.</remarks>
     ///
     /// <param name="count">The number of items to take.</param>
     /// <param name="list">The input list.</param>
