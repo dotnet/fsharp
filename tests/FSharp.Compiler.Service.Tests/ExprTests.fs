@@ -3555,54 +3555,44 @@ module internal ProjectForWitnessConditionalComparison =
             with
             | _ -> ()
 
-[<Fact>]
-let ``ImmediateSubExpressions - generic DU with no constraints should not crash`` () =
-    // This is the core bug repro - a generic DU where the type parameter has
-    // ComparisonConditionalOn but no actual comparison constraint
-    let source = """
+/// Test case for ImmediateSubExpressions tests. ToString() returns just the name for test runner display.
+type ImmediateSubExpressionsTestCase =
+    { Name: string; Source: string }
+    override this.ToString() = this.Name
+
+let immediateSubExpressionsTestCases: obj[][] = [|
+    [| { Name = "generic DU with no constraints should not crash"
+         Source = """
 module M
 
 type Bar<'appEvent> =
     | Wibble of 'appEvent
-"""
-    // This should not throw. Before the fix, it crashed with ConstraintSolverMissingConstraint.
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
-
-[<Fact>]
-let ``ImmediateSubExpressions - generic DU with multiple type parameters should not crash`` () =
-    let source = """
+""" } |]
+    [| { Name = "generic DU with multiple type parameters should not crash"
+         Source = """
 module M
 
 type MultiParam<'a, 'b, 'c> =
     | Case1 of 'a
     | Case2 of 'b * 'c
     | Case3 of 'a * 'b * 'c
-"""
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
-
-[<Fact>]
-let ``ImmediateSubExpressions - generic record with no constraints should not crash`` () =
-    let source = """
+""" } |]
+    [| { Name = "generic record with no constraints should not crash"
+         Source = """
 module M
 
 type MyRecord<'t> = { Value: 't; Name: string }
-"""
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
-
-[<Fact>]
-let ``ImmediateSubExpressions - generic struct DU should not crash`` () =
-    let source = """
+""" } |]
+    [| { Name = "generic struct DU should not crash"
+         Source = """
 module M
 
 [<Struct>]
 type StructDU<'a> =
     | StructCase of value: 'a
-"""
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
-
-[<Fact>]
-let ``ImmediateSubExpressions - nested generic types should not crash`` () =
-    let source = """
+""" } |]
+    [| { Name = "nested generic types should not crash"
+         Source = """
 module M
 
 type Outer<'a> =
@@ -3610,61 +3600,40 @@ type Outer<'a> =
 
 and Inner<'b> =
     | InnerCase of 'b
-"""
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
-
-[<Fact>]
-let ``ImmediateSubExpressions - generic DU with explicit comparison constraint works`` () =
-    // When the type parameter has the comparison constraint, witness generation should work;
-    // no crash occurred even before the bug was fixed. This test is here for completeness.
-    let source = """
+""" } |]
+    [| { Name = "generic DU with explicit comparison constraint works"
+         Source = """
 module M
 
 type WithConstraint<'a when 'a : comparison> =
     | Constrained of 'a
-"""
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
-
-[<Fact>]
-let ``ImmediateSubExpressions - non-generic DU works`` () =
-    // Non-generic types always worked fine (no generics = no witness issues). This test is here for completeness.
-    let source = """
+""" } |]
+    [| { Name = "non-generic DU works"
+         Source = """
 module M
 
 type SimpleUnion =
     | Case1 of int
     | Case2 of string
-"""
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
-
-[<Fact>]
-let ``ImmediateSubExpressions - generic DU with NoComparison attribute should not crash`` () =
-    // With NoComparison, no comparison code is generated, so no crash ever occurred even before the bug was fixed.
-    // This test is here for completeness.
-    let source = """
+""" } |]
+    [| { Name = "generic DU with NoComparison attribute should not crash"
+         Source = """
 module M
 
 [<NoComparison>]
 type NoCompare<'a> =
     | NoCompareCase of 'a
-"""
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
-
-[<Fact>]
-let ``ImmediateSubExpressions - generic DU with NoEquality attribute should not crash`` () =
-    let source = """
+""" } |]
+    [| { Name = "generic DU with NoEquality attribute should not crash"
+         Source = """
 module M
 
 [<NoEquality; NoComparison>]
 type NoEq<'a> =
     | NoEqCase of 'a
-"""
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
-
-[<Fact>]
-let ``ImmediateSubExpressions - generic DU used in function should not crash`` () =
-    // Test that using the generic DU in actual code still works
-    let source = """
+""" } |]
+    [| { Name = "generic DU used in function should not crash"
+         Source = """
 module M
 
 type Option2<'t> =
@@ -3675,12 +3644,9 @@ let mapOption2 f opt =
     match opt with
     | Some2 x -> Some2 (f x)
     | None2 -> None2
-"""
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
-
-[<Fact>]
-let ``ImmediateSubExpressions - complex generic type hierarchy should not crash`` () =
-    let source = """
+""" } |]
+    [| { Name = "complex generic type hierarchy should not crash"
+         Source = """
 module M
 
 type Result<'ok, 'err> =
@@ -3692,5 +3658,352 @@ type Validated<'a> = Result<'a, string list>
 let validate pred msg value : Validated<'a> =
     if pred value then Ok value
     else Error [msg]
-"""
-    ProjectForWitnessConditionalComparison.walkAllExpressions source
+""" } |]
+    [| { Name = "TType_tuple - DU case with tuple containing generic param"
+         Source = """
+module M
+
+type WithTuple<'a> =
+    | TupleCase of 'a * int
+""" } |]
+    [| { Name = "TType_tuple - DU case with nested tuple containing generic param"
+         Source = """
+module M
+
+type WithNestedTuple<'a> =
+    | NestedTupleCase of 'a * (int * string)
+""" } |]
+    [| { Name = "TType_tuple - DU case with generic param in second position"
+         Source = """
+module M
+
+type TupleSecondPos<'a> =
+    | Case of int * 'a
+""" } |]
+    [| { Name = "TType_tuple - DU case with multiple generics in tuple"
+         Source = """
+module M
+
+type MultiGenericTuple<'a, 'b, 'c> =
+    | Case of 'a * 'b * 'c
+""" } |]
+    [| { Name = "TType_tuple - struct tuple containing generic param"
+         Source = """
+module M
+
+type WithStructTuple<'a> =
+    | StructTupleCase of struct ('a * int)
+""" } |]
+    [| { Name = "TType_tuple - record with tuple field containing generic"
+         Source = """
+module M
+
+type RecordWithTuple<'a> = { Pair: 'a * int; Name: string }
+""" } |]
+    [| { Name = "TType_fun - DU case with function type containing generic param in domain"
+         Source = """
+module M
+
+type WithFunDomain<'a> =
+    | FunCase of ('a -> int)
+""" } |]
+    [| { Name = "TType_fun - DU case with function type containing generic param in range"
+         Source = """
+module M
+
+type WithFunRange<'a> =
+    | FunCase of (int -> 'a)
+""" } |]
+    [| { Name = "TType_fun - DU case with function type containing generic in both positions"
+         Source = """
+module M
+
+type WithFunBoth<'a, 'b> =
+    | FunCase of ('a -> 'b)
+""" } |]
+    [| { Name = "TType_fun - DU case with nested function type"
+         Source = """
+module M
+
+type WithNestedFun<'a> =
+    | FunCase of ('a -> int -> string)
+""" } |]
+    [| { Name = "TType_fun - DU case with higher-order function"
+         Source = """
+module M
+
+type WithHigherOrderFun<'a> =
+    | FunCase of (('a -> int) -> string)
+""" } |]
+    [| { Name = "TType_fun - record with function field"
+         Source = """
+module M
+
+type RecordWithFun<'a> = { Transform: 'a -> string; Id: int }
+""" } |]
+    [| { Name = "TType_anon - DU case with anonymous record containing generic param"
+         Source = """
+module M
+
+type WithAnon<'a> =
+    | AnonCase of {| Value: 'a |}
+""" } |]
+    [| { Name = "TType_anon - DU case with anonymous record multiple fields"
+         Source = """
+module M
+
+type WithAnonMultiple<'a, 'b> =
+    | AnonCase of {| First: 'a; Second: 'b; Fixed: int |}
+""" } |]
+    [| { Name = "TType_anon - DU case with nested anonymous record"
+         Source = """
+module M
+
+type WithNestedAnon<'a> =
+    | AnonCase of {| Inner: {| Value: 'a |} |}
+""" } |]
+    [| { Name = "TType_anon - struct anonymous record containing generic"
+         Source = """
+module M
+
+type WithStructAnon<'a> =
+    | StructAnonCase of struct {| Value: 'a |}
+""" } |]
+    [| { Name = "TType_anon - record with anonymous record field"
+         Source = """
+module M
+
+type RecordWithAnon<'a> = { Anon: {| Data: 'a |}; Name: string }
+""" } |]
+    [| { Name = "mixed TType_tuple and TType_fun"
+         Source = """
+module M
+
+type MixedTupleFun<'a> =
+    | Case of (('a * int) -> string)
+""" } |]
+    [| { Name = "mixed TType_fun in TType_tuple"
+         Source = """
+module M
+
+type MixedFunTuple<'a> =
+    | Case of (('a -> int) * string)
+""" } |]
+    [| { Name = "mixed TType_anon in TType_tuple"
+         Source = """
+module M
+
+type MixedAnonTuple<'a> =
+    | Case of ({| V: 'a |} * int)
+""" } |]
+    [| { Name = "mixed TType_tuple in TType_anon"
+         Source = """
+module M
+
+type MixedTupleAnon<'a> =
+    | Case of {| Pair: 'a * int |}
+""" } |]
+    [| { Name = "deeply nested combination"
+         Source = """
+module M
+
+type DeeplyNested<'a, 'b> =
+    | Case of {| Transform: ('a * int) -> {| Result: 'b |}; Pair: 'a * 'b |}
+""" } |]
+    [| { Name = "generic param wrapped in list inside tuple"
+         Source = """
+module M
+
+type ListInTuple<'a> =
+    | Case of 'a list * int
+""" } |]
+    [| { Name = "generic param wrapped in option inside function"
+         Source = """
+module M
+
+type OptionInFun<'a> =
+    | Case of ('a option -> int)
+""" } |]
+    [| { Name = "generic param wrapped in array inside anon record"
+         Source = """
+module M
+
+type ArrayInAnon<'a> =
+    | Case of {| Items: 'a array |}
+""" } |]
+    [| { Name = "TType_ucase - DU containing another DU with generic"
+         Source = """
+module M
+
+type Inner<'a> =
+    | InnerCase of 'a
+
+type Outer<'a> =
+    | OuterCase of Inner<'a> * int
+""" } |]
+    [| { Name = "triple nested generic in tuple"
+         Source = """
+module M
+
+type TripleNestedTuple<'a> =
+    | Case of ((('a * int) * string) * bool)
+""" } |]
+    [| { Name = "generic at leaf of complex function type"
+         Source = """
+module M
+
+type FunWithGenericAtEnd<'a> =
+    | Case of (int -> string -> bool -> 'a)
+""" } |]
+    [| { Name = "struct DU with tuple case"
+         Source = """
+module M
+
+[<Struct>]
+type StructWithTuple<'a> =
+    | Case of item1: 'a * item2: int
+""" } |]
+    [| { Name = "struct record with tuple field"
+         Source = """
+module M
+
+[<Struct>]
+type StructRecordWithTuple<'a> = { Pair: 'a * int }
+""" } |]
+    [| { Name = "struct record with function field"
+         Source = """
+module M
+
+[<Struct>]
+type StructRecordWithFun<'a> = { Transform: 'a -> int }
+""" } |]
+    [| { Name = "multiple DU cases with different tuple shapes"
+         Source = """
+module M
+
+type MultiCaseTuples<'a, 'b> =
+    | Case1 of 'a * int
+    | Case2 of int * 'b
+    | Case3 of 'a * 'b * string
+    | Case4 of ('a * int) * ('b * string)
+""" } |]
+    [| { Name = "DU with both explicit constraint and tuple"
+         Source = """
+module M
+
+type MixedConstraintsTuple<'a, 'b when 'a : comparison> =
+    | Case of 'a * 'b * int
+""" } |]
+    [| { Name = "recursive DU with tuple"
+         Source = """
+module M
+
+type Tree<'a> =
+    | Leaf of 'a
+    | Node of Tree<'a> * Tree<'a>
+""" } |]
+    [| { Name = "mutually recursive DUs with tuples"
+         Source = """
+module M
+
+type Expr<'a> =
+    | Const of 'a
+    | Binary of Expr<'a> * Op<'a> * Expr<'a>
+
+and Op<'a> =
+    | Add
+    | Custom of ('a * 'a -> 'a)
+""" } |]
+    [| { Name = "generic class with method returning tuple"
+         Source = """
+module M
+
+type Container<'a>(value: 'a) =
+    member _.GetWithIndex(i: int) : 'a * int = (value, i)
+""" } |]
+    [| { Name = "generic interface implementation in object expression with tuple"
+         Source = """
+module M
+
+type IPair<'a> =
+    abstract GetPair: unit -> 'a * int
+
+let makePair (x: 'a) =
+    { new IPair<'a> with
+        member _.GetPair() = (x, 42) }
+""" } |]
+    [| { Name = "Choice type with tuple"
+         Source = """
+module M
+
+type MyChoice<'a, 'b> =
+    | Choice1 of 'a * int
+    | Choice2 of 'b * string
+""" } |]
+    [| { Name = "Result-like type with tuple in error case"
+         Source = """
+module M
+
+type Outcome<'ok, 'err> =
+    | Success of 'ok
+    | Failure of 'err * string
+""" } |]
+    [| { Name = "async-like wrapper with tuple"
+         Source = """
+module M
+
+type Delayed<'a> =
+    | Immediate of 'a
+    | Deferred of (unit -> 'a) * int
+""" } |]
+    [| { Name = "event type with handler function"
+         Source = """
+module M
+
+type Event<'a> =
+    | Event of handler: ('a -> unit) * name: string
+""" } |]
+    [| { Name = "validation type with function"
+         Source = """
+module M
+
+type Validator<'a> =
+    | Validator of validate: ('a -> bool) * errorMsg: string
+""" } |]
+    [| { Name = "codec type with encode and decode functions"
+         Source = """
+module M
+
+type Codec<'a> =
+    | Codec of encode: ('a -> string) * decode: (string -> 'a option)
+""" } |]
+    [| { Name = "state monad-like type"
+         Source = """
+module M
+
+type State<'s, 'a> =
+    | State of run: ('s -> 'a * 's)
+""" } |]
+    [| { Name = "reader monad-like type"
+         Source = """
+module M
+
+type Reader<'env, 'a> =
+    | Reader of run: ('env -> 'a)
+""" } |]
+    [| { Name = "writer monad-like type with tuple"
+         Source = """
+module M
+
+type Writer<'w, 'a> =
+    | Writer of value: 'a * log: 'w list
+""" } |]
+|]
+
+[<Theory>]
+[<MemberData(nameof immediateSubExpressionsTestCases)>]
+let ``ImmediateSubExpressions`` (case: ImmediateSubExpressionsTestCase) =
+    // These tests verify that FCS doesn't crash when accessing ImmediateSubExpressions
+    // on auto-generated comparison code for generic DUs/records.
+    // Before the fix for #19118, this would crash with ConstraintSolverMissingConstraint.
+    ProjectForWitnessConditionalComparison.walkAllExpressions case.Source
