@@ -22,6 +22,33 @@ open Xunit
 #nowarn "3397" // This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime.
 // Why warned - the tests here are actually trying to test that when this happens (unit passed), it indeed results in a null
 
+/// floating point helpers for min/max tests, because Double.IsNegative and some other methods aren't available yet
+module FP =
+    let (<&>) f g a = f a && g a
+    let isNegative x =
+        // From https://github.com/dotnet/runtime/blob/a5f3676cc71e176084f0f7f1f6beeecd86fbeafc/src/libraries/System.Private.CoreLib/src/System/Double.cs#L86
+        let signMask = 0x8000_0000_0000_0000L
+        let intValue = BitConverter.DoubleToInt64Bits x
+        intValue &&& signMask = signMask
+
+    let isNegativef (x: float32)  =
+        // https://github.com/dotnet/runtime/blob/a5f3676cc71e176084f0f7f1f6beeecd86fbeafc/src/libraries/System.Private.CoreLib/src/System/Single.cs#L85
+        let signMask = 0x8000_0000_0000_0000L
+        let intValue = x |> float |> BitConverter.DoubleToInt64Bits  // cannot use SingleToInt32Bits yet...
+        intValue &&& signMask = signMask
+
+    let shouldBe (v, test) result = Assert.True(test result, $"Operators.max/min expected a %s{v}.")
+    let positive = "positive zero float", (isNegative >> not)
+    let positivef = "positive zero float32", (isNegativef >> not)
+    let negative = "negative zero float", isNegative
+    let negativef = "positive zero float32", isNegativef
+    let positiveNaN = "positive NaN float", (isNegative >> not) <&> Double.IsNaN
+    let positiveNaNf = "positive NaN float32", (isNegativef >> not) <&> Single.IsNaN
+    let negativeNaN = "positive NaN float", isNegative <&> Double.IsNaN
+    let negativeNaNf = "positive NaN float32", isNegativef <&> Single.IsNaN
+    let f() = isNegativef <&> Single.IsNaN
+
+
 /// If this type compiles without error it is correct
 /// Wrong if you see: FS0670 This code is not sufficiently generic. The type variable ^T could not be generalized because it would escape its scope.
 type TestFs0670Error<'T> =
@@ -39,6 +66,28 @@ type CultureWithDifferentNegativeSign () as this =
     override _.DisplayName = nameof CultureWithDifferentNegativeSign
 
 type OperatorsModule2() =
+
+    [<Fact>]
+    member _.isNegativeHelpers() =
+        let shouldBeTrueFor test = Assert.True(FP.isNegative test, $"Helper FP.isNegative should return true for %f{test}")
+        let shouldBeFalseFor test = Assert.False(FP.isNegative test, $"Helper FP.isNegative should return false for %f{test}")
+        
+        [ -1.0; nan (* default nan is negative! *); -0.0; -9999.99999; -infinity; -Double.Epsilon]
+        |> List.iter shouldBeTrueFor
+
+        [ 1.0; -nan (* default nan is negative! *); 0.0; 9999.99999; infinity; Double.Epsilon]
+        |> List.iter shouldBeFalseFor
+
+    [<Fact>]
+    member _.isNegativefHelper() =
+        let shouldBeTrueFor test = Assert.True(FP.isNegativef test, $"Helper FP.isNegativef should return true for %f{test}")
+        let shouldBeFalseFor test = Assert.False(FP.isNegativef test, $"Helper FP.isNegativef should return false for %f{test}")
+        
+        [ -1.0f; nanf (* default nan is negative! *); -0.0f; -9999.99999f; -infinityf; -Single.Epsilon]
+        |> List.iter shouldBeTrueFor
+
+        [ 1.0f; -nanf (* default nan is negative! *); 0.0f; 9999.99999f; infinityf; Single.Epsilon]
+        |> List.iter shouldBeFalseFor
 
     [<Fact>]
     member _.int() =
@@ -327,40 +376,106 @@ type OperatorsModule2() =
         
     [<Fact>]
     member _.max() =
+        let shouldEqual a b = Assert.AreEqual(a, b)
         // value type
-        let result = Operators.max 10 8
-        Assert.AreEqual(10, result)
-        
+        Operators.max 10 8 |> shouldEqual 10
+
         // negative
-        let result = Operators.max -10.0 -8.0
-        Assert.AreEqual(-8.0, result)
+        Operators.max -10.0M -8.0M |> shouldEqual -8.0M
         
         // zero
-        let result = Operators.max 0 0
-        Assert.AreEqual(0, result)
-        
+        Operators.max 0 0 |> shouldEqual 0
+
         // reference type
-        let result = Operators.max "A" "ABC"
-        Assert.AreEqual("ABC", result)
+        Operators.max "A" "ABC" |> shouldEqual "ABC"
+
+        // floating point
+        // negative zero
+        Operators.max 0.0 -0.0 |> FP.shouldBe FP.positive
+        Operators.max -0.0 0.0 |> FP.shouldBe FP.positive
+        Operators.max -1.0 0.0 |> FP.shouldBe FP.positive
+        Operators.max -1.0 -0.0 |> FP.shouldBe FP.negative
+        Operators.max 0.0f -0.0f |> FP.shouldBe FP.positivef
+        Operators.max -0.0f 0.0f |> FP.shouldBe FP.positivef
+        Operators.max -1.0f 0.0f |> FP.shouldBe FP.positivef
+        Operators.max -1.0f -0.0f |> FP.shouldBe FP.negativef
+        Operators.max -1.0 -2.0 |> shouldEqual -1.0
+        Operators.max infinity -infinity |> shouldEqual infinity
+        Operators.max infinityf -infinityf |> shouldEqual infinityf
+
+        // note that the default nan is negative, using -nan (which does change 
+        // the binary representation), makes nan positive
+        let posNan, negNan, posNanf, negNanf = -nan, nan, -nanf, nanf
+        Operators.max negNan 1.0      |> FP.shouldBe FP.negativeNaN
+        Operators.max 1.0 negNan      |> FP.shouldBe FP.negativeNaN
+        Operators.max negNan -1.0     |> FP.shouldBe FP.negativeNaN 
+        Operators.max -1.0 negNan     |> FP.shouldBe FP.negativeNaN
+        Operators.max 1.0f negNanf    |> FP.shouldBe FP.negativeNaNf
+        Operators.max negNanf 1.0f    |> FP.shouldBe FP.negativeNaNf
+
+        // truth table
+        Operators.max negNan negNan   |> FP.shouldBe FP.negativeNaN
+        Operators.max negNan posNan   |> FP.shouldBe FP.negativeNaN       // Bug in BCL: Math.Max returns first arg if it is any NaN
+        Operators.max posNan negNan   |> FP.shouldBe FP.positiveNaN       // Bug in BCL: Math.Max returns first arg if it is any NaN
+        Operators.max posNan posNan   |> FP.shouldBe FP.positiveNaN
+
+        Operators.max negNanf negNanf |> FP.shouldBe FP.negativeNaNf
+        Operators.max negNanf posNanf |> FP.shouldBe FP.negativeNaNf      // Bug in BCL: Math.Max returns first arg if it is any NaN
+        Operators.max posNanf negNanf |> FP.shouldBe FP.positiveNaNf      // Bug in BCL: Math.Max returns first arg if it is any NaN
+        Operators.max posNanf posNanf |> FP.shouldBe FP.negativeNaNf
         
     [<Fact>]
     member _.min() =
+        let shouldEqual a b = Assert.AreEqual(a, b)
+
         // value type
-        let result = Operators.min 10 8
-        Assert.AreEqual(8, result)
+        Operators.min 10 8 |> shouldEqual 8
         
         // negative
-        let result = Operators.min -10.0 -8.0
-        Assert.AreEqual(-10.0, result)
+        Operators.min -10.0M -8.0M |> shouldEqual -10M
         
         // zero
-        let result = Operators.min 0 0
-        Assert.AreEqual(0, result)
+        Operators.min 0 0 |> shouldEqual 0
         
         // reference type
-        let result = Operators.min "A" "ABC"
-        Assert.AreEqual("A", result)
-        
+        Operators.min "A" "ABC" |> shouldEqual "A"
+
+        // floating point
+        // negative zero
+        Operators.min 0.0 -0.0 |> FP.shouldBe FP.negative
+        Operators.min -0.0 0.0 |> FP.shouldBe FP.negative
+        Operators.min 1.0 0.0 |> FP.shouldBe FP.positive
+        Operators.min 1.0 -0.0 |> FP.shouldBe FP.negative
+        Operators.min 0.0f -0.0f |> FP.shouldBe FP.negativef
+        Operators.min -0.0f 0.0f |> FP.shouldBe FP.negativef
+        Operators.min 1.0f 0.0f |> FP.shouldBe FP.positivef
+        Operators.min 1.0f -0.0f |> FP.shouldBe FP.negativef
+        Operators.min -1.0 -2.0 |> shouldEqual -2.0
+        Operators.min infinity -infinity |> shouldEqual -infinity
+        Operators.min infinityf -infinityf |> shouldEqual -infinityf
+
+        // note that the default nan is negative, using -nan (which does change 
+        // the binary representation), makes nan positive
+        let posNan, negNan, posNanf, negNanf = -nan, nan, -nanf, nanf
+        Operators.min negNan 1.0      |> FP.shouldBe FP.negativeNaN
+        Operators.min 1.0 negNan      |> FP.shouldBe FP.negativeNaN
+        Operators.min negNan -1.0     |> FP.shouldBe FP.negativeNaN 
+        Operators.min -1.0 negNan     |> FP.shouldBe FP.negativeNaN
+        Operators.min 1.0f negNanf    |> FP.shouldBe FP.negativeNaNf
+        Operators.min negNanf 1.0f    |> FP.shouldBe FP.negativeNaNf
+
+        // truth table
+        Operators.min negNan negNan   |> FP.shouldBe FP.negativeNaN
+        Operators.min negNan posNan   |> FP.shouldBe FP.negativeNaN       // Math.Min works like IEEE totalOrder
+        Operators.min posNan negNan   |> FP.shouldBe FP.negativeNaN       // Math.Min works like IEEE totalOrder
+        Operators.min posNan posNan   |> FP.shouldBe FP.positiveNaN
+
+        Operators.min negNanf negNanf |> FP.shouldBe FP.negativeNaNf
+        Operators.min negNanf posNanf |> FP.shouldBe FP.negativeNaNf      // Math.Min works like IEEE totalOrder
+        Operators.min posNanf negNanf |> FP.shouldBe FP.negativeNaNf      // Math.Min works like IEEE totalOrder
+        Operators.min posNanf posNanf |> FP.shouldBe FP.positiveNaNf
+ 
+
     [<Fact>]
     member _.nan() =
         // value type
