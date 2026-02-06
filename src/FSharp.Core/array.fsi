@@ -1629,6 +1629,8 @@ module Array =
     /// </code>
     /// Evaluates to <c>3</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("Length")>]
     val length: array: 'T array -> int
 

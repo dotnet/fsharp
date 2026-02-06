@@ -799,6 +799,8 @@ module Map =
     /// sample |> Map.count // evaluates to 2
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
     [<CompiledName("Count")>]
     val count: table: Map<'Key, 'T> -> int
 

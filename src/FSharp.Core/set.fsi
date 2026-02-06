@@ -456,7 +456,7 @@ module Set =
     /// The sample evaluates to the following output: <c>The set has 3 elements</c>
     /// </example>
     ///
-    /// <remarks>This is an O(1) operation.</remarks>
+    /// <remarks>This is an O(n) operation.</remarks>
     [<CompiledName("Count")>]
     val count: set: Set<'T> -> int
 

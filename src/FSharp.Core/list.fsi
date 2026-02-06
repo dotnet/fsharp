@@ -1336,6 +1336,8 @@ module List =
     /// </code>
     /// Evaluates to <c>3</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Length")>]
     val length: list:'T list -> int
 
