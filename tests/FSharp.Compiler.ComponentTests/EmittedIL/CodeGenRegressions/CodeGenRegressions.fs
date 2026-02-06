@@ -942,7 +942,7 @@ printfn "Test completed"
     // Extension methods use dot separator (e.g., Exception.Reraise) for binary compatibility
     // with FsCheck and other tools that use reflection to find FSharp.Core extension methods.
     // This is the default behavior on main branch - extension names use simple type name.
-    // [<Fact>]
+    [<Fact>]
     let ``Issue_16362_ExtensionMethodCompiledName`` () =
         let source = """
 module Test
