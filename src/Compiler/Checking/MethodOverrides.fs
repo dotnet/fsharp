@@ -90,6 +90,13 @@ type RequiredSlot =
         | DefaultInterfaceImplementationSlot(_, _, possiblyNoMostSpecific) -> possiblyNoMostSpecific
         | _ -> false
 
+    /// Checks if this slot has implicit DIM coverage (used when the ImplicitDIMCoverage feature is enabled).
+    /// A slot has DIM coverage when it has a default interface implementation AND is optional (not re-abstracted).
+    member this.HasImplicitDIMCoverage(g: TcGlobals) =
+        g.langVersion.SupportsFeature LanguageFeature.ImplicitDIMCoverage
+        && this.HasDefaultInterfaceImplementation
+        && this.IsOptional
+
     /// Gets the method info.
     member this.MethodInfo =
         match this with
@@ -583,18 +590,19 @@ module DispatchSlotChecking =
             [ (reqdTy, GetClassDispatchSlots infoReader ad m reqdTy) ]
 
     /// Check all implementations implement some dispatch slot.
-    let CheckOverridesAreAllUsedOnce(denv, g, infoReader: InfoReader, isObjExpr, reqdTy,
+    let CheckOverridesAreAllUsedOnce(denv, g: TcGlobals.TcGlobals, infoReader: InfoReader, isObjExpr, reqdTy,
                                      dispatchSlotsKeyed: NameMultiMap<RequiredSlot>,
                                      availPriorOverrides: OverrideInfo list,
                                      overrides: OverrideInfo list) = 
         let amap = infoReader.amap
 
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
+
         for overrideBy in overrides do 
           if not overrideBy.IsFakeEventProperty then
             let m = overrideBy.Range
-            let relevantVirts = NameMultiMap.find overrideBy.LogicalName dispatchSlotsKeyed
-            let relevantVirts = relevantVirts |> List.map (fun reqdSlot -> reqdSlot.MethodInfo)
+            let relevantSlots = NameMultiMap.find overrideBy.LogicalName dispatchSlotsKeyed
+            let relevantVirts = relevantSlots |> List.map (fun reqdSlot -> reqdSlot.MethodInfo)
 
             match relevantVirts |> List.filter (fun dispatchSlot -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) with
             | [] -> 
@@ -628,7 +636,22 @@ module DispatchSlotChecking =
                 if dispatchSlot.IsFinal && (isObjExpr || not (typeEquiv g reqdTy dispatchSlot.ApparentEnclosingType)) then 
                     errorR(Error(FSComp.SR.typrelMethodIsSealed(NicePrint.stringOfMethInfo infoReader m denv dispatchSlot), m))
             | dispatchSlots -> 
-                match dispatchSlots |> List.filter (fun dispatchSlot ->
+                // Filter out slots that have DIM coverage (when feature is enabled)
+                // by looking up the original RequiredSlot information
+                let slotsWithoutDIMCoverage =
+                    dispatchSlots
+                    |> List.filter (fun dispatchSlot ->
+                        // Find the corresponding RequiredSlot to check for DIM coverage
+                        let correspondingSlot = 
+                            relevantSlots 
+                            |> List.tryFind (fun rs -> 
+                                rs.MethodInfo.LogicalName = dispatchSlot.LogicalName &&
+                                typeEquiv g rs.MethodInfo.ApparentEnclosingType dispatchSlot.ApparentEnclosingType)
+                        match correspondingSlot with
+                        | Some slot -> not (slot.HasImplicitDIMCoverage g)
+                        | None -> true)
+                
+                match slotsWithoutDIMCoverage |> List.filter (fun dispatchSlot ->
                               (dispatchSlot.IsInstance = overrideBy.IsInstance) &&
                               isInterfaceTy g dispatchSlot.ApparentEnclosingType || 
                               not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot)) with
@@ -860,24 +883,26 @@ module DispatchSlotChecking =
                           let overrideByInfo = GetTypeMemberOverrideInfo g reqdTy overrideBy
                           let overriddenForThisSlotImplSet = 
                               [ for reqdSlot in NameMultiMap.find overrideByInfo.LogicalName dispatchSlotsKeyed do
-                                    let dispatchSlot = reqdSlot.MethodInfo
-                                    if OverrideImplementsDispatchSlot g amap m dispatchSlot overrideByInfo then 
-                                        if tyconRefEq g overrideByInfo.BoundingTyconRef dispatchSlot.DeclaringTyconRef then 
-                                             match dispatchSlot.ArbitraryValRef with 
-                                             | Some virtMember -> 
-                                                  if virtMember.MemberInfo.Value.IsImplemented then errorR(Error(FSComp.SR.tcDefaultImplementationAlreadyExists(), overrideByInfo.Range))
-                                                  virtMember.MemberInfo.Value.IsImplemented <- true
-                                             | None -> () // not an F# slot
+                                        // Skip slots that have DIM coverage (they don't need MethodImpl)
+                                        if not (reqdSlot.HasImplicitDIMCoverage g) then
+                                            let dispatchSlot = reqdSlot.MethodInfo
+                                            if OverrideImplementsDispatchSlot g amap m dispatchSlot overrideByInfo then 
+                                                if tyconRefEq g overrideByInfo.BoundingTyconRef dispatchSlot.DeclaringTyconRef then 
+                                                     match dispatchSlot.ArbitraryValRef with 
+                                                     | Some virtMember -> 
+                                                          if virtMember.MemberInfo.Value.IsImplemented then errorR(Error(FSComp.SR.tcDefaultImplementationAlreadyExists(), overrideByInfo.Range))
+                                                          virtMember.MemberInfo.Value.IsImplemented <- true
+                                                     | None -> () // not an F# slot
 
-                                        // Get the slotsig of the overridden method 
-                                        let slotsig = dispatchSlot.GetSlotSig(amap, m)
+                                                // Get the slotsig of the overridden method 
+                                                let slotsig = dispatchSlot.GetSlotSig(amap, m)
 
-                                        // The slotsig from the overridden method is in terms of the type parameters on the parent type of the overriding method,
-                                        // Modify map the slotsig so it is in terms of the type parameters for the overriding method 
-                                        let slotsig = ReparentSlotSigToUseMethodTypars g m overrideBy slotsig
+                                                // The slotsig from the overridden method is in terms of the type parameters on the parent type of the overriding method,
+                                                // Modify map the slotsig so it is in terms of the type parameters for the overriding method 
+                                                let slotsig = ReparentSlotSigToUseMethodTypars g m overrideBy slotsig
                      
-                                        // Record the slotsig via mutation
-                                        yield slotsig ]
+                                                // Record the slotsig via mutation
+                                                yield slotsig ]
                           //if mustOverrideSomething reqdTy overrideBy then 
                           //    assert nonNil overriddenForThisSlotImplSet
                           yield! overriddenForThisSlotImplSet ]

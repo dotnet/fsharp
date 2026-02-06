@@ -95,6 +95,7 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | ImplicitDIMCoverage
 
 /// LanguageVersion management
 type LanguageVersion =
