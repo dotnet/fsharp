@@ -80,6 +80,7 @@
     <Compile Include="SynPatTests.fs" />
     <Compile Include="CapturedTypes.fs" />
     <Compile Include="WarnScopeTests.fs" />
+    <Compile Include="OverloadCacheTests.fs" />
   </ItemGroup>
 
 	<ItemGroup>
