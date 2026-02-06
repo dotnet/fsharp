@@ -359,9 +359,9 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
 
-    # MTP uses --report-xunit-trx with filename only (no path)
+    # MTP uses --report-xunit with filename only (no path)
     # Results go to TestResults directory under project output by default
-    $testLogFileName = "${projectName}_${targetFramework}.trx"
+    $testLogFileName = "${projectName}_${targetFramework}.xml"
     $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
 
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
@@ -369,7 +369,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     # MTP requires --solution flag for .sln files
     $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
     
-    $test_args = "test $testTarget -c $configuration -f $targetFramework --report-xunit-trx --report-xunit-trx-filename ""$testLogFileName"" --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
+    $test_args = "test $testTarget -c $configuration -f $targetFramework --report-xunit --report-xunit-filename ""$testLogFileName"" --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
     # MTP HangDump extension replaces VSTest --blame-hang-timeout
     $test_args += " --hangdump --hangdump-timeout 5m --hangdump-type Full"
 

@@ -152,8 +152,8 @@ extends:
             - task: PublishTestResults@2
               displayName: Publish Test Results
               inputs:
-                testResultsFormat: 'VSTest'
-                testResultsFiles: '*.trx'
+                testResultsFormat: 'XUnit'
+                testResultsFiles: '*.xml'
                 searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
               continueOnError: true
               condition: ne(variables['SkipTests'], 'true')

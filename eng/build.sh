@@ -228,16 +228,16 @@ function Test() {
 
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
-  # MTP uses --report-xunit-trx with filename only (no path)
-  testlogfilename="${projectname}_${targetframework}.trx"
+  # MTP uses --report-xunit with filename only (no path)
+  testlogfilename="${projectname}_${targetframework}.xml"
   testresultsdir="$artifacts_dir/TestResults/$configuration"
   
   # MTP requires --solution flag for .sln files
   # MTP HangDump extension replaces VSTest --blame-hang-timeout
   if [[ "$testproject" == *.sln ]]; then
-    args=(test --solution "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+    args=(test --solution "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit --report-xunit-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
   else
-    args=(test --project "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+    args=(test --project "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit --report-xunit-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
   fi
 
   "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
