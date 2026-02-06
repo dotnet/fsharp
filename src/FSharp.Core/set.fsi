@@ -85,7 +85,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     /// The sample evaluates to the following output: <c>The set has 3 elements</c>
     /// </example>
     ///
-    /// <remarks>This is an O(1) operation.</remarks>
+    /// <remarks>This is an O(n) operation.</remarks>
     member Count: int
 
     /// <summary>A useful shortcut for Set.contains. See the Set module for further operations on sets.</summary>
