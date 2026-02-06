@@ -59,45 +59,32 @@ This document summarizes the refactoring work performed on the F# compiler's cod
 
 ## Test Status
 
-- **Compiler Component Tests:** 5032 passed, 207 skipped
+- **Compiler Component Tests:** 5031 passed, 207 skipped
 - **Compiler Service Tests:** 2028 passed, 29 skipped
-- **FSharp.Core Tests:** 5989 passed, 22 failed (FsCheck compatibility), 5 skipped
+- **FSharp.Core Tests:** 6011 passed, 0 failed, 5 skipped
 - **Formatting:** `dotnet fantomas . --check` passes
-
-### Known Failures (FsCheck Compatibility)
-
-The following tests fail due to Issue #16362 extension method naming change breaking FsCheck's reflection:
-
-- `CollectionModulesConsistency.*` (18 tests)
-- `ArrayProperties.Array.blit works like Array.Copy`
-- `ListProperties.zip*` (3 tests)
-
-These tests use FsCheck which relies on reflection to discover F# extension methods. The naming change from
-`FSharpType.IsRecord.Static` to `System$Type$IsRecord$Static` breaks FsCheck's method lookup.
-
-**Resolution**: Waiting on FsCheck library update or decision to revert #16362.
 
 ## DoD Status
 
 | Criterion | Status |
 |-----------|--------|
-| `./build.sh -c Release --testcoreclr` passes | ⚠️ 22 FsCheck failures (external lib) |
-| Compiler tests pass | ✅ 7060 passed |
+| `./build.sh -c Release --testcoreclr` passes | ✅ All tests pass |
+| Compiler tests pass | ✅ 7059 passed |
 | `dotnet fantomas . --check` passes | ✅ Passed |
 | REFACTORING.md updated | ✅ Updated |
 | Total line reduction documented | ✅ ~252 net lines removed |
 
 ## Sprint 5 Verification Summary
 
-**Date:** 2026-02-05
+**Date:** 2026-02-06
 
 **Verification Actions:**
 1. Ran full build and test suite
 2. Updated StateMachineTests baseline (IL local variable count changed due to TryRecognizeCtorWithFieldSets removal)
 3. Updated FSharp.Compiler.Service surface area baseline
 4. Updated FSharp.Core surface area baseline  
-5. Updated ProjectAnalysisTests.Project23 for new extension method naming
-6. Updated ExprTests for new extension method naming
+5. Reverted extension method separator to dot (.) for FsCheck binary compatibility
+6. Updated ExprTests for extension method naming
 7. Verified formatting passes
 
-**Result:** All compiler and service tests pass. FSharp.Core property tests fail due to FsCheck compatibility issue from #16362.
+**Result:** All tests pass. Extension method naming uses dot separator for binary compatibility with FsCheck and other reflection-based tools.

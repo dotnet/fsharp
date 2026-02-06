@@ -937,13 +937,13 @@ printfn "Test completed"
     // SPRINT 3: Issues #16362, #16292, #16245, #16037, #15627, #15467, #15352, #15326, #15092, #14712
     // ====================================================================================
 
-    // ===== Issue #16362: Extension methods compiled name uses dot separator =====
-    // https://github.com/dotnet/fsharp/issues/16362
-    // Extension methods use dot separator (e.g., Exception.Reraise) for binary compatibility
-    // with FsCheck and other tools that use reflection to find FSharp.Core extension methods.
-    // This is the default behavior on main branch - extension names use simple type name.
+    // ===== Extension method compiled names use dot separator for binary compatibility =====
+    // Extension methods use dot separator (e.g., Exception.Reraise) in their compiled names.
+    // This maintains binary compatibility with FsCheck and other tools that use reflection
+    // to find FSharp.Core extension methods.
+    // Related: https://github.com/dotnet/fsharp/issues/16362 (proposed $ separator was reverted)
     [<Fact>]
-    let ``Issue_16362_ExtensionMethodCompiledName`` () =
+    let ``ExtensionMethod_CompiledName_UsesDotSeparator`` () =
         let source = """
 module Test
 
@@ -951,23 +951,16 @@ open System
 
 type Exception with
     member ex.Reraise() = raise ex
-
-// Issue #16362: Extension methods use dot separator for binary compatibility.
-// The dot separator is the established convention for F# extension methods.
 """
-        let result = FSharp source |> asLibrary |> compile |> shouldSucceed
-        
-        // Verify the IL shows the dot-separated method name pattern
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                // Extension method uses dot separator for binary compatibility
-                // The name should include System.Exception.Reraise (using the fully qualified type path)
-                Assert.Contains("Exception.Reraise", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        FSharp source
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            // Verify the extension method uses dot-separated naming:
+            // The method name should be Exception.Reraise (TypeName.MemberName pattern)
+            ".method public static !!a  Exception.Reraise<a>(class [runtime]System.Exception A_0) cil managed"
+        ]
 
     // ===== Issue #16292: Incorrect codegen for Debug build with SRTP and mutable struct =====
     // https://github.com/dotnet/fsharp/issues/16292
