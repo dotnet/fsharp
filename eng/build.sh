@@ -84,7 +84,8 @@ docker=false
 args=""
 
 # Read product TFM from centralized source of truth using MSBuild
-tfm=$("$scriptroot/common/dotnet.sh" msbuild "$scriptroot/TargetFrameworks.props" --getProperty:FSharpNetCoreProductDefaultTargetFramework 2>/dev/null | tr -d '[:space:]')
+# Pass DotNetBuildSourceOnly so source-build/VMR resolves to $(NetCurrent) instead of hardcoded TFM
+tfm=$("$scriptroot/common/dotnet.sh" msbuild "$scriptroot/TargetFrameworks.props" /p:DotNetBuildSourceOnly=$source_build --getProperty:FSharpNetCoreProductDefaultTargetFramework 2>/dev/null | tr -d '[:space:]')
 
 BuildCategory=""
 BuildMessage=""

@@ -67,26 +67,11 @@
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'" />
 
   <Import Project="FSharpBuild.Directory.Build.props" Condition=" '$(FSharpTestCompilerVersion)' == '' " />
-  <!-- To support source-build for the "next" version of .NET without forcing this repo to use it,
-       we can utilize arcade's $(NetCurrent) property, and set it ourselves in the arcade-less scenarios.
-       For FCS solution, we set it to one for current dev cycle.
-       When used with arcade, and inserting/building for net8 branches, it will set it to net8.0, for net9 branches to net9.0 and so on. -->
-  <Choose>
-    <!-- Once we move to OOP in VS, and major dependants of FCS will move to netcore (not netstandard),
-         we should also support $(NetPrevious) for all releases.
-         This will likely include FCS and FSharp.Core as well as shipped products.
-         Right now, it only covers products we ship (FSC and FSI), not NuGet packages. -->
-    <When Condition="'$(DotNetBuildSourceOnly)' == 'true'">
-      <PropertyGroup>
-        <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup>
-        <FSharpNetCoreProductTargetFramework>$(FSharpNetCoreProductDefaultTargetFramework)</FSharpNetCoreProductTargetFramework>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
+  <!-- FSharpNetCoreProductDefaultTargetFramework is set in eng/TargetFrameworks.props (imported above),
+       which handles both the default (net10.0) and source-build override (DotNetBuildSourceOnly -> NetCurrent). -->
+  <PropertyGroup>
+    <FSharpNetCoreProductTargetFramework>$(FSharpNetCoreProductDefaultTargetFramework)</FSharpNetCoreProductTargetFramework>
+  </PropertyGroup>
 
   <!-- It's important we set TFM before this, since FSharpTests.Directory.Build.props uses it.
        TODO(vlza): this build props looks outdated, since we only use $(FSharpTestCompilerVersion) in TP tests or cambridge suite (which we slowly want to migrate to xUnit).
