@@ -938,12 +938,14 @@ printfn "Test completed"
     // ====================================================================================
 
     // ===== Extension method compiled names use dot separator for binary compatibility =====
-    // Extension methods use dot separator (e.g., Exception.Reraise) in their compiled names.
+    // Extension methods use dot separator (e.g., TypeName.MemberName) in their compiled names.
     // This maintains binary compatibility with FsCheck and other tools that use reflection
     // to find FSharp.Core extension methods.
     // Related: https://github.com/dotnet/fsharp/issues/16362 (proposed $ separator was reverted)
+
     [<Fact>]
-    let ``ExtensionMethod_CompiledName_UsesDotSeparator`` () =
+    let ``ExtensionMethod_InstanceMethod_UsesDotSeparator`` () =
+        // Instance extension method: compiled name is TypeName.MemberName
         let source = """
 module Test
 
@@ -957,9 +959,28 @@ type Exception with
         |> compile
         |> shouldSucceed
         |> verifyIL [
-            // Verify the extension method uses dot-separated naming:
-            // The method name should be Exception.Reraise (TypeName.MemberName pattern)
+            // Instance extension: Exception.Reraise (no .Static suffix)
             ".method public static !!a  Exception.Reraise<a>(class [runtime]System.Exception A_0) cil managed"
+        ]
+
+    [<Fact>]
+    let ``ExtensionMethod_StaticMethod_UsesDotSeparatorWithStaticSuffix`` () =
+        // Static extension method: compiled name is TypeName.MemberName.Static
+        let source = """
+module Test
+
+open System
+
+type Exception with
+    static member CreateNew(msg: string) = Exception(msg)
+"""
+        FSharp source
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            // Static extension: Exception.CreateNew.Static (has .Static suffix)
+            ".method public static class [runtime]System.Exception Exception.CreateNew.Static(string msg) cil managed"
         ]
 
     // ===== Issue #16292: Incorrect codegen for Debug build with SRTP and mutable struct =====
