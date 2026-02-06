@@ -42,7 +42,7 @@ $env:PublishWindowsPdb = "false"
 
 [string] $default_tfm = "netstandard2.0"
 # Read product TFM from centralized source of truth via MSBuild
-[string] $product_tfm = (& (Join-Path $repo_path "eng/common/dotnet.ps1") msbuild (Join-Path $repo_path "eng/TargetFrameworks.props") --getProperty:FSharpNetCoreProductDefaultTargetFramework).Trim()
+[string] $product_tfm = (& (Join-Path $repo_path "eng/common/dotnet.ps1") msbuild (Join-Path $repo_path "eng/TargetFrameworks.props") --getProperty:FSharpNetCoreProductTargetFramework).Trim()
 
 [string] $artifacts_bin_path = Join-Path (Join-Path $repo_path "artifacts") "bin"
 

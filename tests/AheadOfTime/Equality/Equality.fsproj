@@ -16,8 +16,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Release/$(FSharpNetCoreProductDefaultTargetFramework)/fsc.dll</DotnetFscCompilerPath>
-    <Fsc_DotNET_DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Release/$(FSharpNetCoreProductDefaultTargetFramework)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Release/$(FSharpNetCoreProductTargetFramework)/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Release/$(FSharpNetCoreProductTargetFramework)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
   </PropertyGroup>

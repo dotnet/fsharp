@@ -11,7 +11,7 @@ set __scriptpath=%~dp0
 set configuration=Debug
 
 rem Read TFM from centralized source using MSBuild
-for /f "usebackq delims=" %%a in (`dotnet msbuild "%__scriptpath%..\..\..\eng\TargetFrameworks.props" --getProperty:FSharpNetCoreProductDefaultTargetFramework`) do set PRODUCT_TFM=%%a
+for /f "usebackq delims=" %%a in (`dotnet msbuild "%__scriptpath%..\..\..\eng\TargetFrameworks.props" --getProperty:FSharpNetCoreProductTargetFramework`) do set PRODUCT_TFM=%%a
 
 :parseargs
 if "%1" == "" goto argsdone

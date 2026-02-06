@@ -6,7 +6,7 @@
   <Import Project="$(FSharpRepositoryPath)\eng\TargetFrameworks.props" />
 
   <PropertyGroup>
-    <TargetFramework Condition="'$(TargetFramework)' == ''">$(FSharpNetCoreProductDefaultTargetFramework)</TargetFramework>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <_TargetFrameworkVersionWithoutV>$(FSharpNetCoreProductMajorVersion).0</_TargetFrameworkVersionWithoutV>
     <TargetFrameworkIdentifier>.NETCoreApp</TargetFrameworkIdentifier>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>

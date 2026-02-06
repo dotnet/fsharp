@@ -85,7 +85,7 @@ args=""
 
 # Read product TFM from centralized source of truth using MSBuild
 # Pass DotNetBuildSourceOnly so source-build/VMR resolves to $(NetCurrent) instead of hardcoded TFM
-tfm=$("$scriptroot/common/dotnet.sh" msbuild "$scriptroot/TargetFrameworks.props" /p:DotNetBuildSourceOnly=$source_build --getProperty:FSharpNetCoreProductDefaultTargetFramework 2>/dev/null | tr -d '[:space:]')
+tfm=$("$scriptroot/common/dotnet.sh" msbuild "$scriptroot/TargetFrameworks.props" /p:DotNetBuildSourceOnly=$source_build --getProperty:FSharpNetCoreProductTargetFramework 2>/dev/null | tr -d '[:space:]')
 
 BuildCategory=""
 BuildMessage=""
