@@ -935,3 +935,7 @@ stages:
           commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
           buildScript: build.cmd DotnetTest
           displayName: FsToolkit_ErrorHandling_Test
+        - repo: opentk/opentk
+          commit: 60c20cca65a7df6e8335e8d6060d91b30909fbea
+          buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release
+          displayName: OpenTK_FSharp_Build
