@@ -1326,7 +1326,7 @@ module List =
     ///
     /// <returns>The length of the list.</returns>
     ///
-    /// <remarks>The notation <c>array.Length</c> is preferred. This is an O(n) operation, where n is the length of the list.</remarks>
+    /// <remarks>The notation <c>list.Length</c> is preferred. This is an O(n) operation, where n is the length of the list.</remarks>
     ///
     /// <example id="length-1">
     /// <code lang="fsharp">
