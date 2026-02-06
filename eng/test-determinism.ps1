@@ -404,7 +404,8 @@ try {
 
   $script:bootstrap = $true
   $script:bootstrapConfiguration = "Proto"
-  $script:fsharpNetCoreProductTfm = "net10.0"
+  # Read product TFM from centralized source of truth via MSBuild
+  $script:fsharpNetCoreProductTfm = (& $PSScriptRoot/common/dotnet.ps1 msbuild $PSScriptRoot/TargetFrameworks.props --getProperty:FSharpNetCoreProductTargetFramework).Trim()
   $script:bootstrapTfm = $script:fsharpNetCoreProductTfm
 
   $bootstrapDir = Make-BootstrapBuild

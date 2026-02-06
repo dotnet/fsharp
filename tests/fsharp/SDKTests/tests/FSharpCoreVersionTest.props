@@ -1,10 +1,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <Import Project="$(FSharpRepositoryPath)\eng\Versions.props" />
+  
+  <!-- Import target frameworks from single source of truth -->
+  <Import Project="$(FSharpRepositoryPath)\eng\TargetFrameworks.props" />
 
   <PropertyGroup>
-    <TargetFramework Condition="'$(TargetFramework)' == ''">net10.0</TargetFramework>
-    <_TargetFrameworkVersionWithoutV>10.0</_TargetFrameworkVersionWithoutV>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">$(FSharpNetCoreProductTargetFramework)</TargetFramework>
+    <_TargetFrameworkVersionWithoutV>$(FSharpNetCoreProductMajorVersion).0</_TargetFrameworkVersionWithoutV>
     <TargetFrameworkIdentifier>.NETCoreApp</TargetFrameworkIdentifier>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <TargetsDirectory>$(FSharpRepositoryPath)\artifacts\bin\FSharpSuite.Tests\$(Configuration)\$(TARGETFRAMEWORK)</TargetsDirectory>

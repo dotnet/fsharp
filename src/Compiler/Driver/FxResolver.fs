@@ -412,7 +412,11 @@ type internal FxResolver
 
         match runningTfmOpt with
         | Some tfm -> tfm
-        | _ -> if isRunningOnCoreClr then "net11.0" else "net472"
+        | _ ->
+            if isRunningOnCoreClr then
+                FSharp.BuildProperties.fsProductTfm
+            else
+                "net472"
 
     let trySdkRefsPackDirectory =
         lazy

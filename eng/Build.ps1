@@ -35,8 +35,8 @@ param (
     # Options
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
-    [string]$bootstrapTfm = "net10.0",
-    [string]$fsharpNetCoreProductTfm = "net10.0",
+    [string]$bootstrapTfm = "",
+    [string]$fsharpNetCoreProductTfm = "",
     [switch][Alias('bl')]$binaryLog = $true,
     [switch][Alias('nobl')]$excludeCIBinaryLog = $false,
     [switch][Alias('nolog')]$noBinaryLog = $false,
@@ -82,7 +82,16 @@ $BuildCategory = ""
 $BuildMessage = ""
 
 $desktopTargetFramework = "net472"
-$coreclrTargetFramework = "net10.0"
+# Read product TFM from centralized source of truth via MSBuild
+$coreclrTargetFramework = (& $PSScriptRoot/common/dotnet.ps1 msbuild $PSScriptRoot/TargetFrameworks.props --getProperty:FSharpNetCoreProductTargetFramework).Trim()
+
+# Set defaults for bootstrapTfm and fsharpNetCoreProductTfm if not provided
+if ($bootstrapTfm -eq "") {
+    $bootstrapTfm = $coreclrTargetFramework
+}
+if ($fsharpNetCoreProductTfm -eq "") {
+    $fsharpNetCoreProductTfm = $coreclrTargetFramework
+}
 
 function Print-Usage() {
     Write-Host "Common settings:"

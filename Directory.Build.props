@@ -1,12 +1,14 @@
 <Project>
 
+  <!-- Import target frameworks from single source of truth -->
+  <Import Project="$(MSBuildThisFileDirectory)eng/TargetFrameworks.props" />
+
   <PropertyGroup>
     <PackageProjectUrl>https://github.com/dotnet/fsharp</PackageProjectUrl>
     <RepositoryUrl>https://github.com/dotnet/fsharp</RepositoryUrl>
     <LangVersion Condition="'$(FSharpLangVersion)' != ''">$(FSharpLangVersion)</LangVersion>
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
-    <FSharpNetCoreProductDefaultTargetFramework>net10.0</FSharpNetCoreProductDefaultTargetFramework>
     <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildSourceOnly)</IgnoreMibc>
     <!-- When building the .NET product, there's no need to publish Windows PDBs. Any conversion to Windows PDBs will be done during staging, if necessary. -->
     <PublishWindowsPdb Condition="'$(DotNetBuild)' == 'true'">false</PublishWindowsPdb>
@@ -57,34 +59,20 @@
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
     <!-- Note, that default framework is used here (the one we use for development in the current cycle),
          since it's a non-arcade and non-sourcebuild scenario -->
-    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(RuntimeIdentifier)/fslex.dll</FsLexPath>
-    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(RuntimeIdentifier)/fsyacc.dll</FsYaccPath>
+    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/$(FSharpNetCoreProductTargetFramework)/$(RuntimeIdentifier)/fslex.dll</FsLexPath>
+    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductTargetFramework)/$(RuntimeIdentifier)/fsyacc.dll</FsYaccPath>
     <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'" />
 
   <Import Project="FSharpBuild.Directory.Build.props" Condition=" '$(FSharpTestCompilerVersion)' == '' " />
-  <!-- To support source-build for the "next" version of .NET without forcing this repo to use it,
-       we can utilize arcade's $(NetCurrent) property, and set it ourselves in the arcade-less scenarios.
-       For FCS solution, we set it to one for current dev cycle.
-       When used with arcade, and inserting/building for net8 branches, it will set it to net8.0, for net9 branches to net9.0 and so on. -->
-  <Choose>
-    <!-- Once we move to OOP in VS, and major dependants of FCS will move to netcore (not netstandard),
-         we should also support $(NetPrevious) for all releases.
-         This will likely include FCS and FSharp.Core as well as shipped products.
-         Right now, it only covers products we ship (FSC and FSI), not NuGet packages. -->
-    <When Condition="'$(DotNetBuildSourceOnly)' == 'true'">
-      <PropertyGroup>
-        <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup>
-        <FSharpNetCoreProductTargetFramework>$(FSharpNetCoreProductDefaultTargetFramework)</FSharpNetCoreProductTargetFramework>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
+
+  <!-- Source-build override: Arcade SDK (imported above) provides $(NetCurrent).
+       Cannot live in eng/TargetFrameworks.props because it's imported before Arcade. -->
+  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
+    <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
+  </PropertyGroup>
 
   <!-- It's important we set TFM before this, since FSharpTests.Directory.Build.props uses it.
        TODO(vlza): this build props looks outdated, since we only use $(FSharpTestCompilerVersion) in TP tests or cambridge suite (which we slowly want to migrate to xUnit).

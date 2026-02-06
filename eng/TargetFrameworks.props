@@ -1,0 +1,20 @@
+<Project>
+
+  <!-- 
+    This file defines the default target framework for F# .NET Core products.
+    It is the single source of truth for the product TFM.
+    
+    Properties are set defensively (only if not already set) to allow:
+    - Environment variable overrides
+    - CLI property overrides (e.g., -p:FSharpNetCoreProductTargetFramework=net9.0)
+  -->
+
+  <PropertyGroup>
+    <!-- Default target framework for F# products - only set if not already provided -->
+    <FSharpNetCoreProductTargetFramework Condition="'$(FSharpNetCoreProductTargetFramework)' == ''">net10.0</FSharpNetCoreProductTargetFramework>
+
+    <!-- Derive major version by stripping 'net' prefix and '.0' suffix (e.g., net10.0 -> 10) -->
+    <FSharpNetCoreProductMajorVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(FSharpNetCoreProductTargetFramework)', '^net(\d+)\.0$', '$1'))</FSharpNetCoreProductMajorVersion>
+  </PropertyGroup>
+
+</Project>

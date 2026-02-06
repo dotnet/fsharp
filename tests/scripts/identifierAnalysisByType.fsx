@@ -1,12 +1,16 @@
 // Print some stats about identifiers grouped by type
 //
+// IMPORTANT: This is a developer utility script. The TFM in the #r path below
+// must match the FSharpNetCoreProductTargetFramework property in 
+// eng/TargetFrameworks.props. If the product TFM changes, update the path.
+//
+// Run: dotnet fsi tests/scripts/identifierAnalysisByType.fsx <project-file>
 
 #r "nuget: Ionide.ProjInfo"
 #I @"..\..\artifacts\bin\fsc\Debug\net10.0\"
 #r "FSharp.Compiler.Service.dll"
 
 open System
-open System.IO
 open Ionide.ProjInfo
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
