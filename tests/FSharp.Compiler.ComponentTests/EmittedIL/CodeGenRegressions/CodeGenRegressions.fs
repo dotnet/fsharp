@@ -938,16 +938,16 @@ printfn "Test completed"
     // ====================================================================================
 
     // ===== Extension method compiled names use dot separator for binary compatibility =====
-    // Extension methods use dot separator (e.g., TypeName.MemberName) in their compiled names.
+    // Extension methods must use dot separator (e.g., TypeName.MemberName) in their compiled names.
     // This maintains binary compatibility with FsCheck and other tools that use reflection
-    // to find FSharp.Core extension methods.
+    // to find FSharp.Core extension methods like FSharpType.IsRecord.Static.
     // Related: https://github.com/dotnet/fsharp/issues/16362 (proposed $ separator was reverted)
 
     [<Fact>]
     let ``ExtensionMethod_InstanceMethod_UsesDotSeparator`` () =
-        // Instance extension method: compiled name is TypeName.MemberName
-        // Verify dot (.) separator is used, NOT dollar ($) separator
-        let source = """
+        // Instance extension method: compiled name should be TypeName.MemberName
+        let result =
+            FSharp """
 module Test
 
 open System
@@ -955,28 +955,20 @@ open System
 type Exception with
     member ex.Reraise() = raise ex
 """
-        let result = FSharp source |> asLibrary |> compile |> shouldSucceed
-        
-        // Verify IL pattern using standard pipeline
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p [
-                    // Instance extension: Exception.Reraise (no .Static suffix)
-                    ".method public static !!a  Exception.Reraise<a>(class [runtime]System.Exception A_0) cil managed"
-                ]
-                // CRITICAL: Verify $ separator is NOT used (regression guard)
-                // Issue #16362 proposed using $ but was reverted for binary compatibility
-                Assert.DoesNotContain("Exception$Reraise", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+            |> asLibrary
+            |> compile
+            |> shouldSucceed
+        // Positive: dot separator is used (Exception.Reraise)
+        result |> verifyIL [ ".method public static !!a  Exception.Reraise<a>(class [runtime]System.Exception A_0) cil managed" ]
+        // Negative: dollar separator is NOT used (regression guard for Issue #16362)
+        result |> verifyILNotPresent [ "Exception$Reraise" ]
 
     [<Fact>]
     let ``ExtensionMethod_StaticMethod_UsesDotSeparatorWithStaticSuffix`` () =
-        // Static extension method: compiled name is TypeName.MemberName.Static
-        // Verify dot (.) separator is used, NOT dollar ($) separator
-        let source = """
+        // Static extension method: compiled name should be TypeName.MemberName.Static
+        // This mirrors FSharp.Core pattern like FSharpType.IsRecord.Static
+        let result =
+            FSharp """
 module Test
 
 open System
@@ -984,23 +976,13 @@ open System
 type Exception with
     static member CreateNew(msg: string) = Exception(msg)
 """
-        let result = FSharp source |> asLibrary |> compile |> shouldSucceed
-        
-        // Verify IL pattern using standard pipeline
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p [
-                    // Static extension: Exception.CreateNew.Static (has .Static suffix)
-                    ".method public static class [runtime]System.Exception Exception.CreateNew.Static(string msg) cil managed"
-                ]
-                // CRITICAL: Verify $ separator is NOT used (regression guard)
-                // Issue #16362 proposed using $ but was reverted for binary compatibility
-                Assert.DoesNotContain("Exception$CreateNew", actualIL)
-                Assert.DoesNotContain("$Static", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+            |> asLibrary
+            |> compile
+            |> shouldSucceed
+        // Positive: dot separator with .Static suffix (Exception.CreateNew.Static)
+        result |> verifyIL [ ".method public static class [runtime]System.Exception Exception.CreateNew.Static(string msg) cil managed" ]
+        // Negative: dollar separator is NOT used (regression guard for Issue #16362)
+        result |> verifyILNotPresent [ "Exception$CreateNew"; "$Static" ]
 
     // ===== Issue #16292: Incorrect codegen for Debug build with SRTP and mutable struct =====
     // https://github.com/dotnet/fsharp/issues/16292
