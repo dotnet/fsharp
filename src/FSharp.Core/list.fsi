@@ -1479,7 +1479,8 @@ module List =
 
     /// <summary>Returns the greatest of all elements of the list, compared via Operators.max on the function result.</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty.</remarks>
+    /// <remarks>Returns the first maximal element of the list if there are multiple equal maximum elements.</remarks>
+    /// 
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -1538,7 +1539,8 @@ module List =
 
     /// <summary>Returns the lowest of all elements of the list, compared via Operators.min on the function result</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty.</remarks>
+    /// <remarks>Returns the first minimal element of the list if there are multiple equal minimal elements.</remarks>
+    /// 
     /// <param name="projection">The function to transform list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
