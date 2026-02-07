@@ -995,11 +995,42 @@ module internal Tokenizer =
             | -1
             | 0 -> span
             | index -> TextSpan(span.Start + index, text.Length - index)
+        // (#17221, #14057) Operators can contain '.' (e.g., "-.-") - don't split them
+        elif FSharp.Compiler.Syntax.PrettyNaming.IsOperatorDisplayName text then
+            span
         else
             match text.LastIndexOf '.' with
             | -1
             | 0 -> span
             | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
+
+    // (#18270) Check if the text at the given span is a property accessor keyword (get/set).
+    // These should be excluded from rename operations since they are keywords, not identifiers.
+    let private isPropertyAccessorKeyword (sourceText: SourceText, span: TextSpan) : bool =
+        let text = sourceText.GetSubText(span).ToString()
+        text = "get" || text = "set"
+
+    /// #18270: Parameterized active pattern that applies fixupSpan and filters out
+    /// property accessor keywords (get/set) from rename/find-references.
+    /// Usage: match textSpan with FixedSpan sourceText fixedSpan -> ...
+    let (|FixedSpan|_|) (sourceText: SourceText) (span: TextSpan) : TextSpan voption =
+        let fixedSpan = fixupSpan (sourceText, span)
+
+        if isPropertyAccessorKeyword (sourceText, fixedSpan) then
+            ValueNone
+        else
+            ValueSome fixedSpan
+
+    /// #18270: Converts F# range to Roslyn TextSpan with editor-specific filtering.
+    /// Filters out property accessor keywords (get/set) that should not appear in
+    /// Find All References or Rename operations.
+    let TryFSharpRangeToTextSpanForEditor (sourceText: SourceText, range: range) : TextSpan voption =
+        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
+        | ValueSome textSpan ->
+            match textSpan with
+            | FixedSpan sourceText fixedSpan -> ValueSome fixedSpan
+            | _ -> ValueNone
+        | _ -> ValueNone
 
     let isDoubleBacktickIdent (s: string) =
         let doubledDelimiter = 2 * doubleBackTickDelimiter.Length

@@ -1,206 +1,51 @@
-# GitHub Copilot Instructions for F# Compiler
+# F# Compiler
 
-## DEBUGGING MINDSET - CRITICAL
+## Build
 
-**Your changes are the cause until proven otherwise.**
-
-When encountering test failures or build issues after making changes:
-
-1. **NEVER assume "pre-existing failure"** - This is incorrect 99% of the time
-2. **ALWAYS assume your PR diff caused the issue** - Even if it seems unrelated
-3. **Remember the bootstrap**: The F# compiler compiles itself. If you introduced broken code in earlier commits, even if you "reverted" it later, the bootstrap compiler may be using the broken version
-4. **Clean and rebuild**: When in doubt, `git clean -xfd artifacts` and rebuild from scratch to eliminate bootstrap contamination
-5. **Compare your diff**: Use `git diff <base_commit> HEAD` to see ALL changes in your PR, not just the latest commit
-6. **Verify with original code**: Temporarily revert your changes to confirm tests pass without them
-
-**Forbidden phrases:**
-- "pre-existing issue" 
-- "was already broken"
-- "not related to my changes"
-- "known limitation"
-
-**Required verification before claiming something was already broken:**
-1. Clean build artifacts completely
-2. Checkout the base branch
-3. Build and run the same test
-4. Document the failure with the base branch commit hash
-
-Only after this verification can you legitimately claim a pre-existing issue.
-
----
-
-## STRUCTURE YOUR CHANGE (BEFORE EDITING)
-Keep scope tight.  
-General guide:
-- Use F#
-- Target .NET Standard 2.0 for compatibility
-- Avoid external dependencies – the codebase is self-contained (do NOT add new NuGet packages)
-- Follow docs/coding-standards.md and docs/overview.md
-
-**Test‑First** (bugs / regressions): Add/adjust a minimal test that fails on current main → confirm it fails → implement fix → run core command and ensure test passes → only then continue.
-
-Plan your task:
-1. Write a 1–2 sentence intent (bug fix / API add / language tweak).  
-2. Identify domain: Language (`LanguageFeature.fsi` touched) vs `src/FSharp.Core/` vs `vsintegration/` vs compiler/service.  
-3. Public API? Edit matching `.fsi` simultaneously.  
-4. New/changed diagnostics? Update FSComp.txt.  
-5. IL shape change expected? Plan ILVerify baseline update.  
-6. Expect baseline diffs? Plan `TEST_UPDATE_BSL=1` run.  
-7. Add/adjust tests in existing projects.  
-8. Decide release-notes sink now (Section 8).  
-9. Run formatting only at the end.
-
----
-
-# AFTER CHANGING CODE ( Agent-only. Ubuntu only )
-
-Always run the core command. Always verify exit codes. No assumptions.
-
-## 1. Core Command
+Default (set `BUILDING_USING_DOTNET=true` system-wide):
+```bash
+dotnet build <changed>.fsproj -c Debug
 ```
-./build.sh -c Release --testcoreclr
-```
-Non‑zero → classify & stop.
+Get target framework: `dotnet msbuild <proj> -getProperty:TargetFrameworks`
+FSharp.Core + compiler composite: `./build.sh -c Release`
+FSharp.Build changes: `./build.sh -c Release`
 
-### CRITICAL TEST EXECUTION RULES
-**ALWAYS** run tests before claiming success. **NEVER** mark work complete without verified passing tests.
+## No bullshit
 
-When running tests, **ALWAYS** report:
-- Total number of tests executed
-- Number passed / failed / skipped
-- Execution duration
-- Example: "Ran 5 tests: 5 passed, 0 failed, 0 skipped. Duration: 4.2 seconds"
+Build fails → 99% YOUR previous change broke it. You ARE the compiler.
+DON'T say "pre-existing", "infra issue", "unrelated".
+DO `git clean -xfd artifacts` and rebuild.
+Bootstrap contamination: early commits break compiler → later "fixes" still use broken bootstrap. Clean fully.
 
-**ASSUME YOUR CODE IS THE PROBLEM**: When tests fail, ALWAYS assume your implementation is incorrect FIRST. Only after thorough investigation with evidence should you consider other causes like build issues or test infrastructure problems.
+## Test
 
-**UNDERSTAND WHAT YOU'RE TESTING**: Before writing tests, understand exactly what behavior the feature controls. Research the codebase to see how the feature is actually used, not just how you think it should work.
+Default: `-c Debug`
+Use `-c Release` for: EmittedIL tests, Optimizer tests, full component runs
+spot check: `dotnet test <proj> --filter "Name~X" -c Debug`
+full component: `dotnet test tests/FSharp.Compiler.ComponentTests -c Release`
+IDE/service: `tests/FSharp.Compiler.Service.Tests`
+VS integration: `vsintegration/` (Windows only)
+update baselines: `TEST_UPDATE_BSL=1 <test command>`
 
-**TEST INCREMENTALLY**: After each code change, immediately run the relevant tests to verify the change works as expected. Don't accumulate multiple changes before testing.
+## Spotcheck tests
 
-## 2. Bootstrap (Failure Detection Only)
-Two-phase build. No separate bootstrap command.  
-Early proto/tool errors (e.g. "Error building tools") → `BootstrapFailure` (capture key lines). Stop.
+- find new tests for bugfix/feature
+- find preexisting tests in same area
+- run siblings/related
 
-## 3. Build Failure
-Proto ok but solution build fails → `BuildFailure`.  
-Capture exit code, ≤15 error lines (`error FS`, `error F#`, `error MSB`), binlog path: `artifacts/log/Release/Build.*.binlog`.  
-Do not proceed to tests.
+## Final validation (Copilot Coding Agent only)
 
-## 4. Tests
-Core command runs CoreCLR tests:
-- FSharp.Test.Utilities
-- FSharp.Compiler.ComponentTests
-- FSharp.Compiler.Service.Tests
-- FSharp.Compiler.Private.Scripting.UnitTests
-- FSharp.Build.UnitTests
-- FSharp.Core.UnitTests
-Failures → `TestFailure` (projects + failing lines + baseline hints).
+Before submitting: `./build.sh -c Release --testcoreclr`
 
-## 5. Baselines
-Drift → update then re-run.
+## Code
 
-General/component:
-```
-TEST_UPDATE_BSL=1
-./build.sh -c Release --testcoreclr
-```
-Surface area:
-```
-TEST_UPDATE_BSL=1 
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
-```
-ILVerify:
-```
-TEST_UPDATE_BSL=1 
-pwsh tests/ILVerify/ilverify.ps1
-```
-Classify: `BaselineDrift(SurfaceArea|ILVerify|GeneralBSL)` + changed files.
+.fs: implementation
+.fsi: declarations, API docs, context comments
 
-## 6. Formatting
-```
-dotnet fantomas . --check
-```
-If fail:
-```
-dotnet fantomas .
-dotnet fantomas . --check
-```
-Still failing → `FormattingFailure`.
+## Rules
 
-## 7. Public API / IL
-If new/changed public symbol (`.fsi` touched or public addition):
-1. Update `.fsi`.
-2. Surface area baseline flow.
-3. ILVerify if IL shape changed.
-4. Release notes (Section 8).
-Missed baseline update → `BaselineDrift`.
-
-## 8. Release Notes (Sink Rules – Compact)
-Most fixes → FSharp.Compiler.Service.
-
-| Condition | Sink |
-|-----------|------|
-| `LanguageFeature.fsi` changed | Language |
-| Public API/behavior/perf change under `src/FSharp.Core/` | FSharp.Core |
-| Only `vsintegration/` impacted | VisualStudio |
-| Otherwise | FSharp.Compiler.Service |
-
-Action each needed sink:
-- Append bullet in latest version file under `docs/release-notes/<Sink>/`
-- Format: `* Description. ([PR #NNNNN](https://github.com/dotnet/fsharp/pull/NNNNN))`
-- Optional issue link before PR.
-Missing required entry → `ReleaseNotesMissing`.
-
-## 9. Classifications
-Use one or more exactly:
-- `BootstrapFailure`
-- `BuildFailure`
-- `TestFailure`
-- `FormattingFailure`
-- `BaselineDrift(SurfaceArea|ILVerify|GeneralBSL)`
-- `ReleaseNotesMissing`
-
-Schema:
-```
-Classification:
-Command:
-ExitCode:
-KeySnippets:
-ActionTaken:
-Result:
-OutstandingIssues:
-```
-
-## 10. Decision Flow
-1. Format check  
-2. Core command  
-3. If fail classify & stop  
-4. Tests → `TestFailure` if any  
-5. Baseline drift? update → re-run → classify if persists  
-6. Public surface/IL? Section 7  
-7. Release notes sink (Section 8)  
-8. If no unresolved classifications → success summary
-
-## 11. Success Example
-```
-AllChecksPassed:
-  Formatting: OK
-  Bootstrap: OK
-  Build: OK
-  Tests: Passed
-  Baselines: Clean
-  ReleaseNotes: FSharp.Compiler.Service
-```
-
-## 12. Failure Example
-```
-BootstrapFailure:
-  Command: ./build.sh -c Release --testcoreclr
-  ExitCode: 1
-  KeySnippets:
-    - "Error building tools"
-  ActionTaken: None
-  Result: Stopped
-  OutstandingIssues: Bootstrap must be fixed
-```
-(eof)
+Public API change → update .fsi
+New diagnostic → update `src/Compiler/FSComp.txt`
+API surface change → `TEST_UPDATE_BSL=1 dotnet test tests/FSharp.Compiler.Service.Tests --filter "SurfaceAreaTest" -c Release`
+After code changes → `dotnet fantomas .`
+When fully done → write release notes (see skill)

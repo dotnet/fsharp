@@ -2,9 +2,11 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.IO
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
@@ -16,6 +18,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open CancellableTasks
 
 module internal SymbolHelpers =
+
     /// Used for local code fixes in a document, e.g. to rename local parameters
     let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int) =
         asyncMaybe {
@@ -139,6 +142,10 @@ module internal SymbolHelpers =
             | scope ->
                 let projectsToCheck =
                     match scope with
+                    | Some(SymbolScope.CurrentDocument)
+                    | Some(SymbolScope.SignatureAndImplementation) ->
+                        // For current document or signature/implementation, just search current project
+                        [ currentDocument.Project ]
                     | Some(SymbolScope.Projects(scopeProjects, false)) ->
                         [
                             for scopeProject in scopeProjects do
@@ -148,8 +155,18 @@ module internal SymbolHelpers =
                         |> List.distinct
                     | Some(SymbolScope.Projects(scopeProjects, true)) -> scopeProjects
                     // The symbol is declared in .NET framework, an external assembly or in a C# project within the solution.
-                    // In order to find all its usages we have to check all F# projects.
-                    | _ -> Seq.toList currentDocument.Project.Solution.Projects
+                    // Optimization: Only search projects that reference the specific assembly
+                    | None ->
+                        match symbolUse.Symbol.Assembly.FileName with
+                        | Some assemblyPath ->
+                            let referencingProjects =
+                                ProjectFiltering.getProjectsReferencingAssembly assemblyPath currentDocument.Project.Solution
+
+                            if List.isEmpty referencingProjects then
+                                Seq.toList currentDocument.Project.Solution.Projects
+                            else
+                                referencingProjects
+                        | None -> Seq.toList currentDocument.Project.Solution.Projects
 
                 do! getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound)
         }

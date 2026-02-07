@@ -1815,7 +1815,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m -> m.IsUnionCaseTester
         | V v ->
             v.IsPropertyGetterMethod &&
-            v.LogicalName.StartsWith("get_Is") &&
+            PrettyNaming.IsUnionCaseTesterPropertyName v.LogicalName &&
             v.IsImplied && v.MemberApparentEntity.IsUnionTycon
         | E _ | C _ -> false
 
