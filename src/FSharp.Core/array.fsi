@@ -1927,7 +1927,7 @@ module Array =
 
     /// <summary>Returns the lowest of all elements of the array, compared via Operators.min.</summary>
     ///
-    /// <remarks>Throws ArgumentException for empty arrays This is an O(n) operation, where n is the length of the array.</remarks>
+    /// <remarks>Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
     ///
     /// <param name="array">The input array.</param>
     ///
@@ -4212,7 +4212,7 @@ module Array =
         ///
         /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
         /// The order in which the given function is applied to elements of the input array is not specified.
-        /// The order of the keys and values in the result is also not specified This is an O(n) operation, where n is the length of the array.</remarks>
+        /// The order of the keys and values in the result is also not specified. This is an O(n) operation, where n is the length of the array.</remarks>
         /// <param name="projection">A function that transforms an element of the array into a comparable key.</param>
         /// <param name="array">The input array.</param>
         ///

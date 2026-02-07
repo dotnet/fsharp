@@ -1544,7 +1544,7 @@ module List =
 
     /// <summary>Return the greatest of all elements of the list, compared via Operators.max.</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty This is an O(n) operation, where n is the length of the list.</remarks>
+    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
     /// <param name="list">The input list.</param>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
@@ -1819,7 +1819,7 @@ module List =
     /// Return the final result. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
     /// <c>f (... (f i0 i1) i2 ...) iN</c>.</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty This is an O(n) operation, where n is the length of the list.</remarks>
+    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
     ///
     /// <param name="reduction">The function to reduce two list elements to a single element.</param>
     /// <param name="list">The input list.</param>

@@ -3282,7 +3282,7 @@ module Seq =
     /// Can evaluate to <c>seq { 3; 1; 3 }</c>.
     /// </example>
     ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
+    /// <remarks>This is an O(n + count) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("RandomChoicesBy")>]
     val randomChoicesBy: randomizer: (unit -> float) -> count: int -> source: seq<'T> -> seq<'T>
 
