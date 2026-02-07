@@ -21,6 +21,7 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
+open FSharp.Compiler.XmlDocInheritance
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -87,8 +88,59 @@ module Impl =
     let makeXmlDoc (doc: XmlDoc) =
         FSharpXmlDoc.FromXmlText doc
     
+    /// Creates an FSharpXmlDoc with <inheritdoc> elements expanded
+    let makeExpandedXmlDoc (cenv: SymbolEnv) (implicitTargetCrefOpt: string option) (doc: XmlDoc) =
+        if doc.IsEmpty then
+            FSharpXmlDoc.FromXmlText doc
+        else
+            let allCcus = cenv.tcImports.GetCcusInDeclOrder()
+            // Create a lookup function that searches XML documentation files by assembly name and signature
+            let tryFindXmlDocBySignature (assemblyName: string) (xmlDocSig: string) : XmlDoc option =
+                cenv.amap.assemblyLoader.TryFindXmlDocumentationInfo(assemblyName)
+                |> Option.bind (fun xmlDocInfo -> xmlDocInfo.TryGetXmlDocBySig(xmlDocSig))
+            let expandedDoc = expandInheritDoc (Some allCcus) (Some tryFindXmlDocBySignature) (Some cenv.thisCcu) cenv.thisCcuTy implicitTargetCrefOpt doc.Range Set.empty doc
+            FSharpXmlDoc.FromXmlText expandedDoc
+
     let makeElaboratedXmlDoc (doc: XmlDoc) =
         makeReadOnlyCollection (doc.GetElaboratedXmlLines())
+    
+    /// Computes the implicit target cref for an entity (base class or first implemented interface)
+    let getImplicitTargetCrefForEntity (cenv: SymbolEnv) (entity: EntityRef) : string option =
+        try
+            let ty = generalizedTyconRef cenv.g entity
+            // First try base class
+            match GetSuperTypeOfType cenv.g cenv.amap range0 ty with
+            | Some baseTy when not (isObjTyAnyNullness cenv.g baseTy) ->
+                // Get the XmlDocSig of the base type
+                match tryTcrefOfAppTy cenv.g baseTy with
+                | ValueSome tcref -> Some ("T:" + tcref.CompiledRepresentationForNamedType.FullName)
+                | ValueNone -> None
+            | _ ->
+                // Fall back to first implemented interface
+                let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap range0 ty
+                match interfaces with
+                | intfTy :: _ ->
+                    match tryTcrefOfAppTy cenv.g intfTy with
+                    | ValueSome tcref -> Some ("T:" + tcref.CompiledRepresentationForNamedType.FullName)
+                    | ValueNone -> None
+                | [] -> None
+        with _ -> None
+    
+    /// Computes the implicit target cref for a member (from implemented interface or overridden base method)
+    let getImplicitTargetCrefForMember (cenv: SymbolEnv) (slotSigs: SlotSig list) : string option =
+        match slotSigs with
+        | [] -> None
+        | slot :: _ ->
+            try
+                let declaringTy = slot.DeclaringType
+                let methodName = slot.Name
+                match tryTcrefOfAppTy cenv.g declaringTy with
+                | ValueSome tcref ->
+                    let typeName = tcref.CompiledRepresentationForNamedType.FullName
+                    // Build method cref: M:Namespace.Type.MethodName
+                    Some ("M:" + typeName + "." + methodName)
+                | ValueNone -> None
+            with _ -> None
     
     let rescopeEntity optViewedCcu (entity: Entity) = 
         match optViewedCcu with 
@@ -708,7 +760,8 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
  
     member _.XmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeXmlDoc else
-        entity.XmlDoc |> makeXmlDoc
+        let implicitTarget = getImplicitTargetCrefForEntity cenv entity
+        entity.XmlDoc |> makeExpandedXmlDoc cenv implicitTarget
 
     member _.ElaboratedXmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeElaboratedXmlDoc else
@@ -2108,11 +2161,19 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     member _.XmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeXmlDoc else
+        // Get the implemented slot signatures to compute implicit target for inheritdoc
+        let slotSigs =
+            match d with
+            | E e -> e.AddMethod.ImplementedSlotSignatures
+            | P p -> p.ImplementedSlotSignatures
+            | M m | C m -> m.ImplementedSlotSignatures
+            | V v -> v.ImplementedSlotSignatures
+        let implicitTarget = getImplicitTargetCrefForMember cenv slotSigs
         match d with 
-        | E e -> e.XmlDoc |> makeXmlDoc
-        | P p -> p.XmlDoc |> makeXmlDoc
-        | M m | C m -> m.XmlDoc |> makeXmlDoc
-        | V v -> v.XmlDoc |> makeXmlDoc
+        | E e -> e.XmlDoc |> makeExpandedXmlDoc cenv implicitTarget
+        | P p -> p.XmlDoc |> makeExpandedXmlDoc cenv implicitTarget
+        | M m | C m -> m.XmlDoc |> makeExpandedXmlDoc cenv implicitTarget
+        | V v -> v.XmlDoc |> makeExpandedXmlDoc cenv implicitTarget
 
     member _.ElaboratedXmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeElaboratedXmlDoc else

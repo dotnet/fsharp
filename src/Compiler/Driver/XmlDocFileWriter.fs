@@ -3,8 +3,11 @@
 module internal FSharp.Compiler.XmlDocFileWriter
 
 open System.IO
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.XmlDocInheritance
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
@@ -77,18 +80,85 @@ module XmlDocWriter =
 
         doModuleSig None generatedCcu.Contents
 
-    let WriteXmlDocFile (g, assemblyName, generatedCcu: CcuThunk, xmlFile) =
+    let WriteXmlDocFile (g, tcImports: TcImports, assemblyName, generatedCcu: CcuThunk, xmlFile) =
+        let allCcus = tcImports.GetCcusInDeclOrder()
+
         if not (FileSystemUtils.checkSuffix xmlFile "xml") then
             error (Error(FSComp.SR.docfileNoXmlSuffix (), Range.rangeStartup))
 
         let mutable members = []
 
-        let addMember id xmlDoc =
+        /// Compute implicit target cref for a member from its ImplementedSlotSigs
+        /// Returns something like "M:Namespace.IInterface.MethodName" for interface implementations
+        let computeImplicitTargetCref (v: Val) : string option =
+            match v.ImplementedSlotSigs with
+            | slotSig :: _ ->
+                // Get the declaring interface/base class type
+                let declaringType = slotSig.DeclaringType
+                let methodName = slotSig.Name
+
+                // Try to get the type reference
+                match tryTcrefOfAppTy g declaringType with
+                | ValueSome tcref ->
+                    // Build the full type path
+                    let typePath =
+                        match tcref.CompilationPathOpt with
+                        | Some cp ->
+                            let accessPath = cp.AccessPath |> List.map fst |> String.concat "."
+
+                            if accessPath.Length = 0 then
+                                tcref.CompiledName
+                            else
+                                accessPath + "." + tcref.CompiledName
+                        | None -> tcref.CompiledName
+                    // Determine if this is a method or property
+                    match v.MemberInfo with
+                    | Some memberInfo ->
+                        match memberInfo.MemberFlags.MemberKind with
+                        | SynMemberKind.PropertyGet
+                        | SynMemberKind.PropertySet
+                        | SynMemberKind.PropertyGetSet ->
+                            // For properties, use P: prefix and the property name
+                            Some("P:" + typePath + "." + v.PropertyName)
+                        | _ ->
+                            // For methods, use M: prefix
+                            Some("M:" + typePath + "." + methodName)
+                    | None -> Some("M:" + typePath + "." + methodName)
+                | ValueNone -> None
+            | [] -> None
+
+        let amap = tcImports.GetImportMap()
+
+        let addMemberWithImplicitTarget id xmlDoc implicitTargetOpt =
             if hasDoc xmlDoc then
-                let doc = xmlDoc.GetXmlText()
+                // Expand <inheritdoc> elements before writing to XML file
+                // Pass the generatedCcu for same-compilation type resolution
+                let ccuMtyp = generatedCcu.Contents.ModuleOrNamespaceType
+                // Create a lookup function that searches XML documentation files by assembly name and signature
+                let tryFindXmlDocBySignature (assemblyName: string) (xmlDocSig: string) : XmlDoc option =
+                    amap.assemblyLoader.TryFindXmlDocumentationInfo(assemblyName)
+                    |> Option.bind (fun xmlDocInfo -> xmlDocInfo.TryGetXmlDocBySig(xmlDocSig))
+
+                let expandedDoc =
+                    XmlDocInheritance.expandInheritDoc
+                        (Some allCcus)
+                        (Some tryFindXmlDocBySignature)
+                        (Some generatedCcu)
+                        (Some ccuMtyp)
+                        implicitTargetOpt
+                        Range.rangeStartup
+                        Set.empty
+                        xmlDoc
+
+                let doc = expandedDoc.GetXmlText()
                 members <- (id, doc) :: members
 
-        let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc
+        let addMember id xmlDoc =
+            addMemberWithImplicitTarget id xmlDoc None
+
+        let doVal (v: Val) =
+            let implicitTarget = computeImplicitTargetCref v
+            addMemberWithImplicitTarget v.XmlDocSig v.XmlDoc implicitTarget
 
         let doField (rf: RecdField) = addMember rf.XmlDocSig rf.XmlDoc
 

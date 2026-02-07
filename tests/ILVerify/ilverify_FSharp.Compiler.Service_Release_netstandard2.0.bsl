@@ -44,6 +44,13 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Driver+ProcessCommandLineFlags::Invoke(string)][offset 0x00000014][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CreateILModule+MainModuleBuilder::ConvertProductVersionToILVersionInfo(string)][offset 0x00000010][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.StaticLinking+TypeForwarding::followTypeForwardForILTypeRef([FSharp.Compiler.Service]FSharp.Compiler.AbstractIL.IL+ILTypeRef)][offset 0x00000010][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.XmlDocInheritance::parseTypePath(string)][offset 0x0000003E][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.XmlDocInheritance::parseNestedTypeAlternativePath(string)][offset 0x00000089][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.XmlDocInheritance::parseMethodCref(string)][offset 0x00000079][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.XmlDocInheritance::parsePropertyCref(string)][offset 0x00000054][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.XmlDocSigParser::parseDocCommentId(string)][offset 0x00000120][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.XmlDocSigParser::parseDocCommentId(string)][offset 0x000000EC][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.XmlDocSigParser::parseDocCommentId(string)][offset 0x000000A7][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions::getCompilerOption([FSharp.Compiler.Service]FSharp.Compiler.CompilerOptions+CompilerOption, [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>)][offset 0x000000A7][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions::AddPathMapping([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, string)][offset 0x0000000B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnderflow]: : FSharp.Compiler.CompilerOptions::DoWithColor([System.Console]System.ConsoleColor, [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<Microsoft.FSharp.Core.Unit,!!0>)][offset 0x0000005E] Stack underflow.

@@ -1997,6 +1997,11 @@
         <target state="translated">이 XML 주석이 잘못됨: 매개 변수 '{0}'에 대한 여러 설명서 항목이 있음</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocInheritDocError">
+        <source>This XML comment is invalid: inheritdoc error: {0}</source>
+        <target state="new">This XML comment is invalid: inheritdoc error: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
         <source>This XML comment is invalid: unknown parameter '{0}'</source>
         <target state="translated">이 XML 주석이 잘못됨: 알 수 없는 매개 변수 '{0}'</target>
