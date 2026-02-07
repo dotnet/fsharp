@@ -5548,6 +5548,29 @@ and GenILCall
     let makesNoCriticalTailcalls = (newobj || not virt) // Don't tailcall for 'newobj', or 'call' to IL code
     let hasStructObjArg = valu && ilMethRef.CallingConv.IsInstance
 
+    let ilEnclArgTys = GenTypeArgs cenv m eenv.tyenv enclArgTys
+    let ilMethArgTys = GenTypeArgs cenv m eenv.tyenv methArgTys
+    let ilReturnTys = GenTypes cenv m eenv.tyenv returnTys
+    let ilMethSpec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
+
+    let useICallVirt =
+        (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
+        && ilMethRef.CallingConv.IsInstance
+
+    // When calling methods on value types via callvirt (e.g., calling System.Object.GetHashCode on a struct),
+    // we need to use the constrained. prefix to produce valid IL. See ECMA-335 and issue #18140.
+    // This must be computed before CanTailcall so that tail call suppression sees constrained calls.
+    // Note: The fix for #19075 was reverted as it caused test crashes.
+    let ccallInfo =
+        match ccallInfo with
+        | Some _ -> ccallInfo
+        | None when useICallVirt && not (List.isEmpty argExprs) ->
+            let objArgExpr = List.head argExprs
+            let objArgTy = tyOfExpr g objArgExpr
+            // Check if the object argument is a value type (struct) - if so, we need constrained call
+            if isStructTy g objArgTy then Some objArgTy else None
+        | None -> None
+
     let tail =
         CanTailcall(
             hasStructObjArg,
@@ -5562,34 +5585,12 @@ and GenILCall
             sequel
         )
 
-    let ilEnclArgTys = GenTypeArgs cenv m eenv.tyenv enclArgTys
-    let ilMethArgTys = GenTypeArgs cenv m eenv.tyenv methArgTys
-    let ilReturnTys = GenTypes cenv m eenv.tyenv returnTys
-    let ilMethSpec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
-
-    let useICallVirt =
-        (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
-        && ilMethRef.CallingConv.IsInstance
-
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not
     // in the expression tree since it can't be treated like an ordinary value
     if isSuperInit then
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMethSpec.DeclaringType ]) mkLdarg0
 
     GenExprs cenv cgbuf eenv argExprs
-
-    // When calling methods on value types via callvirt (e.g., calling System.Object.GetHashCode on a struct),
-    // we need to use the constrained. prefix to produce valid IL. See ECMA-335 and issue #18140.
-    // Note: The fix for #19075 was reverted as it caused test crashes.
-    let ccallInfo =
-        match ccallInfo with
-        | Some _ -> ccallInfo
-        | None when useICallVirt && not (List.isEmpty argExprs) ->
-            let objArgExpr = List.head argExprs
-            let objArgTy = tyOfExpr g objArgExpr
-            // Check if the object argument is a value type (struct) - if so, we need constrained call
-            if isStructTy g objArgTy then Some objArgTy else None
-        | None -> None
 
     let il =
         if newobj then
@@ -12026,7 +12027,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     // For AllHelpers, nullary cases generate static properties with the case name (e.g., "Overheated")
                     // We need to discard user-defined properties/methods that would conflict with these generated ones.
                     let nullaryCaseNames =
-                        if cuinfo.HasHelpers = AllHelpers then
+                        if cuinfo.HasHelpers = AllHelpers || cuinfo.HasHelpers = NoHelpers then
                             cuinfo.UnionCases
                             |> Array.choose (fun alt -> if alt.IsNullary then Some alt.Name else None)
                             |> Set.ofArray
@@ -12052,6 +12053,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 // If a user defines a property with the same name, discard the user-defined getter.
                                 || (cuinfo.HasHelpers = NoHelpers
                                     && md.Name.StartsWith("get_")
+                                    && md.Name.Length > 4
+                                    && nullaryCaseNames.Contains(md.Name.Substring(4))
                                     && not (tdef2.Methods.FindByName(md.Name).IsEmpty))),
 
                             (fun (pd: ILPropertyDef) ->
@@ -12069,6 +12072,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 // For NoHelpers (DefaultAugmentation(false)), nullary cases generate properties.
                                 // If a user defines a property with the same name, discard the user-defined one.
                                 || (cuinfo.HasHelpers = NoHelpers
+                                    && nullaryCaseNames.Contains(pd.Name)
                                     && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
                         )
 
