@@ -4,11 +4,13 @@
     <TargetFramework>net472</TargetFramework>
 	<LangVersion>preview</LangVersion>
 	<Nullable>enable</Nullable>
-	<UnitTestType>xunit</UnitTestType>
+	<OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>VSTHRD200;CS1591</NoWarn>
+    <!-- Exclude from automatic xUnit3/MTP package references since this uses VS Extensibility Testing (xUnit2) -->
+    <ExcludeFromTestPackageReferences>true</ExcludeFromTestPackageReferences>
   </PropertyGroup>
 
   <ItemGroup>

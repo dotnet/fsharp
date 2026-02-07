@@ -28,9 +28,9 @@ type MultiTargeting() =
     member private this.prepTest(projFile) =
         let dirName = Path.GetDirectoryName(projFile)
         let libDirName = Directory.CreateDirectory(Path.Combine(dirName, "lib")).FullName
-        let codeBase = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath |> Path.GetDirectoryName
-        let refLibPath = Path.Combine(libDirName, "VisualFSharp.UnitTests.dll")
-        File.Copy(Path.Combine(codeBase, "VisualFSharp.UnitTests.dll"), refLibPath)
+        let executingAssemblyPath = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath
+        let refLibPath = Path.Combine(libDirName, Path.GetFileName(executingAssemblyPath))
+        File.Copy(executingAssemblyPath, refLibPath)
         File.AppendAllText(projFile, TheTests.FsprojTextWithProjectReferencesAndOtherFlags([], [refLibPath], [], null, "", "v4.0"))
         refLibPath
 

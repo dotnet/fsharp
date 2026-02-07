@@ -331,9 +331,9 @@ type References() =
         DoWithTempFile "Test.fsproj"(fun projFile ->
             let dirName = Path.GetDirectoryName(projFile)
             let libDirName = Directory.CreateDirectory(Path.Combine(dirName, "lib")).FullName
-            let codeBase = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath |> Path.GetDirectoryName
-            let refLibPath = Path.Combine(libDirName, "xunit.core.dll")
-            File.Copy(Path.Combine(codeBase, "xunit.core.dll"), refLibPath)
+            let executingAssemblyPath = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath
+            let refLibPath = Path.Combine(libDirName, Path.GetFileName(executingAssemblyPath))
+            File.Copy(executingAssemblyPath, refLibPath)
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [refLibPath], ""))
             use project = TheTests.CreateProject(projFile) 
             let l = new List<AssemblyReferenceNode>()

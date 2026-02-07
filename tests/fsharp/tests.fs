@@ -29,6 +29,16 @@ let FSI = FSI_NETFX
 
 let log = printfn
 
+// Helper to read diagnostic log and include in failure messages
+let getDiagnosticLog (cfg: TestConfig) =
+    let diagLogPath = Path.Combine(cfg.Directory, "fsi_stdin_diag.log")
+    if File.Exists diagLogPath then 
+        sprintf "\n\n=== FSI STDIN DIAGNOSTIC LOG ===\n%s\n=== END DIAGNOSTIC LOG ===" (File.ReadAllText diagLogPath)
+    else "\n\n=== NO DIAGNOSTIC LOG FILE FOUND ==="
+
+// Disable parallel execution for CoreTests because the printing and FSI tests
+// spawn external FSI processes with stdin redirection that can interfere with each other
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 module CoreTests =
 
 
@@ -467,11 +477,13 @@ module CoreTests =
 
         let cfg = testConfig "core/fsi-reference"
 
-        begin           
+        try
             fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
             fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
             fsiStdinCheckPassed cfg "test.fsx" "" []
-        end
+        with ex ->
+            let diagContent = getDiagnosticLog cfg
+            failwithf "%s%s" ex.Message diagContent
 
     [<Fact>]
     let ``fsi-reload`` () =
@@ -492,9 +504,12 @@ module CoreTests =
 
         do if fileExists cfg "TestLibrary.dll" then rm cfg "TestLibrary.dll"
 
-        fsiStdin cfg "prepare.fsx" "--maxerrors:1" []
-
-        fsiStdinCheckPassed cfg "test.fsx" "--maxerrors:1"  []
+        try
+            fsiStdin cfg "prepare.fsx" "--maxerrors:1" []
+            fsiStdinCheckPassed cfg "test.fsx" "--maxerrors:1"  []
+        with ex ->
+            let diagContent = getDiagnosticLog cfg
+            failwithf "%s%s" ex.Message diagContent
 
     [<Fact>]
     let ``genericmeasures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
@@ -580,13 +595,15 @@ module CoreTests =
         expectedFileOut |> withDefault diffFileOut
         expectedFileErr |> withDefault diffFileErr
 
+        let diagContent = getDiagnosticLog cfg
+
         match fsdiff cfg diffFileOut expectedFileOut with
         | "" -> ()
-        | diffs -> failwithf "'%s' and '%s' differ; %A" diffFileOut expectedFileOut diffs
+        | diffs -> failwithf "'%s' and '%s' differ; %A%s" diffFileOut expectedFileOut diffs diagContent
 
         match fsdiff cfg diffFileErr expectedFileErr with
         | "" -> ()
-        | diffs -> failwithf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs
+        | diffs -> failwithf "'%s' and '%s' differ; %A%s" diffFileErr expectedFileErr diffs diagContent
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing`` () =
@@ -1068,17 +1085,19 @@ module CoreTests =
         normalizePaths stdoutPath
         normalizePaths stderrPath
 
+        let diagContent = getDiagnosticLog cfg
+
         let diffs = fsdiff cfg stdoutPath stdoutBaseline
 
         match diffs with
         | "" -> ()
-        | _ -> failwithf "'%s' and '%s' differ; %A" stdoutPath stdoutBaseline diffs
+        | _ -> failwithf "'%s' and '%s' differ; %A%s" stdoutPath stdoutBaseline diffs diagContent
 
         let diffs2 = fsdiff cfg stderrPath stderrBaseline
 
         match diffs2 with
         | "" -> ()
-        | _ -> failwithf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2
+        | _ -> failwithf "'%s' and '%s' differ; %A%s" stderrPath stderrBaseline diffs2 diagContent
 #endif
 
 

@@ -13,7 +13,6 @@ open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Xunit
-open Xunit.Abstractions
 open System
 open System.Collections.Immutable
 open System.IO

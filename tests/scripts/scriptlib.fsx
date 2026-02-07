@@ -15,6 +15,20 @@ module Scripting =
 
     let isNullOrEmpty s = String.IsNullOrEmpty s
 
+    module ConsoleHost =
+#if !NETCOREAPP
+
+        let ensureConsole () =
+            // Set UTF-8 encoding for console input/output to ensure FSI receives UTF-8 data.
+            // This is needed because on net472 ProcessStartInfo.StandardInputEncoding is unavailable,
+            // so the spawned process inherits the console's encoding settings.
+            Console.InputEncoding <- Text.UTF8Encoding(false)
+            Console.OutputEncoding <- Text.UTF8Encoding(false)
+#endif
+#if NETCOREAPP
+        let ensureConsole () = ()
+#endif
+
     let executeProcess fileName arguments =
         let processWriteMessage (chan:TextWriter) (message:string) =
             if message <> null then 
@@ -29,6 +43,8 @@ module Scripting =
         if p.Start() then
             p.BeginOutputReadLine()
             p.BeginErrorReadLine()
+            p.WaitForExit()
+            // Second WaitForExit ensures async output handlers complete
             p.WaitForExit()
             p.ExitCode
         else
@@ -107,6 +123,23 @@ module Scripting =
             let exePath = path |> processExePath workDir
             let processInfo = new ProcessStartInfo(exePath, arguments)
             
+            // Diagnostic logging to file - bypasses all console redirection
+            let diagLogFile = Path.Combine(workDir, "fsi_stdin_diag.log")
+            let diagLog msg = 
+                let timestamp = DateTime.Now.ToString("HH:mm:ss.fff")
+                try File.AppendAllText(diagLogFile, sprintf "[%s] %s%s" timestamp msg Environment.NewLine) with _ -> ()
+
+            if cmdArgs.RedirectInput.IsSome then
+                ConsoleHost.ensureConsole()
+            
+            diagLog (sprintf "=== Process.exec START === exe=%s args=%s" exePath arguments)
+            diagLog (sprintf "RedirectInput=%b RedirectOutput=%b RedirectError=%b" 
+                cmdArgs.RedirectInput.IsSome cmdArgs.RedirectOutput.IsSome cmdArgs.RedirectError.IsSome)
+            
+            // Log console state of test process (parent) - helps diagnose MTP console inheritance
+            diagLog (sprintf "[CONSOLE] IsInputRedirected=%b IsOutputRedirected=%b IsErrorRedirected=%b" 
+                Console.IsInputRedirected Console.IsOutputRedirected Console.IsErrorRedirected)
+            
             processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
             processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             
@@ -141,22 +174,53 @@ module Scripting =
             cmdArgs.RedirectInput
             |> Option.iter (fun _ -> p.StartInfo.RedirectStandardInput <- true)
 
+            diagLog "Starting process..."
             p.Start() |> ignore
+            diagLog (sprintf "Process started: PID=%d" p.Id)
 
             cmdArgs.RedirectOutput |> Option.iter (fun _ -> p.BeginOutputReadLine())
             cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
+            diagLog "Async output readers started"
 
+            // HYPOTHESIS TEST: Write stdin SYNCHRONOUSLY, not with Async.Start
+            // The original Async.Start was fire-and-forget and might not complete before WaitForExit
             cmdArgs.RedirectInput |> Option.iter (fun input -> 
-               async {
+                diagLog "Writing to stdin (synchronously)..."
+                diagLog (sprintf "Process.HasExited=%b BEFORE stdin write" p.HasExited)
                 let inputWriter = p.StandardInput
-                do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
-                input inputWriter
-                do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
-                inputWriter.Dispose ()
-               } 
-               |> Async.Start)
+                diagLog (sprintf "StandardInput.BaseStream.CanWrite=%b" inputWriter.BaseStream.CanWrite)
+                try
+                    input inputWriter  // This is the callback that writes the actual content
+                    diagLog "Input callback completed, flushing..."
+                    inputWriter.Flush()
+                    diagLog "Flush completed, disposing (sends EOF)..."
+                    inputWriter.Dispose()
+                    diagLog (sprintf "Stdin closed. Process.HasExited=%b AFTER stdin write" p.HasExited)
+                with ex ->
+                    diagLog (sprintf "EXCEPTION during stdin write: %s - %s" (ex.GetType().Name) ex.Message)
+            )
 
-            p.WaitForExit() 
+            diagLog "Calling WaitForExit..."
+            p.WaitForExit()
+            diagLog (sprintf "WaitForExit returned. ExitCode=%d" p.ExitCode)
+            
+            // Second WaitForExit call ensures async output handlers (OutputDataReceived/ErrorDataReceived) complete.
+            // See: https://learn.microsoft.com/dotnet/api/system.diagnostics.process.waitforexit
+            p.WaitForExit()
+            diagLog (sprintf "Second WaitForExit returned. stdout.Length=%d stderr.Length=%d" out.Length err.Length)
+
+            // Log stdout content - useful for understanding what FSI actually outputs
+            if out.Length > 0 && out.Length < 200 then
+                let stdoutContent = string out
+                diagLog (sprintf "[STDOUT] %s" (stdoutContent.Replace("\r", "\\r").Replace("\n", "\\n")))
+
+            // Log stderr content if there is any - this may contain FSI error messages
+            if err.Length > 0 then
+                let stderrContent = string err
+                let truncated = if stderrContent.Length > 500 then stderrContent.Substring(0, 500) + "..." else stderrContent
+                diagLog (sprintf "[STDERR] %s" (truncated.Replace("\r", "\\r").Replace("\n", "\\n")))
+
+            diagLog "=== Process.exec END ==="
 
             printf $"{string out}"
             eprintf $"{string err}"

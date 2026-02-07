@@ -303,13 +303,11 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
-          strategy:
-            parallel: 4
           steps:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release -testBatch $(System.JobPositionInPhase)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
@@ -322,7 +320,7 @@ stages:
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: WindowsNoRealsig_testDesktop batch $(System.JobPositionInPhase)
+              testRunTitle: WindowsNoRealsig_testDesktop
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
@@ -330,7 +328,6 @@ stages:
             continueOnError: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
@@ -343,7 +340,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps $(System.JobPositionInPhase)'
+                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -526,14 +523,12 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
-          strategy:
-            parallel: 4
 
           steps:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop -testBatch $(System.JobPositionInPhase)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
@@ -546,7 +541,7 @@ stages:
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: WindowsCompressedMetadata testDesktop batch $(System.JobPositionInPhase)
+              testRunTitle: WindowsCompressedMetadata testDesktop
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
@@ -555,7 +550,6 @@ stages:
 
           - task: PublishBuildArtifacts@1
             displayName: Publish BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
@@ -568,14 +562,14 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop process dumps $(System.JobPositionInPhase)'
+                ArtifactName: 'Windows testDesktop process dumps'
                 ArtifactType: Container
                 parallel: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop test logs batch $(System.JobPositionInPhase)'
+              ArtifactName: 'Windows testDesktop test logs'
               publishLocation: Container
             continueOnError: true
             condition: always()
@@ -586,7 +580,7 @@ stages:
             displayName: Publish NuGet cache contents
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop $(System.JobPositionInPhase)'
+              ArtifactName: 'NuGetPackageContents Windows testDesktop'
               publishLocation: Container
             continueOnError: true
             condition: failed()
