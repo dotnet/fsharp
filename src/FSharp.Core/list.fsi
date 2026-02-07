@@ -34,6 +34,8 @@ module List =
     /// [ (1, "Kirk"); (1, "Spock"); (1, "McCoy"); (2, "Kirk"); (2, "Spock"); (2, "McCoy") ]
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n*m) operation, where n and m are the lengths of the input lists.</remarks>
     [<CompiledName("AllPairs")>]
     val allPairs: list1:'T1 list -> list2:'T2 list -> ('T1 * 'T2) list
 
@@ -56,6 +58,8 @@ module List =
     /// [ 1; 2; 3; 4; 5; 6; 7 ]
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the first list.</remarks>
     [<CompiledName("Append")>]
     val append: list1: 'T list -> list2: 'T list -> 'T list
 
@@ -77,6 +81,8 @@ module List =
     /// </code>
     /// </example>
 
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Average")>]
     val inline average   : list:^T list -> ^T
                                when ^T : (static member (+) : ^T * ^T -> ^T)
@@ -110,6 +116,8 @@ module List =
     /// 51.0
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("AverageBy")>]
     val inline averageBy: projection:('T -> ^U) -> list:'T list  -> ^U    
                                when ^U : (static member (+) : ^U * ^U -> ^U) 
@@ -202,6 +210,8 @@ module List =
     /// </code>
     /// </example>
     ///
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Choose")>]
     val choose: chooser:('T -> 'U option) -> list:'T list -> 'U list
 
@@ -239,6 +249,8 @@ module List =
     /// [ [ 1; 2; 3; 4; 5 ] ]
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("ChunkBySize")>]
     val chunkBySize: chunkSize:int -> list:'T list -> 'T list list
 
@@ -255,6 +267,8 @@ module List =
     /// </code>
     /// The sample evaluates to <c>[1;   1; 2;   1; 2; 3;   1; 2; 3; 4]</c> (added extra spaces for easy reading)
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the total length of all resulting sublists.</remarks>
     [<CompiledName("Collect")>]
     val collect: mapping:('T -> 'U list) -> list:'T list -> 'U list
 
@@ -335,6 +349,8 @@ module List =
     /// </code>
     /// Evaluates to <c>-1</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(min(n,m)) operation, where n and m are the lengths of the lists.</remarks>
     [<CompiledName("CompareWith")>]
     val inline compareWith: comparer:('T -> 'T -> int) -> list1:'T list -> list2:'T list -> int
 
@@ -352,6 +368,8 @@ module List =
     /// input |> List.concat  // evaluates [1; 2; 3; 4; 5; 6; 7; 8; 9]
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the total number of elements across all lists.</remarks>
     [<CompiledName("Concat")>]
     val concat: lists:seq<'T list> -> 'T list
     
@@ -393,6 +411,8 @@ module List =
     /// </code>
     /// Evaluates to <c>false</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Contains")>]
     val inline contains: value:'T -> source:'T list -> bool when 'T : equality
 
@@ -412,6 +432,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[6; 1; 2; 3; 4; 5]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Distinct")>]
     val distinct: list:'T list -> 'T list when 'T : equality
 
@@ -433,6 +455,8 @@ module List =
     /// input |> List.distinctBy isEven  // evaluates [6; 1]
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("DistinctBy")>]
     val distinctBy: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : equality
 
@@ -453,6 +477,8 @@ module List =
     /// </code>
     /// Evaluates <c>[('H', 1); ('a', 1); ('p', 2); ('y', 1)]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("CountBy")>]
     val countBy : projection:('T -> 'Key) -> list:'T list -> ('Key * int) list when 'Key : equality
 
@@ -478,10 +504,14 @@ module List =
     /// </code>
     /// Evaluates to <c>[[1; 2; 3]; [4; 5; 6]; [7; 8]; [9; 10]]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("SplitInto")>]
     val splitInto: count:int -> list:'T list -> 'T list list
 
     /// <summary>Returns an empty list of the given type.</summary>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<GeneralizableValue>]
     [<CompiledName("Empty")>]
     val empty<'T> : 'T list
@@ -517,6 +547,8 @@ module List =
     /// [1..5] |> List.except [0..10]  // evaluates []
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n+m) operation, where n is the length of the list and m is the length of the items to exclude.</remarks>
     [<CompiledName("Except")>]
     val except: itemsToExclude:seq<'T> -> list:'T list -> 'T list when 'T : equality
 
@@ -549,6 +581,8 @@ module List =
     /// </code>
     /// Will throw the exception: <c>System.ArgumentException: The input sequence contains more than one element</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("ExactlyOne")>]
     val exactlyOne: list:'T list -> 'T
 
@@ -565,6 +599,8 @@ module List =
     /// ([] : int list) |> List.tryExactlyOne   // evaluates None
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("TryExactlyOne")>]
     val tryExactlyOne: list:'T list -> 'T option
 
@@ -572,7 +608,7 @@ module List =
     ///
     /// <remarks>The predicate is applied to the elements of the input list. If any application 
     /// returns true then the overall result is true and no further elements are tested. 
-    /// Otherwise, false is returned.</remarks>
+    /// Otherwise, false is returned. This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -596,7 +632,7 @@ module List =
     /// two lengths of the collections. If any application returns true then the overall result is 
     /// true and no further elements are tested. Otherwise, if one collections is longer 
     /// than the other then the <see cref="T:System.ArgumentException"/> exception is raised. 
-    /// Otherwise, false is returned.</remarks>
+    /// Otherwise, false is returned. This is an O(n) operation in the worst case, where n is the length of the lists.</remarks>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list1">The first input list.</param>
@@ -643,6 +679,8 @@ module List =
     /// input |> List.find (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("Find")>]
     val find: predicate:('T -> bool) -> list:'T list -> 'T
 
@@ -669,6 +707,8 @@ module List =
     /// input |> List.findBack (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("FindBack")>]
     val findBack: predicate:('T -> bool) -> list:'T list -> 'T
 
@@ -696,6 +736,8 @@ module List =
     /// input |> List.findIndex (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("FindIndex")>]
     val findIndex: predicate:('T -> bool) -> list:'T list -> int
 
@@ -723,6 +765,8 @@ module List =
     /// input |> List.findIndexBack (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("FindIndexBack")>]
     val findIndexBack: predicate:('T -> bool) -> list:'T list -> int
 
@@ -746,6 +790,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[(2, "Kirk"); (4, "Spock")]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Filter")>]
     val filter: predicate:('T -> bool) -> list:'T list -> 'T list
 
@@ -792,6 +838,8 @@ module List =
     ///   { fruit = Apple; quantity = 1 }]
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Fold")>]
     val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State
 
@@ -822,6 +870,8 @@ module List =
     /// </code>
     /// Evaluates to <c>2</c>. Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Fold2")>]
     val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> list1:'T1 list -> list2:'T2 list -> 'State
 
@@ -866,6 +916,8 @@ module List =
     ///   { fruit = Orange; quantity = 1 }]
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("FoldBack")>]
     val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> list:'T list -> state:'State -> 'State
 
@@ -912,6 +964,8 @@ module List =
     /// </code>
     /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("FoldBack2")>]
     val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> list1:'T1 list -> list2:'T2 list -> state:'State -> 'State
 
@@ -919,7 +973,7 @@ module List =
     ///
     /// <remarks>The predicate is applied to the elements of the input list. If any application 
     /// returns false then the overall result is false and no further elements are tested. 
-    /// Otherwise, true is returned.</remarks>
+    /// Otherwise, true is returned. This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -943,7 +997,7 @@ module List =
     /// two lengths of the collections. If any application returns false then the overall result is 
     /// false and no further elements are tested. Otherwise, if one collection is longer 
     /// than the other then the <see cref="T:System.ArgumentException"/> exception is raised. 
-    /// Otherwise, true is returned.</remarks>
+    /// Otherwise, true is returned. This is an O(n) operation in the worst case, where n is the length of the lists.</remarks>
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list1">The first input list.</param>
     /// <param name="list2">The second input list.</param>
@@ -1001,6 +1055,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[(1, [1; 3; 5]); (0, [2; 4])]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("GroupBy")>]
     val groupBy: projection:('T -> 'Key) -> list:'T list -> ('Key * 'T list) list when 'Key : equality
 
@@ -1027,6 +1083,8 @@ module List =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(1) operation.</remarks>
     [<CompiledName("Head")>]
     val head: list:'T list -> 'T
 
@@ -1045,6 +1103,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[(0, "a"); (1, "b"); (2, "c")]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Indexed")>]
     val indexed: list:'T list -> (int * 'T) list
 
@@ -1070,6 +1130,8 @@ module List =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the specified count.</remarks>
     [<CompiledName("Initialize")>]
     val init: length:int -> initializer:(int -> 'T) -> 'T list
 
@@ -1092,6 +1154,8 @@ module List =
     /// </code>
     /// Evaluates to <c>false</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("IsEmpty")>]
     val isEmpty: list:'T list -> bool
 
@@ -1121,6 +1185,8 @@ module List =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(n) operation, where n is the index.</remarks>
     [<CompiledName("Item")>]
     val item: index:int -> list:'T list -> 'T
 
@@ -1143,6 +1209,8 @@ module List =
     /// </code>
     /// in the console.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Iterate")>]
     val inline iter: action:('T -> unit) -> list:'T list -> unit
 
@@ -1168,6 +1236,8 @@ module List =
     /// </code>
     /// in the console.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Iterate2")>]
     val iter2: action:('T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
@@ -1191,6 +1261,8 @@ module List =
     /// </code>
     /// in the console.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("IterateIndexed")>]
     val inline iteri: action:(int -> 'T -> unit) -> list:'T list -> unit
 
@@ -1217,6 +1289,8 @@ module List =
     /// </code>
     /// in the console.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("IterateIndexed2")>]
     val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
@@ -1241,6 +1315,8 @@ module List =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Last")>]
     val last: list:'T list -> 'T
 
@@ -1250,7 +1326,7 @@ module List =
     ///
     /// <returns>The length of the list.</returns>
     ///
-    /// <remarks>The notation <c>array.Length</c> is preferred.</remarks>
+    /// <remarks>The notation <c>list.Length</c> is preferred. This is an O(n) operation, where n is the length of the list.</remarks>
     ///
     /// <example id="length-1">
     /// <code lang="fsharp">
@@ -1260,6 +1336,8 @@ module List =
     /// </code>
     /// Evaluates to <c>3</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Length")>]
     val length: list:'T list -> int
 
@@ -1283,6 +1361,8 @@ module List =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("TryLast")>]
     val tryLast: list:'T list -> 'T option
 
@@ -1302,6 +1382,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 1; 3; 2 ]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Map")>]
     val map: mapping:('T -> 'U) -> list:'T list -> 'U list
 
@@ -1323,6 +1405,8 @@ module List =
     /// </code>
     /// Evaluates to <c>seq ['a'; 'd'; 'o']</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Map2")>]
     val map2: mapping:('T1 -> 'T2 -> 'U) -> list1:'T1 list -> list2:'T2 list -> 'U list
 
@@ -1347,6 +1431,8 @@ module List =
     /// Evaluates to <c>[ "all"; "the"; "time" ]</c>
     /// </example>
     /// 
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Map3")>]
     val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> list1:'T1 list -> list2:'T2 list -> list3:'T3 list -> 'U list
 
@@ -1376,6 +1462,8 @@ module List =
     /// Evaluates <c>newCharges</c> to <c>[In 2; Out 4; In 6]</c> and <c>balance</c> to <c>2</c>.
     /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("MapFold")>]
     val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> list:'T list -> 'Result list * 'State
 
@@ -1405,6 +1493,8 @@ module List =
     /// Evaluates <c>newCharges</c> to <c>[In 2; Out 4; In 6]</c> and <c>balance</c> to <c>2</c>.
     /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("MapFoldBack")>]
     val mapFoldBack<'T,'State,'Result> : mapping:('T -> 'State -> 'Result * 'State) -> list:'T list -> state:'State -> 'Result list * 'State
 
@@ -1425,6 +1515,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 10; 11; 12 ]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("MapIndexed")>]
     val mapi: mapping:(int -> 'T -> 'U) -> list:'T list -> 'U list
 
@@ -1445,12 +1537,14 @@ module List =
     /// </code>
     /// Evaluates to <c>[(0, 'a'); (1, 'd'); (2, 'o')]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("MapIndexed2")>]
     val mapi2: mapping:(int -> 'T1 -> 'T2 -> 'U) -> list1:'T1 list -> list2:'T2 list -> 'U list
 
     /// <summary>Return the greatest of all elements of the list, compared via Operators.max.</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty</remarks>
+    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
     /// <param name="list">The input list.</param>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
@@ -1479,7 +1573,7 @@ module List =
 
     /// <summary>Returns the greatest of all elements of the list, compared via Operators.max on the function result.</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty.</remarks>
+    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -1509,7 +1603,7 @@ module List =
 
     /// <summary>Returns the lowest of all elements of the list, compared via Operators.min.</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty</remarks>
+    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty This is an O(n) operation, where n is the length of the list.</remarks>
     /// <param name="list">The input list.</param>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
@@ -1538,7 +1632,7 @@ module List =
 
     /// <summary>Returns the lowest of all elements of the list, compared via Operators.min on the function result</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty.</remarks>
+    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
     /// <param name="projection">The function to transform list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -1574,6 +1668,8 @@ module List =
     /// <returns>The value at the given index.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when the index is negative or the input list does not contain enough elements.</exception>
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(n) operation, where n is the index.</remarks>
     [<CompiledName("Get")>]
     [<Obsolete("please use List.item")>]
     val nth: list:'T list -> index:int -> 'T
@@ -1592,6 +1688,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 1; 2; 5 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the array.</remarks>
     [<CompiledName("OfArray")>]
     val ofArray : array:'T array -> 'T list
 
@@ -1609,6 +1707,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 1; 2; 5 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("OfSeq")>]
     val ofSeq: source:seq<'T> -> 'T list
 
@@ -1628,6 +1728,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[(1, 2); (2, 3); (3, 4)]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Pairwise")>]
     val pairwise: list:'T list -> ('T * 'T) list
 
@@ -1649,6 +1751,8 @@ module List =
     /// </code>
     /// Evaluates <c>evens</c> to <c>[2; 4]</c> and <c>odds</c> to <c>[1; 3]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Partition")>]
     val partition: predicate:('T -> bool) -> list:'T list -> ('T list * 'T list)
 
@@ -1681,6 +1785,8 @@ module List =
     /// Throws <c>KeyNotFoundException</c>.
     /// </example>
     ///
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("Pick")>]
     val pick: chooser:('T -> 'U option) -> list:'T list -> 'U
 
@@ -1702,6 +1808,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[4; 1; 2; 3]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Permute")>]
     val permute: indexMap:(int -> int) -> list:'T list -> 'T list
 
@@ -1711,7 +1819,7 @@ module List =
     /// Return the final result. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
     /// <c>f (... (f i0 i1) i2 ...) iN</c>.</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty</remarks>
+    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
     ///
     /// <param name="reduction">The function to reduce two list elements to a single element.</param>
     /// <param name="list">The input list.</param>
@@ -1751,6 +1859,8 @@ module List =
     /// </code>
     /// Evaluates to <c>2431</c>, by computing <c>1 + (3 + (4 + 2 * 10) * 10) * 10</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("ReduceBack")>]
     val reduceBack: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
 
@@ -1767,6 +1877,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ "a"; "a"; "a" ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the specified count.</remarks>
     [<CompiledName("Replicate")>]
     val replicate: count:int -> initial:'T -> 'T list
 
@@ -1784,6 +1896,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 2; 1; 0 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Reverse")>]
     val rev: list:'T list -> 'T list
 
@@ -1815,6 +1929,8 @@ module List =
     /// state, <c>1</c> the next state, <c>-1</c> the next state, and <c>2</c> the final state.
     /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Scan")>]
     val scan<'T,'State>  : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State list
 
@@ -1844,6 +1960,8 @@ module List =
     /// are produced from back to front.
     /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("ScanBack")>]
     val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> list:'T list -> state:'State -> 'State list
 
@@ -1859,6 +1977,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 7 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("Singleton")>]
     val inline singleton: value:'T -> 'T list
 
@@ -1898,6 +2018,8 @@ module List =
     /// </code>
     /// Evaluates to <c>["a"; "b"; "c"; "d"]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of elements to skip.</remarks>
     [<CompiledName("Skip")>]
     val skip: count:int -> list: 'T list -> 'T list
 
@@ -1918,12 +2040,14 @@ module List =
     /// Evaluates to <c>["bbb"; "cc"; "d"]</c>
     /// </example>
     ///
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("SkipWhile")>]
     val skipWhile: predicate:('T -> bool) -> list:'T list -> 'T list
 
     /// <summary>Sorts the given list using the given comparison function.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
+    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
     /// <param name="comparer">The function to compare the list elements.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -1947,7 +2071,7 @@ module List =
 
     /// <summary>Sorts the given list using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
+    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -1966,7 +2090,7 @@ module List =
 
     /// <summary>Sorts the given list using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
+    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The sorted list.</returns>
@@ -2000,12 +2124,14 @@ module List =
     /// </code>
     /// Evaluates <c>front</c> to <c>[8; 4; 3]</c> and <c>back</c> to <c>[1; 6; 1]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the index.</remarks>
     [<CompiledName("SplitAt")>]
     val splitAt: index:int -> list:'T list -> ('T list * 'T list)
 
     /// <summary>Sorts the given list in descending order using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
+    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -2024,7 +2150,7 @@ module List =
 
     /// <summary>Sorts the given list in descending order using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
+    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The sorted list.</returns>
@@ -2054,6 +2180,8 @@ module List =
     /// </code>
     /// Evaluates to <c>11</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Sum")>]
     val inline sum: list:^T list -> ^T 
                         when ^T : (static member (+) : ^T * ^T -> ^T) 
@@ -2074,6 +2202,8 @@ module List =
     /// </code>
     /// Evaluates to <c>7</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("SumBy")>]
     val inline sumBy: projection:('T -> ^U) -> list:'T list -> ^U 
                           when ^U : (static member (+) : ^U * ^U -> ^U) 
@@ -2096,13 +2226,15 @@ module List =
     /// Evaluates to <c>["bb"; "ccc"]</c>
     /// </example>
     ///
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(1) operation.</remarks>
     [<CompiledName("Tail")>]
     val tail: list:'T list -> 'T list
 
     /// <summary>Returns the first N elements of the list.</summary>
     /// <remarks>Throws <c>InvalidOperationException</c>
     /// if the count exceeds the number of elements in the list. <c>List.truncate</c>
-    /// returns as many items as the list contains instead of throwing an exception.</remarks>
+    /// returns as many items as the list contains instead of throwing an exception. This is an O(count) operation.</remarks>
     ///
     /// <param name="count">The number of items to take.</param>
     /// <param name="list">The input list.</param>
@@ -2158,6 +2290,8 @@ module List =
     /// </code>
     /// Evaluates to <c>["a"; "bb"]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("TakeWhile")>]
     val takeWhile: predicate:('T -> bool) -> list:'T list -> 'T list
 
@@ -2175,6 +2309,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[| 1; 2; 5 |]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("ToArray")>]
     val toArray: list:'T list -> 'T array
 
@@ -2192,6 +2328,8 @@ module List =
     /// </code>
     /// Evaluates to <c>seq { 1; 2; 5 }</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     [<CompiledName("ToSeq")>]
     val toSeq: list:'T list -> seq<'T>
 
@@ -2219,6 +2357,8 @@ module List =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(1) operation.</remarks>
     [<CompiledName("TryHead")>]
     val tryHead: list:'T list -> 'T option
 
@@ -2241,6 +2381,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ [10; 11]; [20; 21]; [30; 31] ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n*m) operation, where n is the number of inner lists and m is the length of each inner list.</remarks>
     [<CompiledName("Transpose")>]
     val transpose: lists:seq<'T list> -> 'T list list
 
@@ -2277,6 +2419,8 @@ module List =
     /// </code>
     /// Evaluates to the empty list.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of elements to return.</remarks>
     [<CompiledName("Truncate")>]
     val truncate: count:int -> list:'T list -> 'T list
 
@@ -2307,6 +2451,8 @@ module List =
     /// Evaluates to <c>None</c>.
     /// </example>
     ///
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("TryPick")>]
     val tryPick: chooser:('T -> 'U option) -> list:'T list -> 'U option
 
@@ -2336,6 +2482,8 @@ module List =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("TryFind")>]
     val tryFind: predicate:('T -> bool) -> list:'T list -> 'T option
 
@@ -2365,6 +2513,8 @@ module List =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("TryFindBack")>]
     val tryFindBack: predicate:('T -> bool) -> list:'T list -> 'T option
 
@@ -2395,6 +2545,8 @@ module List =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("TryFindIndex")>]
     val tryFindIndex: predicate:('T -> bool) -> list:'T list -> int option
 
@@ -2423,6 +2575,8 @@ module List =
     /// </code>
     /// Evaluates to <c>None</c>.
     /// </example>
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(n) operation, where n is the index.</remarks>
     [<CompiledName("TryItem")>]
     val tryItem: index:int -> list:'T list -> 'T option
 
@@ -2453,6 +2607,8 @@ module List =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("TryFindIndexBack")>]
     val tryFindIndexBack: predicate:('T -> bool) -> list:'T list -> int option
 
@@ -2472,6 +2628,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[1; 2; 4; 8; 16; 32; 64]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of elements generated.</remarks>
     [<CompiledName("Unfold")>]
     val unfold<'T,'State> : generator:('State -> ('T * 'State) option) -> state:'State -> 'T list
 
@@ -2489,6 +2647,8 @@ module List =
     /// </code>
     /// Evaluates <c>numbers</c> to <c>[1; 2]</c> and <c>names</c> to <c>["one"; "two"]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Unzip")>]
     val unzip: list:('T1 * 'T2) list -> ('T1 list * 'T2 list)
 
@@ -2506,6 +2666,8 @@ module List =
     /// </code>
     /// Evaluates <c>numbers</c> to <c>[1; 2]</c>, <c>names</c> to <c>["one"; "two"]</c> and <c>roman</c> to <c>["I"; "II"]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Unzip3")>]
     val unzip3: list:('T1 * 'T2 * 'T3) list -> ('T1 list * 'T2 list * 'T3 list)
     
@@ -2517,7 +2679,7 @@ module List =
     ///
     /// <returns>A list containing only the elements that satisfy the predicate.</returns>
     ///
-    /// <remarks>This is identical to <c>List.filter</c>.</remarks>
+    /// <remarks>This is identical to <c>List.filter</c>. This is an O(n) operation, where n is the length of the list.</remarks>
     ///
     /// <example id="where-1">Select only the even numbers:
     /// <code lang="fsharp">
@@ -2548,6 +2710,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[[1; 2; 3]; [2; 3; 4]; [3; 4; 5]]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n*windowSize) operation, where n is the length of the list.</remarks>
     [<CompiledName("Windowed")>]
     val windowed: windowSize:int -> list:'T list -> 'T list list
 
@@ -2567,6 +2731,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[(1, "one"); (2, "two")]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Zip")>]
     val zip: list1:'T1 list -> list2:'T2 list -> ('T1 * 'T2) list
 
@@ -2588,6 +2754,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[(1, "one", "I"); (2, "two", "II")]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Zip3")>]
     val zip3: list1:'T1 list -> list2:'T2 list -> list3:'T3 list -> ('T1 * 'T2 * 'T3) list
     
@@ -2608,6 +2776,8 @@ module List =
     /// </code>
     /// let inputs = [ 0; 2 ]
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RemoveAt")>]
     val removeAt: index: int -> source: 'T list -> 'T list
 
@@ -2629,6 +2799,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 0; 3 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RemoveManyAt")>]
     val removeManyAt: index: int -> count: int -> source: 'T list -> 'T list
 
@@ -2650,6 +2822,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 0; 9; 2 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("UpdateAt")>]
     val updateAt: index: int -> value: 'T -> source: 'T list -> 'T list
 
@@ -2671,6 +2845,8 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 0; 9; 1; 2 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("InsertAt")>]
     val insertAt: index: int -> value: 'T -> source: 'T list -> 'T list
     
@@ -2692,6 +2868,8 @@ module List =
     /// Evaluates to <c>[ 0; 8; 9; 1; 2 ]</c>.
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n+m) operation, where n is the length of the list and m is the number of elements to insert.</remarks>
     [<CompiledName("InsertManyAt")>]
     val insertManyAt: index: int -> values: seq<'T> -> source: 'T list -> 'T list
 
@@ -2709,6 +2887,8 @@ module List =
     /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomShuffle")>]
     val randomShuffle : source: 'T list -> 'T list
 
@@ -2729,6 +2909,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomShuffleWith")>]
     val randomShuffleWith : random: Random -> source: 'T list -> 'T list
 
@@ -2749,6 +2931,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomShuffleBy")>]
     val randomShuffleBy : randomizer: (unit -> float) -> source: 'T list -> 'T list
 
@@ -2768,6 +2952,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>3</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoice")>]
     val randomChoice : source: 'T list -> 'T
 
@@ -2789,6 +2975,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>3</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoiceWith")>]
     val randomChoiceWith : random: Random -> source: 'T list -> 'T
 
@@ -2810,6 +2998,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>3</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoiceBy")>]
     val randomChoiceBy : randomizer: (unit -> float) -> source: 'T list -> 'T
 
@@ -2831,6 +3021,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n * count) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoices")>]
     val randomChoices : count: int -> source: 'T list -> 'T list
 
@@ -2854,6 +3046,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n * count) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoicesWith")>]
     val randomChoicesWith : random: Random -> count: int -> source: 'T list -> 'T list
 
@@ -2878,6 +3072,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n * count) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomChoicesBy")>]
     val randomChoicesBy : randomizer: (unit -> float) -> count: int -> source: 'T list -> 'T list
 
@@ -2900,6 +3096,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 2 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomSample")>]
     val randomSample : count: int -> source: 'T list -> 'T list
 
@@ -2924,6 +3122,8 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 2 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomSampleWith")>]
     val randomSampleWith : random: Random -> count: int -> source: 'T list -> 'T list
 
@@ -2948,5 +3148,7 @@ module List =
     /// </code>
     /// Can evaluate to <c>[ 3; 1; 2 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("RandomSampleBy")>]
     val randomSampleBy : randomizer: (unit -> float) -> count: int -> source: 'T list -> 'T list

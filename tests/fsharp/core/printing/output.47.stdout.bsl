@@ -4075,6 +4075,9 @@ Description:
 Builds a new collection whose elements are the results of applying the given function
 to each of the elements of the collection.
 
+Remarks:
+This is an O(n) operation, where n is the length of the list.
+
 Parameters:
 - mapping: The function to transform elements from the input list.
 - list: The input list.

@@ -24,6 +24,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     ///
     /// <returns>The resulting map.</returns>
     ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="member-add-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -41,6 +43,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     ///
     /// <returns>The resulting map.</returns>
     ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="member-change-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -56,6 +60,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     member Change: key: 'Key * f: ('Value option -> 'Value option) -> Map<'Key, 'Value>
 
     /// <summary>Returns true if there are no bindings in the map.</summary>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     ///
     /// <example id="member-isempty-1">
     /// <code lang="fsharp">
@@ -74,6 +80,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     ///
     /// <returns>The resulting map.</returns>
     ///
+    /// <remarks>This is an O(n log n) operation, where n is the number of elements in the sequence.</remarks>
+    ///
     /// <example id="new-1">
     /// <code lang="fsharp">
     /// Map [ (1, "a"); (2, "b") ] // evaluates to map [(1, "a"); (2, "b")]
@@ -87,6 +95,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     ///
     /// <returns>True if the map contains the given key.</returns>
     ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="member-containskey-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -98,6 +108,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     member ContainsKey: key: 'Key -> bool
 
     /// <summary>The number of bindings in the map.</summary>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="member-count-1">
     /// <code lang="fsharp">
@@ -116,6 +128,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     ///
     /// <returns>The value mapped to the key.</returns>
     ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="member-item-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -131,6 +145,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     /// <param name="key">The input key.</param>
     ///
     /// <returns>The resulting map.</returns>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="member-remove-1">
     /// <code lang="fsharp">
@@ -149,6 +165,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     ///
     /// <returns>The mapped value, or None if the key is not in the map.</returns>
     ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="member-tryfind-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -166,6 +184,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     /// <param name="value">A reference to the output value.</param>
     ///
     /// <returns><c>true</c> if the value is present, <c>false</c> if not.</returns>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="member-trygetvalue-1">
     /// <code lang="fsharp">
@@ -186,6 +206,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     /// <summary>The keys in the map.
     /// The sequence will be ordered by the keys of the map.</summary>
     ///
+    /// <remarks>This is an O(n) operation, creating a sequence of all keys.</remarks>
+    ///
     /// <example id="member-keys-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -197,6 +219,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     /// <summary>All the values in the map, including the duplicates.
     /// The sequence will be ordered by the keys of the map.</summary>
+    ///
+    /// <remarks>This is an O(n) operation, creating a sequence of all values.</remarks>
     ///
     /// <example id="member-values-1">
     /// <code lang="fsharp">
@@ -230,6 +254,8 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="add-1">
     /// <code lang="fsharp">
     /// let input = Map [ (1, "a"); (2, "b") ]
@@ -248,6 +274,8 @@ module Map =
     /// <param name="table">The input map.</param>
     ///
     /// <returns>The resulting map.</returns>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="change-1">
     /// <code lang="fsharp">
@@ -269,6 +297,8 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     ///
+    /// <remarks>This is an O(n log n) operation, where n is the length of the list.</remarks>
+    ///
     /// <example id="oflist-1">
     /// <code lang="fsharp">
     /// let input = [ (1, "a"); (2, "b") ]
@@ -285,6 +315,8 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     ///
+    /// <remarks>This is an O(n log n) operation, where n is the length of the array.</remarks>
+    ///
     /// <example id="ofarray-1">
     /// <code lang="fsharp">
     /// let input = [| (1, "a"); (2, "b") |]
@@ -300,6 +332,8 @@ module Map =
     /// <param name="elements">The input sequence of key/value pairs.</param>
     ///
     /// <returns>The resulting map.</returns>
+    ///
+    /// <remarks>This is an O(n log n) operation, where n is the number of elements in the sequence.</remarks>
     ///
     /// <example id="ofseq-1">
     /// <code lang="fsharp">
@@ -318,6 +352,8 @@ module Map =
     ///
     /// <returns>The sequence of key/value pairs.</returns>
     ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="toseq-1">
     /// <code lang="fsharp">
     /// let input = Map [ (1, "a"); (2, "b") ]
@@ -334,6 +370,8 @@ module Map =
     /// <param name="table">The input map.</param>
     ///
     /// <returns>The list of key/value pairs.</returns>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="tolist-1">
     /// <code lang="fsharp">
@@ -352,6 +390,8 @@ module Map =
     ///
     /// <returns>The array of key/value pairs.</returns>
     ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="toarray-1">
     /// <code lang="fsharp">
     /// let input = Map [ (1, "a"); (2, "b") ]
@@ -368,6 +408,8 @@ module Map =
     ///
     /// <returns>True if the map is empty.</returns>
     ///
+    /// <remarks>This is an O(1) operation.</remarks>
+    ///
     /// <example id="isempty-1">
     /// <code lang="fsharp">
     /// let emptyMap = Map.empty&lt;int, string>
@@ -381,6 +423,8 @@ module Map =
     val isEmpty: table: Map<'Key, 'T> -> bool
 
     /// <summary>The empty map.</summary>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
     ///
     /// <example id="empty-1">
     /// <code lang="fsharp">
@@ -400,6 +444,8 @@ module Map =
     ///
     /// <returns>The value mapped to the given key.</returns>
     ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="find-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -417,6 +463,8 @@ module Map =
     /// <param name="table">The input map.</param>
     ///
     /// <returns>The first result.</returns>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="trypick-1">
     /// <code lang="fsharp">
@@ -448,6 +496,8 @@ module Map =
     ///
     /// <returns>The first result.</returns>
     ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="pick-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
@@ -475,6 +525,8 @@ module Map =
     ///
     /// <returns>The final state value.</returns>
     ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="foldback-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -496,6 +548,8 @@ module Map =
     ///
     /// <returns>The final state value.</returns>
     ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="fold-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -513,6 +567,8 @@ module Map =
     ///
     /// <param name="action">The function to apply to each key/value pair.</param>
     /// <param name="table">The input map.</param>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="iter-1">
     /// <code lang="fsharp">
@@ -533,6 +589,8 @@ module Map =
     ///
     /// <returns>True if the predicate returns true for one of the key/value pairs.</returns>
     ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="exists-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -551,6 +609,8 @@ module Map =
     ///
     /// <returns>The filtered map.</returns>
     ///
+    /// <remarks>This is an O(n log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="filter-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -568,6 +628,8 @@ module Map =
     /// <param name="table">The input map.</param>
     ///
     /// <returns>True if the predicate evaluates to true for all of the bindings in the map.</returns>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="forall-1">
     /// <code lang="fsharp">
@@ -589,6 +651,8 @@ module Map =
     ///
     /// <returns>The resulting map of keys and transformed values.</returns>
     ///
+    /// <remarks>This is an O(n) operation, creating a new map with the same keys.</remarks>
+    ///
     /// <example id="map-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -605,6 +669,8 @@ module Map =
     /// <param name="table">The input map.</param>
     ///
     /// <returns>True if the map contains the key.</returns>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="containskey-1">
     /// <code lang="fsharp">
@@ -626,6 +692,8 @@ module Map =
     /// <returns>A pair of maps in which the first contains the elements for which the predicate returned true
     /// and the second containing the elements for which the predicated returned false.</returns>
     ///
+    /// <remarks>This is an O(n log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="partition-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -642,6 +710,8 @@ module Map =
     /// <param name="table">The input map.</param>
     ///
     /// <returns>The resulting map.</returns>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="remove-1">
     /// <code lang="fsharp">
@@ -661,6 +731,8 @@ module Map =
     /// <param name="table">The input map.</param>
     ///
     /// <returns>The found <c>Some</c> value or <c>None</c>.</returns>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="tryfind-1">
     /// <code lang="fsharp">
@@ -682,6 +754,8 @@ module Map =
     ///
     /// <returns>The first key for which the predicate evaluates true.</returns>
     ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="findkey-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -701,6 +775,8 @@ module Map =
     ///
     /// <returns>The first key for which the predicate returns true or None if the predicate evaluates to false for each key/value pair.</returns>
     ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="tryfindkey-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -714,6 +790,8 @@ module Map =
 
     /// <summary>The number of bindings in the map.</summary>
     ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="count-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -721,11 +799,15 @@ module Map =
     /// sample |> Map.count // evaluates to 2
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
     [<CompiledName("Count")>]
     val count: table: Map<'Key, 'T> -> int
 
     /// <summary>The keys in the map.
     /// The sequence will be ordered by the keys of the map.</summary>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="keys-1">
     /// <code lang="fsharp">
@@ -739,6 +821,8 @@ module Map =
 
     /// <summary>The values in the map, including the duplicates.
     /// The sequence will be ordered by the keys of the map.</summary>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="values-1">
     /// <code lang="fsharp">
@@ -756,6 +840,8 @@ module Map =
     /// <param name="table">The input map.</param>
     /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if the map is empty.</exception>
     ///
+    /// <remarks>This is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="minkeyvalue-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
@@ -771,6 +857,8 @@ module Map =
     ///
     /// <param name="table">The input map.</param>
     /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if the map is empty.</exception>
+    ///
+    /// <remarks>This is an O(log n) operation, where n is the number of bindings in the map.</remarks>
     ///
     /// <example id="maxkeyvalue-1">
     /// <code lang="fsharp">
