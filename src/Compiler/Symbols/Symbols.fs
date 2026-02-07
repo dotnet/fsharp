@@ -306,6 +306,10 @@ module Impl =
                             | Some xmlDoc when not xmlDoc.IsEmpty -> Some(xmlDoc.GetXmlText())
                             | _ -> None)
 
+    /// Quick check if XML doc text contains an <inheritdoc> element
+    let docHasInheritDoc (doc: XmlDoc) =
+        not doc.IsEmpty && doc.GetXmlText().IndexOf("<inheritdoc") >= 0
+
     /// Creates an FSharpXmlDoc with <inheritdoc> elements expanded
     let makeExpandedXmlDoc (cenv: SymbolEnv) (implicitTargetCrefOpt: string option) (doc: XmlDoc) =
         if doc.IsEmpty then
@@ -974,8 +978,11 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
  
     member _.XmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeXmlDoc else
-        let implicitTarget = getImplicitTargetCrefForEntity cenv entity
-        entity.XmlDoc |> makeExpandedXmlDoc cenv implicitTarget
+        let doc = entity.XmlDoc
+        if not (docHasInheritDoc doc) then makeXmlDoc doc
+        else
+            let implicitTarget = getImplicitTargetCrefForEntity cenv entity
+            doc |> makeExpandedXmlDoc cenv implicitTarget
 
     member _.ElaboratedXmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeElaboratedXmlDoc else
@@ -2375,19 +2382,23 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     member _.XmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeXmlDoc else
-        // Get the implemented slot signatures to compute implicit target for inheritdoc
-        let slotSigs =
-            match d with
-            | E e -> e.AddMethod.ImplementedSlotSignatures
-            | P p -> p.ImplementedSlotSignatures
-            | M m | C m -> m.ImplementedSlotSignatures
-            | V v -> v.ImplementedSlotSignatures
-        let implicitTarget = getImplicitTargetCrefForMember cenv slotSigs
-        match d with 
-        | E e -> e.XmlDoc |> makeExpandedXmlDoc cenv implicitTarget
-        | P p -> p.XmlDoc |> makeExpandedXmlDoc cenv implicitTarget
-        | M m | C m -> m.XmlDoc |> makeExpandedXmlDoc cenv implicitTarget
-        | V v -> v.XmlDoc |> makeExpandedXmlDoc cenv implicitTarget
+        let doc =
+            match d with 
+            | E e -> e.XmlDoc
+            | P p -> p.XmlDoc
+            | M m | C m -> m.XmlDoc
+            | V v -> v.XmlDoc
+        if not (docHasInheritDoc doc) then makeXmlDoc doc
+        else
+            // Only compute implicit target and build resolver when doc contains <inheritdoc>
+            let slotSigs =
+                match d with
+                | E e -> e.AddMethod.ImplementedSlotSignatures
+                | P p -> p.ImplementedSlotSignatures
+                | M m | C m -> m.ImplementedSlotSignatures
+                | V v -> v.ImplementedSlotSignatures
+            let implicitTarget = getImplicitTargetCrefForMember cenv slotSigs
+            doc |> makeExpandedXmlDoc cenv implicitTarget
 
     member _.ElaboratedXmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeElaboratedXmlDoc else

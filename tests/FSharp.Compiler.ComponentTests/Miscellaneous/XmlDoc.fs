@@ -154,3 +154,60 @@ module XmlDocInheritanceTests =
         let result = expandWithNoResolver visited doc
         Assert.NotNull(result)
 
+    [<Fact>]
+    let ``Resolver-based expansion replaces inheritdoc with resolved content`` () =
+        let resolver (cref: string) =
+            if cref = "T:Test.BaseType" then
+                Some "<summary>Base type summary</summary>"
+            else
+                None
+
+        let doc = XmlDoc([| "<inheritdoc cref=\"T:Test.BaseType\"/>" |], Range.range0)
+        let result = expandInheritDoc resolver None Range.range0 Set.empty doc
+        let text = result.GetXmlText()
+        Assert.Contains("Base type summary", text)
+        Assert.DoesNotContain("<inheritdoc", text)
+
+    [<Fact>]
+    let ``Recursive chained resolution expands through multiple levels`` () =
+        let resolver (cref: string) =
+            match cref with
+            | "T:GrandBase" -> Some "<summary>GrandBase documentation</summary>"
+            | "T:Base" -> Some "<inheritdoc cref=\"T:GrandBase\"/>"
+            | _ -> None
+
+        let doc = XmlDoc([| "<inheritdoc cref=\"T:Base\"/>" |], Range.range0)
+        let result = expandInheritDoc resolver None Range.range0 Set.empty doc
+        let text = result.GetXmlText()
+        Assert.Contains("GrandBase documentation", text)
+
+    [<Fact>]
+    let ``Implicit target resolves when no cref is specified`` () =
+        let resolver (cref: string) =
+            if cref = "T:Test.IService" then
+                Some "<summary>Service contract docs</summary>"
+            else
+                None
+
+        let doc = XmlDoc([| "<inheritdoc/>" |], Range.range0)
+
+        let result =
+            expandInheritDoc resolver (Some "T:Test.IService") Range.range0 Set.empty doc
+
+        let text = result.GetXmlText()
+        Assert.Contains("Service contract docs", text)
+
+    [<Fact>]
+    let ``XPath path filter selects only matching elements`` () =
+        let resolver (cref: string) =
+            if cref = "T:Test.Base" then
+                Some "<summary>Base summary</summary><remarks>Base remarks</remarks>"
+            else
+                None
+
+        let doc = XmlDoc([| "<inheritdoc cref=\"T:Test.Base\" path=\"/remarks\"/>" |], Range.range0)
+        let result = expandInheritDoc resolver None Range.range0 Set.empty doc
+        let text = result.GetXmlText()
+        Assert.Contains("Base remarks", text)
+        Assert.DoesNotContain("Base summary", text)
+
