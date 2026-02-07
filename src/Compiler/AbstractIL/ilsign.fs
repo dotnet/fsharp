@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
@@ -301,19 +301,30 @@ let signStream stream keyBlob =
     patchSignature stream peReader signature
 
 let signatureSize (pk: byte array) =
-    if pk.Length < 25 then
-        raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
+    if isNull (box pk) || pk.Length < 16 then
+        0
+    else
+        let reader = BlobReader pk
 
-    let mutable reader = BlobReader pk
-    reader.ReadBigInteger 12 |> ignore // Skip CLRHeader
-    reader.ReadBigInteger 8 |> ignore // Skip BlobHeader
-    let magic = reader.ReadInt32() // Read magic
+        let tryReadBitLen (offset: int) =
+            if pk.Length >= offset + 12 then
+                reader._offset <- offset
+                let magic = reader.ReadInt32()
 
-    if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then // RSAPubKey.magic
-        raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
+                if magic = RSA_PUB_MAGIC || magic = RSA_PRIV_MAGIC then
+                    let bitLen = reader.ReadInt32()
+                    Some bitLen
+                else
+                    None
+            else
+                None
 
-    let x = reader.ReadInt32() / 8
-    x
+        match tryReadBitLen 8 with
+        | Some bitLen -> (bitLen / 8 + 7) &&& ~~~7
+        | None ->
+            match tryReadBitLen 20 with
+            | Some bitLen -> (bitLen / 8 + 7) &&& ~~~7
+            | None -> 128
 
 // Returns a CLR Format Blob public key
 let getPublicKeyForKeyPair keyBlob =
