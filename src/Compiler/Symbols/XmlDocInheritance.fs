@@ -24,7 +24,7 @@ let private hasInheritDoc (xmlText: string) = xmlText.IndexOf("<inheritdoc") >= 
 
 /// Extracts inheritdoc directives from parsed XML
 let private extractInheritDocDirectives (doc: XDocument) =
-    let inheritDocName = XName.op_Implicit "inheritdoc"
+    let inheritDocName = XName.op_Implicit "inheritdoc" |> Operators.nonNull
 
     let crefName = XName.op_Implicit "cref" |> Operators.nonNull
     let pathName = XName.op_Implicit "path" |> Operators.nonNull

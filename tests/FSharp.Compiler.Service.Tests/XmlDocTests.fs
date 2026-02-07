@@ -1643,6 +1643,19 @@ module InheritDocTooltipTests =
         | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> String.concat "\n"
         | _ -> failwith "Expected FromXmlText"
 
+    /// Compiles code, finds a member by name on an entity, and returns its resolved XmlDoc text.
+    let private getMemberXmlText (code: string) (entityName: string) (memberName: string) =
+        let _, checkResults = getParseAndCheckResults code
+        let entity = findSymbolByName entityName checkResults :?> FSharpEntity
+
+        let memberSymbol =
+            entity.MembersFunctionsAndValues
+            |> Seq.find (fun m -> m.DisplayName = memberName)
+
+        match memberSymbol.XmlDoc with
+        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> String.concat "\n"
+        | _ -> failwith "Expected FromXmlText"
+
     [<Theory>]
     [<InlineData("DerivedType", "Base type documentation")>]
     [<InlineData("DerivedType", "Important remarks")>]
@@ -1697,28 +1710,9 @@ type DerivedClass() =
     /// <inheritdoc/>
     override _.Add(x, y) = x + y + 1
 """
-        let _, checkResults = getParseAndCheckResults code
-        let allSymbols = checkResults.GetAllUsesOfAllSymbolsInFile()
-
-        let addMethod =
-            allSymbols
-            |> Seq.filter (fun su ->
-                match su.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as m ->
-                    m.DisplayName = "Add"
-                    && m.DeclaringEntity.IsSome
-                    && m.DeclaringEntity.Value.DisplayName = "DerivedClass"
-                | _ -> false)
-            |> Seq.head
-
-        let xmlDoc = (addMethod.Symbol :?> FSharpMemberOrFunctionOrValue).XmlDoc
-
-        match xmlDoc with
-        | FSharpXmlDoc.FromXmlText t ->
-            let xmlText = t.UnprocessedLines |> String.concat "\n"
-            Assert.NotEmpty(xmlText)
-        | FSharpXmlDoc.None -> ()
-        | _ -> ()
+        let xmlText = getMemberXmlText code "DerivedClass" "Add"
+        Assert.Contains("Base method documentation", xmlText)
+        Assert.DoesNotContain("<inheritdoc", xmlText)
 
     [<Fact>]
     let ``inheritdoc should resolve nested inheritance for same compilation``() =
@@ -1756,11 +1750,12 @@ type TypeB() = class end
         let typeBSymbol = findSymbolByName "TypeB" checkResults
         let xmlDocB = (typeBSymbol :?> FSharpEntity).XmlDoc
 
+        // Circular references should not crash; the result should still be FromXmlText
         match xmlDocA, xmlDocB with
         | FSharpXmlDoc.FromXmlText tA, FSharpXmlDoc.FromXmlText tB ->
             Assert.NotEmpty(tA.UnprocessedLines)
             Assert.NotEmpty(tB.UnprocessedLines)
-        | _ -> ()
+        | _ -> failwith "Expected both types to have FromXmlText XmlDoc"
 
     [<Theory>]
     [<InlineData("ServiceImpl", "Service interface")>]
@@ -1876,9 +1871,9 @@ type DerivedClass() =
     /// <inheritdoc cref="M:Test.BaseClass.Calculate(System.Int32)"/>
     member _.Calculate2(x: int) = x * 3
 """
-        let _, checkResults = getParseAndCheckResults code
-        let derivedSymbol = findSymbolByName "DerivedClass" checkResults
-        Assert.NotNull(derivedSymbol)
+        let xmlText = getMemberXmlText code "DerivedClass" "Calculate2"
+        Assert.Contains("Base method docs", xmlText)
+        Assert.DoesNotContain("<inheritdoc", xmlText)
 
     [<Theory>]
     [<InlineData("DerivedRecord", "Base record documentation")>]
@@ -1919,7 +1914,7 @@ type DerivedUnion =
         Assert.Contains(expectedText, xmlText)
 
     [<Fact>]
-    let ``inheritdoc implicit without cref emits warning``() =
+    let ``inheritdoc implicit without cref on interface impl should resolve``() =
         let code = """
 module Test
 
@@ -1932,9 +1927,8 @@ type ServiceImpl() =
         /// <inheritdoc/>
         member _.DoWork() = ()
 """
-        let _, checkResults = getParseAndCheckResults code
-        let implSymbol = findSymbolByName "ServiceImpl" checkResults
-        Assert.NotNull(implSymbol)
+        let xmlText = getMemberXmlText code "ServiceImpl" "DoWork"
+        Assert.Contains("Service method", xmlText)
 
     [<Theory>]
     [<InlineData("DerivedClass", "Base class documentation")>]
@@ -1975,8 +1969,7 @@ type MyImpl() =
         Assert.Contains(expectedText, xmlText)
 
     // ===========================================
-    // TESTS FOR MISSING FUNCTIONALITY (METHODS)
-    // These tests document what SHOULD work but currently DOES NOT
+    // IMPLICIT INHERITDOC ON METHODS AND PROPERTIES
     // ===========================================
 
     [<Fact>]
@@ -1996,22 +1989,10 @@ type Calculator() =
         /// <inheritdoc/>
         member _.Add(a, b) = a + b
 """
-        let _, checkResults = getParseAndCheckResults code
-        let calcEntity = findSymbolByName "Calculator" checkResults :?> FSharpEntity
-
-        let addMethod =
-            calcEntity.MembersFunctionsAndValues
-            |> Seq.find (fun m -> m.DisplayName = "Add")
-
-        let xmlDoc = addMethod.XmlDoc
-
-        match xmlDoc with
-        | FSharpXmlDoc.FromXmlText t ->
-            let xmlText = t.UnprocessedLines |> String.concat "\n"
-            Assert.Contains("Adds two numbers together", xmlText)
-            Assert.Contains("First number", xmlText)
-            Assert.Contains("The sum", xmlText)
-        | _ -> failwith "Expected FromXmlText with inherited docs"
+        let xmlText = getMemberXmlText code "Calculator" "Add"
+        Assert.Contains("Adds two numbers together", xmlText)
+        Assert.Contains("First number", xmlText)
+        Assert.Contains("The sum", xmlText)
 
     [<Fact>]
     let ``implicit inheritdoc on override method should inherit from base``() =
@@ -2030,21 +2011,9 @@ type DerivedProcessor() =
     /// <inheritdoc/>
     override _.Process(data) = data.ToUpper()
 """
-        let _, checkResults = getParseAndCheckResults code
-        let derivedEntity = findSymbolByName "DerivedProcessor" checkResults :?> FSharpEntity
-
-        let processMethod =
-            derivedEntity.MembersFunctionsAndValues
-            |> Seq.find (fun m -> m.DisplayName = "Process")
-
-        let xmlDoc = processMethod.XmlDoc
-
-        match xmlDoc with
-        | FSharpXmlDoc.FromXmlText t ->
-            let xmlText = t.UnprocessedLines |> String.concat "\n"
-            Assert.Contains("Processes the input data", xmlText)
-            Assert.Contains("The data to process", xmlText)
-        | _ -> failwith "Expected FromXmlText with inherited docs"
+        let xmlText = getMemberXmlText code "DerivedProcessor" "Process"
+        Assert.Contains("Processes the input data", xmlText)
+        Assert.Contains("The data to process", xmlText)
 
     [<Fact>]
     let ``implicit inheritdoc on property implementing interface should inherit docs``() =
@@ -2061,23 +2030,8 @@ type Person() =
         /// <inheritdoc/>
         member _.Name with get() = name and set v = name <- v
 """
-        let _, checkResults = getParseAndCheckResults code
-        let personEntity = findSymbolByName "Person" checkResults :?> FSharpEntity
-
-        let nameProp =
-            personEntity.MembersFunctionsAndValues
-            |> Seq.tryFind (fun m -> m.DisplayName = "Name")
-
-        match nameProp with
-        | Some prop ->
-            let xmlDoc = prop.XmlDoc
-
-            match xmlDoc with
-            | FSharpXmlDoc.FromXmlText t ->
-                let xmlText = t.UnprocessedLines |> String.concat "\n"
-                Assert.Contains("Gets or sets the name", xmlText)
-            | _ -> failwith "Expected FromXmlText with inherited docs"
-        | None -> ()
+        let xmlText = getMemberXmlText code "Person" "Name"
+        Assert.Contains("Gets or sets the name", xmlText)
 
     [<Fact>]
     let ``explicit method cref should resolve and inherit docs``() =
@@ -2093,23 +2047,11 @@ type Worker =
     /// <inheritdoc cref="M:Test.Helper.DoSomething(System.Int32)"/>
     static member Work(x: int) = x * 3
 """
-        let _, checkResults = getParseAndCheckResults code
-        let workerEntity = findSymbolByName "Worker" checkResults :?> FSharpEntity
-
-        let workMethod =
-            workerEntity.MembersFunctionsAndValues
-            |> Seq.find (fun m -> m.DisplayName = "Work")
-
-        let xmlDoc = workMethod.XmlDoc
-
-        match xmlDoc with
-        | FSharpXmlDoc.FromXmlText t ->
-            let xmlText = t.UnprocessedLines |> String.concat "\n"
-            Assert.Contains("Helper method docs", xmlText)
-        | _ -> failwith "Expected FromXmlText with inherited docs"
+        let xmlText = getMemberXmlText code "Worker" "Work"
+        Assert.Contains("Helper method docs", xmlText)
 
     // ===========================================
-    // TESTS FOR REMAINING MISSING FUNCTIONALITY
+    // EXPLICIT CREF AND EDGE CASES
     // ===========================================
 
     [<Fact>]
@@ -2125,20 +2067,8 @@ type Settings =
     /// <inheritdoc cref="P:Test.Config.AppName"/>
     static member Name = "OtherApp"
 """
-        let _, checkResults = getParseAndCheckResults code
-        let settingsEntity = findSymbolByName "Settings" checkResults :?> FSharpEntity
-
-        let nameProp =
-            settingsEntity.MembersFunctionsAndValues
-            |> Seq.find (fun m -> m.DisplayName = "Name")
-
-        let xmlDoc = nameProp.XmlDoc
-
-        match xmlDoc with
-        | FSharpXmlDoc.FromXmlText t ->
-            let xmlText = t.UnprocessedLines |> String.concat "\n"
-            Assert.Contains("The application name", xmlText)
-        | _ -> failwith "Expected FromXmlText with inherited docs"
+        let xmlText = getMemberXmlText code "Settings" "Name"
+        Assert.Contains("The application name", xmlText)
 
     [<Fact>]
     let ``generic type cref should resolve``() =
@@ -2185,6 +2115,38 @@ type DerivedType() = class end
         Assert.Contains("Base type documentation", xmlText)
         Assert.Contains("Base remarks content", xmlText)
         Assert.DoesNotContain("inheritdoc", xmlText)
+
+    [<Fact>]
+    let ``unresolvable cref should not crash and should emit warning``() =
+        let code = """
+module Test
+
+/// <inheritdoc cref="T:NonExistent.Type"/>
+type MyType() = class end
+"""
+        let _, checkResults = getParseAndCheckResults code
+        let symbol = findSymbolByName "MyType" checkResults
+        let xmlDoc = (symbol :?> FSharpEntity).XmlDoc
+        // Should not crash; result should still be FromXmlText
+        match xmlDoc with
+        | FSharpXmlDoc.FromXmlText _ -> ()
+        | _ -> failwith "Expected FromXmlText"
+
+    [<Fact>]
+    let ``inheritdoc preserves surrounding doc elements``() =
+        let code = """
+module Test
+
+/// <summary>Base summary</summary>
+type BaseType() = class end
+
+/// <summary>My own summary</summary>
+/// <inheritdoc cref="T:Test.BaseType" path="/summary"/>
+/// <remarks>My own remarks</remarks>
+type DerivedType() = class end
+"""
+        let xmlText = getEntityXmlText code "DerivedType"
+        Assert.Contains("My own remarks", xmlText)
 
 [<Fact>]
 let ``Discriminated Union - triple slash after case definition should warn``(): unit =

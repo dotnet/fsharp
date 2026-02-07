@@ -28,16 +28,15 @@ type ParsedDocCommentId =
     | None
 
 module XmlDocSigParser =
+    // Hoisted to module level to avoid re-creating compiled Regex on every call
+    let private docCommentIdRx =
+        Regex(@"^(?<kind>\w):(?<entity>[\w\d#`.]+)(?<args>\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)
+
+    let private fnGenericArgsRx =
+        Regex(@"^(?<entity>.+)``(?<typars>\d+)$", RegexOptions.Compiled)
+
     /// Parse a documentation comment ID string (e.g., "M:Namespace.Type.Method(System.String)")
     let parseDocCommentId (docCommentId: string) =
-        // Regex to match documentation comment IDs
-        // Groups: kind (T/M/P/F/E/N), entity (dotted path), optional args, optional return type
-        let docCommentIdRx =
-            Regex(@"^(?<kind>\w):(?<entity>[\w\d#`.]+)(?<args>\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)
-
-        // Parse generic args count from function name (e.g., MethodName``1)
-        let fnGenericArgsRx =
-            Regex(@"^(?<entity>.+)``(?<typars>\d+)$", RegexOptions.Compiled)
 
         let m = docCommentIdRx.Match(docCommentId)
         let kindStr = m.Groups["kind"].Value

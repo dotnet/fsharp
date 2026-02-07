@@ -88,14 +88,9 @@ module Impl =
     let makeXmlDoc (doc: XmlDoc) =
         FSharpXmlDoc.FromXmlText doc
     
-    /// Parses a cref into a type path (for T: prefix)
-    let private parseTypePath (cref: string) : string list option =
-        if cref.Length > 2 && cref.[1] = ':' && cref.[0] = 'T' then
-            let typePath = cref.Substring(2)
-            let normalizedPath = typePath.Replace('+', '.')
-            Some(normalizedPath.Split('.') |> Array.toList)
-        else
-            None
+    /// Returns the XmlText of a doc if non-empty, or None.
+    let private tryGetXmlDocText (doc: XmlDoc) =
+        if doc.IsEmpty then None else Some(doc.GetXmlText())
 
     /// For nested type crefs (with +), returns an alternative F#-style path
     let private parseNestedTypeAlternativePath (cref: string) : string list option =
@@ -114,35 +109,28 @@ module Impl =
             else None
         else None
 
-    /// Parses a method cref (M: prefix) into (typePath, methodName)
-    let private parseMethodCref (cref: string) : (string list * string) option =
-        if cref.Length > 2 && cref.[1] = ':' && cref.[0] = 'M' then
-            let entityPart = cref.Substring(2)
-            let parenIdx = entityPart.IndexOf('(')
-            let pathPart = if parenIdx > 0 then entityPart.Substring(0, parenIdx) else entityPart
-            let lastDot = pathPart.LastIndexOf('.')
-            if lastDot > 0 then
-                Some(pathPart.Substring(0, lastDot).Split('.') |> Array.toList, pathPart.Substring(lastDot + 1))
-            else None
-        else None
-
-    /// Parses a property cref (P: prefix) into (typePath, propertyName)
-    let private parsePropertyCref (cref: string) : (string list * string) option =
-        if cref.Length > 2 && cref.[1] = ':' && cref.[0] = 'P' then
-            let entityPart = cref.Substring(2)
-            let lastDot = entityPart.LastIndexOf('.')
-            if lastDot > 0 then
-                Some(entityPart.Substring(0, lastDot).Split('.') |> Array.toList, entityPart.Substring(lastDot + 1))
-            else None
-        else None
+    /// Parses a cref string using the shared XmlDocSigParser, returning
+    /// (typePath option, memberName option) for entity/member lookup.
+    /// Falls back to manual parsing for crefs with '+' (nested types) that the regex-based parser can't handle.
+    let private parseCref (cref: string) =
+        match XmlDocSigParser.parseDocCommentId cref with
+        | ParsedDocCommentId.Type path -> Some(path, None)
+        | ParsedDocCommentId.Member(typePath, memberName, _, _) -> Some(typePath, Some memberName)
+        | ParsedDocCommentId.Field(typePath, fieldName) -> Some(typePath, Some fieldName)
+        | ParsedDocCommentId.None ->
+            // Handle T:Namespace.Type+Nested format that the regex can't parse
+            if cref.Length > 2 && cref.[0] = 'T' && cref.[1] = ':' then
+                let typePath = cref.Substring(2).Replace('+', '.')
+                Some(typePath.Split('.') |> Array.toList, None)
+            else
+                None
 
     /// Tries to find a member's XmlDoc on an entity by method name
     let private tryFindMemberXmlDoc (entity: Entity) (methodName: string) : string option =
         entity.MembersOfFSharpTyconSorted
         |> List.tryPick (fun vref ->
             if vref.DisplayName = methodName || vref.LogicalName = methodName then
-                let doc = vref.XmlDoc
-                if doc.IsEmpty then None else Some(doc.GetXmlText())
+                tryGetXmlDocText vref.XmlDoc
             else None)
 
     /// Tries to find an entity in a module/namespace by path
@@ -185,92 +173,68 @@ module Impl =
     /// Attempts to retrieve XML documentation from a CCU by cref
     let private tryGetXmlDocFromCcu (ccu: CcuThunk) (cref: string) : string option =
         let tryEntityDoc path =
-            match tryFindEntityInCcu ccu path with
-            | Some entity ->
-                let doc = entity.XmlDoc
-                if doc.IsEmpty then None else Some(doc.GetXmlText())
-            | None -> None
+            tryFindEntityInCcu ccu path
+            |> Option.bind (fun entity -> tryGetXmlDocText entity.XmlDoc)
 
         let tryMemberDoc typePath memberName =
-            match tryFindEntityInCcu ccu typePath with
-            | Some entity -> tryFindMemberXmlDoc entity memberName
-            | None -> None
+            tryFindEntityInCcu ccu typePath
+            |> Option.bind (fun entity -> tryFindMemberXmlDoc entity memberName)
 
-        match parseTypePath cref with
-        | Some path ->
-            match tryEntityDoc path with
-            | Some doc -> Some doc
-            | None ->
-                match parseNestedTypeAlternativePath cref with
-                | Some altPath -> tryEntityDoc altPath
-                | None -> None
-        | None ->
-            match parseMethodCref cref with
-            | Some(typePath, methodName) -> tryMemberDoc typePath methodName
-            | None ->
-                match parsePropertyCref cref with
-                | Some(typePath, propName) -> tryMemberDoc typePath propName
-                | None -> None
+        match parseCref cref with
+        | Some(path, None) ->
+            tryEntityDoc path
+            |> Option.orElseWith (fun () ->
+                parseNestedTypeAlternativePath cref
+                |> Option.bind tryEntityDoc)
+        | Some(typePath, Some memberName) ->
+            tryMemberDoc typePath memberName
+        | None -> None
 
     /// Attempts to retrieve XML documentation from a ModuleOrNamespaceType by cref.
     /// Used for same-compilation resolution where thisCcuTy provides the current compilation's typed content.
     let private tryGetXmlDocFromModuleType (ccuName: string) (mtyp: ModuleOrNamespaceType) (cref: string) : string option =
         let tryFindWithFallbacks (path: string list) =
-            match tryFindEntityByPath mtyp path with
-            | Some entity ->
-                let doc = entity.XmlDoc
-                if doc.IsEmpty then None else Some(doc.GetXmlText())
-            | None ->
+            tryFindEntityByPath mtyp path
+            |> Option.bind (fun entity -> tryGetXmlDocText entity.XmlDoc)
+            |> Option.orElseWith (fun () ->
                 match path with
                 | firstPart :: rest when firstPart = ccuName && not rest.IsEmpty ->
-                    match tryFindEntityByPath mtyp rest with
-                    | Some entity ->
-                        let doc = entity.XmlDoc
-                        if doc.IsEmpty then None else Some(doc.GetXmlText())
-                    | None -> None
+                    tryFindEntityByPath mtyp rest
+                    |> Option.bind (fun entity -> tryGetXmlDocText entity.XmlDoc)
                 | moduleName :: rest ->
                     mtyp.ModuleAndNamespaceDefinitions
                     |> List.tryPick (fun m ->
                         if m.LogicalName = moduleName || m.CompiledName = moduleName then
                             match rest with
-                            | [] ->
-                                let doc = m.XmlDoc
-                                if doc.IsEmpty then None else Some(doc.GetXmlText())
+                            | [] -> tryGetXmlDocText m.XmlDoc
                             | _ ->
-                                match tryFindEntityByPath m.ModuleOrNamespaceType rest with
-                                | Some entity ->
-                                    let doc = entity.XmlDoc
-                                    if doc.IsEmpty then None else Some(doc.GetXmlText())
-                                | None -> None
+                                tryFindEntityByPath m.ModuleOrNamespaceType rest
+                                |> Option.bind (fun entity -> tryGetXmlDocText entity.XmlDoc)
                         else None)
-                | _ -> None
+                | _ -> None)
 
         let tryMemberWithFallbacks typePath memberName =
-            match tryFindEntityByPath mtyp typePath with
-            | Some entity -> tryFindMemberXmlDoc entity memberName
-            | None ->
+            let tryOn mtyp =
+                tryFindEntityByPath mtyp typePath
+                |> Option.bind (fun entity -> tryFindMemberXmlDoc entity memberName)
+
+            tryOn mtyp
+            |> Option.orElseWith (fun () ->
                 match typePath with
                 | firstPart :: rest when firstPart = ccuName && not rest.IsEmpty ->
-                    match tryFindEntityByPath mtyp rest with
-                    | Some entity -> tryFindMemberXmlDoc entity memberName
-                    | None -> None
-                | _ -> None
+                    tryFindEntityByPath mtyp rest
+                    |> Option.bind (fun entity -> tryFindMemberXmlDoc entity memberName)
+                | _ -> None)
 
-        match parseTypePath cref with
-        | Some path ->
-            match tryFindWithFallbacks path with
-            | Some doc -> Some doc
-            | None ->
-                match parseNestedTypeAlternativePath cref with
-                | Some altPath -> tryFindWithFallbacks altPath
-                | None -> None
-        | None ->
-            match parseMethodCref cref with
-            | Some(typePath, methodName) -> tryMemberWithFallbacks typePath methodName
-            | None ->
-                match parsePropertyCref cref with
-                | Some(typePath, propName) -> tryMemberWithFallbacks typePath propName
-                | None -> None
+        match parseCref cref with
+        | Some(path, None) ->
+            tryFindWithFallbacks path
+            |> Option.orElseWith (fun () ->
+                parseNestedTypeAlternativePath cref
+                |> Option.bind tryFindWithFallbacks)
+        | Some(typePath, Some memberName) ->
+            tryMemberWithFallbacks typePath memberName
+        | None -> None
 
     /// Builds a cref resolver function from the SymbolEnv.
     /// The resolver searches same-compilation CCU, all loaded CCUs, and external XML documentation files.
@@ -345,9 +309,8 @@ module Impl =
         with _ -> None
     
     /// Computes the implicit target cref for a member (from implemented interface or overridden base method)
-    let getImplicitTargetCrefForMember (cenv: SymbolEnv) (slotSigs: SlotSig list) : string option =
+    let getImplicitTargetCrefForMember (cenv: SymbolEnv) (d: FSharpMemberOrValData) (slotSigs: SlotSig list) : string option =
         match slotSigs with
-        | [] -> None
         | slot :: _ ->
             try
                 let declaringTy = slot.DeclaringType
@@ -355,9 +318,44 @@ module Impl =
                 match tryTcrefOfAppTy cenv.g declaringTy with
                 | ValueSome tcref ->
                     let typeName = tcref.CompiledRepresentationForNamedType.FullName
-                    // Build method cref: M:Namespace.Type.MethodName
                     Some ("M:" + typeName + "." + methodName)
                 | ValueNone -> None
+            with _ -> None
+        | [] ->
+            // For overrides of base class abstract members, slot sigs may be empty.
+            // Fall back to finding the base type and building a method cref from it.
+            try
+                let memberName =
+                    match d with
+                    | V v -> Some v.DisplayName
+                    | M m | C m -> Some m.DisplayName
+                    | P p -> Some p.PropertyName
+                    | E e -> Some e.EventName
+
+                match memberName with
+                | None -> None
+                | Some name ->
+                    let declaringTyOpt =
+                        match d with
+                        | V v ->
+                            match v.TryDeclaringEntity with
+                            | Parent entityRef -> Some(generalizedTyconRef cenv.g entityRef)
+                            | ParentNone -> None
+                        | M m | C m -> Some m.ApparentEnclosingType
+                        | P p -> Some p.ApparentEnclosingType
+                        | E e -> Some e.ApparentEnclosingType
+
+                    match declaringTyOpt with
+                    | Some declaringTy ->
+                        match GetSuperTypeOfType cenv.g cenv.amap range0 declaringTy with
+                        | Some baseTy when not (isObjTyAnyNullness cenv.g baseTy) ->
+                            match tryTcrefOfAppTy cenv.g baseTy with
+                            | ValueSome baseTcref ->
+                                let baseName = baseTcref.CompiledRepresentationForNamedType.FullName
+                                Some ("M:" + baseName + "." + name)
+                            | ValueNone -> None
+                        | _ -> None
+                    | None -> None
             with _ -> None
     
     let rescopeEntity optViewedCcu (entity: Entity) = 
@@ -2397,7 +2395,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 | P p -> p.ImplementedSlotSignatures
                 | M m | C m -> m.ImplementedSlotSignatures
                 | V v -> v.ImplementedSlotSignatures
-            let implicitTarget = getImplicitTargetCrefForMember cenv slotSigs
+            let implicitTarget = getImplicitTargetCrefForMember cenv d slotSigs
             doc |> makeExpandedXmlDoc cenv implicitTarget
 
     member _.ElaboratedXmlDoc = 
