@@ -40,13 +40,13 @@
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$ServiceLexing+clo::Invoke([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<System.Tuple`3<FSharp.Compiler.Parser+token,int32,int32>,Microsoft.FSharp.Core.Unit>)][offset 0x00000082][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$ServiceLexing+clo::Invoke([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<System.Tuple`3<FSharp.Compiler.Parser+token,int32,int32>,Microsoft.FSharp.Core.Unit>)][offset 0x0000008B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$ServiceLexing+clo::Invoke([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<System.Tuple`3<FSharp.Compiler.Parser+token,int32,int32>,Microsoft.FSharp.Core.Unit>)][offset 0x00000094][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.Impl::parseTypePath(string)][offset 0x0000004D][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.Impl::parseNestedTypeAlternativePath(string)][offset 0x00000094][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.Impl::parseMethodCref(string)][offset 0x00000073][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.Impl::parsePropertyCref(string)][offset 0x00000057][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$Symbols+fullName::Invoke([FSharp.Core]Microsoft.FSharp.Core.Unit)][offset 0x00000015][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CreateILModule+MainModuleBuilder::ConvertProductVersionToILVersionInfo(string)][offset 0x00000011][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.StaticLinking+TypeForwarding::followTypeForwardForILTypeRef([FSharp.Compiler.Service]FSharp.Compiler.AbstractIL.IL+ILTypeRef)][offset 0x00000010][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.XmlDocInheritance::parseTypePath(string)][offset 0x0000004D][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.XmlDocInheritance::parseNestedTypeAlternativePath(string)][offset 0x00000094][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.XmlDocInheritance::parseMethodCref(string)][offset 0x00000082][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.XmlDocInheritance::parsePropertyCref(string)][offset 0x00000063][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.XmlDocSigParser::parseDocCommentId(string)][offset 0x00000319][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.XmlDocSigParser::parseDocCommentId(string)][offset 0x000002DD][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.XmlDocSigParser::parseDocCommentId(string)][offset 0x000000D9][found Char] Unexpected type on the stack.
