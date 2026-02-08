@@ -1730,6 +1730,7 @@ type Derived() = class end
 """
         let xmlText = getEntityXmlText code "Derived"
         Assert.Contains("GrandBase documentation", xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
     let ``inheritdoc circular reference should not crash tooltip``() =
@@ -1787,6 +1788,7 @@ type ServiceImpl() =
 """
         let xmlText = getEntityXmlText code symbolName
         Assert.Contains(expectedText, xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
     let ``inheritdoc from same module nested type``() =
@@ -1803,6 +1805,7 @@ type DerivedFromOuter() = class end
 """
         let xmlText = getEntityXmlText code "DerivedFromOuter"
         Assert.Contains("Outer container documentation", xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Theory>]
     [<InlineData("DerivedInSecond", "Type in first module")>]
@@ -1822,6 +1825,7 @@ type DerivedInSecond() = class end
 """
         let xmlText = getEntityXmlText code symbolName
         Assert.Contains(expectedText, xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
     let ``inheritdoc from System type via IL``() =
@@ -1900,6 +1904,7 @@ type DerivedRecord = { Id: int; Data: string }
 """
         let xmlText = getEntityXmlText code symbolName
         Assert.Contains(expectedText, xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Theory>]
     [<InlineData("DerivedUnion", "Base union type")>]
@@ -1921,6 +1926,7 @@ type DerivedUnion =
 """
         let xmlText = getEntityXmlText code symbolName
         Assert.Contains(expectedText, xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
     let ``inheritdoc implicit without cref on interface impl should resolve``() =
@@ -1939,6 +1945,8 @@ type ServiceImpl() =
         let xmlText = getMemberXmlText code "ServiceImpl" "DoWork"
         Assert.Contains("Service method", xmlText)
         Assert.DoesNotContain("<inheritdoc", xmlText)
+
+    [<Theory>]
     [<InlineData("DerivedClass", "Base class documentation")>]
     [<InlineData("DerivedClass", "Base remarks")>]
     let ``implicit inheritdoc should resolve from base class for type`` (symbolName: string, expectedText: string) =
@@ -1955,6 +1963,7 @@ type DerivedClass() =
 """
         let xmlText = getEntityXmlText code symbolName
         Assert.Contains(expectedText, xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Theory>]
     [<InlineData("MyImpl", "Interface documentation")>]
@@ -1975,6 +1984,7 @@ type MyImpl() =
 """
         let xmlText = getEntityXmlText code symbolName
         Assert.Contains(expectedText, xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     // ===========================================
     // IMPLICIT INHERITDOC ON METHODS AND PROPERTIES
@@ -2096,6 +2106,7 @@ type Box<'T> = { Item: 'T }
 """
         let xmlText = getEntityXmlText code "Box`1"
         Assert.Contains("A generic container", xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
     let ``nested type cref should resolve``() =
@@ -2111,6 +2122,7 @@ type Other = { Y: int }
 """
         let xmlText = getEntityXmlText code "Other"
         Assert.Contains("Inner type docs", xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
     let ``tooling-time resolution removes all inheritdoc elements``() =

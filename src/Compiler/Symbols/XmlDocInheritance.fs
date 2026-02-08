@@ -113,62 +113,35 @@ and private expandInheritDocText
             if directives.IsEmpty then
                 xmlText
             else
+                let resolveAndReplace (directive: InheritDocDirective) (cref: string) (implicitCrefForRecursion: string option) =
+                    if visited.Contains(cref) then
+                        warning (Error(FSComp.SR.xmlDocInheritDocError ($"Circular reference detected for '{cref}'"), m))
+                    else
+                        match resolveCref cref with
+                        | Some inheritedXml ->
+                            let expandedInheritedXml =
+                                expandInheritedDoc resolveCref implicitCrefForRecursion m visited cref inheritedXml
+
+                            let contentToInherit =
+                                match directive.Path with
+                                | Some xpath ->
+                                    applyXPathFilter m xpath expandedInheritedXml
+                                    |> Option.defaultValue expandedInheritedXml
+                                | None -> expandedInheritedXml
+
+                            try
+                                let newContent = XElement.Parse("<temp>" + contentToInherit + "</temp>")
+                                directive.Element.ReplaceWith(newContent.Nodes())
+                            with ex ->
+                                warning (Error(FSComp.SR.xmlDocInheritDocError ($"Failed to process inheritdoc: {ex.Message}"), m))
+                        | None -> warning (Error(FSComp.SR.xmlDocInheritDocError ($"Cannot resolve cref '{cref}'"), m))
+
                 for directive in directives do
                     match directive.Cref with
-                    | Some cref ->
-                        if visited.Contains(cref) then
-                            warning (Error(FSComp.SR.xmlDocInheritDocError ($"Circular reference detected for '{cref}'"), m))
-                        else
-                            match resolveCref cref with
-                            | Some inheritedXml ->
-                                let expandedInheritedXml =
-                                    expandInheritedDoc resolveCref implicitTargetCrefOpt m visited cref inheritedXml
-
-                                let contentToInherit =
-                                    match directive.Path with
-                                    | Some xpath ->
-                                        applyXPathFilter m xpath expandedInheritedXml
-                                        |> Option.defaultValue expandedInheritedXml
-                                    | None -> expandedInheritedXml
-
-                                try
-                                    let newContent = XElement.Parse("<temp>" + contentToInherit + "</temp>")
-                                    directive.Element.ReplaceWith(newContent.Nodes())
-                                with ex ->
-                                    warning (Error(FSComp.SR.xmlDocInheritDocError ($"Failed to process inheritdoc: {ex.Message}"), m))
-                            | None -> warning (Error(FSComp.SR.xmlDocInheritDocError ($"Cannot resolve cref '{cref}'"), m))
+                    | Some cref -> resolveAndReplace directive cref implicitTargetCrefOpt
                     | None ->
                         match implicitTargetCrefOpt with
-                        | Some implicitCref ->
-                            if visited.Contains(implicitCref) then
-                                warning (
-                                    Error(
-                                        FSComp.SR.xmlDocInheritDocError (
-                                            $"Circular reference detected for implicit target '{implicitCref}'"
-                                        ),
-                                        m
-                                    )
-                                )
-                            else
-                                match resolveCref implicitCref with
-                                | Some inheritedXml ->
-                                    let expandedInheritedXml =
-                                        expandInheritedDoc resolveCref None m visited implicitCref inheritedXml
-
-                                    let contentToInherit =
-                                        match directive.Path with
-                                        | Some xpath ->
-                                            applyXPathFilter m xpath expandedInheritedXml
-                                            |> Option.defaultValue expandedInheritedXml
-                                        | None -> expandedInheritedXml
-
-                                    try
-                                        let newContent = XElement.Parse("<temp>" + contentToInherit + "</temp>")
-                                        directive.Element.ReplaceWith(newContent.Nodes())
-                                    with ex ->
-                                        warning (Error(FSComp.SR.xmlDocInheritDocError ($"Failed to process inheritdoc: {ex.Message}"), m))
-                                | None ->
-                                    warning (Error(FSComp.SR.xmlDocInheritDocError ($"Cannot resolve implicit target '{implicitCref}'"), m))
+                        | Some implicitCref -> resolveAndReplace directive implicitCref None
                         | None ->
                             warning (
                                 Error(
@@ -186,32 +159,11 @@ and private expandInheritDocText
         with :? System.Xml.XmlException ->
             xmlText
 
-/// Expands `<inheritdoc>` elements in XML documentation.
+/// Expands `<inheritdoc>` elements in XML documentation text.
 /// The caller provides a `resolveCref` function to look up documentation by cref string.
 /// Takes an optional implicit target cref for resolving <inheritdoc/> without cref attribute.
 /// Tracks visited signatures to prevent infinite recursion.
-let expandInheritDoc
-    (resolveCref: string -> string option)
-    (implicitTargetCrefOpt: string option)
-    (m: range)
-    (visited: Set<string>)
-    (doc: XmlDoc)
-    : XmlDoc =
-    if doc.IsEmpty then
-        doc
-    else
-        let xmlText = doc.GetXmlText()
-
-        let expandedText =
-            expandInheritDocText resolveCref implicitTargetCrefOpt m visited xmlText
-
-        if obj.ReferenceEquals(xmlText, expandedText) || xmlText = expandedText then
-            doc
-        else
-            XmlDoc([| expandedText |], m)
-
-/// Like expandInheritDoc but takes a pre-computed xmlText string, avoiding an extra GetXmlText() call.
-/// Use when the caller has already obtained the XML text (e.g. to check for <inheritdoc> presence).
+/// Takes a pre-computed xmlText string, avoiding an extra GetXmlText() call.
 let expandInheritDocFromXmlText
     (resolveCref: string -> string option)
     (implicitTargetCrefOpt: string option)
