@@ -403,6 +403,21 @@ let main _ =
         |> shouldSucceed
         |> ignore
 
+    // https://github.com/dotnet/fsharp/issues/18374
+    [<Fact>]
+    let ``Issue_18374_RuntimeWrappedExceptionIL`` () =
+        let source = """
+module Test
+let catchAll () =
+    try
+        failwith "test"
+    with
+    | e -> e.Message
+"""
+        let actualIL = FSharp source |> asLibrary |> compile |> shouldSucceed |> getActualIL
+        Assert.Contains("isinst", actualIL)
+        Assert.DoesNotContain("castclass", actualIL)
+
     // https://github.com/dotnet/fsharp/issues/18319
     [<Fact>]
     let ``Issue_18319_LiteralUpcastMissingBox`` () =
@@ -729,8 +744,6 @@ printfn "Test completed"
         Assert.Contains("logSerialized", actualIL)
         Assert.Contains("box", actualIL)
 
-    // Related: https://github.com/dotnet/fsharp/issues/16362 (proposed $ separator was reverted)
-
     [<Fact>]
     let ``ExtensionMethod_InstanceMethod_UsesDotSeparator`` () =
         let result =
@@ -902,8 +915,6 @@ let main args =
         |> asExe
         |> compile
         |> shouldSucceed
-        // |> run
-        // |> shouldSucceed
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/15467
@@ -1257,7 +1268,7 @@ type ConstructB =
 
     // https://github.com/dotnet/fsharp/issues/14508
     [<Fact>]
-    let ``Issue_14508_NativeptrInInterfaces`` () =
+    let ``Issue_14508_NativeptrInInterfaces_CompileOnly`` () =
         let source = """
 module Test
 
@@ -1279,6 +1290,30 @@ type Working<'T when 'T : unmanaged>() =
         FSharp source
         |> asLibrary
         |> compile
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/14508
+    [<Fact>]
+    let ``Issue_14508_NativeptrInInterfaces_RuntimeWorking`` () =
+        let source = """
+open Microsoft.FSharp.NativeInterop
+
+type IFoo<'T when 'T : unmanaged> =
+    abstract member Pointer : nativeptr<'T>
+
+type Working<'T when 'T : unmanaged>() =
+    member x.Pointer : nativeptr<'T> = Unchecked.defaultof<_>
+    interface IFoo<'T> with
+        member x.Pointer = x.Pointer
+
+printfn "Working type loaded successfully"
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
         |> shouldSucceed
         |> ignore
 
@@ -2379,13 +2414,19 @@ module Test
 
 exception Foo of x:string * y:int
 """
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
+        let result =
+            FSharp source
+            |> asLibrary
+            |> compile
+            |> shouldSucceed
+
+        result
         |> verifyIL [
             ".method public strict virtual instance void GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed"
             "call       instance void [runtime]System.Exception::GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo,"
             ".method family specialname rtspecialname instance void  .ctor(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed"
         ]
         |> ignore
+
+        let actualIL = getActualIL result
+        Assert.Contains("AddValue", actualIL)
