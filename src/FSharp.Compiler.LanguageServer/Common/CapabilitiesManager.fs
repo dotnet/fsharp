@@ -33,6 +33,10 @@ type CapabilitiesManager(config: FSharpLanguageServerConfig, scOverrides: IServe
                         WorkspaceDiagnostics = true
                     )),
             //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
+            CompletionProvider =
+                addIf
+                    config.EnabledFeatures.Completion
+                    (CompletionOptions(TriggerCharacters = [| "." |], ResolveProvider = false, WorkDoneProgress = false)),
             //HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
             SemanticTokensOptions =
                 addIf

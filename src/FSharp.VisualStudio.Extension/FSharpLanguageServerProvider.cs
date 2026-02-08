@@ -292,7 +292,8 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         var serverConfig = new FSharpLanguageServerConfig(
             new FSharpLanguageServerFeatures(
                 diagnostics: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetDiagnosticsFrom, defaultValue: FSharpExtensionSettings.BOTH)),
-                semanticHighlighting: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetSemanticHighlightingFrom, defaultValue: FSharpExtensionSettings.BOTH))
+                semanticHighlighting: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetSemanticHighlightingFrom, defaultValue: FSharpExtensionSettings.BOTH)),
+                completion: true
                 ));
 
         var disposeToEndSubscription =
