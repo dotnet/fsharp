@@ -117,19 +117,19 @@ module XmlDocInheritanceTests =
 
     let private noResolver (_cref: string) : string option = None
 
-    let private expandWithNoResolver visited doc =
-        expandInheritDoc noResolver None Range.range0 visited doc
+    let private expandWithNoResolver visited xmlText =
+        expandInheritDocFromXmlText noResolver None Range.range0 visited xmlText
 
     [<Fact>]
     let ``Empty XmlDoc returns empty`` () =
-        let result = expandWithNoResolver Set.empty XmlDoc.Empty
-        Assert.True(result.IsEmpty)
+        let result = expandWithNoResolver Set.empty ""
+        Assert.Equal("", result)
 
     [<Fact>]
     let ``XmlDoc without inheritdoc returns unchanged`` () =
-        let doc = XmlDoc([| "<summary>Test summary</summary>" |], Range.range0)
-        let result = expandWithNoResolver Set.empty doc
-        Assert.Equal(doc.GetXmlText(), result.GetXmlText())
+        let xmlText = "<summary>Test summary</summary>"
+        let result = expandWithNoResolver Set.empty xmlText
+        Assert.Equal(xmlText, result)
 
     // These all pass different inheritdoc variants without resolver - result should be non-null
     [<Theory>]
@@ -137,21 +137,20 @@ module XmlDocInheritanceTests =
     [<InlineData("<inheritdoc cref=\"T:System.String\"/>")>]
     [<InlineData("<inheritdoc path=\"/summary\"/>")>]
     let ``XmlDoc with inheritdoc but no resolver returns non-null`` (xmlLine: string) =
-        let doc = XmlDoc([| xmlLine |], Range.range0)
-        let result = expandWithNoResolver Set.empty doc
+        let result = expandWithNoResolver Set.empty xmlLine
         Assert.NotNull(result)
 
     [<Fact>]
     let ``Malformed XML is handled gracefully`` () =
-        let doc = XmlDoc([| "<unclosed>" |], Range.range0)
-        let result = expandWithNoResolver Set.empty doc
-        Assert.Equal(doc.GetXmlText(), result.GetXmlText())
+        let xmlText = "<unclosed>"
+        let result = expandWithNoResolver Set.empty xmlText
+        Assert.Equal(xmlText, result)
 
     [<Fact>]
     let ``Cycle detection prevents infinite recursion`` () =
-        let doc = XmlDoc([| "<inheritdoc cref=\"T:System.String\"/>" |], Range.range0)
+        let xmlText = "<inheritdoc cref=\"T:System.String\"/>"
         let visited = Set.ofList [ "T:System.String" ]
-        let result = expandWithNoResolver visited doc
+        let result = expandWithNoResolver visited xmlText
         Assert.NotNull(result)
 
     [<Fact>]
@@ -162,11 +161,10 @@ module XmlDocInheritanceTests =
             else
                 None
 
-        let doc = XmlDoc([| "<inheritdoc cref=\"T:Test.BaseType\"/>" |], Range.range0)
-        let result = expandInheritDoc resolver None Range.range0 Set.empty doc
-        let text = result.GetXmlText()
-        Assert.Contains("Base type summary", text)
-        Assert.DoesNotContain("<inheritdoc", text)
+        let xmlText = "<inheritdoc cref=\"T:Test.BaseType\"/>"
+        let result = expandInheritDocFromXmlText resolver None Range.range0 Set.empty xmlText
+        Assert.Contains("Base type summary", result)
+        Assert.DoesNotContain("<inheritdoc", result)
 
     [<Fact>]
     let ``Recursive chained resolution expands through multiple levels`` () =
@@ -176,10 +174,9 @@ module XmlDocInheritanceTests =
             | "T:Base" -> Some "<inheritdoc cref=\"T:GrandBase\"/>"
             | _ -> None
 
-        let doc = XmlDoc([| "<inheritdoc cref=\"T:Base\"/>" |], Range.range0)
-        let result = expandInheritDoc resolver None Range.range0 Set.empty doc
-        let text = result.GetXmlText()
-        Assert.Contains("GrandBase documentation", text)
+        let xmlText = "<inheritdoc cref=\"T:Base\"/>"
+        let result = expandInheritDocFromXmlText resolver None Range.range0 Set.empty xmlText
+        Assert.Contains("GrandBase documentation", result)
 
     [<Fact>]
     let ``Implicit target resolves when no cref is specified`` () =
@@ -189,13 +186,12 @@ module XmlDocInheritanceTests =
             else
                 None
 
-        let doc = XmlDoc([| "<inheritdoc/>" |], Range.range0)
+        let xmlText = "<inheritdoc/>"
 
         let result =
-            expandInheritDoc resolver (Some "T:Test.IService") Range.range0 Set.empty doc
+            expandInheritDocFromXmlText resolver (Some "T:Test.IService") Range.range0 Set.empty xmlText
 
-        let text = result.GetXmlText()
-        Assert.Contains("Service contract docs", text)
+        Assert.Contains("Service contract docs", result)
 
     [<Fact>]
     let ``XPath path filter selects only matching elements`` () =
@@ -205,9 +201,8 @@ module XmlDocInheritanceTests =
             else
                 None
 
-        let doc = XmlDoc([| "<inheritdoc cref=\"T:Test.Base\" path=\"/remarks\"/>" |], Range.range0)
-        let result = expandInheritDoc resolver None Range.range0 Set.empty doc
-        let text = result.GetXmlText()
-        Assert.Contains("Base remarks", text)
-        Assert.DoesNotContain("Base summary", text)
+        let xmlText = "<inheritdoc cref=\"T:Test.Base\" path=\"/remarks\"/>"
+        let result = expandInheritDocFromXmlText resolver None Range.range0 Set.empty xmlText
+        Assert.Contains("Base remarks", result)
+        Assert.DoesNotContain("Base summary", result)
 
