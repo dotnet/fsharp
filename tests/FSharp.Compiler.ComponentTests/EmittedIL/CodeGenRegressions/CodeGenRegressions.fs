@@ -1266,13 +1266,11 @@ open Microsoft.FSharp.NativeInterop
 type IFoo<'T when 'T : unmanaged> =
     abstract member Pointer : nativeptr<'T>
 
-// This type causes the bug - non-generic implementation of generic interface
 type Broken() =
     member x.Pointer : nativeptr<int> = Unchecked.defaultof<_>
     interface IFoo<int> with
         member x.Pointer = x.Pointer
 
-// This works - generic type implementing generic interface
 type Working<'T when 'T : unmanaged>() =
     member x.Pointer : nativeptr<'T> = Unchecked.defaultof<_>
     interface IFoo<'T> with
@@ -1354,10 +1352,8 @@ type EngineError<'e> =
     static abstract Overheated : 'e
     static abstract LowOil : 'e
 
-// Previously caused: "duplicate entry 'Overheated' in property table"
-// Now works: The DU case properties and IWSAM implementations coexist correctly
 type CarError =
-    | Overheated  // Same name as IWSAM member - now works!
+    | Overheated
     | LowOil
     | DeviceNotPaired
 
@@ -1399,7 +1395,6 @@ type MyResult<'T, 'E> =
     | Ok of value: 'T 
     | Error of error: 'E
 
-// Helper that uses stackalloc and passes the span to another function
 let useStackAlloc () : MyResult<int, string> =
     let ptr = NativePtr.stackalloc<byte> 100
     let span = Span<byte>(NativePtr.toVoidPtr ptr, 100)
@@ -1445,12 +1440,11 @@ let f x = x + 1
         let source = """
 module Test
 
-// Full repro would have 13000+ members, simplified here
 type T =
     static member M1 = 1
     static member M2 = 2
     static member M3 = 3
-    // ... 13000 more would cause ~20sec compile time
+    // ... full repro would have 13000+ members
 """
         FSharp source
         |> asLibrary
@@ -1464,7 +1458,6 @@ type T =
         let source = """
 module StaticLinkTest
 
-// Simple program that will exercise static linking with --standalone
 let value = List.iter (fun x -> printfn "%d" x) [1; 2; 3]
 
 [<EntryPoint>]
@@ -1475,7 +1468,7 @@ let main _ = 0
         |> withOptions ["--standalone"]
         |> compile
         |> shouldSucceed
-        |> withDiagnostics []  // No FS2009 warnings should be produced
+        |> withDiagnostics []
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/13100
@@ -1494,10 +1487,8 @@ let main _ = 0
         |> shouldSucceed
         |> withPeReader (fun rdr -> 
             let characteristics = rdr.PEHeaders.CoffHeader.Characteristics
-            // Should have LargeAddressAware (0x20)
             if not (characteristics.HasFlag(System.Reflection.PortableExecutable.Characteristics.LargeAddressAware)) then
                 failwith $"x64 binary should have LargeAddressAware flag. Found: {characteristics}"
-            // Should NOT have Bit32Machine (0x100)
             if characteristics.HasFlag(System.Reflection.PortableExecutable.Characteristics.Bit32Machine) then
                 failwith $"x64 binary should NOT have Bit32Machine flag. Found: {characteristics}")
         |> ignore
@@ -1510,7 +1501,6 @@ module BoxingClosureTest
 
 let foo (ob: obj) = box(fun () -> ob.ToString()) :?> (unit -> string)
 
-// BUG: This allocates an extraneous closure that wraps the real one
 let go() = foo "hi"
 
 let goFixed() = foo(box "hi")
@@ -1548,10 +1538,8 @@ let value = 42
                     let fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(path)
                     if System.String.IsNullOrEmpty(fvi.InternalName) then
                         failwith $"InternalName should not be empty. Expected filename, got: '{fvi.InternalName}'"
-                    // C# sets ProductVersion from AssemblyInformationalVersion
                     if fvi.ProductVersion <> "5.6.7" then
                         failwith $"ProductVersion should be '5.6.7' (from AssemblyInformationalVersion), got: '{fvi.ProductVersion}'"
-                    // FileVersion should still be from AssemblyFileVersion
                     if fvi.FileVersion <> "1.2.3.4" then
                         failwith $"FileVersion should be '1.2.3.4', got: '{fvi.FileVersion}'"
                     result
@@ -1582,13 +1570,10 @@ let value = 42
                 match s.OutputPath with
                 | Some path ->
                     let fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(path)
-                    // InternalName should still be set
                     if System.String.IsNullOrEmpty(fvi.InternalName) then
                         failwith $"InternalName should not be empty, got: '{fvi.InternalName}'"
-                    // Without AssemblyInformationalVersion, ProductVersion falls back to FileVersion
                     if fvi.FileVersion <> "2.3.4.5" then
                         failwith $"FileVersion should be '2.3.4.5', got: '{fvi.FileVersion}'"
-                    // OriginalFilename should also be set (matches InternalName)
                     if System.String.IsNullOrEmpty(fvi.OriginalFilename) then
                         failwith $"OriginalFilename should not be empty, got: '{fvi.OriginalFilename}'"
                     result
@@ -1618,15 +1603,12 @@ let inline (|>>) ([<InlineIfLambda>] v : _ -> _) ([<InlineIfLambda>] f : _ -> _)
 
 let values = [|0..100|]
 
-// THIS INLINES CORRECTLY - values is a let binding
 let thisIsInlined1 () = ofArray values |>> fold (+) 0
 
-// THIS ALSO INLINES - intermediate binding for array
 let thisIsInlined2 () = 
   let vs = [|0..100|]
   ofArray vs |>> fold (+) 0
 
-// BUG: THIS DOES NOT INLINE - array literal inline
 let thisIsNotInlined () = ofArray [|0..100|] |>> fold (+) 0
 """
         FSharp source
@@ -1644,10 +1626,8 @@ module MutRecInitTest
 
 type Node = { Next: Node; Prev: Node; Value: int }
 
-// Single self-reference works correctly
 let rec zero = { Next = zero; Prev = zero; Value = 0 }
 
-// Mutual recursion with let rec ... and ... (fixed by PR #12395)
 let rec one = { Next = two; Prev = two; Value = 1 }
 and two = { Next = one; Prev = one; Value = 2 }
 
@@ -1677,13 +1657,11 @@ let main _ =
         let source = """
 module ClosureNamingTest
 
-// Function with inner closures - closures get the enclosing function name  
 let processData items =
     items
     |> List.map (fun x -> x * 2)    
     |> List.filter (fun x -> x > 2) 
 
-// Nested function with capturing closure
 let outerFunc a =
     let innerFunc b =
         fun c -> a + b + c  
@@ -1699,12 +1677,11 @@ let outerFunc a =
         let source = """
 module CapturingClosureTest
 
-// Closure inside a function that captures outer variables
 let makeAdder n =
-    fun x -> x + n  // Anonymous closure captures 'n'
+    fun x -> x + n
 
 let makeMultiplier n =
-    let multiply x = x * n  // Named inner function captures 'n', inlined by optimizer
+    let multiply x = x * n
     multiply
 """
         let actualIL = FSharp source |> asLibrary |> compile |> shouldSucceed |> getActualIL
@@ -1737,16 +1714,10 @@ module StringNullCheckTest
 
 open System
 
-// F# IL: ldarg.0; ldnull; call bool String::Equals(string, string); ret
-// C# IL: ldarg.0; ldnull; ceq; ret (or just brtrue.s for conditionals)
 let isNullString (s: string) = s = null
 
-// Same issue - extra String.Equals call instead of simple branch
 let isNotNullString (s: string) = s <> null
 
-// In loop context, this adds 2 extra IL instructions per iteration:
-// F# IL: call string Console::ReadLine(); ldnull; call bool String::Equals(...); brtrue.s
-// C# IL: call string Console::ReadLine(); brtrue.s (single branch instruction)
 let test() =
     while Console.ReadLine() <> null do
         Console.WriteLine(1)
@@ -1764,21 +1735,13 @@ let test() =
         let source = """
 module TailEmitTest
 
-// Inline generic fold - when called from same assembly, no tail. (good)
 let inline fold (f: 'S -> 'T -> 'S) (state: 'S) (items: 'T list) =
     let mutable s = state
     for item in items do
         s <- f s item
     s
 
-// Same-assembly call - IL shows NO tail. prefix (correct behavior)
 let sumLocal () = fold (+) 0 [1; 2; 3]
-
-// For cross-assembly scenario (not testable in single file):
-// If another assembly calls: TailEmitTest.fold (+) 0 [1;2;3]
-//   tail.
-//   call !!0 [TailEmitTest]TailEmitTest/fold@5::Invoke(...)
-// This tail. is unnecessary and causes 2-3x performance penalty
 """
         FSharp source
         |> asLibrary
@@ -1803,8 +1766,8 @@ let testFixed (array: int[]) : unit =
     let doBlock() =
         use pin = fixed &array.[0]
         used pin
-    doBlock()  // Function returns, so pinned local is implicitly cleaned
-    used 1     // Now array is correctly unpinned
+    doBlock()
+    used 1
 """
         FSharp source
         |> asLibrary
