@@ -1472,6 +1472,7 @@ Actual:
     type PdbVerificationOption =
     | VerifyImportScopes of ImportScope list list
     | VerifySequencePoints of (Line * Col * Line * Col) list
+    | VerifyMethodSequencePoints of methodName: string * expectedPoints: (Line * Col * Line * Col) list
     | VerifyDocuments of string list
     | Dummy of unit
 
@@ -1526,6 +1527,39 @@ Actual:
             if expectedScope <> imports then
                 failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
+    let private getMethodSequencePoints (assemblyPath: string) (pdbReader: MetadataReader) (methodName: string) =
+        use peStream = File.OpenRead(assemblyPath)
+        use peReader = new PEReader(peStream)
+        let assemblyReader = peReader.GetMetadataReader()
+
+        let methodHandles =
+            [ for typeDef in assemblyReader.TypeDefinitions do
+                let td = assemblyReader.GetTypeDefinition(typeDef)
+                for methodHandle in td.GetMethods() do
+                    let md = assemblyReader.GetMethodDefinition(methodHandle)
+                    let name = assemblyReader.GetString(md.Name)
+                    if name = methodName then
+                        yield methodHandle ]
+
+        if methodHandles.IsEmpty then
+            failwith (sprintf "Method '%s' not found in assembly '%s'" methodName assemblyPath)
+
+        [ for methodHandle in methodHandles do
+            let rowNumber = System.Reflection.Metadata.Ecma335.MetadataTokens.GetRowNumber(methodHandle)
+            let debugInfoHandle = System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDebugInformationHandle(rowNumber)
+            let debugInfo = pdbReader.GetMethodDebugInformation(debugInfoHandle)
+            yield!
+                debugInfo.GetSequencePoints()
+                |> Seq.filter (fun sp -> not sp.IsHidden)
+                |> Seq.sortBy (fun sp -> sp.Offset)
+                |> Seq.map (fun sp -> (Line sp.StartLine, Col sp.StartColumn, Line sp.EndLine, Col sp.EndColumn))
+                |> Seq.toList ]
+
+    let private verifyMethodSequencePoints (assemblyPath: string) (reader: MetadataReader) (methodName: string) (expectedSequencePoints: (Line * Col * Line * Col) list) =
+        let actualPoints = getMethodSequencePoints assemblyPath reader methodName
+        if actualPoints <> expectedSequencePoints then
+            failwith (sprintf "Expected method '%s' sequence points are different from PDB.\nExpected: %A\nActual: %A" methodName expectedSequencePoints actualPoints)
+
     let private verifySequencePoints (reader: MetadataReader) expectedSequencePoints =
         let sequencePoints =
             [ for sp in reader.MethodDebugInformation do
@@ -1559,6 +1593,8 @@ Actual:
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
             | VerifySequencePoints sp -> verifySequencePoints reader sp
+            | VerifyMethodSequencePoints(methodName, sp) ->
+                verifyMethodSequencePoints (optOutputPath |> Option.defaultValue "") reader methodName sp
             | VerifyDocuments docs -> verifyDocuments reader (docs |> List.map(fun doc -> Path.Combine(outputPath, doc)))
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
