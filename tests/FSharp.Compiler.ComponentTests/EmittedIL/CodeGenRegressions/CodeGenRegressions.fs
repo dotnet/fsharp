@@ -12,6 +12,17 @@ open FSharp.Test.Utilities
 
 module CodeGenRegressions =
 
+    /// Extract actual IL text from a CompilationResult, avoiding repeated boilerplate.
+    let private getActualIL (result: CompilationResult) =
+        match result with
+        | CompilationResult.Success s ->
+            match s.OutputPath with
+            | Some p ->
+                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p [ "// dummy" ]
+                actualIL
+            | None -> failwith "No output path"
+        | _ -> failwith "Compilation failed"
+
     // ===== Issue #19075: CLR Crashes when running program using constrained calls =====
     // https://github.com/dotnet/fsharp/issues/19075
     // The combination of SRTP with IDisposable constraint and constrained call generates
@@ -40,7 +51,7 @@ let main argv =
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // This will fail with CLR crash - bug exists
+        |> shouldSucceed // Test disabled: fix was reverted (caused other test crashes)
         |> ignore
 
     // ===== Issue #19068: Object expression in struct generates byref field in a class =====
@@ -539,7 +550,7 @@ module Say =
         FSharp source
         |> asLibrary
         |> compile
-        |> shouldSucceed // This will fail with "duplicate entry 'get_IsSZ' in method table" - bug exists
+        |> shouldSucceed // Fixed: duplicate entry 'get_IsSZ' no longer occurs
         |> ignore
 
     // ===== Issue #18140: Codegen causes ilverify errors - Callvirt on value type =====
@@ -572,12 +583,15 @@ let test() =
     let s = MyRange(42)
     comparer.GetHashCode(s)
 """
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        // Fixed: Now generates constrained.callvirt instead of plain callvirt on value types
-        |> ignore
+        let actualIL =
+            FSharp source
+            |> asLibrary
+            |> compile
+            |> shouldSucceed
+            |> getActualIL
+
+        // Verify constrained. prefix is emitted for callvirt on value types
+        Assert.Contains("constrained.", actualIL)
 
     // ===== Issue #18135: Can't compile static abstract with byref params =====
     // https://github.com/dotnet/fsharp/issues/18135
@@ -792,7 +806,7 @@ and 'T option = Option<'T>
         FSharp source
         |> asLibrary
         |> compile
-        |> shouldSucceed // This will fail with "duplicate entry 'get_None' in method table" - bug exists
+        |> shouldSucceed // Fixed: NoHelpers discard logic prevents duplicate 'get_None' entry
         |> ignore
 
     // ===== Issue #16546: NullReferenceException in Debug build with recursive reference =====
@@ -1622,7 +1636,9 @@ type ConstructB =
     [<Fact>]
     let ``Issue_14508_NativeptrInInterfaces`` () =
         // The bug: non-generic type implementing generic interface with nativeptr causes
-        // runtime TypeLoadException due to IL signature mismatch
+        // runtime TypeLoadException due to IL signature mismatch.
+        // Note: Runtime verification (asExe |> run) still produces TypeLoadException for the
+        // 'Broken' type, indicating the fix is partial. Compile-only test kept for now.
         let source = """
 module Test
 
@@ -1682,11 +1698,18 @@ module BugInReleaseConfig =
     let f: string -> string = memoizeLatestRef id
 
     let run () = test f "ok"
+
+[<EntryPoint>]
+let main _ =
+    BugInReleaseConfig.run ()
+    0
 """
         FSharp source
-        |> asLibrary
+        |> asExe
         |> withOptimize
         |> compile
+        |> shouldSucceed
+        |> run
         |> shouldSucceed
         |> ignore
 
@@ -1803,12 +1826,23 @@ let test () =
     | Ok v -> v
     | Error _ -> -1
 """
-        FSharp source
-        |> asLibrary
-        |> withOptimize
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        let actualIL =
+            FSharp source
+            |> asLibrary
+            |> withOptimize
+            |> compile
+            |> shouldSucceed
+            |> getActualIL
+
+        // Verify that tail. prefix is NOT emitted in the method that uses localloc (stackalloc)
+        // Extract the IL for useStackAlloc method and verify no tail. prefix in it.
+        // Other methods (like 'test') may legitimately use tail calls.
+        let useStackAllocIdx = actualIL.IndexOf("useStackAlloc")
+        Assert.True(useStackAllocIdx >= 0, "useStackAlloc method not found in IL")
+        // Get the IL from useStackAlloc to the next method boundary
+        let methodEnd = actualIL.IndexOf("\n    } ", useStackAllocIdx)
+        let methodIL = if methodEnd > 0 then actualIL.Substring(useStackAllocIdx, methodEnd - useStackAllocIdx) else actualIL.Substring(useStackAllocIdx)
+        Assert.DoesNotContain("tail.", methodIL)
 
     // ===== Issue #13223: FSharp.Build support for reference assemblies =====
     // https://github.com/dotnet/fsharp/issues/13223
@@ -2915,7 +2949,7 @@ let main _ =
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // This will fail - abstract event accessors have IsSpecialName = false - bug exists
+        |> shouldSucceed // Fixed: abstract event accessors now have IsSpecialName = true
         |> ignore
 
     // ===== Issue #5464: F# ignores custom modifiers modreq/modopt =====

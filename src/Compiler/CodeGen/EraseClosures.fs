@@ -172,6 +172,11 @@ let private fixILParamForFunc (ilg: ILGlobals) (p: ILParameter) =
 // Fix parameters list for FSharpFunc methods
 let private fixILParamsForFunc (ilg: ILGlobals) (ps: ILParameter list) = ps |> List.map (fixILParamForFunc ilg)
 
+// Fix void* types in type argument lists and return type for FSharpFunc compatibility.
+// See https://github.com/dotnet/fsharp/issues/11132
+let private fixFuncTypeArgs (ilg: ILGlobals) (argTys: ILType list) retTy =
+    (argTys |> List.map (fixVoidPtrForGenericArg ilg), fixVoidPtrForGenericArg ilg retTy)
+
 let mkILFuncTy cenv dty rty =
     let dty = fixVoidPtrForGenericArg cenv.ilg dty
     let rty = fixVoidPtrForGenericArg cenv.ilg rty
@@ -190,8 +195,7 @@ let typ_Func cenv (dtys: ILType list) rty =
             mkFuncTypeRef cenv.ilg.fsharpCoreAssemblyScopeRef n
 
     // Fix void* types in type arguments - see https://github.com/dotnet/fsharp/issues/11132
-    let dtys = dtys |> List.map (fixVoidPtrForGenericArg cenv.ilg)
-    let rty = fixVoidPtrForGenericArg cenv.ilg rty
+    let dtys, rty = fixFuncTypeArgs cenv.ilg dtys rty
     mkILBoxedTy tref (dtys @ [ rty ])
 
 let rec mkTyOfApps cenv apps =
@@ -215,8 +219,7 @@ let mkMethSpecForMultiApp cenv (argTys: ILType list, retTy) =
     let formalArgTys = List.mapi (fun i _ -> ILType.TypeVar(uint16 i)) argTys
     let formalRetTy = ILType.TypeVar(uint16 n)
     // Fix void* types in type arguments - see https://github.com/dotnet/fsharp/issues/11132
-    let argTys = argTys |> List.map (fixVoidPtrForGenericArg cenv.ilg)
-    let retTy = fixVoidPtrForGenericArg cenv.ilg retTy
+    let argTys, retTy = fixFuncTypeArgs cenv.ilg argTys retTy
     let inst = argTys @ [ retTy ]
 
     if n = 1 then
@@ -595,16 +598,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 // that override methods cannot have different constraints than the base method.
                 // Type safety is already enforced at the F# call site by the type checker.
                 // See https://github.com/dotnet/fsharp/issues/14492
-                let specializeGenParams =
-                    addedGenParams
-                    |> List.map (fun gp ->
-                        { gp with
-                            Constraints = []
-                            HasReferenceTypeConstraint = false
-                            HasNotNullableValueTypeConstraint = false
-                            HasDefaultConstructorConstraint = false
-                            HasAllowsRefStruct = false
-                        })
+                let specializeGenParams = addedGenParams |> List.map stripILGenericParamConstraints
 
                 let nowApplyMethDef =
                     mkILGenericVirtualMethod (
