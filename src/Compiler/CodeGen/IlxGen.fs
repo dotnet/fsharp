@@ -10030,6 +10030,7 @@ and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage storeSeq
         CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdarg0; mkNormalLdfld ilField ]
         CommitGetStorageSequel cenv cgbuf eenv m ty localCloInfo storeSequel
 
+/// Load free variables for closure capture, dereferencing byrefs (https://github.com/dotnet/fsharp/issues/19068).
 and GenGetFreeVarForClosure cenv cgbuf eenv m (fv: Val) =
     let g = cenv.g
     GenGetLocalVal cenv cgbuf eenv m fv None
