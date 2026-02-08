@@ -194,7 +194,6 @@ let typ_Func cenv (dtys: ILType list) rty =
         else
             mkFuncTypeRef cenv.ilg.fsharpCoreAssemblyScopeRef n
 
-    // Fix void* types in type arguments - see https://github.com/dotnet/fsharp/issues/11132
     let dtys, rty = fixFuncTypeArgs cenv.ilg dtys rty
     mkILBoxedTy tref (dtys @ [ rty ])
 
@@ -218,7 +217,6 @@ let mkMethSpecForMultiApp cenv (argTys: ILType list, retTy) =
     let n = argTys.Length
     let formalArgTys = List.mapi (fun i _ -> ILType.TypeVar(uint16 i)) argTys
     let formalRetTy = ILType.TypeVar(uint16 n)
-    // Fix void* types in type arguments - see https://github.com/dotnet/fsharp/issues/11132
     let argTys, retTy = fixFuncTypeArgs cenv.ilg argTys retTy
     let inst = argTys @ [ retTy ]
 

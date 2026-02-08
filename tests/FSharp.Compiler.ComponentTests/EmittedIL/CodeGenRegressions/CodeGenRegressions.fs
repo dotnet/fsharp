@@ -12,7 +12,6 @@ open FSharp.Test.Utilities
 
 module CodeGenRegressions =
 
-    /// Extract actual IL text from a CompilationResult, avoiding repeated boilerplate.
     let private getActualIL (result: CompilationResult) =
         match result with
         | CompilationResult.Success s ->
@@ -51,7 +50,7 @@ let main argv =
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // Test disabled: fix was reverted (caused other test crashes)
+        |> shouldSucceed
         |> ignore
 
     // ===== Issue #19068: Object expression in struct generates byref field in a class =====
@@ -385,19 +384,15 @@ let test2 () =
         "four"
     }
 
-// Both should produce equivalent, fully inlined code
-// But test2 generates lambdas - bug exists
+// Both should produce equivalent, fully inlined code but test2 generates lambdas
 """
         let result = FSharp source |> asLibrary |> withOptimize |> compile |> shouldSucceed
         
-        // Verify IL to document the inlining issue
         match result with
         | CompilationResult.Success s ->
             match s.OutputPath with
             | Some p ->
                 let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                // Document that the code compiles and generates IL
-                // The issue is that test2 generates lambdas while test1 doesn't
                 Assert.Contains("test1", actualIL)
                 Assert.Contains("test2", actualIL)
             | None -> failwith "No output path"
@@ -550,7 +545,7 @@ module Say =
         FSharp source
         |> asLibrary
         |> compile
-        |> shouldSucceed // Fixed: duplicate entry 'get_IsSZ' no longer occurs
+        |> shouldSucceed
         |> ignore
 
     // ===== Issue #18140: Codegen causes ilverify errors - Callvirt on value type =====
@@ -590,7 +585,6 @@ let test() =
             |> shouldSucceed
             |> getActualIL
 
-        // Verify constrained. prefix is emitted for callvirt on value types
         Assert.Contains("constrained.", actualIL)
 
     // ===== Issue #18135: Can't compile static abstract with byref params =====
@@ -806,7 +800,7 @@ and 'T option = Option<'T>
         FSharp source
         |> asLibrary
         |> compile
-        |> shouldSucceed // Fixed: NoHelpers discard logic prevents duplicate 'get_None' entry
+        |> shouldSucceed
         |> ignore
 
     // ===== Issue #16546: NullReferenceException in Debug build with recursive reference =====
@@ -1050,7 +1044,7 @@ let main _ =
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // This may hang or fail in Debug build - bug exists
+        |> shouldSucceed
         |> ignore
 
     // ===== Issue #16245: Span IL gen produces 2 get_Item calls =====
@@ -1635,8 +1629,6 @@ type ConstructB =
     // implementation do not match."
     [<Fact>]
     let ``Issue_14508_NativeptrInInterfaces`` () =
-        // The bug: non-generic type implementing generic interface with nativeptr causes
-        // runtime TypeLoadException due to IL signature mismatch.
         // Note: Runtime verification (asExe |> run) still produces TypeLoadException for the
         // 'Broken' type, indicating the fix is partial. Compile-only test kept for now.
         let source = """
@@ -1834,12 +1826,8 @@ let test () =
             |> shouldSucceed
             |> getActualIL
 
-        // Verify that tail. prefix is NOT emitted in the method that uses localloc (stackalloc)
-        // Extract the IL for useStackAlloc method and verify no tail. prefix in it.
-        // Other methods (like 'test') may legitimately use tail calls.
         let useStackAllocIdx = actualIL.IndexOf("useStackAlloc")
         Assert.True(useStackAllocIdx >= 0, "useStackAlloc method not found in IL")
-        // Get the IL from useStackAlloc to the next method boundary
         let methodEnd = actualIL.IndexOf("\n    } ", useStackAllocIdx)
         let methodIL = if methodEnd > 0 then actualIL.Substring(useStackAllocIdx, methodEnd - useStackAllocIdx) else actualIL.Substring(useStackAllocIdx)
         Assert.DoesNotContain("tail.", methodIL)
@@ -2949,7 +2937,7 @@ let main _ =
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // Fixed: abstract event accessors now have IsSpecialName = true
+        |> shouldSucceed
         |> ignore
 
     // ===== Issue #5464: F# ignores custom modifiers modreq/modopt =====
