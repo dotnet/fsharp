@@ -1850,6 +1850,7 @@ let rec TryTranslateComputationExpression
                                         headPat = pat
                                         expr = rhsExpr
                                         debugPoint = spBind
+                                        range = mBind
                                         trivia = { LeadingKeyword = leadingKeyword }) ]
                        Body = innerComp
                    },
@@ -1882,7 +1883,7 @@ let rec TryTranslateComputationExpression
             requireBuilderMethod "Using" ceenv leadingKeyword.Range leadingKeyword.Range
 
             Some(
-                translatedCtxt (mkSynCall "Using" leadingKeyword.Range [ rhsExpr; consumeExpr ] ceenv.builderValName)
+                translatedCtxt (mkSynCall "Using" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName)
                 |> addBindDebugPoint spBind
             )
 
