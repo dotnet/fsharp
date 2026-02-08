@@ -482,7 +482,7 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
         let actualTy = tryNormalizeMeasureInType g actualTy
         let reqdTy = tryNormalizeMeasureInType g reqdTy
         let reqTyForUnification = reqTyForArgumentNullnessInference g actualTy reqdTy
-        if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqTyForUnification actualTy then
+        if AddCxTypeEqualsTypeUndoIfFailedWithContext env.eContextInfo env.DisplayEnv cenv.css m reqTyForUnification actualTy then
             ()
         else
             // try adhoc type-directed conversions
@@ -595,7 +595,8 @@ let ShrinkContext env oldRange newRange =
     | ContextInfo.YieldInComputationExpression
     | ContextInfo.RuntimeTypeTest _
     | ContextInfo.DowncastUsedInsteadOfUpcast _
-    | ContextInfo.SequenceExpression _ ->
+    | ContextInfo.SequenceExpression _
+    | ContextInfo.NullnessCheckOfCapturedArg _ ->
         env
     | ContextInfo.CollectionElement (b,m) ->
         if not (equals m oldRange) then env else
@@ -5373,7 +5374,7 @@ and TcExprFlex (cenv: cenv) flex compat (desiredTy: TType) (env: TcEnv) tpenv (s
         if compat then
             (destTyparTy g argTy).SetIsCompatFlex(true)
 
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argTy
+        AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argTy
 
         let expr2, tpenv = TcExprFlex2 cenv argTy env false tpenv synExpr
         let expr3 = mkCoerceIfNeeded g desiredTy argTy expr2
@@ -8631,56 +8632,29 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                            || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
                     | _ -> env
 
-                // WORKAROUND for issue #18013: Pipe operator error location
-                // 
-                // When using "bar |> foo" with a nullable bar, the constraint solver reports the error 
-                // at the location of "foo" (the function being applied) rather than "bar" (the nullable value).
-                // This is because TcExprFlex2 is called with synArg (the function), not the piped value.
-                //
-                // This workaround intercepts nullness diagnostics and rewrites their source ranges to 
-                // point at the piped argument. A proper fix would thread range context through the 
-                // constraint solver, but that's a larger refactoring.
-                //
-                // NOTE: If new ConstraintSolverNullnessWarning* exception types are added, they must be
-                // added to adjustNullnessWarningRange below or they won't get proper range adjustment.
-                //
-                // Detect if leftExpr is a partial application of the pipe operator.
-                let pipeArgRangeOpt =
-                    match leftExpr with
-                    | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [pipedArg], _))
-                         when valRefEq g vref g.piperight_vref 
-                           || valRefEq g vref g.piperight2_vref
-                           || valRefEq g vref g.piperight3_vref -> 
-                            Some pipedArg.Range
-                    | _ -> None
+                // For nullness checking: When we have a pipe-like pattern (partial application with
+                // captured value, and synArg is a function being applied to it), the nullness error
+                // should point to the captured argument, not the function expression.
+                // This handles pipe operators (|>, ||>, |||>) and user-defined pipes with the same pattern.
+                // We set the context when:
+                // - domainTy is a function type (synArg is expected to be a function)
+                // - AND there are captured args from a partial application
+                // - AND the last captured arg is NOT a function (it's the value being piped)
+                let env =
+                    if isFunTy g domainTy then
+                        match leftExpr with
+                        | ApplicableExpr(expr=Expr.App (_, _, _, capturedArgs, _)) when not capturedArgs.IsEmpty ->
+                            let lastCapturedArg = List.last capturedArgs
+                            // Only set context if the captured arg is not a function type
+                            if not (isFunTy g (tyOfExpr g lastCapturedArg)) then
+                                { env with eContextInfo = ContextInfo.NullnessCheckOfCapturedArg lastCapturedArg.Range }
+                            else
+                                env
+                        | _ -> env
+                    else
+                        env
 
-                match pipeArgRangeOpt with
-                | Some pipeArgRange ->
-                    // Use a custom diagnostics logger to intercept nullness warnings 
-                    // and re-emit them with the pipe argument range
-                    let adjustNullnessWarningRange (exn: exn) : exn =
-                        match exn with
-                        | ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, n1, n2, _m, m2) ->
-                            ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, n1, n2, pipeArgRange, m2)
-                        | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, n1, n2, _m, m2) ->
-                            ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, n1, n2, pipeArgRange, m2)
-                        | ConstraintSolverNullnessWarningWithType(denv, ty, n, _m, m2) ->
-                            ConstraintSolverNullnessWarningWithType(denv, ty, n, pipeArgRange, m2)
-                        | ConstraintSolverNullnessWarning(msg, _m, m2) ->
-                            ConstraintSolverNullnessWarning(msg, pipeArgRange, m2)
-                        | _ -> exn
-                    
-                    let parentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                    use _ = UseTransformedDiagnosticsLogger (fun _ ->
-                        { new DiagnosticsLogger("PipeNullnessRangeAdjuster") with
-                            member _.DiagnosticSink(diagnostic) = 
-                                let adjusted = { diagnostic with Exception = adjustNullnessWarningRange diagnostic.Exception }
-                                parentLogger.DiagnosticSink(adjusted)
-                            member _.ErrorCount = parentLogger.ErrorCount
-                        })
-                    TcExprFlex2 cenv domainTy env false tpenv synArg
-                | None ->
-                    TcExprFlex2 cenv domainTy env false tpenv synArg
+                TcExprFlex2 cenv domainTy env false tpenv synArg
 
             let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
@@ -10824,56 +10798,16 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
             | TPat_tuple (_,pats,_,_) -> pats |> List.forall isWild
             | _ -> false
 
-        // Check if a pattern definitively handles the null case for a type element
-        let rec handlesNull (p:Pattern) =
-            match p with
-            | TPat_null _ -> true
-            | TPat_as (p,_,_) -> handlesNull p
-            | TPat_disjs(patterns,_) -> patterns |> List.exists handlesNull
-            | TPat_conjs(patterns,_) -> patterns |> List.forall handlesNull
-            | _ -> false
-
-        // Check if a type is a non-struct application type (class, interface, etc.)
-        // Note: This checks type structure, not nullness. A non-struct app type CAN be nullable.
-        let isNonStructAppTy ty =
-            isAppTy cenv.g ty && not (isStructTy cenv.g ty)
-
-        let rec eliminateNull (ty:TType) (p:Pattern)  =
+        let rec eliminateNull (ty: TType) (p: Pattern) =
             match p with
             | TPat_null _ -> removeNull ty
-            | TPat_as (p,_,_) -> eliminateNull ty p
-            | TPat_disjs(patterns,_) -> (ty,patterns) ||> List.fold eliminateNull
-            | TPat_tuple (_,pats,_,_) ->
+            | TPat_as(p, _, _) -> eliminateNull ty p
+            | TPat_disjs(patterns, _) -> (ty, patterns) ||> List.fold eliminateNull
+            | TPat_tuple(_, pats, _, _) ->
                 match stripTyparEqns ty with
-                // For tuples, we can only eliminate null from a position if:
-                // 1. The position handles null (has null pattern)
-                // 2. All OTHER positions that are nullable ref types must be wild
-                //    (because if another nullable position is non-wild, we can't tell
-                //     which position the null came from)
-                | TType_tuple(ti,tys) when tys.Length = pats.Length ->
-                    // Pre-compute which positions are nullable and non-wild
-                    let positionInfo = 
-                        List.map2 (fun pat ty -> 
-                            let nullable = isNonStructAppTy ty
-                            let wild = isWild pat
-                            let handlesnull = handlesNull pat
-                            (nullable, wild, handlesnull)) pats tys
-                    
-                    // Count nullable non-wild positions
-                    let nullableNonWildCount = 
-                        positionInfo |> List.count (fun (nullable, wild, _) -> nullable && not wild)
-                    
-                    // For each position, check if it can have null eliminated
-                    let newTys = 
-                        List.map3 (fun (nullable, wild, handlesnull) pat ty ->
-                            // Can eliminate if:
-                            // - position handles null AND
-                            // - it's the only nullable non-wild position (others are wild or non-nullable)
-                            if handlesnull && nullable && not wild && nullableNonWildCount = 1 then
-                                eliminateNull ty pat
-                            else
-                                ty) positionInfo pats tys
-                    TType_tuple(ti, newTys)
+                // Simple logic: exactly 1 non-wild pattern in tuple
+                | TType_tuple(ti, tys) when tys.Length = pats.Length && (pats |> List.count (isWild >> not)) = 1 ->
+                    TType_tuple(ti, List.map2 eliminateNull tys pats)
                 | _ -> ty
             | _ -> ty
         match whenExprOpt with
@@ -12883,7 +12817,28 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
     | Some _ ->
        match PartitionValTyparsForApparentEnclosingType g vspec with
        | Some(parentTypars, memberParentTypars, _, _, _) ->
+          // For type extension members, NotSupportsNull constraints on memberParentTypars may not be
+          // present on parentTypars. Strip only those extra constraints before calling CheckTypars,
+          // so it doesn't report FS0340. Regular class members keep all constraints intact.
+          // The actual type extension constraint check is handled in CheckDeclarations via
+          // typarsAEquivWithAddedNotNullConstraintsAllowed.
+          let savedConstraints = memberParentTypars |> List.map (fun tp -> tp, tp.Constraints)
+
+          if g.checkNullness then
+              (memberParentTypars, parentTypars)
+              ||> List.iter2 (fun mtp ptp ->
+                  let parentHasConstraint c =
+                      List.exists (typarConstraintsAEquiv g TypeEquivEnv.EmptyIgnoreNulls c) ptp.Constraints
+
+                  mtp.SetConstraints(
+                      mtp.Constraints
+                      |> List.filter (fun c -> not (isConstraintAllowedAsExtra c) || parentHasConstraint c)
+                  ))
+
           ignore(SignatureConformance.Checker(g, cenv.amap, denv, SignatureRepackageInfo.Empty, false).CheckTypars vspec.Range TypeEquivEnv.EmptyIgnoreNulls memberParentTypars parentTypars)
+
+          for tp, cs in savedConstraints do
+              tp.SetConstraints cs
        | None ->
           errorR(Error(FSComp.SR.tcMemberIsNotSufficientlyGeneric(), vspec.Range))
     | _ -> ()

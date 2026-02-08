@@ -62,6 +62,8 @@ module ExtendedData =
             | ContextInfo.FollowingPatternMatchClause _ -> FollowingPatternMatchClause
             | ContextInfo.PatternMatchGuard _ -> PatternMatchGuard
             | ContextInfo.SequenceExpression _ -> SequenceExpression
+            // NullnessCheckOfCapturedArg is internal - map to NoContext for public API
+            | ContextInfo.NullnessCheckOfCapturedArg _ -> NoContext
 
     type IFSharpDiagnosticExtendedData =
         interface end

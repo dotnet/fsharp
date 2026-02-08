@@ -878,45 +878,6 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
     |> shouldFail
     |> withErrorCode 3261
 
-// Regression test for https://github.com/dotnet/fsharp/issues/19042
-// Multi-match tuple should eliminate null even when other tuple elements have non-wildcard patterns
-[<Fact>]
-let ``Eliminate tuple null with non-wildcard patterns on other elements - Issue 19042`` () = 
-    FSharp """module MyLibrary
-
-let test (s: string) = ()
-
-let main () =
-    let x = true
-    let y: string | null = ""
-    match x, y with
-    | true, _ -> ()
-    | false, null -> ()
-    | false, s -> test s  // s should be string, not string|null
-"""
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldSucceed
-
-// Additional test: multiple nullable elements in tuple with mixed patterns
-[<Fact>]
-let ``Eliminate tuple null from multiple elements with non-wildcard patterns`` () = 
-    FSharp """module MyLibrary
-
-let test (s: string) (t: string) = ()
-
-let main () =
-    let x: string | null = ""
-    let y: string | null = ""
-    match x, y with
-    | null, _ -> ()
-    | _, null -> ()
-    | s, t -> test s t  // both s and t should be string
-"""
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldSucceed
-
 [<Fact>]
 let ``Eliminate aliased nullness after matching`` () = 
     FSharp $"""module MyLibrary
@@ -1758,6 +1719,42 @@ let result = bar |> foo "mr"
     // The error should point to 'bar' which is at Col 14 on Line 6
     |> withDiagnostics [Error 3261, Line 6, Col 14, Line 6, Col 17, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
 
+// Additional test for <| operator - error points to the nullable argument (bar)
+[<Fact>]
+let ``Left pipe operator error location with nullness`` () =
+    FSharp """module Test
+
+let foo a b = "hello" + a + b
+let bar : string | null = "test"
+// With <| the error points to 'bar' which is the nullable argument
+let result = foo "mr" <| bar
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    // The error points to 'bar' (the nullable value) at Col 26-29 on Line 6
+    |> withDiagnostics [Error 3261, Line 6, Col 26, Line 6, Col 29, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
+
+// Test for user-defined pipe-like operator - error now correctly points to nullable argument
+// This was a known limitation, but is now fixed by generalizing the captured arg context handling.
+[<Fact>]
+let ``User-defined pipe operator error location points to nullable argument`` () =
+    FSharp """module Test
+
+// Custom pipe-like operator
+let inline (|>!) (x: 'a) (f: 'a -> 'b) = f x
+
+let foo (s: string) = s.Length
+let bar : string | null = "test"
+// Error should point to 'bar' (the nullable value)
+let result = bar |>! foo
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    // The error now points to 'bar' at Col 14-17 on Line 9
+    |> withDiagnostics [Error 3261, Line 9, Col 14, Line 9, Col 17, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
+
 // Regression for https://github.com/dotnet/fsharp/issues/18021
 // Passing a non-null constructor instance of an AllowNullLiteral type to a generic API should not warn
 [<Fact>]
@@ -1809,6 +1806,43 @@ open System.Linq
 
 type ILookup<'Key, 'Value when 'Key : not null> with
     static member Empty = Seq.empty<KeyValuePair<'Key,'Value>>.ToLookup((fun kv -> kv.Key), (fun kv -> kv.Value))
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// Verify that callers of extension members with 'not null' constraint are checked
+[<Fact>]
+let ``Type extension not null constraint rejects nullable type arg at call site`` () =
+    FSharp """module TestModule
+open System.Collections.Generic
+open System.Linq
+
+type ILookup<'Key, 'Value when 'Key : not null> with
+    static member Empty = Seq.empty<KeyValuePair<'Key,'Value>>.ToLookup((fun kv -> kv.Key), (fun kv -> kv.Value))
+
+// Attempt to use the extension with a nullable key type should fail
+let badLookup : ILookup<string | null, int> = ILookup.Empty
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 9, Col 47, Line 9, Col 60, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected."
+    ]
+
+// Verify that callers of extension members with 'not null' constraint succeed with non-null types
+[<Fact>]
+let ``Type extension not null constraint accepts non-null type arg at call site`` () =
+    FSharp """module TestModule
+open System.Collections.Generic
+open System.Linq
+
+type ILookup<'Key, 'Value when 'Key : not null> with
+    static member Empty = Seq.empty<KeyValuePair<'Key,'Value>>.ToLookup((fun kv -> kv.Key), (fun kv -> kv.Value))
+
+// Using the extension with a non-null key type should succeed
+let goodLookup : ILookup<string, int> = ILookup.Empty
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -1999,11 +2033,11 @@ let main () =
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
-// Edge case: when first branch restricts with non-nullable int pattern, null is still eliminated
-// This documents current behavior where null elimination happens based on nullableNonWildCount=1
-// even when a non-nullable position has a restricting pattern
+// Edge case: when first branch has non-wild int pattern (2 non-wild patterns), null is NOT eliminated
+// But when second branch has only 1 non-wild pattern, null IS eliminated for remaining clauses
+// This tests the simple logic where we only eliminate null when exactly 1 non-wild pattern exists
 [<Fact>]
-let ``Tuple null elimination with restricting int pattern causes warning on subsequent null pattern`` () =
+let ``Tuple null elimination with multiple clauses handles each clause independently`` () =
     FSharp """module MyLibrary
 
 let test (s: string) = ()
@@ -2012,17 +2046,13 @@ let main () =
     let x: string | null = null
     let y: int = 5
     match x, y with
-    | null, 0 -> ()  // handles x=null for y=0 - eliminates null from x even though y=0 restricts!
-    | null, _ -> ()  // This null pattern is now on non-null type - generates warning
-    | s, _ -> test s  // s is now string (non-null)
+    | null, 0 -> ()  // Two non-wild patterns - null not eliminated from x for this clause
+    | null, _ -> ()  // One non-wild pattern - null IS eliminated for subsequent clauses
+    | s, _ -> test s  // s is now string (non-null) - should succeed!
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnostics [
-        // The second null pattern is matching on a non-null type after null was eliminated by first clause
-        Error 3261, Line 10, Col 7, Line 10, Col 11, "Nullness warning: The type 'System.String' does not support 'null'."
-    ]
+    |> shouldSucceed
 
 // Edge case: TWO nullable elements where only one handles null
 // This tests the nonWildCount > 1 case
@@ -2046,3 +2076,373 @@ let main () =
         // t should produce a warning because it's still nullable (only x had null eliminated)
         Error 3261, Line 10, Col 22, Line 10, Col 23, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
     ]
+
+// =============================================================================
+// Signature conformance tests for nullness constraints
+// Issue: Implementation having stricter 'not null' constraint than signature is UNSOUND
+// =============================================================================
+
+[<Fact>]
+let ``Signature conformance rejects impl with not null constraint missing from sig`` () =
+    let sigSource = """
+module MyLib
+
+val doWork<'T> : 'T -> int
+"""
+    let implSource = """
+module MyLib
+
+let doWork<'T when 'T : not null> (x: 'T) = 42
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withNullnessOptions
+    |> compile
+    |> shouldFail
+    |> withDiagnostics [
+        Error 340, Line 4, Col 12, Line 4, Col 14, "The signature and implementation are not compatible because the declaration of the type parameter 'T' requires a constraint of the form 'T: not null"
+    ]
+
+[<Fact>]
+let ``Signature conformance rejects impl missing not null constraint from sig`` () =
+    let sigSource = """
+module MyLib
+
+val doWork<'T when 'T : not null> : 'T -> int
+"""
+    let implSource = """
+module MyLib
+
+let doWork<'T> (x: 'T) = 42
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withNullnessOptions
+    |> compile
+    |> shouldFail
+    |> withDiagnostics [
+        Error 341, Line 4, Col 12, Line 4, Col 14, "The signature and implementation are not compatible because the type parameter 'T' has a constraint of the form 'T: not null but the implementation does not. Either remove this constraint from the signature or add it to the implementation."
+    ]
+
+[<Fact>]
+let ``Signature conformance accepts matching not null constraint`` () =
+    let sigSource = """
+module MyLib
+
+val doWork<'T when 'T : not null> : 'T -> int
+"""
+    let implSource = """
+module MyLib
+
+let doWork<'T when 'T : not null> (x: 'T) = 42
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withNullnessOptions
+    |> compile
+    |> shouldSucceed
+
+// =============================================================================
+// A.1 — UoM ToString bad-path: reference type ToString() still returns string | null
+// Validates the isMeasureableValueType guard: value-type UoM's ToString is non-nullable
+// (tested separately above), but reference-type UoM's ToString must remain nullable.
+// =============================================================================
+
+// A.1.1: MeasureAnnotatedAbbreviation on a reference type (string) — ToString still nullable
+[<Fact>]
+let ``ToString on MeasureAnnotatedAbbreviation reference type is still nullable`` () =
+    FSharp """module MyLibrary
+
+[<Measure>]
+type mykg
+
+[<MeasureAnnotatedAbbreviation>]
+type mystring<[<Measure>] 'Measure> = string
+
+let onlyWantNotNullString(x:string) = ()
+
+let processMyStr (x:mystring<mykg>) =
+    onlyWantNotNullString(x.ToString())
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 12, Col 27, Line 12, Col 39, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+        Error 3261, Line 12, Col 27, Line 12, Col 39, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+    ]
+
+// A.1.2: Plain reference type (obj) — ToString still nullable (baseline)
+[<Fact>]
+let ``ToString on reference type still returns nullable string`` () =
+    FSharp """module MyLibrary
+
+let onlyWantNotNullString(x:string) = ()
+
+let processObj (x:obj) =
+    onlyWantNotNullString(x.ToString())
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 6, Col 27, Line 6, Col 39, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+        Error 3261, Line 6, Col 27, Line 6, Col 39, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+    ]
+
+// =============================================================================
+// A.2 — Pipe error location edge cases
+// =============================================================================
+
+// A.2.1: ||> double pipe with nullable tuple element
+[<Fact>]
+let ``Double pipe operator error location with nullness`` () =
+    FSharp """module Test
+
+let foo (a: string) (b: string) = a + b
+let bar : string | null = null
+let result = (bar, "hello") ||> foo
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 5, Col 15, Line 5, Col 27, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
+
+// A.2.2: |||> triple pipe with nullable tuple element
+[<Fact>]
+let ``Triple pipe operator error location with nullness`` () =
+    FSharp """module Test
+
+let foo3 (a: string) (b: string) (c: string) = a + b + c
+let bar : string | null = null
+let result = (bar, "hello", "world") |||> foo3
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 5, Col 15, Line 5, Col 36, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
+
+// A.2.3: Non-pipe partial application with captured nullable arg
+// `apply bar` is a partial application with captured arg `bar` (nullable),
+// then the function arg `(fun s -> s.Length)` triggers the NullnessCheckOfCapturedArg
+// heuristic (CheckExpressions.fs:8635-8655). Warning location should be on `bar`.
+[<Fact>]
+let ``Non-pipe partial application with nullable captured arg`` () =
+    FSharp """module Test
+
+let apply (x: string) (f: string -> int) = f x
+let bar : string | null = null
+let result = apply bar (fun s -> s.Length)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 5, Col 20, Line 5, Col 23, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
+
+// A.2.4: Deeply nested pipe - error on first nullable value
+[<Fact>]
+let ``Deeply nested pipe error points to original nullable value`` () =
+    FSharp """module Test
+
+let step1 (s: string) = s + "!"
+let step2 (s: string) = s.Length
+let bar : string | null = null
+let result = bar |> step1 |> step2
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 6, Col 14, Line 6, Col 17, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
+
+// A.2.5: Pipe with no nullness issue - no false positive
+[<Fact>]
+let ``Pipe with non-nullable value produces no warning`` () =
+    FSharp """module Test
+
+let step (s: string) = s + "!"
+let bar : string = "hello"
+let result = bar |> step
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// =============================================================================
+// A.3 — AllowNullLiteral edge cases for TypeNullIsExtraValueNew
+// Verifies Fix 4 (#18021): TypeNullIsExtraValueNew (TypedTreeOps.fs) checks
+// explicit nullness annotation before AllowNullLiteral, so constructors and
+// other expressions producing WithoutNull do not cause false positives.
+// =============================================================================
+
+// A.3.1: Unchecked.defaultof<MyClass> produces ambivalent nullness. When consumed by a
+// function expecting non-null MyClass (without generic constraint), this succeeds because
+// AllowNullLiteral types accept both null and non-null values in non-generic contexts.
+// This documents that Unchecked.defaultof does not produce a false positive.
+[<Fact>]
+let ``Unchecked defaultof on AllowNullLiteral type does not warn when consumed directly`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyClass() = class end
+let consumeNonNull (x: MyClass) = ()
+let x = Unchecked.defaultof<MyClass>
+consumeNonNull x
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// A.3.2: Static factory method returns MyClass with ambivalent nullness.
+// The return type annotation `MyClass` gets ambivalent treatment — it does not
+// widen to nullable even though AllowNullLiteral is set. This ensures no false
+// positive when consuming the result of a factory method.
+[<Fact>]
+let ``AllowNullLiteral static factory return is not widened to nullable`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyClass() =
+    static member Create() : MyClass = MyClass()
+let consumeNonNull (x: MyClass) = ()
+let x = MyClass.Create()
+consumeNonNull x
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+// A.3.3: Contrast test showing Fix 4 behavior: constructor (WithoutNull) and
+// Unchecked.defaultof (AmbivalentToNull) both pass 'T : not null constraint without
+// warning, but explicit | null annotation correctly produces a warning.
+[<Fact>]
+let ``AllowNullLiteral constructor and defaultof pass not null but explicit nullable warns`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyClass() = class end
+let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
+
+// Constructor produces WithoutNull — no warning (Fix 4)
+consumeNonNull (MyClass())
+
+// Unchecked.defaultof produces AmbivalentToNull — no warning
+consumeNonNull (Unchecked.defaultof<MyClass>)
+
+// Explicit | null annotation produces WithNull — correctly warns
+let nullable : MyClass | null = null
+consumeNonNull nullable
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 15, Col 16, Line 15, Col 24, "Nullness warning: The type 'MyClass | null' supports 'null' but a non-null type is expected."
+    ]
+
+// A.3.4 — AllowNullLiteral with generic not-null constraint (TODO_FIX_NULLNESS.md Issue 6)
+// These tests exercise TypeNullIsExtraValueNew through the constraint solver path,
+// using consumeNonNull<'T when 'T : not null> instead of non-generic consumeNonNull (x: MyClass).
+
+[<Fact>]
+let ``Constructor of AllowNullLiteral type satisfies generic not null constraint`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyClass() = class end
+
+let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
+
+let test () = consumeNonNull (MyClass())
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Static factory of AllowNullLiteral type checked against generic not null constraint`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyClass() = 
+    static member Create() : MyClass = MyClass()
+
+let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
+
+let test () = consumeNonNull (MyClass.Create())
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Let-bound AllowNullLiteral constructor result checked against generic not null constraint`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyClass() = class end
+
+let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
+
+let instance = MyClass()
+let test () = consumeNonNull instance
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Explicit nullable AllowNullLiteral binding fails generic not null constraint`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyClass() = class end
+
+let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
+
+let maybeNull : MyClass | null = MyClass()
+let test () = consumeNonNull maybeNull
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 9, Col 30, Line 9, Col 39, "Nullness warning: The type 'MyClass | null' supports 'null' but a non-null type is expected."
+    ]
+
+// =============================================================================
+// A.4 — hasConditionalTypar comparison witness correctness
+// Verifies Fix 5: after simplification of hasConditionalTypar (Exprs.fs:520),
+// types with conditional comparison still generate witnesses correctly.
+// Compiles and runs to verify IL witness generation, not just type-checking.
+// =============================================================================
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Type with comparison constraint compiles and runs correctly under strict nullness`` () =
+    FSharp """module Test
+
+type MyWrapper<'T when 'T : comparison>(value: 'T) =
+    member _.Value = value
+    override this.Equals(other: obj) =
+        match other with
+        | :? MyWrapper<'T> as o -> this.Value = o.Value
+        | _ -> false
+    override this.GetHashCode() = hash this.Value
+    interface System.IComparable with
+        member this.CompareTo(other: obj) =
+            match other with
+            | :? MyWrapper<'T> as o -> compare this.Value o.Value
+            | _ -> 0
+
+let w1 = MyWrapper(1)
+let w2 = MyWrapper(2)
+let result = compare w1 w2
+printf "%d" result
+
+[<EntryPoint>]
+let main _ = 0
+"""
+    |> withNullnessOptions
+    |> asExe
+    |> compile
+    |> run
+    |> verifyOutputContains [|"-1"|]

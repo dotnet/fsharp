@@ -944,9 +944,6 @@ val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 /// Constraints that may be present in an implementation/extension but not required by a signature/base type.
 val isConstraintAllowedAsExtra: TyparConstraint -> bool
 
-/// Check type parameter equivalence with optional extra constraint allowance.
-val typarsAEquivWithFilter: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> (TyparConstraint -> bool) -> bool
-
 /// Check if declaredTypars are compatible with reqTypars for a type extension.
 /// Allows declaredTypars to have NotSupportsNull constraints even if reqTypars don't have them.
 val typarsAEquivWithAddedNotNullConstraintsAllowed: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool

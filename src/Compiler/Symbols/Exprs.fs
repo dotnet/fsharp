@@ -517,16 +517,15 @@ module FSharpExprConvert =
             /// Note that these conditions are only marked on typars that actually appear in the code, *not* on phantom types.
             /// So `hasConditionalTypar` should tell us exactly when the type parameter is actually being used in the type's equality or
             /// comparison.
+            // Only TType_var and TType_app are checked because at codegen time, type arguments
+            // are fully resolved — conditional flags only appear on direct type parameters (TType_var)
+            // and inside type-application instantiations (TType_app). Other type forms (tuples,
+            // functions, foralls) don't carry conditional comparison/equality flags.
             let rec hasConditionalTypar ty =
                 match stripTyEqns g ty with
                 | TType_var (tp, _) -> tp.ComparisonConditionalOn || tp.EqualityConditionalOn
-                | TType_app (_, tinst, _)
-                | TType_ucase (_, tinst)
-                | TType_anon (_, tinst)
-                | TType_tuple (_, tinst) -> tinst |> List.exists hasConditionalTypar
-                | TType_fun (domainTy, rangeTy, _) -> hasConditionalTypar domainTy || hasConditionalTypar rangeTy
-                | TType_forall (_, bodyTy) -> hasConditionalTypar bodyTy
-                | TType_measure _ -> false
+                | TType_app (_, tinst, _) -> tinst |> List.exists hasConditionalTypar
+                | _ -> false
 
             let witnessExprs =
                 match ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcValF g cenv.amap m tps tyargs with

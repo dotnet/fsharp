@@ -157,7 +157,6 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                       match implTyparCx with 
                       // defaults can be dropped in the signature 
                       | TyparConstraint.DefaultsTo(_, _acty, _) -> true
-                      | _ when isConstraintAllowedAsExtra implTyparCx -> true
                       | _ -> 
                           if not (List.exists  (typarConstraintsAEquiv g aenv implTyparCx) sigTypar.Constraints)
                           then (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDiffer(sigTypar.Name, LayoutRender.showL(NicePrint.layoutTyparConstraint denv (implTypar, implTyparCx))), m)); false)

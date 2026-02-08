@@ -4269,9 +4269,13 @@ module TcDeclarations =
             let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)
             
-            // Helper to check typars equivalence for extensions with 'not null' constraints allowed
+            // Helper to check typars equivalence for extensions with 'not null' constraints allowed.
+            // When nullness checking is disabled, skip the extra constraint allowance for performance.
             let checkTyparsForExtension () =
-                typarsAEquivWithAddedNotNullConstraintsAllowed g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars
+                if g.checkNullness then
+                    typarsAEquivWithAddedNotNullConstraintsAllowed g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars
+                else
+                    typarsAEquiv g TypeEquivEnv.EmptyIgnoreNulls reqTypars declaredTypars
 
             if tcref.TypeAbbrev.IsSome then
                 ExtrinsicExtensionBinding, tcref, declaredTypars
