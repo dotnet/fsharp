@@ -7031,6 +7031,13 @@ and GenLambda cenv cgbuf eenv isLocalTypeFunc thisVars expr sequel =
 
 and GenTypeOfVal cenv eenv (v: Val) = GenType cenv v.Range eenv.tyenv v.Type
 
+/// Byref fields are not valid in classes (https://github.com/dotnet/fsharp/issues/19068).
+and capturedTypeForFreeVar (g: TcGlobals) (fv: Val) =
+    if isByrefTy g fv.Type then
+        destByrefTy g fv.Type
+    else
+        fv.Type
+
 and GenFreevar cenv m eenvouter tyenvinner (fv: Val) =
     let g = cenv.g
 
@@ -7045,15 +7052,7 @@ and GenFreevar cenv m eenvouter tyenvinner (fv: Val) =
     | Method _
     | Null -> error (InternalError("GenFreevar: compiler error: unexpected unrealized value", fv.Range))
 #endif
-    | _ ->
-        // Byref fields are not valid in classes (https://github.com/dotnet/fsharp/issues/19068)
-        let ty =
-            if isByrefTy g fv.Type then
-                destByrefTy g fv.Type
-            else
-                fv.Type
-
-        GenType cenv m tyenvinner ty
+    | _ -> GenType cenv m tyenvinner (capturedTypeForFreeVar g fv)
 
 and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames expr =
     let g = cenv.g
@@ -10031,14 +10030,12 @@ and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage storeSeq
         CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdarg0; mkNormalLdfld ilField ]
         CommitGetStorageSequel cenv cgbuf eenv m ty localCloInfo storeSequel
 
-/// Load free variables for closure capture, dereferencing byrefs (https://github.com/dotnet/fsharp/issues/19068).
 and GenGetFreeVarForClosure cenv cgbuf eenv m (fv: Val) =
     let g = cenv.g
     GenGetLocalVal cenv cgbuf eenv m fv None
 
     if isByrefTy g fv.Type then
-        let underlyingTy = destByrefTy g fv.Type
-        let ilUnderlyingTy = GenType cenv m eenv.tyenv underlyingTy
+        let ilUnderlyingTy = GenType cenv m eenv.tyenv (capturedTypeForFreeVar g fv)
         CG.EmitInstr cgbuf (pop 1) (Push [ ilUnderlyingTy ]) (mkNormalLdobj ilUnderlyingTy)
 
 and GenGetLocalVal cenv cgbuf eenv m (vspec: Val) storeSequel =
