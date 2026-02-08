@@ -270,18 +270,19 @@ module Impl =
                             | Some xmlDoc when not xmlDoc.IsEmpty -> Some(xmlDoc.GetXmlText())
                             | _ -> None)
 
-    /// Quick check if XML doc text contains an <inheritdoc> element
-    let docHasInheritDoc (doc: XmlDoc) =
-        not doc.IsEmpty && doc.GetXmlText().IndexOf("<inheritdoc") >= 0
+    /// Returns the XML text if it contains an <inheritdoc> element, or None.
+    /// Avoids a second GetXmlText() allocation by returning the text for reuse.
+    let tryGetInheritDocXmlText (doc: XmlDoc) =
+        if doc.IsEmpty then None
+        else
+            let xmlText = doc.GetXmlText()
+            if xmlText.IndexOf("<inheritdoc") >= 0 then Some xmlText else None
 
     /// Creates an FSharpXmlDoc with <inheritdoc> elements expanded
     let makeExpandedXmlDoc (cenv: SymbolEnv) (implicitTargetCrefOpt: string option) (doc: XmlDoc) =
-        if doc.IsEmpty then
-            FSharpXmlDoc.FromXmlText doc
-        else
-            let resolveCref = buildCrefResolver cenv
-            let expandedDoc = expandInheritDoc resolveCref implicitTargetCrefOpt doc.Range Set.empty doc
-            FSharpXmlDoc.FromXmlText expandedDoc
+        let resolveCref = buildCrefResolver cenv
+        let expandedDoc = expandInheritDoc resolveCref implicitTargetCrefOpt doc.Range Set.empty doc
+        FSharpXmlDoc.FromXmlText expandedDoc
 
     let makeElaboratedXmlDoc (doc: XmlDoc) =
         makeReadOnlyCollection (doc.GetElaboratedXmlLines())
@@ -325,37 +326,34 @@ module Impl =
             // For overrides of base class abstract members, slot sigs may be empty.
             // Fall back to finding the base type and building a method cref from it.
             try
-                let memberName =
+                let name =
                     match d with
-                    | V v -> Some v.DisplayName
-                    | M m | C m -> Some m.DisplayName
-                    | P p -> Some p.PropertyName
-                    | E e -> Some e.EventName
+                    | V v -> v.DisplayName
+                    | M m | C m -> m.DisplayName
+                    | P p -> p.PropertyName
+                    | E e -> e.EventName
 
-                match memberName with
+                let declaringTyOpt =
+                    match d with
+                    | V v ->
+                        match v.TryDeclaringEntity with
+                        | Parent entityRef -> Some(generalizedTyconRef cenv.g entityRef)
+                        | ParentNone -> None
+                    | M m | C m -> Some m.ApparentEnclosingType
+                    | P p -> Some p.ApparentEnclosingType
+                    | E e -> Some e.ApparentEnclosingType
+
+                match declaringTyOpt with
+                | Some declaringTy ->
+                    match GetSuperTypeOfType cenv.g cenv.amap range0 declaringTy with
+                    | Some baseTy when not (isObjTyAnyNullness cenv.g baseTy) ->
+                        match tryTcrefOfAppTy cenv.g baseTy with
+                        | ValueSome baseTcref ->
+                            let baseName = baseTcref.CompiledRepresentationForNamedType.FullName
+                            Some ("M:" + baseName + "." + name)
+                        | ValueNone -> None
+                    | _ -> None
                 | None -> None
-                | Some name ->
-                    let declaringTyOpt =
-                        match d with
-                        | V v ->
-                            match v.TryDeclaringEntity with
-                            | Parent entityRef -> Some(generalizedTyconRef cenv.g entityRef)
-                            | ParentNone -> None
-                        | M m | C m -> Some m.ApparentEnclosingType
-                        | P p -> Some p.ApparentEnclosingType
-                        | E e -> Some e.ApparentEnclosingType
-
-                    match declaringTyOpt with
-                    | Some declaringTy ->
-                        match GetSuperTypeOfType cenv.g cenv.amap range0 declaringTy with
-                        | Some baseTy when not (isObjTyAnyNullness cenv.g baseTy) ->
-                            match tryTcrefOfAppTy cenv.g baseTy with
-                            | ValueSome baseTcref ->
-                                let baseName = baseTcref.CompiledRepresentationForNamedType.FullName
-                                Some ("M:" + baseName + "." + name)
-                            | ValueNone -> None
-                        | _ -> None
-                    | None -> None
             with _ -> None
     
     let rescopeEntity optViewedCcu (entity: Entity) = 
@@ -977,8 +975,9 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
     member _.XmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeXmlDoc else
         let doc = entity.XmlDoc
-        if not (docHasInheritDoc doc) then makeXmlDoc doc
-        else
+        match tryGetInheritDocXmlText doc with
+        | None -> makeXmlDoc doc
+        | Some _ ->
             let implicitTarget = getImplicitTargetCrefForEntity cenv entity
             doc |> makeExpandedXmlDoc cenv implicitTarget
 
@@ -2386,8 +2385,9 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | P p -> p.XmlDoc
             | M m | C m -> m.XmlDoc
             | V v -> v.XmlDoc
-        if not (docHasInheritDoc doc) then makeXmlDoc doc
-        else
+        match tryGetInheritDocXmlText doc with
+        | None -> makeXmlDoc doc
+        | Some _ ->
             // Only compute implicit target and build resolver when doc contains <inheritdoc>
             let slotSigs =
                 match d with

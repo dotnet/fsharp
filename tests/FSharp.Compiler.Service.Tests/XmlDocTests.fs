@@ -2117,7 +2117,7 @@ type DerivedType() = class end
         Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
-    let ``unresolvable cref should not crash and should emit warning``() =
+    let ``unresolvable cref should not crash``() =
         let code = """
 module Test
 
@@ -2146,7 +2146,10 @@ type BaseType() = class end
 type DerivedType() = class end
 """
         let xmlText = getEntityXmlText code "DerivedType"
+        Assert.Contains("My own summary", xmlText)
         Assert.Contains("My own remarks", xmlText)
+        Assert.Contains("Base summary", xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
 [<Fact>]
 let ``Discriminated Union - triple slash after case definition should warn``(): unit =
