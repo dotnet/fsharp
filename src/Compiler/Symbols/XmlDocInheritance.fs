@@ -88,12 +88,14 @@ let rec private expandInheritedDoc
         xmlText
     else
         let newVisited = visited.Add(cref)
-        expandInheritDocText resolveCref implicitTargetCrefOpt m newVisited xmlText
+        expandInheritDocFromXmlText resolveCref implicitTargetCrefOpt m newVisited xmlText
 
 /// Expands `<inheritdoc>` elements in XML documentation text.
 /// The caller provides a `resolveCref` function that maps a cref string to its resolved XML doc text.
-/// This keeps the module free of CCU/TypedTree dependencies — resolution is done by the tooling layer.
-and private expandInheritDocText
+/// Takes an optional implicit target cref for resolving <inheritdoc/> without cref attribute.
+/// Tracks visited signatures to prevent infinite recursion.
+/// Takes a pre-computed xmlText string, avoiding an extra GetXmlText() call.
+and expandInheritDocFromXmlText
     (resolveCref: string -> string option)
     (implicitTargetCrefOpt: string option)
     (m: range)
@@ -157,17 +159,3 @@ and private expandInheritDocText
                     |> String.concat "\n"
         with :? System.Xml.XmlException ->
             xmlText
-
-/// Expands `<inheritdoc>` elements in XML documentation text.
-/// The caller provides a `resolveCref` function to look up documentation by cref string.
-/// Takes an optional implicit target cref for resolving <inheritdoc/> without cref attribute.
-/// Tracks visited signatures to prevent infinite recursion.
-/// Takes a pre-computed xmlText string, avoiding an extra GetXmlText() call.
-let expandInheritDocFromXmlText
-    (resolveCref: string -> string option)
-    (implicitTargetCrefOpt: string option)
-    (m: range)
-    (visited: Set<string>)
-    (xmlText: string)
-    : string =
-    expandInheritDocText resolveCref implicitTargetCrefOpt m visited xmlText

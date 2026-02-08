@@ -110,16 +110,17 @@ module Impl =
         else None
 
     /// Parses a cref string using the shared XmlDocSigParser, returning
-    /// (typePath option, memberName option) for entity/member lookup.
-    /// Falls back to manual parsing for crefs with '+' (nested types) that the regex-based parser can't handle.
+    /// (typePath, memberName option) for entity/member lookup.
+    /// Falls back to manual parsing for T: crefs with '+' (nested types) that the regex can't handle.
     let private parseCref (cref: string) =
         match XmlDocSigParser.parseDocCommentId cref with
         | ParsedDocCommentId.Type path -> Some(path, None)
         | ParsedDocCommentId.Member(typePath, memberName, _, _) -> Some(typePath, Some memberName)
         | ParsedDocCommentId.Field(typePath, fieldName) -> Some(typePath, Some fieldName)
         | ParsedDocCommentId.None ->
-            // Handle T:Namespace.Type+Nested format that the regex can't parse
-            if cref.Length > 2 && cref.[0] = 'T' && cref.[1] = ':' then
+            // The regex doesn't handle '+' in nested type crefs like T:Test.Outer+Inner.
+            // Replace '+' with '.' to produce a navigable path ["Test"; "Outer"; "Inner"].
+            if cref.Length > 2 && cref.[0] = 'T' && cref.[1] = ':' && cref.Contains("+") then
                 let typePath = cref.Substring(2).Replace('+', '.')
                 Some(typePath.Split('.') |> Array.toList, None)
             else

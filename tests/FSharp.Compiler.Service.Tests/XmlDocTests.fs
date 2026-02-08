@@ -1641,7 +1641,7 @@ module InheritDocTooltipTests =
 
         match xmlDoc with
         | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> String.concat "\n"
-        | _ -> failwith "Expected FromXmlText"
+        | other -> failwith $"Expected FromXmlText for {symbolName}, got {other}"
 
     /// Compiles code, finds a member by name on an entity, and returns its resolved XmlDoc text.
     let private getMemberXmlText (code: string) (entityName: string) (memberName: string) =
@@ -1650,11 +1650,12 @@ module InheritDocTooltipTests =
 
         let memberSymbol =
             entity.MembersFunctionsAndValues
-            |> Seq.find (fun m -> m.DisplayName = memberName)
+            |> Seq.tryFind (fun m -> m.DisplayName = memberName)
+            |> Option.defaultWith (fun () -> failwith $"Member '{memberName}' not found on entity '{entityName}'")
 
         match memberSymbol.XmlDoc with
         | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> String.concat "\n"
-        | _ -> failwith "Expected FromXmlText"
+        | other -> failwith $"Expected FromXmlText for {entityName}.{memberName}, got {other}"
 
     [<Theory>]
     [<InlineData("DerivedType", "Base type documentation")>]
@@ -2052,6 +2053,25 @@ type Person() =
 """
         let xmlText = getMemberXmlText code "Person" "Name"
         Assert.Contains("Gets or sets the name", xmlText)
+        Assert.DoesNotContain("<inheritdoc", xmlText)
+
+    [<Fact>]
+    let ``implicit inheritdoc on override property should inherit from base``() =
+        let code = """
+module Test
+
+[<AbstractClass>]
+type BaseConfig() =
+    /// <summary>Gets the connection timeout</summary>
+    abstract Timeout: int
+
+type AppConfig() =
+    inherit BaseConfig()
+    /// <inheritdoc/>
+    override _.Timeout = 30
+"""
+        let xmlText = getMemberXmlText code "AppConfig" "Timeout"
+        Assert.Contains("Gets the connection timeout", xmlText)
         Assert.DoesNotContain("<inheritdoc", xmlText)
 
     [<Fact>]
