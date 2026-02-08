@@ -386,17 +386,10 @@ let test2 () =
 
 // Both should produce equivalent, fully inlined code but test2 generates lambdas
 """
-        let result = FSharp source |> asLibrary |> withOptimize |> compile |> shouldSucceed
-        
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                Assert.Contains("test1", actualIL)
-                Assert.Contains("test2", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        let actualIL = FSharp source |> asLibrary |> withOptimize |> compile |> shouldSucceed |> getActualIL
+
+        Assert.Contains("test1", actualIL)
+        Assert.Contains("test2", actualIL)
 
     // ===== Issue #18672: Resumable code CE top level value doesn't work =====
     // https://github.com/dotnet/fsharp/issues/18672
@@ -924,22 +917,11 @@ logDirect()
 logSerialized()
 printfn "Test completed"
 """
-        let result = FSharp source |> asExe |> compile |> shouldSucceed
-        
-        // Verify the code compiles and document the issue
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                // Document the current behavior: DU types generate boxing
-                Assert.Contains("logDirect", actualIL)
-                Assert.Contains("logSerialized", actualIL)
-                // The issue is about allocation overhead when DU is boxed for logging
-                // After fix: Generate specialized ToString() that doesn't use reflection
-                Assert.Contains("box", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        let actualIL = FSharp source |> asExe |> compile |> shouldSucceed |> getActualIL
+
+        Assert.Contains("logDirect", actualIL)
+        Assert.Contains("logSerialized", actualIL)
+        Assert.Contains("box", actualIL)
 
     // ====================================================================================
     // SPRINT 3: Issues #16362, #16292, #16245, #16037, #15627, #15467, #15352, #15326, #15092, #14712
@@ -1072,20 +1054,10 @@ let test() =
 
 test()
 """
-        let result = FSharp source |> asExe |> compile |> shouldSucceed
-        
-        // Verify the IL shows the double get_Item pattern
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                // Document the suboptimal pattern: two get_Item calls
-                Assert.Contains("incrementSpan", actualIL)
-                // The issue is about duplicate get_Item calls for span indexing
-                Assert.Contains("get_Item", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        let actualIL = FSharp source |> asExe |> compile |> shouldSucceed |> getActualIL
+
+        Assert.Contains("incrementSpan", actualIL)
+        Assert.Contains("get_Item", actualIL)
 
     // ===== Issue #16037: Suboptimal code for tuple pattern matching in lambda parameter =====
     // https://github.com/dotnet/fsharp/issues/16037
@@ -1129,21 +1101,11 @@ let test() =
 
 test()
 """
-        let result = FSharp source |> asExe |> compile |> shouldSucceed
-        
-        // Verify the IL shows the pattern matching code
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                // Document the different code generation patterns
-                Assert.Contains("foldWithPattern", actualIL)
-                Assert.Contains("foldWithFst", actualIL)
-                // The issue is about FSharpFunc allocation differences
-                Assert.Contains("FSharpFunc", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        let actualIL = FSharp source |> asExe |> compile |> shouldSucceed |> getActualIL
+
+        Assert.Contains("foldWithPattern", actualIL)
+        Assert.Contains("foldWithFst", actualIL)
+        Assert.Contains("FSharpFunc", actualIL)
 
     // ===== Issue #15627: Program stuck when using async/task before EntryPoint =====
     // https://github.com/dotnet/fsharp/issues/15627
@@ -1414,19 +1376,10 @@ let main args =
     printfn "Sum: %d" (Array.sum array)
     0
 """
-        let result = FSharp source |> asExe |> withOptimize |> compile |> shouldSucceed
-        
-        // Verify the IL shows delegate code
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                // Document the current behavior: delegate may not be inlined
-                Assert.Contains("main", actualIL)
-                Assert.Contains("doAction", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        let actualIL = FSharp source |> asExe |> withOptimize |> compile |> shouldSucceed |> getActualIL
+
+        Assert.Contains("main", actualIL)
+        Assert.Contains("doAction", actualIL)
 
     // ===== Issue #15092: Should we generate DebuggerProxies in release code? =====
     // https://github.com/dotnet/fsharp/issues/15092
@@ -1983,23 +1936,11 @@ let go() = foo "hi"
 // WORKAROUND: Explicitly boxing avoids the extra closure
 let goFixed() = foo(box "hi")
 """
-        let result = FSharp source |> asLibrary |> withOptimize |> compile |> shouldSucceed
-        
-        // Verify the code compiles and document the issue
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                // Document the current behavior: extra closure generation
-                Assert.Contains("go", actualIL)
-                Assert.Contains("goFixed", actualIL)
-                // The issue is about extra closure allocation - verify closure classes exist
-                Assert.Contains("FSharpFunc", actualIL)
-                // Current behavior: go@N wrapper closure exists (this is the bug)
-                // After fix: The wrapper closure class should not be present
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        let actualIL = FSharp source |> asLibrary |> withOptimize |> compile |> shouldSucceed |> getActualIL
+
+        Assert.Contains("go", actualIL)
+        Assert.Contains("goFixed", actualIL)
+        Assert.Contains("FSharpFunc", actualIL)
 
     // ===== Issue #12460: F# C# Version info values different =====
     // https://github.com/dotnet/fsharp/issues/12460
@@ -2213,21 +2154,10 @@ let outerFunc a =
         // The closure naming improvement ensures closures inside functions
         // get names that include the enclosing function name for debugger-friendliness.
         // Closures use the enclosing function name (outerFunc) for better debugging.
-        let result = FSharp source |> asLibrary |> compile |> shouldSucceed
-        
-        // Get the IL and verify closure classes have meaningful names
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                // Use verifyILAndReturnActual to get the actual IL content
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy to get actual IL"]
-                // Verify that closures use function names, not generic "clo" names
-                Assert.Contains("outerFunc@", actualIL)
-                // Verify there's no generic "clo@" naming (with quotes because it's a special IL name)
-                Assert.DoesNotContain("'clo@", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        let actualIL = FSharp source |> asLibrary |> compile |> shouldSucceed |> getActualIL
+
+        Assert.Contains("outerFunc@", actualIL)
+        Assert.DoesNotContain("'clo@", actualIL)
 
     // Additional test: Verify closures that capture environment variables work
     [<Fact>]
@@ -2244,20 +2174,10 @@ let makeMultiplier n =
     let multiply x = x * n  // Named inner function captures 'n', inlined by optimizer
     multiply
 """
-        let result = FSharp source |> asLibrary |> compile |> shouldSucceed
-        
-        // Verify closure names include the enclosing function context
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                // The closure should use the enclosing function name
-                Assert.Contains("makeMultiplier@", actualIL)
-                // Verify there's no generic "clo@" naming
-                Assert.DoesNotContain("'clo@", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        let actualIL = FSharp source |> asLibrary |> compile |> shouldSucceed |> getActualIL
+
+        Assert.Contains("makeMultiplier@", actualIL)
+        Assert.DoesNotContain("'clo@", actualIL)
 
     // Edge case: Deeply nested closures
     [<Fact>]
@@ -2272,20 +2192,10 @@ let outermost x =
         innermost
     middle
 """
-        let result = FSharp source |> asLibrary |> compile |> shouldSucceed
-        
-        // Verify closure names include enclosing function context
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                // The closures should use the enclosing function name for context
-                Assert.Contains("outermost@", actualIL)
-                // Verify there's no generic "clo@" naming
-                Assert.DoesNotContain("'clo@", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        let actualIL = FSharp source |> asLibrary |> compile |> shouldSucceed |> getActualIL
+
+        Assert.Contains("outermost@", actualIL)
+        Assert.DoesNotContain("'clo@", actualIL)
 
     // ===== Issue #12139: Improve string null check IL codegen =====
     // https://github.com/dotnet/fsharp/issues/12139
@@ -2683,23 +2593,10 @@ module Test
 type T = { X: int }
 let compare (a: T) (b: T) = compare a.X b.X
 """
-        let result = FSharp source |> asLibrary |> compile |> shouldSucceed
-        
-        // Verify the IL shows comparison code generation
-        // This documents the current compare IL pattern which may be suboptimal
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p ["// dummy"]
-                // Document the current behavior: verify compare function is generated
-                // The issue is about performance of generated comparison IL
-                Assert.Contains("compare", actualIL)
-                // Should have a call to LanguagePrimitives or GenericComparer for the compare
-                // This documents what IL pattern is generated for record field comparison
-                Assert.Contains("ldfld", actualIL)
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
+        let actualIL = FSharp source |> asLibrary |> compile |> shouldSucceed |> getActualIL
+
+        Assert.Contains("compare", actualIL)
+        Assert.Contains("ldfld", actualIL)
 
     // ===== Issue #9176: Decorate inline function code with attribute =====
     // https://github.com/dotnet/fsharp/issues/9176

@@ -175,7 +175,7 @@ let private fixILParamsForFunc (ilg: ILGlobals) (ps: ILParameter list) = ps |> L
 // Fix void* types in type argument lists and return type for FSharpFunc compatibility.
 // See https://github.com/dotnet/fsharp/issues/11132
 let private fixFuncTypeArgs (ilg: ILGlobals) (argTys: ILType list) retTy =
-    (argTys |> List.map (fixVoidPtrForGenericArg ilg), fixVoidPtrForGenericArg ilg retTy)
+    struct (argTys |> List.map (fun ty -> fixVoidPtrForGenericArg ilg ty), fixVoidPtrForGenericArg ilg retTy)
 
 let mkILFuncTy cenv dty rty =
     let dty = fixVoidPtrForGenericArg cenv.ilg dty
@@ -194,7 +194,7 @@ let typ_Func cenv (dtys: ILType list) rty =
         else
             mkFuncTypeRef cenv.ilg.fsharpCoreAssemblyScopeRef n
 
-    let dtys, rty = fixFuncTypeArgs cenv.ilg dtys rty
+    let struct (dtys, rty) = fixFuncTypeArgs cenv.ilg dtys rty
     mkILBoxedTy tref (dtys @ [ rty ])
 
 let rec mkTyOfApps cenv apps =
@@ -217,7 +217,7 @@ let mkMethSpecForMultiApp cenv (argTys: ILType list, retTy) =
     let n = argTys.Length
     let formalArgTys = List.mapi (fun i _ -> ILType.TypeVar(uint16 i)) argTys
     let formalRetTy = ILType.TypeVar(uint16 n)
-    let argTys, retTy = fixFuncTypeArgs cenv.ilg argTys retTy
+    let struct (argTys, retTy) = fixFuncTypeArgs cenv.ilg argTys retTy
     let inst = argTys @ [ retTy ]
 
     if n = 1 then
