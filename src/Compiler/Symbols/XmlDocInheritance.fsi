@@ -16,3 +16,13 @@ val expandInheritDoc:
     visited: Set<string> ->
     doc: XmlDoc ->
         XmlDoc
+
+/// Like expandInheritDoc but takes a pre-computed xmlText string, avoiding an extra GetXmlText() call.
+/// Use when the caller has already obtained the XML text (e.g. to check for <inheritdoc> presence).
+val expandInheritDocFromXmlText:
+    resolveCref: (string -> string option) ->
+    implicitTargetCrefOpt: string option ->
+    m: range ->
+    visited: Set<string> ->
+    xmlText: string ->
+        string

@@ -209,3 +209,14 @@ let expandInheritDoc
             doc
         else
             XmlDoc([| expandedText |], m)
+
+/// Like expandInheritDoc but takes a pre-computed xmlText string, avoiding an extra GetXmlText() call.
+/// Use when the caller has already obtained the XML text (e.g. to check for <inheritdoc> presence).
+let expandInheritDocFromXmlText
+    (resolveCref: string -> string option)
+    (implicitTargetCrefOpt: string option)
+    (m: range)
+    (visited: Set<string>)
+    (xmlText: string)
+    : string =
+    expandInheritDocText resolveCref implicitTargetCrefOpt m visited xmlText

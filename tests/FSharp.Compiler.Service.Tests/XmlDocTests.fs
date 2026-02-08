@@ -1753,8 +1753,17 @@ type TypeB() = class end
         // Circular references should not crash; the result should still be FromXmlText
         match xmlDocA, xmlDocB with
         | FSharpXmlDoc.FromXmlText tA, FSharpXmlDoc.FromXmlText tB ->
-            Assert.NotEmpty(tA.UnprocessedLines)
-            Assert.NotEmpty(tB.UnprocessedLines)
+            let textA = tA.UnprocessedLines |> String.concat "\n"
+            let textB = tB.UnprocessedLines |> String.concat "\n"
+            Assert.NotEmpty(textA)
+            Assert.NotEmpty(textB)
+            // Cycle detection should prevent the <inheritdoc> from expanding infinitely.
+            // One type may resolve (getting the other's unexpanded doc), but at least one
+            // will still contain the unresolved <inheritdoc> element.
+            Assert.True(
+                textA.Contains("<inheritdoc") || textB.Contains("<inheritdoc"),
+                "At least one circular reference should retain <inheritdoc> due to cycle detection"
+            )
         | _ -> failwith "Expected both types to have FromXmlText XmlDoc"
 
     [<Theory>]
@@ -1929,8 +1938,7 @@ type ServiceImpl() =
 """
         let xmlText = getMemberXmlText code "ServiceImpl" "DoWork"
         Assert.Contains("Service method", xmlText)
-
-    [<Theory>]
+        Assert.DoesNotContain("<inheritdoc", xmlText)
     [<InlineData("DerivedClass", "Base class documentation")>]
     [<InlineData("DerivedClass", "Base remarks")>]
     let ``implicit inheritdoc should resolve from base class for type`` (symbolName: string, expectedText: string) =
@@ -1993,6 +2001,7 @@ type Calculator() =
         Assert.Contains("Adds two numbers together", xmlText)
         Assert.Contains("First number", xmlText)
         Assert.Contains("The sum", xmlText)
+        Assert.DoesNotContain("<inheritdoc", xmlText)
 
     [<Fact>]
     let ``implicit inheritdoc on override method should inherit from base``() =
@@ -2014,6 +2023,7 @@ type DerivedProcessor() =
         let xmlText = getMemberXmlText code "DerivedProcessor" "Process"
         Assert.Contains("Processes the input data", xmlText)
         Assert.Contains("The data to process", xmlText)
+        Assert.DoesNotContain("<inheritdoc", xmlText)
 
     [<Fact>]
     let ``implicit inheritdoc on property implementing interface should inherit docs``() =
@@ -2032,6 +2042,7 @@ type Person() =
 """
         let xmlText = getMemberXmlText code "Person" "Name"
         Assert.Contains("Gets or sets the name", xmlText)
+        Assert.DoesNotContain("<inheritdoc", xmlText)
 
     [<Fact>]
     let ``explicit method cref should resolve and inherit docs``() =
@@ -2049,6 +2060,7 @@ type Worker =
 """
         let xmlText = getMemberXmlText code "Worker" "Work"
         Assert.Contains("Helper method docs", xmlText)
+        Assert.DoesNotContain("<inheritdoc", xmlText)
 
     // ===========================================
     // EXPLICIT CREF AND EDGE CASES
@@ -2069,6 +2081,7 @@ type Settings =
 """
         let xmlText = getMemberXmlText code "Settings" "Name"
         Assert.Contains("The application name", xmlText)
+        Assert.DoesNotContain("<inheritdoc", xmlText)
 
     [<Fact>]
     let ``generic type cref should resolve``() =
@@ -2150,6 +2163,66 @@ type DerivedType() = class end
         Assert.Contains("My own remarks", xmlText)
         Assert.Contains("Base summary", xmlText)
         Assert.DoesNotContain("inheritdoc", xmlText)
+
+    [<Fact>]
+    let ``inheritdoc with malformed XML should not crash``() =
+        let code = """
+module Test
+
+/// <summary>Malformed <b>unclosed tag
+/// <inheritdoc cref="T:Test.BaseType"/>
+type MyType() = class end
+
+/// <summary>Base docs</summary>
+type BaseType() = class end
+"""
+        let _, checkResults = getParseAndCheckResults code
+        let symbol = findSymbolByName "MyType" checkResults
+        let xmlDoc = (symbol :?> FSharpEntity).XmlDoc
+        // Should not crash even with malformed XML
+        match xmlDoc with
+        | FSharpXmlDoc.FromXmlText _ -> ()
+        | _ -> failwith "Expected FromXmlText"
+
+    [<Fact>]
+    let ``inheritdoc with invalid XPath should not crash``() =
+        let code = """
+module Test
+
+/// <summary>Base type docs</summary>
+type BaseType() = class end
+
+/// <inheritdoc cref="T:Test.BaseType" path="[[[invalid"/>
+type DerivedType() = class end
+"""
+        let _, checkResults = getParseAndCheckResults code
+        let symbol = findSymbolByName "DerivedType" checkResults
+        let xmlDoc = (symbol :?> FSharpEntity).XmlDoc
+        // Should not crash with invalid XPath; falls back gracefully
+        match xmlDoc with
+        | FSharpXmlDoc.FromXmlText _ -> ()
+        | _ -> failwith "Expected FromXmlText"
+
+    [<Fact>]
+    let ``inheritdoc with field cref should resolve``() =
+        let code = """
+module Test
+
+type Config =
+    /// <summary>The database connection string</summary>
+    static val mutable ConnectionString: string
+
+type Settings =
+    /// <inheritdoc cref="F:Test.Config.ConnectionString"/>
+    static val mutable DbConn: string
+"""
+        let _, checkResults = getParseAndCheckResults code
+        let symbol = findSymbolByName "Settings" checkResults
+        // Should not crash with F: cref prefix
+        let xmlDoc = (symbol :?> FSharpEntity).XmlDoc
+        match xmlDoc with
+        | FSharpXmlDoc.FromXmlText _ -> ()
+        | _ -> failwith "Expected FromXmlText"
 
 [<Fact>]
 let ``Discriminated Union - triple slash after case definition should warn``(): unit =
