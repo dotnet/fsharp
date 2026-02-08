@@ -301,6 +301,12 @@ module Impl =
     
     /// Computes the implicit target cref for a member (from implemented interface or overridden base method)
     let getImplicitTargetCrefForMember (cenv: SymbolEnv) (d: FSharpMemberOrValData) (slotSigs: SlotSig list) : string option =
+        let crefPrefix =
+            match d with
+            | P _ -> "P:"
+            | E _ -> "E:"
+            | _ -> "M:"
+
         match slotSigs with
         | slot :: _ ->
             try
@@ -309,12 +315,12 @@ module Impl =
                 match tryTcrefOfAppTy cenv.g declaringTy with
                 | ValueSome tcref ->
                     let typeName = tcref.CompiledRepresentationForNamedType.FullName
-                    Some ("M:" + typeName + "." + methodName)
+                    Some (crefPrefix + typeName + "." + methodName)
                 | ValueNone -> None
             with _ -> None
         | [] ->
             // For overrides of base class abstract members, slot sigs may be empty.
-            // Fall back to finding the base type and building a method cref from it.
+            // Fall back to finding the base type and building a member cref from it.
             try
                 let name =
                     match d with
@@ -340,7 +346,7 @@ module Impl =
                         match tryTcrefOfAppTy cenv.g baseTy with
                         | ValueSome baseTcref ->
                             let baseName = baseTcref.CompiledRepresentationForNamedType.FullName
-                            Some ("M:" + baseName + "." + name)
+                            Some (crefPrefix + baseName + "." + name)
                         | ValueNone -> None
                     | _ -> None
                 | None -> None

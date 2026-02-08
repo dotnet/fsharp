@@ -39,10 +39,8 @@
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$ServiceLexing+clo::Invoke([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<System.Tuple`3<FSharp.Compiler.Parser+token,int32,int32>,Microsoft.FSharp.Core.Unit>)][offset 0x00000064][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$ServiceLexing+clo::Invoke([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<System.Tuple`3<FSharp.Compiler.Parser+token,int32,int32>,Microsoft.FSharp.Core.Unit>)][offset 0x0000006D][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$ServiceLexing+clo::Invoke([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<System.Tuple`3<FSharp.Compiler.Parser+token,int32,int32>,Microsoft.FSharp.Core.Unit>)][offset 0x00000076][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.Impl::parseTypePath(string)][offset 0x0000003E][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.Impl::parseNestedTypeAlternativePath(string)][offset 0x00000089][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.Impl::parseMethodCref(string)][offset 0x0000006A][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.Impl::parsePropertyCref(string)][offset 0x00000048][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.Symbols.Impl::parseCref(string)][offset 0x000000DD][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$Symbols+fullName::Invoke([FSharp.Core]Microsoft.FSharp.Core.Unit)][offset 0x00000030][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Driver+ProcessCommandLineFlags::Invoke(string)][offset 0x0000000B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Driver+ProcessCommandLineFlags::Invoke(string)][offset 0x00000014][found Char] Unexpected type on the stack.
