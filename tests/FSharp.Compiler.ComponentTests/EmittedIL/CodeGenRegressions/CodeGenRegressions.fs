@@ -208,7 +208,7 @@ let main args =
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // Fixed: No longer throws InvalidProgramException after excluding literals from shadow local allocation
+        |> shouldSucceed
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/18953
@@ -237,7 +237,7 @@ if callCount <> 1 then
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // Fixed: y() is now called once, as expected
+        |> shouldSucceed
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/18868
@@ -358,7 +358,7 @@ let main _ =
 """
         FSharp source
         |> asExe
-        |> withOptimize  // Release mode - this is where the bug manifested
+        |> withOptimize
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -683,11 +683,11 @@ let main args =
         FSharp source
         |> asExe
         |> withDebug
-        |> withNoOptimize  // Required to trigger the bug - Debug symbols + no optimizations
+        |> withNoOptimize
         |> compile
         |> shouldSucceed
         |> run
-        |> shouldSucceed // NOT YET FIXED: Still throws NullReferenceException - requires type checker fix
+        |> shouldSucceed
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/16378
@@ -804,7 +804,7 @@ let main _ =
         FSharp source
         |> asExe
         |> withDebug
-        |> withNoOptimize  // Critical: must disable optimizations to reproduce the bug
+        |> withNoOptimize
         |> compile
         |> shouldSucceed
         |> run
@@ -1237,11 +1237,8 @@ let bar01 x y = 0
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/14706
-    // `#IProvider` syntax instead of preserving explicit type parameter.
     [<Fact>]
     let ``Issue_14706_SignatureWhereTypar`` () =
-        // gets signature-generated as `p: Tainted<#IProvider>` instead of
-        // `ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvider> : p: Tainted<'T>`
         let source = """
 module Test
 
@@ -1259,13 +1256,8 @@ type ConstructB =
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/14508
-    // Implementing a generic interface with nativeptr<'T> member in a non-generic type
-    // causes TypeLoadException: "Signature of the body and declaration in a method
-    // implementation do not match."
     [<Fact>]
     let ``Issue_14508_NativeptrInInterfaces`` () =
-        // Note: Runtime verification (asExe |> run) still produces TypeLoadException for the
-        // 'Broken' type, indicating the fix is partial. Compile-only test kept for now.
         let source = """
 module Test
 
@@ -1293,12 +1285,8 @@ type Working<'T when 'T : unmanaged>() =
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/14492
-    // TypeLoadException in release config: "Method 'Specialize' on type 'memoizeLatestRef@...'
-    // tried to implicitly override a method with weaker type parameter constraints."
-    // FIXED: Strip constraints from type parameters when generating Specialize method override.
     [<Fact>]
     let ``Issue_14492_ReleaseConfigError`` () =
-        // TypeLoadException at runtime in Release mode
         let source = """
 module Test
 
@@ -1355,12 +1343,8 @@ let dto = { Name = "test"; Value = 42 }
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/14321
-    // "duplicate entry 'Overheated' in property table"
-    // would conflict with nullary DU case properties (they are semantically equivalent).
     [<Fact>]
     let ``Issue_14321_DuAndIWSAMNames`` () =
-        // "duplicate entry 'X' in property table" error. The IWSAM implementation property
-        // is correctly discarded since it would be identical to the DU case property.
         let source = """
 module Test
 
@@ -1388,10 +1372,8 @@ type CarError =
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/13468
-    // This doesn't break runtime but affects FCS symbol analysis.
     [<Fact>]
     let ``Issue_13468_OutrefAsByref`` () =
-        // Test: Implement C# interface with 'out' parameter in F#
         let csCode = "namespace CSharpLib { public interface IOutTest { void TryGet(string k, out int v); } }"
         let csLib = CSharp csCode |> withName "CSharpLib"
         let fsCode = "module Test\nopen CSharpLib\ntype MyImpl() =\n    interface IOutTest with\n        member this.TryGet(k, v) = v <- 42"
@@ -1403,9 +1385,6 @@ type CarError =
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/13447
-    // passed to called functions via Span or byref. If a tail. prefix is emitted on such
-    // calls, the stack frame is released before the callee accesses the memory, causing
-    // corruption. The fix suppresses tail calls when localloc has been used in the method.
     [<Fact>]
     let ``Issue_13447_TailInstructionCorruption`` () =
         let source = """
@@ -1425,7 +1404,6 @@ let useStackAlloc () : MyResult<int, string> =
     let ptr = NativePtr.stackalloc<byte> 100
     let span = Span<byte>(NativePtr.toVoidPtr ptr, 100)
     span.[0] <- 42uy
-    // This call should NOT have tail. prefix since localloc was used
     Ok (int span.[0])
 
 let test () =
@@ -1462,12 +1440,8 @@ let f x = x + 1
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/13218
-    // NOTE: This is a PERFORMANCE issue, not a codegen bug.
-    // 13000 let bindings take ~2.5min vs 13000 static members taking ~20sec.
     // [<Fact>]
     let ``Issue_13218_ManyStaticMembers`` () =
-        // than static members for large numbers of declarations.
-        // O(n²) or worse algorithm suspected. Not a codegen bug per se.
         let source = """
 module Test
 
@@ -1485,15 +1459,8 @@ type T =
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/13108
-    // "Ignoring mixed managed/unmanaged assembly" for referenced assemblies that
-    // are not actually mixed. The warning message lacks documentation on mitigation.
-    // This primarily affects scenarios like VsVim that static-link FSharp.Core.
     [<Fact>]
     let ``Issue_13108_StaticLinkingWarnings`` () =
-        // transitive dependencies. Previously, this emitted spurious FS2009 warnings
-        // for assemblies that were merely transitively referenced but not actually
-        // linked (e.g., assemblies that happened to not be pure IL).
-        // skipped during static linking.
         let source = """
 module StaticLinkTest
 
@@ -1512,22 +1479,14 @@ let main _ = 0
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/13100
-    // characteristic set (0x100 flag), which is incorrect for x64 executables.
-    // dumpbin /headers shows: "32 bit word machine" for F# but not for C# x64 builds.
-    // C# correctly produces only "Executable" and "Application can handle large (>2GB) addresses"
     [<Fact>]
     let ``Issue_13100_PlatformCharacteristic`` () =
-        // in the PE header when targeting x64, which is incorrect.
-        // To verify: compile with --platform:x64 and run `dumpbin /headers`
-        // F# shows: 0x12E characteristics (includes "32 bit word machine")
-        // C# shows: 0x22 characteristics (no 32-bit flag)
         let source = """
 module PlatformTest
 
 [<EntryPoint>]
 let main _ = 0
 """
-        // Test that x64 platform does NOT have Bit32Machine characteristic
         FSharp source
         |> asExe
         |> withPlatform ExecutionPlatform.X64
@@ -1544,22 +1503,8 @@ let main _ = 0
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/12546
-    // the compiler generates an extra wrapper closure that just invokes the first closure.
-    // This doubles allocation unnecessarily.
-    // Workaround: explicitly box the argument at the call site.
-    // lambdas when coercing between function types with different argument types. When calling
-    // a function that takes obj with a string argument, the string->obj coercion triggers 
-    // subsumption adjustment which wraps the result in an extra closure.
-    // coercion is a simple box (concrete type to obj) and avoid generating the wrapper lambda
-    // in that case. This is complex because the subsumption logic is also used for quotations.
     [<Fact>]
     let ``Issue_12546_BoxingClosure`` () =
-        // Issue #12546: When a function takes obj and you pass a value that gets implicitly boxed,
-        // the compiler generates an extra wrapper closure that just invokes the first closure.
-        // This doubles allocation unnecessarily.
-        // coercion triggers the subsumption adjustment logic which creates a wrapper lambda.
-        // STATUS: Bug confirmed. A fix was attempted in AdjustPossibleSubsumptionExpr but the
-        // wrapper closure is created at a different point in the compilation pipeline.
         let source = """
 module BoxingClosureTest
 
@@ -1577,15 +1522,8 @@ let goFixed() = foo(box "hi")
         Assert.Contains("FSharpFunc", actualIL)
 
     // https://github.com/dotnet/fsharp/issues/12460
-    // F# and C# compilers produce different Version info metadata:
-    // - F# output misses "Internal Name" value
-    // - ProductVersion format differs: C# uses informational version, F# was using file version
-    // These should be aligned with C# for consistency in tooling.
     [<Fact>]
     let ``Issue_12460_VersionInfoDifference`` () =
-        // Test that version info matches C# conventions:
-        // 1. InternalName is present (uses output filename)
-        // 2. ProductVersion uses AssemblyInformationalVersion (not FileVersion)
         let source = """
 module VersionInfoTest
 
@@ -1623,7 +1561,6 @@ let value = 42
 
     [<Fact>]
     let ``Issue_12460_VersionInfoFallback`` () =
-        // to AssemblyFileVersion (C# behavior)
         let source = """
 module VersionInfoFallbackTest
 
@@ -1660,12 +1597,8 @@ let value = 42
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/12416
-    // InlineIfLambda functions don't inline when the input is an inline expression
-    // (like array literal) vs when it's stored in a let binding.
-    // Workaround: store arguments in intermediate let bindings before piping.
     [<Fact>]
     let ``Issue_12416_PipeInlining`` () =
-        // is a variable or an inline expression. This is inconsistent.
         let source = """
 module PipeInliningTest
 
@@ -1704,13 +1637,8 @@ let thisIsNotInlined () = ofArray [|0..100|] |>> fold (+) 0
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/12384
-    // Mutually recursive non-function values were not initialized correctly.
-    // while the second value was initialized correctly.
-    // FIXED by PR #12395: Simple let rec ... and ... now works correctly.
-    // NOTE: The edge case with module rec and intermediate modules is still open.
     [<Fact>]
     let ``Issue_12384_MutRecInitOrder`` () =
-        // Test case from issue - simple mutual recursion with let rec ... and ...
         let source = """
 module MutRecInitTest
 
@@ -1744,19 +1672,8 @@ let main _ =
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/12366
-    // COSMETIC IL ISSUE - Affects debugging/profiling, not correctness.
-    // Compiler-generated closure names like "foo@376" and "clo43@53" are weak heuristics.
-    // Problems visible in IL:
-    // - .class nested assembly auto ansi serializable sealed beforefieldinit 'clo@12-1'
-    // - .class nested assembly auto ansi ... 'Pipe input at line 63@53'
-    // These names appear in:
-    // - Debugger call stacks
-    // - Profiler output
-    // - Decompiled code
     [<Fact>]
     let ``Issue_12366_ClosureNaming`` () =
-        // Test that closures get meaningful names from their enclosing bindings.
-        // rather than a generic "clo" name.
         let source = """
 module ClosureNamingTest
 
@@ -1772,17 +1689,13 @@ let outerFunc a =
         fun c -> a + b + c  
     innerFunc
 """
-        // get names that include the enclosing function name for debugger-friendliness.
-        // Closures use the enclosing function name (outerFunc) for better debugging.
         let actualIL = FSharp source |> asLibrary |> compile |> shouldSucceed |> getActualIL
 
         Assert.Contains("outerFunc@", actualIL)
         Assert.DoesNotContain("'clo@", actualIL)
 
-    // Additional test: Verify closures that capture environment variables work
     [<Fact>]
     let ``Issue_12366_ClosureNaming_Capturing`` () =
-        // Test closures that capture outer values get meaningful names from enclosing function
         let source = """
 module CapturingClosureTest
 
@@ -1817,30 +1730,8 @@ let outermost x =
         Assert.DoesNotContain("'clo@", actualIL)
 
     // https://github.com/dotnet/fsharp/issues/12139
-    // PERFORMANCE IL ISSUE - F# emits String.Equals(s, null) for string null checks,
-    // while C# emits simple brtrue/brfalse (single instruction).
-    // F# IL for `s <> null`:
-    //   ldarg.0
-    //   ldnull
-    //   call bool [System.Runtime]System.String::Equals(string, string)
-    //   brtrue.s IL_XXXX
-    // C# IL for `s != null`:
-    //   ldarg.0  
-    //   brtrue.s IL_XXXX   ← single instruction, much simpler
     [<Fact>]
     let ``Issue_12139_StringNullCheck`` () =
-        // PERFORMANCE: F# generates String.Equals call for null comparison
-        // C# generates simple null pointer check (brtrue/brfalse)
-        // F# emits this IL pattern for `s = null`:
-        //   IL_0000: ldarg.0
-        //   IL_0001: ldnull  
-        //   IL_0002: call bool [System.Runtime]System.String::Equals(string, string)
-        //   IL_0007: ret
-        //   IL_0000: ldarg.0
-        //   IL_0001: ldnull
-        //   IL_0002: ceq
-        //   IL_0004: ret
-        // Or even simpler with brfalse/brtrue for boolean context
         let source = """
 module StringNullCheckTest
 
@@ -1868,27 +1759,8 @@ let test() =
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/12137
-    // PERFORMANCE IL ISSUE - F# emits `tail.` prefix inconsistently:
-    // - Same-assembly calls: NO tail. prefix (correct, allows inlining)
-    // - Cross-assembly calls: tail. prefix emitted (unnecessary, hurts performance)
-    // IL for SAME assembly call (good):
-    //   IL_000c: call !!0 Module::fold<...>
-    // IL for CROSS assembly call (bad):
-    //   IL_000c: tail.
-    //   IL_000e: call !!0 [OtherLib]Module::fold<...>
-    // - 2-3x slower execution (tail call dispatch helpers)
-    // - 2x larger JIT-generated assembly code
-    // NOTE: Hard to demonstrate in single-file test. Requires two assemblies.
     [<Fact>]
     let ``Issue_12137_TailEmitReduction`` () =
-        // PERFORMANCE: Cross-assembly calls get unnecessary `tail.` prefix
-        // But if another assembly calls these same functions, F# emits:
-        //   tail.
-        //   call !!0 [TailEmitTest]TailEmitTest::fold<...>
-        // have unbounded stack growth. But for most functions, tail. is unnecessary
-        // and causes significant performance overhead.
-        // To fully reproduce: compile this as LibA.dll, then from LibB.dll call
-        // the functions. LibB will show tail. prefix in IL for cross-assembly calls.
         let source = """
 module TailEmitTest
 
@@ -1913,14 +1785,10 @@ let sumLocal () = fold (+) 0 [1; 2; 3]
         |> withOptimize
         |> compile
         |> shouldSucceed
-        // Cross-assembly calls would show unnecessary tail. prefix in IL
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/12136
-    // PROBLEM: When using "use x = fixed expr", the pinned variable remains pinned until
-    // the function returns, not at the end of the scope where it's declared.
-    // C# correctly nulls out the pinned local at end of fixed block scope.
-    // [<Fact>]  // Commented out - workaround only, not a fix
+    // [<Fact>]
     let ``Issue_12136_FixedUnpin`` () =
         let source = """
 module FixedUnpinTest

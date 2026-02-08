@@ -3354,36 +3354,43 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
                 | Const.Zero
                 | Const.Decimal _ -> None
 
-            let emitInt64Constant underlyingTy i =
+            let emitInt64Constant uty i =
                 // see https://github.com/dotnet/fsharp/pull/3620
                 // and https://github.com/dotnet/fsharp/issue/8683
                 // and https://github.com/dotnet/roslyn/blob/98f12bb/src/Compilers/Core/Portable/CodeGen/ILBuilderEmit.cs#L679
                 if i >= int64 Int32.MinValue && i <= int64 Int32.MaxValue then
-                    CG.EmitInstrs cgbuf (pop 0) (Push [ underlyingTy ]) [ mkLdcInt32 (int32 i); AI_conv DT_I8 ]
+                    CG.EmitInstrs cgbuf (pop 0) (Push [ uty ]) [ mkLdcInt32 (int32 i); AI_conv DT_I8 ]
                 elif i >= int64 UInt32.MinValue && i <= int64 UInt32.MaxValue then
-                    CG.EmitInstrs cgbuf (pop 0) (Push [ underlyingTy ]) [ mkLdcInt32 (int32 i); AI_conv DT_U8 ]
+                    CG.EmitInstrs cgbuf (pop 0) (Push [ uty ]) [ mkLdcInt32 (int32 i); AI_conv DT_U8 ]
                 else
-                    CG.EmitInstr cgbuf (pop 0) (Push [ underlyingTy ]) (iLdcInt64 i)
+                    CG.EmitInstr cgbuf (pop 0) (Push [ uty ]) (iLdcInt64 i)
 
-            match c with
-            | Const.Bool b -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Bool ]) (mkLdcInt32 (if b then 1 else 0))
-            | Const.SByte i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_SByte ]) (mkLdcInt32 (int32 i))
-            | Const.Int16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int16 ]) (mkLdcInt32 (int32 i))
-            | Const.Int32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 i)
-            | Const.Int64 i -> emitInt64Constant g.ilg.typ_Int64 i
-            | Const.IntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) [ iLdcInt64 i; AI_conv DT_I ]
-            | Const.Byte i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Byte ]) (mkLdcInt32 (int32 i))
-            | Const.UInt16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_UInt16 ]) (mkLdcInt32 (int32 i))
-            | Const.UInt32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_UInt32 ]) (mkLdcInt32 (int32 i))
-            | Const.UInt64 i -> emitInt64Constant g.ilg.typ_UInt64 (int64 i)
-            | Const.UIntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ g.ilg.typ_UIntPtr ]) [ iLdcInt64 (int64 i); AI_conv DT_U ]
-            | Const.Double f -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Double ]) (AI_ldc(DT_R8, ILConst.R8 f))
-            | Const.Single f -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Single ]) (AI_ldc(DT_R4, ILConst.R4 f))
-            | Const.Char c -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Char ]) (mkLdcInt32 (int c))
-            | Const.String s -> GenString cenv cgbuf s
-            | Const.Unit -> GenUnit cenv eenv m cgbuf
-            | Const.Zero -> GenDefaultValue cenv cgbuf eenv (ty, m)
-            | Const.Decimal _ -> failwith "unreachable"
+            let emitConst uty instr =
+                CG.EmitInstr cgbuf (pop 0) (Push [ uty ]) instr
+
+            let emitConstI uty instrs =
+                CG.EmitInstrs cgbuf (pop 0) (Push [ uty ]) instrs
+
+            match c, underlyingIlTyOpt with
+            | Const.Bool b, Some uty -> emitConst uty (mkLdcInt32 (if b then 1 else 0))
+            | Const.SByte i, Some uty -> emitConst uty (mkLdcInt32 (int32 i))
+            | Const.Int16 i, Some uty -> emitConst uty (mkLdcInt32 (int32 i))
+            | Const.Int32 i, Some uty -> emitConst uty (mkLdcInt32 i)
+            | Const.Int64 i, Some uty -> emitInt64Constant uty i
+            | Const.IntPtr i, Some uty -> emitConstI uty [ iLdcInt64 i; AI_conv DT_I ]
+            | Const.Byte i, Some uty -> emitConst uty (mkLdcInt32 (int32 i))
+            | Const.UInt16 i, Some uty -> emitConst uty (mkLdcInt32 (int32 i))
+            | Const.UInt32 i, Some uty -> emitConst uty (mkLdcInt32 (int32 i))
+            | Const.UInt64 i, Some uty -> emitInt64Constant uty (int64 i)
+            | Const.UIntPtr i, Some uty -> emitConstI uty [ iLdcInt64 (int64 i); AI_conv DT_U ]
+            | Const.Double f, Some uty -> emitConst uty (AI_ldc(DT_R8, ILConst.R8 f))
+            | Const.Single f, Some uty -> emitConst uty (AI_ldc(DT_R4, ILConst.R4 f))
+            | Const.Char c, Some uty -> emitConst uty (mkLdcInt32 (int c))
+            | Const.String s, None -> GenString cenv cgbuf s
+            | Const.Unit, None -> GenUnit cenv eenv m cgbuf
+            | Const.Zero, None -> GenDefaultValue cenv cgbuf eenv (ty, m)
+            | Const.Decimal _, None -> failwith "unreachable"
+            | _ -> failwith "unreachable"
 
             match underlyingIlTyOpt, ilTy with
             | Some _, ILType.Value _ -> ()
@@ -11987,11 +11994,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))
                                 || (cuinfo.HasHelpers = AllHelpers
                                     && (md.Name.StartsWith("get_Is") && not (tdef2.Methods.FindByName(md.Name).IsEmpty)))
-                                || (cuinfo.HasHelpers = AllHelpers
-                                    && md.Name.StartsWith("get_")
-                                    && nullaryCaseNames.Contains(md.Name.Substring(4))
-                                    && not (tdef2.Methods.FindByName(md.Name).IsEmpty))
-                                || (cuinfo.HasHelpers = NoHelpers
+                                || (not nullaryCaseNames.IsEmpty
                                     && md.Name.StartsWith("get_")
                                     && md.Name.Length > 4
                                     && nullaryCaseNames.Contains(md.Name.Substring(4))
@@ -12004,10 +12007,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     && (pd.Name = "Value" || pd.Name = "None"))
                                 || (cuinfo.HasHelpers = AllHelpers
                                     && (pd.Name.StartsWith("Is") && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
-                                || (cuinfo.HasHelpers = AllHelpers
-                                    && nullaryCaseNames.Contains(pd.Name)
-                                    && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty))
-                                || (cuinfo.HasHelpers = NoHelpers
+                                || (not nullaryCaseNames.IsEmpty
                                     && nullaryCaseNames.Contains(pd.Name)
                                     && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
                         )
