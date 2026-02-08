@@ -6,7 +6,6 @@ open System.Xml.Linq
 open System.Xml.XPath
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Text
-open FSharp.Compiler.Xml
 
 /// Represents an inheritdoc directive found in XML documentation
 type InheritDocDirective =

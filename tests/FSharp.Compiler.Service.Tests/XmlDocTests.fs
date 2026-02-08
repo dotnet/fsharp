@@ -2152,9 +2152,12 @@ type MyType() = class end
         let _, checkResults = getParseAndCheckResults code
         let symbol = findSymbolByName "MyType" checkResults
         let xmlDoc = (symbol :?> FSharpEntity).XmlDoc
-        // Should not crash; result should still be FromXmlText
+        // Should not crash; the unresolvable <inheritdoc> is left in place
         match xmlDoc with
-        | FSharpXmlDoc.FromXmlText _ -> ()
+        | FSharpXmlDoc.FromXmlText t ->
+            let xmlText = t.UnprocessedLines |> String.concat "\n"
+            // The inheritdoc element remains because the cref target doesn't exist
+            Assert.Contains("inheritdoc", xmlText)
         | _ -> failwith "Expected FromXmlText"
 
     [<Fact>]
@@ -2191,9 +2194,12 @@ type BaseType() = class end
         let _, checkResults = getParseAndCheckResults code
         let symbol = findSymbolByName "MyType" checkResults
         let xmlDoc = (symbol :?> FSharpEntity).XmlDoc
-        // Should not crash even with malformed XML
+        // Should not crash; malformed XML means original doc is returned unchanged
         match xmlDoc with
-        | FSharpXmlDoc.FromXmlText _ -> ()
+        | FSharpXmlDoc.FromXmlText t ->
+            let xmlText = t.UnprocessedLines |> String.concat "\n"
+            // Original doc preserved because XML parsing failed
+            Assert.Contains("Malformed", xmlText)
         | _ -> failwith "Expected FromXmlText"
 
     [<Fact>]
@@ -2210,9 +2216,12 @@ type DerivedType() = class end
         let _, checkResults = getParseAndCheckResults code
         let symbol = findSymbolByName "DerivedType" checkResults
         let xmlDoc = (symbol :?> FSharpEntity).XmlDoc
-        // Should not crash with invalid XPath; falls back gracefully
+        // Should not crash; invalid XPath falls back to using the full inherited doc
         match xmlDoc with
-        | FSharpXmlDoc.FromXmlText _ -> ()
+        | FSharpXmlDoc.FromXmlText t ->
+            let xmlText = t.UnprocessedLines |> String.concat "\n"
+            Assert.Contains("Base type docs", xmlText)
+            Assert.DoesNotContain("inheritdoc", xmlText)
         | _ -> failwith "Expected FromXmlText"
 
     [<Fact>]
@@ -2224,17 +2233,12 @@ type Config =
     /// <summary>The database connection string</summary>
     static val mutable ConnectionString: string
 
-type Settings =
-    /// <inheritdoc cref="F:Test.Config.ConnectionString"/>
-    static val mutable DbConn: string
+/// <inheritdoc cref="F:Test.Config.ConnectionString"/>
+type Settings() = class end
 """
-        let _, checkResults = getParseAndCheckResults code
-        let symbol = findSymbolByName "Settings" checkResults
-        // Should not crash with F: cref prefix
-        let xmlDoc = (symbol :?> FSharpEntity).XmlDoc
-        match xmlDoc with
-        | FSharpXmlDoc.FromXmlText _ -> ()
-        | _ -> failwith "Expected FromXmlText"
+        let xmlText = getEntityXmlText code "Settings"
+        Assert.Contains("The database connection string", xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
 [<Fact>]
 let ``Discriminated Union - triple slash after case definition should warn``(): unit =

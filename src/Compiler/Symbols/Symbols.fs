@@ -125,13 +125,19 @@ module Impl =
             else
                 None
 
-    /// Tries to find a member's XmlDoc on an entity by method name
-    let private tryFindMemberXmlDoc (entity: Entity) (methodName: string) : string option =
+    /// Tries to find a member's or field's XmlDoc on an entity by name
+    let private tryFindMemberXmlDoc (entity: Entity) (memberName: string) : string option =
         entity.MembersOfFSharpTyconSorted
         |> List.tryPick (fun vref ->
-            if vref.DisplayName = methodName || vref.LogicalName = methodName then
+            if vref.DisplayName = memberName || vref.LogicalName = memberName then
                 tryGetXmlDocText vref.XmlDoc
             else None)
+        |> Option.orElseWith (fun () ->
+            entity.AllFieldsArray
+            |> Array.tryPick (fun field ->
+                if field.DisplayName = memberName || field.LogicalName = memberName then
+                    tryGetXmlDocText field.XmlDoc
+                else None))
 
     /// Tries to find an entity in a module/namespace by path
     let rec private tryFindEntityByPath (mtyp: ModuleOrNamespaceType) (path: string list) : Entity option =
