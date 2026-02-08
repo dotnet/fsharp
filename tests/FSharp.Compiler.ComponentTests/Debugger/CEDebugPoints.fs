@@ -40,6 +40,39 @@ let a =
         """ "GenerateNext" [ (Line 6, Col 15, Line 6, Col 17) ]
 
     [<Fact>]
+    let ``ReturnFrom in async CE - debug point covers full expression`` () =
+        verifyCEMethodDebugPoints """
+module TestModule
+
+let a =
+    async {
+        return! async.Return(1)
+    }
+        """ "Invoke" [ (Line 6, Col 9, Line 6, Col 32) ]
+
+    [<Fact>]
+    let ``YieldFrom in CE - debug point covers full expression`` () =
+        verifyCEMethodDebugPoints """
+module TestModule
+
+type Wrapper<'a> = Wrapper of 'a list
+
+type ListBuilder() =
+    member _.Yield(x) = Wrapper [x]
+    member _.YieldFrom(Wrapper xs) = Wrapper xs
+    member _.Combine(Wrapper xs, Wrapper ys) = Wrapper(xs @ ys)
+    member _.Delay(f: unit -> Wrapper<'a>) = f()
+    member _.Zero() = Wrapper []
+
+let list = ListBuilder()
+
+let a =
+    list {
+        yield! Wrapper [1; 2]
+    }
+        """ "staticInitialization@" [ (Line 13, Col 1, Line 13, Col 25); (Line 16, Col 5, Line 16, Col 9); (Line 17, Col 9, Line 17, Col 30) ]
+
+    [<Fact>]
     let ``Use in task CE - no extra out-of-order sequence point`` () =
         verifyCEMethodDebugPoints """
 module TestModule
