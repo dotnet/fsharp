@@ -4789,17 +4789,6 @@ and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
 
 /// Emit IL to cast a caught object to Exception, wrapping non-Exception objects
 /// in RuntimeWrappedException (https://github.com/dotnet/fsharp/issues/18374).
-///
-/// IL pattern:
-///   stloc.s temp
-///   ldloc.s temp
-///   isinst System.Exception
-///   dup
-///   brtrue.s done
-///   pop
-///   ldloc.s temp
-///   newobj RuntimeWrappedException(object)
-///   done:
 and EmitCastOrWrapNonExceptionThrow (cenv: cenv) (cgbuf: CodeGenBuffer) =
     let g = cenv.g
     let iltyp_RuntimeWrappedException = g.iltyp_RuntimeWrappedException

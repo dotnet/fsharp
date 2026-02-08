@@ -3557,15 +3557,12 @@ module internal ProjectForWitnessConditionalComparison =
 
 [<Fact>]
 let ``ImmediateSubExpressions - generic DU with no constraints should not crash`` () =
-    // This is the core bug repro - a generic DU where the type parameter has
-    // ComparisonConditionalOn but no actual comparison constraint
     let source = """
 module M
 
 type Bar<'appEvent> =
     | Wibble of 'appEvent
 """
-    // This should not throw. Before the fix, it crashed with ConstraintSolverMissingConstraint.
     ProjectForWitnessConditionalComparison.walkAllExpressions source
 
 [<Fact>]
@@ -3615,8 +3612,6 @@ and Inner<'b> =
 
 [<Fact>]
 let ``ImmediateSubExpressions - generic DU with explicit comparison constraint works`` () =
-    // When the type parameter has the comparison constraint, witness generation should work;
-    // no crash occurred even before the bug was fixed. This test is here for completeness.
     let source = """
 module M
 
@@ -3627,7 +3622,6 @@ type WithConstraint<'a when 'a : comparison> =
 
 [<Fact>]
 let ``ImmediateSubExpressions - non-generic DU works`` () =
-    // Non-generic types always worked fine (no generics = no witness issues). This test is here for completeness.
     let source = """
 module M
 
@@ -3639,8 +3633,6 @@ type SimpleUnion =
 
 [<Fact>]
 let ``ImmediateSubExpressions - generic DU with NoComparison attribute should not crash`` () =
-    // With NoComparison, no comparison code is generated, so no crash ever occurred even before the bug was fixed.
-    // This test is here for completeness.
     let source = """
 module M
 
@@ -3663,7 +3655,6 @@ type NoEq<'a> =
 
 [<Fact>]
 let ``ImmediateSubExpressions - generic DU used in function should not crash`` () =
-    // Test that using the generic DU in actual code still works
     let source = """
 module M
 
