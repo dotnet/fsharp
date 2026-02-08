@@ -152,28 +152,19 @@ let newIlxPubCloEnv (ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFi
 
 let mkILTyFuncTy cenv = cenv.mkILTyFuncTy
 
-// Helper to convert void* (voidptr) to IntPtr (nativeint) for FSharpFunc type arguments.
-// While CLI allows void* in many generic contexts (e.g., List<void*>, Dictionary<void*, T>),
-// FSharpFunc generic instantiation with void* causes TypeLoadException at runtime.
-// This is the ONLY location where void*->IntPtr conversion is needed because all FSharpFunc
-// type construction flows through EraseClosures (mkILFuncTy, typ_Func, mkMethSpecForMultiApp).
-// See https://github.com/dotnet/fsharp/issues/11132
+// Convert void* to IntPtr for FSharpFunc type arguments (https://github.com/dotnet/fsharp/issues/11132).
 let private fixVoidPtrForGenericArg (ilg: ILGlobals) ty =
     match ty with
     | ILType.Ptr ILType.Void -> ilg.typ_IntPtr
     | _ -> ty
 
-// Fix parameter type for FSharpFunc methods
 let private fixILParamForFunc (ilg: ILGlobals) (p: ILParameter) =
     match p.Type with
     | ILType.Ptr ILType.Void -> { p with Type = ilg.typ_IntPtr }
     | _ -> p
 
-// Fix parameters list for FSharpFunc methods
 let private fixILParamsForFunc (ilg: ILGlobals) (ps: ILParameter list) = ps |> List.map (fixILParamForFunc ilg)
 
-// Fix void* types in type argument lists and return type for FSharpFunc compatibility.
-// See https://github.com/dotnet/fsharp/issues/11132
 let private fixFuncTypeArgs (ilg: ILGlobals) (argTys: ILType list) retTy =
     struct (argTys |> List.map (fun ty -> fixVoidPtrForGenericArg ilg ty), fixVoidPtrForGenericArg ilg retTy)
 
@@ -421,9 +412,8 @@ let mkILFreeVarForParam (p: ILParameter) =
 
 let mkILLocalForFreeVar (p: IlxClosureFreeVar) = mkILLocal p.fvType None
 
-/// Generate a unique name for a free variable that doesn't conflict with existing field names.
-/// This is used to avoid duplicate parameter names in closure constructors, especially in
-/// mutual recursion scenarios (see issue #17692).
+/// Generate a unique free variable name to avoid duplicate parameter names in closure constructors
+/// (https://github.com/dotnet/fsharp/issues/17692).
 let mkUniqueFreeVarName (baseName: string) (existingFields: IlxClosureFreeVar[]) =
     let existingNames = existingFields |> Array.map (fun fv -> fv.fvName) |> Set.ofArray
 
@@ -591,11 +581,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                 let convil = convILMethodBody (Some nowCloSpec, boxReturnTy) clo.cloCode.Value
 
-                // When overriding FSharpTypeFunc.Specialize<'T>, we must strip all constraints from the
-                // type parameters. The base method Specialize<'T> has no constraints, and the CLR requires
-                // that override methods cannot have different constraints than the base method.
-                // Type safety is already enforced at the F# call site by the type checker.
-                // See https://github.com/dotnet/fsharp/issues/14492
+                // Strip constraints from type params for Specialize<'T> override (https://github.com/dotnet/fsharp/issues/14492)
                 let specializeGenParams = addedGenParams |> List.map stripILGenericParamConstraints
 
                 let nowApplyMethDef =
@@ -603,7 +589,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         "Specialize",
                         ILCallingConv.Instance,
                         ILMemberAccess.Public,
-                        specializeGenParams (* method is generic over added ILGenericParameterDefs, with constraints stripped *) ,
+                        specializeGenParams,
                         [],
                         mkILReturn cenv.ilg.typ_Object,
                         MethodBody.IL(notlazy convil)
@@ -730,7 +716,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
             else
                 // CASE 2b - Build an Invoke method
 
-                // Fix void* types to IntPtr for FSharpFunc compatibility (Issue #11132)
                 let fixedNowParams = fixILParamsForFunc cenv.ilg nowParams
                 let fixedNowReturnTy = fixVoidPtrForGenericArg cenv.ilg nowReturnTy
 
