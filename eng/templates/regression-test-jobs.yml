@@ -98,6 +98,13 @@ jobs:
         installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
 
     - task: UseDotNet@2
+      displayName:  Install .NET SDK 9.0.x for ${{ item.displayName }}
+      inputs:
+        packageType: sdk
+        version: '9.0.x'
+        installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
+
+    - task: UseDotNet@2
       displayName:  Install .NET SDK 10.0.100 for ${{ item.displayName }}
       inputs:
         packageType: sdk
