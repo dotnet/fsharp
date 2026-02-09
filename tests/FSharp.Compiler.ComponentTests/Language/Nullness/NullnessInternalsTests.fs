@@ -2,7 +2,6 @@ module Language.NullnessInternalsTests
 
 open Xunit
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeBasics
 
 [<Fact>]
 let ``KnownFromConstructor evaluates to WithoutNull`` () =
@@ -13,25 +12,11 @@ let ``KnownFromConstructor TryEvaluate returns ValueSome WithoutNull`` () =
     Assert.Equal(ValueSome NullnessInfo.WithoutNull, Nullness.KnownFromConstructor.TryEvaluate())
 
 [<Fact>]
-let ``KnownFromConstructor IsFromConstructor is true`` () =
-    Assert.True(Nullness.KnownFromConstructor.IsFromConstructor)
-
-[<Fact>]
-let ``Known WithoutNull IsFromConstructor is false`` () =
-    Assert.False((Nullness.Known NullnessInfo.WithoutNull).IsFromConstructor)
-
-[<Fact>]
-let ``Known WithNull IsFromConstructor is false`` () =
-    Assert.False((Nullness.Known NullnessInfo.WithNull).IsFromConstructor)
-
-[<Fact>]
-let ``Variable IsFromConstructor is false`` () =
-    let nv = NullnessVar()
-    Assert.False((Nullness.Variable nv).IsFromConstructor)
-
-[<Fact>]
-let ``KnownWithoutNullFromCtor singleton is KnownFromConstructor`` () =
-    Assert.True(KnownWithoutNullFromCtor.IsFromConstructor)
+let ``KnownFromConstructor is distinct from Known WithoutNull`` () =
+    match Nullness.KnownFromConstructor with
+    | Nullness.Known _ -> Assert.Fail("KnownFromConstructor should be distinct from Known WithoutNull")
+    | Nullness.KnownFromConstructor -> ()
+    | _ -> Assert.Fail("Unexpected case")
 
 [<Fact>]
 let ``NullnessVar IsFullySolved with KnownFromConstructor`` () =
@@ -44,7 +29,11 @@ let ``NullnessVar Set normalizes KnownFromConstructor to Known WithoutNull`` () 
     let nv = NullnessVar()
     nv.Set(Nullness.KnownFromConstructor)
     Assert.Equal(NullnessInfo.WithoutNull, nv.Evaluate())
-    Assert.False(nv.Solution.IsFromConstructor)
+    // After Set normalizes, Solution should not be KnownFromConstructor
+    match nv.Solution with
+    | Nullness.KnownFromConstructor -> Assert.Fail("Expected normalization away from KnownFromConstructor")
+    | Nullness.Known NullnessInfo.WithoutNull -> ()
+    | other -> Assert.Fail($"Unexpected solution: %A{other}")
 
 [<Fact>]
 let ``Chained NullnessVar resolution through KnownFromConstructor`` () =

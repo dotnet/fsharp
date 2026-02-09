@@ -188,7 +188,6 @@ let KnownAmbivalentToNull = Nullness.Known NullnessInfo.AmbivalentToNull
 let KnownWithNull = Nullness.Known NullnessInfo.WithNull
 
 let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
-let KnownWithoutNullFromCtor = Nullness.KnownFromConstructor
 
 let mkTyparTy (tp:Typar) = 
     match tp.Kind with 

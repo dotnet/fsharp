@@ -1036,8 +1036,6 @@ and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
     csenv.g.checkNullness &&
     csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome    
 
-/// Gets the range for nullness warnings, preferring the captured argument range
-/// when available (e.g. for pipe operator expressions) over the constraint solver range.
 and getNullnessWarningRange (csenv: ConstraintSolverEnv) =
     match csenv.eContextInfo with
     | ContextInfo.NullnessCheckOfCapturedArg capturedArgRange -> capturedArgRange

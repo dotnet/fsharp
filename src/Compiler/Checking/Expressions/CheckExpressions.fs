@@ -470,6 +470,12 @@ type CheckedBindingInfo =
 
 type cenv = TcFileState
 
+/// Extract nullness-specific context, filtering out all other context kinds to avoid side effects on non-nullness diagnostics.
+let nullnessContextOnly (env: TcEnv) =
+    match env.eContextInfo with
+    | ContextInfo.NullnessCheckOfCapturedArg _ -> env.eContextInfo
+    | _ -> ContextInfo.NoContext
+
 // If the overall type admits subsumption or type directed conversion, and the original unify would have failed,
 // then allow subsumption or type directed conversion.
 //
@@ -482,7 +488,7 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
         let actualTy = tryNormalizeMeasureInType g actualTy
         let reqdTy = tryNormalizeMeasureInType g reqdTy
         let reqTyForUnification = reqTyForArgumentNullnessInference g actualTy reqdTy
-        let nullnessContext = match env.eContextInfo with ContextInfo.NullnessCheckOfCapturedArg _ -> env.eContextInfo | _ -> ContextInfo.NoContext
+        let nullnessContext = nullnessContextOnly env
         if AddCxTypeEqualsTypeUndoIfFailedWithContext nullnessContext env.DisplayEnv cenv.css m reqTyForUnification actualTy then
             ()
         else
@@ -5375,7 +5381,7 @@ and TcExprFlex (cenv: cenv) flex compat (desiredTy: TType) (env: TcEnv) tpenv (s
         if compat then
             (destTyparTy g argTy).SetIsCompatFlex(true)
 
-        AddCxTypeMustSubsumeType (match env.eContextInfo with ContextInfo.NullnessCheckOfCapturedArg _ -> env.eContextInfo | _ -> ContextInfo.NoContext) env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argTy
+        AddCxTypeMustSubsumeType (nullnessContextOnly env) env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argTy
 
         let expr2, tpenv = TcExprFlex2 cenv argTy env false tpenv synExpr
         let expr3 = mkCoerceIfNeeded g desiredTy argTy expr2
@@ -8633,9 +8639,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                            || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
                     | _ -> env
 
-                // For partially applied functions (e.g. pipe operators like `bar |> foo "mr"`),
-                // propagate the range of the last captured argument so nullness warnings
-                // point to the original nullable value rather than the pipe application site.
+                // Propagate captured argument range so nullness warnings point to the original nullable value.
                 let env =
                     if isFunTy g domainTy then
                         match leftExpr with

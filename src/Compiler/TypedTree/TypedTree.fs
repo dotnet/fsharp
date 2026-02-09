@@ -4369,8 +4369,6 @@ type Nullness =
        | Variable v -> v.TryEvaluate()
        | KnownFromConstructor -> ValueSome NullnessInfo.WithoutNull
 
-   member n.IsFromConstructor = match n with KnownFromConstructor -> true | _ -> false
-
    override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
 
    member n.ToFsharpCodeString() = match n.Evaluate() with NullnessInfo.WithNull -> " | null "  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> ""

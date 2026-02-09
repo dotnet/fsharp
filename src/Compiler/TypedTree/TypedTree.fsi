@@ -3108,7 +3108,7 @@ type Nullness =
 
     member TryEvaluate: unit -> NullnessInfo voption
 
-    member IsFromConstructor: bool
+
 
     member ToFsharpCodeString: unit -> string
 

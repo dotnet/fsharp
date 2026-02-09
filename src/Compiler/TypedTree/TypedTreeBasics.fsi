@@ -127,7 +127,7 @@ val KnownWithNull: Nullness
 
 val KnownWithoutNull: Nullness
 
-val KnownWithoutNullFromCtor: Nullness
+
 
 val combineNullness: Nullness -> Nullness -> Nullness
 
