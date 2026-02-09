@@ -80,3 +80,21 @@ let ``HasCachedProject normalizes paths`` () =
     let mgr = createManager ()
     mgr.InjectTestEntry("/a/../b/c.fsproj", dummyOptions "/b/c.fsproj")
     Assert.True(mgr.HasCachedProject("/b/c.fsproj"))
+
+[<Fact>]
+let ``Invalidate normalizes path before removal`` () =
+    let mgr = createManager ()
+    mgr.InjectTestEntry("/b/c.fsproj", dummyOptions "/b/c.fsproj")
+    Assert.Equal(1, mgr.CacheCount)
+
+    mgr.Invalidate("/a/../b/c.fsproj")
+
+    Assert.Equal(0, mgr.CacheCount)
+    Assert.False(mgr.HasCachedProject("/b/c.fsproj"))
+
+[<Fact>]
+let ``InjectTestEntry overwrites existing entry for same normalized path`` () =
+    let mgr = createManager ()
+    mgr.InjectTestEntry("/a.fsproj", dummyOptions "/a.fsproj")
+    mgr.InjectTestEntry("/a.fsproj", dummyOptions "/a.fsproj")
+    Assert.Equal(1, mgr.CacheCount)

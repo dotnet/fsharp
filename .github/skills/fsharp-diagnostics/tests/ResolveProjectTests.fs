@@ -16,6 +16,7 @@ let private componentTests root =
 [<InlineData("/repo/", "/repo/tests/FSharp.Compiler.ComponentTests/SomeTest.fs", false)>]
 [<InlineData("/repo", "/repo/tests/FSharp.Compiler.ComponentTests/SomeTest.fs", false)>]
 [<InlineData("/repo", "/repo/tests/FSharp.Compiler.ComponentTests/Language/SubDir/Test.fs", false)>]
+[<InlineData("/repo", "/other/path/File.fs", true)>]
 let ``resolveProject routes files to correct fsproj`` (repoRoot: string, filePath: string, expectFcs: bool) =
     let result = resolveProject repoRoot filePath
     let expected = if expectFcs then fcs repoRoot else componentTests repoRoot
