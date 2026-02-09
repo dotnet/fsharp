@@ -2437,11 +2437,16 @@ let _ =
                 p_tys l st
 
         | TType_app(ERefNonLocal nleref, [], nullness) ->
+            // Always write nullness byte to B stream to keep it aligned with unconditional reads in u_ty.
+            // Other data (e.g. typar constraints) is also written to stream B unconditionally,
+            // so skipping nullness bytes would cause stream B misalignment when langFeatureNullness = false.
             if st.oglobals.langFeatureNullness then
                 match nullness.Evaluate() with
                 | NullnessInfo.WithNull -> p_byteB 9 st
                 | NullnessInfo.WithoutNull -> p_byteB 10 st
                 | NullnessInfo.AmbivalentToNull -> p_byteB 11 st
+            else
+                p_byteB 0 st
 
             p_byte 1 st
             p_simpletyp nleref st
@@ -2452,6 +2457,8 @@ let _ =
                 | NullnessInfo.WithNull -> p_byteB 12 st
                 | NullnessInfo.WithoutNull -> p_byteB 13 st
                 | NullnessInfo.AmbivalentToNull -> p_byteB 14 st
+            else
+                p_byteB 0 st
 
             p_byte 2 st
             p_tcref "typ" tc st
@@ -2463,6 +2470,8 @@ let _ =
                 | NullnessInfo.WithNull -> p_byteB 15 st
                 | NullnessInfo.WithoutNull -> p_byteB 16 st
                 | NullnessInfo.AmbivalentToNull -> p_byteB 17 st
+            else
+                p_byteB 0 st
 
             p_byte 3 st
             // Note, the "this" argument may be found in the domain position of a function type, so propagate the isStructThisArgPos value
@@ -2475,6 +2484,8 @@ let _ =
                 | NullnessInfo.WithNull -> p_byteB 18 st
                 | NullnessInfo.WithoutNull -> p_byteB 19 st
                 | NullnessInfo.AmbivalentToNull -> p_byteB 20 st
+            else
+                p_byteB 0 st
 
             p_byte 4 st
             p_tpref r st
