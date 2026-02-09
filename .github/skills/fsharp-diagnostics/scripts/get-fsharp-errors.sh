@@ -104,6 +104,13 @@ case "${1:-}" in
         ensure_server "$REPO_ROOT" "$SOCK_PATH"
         send_request "$SOCK_PATH" "{\"command\":\"typeHints\",\"file\":\"$FILE\",\"startLine\":$START_LINE,\"endLine\":$END_LINE}"
         ;;
+    --compile)
+        shift
+        PROJECT="$1"
+        OUTPUT="$2"
+        ensure_server "$REPO_ROOT" "$SOCK_PATH"
+        send_request "$SOCK_PATH" "{\"command\":\"compile\",\"project\":\"$PROJECT\",\"output\":\"$OUTPUT\"}"
+        ;;
     -*)
         echo "Usage: get-fsharp-errors [--parse-only] <file.fs>" >&2
         echo "       get-fsharp-errors --check-project <project.fsproj>" >&2

@@ -19,6 +19,7 @@
     <Compile Include="../server/ProjectManager.fs" Link="ProjectManager.fs" />
     <Compile Include="ProjectManagerTests.fs" />
     <Compile Include="ResolveProjectTests.fs" />
+    <Compile Include="DesignTimeBuildTests.fs" />
   </ItemGroup>
 
 </Project>

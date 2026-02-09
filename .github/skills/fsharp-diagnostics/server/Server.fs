@@ -223,7 +223,7 @@ let startServer (config: ServerConfig) =
                                 return $"ERROR: Project has errors:\n{diags}"
                             else
                                 try
-                                    let! outPath = checker.CompileFromCheckedProject(results, output)
+                                    let! _ = checker.CompileFromCheckedProject(results, output)
                                     return "OK"
                                 with ex ->
                                     return $"ERROR: Compile failed: {ex.Message}"

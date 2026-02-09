@@ -98,3 +98,28 @@ let ``InjectTestEntry overwrites existing entry for same normalized path`` () =
     mgr.InjectTestEntry("/a.fsproj", dummyOptions "/a.fsproj")
     mgr.InjectTestEntry("/a.fsproj", dummyOptions "/a.fsproj")
     Assert.Equal(1, mgr.CacheCount)
+
+[<Fact>]
+let ``Multiple distinct projects coexist in cache`` () =
+    let mgr = createManager ()
+    mgr.InjectTestEntry("/project1.fsproj", dummyOptions "/project1.fsproj")
+    mgr.InjectTestEntry("/project2.fsproj", dummyOptions "/project2.fsproj")
+    mgr.InjectTestEntry("/project3.fsproj", dummyOptions "/project3.fsproj")
+    Assert.Equal(3, mgr.CacheCount)
+    Assert.True(mgr.HasCachedProject("/project1.fsproj"))
+    Assert.True(mgr.HasCachedProject("/project2.fsproj"))
+    Assert.True(mgr.HasCachedProject("/project3.fsproj"))
+
+[<Fact>]
+let ``Invalidate specific project preserves others`` () =
+    let mgr = createManager ()
+    mgr.InjectTestEntry("/x.fsproj", dummyOptions "/x.fsproj")
+    mgr.InjectTestEntry("/y.fsproj", dummyOptions "/y.fsproj")
+    mgr.InjectTestEntry("/z.fsproj", dummyOptions "/z.fsproj")
+
+    mgr.Invalidate("/y.fsproj")
+
+    Assert.Equal(2, mgr.CacheCount)
+    Assert.True(mgr.HasCachedProject("/x.fsproj"))
+    Assert.False(mgr.HasCachedProject("/y.fsproj"))
+    Assert.True(mgr.HasCachedProject("/z.fsproj"))
