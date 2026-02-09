@@ -95,3 +95,33 @@ let ``Test request for parse and check doesn't check whole project`` () =
     printfn "checking no extra background typechecks...., backgroundCheckCount.Value = %d" backgroundCheckCount.Value
     (backgroundCheckCount.Value <= 10) |> shouldEqual true // only two extra typechecks of files
     ()
+
+[<Fact>]
+let ``CompileFromCheckedProject does not cause quadratic attribute growth`` () =
+    let source = """
+module TestLib
+
+[<assembly: System.Reflection.AssemblyTitleAttribute("TestLib")>]
+do ()
+
+let add x y = x + y
+"""
+    let options = createProjectOptions [ source ] []
+    let compileChecker = FSharpChecker.Create(keepAssemblyContents = true, useTransparentCompiler = false)
+    let results = compileChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+
+    Assert.False(results.HasCriticalErrors, "Project should have no critical errors")
+
+    let _tcConfig, _tcGlobals, _tcImports, generatedCcu, _topAttrsOpt, _ilAssemRef, _typedImplFilesOpt =
+        results.CompilationData
+
+    let attribCountBefore = generatedCcu.Contents.Attribs.Length
+
+    let outDir = Path.GetDirectoryName(options.SourceFiles[0])
+    for i in 1..3 do
+        let outFile = Path.Combine(outDir, $"TestLib_{i}.dll")
+        compileChecker.CompileFromCheckedProject(results, outFile) |> Async.RunImmediate |> ignore
+        Assert.True(File.Exists(outFile), $"Output DLL should exist: {outFile}")
+
+    let attribCountAfter = generatedCcu.Contents.Attribs.Length
+    Assert.Equal(attribCountBefore, attribCountAfter)

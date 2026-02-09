@@ -651,7 +651,14 @@ type FSharpChecker
                 | Some files -> files
                 | None -> failwith "CompileFromCheckedProject: keepAssemblyContents must be true"
 
-            generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
+            // Save and restore CCU attribs to prevent quadratic growth on repeated compile calls.
+            let originalAttribs = generatedCcu.Contents.Attribs
+            generatedCcu.Contents.SetAttribs(originalAttribs @ topAttrs.assemblyAttrs)
+
+            use _restoreAttribs =
+                { new System.IDisposable with
+                    member _.Dispose() =
+                        generatedCcu.Contents.SetAttribs(originalAttribs) }
 
             let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
 
