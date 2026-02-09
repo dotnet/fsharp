@@ -152,7 +152,6 @@ let newIlxPubCloEnv (ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFi
 
 let mkILTyFuncTy cenv = cenv.mkILTyFuncTy
 
-// Convert void* to IntPtr for FSharpFunc type arguments (https://github.com/dotnet/fsharp/issues/11132).
 let private fixVoidPtrForGenericArg (ilg: ILGlobals) ty =
     match ty with
     | ILType.Ptr ILType.Void -> ilg.typ_IntPtr
@@ -412,8 +411,6 @@ let mkILFreeVarForParam (p: ILParameter) =
 
 let mkILLocalForFreeVar (p: IlxClosureFreeVar) = mkILLocal p.fvType None
 
-/// Generate a unique free variable name to avoid duplicate parameter names in closure constructors
-/// (https://github.com/dotnet/fsharp/issues/17692).
 let mkUniqueFreeVarName (baseName: string) (existingFields: IlxClosureFreeVar[]) =
     let existingNames = existingFields |> Array.map (fun fv -> fv.fvName) |> Set.ofArray
 
@@ -581,7 +578,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                 let convil = convILMethodBody (Some nowCloSpec, boxReturnTy) clo.cloCode.Value
 
-                // Strip constraints from type params for Specialize<'T> override (https://github.com/dotnet/fsharp/issues/14492)
                 let specializeGenParams = addedGenParams |> List.map stripILGenericParamConstraints
 
                 let nowApplyMethDef =

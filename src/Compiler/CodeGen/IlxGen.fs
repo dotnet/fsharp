@@ -2507,7 +2507,6 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     let mutable hasDebugPoints = false
     let mutable anyDocument = None // we collect an arbitrary document in order to emit the header FeeFee if needed
 
-    /// See https://github.com/dotnet/fsharp/issues/13447
     let mutable hasStackAllocatedLocals = false
 
     let codeLabelToPC: Dictionary<ILCodeLabel, int> = Dictionary<_, _>(10)
@@ -3332,7 +3331,6 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
         match TryEliminateDesugaredConstants g m c with
         | Some e -> GenExpr cenv cgbuf eenv e Continue
         | None ->
-            // Get the underlying IL type for boxing (https://github.com/dotnet/fsharp/issues/18319)
             let underlyingIlTyOpt =
                 match c with
                 | Const.Bool _ -> Some g.ilg.typ_Bool
@@ -4553,7 +4551,6 @@ and CanTailcall
     // Can't tailcall with a struct object arg since it involves a byref
     // Can't tailcall with a .NET 2.0 generic constrained call since it involves a byref
     // Can't tailcall when there are pinned locals since the stack frame must remain alive
-    // Can't tailcall when localloc has been used (issue #13447)
     let hasPinnedLocals = cgbuf.HasPinnedLocals()
     let hasStackAllocatedLocals = cgbuf.HasStackAllocatedLocals()
 
@@ -4788,7 +4785,7 @@ and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
 //--------------------------------------------------------------------------
 
 /// Emit IL to cast a caught object to Exception, wrapping non-Exception objects
-/// in RuntimeWrappedException (https://github.com/dotnet/fsharp/issues/18374).
+/// in RuntimeWrappedException.
 and EmitCastOrWrapNonExceptionThrow (cenv: cenv) (cgbuf: CodeGenBuffer) =
     let g = cenv.g
     let iltyp_RuntimeWrappedException = g.iltyp_RuntimeWrappedException
@@ -5528,7 +5525,6 @@ and GenILCall
         (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
         && ilMethRef.CallingConv.IsInstance
 
-    // Compute constrained call for value types (https://github.com/dotnet/fsharp/issues/18140)
     let ccallInfo =
         match ccallInfo with
         | Some _ -> ccallInfo
@@ -5963,8 +5959,6 @@ and GenActualSlotsig
     let instForSlotSig =
         mkTyparInst (ctps @ mtps) (interfaceTypeArgs @ generalizeTypars methTyparsOfOverridingMethod)
 
-    // Skip nativeptr->pointer conversion when the slot has nativeptr with interface type parameters
-    // that are instantiated to concrete types (https://github.com/dotnet/fsharp/issues/14508)
     let interfaceTypeArgsAreConcrete =
         not ctps.IsEmpty
         && (freeInTypes CollectTypars interfaceTypeArgs).FreeTypars.IsEmpty
@@ -7031,7 +7025,6 @@ and GenLambda cenv cgbuf eenv isLocalTypeFunc thisVars expr sequel =
 
 and GenTypeOfVal cenv eenv (v: Val) = GenType cenv v.Range eenv.tyenv v.Type
 
-/// Byref fields are not valid in classes (https://github.com/dotnet/fsharp/issues/19068).
 and capturedTypeForFreeVar (g: TcGlobals) (fv: Val) =
     if isByrefTy g fv.Type then
         destByrefTy g fv.Type
@@ -8345,7 +8338,6 @@ and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFi
     GenExpr cenv cgbuf eenv e2 Continue
     CG.EmitInstr cgbuf (pop 2) Push0 (mkNormalStfld (mkILFieldSpec (ilField.FieldRef, ilxCloSpec.ILType)))
 
-/// Check if a binding's expression is a lambda/closure (https://github.com/dotnet/fsharp/issues/16546).
 and isLambdaBinding (TBind(_, expr, _)) =
     match stripDebugPoints expr with
     | Expr.Lambda _
@@ -8353,7 +8345,6 @@ and isLambdaBinding (TBind(_, expr, _)) =
     | Expr.Obj _ -> true
     | _ -> false
 
-/// Reorder bindings so lambda bindings come before non-lambda bindings.
 and reorderBindingsLambdasFirst binds =
     let lambdas, nonLambdas = binds |> List.partition isLambdaBinding
     lambdas @ nonLambdas
@@ -9159,7 +9150,6 @@ and GenParams
             let inFlag, outFlag, optionalFlag, defaultParamValue, Marshal, attribs =
                 GenParamAttribs cenv methodArgTy topArgInfo.Attribs
 
-            // Merge in/out flags from slot signature (https://github.com/dotnet/fsharp/issues/13468)
             let inFlag, outFlag =
                 match slotSigParamFlags with
                 | Some flags when paramIdx < flags.Length ->
@@ -9558,7 +9548,6 @@ and GenMethodForBinding
 
     let ilTypars = GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
 
-    // Extract in/out flags from slot signature (https://github.com/dotnet/fsharp/issues/13468)
     let slotSigParamFlags =
         match v.ImplementedSlotSigs with
         | slotsig :: _ ->
@@ -10030,7 +10019,7 @@ and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage storeSeq
         CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdarg0; mkNormalLdfld ilField ]
         CommitGetStorageSequel cenv cgbuf eenv m ty localCloInfo storeSequel
 
-/// Load free variables for closure capture, dereferencing byrefs (https://github.com/dotnet/fsharp/issues/19068).
+/// Load free variables for closure capture, dereferencing byrefs.
 and GenGetFreeVarForClosure cenv cgbuf eenv m (fv: Val) =
     let g = cenv.g
     GenGetLocalVal cenv cgbuf eenv m fv None
@@ -10165,7 +10154,6 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
         // Don't use shadow locals for things like functions which are not compiled as static values/properties
         && (not eenv.realsig)
         && IsCompiledAsStaticProperty cenv.g v
-        // Don't use shadow locals for literal values (https://github.com/dotnet/fsharp/issues/18956)
         && Option.isNone v.LiteralValue
 
     let optShadowLocal, eenv =
@@ -10938,7 +10926,6 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         | SynMemberKind.Constructor
         | SynMemberKind.Member ->
             let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttrs)
-            // SpecialName for generated event accessors (https://github.com/dotnet/fsharp/issues/5834)
             let mdef =
                 if vref.Deref.val_flags.IsGeneratedEventVal then
                     mdef.WithSpecialName
@@ -11963,7 +11950,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     //
                     // Also discard the F#-compiler supplied implementation of the Empty, IsEmpty, Value and None properties.
 
-                    // For AllHelpers, nullary cases generate static properties with the case name (e.g., "Overheated")
                     let nullaryCaseNames =
                         if cuinfo.HasHelpers = AllHelpers || cuinfo.HasHelpers = NoHelpers then
                             cuinfo.UnionCases
@@ -12120,7 +12106,6 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
             match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
             | Some serializationInfoType, Some streamingContextType ->
 
-                // Deserialization constructor: restore fields from SerializationInfo
                 let ilInstrsToRestoreFields =
                     [
                         for (ilPropName, ilFieldName, ilPropType, _) in fieldNamesAndTypes do
@@ -12178,7 +12163,6 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         mkMethodBody (false, [], 8, ilInstrsForSerialization, None, eenv.imports)
                     )
 
-                // GetObjectData override to serialize fields
                 let ilInstrsToSaveFields =
                     [
                         for (ilPropName, ilFieldName, ilPropType, _) in fieldNamesAndTypes do

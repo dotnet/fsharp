@@ -455,8 +455,6 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, retTy: ILTy
                 | ILType.Array(sh1, t1), ILType.Array(sh2, t2) -> sh1 = sh2 && compareILTypes t1 t2
                 | ILType.Modified(req1, tref1, t1), ILType.Modified(req2, tref2, t2) -> 
                     req1 = req2 && tref1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, tref2 :> obj) && compareILTypes t1 t2
-                // Handle case where Modified wrapper is present on one side but not the other
-                // This can happen with inref/outref parameters where slot signatures have the modifier but implementations don't
                 | ILType.Modified(_, _, t1), t2 -> compareILTypes t1 t2
                 | t1, ILType.Modified(_, _, t2) -> compareILTypes t1 t2
                 | _ -> o1 = o2
