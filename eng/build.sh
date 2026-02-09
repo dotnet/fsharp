@@ -226,6 +226,9 @@ function Test() {
     exit 1
   fi
 
+  projectname=$(basename -- "$testproject")
+  projectname="${projectname%.*}"
+  testlogfilename="${projectname}_${targetframework}.xml"
   testresultsdir="$artifacts_dir/TestResults/$configuration"
   
   # MTP requires --solution flag for .sln files
@@ -235,9 +238,14 @@ function Test() {
     testtarget="--project"
   fi
 
-  # Use spekt/testlogger (XunitXml.TestLogger) for xUnit v2 XML output.
-  # {assembly} and {framework} tokens produce one file per test assembly, avoiding overwrites.
-  args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-spekt-xunit "LogFileName={assembly}_{framework}.xml;LogFilePath=$testresultsdir" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+  # When testing a solution, omit --report-xunit-filename so each test project's MTP runner
+  # auto-generates a unique filename per assembly. With an explicit static filename, all
+  # projects in the solution overwrite the same file and only the last assembly's results survive.
+  if [[ "$testproject" == *.sln ]]; then
+    args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+  else
+    args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit --report-xunit-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+  fi
 
   "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
 }

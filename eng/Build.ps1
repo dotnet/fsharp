@@ -365,9 +365,15 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     # MTP requires --solution flag for .sln files
     $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
     
-    # Use spekt/testlogger (XunitXml.TestLogger) for xUnit v2 XML output.
-    # {assembly} and {framework} tokens produce one file per test assembly, avoiding overwrites.
-    $reportArgs = "--report-spekt-xunit ""LogFileName={assembly}_{framework}.xml;LogFilePath=$testResultsDir"""
+    # When testing a solution, omit --report-xunit-filename so each test project's MTP runner
+    # auto-generates a unique filename per assembly. With an explicit static filename, all
+    # projects in the solution overwrite the same file and only the last assembly's results survive.
+    if ($testProject.EndsWith('.sln')) {
+        $reportArgs = "--report-xunit"
+    } else {
+        $testLogFileName = "${projectName}_${targetFramework}.xml"
+        $reportArgs = "--report-xunit --report-xunit-filename ""$testLogFileName"""
+    }
     
     $test_args = "test $testTarget -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
     # MTP HangDump extension replaces VSTest --blame-hang-timeout
@@ -384,7 +390,17 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $test_args += " $settings"
 
     Write-Host("$test_args")
-    Exec-Console $dotnetExe $test_args
+    
+    try {
+        Exec-Console $dotnetExe $test_args
+    } finally {
+        # MTP auto-generates .xunit extension when --report-xunit-filename is omitted (solution runs).
+        # Rename to .xml so the CI pipeline's PublishTestResults task recognizes them.
+        if ($testProject.EndsWith('.sln')) {
+            Get-ChildItem -Path $testResultsDir -Filter "*.xunit" -ErrorAction SilentlyContinue | 
+                Rename-Item -NewName { $_.Name -replace '\.xunit$', '.xml' } -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function Prepare-TempDir() {
