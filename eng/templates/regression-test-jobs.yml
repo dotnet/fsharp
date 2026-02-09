@@ -65,11 +65,13 @@ jobs:
           Write-Host "Build command is a built-in dotnet command:  $buildScript"
           Write-Host "Skipping file existence check for built-in command"
         } else {
-          Write-Host "Verifying build script exists:  $buildScript"
-          if (Test-Path $buildScript) {
-            Write-Host "Build script found: $buildScript"
+          # Extract just the script file name (first token) for existence check
+          $scriptFile = ($buildScript -split ' ', 2)[0]
+          Write-Host "Verifying build script exists:  $scriptFile"
+          if (Test-Path $scriptFile) {
+            Write-Host "Build script found: $scriptFile"
           } else {
-            Write-Host "Build script not found:  $buildScript"
+            Write-Host "Build script not found:  $scriptFile"
             Write-Host "Available files in root:"
             Get-ChildItem
             exit 1
@@ -182,12 +184,13 @@ jobs:
           }
         } elseif ($IsWindows) {
           Write-Host "Executing file-based script: $buildScript"
-          & ".\$buildScript" 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
+          cmd /c ".\$buildScript" 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
             Process-BuildOutput $_
           }
         } else {
           Write-Host "Executing file-based script: $buildScript"
-          chmod +x "$buildScript"
+          $scriptFile = ($buildScript -split ' ', 2)[0]
+          chmod +x "$scriptFile"
           bash -c "./$buildScript" 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
             Process-BuildOutput $_
           }
