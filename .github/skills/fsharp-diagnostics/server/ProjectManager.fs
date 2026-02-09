@@ -56,3 +56,12 @@ type ProjectManager(checker: FSharpChecker) =
             match fsprojPath with
             | Some p -> cache.Remove(normalize p) |> ignore
             | None -> cache.Clear())
+
+    member _.CacheCount = lock gate (fun () -> cache.Count)
+
+    member _.HasCachedProject(fsprojPath: string) =
+        lock gate (fun () -> cache.ContainsKey(normalize fsprojPath))
+
+    member _.InjectTestEntry(fsprojPath: string, options: FSharpProjectOptions) =
+        let key = normalize fsprojPath
+        lock gate (fun () -> cache.[key] <- (System.DateTime.MinValue, options))
