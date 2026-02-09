@@ -1,12 +1,11 @@
 module FSharpDiagServer.ProjectManager
 
-open System.Collections.Generic
+open System.Collections.Concurrent
 open System.IO
 open FSharp.Compiler.CodeAnalysis
 
 type ProjectManager(checker: FSharpChecker) =
-    let cache = Dictionary<string, System.DateTime * FSharpProjectOptions>()
-    let gate = obj ()
+    let cache = ConcurrentDictionary<string, System.DateTime * FSharpProjectOptions>()
 
     let isSourceFile (s: string) =
         not (s.StartsWith("-"))
@@ -19,12 +18,12 @@ type ProjectManager(checker: FSharpChecker) =
         async {
             let key = normalize fsprojPath
             let fsprojMtime = File.GetLastWriteTimeUtc(key)
+
             let current =
-                lock gate (fun () ->
-                    match cache.TryGetValue(key) with
-                    | true, (mtime, opts) when mtime = fsprojMtime -> Some opts
-                    | true, _ -> cache.Remove(key) |> ignore; None
-                    | false, _ -> None)
+                match cache.TryGetValue(key) with
+                | true, (mtime, opts) when mtime = fsprojMtime -> Some opts
+                | true, _ -> cache.TryRemove(key) |> ignore; None
+                | false, _ -> None
 
             match current with
             | Some opts -> return Ok opts
@@ -47,21 +46,20 @@ type ProjectManager(checker: FSharpChecker) =
                     let flagsOnly = resolvedArgs |> Array.filter (not << isSourceFile)
                     let opts = checker.GetProjectOptionsFromCommandLineArgs(key, flagsOnly)
                     let options = { opts with SourceFiles = sourceFiles }
-                    lock gate (fun () -> cache.[key] <- (fsprojMtime, options))
+                    cache.[key] <- (fsprojMtime, options)
                     return Ok options
         }
 
     member _.Invalidate(?fsprojPath: string) =
-        lock gate (fun () ->
-            match fsprojPath with
-            | Some p -> cache.Remove(normalize p) |> ignore
-            | None -> cache.Clear())
+        match fsprojPath with
+        | Some p -> cache.TryRemove(normalize p) |> ignore
+        | None -> cache.Clear()
 
-    member internal _.CacheCount = lock gate (fun () -> cache.Count)
+    member internal _.CacheCount = cache.Count
 
     member internal _.HasCachedProject(fsprojPath: string) =
-        lock gate (fun () -> cache.ContainsKey(normalize fsprojPath))
+        cache.ContainsKey(normalize fsprojPath)
 
     member internal _.InjectTestEntry(fsprojPath: string, options: FSharpProjectOptions) =
         let key = normalize fsprojPath
-        lock gate (fun () -> cache.[key] <- (System.DateTime.MinValue, options))
+        cache.[key] <- (System.DateTime.MinValue, options)

@@ -14,16 +14,13 @@ let ``DtbResult can hold compiler args`` () =
     Assert.Equal(2, result.CompilerArgs.Length)
     Assert.Equal("--debug", result.CompilerArgs.[0])
 
-[<Fact>]
-let ``custom DtbConfig overrides default values`` () =
-    let config = { TargetFramework = Some "net8.0"; Configuration = "Debug" }
-    Assert.Equal(Some "net8.0", config.TargetFramework)
-    Assert.Equal("Debug", config.Configuration)
-
-[<Fact>]
-let ``DtbConfig with no TargetFramework`` () =
-    let config = { TargetFramework = None; Configuration = "Release" }
-    Assert.Equal(None, config.TargetFramework)
+[<Theory>]
+[<InlineData("net8.0", "Debug")>]
+[<InlineData(null, "Release")>]
+let ``DtbConfig construction preserves values`` (tfm: string, cfg: string) =
+    let config = { TargetFramework = Option.ofObj tfm; Configuration = cfg }
+    Assert.Equal(Option.ofObj tfm, config.TargetFramework)
+    Assert.Equal(cfg, config.Configuration)
 
 [<Fact>]
 let ``DtbResult with empty CompilerArgs`` () =

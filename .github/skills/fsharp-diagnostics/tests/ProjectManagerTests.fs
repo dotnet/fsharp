@@ -122,3 +122,62 @@ let ``ResolveProjectOptions returns Error for nonexistent project`` () =
             |> Async.RunSynchronously
             |> ignore)
     Assert.NotNull(ex)
+
+[<Fact>]
+let ``Concurrent InjectTestEntry and Invalidate do not corrupt cache`` () =
+    let mgr = createManager ()
+    let iterations = 100
+    let tasks =
+        [| for i in 0 .. iterations - 1 do
+            async {
+                let path = $"/concurrent_{i}.fsproj"
+                mgr.InjectTestEntry(path, dummyOptions path)
+                mgr.Invalidate(path)
+            } |]
+    tasks |> Async.Parallel |> Async.RunSynchronously |> ignore
+    // After all inject+invalidate pairs, cache should be empty
+    Assert.Equal(0, mgr.CacheCount)
+
+[<Fact>]
+let ``Concurrent InjectTestEntry from multiple threads`` () =
+    let mgr = createManager ()
+    let count = 50
+    let tasks =
+        [| for i in 0 .. count - 1 do
+            async {
+                let path = $"/parallel_{i}.fsproj"
+                mgr.InjectTestEntry(path, dummyOptions path)
+            } |]
+    tasks |> Async.Parallel |> Async.RunSynchronously |> ignore
+    Assert.Equal(count, mgr.CacheCount)
+
+[<Fact>]
+let ``Invalidate specific during concurrent reads preserves other entries`` () =
+    let mgr = createManager ()
+    for i in 0 .. 9 do
+        mgr.InjectTestEntry($"/stable_{i}.fsproj", dummyOptions $"/stable_{i}.fsproj")
+    let tasks =
+        [| for i in 0 .. 4 do
+            async {
+                mgr.Invalidate($"/stable_{i}.fsproj")
+            }
+           for i in 5 .. 9 do
+            async {
+                Assert.True(mgr.HasCachedProject($"/stable_{i}.fsproj"))
+            } |]
+    tasks |> Async.Parallel |> Async.RunSynchronously |> ignore
+    // First 5 removed, last 5 remain
+    Assert.Equal(5, mgr.CacheCount)
+
+[<Fact>]
+let ``ResolveProjectOptions error does not pollute cache`` () =
+    let mgr = createManager ()
+    mgr.InjectTestEntry("/good.fsproj", dummyOptions "/good.fsproj")
+    // Attempting to resolve a nonexistent project should not affect existing cache
+    try
+        mgr.ResolveProjectOptions("/nonexistent/bad.fsproj")
+        |> Async.RunSynchronously
+        |> ignore
+    with _ -> ()
+    Assert.Equal(1, mgr.CacheCount)
+    Assert.True(mgr.HasCachedProject("/good.fsproj"))

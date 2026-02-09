@@ -83,7 +83,10 @@ let startServer (config: ServerConfig) =
                             let! parseResults, checkAnswer = checker.ParseAndCheckFileInProject(file, version, sourceText, options)
                             let diags =
                                 match checkAnswer with
-                                | FSharpCheckFileAnswer.Succeeded r -> Array.append parseResults.Diagnostics r.Diagnostics
+                                | FSharpCheckFileAnswer.Succeeded r ->
+                                    if parseResults.Diagnostics.Length = 0 then r.Diagnostics
+                                    elif r.Diagnostics.Length = 0 then parseResults.Diagnostics
+                                    else Array.append parseResults.Diagnostics r.Diagnostics
                                 | FSharpCheckFileAnswer.Aborted -> parseResults.Diagnostics
                                 |> Array.distinctBy (fun d -> d.StartLine, d.Start.Column, d.ErrorNumberText)
                             return DiagnosticsFormatter.formatFile diags
@@ -134,11 +137,11 @@ let startServer (config: ServerConfig) =
                                 | Some symbolUse ->
                                     let! projectResults = checker.ParseAndCheckProject(options)
                                     // Collect related symbols: for DU types, also search union cases
-                                    let targetNames = ResizeArray<string>()
-                                    targetNames.Add(symbolUse.Symbol.FullName)
+                                    let targetNames = System.Collections.Generic.HashSet<string>()
+                                    targetNames.Add(symbolUse.Symbol.FullName) |> ignore
                                     match symbolUse.Symbol with
                                     | :? FSharpEntity as ent when ent.IsFSharpUnion ->
-                                        for uc in ent.UnionCases do targetNames.Add(uc.FullName)
+                                        for uc in ent.UnionCases do targetNames.Add(uc.FullName) |> ignore
                                     | _ -> ()
                                     let uses =
                                         projectResults.GetAllUsesOfAllSymbols()
@@ -222,7 +225,6 @@ let startServer (config: ServerConfig) =
                         | Error msg ->
                             return $"ERROR: {msg}"
                         | Ok options ->
-                            // FSharpChecker caches project results; repeated calls return cached data.
                             let! results = checker.ParseAndCheckProject(options)
                             if results.HasCriticalErrors then
                                 let diags = DiagnosticsFormatter.formatProject config.RepoRoot results.Diagnostics
