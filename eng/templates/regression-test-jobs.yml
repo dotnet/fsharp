@@ -151,6 +151,18 @@ jobs:
 
     - pwsh: |
         Set-Location $(Pipeline.Workspace)/TestRepo
+        if (Test-Path ".config/dotnet-tools.json") {
+          Write-Host "Restoring dotnet tools..."
+          dotnet tool restore
+          Write-Host "Tool restore exit code: $LASTEXITCODE"
+        } else {
+          Write-Host "No dotnet-tools.json found, skipping tool restore"
+        }
+      displayName: Restore dotnet tools for ${{ item.displayName }}
+      continueOnError: true
+
+    - pwsh: |
+        Set-Location $(Pipeline.Workspace)/TestRepo
         Write-Host "============================================"
         Write-Host "Starting build for ${{ item.displayName }}"
         Write-Host "Repository: ${{ item.repo }}"
