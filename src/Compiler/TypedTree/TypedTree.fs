@@ -4355,16 +4355,21 @@ type RecdFieldRef =
 type Nullness = 
    | Known of NullnessInfo
    | Variable of NullnessVar
+   | KnownFromConstructor
 
    member n.Evaluate() = 
        match n with 
        | Known info -> info
        | Variable v -> v.Evaluate()
+       | KnownFromConstructor -> NullnessInfo.WithoutNull
 
    member n.TryEvaluate() = 
        match n with 
        | Known info -> ValueSome info
        | Variable v -> v.TryEvaluate()
+       | KnownFromConstructor -> ValueSome NullnessInfo.WithoutNull
+
+   member n.IsFromConstructor = match n with KnownFromConstructor -> true | _ -> false
 
    override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
 
@@ -4391,11 +4396,14 @@ type NullnessVar() =
         match solution with
         | None -> false
         | Some (Nullness.Known _) -> true
+        | Some (Nullness.KnownFromConstructor) -> true
         | Some (Nullness.Variable v) -> v.IsFullySolved
 
     member nv.Set(nullness) = 
        assert (not nv.IsSolved) 
-       solution <- Some nullness
+       match nullness with
+       | Nullness.KnownFromConstructor -> solution <- Some (Nullness.Known NullnessInfo.WithoutNull)
+       | _ -> solution <- Some nullness
 
     member nv.Unset() = 
        assert nv.IsSolved

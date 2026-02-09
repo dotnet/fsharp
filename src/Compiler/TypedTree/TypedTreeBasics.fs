@@ -188,6 +188,7 @@ let KnownAmbivalentToNull = Nullness.Known NullnessInfo.AmbivalentToNull
 let KnownWithNull = Nullness.Known NullnessInfo.WithNull
 
 let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
+let KnownWithoutNullFromCtor = Nullness.KnownFromConstructor
 
 let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
@@ -283,6 +284,7 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
 let addNullnessToTy (nullness: Nullness) (ty:TType) =
     match nullness with
     | Nullness.Known NullnessInfo.WithoutNull -> ty
+    | Nullness.KnownFromConstructor -> ty
     | Nullness.Variable nv when nv.IsFullySolved && nv.TryEvaluate() = ValueSome NullnessInfo.WithoutNull -> ty
     | _ -> 
     match ty with

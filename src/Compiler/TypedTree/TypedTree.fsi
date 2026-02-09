@@ -3102,10 +3102,13 @@ type NullnessInfo =
 type Nullness =
     | Known of NullnessInfo
     | Variable of NullnessVar
+    | KnownFromConstructor
 
     member Evaluate: unit -> NullnessInfo
 
     member TryEvaluate: unit -> NullnessInfo voption
+
+    member IsFromConstructor: bool
 
     member ToFsharpCodeString: unit -> string
 
