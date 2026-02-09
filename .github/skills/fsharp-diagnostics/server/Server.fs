@@ -37,14 +37,7 @@ let startServer (config: ServerConfig) =
         let mutable lastActivity = DateTimeOffset.UtcNow
         let cts = new CancellationTokenSource()
 
-        let resolveProject (filePath: string) =
-            let rel = filePath.Replace(config.RepoRoot.TrimEnd('/') + "/", "")
-            if rel.StartsWith("tests/FSharp.Compiler.ComponentTests/") then
-                Path.Combine(config.RepoRoot, "tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj")
-            else
-                Path.Combine(config.RepoRoot, "src/Compiler/FSharp.Compiler.Service.fsproj")
-
-        let getOptions (filePath: string) = projectMgr.ResolveProjectOptions(resolveProject filePath)
+        let getOptions (filePath: string) = projectMgr.ResolveProjectOptions(ProjectRouting.resolveProject config.RepoRoot filePath)
 
         let handleRequest (json: string) =
             async {

@@ -30,6 +30,7 @@
   <ItemGroup>
     <Compile Include="DesignTimeBuild.fs" />
     <Compile Include="ProjectManager.fs" />
+    <Compile Include="ProjectRouting.fs" />
     <Compile Include="DiagnosticsFormatter.fs" />
     <Compile Include="Server.fs" />
     <Compile Include="Program.fs" />
