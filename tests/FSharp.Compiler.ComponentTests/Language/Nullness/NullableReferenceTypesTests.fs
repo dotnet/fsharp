@@ -1768,30 +1768,24 @@ let result = consumeNonNull nullableValue
     ]
 
 // https://github.com/dotnet/fsharp/issues/18334
-[<Fact>]
-let ``Type extension with not null constraint on ILookup should compile - Regression18334`` () =
-    FSharp """module TestModule
+let private iLookupTypeExtensionSource = """
 open System.Collections.Generic
 open System.Linq
 
 type ILookup<'Key, 'Value when 'Key : not null> with
     static member Empty = Seq.empty<KeyValuePair<'Key,'Value>>.ToLookup((fun kv -> kv.Key), (fun kv -> kv.Value))
 """
+
+[<Fact>]
+let ``Type extension with not null constraint on ILookup should compile - Regression18334`` () =
+    FSharp ("module TestModule" + iLookupTypeExtensionSource)
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
 [<Fact>]
 let ``Type extension not null constraint rejects nullable type arg at call site`` () =
-    FSharp """module TestModule
-open System.Collections.Generic
-open System.Linq
-
-type ILookup<'Key, 'Value when 'Key : not null> with
-    static member Empty = Seq.empty<KeyValuePair<'Key,'Value>>.ToLookup((fun kv -> kv.Key), (fun kv -> kv.Value))
-
-let badLookup : ILookup<string | null, int> = ILookup.Empty
-"""
+    FSharp ("module TestModule" + iLookupTypeExtensionSource + "\nlet badLookup : ILookup<string | null, int> = ILookup.Empty\n")
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
@@ -1801,15 +1795,7 @@ let badLookup : ILookup<string | null, int> = ILookup.Empty
 
 [<Fact>]
 let ``Type extension not null constraint accepts non-null type arg at call site`` () =
-    FSharp """module TestModule
-open System.Collections.Generic
-open System.Linq
-
-type ILookup<'Key, 'Value when 'Key : not null> with
-    static member Empty = Seq.empty<KeyValuePair<'Key,'Value>>.ToLookup((fun kv -> kv.Key), (fun kv -> kv.Value))
-
-let goodLookup : ILookup<string, int> = ILookup.Empty
-"""
+    FSharp ("module TestModule" + iLookupTypeExtensionSource + "\nlet goodLookup : ILookup<string, int> = ILookup.Empty\n")
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
