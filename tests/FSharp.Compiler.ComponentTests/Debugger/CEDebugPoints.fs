@@ -4,22 +4,15 @@ namespace Debugger
 
 open Xunit
 open FSharp.Test.Compiler
+open Debugger.DebuggerTestHelpers
 
 /// https://github.com/dotnet/fsharp/issues/19248
 /// https://github.com/dotnet/fsharp/issues/19255
 module CEDebugPoints =
 
-    let private verifyCEMethodDebugPoints source methodName expectedSequencePoints =
-        FSharp source
-        |> asLibrary
-        |> withPortablePdb
-        |> compile
-        |> shouldSucceed
-        |> verifyPdb [ VerifyMethodSequencePoints(methodName, expectedSequencePoints) ]
-
     [<Fact>]
     let ``Return in async CE - debug point covers full expression`` () =
-        verifyCEMethodDebugPoints """
+        verifyMethodDebugPoints """
 module TestModule
 
 let a =
@@ -30,7 +23,7 @@ let a =
 
     [<Fact>]
     let ``Yield in seq CE - debug point on yield value`` () =
-        verifyCEMethodDebugPoints """
+        verifyMethodDebugPoints """
 module TestModule
 
 let a =
@@ -41,7 +34,7 @@ let a =
 
     [<Fact>]
     let ``ReturnFrom in async CE - debug point covers full expression`` () =
-        verifyCEMethodDebugPoints """
+        verifyMethodDebugPoints """
 module TestModule
 
 let a =
@@ -52,7 +45,7 @@ let a =
 
     [<Fact>]
     let ``YieldFrom in CE - debug point covers full expression`` () =
-        verifyCEMethodDebugPoints """
+        verifyMethodDebugPoints """
 module TestModule
 
 type Wrapper<'a> = Wrapper of 'a list
@@ -74,7 +67,7 @@ let a =
 
     [<Fact>]
     let ``Use in task CE - no extra out-of-order sequence point`` () =
-        verifyCEMethodDebugPoints """
+        verifyMethodDebugPoints """
 module TestModule
 
 open System

@@ -45,9 +45,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor(int32 pc,
-                                 class [runtime]System.Tuple`2<int32,int32> current) cil managed
+    .method public specialname rtspecialname instance void  .ctor(int32 pc, class [runtime]System.Tuple`2<int32,int32> current) cil managed
     {
       
       .maxstack  8
@@ -77,47 +75,49 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_003b
+      IL_001c:  br.s       IL_003d
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0051
+      IL_001f:  br.s       IL_0053
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_0058
+      IL_0022:  br.s       IL_005a
 
       IL_0024:  nop
-      IL_0025:  ldarg.0
-      IL_0026:  ldc.i4.1
-      IL_0027:  stfld      int32 assembly/seq1@9::pc
-      IL_002c:  ldarg.0
-      IL_002d:  ldc.i4.1
-      IL_002e:  ldc.i4.1
-      IL_002f:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                            !1)
-      IL_0034:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
-      IL_0039:  ldc.i4.1
-      IL_003a:  ret
+      IL_0025:  br.s       IL_0027
 
-      IL_003b:  ldarg.0
-      IL_003c:  ldc.i4.2
-      IL_003d:  stfld      int32 assembly/seq1@9::pc
-      IL_0042:  ldarg.0
-      IL_0043:  ldc.i4.2
-      IL_0044:  ldc.i4.2
-      IL_0045:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                            !1)
-      IL_004a:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
-      IL_004f:  ldc.i4.1
-      IL_0050:  ret
+      IL_0027:  ldarg.0
+      IL_0028:  ldc.i4.1
+      IL_0029:  stfld      int32 assembly/seq1@9::pc
+      IL_002e:  ldarg.0
+      IL_002f:  ldc.i4.1
+      IL_0030:  ldc.i4.1
+      IL_0031:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                                  !1)
+      IL_0036:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
+      IL_003b:  ldc.i4.1
+      IL_003c:  ret
 
-      IL_0051:  ldarg.0
-      IL_0052:  ldc.i4.3
-      IL_0053:  stfld      int32 assembly/seq1@9::pc
-      IL_0058:  ldarg.0
-      IL_0059:  ldnull
-      IL_005a:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
-      IL_005f:  ldc.i4.0
-      IL_0060:  ret
+      IL_003d:  ldarg.0
+      IL_003e:  ldc.i4.2
+      IL_003f:  stfld      int32 assembly/seq1@9::pc
+      IL_0044:  ldarg.0
+      IL_0045:  ldc.i4.2
+      IL_0046:  ldc.i4.2
+      IL_0047:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                                  !1)
+      IL_004c:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
+      IL_0051:  ldc.i4.1
+      IL_0052:  ret
+
+      IL_0053:  ldarg.0
+      IL_0054:  ldc.i4.3
+      IL_0055:  stfld      int32 assembly/seq1@9::pc
+      IL_005a:  ldarg.0
+      IL_005b:  ldnull
+      IL_005c:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
+      IL_0061:  ldc.i4.0
+      IL_0062:  ret
     } 
 
     .method public strict virtual instance void Close() cil managed
@@ -144,26 +144,28 @@
       IL_001b:  br.s       IL_0029
 
       IL_001d:  nop
-      IL_001e:  br.s       IL_002e
+      IL_001e:  br.s       IL_0030
 
       IL_0020:  nop
-      IL_0021:  br.s       IL_002c
+      IL_0021:  br.s       IL_002e
 
       IL_0023:  nop
-      IL_0024:  br.s       IL_002a
+      IL_0024:  br.s       IL_002c
 
       IL_0026:  nop
-      IL_0027:  br.s       IL_002e
+      IL_0027:  br.s       IL_0030
 
       IL_0029:  nop
-      IL_002a:  ldc.i4.0
-      IL_002b:  ret
+      IL_002a:  br.s       IL_002c
 
       IL_002c:  ldc.i4.0
       IL_002d:  ret
 
       IL_002e:  ldc.i4.0
       IL_002f:  ret
+
+      IL_0030:  ldc.i4.0
+      IL_0031:  ret
     } 
 
     .method public strict virtual instance class [runtime]System.Tuple`2<int32,int32> get_LastGenerated() cil managed
@@ -451,8 +453,8 @@
     IL_005b:  ldc.i4.1
     IL_005c:  ldc.i4.s   10
     IL_005e:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                     int32,
-                                                                                                                                                                     int32)
+                                                                                                                                                                           int32,
+                                                                                                                                                                           int32)
     IL_0063:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0068:  dup
     IL_0069:  stsfld     class [runtime]System.Collections.Generic.IEnumerable`1<int32> '<StartupCode$assembly>'.$assembly::aseq@7
@@ -460,16 +462,16 @@
     IL_006f:  ldc.i4.1
     IL_0070:  ldc.i4.1
     IL_0071:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                          !1)
+                                                                                                !1)
     IL_0076:  ldc.i4.2
     IL_0077:  ldc.i4.2
     IL_0078:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                          !1)
+                                                                                                !1)
     IL_007d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>>::get_Empty()
     IL_0082:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>>::Cons(!0,
-                                                                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+                                                                                                                                                                                                                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0087:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>>::Cons(!0,
-                                                                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+                                                                                                                                                                                                                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_008c:  dup
     IL_008d:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>> '<StartupCode$assembly>'.$assembly::list1@8
     IL_0092:  stloc.3
@@ -487,14 +489,14 @@
     IL_00aa:  ldc.i4.1
     IL_00ab:  ldc.i4.1
     IL_00ac:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                          !1)
+                                                                                                !1)
     IL_00b1:  stelem     class [runtime]System.Tuple`2<int32,int32>
     IL_00b6:  dup
     IL_00b7:  ldc.i4.1
     IL_00b8:  ldc.i4.2
     IL_00b9:  ldc.i4.2
     IL_00ba:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                          !1)
+                                                                                                !1)
     IL_00bf:  stelem     class [runtime]System.Tuple`2<int32,int32>
     IL_00c4:  dup
     IL_00c5:  stsfld     class [runtime]System.Tuple`2<int32,int32>[] '<StartupCode$assembly>'.$assembly::array1@10
@@ -578,9 +580,9 @@
     IL_0193:  call       int32[0...,0...] assembly::get_a3()
     IL_0198:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Base2<int32>(!!0[0...,0...])
     IL_019d:  newobj     instance void class [runtime]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
-                                                                                                      !1,
-                                                                                                      !2,
-                                                                                                      !3)
+                                                                                                            !1,
+                                                                                                            !2,
+                                                                                                            !3)
     IL_01a2:  stloc.s    V_15
     IL_01a4:  ldloc.s    V_15
     IL_01a6:  stloc.s    V_16
@@ -607,8 +609,8 @@
     IL_01d9:  call       int32[0...,0...,0...] assembly::get_array3D()
     IL_01de:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length3<int32>(!!0[0...,0...,0...])
     IL_01e3:  newobj     instance void class [runtime]System.Tuple`3<int32,int32,int32>::.ctor(!0,
-                                                                                                !1,
-                                                                                                !2)
+                                                                                                      !1,
+                                                                                                      !2)
     IL_01e8:  stloc.s    V_18
     IL_01ea:  ldloc.s    V_18
     IL_01ec:  stloc.s    V_19
@@ -641,9 +643,9 @@
     IL_022b:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
     IL_0230:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length4<int32>(!!0[0...,0...,0...,0...])
     IL_0235:  newobj     instance void class [runtime]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
-                                                                                                      !1,
-                                                                                                      !2,
-                                                                                                      !3)
+                                                                                                            !1,
+                                                                                                            !2,
+                                                                                                            !3)
     IL_023a:  stloc.s    V_21
     IL_023c:  ldloc.s    V_21
     IL_023e:  stloc.s    V_22
@@ -675,7 +677,6 @@
   } 
 
 } 
-
 
 
 

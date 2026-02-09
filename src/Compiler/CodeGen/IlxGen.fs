@@ -3556,8 +3556,7 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
                          //
                          // In both cases, any instructions that come after this point will be falsely associated with the last branch of the control
                          // prior to the join point. This is base, e.g. see FSharp 1.0 bug 5155
-                         if not (isNil stackAfterJoin) then
-                             cgbuf.EmitStartOfHiddenCode()
+                         cgbuf.EmitStartOfHiddenCode()
 
                          GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
                          Fake))

@@ -326,9 +326,11 @@
     <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="CompilerService\FSharpWorkspace.fs" />
     <Compile Include="CompilerService\DependencyGraph.fs" />
+    <Compile Include="Debugger\DebuggerTestHelpers.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Debugger\ForArrowDebugPoints.fs" />
     <Compile Include="Debugger\CEDebugPoints.fs" />
+    <Compile Include="Debugger\MatchEndSequencePoint.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
     <Compile Include="Diagnostics\Records.fs" />
