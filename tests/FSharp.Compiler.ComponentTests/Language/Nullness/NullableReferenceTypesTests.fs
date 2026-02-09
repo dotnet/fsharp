@@ -1732,7 +1732,6 @@ let result = bar |>! foo
     |> shouldFail
     |> withDiagnostics [Error 3261, Line 7, Col 14, Line 7, Col 17, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
 
-// https://github.com/dotnet/fsharp/issues/18021
 [<Fact>]
 let ``AllowNullLiteral type constructor call does not produce false positive - issue 18021`` () =
     FSharp """module Test
@@ -1764,6 +1763,7 @@ let result = consumeNonNull nullableValue
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
+        Error 3261, Line 8, Col 21, Line 8, Col 35, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
         Error 3261, Line 9, Col 29, Line 9, Col 42, "Nullness warning: The type 'MyClass | null' supports 'null' but a non-null type is expected."
     ]
 
@@ -2138,7 +2138,6 @@ let result = bar |> step
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
-// https://github.com/dotnet/fsharp/issues/18021
 [<Fact>]
 let ``Unchecked defaultof on AllowNullLiteral type does not warn when consumed directly`` () =
     FSharp """module Test
@@ -2169,7 +2168,7 @@ consumeNonNull x
     |> shouldSucceed
 
 [<Fact>]
-let ``AllowNullLiteral constructor and defaultof pass not null but explicit nullable warns`` () =
+let ``AllowNullLiteral constructor defaultof and explicit nullable all warn for not null constraint`` () =
     FSharp """module Test
 
 [<AllowNullLiteral>]
@@ -2187,11 +2186,14 @@ consumeNonNull nullable
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
+        Error 3261, Line 7, Col 17, Line 7, Col 26, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
+        Error 3261, Line 9, Col 17, Line 9, Col 45, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
+        Error 3261, Line 11, Col 16, Line 11, Col 30, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
         Error 3261, Line 12, Col 16, Line 12, Col 24, "Nullness warning: The type 'MyClass | null' supports 'null' but a non-null type is expected."
     ]
 
 [<Fact>]
-let ``Constructor of AllowNullLiteral type satisfies generic not null constraint`` () =
+let ``Constructor of AllowNullLiteral type warns for generic not null constraint`` () =
     FSharp """module Test
 
 [<AllowNullLiteral>]
@@ -2203,7 +2205,10 @@ let test () = consumeNonNull (MyClass())
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
-    |> shouldSucceed
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 8, Col 31, Line 8, Col 40, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
+    ]
 
 [<Fact>]
 let ``Static factory of AllowNullLiteral type checked against generic not null constraint`` () =
@@ -2219,7 +2224,10 @@ let test () = consumeNonNull (MyClass.Create())
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
-    |> shouldSucceed
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 9, Col 31, Line 9, Col 47, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
+    ]
 
 [<Fact>]
 let ``Let-bound AllowNullLiteral constructor result checked against generic not null constraint`` () =
@@ -2235,7 +2243,10 @@ let test () = consumeNonNull instance
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
-    |> shouldSucceed
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 9, Col 30, Line 9, Col 38, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
+    ]
 
 [<Fact>]
 let ``Explicit nullable AllowNullLiteral binding fails generic not null constraint`` () =
@@ -2253,6 +2264,7 @@ let test () = consumeNonNull maybeNull
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
+        Error 3261, Line 8, Col 17, Line 8, Col 31, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
         Error 3261, Line 9, Col 30, Line 9, Col 39, "Nullness warning: The type 'MyClass | null' supports 'null' but a non-null type is expected."
     ]
 

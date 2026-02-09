@@ -9337,24 +9337,19 @@ let TypeHasAllowNull (tcref:TyconRef) g m =
     not (isByrefLikeTyconRef g m tcref) && 
     (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true)
 
-let explicitNullnessOfTy g ty =
-    match stripTyEqns g ty with
-    | TType_app(_, _, nullness) | TType_fun(_, _, nullness) | TType_var(_, nullness) -> nullness
-    | _ -> g.knownWithoutNull
-
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
-    match (explicitNullnessOfTy g ty).Evaluate() with
-    | NullnessInfo.WithoutNull ->
-        (GetTyparTyIfSupportsNull g ty).IsSome
-    | NullnessInfo.WithNull ->
-        true
-    | NullnessInfo.AmbivalentToNull ->
-        (match tryTcrefOfAppTy g (stripTyEqns g ty) with
-         | ValueSome tcref -> TypeHasAllowNull tcref g m
-         | _ -> false)
-        ||
-        (GetTyparTyIfSupportsNull g ty).IsSome
+    let sty = stripTyparEqns ty
+    (match tryTcrefOfAppTy g sty with 
+     | ValueSome tcref -> TypeHasAllowNull tcref g m
+     | _ -> false) 
+    ||
+    (match (nullnessOfTy g sty).Evaluate() with 
+     | NullnessInfo.AmbivalentToNull -> false
+     | NullnessInfo.WithoutNull -> false
+     | NullnessInfo.WithNull -> true)
+    ||
+    (GetTyparTyIfSupportsNull g ty).IsSome
 
 /// The pre-nullness logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =
