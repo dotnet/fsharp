@@ -10,7 +10,7 @@ parameters:
 
 jobs:
 - ${{ each item in parameters.testMatrix }}:
-  - job: RegressionTest_${{ replace(item.displayName, '-', '_') }}_${{ replace(replace(item.repo, '/', '_'), '-', '_') }}
+  - job: RegressionTest_${{ replace(replace(item.displayName, '-', '_'), '.', '_') }}_${{ replace(replace(replace(item.repo, '/', '_'), '-', '_'), '.', '_') }}
     displayName:  '${{ item.displayName }} Regression Test'
     dependsOn: ${{ parameters.dependsOn }}
     ${{ if item.useVmImage }}:
