@@ -1170,12 +1170,12 @@ let isConstraintAllowedAsExtra cx =
 let typarsAEquivWithFilter g (aenv: TypeEquivEnv) (reqTypars: Typars) (declaredTypars: Typars) allowExtraInDecl =
     List.length reqTypars = List.length declaredTypars &&
     let aenv = aenv.BindEquivTypars reqTypars declaredTypars
+    let cxEquiv = typarConstraintsAEquivAux EraseNone g aenv
     (reqTypars, declaredTypars) ||> List.forall2 (fun reqTp declTp ->
         reqTp.StaticReq = declTp.StaticReq &&
-        reqTp.Constraints |> List.forall (fun reqCx ->
-            declTp.Constraints |> List.exists (fun declCx -> typarConstraintsAEquivAux EraseNone g aenv reqCx declCx)) &&
+        ListSet.isSubsetOf cxEquiv reqTp.Constraints declTp.Constraints &&
         declTp.Constraints |> List.forall (fun declCx ->
-            allowExtraInDecl declCx || reqTp.Constraints |> List.exists (fun reqCx -> typarConstraintsAEquivAux EraseNone g aenv reqCx declCx)))
+            allowExtraInDecl declCx || reqTp.Constraints |> List.exists (fun reqCx -> cxEquiv reqCx declCx)))
 
 let typarsAEquivWithAddedNotNullConstraintsAllowed g aenv reqTypars declaredTypars =
     typarsAEquivWithFilter g aenv reqTypars declaredTypars isConstraintAllowedAsExtra
