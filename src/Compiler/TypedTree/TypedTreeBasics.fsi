@@ -127,8 +127,6 @@ val KnownWithNull: Nullness
 
 val KnownWithoutNull: Nullness
 
-
-
 val combineNullness: Nullness -> Nullness -> Nullness
 
 val tryAddNullnessToTy: Nullness -> TType -> TType option

@@ -9340,18 +9340,15 @@ let TypeHasAllowNull (tcref:TyconRef) g m =
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
-    // Check if the type has AllowNullLiteral
     (match tryTcrefOfAppTy g sty with 
      | ValueSome tcref -> TypeHasAllowNull tcref g m
      | _ -> false) 
     ||
-    // Check if the type has a nullness annotation
     (match (nullnessOfTy g sty).Evaluate() with 
      | NullnessInfo.AmbivalentToNull -> false
      | NullnessInfo.WithoutNull -> false
      | NullnessInfo.WithNull -> true)
     ||
-    // Check if the type has a ': null' constraint
     (GetTyparTyIfSupportsNull g ty).IsSome
 
 /// The pre-nullness logic about whether a type uses 'null' as a true representation value
