@@ -98,6 +98,7 @@
     <InternalsVisibleTo Include="FSharp.Editor" />
     <InternalsVisibleTo Include="FSharp.Compiler.LanguageServer" />
     <InternalsVisibleTo Include="FSharp.VisualStudio.Extension" />
+    <InternalsVisibleTo Include="FSharpDiagServer" />
   </ItemGroup>
 
   <ItemGroup>

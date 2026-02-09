@@ -39,6 +39,5 @@ let ``resolveProject defaults to FCS for FSharp.Core path`` () =
 
 [<Fact>]
 let ``resolveProject with repoRoot substring in path does not double-strip`` () =
-    // Ensure that if repoRoot appears as a substring later in the path, it isn't incorrectly stripped
     let result = resolveProject "/repo" "/repo/tests/FSharp.Compiler.ComponentTests/repo/Test.fs"
     Assert.Equal(componentTests "/repo", result)

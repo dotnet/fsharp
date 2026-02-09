@@ -511,7 +511,7 @@ type public FSharpChecker =
     /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
     /// For dev-loop use only. Requires keepAssemblyContents=true.
     /// Returns the output file path on success.
-    member CompileFromCheckedProject:
+    member internal CompileFromCheckedProject:
         results: FSharpCheckProjectResults * outfile: string -> Async<string>
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer

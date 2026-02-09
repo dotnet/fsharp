@@ -1385,6 +1385,14 @@ and [<Sealed>] TcImports
         | Some res -> res
         | None -> error (Error(FSComp.SR.buildCouldNotResolveAssembly assemblyName, m))
 
+    member tcImports.NormalizeAssemblyRef(ctok, aref: ILAssemblyRef) =
+        match tcImports.TryFindDllInfo(ctok, rangeStartup, aref.Name, lookupOnly = false) with
+        | Some dllInfo ->
+            match dllInfo.ILScopeRef with
+            | ILScopeRef.Assembly ref -> ref
+            | _ -> aref
+        | None -> aref
+
     member _.GetImportedAssemblies() =
         tciLock.AcquireLock(fun tcitok ->
             CheckDisposed()

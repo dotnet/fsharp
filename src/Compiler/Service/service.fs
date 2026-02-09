@@ -636,7 +636,7 @@ type FSharpChecker
     /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
     /// For dev-loop use only. Requires keepAssemblyContents=true.
     /// Returns the output file path on success.
-    member _.CompileFromCheckedProject(results: FSharpCheckProjectResults, outfile: string) =
+    member internal _.CompileFromCheckedProject(results: FSharpCheckProjectResults, outfile: string) =
         async {
             let tcConfig, tcGlobals, tcImports, generatedCcu, topAttrsOpt, _ilAssemRef, typedImplFilesOpt =
                 results.CompilationData
@@ -719,12 +719,7 @@ type FSharpChecker
                 )
 
             let normalizeAssemblyRefs (aref: ILAssemblyRef) =
-                match tcImports.TryFindDllInfo(ctok, rangeStartup, aref.Name, lookupOnly = false) with
-                | Some dllInfo ->
-                    match dllInfo.ILScopeRef with
-                    | ILScopeRef.Assembly ref -> ref
-                    | _ -> aref
-                | None -> aref
+                tcImports.NormalizeAssemblyRef(ctok, aref)
 
             WriteILBinaryFile(
                 {

@@ -1101,12 +1101,7 @@ let main6
             FileSystem.GetFullPathShim(absolutePath))
 
     let normalizeAssemblyRefs (aref: ILAssemblyRef) =
-        match tcImports.TryFindDllInfo(ctok, rangeStartup, aref.Name, lookupOnly = false) with
-        | Some dllInfo ->
-            match dllInfo.ILScopeRef with
-            | ILScopeRef.Assembly ref -> ref
-            | _ -> aref
-        | None -> aref
+        tcImports.NormalizeAssemblyRef(ctok, aref)
 
     match dynamicAssemblyCreator with
     | None ->
