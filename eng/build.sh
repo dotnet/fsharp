@@ -248,6 +248,21 @@ function Test() {
   fi
 
   "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
+
+  # MTP auto-generates .xunit files with opaque names when --report-xunit-filename is omitted
+  # (solution runs). Rename each to <AssemblyName>_<TargetFramework>.xml using the assembly
+  # path inside the XML.
+  if [[ "$testproject" == *.sln ]]; then
+    for f in "$testresultsdir"/*.xunit; do
+      [ -e "$f" ] || continue
+      asmname=$(sed -n 's/.*<assembly name="\([^"]*\)".*/\1/p' "$f" | head -1 | xargs -I{} basename {} .dll)
+      if [ -n "$asmname" ]; then
+        mv "$f" "$testresultsdir/${asmname}_${targetframework}.xml"
+      else
+        mv "$f" "${f%.xunit}.xml"
+      fi
+    done
+  fi
 }
 
 function BuildSolution {

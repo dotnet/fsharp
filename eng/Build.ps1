@@ -394,11 +394,23 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     try {
         Exec-Console $dotnetExe $test_args
     } finally {
-        # MTP auto-generates .xunit extension when --report-xunit-filename is omitted (solution runs).
-        # Rename to .xml so the CI pipeline's PublishTestResults task recognizes them.
+        # MTP auto-generates .xunit files with opaque names (e.g. cloudtest_<id>_<timestamp>.xunit)
+        # when --report-xunit-filename is omitted (solution runs). Rename each to
+        # <AssemblyName>_<TargetFramework>.xml using the assembly path inside the XML,
+        # so CI's PublishTestResults recognizes them and file names are meaningful.
         if ($testProject.EndsWith('.sln')) {
-            Get-ChildItem -Path $testResultsDir -Filter "*.xunit" -ErrorAction SilentlyContinue | 
-                Rename-Item -NewName { $_.Name -replace '\.xunit$', '.xml' } -ErrorAction SilentlyContinue
+            Get-ChildItem -Path $testResultsDir -Filter "*.xunit" -ErrorAction SilentlyContinue | ForEach-Object {
+                try {
+                    [xml]$xunitXml = Get-Content $_.FullName -Raw
+                    $asmPath = $xunitXml.assemblies.assembly | Select-Object -First 1 -ExpandProperty name
+                    $asmName = [System.IO.Path]::GetFileNameWithoutExtension($asmPath)
+                    $newName = "${asmName}_${targetFramework}.xml"
+                    Rename-Item $_.FullName -NewName $newName -ErrorAction Stop
+                } catch {
+                    # Fallback: just swap extension if XML parsing fails
+                    Rename-Item $_.FullName -NewName ($_.Name -replace '\.xunit$', '.xml') -ErrorAction SilentlyContinue
+                }
+            }
         }
     }
 }
