@@ -1,51 +1,48 @@
 ---
 name: fsharp-diagnostics
-description: "Get F# compiler errors/warnings for src/Compiler/FSharp.Compiler.Service.fsproj (Release, net10.0). Parse-only or full typecheck."
+description: "After modifying any F# file, use this to get quick parse errors and typecheck warnings+errors. Also finds symbol references and inferred type hints."
 ---
 
 # F# Diagnostics
 
-**Project:** `src/Compiler/FSharp.Compiler.Service.fsproj` | Release | net10.0 | BUILDING_USING_DOTNET=true
+**Scope:** `src/Compiler/` files only (`FSharp.Compiler.Service.fsproj`, Release, net10.0).
 
-## Setup
-
-```bash
-alias get-fsharp-errors='$(git rev-parse --show-toplevel)/.github/skills/fsharp-diagnostics/scripts/get-fsharp-errors.sh'
-```
-
-## Two-Phase Workflow
-
-**Step 1 — Parse-only.** Always run first.
-```bash
-get-fsharp-errors --parse-only src/Compiler/Checking/CheckBasics.fs
-```
-If errors → fix syntax. Do NOT proceed to Step 2.
-
-**Step 2 — Full typecheck.** Only after Step 1 is clean.
-```bash
-get-fsharp-errors src/Compiler/Checking/CheckBasics.fs
-```
-
-## Other Commands
+## Setup (run once per shell session)
 
 ```bash
-get-fsharp-errors --check-project   # typecheck entire project
-get-fsharp-errors --ping            # check server is alive
-get-fsharp-errors --shutdown        # stop server
+GetErrors() { "$(git rev-parse --show-toplevel)/.github/skills/fsharp-diagnostics/scripts/get-fsharp-errors.sh" "$@"; }
 ```
 
-## Output
+## Parse first, typecheck second
 
-Clean: `OK`
-
-Errors (one per line):
+```bash
+GetErrors --parse-only src/Compiler/Checking/CheckBasics.fs
 ```
-ERROR FS0039 (12,5-12,15) The value or constructor 'foo' is not defined | let x = foo
-WARNING FS0020 (15,1-15,5) The result is implicitly ignored | doSomething()
+If errors → fix syntax. Do NOT typecheck until parse is clean.
+```bash
+GetErrors src/Compiler/Checking/CheckBasics.fs
 ```
 
-## Notes
+## Find references for a single symbol (line 1-based, col 0-based)
 
-- Server auto-starts on first call, one per repo copy, 4h idle timeout.
-- ~3 GB RSS after full project load. First project typecheck ~65s, subsequent file checks <500ms.
-- Log: `~/.fsharp-diag/<hash>.log`
+Before renaming or to understand call sites:
+```bash
+GetErrors --find-refs src/Compiler/Checking/CheckBasics.fs 30 5
+```
+
+## Type hints for a range selection (begin and end line numbers, 1-based)
+
+To see inferred types as inline `// (name: Type)` comments:
+```bash
+GetErrors --type-hints src/Compiler/TypedTree/TypedTreeOps.fs 1028 1032
+```
+
+## Other
+
+```bash
+GetErrors --check-project   # typecheck entire project
+GetErrors --ping
+GetErrors --shutdown
+```
+
+First call starts server (~70s cold start, set initial_wait=600). Auto-shuts down after 4h idle. ~3 GB RAM.

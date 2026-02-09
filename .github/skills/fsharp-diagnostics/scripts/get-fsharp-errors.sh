@@ -88,6 +88,22 @@ case "${1:-}" in
         ensure_server "$REPO_ROOT" "$SOCK_PATH"
         send_request "$SOCK_PATH" '{"command":"checkProject"}'
         ;;
+    --find-refs)
+        shift
+        FILE=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
+        LINE="$2"
+        COL="$3"
+        ensure_server "$REPO_ROOT" "$SOCK_PATH"
+        send_request "$SOCK_PATH" "{\"command\":\"findRefs\",\"file\":\"$FILE\",\"line\":$LINE,\"col\":$COL}"
+        ;;
+    --type-hints)
+        shift
+        FILE=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
+        START_LINE="$2"
+        END_LINE="$3"
+        ensure_server "$REPO_ROOT" "$SOCK_PATH"
+        send_request "$SOCK_PATH" "{\"command\":\"typeHints\",\"file\":\"$FILE\",\"startLine\":$START_LINE,\"endLine\":$END_LINE}"
+        ;;
     -*)
         echo "Usage: get-fsharp-errors [--parse-only] <file.fs>" >&2
         echo "       get-fsharp-errors --check-project <project.fsproj>" >&2
