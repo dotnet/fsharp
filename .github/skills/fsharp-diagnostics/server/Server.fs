@@ -206,6 +206,25 @@ let startServer (config: ServerConfig) =
                                             sb.AppendLine(line) |> ignore
                                 return sb.ToString().TrimEnd()
 
+                    | "compile" ->
+                        let project = doc.RootElement.GetProperty("project").GetString()
+                        let output = doc.RootElement.GetProperty("output").GetString()
+                        let! optionsResult = projectMgr.ResolveProjectOptions(project)
+                        match optionsResult with
+                        | Error msg ->
+                            return $"ERROR: {msg}"
+                        | Ok options ->
+                            let! results = checker.ParseAndCheckProject(options)
+                            if results.HasCriticalErrors then
+                                let diags = DiagnosticsFormatter.formatProject config.RepoRoot results.Diagnostics
+                                return $"ERROR: Project has errors:\n{diags}"
+                            else
+                                try
+                                    let! outPath = checker.CompileFromCheckedProject(results, output)
+                                    return "OK"
+                                with ex ->
+                                    return $"ERROR: Compile failed: {ex.Message}"
+
                     | "shutdown" ->
                         cts.Cancel()
                         return """{ "status":"shutting_down" }"""
