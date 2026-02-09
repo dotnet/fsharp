@@ -8632,6 +8632,9 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                            || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
                     | _ -> env
 
+                // For partially applied functions (e.g. pipe operators like `bar |> foo "mr"`),
+                // propagate the range of the last captured argument so nullness warnings
+                // point to the original nullable value rather than the pipe application site.
                 let env =
                     if isFunTy g domainTy then
                         match leftExpr with
@@ -12808,6 +12811,10 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
     | Some _ ->
        match PartitionValTyparsForApparentEnclosingType g vspec with
        | Some(parentTypars, memberParentTypars, _, _, _) ->
+          // Temporarily strip extra nullness constraints (e.g. NotSupportsNull) from member type params
+          // before checking signature conformance against parent type params.
+          // These constraints may be inferred by the solver but are not present on the parent,
+          // causing false signature mismatch errors. We restore the original constraints afterward.
           let savedConstraints = memberParentTypars |> List.map (fun tp -> tp, tp.Constraints)
 
           if g.checkNullness then

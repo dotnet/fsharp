@@ -30,11 +30,6 @@ let ``Variable IsFromConstructor is false`` () =
     Assert.False((Nullness.Variable nv).IsFromConstructor)
 
 [<Fact>]
-let ``NullnessVar has no isCtorResult parameter`` () =
-    let nv = NullnessVar()
-    Assert.NotNull(nv)
-
-[<Fact>]
 let ``KnownWithoutNullFromCtor singleton is KnownFromConstructor`` () =
     Assert.True(KnownWithoutNullFromCtor.IsFromConstructor)
 

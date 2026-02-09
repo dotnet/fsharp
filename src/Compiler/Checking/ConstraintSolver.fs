@@ -1036,6 +1036,8 @@ and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
     csenv.g.checkNullness &&
     csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome    
 
+/// Gets the range for nullness warnings, preferring the captured argument range
+/// when available (e.g. for pipe operator expressions) over the constraint solver range.
 and getNullnessWarningRange (csenv: ConstraintSolverEnv) =
     match csenv.eContextInfo with
     | ContextInfo.NullnessCheckOfCapturedArg capturedArgRange -> capturedArgRange
@@ -1045,6 +1047,7 @@ and getNullnessWarningRange (csenv: ConstraintSolverEnv) =
 // nullness2: expected
 and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
     match nullness1, nullness2 with
+    // Normalize KnownFromConstructor to KnownWithoutNull before solving
     | Nullness.KnownFromConstructor, _ | _, Nullness.KnownFromConstructor ->
         let n1 = match nullness1 with Nullness.KnownFromConstructor -> KnownWithoutNull | n -> n
         let n2 = match nullness2 with Nullness.KnownFromConstructor -> KnownWithoutNull | n -> n
@@ -1083,6 +1086,7 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
 // nullness2: source
 and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
     match nullness1, nullness2 with
+    // Normalize KnownFromConstructor to KnownWithoutNull before solving
     | Nullness.KnownFromConstructor, _ | _, Nullness.KnownFromConstructor ->
         let n1 = match nullness1 with Nullness.KnownFromConstructor -> KnownWithoutNull | n -> n
         let n2 = match nullness2 with Nullness.KnownFromConstructor -> KnownWithoutNull | n -> n
