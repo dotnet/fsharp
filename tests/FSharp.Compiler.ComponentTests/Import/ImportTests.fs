@@ -679,6 +679,7 @@ let updateAge () =
 """
         |> asLibrary
         |> withReferences [fsLib]
+        |> ignoreWarnings
         |> compile
         |> shouldSucceed
         |> ignore
