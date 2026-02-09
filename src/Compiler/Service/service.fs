@@ -644,12 +644,13 @@ type FSharpChecker
             let topAttrs =
                 match topAttrsOpt with
                 | Some a -> a
-                | None -> failwith "CompileFromCheckedProject: no top attributes available"
+                | None -> raise (InvalidOperationException "CompileFromCheckedProject: no top attributes available")
 
             let typedImplFiles =
                 match typedImplFilesOpt with
                 | Some files -> files
-                | None -> failwith "CompileFromCheckedProject: keepAssemblyContents must be true"
+                | None ->
+                    raise (InvalidOperationException "CompileFromCheckedProject: keepAssemblyContents must be true")
 
             // Save and restore CCU attribs to prevent quadratic growth on repeated compile calls.
             let originalAttribs = generatedCcu.Contents.Attribs

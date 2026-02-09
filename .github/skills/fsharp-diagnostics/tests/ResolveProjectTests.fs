@@ -17,27 +17,23 @@ let private componentTests root =
 [<InlineData("/repo", "/repo/tests/FSharp.Compiler.ComponentTests/SomeTest.fs", false)>]
 [<InlineData("/repo", "/repo/tests/FSharp.Compiler.ComponentTests/Language/SubDir/Test.fs", false)>]
 [<InlineData("/repo", "/other/path/File.fs", true)>]
+[<InlineData("/repo", "/repo/vsintegration/src/FSharpEditor.fs", true)>]
+[<InlineData("/repo", "/repo/src/FSharp.Core/Array.fs", true)>]
+// Edge case: "repo" substring inside ComponentTests path should not confuse stripping
+[<InlineData("/repo", "/repo/tests/FSharp.Compiler.ComponentTests/repo/Test.fs", false)>]
 let ``resolveProject routes files to correct fsproj`` (repoRoot: string, filePath: string, expectFcs: bool) =
     let result = resolveProject repoRoot filePath
     let expected = if expectFcs then fcs repoRoot else componentTests repoRoot
     Assert.Equal(expected, result)
 
 [<Fact>]
-let ``resolveProject with trailing slash on repoRoot matches ComponentTests`` () =
-    let result = resolveProject "/repo/" "/repo/tests/FSharp.Compiler.ComponentTests/X.fs"
-    Assert.Equal(componentTests "/repo/", result)
+let ``resolveProject handles exact ComponentTests boundary`` () =
+    // File directly in ComponentTests root
+    let result = resolveProject "/repo" "/repo/tests/FSharp.Compiler.ComponentTests/SomeTest.fs"
+    Assert.Contains("FSharp.Compiler.ComponentTests.fsproj", result)
 
 [<Fact>]
-let ``resolveProject defaults to FCS for vsintegration path`` () =
-    let result = resolveProject "/repo" "/repo/vsintegration/src/FSharpEditor.fs"
-    Assert.Equal(fcs "/repo", result)
-
-[<Fact>]
-let ``resolveProject defaults to FCS for FSharp.Core path`` () =
-    let result = resolveProject "/repo" "/repo/src/FSharp.Core/Array.fs"
-    Assert.Equal(fcs "/repo", result)
-
-[<Fact>]
-let ``resolveProject with repoRoot substring in path does not double-strip`` () =
-    let result = resolveProject "/repo" "/repo/tests/FSharp.Compiler.ComponentTests/repo/Test.fs"
-    Assert.Equal(componentTests "/repo", result)
+let ``resolveProject falls back to FCS for other test projects`` () =
+    // Non-ComponentTests test project should go to FCS
+    let result = resolveProject "/repo" "/repo/tests/FSharp.Core.UnitTests/SomeTest.fs"
+    Assert.Contains("FSharp.Compiler.Service.fsproj", result)

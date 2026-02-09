@@ -37,13 +37,13 @@ To see inferred types as inline `// (name: Type)` comments:
 GetErrors --type-hints src/Compiler/TypedTree/TypedTreeOps.fs 1028 1032
 ```
 
-## Running tests faster (FSharp.Compiler.Service only)
+## Running tests faster
 
-After checking errors are clean, run tests with cached compilation (skips full recompile of FSharp.Compiler.Service):
+After checking errors are clean, run tests with cached compilation (skips full recompile of FSharp.Compiler.Service and FSharp.Compiler.ComponentTests):
 ```bash
 dotnet test tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj -c Release /p:FastBuildFromCache=true
 ```
-Only affects FSharp.Compiler.Service.fsproj build. All other projects build normally. Falls back to normal build if server is unavailable.
+All other projects build normally. Falls back to normal build if server is unavailable.
 
 ## Other
 

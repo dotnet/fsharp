@@ -28,10 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="FSharpDiagServer.Tests" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="DesignTimeBuild.fs" />
     <Compile Include="ProjectManager.fs" />
     <Compile Include="ProjectRouting.fs" />

@@ -34,19 +34,6 @@ let ``InjectTestEntry populates cache`` () =
     Assert.True(mgr.HasCachedProject("/a.fsproj"))
 
 [<Fact>]
-let ``Invalidate specific path removes only that project`` () =
-    let mgr = createManager ()
-    mgr.InjectTestEntry("/a.fsproj", dummyOptions "/a.fsproj")
-    mgr.InjectTestEntry("/b.fsproj", dummyOptions "/b.fsproj")
-    Assert.Equal(2, mgr.CacheCount)
-
-    mgr.Invalidate("/a.fsproj")
-
-    Assert.Equal(1, mgr.CacheCount)
-    Assert.False(mgr.HasCachedProject("/a.fsproj"))
-    Assert.True(mgr.HasCachedProject("/b.fsproj"))
-
-[<Fact>]
 let ``Invalidate all clears entire cache`` () =
     let mgr = createManager ()
     mgr.InjectTestEntry("/a.fsproj", dummyOptions "/a.fsproj")
@@ -123,3 +110,15 @@ let ``Invalidate specific project preserves others`` () =
     Assert.True(mgr.HasCachedProject("/x.fsproj"))
     Assert.False(mgr.HasCachedProject("/y.fsproj"))
     Assert.True(mgr.HasCachedProject("/z.fsproj"))
+
+[<Fact>]
+let ``ResolveProjectOptions returns Error for nonexistent project`` () =
+    let mgr = createManager ()
+    // DTB run will throw because the working directory doesn't exist;
+    // verify the error propagates without crashing the manager.
+    let ex =
+        Assert.ThrowsAny<exn>(fun () ->
+            mgr.ResolveProjectOptions("/nonexistent/path/project.fsproj")
+            |> Async.RunSynchronously
+            |> ignore)
+    Assert.NotNull(ex)

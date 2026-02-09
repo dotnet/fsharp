@@ -5,6 +5,7 @@ set -euo pipefail
 # Usage:
 #   get-fsharp-errors.sh [--parse-only] <file.fs>
 #   get-fsharp-errors.sh --check-project <project.fsproj>
+#   get-fsharp-errors.sh --compile <project.fsproj> <output.dll>
 #   get-fsharp-errors.sh --ping
 #   get-fsharp-errors.sh --shutdown
 
@@ -114,6 +115,7 @@ case "${1:-}" in
     -*)
         echo "Usage: get-fsharp-errors [--parse-only] <file.fs>" >&2
         echo "       get-fsharp-errors --check-project <project.fsproj>" >&2
+        echo "       get-fsharp-errors --compile <project.fsproj> <output.dll>" >&2
         echo "       get-fsharp-errors --ping | --shutdown" >&2
         exit 1
         ;;

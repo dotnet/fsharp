@@ -37,7 +37,9 @@ let startServer (config: ServerConfig) =
         let mutable lastActivity = DateTimeOffset.UtcNow
         let cts = new CancellationTokenSource()
 
-        let getOptions (filePath: string) = projectMgr.ResolveProjectOptions(ProjectRouting.resolveProject config.RepoRoot filePath)
+        let getOptions (filePath: string) =
+            let fsproj = ProjectRouting.resolveProject config.RepoRoot filePath
+            projectMgr.ResolveProjectOptions(fsproj)
 
         let handleRequest (json: string) =
             async {
@@ -212,11 +214,15 @@ let startServer (config: ServerConfig) =
                     | "compile" ->
                         let project = doc.RootElement.GetProperty("project").GetString()
                         let output = doc.RootElement.GetProperty("output").GetString()
+                        if not (File.Exists project) then
+                            return $"ERROR: project not found: {project}"
+                        else
                         let! optionsResult = projectMgr.ResolveProjectOptions(project)
                         match optionsResult with
                         | Error msg ->
                             return $"ERROR: {msg}"
                         | Ok options ->
+                            // FSharpChecker caches project results; repeated calls return cached data.
                             let! results = checker.ParseAndCheckProject(options)
                             if results.HasCriticalErrors then
                                 let diags = DiagnosticsFormatter.formatProject config.RepoRoot results.Diagnostics
