@@ -29,7 +29,6 @@ let startServer (config: ServerConfig) =
     async {
         let socketPath = deriveSocketPath config.RepoRoot
         let metaPath = deriveMetaPath config.RepoRoot
-        let fsproj = Path.Combine(config.RepoRoot, "src/Compiler/FSharp.Compiler.Service.fsproj")
         Directory.CreateDirectory(sockDir) |> ignore
         if File.Exists(socketPath) then File.Delete(socketPath)
 
@@ -38,7 +37,14 @@ let startServer (config: ServerConfig) =
         let mutable lastActivity = DateTimeOffset.UtcNow
         let cts = new CancellationTokenSource()
 
-        let getOptions () = projectMgr.ResolveProjectOptions(fsproj)
+        let resolveProject (filePath: string) =
+            let rel = filePath.Replace(config.RepoRoot.TrimEnd('/') + "/", "")
+            if rel.StartsWith("tests/FSharp.Compiler.ComponentTests/") then
+                Path.Combine(config.RepoRoot, "tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj")
+            else
+                Path.Combine(config.RepoRoot, "src/Compiler/FSharp.Compiler.Service.fsproj")
+
+        let getOptions (filePath: string) = projectMgr.ResolveProjectOptions(resolveProject filePath)
 
         let handleRequest (json: string) =
             async {
@@ -58,7 +64,7 @@ let startServer (config: ServerConfig) =
                         else
                         let sourceText = SourceText.ofString (File.ReadAllText(file))
                         // Use project options for correct --langversion, --define etc
-                        let! optionsResult = getOptions ()
+                        let! optionsResult = getOptions file
                         let parsingArgs =
                             match optionsResult with
                             | Ok o -> o.OtherOptions |> Array.toList
@@ -72,7 +78,7 @@ let startServer (config: ServerConfig) =
                         if not (File.Exists file) then
                             return $"""{{ "error":"file not found: {file}" }}"""
                         else
-                        let! optionsResult = getOptions ()
+                        let! optionsResult = getOptions file
                         match optionsResult with
                         | Error msg ->
                             return $"ERROR: {msg}"
@@ -88,7 +94,11 @@ let startServer (config: ServerConfig) =
                             return DiagnosticsFormatter.formatFile diags
 
                     | "checkProject" ->
-                        let! optionsResult = getOptions ()
+                        let project =
+                            match doc.RootElement.TryGetProperty("project") with
+                            | true, p -> p.GetString()
+                            | false, _ -> Path.Combine(config.RepoRoot, "src/Compiler/FSharp.Compiler.Service.fsproj")
+                        let! optionsResult = projectMgr.ResolveProjectOptions(project)
                         match optionsResult with
                         | Error msg ->
                             return $"ERROR: {msg}"
@@ -103,7 +113,7 @@ let startServer (config: ServerConfig) =
                         if not (File.Exists file) then
                             return $"ERROR: file not found: {file}"
                         else
-                        let! optionsResult = getOptions ()
+                        let! optionsResult = getOptions file
                         match optionsResult with
                         | Error msg -> return $"ERROR: {msg}"
                         | Ok options ->
@@ -156,7 +166,7 @@ let startServer (config: ServerConfig) =
                         if not (File.Exists file) then
                             return $"ERROR: file not found: {file}"
                         else
-                        let! optionsResult = getOptions ()
+                        let! optionsResult = getOptions file
                         match optionsResult with
                         | Error msg -> return $"ERROR: {msg}"
                         | Ok options ->

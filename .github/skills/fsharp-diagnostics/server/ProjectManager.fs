@@ -1,10 +1,11 @@
 module FSharpDiagServer.ProjectManager
 
+open System.Collections.Generic
 open System.IO
 open FSharp.Compiler.CodeAnalysis
 
 type ProjectManager(checker: FSharpChecker) =
-    let mutable cached: (System.DateTime * FSharpProjectOptions) option = None
+    let cache = Dictionary<string, System.DateTime * FSharpProjectOptions>()
     let gate = obj ()
 
     let isSourceFile (s: string) =
@@ -12,15 +13,18 @@ type ProjectManager(checker: FSharpChecker) =
         && (s.EndsWith(".fs", System.StringComparison.OrdinalIgnoreCase)
             || s.EndsWith(".fsi", System.StringComparison.OrdinalIgnoreCase))
 
+    let normalize (path: string) = Path.GetFullPath(path)
+
     member _.ResolveProjectOptions(fsprojPath: string) =
         async {
-            let fsprojMtime = File.GetLastWriteTimeUtc(fsprojPath)
+            let key = normalize fsprojPath
+            let fsprojMtime = File.GetLastWriteTimeUtc(key)
             let current =
                 lock gate (fun () ->
-                    match cached with
-                    | Some(mtime, opts) when mtime = fsprojMtime -> Some opts
-                    | Some _ -> cached <- None; None
-                    | None -> None)
+                    match cache.TryGetValue(key) with
+                    | true, (mtime, opts) when mtime = fsprojMtime -> Some opts
+                    | true, _ -> cache.Remove(key) |> ignore; None
+                    | false, _ -> None)
 
             match current with
             | Some opts -> return Ok opts
@@ -30,7 +34,7 @@ type ProjectManager(checker: FSharpChecker) =
                 match dtbResult with
                 | Error msg -> return Error msg
                 | Ok dtb ->
-                    let projDir = Path.GetDirectoryName(fsprojPath)
+                    let projDir = Path.GetDirectoryName(key)
 
                     let resolve (s: string) =
                         if Path.IsPathRooted(s) then s else Path.GetFullPath(Path.Combine(projDir, s))
@@ -41,10 +45,14 @@ type ProjectManager(checker: FSharpChecker) =
 
                     let sourceFiles = resolvedArgs |> Array.filter isSourceFile
                     let flagsOnly = resolvedArgs |> Array.filter (not << isSourceFile)
-                    let opts = checker.GetProjectOptionsFromCommandLineArgs(fsprojPath, flagsOnly)
+                    let opts = checker.GetProjectOptionsFromCommandLineArgs(key, flagsOnly)
                     let options = { opts with SourceFiles = sourceFiles }
-                    lock gate (fun () -> cached <- Some(fsprojMtime, options))
+                    lock gate (fun () -> cache.[key] <- (fsprojMtime, options))
                     return Ok options
         }
 
-    member _.Invalidate() = lock gate (fun () -> cached <- None)
+    member _.Invalidate(?fsprojPath: string) =
+        lock gate (fun () ->
+            match fsprojPath with
+            | Some p -> cache.Remove(normalize p) |> ignore
+            | None -> cache.Clear())
