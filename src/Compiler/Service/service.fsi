@@ -508,6 +508,12 @@ type public FSharpChecker =
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
 
+    /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
+    /// For dev-loop use only. Requires keepAssemblyContents=true.
+    /// Returns the output file path on success.
+    member CompileFromCheckedProject:
+        results: FSharpCheckProjectResults * outfile: string -> Async<string>
+
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo[] * FSharpTokenizerLexState
 

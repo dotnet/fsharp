@@ -6,18 +6,27 @@ open System
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.ILBinaryWriter
+open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.IlxGen
+open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
@@ -623,6 +632,120 @@ type FSharpChecker
     static member Instance = globalInstance.Force()
 
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
+
+    /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
+    /// For dev-loop use only. Requires keepAssemblyContents=true.
+    /// Returns the output file path on success.
+    member _.CompileFromCheckedProject(results: FSharpCheckProjectResults, outfile: string) =
+        async {
+            let tcConfig, tcGlobals, tcImports, generatedCcu, topAttrsOpt, _ilAssemRef, typedImplFilesOpt =
+                results.CompilationData
+
+            let topAttrs =
+                match topAttrsOpt with
+                | Some a -> a
+                | None -> failwith "CompileFromCheckedProject: no top attributes available"
+
+            let typedImplFiles =
+                match typedImplFilesOpt with
+                | Some files -> files
+                | None -> failwith "CompileFromCheckedProject: keepAssemblyContents must be true"
+
+            generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
+
+            let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
+
+            let sigDataAttributes, sigDataResources =
+                EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
+
+            let optimizedImpls =
+                typedImplFiles
+                |> List.map (fun implFile ->
+                    { ImplFile = implFile
+                      OptimizeDuringCodeGen = fun _flag expr -> expr })
+                |> CheckedAssemblyAfterOptimization
+
+            let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals
+
+            let ilxGenerator =
+                CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, tcVal, generatedCcu)
+
+            let codegenResults =
+                GenerateIlxCode(
+                    IlWriteBackend,
+                    false,
+                    tcConfig,
+                    topAttrs,
+                    optimizedImpls,
+                    generatedCcu.AssemblyName,
+                    ilxGenerator
+                )
+
+            let topAssemblyAttrs = codegenResults.topAssemblyAttrs
+            let topAttrs = { topAttrs with assemblyAttrs = topAssemblyAttrs }
+            let secDecls = mkILSecurityDecls codegenResults.permissionSets
+
+            let metadataVersion =
+                match tcConfig.metadataVersion with
+                | Some v -> v
+                | _ -> ""
+
+            let ctok = CompilationThreadToken()
+
+            let ilxMainModule =
+                MainModuleBuilder.CreateMainModule(
+                    ctok,
+                    tcConfig,
+                    tcGlobals,
+                    tcImports,
+                    None,
+                    generatedCcu.AssemblyName,
+                    outfile,
+                    topAttrs,
+                    sigDataAttributes,
+                    sigDataResources,
+                    [],
+                    codegenResults,
+                    None,
+                    metadataVersion,
+                    secDecls
+                )
+
+            let normalizeAssemblyRefs (aref: ILAssemblyRef) =
+                match tcImports.TryFindDllInfo(ctok, rangeStartup, aref.Name, lookupOnly = false) with
+                | Some dllInfo ->
+                    match dllInfo.ILScopeRef with
+                    | ILScopeRef.Assembly ref -> ref
+                    | _ -> aref
+                | None -> aref
+
+            WriteILBinaryFile(
+                {
+                    ilg = tcGlobals.ilg
+                    outfile = outfile
+                    pdbfile = None
+                    emitTailcalls = tcConfig.emitTailcalls
+                    deterministic = tcConfig.deterministic
+                    portablePDB = false
+                    embeddedPDB = false
+                    embedAllSource = false
+                    embedSourceList = []
+                    allGivenSources = []
+                    sourceLink = ""
+                    checksumAlgorithm = tcConfig.checksumAlgorithm
+                    signer = None
+                    dumpDebugInfo = false
+                    referenceAssemblyOnly = false
+                    referenceAssemblyAttribOpt = None
+                    referenceAssemblySignatureHash = None
+                    pathMap = tcConfig.pathMap
+                },
+                ilxMainModule,
+                normalizeAssemblyRefs
+            )
+
+            return outfile
+        }
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =
