@@ -2450,25 +2450,25 @@ let _ =
                 p_tys l st
 
         | TType_app(ERefNonLocal nleref, [], nullness) ->
-            p_nullnessB 9 nullness st
+            p_nullnessB 9 nullness st // B tags: 9=WithNull, 10=WithoutNull, 11=Ambivalent
             p_byte 1 st
             p_simpletyp nleref st
 
         | TType_app(tc, tinst, nullness) ->
-            p_nullnessB 12 nullness st
+            p_nullnessB 12 nullness st // B tags: 12=WithNull, 13=WithoutNull, 14=Ambivalent
             p_byte 2 st
             p_tcref "typ" tc st
             p_tys tinst st
 
         | TType_fun(d, r, nullness) ->
-            p_nullnessB 15 nullness st
+            p_nullnessB 15 nullness st // B tags: 15=WithNull, 16=WithoutNull, 17=Ambivalent
             p_byte 3 st
             // Note, the "this" argument may be found in the domain position of a function type, so propagate the isStructThisArgPos value
             p_ty2 isStructThisArgPos d st
             p_ty r st
 
         | TType_var(r, nullness) ->
-            p_nullnessB 18 nullness st
+            p_nullnessB 18 nullness st // B tags: 18=WithNull, 19=WithoutNull, 20=Ambivalent
             p_byte 4 st
             p_tpref r st
 
