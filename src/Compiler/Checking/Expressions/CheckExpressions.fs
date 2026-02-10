@@ -9320,6 +9320,15 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
                 vTy
         // Always allow subsumption on assignment to fields
         let expr2R, tpenv = TcExprFlex cenv true false vty2 env tpenv expr2
+        // After assignment, strip KnownFromConstructor from the val's type so subsequent
+        // reads no longer bypass AllowNullLiteral warnings for 'not null' constraints.
+        if g.checkNullness && not (isByrefTy g vTy) then
+            match stripTyparEqns vTy with
+            | TType_app(_, _, Nullness.KnownFromConstructor)
+            | TType_var(_, Nullness.KnownFromConstructor) ->
+                vref.Deref.SetType(replaceNullnessOfTy (Nullness.Known NullnessInfo.WithoutNull) vTy)
+            | _ -> ()
+
         let vExpr =
             if isInByrefTy g vTy then
                 errorR(Error(FSComp.SR.writeToReadOnlyByref(), mStmt))

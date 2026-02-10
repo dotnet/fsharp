@@ -2247,6 +2247,27 @@ let test () = consumeNonNull maybeNull
         Error 3261, Line 9, Col 30, Line 9, Col 39, "Nullness warning: The type 'MyClass | null' supports 'null' but a non-null type is expected."
     ]
 
+[<Fact>]
+let ``Mutable AllowNullLiteral binding warns for not null constraint`` () =
+    // Mutable bindings strip KnownFromConstructor — they can be reassigned to null.
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyClass() = class end
+
+let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
+
+let mutable x = MyClass()
+x <- null
+let test () = consumeNonNull x
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 10, Col 30, Line 10, Col 31, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
+    ]
+
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Type with comparison constraint compiles and runs correctly under strict nullness`` () =
     FSharp """module Test
