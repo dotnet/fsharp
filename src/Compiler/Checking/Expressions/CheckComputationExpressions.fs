@@ -113,7 +113,7 @@ let mkSourceExprConditional isFromSource callExpr sourceMethInfo builderValName 
 let inline mkSynLambda p e m =
     SynExpr.Lambda(false, false, p, e, None, m, SynExprLambdaTrivia.Zero)
 
-// Use synthetic ranges so compiler-generated varSpace refs don't mark vals as referenced for FS1182
+// Use synthetic ranges so query varSpace re-expressions don't mark vals as referenced for FS1182
 let mkExprForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynExpr.Const(SynConst.Unit, m)
@@ -3114,7 +3114,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
     let lambdaExpr, tpenv =
         TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
 
-    // For queries, transfer HasBeenReferenced from compiler-generated varSpace Vals to user Vals
+    // For queries, transfer HasBeenReferenced across varSpace Vals sharing a declaration range
     if isQuery then
         transferVarSpaceReferences lambdaExpr
 

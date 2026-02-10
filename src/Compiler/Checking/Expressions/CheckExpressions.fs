@@ -2758,7 +2758,7 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
         let v = vref.Deref
         let valRecInfo = v.RecursiveValInfo
 
-        // Don't count compiler-generated refs (synthetic range) for FS1182
+        // Don't count refs from synthetic ranges (query varSpace re-expressions) for FS1182
         if not m.IsSynthetic then v.SetHasBeenReferenced()
 
         CheckValAccessible m env.eAccessRights vref
