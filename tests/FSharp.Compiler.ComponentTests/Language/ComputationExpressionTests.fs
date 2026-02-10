@@ -2365,3 +2365,35 @@ let f () =
         |> compile
         |> withSingleDiagnostic (Warning 1182, Line 5, Col 9, Line 5, Col 15, "The value 'unused' is unused")
         |> ignore
+
+    [<Fact>]
+    let ``Shadowed query variable warns FS1182 for outer variable`` () =
+        FSharp """
+module Test
+let result =
+    query { for x in [1;2;3] do
+            select (
+                let x = 42
+                x) }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 1182, Line 4, Col 17, Line 4, Col 18, "The value 'x' is unused")
+
+    [<Fact>]
+    let ``Inner shadowing variable in query warns FS1182 when unused`` () =
+        FSharp """
+module Test
+let result =
+    query { for x in [1;2;3] do
+            select (
+                let x = x
+                1) }
+        """
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 1182, Line 6, Col 21, Line 6, Col 22, "The value 'x' is unused")

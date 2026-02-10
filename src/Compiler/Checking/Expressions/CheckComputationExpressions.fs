@@ -136,31 +136,42 @@ let mkPatForVarSpace m (patvs: Val list) =
     | [ v ] -> mkSynPatVar None v.Id
     | vs -> SynPat.Tuple(false, (vs |> List.map (fun x -> mkSynPatVar None x.Id)), [], m)
 
-/// Transfer HasBeenReferenced across query lambda Vals with the same name.
-/// In queries, multiple lambdas may have Vals with the same name (for, where, join).
-/// If any is referenced by user code, mark all as referenced to avoid FS1182 false positives.
+/// Transfer HasBeenReferenced across query lambda Vals with the same declaration range.
+/// In queries, multiple lambdas share Vals originating from the same source declaration (e.g., for x).
+/// If any is referenced by user code, mark all with the same origin as referenced to avoid FS1182 false positives.
+/// Grouping by declaration range (not name) correctly handles shadowing.
 let transferVarSpaceReferences (expr: Expr) =
-    let addVal (v: Val) m = NameMultiMap.add v.LogicalName v m
+    let valsByRange = Dictionary<range, ResizeArray<Val>>()
+
+    let addVal (v: Val) =
+        match valsByRange.TryGetValue(v.Range) with
+        | true, vals -> vals.Add(v)
+        | false, _ ->
+            let vals = ResizeArray()
+            vals.Add(v)
+            valsByRange[v.Range] <- vals
 
     let folder =
         { ExprFolder0 with
             exprIntercept =
                 fun _recurseF noInterceptF z e ->
-                    let z =
-                        match e with
-                        | Expr.Lambda(_, _, _, argVals, _, _, _) -> (z, argVals) ||> List.fold (fun m v -> addVal v m)
-                        | _ -> z
+                    match e with
+                    | Expr.Lambda(_, _, _, argVals, _, _, _) -> argVals |> List.iter addVal
+                    | _ -> ()
 
                     noInterceptF z e
-            valBindingSiteIntercept = fun z (_, v) -> addVal v z
+            valBindingSiteIntercept =
+                fun z (_, v) ->
+                    addVal v
+                    z
         }
 
-    let valsByName = FoldExpr folder NameMultiMap.empty expr
+    FoldExpr folder () expr |> ignore
 
-    // If any Val with a name is referenced, mark all Vals with that name as referenced
-    for KeyValue(_, vals) in valsByName do
-        if vals |> List.exists _.HasBeenReferenced then
-            vals |> List.iter _.SetHasBeenReferenced()
+    // If any Val at a declaration range is referenced, mark all at that range as referenced
+    for KeyValue(_, vals) in valsByRange do
+        if vals |> Seq.exists _.HasBeenReferenced then
+            vals |> Seq.iter _.SetHasBeenReferenced()
 
 let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
