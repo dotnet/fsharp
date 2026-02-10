@@ -24,6 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Compiler.Service" Version="43.*" />
     <PackageReference Update="FSharp.Core" Version="10.*" />
   </ItemGroup>
 
