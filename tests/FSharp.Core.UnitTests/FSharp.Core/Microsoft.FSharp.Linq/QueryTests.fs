@@ -53,7 +53,6 @@ type QueryTupleJoinTests() =
         let t1 = table1Data.AsQueryable()
         let t2 = table2Data.AsQueryable()
         
-        // Inline tuple join - this was broken before the fix
         let inlineResult = 
             query {
                 for a in t1 do
@@ -61,7 +60,6 @@ type QueryTupleJoinTests() =
                 select (a.Value1, b.Value2)
             } |> Seq.toList
         
-        // Expected: 2 matches (1,10) and (2,20)
         Assert.Equal(2, inlineResult.Length)
         Assert.Contains(("A", "X"), inlineResult)
         Assert.Contains(("B", "Y"), inlineResult)
@@ -83,7 +81,7 @@ type QueryTupleJoinTests() =
                 select (a.Value1, b.Value2)
             } |> Seq.toList
         
-        // Function-based tuple join (this was working before)
+        // Function-based tuple join
         let funcResult = 
             query {
                 for a in t1 do
@@ -91,7 +89,6 @@ type QueryTupleJoinTests() =
                 select (a.Value1, b.Value2)
             } |> Seq.toList
         
-        // Both should produce the same results
         Assert.Equal(funcResult.Length, inlineResult.Length)
         for item in funcResult do
             Assert.Contains(item, inlineResult)
@@ -130,7 +127,6 @@ type QueryGroupByTupleTests() =
                 select (fst g.Key, snd g.Key, g.Count())
             } |> Seq.toList
         
-        // Verify we can access fst and snd on the key
         Assert.True(result.Length > 0)
         for (deptId, isOver28, count) in result do
             Assert.True(deptId >= 1 && deptId <= 2)
@@ -168,9 +164,7 @@ type QueryGroupJoinTupleTests() =
                 select (a.Value1, bs |> Seq.length)
             } |> Seq.toList
         
-        // t1 has 3 items, each should have a group (possibly empty)
         Assert.Equal(3, result.Length)
-        // First two should have 1 match each, third should have 0
         Assert.Contains(("A", 1), result)
         Assert.Contains(("B", 1), result)
         Assert.Contains(("C", 0), result)
@@ -225,15 +219,13 @@ type QueryTupleSelectTests() =
         Assert.True(typeof<IQueryable<int * string>>.IsAssignableFrom(result.GetType()), 
             sprintf "Expected IQueryable<int * string> but got %s" (result.GetType().FullName))
         
-        // The expression tree should have Select calls that produce tuples
+        // The expression tree should have Select with Tuple conversion
         let queryable = result
         let exprStr = queryable.Expression.ToString()
-        // Verify the expression has the tuple conversion
         Assert.True(exprStr.Contains("Tuple") && exprStr.Contains("Select"), 
             sprintf "Expression should contain Select with Tuple, but got: %s" exprStr)
         
-        // Most importantly: verify the query can be composed (this is what the issue is about)
-        // If the query was incorrectly using Enumerable.Select, adding Where would fail or produce wrong results
+        // Verify the query can be composed - if incorrectly using Enumerable.Select, this would fail
         let composed = result.Where(fun (id, _name) -> id > 0)
         let items = composed |> Seq.toList
         Assert.True(items.Length > 0)
@@ -249,12 +241,11 @@ type QueryTupleSelectTests() =
                 select (System.Tuple.Create(p.Id, p.Name))
             }
         
-        // System.Tuple should also produce IQueryable - use box to avoid FS0067 warning
+        // box to avoid FS0067 warning
         Assert.NotNull(box result)
         Assert.True(typeof<IQueryable<System.Tuple<int, string>>>.IsAssignableFrom(result.GetType()), 
             sprintf "Expected IQueryable<Tuple<int, string>> but got %s" (result.GetType().FullName))
         
-        // Verify composability
         let composed = result.Where(fun t -> t.Item1 > 0)
         let items = composed |> Seq.toList
         Assert.True(items.Length > 0)
@@ -264,21 +255,18 @@ type QueryTupleSelectTests() =
     member _.``F# tuple and System.Tuple produce equivalent query behavior``() =
         let data = TestData.people.AsQueryable()
         
-        // F# tuple projection
         let fsharpTupleResult = 
             query {
                 for p in data do
                 select (p.Id, p.Name)
             } |> Seq.toList
         
-        // Explicit System.Tuple projection
         let systemTupleResult = 
             query {
                 for p in data do
                 select (System.Tuple.Create(p.Id, p.Name))
             } |> Seq.map (fun t -> (t.Item1, t.Item2)) |> Seq.toList
         
-        // Both should produce the same results
         Assert.Equal(fsharpTupleResult.Length, systemTupleResult.Length)
         for (expected, actual) in List.zip fsharpTupleResult systemTupleResult do
             Assert.Equal(expected, actual)
@@ -294,13 +282,10 @@ type QueryTupleSelectTests() =
                 select (p.Id, p.Name, p.Age)
             }
         
-        // Should be able to add Where after tuple select
         let filtered = baseQuery.Where(fun (id, name, age) -> age > 25)
         
-        // Verify the query can be executed
         let result = filtered |> Seq.toList
         
-        // All results should have age > 25
         Assert.True(result.Length > 0)
         for (id, name, age) in result do
             Assert.True(age > 25, sprintf "Expected age > 25 but got %d" age)
@@ -316,14 +301,11 @@ type QueryTupleSelectTests() =
                 select (p.Id, p.Name, p.Age)
             }
         
-        // Should be able to add OrderBy after tuple select
         let sorted = baseQuery.OrderBy(fun (id, name, age) -> age)
         
-        // Verify the query can be executed and is sorted
         let result = sorted |> Seq.toList
         
         Assert.True(result.Length > 0)
-        // Verify sorting
         let ages = result |> List.map (fun (_, _, age) -> age)
         let sortedAges = ages |> List.sort
         Assert.Equal<int list>(sortedAges, ages)
@@ -339,9 +321,7 @@ type QueryTupleSelectTests() =
                 select { TestData.Person.Id = p.Id; Name = p.Name; Age = p.Age; DepartmentId = p.DepartmentId }
             }
         
-        // Should be able to compose with Where
         let filtered = baseQuery.Where(fun p -> p.Age > 28)
-        
         let result = filtered |> Seq.toList
         Assert.True(result.Length > 0)
         for p in result do
@@ -358,7 +338,6 @@ type QueryTupleSelectTests() =
                 select (p.Id, p.Name, p.Age, p.DepartmentId)
             }
         
-        // Filter by tuple element
         let filtered = baseQuery.Where(fun (id, name, age, deptId) -> deptId = 1 && age > 20)
         let result = filtered |> Seq.toList
         
@@ -387,7 +366,6 @@ type EvaluateQuotationEdgeCaseTests() =
     /// Issue #19099: EvaluateQuotation should handle Sequential expressions
     [<Fact>]
     member _.``EvaluateQuotation handles Sequential expressions - issue 19099``() =
-        // Test sequential expression: (ignore 1; 42) - evaluates first expr for side effects, returns second
         let result = LeafExpressionConverter.EvaluateQuotation <@ ignore 1; 42 @>
         Assert.Equal(42, result :?> int)
     
@@ -408,14 +386,12 @@ type EvaluateQuotationEdgeCaseTests() =
     /// Issue #19099 T1.1: EvaluateQuotation should handle VarSet (mutable variable assignment)
     [<Fact>]
     member _.``EvaluateQuotation handles VarSet - issue 19099``() =
-        // Test mutable variable assignment: let mutable x = 1; x <- 2; x should return 2
         let result = LeafExpressionConverter.EvaluateQuotation <@ let mutable x = 1 in x <- 2; x @>
         Assert.Equal(2, result :?> int)
     
     /// Issue #19099 T1.2: EvaluateQuotation should handle FieldSet (mutable field assignment)
     [<Fact>]
     member _.``EvaluateQuotation handles FieldSet - issue 19099``() =
-        // Test mutable field assignment
         let obj = MutationTestHelpers.TypeWithMutableField()
         let result = LeafExpressionConverter.EvaluateQuotation <@ obj.Field <- 42; obj.Field @>
         Assert.Equal(42, result :?> int)
@@ -423,7 +399,6 @@ type EvaluateQuotationEdgeCaseTests() =
     /// Issue #19099 T1.3: EvaluateQuotation should handle PropertySet (settable property assignment)
     [<Fact>]
     member _.``EvaluateQuotation handles PropertySet - issue 19099``() =
-        // Test settable property assignment
         let obj = MutationTestHelpers.TypeWithSettableProperty()
         let result = LeafExpressionConverter.EvaluateQuotation <@ obj.Prop <- 99; obj.Prop @>
         Assert.Equal(99, result :?> int)
@@ -431,7 +406,6 @@ type EvaluateQuotationEdgeCaseTests() =
     /// Issue #19099 T1.4: EvaluateQuotation should handle indexed PropertySet (array index assignment)
     [<Fact>]
     member _.``EvaluateQuotation handles indexed PropertySet - issue 19099``() =
-        // Test array index assignment: arr.[0] <- value
         let arr = [| 1; 2; 3 |]
         let result = LeafExpressionConverter.EvaluateQuotation <@ arr.[0] <- 10; arr.[0] @>
         Assert.Equal(10, result :?> int)
@@ -440,14 +414,12 @@ type EvaluateQuotationEdgeCaseTests() =
     /// This tests the let-binding inlining logic doesn't break with deep nesting
     [<Fact>]
     member _.``EvaluateQuotation handles deeply nested let bindings``() =
-        // Test: let a = x in let b = a in let c = b in c
         let result = LeafExpressionConverter.EvaluateQuotation <@ let a = 42 in let b = a in let c = b in c @>
         Assert.Equal(42, result :?> int)
     
     /// Q3.5: Additional test for deeply nested let with computation at each level
     [<Fact>]
     member _.``EvaluateQuotation handles deeply nested let with computation``() =
-        // Test with actual computation at each level
         let result = LeafExpressionConverter.EvaluateQuotation <@ let a = 1 in let b = a + 1 in let c = b + 1 in let d = c + 1 in d @>
         Assert.Equal(4, result :?> int)
 
@@ -455,8 +427,7 @@ type EvaluateQuotationEdgeCaseTests() =
     /// This tests the inlining approach doesn't cause exponential blowup
     [<Fact>]
     member _.``EvaluateQuotation handles 15 nested let bindings``() =
-        // 15 levels of nested lets with computation at each level
-        // This verifies the inlining is O(n) not O(2^n)
+        // Verifies inlining is O(n) not O(2^n)
         let result = LeafExpressionConverter.EvaluateQuotation <@ 
             let v1 = 1 in
             let v2 = v1 + 1 in
