@@ -228,7 +228,7 @@ function Test() {
 
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
-  testlogfilename="${projectname}_${targetframework}.xml"
+  testlogfilename="${projectname}_${targetframework}.trx"
   testresultsdir="$artifacts_dir/TestResults/$configuration"
   
   # MTP requires --solution flag for .sln files
@@ -238,31 +238,9 @@ function Test() {
     testtarget="--project"
   fi
 
-  # When testing a solution, omit --report-xunit-filename so each test project's MTP runner
-  # auto-generates a unique filename per assembly. With an explicit static filename, all
-  # projects in the solution overwrite the same file and only the last assembly's results survive.
-  if [[ "$testproject" == *.sln ]]; then
-    args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
-  else
-    args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit --report-xunit-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
-  fi
+  args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
 
   "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
-
-  # MTP auto-generates .xunit files with opaque names when --report-xunit-filename is omitted
-  # (solution runs). Rename each to <AssemblyName>_<TargetFramework>.xml using the assembly
-  # path inside the XML.
-  if [[ "$testproject" == *.sln ]]; then
-    for f in "$testresultsdir"/*.xunit; do
-      [ -e "$f" ] || continue
-      asmname=$(sed -n 's/.*<assembly name="\([^"]*\)".*/\1/p' "$f" | head -1 | xargs -I{} basename {} .dll)
-      if [ -n "$asmname" ]; then
-        mv "$f" "$testresultsdir/${asmname}_${targetframework}.xml"
-      else
-        mv "$f" "${f%.xunit}.xml"
-      fi
-    done
-  fi
 }
 
 function BuildSolution {
