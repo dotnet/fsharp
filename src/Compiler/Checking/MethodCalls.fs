@@ -1375,10 +1375,7 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
             
     let meth = TObjExprMethod(slotsig, [], [], [delArgVals], expr, m)
     let delegateExpr = mkObjExpr(delegateTy, None, BuildObjCtorCall g m, [meth], [], m)
-    
-    match wrapperOpt with
-    | Some wrapper -> wrapper delegateExpr
-    | None -> delegateExpr
+    (wrapperOpt |> Option.defaultValue id) delegateExpr
 
 let CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgExpr delegateTy =    
     let (SigOfFunctionForDelegate(delInvokeMeth, delArgTys, _, _)) = GetSigOfFunctionForDelegate infoReader delegateTy m ad

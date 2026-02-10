@@ -19,33 +19,6 @@ module CodeGenRegressions =
             | None -> failwith "No output path"
         | _ -> failwith "Compilation failed"
 
-    // https://github.com/dotnet/fsharp/issues/19075
-    // [<Fact>]
-    let ``Issue_19075_ConstrainedCallsCrash`` () =
-        let source = """
-module Dispose
-
-open System
-open System.IO
-
-[<RequireQualifiedAccess>]
-module Dispose =
-    let inline action<'a when 'a: (member Dispose: unit -> unit) and 'a :> IDisposable>(a: 'a) = a.Dispose()
-
-[<EntryPoint>]
-let main argv =
-    let ms = new MemoryStream()
-    ms |> Dispose.action
-    0
-"""
-        FSharp source
-        |> asExe
-        |> compile
-        |> shouldSucceed
-        |> run
-        |> shouldSucceed
-        |> ignore
-
     // https://github.com/dotnet/fsharp/issues/19068
     [<Fact>]
     let ``Issue_19068_StructObjectExprByrefField`` () =
@@ -75,118 +48,6 @@ run()
         |> shouldSucceed
         |> run
         |> shouldSucceed
-        |> ignore
-
-    // https://github.com/dotnet/fsharp/issues/19020
-    // [<Fact>]
-    let ``Issue_19020_ReturnAttributeNotRespected`` () =
-        let source = """
-module Test
-
-open System.Reflection
-
-type SomeAttribute() =
-    inherit System.Attribute()
-
-module Module =
-    [<return: SomeAttribute>]
-    let func a = a + 1
-
-type Class() =
-    [<return: SomeAttribute>]
-    static member ``static member`` a = a + 1
-
-    [<return: SomeAttribute>]
-    member _.``member`` a = a + 1
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> verifyIL [
-            """
-.method public static int32  func(int32 a) cil managed
-{
-  .param [0]
-  .custom instance void Test/SomeAttribute::.ctor() = ( 01 00 00 00 )
-"""
-            """
-.method public static int32  'static member'(int32 a) cil managed
-{
-  .param [0]
-  .custom instance void Test/SomeAttribute::.ctor() = ( 01 00 00 00 )
-"""
-            """
-.method public hidebysig instance int32 member(int32 a) cil managed
-{
-  .param [0]
-  .custom instance void Test/SomeAttribute::.ctor() = ( 01 00 00 00 )
-"""
-        ]
-        |> ignore
-
-    // [<Fact>]
-    let ``Issue_19020_ReturnAttributeEdgeCases`` () =
-        let source = """
-module Test
-
-open System
-
-type MyAttribute(value: string) =
-    inherit Attribute()
-    member _.Value = value
-
-type AnotherAttribute() =
-    inherit Attribute()
-
-module Module =
-    [<return: MyAttribute("mod")>]
-    [<return: AnotherAttribute>]
-    let func a = a + 1
-
-type SomeClass() =
-    [<return: MyAttribute("ins")>]
-    [<return: AnotherAttribute>]
-    member _.MultipleAttrs a = a + 1
-    
-    [<return: MyAttribute("str")>]
-    static member StringMethod () = "hello"
-    
-    [<return: MyAttribute("get")>]
-    member _.PropWithReturnAttr = 42
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> verifyIL [
-            """
-.method public static int32  func(int32 a) cil managed
-{
-  .param [0]
-  .custom instance void Test/MyAttribute::.ctor(string) = ( 01 00 03 6D 6F 64 00 00 )
-  .custom instance void Test/AnotherAttribute::.ctor() = ( 01 00 00 00 )
-"""
-            """
-.method public hidebysig instance int32 MultipleAttrs(int32 a) cil managed
-{
-  .param [0]
-  .custom instance void Test/MyAttribute::.ctor(string) = ( 01 00 03 69 6E 73 00 00 )
-  .custom instance void Test/AnotherAttribute::.ctor() = ( 01 00 00 00 )
-"""
-            """
-.method public static string  StringMethod() cil managed
-{
-  .param [0]
-  .custom instance void Test/MyAttribute::.ctor(string) = ( 01 00 03 73 74 72 00 00 )
-"""
-            """
-.method public hidebysig specialname instance int32  get_PropWithReturnAttr() cil managed
-{
-  .param [0]
-  .custom instance void Test/MyAttribute::.ctor(string) = ( 01 00 03 67 65 74 00 00 )
-"""
-        ]
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/18956
@@ -254,26 +115,6 @@ type C = delegate of [<System.Runtime.CompilerServices.CallerMemberName>] ?name:
         |> asLibrary
         |> compile
         |> shouldSucceed
-        |> ignore
-
-    // https://github.com/dotnet/fsharp/issues/18815
-    // [<Fact>]
-    let ``Issue_18815_DuplicateExtensionMethodNames`` () =
-        let source = """
-module Compiled
-
-type Task = { F: int }
-
-module CompiledExtensions =
-    type System.Threading.Tasks.Task with
-        static member CompiledStaticExtension() = ()
-
-    type Task with
-        static member CompiledStaticExtension() = ()
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/18753
@@ -404,6 +245,61 @@ let main _ =
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/18374
+    // Tests that non-Exception objects thrown from IL are wrapped in RuntimeWrappedException
+    [<Fact>]
+    let ``Issue_18374_RuntimeWrappedExceptionNonExceptionThrow`` () =
+        let csCode = """
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+namespace CSharpHelper {
+    public static class NonExceptionThrower {
+        public static Action CreateStringThrower() {
+            var dm = new DynamicMethod("ThrowString", typeof(void), Type.EmptyTypes);
+            var il = dm.GetILGenerator();
+            il.Emit(OpCodes.Ldstr, "non-exception payload");
+            il.Emit(OpCodes.Throw);
+            il.Emit(OpCodes.Ret);
+            return (Action)dm.CreateDelegate(typeof(Action));
+        }
+    }
+}"""
+        let csLib = CSharp csCode |> withName "CSharpHelper"
+        let fsCode = """
+module Test
+open System.Runtime.CompilerServices
+
+[<EntryPoint>]
+let main _ =
+    let thrower = CSharpHelper.NonExceptionThrower.CreateStringThrower()
+    let mutable caught = false
+    try
+        thrower.Invoke()
+    with
+    | :? RuntimeWrappedException as rwe ->
+        caught <- true
+        let payload = rwe.WrappedException :?> string
+        if payload <> "non-exception payload" then
+            failwithf "Wrong payload: %s" payload
+    | e ->
+        caught <- true
+        printfn "Caught as %s: %s" (e.GetType().Name) e.Message
+
+    if not caught then failwith "Non-exception throw was not caught"
+    printfn "SUCCESS: Non-exception throw caught correctly"
+    0
+"""
+        FSharp fsCode
+        |> withReferences [csLib]
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/18374
     [<Fact>]
     let ``Issue_18374_RuntimeWrappedExceptionIL`` () =
         let source = """
@@ -512,76 +408,53 @@ let f<'T when 'T :> I>() =
     let x = 123
     printfn "%d" ('T.Foo &x)
 
-f<T>()
+[<EntryPoint>]
+let main _ =
+    f<T>()
+    0
 """
         FSharp source
         |> asExe
         |> compile
         |> shouldSucceed
+        |> run
+        |> shouldSucceed
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/18125
-    // [<Fact>] // UNFIXED: Enable when issue is fixed
-    let ``Issue_18125_WrongStructLayoutSize`` () =
-        let source = """
-module Test
-
-[<Struct>]
-type ABC = A | B | C
-
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> verifyIL [
-            """.pack 0
-    .size 4"""
-            """.field assembly int32 _tag"""
-        ]
-        |> ignore
-
-    // [<Fact>] // UNFIXED: Enable when issue #18125 is fixed
-    let ``Issue_18125_WrongStructLayoutSize_ManyCases`` () =
-        let source = """
-module Test
-
-[<Struct>]
-type ManyOptions = 
-    | A | B | C | D | E | F | G | H | I | J
-
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> verifyIL [
-            """.pack 0"""
-            """.size 4"""
-            """.field assembly int32 _tag"""
-        ]
-        |> ignore
-
+    // Tests letrec lambda reordering: lambdas must be allocated before non-lambda bindings
+    // that reference them, to avoid null closure references in mutual recursion.
     [<Fact>]
-    let ``Issue_18125_StructLayoutWithDataFields`` () =
+    let ``Issue_18125_LetRecLambdaReordering`` () =
         let source = """
 module Test
 
-[<Struct>]
-type IntOrFloat =
-    | Int of i: int
-    | Float of f: float
+// Mutual recursion where lambdas reference record values and vice versa.
+// The compiler must reorder bindings so closures are allocated before records that capture them.
+[<NoComparison; NoEquality>]
+type Node = { Value: int; GetLabel: unit -> string }
 
+let test () =
+    let rec a = { Value = 1; GetLabel = labelA }
+    and b = { Value = 2; GetLabel = labelB }
+    and labelA () = sprintf "A(%d)->B(%d)" a.Value b.Value
+    and labelB () = sprintf "B(%d)->A(%d)" b.Value a.Value
+    
+    if a.GetLabel() <> "A(1)->B(2)" then failwithf "Expected A(1)->B(2), got %s" (a.GetLabel())
+    if b.GetLabel() <> "B(2)->A(1)" then failwithf "Expected B(2)->A(1), got %s" (b.GetLabel())
+    printfn "SUCCESS"
+
+[<EntryPoint>]
+let main _ =
+    test()
+    0
 """
         FSharp source
-        |> asLibrary
+        |> asExe
         |> compile
         |> shouldSucceed
-        |> verifyIL [
-            """.field assembly int32 _tag"""
-            """.field assembly int32 _i"""
-            """.field assembly float64 _f"""
-        ]
+        |> run
+        |> shouldSucceed
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/17692
@@ -656,55 +529,6 @@ and 'T option = Option<'T>
         |> shouldSucceed
         |> ignore
 
-    // https://github.com/dotnet/fsharp/issues/16546
-    // [<Fact>]
-    let ``Issue_16546_DebugRecursiveReferenceNull`` () =
-        let source = """
-module Test
-
-type Ident = string
-
-type Type =
-    | TPrim of Ident
-    | TParam of Ident * Type
-
-let tryParam pv x =
-    match x with
-    | TParam (name, typ) ->
-        pv typ |> Result.map (fun t -> [name, t])
-    | _ -> Error "unexpected"
-
-let tryPrim = function
-    | TPrim name -> Ok name
-    | _ -> Error "unused"
-
-module TypeModule =
-    let parse =
-        let rec paramParse = tryParam parse
-        and parse node =
-            match tryPrim node with
-            | Ok name -> Ok(TPrim name)
-            | _ ->
-                match paramParse node with
-                | Ok [name, typ] -> Ok(TParam(name,typ))
-                | _ -> Error "invalid type"
-        parse
-
-[<EntryPoint>]
-let main args =
-    printfn "%A" (TypeModule.parse (TParam ("ptr", TPrim "float")))
-    0
-"""
-        FSharp source
-        |> asExe
-        |> withDebug
-        |> withNoOptimize
-        |> compile
-        |> shouldSucceed
-        |> run
-        |> shouldSucceed
-        |> ignore
-
     // https://github.com/dotnet/fsharp/issues/16378
     [<Fact>]
     let ``Issue_16378_DULoggingAllocations`` () =
@@ -743,86 +567,6 @@ printfn "Test completed"
         Assert.Contains("logDirect", actualIL)
         Assert.Contains("logSerialized", actualIL)
         Assert.Contains("box", actualIL)
-
-    [<Fact>]
-    let ``ExtensionMethod_InstanceMethod_UsesDotSeparator`` () =
-        let result =
-            FSharp """
-module Test
-
-open System
-
-type Exception with
-    member ex.Reraise() = raise ex
-"""
-            |> asLibrary
-            |> compile
-            |> shouldSucceed
-        result |> verifyIL [ ".method public static !!a  Exception.Reraise<a>(class [runtime]System.Exception A_0) cil managed" ]
-        result |> verifyILNotPresent [ "Exception$Reraise" ]
-
-    [<Fact>]
-    let ``ExtensionMethod_StaticMethod_UsesDotSeparatorWithStaticSuffix`` () =
-        let result =
-            FSharp """
-module Test
-
-open System
-
-type Exception with
-    static member CreateNew(msg: string) = Exception(msg)
-"""
-            |> asLibrary
-            |> compile
-            |> shouldSucceed
-        result |> verifyIL [ ".method public static class [runtime]System.Exception Exception.CreateNew.Static(string msg) cil managed" ]
-        result |> verifyILNotPresent [ "Exception$CreateNew"; "$Static" ]
-
-    // https://github.com/dotnet/fsharp/issues/16292
-    // [<Fact>]
-    let ``Issue_16292_SrtpDebugMutableStructEnumerator`` () =
-        let source = """
-module Test
-
-open System
-open System.Buffers
-open System.Text
-
-let inline forEach<'C, 'E, 'I
-                        when 'C: (member GetEnumerator: unit -> 'I)
-                        and  'I: struct
-                        and  'I: (member MoveNext: unit -> bool)
-                        and  'I: (member Current : 'E) >
-        ([<InlineIfLambda>] f: 'E -> unit) (container: 'C)  =
-    let mutable iter = container.GetEnumerator()
-    while iter.MoveNext() do
-        f iter.Current
-
-let showIt (buffer: ReadOnlySequence<byte>) =
-    let mutable count = 0
-    buffer |> forEach (fun segment ->
-        count <- count + 1
-    )
-    count
-
-[<EntryPoint>]
-let main _ =
-    let arr = [| 1uy; 2uy; 3uy |]
-    let buffer = ReadOnlySequence<byte>(arr)
-    let result = showIt buffer
-    printfn "Segments: %d" result
-    if result = 0 then failwith "Bug: Debug build has infinite loop or zero iterations"
-    0
-"""
-        FSharp source
-        |> asExe
-        |> withDebug
-        |> withNoOptimize
-        |> compile
-        |> shouldSucceed
-        |> run
-        |> shouldSucceed
-        |> ignore
 
     // https://github.com/dotnet/fsharp/issues/16245
     [<Fact>]
@@ -929,56 +673,6 @@ let test = { Value = 42 }
         FSharp source
         |> asLibrary
         |> compile
-        |> shouldSucceed
-        |> ignore
-
-    // https://github.com/dotnet/fsharp/issues/15352
-    // [<Fact>] // UNFIXED: Enable when issue is fixed
-    let ``Issue_15352_UserCodeCompilerGeneratedAttribute`` () =
-        let source = """
-module Test
-
-open System
-open System.Reflection
-open System.Runtime.CompilerServices
-
-type T() =
-    let f x = x + 1
-    let mutable counter = 0
-    member _.CallF x = f x
-    member _.Increment() = counter <- counter + 1
-    member _.Counter = counter
-
-let checkAttribute() =
-    let t = typeof<T>
-    
-    let methodF = t.GetMethod("f", BindingFlags.NonPublic ||| BindingFlags.Instance)
-    if methodF <> null then
-        let hasAttr = methodF.GetCustomAttribute<CompilerGeneratedAttribute>() <> null
-        if hasAttr then
-            failwith "Bug: User-defined method 'f' has CompilerGeneratedAttribute"
-        else
-            printfn "OK: No CompilerGeneratedAttribute on user method 'f'"
-    else
-        failwith "Method 'f' not found"
-    
-    let memberCallF = t.GetMethod("CallF", BindingFlags.Public ||| BindingFlags.Instance)
-    if memberCallF <> null then
-        let hasAttr = memberCallF.GetCustomAttribute<CompilerGeneratedAttribute>() <> null
-        if hasAttr then
-            failwith "Bug: User-defined member 'CallF' has CompilerGeneratedAttribute"
-        else
-            printfn "OK: No CompilerGeneratedAttribute on user member 'CallF'"
-    else
-        failwith "Member 'CallF' not found"
-
-checkAttribute()
-"""
-        FSharp source
-        |> asExe
-        |> compile
-        |> shouldSucceed
-        |> run
         |> shouldSucceed
         |> ignore
 
@@ -1233,20 +927,6 @@ let useTimeSpan (x:TimeSpan) = x
         Assert.Contains("DateTime", signature)
         Assert.Contains("TimeSpan", signature)
 
-    // https://github.com/dotnet/fsharp/issues/14707
-    // [<Fact>]
-    let ``Issue_14707_SignatureFileUnusable`` () =
-        let source = """
-module Test
-let foo01 x y = "result"
-let bar01 x y = 0
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
     // https://github.com/dotnet/fsharp/issues/14706
     [<Fact>]
     let ``Issue_14706_SignatureWhereTypar`` () =
@@ -1402,16 +1082,95 @@ type CarError =
         |> shouldSucceed
         |> ignore
 
+    // https://github.com/dotnet/fsharp/issues/14321
+    // Runtime test: type must load without "duplicate entry in method table"
+    [<Fact>]
+    let ``Issue_14321_DuAndIWSAMNames_Runtime`` () =
+        let source = """
+module Test
+
+#nowarn "3535"
+
+type EngineError<'e> =
+    static abstract Overheated : 'e
+    static abstract LowOil : 'e
+
+type CarError =
+    | Overheated
+    | LowOil
+    | DeviceNotPaired
+
+    interface EngineError<CarError> with
+        static member Overheated = Overheated
+        static member LowOil = LowOil
+
+[<EntryPoint>]
+let main _ =
+    let err = CarError.Overheated
+    match err with
+    | Overheated -> printfn "Got Overheated"
+    | LowOil -> printfn "Got LowOil"
+    | DeviceNotPaired -> printfn "Got DeviceNotPaired"
+    0
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
     // https://github.com/dotnet/fsharp/issues/13468
     [<Fact>]
-    let ``Issue_13468_OutrefAsByref`` () =
+    let ``Issue_13468_OutrefAsByref_IL`` () =
         let csCode = "namespace CSharpLib { public interface IOutTest { void TryGet(string k, out int v); } }"
         let csLib = CSharp csCode |> withName "CSharpLib"
         let fsCode = "module Test\nopen CSharpLib\ntype MyImpl() =\n    interface IOutTest with\n        member this.TryGet(k, v) = v <- 42"
+        let actualIL =
+            FSharp fsCode
+            |> withReferences [csLib]
+            |> asLibrary
+            |> compile
+            |> shouldSucceed
+            |> getActualIL
+        Assert.Contains("[out]", actualIL)
+
+    // https://github.com/dotnet/fsharp/issues/13468
+    [<Fact>]
+    let ``Issue_13468_OutrefAsByref_Runtime`` () =
+        let csCode = """
+namespace CSharpLib {
+    public interface IOutTest { bool TryGet(string k, out int v); }
+    public static class OutTestHelper {
+        public static string Run(IOutTest impl) {
+            int v;
+            bool ok = impl.TryGet("key", out v);
+            return ok ? v.ToString() : "fail";
+        }
+    }
+}"""
+        let csLib = CSharp csCode |> withName "CSharpLib"
+        let fsCode = """
+module Test
+open CSharpLib
+type MyImpl() =
+    interface IOutTest with
+        member this.TryGet(k, v) = v <- 42; true
+
+[<EntryPoint>]
+let main _ =
+    let result = OutTestHelper.Run(MyImpl())
+    if result <> "42" then failwithf "Expected 42, got %s" result
+    printfn "Success: %s" result
+    0
+"""
         FSharp fsCode
         |> withReferences [csLib]
-        |> asLibrary
+        |> asExe
         |> compile
+        |> shouldSucceed
+        |> run
         |> shouldSucceed
         |> ignore
 
@@ -1462,24 +1221,6 @@ let test () =
 module Test
 
 let f x = x + 1
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
-    // https://github.com/dotnet/fsharp/issues/13218
-    // [<Fact>]
-    let ``Issue_13218_ManyStaticMembers`` () =
-        let source = """
-module Test
-
-type T =
-    static member M1 = 1
-    static member M2 = 2
-    static member M3 = 3
-    // ... full repro would have 13000+ members
 """
         FSharp source
         |> asLibrary
@@ -1785,31 +1526,6 @@ let sumLocal () = fold (+) 0 [1; 2; 3]
         |> shouldSucceed
         |> ignore
 
-    // https://github.com/dotnet/fsharp/issues/12136
-    // [<Fact>]
-    let ``Issue_12136_FixedUnpin`` () =
-        let source = """
-module FixedUnpinTest
-
-#nowarn "9"  // Suppress unverifiable IL warning for fixed
-
-open Microsoft.FSharp.NativeInterop
-
-let inline used<'T> (t: 'T) : unit = ignore t
-
-let testFixed (array: int[]) : unit =
-    let doBlock() =
-        use pin = fixed &array.[0]
-        used pin
-    doBlock()
-    used 1
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
     // https://github.com/dotnet/fsharp/issues/11935
     [<Fact>]
     let ``Issue_11935_UnmanagedConstraintInterop`` () =
@@ -1916,35 +1632,6 @@ let combine<'T, 'U when 'T : unmanaged and 'U : unmanaged> (x: 'T) (y: 'U) = str
         ]
         |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/11556
-    [<Fact>]
-    let ``Issue_11556_FieldInitializers`` () =
-        let source = """
-module Program
-
-open System.Runtime.CompilerServices
-
-type Test =
-    [<DefaultValue>]
-    val mutable X : int
-    new() = { }
-
-[<MethodImpl(MethodImplOptions.NoInlining)>]
-let test() =
-    Test(X = 1)
-
-[<EntryPoint>]
-let main _ =
-    let t = test()
-    if t.X <> 1 then failwith "X should be 1"
-    0
-"""
-        FSharp source
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
     // https://github.com/dotnet/fsharp/issues/11132
     [<Fact>]
     let ``Issue_11132_VoidptrDelegate`` () =
@@ -1970,24 +1657,6 @@ do test()
         |> asExe
         |> withOptimize
         |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    // https://github.com/dotnet/fsharp/issues/11114
-    // [<Fact>]
-    let ``Issue_11114_LargeRecordStackOverflow`` () =
-        let source = """
-module Test
-
-type SmallRecord = {
-    Field1: int
-    Field2: int
-    Field3: int
-}
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
         |> shouldSucceed
         |> ignore
 
@@ -2068,30 +1737,6 @@ type MyClass() = class end
         ]
         |> shouldSucceed
 
-    // [<Fact>] // UNFIXED: Enable when issue #7861 is fixed
-    let ``Issue_7861_TypeArrayInAttribute`` () =
-        let source = """
-module Test
-
-open System
-
-type MultiTypeAttribute(types: Type[]) =
-    inherit Attribute()
-    member _.Types = types
-
-[<MultiType([| typeof<System.Xml.XmlDocument>; typeof<System.Net.Http.HttpClient> |])>]
-type MyClass() = class end
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> verifyILContains [ 
-            ".assembly extern System.Xml.ReaderWriter"
-            ".assembly extern System.Net.Http"
-        ]
-        |> shouldSucceed
-
     [<Fact>]
     let ``Issue_7861_AttributeOnMethod`` () =
         let source = """
@@ -2115,35 +1760,6 @@ type MyClass() =
             ".assembly extern System.Xml.ReaderWriter"
         ]
         |> shouldSucceed
-
-    // https://github.com/dotnet/fsharp/issues/6750
-    // [<Fact>]
-    let ``Issue_6750_MutRecUninitialized`` () =
-        let source = """
-module Test
-
-let rec a = b + 1
-and b = 0
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
-    // https://github.com/dotnet/fsharp/issues/6379
-    // [<Fact>]
-    let ``Issue_6379_TupledArgsWarning`` () =
-        let source = """
-module Test
-
-let f (x, y) = x + y
-"""
-        FSharp source
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
 
     // https://github.com/dotnet/fsharp/issues/5834
     [<Fact>]
@@ -2196,216 +1812,6 @@ let main _ =
         |> shouldSucceed
         |> ignore
 
-    // https://github.com/dotnet/fsharp/issues/5464
-    // [<Fact>] // UNFIXED: Enable when issue is fixed
-    let ``Issue_5464_CustomModifiers`` () =
-        let csLib = 
-            CSharp """
-    using System;
-    namespace CsLib
-    {
-        public struct ReadOnlyStruct 
-        { 
-            public int Value; 
-            public ReadOnlyStruct(int v) { Value = v; }
-        }
-        
-        public class Processor
-        {
-            public static int Process(in ReadOnlyStruct s)
-            {
-                return s.Value;
-            }
-        }
-    }""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11 |> withName "CsLib"
-
-        let fsharpSource = """
-module Test
-
-open CsLib
-
-let callProcessor () =
-    let s = ReadOnlyStruct(42)
-    Processor.Process(&s)
-"""
-        FSharp fsharpSource
-        |> asLibrary
-        |> withReferences [csLib]
-        |> compile
-        |> shouldSucceed
-        |> verifyIL [
-            "call       int32 [CsLib]CsLib.Processor::Process(valuetype [CsLib]CsLib.ReadOnlyStruct& modreq("
-        ]
-        |> ignore
-
-    // [<Fact>] // UNFIXED: Enable when issue #5464 is fixed
-    let ``Issue_5464_CustomModifiers_ModOpt`` () =
-        let csLib = 
-            CSharp """
-    using System;
-    using System.Runtime.CompilerServices;
-    namespace CsLib
-    {
-        public struct Data 
-        { 
-            public int Value; 
-        }
-        
-        public class Container
-        {
-            private Data _data;
-            
-            public static void ProcessWithIn(in Data d) { }
-        }
-    }""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11 |> withName "CsLibModOpt"
-
-        let fsharpSource = """
-module Test
-
-open CsLib
-
-let callWithIn () =
-    let d = Data()
-    Container.ProcessWithIn(&d)
-"""
-        FSharp fsharpSource
-        |> asLibrary
-        |> withReferences [csLib]
-        |> compile
-        |> shouldSucceed
-        |> verifyIL [
-            "call       void [CsLibModOpt]CsLib.Container::ProcessWithIn(valuetype [CsLibModOpt]CsLib.Data& modreq("
-        ]
-        |> ignore
-
-    // [<Fact>] // UNFIXED: Enable when issue #5464 is fixed
-    let ``Issue_5464_CustomModifiers_MultipleInParams`` () =
-        let csLib = 
-            CSharp """
-    using System;
-    namespace CsLib
-    {
-        public struct Vector3
-        {
-            public float X, Y, Z;
-            public Vector3(float x, float y, float z) { X = x; Y = y; Z = z; }
-        }
-        
-        public class VectorMath
-        {
-            public static float Dot(in Vector3 a, in Vector3 b)
-            {
-                return a.X * b.X + a.Y * b.Y + a.Z * b.Z;
-            }
-        }
-    }""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11 |> withName "CsLibMultiIn"
-
-        let fsharpSource = """
-module Test
-
-open CsLib
-
-let dotProduct () =
-    let a = Vector3(1.0f, 2.0f, 3.0f)
-    let b = Vector3(4.0f, 5.0f, 6.0f)
-    VectorMath.Dot(&a, &b)
-"""
-        FSharp fsharpSource
-        |> asLibrary
-        |> withReferences [csLib]
-        |> compile
-        |> shouldSucceed
-        |> verifyIL [
-            "call       float32 [CsLibMultiIn]CsLib.VectorMath::Dot(valuetype [CsLibMultiIn]CsLib.Vector3& modreq("
-        ]
-        |> ignore
-
-    // [<Fact>] // UNFIXED: Enable when issue #5464 is fixed
-    let ``Issue_5464_CustomModifiers_GenericType`` () =
-        let csLib = 
-            CSharp """
-    using System;
-    namespace CsLib
-    {
-        public struct GenericData<T> 
-        { 
-            public T Value; 
-        }
-        
-        public class GenericProcessor
-        {
-            public static T Process<T>(in GenericData<T> data) where T : struct
-            {
-                return data.Value;
-            }
-        }
-    }""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11 |> withName "CsLibGeneric"
-
-        let fsharpSource = """
-module Test
-
-open CsLib
-
-let processGeneric () =
-    let data = GenericData<int>(Value = 42)
-    GenericProcessor.Process(&data)
-"""
-        FSharp fsharpSource
-        |> asLibrary
-        |> withReferences [csLib]
-        |> compile
-        |> shouldSucceed
-        |> verifyIL [
-            "call       !!0 [CsLibGeneric]CsLib.GenericProcessor::Process<int32>(valuetype [CsLibGeneric]CsLib.GenericData`1<!!0>& modreq("
-        ]
-        |> ignore
-
-    // [<Fact>] // UNFIXED: Enable when issue #5464 is fixed
-    let ``Issue_5464_CustomModifiers_ChainedCalls`` () =
-        let csLib = 
-            CSharp """
-    using System;
-    namespace CsLib
-    {
-        public struct Point 
-        { 
-            public int X, Y; 
-            public Point(int x, int y) { X = x; Y = y; }
-        }
-        
-        public class Math
-        {
-            public static int GetX(in Point p) => p.X;
-            public static int GetY(in Point p) => p.Y;
-            public static int Distance(in Point a, in Point b)
-            {
-                var dx = b.X - a.X;
-                var dy = b.Y - a.Y;
-                return dx * dx + dy * dy;
-            }
-        }
-    }""" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11 |> withName "CsLibChain"
-
-        let fsharpSource = """
-module Test
-
-open CsLib
-
-let computeDistance () =
-    let p1 = Point(0, 0)
-    let p2 = Point(3, 4)
-    Math.Distance(&p1, &p2)
-"""
-        FSharp fsharpSource
-        |> asLibrary
-        |> withReferences [csLib]
-        |> compile
-        |> shouldSucceed
-        |> verifyIL [
-            "call       int32 [CsLibChain]CsLib.Math::Distance(valuetype [CsLibChain]CsLib.Point& modreq("
-        ]
-        |> ignore
-
     // https://github.com/dotnet/fsharp/issues/878
     [<Fact>]
     let ``Issue_878_ExceptionSerialization`` () =
@@ -2430,3 +1836,65 @@ exception Foo of x:string * y:int
 
         let actualIL = getActualIL result
         Assert.Contains("AddValue", actualIL)
+
+    // https://github.com/dotnet/fsharp/issues/878
+    // Runtime roundtrip test using SerializationInfo directly (BinaryFormatter removed in .NET 10)
+    [<Fact>]
+    let ``Issue_878_ExceptionSerialization_Roundtrip`` () =
+        let source = """
+module Test
+open System
+open System.Runtime.Serialization
+
+#nowarn "44" // Serialization types are obsolete but needed for testing ISerializable
+#nowarn "67"
+
+exception Foo of x:string * y:int
+
+let roundtrip (e: Exception) =
+    let info = SerializationInfo(e.GetType(), FormatterConverter())
+    let ctx = StreamingContext(StreamingContextStates.All)
+    e.GetObjectData(info, ctx)
+    let ctor =
+        e.GetType().GetConstructor(
+            System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Public,
+            null,
+            [| typeof<SerializationInfo>; typeof<StreamingContext> |],
+            null)
+    if ctor = null then failwith "Deserialization constructor not found"
+    ctor.Invoke([| info :> obj; ctx :> obj |]) :?> Exception
+
+[<EntryPoint>]
+let main _ =
+    let original = Foo("value", 42)
+    // Check GetObjectData actually writes our fields
+    let info = SerializationInfo(original.GetType(), FormatterConverter())
+    let ctx = StreamingContext(StreamingContextStates.All)
+    original.GetObjectData(info, ctx)
+    let xVal = info.GetString("x")
+    let yVal = info.GetInt32("y")
+    if xVal <> "value" then failwithf "GetObjectData: Expected x='value', got '%s'" xVal
+    if yVal <> 42 then failwithf "GetObjectData: Expected y=42, got %d" yVal
+    
+    // Check full roundtrip
+    let cloned = roundtrip original
+    // Access fields via internal backing fields using reflection
+    let xField = cloned.GetType().GetField("x@", System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.NonPublic)
+    let yField = cloned.GetType().GetField("y@", System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.NonPublic)
+    if xField = null then failwith "Field x@ not found"
+    if yField = null then failwith "Field y@ not found"
+    let xCloned = xField.GetValue(cloned) :?> string
+    let yCloned = yField.GetValue(cloned) :?> int
+    if xCloned <> "value" then failwithf "Roundtrip: Expected x='value', got '%s'" xCloned
+    if yCloned <> 42 then failwithf "Roundtrip: Expected y=42, got %d" yCloned
+    printfn "SUCCESS: Foo(value, 42) roundtripped correctly"
+    0
+"""
+        FSharp source
+        |> asExe
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore

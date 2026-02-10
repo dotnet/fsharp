@@ -3685,3 +3685,59 @@ let validate pred msg value : Validated<'a> =
     else Error [msg]
 """
     ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+// Tests for hasConditionalTypar scope reduction:
+// The function was simplified to only check TType_var and TType_app, removing recursion into
+// tuples, functions, forall, etc. These tests verify that types with conditional typars in
+// nested positions still work correctly through FCS expression conversion.
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic DU with tuple field should not crash`` () =
+    let source = """
+module M
+
+type TupleDU<'a> =
+    | TupleCase of ('a * int)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic record with tuple field should not crash`` () =
+    let source = """
+module M
+
+type TupleRecord<'a> = { Pair: 'a * string; Extra: 'a * 'a }
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic DU with function field should not crash`` () =
+    let source = """
+module M
+
+[<NoComparison; NoEquality>]
+type FuncDU<'a> =
+    | FuncCase of ('a -> 'a)
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic DU with nested tuple of tuples should not crash`` () =
+    let source = """
+module M
+
+type DeepTuple<'a> =
+    | Deep of ('a * ('a * int))
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source
+
+[<Fact>]
+let ``ImmediateSubExpressions - generic record with comparison and tuple fields should not crash`` () =
+    let source = """
+module M
+
+type Wrapper<'a> = { Items: ('a * 'a) list; Tag: string }
+
+let compare2 (a: Wrapper<int>) (b: Wrapper<int>) = compare a b
+"""
+    ProjectForWitnessConditionalComparison.walkAllExpressions source

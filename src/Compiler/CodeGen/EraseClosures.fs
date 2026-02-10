@@ -152,20 +152,15 @@ let newIlxPubCloEnv (ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFi
 
 let mkILTyFuncTy cenv = cenv.mkILTyFuncTy
 
+let inline private (|IsVoidPtr|_|) ty =
+    match ty with
+    | ILType.Ptr ILType.Void -> true
+    | _ -> false
+
 let private fixVoidPtrForGenericArg (ilg: ILGlobals) ty =
     match ty with
-    | ILType.Ptr ILType.Void -> ilg.typ_IntPtr
+    | IsVoidPtr -> ilg.typ_IntPtr
     | _ -> ty
-
-let private fixILParamForFunc (ilg: ILGlobals) (p: ILParameter) =
-    match p.Type with
-    | ILType.Ptr ILType.Void -> { p with Type = ilg.typ_IntPtr }
-    | _ -> p
-
-let private fixILParamsForFunc (ilg: ILGlobals) (ps: ILParameter list) = ps |> List.map (fixILParamForFunc ilg)
-
-let private fixFuncTypeArgs (ilg: ILGlobals) (argTys: ILType list) retTy =
-    struct (argTys |> List.map (fun ty -> fixVoidPtrForGenericArg ilg ty), fixVoidPtrForGenericArg ilg retTy)
 
 let mkILFuncTy cenv dty rty =
     let dty = fixVoidPtrForGenericArg cenv.ilg dty
@@ -184,7 +179,8 @@ let typ_Func cenv (dtys: ILType list) rty =
         else
             mkFuncTypeRef cenv.ilg.fsharpCoreAssemblyScopeRef n
 
-    let struct (dtys, rty) = fixFuncTypeArgs cenv.ilg dtys rty
+    let dtys = dtys |> List.map (fixVoidPtrForGenericArg cenv.ilg)
+    let rty = fixVoidPtrForGenericArg cenv.ilg rty
     mkILBoxedTy tref (dtys @ [ rty ])
 
 let rec mkTyOfApps cenv apps =
@@ -207,7 +203,8 @@ let mkMethSpecForMultiApp cenv (argTys: ILType list, retTy) =
     let n = argTys.Length
     let formalArgTys = List.mapi (fun i _ -> ILType.TypeVar(uint16 i)) argTys
     let formalRetTy = ILType.TypeVar(uint16 n)
-    let struct (argTys, retTy) = fixFuncTypeArgs cenv.ilg argTys retTy
+    let argTys = argTys |> List.map (fixVoidPtrForGenericArg cenv.ilg)
+    let retTy = fixVoidPtrForGenericArg cenv.ilg retTy
     let inst = argTys @ [ retTy ]
 
     if n = 1 then
@@ -712,7 +709,13 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
             else
                 // CASE 2b - Build an Invoke method
 
-                let fixedNowParams = fixILParamsForFunc cenv.ilg nowParams
+                let fixedNowParams =
+                    nowParams
+                    |> List.map (fun (p: ILParameter) ->
+                        match p.Type with
+                        | IsVoidPtr -> { p with Type = cenv.ilg.typ_IntPtr }
+                        | _ -> p)
+
                 let fixedNowReturnTy = fixVoidPtrForGenericArg cenv.ilg nowReturnTy
 
                 let nowEnvParentClass =

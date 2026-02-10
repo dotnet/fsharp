@@ -605,6 +605,10 @@ let voidCheck m g permits ty =
 [<Struct>]
 type DuFieldCoordinates = { CaseIdx: int; FieldIdx: int }
 
+/// Flags propagated from interface slot signatures to parameter metadata.
+[<Struct>]
+type SlotParamFlags = { IsIn: bool; IsOut: bool }
+
 /// Structure for maintaining field reuse across struct unions
 type UnionFieldReuseMap = MultiMap<string, DuFieldCoordinates>
 
@@ -3331,26 +3335,13 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
         match TryEliminateDesugaredConstants g m c with
         | Some e -> GenExpr cenv cgbuf eenv e Continue
         | None ->
-            let underlyingIlTyOpt =
-                match c with
-                | Const.Bool _ -> Some g.ilg.typ_Bool
-                | Const.SByte _ -> Some g.ilg.typ_SByte
-                | Const.Int16 _ -> Some g.ilg.typ_Int16
-                | Const.Int32 _ -> Some g.ilg.typ_Int32
-                | Const.Int64 _ -> Some g.ilg.typ_Int64
-                | Const.IntPtr _ -> Some g.ilg.typ_IntPtr
-                | Const.Byte _ -> Some g.ilg.typ_Byte
-                | Const.UInt16 _ -> Some g.ilg.typ_UInt16
-                | Const.UInt32 _ -> Some g.ilg.typ_UInt32
-                | Const.UInt64 _ -> Some g.ilg.typ_UInt64
-                | Const.UIntPtr _ -> Some g.ilg.typ_UIntPtr
-                | Const.Double _ -> Some g.ilg.typ_Double
-                | Const.Single _ -> Some g.ilg.typ_Single
-                | Const.Char _ -> Some g.ilg.typ_Char
-                | Const.String _
-                | Const.Unit
-                | Const.Zero
-                | Const.Decimal _ -> None
+            let needsBoxingToTargetTy = (match ilTy with ILType.Value _ -> false | _ -> true)
+
+            // Wraps an emitter: calls it, then boxes if target type is not a value type (e.g. literal upcast to obj).
+            let inline emitAndBoxIfNeeded emitter uty arg =
+                emitter uty arg
+                if needsBoxingToTargetTy then
+                    CG.EmitInstr cgbuf (pop 1) (Push [ ilTy ]) (I_box uty)
 
             let emitInt64Constant uty i =
                 // see https://github.com/dotnet/fsharp/pull/3620
@@ -3369,31 +3360,25 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
             let emitConstI uty instrs =
                 CG.EmitInstrs cgbuf (pop 0) (Push [ uty ]) instrs
 
-            match c, underlyingIlTyOpt with
-            | Const.Bool b, Some uty -> emitConst uty (mkLdcInt32 (if b then 1 else 0))
-            | Const.SByte i, Some uty -> emitConst uty (mkLdcInt32 (int32 i))
-            | Const.Int16 i, Some uty -> emitConst uty (mkLdcInt32 (int32 i))
-            | Const.Int32 i, Some uty -> emitConst uty (mkLdcInt32 i)
-            | Const.Int64 i, Some uty -> emitInt64Constant uty i
-            | Const.IntPtr i, Some uty -> emitConstI uty [ iLdcInt64 i; AI_conv DT_I ]
-            | Const.Byte i, Some uty -> emitConst uty (mkLdcInt32 (int32 i))
-            | Const.UInt16 i, Some uty -> emitConst uty (mkLdcInt32 (int32 i))
-            | Const.UInt32 i, Some uty -> emitConst uty (mkLdcInt32 (int32 i))
-            | Const.UInt64 i, Some uty -> emitInt64Constant uty (int64 i)
-            | Const.UIntPtr i, Some uty -> emitConstI uty [ iLdcInt64 (int64 i); AI_conv DT_U ]
-            | Const.Double f, Some uty -> emitConst uty (AI_ldc(DT_R8, ILConst.R8 f))
-            | Const.Single f, Some uty -> emitConst uty (AI_ldc(DT_R4, ILConst.R4 f))
-            | Const.Char c, Some uty -> emitConst uty (mkLdcInt32 (int c))
-            | Const.String s, None -> GenString cenv cgbuf s
-            | Const.Unit, None -> GenUnit cenv eenv m cgbuf
-            | Const.Zero, None -> GenDefaultValue cenv cgbuf eenv (ty, m)
-            | Const.Decimal _, None -> failwith "unreachable"
-            | _ -> failwith "unreachable"
-
-            match underlyingIlTyOpt, ilTy with
-            | Some _, ILType.Value _ -> ()
-            | Some underlyingIlTy, _ -> CG.EmitInstr cgbuf (pop 1) (Push [ ilTy ]) (I_box underlyingIlTy)
-            | None, _ -> ()
+            match c with
+            | Const.Bool b -> emitAndBoxIfNeeded emitConst g.ilg.typ_Bool (mkLdcInt32 (if b then 1 else 0))
+            | Const.SByte i -> emitAndBoxIfNeeded emitConst g.ilg.typ_SByte (mkLdcInt32 (int32 i))
+            | Const.Int16 i -> emitAndBoxIfNeeded emitConst g.ilg.typ_Int16 (mkLdcInt32 (int32 i))
+            | Const.Int32 i -> emitAndBoxIfNeeded emitConst g.ilg.typ_Int32 (mkLdcInt32 i)
+            | Const.Int64 i -> emitAndBoxIfNeeded emitInt64Constant g.ilg.typ_Int64 i
+            | Const.IntPtr i -> emitAndBoxIfNeeded emitConstI g.ilg.typ_IntPtr [ iLdcInt64 i; AI_conv DT_I ]
+            | Const.Byte i -> emitAndBoxIfNeeded emitConst g.ilg.typ_Byte (mkLdcInt32 (int32 i))
+            | Const.UInt16 i -> emitAndBoxIfNeeded emitConst g.ilg.typ_UInt16 (mkLdcInt32 (int32 i))
+            | Const.UInt32 i -> emitAndBoxIfNeeded emitConst g.ilg.typ_UInt32 (mkLdcInt32 (int32 i))
+            | Const.UInt64 i -> emitAndBoxIfNeeded emitInt64Constant g.ilg.typ_UInt64 (int64 i)
+            | Const.UIntPtr i -> emitAndBoxIfNeeded emitConstI g.ilg.typ_UIntPtr [ iLdcInt64 (int64 i); AI_conv DT_U ]
+            | Const.Double f -> emitAndBoxIfNeeded emitConst g.ilg.typ_Double (AI_ldc(DT_R8, ILConst.R8 f))
+            | Const.Single f -> emitAndBoxIfNeeded emitConst g.ilg.typ_Single (AI_ldc(DT_R4, ILConst.R4 f))
+            | Const.Char c -> emitAndBoxIfNeeded emitConst g.ilg.typ_Char (mkLdcInt32 (int c))
+            | Const.String s -> GenString cenv cgbuf s
+            | Const.Unit -> GenUnit cenv eenv m cgbuf
+            | Const.Zero -> GenDefaultValue cenv cgbuf eenv (ty, m)
+            | Const.Decimal _ -> failwith "unreachable"
 
         GenSequel cenv eenv.cloc cgbuf sequel
     | Some sq ->
@@ -5526,13 +5511,13 @@ and GenILCall
         && ilMethRef.CallingConv.IsInstance
 
     let ccallInfo =
-        match ccallInfo with
-        | Some _ -> ccallInfo
-        | None when useICallVirt && not (List.isEmpty argExprs) ->
-            let objArgExpr = List.head argExprs
-            let objArgTy = tyOfExpr g objArgExpr
-            if isStructTy g objArgTy then Some objArgTy else None
-        | None -> None
+        ccallInfo
+        |> Option.orElseWith (fun () ->
+            match argExprs with
+            | objArgExpr :: _ when useICallVirt ->
+                let objArgTy = tyOfExpr g objArgExpr
+                if isStructTy g objArgTy then Some objArgTy else None
+            | _ -> None)
 
     let tail =
         CanTailcall(
@@ -9126,7 +9111,7 @@ and GenParams
     (argInfos: ArgReprInfo list)
     methArgTys
     (implValsOpt: Val list option)
-    (slotSigParamFlags: (bool * bool) list option)
+    (slotSigParamFlags: SlotParamFlags list option)
     =
     let g = cenv.g
     let ilWitnessParams = GenWitnessParams cenv eenv m witnessInfos
@@ -9153,8 +9138,8 @@ and GenParams
             let inFlag, outFlag =
                 match slotSigParamFlags with
                 | Some flags when paramIdx < flags.Length ->
-                    let slotInFlag, slotOutFlag = flags[paramIdx]
-                    (inFlag || slotInFlag, outFlag || slotOutFlag)
+                    let slotFlags = flags[paramIdx]
+                    (inFlag || slotFlags.IsIn, outFlag || slotFlags.IsOut)
                 | _ -> (inFlag, outFlag)
 
             let idOpt =
@@ -9554,7 +9539,7 @@ and GenMethodForBinding
             let slotParams = slotsig.FormalParams |> List.concat
 
             slotParams
-            |> List.map (fun (TSlotParam(_, _, inFlag, outFlag, _, _)) -> (inFlag, outFlag))
+            |> List.map (fun (TSlotParam(_, _, inFlag, outFlag, _, _)) -> { IsIn = inFlag; IsOut = outFlag })
             |> Some
         | [] -> None
 
@@ -11958,6 +11943,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         else
                             Set.empty
 
+                    let isNullaryCaseClash name =
+                        not nullaryCaseNames.IsEmpty && nullaryCaseNames.Contains name
+
                     let tdefDiscards =
                         Some(
                             (fun (md: ILMethodDef) ->
@@ -11967,10 +11955,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))
                                 || (cuinfo.HasHelpers = AllHelpers
                                     && (md.Name.StartsWith("get_Is") && not (tdef2.Methods.FindByName(md.Name).IsEmpty)))
-                                || (not nullaryCaseNames.IsEmpty
-                                    && md.Name.StartsWith("get_")
+                                || (md.Name.StartsWith("get_")
                                     && md.Name.Length > 4
-                                    && nullaryCaseNames.Contains(md.Name.Substring(4))
+                                    && isNullaryCaseClash (md.Name.Substring(4))
                                     && not (tdef2.Methods.FindByName(md.Name).IsEmpty))),
 
                             (fun (pd: ILPropertyDef) ->
@@ -11980,8 +11967,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     && (pd.Name = "Value" || pd.Name = "None"))
                                 || (cuinfo.HasHelpers = AllHelpers
                                     && (pd.Name.StartsWith("Is") && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
-                                || (not nullaryCaseNames.IsEmpty
-                                    && nullaryCaseNames.Contains(pd.Name)
+                                || (isNullaryCaseClash pd.Name
                                     && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
                         )
 
@@ -12106,42 +12092,48 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
             match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
             | Some serializationInfoType, Some streamingContextType ->
 
-                let ilInstrsToRestoreFields =
+                let emitSerializationFieldIL emitPerField =
                     [
                         for (ilPropName, ilFieldName, ilPropType, _) in fieldNamesAndTypes do
-                            yield mkLdarg0
-                            yield mkLdarg 1us
-                            yield I_ldstr ilPropName
-                            yield I_ldtoken(ILToken.ILType ilPropType)
-
-                            yield
-                                mkNormalCall (
-                                    mkILNonGenericStaticMethSpecInTy (
-                                        g.ilg.typ_Type,
-                                        "GetTypeFromHandle",
-                                        [ g.iltyp_RuntimeTypeHandle ],
-                                        g.ilg.typ_Type
-                                    )
-                                )
-
-                            yield
-                                mkNormalCallvirt (
-                                    mkILNonGenericInstanceMethSpecInTy (
-                                        serializationInfoType,
-                                        "GetValue",
-                                        [ g.ilg.typ_String; g.ilg.typ_Type ],
-                                        g.ilg.typ_Object
-                                    )
-                                )
-
-                            yield
-                                if ilPropType.IsNominal && ilPropType.Boxity = ILBoxity.AsValue then
-                                    I_unbox_any ilPropType
-                                else
-                                    I_castclass ilPropType
-
-                            yield mkNormalStfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
+                            yield! emitPerField ilPropName ilFieldName ilPropType
                     ]
+
+                let isILValueType (ty: ILType) =
+                    ty.IsNominal && ty.Boxity = ILBoxity.AsValue
+
+                let ilInstrsToRestoreFields =
+                    emitSerializationFieldIL (fun ilPropName ilFieldName ilPropType ->
+                        [
+                            mkLdarg0
+                            mkLdarg 1us
+                            I_ldstr ilPropName
+                            I_ldtoken(ILToken.ILType ilPropType)
+
+                            mkNormalCall (
+                                mkILNonGenericStaticMethSpecInTy (
+                                    g.ilg.typ_Type,
+                                    "GetTypeFromHandle",
+                                    [ g.iltyp_RuntimeTypeHandle ],
+                                    g.ilg.typ_Type
+                                )
+                            )
+
+                            mkNormalCallvirt (
+                                mkILNonGenericInstanceMethSpecInTy (
+                                    serializationInfoType,
+                                    "GetValue",
+                                    [ g.ilg.typ_String; g.ilg.typ_Type ],
+                                    g.ilg.typ_Object
+                                )
+                            )
+
+                            if isILValueType ilPropType then
+                                I_unbox_any ilPropType
+                            else
+                                I_castclass ilPropType
+
+                            mkNormalStfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
+                        ])
 
                 let ilInstrsForSerialization =
                     [
@@ -12164,26 +12156,25 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     )
 
                 let ilInstrsToSaveFields =
-                    [
-                        for (ilPropName, ilFieldName, ilPropType, _) in fieldNamesAndTypes do
-                            yield mkLdarg 1us
-                            yield I_ldstr ilPropName
-                            yield mkLdarg0
-                            yield mkNormalLdfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
+                    emitSerializationFieldIL (fun ilPropName ilFieldName ilPropType ->
+                        [
+                            mkLdarg 1us
+                            I_ldstr ilPropName
+                            mkLdarg0
+                            mkNormalLdfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
 
-                            if ilPropType.IsNominal && ilPropType.Boxity = ILBoxity.AsValue then
-                                yield I_box ilPropType
+                            if isILValueType ilPropType then
+                                I_box ilPropType
 
-                            yield
-                                mkNormalCallvirt (
-                                    mkILNonGenericInstanceMethSpecInTy (
-                                        serializationInfoType,
-                                        "AddValue",
-                                        [ g.ilg.typ_String; g.ilg.typ_Object ],
-                                        ILType.Void
-                                    )
+                            mkNormalCallvirt (
+                                mkILNonGenericInstanceMethSpecInTy (
+                                    serializationInfoType,
+                                    "AddValue",
+                                    [ g.ilg.typ_String; g.ilg.typ_Object ],
+                                    ILType.Void
                                 )
-                    ]
+                            )
+                        ])
 
                 let ilInstrsForGetObjectData =
                     [
