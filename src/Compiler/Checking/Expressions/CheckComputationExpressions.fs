@@ -117,12 +117,12 @@ let inline mkSynLambda p e m =
 let mkExprForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynExpr.Const(SynConst.Unit, m)
-    | [ v ] -> SynExpr.Ident(Ident(v.Id.idText, v.Id.idRange.MakeSynthetic()))
+    | [ v ] -> SynExpr.Ident(v.Id.MakeSynthetic())
     | vs ->
         SynExpr.Tuple(
             false,
             (vs
-             |> List.map (fun v -> SynExpr.Ident(Ident(v.Id.idText, v.Id.idRange.MakeSynthetic())))),
+             |> List.map (fun v -> SynExpr.Ident(v.Id.MakeSynthetic()))),
             [],
             m
         )
