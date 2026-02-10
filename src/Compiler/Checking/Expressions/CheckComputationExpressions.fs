@@ -1308,19 +1308,12 @@ let rec TryTranslateComputationExpression
             requireBuilderMethod "For" ceenv mFor mFor
 
             // Add the variables to the query variable space, on demand
-            let syntheticPat =
-                match pat with
-                | SynPat.Named(synIdent, isThisVal, access, m) -> SynPat.Named(synIdent, isThisVal, access, m.MakeSynthetic())
-                | SynPat.LongIdent(lid, idOpt, typarDecls, argPats, access, m) ->
-                    SynPat.LongIdent(lid, idOpt, typarDecls, argPats, access, m.MakeSynthetic())
-                | _ -> pat
-
             let varSpace =
                 addVarsToVarSpace varSpace (fun _mCustomOp env ->
                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
 
                     let _, _, vspecs, envinner, _ =
-                        TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv syntheticPat None TcTrueMatchClause.No
+                        TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv pat None TcTrueMatchClause.No
 
                     vspecs, envinner)
 

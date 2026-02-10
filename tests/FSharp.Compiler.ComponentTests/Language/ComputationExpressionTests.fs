@@ -2260,156 +2260,65 @@ but here has type
          |> runFsi
          |> shouldSucceed
 
-    [<Fact>]
-    let ``Query variable used in where does not trigger FS1182`` () =
-        FSharp """
-module Test
-let result = query { for x in [1;2;3] do where (x > 0); select 1 }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Query variable used in select does not trigger FS1182`` () =
-        FSharp """
-module Test
-let result = query { for x in [1;2;3] do where (x > 2); select x }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Query variable used in let binding does not trigger FS1182`` () =
-        FSharp """
-module Test
-let result = query { for x in [1;2;3] do let y = x * 2 in select y }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Join variables used in on clause do not trigger FS1182`` () =
-        FSharp """
-module Test
-let data1 = [1;2;3]
+    let queryFS1182NoWarnCases =
+        [
+            "let result = query { for x in [1;2;3] do where (x > 0); select 1 }"
+            "let result = query { for x in [1;2;3] do where (x > 2); select x }"
+            "let result = query { for x in [1;2;3] do let y = x * 2 in select y }"
+            """let data1 = [1;2;3]
 let data2 = [(1, "one"); (2, "two"); (3, "three")]
-let result = query { for x in data1 do join (y, name) in data2 on (x = y); select name }
-        """
-        |> withOptions ["--warnon:FS1182"]
+let result = query { for x in data1 do join (y, name) in data2 on (x = y); select name }"""
+            "let result = query { for a in [1;2;3] do for b in [4;5;6] do where (a < b); select (a + b) }"
+            "let result = query { for x in [3;1;2] do sortBy x; select x }"
+        ]
+        |> List.map Array.singleton
+
+    [<Theory>]
+    [<MemberData(nameof queryFS1182NoWarnCases)>]
+    let ``Query variable used in expression does not trigger FS1182`` (code: string) =
+        FSharp $"module Test\n{code}"
+        |> withWarnOn 1182
         |> asLibrary
         |> compile
         |> shouldSucceed
-        |> ignore
 
-    [<Fact>]
-    let ``Multiple query variables in nested for do not trigger FS1182`` () =
-        FSharp """
-module Test
-let result = query { for a in [1;2;3] do for b in [4;5;6] do where (a < b); select (a + b) }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Genuinely unused query loop variable warns FS1182`` () =
-        FSharp """
-module Test
-let result = query { for x in [1;2;3] do select 1 }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withSingleDiagnostic (Warning 1182, Line 3, Col 26, Line 3, Col 27, "The value 'x' is unused")
-
-    [<Fact>]
-    let ``Unused variable in select scope warns FS1182`` () =
-        FSharp """
-module Test
-
-let result = 
+    let queryFS1182WarnCases =
+        [
+            "let result = query { for x in [1;2;3] do select 1 }",
+                2, 26, 2, 27, "The value 'x' is unused"
+            """let result = 
     query { for x in [1;2;3] do
             select (
                 let unused = 42
-                x) }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withSingleDiagnostic (Warning 1182, Line 7, Col 21, Line 7, Col 27, "The value 'unused' is unused")
-        |> ignore
-
-    [<Fact>]
-    let ``Local unused variable in function with query warns FS1182`` () =
-        FSharp """
-module Test
-
-let f () =
+                x) }""",
+                5, 21, 5, 27, "The value 'unused' is unused"
+            """let f () =
     let unused = 42
-    query { for x in [1;2;3] do select x }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withSingleDiagnostic (Warning 1182, Line 5, Col 9, Line 5, Col 15, "The value 'unused' is unused")
-        |> ignore
-
-    [<Fact>]
-    let ``Shadowed query variable warns FS1182 for outer variable`` () =
-        FSharp """
-module Test
-let result =
+    query { for x in [1;2;3] do select x }""",
+                3, 9, 3, 15, "The value 'unused' is unused"
+            """let result =
     query { for x in [1;2;3] do
             select (
                 let x = 42
-                x) }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withSingleDiagnostic (Warning 1182, Line 4, Col 17, Line 4, Col 18, "The value 'x' is unused")
-        |> ignore
-
-    [<Fact>]
-    let ``Inner shadowing variable in query warns FS1182 when unused`` () =
-        FSharp """
-module Test
-let result =
+                x) }""",
+                3, 17, 3, 18, "The value 'x' is unused"
+            """let result =
     query { for x in [1;2;3] do
             select (
                 let x = x
-                1) }
-        """
-        |> withOptions ["--warnon:FS1182"]
+                1) }""",
+                5, 21, 5, 22, "The value 'x' is unused"
+        ]
+        |> List.map (fun (str, line1, col1, line2, col2, msg) ->
+            [| box str; box line1; box col1; box line2; box col2; box msg |])
+
+    [<Theory>]
+    [<MemberData(nameof queryFS1182WarnCases)>]
+    let ``Unused variable in query warns FS1182`` (code: string, line1: int, col1: int, line2: int, col2: int, msg: string) =
+        FSharp $"module Test\n{code}"
+        |> withWarnOn 1182
         |> asLibrary
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Warning 1182, Line 6, Col 21, Line 6, Col 22, "The value 'x' is unused")
-        |> ignore
-
-    [<Fact>]
-    let ``Query variable used in sortBy does not trigger FS1182`` () =
-        FSharp """
-module Test
-let result = query { for x in [3;1;2] do sortBy x; select x }
-        """
-        |> withOptions ["--warnon:FS1182"]
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
+        |> withSingleDiagnostic (Warning 1182, Line line1, Col col1, Line line2, Col col2, msg)
         |> ignore
