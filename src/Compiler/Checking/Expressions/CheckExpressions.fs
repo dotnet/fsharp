@@ -5918,7 +5918,12 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcExprArrayOrList cenv overallTy env tpenv (isArray, args, m)
 
     | SynExpr.New (superInit, synObjTy, arg, mNewExpr) ->
+        let g = cenv.g
         let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes env tpenv synObjTy
+
+        // Stamp constructor result as KnownFromConstructor so the constraint solver
+        // knows this is provably non-null (even for AllowNullLiteral types).
+        let objTy = if g.checkNullness then replaceNullnessOfTy Nullness.KnownFromConstructor objTy else objTy
 
         TcNonControlFlowExpr env <| fun env ->
         TcPropagatingExprLeafThenConvert cenv overallTy objTy env (* true *) mNewExpr (fun () ->
@@ -6858,6 +6863,12 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
         // skip this check if this ctor call is either 'inherit(...)' or call is located within constructor shape
         if not (superInit || AreWithinCtorShape env)
             then CheckSuperInit cenv objTy mWholeCall
+
+        // Pre-unify expected type with KnownFromConstructor nullness so the constraint solver
+        // sees constructor results as provably non-null (issue #18021).
+        // Guarded: this adds a new unification step that changes inference order.
+        if g.checkNullness && TypeNullIsExtraValueNew g mWholeCall objTy then
+            UnifyTypes cenv env mWholeCall overallTy.Commit (replaceNullnessOfTy Nullness.KnownFromConstructor objTy)
 
         let afterResolution =
             match mObjTyOpt, afterTcOverloadResolutionOpt with
@@ -9031,14 +9042,15 @@ and TcMethodItemThen (cenv: cenv) overallTy env item methodName minfos tpenv mIt
         TcMethodApplicationThen cenv env overallTy None tpenv None [] mItem mItem methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic staticTyOpt delayed
 
 and TcCtorItemThen (cenv: cenv) overallTy env item nm minfos tinstEnclosing tpenv mItem afterResolution delayed =
-#if !NO_TYPEPROVIDERS
     let g = cenv.g
+#if !NO_TYPEPROVIDERS
     let ad = env.eAccessRights
 #endif
     let objTy =
         match minfos with
         | minfo :: _ -> minfo.ApparentEnclosingType
         | [] -> error(Error(FSComp.SR.tcTypeHasNoAccessibleConstructor(), mItem))
+
     match delayed with
     | DelayedApp(_, _, _, arg, mExprAndArg) :: otherDelayed ->
 
