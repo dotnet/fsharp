@@ -237,25 +237,29 @@ let storeCacheResult
     (anyHasOutArgs: bool)
     (calledMethOpt: CalledMeth<'T> voption)
     =
-    match cacheKeyOpt with
-    | ValueSome cacheKey ->
-        match computeCacheResult calledMethGroup calledMethOpt with
-        | Some res ->
-            // Store under the "before" key
-            cache.TryAdd(cacheKey, res) |> ignore
-
-            // Compute "after" key - types may have been solved during resolution
-            // If different from "before" key, store under that too for future hits
-            match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt anyHasOutArgs with
-            | ValueSome afterKey when afterKey <> cacheKey -> cache.TryAdd(afterKey, res) |> ignore
-            | _ -> ()
-        | None -> ()
-    | ValueNone ->
-        // Even if we couldn't compute a "before" key (unstable types),
-        // try to compute an "after" key now that types may be solved
-        match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt anyHasOutArgs with
-        | ValueSome afterKey ->
+    // Only store in cache if the language feature is enabled
+    if not (g.langVersion.SupportsFeature LanguageFeature.MethodOverloadsCache) then
+        ()
+    else
+        match cacheKeyOpt with
+        | ValueSome cacheKey ->
             match computeCacheResult calledMethGroup calledMethOpt with
-            | Some res -> cache.TryAdd(afterKey, res) |> ignore
+            | Some res ->
+                // Store under the "before" key
+                cache.TryAdd(cacheKey, res) |> ignore
+
+                // Compute "after" key - types may have been solved during resolution
+                // If different from "before" key, store under that too for future hits
+                match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt anyHasOutArgs with
+                | ValueSome afterKey when afterKey <> cacheKey -> cache.TryAdd(afterKey, res) |> ignore
+                | _ -> ()
             | None -> ()
-        | ValueNone -> ()
+        | ValueNone ->
+            // Even if we couldn't compute a "before" key (unstable types),
+            // try to compute an "after" key now that types may be solved
+            match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt anyHasOutArgs with
+            | ValueSome afterKey ->
+                match computeCacheResult calledMethGroup calledMethOpt with
+                | Some res -> cache.TryAdd(afterKey, res) |> ignore
+                | None -> ()
+            | ValueNone -> ()

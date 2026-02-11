@@ -3644,11 +3644,13 @@ and ResolveOverloading
 
           // Try to use cached overload resolution result for repetitive patterns
           // Only cache when:
+          // - Language feature is enabled
           // - NOT doing op_Explicit/op_Implicit conversions
           // - NOT doing trait constraint (SRTP) resolution (cx is None)
           // - Have multiple candidates
           let cacheKeyOpt = 
-              if not isOpConversion && cx.IsNone && candidates.Length > 1 then
+              if g.langVersion.SupportsFeature LanguageFeature.MethodOverloadsCache && 
+                 not isOpConversion && cx.IsNone && candidates.Length > 1 then
                   tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt
               else
                   ValueNone
