@@ -2153,14 +2153,18 @@ consumeNonNull x
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
-[<Fact>]
-let ``AllowNullLiteral constructor does not warn but defaultof and explicit nullable do for not null constraint`` () =
-    FSharp """module Test
+let private allowNullLiteralConsumeNonNullPreamble = """module Test
 
 [<AllowNullLiteral>]
 type MyClass() = class end
-let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
 
+let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
+"""
+
+[<Fact>]
+let ``AllowNullLiteral constructor does not warn but defaultof and explicit nullable do for not null constraint`` () =
+    let source =
+        allowNullLiteralConsumeNonNullPreamble + """
 consumeNonNull (MyClass())
 
 consumeNonNull (Unchecked.defaultof<MyClass>)
@@ -2168,26 +2172,23 @@ consumeNonNull (Unchecked.defaultof<MyClass>)
 let nullable : MyClass | null = null
 consumeNonNull nullable
 """
+    FSharp source
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 9, Col 17, Line 9, Col 45, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
-        Error 3261, Line 11, Col 16, Line 11, Col 30, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
-        Error 3261, Line 12, Col 16, Line 12, Col 24, "Nullness warning: The type 'MyClass | null' supports 'null' but a non-null type is expected."
+        Error 3261, Line 10, Col 17, Line 10, Col 45, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
+        Error 3261, Line 12, Col 16, Line 12, Col 30, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
+        Error 3261, Line 13, Col 16, Line 13, Col 24, "Nullness warning: The type 'MyClass | null' supports 'null' but a non-null type is expected."
     ]
 
 [<Fact>]
 let ``Constructor of AllowNullLiteral type does not warn for generic not null constraint`` () =
-    FSharp """module Test
-
-[<AllowNullLiteral>]
-type MyClass() = class end
-
-let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
-
+    let source =
+        allowNullLiteralConsumeNonNullPreamble + """
 let test () = consumeNonNull (MyClass())
 """
+    FSharp source
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
@@ -2213,32 +2214,24 @@ let test () = consumeNonNull (MyClass.Create())
 
 [<Fact>]
 let ``Let-bound AllowNullLiteral constructor result checked against generic not null constraint`` () =
-    FSharp """module Test
-
-[<AllowNullLiteral>]
-type MyClass() = class end
-
-let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
-
+    let source =
+        allowNullLiteralConsumeNonNullPreamble + """
 let instance = MyClass()
 let test () = consumeNonNull instance
 """
+    FSharp source
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
 [<Fact>]
 let ``Explicit nullable AllowNullLiteral binding fails generic not null constraint`` () =
-    FSharp """module Test
-
-[<AllowNullLiteral>]
-type MyClass() = class end
-
-let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
-
+    let source =
+        allowNullLiteralConsumeNonNullPreamble + """
 let maybeNull : MyClass | null = MyClass()
 let test () = consumeNonNull maybeNull
 """
+    FSharp source
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
@@ -2250,17 +2243,13 @@ let test () = consumeNonNull maybeNull
 [<Fact>]
 let ``Mutable AllowNullLiteral binding warns for not null constraint`` () =
     // Mutable bindings strip KnownFromConstructor — they can be reassigned to null.
-    FSharp """module Test
-
-[<AllowNullLiteral>]
-type MyClass() = class end
-
-let consumeNonNull<'T when 'T : not null> (x: 'T) = ()
-
+    let source =
+        allowNullLiteralConsumeNonNullPreamble + """
 let mutable x = MyClass()
 x <- null
 let test () = consumeNonNull x
 """
+    FSharp source
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
