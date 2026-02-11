@@ -315,7 +315,8 @@ let BindVal cenv env (v: Val) =
        (not v.IsCompiledAsTopLevel || topLevelBindingHiddenBySignatureFile ()) &&
        not (v.DisplayName.StartsWithOrdinal("_")) &&
        not v.IsCompilerGenerated &&
-       // Don't warn for vals with synthetic ranges (query varSpace rebindings). See #422.
+       // Don't warn for variables with synthetic ranges - these are compiler-generated
+       // rebinding patterns in query/CE translation. See https://github.com/dotnet/fsharp/issues/422
        not v.Range.IsSynthetic then
 
         if v.IsCtorThisVal then

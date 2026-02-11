@@ -113,7 +113,7 @@ let mkSourceExprConditional isFromSource callExpr sourceMethInfo builderValName 
 let inline mkSynLambda p e m =
     SynExpr.Lambda(false, false, p, e, None, m, SynExprLambdaTrivia.Zero)
 
-// Use synthetic ranges so query varSpace re-expressions don't mark vals as referenced for FS1182
+// Use synthetic ranges so compiler-generated varSpace refs don't mark vals as referenced for FS1182
 let mkExprForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynExpr.Const(SynConst.Unit, m)
@@ -144,12 +144,17 @@ let transferVarSpaceReferences (expr: Expr) =
     let valsByRange = Dictionary<range, ResizeArray<Val>>()
 
     let addVal (v: Val) =
-        match valsByRange.TryGetValue(v.Range) with
-        | true, vals -> vals.Add(v)
-        | false, _ ->
-            let vals = ResizeArray()
-            vals.Add(v)
-            valsByRange[v.Range] <- vals
+        let key = v.Range
+
+        let vals =
+            match valsByRange.TryGetValue(key) with
+            | true, existing -> existing
+            | false, _ ->
+                let newVals = ResizeArray(1)
+                valsByRange[key] <- newVals
+                newVals
+
+        vals.Add(v)
 
     let folder =
         { ExprFolder0 with
@@ -168,10 +173,16 @@ let transferVarSpaceReferences (expr: Expr) =
 
     FoldExpr folder () expr |> ignore
 
-    // If any Val at a declaration range is referenced, mark all at that range as referenced
     for KeyValue(_, vals) in valsByRange do
-        if vals |> Seq.exists _.HasBeenReferenced then
-            vals |> Seq.iter _.SetHasBeenReferenced()
+        let mutable anyReferenced = false
+
+        for v in vals do
+            if v.HasBeenReferenced then
+                anyReferenced <- true
+
+        if anyReferenced then
+            for v in vals do
+                v.SetHasBeenReferenced()
 
 let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
@@ -3107,7 +3118,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
     let lambdaExpr, tpenv =
         TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
 
-    // For queries, transfer HasBeenReferenced across varSpace Vals sharing a declaration range
+    // For queries, transfer HasBeenReferenced from compiler-generated varSpace Vals to user Vals
     if isQuery then
         transferVarSpaceReferences lambdaExpr
 

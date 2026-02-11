@@ -2271,7 +2271,7 @@ let result = query { for x in data1 do join (y, name) in data2 on (x = y); selec
             "let result = query { for a in [1;2;3] do for b in [4;5;6] do where (a < b); select (a + b) }"
             "let result = query { for x in [3;1;2] do sortBy x; select x }"
         ]
-        |> List.map Array.singleton
+        |> List.map (fun s -> [| box s |])
 
     [<Theory>]
     [<MemberData(nameof queryFS1182NoWarnCases)>]
@@ -2281,6 +2281,7 @@ let result = query { for x in data1 do join (y, name) in data2 on (x = y); selec
         |> asLibrary
         |> compile
         |> shouldSucceed
+        |> ignore
 
     let queryFS1182WarnCases =
         [

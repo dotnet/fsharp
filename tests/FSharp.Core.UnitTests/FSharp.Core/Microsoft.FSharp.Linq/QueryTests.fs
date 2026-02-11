@@ -11,7 +11,6 @@ open Xunit
 open Microsoft.FSharp.Linq
 open Microsoft.FSharp.Linq.RuntimeHelpers
 
-/// Test data for query tests
 module TestData =
     type Person = { Id: int; Name: string; Age: int; DepartmentId: int }
     type Department = { Id: int; DeptName: string }
@@ -47,7 +46,6 @@ open TestData
 
 type QueryTupleJoinTests() =
     
-    /// Issue #7885: Inline tuple join on ((t1.Id1, t1.Id2) = (t2.Id1, t2.Id2)) returns correct matches
     [<Fact>]
     member _.``Inline tuple join returns correct matches - issue 7885``() =
         let t1 = table1Data.AsQueryable()
@@ -64,7 +62,6 @@ type QueryTupleJoinTests() =
         Assert.Contains(("A", "X"), inlineResult)
         Assert.Contains(("B", "Y"), inlineResult)
     
-    /// Issue #7885: Verify inline and function-based tuple joins produce same results
     [<Fact>]
     member _.``Inline tuple join matches function-based tuple join - issue 7885``() =
         let t1 = table1Data.AsQueryable()
@@ -73,7 +70,6 @@ type QueryTupleJoinTests() =
         let makeKey1 (a: Table1) = (a.Id1, a.Id2)
         let makeKey2 (b: Table2) = (b.Id1, b.Id2)
         
-        // Inline tuple join
         let inlineResult = 
             query {
                 for a in t1 do
@@ -81,7 +77,6 @@ type QueryTupleJoinTests() =
                 select (a.Value1, b.Value2)
             } |> Seq.toList
         
-        // Function-based tuple join
         let funcResult = 
             query {
                 for a in t1 do
@@ -98,7 +93,6 @@ type QueryTupleJoinTests() =
 
 type QueryGroupByTupleTests() =
     
-    /// Issue #47: GroupBy with tuple key works
     [<Fact>]
     member _.``GroupBy with tuple key works - issue 47``() =
         let data = 
@@ -115,7 +109,6 @@ type QueryGroupByTupleTests() =
         Assert.Contains(((1, "A"), 2), result)
         Assert.Contains(((2, "B"), 1), result)
     
-    /// Issue #47: Accessing tuple elements after groupBy works  
     [<Fact>]
     member _.``Accessing tuple elements after groupBy works - issue 47``() =
         let data = people.AsQueryable()
@@ -132,7 +125,6 @@ type QueryGroupByTupleTests() =
             Assert.True(deptId >= 1 && deptId <= 2)
             Assert.True(count >= 1)
     
-    /// Verify groupBy with complex tuple key and element access
     [<Fact>]
     member _.``GroupBy with tuple key allows iteration over group elements``() =
         let data = table1Data.AsQueryable()
@@ -151,7 +143,6 @@ type QueryGroupByTupleTests() =
 
 type QueryGroupJoinTupleTests() =
     
-    /// Verify groupJoin with inline tuple key works
     [<Fact>]
     member _.``GroupJoin with inline tuple key works``() =
         let t1 = table1Data.AsQueryable()
@@ -172,7 +163,6 @@ type QueryGroupJoinTupleTests() =
 
 type AnonymousObjectEqualityTests() =
     
-    /// Verify AnonymousObject has structural equality
     [<Fact>]
     member _.``AnonymousObject with same values are equal``() =
         let ao1 = Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<int, string>(1, "test")
@@ -181,7 +171,6 @@ type AnonymousObjectEqualityTests() =
         Assert.True(ao1.Equals(ao2))
         Assert.Equal(ao1.GetHashCode(), ao2.GetHashCode())
     
-    /// Verify AnonymousObject with different values are not equal
     [<Fact>]
     member _.``AnonymousObject with different values are not equal``() =
         let ao1 = Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<int, string>(1, "test")
@@ -189,7 +178,6 @@ type AnonymousObjectEqualityTests() =
         
         Assert.False(ao1.Equals(ao2))
     
-    /// Verify AnonymousObject hash codes differ for different values
     [<Fact>]
     member _.``AnonymousObject hash codes are consistent with equality``() =
         let ao1 = Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<int, string>(1, "test")
@@ -202,8 +190,6 @@ type AnonymousObjectEqualityTests() =
 /// Tests for tuple select preserving IQueryable type - Issues #3782 and #15133
 type QueryTupleSelectTests() =
     
-    /// Issue #3782: Tuple select should produce composable IQueryable
-    /// The query expression should contain proper Select calls that can be extended
     [<Fact>]
     member _.``Tuple select preserves IQueryable type - issue 3782``() =
         let data = TestData.people.AsQueryable()
@@ -219,7 +205,6 @@ type QueryTupleSelectTests() =
         Assert.True(typeof<IQueryable<int * string>>.IsAssignableFrom(result.GetType()), 
             sprintf "Expected IQueryable<int * string> but got %s" (result.GetType().FullName))
         
-        // The expression tree should have Select with Tuple conversion
         let queryable = result
         let exprStr = queryable.Expression.ToString()
         Assert.True(exprStr.Contains("Tuple") && exprStr.Contains("Select"), 
@@ -230,7 +215,6 @@ type QueryTupleSelectTests() =
         let items = composed |> Seq.toList
         Assert.True(items.Length > 0)
     
-    /// Issue #3782: System.Tuple select should also preserve IQueryable type  
     [<Fact>]
     member _.``System.Tuple select preserves IQueryable type``() =
         let data = TestData.people.AsQueryable()
@@ -250,7 +234,6 @@ type QueryTupleSelectTests() =
         let items = composed |> Seq.toList
         Assert.True(items.Length > 0)
     
-    /// Issue #3782: F# tuple and System.Tuple should produce equivalent query types
     [<Fact>]
     member _.``F# tuple and System.Tuple produce equivalent query behavior``() =
         let data = TestData.people.AsQueryable()
@@ -271,7 +254,6 @@ type QueryTupleSelectTests() =
         for (expected, actual) in List.zip fsharpTupleResult systemTupleResult do
             Assert.Equal(expected, actual)
     
-    /// Issue #15133: Queries with tuple select can be extended with Where
     [<Fact>]
     member _.``Tuple select query can be composed with Where - issue 15133``() =
         let data = TestData.people.AsQueryable()
@@ -290,7 +272,6 @@ type QueryTupleSelectTests() =
         for (id, name, age) in result do
             Assert.True(age > 25, sprintf "Expected age > 25 but got %d" age)
     
-    /// Issue #15133: Queries with tuple select can be extended with OrderBy
     [<Fact>]
     member _.``Tuple select query can be composed with OrderBy - issue 15133``() =
         let data = TestData.people.AsQueryable()
@@ -310,7 +291,6 @@ type QueryTupleSelectTests() =
         let sortedAges = ages |> List.sort
         Assert.Equal<int list>(sortedAges, ages)
     
-    /// Record projections should also be composable
     [<Fact>]
     member _.``Record projection query is composable``() =
         let data = TestData.people.AsQueryable()
@@ -327,7 +307,6 @@ type QueryTupleSelectTests() =
         for p in result do
             Assert.True(p.Age > 28)
     
-    /// Multiple tuple elements should all be accessible in composed queries
     [<Fact>]
     member _.``Multi-element tuple select preserves all elements for composition``() =
         let data = TestData.people.AsQueryable()
@@ -346,14 +325,11 @@ type QueryTupleSelectTests() =
             Assert.Equal(1, deptId)
 
 
-/// Helper types for mutation tests
 module MutationTestHelpers =
-    /// Type with a mutable field for FieldSet testing
     type TypeWithMutableField() =
         [<DefaultValue>]
         val mutable Field: int
     
-    /// Type with a settable property for PropertySet testing
     type TypeWithSettableProperty() =
         let mutable value = 0
         member this.Prop
@@ -363,68 +339,56 @@ module MutationTestHelpers =
 /// Tests for EvaluateQuotation edge cases - Issue #19099
 type EvaluateQuotationEdgeCaseTests() =
     
-    /// Issue #19099: EvaluateQuotation should handle Sequential expressions
     [<Fact>]
     member _.``EvaluateQuotation handles Sequential expressions - issue 19099``() =
         let result = LeafExpressionConverter.EvaluateQuotation <@ ignore 1; 42 @>
         Assert.Equal(42, result :?> int)
     
-    /// Issue #19099: EvaluateQuotation should handle void method calls (unit return)
     [<Fact>]
     member _.``EvaluateQuotation handles void method calls - issue 19099``() =
         // This should not throw - it should execute and return unit
         let result = LeafExpressionConverter.EvaluateQuotation <@ System.Console.Write("") @>
         Assert.Equal(box (), result)
     
-    /// Issue #19099: EvaluateQuotation should handle unit-returning expressions
     [<Fact>]
     member _.``EvaluateQuotation handles unit return - issue 19099``() =
         // Test that unit-returning expressions work (previously failed with System.Void issue)
         let result = LeafExpressionConverter.EvaluateQuotation <@ ignore 1; () @>
         Assert.Equal(box (), result)
     
-    /// Issue #19099 T1.1: EvaluateQuotation should handle VarSet (mutable variable assignment)
     [<Fact>]
     member _.``EvaluateQuotation handles VarSet - issue 19099``() =
         let result = LeafExpressionConverter.EvaluateQuotation <@ let mutable x = 1 in x <- 2; x @>
         Assert.Equal(2, result :?> int)
     
-    /// Issue #19099 T1.2: EvaluateQuotation should handle FieldSet (mutable field assignment)
     [<Fact>]
     member _.``EvaluateQuotation handles FieldSet - issue 19099``() =
         let obj = MutationTestHelpers.TypeWithMutableField()
         let result = LeafExpressionConverter.EvaluateQuotation <@ obj.Field <- 42; obj.Field @>
         Assert.Equal(42, result :?> int)
     
-    /// Issue #19099 T1.3: EvaluateQuotation should handle PropertySet (settable property assignment)
     [<Fact>]
     member _.``EvaluateQuotation handles PropertySet - issue 19099``() =
         let obj = MutationTestHelpers.TypeWithSettableProperty()
         let result = LeafExpressionConverter.EvaluateQuotation <@ obj.Prop <- 99; obj.Prop @>
         Assert.Equal(99, result :?> int)
     
-    /// Issue #19099 T1.4: EvaluateQuotation should handle indexed PropertySet (array index assignment)
     [<Fact>]
     member _.``EvaluateQuotation handles indexed PropertySet - issue 19099``() =
         let arr = [| 1; 2; 3 |]
         let result = LeafExpressionConverter.EvaluateQuotation <@ arr.[0] <- 10; arr.[0] @>
         Assert.Equal(10, result :?> int)
     
-    /// Q3.5: EvaluateQuotation should handle deeply nested let bindings
-    /// This tests the let-binding inlining logic doesn't break with deep nesting
     [<Fact>]
     member _.``EvaluateQuotation handles deeply nested let bindings``() =
         let result = LeafExpressionConverter.EvaluateQuotation <@ let a = 42 in let b = a in let c = b in c @>
         Assert.Equal(42, result :?> int)
     
-    /// Q3.5: Additional test for deeply nested let with computation at each level
     [<Fact>]
     member _.``EvaluateQuotation handles deeply nested let with computation``() =
         let result = LeafExpressionConverter.EvaluateQuotation <@ let a = 1 in let b = a + 1 in let c = b + 1 in let d = c + 1 in d @>
         Assert.Equal(4, result :?> int)
 
-    /// Q3.6: Verify no performance regression with 15+ nested let bindings
-    /// This tests the inlining approach doesn't cause exponential blowup
     [<Fact>]
     member _.``EvaluateQuotation handles 15 nested let bindings``() =
         // Verifies inlining is O(n) not O(2^n)
@@ -451,7 +415,6 @@ type EvaluateQuotationEdgeCaseTests() =
 /// Tests for conditional without else branch in queries - Issue #3445
 type QueryConditionalTests() =
     
-    /// Issue #3445: Query with if-then (no else) should compile and run
     [<Fact>]
     member _.``Query with if-then no else compiles and runs - issue 3445``() =
         // This was throwing: Type mismatch when building 'cond'
@@ -466,7 +429,6 @@ type QueryConditionalTests() =
         Assert.Contains(2, result)
         Assert.Contains(3, result)
     
-    /// Issue #3445: Query with if-then (no else) with false condition returns empty
     [<Fact>]
     member _.``Query with if-then no else with false condition returns empty - issue 3445``() =
         let result = 
@@ -478,7 +440,6 @@ type QueryConditionalTests() =
         
         Assert.Empty(result)
     
-    /// Issue #3445: Query with complex conditional filter
     [<Fact>]
     member _.``Query with complex if-then condition works - issue 3445``() =
         let data = TestData.people.AsQueryable()
@@ -499,7 +460,6 @@ type QueryConditionalTests() =
 /// These tests document the current behavior.
 type QueryHeadOrDefaultTests() =
     
-    /// headOrDefault returns null for empty sequence with reference type
     [<Fact>]
     member _.``headOrDefault with empty sequence returns default``() =
         let data = [1; 2; 3].AsQueryable()
@@ -512,7 +472,6 @@ type QueryHeadOrDefaultTests() =
         // For int (value type), default is 0
         Assert.Equal(0, result)
     
-    /// headOrDefault with matching element returns that element
     [<Fact>]
     member _.``headOrDefault with matching element returns first match``() =
         let data = [1; 2; 3].AsQueryable()
@@ -524,8 +483,6 @@ type QueryHeadOrDefaultTests() =
             }
         Assert.Equal(2, result)
     
-    /// Document: headOrDefault with tuple and no match returns null
-    /// This test documents the known limitation (issue #3845)
     [<Fact>]
     member _.``headOrDefault with tuple and no match returns null - issue 3845 known limitation``() =
         let data = [(1, "a"); (2, "b")].AsQueryable()
