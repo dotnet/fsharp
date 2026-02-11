@@ -82,8 +82,8 @@ if File.Exists(propsFilePath) then
         otherFlags.InnerText <- "$(OtherFlags) --times"
         propertyGroup.AppendChild(otherFlags) |> ignore
         
-        // Find the import element (either just created or existing)
-        let importNode = doc.SelectSingleNode("//Import[contains(@Project, 'UseLocalCompiler.Directory.Build.props')]")
+        // Reuse the import node we already found (or find it again with the same xpath)
+        let importNode = doc.SelectSingleNode(xpath)
         
         // Find the text node after the import (if it exists)
         let nodeAfterImport = 
