@@ -260,13 +260,28 @@ type internal FxResolver
 
     let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
 
-    // Use the FSharp.Core that is executing with the compiler as a backup reference
-    let getFSharpCoreImplementationReference () =
-        Path.Combine(getFSharpCompilerLocation (), getFSharpCoreLibraryName + ".dll")
+    let getFSharpLibImplementationReferences useFsiAuxLib =
+        let getFSharpLibImplementationReference libName =
+            // Use the FSharp.Core/FSharp.Compiler.Interactive.Settings
+            // that is executing with the compiler as a backup reference
+            let getDefaultImplementationReference libName =
+                Path.Combine(getFSharpCompilerLocation (), libName + ".dll")
 
-    // Use the FSharp.Compiler.Interactive.Settings executing with the compiler as a backup reference
-    let getFsiLibraryImplementationReference () =
-        Path.Combine(getFSharpCompilerLocation (), getFsiLibraryName + ".dll")
+            match sdkDirOverride with
+            | None -> getDefaultImplementationReference libName
+            | Some sdkDirOverride ->
+                let libPath = Path.Combine(sdkDirOverride, "FSharp", libName + ".dll")
+
+                if File.Exists(libPath) then
+                    libPath
+                else
+                    getDefaultImplementationReference libName
+
+        [
+            getFSharpLibImplementationReference getFSharpCoreLibraryName
+            if useFsiAuxLib then
+                getFSharpLibImplementationReference getFsiLibraryName
+        ]
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
@@ -615,9 +630,7 @@ type internal FxResolver
         let roots =
             [
                 yield! Directory.GetFiles(implDir, "*.dll")
-                getFSharpCoreImplementationReference ()
-                if useFsiAuxLib then
-                    getFsiLibraryImplementationReference ()
+                yield! getFSharpLibImplementationReferences useFsiAuxLib
             ]
 
         (getDependenciesOf roots).Values |> Seq.toList
@@ -928,9 +941,7 @@ type internal FxResolver
                             let sdkReferences =
                                 [
                                     yield! Directory.GetFiles(path, "*.dll")
-                                    getFSharpCoreImplementationReference ()
-                                    if useFsiAuxLib then
-                                        getFsiLibraryImplementationReference ()
+                                    yield! getFSharpLibImplementationReferences useFsiAuxLib
                                 ]
                                 |> List.filter (Path.GetFileNameWithoutExtension >> (!!) >> systemAssemblies.Contains)
 
