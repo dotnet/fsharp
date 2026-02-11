@@ -697,7 +697,9 @@ module CompiledExtensions =
         ]
 
     [<Fact>]
-    let ``Instance extension members for types with same simple name should error`` () =
+    let ``Instance extension members for types with same simple name should succeed`` () =
+        // Instance extension members compile with the extended type as the first IL parameter,
+        // so they can never produce duplicate IL signatures even with same simple type name.
         Fsx
             """
 module Compiled
@@ -712,10 +714,7 @@ module CompiledExtensions =
         member _.InstanceExtension() = ()
             """
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3356, Line 11, Col 18, Line 11, Col 35, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
-        ]
+        |> shouldSucceed
 
     [<Fact>]
     let ``Extension members on generic types with same simple name should error`` () =
@@ -806,3 +805,48 @@ module CompiledExtensions =
             (Error 3356, Line 12, Col 23, Line 12, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
             (Error 3356, Line 13, Col 23, Line 13, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
         ]
+
+    [<Fact>]
+    let ``Instance inline extension members on builder types with same simple name should succeed`` () =
+        // Regression test for IcedTasks-like pattern: instance (inline) extension members on
+        // computation expression builder types with the same simple name from different namespaces.
+        // Instance extension members compile with the extended type as the first IL parameter,
+        // so signatures never collide even when the simple type name is the same.
+        Fsx
+            """
+namespace NsA
+type BuilderBase() = class end
+
+namespace NsB
+type BuilderBase() = class end
+
+namespace Extensions
+module M =
+    type NsA.BuilderBase with
+        member inline this.Bind(x: int, f) = f x
+        member inline this.ReturnFrom(x: int) = x
+
+    type NsB.BuilderBase with
+        member inline this.Source(x: int) = x
+        member inline this.Bind(x: string, f) = f x
+            """
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Mixed static and instance extension members - only static should error`` () =
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module CompiledExtensions =
+    type System.Threading.Tasks.Task with
+        static member StaticExt() = ()
+
+    type Task with
+        member _.InstanceExt() = ()
+            """
+        |> compile
+        |> shouldSucceed
