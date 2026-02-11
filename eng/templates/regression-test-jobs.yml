@@ -209,7 +209,9 @@ jobs:
                 Process-BuildOutput $_
               }
             } else {
-              bash -c "$cmd" 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
+              # Escape semicolons for bash -c to prevent them being treated as command separators
+              $escapedCmd = $cmd -replace ';', '\;'
+              bash -c "$escapedCmd" 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
                 Process-BuildOutput $_
               }
             }
