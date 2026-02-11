@@ -2704,6 +2704,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="tail">The existing list.</param>
         ///
         /// <returns>The list with head appended to the front of tail.</returns>
+        ///
+        /// <remarks>This is an O(1) operation.</remarks>
         static member Cons: head: 'T * tail: 'T list -> 'T list
 
         interface IEnumerable<'T>
@@ -3791,6 +3793,8 @@ namespace Microsoft.FSharp.Core
         /// l1 @ l2   //  Evaluates to ['a'; 'b'; 'c'; 'd'; 'e'; 'f']
         /// </code>
         /// </example>
+        ///
+        /// <remarks>This is an O(n) operation, where n is the length of the first list.</remarks>
         /// 
         val (@): list1: 'T list -> list2: 'T list -> 'T list
 

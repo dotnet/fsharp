@@ -679,6 +679,7 @@ let updateAge () =
 """
         |> asLibrary
         |> withReferences [fsLib]
+        |> ignoreWarnings
         |> compile
         |> shouldSucceed
         |> ignore
@@ -930,6 +931,114 @@ type y() =
 
 let v = new y()
 """
+        |> asLibrary
+        |> withReferences [fsLib]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    // Regression test: B-stream misalignment when pickling metadata with langFeatureNullness=false
+    // When a library is compiled with LangVersion 8.0 (no nullness), the type nullness B-stream bytes
+    // must still be written to keep the stream aligned with unconditional reads and constraint data.
+    // Without the fix, the reader hits NotSupportsNull constraint bytes (0x01) when expecting type
+    // nullness values, causing FS0229 "u_ty - 4/B".
+    [<Fact>]
+    let ``Referencing library compiled with LangVersion 8 should not produce FS0229 B-stream error`` () =
+        let fsLib =
+            FSharp """
+module LibA
+
+type Result<'T, 'E> =
+    | Ok of 'T
+    | Error of 'E
+
+let bind (f: 'T -> Result<'U, 'E>) (r: Result<'T, 'E>) : Result<'U, 'E> =
+    match r with
+    | Ok x -> f x
+    | Error e -> Error e
+
+let map (f: 'T -> 'U) (r: Result<'T, 'E>) : Result<'U, 'E> =
+    bind (f >> Ok) r
+
+type Builder() =
+    member _.Return(x: 'T) : Result<'T, 'E> = Ok x
+    member _.ReturnFrom(x: Result<'T, 'E>) : Result<'T, 'E> = x
+    member _.Bind(m: Result<'T, 'E>, f: 'T -> Result<'U, 'E>) : Result<'U, 'E> = bind f m
+
+let builder = Builder()
+
+let inline combine<'T, 'U, 'E when 'T : equality and 'U : comparison>
+    (r1: Result<'T, 'E>) (r2: Result<'U, 'E>) : Result<'T * 'U, 'E> =
+    match r1, r2 with
+    | Ok t, Ok u -> Ok(t, u)
+    | Error e, _ | _, Error e -> Error e
+            """
+            |> withName "LibA"
+            |> asLibrary
+            |> withLangVersion80
+
+        FSharp """
+module LibB
+
+open LibA
+
+let test() =
+    let r1 = Ok 42
+    let r2 = Ok "hello"
+    combine r1 r2
+        """
+        |> asLibrary
+        |> withReferences [fsLib]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Referencing library with many generic types compiled at LangVersion 8 should not produce FS0229`` () =
+        let fsLib =
+            FSharp """
+module Lib
+
+type Wrapper<'T> = { Value: 'T }
+type Pair<'T, 'U> = { First: 'T; Second: 'U }
+type Triple<'T, 'U, 'V> = { A: 'T; B: 'U; C: 'V }
+
+let wrap (x: 'T) : Wrapper<'T> = { Value = x }
+let pair (x: 'T) (y: 'U) : Pair<'T, 'U> = { First = x; Second = y }
+let triple (x: 'T) (y: 'U) (z: 'V) : Triple<'T, 'U, 'V> = { A = x; B = y; C = z }
+
+let mapWrapper (f: 'T -> 'U) (w: Wrapper<'T>) : Wrapper<'U> = { Value = f w.Value }
+let mapPair (f: 'T -> 'T2) (g: 'U -> 'U2) (p: Pair<'T, 'U>) : Pair<'T2, 'U2> =
+    { First = f p.First; Second = g p.Second }
+
+type ChainBuilder() =
+    member _.Return(x: 'T) : Wrapper<'T> = wrap x
+    member _.Bind(m: Wrapper<'T>, f: 'T -> Wrapper<'U>) : Wrapper<'U> = f m.Value
+
+let chain = ChainBuilder()
+
+let inline constrained<'T when 'T : equality> (x: 'T) (y: 'T) = x = y
+let inline constrained2<'T, 'U when 'T : equality and 'U : comparison> (x: 'T) (y: 'U) =
+    (x, y)
+            """
+            |> withName "GenericLib"
+            |> asLibrary
+            |> withLangVersion80
+
+        FSharp """
+module Consumer
+
+open Lib
+
+let test() =
+    let w = wrap 42
+    let mapped = mapWrapper (fun x -> x + 1) w
+    let p = pair "hello" 42
+    let t = triple 1 "two" 3.0
+    let eq = constrained 1 1
+    let c = chain { return 42 }
+    (mapped, p, t, eq, c)
+        """
         |> asLibrary
         |> withReferences [fsLib]
         |> compile
