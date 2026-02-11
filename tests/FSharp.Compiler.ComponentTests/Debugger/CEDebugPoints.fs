@@ -21,6 +21,8 @@ let a =
     }
         """ "Invoke" [ (Line 6, Col 9, Line 6, Col 17) ]
 
+    /// Seq expressions use a different code path (CheckSequenceExpressions.fs, not CheckComputationExpressions.fs).
+    /// This test is a baseline smoke test, not a validation of the CE yield/return fix.
     [<Fact>]
     let ``Yield in seq CE - debug point on yield value`` () =
         verifyMethodDebugPoints """

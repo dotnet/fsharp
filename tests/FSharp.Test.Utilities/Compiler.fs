@@ -1473,6 +1473,7 @@ Actual:
     | VerifyImportScopes of ImportScope list list
     | VerifySequencePoints of (Line * Col * Line * Col) list
     | VerifyMethodSequencePoints of methodName: string * expectedPoints: (Line * Col * Line * Col) list
+    | VerifyMethodSequencePointsInRange of methodName: string * startLine: Line * endLine: Line
     | VerifyDocuments of string list
     | Dummy of unit
 
@@ -1560,6 +1561,16 @@ Actual:
         if actualPoints <> expectedSequencePoints then
             failwith (sprintf "Expected method '%s' sequence points are different from PDB.\nExpected: %A\nActual: %A" methodName expectedSequencePoints actualPoints)
 
+    let private verifyMethodSequencePointsInRange (assemblyPath: string) (reader: MetadataReader) (methodName: string) (Line startLine) (Line endLine) =
+        let actualPoints = getMethodSequencePoints assemblyPath reader methodName
+        let outOfRange =
+            actualPoints
+            |> List.filter (fun (Line sl, _, Line el, _) -> sl < startLine || el > endLine)
+        if not outOfRange.IsEmpty then
+            failwith (sprintf "Method '%s' has sequence points outside range [%d-%d]:\n%A\nAll points: %A" methodName startLine endLine outOfRange actualPoints)
+        if actualPoints.IsEmpty then
+            failwith (sprintf "Method '%s' has no non-hidden sequence points" methodName)
+
     let private verifySequencePoints (reader: MetadataReader) expectedSequencePoints =
         let sequencePoints =
             [ for sp in reader.MethodDebugInformation do
@@ -1595,6 +1606,8 @@ Actual:
             | VerifySequencePoints sp -> verifySequencePoints reader sp
             | VerifyMethodSequencePoints(methodName, sp) ->
                 verifyMethodSequencePoints (optOutputPath |> Option.defaultValue "") reader methodName sp
+            | VerifyMethodSequencePointsInRange(methodName, startLine, endLine) ->
+                verifyMethodSequencePointsInRange (optOutputPath |> Option.defaultValue "") reader methodName startLine endLine
             | VerifyDocuments docs -> verifyDocuments reader (docs |> List.map(fun doc -> Path.Combine(outputPath, doc)))
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
