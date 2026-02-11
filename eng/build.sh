@@ -83,8 +83,9 @@ properties=""
 docker=false
 args=""
 
-# Read product TFM from centralized source of truth using MSBuild
-tfm=$("$scriptroot/common/dotnet.sh" msbuild "$scriptroot/TargetFrameworks.props" --getProperty:FSharpNetCoreProductTargetFramework 2>/dev/null | tr -d '[:space:]')
+# TFM will be resolved after InitializeDotNetCli ensures the SDK is available.
+# Can be overridden via --tfm argument.
+tfm=""
 
 BuildCategory=""
 BuildMessage=""
@@ -352,6 +353,11 @@ function TrapAndReportError {
 trap TrapAndReportError EXIT
 
 InitializeDotNetCli $restore
+
+# Resolve product TFM from centralized source of truth if not overridden via --tfm
+if [[ "$tfm" == "" ]]; then
+  tfm=$("$DOTNET_INSTALL_DIR/dotnet" msbuild "$scriptroot/TargetFrameworks.props" -getProperty:FSharpNetCoreProductTargetFramework 2>/dev/null | tr -d '[:space:]')
+fi
 
 BuildSolution
 
