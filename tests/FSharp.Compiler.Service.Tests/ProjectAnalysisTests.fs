@@ -3701,7 +3701,7 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     let fileNames = [|fileName1|]
     let args =
         [| yield! mkProjectCommandLineArgs (dllName, [])
-           yield @"-r:" + (__SOURCE_DIRECTORY__ ++ ".." ++ "service" ++ "data" ++ "FSharp.Data.dll")
+           yield @"-r:" + PathRelativeToTestAssembly "FSharp.Data.dll"
            yield @"-r:" + sysLib "System.Xml.Linq" |]
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
