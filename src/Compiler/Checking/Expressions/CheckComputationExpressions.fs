@@ -118,14 +118,7 @@ let mkExprForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynExpr.Const(SynConst.Unit, m)
     | [ v ] -> SynExpr.Ident(v.Id.MakeSynthetic())
-    | vs ->
-        SynExpr.Tuple(
-            false,
-            (vs
-             |> List.map (fun v -> SynExpr.Ident(v.Id.MakeSynthetic()))),
-            [],
-            m
-        )
+    | vs -> SynExpr.Tuple(false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id.MakeSynthetic()))), [], m)
 
 let mkSimplePatForVarSpace m (patvs: Val list) =
     SynSimplePats.SimplePats(List.map (fun (v: Val) -> mkSynSimplePatVar false v.Id) patvs, [], m)
