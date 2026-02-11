@@ -198,6 +198,10 @@ jobs:
 
         function Run-Command {
           param([string]$cmd)
+          # Ensure binlog is produced for dotnet build/test/msbuild commands
+          if ($cmd -match '^dotnet\s+(build|test|msbuild)') {
+            $cmd = "$cmd -bl"
+          }
           if ($cmd -like "dotnet*") {
             Write-Host "Executing built-in command:  $cmd"
             if ($IsWindows) {
@@ -269,6 +273,32 @@ jobs:
           Write-Host "Collected $($binlogs.Count) .binlog files"
         }
       displayName:  Collect Binary Logs
+      condition: always()
+      continueOnError: true
+
+    - pwsh: |
+        $binlogDir = "$(Pipeline.Workspace)/BinaryLogs"
+        $script = "$(Build.SourcesDirectory)/eng/scripts/ExtractTimingsFromBinlog.fsx"
+        
+        if (-not (Test-Path $binlogDir)) {
+          Write-Host "No binary logs directory found, skipping timing extraction"
+          exit 0
+        }
+        
+        $binlogs = Get-ChildItem -Path $binlogDir -Filter "*.binlog" -ErrorAction SilentlyContinue
+        if ($binlogs.Count -eq 0) {
+          Write-Host "No binlog files found, skipping timing extraction"
+          exit 0
+        }
+        
+        Write-Host "##[group]F# Compiler Timing Summary for ${{ item.displayName }}"
+        foreach ($bl in $binlogs) {
+          Write-Host ""
+          Write-Host "--- Timings from $($bl.Name) ---"
+          dotnet fsi $script "$($bl.FullName)"
+        }
+        Write-Host "##[endgroup]"
+      displayName: Extract compiler timing from binlogs for ${{ item.displayName }}
       condition: always()
       continueOnError: true
 

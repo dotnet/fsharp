@@ -1,0 +1,64 @@
+/// Script to extract F# compiler timing data from MSBuild binary logs
+/// Usage: dotnet fsi ExtractTimingsFromBinlog.fsx <path-to-binlog-file>
+
+#r "nuget: MSBuild.StructuredLogger"
+
+open System
+open Microsoft.Build.Logging.StructuredLogger
+
+// Get the binlog file path from command line args
+let binlogPath = 
+    let args = Environment.GetCommandLineArgs()
+    // When running with dotnet fsi, args are: [0]=dotnet; [1]=fsi.dll; [2]=script.fsx; [3...]=args
+    let scriptArgs = args |> Array.skipWhile (fun a -> not (a.EndsWith(".fsx"))) |> Array.skip 1
+    if scriptArgs.Length > 0 then
+        scriptArgs.[0]
+    else
+        failwith "Usage: dotnet fsi ExtractTimingsFromBinlog.fsx <path-to-binlog-file>"
+
+// Helper function to find the project node by walking up the parent chain
+let rec findProject (node: TreeNode) =
+    match node with
+    | null -> None
+    | :? Project as p -> Some p.Name
+    | _ -> findProject node.Parent
+
+// Load the binlog
+let build = BinaryLog.ReadBuild(binlogPath)
+
+// Track whether we found any Fsc tasks
+let mutable foundFscTasks = false
+
+// Walk the build tree looking for Fsc tasks
+build.VisitAllChildren<Task>(fun task ->
+    if task.Name = "Fsc" then
+        foundFscTasks <- true
+        
+        // Get the project name
+        let projectName = 
+            match findProject task with
+            | Some name -> name
+            | None -> "Unknown Project"
+        
+        // Collect all Message children
+        let messages = 
+            task.Children
+            |> Seq.choose (function
+                | :? Message as m -> Some m.Text
+                | _ -> None)
+            |> Seq.toList
+        
+        // Print the project header and messages
+        if messages.Length > 0 then
+            printfn "=== %s ===" projectName
+            for msg in messages do
+                printfn "  %s" msg
+            printfn ""
+)
+
+// If no Fsc tasks were found, print a message
+if not foundFscTasks then
+    printfn "No Fsc task output found in binlog."
+
+// Always exit 0 (this is informational)
+exit 0

@@ -48,8 +48,8 @@ if File.Exists(propsFilePath) then
     if isNull projectElement then
         failwith "Could not find Project element in Directory.Build.props"
     
-    // Check if our import already exists
-    let xpath = sprintf "//Import[contains(@Project, 'UseLocalCompiler.Directory.Build.props')]"
+    // Check if our import already exists (look for any import with this exact path)
+    let xpath = sprintf "//Import[@Project='%s']" absolutePropsPath
     let existingImport = doc.SelectSingleNode(xpath)
     
     if isNull existingImport then
@@ -71,11 +71,46 @@ if File.Exists(propsFilePath) then
         printfn "✓ Added UseLocalCompiler import to Directory.Build.props"
     else
         printfn "✓ UseLocalCompiler import already exists"
+    
+    // Check if --times flag already exists in any OtherFlags element
+    let otherFlagsWithTimes = doc.SelectSingleNode("//OtherFlags[contains(text(), '--times')]")
+    
+    if isNull otherFlagsWithTimes then
+        // Create PropertyGroup with OtherFlags element
+        let propertyGroup = doc.CreateElement("PropertyGroup")
+        let otherFlags = doc.CreateElement("OtherFlags")
+        otherFlags.InnerText <- "$(OtherFlags) --times"
+        propertyGroup.AppendChild(otherFlags) |> ignore
+        
+        // Find the import element (either just created or existing)
+        let importNode = doc.SelectSingleNode("//Import[contains(@Project, 'UseLocalCompiler.Directory.Build.props')]")
+        
+        // Find the text node after the import (if it exists)
+        let nodeAfterImport = 
+            if not (isNull importNode) && not (isNull importNode.NextSibling) && importNode.NextSibling.NodeType = XmlNodeType.Text then
+                importNode.NextSibling
+            else
+                null
+        
+        // Insert PropertyGroup after the import's trailing newline (if present) or after the import itself
+        if not (isNull nodeAfterImport) then
+            projectElement.InsertAfter(propertyGroup, nodeAfterImport) |> ignore
+        else
+            projectElement.InsertAfter(propertyGroup, importNode) |> ignore
+        
+        // Add newline for formatting after PropertyGroup
+        let newlineAfter = doc.CreateTextNode("\n  ")
+        projectElement.InsertAfter(newlineAfter, propertyGroup) |> ignore
+        
+        doc.Save(propsFilePath)
+        printfn "✓ Added --times flag to OtherFlags"
+    else
+        printfn "✓ --times flag already exists in OtherFlags"
 else
     printfn "Directory.Build.props does not exist, creating it..."
-    let newContent = sprintf "<Project>\n  <Import Project=\"%s\" />\n</Project>\n" absolutePropsPath
+    let newContent = sprintf "<Project>\n  <Import Project=\"%s\" />\n  <PropertyGroup>\n    <OtherFlags>$(OtherFlags) --times</OtherFlags>\n  </PropertyGroup>\n</Project>\n" absolutePropsPath
     File.WriteAllText(propsFilePath, newContent)
-    printfn "✓ Created Directory.Build.props with UseLocalCompiler import"
+    printfn "✓ Created Directory.Build.props with UseLocalCompiler import and --times flag"
 
 // Print the final content
 printfn ""
