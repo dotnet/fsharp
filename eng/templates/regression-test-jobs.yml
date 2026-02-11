@@ -20,7 +20,7 @@ jobs:
       pool:
         name: $(DncEngPublicBuildPool)
         demands:  ImageOverride -equals $(_WindowsMachineQueueName)
-    timeoutInMinutes: 60
+    timeoutInMinutes: 120
     steps:
     - checkout: self
       displayName: Checkout F# compiler repo (for scripts)
