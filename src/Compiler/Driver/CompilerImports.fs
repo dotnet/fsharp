@@ -1385,7 +1385,7 @@ and [<Sealed>] TcImports
         | Some res -> res
         | None -> error (Error(FSComp.SR.buildCouldNotResolveAssembly assemblyName, m))
 
-    member tcImports.NormalizeAssemblyRef(ctok, aref: ILAssemblyRef) =
+    member internal tcImports.NormalizeAssemblyRef(ctok, aref: ILAssemblyRef) =
         match tcImports.TryFindDllInfo(ctok, rangeStartup, aref.Name, lookupOnly = false) with
         | Some dllInfo ->
             match dllInfo.ILScopeRef with

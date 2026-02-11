@@ -167,7 +167,7 @@ type TcImports =
     member TryFindDllInfo: CompilationThreadToken * range * string * lookupOnly: bool -> ImportedBinary option
 
     /// Normalize an assembly reference by resolving it through the imported assemblies table.
-    member NormalizeAssemblyRef: CompilationThreadToken * ILAssemblyRef -> ILAssemblyRef
+    member internal NormalizeAssemblyRef: CompilationThreadToken * ILAssemblyRef -> ILAssemblyRef
 
     member FindCcuFromAssemblyRef: CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 

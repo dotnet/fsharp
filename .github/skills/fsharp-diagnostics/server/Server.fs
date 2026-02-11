@@ -37,6 +37,9 @@ let startServer (config: ServerConfig) =
         let mutable lastActivity = DateTimeOffset.UtcNow
         let cts = new CancellationTokenSource()
 
+        // Enable --times output from F# compiler phases (Activity-based profiling)
+        use _timesListener = FSharp.Compiler.Diagnostics.Activity.Profiling.addConsoleListener ()
+
         let getOptions (filePath: string) =
             let fsproj = ProjectRouting.resolveProject config.RepoRoot filePath
             projectMgr.ResolveProjectOptions(fsproj)
@@ -94,7 +97,10 @@ let startServer (config: ServerConfig) =
                     | "checkProject" ->
                         let project =
                             match doc.RootElement.TryGetProperty("project") with
-                            | true, p -> p.GetString()
+                            | true, p ->
+                                let raw = p.GetString()
+                                if Path.IsPathRooted(raw) then raw
+                                else Path.GetFullPath(Path.Combine(config.RepoRoot, raw))
                             | false, _ -> Path.Combine(config.RepoRoot, "src/Compiler/FSharp.Compiler.Service.fsproj")
                         let! optionsResult = projectMgr.ResolveProjectOptions(project)
                         match optionsResult with
@@ -220,18 +226,25 @@ let startServer (config: ServerConfig) =
                         if not (File.Exists project) then
                             return $"ERROR: project not found: {project}"
                         else
+                        let sw = System.Diagnostics.Stopwatch.StartNew()
                         let! optionsResult = projectMgr.ResolveProjectOptions(project)
+                        let dtbTime = sw.Elapsed.TotalMilliseconds
                         match optionsResult with
                         | Error msg ->
                             return $"ERROR: {msg}"
                         | Ok options ->
+                            sw.Restart()
                             let! results = checker.ParseAndCheckProject(options)
+                            let checkTime = sw.Elapsed.TotalMilliseconds
                             if results.HasCriticalErrors then
                                 let diags = DiagnosticsFormatter.formatProject config.RepoRoot results.Diagnostics
                                 return $"ERROR: Project has errors:\n{diags}"
                             else
                                 try
+                                    sw.Restart()
                                     let! _ = checker.CompileFromCheckedProject(results, output)
+                                    let emitTime = sw.Elapsed.TotalMilliseconds
+                                    eprintfn $"[fsharp-diag] compile: DTB={dtbTime:F0}ms  Check={checkTime:F0}ms  Emit={emitTime:F0}ms  Total={dtbTime+checkTime+emitTime:F0}ms"
                                     return "OK"
                                 with ex ->
                                     return $"ERROR: Compile failed: {ex.Message}"
@@ -246,6 +259,59 @@ let startServer (config: ServerConfig) =
             }
 
         File.WriteAllText(metaPath, $"""{{ "repoRoot":"{config.RepoRoot}", "pid":{Environment.ProcessId} }}""")
+
+        // ── Filewatcher: pre-warm cache on source changes ──
+        // Watch src/Compiler/ for .fs/.fsi changes. On modification, after a 5s quiet period,
+        // request a ParseAndCheckProject to warm the TransparentCompiler cache.
+        // By the time MSBuild calls us, the typecheck is already done.
+        let mutable lastFileChange = DateTimeOffset.MinValue
+        let watchPath = Path.Combine(config.RepoRoot, "src", "Compiler")
+        let fcsProjectPath =
+            Path.Combine(config.RepoRoot, "src", "Compiler", "FSharp.Compiler.Service.fsproj")
+        let prewarmThrottleMs = 5_000
+
+        let prewarmCache () =
+            async {
+                try
+                    let! optionsResult = projectMgr.ResolveProjectOptions(fcsProjectPath)
+                    match optionsResult with
+                    | Ok options ->
+                        let sw = System.Diagnostics.Stopwatch.StartNew()
+                        let! _results = checker.ParseAndCheckProject(options)
+                        eprintfn $"[fsharp-diag] Prewarm: typechecked in {sw.Elapsed.TotalMilliseconds:F0}ms"
+                    | Error msg ->
+                        eprintfn $"[fsharp-diag] Prewarm: options error: {msg}"
+                with ex ->
+                    eprintfn $"[fsharp-diag] Prewarm: error: {ex.Message}"
+            }
+
+        let schedulePrewarm () =
+            lastFileChange <- DateTimeOffset.UtcNow
+            let snapshot = lastFileChange
+            Async.Start(
+                async {
+                    do! Async.Sleep(prewarmThrottleMs)
+                    // Only fire if no newer change arrived during the throttle window
+                    if lastFileChange = snapshot then
+                        eprintfn $"[fsharp-diag] File change detected, pre-warming cache..."
+                        do! prewarmCache ()
+                }, cts.Token)
+
+        let watcher =
+            if Directory.Exists(watchPath) then
+                let w = new FileSystemWatcher(watchPath, IncludeSubdirectories = true)
+                w.Filters.Add("*.fs")
+                w.Filters.Add("*.fsi")
+                w.NotifyFilter <- NotifyFilters.LastWrite ||| NotifyFilters.FileName
+                w.Changed.Add(fun _ -> schedulePrewarm ())
+                w.Created.Add(fun _ -> schedulePrewarm ())
+                w.Renamed.Add(fun _ -> schedulePrewarm ())
+                w.EnableRaisingEvents <- true
+                eprintfn $"[fsharp-diag] Watching {watchPath} for source changes (5s throttle)"
+                Some w
+            else
+                eprintfn $"[fsharp-diag] Watch path not found: {watchPath}"
+                None
 
         use listener = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified)
         listener.Bind(UnixDomainSocketEndPoint(socketPath))
@@ -284,5 +350,6 @@ let startServer (config: ServerConfig) =
 
         try File.Delete(socketPath) with _ -> ()
         try File.Delete(metaPath) with _ -> ()
+        watcher |> Option.iter (fun w -> w.Dispose())
         eprintfn "[fsharp-diag] Shut down."
     }

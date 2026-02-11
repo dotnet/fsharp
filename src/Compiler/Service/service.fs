@@ -638,8 +638,16 @@ type FSharpChecker
     /// Returns the output file path on success.
     member internal _.CompileFromCheckedProject(results: FSharpCheckProjectResults, outfile: string) =
         async {
-            let tcConfig, tcGlobals, tcImports, generatedCcu, topAttrsOpt, _ilAssemRef, typedImplFilesOpt =
+            let tcConfig, tcGlobals, tcImports, unfinalizedCcu, ccuSig, topAttrsOpt, _ilAssemRef, typedImplFilesOpt =
                 results.CompilationData
+
+            ReportTime tcConfig "CompileFromCheckedProject: Setup"
+
+            // The CCU from TransparentCompiler has unfinalized Contents (empty ModuleOrNamespaceType).
+            // Finalize it using ccuSig, matching what CheckClosedInputSetFinish does.
+            let ccuContents =
+                Construct.NewCcuContents ILScopeRef.Local range0 unfinalizedCcu.AssemblyName ccuSig
+            let generatedCcu = unfinalizedCcu.CloneWithFinalizedContents(ccuContents)
 
             let topAttrs =
                 match topAttrsOpt with
@@ -652,6 +660,33 @@ type FSharpChecker
                 | None ->
                     raise (InvalidOperationException "CompileFromCheckedProject: keepAssemblyContents must be true")
 
+            // Note: We do NOT filter files with diagnostics here. FSharpCheckProjectResults.Diagnostics
+            // may include warnings promoted to errors (e.g. FS1182 from --warnaserror+:1182) that
+            // are suppressed by #nowarn in the source. These files compiled successfully in the
+            // normal fsc pipeline and must be included here for IlxGen to resolve all types.
+            // If there are genuine type-check errors, IlxGen will fail and we fall back to fsc.
+
+            // Deduplicate QualifiedNameOfFile values. TransparentCompiler processes files
+            // via dependency graph (potentially parallel), so the per-file DeduplicateParsedInputModuleName
+            // may not see all prior names. Re-deduplicate here to avoid startup code type collisions.
+            let typedImplFiles =
+                typedImplFiles
+                |> List.mapFold
+                    (fun (seen: Map<string, int>) (f: CheckedImplFile) ->
+                        let name = f.QualifiedNameOfFile.Text
+                        match seen.TryFind name with
+                        | None ->
+                            f, seen.Add(name, 1)
+                        | Some count ->
+                            let newCount = count + 1
+                            let newName = name + "___" + string newCount
+                            let newQName = FSharp.Compiler.Syntax.QualifiedNameOfFile(FSharp.Compiler.Syntax.Ident(newName, f.QualifiedNameOfFile.Range))
+                            let (CheckedImplFile(_, sig', contents, hasEntry, isScript, anonRecs, namedDbgPts)) = f
+                            CheckedImplFile(newQName, sig', contents, hasEntry, isScript, anonRecs, namedDbgPts),
+                            seen.Add(name, newCount))
+                    Map.empty
+                |> fst
+
             // Save and restore CCU attribs to prevent quadratic growth on repeated compile calls.
             let originalAttribs = generatedCcu.Contents.Attribs
             generatedCcu.Contents.SetAttribs(originalAttribs @ topAttrs.assemblyAttrs)
@@ -663,18 +698,57 @@ type FSharpChecker
 
             let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
 
+            ReportTime tcConfig "CompileFromCheckedProject: Encode Signature Data"
             let sigDataAttributes, sigDataResources =
                 EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
 
-            let optimizedImpls =
-                typedImplFiles
-                |> List.map (fun implFile ->
-                    { ImplFile = implFile
-                      OptimizeDuringCodeGen = fun _flag expr -> expr })
-                |> CheckedAssemblyAfterOptimization
-
             let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals
+            let importMap = tcImports.GetImportMap()
+            let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
 
+            ReportTime tcConfig "CompileFromCheckedProject: Optimizations"
+
+            // Dev-loop optimization: use minimal passes only (no extra loops, no detuple,
+            // no TLR, no cross-assembly opt). This DLL is for local testing, not shipping.
+            // OptimizeImplFile + LowerLocalMutables + LowerCalls are mandatory for correct IlxGen.
+            let optimizedImpls, optDataResources =
+                let minimalSettings =
+                    { tcConfig.optSettings with
+                        jitOptUser = Some false
+                        localOptUser = Some false
+                        crossAssemblyOptimizationUser = Some false
+                        lambdaInlineThreshold = 0
+                        abstractBigTargets = false
+                        reportingPhase = false
+                    }
+                let impls =
+                    typedImplFiles
+                    |> List.mapFold
+                        (fun (env, hidingInfo) implFile ->
+                            let (env', file, _optInfo, hidingInfo'), optDuringCodeGen =
+                                Optimizer.OptimizeImplFile(
+                                    minimalSettings,
+                                    generatedCcu,
+                                    tcGlobals,
+                                    tcVal,
+                                    importMap,
+                                    env,
+                                    false,
+                                    tcConfig.emitTailcalls,
+                                    hidingInfo,
+                                    implFile
+                                )
+                            let file = LowerLocalMutables.TransformImplFile tcGlobals importMap file
+                            let file = LowerCalls.LowerImplFile tcGlobals file
+                            { ImplFile = file
+                              OptimizeDuringCodeGen = optDuringCodeGen },
+                            (env', hidingInfo'))
+                        (optEnv0, SignatureHidingInfo.Empty)
+                    |> fst
+                    |> CheckedAssemblyAfterOptimization
+                impls, []
+
+            ReportTime tcConfig "CompileFromCheckedProject: TAST -> IL"
             let ilxGenerator =
                 CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, tcVal, generatedCcu)
 
@@ -700,28 +774,43 @@ type FSharpChecker
 
             let ctok = CompilationThreadToken()
 
+            // Extract AssemblyVersionAttribute from typed assembly attributes, matching fsc's logic.
+            let assemVerFromAttrib =
+                match AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" topAttrs.assemblyAttrs with
+                | Some versionString ->
+                    try Some(parseILVersion versionString)
+                    with _ -> None
+                | _ ->
+                    match tcConfig.version with
+                    | VersionNone -> Some(ILVersionInfo(0us, 0us, 0us, 0us))
+                    | _ -> Some(tcConfig.version.GetVersionInfo tcConfig.implicitIncludeDir)
+
             let ilxMainModule =
-                MainModuleBuilder.CreateMainModule(
-                    ctok,
-                    tcConfig,
-                    tcGlobals,
-                    tcImports,
-                    None,
-                    generatedCcu.AssemblyName,
-                    outfile,
-                    topAttrs,
-                    sigDataAttributes,
-                    sigDataResources,
-                    [],
-                    codegenResults,
-                    None,
-                    metadataVersion,
-                    secDecls
-                )
+                let m =
+                    MainModuleBuilder.CreateMainModule(
+                        ctok,
+                        tcConfig,
+                        tcGlobals,
+                        tcImports,
+                        None,
+                        generatedCcu.AssemblyName,
+                        outfile,
+                        topAttrs,
+                        sigDataAttributes,
+                        sigDataResources,
+                        optDataResources,
+                        codegenResults,
+                        assemVerFromAttrib,
+                        metadataVersion,
+                        secDecls
+                    )
+                // Strip native resources — default.win32manifest may not exist on all platforms.
+                { m with NativeResources = [] }
 
             let normalizeAssemblyRefs (aref: ILAssemblyRef) =
                 tcImports.NormalizeAssemblyRef(ctok, aref)
 
+            ReportTime tcConfig "CompileFromCheckedProject: Write .NET Binary"
             WriteILBinaryFile(
                 {
                     ilg = tcGlobals.ilg
@@ -736,7 +825,7 @@ type FSharpChecker
                     allGivenSources = []
                     sourceLink = ""
                     checksumAlgorithm = tcConfig.checksumAlgorithm
-                    signer = None
+                    signer = GetStrongNameSigner(ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs))
                     dumpDebugInfo = false
                     referenceAssemblyOnly = false
                     referenceAssemblyAttribOpt = None
@@ -746,6 +835,7 @@ type FSharpChecker
                 ilxMainModule,
                 normalizeAssemblyRefs
             )
+            ReportTime tcConfig "Exiting"
 
             return outfile
         }

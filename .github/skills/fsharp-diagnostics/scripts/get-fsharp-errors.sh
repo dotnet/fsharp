@@ -110,7 +110,9 @@ case "${1:-}" in
         PROJECT="$1"
         OUTPUT="$2"
         ensure_server "$REPO_ROOT" "$SOCK_PATH"
-        send_request "$SOCK_PATH" "{\"command\":\"compile\",\"project\":\"$PROJECT\",\"output\":\"$OUTPUT\"}"
+        RESPONSE=$(send_request "$SOCK_PATH" "{\"command\":\"compile\",\"project\":\"$PROJECT\",\"output\":\"$OUTPUT\"}")
+        echo "$RESPONSE"
+        case "$RESPONSE" in ERROR*) exit 1 ;; esac
         ;;
     -*)
         echo "Usage: get-fsharp-errors [--parse-only] <file.fs>" >&2
