@@ -21,8 +21,10 @@ let main argv =
     repoRoot <- IO.Path.GetFullPath(repoRoot)
 
     let config: Server.ServerConfig =
-        { RepoRoot = repoRoot
-          IdleTimeoutMinutes = 240.0 }
+        {
+            RepoRoot = repoRoot
+            IdleTimeoutMinutes = 240.0
+        }
 
     eprintfn $"[fsharp-diag] Starting server for {repoRoot}"
     eprintfn $"[fsharp-diag] Socket: {Server.deriveSocketPath repoRoot}"
