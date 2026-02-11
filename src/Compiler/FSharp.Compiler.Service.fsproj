@@ -472,6 +472,10 @@
     <Compile Include="Driver\CompilerOptions.fs" />
     <Compile Include="Driver\OptimizeInputs.fsi" />
     <Compile Include="Driver\OptimizeInputs.fs" />
+    <Compile Include="Symbols\XmlDocSigParser.fsi" />
+    <Compile Include="Symbols\XmlDocSigParser.fs" />
+    <Compile Include="Symbols\XmlDocInheritance.fsi" />
+    <Compile Include="Symbols\XmlDocInheritance.fs" />
     <Compile Include="Driver\XmlDocFileWriter.fsi" />
     <Compile Include="Driver\XmlDocFileWriter.fs" />
     <Compile Include="Driver\BinaryResourceFormats.fsi" />
