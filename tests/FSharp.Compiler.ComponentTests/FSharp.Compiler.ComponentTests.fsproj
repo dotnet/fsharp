@@ -267,6 +267,7 @@
     <Compile Include="Language\Nullness\NullableReferenceTypesTests.fs" />
     <Compile Include="Language\Nullness\EventNullnessTests.fs" />
     <Compile Include="Language\IndexedSetTests.fs" />
+    <Compile Include="Import\ImportTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="ConstraintSolver\ObjInference.fs" />
