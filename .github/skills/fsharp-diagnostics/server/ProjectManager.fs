@@ -15,11 +15,14 @@ type ProjectManager(checker: FSharpChecker) =
     member _.ResolveProjectOptions(fsprojPath: string) =
         async {
             let fsprojMtime = File.GetLastWriteTimeUtc(fsprojPath)
+
             let current =
                 lock gate (fun () ->
                     match cached with
                     | Some(mtime, opts) when mtime = fsprojMtime -> Some opts
-                    | Some _ -> cached <- None; None
+                    | Some _ ->
+                        cached <- None
+                        None
                     | None -> None)
 
             match current with
@@ -33,11 +36,13 @@ type ProjectManager(checker: FSharpChecker) =
                     let projDir = Path.GetDirectoryName(fsprojPath)
 
                     let resolve (s: string) =
-                        if Path.IsPathRooted(s) then s else Path.GetFullPath(Path.Combine(projDir, s))
+                        if Path.IsPathRooted(s) then
+                            s
+                        else
+                            Path.GetFullPath(Path.Combine(projDir, s))
 
                     let resolvedArgs =
-                        dtb.CompilerArgs
-                        |> Array.map (fun a -> if isSourceFile a then resolve a else a)
+                        dtb.CompilerArgs |> Array.map (fun a -> if isSourceFile a then resolve a else a)
 
                     let sourceFiles = resolvedArgs |> Array.filter isSourceFile
                     let flagsOnly = resolvedArgs |> Array.filter (not << isSourceFile)
