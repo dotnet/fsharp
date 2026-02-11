@@ -256,10 +256,6 @@ type internal FxResolver
 
     let getImplementationAssemblyDir () = implementationAssemblyDir.Force()
 
-    let getFSharpCoreLibraryName = "FSharp.Core"
-
-    let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
-
     let getFSharpLibImplementationReferences useFsiAuxLib =
         let getFSharpLibImplementationReference libName =
             // Use the FSharp.Core/FSharp.Compiler.Interactive.Settings
@@ -280,7 +276,7 @@ type internal FxResolver
         [
             getFSharpLibImplementationReference getFSharpCoreLibraryName
             if useFsiAuxLib then
-                getFSharpLibImplementationReference getFsiLibraryName
+                getFSharpLibImplementationReference fsiLibraryName
         ]
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
