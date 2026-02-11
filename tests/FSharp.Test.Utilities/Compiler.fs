@@ -2074,3 +2074,32 @@ Actual:
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
+
+    /// Result type for CLI subprocess execution (runFsiProcess / runFscProcess).
+    type ProcessResult = { ExitCode: int; StdOut: string; StdErr: string }
+
+    /// Run FSI as a subprocess with the given arguments. For CLI-level tests only (--help, exit codes, etc.).
+    let runFsiProcess (args: string list) : ProcessResult =
+        let cfg = TestFramework.initialConfig
+#if NETCOREAPP
+        let exe = cfg.DotNetExe
+        let arguments = cfg.FSI + " " + (args |> String.concat " ")
+#else
+        let exe = cfg.FSI
+        let arguments = args |> String.concat " "
+#endif
+        let exitCode, stdout, stderr = Commands.executeProcess exe arguments (Directory.GetCurrentDirectory())
+        { ExitCode = exitCode; StdOut = stdout; StdErr = stderr }
+
+    /// Run FSC as a subprocess with the given arguments. For CLI-level tests only (missing files, exit codes, etc.).
+    let runFscProcess (args: string list) : ProcessResult =
+        let cfg = TestFramework.initialConfig
+#if NETCOREAPP
+        let exe = cfg.DotNetExe
+        let arguments = cfg.FSC + " " + (args |> String.concat " ")
+#else
+        let exe = cfg.FSC
+        let arguments = args |> String.concat " "
+#endif
+        let exitCode, stdout, stderr = Commands.executeProcess exe arguments (Directory.GetCurrentDirectory())
+        { ExitCode = exitCode; StdOut = stdout; StdErr = stderr }

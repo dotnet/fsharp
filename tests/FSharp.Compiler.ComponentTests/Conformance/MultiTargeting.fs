@@ -11,7 +11,7 @@ module MultiTargetingTests =
     [<FactForDESKTOP>]
     let ``E_BadPathToFSharpCore - Invalid FSharp.Core path produces FS0084`` () =
         FSharp "exit 0"
-            |> withRawOptions [
+            |> withOptions [
                 "-o:test.exe"
                 "--target:exe"
                 "--noframework"
@@ -26,7 +26,7 @@ module MultiTargetingTests =
     [<FactForDESKTOP>]
     let ``E_BadPathToFSharpCore fsx - FSI variant with invalid path`` () =
         Fsx "exit 0"
-            |> withRawOptions [
+            |> withOptions [
                 "-o:test.exe"
                 "--target:exe"
                 "--noframework"
@@ -44,7 +44,7 @@ module MultiTargetingTests =
         // Verifies compiler doesn't ICE when compiling without FSharp.Core reference
         // (mixing .NET Framework versions: mscorlib 4.0 but no FSharp.Core)
         FSharp "exit 0"
-            |> withRawOptions [
+            |> withOptions [
                 "-o:test.exe"
                 "--target:exe"
                 "--noframework"

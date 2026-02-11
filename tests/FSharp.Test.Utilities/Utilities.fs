@@ -39,6 +39,12 @@ type FactForDESKTOPAttribute() =
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
 
+type FactForWINDOWSAttribute() =
+    inherit FactAttribute()
+    do
+        if not (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)) then
+            base.Skip <- "This test is only supported on Windows"
+
 module SignedBuildSkip =
     let isSignedBuild = System.Environment.GetEnvironmentVariable("SIGNTYPE") = "Real"
     let skipMessage = "Test skipped on signed builds due to NuGet package restore restrictions"

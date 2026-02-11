@@ -6,7 +6,7 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-module ClassTypeVisibilityModuleRoot =
+module ClassTypeVisibility =
 
     let withRealInternalSignature realSig compilation =
         compilation

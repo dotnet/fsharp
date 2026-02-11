@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-module RealInternalSignature =
+module RealInternalSignatureTests =
 
     let withRealInternalSignature realSig compilation =
         compilation
@@ -1254,8 +1254,6 @@ module M =
        0
         """
         |> withRealInternalSignature true
-        |> asLibrary
-        |> compile
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
@@ -1281,7 +1279,5 @@ module M =
        0
         """
         |> withRealInternalSignature false
-        |> asLibrary
-        |> compile
         |> compileExeAndRun
         |> shouldFail
