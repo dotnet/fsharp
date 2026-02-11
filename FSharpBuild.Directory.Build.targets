@@ -73,6 +73,9 @@
       <_BuildPropertyLines Include="module internal FSharp.BuildProperties" />
       <_BuildPropertyLines Include="let fsProductVersion = &quot;$(FSPRODUCTVERSION)&quot;" />
       <_BuildPropertyLines Include="let fsLanguageVersion = &quot;$(FSLANGUAGEVERSION)&quot;" />
+      <!-- Only include TFM properties for non-FSharp.Core projects (FSharp.Core is still defining the int type) -->
+      <_BuildPropertyLines Include="let fsProductTfm = &quot;$(FSharpNetCoreProductTargetFramework)&quot;" Condition="'$(MSBuildProjectName)' != 'FSharp.Core'" />
+      <_BuildPropertyLines Include="let fsProductTfmMajorVersion : int = $(FSharpNetCoreProductMajorVersion)" Condition="'$(MSBuildProjectName)' != 'FSharp.Core'" />
     </ItemGroup>
 
     <MakeDir

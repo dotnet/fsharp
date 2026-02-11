@@ -19,20 +19,33 @@ let private deriveHash (repoRoot: string) =
     |> Convert.ToHexString
     |> fun s -> s.Substring(0, 16).ToLowerInvariant()
 
-let deriveSocketPath repoRoot = Path.Combine(sockDir, $"{deriveHash repoRoot}.sock")
-let deriveMetaPath repoRoot = Path.Combine(sockDir, $"{deriveHash repoRoot}.meta.json")
-let deriveLogPath repoRoot = Path.Combine(sockDir, $"{deriveHash repoRoot}.log")
+let deriveSocketPath repoRoot =
+    Path.Combine(sockDir, $"{deriveHash repoRoot}.sock")
 
-type ServerConfig = { RepoRoot: string; IdleTimeoutMinutes: float }
+let deriveMetaPath repoRoot =
+    Path.Combine(sockDir, $"{deriveHash repoRoot}.meta.json")
+
+let deriveLogPath repoRoot =
+    Path.Combine(sockDir, $"{deriveHash repoRoot}.log")
+
+type ServerConfig =
+    {
+        RepoRoot: string
+        IdleTimeoutMinutes: float
+    }
 
 let startServer (config: ServerConfig) =
     async {
         let socketPath = deriveSocketPath config.RepoRoot
         let metaPath = deriveMetaPath config.RepoRoot
         Directory.CreateDirectory(sockDir) |> ignore
-        if File.Exists(socketPath) then File.Delete(socketPath)
 
-        let checker = FSharpChecker.Create(projectCacheSize = 3, useTransparentCompiler = true)
+        if File.Exists(socketPath) then
+            File.Delete(socketPath)
+
+        let checker =
+            FSharpChecker.Create(projectCacheSize = 3, useTransparentCompiler = true)
+
         let projectMgr = ProjectManager.ProjectManager(checker)
         let mutable lastActivity = DateTimeOffset.UtcNow
         let cts = new CancellationTokenSource()
@@ -47,16 +60,17 @@ let startServer (config: ServerConfig) =
         let handleRequest (json: string) =
             async {
                 lastActivity <- DateTimeOffset.UtcNow
+
                 try
                     let doc = JsonDocument.Parse(json)
                     let command = doc.RootElement.GetProperty("command").GetString()
 
                     match command with
-                    | "ping" ->
-                        return $"""{{ "status":"ok", "pid":{Environment.ProcessId} }}"""
+                    | "ping" -> return $"""{{ "status":"ok", "pid":{Environment.ProcessId} }}"""
 
                     | "parseOnly" ->
                         let file = doc.RootElement.GetProperty("file").GetString()
+
                         if not (File.Exists file) then
                             return $"""{{ "error":"file not found: {file}" }}"""
                         else
@@ -73,6 +87,7 @@ let startServer (config: ServerConfig) =
 
                     | "check" ->
                         let file = Path.GetFullPath(doc.RootElement.GetProperty("file").GetString())
+
                         if not (File.Exists file) then
                             return $"""{{ "error":"file not found: {file}" }}"""
                         else
@@ -104,8 +119,7 @@ let startServer (config: ServerConfig) =
                             | false, _ -> Path.Combine(config.RepoRoot, "src/Compiler/FSharp.Compiler.Service.fsproj")
                         let! optionsResult = projectMgr.ResolveProjectOptions(project)
                         match optionsResult with
-                        | Error msg ->
-                            return $"ERROR: {msg}"
+                        | Error msg -> return $"ERROR: {msg}"
                         | Ok options ->
                             let! results = checker.ParseAndCheckProject(options)
                             return DiagnosticsFormatter.formatProject config.RepoRoot results.Diagnostics
@@ -114,6 +128,7 @@ let startServer (config: ServerConfig) =
                         let file = Path.GetFullPath(doc.RootElement.GetProperty("file").GetString())
                         let line = doc.RootElement.GetProperty("line").GetInt32()
                         let col = doc.RootElement.GetProperty("col").GetInt32()
+
                         if not (File.Exists file) then
                             return $"ERROR: file not found: {file}"
                         else
@@ -167,6 +182,7 @@ let startServer (config: ServerConfig) =
                         let file = Path.GetFullPath(doc.RootElement.GetProperty("file").GetString())
                         let startLine = doc.RootElement.GetProperty("startLine").GetInt32()
                         let endLine = doc.RootElement.GetProperty("endLine").GetInt32()
+
                         if not (File.Exists file) then
                             return $"ERROR: file not found: {file}"
                         else
@@ -324,13 +340,18 @@ let startServer (config: ServerConfig) =
             async {
                 while not cts.Token.IsCancellationRequested do
                     do! Async.Sleep(60_000 * 60)
+
                     if (DateTimeOffset.UtcNow - lastActivity).TotalMinutes > config.IdleTimeoutMinutes then
-                        eprintfn "[fsharp-diag] Idle timeout"; cts.Cancel()
-            }, cts.Token)
+                        eprintfn "[fsharp-diag] Idle timeout"
+                        cts.Cancel()
+            },
+            cts.Token
+        )
 
         try
             while not cts.Token.IsCancellationRequested do
                 let! client = listener.AcceptAsync(cts.Token).AsTask() |> Async.AwaitTask
+
                 Async.Start(
                     async {
                         try
@@ -339,11 +360,15 @@ let startServer (config: ServerConfig) =
                             use reader = new StreamReader(stream)
                             use writer = new StreamWriter(stream, AutoFlush = true)
                             let! line = reader.ReadLineAsync() |> Async.AwaitTask
+
                             if line <> null && line.Length > 0 then
                                 let! response = handleRequest line
                                 do! writer.WriteLineAsync(response) |> Async.AwaitTask
-                        with ex -> eprintfn $"[fsharp-diag] Client error: {ex.Message}"
-                    }, cts.Token)
+                        with ex ->
+                            eprintfn $"[fsharp-diag] Client error: {ex.Message}"
+                    },
+                    cts.Token
+                )
         with
         | :? OperationCanceledException -> ()
         | ex -> eprintfn $"[fsharp-diag] Error: {ex.Message}"

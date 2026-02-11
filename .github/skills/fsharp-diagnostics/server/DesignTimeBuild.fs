@@ -10,12 +10,16 @@ type DtbResult =
       IntermediateOutputPath: string }
 
 type DtbConfig =
-    { TargetFramework: string option
-      Configuration: string }
+    {
+        TargetFramework: string option
+        Configuration: string
+    }
 
 let defaultConfig =
-    { TargetFramework = Some "net10.0"
-      Configuration = "Release" }
+    {
+        TargetFramework = Some "net10.0"
+        Configuration = "Release"
+    }
 
 let run (fsprojPath: string) (config: DtbConfig) =
     async {
@@ -84,6 +88,7 @@ let run (fsprojPath: string) (config: DtbConfig) =
         else
             try
                 let jsonStart = stdout.IndexOf('{')
+
                 if jsonStart < 0 then
                     return Error $"No JSON in DTB output: {stdout.[..200]}"
                 else

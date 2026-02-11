@@ -36,11 +36,13 @@ type ProjectManager(checker: FSharpChecker) =
                     let projDir = Path.GetDirectoryName(key)
 
                     let resolve (s: string) =
-                        if Path.IsPathRooted(s) then s else Path.GetFullPath(Path.Combine(projDir, s))
+                        if Path.IsPathRooted(s) then
+                            s
+                        else
+                            Path.GetFullPath(Path.Combine(projDir, s))
 
                     let resolvedArgs =
-                        dtb.CompilerArgs
-                        |> Array.map (fun a -> if isSourceFile a then resolve a else a)
+                        dtb.CompilerArgs |> Array.map (fun a -> if isSourceFile a then resolve a else a)
 
                     let sourceFiles = resolvedArgs |> Array.filter isSourceFile
 
