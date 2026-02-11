@@ -228,17 +228,21 @@ function Test() {
 
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
-  testlogfilename="${projectname}_${targetframework}.trx"
   testresultsdir="$artifacts_dir/TestResults/$configuration"
-  
+
   # MTP requires --solution flag for .sln files
+  # For solutions, omit --report-xunit-trx-filename so each test assembly generates a unique .trx file.
+  # With a static filename, all assemblies overwrite the same file and only the last one's results survive.
   if [[ "$testproject" == *.sln ]]; then
     testtarget="--solution"
+    reportargs="--report-xunit-trx"
   else
     testtarget="--project"
+    testlogfilename="${projectname}_${targetframework}.trx"
+    reportargs="--report-xunit-trx --report-xunit-trx-filename $testlogfilename"
   fi
 
-  args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" --report-xunit-trx --report-xunit-trx-filename "$testlogfilename" --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+  args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" $reportargs --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
 
   "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
 }
