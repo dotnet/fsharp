@@ -1,5 +1,10 @@
 # Template for F# Compiler Regression Tests
 # Tests third-party F# projects with the freshly built compiler
+#
+# buildScript notation:
+#   - Single command:   buildScript: dotnet build MySolution.sln
+#   - Multiple commands: buildScript: dotnet build A.fsproj ;; dotnet build B.fsproj
+#     Commands separated by ';;' run sequentially; the job fails on the first non-zero exit code.
 
 parameters:
 - name: testMatrix
@@ -10,7 +15,7 @@ parameters:
 
 jobs:
 - ${{ each item in parameters.testMatrix }}:
-  - job: RegressionTest_${{ replace(item.displayName, '-', '_') }}_${{ replace(replace(item.repo, '/', '_'), '-', '_') }}
+  - job: RegressionTest_${{ replace(replace(item.displayName, '-', '_'), '.', '_') }}_${{ replace(replace(replace(item.repo, '/', '_'), '-', '_'), '.', '_') }}
     displayName:  '${{ item.displayName }} Regression Test'
     dependsOn: ${{ parameters.dependsOn }}
     ${{ if item.useVmImage }}:
@@ -61,18 +66,22 @@ jobs:
         Get-ChildItem -Name
         
         $buildScript = '${{ item.buildScript }}'
-        if ($buildScript -like "dotnet*") {
-          Write-Host "Build command is a built-in dotnet command:  $buildScript"
-          Write-Host "Skipping file existence check for built-in command"
-        } else {
-          Write-Host "Verifying build script exists:  $buildScript"
-          if (Test-Path $buildScript) {
-            Write-Host "Build script found: $buildScript"
+        # Support ';;' separator for multiple commands — validate each command's script file
+        $commands = $buildScript -split ';;' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+        foreach ($cmd in $commands) {
+          if ($cmd -like "dotnet*") {
+            Write-Host "Built-in dotnet command, skipping file check:  $cmd"
           } else {
-            Write-Host "Build script not found:  $buildScript"
-            Write-Host "Available files in root:"
-            Get-ChildItem
-            exit 1
+            $scriptFile = ($cmd -split ' ', 2)[0]
+            Write-Host "Verifying build script exists:  $scriptFile"
+            if (Test-Path $scriptFile) {
+              Write-Host "Build script found: $scriptFile"
+            } else {
+              Write-Host "Build script not found:  $scriptFile"
+              Write-Host "Available files in root:"
+              Get-ChildItem
+              exit 1
+            }
           }
         }
       displayName:  Checkout ${{ item.displayName }} at specific commit
@@ -93,6 +102,13 @@ jobs:
       inputs:
         packageType: sdk
         version: '8.0.x'
+        installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
+
+    - task: UseDotNet@2
+      displayName:  Install .NET SDK 9.0.x for ${{ item.displayName }}
+      inputs:
+        packageType: sdk
+        version: '9.0.x'
         installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
 
     - task: UseDotNet@2
@@ -142,6 +158,18 @@ jobs:
 
     - pwsh: |
         Set-Location $(Pipeline.Workspace)/TestRepo
+        if (Test-Path ".config/dotnet-tools.json") {
+          Write-Host "Restoring dotnet tools..."
+          dotnet tool restore
+          Write-Host "Tool restore exit code: $LASTEXITCODE"
+        } else {
+          Write-Host "No dotnet-tools.json found, skipping tool restore"
+        }
+      displayName: Restore dotnet tools for ${{ item.displayName }}
+      continueOnError: true
+
+    - pwsh: |
+        Set-Location $(Pipeline.Workspace)/TestRepo
         Write-Host "============================================"
         Write-Host "Starting build for ${{ item.displayName }}"
         Write-Host "Repository: ${{ item.repo }}"
@@ -150,7 +178,6 @@ jobs:
         Write-Host "============================================"
         Write-Host ""
         
-        $buildScript = '${{ item.buildScript }}'
         $errorLogPath = "$(Pipeline.Workspace)/build-errors.log"
         $fullLogPath = "$(Pipeline.Workspace)/build-full.log"
         
@@ -168,41 +195,56 @@ jobs:
             Add-Content -Path $errorLogPath -Value $line
           }
         }
-        
-        if ($buildScript -like "dotnet*") {
-          Write-Host "Executing built-in command:  $buildScript"
-          if ($IsWindows) {
-            cmd /c $buildScript 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
+
+        function Run-Command {
+          param([string]$cmd)
+          if ($cmd -like "dotnet*") {
+            Write-Host "Executing built-in command:  $cmd"
+            if ($IsWindows) {
+              cmd /c $cmd 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
+                Process-BuildOutput $_
+              }
+            } else {
+              bash -c "$cmd" 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
+                Process-BuildOutput $_
+              }
+            }
+          } elseif ($IsWindows) {
+            Write-Host "Executing file-based script: $cmd"
+            cmd /c ".\$cmd" 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
               Process-BuildOutput $_
             }
           } else {
-            bash -c "$buildScript" 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
+            Write-Host "Executing file-based script: $cmd"
+            $scriptFile = ($cmd -split ' ', 2)[0]
+            chmod +x "$scriptFile"
+            bash -c "./$cmd" 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
               Process-BuildOutput $_
             }
           }
-        } elseif ($IsWindows) {
-          Write-Host "Executing file-based script: $buildScript"
-          & ".\$buildScript" 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
-            Process-BuildOutput $_
-          }
-        } else {
-          Write-Host "Executing file-based script: $buildScript"
-          chmod +x "$buildScript"
-          bash -c "./$buildScript" 2>&1 | Tee-Object -FilePath $fullLogPath | ForEach-Object {
-            Process-BuildOutput $_
+          return $LASTEXITCODE
+        }
+
+        # Support ';;' separator for multiple commands
+        $commands = ('${{ item.buildScript }}' -split ';;') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+        
+        foreach ($cmd in $commands) {
+          $exitCode = Run-Command $cmd
+          if ($exitCode -ne 0) {
+            Write-Host ""
+            Write-Host "============================================"
+            Write-Host "Command failed: $cmd"
+            Write-Host "Exit code: $exitCode"
+            Write-Host "============================================"
+            exit $exitCode
           }
         }
-        $exitCode = $LASTEXITCODE
         
         Write-Host ""
         Write-Host "============================================"
         Write-Host "Build completed for ${{ item.displayName }}"
-        Write-Host "Exit code: $exitCode"
+        Write-Host "Exit code: 0"
         Write-Host "============================================"
-        
-        if ($exitCode -ne 0) {
-          exit $exitCode
-        }
       displayName:  Build ${{ item.displayName }} with local F# compiler
       env:
         LocalFSharpCompilerPath: $(Pipeline.Workspace)/FSharpCompiler

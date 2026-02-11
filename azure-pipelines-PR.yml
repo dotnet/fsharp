@@ -919,3 +919,23 @@ stages:
           buildScript: build.sh
           displayName: FsharpPlus_Net10_Linux
           useVmImage: $(UbuntuMachineQueueName)
+        - repo: TheAngryByrd/IcedTasks
+          commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
+          buildScript: dotnet build IcedTasks.sln
+          displayName: IcedTasks_Build
+        - repo: TheAngryByrd/IcedTasks
+          commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
+          buildScript: dotnet test IcedTasks.sln
+          displayName: IcedTasks_Test
+        - repo: demystifyfp/FsToolkit.ErrorHandling
+          commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
+          buildScript: dotnet build FsToolkit.ErrorHandling.sln
+          displayName: FsToolkit_ErrorHandling_Build
+        - repo: demystifyfp/FsToolkit.ErrorHandling
+          commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
+          buildScript: dotnet test FsToolkit.ErrorHandling.sln
+          displayName: FsToolkit_ErrorHandling_Test
+        - repo: opentk/opentk
+          commit: 60c20cca65a7df6e8335e8d6060d91b30909fbea
+          buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release
+          displayName: OpenTK_FSharp_Build
