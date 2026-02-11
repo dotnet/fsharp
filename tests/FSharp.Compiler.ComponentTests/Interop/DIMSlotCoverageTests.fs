@@ -67,6 +67,17 @@ namespace GenericDIMTest {
     public interface IGet<T> { T Get(); }
     public interface IContainer : IGet<int>, IGet<string> { int IGet<int>.Get() => 42; }
 }
+namespace IndependentDIMs {
+    public interface IX { int X(); }
+    public interface IY : IX { new int X(); int IX.X() => this.X() + 1000; }
+    public interface IA { int A(); }
+    public interface IB : IA { new int A(); int IA.A() => this.A() + 2000; }
+}
+namespace BaseClassDIM {
+    public interface IA { int M(); }
+    public interface IB : IA { new int M(); int IA.M() => this.M() + 100; }
+    public class CSharpBase : IB { public int M() => 77; }
+}
         """
         |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8
         |> withName "DIMTestLib"
@@ -185,5 +196,75 @@ let obj : IB = { new IB with member x.M(y) = y + 3 }
     [<FactForNETCOREAPP>]
     let ``Old language version (pre-feature) requires explicit implementation`` () =
         fsharpImplementingInterface "DIMTest" "type C() = interface IB with member _.M() = 42"
-        |> shouldFailWithoutFeature dimTestLib "9.0" 361
+        |> shouldFailWithoutFeature dimTestLib "10.0" 361
         |> withDiagnosticMessageMatches "implements"
+
+    [<FactForNETCOREAPP>]
+    let ``Runtime - DIM forwarding calls correct method`` () =
+        fsharpImplementingInterface "DIMTest" """
+type C() =
+    interface IB with member _.M() = 42
+
+[<EntryPoint>]
+let main _ =
+    let c = C()
+    let ibResult = (c :> IB).M()
+    let iaResult = (c :> IA).M()
+    if ibResult <> 42 then failwithf "IB.M() expected 42 but got %d" ibResult
+    if iaResult <> 142 then failwithf "IA.M() via DIM expected 142 but got %d" iaResult
+    0
+"""
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compileExeAndRun |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Runtime - explicit override of DIM-covered slot`` () =
+        fsharpImplementingInterface "DIMTest" """
+type C() =
+    interface IB with member _.M() = 42
+    interface IA with member _.M() = 999
+
+[<EntryPoint>]
+let main _ =
+    let c = C()
+    let ibResult = (c :> IB).M()
+    let iaResult = (c :> IA).M()
+    if ibResult <> 42 then failwithf "IB.M() expected 42 but got %d" ibResult
+    if iaResult <> 999 then failwithf "IA.M() explicit override expected 999 but got %d" iaResult
+    0
+"""
+        |> withLangVersionPreview |> withReferences [dimTestLib] |> compileExeAndRun |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Struct implementing DIM-covered interface`` () =
+        fsharpImplementingInterface "DIMTest" """
+[<Struct>]
+type S =
+    interface IB with member _.M() = 42
+"""
+        |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
+    let ``Abstract class with DIM-covered interface`` () =
+        fsharpImplementingInterface "DIMTest" """
+[<AbstractClass>]
+type A() =
+    interface IB with member _.M() = 42
+"""
+        |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
+    let ``Multiple independent DIM-covered interfaces`` () =
+        fsharpImplementingInterface "IndependentDIMs" """
+type C() =
+    interface IY with member _.X() = 10
+    interface IB with member _.A() = 20
+"""
+        |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
+    let ``Base class inheritance - F# class inheriting C# class with DIM`` () =
+        fsharpImplementingInterface "BaseClassDIM" """
+type Derived() =
+    inherit CSharpBase()
+"""
+        |> shouldCompileWithDIM dimTestLib

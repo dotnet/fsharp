@@ -252,7 +252,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.ImplicitDIMCoverage, previewVersion
+                LanguageFeature.ImplicitDIMCoverage, languageVersion110
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
