@@ -10,7 +10,6 @@ open System.Xml
 
 let propsFilePath = "Directory.Build.props"
 
-// Get the path to UseLocalCompiler.Directory.Build.props from command line args
 let useLocalCompilerPropsPath = 
     let args = Environment.GetCommandLineArgs()
     // When running with dotnet fsi, args are: [0]=dotnet; [1]=fsi.dll; [2]=script.fsx; [3...]=args
@@ -24,7 +23,6 @@ printfn "PrepareRepoForRegressionTesting.fsx"
 printfn "==================================="
 printfn "UseLocalCompiler props path: %s" useLocalCompilerPropsPath
 
-// Verify the UseLocalCompiler props file exists
 if not (File.Exists(useLocalCompilerPropsPath)) then
     failwithf "UseLocalCompiler.Directory.Build.props not found at: %s" useLocalCompilerPropsPath
 
@@ -38,12 +36,10 @@ printfn "Absolute path: %s" absolutePropsPath
 if File.Exists(propsFilePath) then
     printfn "Directory.Build.props exists, modifying it..."
     
-    // Load the existing XML
     let doc = XmlDocument()
     doc.PreserveWhitespace <- true
     doc.Load(propsFilePath)
     
-    // Find the Project element
     let projectElement = doc.SelectSingleNode("/Project")
     if isNull projectElement then
         failwith "Could not find Project element in Directory.Build.props"
@@ -52,17 +48,14 @@ if File.Exists(propsFilePath) then
     let existingImport = doc.SelectSingleNode(xpath)
     
     if isNull existingImport then
-        // Create Import element
         let importElement = doc.CreateElement("Import")
         importElement.SetAttribute("Project", absolutePropsPath)
         
-        // Insert as first child of Project element
         if projectElement.HasChildNodes then
             projectElement.InsertBefore(importElement, projectElement.FirstChild) |> ignore
         else
             projectElement.AppendChild(importElement) |> ignore
         
-        // Add newline for formatting
         let newline = doc.CreateTextNode("\n  ")
         projectElement.InsertAfter(newline, importElement) |> ignore
         
@@ -113,7 +106,6 @@ else
     File.WriteAllText(propsFilePath, newContent)
     printfn "✓ Created Directory.Build.props with UseLocalCompiler import and --times flag"
 
-// Print the final content
 printfn ""
 printfn "Final Directory.Build.props content:"
 printfn "-----------------------------------"
