@@ -8,12 +8,15 @@ open Microsoft.Build.Logging.StructuredLogger
 
 let binlogPath = 
     let args = Environment.GetCommandLineArgs()
-    // When running with dotnet fsi, args are: [0]=dotnet; [1]=fsi.dll; [2]=script.fsx; [3...]=args
     let scriptArgs = args |> Array.skipWhile (fun a -> not (a.EndsWith(".fsx"))) |> Array.skip 1
     if scriptArgs.Length > 0 then
         scriptArgs.[0]
     else
         failwith "Usage: dotnet fsi ExtractTimingsFromBinlog.fsx <path-to-binlog-file>"
+
+if not (IO.File.Exists(binlogPath)) then
+    printfn "Binlog file not found: %s" binlogPath
+    exit 1
 
 let rec findProject (node: TreeNode) =
     match node with
@@ -24,7 +27,7 @@ let rec findProject (node: TreeNode) =
 let build = BinaryLog.ReadBuild(binlogPath)
 
 let isTimingLine (s: string) =
-    s.StartsWith("|") || (s.Length > 20 && s.TrimEnd() |> Seq.forall (fun c -> c = '-'))
+    s.StartsWith("|")
 
 let mutable foundFscTasks = false
 let mutable foundTimingData = false
