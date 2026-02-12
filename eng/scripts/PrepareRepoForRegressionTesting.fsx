@@ -65,11 +65,8 @@ if File.Exists(propsFilePath) then
     if isNull otherFlagsWithTimes then
         let propertyGroup = doc.CreateElement("PropertyGroup")
         let otherFlags = doc.CreateElement("OtherFlags")
-        otherFlags.InnerText <- "$(OtherFlags) --times"
+        otherFlags.InnerText <- "$(OtherFlags) --nowarn:75 --times"
         propertyGroup.AppendChild(otherFlags) |> ignore
-        let noWarn = doc.CreateElement("NoWarn")
-        noWarn.InnerText <- "$(NoWarn);0075"
-        propertyGroup.AppendChild(noWarn) |> ignore
         
         let importNode = doc.SelectSingleNode(xpath)
         
@@ -92,23 +89,16 @@ if File.Exists(propsFilePath) then
         doc.Save(propsFilePath)
         printfn "✓ Added --times flag to OtherFlags"
     else
-        // Clean up --nowarn:75 from OtherFlags if present (moved to <NoWarn> element)
-        if otherFlagsWithTimes.InnerText.Contains("--nowarn:75") then
-            otherFlagsWithTimes.InnerText <- otherFlagsWithTimes.InnerText.Replace(" --nowarn:75", "").Replace("--nowarn:75 ", "")
-        
-        let parentPG = otherFlagsWithTimes.ParentNode
-        let existingNoWarn = parentPG.SelectSingleNode("NoWarn[contains(text(), '0075')]")
-        if isNull existingNoWarn then
-            let noWarn = doc.CreateElement("NoWarn")
-            noWarn.InnerText <- "$(NoWarn);0075"
-            parentPG.AppendChild(noWarn) |> ignore
+        // Ensure --nowarn:75 is present before --times in OtherFlags
+        if not (otherFlagsWithTimes.InnerText.Contains("--nowarn:75")) then
+            otherFlagsWithTimes.InnerText <- otherFlagsWithTimes.InnerText.Replace("--times", "--nowarn:75 --times")
             doc.Save(propsFilePath)
-            printfn "✓ Added NoWarn for FS0075"
+            printfn "✓ Added --nowarn:75 before --times in OtherFlags"
         else
-            printfn "✓ --times and NoWarn for FS0075 already exist"
+            printfn "✓ --times and --nowarn:75 already exist in OtherFlags"
 else
     printfn "Directory.Build.props does not exist, creating it..."
-    let newContent = sprintf "<Project>\n  <Import Project=\"%s\" />\n  <PropertyGroup>\n    <OtherFlags>$(OtherFlags) --times</OtherFlags>\n    <NoWarn>$(NoWarn);0075</NoWarn>\n  </PropertyGroup>\n</Project>\n" absolutePropsPath
+    let newContent = sprintf "<Project>\n  <Import Project=\"%s\" />\n  <PropertyGroup>\n    <OtherFlags>$(OtherFlags) --nowarn:75 --times</OtherFlags>\n  </PropertyGroup>\n</Project>\n" absolutePropsPath
     File.WriteAllText(propsFilePath, newContent)
     printfn "✓ Created Directory.Build.props with UseLocalCompiler import and --times flag"
 
