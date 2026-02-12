@@ -88,13 +88,12 @@ if File.Exists(propsFilePath) then
         doc.Save(propsFilePath)
         printfn "✓ Added --times flag to OtherFlags"
     else
-        printfn "✓ --times flag already exists in OtherFlags"
-
-    let otherFlagsWithTimesNode = doc.SelectSingleNode("//OtherFlags[contains(text(), '--times')]")
-    if not (isNull otherFlagsWithTimesNode) && not (otherFlagsWithTimesNode.InnerText.Contains("--nowarn:75")) then
-        otherFlagsWithTimesNode.InnerText <- otherFlagsWithTimesNode.InnerText.Replace("--times", "--nowarn:75 --times")
-        doc.Save(propsFilePath)
-        printfn "✓ Added --nowarn:75 before --times in OtherFlags"
+        if not (otherFlagsWithTimes.InnerText.Contains("--nowarn:75")) then
+            otherFlagsWithTimes.InnerText <- otherFlagsWithTimes.InnerText.Replace("--times", "--nowarn:75 --times")
+            doc.Save(propsFilePath)
+            printfn "✓ Added --nowarn:75 before --times in existing OtherFlags"
+        else
+            printfn "✓ --times flag already exists in OtherFlags"
 else
     printfn "Directory.Build.props does not exist, creating it..."
     let newContent = sprintf "<Project>\n  <Import Project=\"%s\" />\n  <PropertyGroup>\n    <OtherFlags>$(OtherFlags) --nowarn:75 --times</OtherFlags>\n  </PropertyGroup>\n</Project>\n" absolutePropsPath
