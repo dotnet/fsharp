@@ -141,7 +141,8 @@ jobs:
         dotnet msbuild -version
         Write-Host ""
         Write-Host "F# Compiler artifacts available:"
-        Get-ChildItem "$(Pipeline.Workspace)/FSharpCompiler/bin/fsc/Release/net10.0" -Name -ErrorAction SilentlyContinue
+        $productTfm = (dotnet msbuild "$(Pipeline.Workspace)/Props/TargetFrameworks.props" --getProperty:FSharpNetCoreProductTargetFramework).Trim()
+        Get-ChildItem "$(Pipeline.Workspace)/FSharpCompiler/bin/fsc/Release/$productTfm" -Name -ErrorAction SilentlyContinue
         Write-Host ""
         Write-Host "F# Core available:"
         if (Test-Path "$(Pipeline.Workspace)/FSharpCompiler/bin/FSharp.Core/Release/netstandard2.0/FSharp.Core.dll") {
