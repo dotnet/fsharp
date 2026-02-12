@@ -1137,7 +1137,7 @@ let example () =
     // RFC section-byref-span.md scenarios
     // ============================================================================
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Span - Span of byte vs Span of generic - resolves to concrete byte`` () =
         // RFC section-byref-span.md: Element type comparison for Span
         // Span<byte> is more concrete than Span<'T>
@@ -1161,7 +1161,7 @@ let runTest () =
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``ReadOnlySpan - element type comparison - concrete vs generic`` () =
         // RFC section-byref-span.md: ReadOnlySpan<byte> > ReadOnlySpan<'T>
         FSharp """
@@ -1204,7 +1204,7 @@ let result = Example.Process(value)
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Span - generic element with nested type - Option of int vs Option of generic`` () =
         // RFC section-byref-span.md: Concreteness applies to element types within Span
         FSharp """
@@ -1881,7 +1881,7 @@ let result = ValueProcessor.Process(vopt)
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``ValueTask - ValueTask of int vs generic`` () =
         // ValueTask with concrete inner type
         FSharp """
@@ -2468,7 +2468,7 @@ let result = Example.Handle([|1; 2; 3|])
         |> withErrorCode 41
         |> ignore
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``LangVersion Latest - ORP attribute ignored - higher priority does not win`` () =
         // Under langversion=latest, OverloadResolutionPriority is silently ignored
         // Normal tiebreaker rules apply - string (more specific) should beat object
@@ -2489,7 +2489,7 @@ if result <> "priority-1-string" then
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``LangVersion Latest - ORP attribute ignored - negative priority has no effect`` () =
         // Under langversion=latest, OverloadResolutionPriority is silently ignored
         // Even negative priority doesn't deprioritize - normal rules apply
@@ -2511,7 +2511,7 @@ if result <> "current" then
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``LangVersion Latest - ORP attribute ignored - priority does not override concreteness`` () =
         // Under langversion=latest, ORP is ignored AND MoreConcrete is disabled
         // For Process(int) vs Process<T>(T), both are applicable for int
