@@ -1150,6 +1150,9 @@ let value = Script.ScriptModule.compute "hi"
 """
                     (set [| 2 |])
             ]
+        // Regression tests for graph-based dependency resolution in projects with
+        // sub-namespace patterns (e.g. the Nu game engine). These verify that
+        // PrefixedIdentifier resolution correctly discovers modules through open namespaces.
         scenario
             "Sub-namespace opens parent namespace with types and modules"
             [
@@ -1185,6 +1188,30 @@ module Dissolve =
                     (set [| 0; 1 |])
             ]
         scenario
+            "Sub-namespace opens parent namespace and uses type constructor"
+            [
+                sourceFile
+                    "Types.fs"
+                    """
+namespace Nu
+
+type GameTime =
+    { Value: float }
+    static member ofSeconds (s: float) = { Value = s }
+"""
+                    Set.empty
+                sourceFile
+                    "Constants.fs"
+                    """
+namespace Nu.Constants
+open Nu
+
+module Defaults =
+    let IncomingTime = GameTime.ofSeconds 0.5
+"""
+                    (set [| 0 |])
+            ]
+        scenario
             "Sub-namespace opens parent namespace with only modules"
             [
                 sourceFile
@@ -1208,9 +1235,49 @@ module M =
 """
                     (set [| 0 |])
             ]
-        // When two files define the same module name in the same namespace,
-        // the trie must track both file indices so that dependencies on either are detected.
-        // ModuleSuffix avoids FS0248 while preserving the same source-level name.
+        scenario
+            "Multiple namespace declarations in one file with AutoOpen"
+            [
+                sourceFile
+                    "Entity.fs"
+                    """
+namespace Nu
+
+type Entity = { Name: string }
+"""
+                    Set.empty
+                sourceFile
+                    "BlockMap.fs"
+                    """
+namespace Nu.BlockMap
+
+module BlockMapCore =
+    let defaultSize = 32
+
+namespace Nu
+
+[<AutoOpen>]
+module BlockMapExtensions =
+    let getBlockMapSize () = 42
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "Consumer.fs"
+                    """
+namespace Nu.Game
+open Nu
+
+module GameLogic =
+    let size = getBlockMapSize ()
+    let e : Entity = { Name = "test" }
+"""
+                    (set [| 0; 1 |])
+            ]
+        // Two files define the same nested module name within the same namespace.
+        // Without the Module+Module merge case in TrieMapping.mergeTrieNodes,
+        // only the first file's index would be tracked, causing the second to be
+        // missed as a dependency. CompilationRepresentation(ModuleSuffix) on the
+        // second file avoids FS0248 (duplicate module name) at the CLR level.
         scenario
             "Same module name defined in multiple files of the same namespace"
             [
