@@ -110,6 +110,17 @@ if File.Exists(propsFilePath) then
         printfn "✓ Added --times flag to OtherFlags"
     else
         printfn "✓ --times flag already exists in OtherFlags"
+
+        let noWarnWith0075 = doc.SelectSingleNode("//NoWarn[contains(text(), '0075')]")
+        if isNull noWarnWith0075 then
+            let parentPG = otherFlagsWithTimes.ParentNode
+            let noWarn = doc.CreateElement("NoWarn")
+            noWarn.InnerText <- "$(NoWarn);0075"
+            parentPG.AppendChild(noWarn) |> ignore
+            doc.Save(propsFilePath)
+            printfn "✓ Added NoWarn for FS0075"
+        else
+            printfn "✓ NoWarn for FS0075 already exists"
 else
     printfn "Directory.Build.props does not exist, creating it..."
     let newContent = sprintf "<Project>\n  <Import Project=\"%s\" />\n  <PropertyGroup>\n    <OtherFlags>$(OtherFlags) --times</OtherFlags>\n    <NoWarn>$(NoWarn);0075</NoWarn>\n  </PropertyGroup>\n</Project>\n" absolutePropsPath
