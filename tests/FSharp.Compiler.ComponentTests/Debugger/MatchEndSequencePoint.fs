@@ -105,6 +105,48 @@ let processAndLog (x: int) =
               (Line 8, Col 27, Line 8, Col 37)
               (Line 9, Col 16, Line 9, Col 22) ]
 
+    /// https://github.com/dotnet/fsharp/issues/12052#issuecomment-974695340
+    /// Auduchinok reported extra Step Over needed in if/then/else expressions too.
+    [<Fact>]
+    let ``If-then-else does not produce extra sequence point at end`` () =
+        verifyMethodDebugPoints
+            "
+module TestModuleIf
+
+let funcC (x: int) =
+    let result =
+        if x > 0 then \"positive\"
+        elif x = 0 then \"zero\"
+        else \"negative\"
+    System.Console.WriteLine(result)
+            "
+            "funcC"
+            [ (Line 9, Col 5, Line 9, Col 37)
+              (Line 6, Col 9, Line 6, Col 22)
+              (Line 6, Col 23, Line 6, Col 33)
+              (Line 7, Col 9, Line 7, Col 24)
+              (Line 7, Col 25, Line 7, Col 31)
+              (Line 8, Col 14, Line 8, Col 24) ]
+
+    [<Fact>]
+    let ``If-then-else in statement position does not produce extra sequence point`` () =
+        verifyMethodDebugPoints
+            "
+module TestModuleIfStmt
+
+let funcD (x: int) =
+    if x > 0 then
+        System.Console.WriteLine(\"positive\")
+    else
+        System.Console.WriteLine(\"non-positive\")
+    System.Console.WriteLine(\"done\")
+            "
+            "funcD"
+            [ (Line 5, Col 5, Line 5, Col 18)
+              (Line 6, Col 9, Line 6, Col 45)
+              (Line 8, Col 9, Line 8, Col 49)
+              (Line 9, Col 5, Line 9, Col 37) ]
+
     [<Fact>]
     let ``Complex match with nested when guards has all sequence points within method range`` () =
         FSharp "

@@ -67,6 +67,27 @@ let a =
     }
         """ "staticInitialization@" [ (Line 13, Col 1, Line 13, Col 25); (Line 16, Col 5, Line 16, Col 9); (Line 17, Col 9, Line 17, Col 30) ]
 
+    /// The yield/return fix uses the same code path (SynExpr.YieldOrReturn handler).
+    /// 'return' is tested above in async CE. This test verifies 'yield' specifically,
+    /// using a task CE which preserves debug points in MoveNext.
+    [<Fact>]
+    let ``Yield in task CE - debug point covers full expression`` () =
+        verifyMethodDebugPoints """
+module TestModule
+
+open System.Collections.Generic
+
+let mkValue () = 42
+
+let items = ResizeArray<int>()
+
+let t =
+    task {
+        items.Add(mkValue())
+        return ()
+    }
+        """ "MoveNext" [ (Line 12, Col 9, Line 12, Col 29); (Line 13, Col 9, Line 13, Col 18) ]
+
     [<Fact>]
     let ``Use in task CE - no extra out-of-order sequence point`` () =
         verifyMethodDebugPoints """
