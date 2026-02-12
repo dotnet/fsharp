@@ -1150,6 +1150,103 @@ let value = Script.ScriptModule.compute "hi"
 """
                     (set [| 2 |])
             ]
+        scenario
+            "Sub-namespace opens parent namespace with types and modules"
+            [
+                sourceFile
+                    "Types.fs"
+                    """
+namespace Nu
+
+type GameTime =
+    { Value: float }
+    static member ofSeconds (s: float) = { Value = s }
+"""
+                    Set.empty
+                sourceFile
+                    "Assets.fs"
+                    """
+namespace Nu
+
+module Assets =
+    module Default =
+        let Black = "black"
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "Constants.fs"
+                    """
+namespace Nu.Constants
+open Nu
+
+module Dissolve =
+    let x = Assets.Default.Black
+"""
+                    (set [| 0; 1 |])
+            ]
+        scenario
+            "Sub-namespace opens parent namespace with only modules"
+            [
+                sourceFile
+                    "Modules.fs"
+                    """
+namespace Nu
+
+module Assets =
+    module Default =
+        let Black = "black"
+"""
+                    Set.empty
+                sourceFile
+                    "Consumer.fs"
+                    """
+namespace Nu.Sub
+open Nu
+
+module M =
+    let x = Assets.Default.Black
+"""
+                    (set [| 0 |])
+            ]
+        // When two files define the same module name in the same namespace,
+        // the trie must track both file indices so that dependencies on either are detected.
+        // ModuleSuffix avoids FS0248 while preserving the same source-level name.
+        scenario
+            "Same module name defined in multiple files of the same namespace"
+            [
+                sourceFile
+                    "Assets1.fs"
+                    """
+namespace Nu
+
+[<RequireQualifiedAccess>]
+module Assets =
+    module Default =
+        let PackageName = "Default"
+"""
+                    Set.empty
+                sourceFile
+                    "Assets2.fs"
+                    """
+namespace Nu
+
+[<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Assets =
+    module Default =
+        let Black = "black"
+"""
+                    Set.empty
+                sourceFile
+                    "Constants.fs"
+                    """
+namespace Nu.Constants
+open Nu
+
+module Dissolve =
+    let x = Assets.Default.Black
+"""
+                    (set [| 0; 1 |])
+            ]
     ]
 
 
