@@ -1004,31 +1004,33 @@ module internal Tokenizer =
             | 0 -> span
             | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
-    // (#18270) Check if the text at the given span is a property accessor keyword (get/set).
-    // These should be excluded from rename operations since they are keywords, not identifiers.
-    let private isPropertyAccessorKeyword (sourceText: SourceText, span: TextSpan) : bool =
+    // (#18270) FCS reports get/set accessor keywords as uses of the property symbol.
+    // Filter them out only when the span text doesn't match the actual symbol name,
+    // so that identifiers genuinely named "get"/"set" (e.g., let get = ...) are preserved.
+    let private isPhantomPropertyAccessor (sourceText: SourceText, span: TextSpan, symbolName: string) : bool =
         let text = sourceText.GetSubText(span).ToString()
-        text = "get" || text = "set"
+        (text = "get" || text = "set") && text <> symbolName
 
     /// #18270: Parameterized active pattern that applies fixupSpan and filters out
-    /// property accessor keywords (get/set) from rename/find-references.
-    /// Usage: match textSpan with FixedSpan sourceText fixedSpan -> ...
-    let (|FixedSpan|_|) (sourceText: SourceText) (span: TextSpan) : TextSpan voption =
+    /// phantom property accessor references from rename/find-references.
+    /// The symbolName parameter ensures identifiers genuinely named "get"/"set" are kept.
+    /// Usage: match textSpan with FixedSpan sourceText symbolName fixedSpan -> ...
+    let (|FixedSpan|_|) (sourceText: SourceText) (symbolName: string) (span: TextSpan) : TextSpan voption =
         let fixedSpan = fixupSpan (sourceText, span)
 
-        if isPropertyAccessorKeyword (sourceText, fixedSpan) then
+        if isPhantomPropertyAccessor (sourceText, fixedSpan, symbolName) then
             ValueNone
         else
             ValueSome fixedSpan
 
     /// #18270: Converts F# range to Roslyn TextSpan with editor-specific filtering.
-    /// Filters out property accessor keywords (get/set) that should not appear in
+    /// Filters out phantom property accessor references that should not appear in
     /// Find All References or Rename operations.
-    let TryFSharpRangeToTextSpanForEditor (sourceText: SourceText, range: range) : TextSpan voption =
+    let TryFSharpRangeToTextSpanForEditor (sourceText: SourceText, range: range, symbolName: string) : TextSpan voption =
         match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
         | ValueSome textSpan ->
             match textSpan with
-            | FixedSpan sourceText fixedSpan -> ValueSome fixedSpan
+            | FixedSpan sourceText symbolName fixedSpan -> ValueSome fixedSpan
             | _ -> ValueNone
         | _ -> ValueNone
 

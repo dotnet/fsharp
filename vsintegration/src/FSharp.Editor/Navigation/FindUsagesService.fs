@@ -23,6 +23,7 @@ module FSharpFindUsagesService =
         externalDefinitionItem
         definitionItems
         isExternal
+        symbolName
         (onReferenceFoundAsync: FSharpSourceReferenceItem -> Task)
         (doc: Document)
         (symbolUse: range)
@@ -37,7 +38,7 @@ module FSharpFindUsagesService =
             | _, ValueSome _ when not allReferences -> ()
             | _, ValueSome textSpan ->
                 match textSpan with
-                | Tokenizer.FixedSpan sourceText fixedSpan ->
+                | Tokenizer.FixedSpan sourceText symbolName fixedSpan ->
                     let definitionItem =
                         if isExternal then
                             externalDefinitionItem
@@ -58,7 +59,7 @@ module FSharpFindUsagesService =
         }
 
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
-    let rangeToDocumentSpans (solution: Solution, range: range) =
+    let rangeToDocumentSpans (solution: Solution, range: range, symbolName: string) =
         if range.Start = range.End then
             CancellableTask.singleton [||]
         else
@@ -73,7 +74,7 @@ module FSharpFindUsagesService =
                                 let! cancellationToken = CancellableTask.getCancellationToken ()
                                 let! sourceText = doc.GetTextAsync(cancellationToken)
 
-                                match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, range) with
+                                match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, range, symbolName) with
                                 | ValueSome fixedSpan -> return Some(FSharpDocumentSpan(doc, fixedSpan))
                                 | ValueNone -> return None
                             }
@@ -118,7 +119,7 @@ module FSharpFindUsagesService =
 
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range -> rangeToDocumentSpans (document.Project.Solution, range)
+                        | Some range -> rangeToDocumentSpans (document.Project.Solution, range, symbol.Ident.idText)
                         | None -> CancellableTask.singleton [||]
 
                     let declarationSpans =
@@ -155,6 +156,7 @@ module FSharpFindUsagesService =
                             externalDefinitionItem
                             definitionItems
                             isExternal
+                            symbol.Ident.idText
                             context.OnReferenceFoundAsync
 
                     do! SymbolHelpers.findSymbolUses symbolUse document checkFileResults onFound

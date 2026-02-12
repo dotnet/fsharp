@@ -211,3 +211,38 @@ module FindReferences =
         // in FindUsagesService.onSymbolFound
         if foundReferences.Count <> 2 then
             failwith $"Expected 2 references but found {foundReferences.Count}"
+
+    /// Ensures identifiers genuinely named "get" are not incorrectly filtered out
+    /// by the phantom property accessor filter (#18270 fix).
+    [<Fact>]
+    let ``Find references for identifier named get`` () =
+
+        let project =
+            SyntheticProject.Create(
+                { sourceFile "First" [] with
+                    SignatureFile = No
+                    ExtraSource =
+                        "let get x = x + 1\n"
+                        + "let result = get 42\n"
+                }
+            )
+
+        let solution, _ = RoslynTestHelpers.CreateSolution project
+
+        let context, foundDefinitions, foundReferences = getContext ()
+
+        let documentPath = project.GetFilePath "First"
+
+        let document =
+            solution.TryGetDocumentFromPath documentPath
+            |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
+
+        findUsagesService.FindReferencesAsync(document, getPositionOf "get x" documentPath, context).Wait()
+
+        // Should find 1 definition
+        if foundDefinitions.Count <> 1 then
+            failwith $"Expected 1 definition but found {foundDefinitions.Count}"
+
+        // Should find 1 reference (the call site) - the identifier "get" must NOT be filtered
+        if foundReferences.Count <> 1 then
+            failwith $"Expected 1 reference but found {foundReferences.Count}"

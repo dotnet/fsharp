@@ -100,6 +100,8 @@ type internal InlineRenameInfo
     let symbolUses =
         SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document) ct
 
+    let symbolDisplayName = symbolUse.Symbol.DisplayName
+
     override _.CanRename = true
     override _.LocalizedErrorMessage = null
     override _.TriggerSpan = triggerSpan
@@ -161,7 +163,7 @@ type internal InlineRenameInfo
                             return
                                 [|
                                     for symbolUse in symbolUses do
-                                        match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse) with
+                                        match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse, symbolDisplayName) with
                                         | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
                                         | ValueNone -> ()
                                 |]
@@ -214,13 +216,13 @@ type internal InlineRenameService [<ImportingConstructor>] () =
                     | ValueNone -> return Unchecked.defaultof<_>
                     | ValueSome textSpan ->
                         match textSpan with
-                        | Tokenizer.FixedSpan sourceText triggerSpan ->
+                        | Tokenizer.FixedSpan sourceText symbolUse.Symbol.DisplayName triggerSpan ->
                             let result =
                                 InlineRenameInfo(document, triggerSpan, sourceText, symbol, symbolUse, checkFileResults, ct)
 
                             return result :> FSharpInlineRenameInfo
                         | _ ->
-                            // #18270: Abort if user clicked on get/set keyword
+                            // #18270: Abort if user clicked on phantom get/set accessor keyword
                             return Unchecked.defaultof<_>
         }
         |> CancellableTask.start cancellationToken
