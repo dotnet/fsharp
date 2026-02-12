@@ -14,8 +14,8 @@
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- Note, that default framework is used here (the one we use for development in the current cycle),
          since it's a non-arcade and non-sourcebuild scenario -->
-    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(NETCoreSdkPortableRuntimeIdentifier)/fslex.dll</FsLexPath>
-    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(NETCoreSdkPortableRuntimeIdentifier)/fsyacc.dll</FsYaccPath>
+    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/$(FSharpNetCoreProductTargetFramework)/$(NETCoreSdkPortableRuntimeIdentifier)/fslex.dll</FsLexPath>
+    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductTargetFramework)/$(NETCoreSdkPortableRuntimeIdentifier)/fsyacc.dll</FsYaccPath>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(DesignTimeBuild)' == 'true'">
