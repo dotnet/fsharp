@@ -24,7 +24,7 @@ let rec findProject (node: TreeNode) =
 let build = BinaryLog.ReadBuild(binlogPath)
 
 let isTimingLine (s: string) =
-    s.Contains("|") || (s.TrimStart().StartsWith("-") && s.Length > 10 && not (s.Contains("/")))
+    s.StartsWith("|") || (s.Length > 20 && s.TrimEnd() |> Seq.forall (fun c -> c = '-'))
 
 let mutable foundFscTasks = false
 let mutable foundTimingData = false
