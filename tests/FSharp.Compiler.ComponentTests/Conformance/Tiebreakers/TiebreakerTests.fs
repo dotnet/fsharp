@@ -21,21 +21,6 @@ let result = Example.Invoke(Some([1]))
         """
 
     [<Fact>]
-    let ``Placeholder - Test infrastructure compiles and runs`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Invoke(value: int) = "int"
-    static member Invoke(value: string) = "string"
-
-let result = Example.Invoke(42)
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
     let ``Example 1 - Basic Generic vs Concrete - Option of t vs Option of int`` () =
         FSharp """
 module Test
@@ -1196,16 +1181,6 @@ let result : string = Resolver.Resolve(Some([1]))
         |> shouldFail
         |> withWarningCode 3576
         |> withDiagnosticMessageMatches "bypassed"
-        |> ignore
-
-    [<Fact>]
-    let ``Warning 3576 - Shows bypassed and selected overload names`` () =
-        FSharp concretenessWarningSource
-        |> withLangVersionPreview
-        |> withOptions ["--warnon:3576"]
-        |> typecheck
-        |> shouldFail
-        |> withWarningCode 3576
         |> withDiagnosticMessageMatches "Invoke"
         |> ignore
 

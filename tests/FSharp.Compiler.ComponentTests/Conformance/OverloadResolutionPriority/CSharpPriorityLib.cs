@@ -1,6 +1,3 @@
-// C# Library for OverloadResolutionPriority Tests
-// This file is compiled ONCE and used by all ORP tests
-
 using System;
 using System.Runtime.CompilerServices;
 
@@ -15,7 +12,6 @@ namespace PriorityTests
         [OverloadResolutionPriority(0)]
         public static string LowPriority(object o) => "low";
         
-        // Overloaded methods with same name but different priorities
         [OverloadResolutionPriority(2)]
         public static string Invoke(object o) => "priority-2";
         
@@ -34,7 +30,6 @@ namespace PriorityTests
         
         public static string Legacy(string s) => "current"; // default priority 0
         
-        // Multiple negative levels
         [OverloadResolutionPriority(-2)]
         public static string Obsolete(object o) => "very-old";
         
@@ -47,15 +42,12 @@ namespace PriorityTests
     /// Priority overrides type concreteness
     public static class PriorityVsConcreteness
     {
-        // Less concrete but higher priority - should win
         [OverloadResolutionPriority(1)]
         public static string Process<T>(T value) => "generic-high-priority";
         
-        // More concrete but lower priority - should lose
         [OverloadResolutionPriority(0)]
         public static string Process(int value) => "int-low-priority";
         
-        // Another scenario: wrapped generic with priority beats concrete
         [OverloadResolutionPriority(1)]
         public static string Handle<T>(T[] arr) => "array-generic-high";
         
@@ -73,7 +65,6 @@ namespace PriorityTests
     
     public static class ExtensionTypeB
     {
-        // Different declaring type - priority is independent
         [OverloadResolutionPriority(2)]
         public static string ExtMethod(this string s, int x) => "TypeB-priority2";
         
@@ -83,7 +74,6 @@ namespace PriorityTests
     /// Default priority is 0 when attribute is absent
     public static class DefaultPriority
     {
-        // No attribute - implicit priority 0
         public static string NoAttr(object o) => "no-attr";
         
         [OverloadResolutionPriority(0)]
@@ -92,7 +82,6 @@ namespace PriorityTests
         [OverloadResolutionPriority(1)]
         public static string PositiveOne(object o) => "positive-one";
         
-        // Overloads where one has attribute and one doesn't
         public static string Mixed(string s) => "mixed-default";
         
         [OverloadResolutionPriority(1)]
@@ -162,15 +151,12 @@ namespace ExtensionPriorityTests
     
     public class DerivedClass : BaseClass
     {
-        // Inherits priorities from base - no new attributes here
         public override string Method(object o) => "Derived-object";
         public override string Method(string s) => "Derived-string";
     }
     
-    // New methods in derived with different priorities
     public class DerivedClassWithNewMethods : BaseClass
     {
-        // New overloads with their own priorities
         [OverloadResolutionPriority(2)]
         public string Method(int i) => "DerivedNew-int-priority2";
     }
@@ -188,7 +174,6 @@ namespace ExtensionPriorityTests
     
     public static class TargetClassExtensions
     {
-        // Extension method that adds new overload not conflicting with instance methods
         [OverloadResolutionPriority(2)]
         public static string DoWork(this TargetClass tc, int i) => "Extension-int-priority2";
     }
@@ -213,8 +198,6 @@ namespace ExtensionPriorityTests
         public static string WithExplicitZero(object o) => "explicit-zero";
         
         public static string WithoutAttr(string s) => "no-attr";
-        
-        // These should compete equally, string should win by concreteness
     }
     
     // ===== Complex generic scenarios =====

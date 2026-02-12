@@ -112,19 +112,16 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     let sty2 = stripTyEqns g ty2
 
     match sty1, sty2 with
-    // Case 1: Both are type variables - they are equally concrete
-    // Note: Neither F# nor C# allows constraint-only method overloads, so comparing
+    // Neither F# nor C# allows constraint-only method overloads, so comparing
     // constraint counts would be dead code. Both type vars are treated as equal.
     | TType_var _, TType_var _ -> 0
 
-    // Case 2: Type variable vs concrete type - concrete is more concrete
-    // Skip SRTP type variables
+    // SRTP type variables are excluded from concreteness comparison
     | TType_var(tp, _), _ when isStaticallyResolvedTypeParam tp -> 0
     | _, TType_var(tp, _) when isStaticallyResolvedTypeParam tp -> 0
     | TType_var _, _ -> -1
     | _, TType_var _ -> 1
 
-    // Case 3: Type applications - compare type arguments when constructors match
     | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) ->
         if not (tyconRefEq g tcref1 tcref2) then
             0
@@ -134,7 +131,6 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
             let comparisons = List.map2 (compareTypeConcreteness g) args1 args2
             aggregateComparisons comparisons
 
-    // Case 4: Tuple types - compare element-wise
     | TType_tuple(_, elems1), TType_tuple(_, elems2) ->
         if elems1.Length <> elems2.Length then
             0
@@ -142,13 +138,11 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
             let comparisons = List.map2 (compareTypeConcreteness g) elems1 elems2
             aggregateComparisons comparisons
 
-    // Case 5: Function types - compare domain and range
     | TType_fun(dom1, rng1, _), TType_fun(dom2, rng2, _) ->
         let cDomain = compareTypeConcreteness g dom1 dom2
         let cRange = compareTypeConcreteness g rng1 rng2
         aggregateComparisons [ cDomain; cRange ]
 
-    // Case 6: Anonymous record types - compare fields
     | TType_anon(info1, tys1), TType_anon(info2, tys2) ->
         if not (anonInfoEquiv info1 info2) then
             0
@@ -156,17 +150,14 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
             let comparisons = List.map2 (compareTypeConcreteness g) tys1 tys2
             aggregateComparisons comparisons
 
-    // Case 7: Measure types - equal or incomparable
     | TType_measure _, TType_measure _ -> 0
 
-    // Case 8: Universal quantified types (forall)
     | TType_forall(tps1, body1), TType_forall(tps2, body2) ->
         if tps1.Length <> tps2.Length then
             0
         else
             compareTypeConcreteness g body1 body2
 
-    // Default: Different structural forms are incomparable
     | _ -> 0
 
 /// Represents why two methods are incomparable under concreteness ordering.
@@ -308,7 +299,6 @@ let private compareArgLists ctx (args1: CalledArg list) (args2: CalledArg list) 
 // Rule Definitions
 // -------------------------------------------------------------------------
 
-/// Rule 1: Prefer methods that don't use type-directed conversion
 let private noTDCRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NoTDC
@@ -325,7 +315,6 @@ let private noTDCRule: TiebreakRule =
                      | _ -> 0)
     }
 
-/// Rule 2: Prefer methods that need less type-directed conversion
 let private lessTDCRule: TiebreakRule =
     {
         Id = TiebreakRuleId.LessTDC
@@ -342,7 +331,6 @@ let private lessTDCRule: TiebreakRule =
                      | _ -> 0)
     }
 
-/// Rule 3: Prefer methods that only have nullable type-directed conversions
 let private nullableTDCRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NullableTDC
@@ -359,7 +347,6 @@ let private nullableTDCRule: TiebreakRule =
                      | _ -> 0)
     }
 
-/// Rule 4: Prefer methods that don't give "this code is less generic" warnings
 let private noWarningsRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NoWarnings
@@ -368,7 +355,6 @@ let private noWarningsRule: TiebreakRule =
         Compare = fun _ (_, _, warnCount1) (_, _, warnCount2) -> compare (warnCount1 = 0) (warnCount2 = 0)
     }
 
-/// Rule 5: Prefer methods that don't use param array arg
 let private noParamArrayRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NoParamArray
@@ -378,7 +364,6 @@ let private noParamArrayRule: TiebreakRule =
             fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion)
     }
 
-/// Rule 6: Prefer methods with more precise param array arg type
 let private preciseParamArrayRule: TiebreakRule =
     {
         Id = TiebreakRuleId.PreciseParamArray
@@ -392,7 +377,6 @@ let private preciseParamArrayRule: TiebreakRule =
                     0
     }
 
-/// Rule 7: Prefer methods that don't use out args
 let private noOutArgsRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NoOutArgs
@@ -401,7 +385,6 @@ let private noOutArgsRule: TiebreakRule =
         Compare = fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.HasOutArgs) (not other.HasOutArgs)
     }
 
-/// Rule 8: Prefer methods that don't use optional args
 let private noOptionalArgsRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NoOptionalArgs
@@ -410,7 +393,6 @@ let private noOptionalArgsRule: TiebreakRule =
         Compare = fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.HasOptionalArgs) (not other.HasOptionalArgs)
     }
 
-/// Rule 9: Compare regular unnamed args (including extension member object args)
 let private unnamedArgsRule: TiebreakRule =
     {
         Id = TiebreakRuleId.UnnamedArgs
@@ -443,7 +425,6 @@ let private unnamedArgsRule: TiebreakRule =
                     0
     }
 
-/// Rule 10: Prefer non-extension methods
 let private preferNonExtensionRule: TiebreakRule =
     {
         Id = TiebreakRuleId.PreferNonExtension
@@ -453,7 +434,6 @@ let private preferNonExtensionRule: TiebreakRule =
             fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
     }
 
-/// Rule 11: Between extension methods, prefer most recently opened
 let private extensionPriorityRule: TiebreakRule =
     {
         Id = TiebreakRuleId.ExtensionPriority
@@ -467,7 +447,6 @@ let private extensionPriorityRule: TiebreakRule =
                     0
     }
 
-/// Rule 12: Prefer non-generic methods
 let private preferNonGenericRule: TiebreakRule =
     {
         Id = TiebreakRuleId.PreferNonGeneric
@@ -476,9 +455,6 @@ let private preferNonGenericRule: TiebreakRule =
         Compare = fun _ (candidate, _, _) (other, _, _) -> compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
     }
 
-/// Rule 13: Prefer more concrete type instantiations (RFC FS-XXXX)
-/// This is the "Most Concrete" tiebreaker from the RFC.
-/// Only activates when BOTH methods are generic (have type arguments).
 let private moreConcreteRule: TiebreakRule =
     {
         Id = TiebreakRuleId.MoreConcrete
@@ -527,7 +503,6 @@ let private moreConcreteRule: TiebreakRule =
                     0
     }
 
-/// Rule 14: F# 5.0 NullableOptionalInterop - compare all args including optional/named
 let private nullableOptionalInteropRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NullableOptionalInterop
@@ -540,7 +515,6 @@ let private nullableOptionalInteropRule: TiebreakRule =
                 compareArgLists ctx args1 args2
     }
 
-/// Rule 15: For properties with partial override, prefer more derived type
 let private propertyOverrideRule: TiebreakRule =
     {
         Id = TiebreakRuleId.PropertyOverride
