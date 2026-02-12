@@ -138,7 +138,6 @@ let main _ =
         "int64",                  TDCOverload.Pick(42L)
         "float",                  TDCOverload.Pick(3.14)
         
-        // Out params - must be explicit about type
         "success:42",             (let mutable v = 0 in if OutArgOverload.TryGet("k", &v) then sprintf "success:%d" v else "failed")
         "success:found",          (let mutable v = "" in if OutArgOverload.TryGet("k", &v) then sprintf "success:%s" v else "failed")
     ]

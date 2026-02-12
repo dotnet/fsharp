@@ -3552,7 +3552,12 @@ and ResolveOverloadingCore
           Some calledMeth, OkResult (warns, ()), WithTrace t
 
       | applicableMeths -> 
-          GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m retTyOpt anyHasOutArgs cacheKeyOpt cache
+          let result = GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m
+          match result with
+          | (Some calledMeth, _, _) ->
+              OverloadResolutionCache.storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs (ValueSome calledMeth)
+          | _ -> ()
+          result
 
 // Resolve the overloading of a method 
 // This is used after analyzing the types of arguments 
@@ -3717,7 +3722,7 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
         // Otherwise pass the overload resolution failure for error printing in CompileOps
         UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
 
-and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m (retTyOpt: TType option) (anyHasOutArgs: bool) (cacheKeyOpt: OverloadResolutionCacheKey voption) (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>) =
+and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m =
     let g = csenv.g
     let infoReader = csenv.InfoReader
     /// Compare two things by the given predicate. 
@@ -3902,7 +3907,6 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     match bestMethods with 
     | [(calledMeth, warns, t, _)] ->
-        OverloadResolutionCache.storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs (ValueSome calledMeth)
         Some calledMeth, OkResult (warns, ()), WithTrace t
 
     | bestMethods ->

@@ -33,7 +33,6 @@ type TypeCompatTest() =
     
     static member NumericConversions(x: int64) = "int64"
     static member NumericConversions(x: nativeint) = "nativeint"
-    // static member NumericConversions(x: float) = "float-conv"  // Commented to avoid ambiguity
 
 if TypeCompatTest.Process(42) <> "int" then failwith "Failed: Process int"
 if TypeCompatTest.Process("hello") <> "string" then failwith "Failed: Process string"
@@ -64,7 +63,6 @@ if TypeCompatTest.Multi("a", 2) <> "string-int" then failwith "Failed: Multi str
 if TypeCompatTest.WithNullable(Nullable<int>(42)) <> "nullable-int" then failwith "Failed: WithNullable int"
 if TypeCompatTest.WithNullable(Nullable<float>(3.14)) <> "nullable-float" then failwith "Failed: WithNullable float"
 
-// Numeric conversions require type annotations when multiple overloads match
 if TypeCompatTest.NumericConversions(42L) <> "int64" then failwith "Failed: NumericConversions int64"
 if TypeCompatTest.NumericConversions(42n) <> "nativeint" then failwith "Failed: NumericConversions nativeint"
 

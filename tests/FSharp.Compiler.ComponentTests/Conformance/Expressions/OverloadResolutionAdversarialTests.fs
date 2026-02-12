@@ -58,7 +58,6 @@ let main _ =
         "Array<Int32>",   NestedGeneric.Process([|1;2;3|])
         "Array<String>",  NestedGeneric.Process([|"a";"b"|])
         
-        // Byref - explicit type annotation needed
         "100",      (let mutable v = 0 in if ByrefOverload.TryGet("k", &v) then sprintf "%d" v else "failed")
         "value",    (let mutable v = "" in if ByrefOverload.TryGet("k", &v) then v else "failed")
         "100",      (let mutable v = 0 in if ByrefOverload.TryGet("x", &v) then sprintf "%d" v else "failed")
