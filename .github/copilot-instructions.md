@@ -107,7 +107,7 @@ TEST_UPDATE_BSL=1
 Surface area:
 ```
 TEST_UPDATE_BSL=1 
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" -c Release /p:BUILDING_USING_DOTNET=true
 ```
 ILVerify:
 ```

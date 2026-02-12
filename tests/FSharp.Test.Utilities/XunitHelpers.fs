@@ -102,7 +102,7 @@ module TestCaseCustomizations =
 
     // We add extra trait to each test, of the form "batch=n" where n is between 1 and 4.
     // It can be used to filter on in multi-agent testing in CI
-    // with dotnet test filter switch, for example "--filter batch=1"
+    // with dotnet test filter switch, for example "-- --filter-trait batch=1"
     // That way each agent can run test for a batch of tests. 
     let NumberOfBatchesInMultiAgentTesting = 4u
 
