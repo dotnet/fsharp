@@ -70,7 +70,6 @@ if File.Exists(propsFilePath) then
         
         let importNode = doc.SelectSingleNode(xpath)
         
-        // Skip past whitespace text nodes when inserting after the import
         let nodeAfterImport = 
             if not (isNull importNode) && not (isNull importNode.NextSibling) && importNode.NextSibling.NodeType = XmlNodeType.Text then
                 importNode.NextSibling

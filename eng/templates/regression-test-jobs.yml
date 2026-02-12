@@ -199,7 +199,6 @@ jobs:
         $script:blIndex = 0
         function Run-Command {
           param([string]$cmd)
-          # Ensure binlog is produced for dotnet build/test/msbuild commands
           if ($cmd -match '^dotnet\s+(build|test|msbuild)') {
             $script:blIndex++
             $cmd = "$cmd -bl:build_$($script:blIndex).binlog"
