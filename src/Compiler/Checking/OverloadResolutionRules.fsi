@@ -4,7 +4,6 @@
 /// This module provides a structured representation of all rules used in method overload resolution.
 module internal FSharp.Compiler.OverloadResolutionRules
 
-open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.Text
@@ -57,25 +56,6 @@ type TiebreakRuleId =
     | MoreConcrete = 13
     | NullableOptionalInterop = 14
     | PropertyOverride = 15
-
-/// Represents a single tiebreaker rule in overload resolution.
-/// Rules are ordered by their TiebreakRuleId (lower value = higher priority).
-type TiebreakRule =
-    {
-        /// Rule identifier. Rules are evaluated in ascending order by this value.
-        Id: TiebreakRuleId
-        /// Human-readable description of what the rule does
-        Description: string
-        /// Optional LanguageFeature required for this rule to be active.
-        /// If Some, the rule is skipped when the feature is not supported.
-        RequiredFeature: LanguageFeature option
-        /// Comparison function: returns >0 if candidate is better, <0 if other is better, 0 if equal
-        Compare:
-            OverloadResolutionContext
-                -> CalledMeth<Expr> * TypeDirectedConversionUsed * int // candidate, TDC, warnCount
-                -> CalledMeth<Expr> * TypeDirectedConversionUsed * int // other, TDC, warnCount
-                -> int
-    }
 
 /// Evaluate all tiebreaker rules and return both the result and the deciding rule.
 /// Returns (result, ValueSome ruleId) if a rule decided, or (0, ValueNone) if all rules returned 0.

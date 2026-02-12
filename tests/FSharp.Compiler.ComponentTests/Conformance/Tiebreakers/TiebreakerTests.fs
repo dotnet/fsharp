@@ -7,16 +7,8 @@ open FSharp.Test.Compiler
 open Xunit
 
 /// Tests for RFC FS-XXXX: "Most Concrete" Tiebreaker for Overload Resolution
-/// 
-/// These tests verify that the F# compiler correctly selects the more concrete overload
-/// when multiple overloads are compatible with the provided arguments.
 module TiebreakerTests =
 
-    // ============================================================================
-    // Shared test source strings for diagnostic tests
-    // ============================================================================
-
-    /// Common F# source for concreteness tiebreaker warning tests (3575/3576)
     let private concretenessWarningSource =
         """
 module Test
@@ -28,13 +20,8 @@ type Example =
 let result = Example.Invoke(Some([1]))
         """
 
-    // ============================================================================
-    // Placeholder test - validates test infrastructure is working
-    // ============================================================================
-
     [<Fact>]
     let ``Placeholder - Test infrastructure compiles and runs`` () =
-        // Simple test to verify test infrastructure is working
         FSharp """
 module Test
 
@@ -48,15 +35,8 @@ let result = Example.Invoke(42)
         |> shouldSucceed
         |> ignore
 
-    // ============================================================================
-    // Core RFC Examples - "Most Concrete" Tiebreaker
-    // These tests currently expect ambiguity (FS0041) until the feature is implemented
-    // ============================================================================
-
     [<Fact>]
     let ``RFC Example - Option of int list vs Option of generic - resolves to more concrete`` () =
-        // This is the core motivating example from the RFC
-        // With the tiebreaker implementation, this resolves to Option<int list> (more concrete)
         FSharp """
 module Test
 
@@ -64,7 +44,6 @@ type Example =
     static member Invoke(value: Option<'t>) = "generic"
     static member Invoke(value: Option<int list>) = "concrete"
 
-// With tiebreaker: resolves to the more concrete overload (Option<int list>)
 let result = Example.Invoke(Some([1]))
         """
         |> typecheck
@@ -73,7 +52,6 @@ let result = Example.Invoke(Some([1]))
 
     [<Fact>]
     let ``Non-generic overload is preferred over generic - existing behavior`` () =
-        // This tests existing F# behavior where non-generic is preferred over generic
         FSharp """
 module Test
 
@@ -87,14 +65,8 @@ let result = Example.Process(42)
         |> shouldSucceed
         |> ignore
 
-    // ============================================================================
-    // RFC Section Examples 1-4: Basic Concreteness Scenarios
-    // ============================================================================
-
     [<Fact>]
     let ``Example 1 - Basic Generic vs Concrete - Option of t vs Option of int`` () =
-        // RFC Example 1: Option<'t> vs Option<int>
-        // Option<int> should be preferred as it is more concrete
         FSharp """
 module Test
 
@@ -102,7 +74,6 @@ type Example =
     static member Invoke(value: Option<'t>) = "generic"
     static member Invoke(value: Option<int>) = "int"
 
-// With tiebreaker: resolves to Invoke(Option<int>) - more concrete
 let result = Example.Invoke(Some 42)
         """
         |> typecheck
@@ -111,9 +82,6 @@ let result = Example.Invoke(Some 42)
 
     [<Fact>]
     let ``Example 2 - Fully Generic vs Wrapped - t vs Option of t - resolves to wrapped`` () =
-        // RFC Example 2: 't vs Option<'t>
-        // This tests a case where parameter structures differ ('t vs Option<'t>)
-        // Option<'t> should be preferred as it is more concrete (has concrete structure)
         FSharp """
 module Test
 
@@ -121,7 +89,6 @@ type Example =
     static member Process(value: 't) = "fully generic"
     static member Process(value: Option<'t>) = "wrapped"
 
-// Resolves to wrapped - Option<'t> is more concrete than bare 't
 let result = Example.Process(Some 42)
         """
         |> withLangVersionPreview
@@ -131,8 +98,6 @@ let result = Example.Process(Some 42)
 
     [<Fact>]
     let ``Example 3 - Nested Generics - Option of Option of t vs Option of Option of int`` () =
-        // RFC Example 3: Nested Option types
-        // Option<Option<int>> should be preferred as innermost type is more concrete
         FSharp """
 module Test
 
@@ -140,7 +105,6 @@ type Example =
     static member Handle(value: Option<Option<'t>>) = "nested generic"
     static member Handle(value: Option<Option<int>>) = "nested int"
 
-// With tiebreaker: resolves to Handle(Option<Option<int>>) - innermost type is more concrete
 let result = Example.Handle(Some(Some 42))
         """
         |> typecheck
@@ -149,8 +113,6 @@ let result = Example.Handle(Some(Some 42))
 
     [<Fact>]
     let ``Example 4 - Triple Nesting Depth - list Option Result deep nesting`` () =
-        // RFC Example 4: Deep nesting - list<Option<Result<'t, exn>>> vs list<Option<Result<int, exn>>>
-        // The more concrete overload (int) should be preferred at depth 3
         FSharp """
 module Test
 
@@ -158,21 +120,14 @@ type Example =
     static member Deep(value: list<Option<Result<'t, exn>>>) = "generic"
     static member Deep(value: list<Option<Result<int, exn>>>) = "int"
 
-// With tiebreaker: resolves to Deep(list<Option<Result<int, exn>>>) - more concrete at depth 3
 let result = Example.Deep([Some(Ok 42)])
         """
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    // ============================================================================
-    // RFC Section Examples 5-6: Multiple Type Parameters
-    // ============================================================================
-
     [<Fact>]
     let ``Example 5 - Multiple Type Parameters - Result fully concrete wins`` () =
-        // RFC Example 5: Multiple type parameters - Result<'ok, 'error> variants
-        // Result<int, string> (fully concrete) should be preferred over partial concreteness
         FSharp """
 module Test
 
@@ -182,7 +137,6 @@ type Example =
     static member Transform(value: Result<'ok, string>) = "string error"
     static member Transform(value: Result<int, string>) = "both concrete"
 
-// With tiebreaker: resolves to Transform(Result<int, string>) - both args are concrete
 let result = Example.Transform(Ok 42 : Result<int, string>)
         """
         |> typecheck
@@ -191,8 +145,6 @@ let result = Example.Transform(Ok 42 : Result<int, string>)
 
     [<Fact>]
     let ``Example 5 - Multiple Type Parameters - Partial concreteness int ok - resolves`` () =
-        // When only int is concrete, Result<int, 'error> beats Result<'ok, 'error>
-        // int is more concrete than 'ok, while 'error = 'error
         FSharp """
 module Test
 
@@ -200,7 +152,6 @@ type Example =
     static member Process(value: Result<'ok, 'error>) = "fully generic"
     static member Process(value: Result<int, 'error>) = "int ok"
 
-// Resolves to int ok - Result<int, 'error> is more concrete
 let result = Example.Process(Ok 42 : Result<int, exn>)
         """
         |> withLangVersionPreview
@@ -210,8 +161,6 @@ let result = Example.Process(Ok 42 : Result<int, exn>)
 
     [<Fact>]
     let ``Example 5 - Multiple Type Parameters - Partial concreteness string error - resolves`` () =
-        // When only string error is concrete, Result<'ok, string> beats Result<'ok, 'error>
-        // 'ok = 'ok, while string is more concrete than 'error
         FSharp """
 module Test
 
@@ -219,7 +168,6 @@ type Example =
     static member Handle(value: Result<'ok, 'error>) = "fully generic"
     static member Handle(value: Result<'ok, string>) = "string error"
 
-// Resolves to string error - Result<'ok, string> is more concrete
 let result = Example.Handle(Ok "test" : Result<string, string>)
         """
         |> withLangVersionPreview
@@ -229,9 +177,6 @@ let result = Example.Handle(Ok "test" : Result<string, string>)
 
     [<Fact>]
     let ``Example 6 - Incomparable Concreteness - Result int e vs Result t string - ambiguous`` () =
-        // RFC Example 6: Incomparable types - neither dominates the other
-        // Result<int, 'error> is better in position 1, Result<'ok, string> is better in position 2
-        // This MUST remain ambiguous (FS0041) - partial order cannot determine winner
         FSharp """
 module Test
 
@@ -239,8 +184,6 @@ type Example =
     static member Compare(value: Result<int, 'error>) = "int ok"
     static member Compare(value: Result<'ok, string>) = "string error"
 
-// Neither overload dominates - one is more concrete in ok, other in error
-// This remains ambiguous
 let result = Example.Compare(Ok 42 : Result<int, string>)
         """
         |> typecheck
@@ -250,7 +193,6 @@ let result = Example.Compare(Ok 42 : Result<int, string>)
 
     [<Fact>]
     let ``Example 6 - Incomparable Concreteness - Error message is helpful`` () =
-        // Verify the error message explains incomparable concreteness
         FSharp """
 module Test
 
@@ -269,7 +211,6 @@ let result = Example.Compare(Ok 42 : Result<int, string>)
 
     [<Fact>]
     let ``Multiple Type Parameters - Three way comparison with clear winner`` () =
-        // When there's a clear hierarchy, the most concrete should win
         FSharp """
 module Test
 
@@ -278,7 +219,6 @@ type Example =
     static member Check(a: int, b: 'u) = "first concrete"
     static member Check(a: int, b: string) = "both concrete"
 
-// With tiebreaker: resolves to Check(int, string) - fully concrete
 let result = Example.Check(42, "hello")
         """
         |> typecheck
@@ -287,7 +227,6 @@ let result = Example.Check(42, "hello")
 
     [<Fact>]
     let ``Multiple Type Parameters - Tuple-like scenario`` () =
-        // Testing with multiple independent type parameters in different overloads
         FSharp """
 module Test
 
@@ -295,26 +234,14 @@ type Example =
     static member Pair(fst: 't, snd: 'u) = "both generic"
     static member Pair(fst: int, snd: int) = "both int"
 
-// With tiebreaker: resolves to Pair(int, int) - both positions are concrete
 let result = Example.Pair(1, 2)
         """
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    // ============================================================================
-    // RFC Section Examples 7-9: Real-World Scenarios
-    // These are the primary motivating use cases for the "more concrete" tiebreaker
-    // NOTE: Some cases require structural type comparison ('t vs Task<'T>)
-    // which is not yet implemented. Tests document current vs expected behavior.
-    // ============================================================================
-
     [<Fact>]
     let ``Example 7 - ValueTask constructor scenario - Task of T vs T - resolves to Task`` () =
-        // RFC Example 7: ValueTask<'T> constructor disambiguation
-        // ValueTask(task: Task<'T>) vs ValueTask(result: 'T)
-        // When passing Task<int>, the Task<'T> overload is preferred
-        // because Task<int> is more concrete than treating it as bare 'T
         FSharp """
 module Test
 
@@ -331,7 +258,6 @@ type ValueTaskFactory =
 
 let createFromTask () =
     let task = Task.FromResult(42)
-    // Task<int> matches Task<'T> more concretely than 'T
     let result = ValueTaskFactory.Create(task)
     result
         """
@@ -342,8 +268,6 @@ let createFromTask () =
 
     [<Fact>]
     let ``Example 7 - ValueTask constructor - bare int resolves to result overload`` () =
-        // When passing a bare int (not Task<int>), the 'T overload should still work
-        // because int is more concrete than Task<int> when the value IS an int
         FSharp """
 module Test
 
@@ -354,7 +278,6 @@ type ValueTaskFactory =
     static member Create(task: Task<'T>) = "task"
 
 let createFromInt () =
-    // When passing int, the 'T overload is the only match (Task<'T> doesn't fit int)
     let result = ValueTaskFactory.Create(42)
     result
         """
@@ -364,9 +287,6 @@ let createFromInt () =
 
     [<Fact>]
     let ``Example 8 - CE Source overloads - FsToolkit AsyncResult pattern - resolves`` () =
-        // RFC Example 8: Computation Expression Builder - Source overloads
-        // Demonstrates CE builder patterns from FsToolkit.ErrorHandling
-        // Async<Result<'ok, 'error>> is preferred over Async<'t> when applicable
         FSharp """
 module Test
 
@@ -376,7 +296,6 @@ type AsyncResultBuilder() =
     member _.Return(x) = async { return Ok x }
     member _.ReturnFrom(x) = x
     
-    // Source overloads - the tiebreaker prefers more concrete
     member _.Source(result: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> = result
     member _.Source(result: Result<'ok, 'error>) : Async<Result<'ok, 'error>> = async { return result }
     member _.Source(asyncValue: Async<'t>) : Async<Result<'t, exn>> = 
@@ -395,8 +314,6 @@ type AsyncResultBuilder() =
 
 let asyncResult = AsyncResultBuilder()
 
-// When input is Async<Result<int, string>>, the Async<Result<'ok, 'error>> overload
-// is preferred over Async<'t> because Result<_,_> is more concrete than 't
 let example () =
     let source : Async<Result<int, string>> = async { return Ok 42 }
     asyncResult.Source(source)
@@ -408,7 +325,6 @@ let example () =
 
     [<Fact>]
     let ``Example 8 - CE Source overloads - Async of plain value uses generic`` () =
-        // When input is Async<int> (not Async<Result<...>>), only Async<'t> matches
         FSharp """
 module Test
 
@@ -418,7 +334,6 @@ type SimpleBuilder() =
 
 let builder = SimpleBuilder()
 
-// Async<int> doesn't match Async<Result<'ok, 'error>>, so Async<'t> is used
 let result = builder.Source(async { return 42 })
         """
         |> typecheck
@@ -427,10 +342,6 @@ let result = builder.Source(async { return 42 })
 
     [<Fact>]
     let ``Example 9 - CE Bind with Task types - TaskBuilder pattern`` () =
-        // RFC Example 9: TaskBuilder.fs-style Bind pattern
-        // Bind(task: Task<'a>, ...) should be preferred over Bind(taskLike: 't, ...)
-        // when passing Task<int>
-        // SUCCESS: The tiebreaker correctly prefers Task<'a> over 't
         FSharp """
 module Test
 
@@ -439,18 +350,14 @@ open System.Threading.Tasks
 type TaskBuilder() =
     member _.Return(x: 'a) : Task<'a> = Task.FromResult(x)
     
-    // Generic await - matches any type via SRTP (simulated here as bare 't)
     member _.Bind(taskLike: 't, continuation: 't -> Task<'b>) : Task<'b> = 
         continuation taskLike
         
-    // Optimized Task path - more concrete
     member _.Bind(task: Task<'a>, continuation: 'a -> Task<'b>) : Task<'b> = 
         task.ContinueWith(fun (t: Task<'a>) -> continuation(t.Result)).Unwrap()
 
 let taskBuilder = TaskBuilder()
 
-// When passing Task<int>, the Task<'a> overload is preferred
-// because Task<int> is more concrete than bare 't
 let example () =
     let task = Task.FromResult(42)
     taskBuilder.Bind(task, fun x -> Task.FromResult(x + 1))
@@ -461,7 +368,6 @@ let example () =
 
     [<Fact>]
     let ``Example 9 - CE Bind with Task - non-task value uses generic overload`` () =
-        // When passing a non-Task value, only the generic overload matches
         FSharp """
 module Test
 
@@ -474,7 +380,6 @@ type SimpleTaskBuilder() =
 
 let builder = SimpleTaskBuilder()
 
-// When passing int (not Task), only the generic overload matches
 let result = builder.Bind(42, fun x -> Task.FromResult(x + 1))
         """
         |> typecheck
@@ -483,20 +388,15 @@ let result = builder.Bind(42, fun x -> Task.FromResult(x + 1))
 
     [<Fact>]
     let ``Real-world pattern - Source with Result types vs generic - resolves`` () =
-        // Real-world test: Source overload prioritization for Result types
-        // Result<'a, 'e> is preferred over 't as it has concrete structure
         FSharp """
 module Test
 
 type Builder() =
-    // More concrete - explicitly handles Result
     member _.Source(x: Result<'a, 'e>) = "result"
-    // Less concrete - handles any type
     member _.Source(x: 't) = "generic"
 
 let b = Builder()
 
-// Result<int, string> prefers the Result overload
 let result = b.Source(Ok 42 : Result<int, string>)
         """
         |> withLangVersionPreview
@@ -506,15 +406,12 @@ let result = b.Source(Ok 42 : Result<int, string>)
 
     [<Fact>]
     let ``Real-world pattern - Nested task result types`` () =
-        // Pattern from async CE builders with nested Task<Result<...>>
-        // SUCCESS: Task<Result<'a,'e>> is correctly preferred over Task<'t>
         FSharp """
 module Test
 
 open System.Threading.Tasks
 
 type AsyncBuilder() =
-    // More concrete - Task of Result
     member _.Bind(x: Task<Result<'a, 'e>>, f: 'a -> Task<Result<'b, 'e>>) = 
         x.ContinueWith(fun (t: Task<Result<'a, 'e>>) ->
             match t.Result with
@@ -522,14 +419,11 @@ type AsyncBuilder() =
             | Error e -> Task.FromResult(Error e)
         ).Unwrap()
         
-    // Less concrete - any Task
     member _.Bind(x: Task<'t>, f: 't -> Task<Result<'b, 'e>>) = 
         x.ContinueWith(fun (t: Task<'t>) -> f(t.Result)).Unwrap()
 
 let ab = AsyncBuilder()
 
-// Task<Result<int, string>> correctly prefers the Task<Result<...>> overload
-// The tiebreaker works because Result<int, string> is more concrete than 't
 let example () =
     let taskResult : Task<Result<int, string>> = Task.FromResult(Ok 42)
     ab.Bind(taskResult, fun x -> Task.FromResult(Ok (x + 1)))
@@ -538,16 +432,8 @@ let example () =
         |> shouldSucceed
         |> ignore
 
-    // ============================================================================
-    // RFC Section Examples 10-12: Optional and ParamArray Interactions
-    // These tests verify the interaction between the "more concrete" tiebreaker
-    // and existing rules for optional/ParamArray parameters.
-    // ============================================================================
-
     [<Fact>]
     let ``Example 10 - Mixed Optional and Generic - existing optional rule has priority`` () =
-        // RFC Example 10: Existing Rule 8 (prefer no optional) applies BEFORE concreteness
-        // The generic overload WITHOUT optional should win over the concrete WITH optional
         FSharp """
 module Test
 
@@ -555,8 +441,6 @@ type Example =
     static member Configure(value: Option<'t>) = "generic, required"
     static member Configure(value: Option<int>, ?timeout: int) = "int, optional timeout"
 
-// Rule 8 (prefer no optional args) applies FIRST, before concreteness
-// Resolves to Configure(Option<'t>) because it has no optional parameters
 let result = Example.Configure(Some 42)
         """
         |> typecheck
@@ -565,7 +449,6 @@ let result = Example.Configure(Some 42)
 
     [<Fact>]
     let ``Example 10 - Mixed Optional - verify priority order does not change`` () =
-        // Additional test: Even with nested generics, optional rule still takes priority
         FSharp """
 module Test
 
@@ -573,8 +456,6 @@ type Example =
     static member Process(value: Option<Option<'t>>) = "nested generic, no optional"
     static member Process(value: Option<Option<int>>, ?retries: int) = "nested int, with optional"
 
-// Rule 8 applies first: prefer no optional args
-// The generic overload without optional wins
 let result = Example.Process(Some(Some 42))
         """
         |> typecheck
@@ -583,8 +464,6 @@ let result = Example.Process(Some(Some 42))
 
     [<Fact>]
     let ``Example 11 - Both Have Optional - concreteness breaks tie`` () =
-        // RFC Example 11: Both overloads have optional parameters
-        // Rule 8 returns 0 (equal), so concreteness should break the tie
         FSharp """
 module Test
 
@@ -592,9 +471,6 @@ type Example =
     static member Format(value: Option<'t>, ?prefix: string) = "generic"
     static member Format(value: Option<int>, ?prefix: string) = "int"
 
-// Both have optional args -> Rule 8 returns 0 (equal)
-// "More concrete" tiebreaker applies: Option<int> > Option<'t>
-// Resolves to Format(Option<int>, ?prefix)
 let result = Example.Format(Some 42)
         """
         |> typecheck
@@ -603,7 +479,6 @@ let result = Example.Format(Some 42)
 
     [<Fact>]
     let ``Example 11 - Both Have Optional - with different optional types`` () =
-        // Both overloads have optional parameters with different types
         FSharp """
 module Test
 
@@ -611,9 +486,6 @@ type Example =
     static member Transform(value: Option<'t>, ?prefix: string) = "generic"
     static member Transform(value: Option<int>, ?timeout: int) = "int"
 
-// Both have optional args -> Rule 8 returns 0
-// Concreteness comparison: Option<int> > Option<'t>
-// Resolves to Transform(Option<int>, ?timeout)
 let result = Example.Transform(Some 42)
         """
         |> typecheck
@@ -622,7 +494,6 @@ let result = Example.Transform(Some 42)
 
     [<Fact>]
     let ``Example 11 - Both Have Optional - multiple optional params`` () =
-        // Both overloads have multiple optional parameters
         FSharp """
 module Test
 
@@ -630,8 +501,6 @@ type Example =
     static member Config(value: Option<'t>, ?prefix: string, ?suffix: string) = "generic"
     static member Config(value: Option<int>, ?min: int, ?max: int) = "int"
 
-// Both have optional args (multiple) -> Rule 8 returns 0
-// Concreteness: Option<int> > Option<'t>
 let result = Example.Config(Some 42)
         """
         |> typecheck
@@ -640,7 +509,6 @@ let result = Example.Config(Some 42)
 
     [<Fact>]
     let ``Example 11 - Both Have Optional - nested generics`` () =
-        // Both overloads have optional with nested generic types
         FSharp """
 module Test
 
@@ -648,8 +516,6 @@ type Example =
     static member Handle(value: Option<Option<'t>>, ?tag: string) = "nested generic"
     static member Handle(value: Option<Option<int>>, ?tag: string) = "nested int"
 
-// Both have optional -> Rule 8 is tie
-// Concreteness at inner level: Option<int> > Option<'t>
 let result = Example.Handle(Some(Some 42))
         """
         |> typecheck
@@ -658,10 +524,6 @@ let result = Example.Handle(Some(Some 42))
 
     [<Fact>]
     let ``Example 12 - ParamArray with Generic Elements - concreteness breaks tie`` () =
-        // RFC Example 12: ParamArray with generic element types
-        // Both use ParamArray conversion -> Rule 5 returns 0
-        // Rule 6 (element type comparison via subsumption) may return 0 for type vars
-        // Concreteness should break the tie: Option<int>[] > Option<'t>[]
         FSharp """
 module Test
 
@@ -669,9 +531,6 @@ type Example =
     static member Log([<System.ParamArray>] items: Option<'t>[]) = "generic options"
     static member Log([<System.ParamArray>] items: Option<int>[]) = "int options"
 
-// Both use ParamArray conversion -> Rule 5 returns 0
-// Concreteness compares element types: Option<int> > Option<'t>
-// Resolves to Log(Option<int>[])
 let result = Example.Log(Some 1, Some 2, Some 3)
         """
         |> typecheck
@@ -680,7 +539,6 @@ let result = Example.Log(Some 1, Some 2, Some 3)
 
     [<Fact>]
     let ``Example 12 - ParamArray - nested generic element types`` () =
-        // ParamArray with nested generic element types
         FSharp """
 module Test
 
@@ -688,8 +546,6 @@ type Example =
     static member Combine([<System.ParamArray>] values: Option<Option<'t>>[]) = "nested generic"
     static member Combine([<System.ParamArray>] values: Option<Option<int>>[]) = "nested int"
 
-// Both use ParamArray -> Rule 5 tie
-// Concreteness: Option<Option<int>>[] > Option<Option<'t>>[]
 let result = Example.Combine(Some(Some 1), Some(Some 2))
         """
         |> typecheck
@@ -698,7 +554,6 @@ let result = Example.Combine(Some(Some 1), Some(Some 2))
 
     [<Fact>]
     let ``Example 12 - ParamArray - Result element types`` () =
-        // ParamArray with Result element types - more concrete error type wins
         FSharp """
 module Test
 
@@ -706,8 +561,6 @@ type Example =
     static member Process([<System.ParamArray>] results: Result<int, 'e>[]) = "generic error"
     static member Process([<System.ParamArray>] results: Result<int, string>[]) = "string error"
 
-// Both use ParamArray -> Rule 5 tie
-// Concreteness: Result<int, string>[] > Result<int, 'e>[]
 let r1 : Result<int, string> = Ok 1
 let r2 : Result<int, string> = Ok 2
 let result = Example.Process(r1, r2)
@@ -718,21 +571,13 @@ let result = Example.Process(r1, r2)
 
     [<Fact>]
     let ``ParamArray vs explicit array - identical types remain ambiguous`` () =
-        // When both overloads have identical array types (string[]), the only difference
-        // is the ParamArray attribute. Rule 5 distinguishes based on HOW the call is made
-        // (ParamArray conversion vs explicit array), but with identical types this can be ambiguous.
-        // NOTE: This tests current behavior - identical types with ParamArray difference
         FSharp """
 module Test
 
 type Example =
-    // Explicit array parameter (NOT ParamArray)
     static member Write(messages: string[]) = "explicit array"
-    // ParamArray version
     static member Write([<System.ParamArray>] messages: string[]) = "param array"
 
-// When calling with explicit array, both overloads match the array type
-// This is ambiguous because both have identical parameter types
 let messages = [| "a"; "b"; "c" |]
 let result = Example.Write(messages)
         """
@@ -743,7 +588,6 @@ let result = Example.Write(messages)
 
     [<Fact>]
     let ``Combined Optional and ParamArray - complex scenario`` () =
-        // Combining optional parameters and ParamArray in same overload set
         FSharp """
 module Test
 
@@ -751,25 +595,14 @@ type Example =
     static member Send(target: string, [<System.ParamArray>] data: Option<'t>[]) = "generic"
     static member Send(target: string, [<System.ParamArray>] data: Option<int>[]) = "int"
 
-// Both overloads: no optional args (Rule 8 tie), both use ParamArray (Rule 5 tie)
-// Concreteness breaks the tie: Option<int>[] > Option<'t>[]
 let result = Example.Send("dest", Some 1, Some 2, Some 3)
         """
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    // ============================================================================
-    // RFC Section Examples 13+: Extension Methods Interaction
-    // These tests verify the interaction between the "more concrete" tiebreaker
-    // and extension method resolution rules.
-    // ============================================================================
-
     [<Fact>]
     let ``Example 13 - Intrinsic method always preferred over extension`` () =
-        // RFC section-extension-methods: Rule 8 (intrinsic > extension) applies BEFORE concreteness
-        // An intrinsic method is ALWAYS preferred over an extension method,
-        // even if the extension method is more concrete
         FSharp """
 module Test
 
@@ -782,8 +615,6 @@ module ContainerExtensions =
         member this.TransformExt() = "extension - same signature"
 
 let c = Container<int>()
-// Result: Calls intrinsic method
-// Rule 8 applies: intrinsic > extension, regardless of concreteness
 let result = c.Transform()
         """
         |> typecheck
@@ -792,10 +623,6 @@ let result = c.Transform()
 
     [<Fact>]
     let ``Example 13 - Less concrete intrinsic still wins over more concrete extension`` () =
-        // RFC section-extension-methods: Even when extension is more concrete,
-        // intrinsic methods represent the type author's intent and are preferred
-        // NOTE: F# extension members on specific type instantiations (like Wrapper<int>)
-        // require an explicit type check. This test verifies the principle holds.
         FSharp """
 module Test
 
@@ -808,9 +635,6 @@ module WrapperExtensions =
         member this.ProcessExt(value: int) = "extension concrete"
 
 let w = Wrapper<int>()
-// Both methods apply: intrinsic Process('t) where 't=int, and extension ProcessExt(int)
-// Rule 8: intrinsic > extension, even though int is more concrete than 't
-// Result: Calls intrinsic Process('t)
 let result = w.Process(42)
         """
         |> typecheck
@@ -819,7 +643,6 @@ let result = w.Process(42)
 
     [<Fact>]
     let ``Example 13 - Extension with different return type - intrinsic preferred`` () =
-        // Verify intrinsic preference even when extensions have different return types
         FSharp """
 module Test
 
@@ -832,7 +655,6 @@ module HandlerExtensions =
         member this.ExecuteExt(input: int) = sprintf "extension int: %d" input
 
 let h = Handler<int>()
-// Intrinsic is preferred despite extension being more specific
 let result = h.Execute(42)
         """
         |> typecheck
@@ -841,8 +663,6 @@ let result = h.Execute(42)
 
     [<Fact>]
     let ``Extension methods in same module - concreteness breaks tie`` () =
-        // RFC section-extension-methods: When both are extensions in same module,
-        // they have the same ExtensionMemberPriority, so concreteness applies
         FSharp """
 module Test
 
@@ -856,90 +676,37 @@ module DataExtensions =
 open DataExtensions
 
 let d = { Value = 1 }
-// Both are extensions with same priority (same module)
-// Rule 8: Both extensions -> tie
-// Rule 9: Same module = same priority -> tie
-// Concreteness: (int -> int) > ('a -> 'b)
-// Result: Calls Map(int -> int)
 let result = d.Map(fun x -> x + 1)
         """
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``Extension methods in same module - Result types concreteness`` () =
-        // Extensions in same module with Result type parameters
-        FSharp """
-module Test
+    /// Test cases for extension methods in same module resolved by concreteness.
+    let sameModuleExtensionTestCases: obj[] seq =
+        let case desc source = [| desc :> obj; source :> obj |]
 
-type Wrapper = class end
+        [
+            case "Result types"
+                 "module Test\ntype Wrapper = class end\nmodule WrapperExtensions =\n    type Wrapper with\n        static member Process(value: Result<'ok, 'err>) = \"generic result\"\n        static member Process(value: Result<int, string>) = \"concrete result\"\nopen WrapperExtensions\nlet result = Wrapper.Process(Ok 42 : Result<int, string>)"
 
-module WrapperExtensions =
-    type Wrapper with
-        static member Process(value: Result<'ok, 'err>) = "generic result"
-        static member Process(value: Result<int, string>) = "concrete result"
+            case "Option type"
+                 "module Test\ntype Processor = class end\nmodule ProcessorExtensions =\n    type Processor with\n        static member Handle(value: Option<'t>) = \"generic option\"\n        static member Handle(value: Option<int>) = \"int option\"\nopen ProcessorExtensions\nlet result = Processor.Handle(Some 42)"
 
-open WrapperExtensions
+            case "Nested generic"
+                 "module Test\ntype Builder = class end\nmodule BuilderExtensions =\n    type Builder with\n        static member Create(value: Option<Option<'t>>) = \"nested generic\"\n        static member Create(value: Option<Option<int>>) = \"nested int\"\nopen BuilderExtensions\nlet result = Builder.Create(Some(Some 42))"
+        ]
 
-// Both extensions, same module -> same priority
-// Concreteness: Result<int, string> > Result<'ok, 'err>
-let result = Wrapper.Process(Ok 42 : Result<int, string>)
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Extension methods in same module - Option type concreteness`` () =
-        // Extensions in same module with Option type parameters
-        FSharp """
-module Test
-
-type Processor = class end
-
-module ProcessorExtensions =
-    type Processor with
-        static member Handle(value: Option<'t>) = "generic option"
-        static member Handle(value: Option<int>) = "int option"
-
-open ProcessorExtensions
-
-// Both extensions, same module -> same priority
-// Concreteness: Option<int> > Option<'t>
-let result = Processor.Handle(Some 42)
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Extension methods in same module - nested generic concreteness`` () =
-        // Extensions in same module with nested generic types
-        FSharp """
-module Test
-
-type Builder = class end
-
-module BuilderExtensions =
-    type Builder with
-        static member Create(value: Option<Option<'t>>) = "nested generic"
-        static member Create(value: Option<Option<int>>) = "nested int"
-
-open BuilderExtensions
-
-// Both extensions, same module -> same priority
-// Concreteness at inner level: Option<int> > Option<'t>
-let result = Builder.Create(Some(Some 42))
-        """
+    [<Theory>]
+    [<MemberData(nameof sameModuleExtensionTestCases)>]
+    let ``Extension methods in same module - concreteness resolves`` (_description: string) (source: string) =
+        FSharp source
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     [<Fact>]
     let ``SRTP resolution - intrinsic method preferred over extension`` () =
-        // RFC section-extension-methods: SRTP follows same rules as regular resolution
-        // Intrinsic methods are found before extensions in SRTP search order
         FSharp """
 module Test
 
@@ -957,11 +724,8 @@ let inline handle (p: ^T when ^T : (member Handle : 'a -> string)) (arg: 'a) =
 
 let p = Processor()
 
-// Direct call - intrinsic preferred
 let directResult = p.Handle(42)
 
-// SRTP call - follows same rules, intrinsic preferred
-// Note: obj is less specific than int, but intrinsic > extension
 let srtpResult = handle p 42
         """
         |> typecheck
@@ -970,10 +734,6 @@ let srtpResult = handle p 42
 
     [<Fact>]
     let ``SRTP resolution - extension-only overloads resolved by concreteness`` () =
-        // RFC section-extension-methods: When no intrinsic method exists,
-        // SRTP resolves among extensions following normal rules including concreteness
-        // NOTE: SRTP member constraints require intrinsic members or type extensions
-        // in scope. This test verifies direct extension call behavior (non-SRTP).
         FSharp """
 module Test
 
@@ -988,8 +748,6 @@ open DataExtensions
 
 let d = { Value = 1 }
 
-// Direct call - extensions only, concreteness applies
-// string is more concrete than 't
 let directResult = d.Format("hello")
         """
         |> typecheck
@@ -998,7 +756,6 @@ let directResult = d.Format("hello")
 
     [<Fact>]
     let ``SRTP resolution - generic SRTP constraint with concrete extension`` () =
-        // SRTP with generic constraint where extension provides concrete implementation
         FSharp """
 module Test
 
@@ -1008,9 +765,6 @@ module ContainerExtensions =
     type Container<'t> with
         member this.Extract() = this.Item
         member this.Extract() = 0 // Specialized for int return - but this creates ambiguity
-
-// Note: Multiple extensions with same name and no parameters create ambiguity
-// This tests that the infrastructure handles this correctly
         """
         |> typecheck
         |> shouldSucceed
@@ -1018,22 +772,14 @@ module ContainerExtensions =
 
     [<Fact>]
     let ``C# style extension methods consumed in F# - concreteness applies`` () =
-        // RFC section-extension-methods: C# extension methods are treated as F# extensions
-        // When in same namespace (same priority), concreteness can resolve
-        // Simulated using F# extension syntax
         FSharp """
 module Test
 
-// Simulating C# extension methods imported into F#
-// Both extensions are in same module = same namespace = same priority
 type System.String with
     member this.Transform(arg: 't) = sprintf "generic %A" arg
     member this.Transform(arg: int) = sprintf "int %d" arg
 
 let result = "hello".Transform(42)
-// Both are extensions, same priority
-// Concreteness: int > 't
-// Result: calls Transform(int)
         """
         |> typecheck
         |> shouldSucceed
@@ -1041,9 +787,6 @@ let result = "hello".Transform(42)
 
     [<Fact>]
     let ``Extension priority - later opened module takes precedence over concreteness`` () =
-        // RFC section-extension-methods: ExtensionMemberPriority (Rule 9) is checked
-        // BEFORE concreteness. Later opened module has higher priority.
-        // NOTE: This tests that priority order is respected even when less concrete wins
         FSharp """
 module Test
 
@@ -1055,12 +798,9 @@ module ConcreteExtensions =
     type System.Int32 with
         member this.Describe() = "concrete extension"
 
-// Order of opening matters for priority
-open ConcreteExtensions   // Priority = 1
-open GenericExtensions    // Priority = 2 (higher, preferred)
+open ConcreteExtensions
+open GenericExtensions
 
-// GenericExtensions was opened last -> higher priority -> wins
-// Even though both have same signature, priority order determines winner
 let result = (42).Describe()
         """
         |> typecheck
@@ -1069,7 +809,6 @@ let result = (42).Describe()
 
     [<Fact>]
     let ``Extension methods - incomparable concreteness remains ambiguous`` () =
-        // When neither extension dominates the other in concreteness, remain ambiguous
         FSharp """
 module Test
 
@@ -1082,8 +821,6 @@ module PairExtensions =
 
 open PairExtensions
 
-// Neither overload dominates: one has int, other has string
-// This is incomparable and should remain ambiguous
 let result = Pair.Compare(Ok 42 : Result<int, string>)
         """
         |> typecheck
@@ -1093,8 +830,6 @@ let result = Pair.Compare(Ok 42 : Result<int, string>)
 
     [<Fact>]
     let ``FsToolkit pattern - same module extensions resolved by concreteness`` () =
-        // RFC section-extension-methods: Real-world impact - FsToolkit pattern simplified
-        // Extensions in same module can be differentiated by concreteness
         FSharp """
 module Test
 
@@ -1103,11 +838,9 @@ open System
 type AsyncResultBuilder() =
     member _.Return(x) = async { return Ok x }
 
-// Single module works - concreteness breaks the tie
 [<AutoOpen>]
 module AsyncResultCEExtensions =
     type AsyncResultBuilder with
-        // Both in same module = same priority
         member inline _.Source(result: Async<'t>) : Async<Result<'t, exn>> =
             async { 
                 let! v = result 
@@ -1115,11 +848,10 @@ module AsyncResultCEExtensions =
             }
             
         member inline _.Source(result: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> =
-            result  // Preferred: Async<Result<_,_>> is more concrete than Async<'t>
+            result
 
 let asyncResult = AsyncResultBuilder()
 
-// When Source is called with Async<Result<int, string>>, the more concrete overload wins
 let example () =
     let source : Async<Result<int, string>> = async { return Ok 42 }
     asyncResult.Source(source)
@@ -1129,15 +861,8 @@ let example () =
         |> shouldSucceed
         |> ignore
 
-    // ============================================================================
-    // Byref and Span Type Tests
-    // RFC section-byref-span.md scenarios
-    // ============================================================================
-
     [<Fact>]
     let ``Adhoc rule - T is always better than inref of T`` () =
-        // RFC section-byref-span.md: Existing adhoc rule T > inref<T> takes precedence
-        // This rule is applied BEFORE concreteness in compareArg
         FSharp """
 module Test
 
@@ -1147,8 +872,6 @@ type Example =
 
 let value = 42
 let result = Example.Process(value)
-// Adhoc rule: T > inref<T>
-// Result: "by value" (adhoc rule prefers T over inref<T>)
         """
         |> typecheck
         |> shouldSucceed
@@ -1156,8 +879,6 @@ let result = Example.Process(value)
 
     [<Fact>]
     let ``Adhoc rule priority - T over inref T takes precedence over concreteness`` () =
-        // RFC section-byref-span.md: Priority order - adhoc rules come before concreteness
-        // Even when comparing generic T over concrete inref<int>, adhoc rule determines outcome
         FSharp """
 module Test
 
@@ -1167,22 +888,13 @@ type Example =
 
 let value = 42
 let result = Example.Process(value)
-// Even though inref<int> is more concrete type-wise, the adhoc rule T > inref<T> 
-// applies in compareArg and prefers passing by value
         """
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    // ============================================================================
-    // TDC Interaction Tests
-    // RFC section-tdc-interaction.md, section-adhoc-rules.md
-    // ============================================================================
-
     [<Fact>]
     let ``Constrained type variable - different wrapper types with constraints allowed`` () =
-        // This tests a valid scenario where constraints are used with different wrapper types
-        // The constraint doesn't create a duplicate, the different parameter types do
         FSharp """
 module Test
 
@@ -1193,8 +905,6 @@ type Example =
     static member Compare(value: IComparable) = "interface"
 
 let result = Example.Compare(42)
-// int implements IComparable, but 't is more general
-// Existing Rule 10 (prefer non-generic) may apply, or both match
         """
         |> typecheck
         |> shouldSucceed
@@ -1202,8 +912,6 @@ let result = Example.Compare(42)
 
     [<Fact>]
     let ``TDC priority - No TDC preferred over TDC even when TDC target is more concrete`` () =
-        // RFC section-tdc-interaction.md: TDC rules have HIGHER priority than concreteness
-        // When one overload requires TDC and another doesn't, no-TDC wins
         FSharp """
 module Test
 
@@ -1212,8 +920,6 @@ type Example =
     static member Process(x: int64) = "int64"       // Would need TDC: int→int64
 
 let result = Example.Process(42)
-// Result: Calls Process(int) - TDC Rule 1 applies BEFORE concreteness
-// Both overloads match, but int→int overload needs no conversion
         """
         |> typecheck
         |> shouldSucceed
@@ -1221,8 +927,6 @@ let result = Example.Process(42)
 
     [<Fact>]
     let ``TDC priority - Concreteness applies only when TDC is equal`` () =
-        // RFC section-tdc-interaction.md Scenario 2: When neither overload uses TDC,
-        // concreteness tiebreaker applies
         FSharp """
 module Test
 
@@ -1231,9 +935,6 @@ type Example =
     static member Invoke(value: Option<int list>) = "concrete"
 
 let result = Example.Invoke(Some([1]))
-// Neither overload uses TDC (both are direct matches)
-// TDC Rules 1-3 return 0 (equal)
-// "More concrete" tiebreaker applies → selects Option<int list>
         """
         |> typecheck
         |> shouldSucceed
@@ -1241,8 +942,6 @@ let result = Example.Invoke(Some([1]))
 
     [<Fact>]
     let ``TDC priority - Combined TDC and generic resolution`` () =
-        // RFC section-tdc-interaction.md Scenario 5: Both overloads require same TDC
-        // When TDC usage is equal, concreteness breaks the tie
         FSharp """
 module Test
 
@@ -1251,10 +950,6 @@ type Example =
     static member Handle(x: int64, y: Option<string>) = "concrete"
 
 let result = Example.Handle(42L, Some("hello"))
-// Both overloads need no TDC for first arg (int64 matches directly with 42L)
-// TDC Rules 1-3 return 0 (equal TDC usage)
-// "More concrete" compares Option<'t> vs Option<string>
-// Result: Calls Handle(int64, Option<string>) - more concrete
         """
         |> typecheck
         |> shouldSucceed
@@ -1262,8 +957,6 @@ let result = Example.Handle(42L, Some("hello"))
 
     [<Fact>]
     let ``TDC priority - Nullable TDC preferred over op_Implicit TDC`` () =
-        // RFC section-tdc-interaction.md: TDC Rule 3 prefers nullable-only TDC over op_Implicit
-        // This test verifies TDC rule ordering is preserved
         FSharp """
 module Test
 
@@ -1272,8 +965,6 @@ type Example =
     static member Method(x: int) = "direct"                       // No TDC
 
 let result = Example.Method(42)
-// Result: Calls Method(int) - TDC Rule 1 prefers no conversion
-// Concreteness never evaluated
         """
         |> typecheck
         |> shouldSucceed
@@ -1281,8 +972,6 @@ let result = Example.Method(42)
 
     [<Fact>]
     let ``Adhoc rule - Func is preferred over other delegate types`` () =
-        // RFC section-adhoc-rules.md Rule 1: Func<_> is always better than any other delegate type
-        // This tests the existing adhoc rule which applies BEFORE concreteness
         FSharp """
 module Test
 
@@ -1295,8 +984,6 @@ type Example =
     static member Process(f: CustomDelegate) = "custom"
 
 let result = Example.Process(fun x -> string x)
-// Adhoc Rule 1: Func<_> is preferred over other delegates
-// Result: Calls Process(Func<...>) — Func is preferred over CustomDelegate
         """
         |> typecheck
         |> shouldSucceed
@@ -1304,8 +991,6 @@ let result = Example.Process(fun x -> string x)
 
     [<Fact>]
     let ``Adhoc rule - Func concreteness applies when both are Func`` () =
-        // RFC section-adhoc-rules.md: When both overloads use Func, concreteness breaks the tie
-        // Func<int, string> is more concrete than Func<'a, 'b>
         FSharp """
 module Test
 
@@ -1316,28 +1001,6 @@ type Example =
     static member Invoke(f: Func<'a, 'b>) = "generic func"
 
 let result = Example.Invoke(fun x -> string x)
-// Both are Func types, adhoc rule doesn't differentiate
-// Concreteness: Func<int, string> > Func<'a, 'b>
-// Result: Calls Invoke(Func<int, string>) — most concrete Func
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Adhoc rule - T preferred over Nullable T`` () =
-        // RFC section-adhoc-rules.md Rule 3: T is always better than Nullable<T> (F# 5.0+)
-        // This adhoc rule applies BEFORE concreteness
-        FSharp """
-module Test
-
-type Example =
-    static member Parse(value: int) = "direct"
-    static member Parse(value: System.Nullable<int>) = "nullable"
-
-let result = Example.Parse(42)
-// Adhoc Rule 3: T preferred over Nullable<T>
-// Result: Calls Parse(int) — T is preferred over Nullable<T>
         """
         |> typecheck
         |> shouldSucceed
@@ -1345,8 +1008,6 @@ let result = Example.Parse(42)
 
     [<Fact>]
     let ``Adhoc rule - Nullable concreteness applies when both are Nullable`` () =
-        // RFC section-adhoc-rules.md: When both overloads use Nullable, concreteness breaks the tie
-        // Nullable<int> is more concrete than Nullable<'t>
         FSharp """
 module Test
 
@@ -1355,9 +1016,6 @@ type Example =
     static member Convert(value: System.Nullable<'t>) = "nullable generic"
 
 let result = Example.Convert(System.Nullable<int>(42))
-// Both are Nullable types, adhoc rule doesn't differentiate
-// Concreteness: Nullable<int> > Nullable<'t>
-// Result: Calls Convert(Nullable<int>) — more concrete
         """
         |> typecheck
         |> shouldSucceed
@@ -1365,8 +1023,6 @@ let result = Example.Convert(System.Nullable<int>(42))
 
     [<Fact>]
     let ``Adhoc rule - Nullable and concreteness combined`` () =
-        // RFC section-adhoc-rules.md Scenario 4: Combined Nullable and concreteness
-        // Tests that adhoc rules and concreteness work together correctly
         FSharp """
 module Test
 
@@ -1376,31 +1032,15 @@ type Example =
     static member Convert(value: System.Nullable<'t>) = "nullable generic"
 
 let result1 = Example.Convert(42)
-// Step 1: int vs Nullable<int> — adhoc Rule 3 prefers int
-// Result: Calls Convert(int)
 
 let result2 = Example.Convert(System.Nullable<int>(42))
-// Now passing Nullable explicitly:
-// Step 1: Nullable<int> vs Nullable<'t> — concreteness applies
-// Result: Calls Convert(Nullable<int>) — more concrete
         """
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    // ============================================================================
-    // Orthogonal Test Scenarios - Beyond RFC Examples
-    // These stress-test edge cases with F# specific features
-    // ============================================================================
-
-    // --------------------------------------------------------------------------
-    // SRTP (Statically Resolved Type Parameters) Tests
-    // --------------------------------------------------------------------------
-
     [<Fact>]
     let ``SRTP - Generic SRTP vs concrete type instantiation`` () =
-        // SRTP with generic constraint vs SRTP with concrete type
-        // Tests that concreteness applies within SRTP contexts
         FSharp """
 module Test
 
@@ -1410,7 +1050,6 @@ type Handler =
     static member inline Process(s: string) : Option<int> =
         Some(System.Int32.Parse s)
 
-// When calling with string that should parse to int, concrete Option<int> is preferred
 let result : Option<int> = Handler.Process("42")
         """
         |> typecheck
@@ -1419,7 +1058,6 @@ let result : Option<int> = Handler.Process("42")
 
     [<Fact>]
     let ``SRTP - Inline function with concrete specialization`` () =
-        // Inline function with SRTP that has a more concrete alternative
         FSharp """
 module Test
 
@@ -1428,7 +1066,6 @@ type Converter =
     static member Convert(x: System.Nullable<int>) = x.GetValueOrDefault()
 
 let result = Converter.Convert(System.Nullable<int>(42))
-// Concrete Nullable<int> overload is more specific than SRTP generic
         """
         |> typecheck
         |> shouldSucceed
@@ -1436,7 +1073,6 @@ let result = Converter.Convert(System.Nullable<int>(42))
 
     [<Fact>]
     let ``SRTP - Member constraint with nested type arguments`` () =
-        // SRTP with nested generic types in the constraint
         FSharp """
 module Test
 
@@ -1446,18 +1082,75 @@ type Builder =
     static member Build() : Option<int> = Some 0
 
 let result : Option<int> = Builder.Build()
-// Option<int> is more concrete than generic SRTP result
         """
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    // --------------------------------------------------------------------------
-    // F#-Specific Types and Wrapper Types
-    // These tests verify concreteness resolution across various F# wrapper types.
-    // Byref/inref/outref, anon records, UoM, Span, and ValueTask tests are
-    // parameterized in concreteWrapperTestCases / concreteWrapperNetCoreTestCases.
-    // --------------------------------------------------------------------------
+    [<Fact>]
+    let ``MoreConcrete - Both generic, function type parameter`` () =
+        FSharp """
+module Test
+
+type Dispatcher =
+    static member Dispatch<'a, 'b>(handler: 'a -> 'b) = "fully generic"
+    static member Dispatch<'a>(handler: 'a -> string) = "concrete range"
+
+let result = Dispatcher.Dispatch(fun (x: int) -> "hello")
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``MoreConcrete - Both generic, tuple type parameter`` () =
+        FSharp """
+module Test
+
+type Handler =
+    static member Handle<'a, 'b>(pair: 'a * 'b) = "fully generic tuple"
+    static member Handle<'a>(pair: 'a * int) = "concrete second"
+
+let result = Handler.Handle(("hello", 42))
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``MoreConcrete - Both generic, Option of list vs Option of generic`` () =
+        FSharp """
+module Test
+
+type Example =
+    static member Process<'t>(value: Option<'t>) = "generic option"
+    static member Process<'t>(value: Option<'t list>) = "option of list"
+
+let result = Example.Process(Some([1; 2; 3]))
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``SRTP skip - Both generic with SRTP produces ambiguity`` () =
+        FSharp """
+module Test
+
+type Resolver =
+    static member inline Resolve< ^T>(input: Option< ^T>) = "srtp option"
+    static member inline Resolve< ^T>(input: Option< ^T list>) = "srtp option list"
+
+let result : string = Resolver.Resolve(Some([1]))
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
 
     /// Test cases for concrete-vs-generic wrapper type resolution.
     /// Each entry: (description, F# source code)
@@ -1569,14 +1262,8 @@ let result : Option<int> = Builder.Build()
         |> shouldSucceed
         |> ignore
 
-    // --------------------------------------------------------------------------
-    // Diagnostic Tests
-    // --------------------------------------------------------------------------
-
     [<Fact>]
     let ``Warning 3575 - Not emitted by default when concreteness tiebreaker used`` () =
-        // By default, warning 3575 is off, so no warning should be emitted
-        // Both overloads are generic, but one is more concrete
         FSharp concretenessWarningSource
         |> withLangVersionPreview
         |> typecheck
@@ -1585,8 +1272,6 @@ let result : Option<int> = Builder.Build()
 
     [<Fact>]
     let ``Warning 3575 - Emitted when enabled and concreteness tiebreaker is used`` () =
-        // When --warnon:3575 is passed, warning should be emitted
-        // Both overloads are generic, but Option<'t list> is more concrete than Option<'t>
         FSharp concretenessWarningSource
         |> withLangVersionPreview
         |> withOptions ["--warnon:3575"]
@@ -1596,22 +1281,8 @@ let result : Option<int> = Builder.Build()
         |> withDiagnosticMessageMatches "concreteness"
         |> ignore
 
-    // ============================================================================
-    // FS3576 - Generic Overload Bypassed Diagnostic Tests
-    // ============================================================================
-
-    [<Fact>]
-    let ``Warning 3576 - Off by default`` () =
-        // By default, warning 3576 is off, so no warning should be emitted
-        FSharp concretenessWarningSource
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
     [<Fact>]
     let ``Warning 3576 - Emitted when enabled and generic overload is bypassed`` () =
-        // When --warnon:3576 is passed, warning should be emitted for bypassed generic overload
         FSharp concretenessWarningSource
         |> withLangVersionPreview
         |> withOptions ["--warnon:3576"]
@@ -1623,7 +1294,6 @@ let result : Option<int> = Builder.Build()
 
     [<Fact>]
     let ``Warning 3576 - Shows bypassed and selected overload names`` () =
-        // FS3576 should show the bypassed overload and the selected one
         FSharp concretenessWarningSource
         |> withLangVersionPreview
         |> withOptions ["--warnon:3576"]
@@ -1635,7 +1305,6 @@ let result : Option<int> = Builder.Build()
 
     [<Fact>]
     let ``Warning 3576 - Multiple bypassed overloads`` () =
-        // When multiple generic overloads are bypassed, FS3576 should be emitted for each
         FSharp """
 module Test
 
@@ -1653,16 +1322,8 @@ let result = Example.Process(Some([1]))
         |> withWarningCode 3576
         |> ignore
 
-    // ============================================================================
-    // SRTP Tests - Real Statically Resolved Type Parameter Patterns
-    // ============================================================================
-    // Based on FSharpPlus patterns: type class encoding with ^T, member constraints,
-    // and layered inline resolution through phantom type dispatch.
-
     [<Fact>]
     let ``SRTP - member constraint with overloaded static member`` () =
-        // Core SRTP pattern: inline function with explicit member constraint
-        // When instantiated, the tiebreaker picks more concrete candidate
         FSharp """
 module Test
 
@@ -1670,7 +1331,6 @@ type Converter =
     static member Convert<'t>(x: 't) = box x
     static member Convert(x: int) = box (x * 2)
 
-// Non-SRTP call - directly tests overload with tiebreaker
 let result = Converter.Convert 21
         """
         |> typecheck
@@ -1679,7 +1339,6 @@ let result = Converter.Convert 21
 
     [<Fact>]
     let ``SRTP - inline function calling overloaded method`` () =
-        // Inline function where resolution defers to call site
         FSharp """
 module Test
 
@@ -1687,7 +1346,6 @@ type Handler =
     static member Handle<'t>(x: 't) = x
     static member Handle(x: int) = x * 2
 
-// inline defers resolution - at call site, Handle(int) is more concrete
 let inline handle x = Handler.Handle x
 
 let result : int = handle 21
@@ -1698,7 +1356,6 @@ let result : int = handle 21
 
     [<Fact>]
     let ``SRTP - layered inline with deferred overload resolution`` () =
-        // Multiple inline layers - resolution propagates to final call site
         FSharp """
 module Test
 
@@ -1710,7 +1367,6 @@ let inline layer3 x = Processor.Process(Some x)
 let inline layer2 x = layer3 x
 let inline layer1 x = layer2 x
 
-// Through 3 inline layers, Option<int> overload selected at call site
 let result = layer1 42
         """
         |> typecheck
@@ -1719,7 +1375,6 @@ let result = layer1 42
 
     [<Fact>]
     let ``SRTP - explicit member constraint with Parse`` () =
-        // Standard SRTP pattern: (^T : (static member Parse ...))
         FSharp """
 module Test
 
@@ -1727,11 +1382,9 @@ type MyParser =
     static member Parse(s: string) = 42
     static member Parse<'t>(s: string) = Unchecked.defaultof<'t>
 
-// SRTP member constraint - resolved at instantiation
 let inline parse< ^T when ^T : (static member Parse : string -> ^T)> (s: string) : ^T =
     (^T : (static member Parse : string -> ^T) s)
 
-// When ^T = int, Parse(string) -> int is more concrete than Parse<'t>(string) -> 't
 let result : int = parse "42"
         """
         |> typecheck
@@ -1740,7 +1393,6 @@ let result : int = parse "42"
 
     [<Fact>]
     let ``SRTP - witness passing with explicit type`` () =
-        // Type class witness pattern - explicit interface with overloaded methods
         FSharp """
 module Test
 
@@ -1759,7 +1411,6 @@ type Folder =
     static member Fold(xs: int list, m: IMonoid<int>) = 
         List.fold (fun acc x -> m.Plus acc x) m.Zero xs
 
-// int list with IMonoid<int> - concrete overload preferred by tiebreaker
 let sum = Folder.Fold([1;2;3], IntMonoid() :> IMonoid<int>)
         """
         |> typecheck
@@ -1768,7 +1419,6 @@ let sum = Folder.Fold([1;2;3], IntMonoid() :> IMonoid<int>)
 
     [<Fact>]
     let ``SRTP - nested generic in inline with concrete specialization`` () =
-        // Nested generics through inline - tests concreteness at multiple levels
         FSharp """
 module Test
 
@@ -1779,41 +1429,20 @@ type Wrapper =
 let inline wrap x = Wrapper.Wrap(Some x)
 let inline wrapTwice x = wrap x |> Option.bind id
 
-// At call site: Option<int> -> more concrete Wrap overload used
 let result = wrapTwice 21
         """
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    // ============================================================================
-    // OverloadResolutionPriorityAttribute Tests (RFC FS-XXXX)
-    // 
-    // These tests verify F# correctly respects [OverloadResolutionPriority] from C#.
-    // Tests use inline C# to define test types since F# cannot apply the attribute directly.
-    // 
-    // Currently EXPECTED TO FAIL since the pre-filter is not yet implemented.
-    // ============================================================================
-
     /// C# library with OverloadResolutionPriority test types
     let private csharpPriorityLib =
         CSharpFromPath (__SOURCE_DIRECTORY__ ++ "../OverloadResolutionPriority/CSharpPriorityLib.cs")
         |> withCSharpLanguageVersionPreview
         |> withName "CSharpPriorityLib"
-    // ============================================================================
-    // LangVersion Latest Tests
-    // 
-    // These tests verify behavior under langversion=latest (or default langversion).
-    // Under latest:
-    // - Existing rules (non-generic preferred, non-extension preferred) still work
-    // - MoreConcrete tiebreaker is DISABLED (expect FS0041 ambiguity)
-    // - OverloadResolutionPriority attribute is silently IGNORED
-    // ============================================================================
 
     [<Fact>]
     let ``LangVersion Latest - Non-generic overload preferred over generic - existing behavior`` () =
-        // This is existing F# behavior that works regardless of langversion
-        // Non-generic overload is always preferred when directly applicable
         FSharp """
 module Test
 
@@ -1830,7 +1459,6 @@ let result = Example.Process(42)
 
     [<Fact>]
     let ``LangVersion Latest - Non-extension method preferred over extension - existing behavior`` () =
-        // Existing F# behavior: instance/static methods on the type beat extension methods
         FSharp """
 module Test
 
@@ -1853,9 +1481,6 @@ let result = t.Invoke(42)
 
     [<Fact>]
     let ``LangVersion Latest - MoreConcrete disabled - fully generic vs wrapped generic remains ambiguous`` () =
-        // Under langversion=latest, MoreConcrete tiebreaker is disabled
-        // 't vs Option<'t> - BOTH are generic, so PreferNonGeneric doesn't help
-        // Only MoreConcrete can resolve this, so without it we get FS0041
         FSharp """
 module Test
 
@@ -1863,8 +1488,6 @@ type Example =
     static member Process(value: 't) = "fully generic"
     static member Process(value: Option<'t>) = "wrapped"
 
-// Without MoreConcrete: ambiguous, expect FS0041
-// Both methods are generic, and wrapped Option<'t> is more concrete
 let result = Example.Process(Some 42)
         """
         |> withLangVersion "latest"
@@ -1875,8 +1498,6 @@ let result = Example.Process(Some 42)
 
     [<Fact>]
     let ``LangVersion Latest - MoreConcrete disabled - array generic vs bare generic remains ambiguous`` () =
-        // Under langversion=latest, MoreConcrete tiebreaker is disabled
-        // 't vs 't array - BOTH are generic, so PreferNonGeneric doesn't help
         FSharp """
 module Test
 
@@ -1884,7 +1505,6 @@ type Example =
     static member Handle(value: 't) = "bare"
     static member Handle(value: 't array) = "array"
 
-// Without MoreConcrete: ambiguous, expect FS0041
 let result = Example.Handle([|1; 2; 3|])
         """
         |> withLangVersion "latest"
@@ -1895,14 +1515,10 @@ let result = Example.Handle([|1; 2; 3|])
 
     [<FactForNETCOREAPP>]
     let ``LangVersion Latest - ORP attribute ignored - higher priority does not win`` () =
-        // Under langversion=latest, OverloadResolutionPriority is silently ignored
-        // Normal tiebreaker rules apply - string (more specific) should beat object
         FSharp """
 module Test
 open PriorityTests
 
-// BasicPriority: object has priority 2, string has priority 1, int has priority 0
-// Under latest: ORP is ignored, so string is picked (more specific than object)
 let result = BasicPriority.Invoke("test")
 if result <> "priority-1-string" then
     failwithf "Expected 'priority-1-string' (string) but got '%s' - ORP should be ignored" result
@@ -1916,16 +1532,11 @@ if result <> "priority-1-string" then
 
     [<FactForNETCOREAPP>]
     let ``LangVersion Latest - ORP attribute ignored - negative priority has no effect`` () =
-        // Under langversion=latest, OverloadResolutionPriority is silently ignored
-        // Even negative priority doesn't deprioritize - normal rules apply
         FSharp """
 module Test
 open PriorityTests
 
-// NegativePriority.Legacy: object has priority -1, string has priority 0 (default)
-// Under latest: ORP is ignored, so normal rules apply - string is more specific
 let result = NegativePriority.Legacy("test")
-// Should still pick string since it's more specific than object
 if result <> "current" then
     failwithf "Expected 'current' (string) but got '%s'" result
         """
@@ -1938,15 +1549,10 @@ if result <> "current" then
 
     [<FactForNETCOREAPP>]
     let ``LangVersion Latest - ORP attribute ignored - priority does not override concreteness`` () =
-        // Under langversion=latest, ORP is ignored AND MoreConcrete is disabled
-        // For Process(int) vs Process<T>(T), both are applicable for int
-        // Process(int) is non-generic so should be preferred by existing rules
         FSharp """
 module Test
 open PriorityTests
 
-// PriorityVsConcreteness: Process<T>(T) has priority 1, Process(int) has priority 0
-// Under latest: ORP is ignored. Non-generic Process(int) should win over generic.
 let result = PriorityVsConcreteness.Process(42)
 if result <> "int-low-priority" then
     failwithf "Expected 'int-low-priority' (int) but got '%s' - ORP should be ignored" result
@@ -1960,8 +1566,6 @@ if result <> "int-low-priority" then
 
     [<Fact>]
     let ``LangVersion Latest - default langversion behaves same as explicit latest`` () =
-        // Verify that omitting langversion flag gives same behavior as latest
-        // Non-generic still preferred, MoreConcrete disabled
         FSharp """
 module Test
 
@@ -1969,9 +1573,8 @@ type Example =
     static member Process(value: 't) = "generic"
     static member Process(value: int) = "int"
 
-// Non-generic int should be preferred (existing rule)
 let result = Example.Process(42)
         """
-        |> typecheck // no langversion flag = default = latest
+        |> typecheck
         |> shouldSucceed
         |> ignore
