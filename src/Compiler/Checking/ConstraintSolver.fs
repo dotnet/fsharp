@@ -363,11 +363,10 @@ let tryComputeOverloadCacheKey
     (g: TcGlobals)
     (calledMethGroup: CalledMeth<'T> list)
     (callerArgs: CallerArgs<'T>)
-    (reqdRetTyOpt: OverallTy option)
+    (retTyOpt: TType option)
+    (anyHasOutArgs: bool)
     : OverloadResolutionCacheKey voption
     =
-    let retTyOpt = reqdRetTyOpt |> Option.map (fun oty -> oty.Commit)
-    let anyHasOutArgs = calledMethGroup |> List.exists (fun cm -> cm.HasOutArgs)
     OverloadResolutionCache.tryComputeOverloadCacheKey g calledMethGroup callerArgs retTyOpt anyHasOutArgs
 
 /// Stores an overload resolution result in the cache (wrapper for OverallTy)
@@ -377,11 +376,10 @@ let storeCacheResult
     (cacheKeyOpt: OverloadResolutionCacheKey voption)
     (calledMethGroup: CalledMeth<'T> list)
     (callerArgs: CallerArgs<'T>)
-    (reqdRetTyOpt: OverallTy option)
+    (retTyOpt: TType option)
+    (anyHasOutArgs: bool)
     (calledMethOpt: CalledMeth<'T> voption)
     =
-    let retTyOpt = reqdRetTyOpt |> Option.map (fun oty -> oty.Commit)
-    let anyHasOutArgs = calledMethGroup |> List.exists (fun cm -> cm.HasOutArgs)
     OverloadResolutionCache.storeCacheResult g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs calledMethOpt
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
@@ -3491,6 +3489,8 @@ and ResolveOverloadingCore
          permitOptArgs
          (reqdRetTyOpt: OverallTy option)
          isOpConversion
+         (retTyOpt: TType option)
+         (anyHasOutArgs: bool)
          (cacheKeyOpt: OverloadResolutionCacheKey voption)
          (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>)
          : CalledMeth<Expr> option * OperationResult<unit> * OptionalTrace =
@@ -3502,8 +3502,7 @@ and ResolveOverloadingCore
     //    -- op_Explicit, op_Implicit
     //    -- candidate method sets that potentially use tupling of unfilled out args
     let alwaysCheckReturn =
-        isOpConversion ||
-        candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs) 
+        isOpConversion || anyHasOutArgs
 
     // Exact match rule.
     //
@@ -3526,7 +3525,7 @@ and ResolveOverloadingCore
 
     match exactMatchCandidates with
     | [(calledMeth, warns, _, _usesTDC)] ->
-        storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs reqdRetTyOpt (ValueSome calledMeth)
+        storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs (ValueSome calledMeth)
         Some calledMeth, OkResult (warns, ()), NoTrace
 
     | _ -> 
@@ -3550,7 +3549,7 @@ and ResolveOverloadingCore
       match applicable with 
       | [] ->
           // OK, we failed. Collect up the errors from overload resolution and the possible overloads
-          storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs reqdRetTyOpt ValueNone
+          storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs ValueNone
 
           let errors =
               candidates 
@@ -3577,11 +3576,11 @@ and ResolveOverloadingCore
           None, ErrorD err, NoTrace
 
       | [(calledMeth, warns, t, _usesTDC)] ->
-          storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs reqdRetTyOpt (ValueSome calledMeth)
+          storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs (ValueSome calledMeth)
           Some calledMeth, OkResult (warns, ()), WithTrace t
 
       | applicableMeths -> 
-          GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m cacheKeyOpt cache
+          GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m retTyOpt anyHasOutArgs cacheKeyOpt cache
 
 // Resolve the overloading of a method 
 // This is used after analyzing the types of arguments 
@@ -3638,10 +3637,13 @@ and ResolveOverloading
             
         | _, _ -> 
 
+          let retTyOpt = reqdRetTyOpt |> Option.map (fun oty -> oty.Commit)
+          let anyHasOutArgs = calledMethGroup |> List.exists (fun cm -> cm.HasOutArgs)
+
           let cacheKeyOpt = 
               if g.langVersion.SupportsFeature LanguageFeature.MethodOverloadsCache && 
                  not isOpConversion && cx.IsNone && candidates.Length > 1 then
-                  tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt
+                  tryComputeOverloadCacheKey g calledMethGroup callerArgs retTyOpt anyHasOutArgs
               else
                   ValueNone
 
@@ -3656,16 +3658,15 @@ and ResolveOverloading
                       if calledMeth.HasCorrectGenericArity then
                           Some calledMeth, CompleteD, NoTrace
                       else
-                          ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
+                          ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion retTyOpt anyHasOutArgs cacheKeyOpt cache
                   | CachedFailed ->
-                      // Still go through normal resolution to generate proper error messages
-                      ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
+                      ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion retTyOpt anyHasOutArgs cacheKeyOpt cache
                   | _ ->
-                      ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
+                      ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion retTyOpt anyHasOutArgs cacheKeyOpt cache
               else
-                  ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
+                  ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion retTyOpt anyHasOutArgs cacheKeyOpt cache
           | ValueNone ->
-              ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion ValueNone cache
+              ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion retTyOpt anyHasOutArgs ValueNone cache
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
@@ -3741,7 +3742,7 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
         // Otherwise pass the overload resolution failure for error printing in CompileOps
         UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
 
-and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m (cacheKeyOpt: OverloadResolutionCacheKey voption) (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>) =
+and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m (retTyOpt: TType option) (anyHasOutArgs: bool) (cacheKeyOpt: OverloadResolutionCacheKey voption) (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>) =
     let g = csenv.g
     let infoReader = csenv.InfoReader
     /// Compare two things by the given predicate. 
@@ -3926,7 +3927,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     match bestMethods with 
     | [(calledMeth, warns, t, _)] ->
-        storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs reqdRetTyOpt (ValueSome calledMeth)
+        storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs (ValueSome calledMeth)
         Some calledMeth, OkResult (warns, ()), WithTrace t
 
     | bestMethods ->

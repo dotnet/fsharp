@@ -28,9 +28,9 @@ type OverloadResolutionCacheKey =
         MethodGroupHash: int
         /// Type structures for caller object arguments (the 'this' argument for instance/extension methods)
         /// This is critical for extension methods where the 'this' type determines the overload
-        ObjArgTypeStructures: TypeStructure list
+        ObjArgTypeStructures: TypeStructure[]
         /// Type structures for each caller argument (only used when all types are stable)
-        ArgTypeStructures: TypeStructure list
+        ArgTypeStructures: TypeStructure[]
         /// Type structure for expected return type (if any), to differentiate calls with different expected types
         ReturnTypeStructure: TypeStructure voption
         /// Number of caller-provided type arguments (to distinguish calls with different type instantiations)
@@ -188,8 +188,8 @@ let tryComputeOverloadCacheKey
                     ValueSome
                         {
                             MethodGroupHash = methodGroupHash
-                            ObjArgTypeStructures = Seq.toList objArgStructures
-                            ArgTypeStructures = Seq.toList argStructures
+                            ObjArgTypeStructures = objArgStructures.ToArray()
+                            ArgTypeStructures = argStructures.ToArray()
                             ReturnTypeStructure = retStruct
                             CallerTyArgCount = callerTyArgCount
                         }

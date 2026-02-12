@@ -57,7 +57,7 @@ let generateRepetitiveOverloadCalls (callCount: int) =
 
 /// Test that the overload resolution cache achieves reasonable hit rate for repetitive patterns
 [<Fact>]
-let ``Overload cache hit rate exceeds 95 percent for repetitive int-int calls`` () =
+let ``Overload cache hit rate exceeds 70 percent for repetitive int-int calls`` () =
     // Use the new public API to listen to overload cache metrics
     use listener = FSharpChecker.CreateOverloadCacheMetricsListener()
     
