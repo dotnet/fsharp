@@ -2751,13 +2751,15 @@ let TcValEarlyGeneralizationConsistencyCheck (cenv: cenv) (env: TcEnv) (v: Val, 
 /// instantiationInfoOpt is is also set when building the final call for a reference to an
 /// F# object model member, in which case the instantiationInfoOpt is the type instantiation
 /// inferred by member overload resolution.
-let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiationInfoOpt optAfterResolution m =
+let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiationInfoOpt optAfterResolution (m: range) =
     let g = cenv.g
 
     let tpsorig, _, _, _, tinst, _ as res =
         let v = vref.Deref
         let valRecInfo = v.RecursiveValInfo
-        v.SetHasBeenReferenced()
+
+        // Don't count compiler-generated refs (synthetic range) for FS1182
+        if not m.IsSynthetic then v.SetHasBeenReferenced()
 
         CheckValAccessible m env.eAccessRights vref
 
