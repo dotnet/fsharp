@@ -777,7 +777,15 @@ module AttributeTargets =
 let ForNewConstructors tcSink (env: TcEnv) mObjTy methodName meths =
     let origItem = Item.CtorGroup(methodName, meths)
     let callSink (item, minst) = CallMethodGroupNameResolutionSink tcSink (mObjTy, env.NameEnv, item, origItem, minst, ItemOccurrence.Use, env.AccessRights)
-    let sendToSink minst refinedMeths = callSink (Item.CtorGroup(methodName, refinedMeths), minst)
+    let sendToSink minst refinedMeths = 
+        callSink (Item.CtorGroup(methodName, refinedMeths), minst)
+        // #14902: Also register as Item.Value for Find All References
+        for meth in refinedMeths do
+            match meth with
+            | FSMeth(_, _, vref, _) when vref.IsConstructor ->
+                let shiftedRange = Range.mkRange mObjTy.FileName (Position.mkPos mObjTy.StartLine (mObjTy.StartColumn + 1)) mObjTy.End
+                CallNameResolutionSink tcSink (shiftedRange, env.NameEnv, Item.Value vref, minst, ItemOccurrence.Use, env.AccessRights)
+            | _ -> ()
     match meths with
     | [] ->
         AfterResolution.DoNothing
@@ -1468,8 +1476,20 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
     | Some _ when not vspec.IsCompilerGenerated && shouldNotifySink vspec ->
         let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec)
         CallEnvSink cenv.tcSink (vspec.Range, nenv, env.eAccessRights)
-        let item = Item.Value(mkLocalValRef vspec)
+        let vref = mkLocalValRef vspec
+        let item = Item.Value(vref)
         CallNameResolutionSink cenv.tcSink (vspec.Range, nenv, item, emptyTyparInst, ItemOccurrence.Binding, env.eAccessRights)
+        
+        // (#14969, #19173) For active patterns in signature files, also report each case as Item.ActivePatternResult
+        // so that Find All References can find them. In implementation files, this is done during 
+        // TcLetBinding, but signature files don't go through that path.
+        if inSig then
+            match TryGetActivePatternInfo vref with
+            | Some apinfo ->
+                apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag, tagRange) ->
+                    let apItem = Item.ActivePatternResult(apinfo, vspec.TauType, i, tagRange)
+                    CallNameResolutionSink cenv.tcSink (tagRange, nenv, apItem, emptyTyparInst, ItemOccurrence.Binding, env.eAccessRights))
+            | None -> ()
     | _ -> ()
 
     vspec
@@ -7819,6 +7839,12 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
 
                 let gtyp = mkWoNullAppTy tcref tinst
                 UnifyTypes cenv env mWholeExpr overallTy gtyp
+
+                // (#15290) For copy-and-update expressions, register the record type as a reference
+                // so that "Find All References" on the record type includes copy-and-update usages
+                if hasOrigExpr then
+                    let item = Item.Types(tcref.DisplayName, [gtyp])
+                    CallNameResolutionSink cenv.tcSink (mWholeExpr, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
 
                 [ for n, v in fldsList do
                     match v with
