@@ -81,6 +81,10 @@ if File.Exists(propsFilePath) then
         let otherFlags = doc.CreateElement("OtherFlags")
         otherFlags.InnerText <- "$(OtherFlags) --times"
         propertyGroup.AppendChild(otherFlags) |> ignore
+
+        let noWarn = doc.CreateElement("NoWarn")
+        noWarn.InnerText <- "$(NoWarn);0075"
+        propertyGroup.AppendChild(noWarn) |> ignore
         
         // Reuse the import node we already found (or find it again with the same xpath)
         let importNode = doc.SelectSingleNode(xpath)
@@ -108,7 +112,7 @@ if File.Exists(propsFilePath) then
         printfn "✓ --times flag already exists in OtherFlags"
 else
     printfn "Directory.Build.props does not exist, creating it..."
-    let newContent = sprintf "<Project>\n  <Import Project=\"%s\" />\n  <PropertyGroup>\n    <OtherFlags>$(OtherFlags) --times</OtherFlags>\n  </PropertyGroup>\n</Project>\n" absolutePropsPath
+    let newContent = sprintf "<Project>\n  <Import Project=\"%s\" />\n  <PropertyGroup>\n    <OtherFlags>$(OtherFlags) --times</OtherFlags>\n    <NoWarn>$(NoWarn);0075</NoWarn>\n  </PropertyGroup>\n</Project>\n" absolutePropsPath
     File.WriteAllText(propsFilePath, newContent)
     printfn "✓ Created Directory.Build.props with UseLocalCompiler import and --times flag"
 
