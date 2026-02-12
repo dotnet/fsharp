@@ -1134,53 +1134,6 @@ let example () =
     // RFC section-byref-span.md scenarios
     // ============================================================================
 
-    [<FactForNETCOREAPP>]
-    let ``Span - Span of byte vs Span of generic - resolves to concrete byte`` () =
-        // RFC section-byref-span.md: Element type comparison for Span
-        // Span<byte> is more concrete than Span<'T>
-        FSharp """
-module Test
-
-open System
-
-type Parser =
-    static member Parse(data: Span<'T>) = "generic"
-    static member Parse(data: Span<byte>) = "bytes"
-
-let runTest () =
-    let buffer: byte[] = [| 1uy; 2uy; 3uy |]
-    let span = Span(buffer)
-    Parser.Parse(span)
-    // Concreteness: Span<byte> > Span<'T>
-    // Result: "bytes"
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<FactForNETCOREAPP>]
-    let ``ReadOnlySpan - element type comparison - concrete vs generic`` () =
-        // RFC section-byref-span.md: ReadOnlySpan<byte> > ReadOnlySpan<'T>
-        FSharp """
-module Test
-
-open System
-
-type Parser =
-    static member Parse(data: ReadOnlySpan<'T>) = "generic"
-    static member Parse(data: ReadOnlySpan<byte>) = "bytes"
-
-let runTest () =
-    let bytes: byte[] = [| 1uy; 2uy; 3uy |]
-    let roSpan = ReadOnlySpan(bytes)
-    Parser.Parse(roSpan)
-    // Concreteness: ReadOnlySpan<byte> > ReadOnlySpan<'T>
-    // Result: "bytes"
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
     [<Fact>]
     let ``Adhoc rule - T is always better than inref of T`` () =
         // RFC section-byref-span.md: Existing adhoc rule T > inref<T> takes precedence
@@ -1196,51 +1149,6 @@ let value = 42
 let result = Example.Process(value)
 // Adhoc rule: T > inref<T>
 // Result: "by value" (adhoc rule prefers T over inref<T>)
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<FactForNETCOREAPP>]
-    let ``Span - generic element with nested type - Option of int vs Option of generic`` () =
-        // RFC section-byref-span.md: Concreteness applies to element types within Span
-        FSharp """
-module Test
-
-open System
-
-type DataHandler =
-    static member Handle(data: Span<Option<'T>>) = "generic option"
-    static member Handle(data: Span<Option<int>>) = "int option"
-
-let runTest () =
-    let options: Option<int>[] = [| Some 1; Some 2 |]
-    let span = Span(options)
-    DataHandler.Handle(span)
-    // Element type comparison:
-    // - Span<Option<int>>: element = Option<int> (concrete)
-    // - Span<Option<'T>>: element = Option<'T> (generic)
-    // Result: "int option" via more concrete
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Inref with nested generic - Result of int vs Result of generic`` () =
-        // RFC section-byref-span.md: Concreteness applies to types within inref
-        FSharp """
-module Test
-
-type RefProcessor =
-    static member Transform(ref: inref<Result<'T, exn>>) = "generic result"
-    static member Transform(ref: inref<Result<int, exn>>) = "int result"
-
-let runTest () =
-    let mutable result: Result<int, exn> = Ok 42
-    RefProcessor.Transform(&result)
-    // Compares: Result<int, exn> vs Result<'T, exn>
-    // Result: "int result" (more concrete in first type arg)
         """
         |> typecheck
         |> shouldSucceed
@@ -1545,228 +1453,10 @@ let result : Option<int> = Builder.Build()
         |> ignore
 
     // --------------------------------------------------------------------------
-    // Byref/Inref/Outref Combination Tests
-    // --------------------------------------------------------------------------
-
-    [<Fact>]
-    let ``Byref - outref of int vs outref of generic`` () =
-        // outref concreteness comparison
-        FSharp """
-module Test
-
-type Writer =
-    static member Write(dest: outref<int>, value: int) = dest <- value
-    static member Write(dest: outref<'T>, value: 'T) = dest <- value
-
-let mutable x = 0
-Writer.Write(&x, 42)
-// outref<int> is more concrete than outref<'T>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Byref - inref and outref combined with generics`` () =
-        // Tests mixed inref/outref parameters
-        FSharp """
-module Test
-
-type Transformer =
-    static member Transform(src: inref<int>, dest: outref<int>) = dest <- src
-    static member Transform(src: inref<'T>, dest: outref<'T>) = dest <- src
-
-let mutable value = 42
-let mutable result = 0
-Transformer.Transform(&value, &result)
-// Both inref<int> and outref<int> are more concrete than generic versions
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Byref - byref with nested option type`` () =
-        // Byref to a complex nested type
-        FSharp """
-module Test
-
-type RefProcessor =
-    static member Process(r: byref<Option<int>>) = r <- Some 42
-    static member Process(r: byref<Option<'T>>) = r <- None
-
-let mutable opt : Option<int> = None
-RefProcessor.Process(&opt)
-// byref<Option<int>> is more concrete than byref<Option<'T>>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Byref - nativeptr with concrete vs generic element type`` () =
-        // Tests nativeptr concreteness (simplified version that compiles)
-        FSharp """
-module Test
-
-open Microsoft.FSharp.NativeInterop
-
-type PtrHandler =
-    static member Handle(p: nativeptr<int>) = 1
-    static member Handle(p: nativeptr<'T>) = 2
-
-// Just test that the overloads can be defined - actual pointer usage
-// would require unsafe code blocks which complicate the test
-let inline handlePtr (p: nativeptr<int>) = PtrHandler.Handle(p)
-// nativeptr<int> is more concrete than nativeptr<'T>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // --------------------------------------------------------------------------
-    // Anonymous Record Type Tests
-    // --------------------------------------------------------------------------
-
-    [<Fact>]
-    let ``Anonymous Record - concrete field type vs generic`` () =
-        // Anonymous record with concrete vs generic field types
-        FSharp """
-module Test
-
-type Processor =
-    static member Process(r: {| Value: int |}) = "int"
-    static member Process(r: {| Value: 'T |}) = "generic"
-
-let result = Processor.Process({| Value = 42 |})
-// {| Value: int |} is more concrete than {| Value: 'T |}
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Anonymous Record - nested anonymous records with concreteness`` () =
-        // Nested anonymous records where inner type differs
-        FSharp """
-module Test
-
-type Handler =
-    static member Handle(r: {| Inner: {| X: int |} |}) = "concrete"
-    static member Handle(r: {| Inner: {| X: 'T |} |}) = "generic"
-
-let result = Handler.Handle({| Inner = {| X = 42 |} |})
-// Innermost type int is more concrete than 'T
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Anonymous Record - option of anonymous record`` () =
-        // Option wrapping anonymous record
-        FSharp """
-module Test
-
-type Builder =
-    static member Build(x: Option<{| Id: int; Name: string |}>) = "concrete"
-    static member Build(x: Option<{| Id: 'T; Name: string |}>) = "generic id"
-
-let result = Builder.Build(Some {| Id = 1; Name = "test" |})
-// Option<{| Id: int; ... |}> is more concrete
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // --------------------------------------------------------------------------
-    // Units of Measure Tests
-    // --------------------------------------------------------------------------
-
-    [<Fact>]
-    let ``Units of Measure - concrete measure vs generic measure`` () =
-        // Concrete unit of measure vs generic measure type parameter
-        FSharp """
-module Test
-
-[<Measure>] type m
-[<Measure>] type s
-
-type Calculator =
-    static member Calculate(x: float<m>) = "meters"
-    static member Calculate(x: float<'u>) = "generic unit"
-
-let distance : float<m> = 5.0<m>
-let result = Calculator.Calculate(distance)
-// float<m> is more concrete than float<'u>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Units of Measure - derived units vs base units`` () =
-        // Derived unit (m/s) vs generic measure
-        FSharp """
-module Test
-
-[<Measure>] type m
-[<Measure>] type s
-
-type Physics =
-    static member Velocity(x: float<m/s>) = "velocity"
-    static member Velocity(x: float<'u>) = "generic"
-
-let speed : float<m/s> = 10.0<m/s>
-let result = Physics.Velocity(speed)
-// float<m/s> is more concrete than float<'u>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Units of Measure - option of measured value`` () =
-        // Option wrapping measured values
-        FSharp """
-module Test
-
-[<Measure>] type kg
-
-type Scale =
-    static member Weigh(x: Option<float<kg>>) = "kg"
-    static member Weigh(x: Option<float<'u>>) = "generic"
-
-let result = Scale.Weigh(Some 75.0<kg>)
-// Option<float<kg>> is more concrete
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Units of Measure - array of measured values`` () =
-        // Array of measured values with concreteness
-        FSharp """
-module Test
-
-[<Measure>] type Hz
-
-type SignalProcessor =
-    static member Process(samples: float<Hz>[]) = "Hz array"
-    static member Process(samples: float<'u>[]) = "generic array"
-
-let frequencies : float<Hz>[] = [| 440.0<Hz>; 880.0<Hz> |]
-let result = SignalProcessor.Process(frequencies)
-// float<Hz>[] is more concrete than float<'u>[]
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // --------------------------------------------------------------------------
-    // F#-Specific Types: Async, MailboxProcessor, Lazy, etc.
+    // F#-Specific Types and Wrapper Types
     // These tests verify concreteness resolution across various F# wrapper types.
+    // Byref/inref/outref, anon records, UoM, Span, and ValueTask tests are
+    // parameterized in concreteWrapperTestCases / concreteWrapperNetCoreTestCases.
     // --------------------------------------------------------------------------
 
     /// Test cases for concrete-vs-generic wrapper type resolution.
@@ -1807,6 +1497,60 @@ let result = SignalProcessor.Process(frequencies)
 
             case "Tree<int> vs Tree<'T>"
                  "module Test\ntype Tree<'T> =\n    | Leaf of 'T\n    | Node of Tree<'T> * Tree<'T>\ntype TreeProcessor =\n    static member Process(t: Tree<int>) = \"int tree\"\n    static member Process(t: Tree<'T>) = \"generic tree\"\nlet tree = Node(Leaf 1, Leaf 2)\nlet result = TreeProcessor.Process(tree)"
+
+            case "inref<Result<int, exn>> vs inref<Result<'T, exn>>"
+                 "module Test\ntype RefProcessor =\n    static member Transform(ref: inref<Result<'T, exn>>) = \"generic result\"\n    static member Transform(ref: inref<Result<int, exn>>) = \"int result\"\nlet runTest () =\n    let mutable result: Result<int, exn> = Ok 42\n    RefProcessor.Transform(&result)"
+
+            case "outref<int> vs outref<'T>"
+                 "module Test\ntype Writer =\n    static member Write(dest: outref<int>, value: int) = dest <- value\n    static member Write(dest: outref<'T>, value: 'T) = dest <- value\nlet mutable x = 0\nWriter.Write(&x, 42)"
+
+            case "inref<int>/outref<int> vs inref<'T>/outref<'T>"
+                 "module Test\ntype Transformer =\n    static member Transform(src: inref<int>, dest: outref<int>) = dest <- src\n    static member Transform(src: inref<'T>, dest: outref<'T>) = dest <- src\nlet mutable value = 42\nlet mutable result = 0\nTransformer.Transform(&value, &result)"
+
+            case "byref<Option<int>> vs byref<Option<'T>>"
+                 "module Test\ntype RefProcessor =\n    static member Process(r: byref<Option<int>>) = r <- Some 42\n    static member Process(r: byref<Option<'T>>) = r <- None\nlet mutable opt : Option<int> = None\nRefProcessor.Process(&opt)"
+
+            case "nativeptr<int> vs nativeptr<'T>"
+                 "module Test\nopen Microsoft.FSharp.NativeInterop\ntype PtrHandler =\n    static member Handle(p: nativeptr<int>) = 1\n    static member Handle(p: nativeptr<'T>) = 2\nlet inline handlePtr (p: nativeptr<int>) = PtrHandler.Handle(p)"
+
+            case "{| Value: int |} vs {| Value: 'T |}"
+                 "module Test\ntype Processor =\n    static member Process(r: {| Value: int |}) = \"int\"\n    static member Process(r: {| Value: 'T |}) = \"generic\"\nlet result = Processor.Process({| Value = 42 |})"
+
+            case "nested {| Inner: {| X: int |} |} vs {| Inner: {| X: 'T |} |}"
+                 "module Test\ntype Handler =\n    static member Handle(r: {| Inner: {| X: int |} |}) = \"concrete\"\n    static member Handle(r: {| Inner: {| X: 'T |} |}) = \"generic\"\nlet result = Handler.Handle({| Inner = {| X = 42 |} |})"
+
+            case "Option<{| Id: int; Name: string |}> vs Option<{| Id: 'T; Name: string |}>"
+                 "module Test\ntype Builder =\n    static member Build(x: Option<{| Id: int; Name: string |}>) = \"concrete\"\n    static member Build(x: Option<{| Id: 'T; Name: string |}>) = \"generic id\"\nlet result = Builder.Build(Some {| Id = 1; Name = \"test\" |})"
+
+            case "float<m> vs float<'u>"
+                 "module Test\n[<Measure>] type m\n[<Measure>] type s\ntype Calculator =\n    static member Calculate(x: float<m>) = \"meters\"\n    static member Calculate(x: float<'u>) = \"generic unit\"\nlet distance : float<m> = 5.0<m>\nlet result = Calculator.Calculate(distance)"
+
+            case "float<m/s> vs float<'u>"
+                 "module Test\n[<Measure>] type m\n[<Measure>] type s\ntype Physics =\n    static member Velocity(x: float<m/s>) = \"velocity\"\n    static member Velocity(x: float<'u>) = \"generic\"\nlet speed : float<m/s> = 10.0<m/s>\nlet result = Physics.Velocity(speed)"
+
+            case "Option<float<kg>> vs Option<float<'u>>"
+                 "module Test\n[<Measure>] type kg\ntype Scale =\n    static member Weigh(x: Option<float<kg>>) = \"kg\"\n    static member Weigh(x: Option<float<'u>>) = \"generic\"\nlet result = Scale.Weigh(Some 75.0<kg>)"
+
+            case "float<Hz>[] vs float<'u>[]"
+                 "module Test\n[<Measure>] type Hz\ntype SignalProcessor =\n    static member Process(samples: float<Hz>[]) = \"Hz array\"\n    static member Process(samples: float<'u>[]) = \"generic array\"\nlet frequencies : float<Hz>[] = [| 440.0<Hz>; 880.0<Hz> |]\nlet result = SignalProcessor.Process(frequencies)"
+        ]
+
+    /// Test cases for concrete-vs-generic wrapper types requiring .NET Core (Span, ValueTask, etc.)
+    let concreteWrapperNetCoreTestCases: obj[] seq =
+        let case desc source = [| desc :> obj; source :> obj |]
+
+        [
+            case "Span<byte> vs Span<'T>"
+                 "module Test\nopen System\ntype Parser =\n    static member Parse(data: Span<'T>) = \"generic\"\n    static member Parse(data: Span<byte>) = \"bytes\"\nlet runTest () =\n    let buffer: byte[] = [| 1uy; 2uy; 3uy |]\n    let span = Span(buffer)\n    Parser.Parse(span)"
+
+            case "ReadOnlySpan<byte> vs ReadOnlySpan<'T>"
+                 "module Test\nopen System\ntype Parser =\n    static member Parse(data: ReadOnlySpan<'T>) = \"generic\"\n    static member Parse(data: ReadOnlySpan<byte>) = \"bytes\"\nlet runTest () =\n    let bytes: byte[] = [| 1uy; 2uy; 3uy |]\n    let roSpan = ReadOnlySpan(bytes)\n    Parser.Parse(roSpan)"
+
+            case "Span<Option<int>> vs Span<Option<'T>>"
+                 "module Test\nopen System\ntype DataHandler =\n    static member Handle(data: Span<Option<'T>>) = \"generic option\"\n    static member Handle(data: Span<Option<int>>) = \"int option\"\nlet runTest () =\n    let options: Option<int>[] = [| Some 1; Some 2 |]\n    let span = Span(options)\n    DataHandler.Handle(span)"
+
+            case "ValueTask<int> vs ValueTask<'T>"
+                 "module Test\nopen System.Threading.Tasks\ntype TaskRunner =\n    static member Run(t: ValueTask<int>) = \"int valuetask\"\n    static member Run(t: ValueTask<'T>) = \"generic valuetask\"\nlet vt = ValueTask<int>(42)\nlet result = TaskRunner.Run(vt)"
         ]
 
     [<Theory>]
@@ -1817,21 +1561,10 @@ let result = SignalProcessor.Process(frequencies)
         |> shouldSucceed
         |> ignore
 
-    [<FactForNETCOREAPP>]
-    let ``ValueTask - ValueTask of int vs generic`` () =
-        // ValueTask with concrete inner type (requires .NET Core)
-        FSharp """
-module Test
-
-open System.Threading.Tasks
-
-type TaskRunner =
-    static member Run(t: ValueTask<int>) = "int valuetask"
-    static member Run(t: ValueTask<'T>) = "generic valuetask"
-
-let vt = ValueTask<int>(42)
-let result = TaskRunner.Run(vt)
-        """
+    [<TheoryForNETCOREAPP>]
+    [<MemberData(nameof concreteWrapperNetCoreTestCases)>]
+    let ``Concrete wrapper type resolves over generic (NETCOREAPP)`` (_description: string) (source: string) =
+        FSharp source
         |> typecheck
         |> shouldSucceed
         |> ignore

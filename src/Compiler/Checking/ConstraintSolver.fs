@@ -3666,22 +3666,17 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     let ctx: OverloadResolutionContext = { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep }
 
+    // Cache deciding rules from pairwise comparisons to avoid re-evaluation
+    let decidingRuleCache = System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>()
+
     /// Check whether one overload is better than another
     let better (candidate: CalledMeth<_>, candidateWarnings, _, usesTDC1) (other: CalledMeth<_>, otherWarnings, _, usesTDC2) =
         let candidateWarnCount = List.length candidateWarnings
         let otherWarnCount = List.length otherWarnings
-        evaluateTiebreakRules ctx (candidate, usesTDC1, candidateWarnCount) (other, usesTDC2, otherWarnCount)
+        let result, decidingRule = findDecidingRule ctx (candidate, usesTDC1, candidateWarnCount) (other, usesTDC2, otherWarnCount)
+        decidingRuleCache[struct(candidate :> obj, other :> obj)] <- decidingRule
+        result
     
-    /// Check if concreteness tiebreaker was the deciding factor between winner and loser
-    /// Returns Some with method name strings if concreteness decided, None otherwise 
-    let wasConcretenessTiebreaker (winner: CalledMeth<_>, winnerWarnings, _, winnerTDC) (loser: CalledMeth<_>, loserWarnings, _, loserTDC) =
-        let winnerWarnCount = List.length winnerWarnings
-        let loserWarnCount = List.length loserWarnings
-        let _, decidingRule = findDecidingRule ctx (winner, winnerTDC, winnerWarnCount) (loser, loserTDC, loserWarnCount)
-        match decidingRule with
-        | ValueSome TiebreakRuleId.MoreConcrete -> Some (winner.Method.DisplayName, loser.Method.DisplayName)
-        | _ -> None
-
     let bestMethods =
         let indexedApplicableMeths = applicableMeths |> List.indexed
         indexedApplicableMeths |> List.choose (fun (i, candidate) -> 
@@ -3694,7 +3689,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
                 None) 
 
     match bestMethods with 
-    | [(calledMeth, warns, t, _) as winner] ->
+    | [(calledMeth, warns, t, _)] ->
         // Check if concreteness tiebreaker was decisive against any other candidate
         let concretenessWarns =
             applicableMeths
@@ -3704,7 +3699,10 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
                 if System.Object.ReferenceEquals(loserMeth, calledMeth) then
                     None
                 else
-                    wasConcretenessTiebreaker winner loser)
+                    match decidingRuleCache.TryGetValue(struct(calledMeth :> obj, loserMeth :> obj)) with
+                    | true, ValueSome TiebreakRuleId.MoreConcrete ->
+                        Some(calledMeth.Method.DisplayName, loserMeth.Method.DisplayName)
+                    | _ -> None)
 
         let allWarns =
             match concretenessWarns with
@@ -3746,7 +3744,6 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
         // Check if any pair of applicable methods is incomparable due to concreteness
         let incomparableConcretenessInfo =
-            let ctx: OverloadResolutionContext = { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep }
             applicableMeths
             |> List.tryPick (fun (meth1, _, _, _) ->
                 applicableMeths

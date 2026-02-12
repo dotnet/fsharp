@@ -647,37 +647,14 @@ let private allTiebreakRules: TiebreakRule list =
         propertyOverrideRule
     ]
 
-/// Get all tiebreaker rules in priority order (ascending by TiebreakRuleId value).
-let getAllTiebreakRules () : TiebreakRule list = allTiebreakRules
-
 /// Helper to check if a rule's required feature is supported
 let private isRuleEnabled (context: OverloadResolutionContext) (rule: TiebreakRule) =
     match rule.RequiredFeature with
     | None -> true
     | Some feature -> context.g.langVersion.SupportsFeature(feature)
 
-/// Evaluate all tiebreaker rules to determine which method is better.
-/// Returns >0 if candidate is better, <0 if other is better, 0 if they are equal.
-let evaluateTiebreakRules
-    (context: OverloadResolutionContext)
-    (candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
-    (other: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
-    : int =
-
-    let rec loop rules =
-        match rules with
-        | [] -> 0
-        | rule :: rest ->
-            if isRuleEnabled context rule then
-                let c = rule.Compare context candidate other
-                if c <> 0 then c else loop rest
-            else
-                loop rest
-
-    loop allTiebreakRules
-
 /// Evaluate all tiebreaker rules and return both the result and the deciding rule.
-/// Returns (result, Some ruleId) if a rule decided, or (0, None) if all rules returned 0.
+/// Returns (result, ValueSome ruleId) if a rule decided, or (0, ValueNone) if all rules returned 0.
 let findDecidingRule
     (context: OverloadResolutionContext)
     (candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
@@ -696,28 +673,14 @@ let findDecidingRule
 
     loop allTiebreakRules
 
-/// Check if a specific rule was the deciding factor between two methods.
-/// Returns true if all rules BEFORE the specified rule returned 0, and the specified rule returned > 0.
-let wasDecidedByRule
-    (ruleId: TiebreakRuleId)
+/// Evaluate all tiebreaker rules to determine which method is better.
+/// Returns >0 if candidate is better, <0 if other is better, 0 if they are equal.
+let evaluateTiebreakRules
     (context: OverloadResolutionContext)
-    (winner: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
-    (loser: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
-    : bool =
-    let rec loop rules =
-        match rules with
-        | [] -> false
-        | rule :: rest ->
-            if isRuleEnabled context rule then
-                let c = rule.Compare context winner loser
-
-                if rule.Id = ruleId then c > 0 // The specified rule decided in favor of winner
-                elif c <> 0 then false // An earlier rule decided, so the specified rule wasn't the decider
-                else loop rest
-            else
-                loop rest
-
-    loop allTiebreakRules
+    (candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
+    (other: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
+    : int =
+    fst (findDecidingRule context candidate other)
 
 // -------------------------------------------------------------------------
 // OverloadResolutionPriority Pre-Filter (RFC: .NET 9 attribute)

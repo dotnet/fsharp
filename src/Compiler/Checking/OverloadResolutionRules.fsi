@@ -92,9 +92,6 @@ type TiebreakRule =
                 -> int
     }
 
-/// Get all tiebreaker rules in priority order (ascending by TiebreakRuleId value).
-val getAllTiebreakRules: unit -> TiebreakRule list
-
 /// Evaluate all tiebreaker rules to determine which method is better.
 /// Returns >0 if candidate is better, <0 if other is better, 0 if they are equal.
 val evaluateTiebreakRules:
@@ -110,15 +107,6 @@ val findDecidingRule:
     candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
         other: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
             int * TiebreakRuleId voption
-
-/// Check if a specific rule was the deciding factor between two methods.
-/// Returns true if all rules BEFORE the specified rule returned 0, and the specified rule returned > 0.
-val wasDecidedByRule:
-    ruleId: TiebreakRuleId ->
-    context: OverloadResolutionContext ->
-    winner: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
-        loser: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
-            bool
 
 // -------------------------------------------------------------------------
 // OverloadResolutionPriority Pre-Filter
