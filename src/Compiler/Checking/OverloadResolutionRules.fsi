@@ -11,7 +11,6 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Import
 
-/// The context needed for overload resolution rule evaluation
 type OverloadResolutionContext =
     {
         g: TcGlobals
@@ -19,6 +18,10 @@ type OverloadResolutionContext =
         m: range
         /// Nesting depth for subsumption checks
         ndeep: int
+        /// Per-method cache for GetParamDatas results, avoiding redundant calls across pairwise comparisons
+        paramDataCache: System.Collections.Generic.Dictionary<obj, ParamData list>
+        /// Per-method cache for SRTP presence checks, avoiding redundant traversals across pairwise comparisons
+        srtpCache: System.Collections.Generic.Dictionary<obj, bool>
     }
 
 /// Represents why two methods are incomparable under concreteness ordering.

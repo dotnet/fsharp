@@ -7,7 +7,6 @@ open FSharp.Test.Compiler
 open Xunit
 open Conformance.SharedTestHelpers
 
-/// Tests for the "Most Concrete" Tiebreaker for Overload Resolution
 module TiebreakerTests =
 
     let private concretenessWarningSource =

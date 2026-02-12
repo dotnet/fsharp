@@ -1257,7 +1257,6 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetCustomAttrs()
         | _ -> ILAttributes.Empty
 
-    /// Get the OverloadResolutionPriority for this method.
     /// Returns 0 if the attribute is not present or if targeting a runtime without the attribute.
     member x.GetOverloadResolutionPriority() : int =
         match x with

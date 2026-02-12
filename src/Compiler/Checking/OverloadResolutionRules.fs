@@ -16,7 +16,6 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
-/// The context needed for overload resolution rule evaluation
 type OverloadResolutionContext =
     {
         g: TcGlobals
@@ -24,6 +23,10 @@ type OverloadResolutionContext =
         m: range
         /// Nesting depth for subsumption checks
         ndeep: int
+        /// Per-method cache for GetParamDatas results, avoiding redundant calls across pairwise comparisons
+        paramDataCache: System.Collections.Generic.Dictionary<obj, ParamData list>
+        /// Per-method cache for SRTP presence checks, avoiding redundant traversals across pairwise comparisons
+        srtpCache: System.Collections.Generic.Dictionary<obj, bool>
     }
 
 /// Identifies a tiebreaker rule in overload resolution.
@@ -47,13 +50,10 @@ type TiebreakRuleId =
     | NullableOptionalInterop = 14
     | PropertyOverride = 15
 
-/// Represents a single tiebreaker rule in overload resolution.
 /// Rules are ordered by their TiebreakRuleId (lower value = higher priority).
 type TiebreakRule =
     {
-        /// Rule identifier. Rules are evaluated in ascending order by this value.
         Id: TiebreakRuleId
-        /// Human-readable description of what the rule does
         Description: string
         /// Optional LanguageFeature required for this rule to be active.
         /// If Some, the rule is skipped when the feature is not supported.
@@ -82,7 +82,6 @@ let aggregateComparisons (comparisons: int list) =
     elif not hasPositive && hasNegative then -1
     else 0
 
-/// Check if a type parameter is statically resolved (SRTP).
 /// SRTP type parameters use a different constraint solving mechanism and shouldn't
 /// be compared under the "more concrete" ordering.
 let private isStaticallyResolvedTypeParam (tp: Typar) =
@@ -90,8 +89,6 @@ let private isStaticallyResolvedTypeParam (tp: Typar) =
     | TyparStaticReq.HeadType -> true
     | TyparStaticReq.None -> false
 
-/// Check if a type contains any SRTP type variables.
-/// Used to skip the MoreConcrete tiebreaker for SRTP-heavy code.
 let rec private containsSRTPTypeVar (g: TcGlobals) (ty: TType) : bool =
     let sty = stripTyEqns g ty
 
@@ -105,7 +102,6 @@ let rec private containsSRTPTypeVar (g: TcGlobals) (ty: TType) : bool =
     | TType_measure _ -> false
     | TType_ucase _ -> false
 
-/// Compare types under the "more concrete" partial ordering.
 /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
 let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     let sty1 = stripTyEqns g ty1
@@ -116,7 +112,6 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     // constraint counts would be dead code. Both type vars are treated as equal.
     | TType_var _, TType_var _ -> 0
 
-    // SRTP type variables are excluded from concreteness comparison
     | TType_var(tp, _), _ when isStaticallyResolvedTypeParam tp -> 0
     | _, TType_var(tp, _) when isStaticallyResolvedTypeParam tp -> 0
     | TType_var _, _ -> -1
@@ -461,6 +456,41 @@ let private preferNonGenericRule: TiebreakRule =
         Compare = fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
     }
 
+let private getCachedParamData (ctx: OverloadResolutionContext) (meth: CalledMeth<Expr>) =
+    let key = meth :> obj
+
+    match ctx.paramDataCache.TryGetValue(key) with
+    | true, v -> v
+    | _ ->
+        let v =
+            meth.Method.GetParamDatas(ctx.amap, ctx.m, meth.Method.FormalMethodInst)
+            |> List.concat
+
+        ctx.paramDataCache[key] <- v
+        v
+
+let private getCachedHasSRTP (ctx: OverloadResolutionContext) (meth: CalledMeth<Expr>) =
+    let key = meth :> obj
+
+    match ctx.srtpCache.TryGetValue(key) with
+    | true, v -> v
+    | _ ->
+        let hasTyparSRTP =
+            meth.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
+
+        let hasTyArgSRTP =
+            hasTyparSRTP
+            || meth.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
+
+        let result =
+            hasTyArgSRTP
+            || (let paramData = getCachedParamData ctx meth in
+                paramData
+                |> List.exists (fun (ParamData(_, _, _, _, _, _, _, ty)) -> containsSRTPTypeVar ctx.g ty))
+
+        ctx.srtpCache[key] <- result
+        result
+
 let private moreConcreteRule: TiebreakRule =
     {
         Id = TiebreakRuleId.MoreConcrete
@@ -469,32 +499,13 @@ let private moreConcreteRule: TiebreakRule =
         Compare =
             fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
                 if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
-                    let hasAnySRTPTypeParams =
-                        candidate.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
-                        || other.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
-
-                    if hasAnySRTPTypeParams then
+                    if getCachedHasSRTP ctx candidate || getCachedHasSRTP ctx other then
                         0
                     else
-                        let formalParams1 =
-                            candidate.Method.GetParamDatas(ctx.amap, ctx.m, candidate.Method.FormalMethodInst)
-                            |> List.concat
+                        let formalParams1 = getCachedParamData ctx candidate
+                        let formalParams2 = getCachedParamData ctx other
 
-                        let formalParams2 =
-                            other.Method.GetParamDatas(ctx.amap, ctx.m, other.Method.FormalMethodInst)
-                            |> List.concat
-
-                        let hasAnySRTPInTypes =
-                            candidate.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
-                            || other.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
-                            || formalParams1
-                               |> List.exists (fun (ParamData(_, _, _, _, _, _, _, ty)) -> containsSRTPTypeVar ctx.g ty)
-                            || formalParams2
-                               |> List.exists (fun (ParamData(_, _, _, _, _, _, _, ty)) -> containsSRTPTypeVar ctx.g ty)
-
-                        if hasAnySRTPInTypes then
-                            0
-                        else if formalParams1.Length = formalParams2.Length then
+                        if formalParams1.Length = formalParams2.Length then
                             let comparisons =
                                 List.map2
                                     (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
@@ -542,7 +553,6 @@ let private propertyOverrideRule: TiebreakRule =
 // Public API
 // -------------------------------------------------------------------------
 
-/// All tiebreaker rules in priority order (ascending by TiebreakRuleId value).
 let private allTiebreakRules: TiebreakRule list =
     [
         noTDCRule
@@ -562,7 +572,6 @@ let private allTiebreakRules: TiebreakRule list =
         propertyOverrideRule
     ]
 
-/// Helper to check if a rule's required feature is supported
 let private isRuleEnabled (context: OverloadResolutionContext) (rule: TiebreakRule) =
     match rule.RequiredFeature with
     | None -> true

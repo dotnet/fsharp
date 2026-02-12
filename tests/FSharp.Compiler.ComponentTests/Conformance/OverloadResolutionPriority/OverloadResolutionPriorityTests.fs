@@ -7,7 +7,6 @@ open FSharp.Test.Compiler
 open Xunit
 open Conformance.SharedTestHelpers
 
-/// Tests for OverloadResolutionPriority attribute support (.NET 9)
 module OverloadResolutionPriorityTests =
 
     [<FactForNETCOREAPP>]

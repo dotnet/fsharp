@@ -523,7 +523,6 @@ type MethInfo =
     /// Get custom attributes for method (only applicable for IL methods)
     member GetCustomAttrs: unit -> ILAttributes
 
-    /// Get the OverloadResolutionPriority for this method.
     /// Returns 0 if the attribute is not present.
     member GetOverloadResolutionPriority: unit -> int
 

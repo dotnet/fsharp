@@ -3664,7 +3664,7 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
 and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m =
     let infoReader = csenv.InfoReader
 
-    let ctx: OverloadResolutionContext = { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep }
+    let ctx: OverloadResolutionContext = { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep; paramDataCache = System.Collections.Generic.Dictionary(); srtpCache = System.Collections.Generic.Dictionary() }
 
     let decidingRuleCache = System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>()
 
