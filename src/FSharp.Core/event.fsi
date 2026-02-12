@@ -10,7 +10,7 @@ open Microsoft.FSharp.Control
 ///
 /// <category index="3">Events and Observables</category>
 [<CompiledName("FSharpDelegateEvent`1")>]
-type DelegateEvent<'Delegate when 'Delegate :> Delegate> =
+type DelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate: not null> =
     /// <summary>Creates an event object suitable for implementing an arbitrary type of delegate.</summary>
     /// <returns>The event object.</returns>
     ///
@@ -32,7 +32,8 @@ type DelegateEvent<'Delegate when 'Delegate :> Delegate> =
 ///
 /// <category index="3">Events and Observables</category>
 [<CompiledName("FSharpEvent`2")>]
-type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct> =
+type Event<'Delegate, 'Args
+    when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct and 'Delegate: not null> =
 
     /// <summary>Creates an event object suitable for delegate types following the standard .NET Framework convention of a first 'sender' argument.</summary>
     /// <returns>The created event.</returns>

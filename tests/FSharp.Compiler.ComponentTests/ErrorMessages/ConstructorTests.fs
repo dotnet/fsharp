@@ -26,11 +26,13 @@ doSomething {Record.field1=0; field2=0}
 type Person = { Name : string; Age : int; City : string }
 let x = { Name = "Isaac", Age = 21, City = "London" }
         """
-        |> withLangVersion50
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1,   Line 3, Col 18, Line 3, Col 52, "This expression was expected to have type\n    'string'    \nbut here has type\n    ''a * 'b * 'c'    " + System.Environment.NewLine + "A ';' is used to separate field values in records. Consider replacing ',' with ';'.")
+            (Error 39,  Line 3, Col 27, Line 3, Col 30, "The value or constructor 'Age' is not defined.")
+            (Error 39,  Line 3, Col 37, Line 3, Col 41, "The value or constructor 'City' is not defined.")
+            (Error 1,   Line 3, Col 18, Line 3, Col 52, "This expression was expected to have type\n    'string'    \nbut here has type\n    'string * bool * bool'    ")
             (Error 764, Line 3, Col 9,  Line 3, Col 54, "No assignment given for field 'Age' of type 'Test.Person'")]
 
     [<Fact>]

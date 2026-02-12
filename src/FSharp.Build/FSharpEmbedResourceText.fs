@@ -270,9 +270,6 @@ open Microsoft.FSharp.Collections
 open Printf
 
 #nowarn ""3262"" // The call to Option.ofObj below is applied in multiple compilation modes for GetString, sometimes the value is typed as a non-nullable string
-#if BUILDING_WITH_LKG
-#nowarn ""3261"" // Nullness warnings can happen due to LKG not having latest fixes
-#endif
 "
 
     let StringBoilerPlate fileName =

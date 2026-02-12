@@ -490,7 +490,12 @@ type internal TransparentCompiler
 
         let applyCompilerOptions tcConfig =
             let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
-            ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
+
+            try
+                ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
+            with
+            | :? OperationCanceledException -> reraise ()
+            | exn -> errorRecovery exn range0
 
         let closure =
             LoadClosure.ComputeClosureOfScriptText(
@@ -900,8 +905,16 @@ type internal TransparentCompiler
             tcConfigB.useSimpleResolution <- useSimpleResolution
 
             // Apply command-line arguments and collect more source files if they are in the arguments
+            // Wrap in try/catch to ensure command-line parsing errors are properly captured
+            // as diagnostics rather than escaping as exceptions
             let sourceFilesNew =
-                ApplyCommandLineArgs(tcConfigB, projectSnapshot.SourceFileNames, commandLineArgs)
+                try
+                    ApplyCommandLineArgs(tcConfigB, projectSnapshot.SourceFileNames, commandLineArgs)
+                with
+                | :? OperationCanceledException -> reraise ()
+                | exn ->
+                    errorRecovery exn range0
+                    projectSnapshot.SourceFileNames
 
             // Never open PDB files for the language service, even if --standalone is specified
             tcConfigB.openDebugInformationForLaterStaticLinking <- false
@@ -948,6 +961,33 @@ type internal TransparentCompiler
 
                 // Prepare the frameworkTcImportsCache
                 let! tcGlobals, frameworkTcImports = ComputeFrameworkImports tcConfig frameworkDLLs nonFrameworkResolutions
+
+                // If the tcGlobals was loaded from a different project, langVersion and realsig may be different
+                // for each cached project.  So here we create a new tcGlobals, with the existing framework values
+                // and updated realsig and langversion
+                let tcGlobals =
+                    if
+                        tcGlobals.langVersion <> tcConfig.langVersion
+                        || tcGlobals.realsig <> tcConfig.realsig
+                    then
+                        TcGlobals(
+                            tcGlobals.compilingFSharpCore,
+                            tcGlobals.ilg,
+                            tcGlobals.fslibCcu,
+                            tcGlobals.directoryToResolveRelativePaths,
+                            tcGlobals.isInteractive,
+                            tcGlobals.checkNullness,
+                            tcGlobals.useReflectionFreeCodeGen,
+                            tcGlobals.tryFindSysTypeCcuHelper,
+                            tcGlobals.emitDebugInfoInQuotations,
+                            tcGlobals.noDebugAttributes,
+                            tcGlobals.pathMap,
+                            tcConfig.langVersion,
+                            tcConfig.realsig,
+                            tcConfig.compilationMode
+                        )
+                    else
+                        tcGlobals
 
                 // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
                 // This is ok because not much can actually go wrong here.
@@ -1013,7 +1053,6 @@ type internal TransparentCompiler
 
     let computeBootstrapInfoInner (projectSnapshot: ProjectSnapshot) =
         async {
-
             let! tcConfigB, sourceFiles, loadClosureOpt = ComputeTcConfigBuilder projectSnapshot
 
             // If this is a builder for a script, re-apply the settings inferred from the

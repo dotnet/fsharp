@@ -253,7 +253,7 @@ module internal Activity =
 
     module CsvExport =
 
-        let private escapeStringForCsv (o: obj MaybeNull) =
+        let private escapeStringForCsv (o: (obj | null)) =
             match o with
             | null -> ""
             | o ->
@@ -276,7 +276,7 @@ module internal Activity =
         let private createCsvRow (a: Activity) =
             let sb = StringBuilder(128)
 
-            let appendWithLeadingComma (s: string MaybeNull) =
+            let appendWithLeadingComma (s: (string | null)) =
                 sb.Append(',') |> ignore
                 sb.Append(s) |> ignore
 

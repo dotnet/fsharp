@@ -23,27 +23,6 @@ let PropertyHiding compilation =
     |> verifyBaselines
     |> compileAndRun
     |> shouldSucceed
-    
-[<Theory;
-  Directory(
-      folder
-      , Includes = [|
-        "ShadowWithExtensionMethod.fsx"
-        "ShadowWithTypeExtension.fsx"
-        "ShadowingAndStillOkWithChainedCalls.fsx"
-        "LinqCount.fsx"
-        "ShadowStaticProperty.fsx"
-        "ShadowWithLastOpenedTypeExtensions.fsx"
-      |]
-      , BaselineSuffix = ".support.added.later"
-)>]
-let ``PropertyHiding v7.0`` compilation =
-    compilation
-    |> asFsx
-    |> withOptions ["--langversion:7.0"]
-    |> verifyBaselines
-    |> compile
-    |> shouldFail
 
 [<Theory;
   Directory(
@@ -59,26 +38,6 @@ let ``PropertyHiding v7.0`` compilation =
 let ``PropertyHiding fails`` compilation =
     compilation
     |> asFsx
-    |> verifyBaselines
-    |> compile
-    |> shouldFail
-    
-
-[<Theory;
-  Directory(
-    folder
-    , Includes=[|
-        "E_CannotShadowIndexedPropertyWithExtensionMethod.fsx"
-        "E_CannotShadowIndexedPropertyWithTypeExtension.fsx"
-        "E_CannotShadowFunctionPropertyWithExtensionMethod.fsx"
-        "E_CannotShadowFunctionPropertyWithTypeExtension.fsx"
-        "E_NoChangeForEvent.fsx"
-    |]
-)>]
-let ``PropertyHidingFails v7.0`` compilation =
-    compilation
-    |> asFsx
-    |> withOptions ["--langversion:7.0"]
     |> verifyBaselines
     |> compile
     |> shouldFail

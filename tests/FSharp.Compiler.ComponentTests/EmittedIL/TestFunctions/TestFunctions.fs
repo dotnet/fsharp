@@ -293,7 +293,7 @@ module TestFunctions =
     let ``TestFunction24_fs`` compilation =
         compilation
         |> getCompilation
-        |> withLangVersion70
+        |> withLangVersion80
         |> verifyCompileAndRun
 
     // Verify Execution 13043 run it built not optimized with debug

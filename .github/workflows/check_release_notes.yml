@@ -50,39 +50,27 @@ jobs:
 
         echo "Opt out of release notes: $OPT_OUT_RELEASE_NOTES"
 
-        # Parse version from eng/Versions.props
-        # For FSarp.Core:
-        # <FSMajorVersion>8</FSMajorVersion>
-        # <FSMinorVersion>0</FSMinorVersion>
-        # <FSBuildVersion>100</FSBuildVersion>
-        # For FCS:
-        # FCSMajorVersion>43</FCSMajorVersion>
-        # <FCSMinorVersion>8</FCSMinorVersion>
-        # <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
-        # For VS:
-        # <VSMajorVersion>17</VSMajorVersion>
-        # <VSMinorVersion>8</VSMinorVersion>
+        # VNEXT is a GitHub repository variable set via admin settings
+        # It controls the expected release notes version for FSharp.Core and FCS
+        VNEXT="${{ vars.VNEXT }}"
+        if [[ -z "$VNEXT" ]]; then
+          echo "Error: VNEXT repository variable is not set. Please configure it in GitHub repository settings."
+          exit 1
+        fi
 
-        _fs_major_version=$(grep -oPm1 "(?<=<FSMajorVersion>)[^<]+" eng/Versions.props)
-        _fs_minor_version=$(grep -oPm1 "(?<=<FSMinorVersion>)[^<]+" eng/Versions.props)
-        _fs_build_version=$(grep -oPm1 "(?<=<FSBuildVersion>)[^<]+" eng/Versions.props)
-        _fcs_major_version=$(grep -oPm1 "(?<=<FCSMajorVersion>)[^<]+" eng/Versions.props)
-        _fcs_minor_version=$(grep -oPm1 "(?<=<FCSMinorVersion>)[^<]+" eng/Versions.props)
-        _fcs_build_version=$_fs_build_version
+        # Parse VS major version from eng/Versions.props for the vNext pattern
+        # <VSMajorVersion>18</VSMajorVersion>
         _vs_major_version=$(grep -oPm1 "(?<=<VSMajorVersion>)[^<]+" eng/Versions.props)
-        _vs_minor_version=$(grep -oPm1 "(?<=<VSMinorVersion>)[^<]+" eng/Versions.props)
 
-        FSHARP_CORE_VERSION="$_fs_major_version.$_fs_minor_version.$_fs_build_version"
-        FCS_VERSION="$_fcs_major_version.$_fcs_minor_version.$_fcs_build_version"
-        VISUAL_STUDIO_VERSION="$_vs_major_version.$_vs_minor_version"
+        FSHARP_CORE_VERSION="$VNEXT"
+        FCS_VERSION="$VNEXT"
+        VISUAL_STUDIO_VERSION="$_vs_major_version.vNext"
 
-        echo "Found F# version: ${FSHARP_CORE_VERSION}"
-        echo "Found FCS version: ${FCS_VERSION}"
-        echo "Found Visual Studio version: ${VISUAL_STUDIO_VERSION}"
+        echo "Using VNEXT for release notes: ${VNEXT}"
+        echo "Visual Studio release notes: ${VISUAL_STUDIO_VERSION}"
 
-        [[ "$FSHARP_CORE_VERSION" =~ ^[0-9]+\.[0-9]+.[0-9]+$ ]] || (echo "  Invalid FSharp.Core Version parsed"; exit 1)
-        [[ "$FCS_VERSION" =~ ^[0-9]+\.[0-9]+.[0-9]+$ ]] || (echo "  Invalid FCS Version parsed"; exit 1)
-        [[ "$VISUAL_STUDIO_VERSION" =~ ^[0-9]+\.[0-9]+$ ]] || (echo "   Invalid Visual Studio Version parsed"; exit 1)
+        [[ "$VNEXT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || (echo "  Invalid VNEXT format (expected X.Y.Z)"; exit 1)
+        [[ "$_vs_major_version" =~ ^[0-9]+$ ]] || (echo "  Invalid VS major version parsed"; exit 1)
 
         _release_notes_base_path='docs/release-notes'
         _fsharp_core_release_notes_path="${_release_notes_base_path}/.FSharp.Core/${FSHARP_CORE_VERSION}.md"

@@ -2751,13 +2751,15 @@ let TcValEarlyGeneralizationConsistencyCheck (cenv: cenv) (env: TcEnv) (v: Val, 
 /// instantiationInfoOpt is is also set when building the final call for a reference to an
 /// F# object model member, in which case the instantiationInfoOpt is the type instantiation
 /// inferred by member overload resolution.
-let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiationInfoOpt optAfterResolution m =
+let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiationInfoOpt optAfterResolution (m: range) =
     let g = cenv.g
 
     let tpsorig, _, _, _, tinst, _ as res =
         let v = vref.Deref
         let valRecInfo = v.RecursiveValInfo
-        v.SetHasBeenReferenced()
+
+        // Don't count compiler-generated refs (synthetic range) for FS1182
+        if not m.IsSynthetic then v.SetHasBeenReferenced()
 
         CheckValAccessible m env.eAccessRights vref
 
@@ -7236,6 +7238,13 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
     // Add the object type to the ungeneralizable items
     let env = {env with eUngeneralizableItems = addFreeItemOfTy objTy env.eUngeneralizableItems }
 
+    // Save the enclosing struct context BEFORE EnterFamilyRegion overwrites env.eFamilyType.
+    // This is used later to detect struct instance captures that would generate illegal byref fields.
+    let enclosingStructTyconRefOpt =
+        match env.eFamilyType with
+        | Some tcref when tcref.IsStructOrEnumTycon -> Some tcref
+        | _ -> None
+
     // Object expression members can access protected members of the implemented type
     let env = EnterFamilyRegion tcref env
     let ad = env.AccessRights
@@ -7344,8 +7353,20 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
            errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
 
         // 4. Build the implementation
-        let expr = mkObjExpr(objtyR, baseValOpt, ctorCall, overrides', extraImpls, mWholeExpr)
-        let expr = mkCoerceIfNeeded g realObjTy objtyR expr
+        // Check for struct instance captures that would generate illegal byref fields.
+        // See AnalyzeObjExprStructCaptures and TransformObjExprForStructByrefCaptures for details.
+        let shouldTransform, structCaptures, _ = 
+            AnalyzeObjExprStructCaptures enclosingStructTyconRefOpt ctorCall overrides' extraImpls
+
+        let expr =
+            if not shouldTransform then
+                // No transformation needed - build the object expression directly
+                let expr = mkObjExpr(objtyR, baseValOpt, ctorCall, overrides', extraImpls, mWholeExpr)
+                mkCoerceIfNeeded g realObjTy objtyR expr
+            else
+                // Transform to avoid byref captures
+                TransformObjExprForStructByrefCaptures g mWholeExpr structCaptures objtyR baseValOpt ctorCall overrides' extraImpls realObjTy
+
         expr, tpenv
 
 //-------------------------------------------------------------------------
@@ -10742,6 +10763,9 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
 
     let inputTypeForNextPatterns=
         let removeNull t =
+            // Strip type equations (including abbreviations) and set nullness to non-null.
+            // For type abbreviations like `type objnull = obj | null`, we need to expand
+            // the abbreviation and apply non-null to the underlying type.
             let stripped = stripTyEqns cenv.g t
             replaceNullnessOfTy KnownWithoutNull stripped
         let rec isWild (p:Pattern) =

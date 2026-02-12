@@ -93,6 +93,16 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <Import Project="Microsoft.FSharp.Core.NetSdk.props" />                       <!-- Sets initial value of FSharp.Core -->
 
+  <!-- 
+    Auto-set LangVersion for preview SDK users. 
+    When using a preview SDK and user hasn't explicitly set LangVersion,
+    derive the language version from the SDK's major version.
+    This allows SDK 11 preview users to use F# 11 features automatically.
+  -->
+  <PropertyGroup Condition="'$(LangVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(NETCoreSdkVersion)' != '' and $(NETCoreSdkVersion.StartsWith('11.'))">
+    <LangVersion>11</LangVersion>
+  </PropertyGroup>
+
   <PropertyGroup>
     <ValueTupleImplicitPackageVersion>4.6.1</ValueTupleImplicitPackageVersion>
   </PropertyGroup>

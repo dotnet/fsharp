@@ -179,7 +179,7 @@ printfn "%A" x14
             """
     [<Fact>]
     let ``dotless float``() = 
-        CompilerAssert.CompileExeWithOptions([|"--langversion:5.0"|],
+        CompilerAssert.CompileExeWithOptions([|"--langversion:8.0"|],
             """
 let x = 42f
 printfn "%A" x
@@ -194,7 +194,7 @@ printfn "%A" x
 
     [<Fact>]
     let ``dotted floats should be equal to dotless floats``() = 
-        CompilerAssert.CompileExeAndRunWithOptions([|"--langversion:5.0"|],
+        CompilerAssert.CompileExeAndRunWithOptions([|"--langversion:8.0"|],
             """
 if 1.0f <> 1f then failwith "1.0f <> 1f"
             """)
@@ -216,7 +216,7 @@ if 1e1f <> 10.f then failwith "1e1f <> 10.f"
     [<Fact>]
     let ``exponent dotted floats should be equal to dotless floats``() = 
         CompilerAssert.CompileExeAndRunWithOptions(
-            [|"--langversion:5.0"|],
+            [|"--langversion:8.0"|],
             """
 if 1.0e1f <> 10f then failwith "1.0e1f <> 10f" 
             """)
@@ -224,7 +224,7 @@ if 1.0e1f <> 10f then failwith "1.0e1f <> 10f"
     [<Fact>]
     let ``exponent dotless floats should be equal to dotless floats``() = 
         CompilerAssert.CompileExeAndRunWithOptions(
-            [|"--langversion:5.0"|],
+            [|"--langversion:8.0"|],
             """
 if 1e1f <> 10f then failwith "1e1f <> 10f" 
             """)
