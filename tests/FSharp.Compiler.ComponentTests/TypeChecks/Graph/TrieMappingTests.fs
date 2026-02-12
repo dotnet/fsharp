@@ -331,8 +331,6 @@ let _ = ()
 
 [<Fact>]
 let ``Module+Module merge promotes to Namespace and preserves both file indices`` () =
-    // Three files: files 0 and 1 both declare "module N.M", file 2 is a dummy (skipped by mkTrie).
-    // This exercises the Module+Module merge branch in mergeTrieNodes.
     let trie =
         getLastTrie
             [|
@@ -375,7 +373,6 @@ let y = 42
 
 [<Fact>]
 let ``Module+Module merge across three files preserves all file indices`` () =
-    // Four files: files 0, 1, 2 all declare "module N.M", file 3 is a dummy.
     let trie =
         getLastTrie
             [|
@@ -431,8 +428,6 @@ let z = "hello"
 
 [<Fact>]
 let ``Module+Module merge preserves children from both sides`` () =
-    // Two files under namespace N both define nested module M with different children.
-    // After merge, children from both files should be present.
     let trie =
         getLastTrie
             [|
