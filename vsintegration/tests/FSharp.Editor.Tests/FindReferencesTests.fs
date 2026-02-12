@@ -221,9 +221,7 @@ module FindReferences =
             SyntheticProject.Create(
                 { sourceFile "First" [] with
                     SignatureFile = No
-                    ExtraSource =
-                        "let get x = x + 1\n"
-                        + "let result = get 42\n"
+                    ExtraSource = "let get x = x + 1\n" + "let result = get 42\n"
                 }
             )
 
