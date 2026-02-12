@@ -13,23 +13,20 @@ open Xunit
 module TiebreakerTests =
 
     // ============================================================================
-    // Helper functions for testing overload resolution
+    // Shared test source strings for diagnostic tests
     // ============================================================================
-    
-    /// Verifies that the code compiles successfully
-    let private shouldCompile source =
-        FSharp source
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
 
-    /// Verifies that the code fails to compile with the expected error
-    let private shouldFailWithAmbiguity source =
-        FSharp source
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 41 // FS0041: A unique overload could not be determined
-        |> ignore
+    /// Common F# source for concreteness tiebreaker warning tests (3575/3576)
+    let private concretenessWarningSource =
+        """
+module Test
+
+type Example =
+    static member Invoke<'t>(value: Option<'t>) = "generic"
+    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
+
+let result = Example.Invoke(Some([1]))
+        """
 
     // ============================================================================
     // Placeholder test - validates test infrastructure is working
@@ -1769,121 +1766,60 @@ let result = SignalProcessor.Process(frequencies)
 
     // --------------------------------------------------------------------------
     // F#-Specific Types: Async, MailboxProcessor, Lazy, etc.
+    // These tests verify concreteness resolution across various F# wrapper types.
     // --------------------------------------------------------------------------
 
-    [<Fact>]
-    let ``Async - Async of int vs Async of generic`` () =
-        // Async with concrete vs generic inner type
-        FSharp """
-module Test
+    /// Test cases for concrete-vs-generic wrapper type resolution.
+    /// Each entry: (description, F# source code)
+    let concreteWrapperTestCases: obj[] seq =
+        let case desc source = [| desc :> obj; source :> obj |]
 
-type AsyncRunner =
-    static member Run(comp: Async<int>) = "int async"
-    static member Run(comp: Async<'T>) = "generic async"
+        [
+            case "Async<int> vs Async<'T>"
+                 "module Test\ntype AsyncRunner =\n    static member Run(comp: Async<int>) = \"int async\"\n    static member Run(comp: Async<'T>) = \"generic async\"\nlet computation = async { return 42 }\nlet result = AsyncRunner.Run(computation)"
 
-let computation = async { return 42 }
-let result = AsyncRunner.Run(computation)
-// Async<int> is more concrete than Async<'T>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+            case "Async<Result<int, exn>> vs Async<Result<'T, exn>>"
+                 "module Test\ntype AsyncHandler =\n    static member Handle(comp: Async<Result<int, exn>>) = \"int result async\"\n    static member Handle(comp: Async<Result<'T, exn>>) = \"generic result async\"\nlet computation : Async<Result<int, exn>> = async { return Ok 42 }\nlet result = AsyncHandler.Handle(computation)"
 
-    [<Fact>]
-    let ``Async - nested Async of Result`` () =
-        // Async<Result<int, exn>> vs Async<Result<'T, exn>>
-        FSharp """
-module Test
+            case "MailboxProcessor<int> vs MailboxProcessor<'T>"
+                 "module Test\ntype Message = Start | Stop\ntype Dispatcher =\n    static member Dispatch(mb: MailboxProcessor<int>) = \"int mailbox\"\n    static member Dispatch(mb: MailboxProcessor<'T>) = \"generic mailbox\"\nlet mb = MailboxProcessor.Start(fun inbox -> async { return () })\nlet result = Dispatcher.Dispatch(mb)"
 
-type AsyncHandler =
-    static member Handle(comp: Async<Result<int, exn>>) = "int result async"
-    static member Handle(comp: Async<Result<'T, exn>>) = "generic result async"
+            case "Lazy<int list> vs Lazy<'T>"
+                 "module Test\ntype LazyLoader =\n    static member Load(value: Lazy<int list>) = \"int list lazy\"\n    static member Load(value: Lazy<'T>) = \"generic lazy\"\nlet lazyValue = lazy [1; 2; 3]\nlet result = LazyLoader.Load(lazyValue)"
 
-let computation : Async<Result<int, exn>> = async { return Ok 42 }
-let result = AsyncHandler.Handle(computation)
-// Async<Result<int, exn>> is more concrete
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+            case "Choice<int, string> vs Choice<'T1, 'T2>"
+                 "module Test\ntype Router =\n    static member Route(choice: Choice<int, string>) = \"int or string\"\n    static member Route(choice: Choice<'T1, 'T2>) = \"generic choice\"\nlet c = Choice1Of2 42\nlet result = Router.Route(c)"
 
-    [<Fact>]
-    let ``MailboxProcessor - concrete message type vs generic`` () =
-        // MailboxProcessor with concrete vs generic message types
-        FSharp """
-module Test
+            case "ValueOption<int> vs ValueOption<'T>"
+                 "module Test\ntype ValueProcessor =\n    static member Process(v: ValueOption<int>) = \"voption int\"\n    static member Process(v: ValueOption<'T>) = \"voption generic\"\nlet vopt = ValueSome 42\nlet result = ValueProcessor.Process(vopt)"
 
-type Message = Start | Stop
+            case "seq<int> vs seq<'T>"
+                 "module Test\ntype SeqHandler =\n    static member Handle(s: seq<int>) = \"int seq\"\n    static member Handle(s: seq<'T>) = \"generic seq\"\nlet numbers = seq { 1; 2; 3 }\nlet result = SeqHandler.Handle(numbers)"
 
-type Dispatcher =
-    static member Dispatch(mb: MailboxProcessor<int>) = "int mailbox"
-    static member Dispatch(mb: MailboxProcessor<'T>) = "generic mailbox"
+            case "Option<int> list vs Option<'T> list"
+                 "module Test\ntype ListHandler =\n    static member Handle(lst: Option<int> list) = \"option int list\"\n    static member Handle(lst: Option<'T> list) = \"option generic list\"\nlet items = [ Some 1; Some 2; None ]\nlet result = ListHandler.Handle(items)"
 
-let mb = MailboxProcessor.Start(fun inbox -> async { return () })
-let result = Dispatcher.Dispatch(mb)
-// MailboxProcessor<int> would be more concrete, but mb is generic here
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+            case "Async<int * string> vs Async<'T>"
+                 "module Test\ntype AsyncBuilder =\n    static member Wrap(comp: Async<int * string>) = \"tuple async\"\n    static member Wrap(comp: Async<'T>) = \"generic async\"\nlet work = async { return (42, \"hello\") }\nlet result = AsyncBuilder.Wrap(work)"
 
-    [<Fact>]
-    let ``Lazy - Lazy of complex type vs generic`` () =
-        // Lazy with concrete inner type
-        FSharp """
-module Test
+            case "Result<int, string> vs Result<int, 'E>"
+                 "module Test\ntype ErrorHandler =\n    static member Handle(r: Result<int, string>) = \"int result string error\"\n    static member Handle(r: Result<int, 'E>) = \"int result generic error\"\nlet ok : Result<int, string> = Ok 42\nlet result = ErrorHandler.Handle(ok)"
 
-type LazyLoader =
-    static member Load(value: Lazy<int list>) = "int list lazy"
-    static member Load(value: Lazy<'T>) = "generic lazy"
+            case "Tree<int> vs Tree<'T>"
+                 "module Test\ntype Tree<'T> =\n    | Leaf of 'T\n    | Node of Tree<'T> * Tree<'T>\ntype TreeProcessor =\n    static member Process(t: Tree<int>) = \"int tree\"\n    static member Process(t: Tree<'T>) = \"generic tree\"\nlet tree = Node(Leaf 1, Leaf 2)\nlet result = TreeProcessor.Process(tree)"
+        ]
 
-let lazyValue = lazy [1; 2; 3]
-let result = LazyLoader.Load(lazyValue)
-// Lazy<int list> is more concrete than Lazy<'T>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Choice - Choice with concrete types vs generic`` () =
-        // Choice types with concreteness
-        FSharp """
-module Test
-
-type Router =
-    static member Route(choice: Choice<int, string>) = "int or string"
-    static member Route(choice: Choice<'T1, 'T2>) = "generic choice"
-
-let c = Choice1Of2 42
-let result = Router.Route(c)
-// Choice<int, string> is more concrete than Choice<'T1, 'T2>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Voption - ValueOption of int vs generic`` () =
-        // ValueOption with concrete type
-        FSharp """
-module Test
-
-type ValueProcessor =
-    static member Process(v: ValueOption<int>) = "voption int"
-    static member Process(v: ValueOption<'T>) = "voption generic"
-
-let vopt = ValueSome 42
-let result = ValueProcessor.Process(vopt)
-// ValueOption<int> is more concrete than ValueOption<'T>
-        """
+    [<Theory>]
+    [<MemberData(nameof concreteWrapperTestCases)>]
+    let ``Concrete wrapper type resolves over generic`` (_description: string) (source: string) =
+        FSharp source
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     [<FactForNETCOREAPP>]
     let ``ValueTask - ValueTask of int vs generic`` () =
-        // ValueTask with concrete inner type
+        // ValueTask with concrete inner type (requires .NET Core)
         FSharp """
 module Test
 
@@ -1895,133 +1831,20 @@ type TaskRunner =
 
 let vt = ValueTask<int>(42)
 let result = TaskRunner.Run(vt)
-// ValueTask<int> is more concrete than ValueTask<'T>
         """
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     // --------------------------------------------------------------------------
-    // Computation Expression Integration Tests
+    // Diagnostic Tests
     // --------------------------------------------------------------------------
-
-    [<Fact>]
-    let ``CE - seq expression with concrete element type`` () =
-        // Seq with concrete element type
-        FSharp """
-module Test
-
-type SeqHandler =
-    static member Handle(s: seq<int>) = "int seq"
-    static member Handle(s: seq<'T>) = "generic seq"
-
-let numbers = seq { 1; 2; 3 }
-let result = SeqHandler.Handle(numbers)
-// seq<int> is more concrete than seq<'T>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``CE - list comprehension with complex type`` () =
-        // List with nested option
-        FSharp """
-module Test
-
-type ListHandler =
-    static member Handle(lst: Option<int> list) = "option int list"
-    static member Handle(lst: Option<'T> list) = "option generic list"
-
-let items = [ Some 1; Some 2; None ]
-let result = ListHandler.Handle(items)
-// Option<int> list is more concrete
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``CE - async comprehension result type`` () =
-        // Async comprehension with specific return type
-        FSharp """
-module Test
-
-type AsyncBuilder =
-    static member Wrap(comp: Async<int * string>) = "tuple async"
-    static member Wrap(comp: Async<'T>) = "generic async"
-
-let work = async {
-    return (42, "hello")
-}
-let result = AsyncBuilder.Wrap(work)
-// Async<int * string> is more concrete than Async<'T>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // --------------------------------------------------------------------------
-    // Discriminated Union Tests
-    // --------------------------------------------------------------------------
-
-    [<Fact>]
-    let ``DU - Result with concrete error type`` () =
-        // Result with concrete error type
-        FSharp """
-module Test
-
-type ErrorHandler =
-    static member Handle(r: Result<int, string>) = "int result string error"
-    static member Handle(r: Result<int, 'E>) = "int result generic error"
-
-let ok : Result<int, string> = Ok 42
-let result = ErrorHandler.Handle(ok)
-// Result<int, string> is more concrete than Result<int, 'E>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``DU - Nested custom DU with generics`` () =
-        // Custom DU with generic type parameters
-        FSharp """
-module Test
-
-type Tree<'T> =
-    | Leaf of 'T
-    | Node of Tree<'T> * Tree<'T>
-
-type TreeProcessor =
-    static member Process(t: Tree<int>) = "int tree"
-    static member Process(t: Tree<'T>) = "generic tree"
-
-let tree = Node(Leaf 1, Leaf 2)
-let result = TreeProcessor.Process(tree)
-// Tree<int> is more concrete than Tree<'T>
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    // ============================================================================
-    // Diagnostic Tests - Warning FS3575 for Concreteness Tiebreaker
-    // ============================================================================
 
     [<Fact>]
     let ``Warning 3575 - Not emitted by default when concreteness tiebreaker used`` () =
         // By default, warning 3575 is off, so no warning should be emitted
         // Both overloads are generic, but one is more concrete
-        FSharp """
-module Test
-
-type Example =
-    static member Invoke<'t>(value: Option<'t>) = "generic"
-    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
-
-let result = Example.Invoke(Some([1]))
-        """
+        FSharp concretenessWarningSource
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
@@ -2031,15 +1854,7 @@ let result = Example.Invoke(Some([1]))
     let ``Warning 3575 - Emitted when enabled and concreteness tiebreaker is used`` () =
         // When --warnon:3575 is passed, warning should be emitted
         // Both overloads are generic, but Option<'t list> is more concrete than Option<'t>
-        FSharp """
-module Test
-
-type Example =
-    static member Invoke<'t>(value: Option<'t>) = "generic"
-    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
-
-let result = Example.Invoke(Some([1]))
-        """
+        FSharp concretenessWarningSource
         |> withLangVersionPreview
         |> withOptions ["--warnon:3575"]
         |> typecheck
@@ -2055,15 +1870,7 @@ let result = Example.Invoke(Some([1]))
     [<Fact>]
     let ``Warning 3576 - Off by default`` () =
         // By default, warning 3576 is off, so no warning should be emitted
-        FSharp """
-module Test
-
-type Example =
-    static member Invoke<'t>(value: Option<'t>) = "generic"
-    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
-
-let result = Example.Invoke(Some([1]))
-        """
+        FSharp concretenessWarningSource
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
@@ -2072,15 +1879,7 @@ let result = Example.Invoke(Some([1]))
     [<Fact>]
     let ``Warning 3576 - Emitted when enabled and generic overload is bypassed`` () =
         // When --warnon:3576 is passed, warning should be emitted for bypassed generic overload
-        FSharp """
-module Test
-
-type Example =
-    static member Invoke<'t>(value: Option<'t>) = "generic"
-    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
-
-let result = Example.Invoke(Some([1]))
-        """
+        FSharp concretenessWarningSource
         |> withLangVersionPreview
         |> withOptions ["--warnon:3576"]
         |> typecheck
@@ -2092,15 +1891,7 @@ let result = Example.Invoke(Some([1]))
     [<Fact>]
     let ``Warning 3576 - Shows bypassed and selected overload names`` () =
         // FS3576 should show the bypassed overload and the selected one
-        FSharp """
-module Test
-
-type Example =
-    static member Invoke<'t>(value: Option<'t>) = "generic"
-    static member Invoke<'t>(value: Option<'t list>) = "more concrete"
-
-let result = Example.Invoke(Some([1]))
-        """
+        FSharp concretenessWarningSource
         |> withLangVersionPreview
         |> withOptions ["--warnon:3576"]
         |> typecheck
@@ -2273,106 +2064,7 @@ let result = wrapTwice 21
 
     /// C# library with OverloadResolutionPriority test types
     let private csharpPriorityLib =
-        CSharp """
-using System;
-using System.Runtime.CompilerServices;
-
-namespace PriorityTests
-{
-    /// Basic priority within same type - higher priority should win
-    public static class BasicPriority
-    {
-        [OverloadResolutionPriority(1)]
-        public static string HighPriority(object o) => "high";
-        
-        [OverloadResolutionPriority(0)]
-        public static string LowPriority(object o) => "low";
-        
-        // Overloaded methods with same name but different priorities
-        [OverloadResolutionPriority(2)]
-        public static string Invoke(object o) => "priority-2";
-        
-        [OverloadResolutionPriority(1)]
-        public static string Invoke(string s) => "priority-1-string";
-        
-        [OverloadResolutionPriority(0)]
-        public static string Invoke(int i) => "priority-0-int";
-    }
-    
-    /// Negative priority - should be deprioritized (used for backward compat scenarios)
-    public static class NegativePriority
-    {
-        [OverloadResolutionPriority(-1)]
-        public static string Legacy(object o) => "legacy";
-        
-        public static string Legacy(string s) => "current"; // default priority 0
-        
-        // Multiple negative levels
-        [OverloadResolutionPriority(-2)]
-        public static string Obsolete(object o) => "very-old";
-        
-        [OverloadResolutionPriority(-1)]
-        public static string Obsolete(string s) => "old";
-        
-        public static string Obsolete(int i) => "new"; // default priority 0
-    }
-    
-    /// Priority overrides type concreteness
-    public static class PriorityVsConcreteness
-    {
-        // Less concrete but higher priority - should win
-        [OverloadResolutionPriority(1)]
-        public static string Process<T>(T value) => "generic-high-priority";
-        
-        // More concrete but lower priority - should lose
-        [OverloadResolutionPriority(0)]
-        public static string Process(int value) => "int-low-priority";
-        
-        // Another scenario: wrapped generic with priority beats concrete
-        [OverloadResolutionPriority(1)]
-        public static string Handle<T>(T[] arr) => "array-generic-high";
-        
-        public static string Handle(int[] arr) => "array-int-default";
-    }
-    
-    /// Priority is scoped per-declaring-type for extension methods
-    public static class ExtensionTypeA
-    {
-        [OverloadResolutionPriority(1)]
-        public static string ExtMethod(this string s, int x) => "TypeA-priority1";
-        
-        public static string ExtMethod(this string s, object o) => "TypeA-priority0";
-    }
-    
-    public static class ExtensionTypeB
-    {
-        // Different declaring type - priority is independent
-        [OverloadResolutionPriority(2)]
-        public static string ExtMethod(this string s, int x) => "TypeB-priority2";
-        
-        public static string ExtMethod(this string s, object o) => "TypeB-priority0";
-    }
-    
-    /// Default priority is 0 when attribute is absent
-    public static class DefaultPriority
-    {
-        // No attribute - implicit priority 0
-        public static string NoAttr(object o) => "no-attr";
-        
-        [OverloadResolutionPriority(0)]
-        public static string ExplicitZero(object o) => "explicit-zero";
-        
-        [OverloadResolutionPriority(1)]
-        public static string PositiveOne(object o) => "positive-one";
-        
-        // Overloads where one has attribute and one doesn't
-        public static string Mixed(string s) => "mixed-default";
-        
-        [OverloadResolutionPriority(1)]
-        public static string Mixed(object o) => "mixed-priority";
-    }
-}
-"""
+        CSharpFromPath (__SOURCE_DIRECTORY__ ++ "../OverloadResolutionPriority/CSharpPriorityLib.cs")
         |> withCSharpLanguageVersionPreview
         |> withName "CSharpPriorityLib"
     // ============================================================================

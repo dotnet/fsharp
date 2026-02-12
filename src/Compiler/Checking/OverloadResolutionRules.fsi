@@ -103,6 +103,14 @@ val evaluateTiebreakRules:
         other: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
             int
 
+/// Evaluate all tiebreaker rules and return both the result and the deciding rule.
+/// Returns (result, ValueSome ruleId) if a rule decided, or (0, ValueNone) if all rules returned 0.
+val findDecidingRule:
+    context: OverloadResolutionContext ->
+    candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
+        other: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
+            int * TiebreakRuleId voption
+
 /// Check if a specific rule was the deciding factor between two methods.
 /// Returns true if all rules BEFORE the specified rule returned 0, and the specified rule returned > 0.
 val wasDecidedByRule:

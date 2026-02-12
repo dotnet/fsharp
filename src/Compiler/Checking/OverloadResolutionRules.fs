@@ -74,8 +74,9 @@ type TiebreakRule =
 /// Returns 1 if ty1 dominates (better in some positions, not worse in any),
 /// -1 if ty2 dominates, 0 if incomparable or equal.
 let aggregateComparisons (comparisons: int list) =
-    let hasPositive = comparisons |> List.exists (fun c -> c > 0)
-    let hasNegative = comparisons |> List.exists (fun c -> c < 0)
+    let struct (hasPositive, hasNegative) =
+        (struct (false, false), comparisons)
+        ||> List.fold (fun (struct (p, n)) c -> struct (p || c > 0, n || c < 0))
 
     if not hasNegative && hasPositive then 1
     elif not hasPositive && hasNegative then -1
@@ -360,14 +361,7 @@ let private compareArg (ctx: OverloadResolutionContext) (calledArg1: CalledArg) 
 let private compareArgLists ctx (args1: CalledArg list) (args2: CalledArg list) =
     if args1.Length = args2.Length then
         let cs = (args1, args2) ||> List.map2 (compareArg ctx)
-        // "all args are at least as good, and one argument is actually better"
-        if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then
-            1
-        // "all args are at least as bad, and one argument is actually worse"
-        elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then
-            -1
-        else
-            0
+        aggregateComparisons cs
     else
         0
 
@@ -504,14 +498,8 @@ let private unnamedArgsRule: TiebreakRule =
                         objArgComparisons
                         @ ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs)
                            ||> List.map2 (compareArg ctx))
-                    // "all args are at least as good, and one argument is actually better"
-                    if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then
-                        1
-                    // "all args are at least as bad, and one argument is actually worse"
-                    elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then
-                        -1
-                    else
-                        0
+
+                    aggregateComparisons cs
                 else
                     0
     }
@@ -609,15 +597,12 @@ let private nullableOptionalInteropRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NullableOptionalInterop
         Description = "F# 5.0 rule - compare all arguments including optional and named"
-        RequiredFeature = None
+        RequiredFeature = Some LanguageFeature.NullableOptionalInterop
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
-                if ctx.g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) then
-                    let args1 = candidate.AllCalledArgs |> List.concat
-                    let args2 = other.AllCalledArgs |> List.concat
-                    compareArgLists ctx args1 args2
-                else
-                    0
+                let args1 = candidate.AllCalledArgs |> List.concat
+                let args2 = other.AllCalledArgs |> List.concat
+                compareArgLists ctx args1 args2
     }
 
 /// Rule 15: For properties with partial override, prefer more derived type
@@ -642,8 +627,8 @@ let private propertyOverrideRule: TiebreakRule =
 // Public API
 // -------------------------------------------------------------------------
 
-/// Get all tiebreaker rules in priority order (ascending by TiebreakRuleId value).
-let getAllTiebreakRules () : TiebreakRule list =
+/// All tiebreaker rules in priority order (ascending by TiebreakRuleId value).
+let private allTiebreakRules: TiebreakRule list =
     [
         noTDCRule
         lessTDCRule
@@ -662,6 +647,9 @@ let getAllTiebreakRules () : TiebreakRule list =
         propertyOverrideRule
     ]
 
+/// Get all tiebreaker rules in priority order (ascending by TiebreakRuleId value).
+let getAllTiebreakRules () : TiebreakRule list = allTiebreakRules
+
 /// Helper to check if a rule's required feature is supported
 let private isRuleEnabled (context: OverloadResolutionContext) (rule: TiebreakRule) =
     match rule.RequiredFeature with
@@ -675,7 +663,6 @@ let evaluateTiebreakRules
     (candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
     (other: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
     : int =
-    let rules = getAllTiebreakRules ()
 
     let rec loop rules =
         match rules with
@@ -687,7 +674,27 @@ let evaluateTiebreakRules
             else
                 loop rest
 
-    loop rules
+    loop allTiebreakRules
+
+/// Evaluate all tiebreaker rules and return both the result and the deciding rule.
+/// Returns (result, Some ruleId) if a rule decided, or (0, None) if all rules returned 0.
+let findDecidingRule
+    (context: OverloadResolutionContext)
+    (candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
+    (other: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
+    : int * TiebreakRuleId voption =
+
+    let rec loop rules =
+        match rules with
+        | [] -> 0, ValueNone
+        | rule :: rest ->
+            if isRuleEnabled context rule then
+                let c = rule.Compare context candidate other
+                if c <> 0 then c, ValueSome rule.Id else loop rest
+            else
+                loop rest
+
+    loop allTiebreakRules
 
 /// Check if a specific rule was the deciding factor between two methods.
 /// Returns true if all rules BEFORE the specified rule returned 0, and the specified rule returned > 0.
@@ -697,8 +704,6 @@ let wasDecidedByRule
     (winner: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
     (loser: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
     : bool =
-    let rules = getAllTiebreakRules ()
-
     let rec loop rules =
         match rules with
         | [] -> false
@@ -712,7 +717,7 @@ let wasDecidedByRule
             else
                 loop rest
 
-    loop rules
+    loop allTiebreakRules
 
 // -------------------------------------------------------------------------
 // OverloadResolutionPriority Pre-Filter (RFC: .NET 9 attribute)
@@ -725,21 +730,27 @@ let filterByOverloadResolutionPriority<'T> (g: TcGlobals) (getMeth: 'T -> MethIn
     | []
     | [ _ ] -> candidates
     | _ when not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) -> candidates
-    | _ when
-        candidates
-        |> List.forall (fun c -> (getMeth c).GetOverloadResolutionPriority() = 0)
-        ->
-        candidates
     | twoOrMoreCandidates ->
-        twoOrMoreCandidates
-        |> List.map (fun c ->
-            let m = getMeth c
-            let stamp = (tcrefOfAppTy g m.ApparentEnclosingType).Stamp
-            (c, stamp, m.GetOverloadResolutionPriority()))
-        |> List.groupBy (fun (_, stamp, _) -> stamp)
-        |> List.collect (fun (_, group) ->
-            let _, _, maxPrio = group |> List.maxBy (fun (_, _, prio) -> prio)
+        let enriched =
+            twoOrMoreCandidates
+            |> List.map (fun c ->
+                let m = getMeth c
 
-            group
-            |> List.filter (fun (_, _, prio) -> prio = maxPrio)
-            |> List.map (fun (c, _, _) -> c))
+                let stamp =
+                    match tryTcrefOfAppTy g m.ApparentEnclosingType with
+                    | ValueSome tcref -> tcref.Stamp
+                    | ValueNone -> 0L
+
+                (c, stamp, m.GetOverloadResolutionPriority()))
+
+        if enriched |> List.forall (fun (_, _, prio) -> prio = 0) then
+            candidates
+        else
+            enriched
+            |> List.groupBy (fun (_, stamp, _) -> stamp)
+            |> List.collect (fun (_, group) ->
+                let _, _, maxPrio = group |> List.maxBy (fun (_, _, prio) -> prio)
+
+                group
+                |> List.filter (fun (_, _, prio) -> prio = maxPrio)
+                |> List.map (fun (c, _, _) -> c))

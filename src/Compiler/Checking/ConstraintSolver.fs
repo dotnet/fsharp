@@ -3664,14 +3664,10 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
 and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m =
     let infoReader = csenv.InfoReader
 
-    // Apply priority pre-filter before tiebreaker comparison
-    let applicableMeths = 
-        applicableMeths
-        |> filterByOverloadResolutionPriority csenv.g (fun (cm, _, _, _) -> cm.Method)
+    let ctx: OverloadResolutionContext = { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep }
 
     /// Check whether one overload is better than another
     let better (candidate: CalledMeth<_>, candidateWarnings, _, usesTDC1) (other: CalledMeth<_>, otherWarnings, _, usesTDC2) =
-        let ctx: OverloadResolutionContext = { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep }
         let candidateWarnCount = List.length candidateWarnings
         let otherWarnCount = List.length otherWarnings
         evaluateTiebreakRules ctx (candidate, usesTDC1, candidateWarnCount) (other, usesTDC2, otherWarnCount)
@@ -3679,13 +3675,12 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
     /// Check if concreteness tiebreaker was the deciding factor between winner and loser
     /// Returns Some with method name strings if concreteness decided, None otherwise 
     let wasConcretenessTiebreaker (winner: CalledMeth<_>, winnerWarnings, _, winnerTDC) (loser: CalledMeth<_>, loserWarnings, _, loserTDC) =
-        let ctx: OverloadResolutionContext = { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep }
         let winnerWarnCount = List.length winnerWarnings
         let loserWarnCount = List.length loserWarnings
-        if wasDecidedByRule TiebreakRuleId.MoreConcrete ctx (winner, winnerTDC, winnerWarnCount) (loser, loserTDC, loserWarnCount) then
-            Some (winner.Method.DisplayName, loser.Method.DisplayName)
-        else
-            None
+        let _, decidingRule = findDecidingRule ctx (winner, winnerTDC, winnerWarnCount) (loser, loserTDC, loserWarnCount)
+        match decidingRule with
+        | ValueSome TiebreakRuleId.MoreConcrete -> Some (winner.Method.DisplayName, loser.Method.DisplayName)
+        | _ -> None
 
     let bestMethods =
         let indexedApplicableMeths = applicableMeths |> List.indexed
