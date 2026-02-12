@@ -83,7 +83,9 @@ properties=""
 docker=false
 args=""
 
-tfm="net10.0" # This needs to be changed every time it's bumped by arcade/us.
+# TFM will be resolved after InitializeDotNetCli ensures the SDK is available.
+# Can be overridden via --tfm argument.
+tfm=""
 
 BuildCategory=""
 BuildMessage=""
@@ -351,6 +353,11 @@ function TrapAndReportError {
 trap TrapAndReportError EXIT
 
 InitializeDotNetCli $restore
+
+# Resolve product TFM from centralized source of truth if not overridden via --tfm
+if [[ "$tfm" == "" ]]; then
+  tfm=$("$DOTNET_INSTALL_DIR/dotnet" msbuild "$scriptroot/TargetFrameworks.props" -getProperty:FSharpNetCoreProductTargetFramework 2>/dev/null | tr -d '[:space:]')
+fi
 
 BuildSolution
 

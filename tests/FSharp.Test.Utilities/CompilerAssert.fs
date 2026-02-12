@@ -615,16 +615,18 @@ module CompilerAssertHelpers =
         let fileName = "dotnet"
         let arguments = outputFilePath
 
-        let runtimeconfig = """
-{
-    "runtimeOptions": {
-        "tfm": "net10.0",
-        "framework": {
+        // Derive the runtime version from productTfm (e.g., "net10.0" -> "10.0.0")
+        let runtimeVersion = productTfm.Replace("net", "") + ".0"
+        let runtimeconfig = $"""
+{{
+    "runtimeOptions": {{
+        "tfm": "{productTfm}",
+        "framework": {{
             "name": "Microsoft.NETCore.App",
-            "version": "10.0.0"
-        }
-    }
-}"""
+            "version": "{runtimeVersion}"
+        }}
+    }}
+}}"""
         let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
         File.WriteAllText(runtimeconfigPath, runtimeconfig)
 #endif

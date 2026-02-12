@@ -113,26 +113,69 @@ let mkSourceExprConditional isFromSource callExpr sourceMethInfo builderValName 
 let inline mkSynLambda p e m =
     SynExpr.Lambda(false, false, p, e, None, m, SynExprLambdaTrivia.Zero)
 
+// Use synthetic ranges so compiler-generated varSpace refs don't mark vals as referenced for FS1182
 let mkExprForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynExpr.Const(SynConst.Unit, m)
-    | [ v ] -> SynExpr.Ident v.Id
-    | vs -> SynExpr.Tuple(false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id))), [], m)
+    | [ v ] -> SynExpr.Ident(v.Id.MakeSynthetic())
+    | vs -> SynExpr.Tuple(false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id.MakeSynthetic()))), [], m)
 
 let mkSimplePatForVarSpace m (patvs: Val list) =
-    let spats =
-        match patvs with
-        | [] -> []
-        | [ v ] -> [ mkSynSimplePatVar false v.Id ]
-        | vs -> vs |> List.map (fun v -> mkSynSimplePatVar false v.Id)
-
-    SynSimplePats.SimplePats(spats, [], m)
+    SynSimplePats.SimplePats(List.map (fun (v: Val) -> mkSynSimplePatVar false v.Id) patvs, [], m)
 
 let mkPatForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynPat.Const(SynConst.Unit, m)
     | [ v ] -> mkSynPatVar None v.Id
     | vs -> SynPat.Tuple(false, (vs |> List.map (fun x -> mkSynPatVar None x.Id)), [], m)
+
+/// Transfer HasBeenReferenced across query lambda Vals with the same declaration range.
+/// In queries, multiple lambdas share Vals originating from the same source declaration (e.g., for x).
+/// If any is referenced by user code, mark all with the same origin as referenced to avoid FS1182 false positives.
+/// Grouping by declaration range (not name) correctly handles shadowing.
+let transferVarSpaceReferences (expr: Expr) =
+    let valsByRange = Dictionary<range, ResizeArray<Val>>()
+
+    let addVal (v: Val) =
+        let key = v.Range
+
+        let vals =
+            match valsByRange.TryGetValue(key) with
+            | true, existing -> existing
+            | false, _ ->
+                let newVals = ResizeArray(1)
+                valsByRange[key] <- newVals
+                newVals
+
+        vals.Add(v)
+
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF z e ->
+                    match e with
+                    | Expr.Lambda(_, _, _, argVals, _, _, _) -> argVals |> List.iter addVal
+                    | _ -> ()
+
+                    noInterceptF z e
+            valBindingSiteIntercept =
+                fun z (_, v) ->
+                    addVal v
+                    z
+        }
+
+    FoldExpr folder () expr |> ignore
+
+    for KeyValue(_, vals) in valsByRange do
+        let mutable anyReferenced = false
+
+        for v in vals do
+            if v.HasBeenReferenced then
+                anyReferenced <- true
+
+        if anyReferenced then
+            for v in vals do
+                v.SetHasBeenReferenced()
 
 let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
@@ -3067,6 +3110,10 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let lambdaExpr, tpenv =
         TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
+
+    // For queries, transfer HasBeenReferenced from compiler-generated varSpace Vals to user Vals
+    if isQuery then
+        transferVarSpaceReferences lambdaExpr
 
     // beta-var-reduce to bind the builder using a 'let' binding
     let coreExpr =

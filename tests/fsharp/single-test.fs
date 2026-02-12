@@ -219,7 +219,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     let extraSources = ["testlib.fsi";"testlib.fs";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
     let utilitySources = []
     let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
-    let framework = "net10.0"
+    let framework = productTfm
 
     // Arguments:
     //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
@@ -283,8 +283,8 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     match p with
 #if NETCOREAPP
-    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net10.0" optimized buildOnly
-    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net10.0" true false
+    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" productTfm optimized buildOnly
+    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" productTfm true false
 #else
     | FSC_NETFX (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" optimized buildOnly
     | FSI_NETFX -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
