@@ -304,9 +304,7 @@ jobs:
       displayName: Extract compiler timing from binlogs for ${{ item.displayName }}
       condition: always()
       continueOnError: true
-      env:
-        # Avoid global.json SDK version mismatch — use whatever SDK is available
-        DOTNET_ROLL_FORWARD: LatestMajor
+      workingDirectory: '$(Pipeline.Workspace)'
 
     - task: PublishPipelineArtifact@1
       displayName:  Publish ${{ item.displayName }} Binary Logs
