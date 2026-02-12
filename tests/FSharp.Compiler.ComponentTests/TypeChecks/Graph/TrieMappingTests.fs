@@ -371,6 +371,12 @@ let y = 42
     let mNode = nNode.Children.["M"]
     Assert.Equal<Set<FileIndex>>(set [| 0; 1 |], mNode.Files)
 
+    match mNode.Current with
+    | TrieNodeInfo.Namespace(_, filesThatExposeTypes, filesDefiningNamespaceWithoutTypes) ->
+        Assert.Equal<Set<FileIndex>>(set [| 0; 1 |], set filesThatExposeTypes)
+        Assert.True(filesDefiningNamespaceWithoutTypes.Count = 0, "filesDefiningNamespaceWithoutTypes should be empty after Module+Module merge")
+    | other -> Assert.Fail($"Expected Namespace after Module+Module merge, got {other}")
+
 [<Fact>]
 let ``Module+Module merge across three files preserves all file indices`` () =
     let trie =
@@ -426,6 +432,11 @@ let z = "hello"
     let mNode = nNode.Children.["M"]
     Assert.Equal<Set<FileIndex>>(set [| 0; 1; 2 |], mNode.Files)
 
+    match mNode.Current with
+    | TrieNodeInfo.Namespace(_, filesThatExposeTypes, _) ->
+        Assert.Equal<Set<FileIndex>>(set [| 0; 1; 2 |], set filesThatExposeTypes)
+    | other -> Assert.Fail($"Expected Namespace after triple Module merge, got {other}")
+
 [<Fact>]
 let ``Module+Module merge preserves children from both sides`` () =
     let trie =
@@ -471,6 +482,12 @@ module M =
     let nNode = trie.Children.["N"]
     let mNode = nNode.Children.["M"]
     Assert.Equal<Set<FileIndex>>(set [| 0; 1 |], mNode.Files)
+
+    match mNode.Current with
+    | TrieNodeInfo.Namespace(_, filesThatExposeTypes, _) ->
+        Assert.Equal<Set<FileIndex>>(set [| 0; 1 |], set filesThatExposeTypes)
+    | other -> Assert.Fail($"Expected Namespace after Module+Module merge, got {other}")
+
     Assert.True(mNode.Children.ContainsKey("Child1"), "Child1 from file 0 should survive merge")
     Assert.True(mNode.Children.ContainsKey("Child2"), "Child2 from file 1 should survive merge")
     Assert.Equal(2, mNode.Children.Count)
