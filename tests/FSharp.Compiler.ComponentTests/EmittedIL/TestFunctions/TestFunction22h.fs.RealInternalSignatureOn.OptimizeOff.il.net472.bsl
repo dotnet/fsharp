@@ -3,6 +3,7 @@
 
 
 
+.assembly extern runtime { }
 .assembly extern FSharp.Core { }
 .assembly assembly
 {
