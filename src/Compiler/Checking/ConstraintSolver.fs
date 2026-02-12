@@ -3666,7 +3666,6 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     let ctx: OverloadResolutionContext = { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep }
 
-    // Cache deciding rules from pairwise comparisons to avoid re-evaluation
     let decidingRuleCache = System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>()
 
     /// Check whether one overload is better than another
@@ -3690,7 +3689,6 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     match bestMethods with 
     | [(calledMeth, warns, t, _)] ->
-        // Check if concreteness tiebreaker was decisive against any other candidate
         let concretenessWarns =
             applicableMeths
             |> List.choose (fun loser ->
@@ -3708,10 +3706,8 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
             match concretenessWarns with
             | [] -> warns
             | (winnerName, loserName) :: _ ->
-                // Add the concreteness tiebreaker warning (FS3575)
                 let warn3575 =
                     Error(FSComp.SR.tcMoreConcreteTiebreakerUsed (winnerName, winnerName, loserName), m)
-                // Add FS3576 for each bypassed generic overload
                 let warn3576List =
                     concretenessWarns
                     |> List.map (fun (winner, loser) -> Error(FSComp.SR.tcGenericOverloadBypassed (loser, winner), m))
@@ -3742,7 +3738,6 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
         let methods = List.concat methods
 
-        // Check if any pair of applicable methods is incomparable due to concreteness
         let incomparableConcretenessInfo =
             applicableMeths
             |> List.tryPick (fun (meth1, _, _, _) ->

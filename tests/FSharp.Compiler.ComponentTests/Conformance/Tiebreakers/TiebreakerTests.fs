@@ -36,36 +36,6 @@ let result = Example.Invoke(42)
         |> ignore
 
     [<Fact>]
-    let ``RFC Example - Option of int list vs Option of generic - resolves to more concrete`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Invoke(value: Option<'t>) = "generic"
-    static member Invoke(value: Option<int list>) = "concrete"
-
-let result = Example.Invoke(Some([1]))
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Non-generic overload is preferred over generic - existing behavior`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Process(value: 't) = "generic"
-    static member Process(value: int) = "int"
-
-let result = Example.Process(42)
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
     let ``Example 1 - Basic Generic vs Concrete - Option of t vs Option of int`` () =
         FSharp """
 module Test
@@ -462,109 +432,49 @@ let result = Example.Process(Some(Some 42))
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``Example 11 - Both Have Optional - concreteness breaks tie`` () =
-        FSharp """
-module Test
+    let bothHaveOptionalTestCases: obj[] seq =
+        let case desc source = [| desc :> obj; source :> obj |]
 
-type Example =
-    static member Format(value: Option<'t>, ?prefix: string) = "generic"
-    static member Format(value: Option<int>, ?prefix: string) = "int"
+        [
+            case "Same optional types"
+                 "module Test\ntype Example =\n    static member Format(value: Option<'t>, ?prefix: string) = \"generic\"\n    static member Format(value: Option<int>, ?prefix: string) = \"int\"\nlet result = Example.Format(Some 42)"
 
-let result = Example.Format(Some 42)
-        """
+            case "Different optional types"
+                 "module Test\ntype Example =\n    static member Transform(value: Option<'t>, ?prefix: string) = \"generic\"\n    static member Transform(value: Option<int>, ?timeout: int) = \"int\"\nlet result = Example.Transform(Some 42)"
+
+            case "Multiple optional params"
+                 "module Test\ntype Example =\n    static member Config(value: Option<'t>, ?prefix: string, ?suffix: string) = \"generic\"\n    static member Config(value: Option<int>, ?min: int, ?max: int) = \"int\"\nlet result = Example.Config(Some 42)"
+
+            case "Nested generics"
+                 "module Test\ntype Example =\n    static member Handle(value: Option<Option<'t>>, ?tag: string) = \"nested generic\"\n    static member Handle(value: Option<Option<int>>, ?tag: string) = \"nested int\"\nlet result = Example.Handle(Some(Some 42))"
+        ]
+
+    [<Theory>]
+    [<MemberData(nameof bothHaveOptionalTestCases)>]
+    let ``Both have optional params - concreteness breaks tie`` (_description: string) (source: string) =
+        FSharp source
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``Example 11 - Both Have Optional - with different optional types`` () =
-        FSharp """
-module Test
+    let paramArrayTestCases: obj[] seq =
+        let case desc source = [| desc :> obj; source :> obj |]
 
-type Example =
-    static member Transform(value: Option<'t>, ?prefix: string) = "generic"
-    static member Transform(value: Option<int>, ?timeout: int) = "int"
+        [
+            case "Option elements"
+                 "module Test\ntype Example =\n    static member Log([<System.ParamArray>] items: Option<'t>[]) = \"generic options\"\n    static member Log([<System.ParamArray>] items: Option<int>[]) = \"int options\"\nlet result = Example.Log(Some 1, Some 2, Some 3)"
 
-let result = Example.Transform(Some 42)
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+            case "Nested Option elements"
+                 "module Test\ntype Example =\n    static member Combine([<System.ParamArray>] values: Option<Option<'t>>[]) = \"nested generic\"\n    static member Combine([<System.ParamArray>] values: Option<Option<int>>[]) = \"nested int\"\nlet result = Example.Combine(Some(Some 1), Some(Some 2))"
 
-    [<Fact>]
-    let ``Example 11 - Both Have Optional - multiple optional params`` () =
-        FSharp """
-module Test
+            case "Result elements"
+                 "module Test\ntype Example =\n    static member Process([<System.ParamArray>] results: Result<int, 'e>[]) = \"generic error\"\n    static member Process([<System.ParamArray>] results: Result<int, string>[]) = \"string error\"\nlet r1 : Result<int, string> = Ok 1\nlet r2 : Result<int, string> = Ok 2\nlet result = Example.Process(r1, r2)"
+        ]
 
-type Example =
-    static member Config(value: Option<'t>, ?prefix: string, ?suffix: string) = "generic"
-    static member Config(value: Option<int>, ?min: int, ?max: int) = "int"
-
-let result = Example.Config(Some 42)
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Example 11 - Both Have Optional - nested generics`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Handle(value: Option<Option<'t>>, ?tag: string) = "nested generic"
-    static member Handle(value: Option<Option<int>>, ?tag: string) = "nested int"
-
-let result = Example.Handle(Some(Some 42))
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Example 12 - ParamArray with Generic Elements - concreteness breaks tie`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Log([<System.ParamArray>] items: Option<'t>[]) = "generic options"
-    static member Log([<System.ParamArray>] items: Option<int>[]) = "int options"
-
-let result = Example.Log(Some 1, Some 2, Some 3)
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Example 12 - ParamArray - nested generic element types`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Combine([<System.ParamArray>] values: Option<Option<'t>>[]) = "nested generic"
-    static member Combine([<System.ParamArray>] values: Option<Option<int>>[]) = "nested int"
-
-let result = Example.Combine(Some(Some 1), Some(Some 2))
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Example 12 - ParamArray - Result element types`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Process([<System.ParamArray>] results: Result<int, 'e>[]) = "generic error"
-    static member Process([<System.ParamArray>] results: Result<int, string>[]) = "string error"
-
-let r1 : Result<int, string> = Ok 1
-let r2 : Result<int, string> = Ok 2
-let result = Example.Process(r1, r2)
-        """
+    [<Theory>]
+    [<MemberData(nameof paramArrayTestCases)>]
+    let ``ParamArray with generic elements - concreteness breaks tie`` (_description: string) (source: string) =
+        FSharp source
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -682,7 +592,6 @@ let result = d.Map(fun x -> x + 1)
         |> shouldSucceed
         |> ignore
 
-    /// Test cases for extension methods in same module resolved by concreteness.
     let sameModuleExtensionTestCases: obj[] seq =
         let case desc source = [| desc :> obj; source :> obj |]
 
@@ -1152,8 +1061,6 @@ let result : string = Resolver.Resolve(Some([1]))
         |> withErrorCode 41
         |> ignore
 
-    /// Test cases for concrete-vs-generic wrapper type resolution.
-    /// Each entry: (description, F# source code)
     let concreteWrapperTestCases: obj[] seq =
         let case desc source = [| desc :> obj; source :> obj |]
 
@@ -1228,7 +1135,6 @@ let result : string = Resolver.Resolve(Some([1]))
                  "module Test\n[<Measure>] type Hz\ntype SignalProcessor =\n    static member Process(samples: float<Hz>[]) = \"Hz array\"\n    static member Process(samples: float<'u>[]) = \"generic array\"\nlet frequencies : float<Hz>[] = [| 440.0<Hz>; 880.0<Hz> |]\nlet result = SignalProcessor.Process(frequencies)"
         ]
 
-    /// Test cases for concrete-vs-generic wrapper types requiring .NET Core (Span, ValueTask, etc.)
     let concreteWrapperNetCoreTestCases: obj[] seq =
         let case desc source = [| desc :> obj; source :> obj |]
 
@@ -1435,7 +1341,6 @@ let result = wrapTwice 21
         |> shouldSucceed
         |> ignore
 
-    /// C# library with OverloadResolutionPriority test types
     let private csharpPriorityLib =
         CSharpFromPath (__SOURCE_DIRECTORY__ ++ "../OverloadResolutionPriority/CSharpPriorityLib.cs")
         |> withCSharpLanguageVersionPreview
@@ -1561,20 +1466,5 @@ if result <> "int-low-priority" then
         |> withLangVersion "latest"
         |> asExe
         |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``LangVersion Latest - default langversion behaves same as explicit latest`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Process(value: 't) = "generic"
-    static member Process(value: int) = "int"
-
-let result = Example.Process(42)
-        """
-        |> typecheck
         |> shouldSucceed
         |> ignore

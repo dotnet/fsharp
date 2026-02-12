@@ -170,7 +170,6 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     | _ -> 0
 
 /// Represents why two methods are incomparable under concreteness ordering.
-/// Contains (method1Name, method1BetterPositions, method2Name, method2BetterPositions)
 type IncomparableConcretenessInfo =
     {
         Method1Name: string
@@ -186,11 +185,9 @@ let explainIncomparableMethodConcreteness<'T>
     (meth1: CalledMeth<'T>)
     (meth2: CalledMeth<'T>)
     : IncomparableConcretenessInfo option =
-    // Only applies when both methods are generic
     if meth1.CalledTyArgs.IsEmpty || meth2.CalledTyArgs.IsEmpty then
         None
     else
-        // Get formal (uninstantiated) parameter types
         let formalParams1 =
             meth1.Method.GetParamDatas(ctx.amap, ctx.m, meth1.Method.FormalMethodInst)
             |> List.concat
@@ -202,7 +199,6 @@ let explainIncomparableMethodConcreteness<'T>
         if formalParams1.Length <> formalParams2.Length then
             None
         else
-            // Collect all type argument comparisons, drilling into type applications
             let rec collectComparisons paramIdx (ty1: TType) (ty2: TType) : (int * int) list =
                 let sty1 = stripTyEqns ctx.g ty1
                 let sty2 = stripTyEqns ctx.g ty2
@@ -211,15 +207,13 @@ let explainIncomparableMethodConcreteness<'T>
                 | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) when
                     tyconRefEq ctx.g tcref1 tcref2 && args1.Length = args2.Length
                     ->
-                    // Compare type arguments of the type application
                     args1
                     |> List.mapi2
                         (fun argIdx arg1 arg2 ->
                             let c = compareTypeConcreteness ctx.g arg1 arg2
-                            (argIdx + 1, c)) // 1-based position for type args
+                            (argIdx + 1, c))
                         args2
                 | _ ->
-                    // Compare at parameter level
                     [ (paramIdx, compareTypeConcreteness ctx.g ty1 ty2) ]
 
             let allComparisons =
@@ -236,7 +230,6 @@ let explainIncomparableMethodConcreteness<'T>
             let meth2Better =
                 allComparisons |> List.choose (fun (pos, c) -> if c < 0 then Some pos else None)
 
-            // Incomparable means each method is better in at least one position
             if not meth1Better.IsEmpty && not meth2Better.IsEmpty then
                 Some
                     {
@@ -494,8 +487,6 @@ let private moreConcreteRule: TiebreakRule =
         Compare =
             fun ctx (candidate, _, _) (other, _, _) ->
                 if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
-                    // Skip SRTP: Don't apply MoreConcrete tiebreaker when SRTP is involved
-                    // at the method level - check formal method type parameters for SRTP
                     let hasAnySRTPTypeParams =
                         candidate.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
                         || other.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
@@ -503,7 +494,6 @@ let private moreConcreteRule: TiebreakRule =
                     if hasAnySRTPTypeParams then
                         0
                     else
-                        // Get formal (uninstantiated) parameter types using FormalMethodInst
                         let formalParams1 =
                             candidate.Method.GetParamDatas(ctx.amap, ctx.m, candidate.Method.FormalMethodInst)
                             |> List.concat
@@ -512,7 +502,6 @@ let private moreConcreteRule: TiebreakRule =
                             other.Method.GetParamDatas(ctx.amap, ctx.m, other.Method.FormalMethodInst)
                             |> List.concat
 
-                        // Also skip if called type args or formal params contain SRTP type variables
                         let hasAnySRTPInTypes =
                             candidate.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
                             || other.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
