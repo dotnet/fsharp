@@ -11159,7 +11159,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             match rtyOpt, rhsExpr with
             | Some (SynBindingReturnInfo(typeName = retInfoTy; range = mRetTy)), SynExpr.Typed(innerExpr, _, _) when spatsL.IsEmpty ->
                 let retTy, _ = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes envinner tpenv retInfoTy
-                try UnifyTypes cenv envinner mRetTy overallExprTy retTy
+                try UnifyTypes cenv envinner pat.Range retTy overallExprTy
                 with RecoverableException exn -> errorRecovery exn mRetTy
                 innerExpr
             | _ ->
