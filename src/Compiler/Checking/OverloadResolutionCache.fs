@@ -9,6 +9,7 @@ open Internal.Utilities.TypeHashing.StructuralUtilities
 
 open FSharp.Compiler
 open FSharp.Compiler.Caches
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.TcGlobals
