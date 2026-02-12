@@ -370,3 +370,17 @@ let main args =
             (Error 1, Line 8, Col 25, Line 8, Col 37, "The tuples have differing lengths of 3 and 2")
         ]
 
+    [<Fact>]
+    let ``Binding with type annotation and tuple pattern reports correct type``() =
+        FSharp """
+let a, b: int = ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 11, Line 2, Col 14,
+             "This expression was expected to have type\n    ''a * 'b'    \nbut here has type\n    'int'    ")
+            (Error 1, Line 2, Col 17, Line 2, Col 19,
+             "This expression was expected to have type\n    ''a * 'b'    \nbut here has type\n    'unit'    ")
+        ]
+
