@@ -2348,6 +2348,8 @@ val mkIncr: TcGlobals -> range -> Expr -> Expr
 
 val mkLdlen: TcGlobals -> range -> Expr -> Expr
 
+val mkGetStringLength: TcGlobals -> range -> Expr -> Expr
+
 val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 //-------------------------------------------------------------------------
@@ -2403,7 +2405,7 @@ val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool optio
 
 #if !NO_TYPEPROVIDERS
 /// returns Some(assemblyName) for success
-val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string MaybeNull option
+val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> (string | null) option
 #endif
 
 val IsSignatureDataVersionAttr: ILAttribute -> bool
@@ -2757,6 +2759,8 @@ val mkCoerceIfNeeded: TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 val (|InnerExprPat|): Expr -> Expr
 
 val allValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
+
+val allTopLevelValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 
 val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
 

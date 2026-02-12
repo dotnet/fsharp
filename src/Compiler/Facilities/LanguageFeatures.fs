@@ -106,7 +106,7 @@ type LanguageFeature =
     | ReturnFromFinal
 
 /// LanguageVersion management
-type LanguageVersion(versionText) =
+type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
 
     // When we increment language versions here preview is higher than current RTM version
     static let languageVersion46 = 4.6m
@@ -117,10 +117,11 @@ type LanguageVersion(versionText) =
     static let languageVersion80 = 8.0m
     static let languageVersion90 = 9.0m
     static let languageVersion100 = 10.0m
+    static let languageVersion110 = 11.0m
     static let previewVersion = 9999m // Language version when preview specified
     static let defaultVersion = languageVersion100 // Language version when default specified
     static let latestVersion = defaultVersion // Language version when latest specified
-    static let latestMajorVersion = languageVersion100 // Language version when latestmajor specified
+    static let latestMajorVersion = defaultVersion // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
 
@@ -135,6 +136,7 @@ type LanguageVersion(versionText) =
                 languageVersion80
                 languageVersion90
                 languageVersion100
+                languageVersion110
             |]
 
     static let features =
@@ -241,6 +243,12 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ReturnFromFinal, languageVersion100
                 LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions, languageVersion100
 
+                // F# 11.0
+                // Put stabilized features here for F# 11.0 previews via .NET SDK preview channels
+
+                // Difference between languageVersion110 and preview - 11.0 gets turned on automatically by picking a preview .NET 11 SDK
+                // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
+
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
             ]
@@ -268,6 +276,8 @@ type LanguageVersion(versionText) =
         | "9" -> languageVersion90
         | "10.0"
         | "10" -> languageVersion100
+        | "11.0"
+        | "11" -> languageVersion110
         | _ -> 0m
 
     let specified = getVersionFromString versionText
@@ -277,11 +287,22 @@ type LanguageVersion(versionText) =
 
     let specifiedString = versionToString specified
 
+    let disabledFeatures: LanguageFeature array = defaultArg disabledFeaturesArray [||]
+
+    /// Get the disabled features
+    member _.DisabledFeatures = disabledFeatures
+
     /// Check if this feature is supported by the selected langversion
     member _.SupportsFeature featureId =
-        match features.TryGetValue featureId with
-        | true, v -> v <= specified
-        | false, _ -> false
+        if Array.contains featureId disabledFeatures then
+            false
+        else
+            match features.TryGetValue featureId with
+            | true, v -> v <= specified
+            | false, _ -> false
+
+    /// Create a new LanguageVersion with updated disabled features
+    member _.WithDisabledFeatures(disabled: LanguageFeature array) = LanguageVersion(versionText, disabled)
 
     /// Has preview been explicitly specified
     member _.IsExplicitlySpecifiedAs50OrBefore() =
@@ -426,11 +447,38 @@ type LanguageVersion(versionText) =
         | true, v -> versionToString v
         | _ -> invalidArg "feature" "Internal error: Unable to find feature."
 
+    /// Try to parse a feature name string to a LanguageFeature option using reflection
+    static member TryParseFeature(featureName: string) =
+        let normalized = featureName.Trim()
+
+        let bindingFlags =
+            System.Reflection.BindingFlags.Public
+            ||| System.Reflection.BindingFlags.NonPublic
+
+        Microsoft.FSharp.Reflection.FSharpType.GetUnionCases(typeof<LanguageFeature>, bindingFlags)
+        |> Array.tryFind (fun case -> System.String.Equals(case.Name, normalized, System.StringComparison.OrdinalIgnoreCase))
+        |> Option.bind (fun case ->
+            let union =
+                Microsoft.FSharp.Reflection.FSharpValue.MakeUnion(case, [||], bindingFlags)
+
+            match box union with
+            | null -> None
+            | obj -> Some(obj :?> LanguageFeature))
+
     override x.Equals(yobj: obj) =
         match yobj with
-        | :? LanguageVersion as y -> x.SpecifiedVersion = y.SpecifiedVersion
+        | :? LanguageVersion as y ->
+            x.SpecifiedVersion = y.SpecifiedVersion
+            && x.DisabledFeatures.Length = y.DisabledFeatures.Length
+            && (x.DisabledFeatures, y.DisabledFeatures) ||> Array.forall2 (=)
         | _ -> false
 
-    override x.GetHashCode() = hash x.SpecifiedVersion
+    override x.GetHashCode() =
+        let mutable h = hash x.SpecifiedVersion
+
+        for f in x.DisabledFeatures do
+            h <- h ^^^ hash f
+
+        h
 
     static member Default = defaultLanguageVersion

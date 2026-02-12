@@ -149,7 +149,6 @@ extends:
                   NativeToolsOnMachine: true
                   FSHARP_CACHE_OVERRIDE: 256
                   FSharp_CacheEvictionImmediate: true
-                  SKIP_VERSION_SUPPORTED_CHECK: 1
             - task: PublishTestResults@2
               displayName: Publish Test Results
               inputs:

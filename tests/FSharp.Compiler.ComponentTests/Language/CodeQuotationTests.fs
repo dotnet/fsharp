@@ -36,7 +36,7 @@ let z : unit =
         failwithf "did not expect expression for 'z': %A" e
         """
         |> asExe
-        |> withLangVersion50
+        |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
 

@@ -443,12 +443,12 @@ let renderCustomSignatureFile (project: SyntheticProject) (f: SyntheticSourceFil
 
 let private renderFsProj (p: SyntheticProject) =
     seq {
-        """
+        $"""
         <Project Sdk="Microsoft.NET.Sdk">
 
         <PropertyGroup>
             <OutputType>Exe</OutputType>
-            <TargetFramework>net10.0</TargetFramework>
+            <TargetFramework>{productTfm}</TargetFramework>
         </PropertyGroup>
 
         <ItemGroup>

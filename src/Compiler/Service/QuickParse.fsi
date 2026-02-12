@@ -73,14 +73,14 @@ module public QuickParse =
     /// allow us to use find the correct qualified items rather than resorting
     /// to the more expensive and less accurate environment lookup.
     val GetCompleteIdentifierIsland:
-        tolerateJustAfter: bool -> lineStr: string MaybeNull -> index: int -> (string * int * bool) option
+        tolerateJustAfter: bool -> lineStr: (string | null) -> index: int -> (string * int * bool) option
 
     /// Get the partial long name of the identifier to the left of index.
-    val GetPartialLongName: lineStr: string MaybeNull * index: int -> string list * string
+    val GetPartialLongName: lineStr: (string | null) * index: int -> string list * string
 
     /// Get the partial long name of the identifier to the left of index.
     /// For example, for `System.DateTime.Now` it returns PartialLongName ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
-    val GetPartialLongNameEx: lineStr: string MaybeNull * index: int -> PartialLongName
+    val GetPartialLongNameEx: lineStr: (string | null) * index: int -> PartialLongName
 
     /// Tests whether the user is typing something like "member x." or "override (*comment*) x."
     val TestMemberOrOverrideDeclaration: tokens: FSharpTokenInfo[] -> bool

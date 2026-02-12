@@ -38,6 +38,13 @@ type UsingMSBuild() =
             printf "%s\n" (error.ToString()) 
 
     let checkTooltip expected ((tooltip, span : TextSpan), (row, col)) = 
+        // Instrumentation: Show actual tooltip for debugging
+        printfn "=== ACTUAL TOOLTIP START ==="
+        printfn "%s" tooltip
+        printfn "=== ACTUAL TOOLTIP END ==="
+        printfn "=== EXPECTED TOOLTIP START ==="
+        printfn "%s" expected
+        printfn "=== EXPECTED TOOLTIP END ==="
         AssertContains(tooltip, expected)
         // cursor should be inside the span
         Assert.True(row = (span.iStartLine + 1) && row = (span.iEndLine + 1), "Cursor should be one the same line with the tooltip span")
@@ -261,7 +268,7 @@ type UsingMSBuild() =
         let expectedTooltip = """
 type Async =
   static member AsBeginEnd: computation: ('Arg -> Async<'T>) -> ('Arg * AsyncCallback * objnull -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit)
-  static member AwaitEvent: event: IEvent<'Del,'T> * ?cancelAction: (unit -> unit) -> Async<'T> (requires delegate and 'Del :> Delegate)
+  static member AwaitEvent: event: IEvent<'Del,'T> * ?cancelAction: (unit -> unit) -> Async<'T> (requires delegate and 'Del :> Delegate and 'Del: not null)
   static member AwaitIAsyncResult: iar: IAsyncResult * ?millisecondsTimeout: int -> Async<bool>
   static member AwaitTask: task: Task<'T> -> Async<'T> + 1 overload
   static member AwaitWaitHandle: waitHandle: WaitHandle * ?millisecondsTimeout: int -> Async<bool>

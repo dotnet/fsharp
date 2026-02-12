@@ -9,8 +9,8 @@ open FSharp.Test.Compiler
 module DynamicAssignmentOperatorTests =
 
     [<Theory>]
-    [<InlineData("6.0")>]
-    [<InlineData("7.0")>]
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
     let ``Implementing dynamic assignment operator does not produce a warning`` version = 
         Fsx """
         type T = T with

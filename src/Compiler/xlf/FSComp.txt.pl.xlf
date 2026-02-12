@@ -987,6 +987,11 @@
         <target state="new">Compress interface and optimization data files ({0} by default)</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsDisableLanguageFeature">
+        <source>Disable a specific language feature by name.</source>
+        <target state="new">Disable a specific language feature by name.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsGetLangVersions">
         <source>Display the allowed values for language version.</source>
         <target state="translated">Wyświetl dozwolone wartości dla wersji językowej.</target>
@@ -1070,6 +1075,11 @@
       <trans-unit id="optsUnknownSignatureData">
         <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</source>
         <target state="translated">Nieprawidłowa wartość „{0}” dla parametru --interfacedata, prawidłowa wartość to: none, file, compress.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageFeature">
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -1430,6 +1440,11 @@
       <trans-unit id="tcDowncastFromNullableToWithoutNull">
         <source>Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</source>
         <target state="new">Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDuplicateExtensionMemberNames">
+        <source>Extension members extending types with the same simple name '{0}' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.</source>
+        <target state="new">Extension members extending types with the same simple name '{0}' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">

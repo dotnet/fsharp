@@ -36,7 +36,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue
     let strongList = LinkedList<'TKey * 'TVersion * string * ValueLink<'TValue>>()
     let weakList = LinkedList<'TKey * 'TVersion * string * ValueLink<'TValue>>()
 
-    let rec removeCollected (possiblyNullNode: LinkedListNode<_> MaybeNull) =
+    let rec removeCollected (possiblyNullNode: (LinkedListNode<_> | null)) =
         match possiblyNullNode with
         | null -> ()
         | node ->

@@ -20,7 +20,7 @@
     <Compile Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\XunitSetup.fs">
         <Link>XunitSetup.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullHelpers.fs" />
     <Compile Include="AssemblyResolver.fs" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\InternalCollections.fsi">
       <Link>Internal.Utilities.Collections.fsi</Link>
