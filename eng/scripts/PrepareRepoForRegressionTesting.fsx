@@ -48,7 +48,6 @@ if File.Exists(propsFilePath) then
     if isNull projectElement then
         failwith "Could not find Project element in Directory.Build.props"
     
-    // Check if our import already exists (look for any import with this exact path)
     let xpath = sprintf "//Import[@Project='%s']" absolutePropsPath
     let existingImport = doc.SelectSingleNode(xpath)
     
@@ -72,33 +71,28 @@ if File.Exists(propsFilePath) then
     else
         printfn "✓ UseLocalCompiler import already exists"
     
-    // Check if --times flag already exists in any OtherFlags element
     let otherFlagsWithTimes = doc.SelectSingleNode("//OtherFlags[contains(text(), '--times')]")
     
     if isNull otherFlagsWithTimes then
-        // Create PropertyGroup with OtherFlags element
         let propertyGroup = doc.CreateElement("PropertyGroup")
         let otherFlags = doc.CreateElement("OtherFlags")
         otherFlags.InnerText <- "$(OtherFlags) --nowarn:75 --times"
         propertyGroup.AppendChild(otherFlags) |> ignore
         
-        // Reuse the import node we already found (or find it again with the same xpath)
         let importNode = doc.SelectSingleNode(xpath)
         
-        // Find the text node after the import (if it exists)
+        // Skip past whitespace text nodes when inserting after the import
         let nodeAfterImport = 
             if not (isNull importNode) && not (isNull importNode.NextSibling) && importNode.NextSibling.NodeType = XmlNodeType.Text then
                 importNode.NextSibling
             else
                 null
         
-        // Insert PropertyGroup after the import's trailing newline (if present) or after the import itself
         if not (isNull nodeAfterImport) then
             projectElement.InsertAfter(propertyGroup, nodeAfterImport) |> ignore
         else
             projectElement.InsertAfter(propertyGroup, importNode) |> ignore
         
-        // Add newline for formatting after PropertyGroup
         let newlineAfter = doc.CreateTextNode("\n  ")
         projectElement.InsertAfter(newlineAfter, propertyGroup) |> ignore
         
@@ -107,7 +101,6 @@ if File.Exists(propsFilePath) then
     else
         printfn "✓ --times flag already exists in OtherFlags"
 
-        // Ensure --nowarn:75 is present before --times
         if not (otherFlagsWithTimes.InnerText.Contains("--nowarn:75")) then
             otherFlagsWithTimes.InnerText <- otherFlagsWithTimes.InnerText.Replace("--times", "--nowarn:75 --times")
             doc.Save(propsFilePath)
