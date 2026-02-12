@@ -32,8 +32,7 @@ type OverloadResolutionCacheKey =
 type OverloadResolutionCacheResult =
     /// Resolution succeeded - index of the resolved method in the original calledMethGroup list
     | CachedResolved of methodIndex: int
-    /// Resolution failed (no matching overload)
-    | CachedFailed
+
 
 /// Gets a per-TcGlobals overload resolution cache.
 /// Uses WeakMap to tie cache lifetime to TcGlobals (per-compilation isolation).
@@ -56,13 +55,6 @@ val tryGetTypeStructureForOverloadCache: g: TcGlobals -> ty: TType -> TypeStruct
 
 /// Try to compute a cache key for overload resolution.
 /// Returns None if the resolution cannot be cached (e.g., unresolved type variables, named arguments).
-///
-/// Parameters:
-/// - g: TcGlobals
-/// - calledMethGroup: The list of candidate methods
-/// - callerArgs: The caller's arguments
-/// - reqdRetTyOpt: The required return type (if any), already extracted as TType
-/// - anyHasOutArgs: Whether any candidate has out arguments (affects caching decision for return type)
 val tryComputeOverloadCacheKey:
     g: TcGlobals ->
     calledMethGroup: CalledMeth<'T> list ->
@@ -79,7 +71,7 @@ val computeCacheResult:
 
 /// Stores an overload resolution result in the cache.
 /// For successful resolutions, finds the method's index in calledMethGroup and stores CachedResolved.
-/// For failures, stores CachedFailed.
+/// Failed resolutions are not cached.
 ///
 /// Also computes and stores under an "after" key if types were solved during resolution.
 /// This allows future calls with already-solved types to hit the cache directly.

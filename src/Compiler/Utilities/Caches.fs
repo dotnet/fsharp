@@ -123,10 +123,6 @@ module CacheMetrics =
                 Console.WriteLine(StatsToString())
         }
 
-    // Currently the Cache emits telemetry for raw cache events: hits, misses, evictions etc.
-    // This type observes those counters and keeps a snapshot of readings. It is used in tests and can be used to print cache stats in debug mode.
-    // When nameOnlyFilter is Some, it matches by cache name only (ignoring cacheId), aggregating metrics across all cache instances with that name.
-    // When nameOnlyFilter is None, it uses cacheTags to match both name and cacheId exactly.
     [<Sealed>]
     type CacheMetricsListener(cacheTags: TagList, ?nameOnlyFilter: string) =
 
@@ -141,12 +137,10 @@ module CacheMetrics =
                 let shouldIncrement =
                     match nameOnlyFilter with
                     | Some filterName ->
-                        // Match by cache name only (first tag), ignoring cacheId
                         match tags[0].Value with
                         | :? string as name when name = filterName -> true
                         | _ -> false
                     | None ->
-                        // Match both name and cacheId tags exactly
                         tags[0] = cacheTags[0] && tags[1] = cacheTags[1]
 
                 if shouldIncrement then
@@ -154,7 +148,7 @@ module CacheMetrics =
 
             listener.Start()
 
-        /// Creates a listener that matches by cache name only (aggregates metrics across all instances with that name).
+        /// Creates a listener that aggregates metrics across all cache instances with the given name.
         new(cacheName: string) = new CacheMetricsListener(TagList(), nameOnlyFilter = cacheName)
 
         interface IDisposable with

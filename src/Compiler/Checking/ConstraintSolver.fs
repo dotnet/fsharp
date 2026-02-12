@@ -3450,7 +3450,6 @@ and AssumeMethodSolvesTrait (csenv: ConstraintSolverEnv) (cx: TraitConstraintInf
 /// Core implementation of overload resolution (extracted for caching)
 and ResolveOverloadingCore 
          (csenv: ConstraintSolverEnv)
-         _trace
          methodName
          ndeep
          cx
@@ -3646,7 +3645,7 @@ and ResolveOverloading
           match cachedHit with
           | Some result -> result
           | None ->
-              ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion retTyOpt anyHasOutArgs cacheKeyOpt cache
+              ResolveOverloadingCore csenv methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion retTyOpt anyHasOutArgs cacheKeyOpt cache
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.

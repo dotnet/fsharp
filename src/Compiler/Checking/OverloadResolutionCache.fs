@@ -42,8 +42,7 @@ type OverloadResolutionCacheKey =
 type OverloadResolutionCacheResult =
     /// Resolution succeeded - index of the resolved method in the original calledMethGroup list
     | CachedResolved of methodIndex: int
-    /// Resolution failed (no matching overload)
-    | CachedFailed
+
 
 /// Gets a per-TcGlobals overload resolution cache.
 /// Uses WeakMap to tie cache lifetime to TcGlobals (per-compilation isolation).
@@ -199,11 +198,11 @@ let computeCacheResult
         calledMethGroup
         |> List.tryFindIndex (fun cm -> obj.ReferenceEquals(cm, calledMeth))
         |> Option.map CachedResolved
-    | ValueNone -> Some CachedFailed
+    | ValueNone -> None
 
 /// Stores an overload resolution result in the cache.
 /// For successful resolutions, finds the method's index in calledMethGroup and stores CachedResolved.
-/// For failures, stores CachedFailed.
+/// Failed resolutions are not cached.
 ///
 /// Also computes and stores under an "after" key if types were solved during resolution.
 /// This allows future calls with already-solved types to hit the cache directly.

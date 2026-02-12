@@ -44,13 +44,13 @@ let main _ =
         "String",   GenericOverload.Process("a", "b")
         "Boolean",  GenericOverload.Process(true, false)
         "Double",   GenericOverload.Process(1.0, 2.0)
-        "Int32",    GenericOverload.Process(3, 4)  // cycle back
+        "Int32",    GenericOverload.Process(3, 4)
         
         "string",   SubtypeOverload.Accept("hello")
         "int",      SubtypeOverload.Accept(42)
         "float",    SubtypeOverload.Accept(3.14)
         "obj",      SubtypeOverload.Accept(box [1;2;3])
-        "string",   SubtypeOverload.Accept("world")  // interleave
+        "string",   SubtypeOverload.Accept("world")
         "int",      SubtypeOverload.Accept(99)
         
         "List<Int32>",    NestedGeneric.Process([1;2;3] |> List)

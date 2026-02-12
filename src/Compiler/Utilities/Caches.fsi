@@ -12,14 +12,10 @@ module CacheMetrics =
     val internal StatsToString: unit -> string
     val internal CaptureStatsAndWriteToConsole: unit -> IDisposable
 
-    /// A listener that captures cache metrics.
-    /// Can match by cache name only (aggregating across all instances) or by exact cache tags.
-    /// When created with just a cache name, it aggregates metrics across all cache instances with that name.
-    /// When created with cache tags (internal), it matches both name and cacheId exactly.
+    /// A listener that captures cache metrics, matching by cache name or exact cache tags.
     [<Sealed>]
     type CacheMetricsListener =
-        /// Creates a listener that matches by cache name only (aggregates metrics across all instances with that name).
-        /// This is useful for caches that are created per-compilation (e.g., overload resolution cache).
+        /// Creates a listener that aggregates metrics across all cache instances with the given name.
         new: cacheName: string -> CacheMetricsListener
         /// Gets the current totals for each metric type.
         member GetTotals: unit -> Map<string, int64>
