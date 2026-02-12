@@ -40,7 +40,7 @@ if File.Exists(propsFilePath) then
     if isNull projectElement then
         failwith "Could not find Project element in Directory.Build.props"
     
-    let xpath = sprintf "//Import[@Project='%s']" absolutePropsPath
+    let xpath = "//Import[contains(@Project, 'UseLocalCompiler.Directory.Build.props')]"
     let existingImport = doc.SelectSingleNode(xpath)
     
     if isNull existingImport then
