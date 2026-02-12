@@ -22,21 +22,6 @@ type OverloadResolutionContext =
         ndeep: int
     }
 
-/// Aggregate pairwise comparison results using dominance rule.
-/// Returns 1 if ty1 dominates (better in some positions, not worse in any),
-/// -1 if ty2 dominates, 0 if incomparable or equal.
-val aggregateComparisons: comparisons: int list -> int
-
-/// Compare types under the "more concrete" partial ordering.
-/// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
-val compareTypeConcreteness: g: TcGlobals -> ty1: TType -> ty2: TType -> int
-
-/// Explain why two types are incomparable under the concreteness ordering.
-/// Returns Some with position-by-position details when types are incomparable (mixed results),
-/// Returns None when one type strictly dominates or they are equal.
-/// Each tuple contains (position, ty1Arg, ty2Arg, comparison) where comparison is 1/-1/0.
-val explainIncomparableConcreteness: g: TcGlobals -> ty1: TType -> ty2: TType -> (int * TType * TType * int) list option
-
 /// Represents why two methods are incomparable under concreteness ordering.
 type IncomparableConcretenessInfo =
     { Method1Name: string
@@ -91,14 +76,6 @@ type TiebreakRule =
                 -> CalledMeth<Expr> * TypeDirectedConversionUsed * int // other, TDC, warnCount
                 -> int
     }
-
-/// Evaluate all tiebreaker rules to determine which method is better.
-/// Returns >0 if candidate is better, <0 if other is better, 0 if they are equal.
-val evaluateTiebreakRules:
-    context: OverloadResolutionContext ->
-    candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
-        other: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
-            int
 
 /// Evaluate all tiebreaker rules and return both the result and the deciding rule.
 /// Returns (result, ValueSome ruleId) if a rule decided, or (0, ValueNone) if all rules returned 0.
