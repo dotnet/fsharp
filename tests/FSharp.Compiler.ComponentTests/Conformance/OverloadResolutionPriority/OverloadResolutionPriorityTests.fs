@@ -5,19 +5,15 @@ namespace Conformance.OverloadResolutionPriority
 open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
+open Conformance.SharedTestHelpers
 
 /// Tests for OverloadResolutionPriority attribute support (.NET 9)
 module OverloadResolutionPriorityTests =
 
     [<FactForNETCOREAPP>]
     let ``OverloadResolutionPriority - comprehensive test`` () =
-        let csharpLib =
-            CSharpFromPath (__SOURCE_DIRECTORY__ ++ "CSharpPriorityLib.cs")
-            |> withCSharpLanguageVersionPreview
-            |> withName "CSharpPriorityLib"
-        
         FsFromPath (__SOURCE_DIRECTORY__ ++ "ORPTestRunner.fs")
-        |> withReferences [csharpLib]
+        |> withReferences [csharpPriorityLib]
         |> withLangVersionPreview
         |> asExe
         |> compileAndRun

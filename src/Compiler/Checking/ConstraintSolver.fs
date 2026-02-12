@@ -3668,11 +3668,22 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     let decidingRuleCache = System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>()
 
+    // Precompute warning counts once per method to avoid redundant List.length calls across pairs
+    let warnCountCache = System.Collections.Generic.Dictionary<obj, int>()
+    let getWarnCount (meth: CalledMeth<_>) (warnings: _ list) =
+        let key = meth :> obj
+        match warnCountCache.TryGetValue(key) with
+        | true, v -> v
+        | _ ->
+            let v = List.length warnings
+            warnCountCache[key] <- v
+            v
+
     /// Check whether one overload is better than another
     let better (candidate: CalledMeth<_>, candidateWarnings, _, usesTDC1) (other: CalledMeth<_>, otherWarnings, _, usesTDC2) =
-        let candidateWarnCount = List.length candidateWarnings
-        let otherWarnCount = List.length otherWarnings
-        let result, decidingRule = findDecidingRule ctx (candidate, usesTDC1, candidateWarnCount) (other, usesTDC2, otherWarnCount)
+        let candidateWarnCount = getWarnCount candidate candidateWarnings
+        let otherWarnCount = getWarnCount other otherWarnings
+        let struct (result, decidingRule) = findDecidingRule ctx (struct (candidate, usesTDC1, candidateWarnCount)) (struct (other, usesTDC2, otherWarnCount))
         decidingRuleCache[struct(candidate :> obj, other :> obj)] <- decidingRule
         result
     

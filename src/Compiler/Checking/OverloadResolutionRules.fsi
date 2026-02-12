@@ -58,12 +58,12 @@ type TiebreakRuleId =
     | PropertyOverride = 15
 
 /// Evaluate all tiebreaker rules and return both the result and the deciding rule.
-/// Returns (result, ValueSome ruleId) if a rule decided, or (0, ValueNone) if all rules returned 0.
+/// Returns struct(result, ValueSome ruleId) if a rule decided, or struct(0, ValueNone) if all rules returned 0.
 val findDecidingRule:
     context: OverloadResolutionContext ->
-    candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
-        other: CalledMeth<Expr> * TypeDirectedConversionUsed * int ->
-            int * TiebreakRuleId voption
+    candidate: struct (CalledMeth<Expr> * TypeDirectedConversionUsed * int) ->
+        other: struct (CalledMeth<Expr> * TypeDirectedConversionUsed * int) ->
+            struct (int * TiebreakRuleId voption)
 
 // -------------------------------------------------------------------------
 // OverloadResolutionPriority Pre-Filter

@@ -5,8 +5,9 @@ namespace Conformance.Tiebreakers
 open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
+open Conformance.SharedTestHelpers
 
-/// Tests for RFC FS-XXXX: "Most Concrete" Tiebreaker for Overload Resolution
+/// Tests for the "Most Concrete" Tiebreaker for Overload Resolution
 module TiebreakerTests =
 
     let private concretenessWarningSource =
@@ -98,16 +99,18 @@ let result = Example.Transform(Ok 42 : Result<int, string>)
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``Example 5 - Multiple Type Parameters - Partial concreteness int ok - resolves`` () =
-        FSharp """
+    [<Theory>]
+    [<InlineData("Process", "Result<int, 'error>", "int ok", "Ok 42 : Result<int, exn>")>]
+    [<InlineData("Handle", "Result<'ok, string>", "string error", "Ok \"test\" : Result<string, string>")>]
+    let ``Example 5 - Multiple Type Parameters - Partial concreteness resolves`` (methodName: string, concreteParam: string, concreteDesc: string, callExpr: string) =
+        FSharp $"""
 module Test
 
 type Example =
-    static member Process(value: Result<'ok, 'error>) = "fully generic"
-    static member Process(value: Result<int, 'error>) = "int ok"
+    static member {methodName}(value: Result<'ok, 'error>) = "fully generic"
+    static member {methodName}(value: {concreteParam}) = "{concreteDesc}"
 
-let result = Example.Process(Ok 42 : Result<int, exn>)
+let result = Example.{methodName}({callExpr})
         """
         |> withLangVersionPreview
         |> typecheck
@@ -115,23 +118,7 @@ let result = Example.Process(Ok 42 : Result<int, exn>)
         |> ignore
 
     [<Fact>]
-    let ``Example 5 - Multiple Type Parameters - Partial concreteness string error - resolves`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Handle(value: Result<'ok, 'error>) = "fully generic"
-    static member Handle(value: Result<'ok, string>) = "string error"
-
-let result = Example.Handle(Ok "test" : Result<string, string>)
-        """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Example 6 - Incomparable Concreteness - Result int e vs Result t string - ambiguous`` () =
+    let ``Example 6 - Incomparable Concreteness - Result int e vs Result t string - ambiguous with helpful message`` () =
         FSharp """
 module Test
 
@@ -144,22 +131,6 @@ let result = Example.Compare(Ok 42 : Result<int, string>)
         |> typecheck
         |> shouldFail
         |> withErrorCode 41 // FS0041: A unique overload could not be determined
-        |> ignore
-
-    [<Fact>]
-    let ``Example 6 - Incomparable Concreteness - Error message is helpful`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Compare(value: Result<int, 'error>) = "int ok"
-    static member Compare(value: Result<'ok, string>) = "string error"
-
-let result = Example.Compare(Ok 42 : Result<int, string>)
-        """
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 41 // FS0041
         |> withDiagnosticMessageMatches "Neither candidate is strictly more concrete"
         |> withDiagnosticMessageMatches "Compare is more concrete at position 1"
         |> ignore
@@ -1315,11 +1286,6 @@ let result = wrapTwice 21
         |> typecheck
         |> shouldSucceed
         |> ignore
-
-    let private csharpPriorityLib =
-        CSharpFromPath (__SOURCE_DIRECTORY__ ++ "../OverloadResolutionPriority/CSharpPriorityLib.cs")
-        |> withCSharpLanguageVersionPreview
-        |> withName "CSharpPriorityLib"
 
     [<Fact>]
     let ``LangVersion Latest - Non-generic overload preferred over generic - existing behavior`` () =

@@ -61,13 +61,13 @@ type TiebreakRule =
         /// Comparison function: returns >0 if candidate is better, <0 if other is better, 0 if equal
         Compare:
             OverloadResolutionContext
-                -> CalledMeth<Expr> * TypeDirectedConversionUsed * int // candidate, TDC, warnCount
-                -> CalledMeth<Expr> * TypeDirectedConversionUsed * int // other, TDC, warnCount
+                -> struct (CalledMeth<Expr> * TypeDirectedConversionUsed * int) // candidate, TDC, warnCount
+                -> struct (CalledMeth<Expr> * TypeDirectedConversionUsed * int) // other, TDC, warnCount
                 -> int
     }
 
 // -------------------------------------------------------------------------
-// Type Concreteness Comparison (RFC FS-XXXX)
+// Type Concreteness Comparison
 // -------------------------------------------------------------------------
 
 /// Aggregate pairwise comparison results using dominance rule.
@@ -141,7 +141,13 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     | TType_fun(dom1, rng1, _), TType_fun(dom2, rng2, _) ->
         let cDomain = compareTypeConcreteness g dom1 dom2
         let cRange = compareTypeConcreteness g rng1 rng2
-        aggregateComparisons [ cDomain; cRange ]
+        // Inline aggregation for 2 elements to avoid list allocation
+        let hasPositive = cDomain > 0 || cRange > 0
+        let hasNegative = cDomain < 0 || cRange < 0
+
+        if not hasNegative && hasPositive then 1
+        elif not hasPositive && hasNegative then -1
+        else 0
 
     | TType_anon(info1, tys1), TType_anon(info2, tys2) ->
         if not (anonInfoEquiv info1 info2) then
@@ -305,7 +311,7 @@ let private noTDCRule: TiebreakRule =
         Description = "Prefer methods that don't use type-directed conversion"
         RequiredFeature = None
         Compare =
-            fun _ (_, usesTDC1, _) (_, usesTDC2, _) ->
+            fun _ (struct (_, usesTDC1, _)) (struct (_, usesTDC2, _)) ->
                 compare
                     (match usesTDC1 with
                      | TypeDirectedConversionUsed.No -> 1
@@ -321,7 +327,7 @@ let private lessTDCRule: TiebreakRule =
         Description = "Prefer methods that need less type-directed conversion"
         RequiredFeature = None
         Compare =
-            fun _ (_, usesTDC1, _) (_, usesTDC2, _) ->
+            fun _ (struct (_, usesTDC1, _)) (struct (_, usesTDC2, _)) ->
                 compare
                     (match usesTDC1 with
                      | TypeDirectedConversionUsed.Yes(_, false, _) -> 1
@@ -337,7 +343,7 @@ let private nullableTDCRule: TiebreakRule =
         Description = "Prefer methods that only have nullable type-directed conversions"
         RequiredFeature = None
         Compare =
-            fun _ (_, usesTDC1, _) (_, usesTDC2, _) ->
+            fun _ (struct (_, usesTDC1, _)) (struct (_, usesTDC2, _)) ->
                 compare
                     (match usesTDC1 with
                      | TypeDirectedConversionUsed.Yes(_, _, true) -> 1
@@ -352,7 +358,7 @@ let private noWarningsRule: TiebreakRule =
         Id = TiebreakRuleId.NoWarnings
         Description = "Prefer methods that don't give 'this code is less generic' warnings"
         RequiredFeature = None
-        Compare = fun _ (_, _, warnCount1) (_, _, warnCount2) -> compare (warnCount1 = 0) (warnCount2 = 0)
+        Compare = fun _ (struct (_, _, warnCount1)) (struct (_, _, warnCount2)) -> compare (warnCount1 = 0) (warnCount2 = 0)
     }
 
 let private noParamArrayRule: TiebreakRule =
@@ -361,7 +367,7 @@ let private noParamArrayRule: TiebreakRule =
         Description = "Prefer methods that don't use param array arg"
         RequiredFeature = None
         Compare =
-            fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion)
+            fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion)
     }
 
 let private preciseParamArrayRule: TiebreakRule =
@@ -370,7 +376,7 @@ let private preciseParamArrayRule: TiebreakRule =
         Description = "Prefer methods with more precise param array arg type"
         RequiredFeature = None
         Compare =
-            fun ctx (candidate, _, _) (other, _, _) ->
+            fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
                 if candidate.UsesParamArrayConversion && other.UsesParamArrayConversion then
                     compareTypes ctx (candidate.GetParamArrayElementType()) (other.GetParamArrayElementType())
                 else
@@ -382,7 +388,7 @@ let private noOutArgsRule: TiebreakRule =
         Id = TiebreakRuleId.NoOutArgs
         Description = "Prefer methods that don't use out args"
         RequiredFeature = None
-        Compare = fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.HasOutArgs) (not other.HasOutArgs)
+        Compare = fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare (not candidate.HasOutArgs) (not other.HasOutArgs)
     }
 
 let private noOptionalArgsRule: TiebreakRule =
@@ -390,7 +396,7 @@ let private noOptionalArgsRule: TiebreakRule =
         Id = TiebreakRuleId.NoOptionalArgs
         Description = "Prefer methods that don't use optional args"
         RequiredFeature = None
-        Compare = fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.HasOptionalArgs) (not other.HasOptionalArgs)
+        Compare = fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare (not candidate.HasOptionalArgs) (not other.HasOptionalArgs)
     }
 
 let private unnamedArgsRule: TiebreakRule =
@@ -399,7 +405,7 @@ let private unnamedArgsRule: TiebreakRule =
         Description = "Compare regular unnamed args using subsumption ordering"
         RequiredFeature = None
         Compare =
-            fun ctx (candidate, _, _) (other, _, _) ->
+            fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
                 if candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs then
                     // For extension members, we also include the object argument type, if any in the comparison set
                     // This matches C#, where all extension members are treated and resolved as "static" methods calls
@@ -431,7 +437,7 @@ let private preferNonExtensionRule: TiebreakRule =
         Description = "Prefer non-extension methods over extension methods"
         RequiredFeature = None
         Compare =
-            fun _ (candidate, _, _) (other, _, _) -> compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
+            fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
     }
 
 let private extensionPriorityRule: TiebreakRule =
@@ -440,7 +446,7 @@ let private extensionPriorityRule: TiebreakRule =
         Description = "Between extension methods, prefer most recently opened"
         RequiredFeature = None
         Compare =
-            fun _ (candidate, _, _) (other, _, _) ->
+            fun _ (struct (candidate, _, _)) (struct (other, _, _)) ->
                 if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then
                     compare candidate.Method.ExtensionMemberPriority other.Method.ExtensionMemberPriority
                 else
@@ -452,7 +458,7 @@ let private preferNonGenericRule: TiebreakRule =
         Id = TiebreakRuleId.PreferNonGeneric
         Description = "Prefer non-generic methods over generic methods"
         RequiredFeature = None
-        Compare = fun _ (candidate, _, _) (other, _, _) -> compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
+        Compare = fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
     }
 
 let private moreConcreteRule: TiebreakRule =
@@ -461,7 +467,7 @@ let private moreConcreteRule: TiebreakRule =
         Description = "Prefer more concrete type instantiations over more generic ones"
         RequiredFeature = Some LanguageFeature.MoreConcreteTiebreaker
         Compare =
-            fun ctx (candidate, _, _) (other, _, _) ->
+            fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
                 if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
                     let hasAnySRTPTypeParams =
                         candidate.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
@@ -509,7 +515,7 @@ let private nullableOptionalInteropRule: TiebreakRule =
         Description = "F# 5.0 rule - compare all arguments including optional and named"
         RequiredFeature = Some LanguageFeature.NullableOptionalInterop
         Compare =
-            fun ctx (candidate, _, _) (other, _, _) ->
+            fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
                 let args1 = candidate.AllCalledArgs |> List.concat
                 let args2 = other.AllCalledArgs |> List.concat
                 compareArgLists ctx args1 args2
@@ -521,7 +527,7 @@ let private propertyOverrideRule: TiebreakRule =
         Description = "For properties, prefer more derived type (partial override support)"
         RequiredFeature = None
         Compare =
-            fun ctx (candidate, _, _) (other, _, _) ->
+            fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
                 match
                     candidate.AssociatedPropertyInfo,
                     other.AssociatedPropertyInfo,
@@ -563,20 +569,20 @@ let private isRuleEnabled (context: OverloadResolutionContext) (rule: TiebreakRu
     | Some feature -> context.g.langVersion.SupportsFeature(feature)
 
 /// Evaluate all tiebreaker rules and return both the result and the deciding rule.
-/// Returns (result, ValueSome ruleId) if a rule decided, or (0, ValueNone) if all rules returned 0.
+/// Returns struct(result, ValueSome ruleId) if a rule decided, or struct(0, ValueNone) if all rules returned 0.
 let findDecidingRule
     (context: OverloadResolutionContext)
-    (candidate: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
-    (other: CalledMeth<Expr> * TypeDirectedConversionUsed * int)
-    : int * TiebreakRuleId voption =
+    (candidate: struct (CalledMeth<Expr> * TypeDirectedConversionUsed * int))
+    (other: struct (CalledMeth<Expr> * TypeDirectedConversionUsed * int))
+    : struct (int * TiebreakRuleId voption) =
 
     let rec loop rules =
         match rules with
-        | [] -> 0, ValueNone
+        | [] -> struct (0, ValueNone)
         | rule :: rest ->
             if isRuleEnabled context rule then
                 let c = rule.Compare context candidate other
-                if c <> 0 then c, ValueSome rule.Id else loop rest
+                if c <> 0 then struct (c, ValueSome rule.Id) else loop rest
             else
                 loop rest
 
