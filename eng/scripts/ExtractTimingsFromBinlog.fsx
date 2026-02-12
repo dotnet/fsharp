@@ -8,6 +8,7 @@ open Microsoft.Build.Logging.StructuredLogger
 
 let binlogPath = 
     let args = Environment.GetCommandLineArgs()
+    // When running with dotnet fsi, args are: [0]=dotnet; [1]=fsi.dll; [2]=script.fsx; [3...]=args
     let scriptArgs = args |> Array.skipWhile (fun a -> not (a.EndsWith(".fsx"))) |> Array.skip 1
     if scriptArgs.Length > 0 then
         scriptArgs.[0]
