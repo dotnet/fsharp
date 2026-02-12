@@ -51,5 +51,4 @@ build.VisitAllChildren<Task>(fun task ->
 if not foundFscTasks then
     printfn "No Fsc task output found in binlog."
 
-// Always exit 0 (this is informational)
 exit 0

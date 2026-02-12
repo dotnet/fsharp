@@ -1,8 +1,5 @@
 /// Script to inject UseLocalCompiler.Directory.Build.props import into a third-party repository's Directory.Build.props
 /// Usage: dotnet fsi PrepareRepoForRegressionTesting.fsx <path-to-UseLocalCompiler.Directory.Build.props>
-/// 
-/// This script is designed to be run in the root of a third-party repository
-/// It modifies the Directory.Build.props to import the UseLocalCompiler.Directory.Build.props
 
 open System
 open System.IO
@@ -28,7 +25,6 @@ if not (File.Exists(useLocalCompilerPropsPath)) then
 
 printfn "✓ UseLocalCompiler.Directory.Build.props found"
 
-// Convert to absolute path and normalize slashes for MSBuild
 let absolutePropsPath = 
     Path.GetFullPath(useLocalCompilerPropsPath).Replace("\\", "/")
 printfn "Absolute path: %s" absolutePropsPath
