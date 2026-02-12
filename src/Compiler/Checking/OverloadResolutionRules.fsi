@@ -118,8 +118,4 @@ val wasDecidedByRule:
 
 /// Apply OverloadResolutionPriority pre-filter to a list of candidates.
 /// Groups methods by declaring type and keeps only highest-priority within each group.
-val filterByOverloadResolutionPriority<'T> :
-    g: TcGlobals ->
-    getMeth: ('T -> MethInfo) ->
-    candidates: 'T list ->
-        'T list
+val filterByOverloadResolutionPriority<'T> : g: TcGlobals -> getMeth: ('T -> MethInfo) -> candidates: 'T list -> 'T list

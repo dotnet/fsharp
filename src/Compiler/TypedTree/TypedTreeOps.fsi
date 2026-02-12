@@ -2364,7 +2364,8 @@ val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
 val TryFindILAttributeOpt: BuiltinAttribInfo option -> ILAttributes -> bool
 
-val TryDecodeILAttributeOpt: BuiltinAttribInfo option -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+val TryDecodeILAttributeOpt:
+    BuiltinAttribInfo option -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
 
 val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 

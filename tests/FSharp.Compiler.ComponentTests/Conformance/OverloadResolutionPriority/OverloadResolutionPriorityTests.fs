@@ -15,7 +15,7 @@ open Xunit
 module OverloadResolutionPriorityTests =
 
     /// Single comprehensive test that compiles C# library once and runs all assertions
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``OverloadResolutionPriority - comprehensive test`` () =
         // Compile C# library with all ORP test types (compiled ONCE)
         let csharpLib =
