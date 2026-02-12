@@ -70,17 +70,24 @@ type TiebreakRule =
 // Type Concreteness Comparison
 // -------------------------------------------------------------------------
 
-/// Aggregate pairwise comparison results using dominance rule.
-/// Returns 1 if ty1 dominates (better in some positions, not worse in any),
-/// -1 if ty2 dominates, 0 if incomparable or equal.
-let aggregateComparisons (comparisons: int list) =
-    let struct (hasPositive, hasNegative) =
-        (struct (false, false), comparisons)
-        ||> List.fold (fun (struct (p, n)) c -> struct (p || c > 0, n || c < 0))
+/// Fold over two lists pairwise with a comparison function, aggregating using dominance.
+/// Early-exits when incomparability is detected (both positive and negative seen).
+let private aggregateMap2 (f: 'a -> 'b -> int) (xs: 'a list) (ys: 'b list) =
+    let rec loop hasPositive hasNegative xs ys =
+        match xs, ys with
+        | [], _
+        | _, [] ->
+            if not hasNegative && hasPositive then 1
+            elif not hasPositive && hasNegative then -1
+            else 0
+        | x :: xt, y :: yt ->
+            let c = f x y
+            let p = hasPositive || c > 0
+            let n = hasNegative || c < 0
+            if p && n then 0 // incomparable — early exit
+            else loop p n xt yt
 
-    if not hasNegative && hasPositive then 1
-    elif not hasPositive && hasNegative then -1
-    else 0
+    loop false false xs ys
 
 /// SRTP type parameters use a different constraint solving mechanism and shouldn't
 /// be compared under the "more concrete" ordering.
@@ -123,15 +130,13 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
         elif args1.Length <> args2.Length then
             0
         else
-            let comparisons = List.map2 (compareTypeConcreteness g) args1 args2
-            aggregateComparisons comparisons
+            aggregateMap2 (compareTypeConcreteness g) args1 args2
 
     | TType_tuple(_, elems1), TType_tuple(_, elems2) ->
         if elems1.Length <> elems2.Length then
             0
         else
-            let comparisons = List.map2 (compareTypeConcreteness g) elems1 elems2
-            aggregateComparisons comparisons
+            aggregateMap2 (compareTypeConcreteness g) elems1 elems2
 
     | TType_fun(dom1, rng1, _), TType_fun(dom2, rng2, _) ->
         let cDomain = compareTypeConcreteness g dom1 dom2
@@ -148,8 +153,7 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
         if not (anonInfoEquiv info1 info2) then
             0
         else
-            let comparisons = List.map2 (compareTypeConcreteness g) tys1 tys2
-            aggregateComparisons comparisons
+            aggregateMap2 (compareTypeConcreteness g) tys1 tys2
 
     | TType_measure _, TType_measure _ -> 0
 
@@ -291,8 +295,7 @@ let private compareArg (ctx: OverloadResolutionContext) (calledArg1: CalledArg) 
 /// Compare argument lists using dominance: better in at least one, not worse in any
 let private compareArgLists ctx (args1: CalledArg list) (args2: CalledArg list) =
     if args1.Length = args2.Length then
-        let cs = (args1, args2) ||> List.map2 (compareArg ctx)
-        aggregateComparisons cs
+        aggregateMap2 (compareArg ctx) args1 args2
     else
         0
 
@@ -404,24 +407,28 @@ let private unnamedArgsRule: TiebreakRule =
                 if candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs then
                     // For extension members, we also include the object argument type, if any in the comparison set
                     // This matches C#, where all extension members are treated and resolved as "static" methods calls
-                    let objArgComparisons =
+                    let objArgResult =
                         if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then
                             let objArgTys1 = candidate.CalledObjArgTys(ctx.m)
                             let objArgTys2 = other.CalledObjArgTys(ctx.m)
 
                             if objArgTys1.Length = objArgTys2.Length then
-                                List.map2 (compareTypes ctx) objArgTys1 objArgTys2
+                                aggregateMap2 (compareTypes ctx) objArgTys1 objArgTys2
                             else
-                                []
+                                0
                         else
-                            []
+                            0
 
-                    let cs =
-                        objArgComparisons
-                        @ ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs)
-                           ||> List.map2 (compareArg ctx))
+                    let unnamedResult =
+                        aggregateMap2 (compareArg ctx) candidate.AllUnnamedCalledArgs other.AllUnnamedCalledArgs
 
-                    aggregateComparisons cs
+                    // Combine the two sub-results using dominance
+                    let hasPositive = objArgResult > 0 || unnamedResult > 0
+                    let hasNegative = objArgResult < 0 || unnamedResult < 0
+
+                    if not hasNegative && hasPositive then 1
+                    elif not hasPositive && hasNegative then -1
+                    else 0
                 else
                     0
     }
@@ -506,14 +513,11 @@ let private moreConcreteRule: TiebreakRule =
                         let formalParams2 = getCachedParamData ctx other
 
                         if formalParams1.Length = formalParams2.Length then
-                            let comparisons =
-                                List.map2
-                                    (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
-                                        compareTypeConcreteness ctx.g ty1 ty2)
-                                    formalParams1
-                                    formalParams2
-
-                            aggregateComparisons comparisons
+                            aggregateMap2
+                                (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
+                                    compareTypeConcreteness ctx.g ty1 ty2)
+                                formalParams1
+                                formalParams2
                         else
                             0
                 else
@@ -609,21 +613,26 @@ let filterByOverloadResolutionPriority<'T> (g: TcGlobals) (getMeth: 'T -> MethIn
     | [ _ ] -> candidates
     | _ when not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) -> candidates
     | twoOrMoreCandidates ->
-        let enriched =
+        // Fast path: check if any method has a non-zero priority before allocating
+        let hasAnyPriority =
             twoOrMoreCandidates
-            |> List.map (fun c ->
-                let m = getMeth c
+            |> List.exists (fun c -> (getMeth c).GetOverloadResolutionPriority() <> 0)
 
-                let stamp =
-                    match tryTcrefOfAppTy g m.ApparentEnclosingType with
-                    | ValueSome tcref -> tcref.Stamp
-                    | ValueNone -> 0L
-
-                (c, stamp, m.GetOverloadResolutionPriority()))
-
-        if enriched |> List.forall (fun (_, _, prio) -> prio = 0) then
+        if not hasAnyPriority then
             candidates
         else
+            let enriched =
+                twoOrMoreCandidates
+                |> List.map (fun c ->
+                    let m = getMeth c
+
+                    let stamp =
+                        match tryTcrefOfAppTy g m.ApparentEnclosingType with
+                        | ValueSome tcref -> tcref.Stamp
+                        | ValueNone -> 0L
+
+                    (c, stamp, m.GetOverloadResolutionPriority()))
+
             enriched
             |> List.groupBy (fun (_, stamp, _) -> stamp)
             |> List.collect (fun (_, group) ->

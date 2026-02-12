@@ -93,7 +93,6 @@ namespace ExtensionPriorityTests
 {
     // ===== Per-declaring-type scoped priority for extensions =====
     
-    /// Extension methods in Module A with varying priorities
     public static class ExtensionModuleA
     {
         [OverloadResolutionPriority(1)]
@@ -103,7 +102,6 @@ namespace ExtensionPriorityTests
         public static string Transform(this int value) => "ModuleA-int-priority0";
     }
     
-    /// Extension methods in Module B with different priority assignments
     public static class ExtensionModuleB
     {
         [OverloadResolutionPriority(0)]
@@ -191,7 +189,6 @@ namespace ExtensionPriorityTests
     
     // ===== Priority with zero vs absent attribute =====
     
-    /// Mixed explicit zero and absent (implicit zero) 
     public static class ExplicitVsImplicitZero
     {
         [OverloadResolutionPriority(0)]

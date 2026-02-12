@@ -30,8 +30,11 @@ type Example =
     static member Invoke(value: Option<int>) = "int"
 
 let result = Example.Invoke(Some 42)
+if result <> "int" then
+    failwithf "Expected 'int' but got '%s' - wrong overload selected" result
         """
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
@@ -93,8 +96,11 @@ type Example =
     static member Transform(value: Result<int, string>) = "both concrete"
 
 let result = Example.Transform(Ok 42 : Result<int, string>)
+if result <> "both concrete" then
+    failwithf "Expected 'both concrete' but got '%s' - wrong overload selected" result
         """
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
@@ -145,8 +151,11 @@ type Example =
     static member Check(a: int, b: string) = "both concrete"
 
 let result = Example.Check(42, "hello")
+if result <> "both concrete" then
+    failwithf "Expected 'both concrete' but got '%s' - wrong overload selected" result
         """
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
@@ -1358,49 +1367,23 @@ let result = Example.Handle([|1; 2; 3|])
         |> withErrorCode 41
         |> ignore
 
-    [<FactForNETCOREAPP>]
-    let ``LangVersion Latest - ORP attribute ignored - higher priority does not win`` () =
-        FSharp """
+    let orpIgnoredTestCases: obj[] seq =
+        [
+            [| "higher priority does not win"; "BasicPriority.Invoke(\"test\")"; "priority-1-string" |]
+            [| "negative priority has no effect"; "NegativePriority.Legacy(\"test\")"; "current" |]
+            [| "priority does not override concreteness"; "PriorityVsConcreteness.Process(42)"; "int-low-priority" |]
+        ]
+
+    [<TheoryForNETCOREAPP>]
+    [<MemberData(nameof orpIgnoredTestCases)>]
+    let ``LangVersion Latest - ORP attribute ignored`` (_description: string) (callExpr: string) (expected: string) =
+        FSharp $"""
 module Test
 open PriorityTests
 
-let result = BasicPriority.Invoke("test")
-if result <> "priority-1-string" then
-    failwithf "Expected 'priority-1-string' (string) but got '%s' - ORP should be ignored" result
-        """
-        |> withReferences [csharpPriorityLib]
-        |> withLangVersion "latest"
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<FactForNETCOREAPP>]
-    let ``LangVersion Latest - ORP attribute ignored - negative priority has no effect`` () =
-        FSharp """
-module Test
-open PriorityTests
-
-let result = NegativePriority.Legacy("test")
-if result <> "current" then
-    failwithf "Expected 'current' (string) but got '%s'" result
-        """
-        |> withReferences [csharpPriorityLib]
-        |> withLangVersion "latest"
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<FactForNETCOREAPP>]
-    let ``LangVersion Latest - ORP attribute ignored - priority does not override concreteness`` () =
-        FSharp """
-module Test
-open PriorityTests
-
-let result = PriorityVsConcreteness.Process(42)
-if result <> "int-low-priority" then
-    failwithf "Expected 'int-low-priority' (int) but got '%s' - ORP should be ignored" result
+let result = {callExpr}
+if result <> "{expected}" then
+    failwithf "Expected '{expected}' but got '%%s' - ORP should be ignored" result
         """
         |> withReferences [csharpPriorityLib]
         |> withLangVersion "latest"

@@ -3700,30 +3700,38 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     match bestMethods with 
     | [(calledMeth, warns, t, _)] ->
-        let concretenessWarns =
-            applicableMeths
-            |> List.choose (fun loser ->
-                let (loserMeth, _, _, _) = loser
-
-                if System.Object.ReferenceEquals(loserMeth, calledMeth) then
-                    None
-                else
-                    match decidingRuleCache.TryGetValue(struct(calledMeth :> obj, loserMeth :> obj)) with
-                    | true, ValueSome TiebreakRuleId.MoreConcrete ->
-                        Some(calledMeth.Method.DisplayName, loserMeth.Method.DisplayName)
-                    | _ -> None)
+        // Only compute concreteness warnings when the MoreConcrete rule was used as deciding factor
+        let anyMoreConcreteUsed =
+            decidingRuleCache.Values
+            |> Seq.exists (fun v -> match v with ValueSome TiebreakRuleId.MoreConcrete -> true | _ -> false)
 
         let allWarns =
-            match concretenessWarns with
-            | [] -> warns
-            | (winnerName, loserName) :: _ ->
-                let warn3575 =
-                    Error(FSComp.SR.tcMoreConcreteTiebreakerUsed (winnerName, winnerName, loserName), m)
-                let warn3576List =
-                    concretenessWarns
-                    |> List.map (fun (winner, loser) -> Error(FSComp.SR.tcGenericOverloadBypassed (loser, winner), m))
+            if not anyMoreConcreteUsed then
+                warns
+            else
+                let concretenessWarns =
+                    applicableMeths
+                    |> List.choose (fun loser ->
+                        let (loserMeth, _, _, _) = loser
 
-                warn3575 :: warn3576List @ warns
+                        if System.Object.ReferenceEquals(loserMeth, calledMeth) then
+                            None
+                        else
+                            match decidingRuleCache.TryGetValue(struct(calledMeth :> obj, loserMeth :> obj)) with
+                            | true, ValueSome TiebreakRuleId.MoreConcrete ->
+                                Some(calledMeth.Method.DisplayName, loserMeth.Method.DisplayName)
+                            | _ -> None)
+
+                match concretenessWarns with
+                | [] -> warns
+                | (winnerName, loserName) :: _ ->
+                    let warn3575 =
+                        Error(FSComp.SR.tcMoreConcreteTiebreakerUsed (winnerName, winnerName, loserName), m)
+                    let warn3576List =
+                        concretenessWarns
+                        |> List.map (fun (winner, loser) -> Error(FSComp.SR.tcGenericOverloadBypassed (loser, winner), m))
+
+                    warn3575 :: warn3576List @ warns
 
         Some calledMeth, OkResult(allWarns, ()), WithTrace t
 
