@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Linq.NullableOperators
+namespace FSharp.Core.UnitTests.Linq
 
 open System
 open Xunit
