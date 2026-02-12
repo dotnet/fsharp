@@ -1,6 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-// Test source for overload resolution cache correctness.
-// Each overload returns a unique string identifying which overload was picked.
 module OverloadTests
 
 open System

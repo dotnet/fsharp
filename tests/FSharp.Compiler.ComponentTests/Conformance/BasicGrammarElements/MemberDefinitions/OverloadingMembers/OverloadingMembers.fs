@@ -41,7 +41,6 @@ module MemberDefinitions_OverloadingMembers =
         |> shouldSucceed
 
     // SOURCE=ArityFilteringTest.fs                         # ArityFilteringTest.fs
-    // Tests that early arity filtering in overload resolution works correctly
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ArityFilteringTest.fs"|])>]
     let ``ArityFilteringTest_fs`` compilation =
         compilation
@@ -49,8 +48,6 @@ module MemberDefinitions_OverloadingMembers =
         |> shouldSucceed
 
     // SOURCE=TypeCompatibilityFilterTest.fs               # TypeCompatibilityFilterTest.fs
-    // Tests that quick type compatibility filtering in overload resolution works correctly
-    // This covers: generics, param arrays, optional args, type-directed conversions
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeCompatibilityFilterTest.fs"|])>]
     let ``TypeCompatibilityFilterTest_fs`` compilation =
         compilation

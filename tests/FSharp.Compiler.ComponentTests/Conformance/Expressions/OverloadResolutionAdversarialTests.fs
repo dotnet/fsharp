@@ -1,6 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-// Adversarial test source for overload resolution cache.
-// Intentionally tries to poison the cache by calling with different types.
 module CacheBustingTests
 
 open System

@@ -574,8 +574,7 @@ type CalledMeth<'T>
         | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWithOrdinal("set_") && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
         | _ -> false
 
-    // Helper function to compute property setter assignments - this is expensive due to property lookups
-    // and is deferred until actually needed (after candidate is selected)
+    // Deferred until needed - property lookups are expensive and most candidates get filtered out
     let computeAssignedNamedProps (unassignedItems: CallerNamedArg<'T> list) =
         let returnedObjTy = methodRetTy
         unassignedItems |> List.splitChoose (fun (CallerNamedArg(id, e) as arg) -> 
@@ -731,13 +730,10 @@ type CalledMeth<'T>
     let unnamedCalledOptArgs        = argSetInfos |> List.collect (fun (_, _, _, x, _) -> x)
     let unnamedCalledOutArgs        = argSetInfos |> List.collect (fun (_, _, _, _, x) -> x)
 
-    // Lazy computation of assigned named props - deferred until actually needed
-    // This avoids expensive property lookups for candidates that will be filtered out
     let lazyAssignedNamedPropsAndUnassigned = lazy (computeAssignedNamedProps unassignedNamedItemsRaw)
     let assignedNamedProps () = fst (lazyAssignedNamedPropsAndUnassigned.Value)
     let unassignedNamedItems () = snd (lazyAssignedNamedPropsAndUnassigned.Value)
     
-    // Quick check for AssignsAllNamedArgs - avoids forcing lazy if no unassigned items exist
     let hasNoUnassignedNamedItems () = 
         if isNil unassignedNamedItemsRaw then true  // Fast path: no items to look up
         else isNil (unassignedNamedItems())         // Slow path: force lazy and check

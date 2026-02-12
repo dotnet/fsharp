@@ -81,7 +81,6 @@ open FSharp.Compiler.TypeProviders
 // of the constraint resolution carried out by type checking.
 //------------------------------------------------------------------------- 
 
-
    
 let compgenId = mkSynId range0 unassignedTyparName
 
@@ -358,8 +357,6 @@ let MakeConstraintSolverEnv contextInfo css m denv =
 //-------------------------------------------------------------------------
 // Overload Resolution Caching Wrappers
 //-------------------------------------------------------------------------
-// These wrappers convert OverallTy to TType and delegate to the
-// OverloadResolutionCache module
 
 /// Try to compute a cache key for overload resolution (wrapper for OverallTy)
 let tryComputeOverloadCacheKey
@@ -3483,7 +3480,7 @@ and AssumeMethodSolvesTrait (csenv: ConstraintSolverEnv) (cx: TraitConstraintInf
 /// Core implementation of overload resolution (extracted for caching)
 and ResolveOverloadingCore 
          (csenv: ConstraintSolverEnv)
-         _trace  // Currently unused - may be used for future improvements
+         _trace
          methodName
          ndeep
          cx
@@ -3584,7 +3581,6 @@ and ResolveOverloadingCore
           Some calledMeth, OkResult (warns, ()), WithTrace t
 
       | applicableMeths -> 
-          // Multiple applicable methods - use most applicable overload rules to find the best one
           GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m cacheKeyOpt cache
 
 // Resolve the overloading of a method 
@@ -3642,12 +3638,6 @@ and ResolveOverloading
             
         | _, _ -> 
 
-          // Try to use cached overload resolution result for repetitive patterns
-          // Only cache when:
-          // - Language feature is enabled
-          // - NOT doing op_Explicit/op_Implicit conversions
-          // - NOT doing trait constraint (SRTP) resolution (cx is None)
-          // - Have multiple candidates
           let cacheKeyOpt = 
               if g.langVersion.SupportsFeature LanguageFeature.MethodOverloadsCache && 
                  not isOpConversion && cx.IsNone && candidates.Length > 1 then
@@ -3655,7 +3645,6 @@ and ResolveOverloading
               else
                   ValueNone
 
-          // Check cache for existing result
           let cache = getOverloadResolutionCache g
           match cacheKeyOpt with
           | ValueSome cacheKey ->
@@ -3663,26 +3652,19 @@ and ResolveOverloading
               if cache.TryGetValue(cacheKey, &cachedResult) then
                   match cachedResult with
                   | CachedResolved idx when idx >= 0 && idx < calledMethGroup.Length ->
-                      // Cache hit - verify the cached method has correct generic arity before using
                       let calledMeth = calledMethGroup[idx]
                       if calledMeth.HasCorrectGenericArity then
                           Some calledMeth, CompleteD, NoTrace
                       else
-                          // Cached method doesn't match current call's type args - do normal resolution
                           ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
                   | CachedFailed ->
-                      // Cache hit - resolution previously failed
-                      // We still need to go through normal resolution to generate proper error messages
-                      // (not using cached failure to avoid wrong error messages for ambiguity cases)
+                      // Still go through normal resolution to generate proper error messages
                       ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
                   | _ ->
-                      // Cache miss - proceed with normal resolution
                       ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
               else
-                  // Cache miss - proceed with normal resolution
                   ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion cacheKeyOpt cache
           | ValueNone ->
-              // Cannot cache - proceed with normal resolution
               ResolveOverloadingCore csenv trace methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion ValueNone cache
 
     // If we've got a candidate solution: make the final checks - no undo here! 

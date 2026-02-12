@@ -87,12 +87,10 @@ let tryGetTypeStructureForOverloadCache (g: TcGlobals) (ty: TType) : TypeStructu
     match tryGetTypeStructureOfStrippedType ty with
     | ValueSome(Stable tokens) -> ValueSome(Stable tokens)
     | ValueSome(Unstable tokens) ->
-        // Only accept Unstable if it doesn't contain flexible unsolved typars
-        // Unstable due to solved typars is safe; Unstable due to unsolved is not
         if hasUnsolvedTokens tokens then
-            ValueNone // Reject - contains unsolved flexible typars
+            ValueNone
         else
-            ValueSome(Stable tokens) // Accept - unstable only due to solved typars
+            ValueSome(Stable tokens)
     | ValueSome PossiblyInfinite -> ValueNone
     | ValueNone -> ValueNone
 
@@ -127,16 +125,14 @@ let tryComputeOverloadCacheKey
     else
 
         // Compute method group hash - must be order-dependent since we cache by index
-        // Using combineHash pattern from HashingPrimitives for consistency
         let mutable methodGroupHash = 0
 
         for cmeth in calledMethGroup do
             let methHash = computeMethInfoHash cmeth.Method
             methodGroupHash <- HashingPrimitives.combineHash methodGroupHash methHash
 
-        // Collect type structures for caller object arguments (the 'this' argument)
-        // This is critical for extension methods where the 'this' type determines the overload
-        // e.g., GItem1 on Tuple<T1,T2> vs Tuple<T1,T2,T3> vs Tuple<T1,T2,T3,T4>
+        // Collect type structures for caller object arguments
+        // Critical for extension methods where the 'this' type determines the overload
         let objArgStructures = ResizeArray()
         let mutable allStable = true
 
@@ -166,30 +162,18 @@ let tryComputeOverloadCacheKey
             if not allStable then
                 ValueNone
             else
-                // Compute return type structure if present
-                // This is critical for cases like:
-                // - c.CheckCooperativeLevel() returning bool (calls no-arg overload)
-                // - let a, b = c.CheckCooperativeLevel() (calls byref overload with tuple destructuring)
+                // Critical for distinguishing calls where return type selects the overload (e.g., out args)
                 let retTyStructure =
                     match reqdRetTyOpt with
                     | Some retTy ->
                         match tryGetTypeStructureForOverloadCache g retTy with
                         | ValueSome ts -> ValueSome ts
                         | ValueNone ->
-                            // Return type has unresolved type variable
-                            // This is only a problem if any candidate has out args, because out args
-                            // affect the effective return type (method returning bool with out int becomes bool*int)
-                            // For normal overloads (no out args), the return type doesn't affect resolution
                             if anyHasOutArgs then
-                                // Don't cache - the expected return type determines which overload to pick
-                                // e.g., c.CheckCooperativeLevel() -> bool vs let a,b = c.CheckCooperativeLevel() -> bool*int
                                 ValueNone
                             else
-                                // Safe to cache with wildcard - return type doesn't affect resolution
-                                // Use empty Stable array as marker for "any return type"
                                 ValueSome(Stable [||])
                     | None ->
-                        // No return type constraint - use empty marker
                         ValueSome(Stable [||])
 
                 match retTyStructure with
@@ -238,7 +222,6 @@ let storeCacheResult
     (anyHasOutArgs: bool)
     (calledMethOpt: CalledMeth<'T> voption)
     =
-    // Only store in cache if the language feature is enabled
     if not (g.langVersion.SupportsFeature LanguageFeature.MethodOverloadsCache) then
         ()
     else
@@ -246,18 +229,15 @@ let storeCacheResult
         | ValueSome cacheKey ->
             match computeCacheResult calledMethGroup calledMethOpt with
             | Some res ->
-                // Store under the "before" key
                 cache.TryAdd(cacheKey, res) |> ignore
 
-                // Compute "after" key - types may have been solved during resolution
-                // If different from "before" key, store under that too for future hits
+                // Also store under "after" key if types were solved during resolution
                 match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt anyHasOutArgs with
                 | ValueSome afterKey when afterKey <> cacheKey -> cache.TryAdd(afterKey, res) |> ignore
                 | _ -> ()
             | None -> ()
         | ValueNone ->
-            // Even if we couldn't compute a "before" key (unstable types),
-            // try to compute an "after" key now that types may be solved
+            // Try to compute a key now that types may have been solved
             match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt anyHasOutArgs with
             | ValueSome afterKey ->
                 match computeCacheResult calledMethGroup calledMethOpt with

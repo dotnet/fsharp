@@ -28,11 +28,9 @@ let checkSourceHasNoErrors (source: string) =
 /// Generate F# source code with many identical overloaded method calls
 let generateRepetitiveOverloadCalls (callCount: int) =
     let sb = StringBuilder()
-    sb.AppendLine("// Test file with repetitive overloaded method calls") |> ignore
     sb.AppendLine("open System") |> ignore
     sb.AppendLine() |> ignore
     
-    // Define a type with multiple overloads to simulate Assert.Equal pattern
     sb.AppendLine("type TestAssert =") |> ignore
     sb.AppendLine("    static member Equal(expected: int, actual: int) = expected = actual") |> ignore
     sb.AppendLine("    static member Equal(expected: string, actual: string) = expected = actual") |> ignore
@@ -44,8 +42,6 @@ let generateRepetitiveOverloadCalls (callCount: int) =
     sb.AppendLine("    static member Equal(expected: obj, actual: obj) = obj.Equals(expected, actual)") |> ignore
     sb.AppendLine() |> ignore
     
-    // Generate many identical calls - these should benefit from caching
-    // Use typed variables to ensure types are already resolved
     sb.AppendLine("let runTests() =") |> ignore
     sb.AppendLine("    let mutable x: int = 0") |> ignore
     sb.AppendLine("    let mutable y: int = 0") |> ignore
@@ -65,17 +61,13 @@ let ``Overload cache hit rate exceeds 95 percent for repetitive int-int calls`` 
     // Use the new public API to listen to overload cache metrics
     use listener = FSharpChecker.CreateOverloadCacheMetricsListener()
     
-    // Clear caches to get clean measurement
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     
-    // Generate source with 100+ repetitive calls
     let callCount = 150
     let source = generateRepetitiveOverloadCalls callCount
     
-    // Type check the file and verify no errors
     checkSourceHasNoErrors source |> ignore
     
-    // Validate cache metrics using the new CacheMetricsListener API
     let hits = listener.Hits
     let misses = listener.Misses
     let ratio = listener.Ratio
@@ -83,63 +75,44 @@ let ``Overload cache hit rate exceeds 95 percent for repetitive int-int calls`` 
     printfn "Overload cache metrics for %d repetitive calls:" callCount
     printfn "  Hits: %d, Misses: %d, Hit ratio: %.2f%%" hits misses (ratio * 100.0)
     
-    // With 150 repetitive identical overload calls, we expect >70% hit rate
-    // The first call is a miss, subsequent identical calls should be hits
-    // Note: Variation expected due to cache initialization overhead,
-    // additional overload resolutions for type construction/operators,
-    // and test isolation issues when run with other tests
     if hits + misses > 0L then
         Assert.True(ratio > 0.70, sprintf "Expected hit ratio > 70%%, but got %.2f%%" (ratio * 100.0))
 
 /// Test that caching correctly returns resolved overload
 [<Fact>]
 let ``Overload cache returns correct resolution`` () =
-    // Use the new public API to listen to overload cache metrics
     use listener = FSharpChecker.CreateOverloadCacheMetricsListener()
     
-    // Clear caches to get clean measurement
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     
-    // Source with clear type-based overload selection
     let source = """
 type Overloaded =
     static member Process(x: int) = "int"
     static member Process(x: string) = "string"
     static member Process(x: float) = "float"
 
-// Multiple calls with same types should use cache
 let r1 = Overloaded.Process(1)
 let r2 = Overloaded.Process(2)
 let r3 = Overloaded.Process(3)
 let r4 = Overloaded.Process(4)
 let r5 = Overloaded.Process(5)
 
-// String calls are different type signature
 let s1 = Overloaded.Process("a")
 let s2 = Overloaded.Process("b")
 
-// Float calls are different type signature  
 let f1 = Overloaded.Process(1.0)
 let f2 = Overloaded.Process(2.0)
 """
     
     checkSourceHasNoErrors source |> ignore
     
-    // Verify listener captured cache activity
     let hits = listener.Hits
     let misses = listener.Misses
     printfn "Cache metrics - Hits: %d, Misses: %d" hits misses
-    
-    // If we got here without errors, the overload resolution worked correctly
-    // (including any cached resolutions)
-    printfn "All overload resolutions succeeded"
 
 /// Test that overload resolution with type inference variables works correctly
-/// This is a safety test - types with inference variables should not be cached incorrectly
 [<Fact>]
 let ``Overload resolution with type inference produces correct results`` () =
-    // This test verifies that the cache doesn't incorrectly cache resolutions
-    // when type inference variables are involved
     let source = """
 type Overloaded =
     static member Process(x: int) = "int"
@@ -147,22 +120,18 @@ type Overloaded =
     static member Process(x: float) = "float"
     static member Process(x: 'T list) = "list"
 
-// Type is inferred - these should NOT be cached (unstable types)
 let inferredInt = Overloaded.Process(42)
 let inferredString = Overloaded.Process("hello")
 let inferredFloat = Overloaded.Process(3.14)
 
-// Generic list inference
 let inferredIntList = Overloaded.Process([1;2;3])
 let inferredStringList = Overloaded.Process(["a";"b"])
 
-// Explicit types - these CAN be cached
 let explicitInt: string = Overloaded.Process(100)
 let explicitString: string = Overloaded.Process("world")
 """
     
     checkSourceHasNoErrors source |> ignore
-    // All resolutions should work correctly - no incorrect cache hits
     printfn "Type inference overload resolution succeeded"
 
 /// Test that nested generic types with inference variables are handled correctly
@@ -180,12 +149,10 @@ let c1 = { Value = 42 }
 let c2 = { Value = "hello" }
 let c3 = { Value = { Value = 99 } }
 
-// These should resolve to correct overloads
-let r1 = Processor.Handle(c1)  // int container
-let r2 = Processor.Handle(c2)  // string container
-let r3 = Processor.Handle(c3)  // nested int container
+let r1 = Processor.Handle(c1)
+let r2 = Processor.Handle(c2)
+let r3 = Processor.Handle(c3)
 
-// Inline construction - type inference involved
 let r4 = Processor.Handle({ Value = 123 })
 let r5 = Processor.Handle({ Value = "world" })
 """
@@ -199,17 +166,14 @@ let ``Overload resolution with out args and type inference works correctly`` () 
     let source = """
 open System
 
-// Use standard .NET TryParse which has out args
-let test1 = Int32.TryParse("42")  // returns bool * int
-let test2 = Double.TryParse("3.14")  // returns bool * float
-let test3 = Boolean.TryParse("true")  // returns bool * bool
+let test1 = Int32.TryParse("42")
+let test2 = Double.TryParse("3.14")
+let test3 = Boolean.TryParse("true")
 
-// Verify the results have correct types
 let (success1: bool, value1: int) = test1
 let (success2: bool, value2: float) = test2
 let (success3: bool, value3: bool) = test3
 
-// Multiple calls to same TryParse
 let a = Int32.TryParse("1")
 let b = Int32.TryParse("2")
 let c = Int32.TryParse("3")
@@ -230,18 +194,15 @@ type Processor =
     static member Handle(x: string list) = "string list"
     static member Handle(x: int) = "int"
 
-// Using type abbreviations
 let myIntList: IntList = [1; 2; 3]
 let myStringList: StringList = ["a"; "b"]
 
-let r1 = Processor.Handle(myIntList)    // Should resolve to "int list"
-let r2 = Processor.Handle(myStringList) // Should resolve to "string list"
+let r1 = Processor.Handle(myIntList)
+let r2 = Processor.Handle(myStringList)
 
-// Direct usage
 let r3 = Processor.Handle([1; 2; 3])
 let r4 = Processor.Handle(["x"; "y"])
 
-// Mix of abbreviation and direct
 let r5 = Processor.Handle(myIntList)
 let r6 = Processor.Handle([4; 5; 6])
 """
@@ -250,25 +211,20 @@ let r6 = Processor.Handle([4; 5; 6])
     printfn "Type abbreviation overload resolution succeeded"
 
 /// Test that rigid generic type parameters work correctly in overload resolution
-/// This is crucial for patterns like Assert.Equal<'T>('T, 'T)
 [<Fact>]
 let ``Overload cache benefits from rigid generic type parameters`` () =
     use listener = FSharpChecker.CreateOverloadCacheMetricsListener()
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     
     let source = """
-// Simulate xUnit Assert.Equal pattern with multiple overloads
 type Assert =
     static member Equal(expected: int, actual: int) = expected = actual
     static member Equal(expected: string, actual: string) = expected = actual
     static member Equal(expected: float, actual: float) = expected = actual
     static member Equal<'T when 'T: equality>(expected: 'T, actual: 'T) = expected = actual
 
-// Generic function with rigid type parameter - should enable caching
 let inline check<'T when 'T: equality>(x: 'T, y: 'T) = Assert.Equal(x, y)
 
-// Multiple calls using the generic check function
-// These should benefit from caching because 'T is rigid
 let test1() = check(1, 2)
 let test2() = check(3, 4)
 let test3() = check(5, 6)
@@ -277,7 +233,6 @@ let test5() = check("c", "d")
 let test6() = check(1.0, 2.0)
 let test7() = check(3.0, 4.0)
 
-// Direct generic calls with explicit type args
 let d1 = Assert.Equal<int>(10, 20)
 let d2 = Assert.Equal<int>(30, 40)
 let d3 = Assert.Equal<string>("x", "y")
@@ -289,14 +244,8 @@ let d4 = Assert.Equal<string>("z", "w")
     let hits = listener.Hits
     let misses = listener.Misses
     printfn "Generic overload cache metrics - Hits: %d, Misses: %d" hits misses
-    
-    // This test verifies correctness - rigid generics should resolve correctly
-    // Cache hits depend on code patterns; the main test for cache effectiveness
-    // is "Overload cache hit rate exceeds 95 percent" which uses concrete types
-    printfn "Rigid generic overload resolution succeeded"
 
-/// Test that inference variables (flexible typars) are NOT cached
-/// but correctly resolved
+/// Test that inference variables (flexible typars) are NOT cached but correctly resolved
 [<Fact>]
 let ``Overload resolution with inference variables works correctly`` () =
     let source = """
@@ -305,12 +254,10 @@ type Overloaded =
     static member Process(x: string) = "string"
     static member Process<'T>(x: 'T) = "generic"
 
-// These have inference variables that get solved - should work correctly
-let a = Overloaded.Process(42)       // Should pick int overload
-let b = Overloaded.Process("hello")  // Should pick string overload
-let c = Overloaded.Process(true)     // Should pick generic<bool>
+let a = Overloaded.Process(42)
+let b = Overloaded.Process("hello")
+let c = Overloaded.Process(true)
 
-// Multiple calls with same inferred type
 let x1 = Overloaded.Process(1)
 let x2 = Overloaded.Process(2)
 let x3 = Overloaded.Process(3)
@@ -339,19 +286,16 @@ type Cat() = inherit Animal()
 // Define overloads that require type subsumption checks
 type Zoo =
     static member Accept(animals: IEnumerable<Animal>) = "animals"
-    static member Accept(dogs: IList<Dog>) = "dogs"  // More specific
+    static member Accept(dogs: IList<Dog>) = "dogs"
     static member Accept(x: obj) = "obj"
 
-// Test with solved generic type parameters
 let dogs: IList<Dog> = [Dog(); Dog()] |> ResizeArray :> IList<Dog>
 let animals: IEnumerable<Animal> = [Animal(); Dog(); Cat()] |> Seq.ofList
 
-// Overload resolution requires subsumption checks
-let r1 = Zoo.Accept(dogs)     // Should pick IList<Dog> overload
-let r2 = Zoo.Accept(animals)  // Should pick IEnumerable<Animal> overload
-let r3 = Zoo.Accept(42)       // Should pick obj overload
+let r1 = Zoo.Accept(dogs)
+let r2 = Zoo.Accept(animals)
+let r3 = Zoo.Accept(42)
 
-// Multiple calls with same types - subsumption cache should work
 let d1 = Zoo.Accept(dogs)
 let d2 = Zoo.Accept(dogs)
 let d3 = Zoo.Accept(dogs)
@@ -360,14 +304,12 @@ let a1 = Zoo.Accept(animals)
 let a2 = Zoo.Accept(animals)
 let a3 = Zoo.Accept(animals)
 
-// With inline inference - solved typars
 let inline testWith<'T when 'T :> Animal>(items: seq<'T>) =
     Zoo.Accept(items)
 
 let dogSeq = [Dog(); Dog()] |> Seq.ofList
 let catSeq = [Cat(); Cat()] |> Seq.ofList
 
-// These involve type subsumption with solved type parameters
 let t1 = testWith dogSeq
 let t2 = testWith catSeq
 """
@@ -376,7 +318,6 @@ let t2 = testWith catSeq
     printfn "Type subsumption with solved generics succeeded"
 
 /// Test that caching doesn't break when types are known vs unknown at call site
-/// This verifies the before/after key strategy works correctly
 [<Fact>]
 let ``Cache handles known vs inferred types correctly`` () =
     let source = """
@@ -385,12 +326,10 @@ type Overloaded =
     static member Call(x: string) = "string"
     static member Call(x: float) = "float"
 
-// Calls with known types (should all resolve unambiguously)
 let r1 = Overloaded.Call(42)
 let r2 = Overloaded.Call("hello")
 let r3 = Overloaded.Call(3.14)
 
-// Multiple identical calls - should benefit from caching
 let a1 = Overloaded.Call(1)
 let a2 = Overloaded.Call(2)
 let a3 = Overloaded.Call(3)
@@ -414,14 +353,11 @@ type GenericOverload =
     static member Process(x: string) = "string"
     static member Process<'T>(x: 'T) = "generic"
 
-// Non-generic calls should pick specific overloads
-let r1 = GenericOverload.Process(42)       // int
-let r2 = GenericOverload.Process("hello")  // string
+let r1 = GenericOverload.Process(42)
+let r2 = GenericOverload.Process("hello")
 
-// Explicit generic call
-let r3 = GenericOverload.Process<bool>(true)  // generic
+let r3 = GenericOverload.Process<bool>(true)
 
-// Multiple calls to same overload - caching
 let x1 = GenericOverload.Process(1)
 let x2 = GenericOverload.Process(2)
 let x3 = GenericOverload.Process(3)
@@ -439,12 +375,10 @@ type Processor =
     static member Handle(x: string list) = "string list"
     static member Handle(x: float list) = "float list"
 
-// Calls with known list types
 let r1 = Processor.Handle([1; 2; 3])
 let r2 = Processor.Handle(["a"; "b"; "c"])
 let r3 = Processor.Handle([1.0; 2.0; 3.0])
 
-// Multiple calls - caching
 let a1 = Processor.Handle([1])
 let a2 = Processor.Handle([2])
 let a3 = Processor.Handle([3])
