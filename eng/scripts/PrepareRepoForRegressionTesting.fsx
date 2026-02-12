@@ -89,7 +89,6 @@ if File.Exists(propsFilePath) then
         doc.Save(propsFilePath)
         printfn "✓ Added --times flag to OtherFlags"
     else
-        // Ensure --nowarn:75 is present before --times in OtherFlags
         if not (otherFlagsWithTimes.InnerText.Contains("--nowarn:75")) then
             otherFlagsWithTimes.InnerText <- otherFlagsWithTimes.InnerText.Replace("--times", "--nowarn:75 --times")
             doc.Save(propsFilePath)
