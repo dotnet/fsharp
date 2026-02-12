@@ -7,9 +7,6 @@ open FSharp.Test.Compiler
 open Debugger.DebuggerTestHelpers
 
 /// https://github.com/dotnet/fsharp/issues/12052
-/// Tests below for #15289 verify sequence point ranges for match expressions with when guards.
-/// No implementation fix for #15289 is included in this branch — these are coverage/regression tests only.
-/// The actual #15289 issue involves very large methods (1300+ lines) where PDB SP ranges extend incorrectly.
 module MatchEndSequencePoint =
 
     [<Fact>]
@@ -106,7 +103,6 @@ let processAndLog (x: int) =
               (Line 9, Col 16, Line 9, Col 22) ]
 
     /// https://github.com/dotnet/fsharp/issues/12052#issuecomment-974695340
-    /// Auduchinok reported extra Step Over needed in if/then/else expressions too.
     [<Fact>]
     let ``If-then-else does not produce extra sequence point at end`` () =
         verifyMethodDebugPoints
@@ -149,7 +145,8 @@ let funcD (x: int) =
 
     [<Fact>]
     let ``Complex match with nested when guards has all sequence points within method range`` () =
-        FSharp "
+        verifyMethodDebugPointsInRange
+            "
 module TestModule5
 
 type Cmd = Start of int | Stop | Pause of string | Resume
@@ -178,10 +175,7 @@ let dispatch (cmd: Cmd) (active: bool) (count: int) =
         \"resuming\"
     | Resume ->
         \"already-active\"
-        "
-        |> asLibrary
-        |> withPortablePdb
-        |> compile
-        |> shouldSucceed
-        |> verifyPdb [ VerifyMethodSequencePointsInRange("dispatch", Line 6, Line 29) ]
-        |> ignore
+            "
+            "dispatch"
+            (Line 6)
+            (Line 29)

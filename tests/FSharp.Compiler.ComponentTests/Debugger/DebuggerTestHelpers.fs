@@ -13,3 +13,20 @@ module DebuggerTestHelpers =
         |> compile
         |> shouldSucceed
         |> verifyPdb [ VerifyMethodSequencePoints(methodName, expectedSequencePoints) ]
+
+    let verifyAllSequencePoints source expectedSequencePoints =
+        FSharp source
+        |> asLibrary
+        |> withPortablePdb
+        |> compile
+        |> shouldSucceed
+        |> verifyPdb [ VerifySequencePoints expectedSequencePoints ]
+
+    let verifyMethodDebugPointsInRange source methodName startLine endLine =
+        FSharp source
+        |> asLibrary
+        |> withPortablePdb
+        |> compile
+        |> shouldSucceed
+        |> verifyPdb [ VerifyMethodSequencePointsInRange(methodName, startLine, endLine) ]
+        |> ignore

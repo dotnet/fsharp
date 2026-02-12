@@ -21,8 +21,6 @@ let a =
     }
         """ "Invoke" [ (Line 6, Col 9, Line 6, Col 17) ]
 
-    /// Seq expressions use a different code path (CheckSequenceExpressions.fs, not CheckComputationExpressions.fs).
-    /// This test is a baseline smoke test, not a validation of the CE yield/return fix.
     [<Fact>]
     let ``Yield in seq CE - debug point on yield value`` () =
         verifyMethodDebugPoints """
@@ -67,9 +65,6 @@ let a =
     }
         """ "staticInitialization@" [ (Line 13, Col 1, Line 13, Col 25); (Line 16, Col 5, Line 16, Col 9); (Line 17, Col 9, Line 17, Col 30) ]
 
-    /// The yield/return fix uses the same code path (SynExpr.YieldOrReturn handler).
-    /// 'return' is tested above in async CE. This test verifies 'yield' specifically,
-    /// using a task CE which preserves debug points in MoveNext.
     [<Fact>]
     let ``Yield in task CE - debug point covers full expression`` () =
         verifyMethodDebugPoints """

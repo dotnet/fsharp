@@ -4,21 +4,14 @@ namespace Debugger
 
 open Xunit
 open FSharp.Test.Compiler
+open Debugger.DebuggerTestHelpers
 
 /// https://github.com/dotnet/fsharp/issues/13504
 module ForArrowDebugPoints =
 
-    let private verifyComprehensionDebugPoints source expectedSequencePoints =
-        FSharp source
-        |> asLibrary
-        |> withPortablePdb
-        |> compile
-        |> shouldSucceed
-        |> verifyPdb [ VerifySequencePoints expectedSequencePoints ]
-
     [<Fact>]
     let ``For-arrow list comprehension body has debug point`` () =
-        verifyComprehensionDebugPoints """
+        verifyAllSequencePoints """
 module TestModule
 
 let squares = [
@@ -35,7 +28,7 @@ let squares = [
 
     [<Fact>]
     let ``For-arrow array comprehension body has debug point`` () =
-        verifyComprehensionDebugPoints """
+        verifyAllSequencePoints """
 module TestModule
 
 let squares = [|
@@ -52,7 +45,7 @@ let squares = [|
 
     [<Fact>]
     let ``For-do-yield comprehension body has debug point`` () =
-        verifyComprehensionDebugPoints """
+        verifyAllSequencePoints """
 module TestModule
 
 let squares = [
