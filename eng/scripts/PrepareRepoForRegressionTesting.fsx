@@ -70,6 +70,7 @@ if File.Exists(propsFilePath) then
         
         let importNode = doc.SelectSingleNode(xpath)
         
+        // Skip past whitespace text nodes when inserting after the import
         let nodeAfterImport = 
             if not (isNull importNode) && not (isNull importNode.NextSibling) && importNode.NextSibling.NodeType = XmlNodeType.Text then
                 importNode.NextSibling
@@ -90,9 +91,10 @@ if File.Exists(propsFilePath) then
         if not (otherFlagsWithTimes.InnerText.Contains("--nowarn:75")) then
             otherFlagsWithTimes.InnerText <- otherFlagsWithTimes.InnerText.Replace("--times", "--nowarn:75 --times")
             doc.Save(propsFilePath)
-            printfn "✓ Added --nowarn:75 before --times in existing OtherFlags"
+            printfn "✓ Added --nowarn:75 before --times in OtherFlags"
         else
-            printfn "✓ --times flag already exists in OtherFlags"
+            printfn "✓ --nowarn:75 already exists in OtherFlags"
+        printfn "✓ --times flag already exists in OtherFlags"
 else
     printfn "Directory.Build.props does not exist, creating it..."
     let newContent = sprintf "<Project>\n  <Import Project=\"%s\" />\n  <PropertyGroup>\n    <OtherFlags>$(OtherFlags) --nowarn:75 --times</OtherFlags>\n  </PropertyGroup>\n</Project>\n" absolutePropsPath

@@ -23,7 +23,11 @@ let rec findProject (node: TreeNode) =
 
 let build = BinaryLog.ReadBuild(binlogPath)
 
+let isTimingLine (s: string) =
+    s.Contains("|") || (s.TrimStart().StartsWith("-") && s.Length > 10 && not (s.Contains("/")))
+
 let mutable foundFscTasks = false
+let mutable foundTimingData = false
 
 build.VisitAllChildren<Task>(fun task ->
     if task.Name = "Fsc" then
@@ -34,21 +38,24 @@ build.VisitAllChildren<Task>(fun task ->
             | Some name -> name
             | None -> "Unknown Project"
         
-        let messages = 
+        let timingMessages = 
             task.Children
             |> Seq.choose (function
-                | :? Message as m -> Some m.Text
+                | :? Message as m when isTimingLine m.Text -> Some m.Text
                 | _ -> None)
             |> Seq.toList
         
-        if messages.Length > 0 then
+        if timingMessages.Length > 0 then
+            foundTimingData <- true
             printfn "=== %s ===" projectName
-            for msg in messages do
+            for msg in timingMessages do
                 printfn "  %s" msg
             printfn ""
 )
 
 if not foundFscTasks then
-    printfn "No Fsc task output found in binlog."
+    printfn "No Fsc tasks found in binlog."
+elif not foundTimingData then
+    printfn "Fsc tasks found but no timing data present. Was --times flag set?"
 
 exit 0
