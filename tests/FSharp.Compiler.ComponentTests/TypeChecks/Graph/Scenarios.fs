@@ -1150,9 +1150,6 @@ let value = Script.ScriptModule.compute "hi"
 """
                     (set [| 2 |])
             ]
-        // Regression tests for graph-based dependency resolution in projects with
-        // sub-namespace patterns (e.g. the Nu game engine). These verify that
-        // PrefixedIdentifier resolution correctly discovers modules through open namespaces.
         scenario
             "Sub-namespace opens parent namespace with types and modules"
             [
@@ -1273,11 +1270,7 @@ module GameLogic =
 """
                     (set [| 0; 1 |])
             ]
-        // Two files define the same nested module name within the same namespace.
-        // Without the Module+Module merge case in TrieMapping.mergeTrieNodes,
-        // only the first file's index would be tracked, causing the second to be
-        // missed as a dependency. CompilationRepresentation(ModuleSuffix) on the
-        // second file avoids FS0248 (duplicate module name) at the CLR level.
+        // CompilationRepresentation(ModuleSuffix) on Assets2 avoids FS0248 at the CLR level.
         scenario
             "Same module name defined in multiple files of the same namespace"
             [
