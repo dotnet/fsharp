@@ -721,21 +721,17 @@ let wasDecidedByRule
 /// Apply OverloadResolutionPriority pre-filter to a list of candidates.
 /// Groups methods by declaring type and keeps only highest-priority within each group.
 let filterByOverloadResolutionPriority<'T> (g: TcGlobals) (getMeth: 'T -> MethInfo) (candidates: 'T list) : 'T list =
-    // Early exits - no allocations for common cases
-    if not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) then
+    match candidates with
+    | []
+    | [ _ ] -> candidates
+    | _ when not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) -> candidates
+    | _ when
         candidates
-    elif candidates.Length <= 1 then
+        |> List.forall (fun c -> (getMeth c).GetOverloadResolutionPriority() = 0)
+        ->
         candidates
-    elif
-        not (
-            candidates
-            |> List.exists (fun c -> (getMeth c).GetOverloadResolutionPriority() <> 0)
-        )
-    then
-        candidates
-    else
-        // Slow path: compute priority once per candidate, group by declaring type, keep highest priority per group
-        candidates
+    | twoOrMoreCandidates ->
+        twoOrMoreCandidates
         |> List.map (fun c ->
             let m = getMeth c
             let stamp = (tcrefOfAppTy g m.ApparentEnclosingType).Stamp
