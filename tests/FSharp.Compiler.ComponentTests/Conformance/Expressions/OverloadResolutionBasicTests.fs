@@ -68,16 +68,13 @@ type TupleOverload =
     static member Pick(x: int * string) = "tuple"
     static member Pick(x: int, y: string) = "separate"
 
-// Rigid typar test
 let inline pickRigid<'T> (x: 'T) = BasicOverload.Pick(x)
 
-// Cache stress test
 let cacheStress () =
     let mutable all = true
     for i in 1..100 do if BasicOverload.Pick(i) <> "int" then all <- false
     if all then "all-int" else "MISMATCH"
 
-// Alternating types test  
 let cacheAlternating () =
     sprintf "%s,%s,%s,%s,%s,%s" 
         (BasicOverload.Pick 1) (BasicOverload.Pick "a") 

@@ -94,16 +94,18 @@ let tryGetTypeStructureForOverloadCache (g: TcGlobals) (ty: TType) : TypeStructu
     | ValueSome PossiblyInfinite -> ValueNone
     | ValueNone -> ValueNone
 
-/// Compute a hash for a method info for caching purposes
 let rec computeMethInfoHash (minfo: MethInfo) : int =
     match minfo with
-    | FSMeth(_, _, vref, _) -> hash (vref.Stamp, vref.LogicalName)
-    | ILMeth(_, ilMethInfo, _) -> hash (ilMethInfo.ILName, ilMethInfo.DeclaringTyconRef.Stamp)
+    | FSMeth(_, _, vref, _) -> HashingPrimitives.combineHash (hash vref.Stamp) (hash vref.LogicalName)
+    | ILMeth(_, ilMethInfo, _) -> HashingPrimitives.combineHash (hash ilMethInfo.ILName) (hash ilMethInfo.DeclaringTyconRef.Stamp)
     | DefaultStructCtor(_, _) -> hash "DefaultStructCtor"
     | MethInfoWithModifiedReturnType(original, _) -> computeMethInfoHash original
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(_, mb, _, _) ->
-        hash (mb.PUntaint((fun m -> m.Name, (nonNull<ProvidedType> m.DeclaringType).FullName |> string), Range.range0))
+        let name, declTypeName =
+            mb.PUntaint((fun m -> m.Name, (nonNull<ProvidedType> m.DeclaringType).FullName |> string), Range.range0)
+
+        HashingPrimitives.combineHash (hash name) (hash declTypeName)
 #endif
 
 /// Try to compute a cache key for overload resolution.
@@ -116,7 +118,6 @@ let tryComputeOverloadCacheKey
     (anyHasOutArgs: bool)
     : OverloadResolutionCacheKey voption =
 
-    // Don't cache if there are named arguments (simplifies key computation)
     let hasNamedArgs =
         callerArgs.Named |> List.exists (fun namedList -> not (List.isEmpty namedList))
 
@@ -124,15 +125,12 @@ let tryComputeOverloadCacheKey
         ValueNone
     else
 
-        // Compute method group hash - must be order-dependent since we cache by index
         let mutable methodGroupHash = 0
 
         for cmeth in calledMethGroup do
             let methHash = computeMethInfoHash cmeth.Method
             methodGroupHash <- HashingPrimitives.combineHash methodGroupHash methHash
 
-        // Collect type structures for caller object arguments
-        // Critical for extension methods where the 'this' type determines the overload
         let objArgStructures = ResizeArray()
         let mutable allStable = true
 
@@ -148,7 +146,6 @@ let tryComputeOverloadCacheKey
             ValueNone
         else
 
-            // Collect type structures for all caller arguments
             let argStructures = ResizeArray()
 
             for argList in callerArgs.Unnamed do
@@ -162,7 +159,6 @@ let tryComputeOverloadCacheKey
             if not allStable then
                 ValueNone
             else
-                // Critical for distinguishing calls where return type selects the overload (e.g., out args)
                 let retTyStructure =
                     match reqdRetTyOpt with
                     | Some retTy ->
@@ -179,7 +175,6 @@ let tryComputeOverloadCacheKey
                 match retTyStructure with
                 | ValueNone -> ValueNone
                 | retStruct ->
-                    // Get caller type arg count from first method (all methods in group have same caller type args)
                     let callerTyArgCount =
                         match calledMethGroup with
                         | cmeth :: _ -> cmeth.NumCallerTyArgs
@@ -231,13 +226,11 @@ let storeCacheResult
             | Some res ->
                 cache.TryAdd(cacheKey, res) |> ignore
 
-                // Also store under "after" key if types were solved during resolution
                 match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt anyHasOutArgs with
                 | ValueSome afterKey when afterKey <> cacheKey -> cache.TryAdd(afterKey, res) |> ignore
                 | _ -> ()
             | None -> ()
         | ValueNone ->
-            // Try to compute a key now that types may have been solved
             match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt anyHasOutArgs with
             | ValueSome afterKey ->
                 match computeCacheResult calledMethGroup calledMethOpt with
