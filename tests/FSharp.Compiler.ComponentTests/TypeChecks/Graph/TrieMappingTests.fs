@@ -329,113 +329,37 @@ let _ = ()
     let aNode = trie.Children.["A"]
     Assert.Equal<Set<FileIndex>>(set [| 0 |], aNode.Files)
 
-[<Fact>]
-let ``Module+Module merge promotes to Namespace and preserves both file indices`` () =
-    let trie =
-        getLastTrie
-            [|
-                {
-                    Idx = 0
-                    FileName = "M1.fs"
-                    ParsedInput =
-                        parseSourceCode (
-                            "M1.fs",
-                            """
-module N.M
+let private assertModuleMergePromotesToNamespace (fileCount: int) =
+    let sourceFiles =
+        [| for i in 0 .. fileCount - 1 do
+               {
+                   Idx = i
+                   FileName = $"M{i + 1}.fs"
+                   ParsedInput = parseSourceCode ($"M{i + 1}.fs", $"module N.M\n\nlet v{i} = {i}")
+               }
+           {
+               Idx = fileCount
+               FileName = "Dummy.fs"
+               ParsedInput = Unchecked.defaultof<FSharp.Compiler.Syntax.ParsedInput>
+           } |]
 
-type A = { X: int }
-"""
-                        )
-                }
-                {
-                    Idx = 1
-                    FileName = "M2.fs"
-                    ParsedInput =
-                        parseSourceCode (
-                            "M2.fs",
-                            """
-module N.M
-
-let y = 42
-"""
-                        )
-                }
-                {
-                    Idx = 2
-                    FileName = "Dummy.fs"
-                    ParsedInput = Unchecked.defaultof<FSharp.Compiler.Syntax.ParsedInput>
-                }
-            |]
-
+    let trie = getLastTrie sourceFiles
     let nNode = trie.Children.["N"]
     let mNode = nNode.Children.["M"]
-    Assert.Equal<Set<FileIndex>>(set [| 0; 1 |], mNode.Files)
+    let expectedIndices = set [| 0 .. fileCount - 1 |]
+    Assert.Equal<Set<FileIndex>>(expectedIndices, mNode.Files)
 
     match mNode.Current with
     | TrieNodeInfo.Namespace(_, filesThatExposeTypes, filesDefiningNamespaceWithoutTypes) ->
-        Assert.Equal<Set<FileIndex>>(set [| 0; 1 |], set filesThatExposeTypes)
+        Assert.Equal<Set<FileIndex>>(expectedIndices, set filesThatExposeTypes)
         Assert.True(filesDefiningNamespaceWithoutTypes.Count = 0, "filesDefiningNamespaceWithoutTypes should be empty after Module+Module merge")
-    | other -> Assert.Fail($"Expected Namespace after Module+Module merge, got {other}")
+    | other -> Assert.Fail($"Expected Namespace after Module+Module merge of {fileCount} files, got {other}")
 
-[<Fact>]
-let ``Module+Module merge across three files preserves all file indices`` () =
-    let trie =
-        getLastTrie
-            [|
-                {
-                    Idx = 0
-                    FileName = "M1.fs"
-                    ParsedInput =
-                        parseSourceCode (
-                            "M1.fs",
-                            """
-module N.M
-
-type A = { X: int }
-"""
-                        )
-                }
-                {
-                    Idx = 1
-                    FileName = "M2.fs"
-                    ParsedInput =
-                        parseSourceCode (
-                            "M2.fs",
-                            """
-module N.M
-
-let y = 42
-"""
-                        )
-                }
-                {
-                    Idx = 2
-                    FileName = "M3.fs"
-                    ParsedInput =
-                        parseSourceCode (
-                            "M3.fs",
-                            """
-module N.M
-
-let z = "hello"
-"""
-                        )
-                }
-                {
-                    Idx = 3
-                    FileName = "Dummy.fs"
-                    ParsedInput = Unchecked.defaultof<FSharp.Compiler.Syntax.ParsedInput>
-                }
-            |]
-
-    let nNode = trie.Children.["N"]
-    let mNode = nNode.Children.["M"]
-    Assert.Equal<Set<FileIndex>>(set [| 0; 1; 2 |], mNode.Files)
-
-    match mNode.Current with
-    | TrieNodeInfo.Namespace(_, filesThatExposeTypes, _) ->
-        Assert.Equal<Set<FileIndex>>(set [| 0; 1; 2 |], set filesThatExposeTypes)
-    | other -> Assert.Fail($"Expected Namespace after triple Module merge, got {other}")
+[<Theory>]
+[<InlineData(2)>]
+[<InlineData(3)>]
+let ``Module+Module merge promotes to Namespace and preserves all file indices`` (fileCount: int) =
+    assertModuleMergePromotesToNamespace fileCount
 
 [<Fact>]
 let ``Module+Module merge preserves children from both sides`` () =
