@@ -1044,7 +1044,7 @@ type outref<'T> with
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; FileInlineData("ReturnFieldSetBySpan.fs")>]
+    [<Theory; FileInlineData("UseSpanFromLocalByref.fs")>]
     let``UseSpanFromLocalByref_fs`` compilation =
         compilation
         |> getCompilation
