@@ -2084,9 +2084,8 @@ Actual:
 
     /// Run an F# tool (FSI or FSC) as a subprocess. Shared helper for runFsiProcess / runFscProcess.
     let private runToolProcess (toolPath: string) (args: string list) : ProcessResult =
-        let cfg = TestFramework.initialConfig
 #if NETCOREAPP
-        let exe = cfg.DotNetExe
+        let exe = TestFramework.initialConfig.DotNetExe
         let arguments = toolPath + " " + (args |> String.concat " ")
 #else
         let exe = toolPath
