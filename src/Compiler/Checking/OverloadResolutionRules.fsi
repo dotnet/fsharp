@@ -65,8 +65,8 @@ type TiebreakRuleId =
 val findDecidingRule:
     context: OverloadResolutionContext ->
     candidate: struct (CalledMeth<Expr> * TypeDirectedConversionUsed * int) ->
-        other: struct (CalledMeth<Expr> * TypeDirectedConversionUsed * int) ->
-            struct (int * TiebreakRuleId voption)
+    other: struct (CalledMeth<Expr> * TypeDirectedConversionUsed * int) ->
+        struct (int * TiebreakRuleId voption)
 
 // -------------------------------------------------------------------------
 // OverloadResolutionPriority Pre-Filter

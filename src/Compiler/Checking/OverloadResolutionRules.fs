@@ -70,6 +70,27 @@ type TiebreakRule =
 // Type Concreteness Comparison
 // -------------------------------------------------------------------------
 
+/// Aggregate a list of comparison results using dominance.
+/// Returns 1 if all >= 0 and at least one > 0, -1 if all <= 0 and at least one < 0, else 0.
+/// Early-exits when incomparability is detected (both positive and negative seen).
+let private aggregateComparisons (cs: int list) =
+    let rec loop hasPositive hasNegative xs =
+        match xs with
+        | [] ->
+            if not hasNegative && hasPositive then 1
+            elif not hasPositive && hasNegative then -1
+            else 0
+        | c :: rest ->
+            let p = hasPositive || c > 0
+            let n = hasNegative || c < 0
+
+            if p && n then
+                0 // incomparable — early exit
+            else
+                loop p n rest
+
+    loop false false cs
+
 /// Fold over two lists pairwise with a comparison function, aggregating using dominance.
 /// Early-exits when incomparability is detected (both positive and negative seen).
 let private aggregateMap2 (f: 'a -> 'b -> int) (xs: 'a list) (ys: 'b list) =
@@ -84,8 +105,11 @@ let private aggregateMap2 (f: 'a -> 'b -> int) (xs: 'a list) (ys: 'b list) =
             let c = f x y
             let p = hasPositive || c > 0
             let n = hasNegative || c < 0
-            if p && n then 0 // incomparable — early exit
-            else loop p n xt yt
+
+            if p && n then
+                0 // incomparable — early exit
+            else
+                loop p n xt yt
 
     loop false false xs ys
 
@@ -125,12 +149,9 @@ let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     | _, TType_var _ -> 1
 
     | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) ->
-        if not (tyconRefEq g tcref1 tcref2) then
-            0
-        elif args1.Length <> args2.Length then
-            0
-        else
-            aggregateMap2 (compareTypeConcreteness g) args1 args2
+        if not (tyconRefEq g tcref1 tcref2) then 0
+        elif args1.Length <> args2.Length then 0
+        else aggregateMap2 (compareTypeConcreteness g) args1 args2
 
     | TType_tuple(_, elems1), TType_tuple(_, elems2) ->
         if elems1.Length <> elems2.Length then
@@ -209,8 +230,7 @@ let explainIncomparableMethodConcreteness<'T>
                             let c = compareTypeConcreteness ctx.g arg1 arg2
                             (argIdx + 1, c))
                         args2
-                | _ ->
-                    [ (paramIdx, compareTypeConcreteness ctx.g ty1 ty2) ]
+                | _ -> [ (paramIdx, compareTypeConcreteness ctx.g ty1 ty2) ]
 
             let allComparisons =
                 List.mapi2
@@ -365,7 +385,8 @@ let private noParamArrayRule: TiebreakRule =
         Description = "Prefer methods that don't use param array arg"
         RequiredFeature = None
         Compare =
-            fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion)
+            fun _ (struct (candidate, _, _)) (struct (other, _, _)) ->
+                compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion)
     }
 
 let private preciseParamArrayRule: TiebreakRule =
@@ -394,7 +415,8 @@ let private noOptionalArgsRule: TiebreakRule =
         Id = TiebreakRuleId.NoOptionalArgs
         Description = "Prefer methods that don't use optional args"
         RequiredFeature = None
-        Compare = fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare (not candidate.HasOptionalArgs) (not other.HasOptionalArgs)
+        Compare =
+            fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare (not candidate.HasOptionalArgs) (not other.HasOptionalArgs)
     }
 
 let private unnamedArgsRule: TiebreakRule =
@@ -421,14 +443,7 @@ let private unnamedArgsRule: TiebreakRule =
                              [])
                         @ (List.map2 (compareArg ctx) candidate.AllUnnamedCalledArgs other.AllUnnamedCalledArgs)
 
-                    // "all args are at least as good, and one argument is actually better"
-                    if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then
-                        1
-                    // "all args are at least as bad, and one argument is actually worse"
-                    elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then
-                        -1
-                    else
-                        0
+                    aggregateComparisons cs
                 else
                     0
     }
@@ -439,7 +454,8 @@ let private preferNonExtensionRule: TiebreakRule =
         Description = "Prefer non-extension methods over extension methods"
         RequiredFeature = None
         Compare =
-            fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
+            fun _ (struct (candidate, _, _)) (struct (other, _, _)) ->
+                compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
     }
 
 let private extensionPriorityRule: TiebreakRule =
@@ -460,7 +476,8 @@ let private preferNonGenericRule: TiebreakRule =
         Id = TiebreakRuleId.PreferNonGeneric
         Description = "Prefer non-generic methods over generic methods"
         RequiredFeature = None
-        Compare = fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
+        Compare =
+            fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
     }
 
 let private getCachedParamData (ctx: OverloadResolutionContext) (meth: CalledMeth<Expr>) =
@@ -486,12 +503,12 @@ let private getCachedHasSRTP (ctx: OverloadResolutionContext) (meth: CalledMeth<
             meth.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
 
         let hasTyArgSRTP =
-            hasTyparSRTP
-            || meth.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
+            hasTyparSRTP || meth.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
 
         let result =
             hasTyArgSRTP
             || (let paramData = getCachedParamData ctx meth in
+
                 paramData
                 |> List.exists (fun (ParamData(_, _, _, _, _, _, _, ty)) -> containsSRTPTypeVar ctx.g ty))
 
@@ -613,26 +630,25 @@ let filterByOverloadResolutionPriority<'T> (g: TcGlobals) (getMeth: 'T -> MethIn
     | [ _ ] -> candidates
     | _ when not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) -> candidates
     | twoOrMoreCandidates ->
-        // Fast path: check if any method has a non-zero priority before allocating
-        let hasAnyPriority =
+        let enriched =
             twoOrMoreCandidates
-            |> List.exists (fun c -> (getMeth c).GetOverloadResolutionPriority() <> 0)
+            |> List.map (fun c ->
+                let m = getMeth c
+
+                let stamp =
+                    match tryTcrefOfAppTy g m.ApparentEnclosingType with
+                    | ValueSome tcref -> tcref.Stamp
+                    | ValueNone -> 0L
+
+                (c, stamp, m.GetOverloadResolutionPriority()))
+
+        // Fast path: check if any method has a non-zero priority before grouping
+        let hasAnyPriority =
+            enriched |> List.exists (fun (_, _, prio) -> prio <> 0)
 
         if not hasAnyPriority then
             candidates
         else
-            let enriched =
-                twoOrMoreCandidates
-                |> List.map (fun c ->
-                    let m = getMeth c
-
-                    let stamp =
-                        match tryTcrefOfAppTy g m.ApparentEnclosingType with
-                        | ValueSome tcref -> tcref.Stamp
-                        | ValueNone -> 0L
-
-                    (c, stamp, m.GetOverloadResolutionPriority()))
-
             enriched
             |> List.groupBy (fun (_, stamp, _) -> stamp)
             |> List.collect (fun (_, group) ->
