@@ -112,7 +112,7 @@ let add x y = x + y
 
     Assert.False(results.HasCriticalErrors, "Project should have no critical errors")
 
-    let _tcConfig, _tcGlobals, _tcImports, generatedCcu, _topAttrsOpt, _ilAssemRef, _typedImplFilesOpt =
+    let _tcConfig, _tcGlobals, _tcImports, generatedCcu, _ccuSig, _topAttrsOpt, _ilAssemRef, _typedImplFilesOpt =
         results.CompilationData
 
     let attribCountBefore = generatedCcu.Contents.Attribs.Length

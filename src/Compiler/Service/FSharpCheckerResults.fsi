@@ -535,7 +535,13 @@ type public FSharpCheckProjectResults =
     /// Get the internal compilation data needed for CompileFromCheckedProject.
     /// Requires keepAssemblyContents=true.
     member internal CompilationData:
-        TcConfig * TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TopAttribs option * ILAssemblyRef *
+        TcConfig *
+        TcGlobals *
+        TcImports *
+        CcuThunk *
+        ModuleOrNamespaceType *
+        TopAttribs option *
+        ILAssemblyRef *
         CheckedImplFile list option
 
     /// Get the resolution of the ProjectOptions

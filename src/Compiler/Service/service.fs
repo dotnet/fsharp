@@ -645,8 +645,7 @@ type FSharpChecker
 
             // The CCU from TransparentCompiler has unfinalized Contents (empty ModuleOrNamespaceType).
             // Finalize it using ccuSig, matching what CheckClosedInputSetFinish does.
-            let ccuContents =
-                Construct.NewCcuContents ILScopeRef.Local range0 unfinalizedCcu.AssemblyName ccuSig
+            let ccuContents = Construct.NewCcuContents ILScopeRef.Local range0 unfinalizedCcu.AssemblyName ccuSig
             let generatedCcu = unfinalizedCcu.CloneWithFinalizedContents(ccuContents)
 
             let topAttrs =
@@ -657,8 +656,7 @@ type FSharpChecker
             let typedImplFiles =
                 match typedImplFilesOpt with
                 | Some files -> files
-                | None ->
-                    raise (InvalidOperationException "CompileFromCheckedProject: keepAssemblyContents must be true")
+                | None -> raise (InvalidOperationException "CompileFromCheckedProject: keepAssemblyContents must be true")
 
             // Note: We do NOT filter files with diagnostics here. FSharpCheckProjectResults.Diagnostics
             // may include warnings promoted to errors (e.g. FS1182 from --warnaserror+:1182) that
@@ -674,16 +672,18 @@ type FSharpChecker
                 |> List.mapFold
                     (fun (seen: Map<string, int>) (f: CheckedImplFile) ->
                         let name = f.QualifiedNameOfFile.Text
+
                         match seen.TryFind name with
-                        | None ->
-                            f, seen.Add(name, 1)
+                        | None -> f, seen.Add(name, 1)
                         | Some count ->
                             let newCount = count + 1
                             let newName = name + "___" + string newCount
-                            let newQName = FSharp.Compiler.Syntax.QualifiedNameOfFile(FSharp.Compiler.Syntax.Ident(newName, f.QualifiedNameOfFile.Range))
+
+                            let newQName =
+                                FSharp.Compiler.Syntax.QualifiedNameOfFile(FSharp.Compiler.Syntax.Ident(newName, f.QualifiedNameOfFile.Range))
+
                             let (CheckedImplFile(_, sig', contents, hasEntry, isScript, anonRecs, namedDbgPts)) = f
-                            CheckedImplFile(newQName, sig', contents, hasEntry, isScript, anonRecs, namedDbgPts),
-                            seen.Add(name, newCount))
+                            CheckedImplFile(newQName, sig', contents, hasEntry, isScript, anonRecs, namedDbgPts), seen.Add(name, newCount))
                     Map.empty
                 |> fst
 
@@ -694,11 +694,13 @@ type FSharpChecker
             use _restoreAttribs =
                 { new System.IDisposable with
                     member _.Dispose() =
-                        generatedCcu.Contents.SetAttribs(originalAttribs) }
+                        generatedCcu.Contents.SetAttribs(originalAttribs)
+                }
 
             let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
 
             ReportTime tcConfig "CompileFromCheckedProject: Encode Signature Data"
+
             let sigDataAttributes, sigDataResources =
                 EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
 
@@ -721,6 +723,7 @@ type FSharpChecker
                         abstractBigTargets = false
                         reportingPhase = false
                     }
+
                 let impls =
                     typedImplFiles
                     |> List.mapFold
@@ -738,33 +741,34 @@ type FSharpChecker
                                     hidingInfo,
                                     implFile
                                 )
+
                             let file = LowerLocalMutables.TransformImplFile tcGlobals importMap file
                             let file = LowerCalls.LowerImplFile tcGlobals file
-                            { ImplFile = file
-                              OptimizeDuringCodeGen = optDuringCodeGen },
+
+                            {
+                                ImplFile = file
+                                OptimizeDuringCodeGen = optDuringCodeGen
+                            },
                             (env', hidingInfo'))
                         (optEnv0, SignatureHidingInfo.Empty)
                     |> fst
                     |> CheckedAssemblyAfterOptimization
+
                 impls, []
 
             ReportTime tcConfig "CompileFromCheckedProject: TAST -> IL"
-            let ilxGenerator =
-                CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, tcVal, generatedCcu)
+            let ilxGenerator = CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, tcVal, generatedCcu)
 
             let codegenResults =
-                GenerateIlxCode(
-                    IlWriteBackend,
-                    false,
-                    tcConfig,
-                    topAttrs,
-                    optimizedImpls,
-                    generatedCcu.AssemblyName,
-                    ilxGenerator
-                )
+                GenerateIlxCode(IlWriteBackend, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
 
             let topAssemblyAttrs = codegenResults.topAssemblyAttrs
-            let topAttrs = { topAttrs with assemblyAttrs = topAssemblyAttrs }
+
+            let topAttrs =
+                { topAttrs with
+                    assemblyAttrs = topAssemblyAttrs
+                }
+
             let secDecls = mkILSecurityDecls codegenResults.permissionSets
 
             let metadataVersion =
@@ -778,8 +782,10 @@ type FSharpChecker
             let assemVerFromAttrib =
                 match AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" topAttrs.assemblyAttrs with
                 | Some versionString ->
-                    try Some(parseILVersion versionString)
-                    with _ -> None
+                    try
+                        Some(parseILVersion versionString)
+                    with _ ->
+                        None
                 | _ ->
                     match tcConfig.version with
                     | VersionNone -> Some(ILVersionInfo(0us, 0us, 0us, 0us))
@@ -811,6 +817,7 @@ type FSharpChecker
                 tcImports.NormalizeAssemblyRef(ctok, aref)
 
             ReportTime tcConfig "CompileFromCheckedProject: Write .NET Binary"
+
             WriteILBinaryFile(
                 {
                     ilg = tcGlobals.ilg
@@ -835,6 +842,7 @@ type FSharpChecker
                 ilxMainModule,
                 normalizeAssemblyRefs
             )
+
             ReportTime tcConfig "Exiting"
 
             return outfile
