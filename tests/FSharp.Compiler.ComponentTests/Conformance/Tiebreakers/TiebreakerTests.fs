@@ -48,9 +48,12 @@ type Example =
     static member Process(value: Option<'t>) = "wrapped"
 
 let result = Example.Process(Some 42)
+if result <> "wrapped" then
+    failwithf "Expected 'wrapped' but got '%s' - wrong overload selected" result
         """
         |> withLangVersionPreview
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
@@ -970,9 +973,12 @@ type Dispatcher =
     static member Dispatch<'a>(handler: 'a -> string) = "concrete range"
 
 let result = Dispatcher.Dispatch(fun (x: int) -> "hello")
+if result <> "concrete range" then
+    failwithf "Expected 'concrete range' but got '%s' - wrong overload selected" result
         """
         |> withLangVersionPreview
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
@@ -986,9 +992,12 @@ type Handler =
     static member Handle<'a>(pair: 'a * int) = "concrete second"
 
 let result = Handler.Handle(("hello", 42))
+if result <> "concrete second" then
+    failwithf "Expected 'concrete second' but got '%s' - wrong overload selected" result
         """
         |> withLangVersionPreview
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
@@ -1002,9 +1011,12 @@ type Example =
     static member Process<'t>(value: Option<'t list>) = "option of list"
 
 let result = Example.Process(Some([1; 2; 3]))
+if result <> "option of list" then
+    failwithf "Expected 'option of list' but got '%s' - wrong overload selected" result
         """
         |> withLangVersionPreview
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
