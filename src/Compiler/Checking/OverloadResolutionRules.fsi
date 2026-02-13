@@ -19,9 +19,9 @@ type OverloadResolutionContext =
         /// Nesting depth for subsumption checks
         ndeep: int
         /// Per-method cache for GetParamDatas results, avoiding redundant calls across pairwise comparisons
-        paramDataCache: System.Collections.Generic.Dictionary<obj, ParamData list>
+        paramDataCache: System.Collections.Generic.Dictionary<obj, ParamData list> voption
         /// Per-method cache for SRTP presence checks, avoiding redundant traversals across pairwise comparisons
-        srtpCache: System.Collections.Generic.Dictionary<obj, bool>
+        srtpCache: System.Collections.Generic.Dictionary<obj, bool> voption
     }
 
 /// Represents why two methods are incomparable under concreteness ordering.

@@ -3667,18 +3667,20 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     let ctx: OverloadResolutionContext =
         { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep
-          paramDataCache = (if moreConcretEnabled then System.Collections.Generic.Dictionary() else Unchecked.defaultof<_>)
-          srtpCache = (if moreConcretEnabled then System.Collections.Generic.Dictionary() else Unchecked.defaultof<_>) }
+          paramDataCache = (if moreConcretEnabled then ValueSome(System.Collections.Generic.Dictionary()) else ValueNone)
+          srtpCache = (if moreConcretEnabled then ValueSome(System.Collections.Generic.Dictionary()) else ValueNone) }
 
     let decidingRuleCache =
-        if moreConcretEnabled then System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>()
-        else Unchecked.defaultof<_>
+        if moreConcretEnabled then ValueSome(System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>())
+        else ValueNone
 
     /// Check whether one overload is better than another
     let better (candidate: CalledMeth<_>, candidateWarnings: _ list, _, usesTDC1) (other: CalledMeth<_>, otherWarnings: _ list, _, usesTDC2) =
         let struct (result, decidingRule) = findDecidingRule ctx (struct (candidate, usesTDC1, candidateWarnings.Length)) (struct (other, usesTDC2, otherWarnings.Length))
         if moreConcretEnabled then
-            decidingRuleCache[struct(candidate :> obj, other :> obj)] <- decidingRule
+            match decidingRuleCache with
+            | ValueSome cache -> cache[struct(candidate :> obj, other :> obj)] <- decidingRule
+            | ValueNone -> ()
         result
     
     let bestMethods =
@@ -3696,37 +3698,42 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
     | [(calledMeth, warns, t, _)] ->
         // Only compute concreteness warnings when the MoreConcrete rule was used as deciding factor
         let anyMoreConcreteUsed =
-            moreConcretEnabled &&
-            decidingRuleCache.Values
-            |> Seq.exists (fun v -> match v with ValueSome TiebreakRuleId.MoreConcrete -> true | _ -> false)
+            match decidingRuleCache with
+            | ValueNone -> false
+            | ValueSome cache ->
+                cache.Values
+                |> Seq.exists (fun v -> match v with ValueSome TiebreakRuleId.MoreConcrete -> true | _ -> false)
 
         let allWarns =
             if not anyMoreConcreteUsed then
                 warns
             else
-                let concretenessWarns =
-                    applicableMeths
-                    |> List.choose (fun loser ->
-                        let (loserMeth, _, _, _) = loser
+                match decidingRuleCache with
+                | ValueNone -> warns
+                | ValueSome cache ->
+                    let concretenessWarns =
+                        applicableMeths
+                        |> List.choose (fun loser ->
+                            let (loserMeth, _, _, _) = loser
 
-                        if System.Object.ReferenceEquals(loserMeth, calledMeth) then
-                            None
-                        else
-                            match decidingRuleCache.TryGetValue(struct(calledMeth :> obj, loserMeth :> obj)) with
-                            | true, ValueSome TiebreakRuleId.MoreConcrete ->
-                                Some(calledMeth.Method.DisplayName, loserMeth.Method.DisplayName)
-                            | _ -> None)
+                            if System.Object.ReferenceEquals(loserMeth, calledMeth) then
+                                None
+                            else
+                                match cache.TryGetValue(struct(calledMeth :> obj, loserMeth :> obj)) with
+                                | true, ValueSome TiebreakRuleId.MoreConcrete ->
+                                    Some(calledMeth.Method.DisplayName, loserMeth.Method.DisplayName)
+                                | _ -> None)
 
-                match concretenessWarns with
-                | [] -> warns
-                | (winnerName, loserName) :: _ ->
-                    let warn3575 =
-                        Error(FSComp.SR.tcMoreConcreteTiebreakerUsed (winnerName, winnerName, loserName), m)
-                    let warn3576List =
-                        concretenessWarns
-                        |> List.map (fun (winner, loser) -> Error(FSComp.SR.tcGenericOverloadBypassed (loser, winner), m))
+                    match concretenessWarns with
+                    | [] -> warns
+                    | (winnerName, loserName) :: _ ->
+                        let warn3575 =
+                            Error(FSComp.SR.tcMoreConcreteTiebreakerUsed (winnerName, winnerName, loserName), m)
+                        let warn3576List =
+                            concretenessWarns
+                            |> List.map (fun (winner, loser) -> Error(FSComp.SR.tcGenericOverloadBypassed (loser, winner), m))
 
-                    warn3575 :: warn3576List @ warns
+                        warn3575 :: warn3576List @ warns
 
         Some calledMeth, OkResult(allWarns, ()), WithTrace t
 

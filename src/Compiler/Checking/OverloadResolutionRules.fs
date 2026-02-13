@@ -24,9 +24,9 @@ type OverloadResolutionContext =
         /// Nesting depth for subsumption checks
         ndeep: int
         /// Per-method cache for GetParamDatas results, avoiding redundant calls across pairwise comparisons
-        paramDataCache: System.Collections.Generic.Dictionary<obj, ParamData list>
+        paramDataCache: System.Collections.Generic.Dictionary<obj, ParamData list> voption
         /// Per-method cache for SRTP presence checks, avoiding redundant traversals across pairwise comparisons
-        srtpCache: System.Collections.Generic.Dictionary<obj, bool>
+        srtpCache: System.Collections.Generic.Dictionary<obj, bool> voption
     }
 
 /// Identifies a tiebreaker rule in overload resolution.
@@ -475,39 +475,47 @@ let private preferNonGenericRule: TiebreakRule =
     }
 
 let private getCachedParamData (ctx: OverloadResolutionContext) (meth: CalledMeth<Expr>) =
-    let key = meth :> obj
+    let computeParamData () =
+        meth.Method.GetParamDatas(ctx.amap, ctx.m, meth.Method.FormalMethodInst)
+        |> List.concat
 
-    match ctx.paramDataCache.TryGetValue(key) with
-    | true, v -> v
-    | _ ->
-        let v =
-            meth.Method.GetParamDatas(ctx.amap, ctx.m, meth.Method.FormalMethodInst)
-            |> List.concat
+    match ctx.paramDataCache with
+    | ValueNone -> computeParamData ()
+    | ValueSome cache ->
+        let key = meth :> obj
 
-        ctx.paramDataCache[key] <- v
-        v
+        match cache.TryGetValue(key) with
+        | true, v -> v
+        | _ ->
+            let v = computeParamData ()
+            cache[key] <- v
+            v
 
 let private getCachedHasSRTP (ctx: OverloadResolutionContext) (meth: CalledMeth<Expr>) =
-    let key = meth :> obj
-
-    match ctx.srtpCache.TryGetValue(key) with
-    | true, v -> v
-    | _ ->
+    let computeHasSRTP () =
         let hasTyparSRTP =
             meth.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
 
         let hasTyArgSRTP =
             hasTyparSRTP || meth.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
 
-        let result =
-            hasTyArgSRTP
-            || (let paramData = getCachedParamData ctx meth in
+        hasTyArgSRTP
+        || (let paramData = getCachedParamData ctx meth in
 
-                paramData
-                |> List.exists (fun (ParamData(_, _, _, _, _, _, _, ty)) -> containsSRTPTypeVar ctx.g ty))
+            paramData
+            |> List.exists (fun (ParamData(_, _, _, _, _, _, _, ty)) -> containsSRTPTypeVar ctx.g ty))
 
-        ctx.srtpCache[key] <- result
-        result
+    match ctx.srtpCache with
+    | ValueNone -> computeHasSRTP ()
+    | ValueSome cache ->
+        let key = meth :> obj
+
+        match cache.TryGetValue(key) with
+        | true, v -> v
+        | _ ->
+            let result = computeHasSRTP ()
+            cache[key] <- result
+            result
 
 let private moreConcreteRule: TiebreakRule =
     {
