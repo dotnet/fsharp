@@ -235,7 +235,8 @@ type ItemKeyStore(mmf: MemoryMappedFile, length, tcGlobals, debugStore) =
                 let keyString2 = this.ReadKeyString &reader
 
                 if keyString1.SequenceEqual keyString2 then
-                    results.Add m
+                    // Apply line directives to get the correct file/line for generated code (#9928)
+                    results.Add(m.ApplyLineDirectives())
 
             results :> range seq
 
@@ -532,7 +533,12 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
                 ilMethInfo.ILMethodRef.ArgTypes |> List.iter writeILType
                 writeILType ilMethInfo.ILMethodRef.ReturnType
                 writeString ilMethInfo.ILName
-                writeType false ilMethInfo.ApparentEnclosingType
+                // For C# extension methods, use the declaring type (e.g., Enumerable) not the apparent type (e.g., Array)
+                // This ensures consistent keys between different usages of the same extension method (#16993)
+                if ilMethInfo.IsILExtensionMethod then
+                    writeEntityRef ilMethInfo.DeclaringTyconRef
+                else
+                    writeType false ilMethInfo.ApparentEnclosingType
             | _ ->
                 writeString ItemKeyTags.itemValueMember
                 writeEntityRef info.DeclaringTyconRef
