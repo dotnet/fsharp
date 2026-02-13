@@ -2257,6 +2257,69 @@ let test () = consumeNonNull x
         Error 3261, Line 10, Col 30, Line 10, Col 31, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
     ]
 
+[<Fact>]
+let ``AllowNullLiteral constructor piped compiles without error`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyWrapper(value: string) =
+    member _.Value = value
+
+let result = "hello" |> MyWrapper
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``AllowNullLiteral constructor piped with interface object expression compiles without error`` () =
+    FSharp """module Test
+
+type IMyInterface =
+    abstract Name: string
+
+[<AllowNullLiteral>]
+type MyWrapper(impl: IMyInterface) =
+    member _.Impl = impl
+
+let result =
+    { new IMyInterface with
+        member _.Name = "test" }
+    |> MyWrapper
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``AllowNullLiteral constructor piped with value type arg compiles without error`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyWrapper(value: int) =
+    member _.Value = value
+
+let result = 5 |> MyWrapper
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``AllowNullLiteral constructor used as first-class function compiles without error`` () =
+    FSharp """module Test
+
+[<AllowNullLiteral>]
+type MyWrapper(value: string) =
+    member _.Value = value
+
+let items = ["a"; "b"; "c"] |> List.map MyWrapper
+let f : string -> MyWrapper = MyWrapper
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Type with comparison constraint compiles and runs correctly under strict nullness`` () =
     FSharp """module Test

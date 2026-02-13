@@ -6888,8 +6888,9 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
 
         // Pre-unify expected type with KnownFromConstructor nullness so the constraint solver
         // sees constructor results as provably non-null (issue #18021).
-        // Guarded: this adds a new unification step that changes inference order.
-        if g.checkNullness && TypeNullIsExtraValueNew g mWholeCall objTy then
+        // Skip when args is empty: the constructor is used as a first-class function (e.g. |> ClassName)
+        // and overallTy is a function type, not the return type.
+        if g.checkNullness && not args.IsEmpty && TypeNullIsExtraValueNew g mWholeCall objTy then
             UnifyTypes cenv env mWholeCall overallTy.Commit (replaceNullnessOfTy Nullness.KnownFromConstructor objTy)
 
         let afterResolution =
