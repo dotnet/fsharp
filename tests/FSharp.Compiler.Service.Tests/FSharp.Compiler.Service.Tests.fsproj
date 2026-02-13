@@ -90,7 +90,6 @@
 
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
-    <PackageReference Include="FSharp.Data" Version="6.6.0" />
     <!-- Force a newer Newtonsoft.Json version to avoid conflicts. -->
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
 	<ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj">
