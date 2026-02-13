@@ -39,25 +39,6 @@ if result <> "int" then
         |> ignore
 
     [<Fact>]
-    let ``Example 2 - Fully Generic vs Wrapped - t vs Option of t - resolves to wrapped`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Process(value: 't) = "fully generic"
-    static member Process(value: Option<'t>) = "wrapped"
-
-let result = Example.Process(Some 42)
-if result <> "wrapped" then
-    failwithf "Expected 'wrapped' but got '%s' - wrong overload selected" result
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
     let ``Example 3 - Nested Generics - Option of Option of t vs Option of Option of int`` () =
         FSharp """
 module Test
@@ -964,63 +945,6 @@ let result : Option<int> = Builder.Build()
         |> ignore
 
     [<Fact>]
-    let ``MoreConcrete - Both generic, function type parameter`` () =
-        FSharp """
-module Test
-
-type Dispatcher =
-    static member Dispatch<'a, 'b>(handler: 'a -> 'b) = "fully generic"
-    static member Dispatch<'a>(handler: 'a -> string) = "concrete range"
-
-let result = Dispatcher.Dispatch(fun (x: int) -> "hello")
-if result <> "concrete range" then
-    failwithf "Expected 'concrete range' but got '%s' - wrong overload selected" result
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``MoreConcrete - Both generic, tuple type parameter`` () =
-        FSharp """
-module Test
-
-type Handler =
-    static member Handle<'a, 'b>(pair: 'a * 'b) = "fully generic tuple"
-    static member Handle<'a>(pair: 'a * int) = "concrete second"
-
-let result = Handler.Handle(("hello", 42))
-if result <> "concrete second" then
-    failwithf "Expected 'concrete second' but got '%s' - wrong overload selected" result
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``MoreConcrete - Both generic, Option of list vs Option of generic`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Process<'t>(value: Option<'t>) = "generic option"
-    static member Process<'t>(value: Option<'t list>) = "option of list"
-
-let result = Example.Process(Some([1; 2; 3]))
-if result <> "option of list" then
-    failwithf "Expected 'option of list' but got '%s' - wrong overload selected" result
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
     let ``SRTP skip - Both generic with SRTP produces ambiguity`` () =
         FSharp """
 module Test
@@ -1397,50 +1321,24 @@ let result = Example.Handle([|1; 2; 3|])
 
             case "list<'T> vs list<int * 'T> - tuple element more concrete"
                  "module Test\ntype Proc =\n    static member Run<'t>(x: list<'t>) = \"generic\"\n    static member Run<'t>(x: list<int * 't>) = \"paired\"\nlet result = Proc.Run([(1, \"a\")])\nif result <> \"paired\" then failwithf \"Expected 'paired' but got '%s'\" result"
+
+            case "'a -> 'b vs 'a -> string - concrete range in function type"
+                 "module Test\ntype Dispatcher =\n    static member Dispatch<'a, 'b>(handler: 'a -> 'b) = \"fully generic\"\n    static member Dispatch<'a>(handler: 'a -> string) = \"concrete range\"\nlet result = Dispatcher.Dispatch(fun (x: int) -> \"hello\")\nif result <> \"concrete range\" then failwithf \"Expected 'concrete range' but got '%s'\" result"
+
+            case "'a * 'b vs 'a * int - concrete element in tuple type"
+                 "module Test\ntype Handler =\n    static member Handle<'a, 'b>(pair: 'a * 'b) = \"fully generic tuple\"\n    static member Handle<'a>(pair: 'a * int) = \"concrete second\"\nlet result = Handler.Handle((\"hello\", 42))\nif result <> \"concrete second\" then failwithf \"Expected 'concrete second' but got '%s'\" result"
+
+            case "'a -> 'b vs int -> 'b - concrete domain in function type"
+                 "module Test\ntype Mapper =\n    static member Map<'a, 'b>(f: 'a -> 'b, items: 'a list) = \"generic\"\n    static member Map<'b>(f: int -> 'b, items: int list) = \"int domain\"\nlet result = Mapper.Map((fun x -> string x), [1; 2; 3])\nif result <> \"int domain\" then failwithf \"Expected 'int domain' but got '%s'\" result"
+
+            case "'a * 'b vs int * 'b - concrete first element in tuple"
+                 "module Test\ntype Tupler =\n    static member Pack<'a, 'b>(x: 'a * 'b) = \"generic\"\n    static member Pack<'b>(x: int * 'b) = \"int first\"\nlet result = Tupler.Pack((42, \"hello\"))\nif result <> \"int first\" then failwithf \"Expected 'int first' but got '%s'\" result"
         ]
 
     [<Theory>]
     [<MemberData(nameof moreConcreteTestCases)>]
     let ``MoreConcrete tiebreaker resolves both-generic overloads`` (_description: string) (source: string) =
         FSharp source
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``MoreConcrete - function type concreteness - concrete domain preferred`` () =
-        FSharp """
-module Test
-
-type Mapper =
-    static member Map<'a, 'b>(f: 'a -> 'b, items: 'a list) = "generic"
-    static member Map<'b>(f: int -> 'b, items: int list) = "int domain"
-
-let result = Mapper.Map((fun x -> string x), [1; 2; 3])
-if result <> "int domain" then
-    failwithf "Expected 'int domain' but got '%s'" result
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``MoreConcrete - tuple type concreteness - concrete element preferred`` () =
-        FSharp """
-module Test
-
-type Tupler =
-    static member Pack<'a, 'b>(x: 'a * 'b) = "generic"
-    static member Pack<'b>(x: int * 'b) = "int first"
-
-let result = Tupler.Pack((42, "hello"))
-if result <> "int first" then
-    failwithf "Expected 'int first' but got '%s'" result
-        """
         |> withLangVersionPreview
         |> asExe
         |> compileAndRun
