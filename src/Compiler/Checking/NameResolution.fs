@@ -2241,9 +2241,7 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
     | None -> ()
     | Some sink -> sink.NotifyEnvWithScope(scopem, nenv, ad)
 
-// (#16621) Register union case tester properties as references to their underlying union case.
-// For union case testers (e.g., IsB property), this ensures "Find All References" on a union case
-// includes usages of its tester property. Uses a shifted range to avoid duplicate filtering in ItemKeyStore.
+// (#16621) Register union case tester properties (e.g., IsB) as references to their underlying union case.
 let RegisterUnionCaseTesterForProperty
     (sink: TcResultsSink)
     (m: range)
@@ -2278,7 +2276,7 @@ let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, 
     | None -> ()
     | Some currentSink ->
         currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, false)
-        // (#16621) For union case tester properties, also register the underlying union case
+
         match item with
         | Item.Property(_, pinfos, _) -> RegisterUnionCaseTesterForProperty sink m nenv pinfos occurrenceType ad
         | _ -> ()
@@ -2288,7 +2286,7 @@ let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, ite
     | None -> ()
     | Some currentSink ->
         currentSink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, false)
-        // (#16621) For union case tester properties, also register the underlying union case
+
         match item with
         | Item.Property(_, pinfos, _) -> RegisterUnionCaseTesterForProperty sink m nenv pinfos occurrenceType ad
         | _ -> ()

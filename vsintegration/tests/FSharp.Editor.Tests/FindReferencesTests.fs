@@ -163,9 +163,7 @@ module FindReferences =
         if foundReferences.Count <> 2 then
             failwith $"Expected 2 reference but found {foundReferences.Count}"
 
-    /// Fix for bug: https://github.com/dotnet/fsharp/issues/18270
-    /// Tests that find references for properties with get/set accessors correctly
-    /// excludes the 'get' and 'set' keywords from the results.
+    /// https://github.com/dotnet/fsharp/issues/18270
     [<Fact>]
     let ``Find references for property with get set accessors`` () =
 
@@ -202,18 +200,13 @@ module FindReferences =
 
         findUsagesService.FindReferencesAsync(document, getPositionOf "MyProperty" documentPath, context).Wait()
 
-        // Should find 1 definition (the property declaration)
         if foundDefinitions.Count <> 1 then
             failwith $"Expected 1 definition but found {foundDefinitions.Count}"
 
-        // Should find 2 references (the two uses in Second file)
-        // The 'get' and 'set' keywords are filtered out by Tokenizer.tryFixupSpan
-        // in FindUsagesService.onSymbolFound
         if foundReferences.Count <> 2 then
             failwith $"Expected 2 references but found {foundReferences.Count}"
 
-    /// Ensures identifiers genuinely named "get" are not incorrectly filtered out
-    /// by the phantom property accessor filter (#18270 fix).
+    /// https://github.com/dotnet/fsharp/issues/18270
     [<Fact>]
     let ``Find references for identifier named get`` () =
 
@@ -237,10 +230,8 @@ module FindReferences =
 
         findUsagesService.FindReferencesAsync(document, getPositionOf "get x" documentPath, context).Wait()
 
-        // Should find 1 definition
         if foundDefinitions.Count <> 1 then
             failwith $"Expected 1 definition but found {foundDefinitions.Count}"
 
-        // Should find 1 reference (the call site) - the identifier "get" must NOT be filtered
         if foundReferences.Count <> 1 then
             failwith $"Expected 1 reference but found {foundReferences.Count}"

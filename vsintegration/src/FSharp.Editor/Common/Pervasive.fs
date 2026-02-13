@@ -23,8 +23,7 @@ let inline isScriptFile (filePath: string) =
     String.Equals(ext, ".fsx", StringComparison.OrdinalIgnoreCase)
     || String.Equals(ext, ".fsscript", StringComparison.OrdinalIgnoreCase)
 
-/// (#16394) Checks if the file path ends with an F# source file extension ('.fs', '.fsi', '.fsx', or '.fsscript')
-/// Used to filter non-F# files (e.g., .cshtml) from Find All References to prevent crashes.
+/// https://github.com/dotnet/fsharp/issues/16394
 let inline isFSharpSourceFile (filePath: string) =
     let ext = Path.GetExtension filePath
 

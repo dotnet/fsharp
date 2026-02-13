@@ -8,8 +8,7 @@ open Microsoft.CodeAnalysis
 
 module internal ProjectFiltering =
 
-    /// #10227: Filters projects to those referencing a specific assembly file.
-    /// Used to optimize Find All References for external DLL symbols.
+    /// https://github.com/dotnet/fsharp/issues/10227
     let getProjectsReferencingAssembly (assemblyFilePath: string) (solution: Solution) =
         let assemblyFileName = Path.GetFileName(assemblyFilePath)
 

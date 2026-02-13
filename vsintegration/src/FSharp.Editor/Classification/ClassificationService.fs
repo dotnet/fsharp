@@ -84,7 +84,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with
             | ValueNone -> ()
             | ValueSome span ->
-                // Use fixupSpan (not tryFixupSpan) for syntax coloring
+                // Use fixupSpan (not FixedSpan) for syntax coloring - don't filter phantom accessors
                 let span =
                     match item.Type with
                     | SemanticClassificationType.Printf -> span
