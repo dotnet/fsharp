@@ -78,6 +78,32 @@ namespace BaseClassDIM {
     public interface IB : IA { new int M(); int IA.M() => this.M() + 100; }
     public class CSharpBase : IB { public int M() => 77; }
 }
+namespace MixedDIM {
+    public interface IMixed {
+        int Covered() => 1;
+        int NotCovered();
+    }
+}
+namespace RootDIM {
+    public interface IRoot {
+        int M() => 1;
+    }
+}
+namespace ChainDIM {
+    public interface IA { int M() => 1; }
+    public interface IB : IA { }
+    public interface IC : IB { }
+}
+namespace PartialDIMCoverage {
+    public interface IA { int M(); }
+    public interface IB : IA { int IA.M() => this.M(); new int M(); }
+    public interface IC { int M(); }
+    public interface ID : IB, IC { }
+}
+namespace ExplicitIADIM {
+    public interface IA { int M(); }
+    public interface IB : IA { new int M(); int IA.M() => this.M() + 100; }
+}
         """
         |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8
         |> withName "DIMTestLib"
@@ -268,3 +294,46 @@ type Derived() =
     inherit CSharpBase()
 """
         |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
+    let ``Mixed DIM - must implement non-covered method`` () =
+        fsharpImplementingInterface "MixedDIM" "type C() = interface IMixed"
+        |> shouldFailWithDIM dimTestLib 361
+
+    [<FactForNETCOREAPP>]
+    let ``Mixed DIM - implementation of non-covered method suffices`` () =
+        fsharpImplementingInterface "MixedDIM" "type C() = interface IMixed with member _.NotCovered() = 2"
+        |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
+    let ``Root DIM - no implementation needed`` () =
+        fsharpImplementingInterface "RootDIM" "type C() = interface IRoot"
+        |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
+    let ``Chain DIM - deep inheritance picks up DIM`` () =
+        fsharpImplementingInterface "ChainDIM" "type C() = interface IC"
+        |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
+    let ``Class with own abstract member and DIM interface`` () =
+        fsharpImplementingInterface "RootDIM" """
+[<AbstractClass>]
+type C() =
+   interface IRoot
+   abstract member MyAbstract : unit -> unit
+"""
+        |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
+    let ``Partial DIM filtering - residual FS0361 when uncovered slots remain`` () =
+        fsharpImplementingInterface "PartialDIMCoverage" "type C() = interface ID with member _.M() = 42"
+        |> shouldFailWithDIM dimTestLib 361
+
+    [<FactForNETCOREAPP>]
+    let ``Explicit IA declaration with DIM coverage succeeds`` () =
+        fsharpImplementingInterface "ExplicitIADIM" """type C() =
+    interface IB with member _.M() = 42
+    interface IA"""
+        |> shouldCompileWithDIM dimTestLib
+
