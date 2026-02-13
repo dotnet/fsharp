@@ -5,6 +5,7 @@ namespace CompilerOptions.Fsc
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
+open System.IO
 
 // Migrated from FSharpQA suite - CompilerOptions/fsc/pdb
 // --pdb option tests (WindowsOnly - NOMONO tests for pdb file creation)
@@ -67,13 +68,21 @@ module Pdb =
 
     // Test 7: --pdb with path in subdirectory
     // Original: NOMONO SOURCE=pdb01.fs SCFLAGS="--debug --pdb:d\\pdb01.pdb"
-    [<FactForWINDOWS(Skip = "Requires PRECMD to create subdirectory - cannot be replicated in migrated test infrastructure")>]
+    [<FactForWINDOWS>]
     let ``pdb - pdb in subdirectory succeeds`` () =
-        FSharp """exit 0"""
-        |> asExe
-        |> withOptions ["--debug"; "--pdb:subdir/test.pdb"]
-        |> compile
-        |> shouldSucceed
+        let tempDir = Path.Combine(Path.GetTempPath(), "pdb_subdir_" + Path.GetRandomFileName())
+        let subDir = Path.Combine(tempDir, "d")
+        Directory.CreateDirectory(subDir) |> ignore
+        try
+            let pdbPath = Path.Combine(subDir, "test.pdb")
+            FSharp """exit 0"""
+            |> asExe
+            |> withOutputDirectory (Some (DirectoryInfo(tempDir)))
+            |> withOptions ["--debug"; $"--pdb:{pdbPath}"]
+            |> compile
+            |> shouldSucceed
+        finally
+            try Directory.Delete(tempDir, true) with _ -> ()
 
     // Test 8: --pdb with path in current directory (.\\)
     // Original: NOMONO SOURCE=pdb01.fs SCFLAGS="--debug --pdb:.\\pdb01.pdb"
@@ -136,14 +145,22 @@ module Pdb =
 
     // Test 14: --pdb cannot match the output filename
     // Original: NOMONO SOURCE=pdb04.fs SCFLAGS="-g --pdb:pdb04.exe"
-    [<FactForWINDOWS(Skip = "Relative --pdb path resolves against CWD, not temp output dir - paths never match in test infrastructure")>]
+    [<FactForWINDOWS>]
     let ``pdb - pdb cannot match output filename`` () =
-        FSharp """exit 1"""
-        |> asExe
-        |> withName "testpdb"
-        |> withOptions ["-g"; "--pdb:testpdb.exe"]
-        |> compile
-        |> shouldFail
-        |> withErrorCode 1001
-        |> withDiagnosticMessageMatches "The pdb output file name cannot match the build output filename"
-        |> ignore
+        let tempDir = Path.Combine(Path.GetTempPath(), "pdb_match_" + Path.GetRandomFileName())
+        Directory.CreateDirectory(tempDir) |> ignore
+        try
+            let outputName = "testpdb"
+            let pdbPath = Path.Combine(tempDir, $"{outputName}.exe")
+            FSharp """exit 1"""
+            |> asExe
+            |> withOutputDirectory (Some (DirectoryInfo(tempDir)))
+            |> withName outputName
+            |> withOptions ["-g"; $"--pdb:{pdbPath}"]
+            |> compile
+            |> shouldFail
+            |> withErrorCode 1001
+            |> withDiagnosticMessageMatches "The pdb output file name cannot match the build output filename"
+            |> ignore
+        finally
+            try Directory.Delete(tempDir, true) with _ -> ()
