@@ -203,4 +203,21 @@ namespace ExtensionPriorityTests
         [OverloadResolutionPriority(0)]
         public static string Process(int t, int u) => "fully-concrete-priority0";
     }
+
+    // ===== Property / Indexer with ORP =====
+
+    public class IndexerWithPriority
+    {
+        [OverloadResolutionPriority(1)]
+        public string this[object key] => "object-indexer-priority1";
+
+        [OverloadResolutionPriority(0)]
+        public string this[string key] => "string-indexer-priority0";
+
+        [OverloadResolutionPriority(2)]
+        public string this[int index1, int index2] => "two-int-indexer-priority2";
+
+        [OverloadResolutionPriority(0)]
+        public string this[object index1, object index2] => "two-object-indexer-priority0";
+    }
 }

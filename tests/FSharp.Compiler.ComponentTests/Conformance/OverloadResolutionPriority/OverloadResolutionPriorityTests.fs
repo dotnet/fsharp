@@ -34,3 +34,33 @@ let run () =
         |> compile
         |> shouldSucceed
         |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``OverloadResolutionPriority - indexer with priority`` () =
+        // Known limitation: ORPA on C# indexers does not override F# overload resolution.
+        // F# selects the more specific type (string over object) regardless of priority.
+        Fs """
+module TestIndexerPriority
+
+open ExtensionPriorityTests
+
+let run () =
+    let obj = IndexerWithPriority()
+    // Single-arg indexer: F# picks string-priority0 (more specific) despite object having priority1
+    let r1 = obj.["hello"]
+    if r1 <> "string-indexer-priority0" then
+        failwithf "Expected 'string-indexer-priority0' but got '%s'" r1
+
+    // Two-arg indexer: F# picks two-int-priority2 (both more specific and higher priority)
+    let r2 = obj.[1, 2]
+    if r2 <> "two-int-indexer-priority2" then
+        failwithf "Expected 'two-int-indexer-priority2' but got '%s'" r2
+
+run ()
+"""
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
