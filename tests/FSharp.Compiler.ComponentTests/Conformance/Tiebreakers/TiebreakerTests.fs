@@ -48,8 +48,11 @@ type Example =
     static member Handle(value: Option<Option<int>>) = "nested int"
 
 let result = Example.Handle(Some(Some 42))
+if result <> "nested int" then
+    failwithf "Expected 'nested int' but got '%s' - wrong overload selected" result
         """
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
@@ -63,8 +66,11 @@ type Example =
     static member Deep(value: list<Option<Result<int, exn>>>) = "int"
 
 let result = Example.Deep([Some(Ok 42)])
+if result <> "int" then
+    failwithf "Expected 'int' but got '%s' - wrong overload selected" result
         """
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
@@ -100,9 +106,12 @@ type Example =
     static member {methodName}(value: {concreteParam}) = "{concreteDesc}"
 
 let result = Example.{methodName}({callExpr})
+if result <> "{concreteDesc}" then
+    failwithf "Expected '{concreteDesc}' but got '%%s' - wrong overload selected" result
         """
         |> withLangVersionPreview
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 

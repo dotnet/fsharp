@@ -70,48 +70,35 @@ type TiebreakRule =
 // Type Concreteness Comparison
 // -------------------------------------------------------------------------
 
-/// Aggregate a list of comparison results using dominance.
-/// Returns 1 if all >= 0 and at least one > 0, -1 if all <= 0 and at least one < 0, else 0.
+/// Fold over two lists pairwise with a comparison function, accumulating dominance state.
 /// Early-exits when incomparability is detected (both positive and negative seen).
-let private aggregateComparisons (cs: int list) =
-    let rec loop hasPositive hasNegative xs =
-        match xs with
-        | [] ->
-            if not hasNegative && hasPositive then 1
-            elif not hasPositive && hasNegative then -1
-            else 0
-        | c :: rest ->
-            let p = hasPositive || c > 0
-            let n = hasNegative || c < 0
-
-            if p && n then
-                0 // incomparable — early exit
-            else
-                loop p n rest
-
-    loop false false cs
-
-/// Fold over two lists pairwise with a comparison function, aggregating using dominance.
-/// Early-exits when incomparability is detected (both positive and negative seen).
-let private aggregateMap2 (f: 'a -> 'b -> int) (xs: 'a list) (ys: 'b list) =
+/// Returns the accumulated state so it can be chained across multiple lists.
+let private foldMap2 (f: 'a -> 'b -> int) initP initN (xs: 'a list) (ys: 'b list) =
     let rec loop hasPositive hasNegative xs ys =
         match xs, ys with
         | [], _
-        | _, [] ->
-            if not hasNegative && hasPositive then 1
-            elif not hasPositive && hasNegative then -1
-            else 0
+        | _, [] -> struct (hasPositive, hasNegative)
         | x :: xt, y :: yt ->
             let c = f x y
             let p = hasPositive || c > 0
             let n = hasNegative || c < 0
 
             if p && n then
-                0 // incomparable — early exit
+                struct (true, true) // incomparable — early exit
             else
                 loop p n xt yt
 
-    loop false false xs ys
+    loop initP initN xs ys
+
+/// Convert accumulated dominance state into a comparison result.
+let private resolveAggregation (struct (hasPositive, hasNegative)) =
+    if not hasNegative && hasPositive then 1
+    elif not hasPositive && hasNegative then -1
+    else 0
+
+/// Fold over two lists pairwise with a comparison function, aggregating using dominance.
+let private aggregateMap2 f xs ys =
+    foldMap2 f false false xs ys |> resolveAggregation
 
 /// SRTP type parameters use a different constraint solving mechanism and shouldn't
 /// be compared under the "more concrete" ordering.
@@ -427,23 +414,26 @@ let private unnamedArgsRule: TiebreakRule =
         Compare =
             fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
                 if candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs then
-                    // Build a single flat list of all individual comparisons, then apply dominance.
-                    // Both obj-arg and unnamed-arg comparisons must be in one list so that
-                    // cross-group incomparability is detected correctly.
-                    let cs =
-                        (if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then
-                             let objArgTys1 = candidate.CalledObjArgTys(ctx.m)
-                             let objArgTys2 = other.CalledObjArgTys(ctx.m)
+                    // Fold over obj-args first, then unnamed-args, with shared dominance state.
+                    // This avoids intermediate list allocations from `@` concatenation while
+                    // still detecting cross-group incomparability correctly.
+                    let struct (p, n) =
+                        if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then
+                            let objArgTys1 = candidate.CalledObjArgTys(ctx.m)
+                            let objArgTys2 = other.CalledObjArgTys(ctx.m)
 
-                             if objArgTys1.Length = objArgTys2.Length then
-                                 List.map2 (compareTypes ctx) objArgTys1 objArgTys2
-                             else
-                                 []
-                         else
-                             [])
-                        @ (List.map2 (compareArg ctx) candidate.AllUnnamedCalledArgs other.AllUnnamedCalledArgs)
+                            if objArgTys1.Length = objArgTys2.Length then
+                                foldMap2 (compareTypes ctx) false false objArgTys1 objArgTys2
+                            else
+                                struct (false, false)
+                        else
+                            struct (false, false)
 
-                    aggregateComparisons cs
+                    if p && n then
+                        0
+                    else
+                        foldMap2 (compareArg ctx) p n candidate.AllUnnamedCalledArgs other.AllUnnamedCalledArgs
+                        |> resolveAggregation
                 else
                     0
     }
@@ -630,25 +620,27 @@ let filterByOverloadResolutionPriority<'T> (g: TcGlobals) (getMeth: 'T -> MethIn
     | [ _ ] -> candidates
     | _ when not (g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority) -> candidates
     | twoOrMoreCandidates ->
-        let enriched =
-            twoOrMoreCandidates
-            |> List.map (fun c ->
-                let m = getMeth c
-
-                let stamp =
-                    match tryTcrefOfAppTy g m.ApparentEnclosingType with
-                    | ValueSome tcref -> tcref.Stamp
-                    | ValueNone -> 0L
-
-                (c, stamp, m.GetOverloadResolutionPriority()))
-
-        // Fast path: check if any method has a non-zero priority before grouping
+        // Fast path: check if any method has a non-zero priority before allocating the enriched list.
+        // In 99% of resolutions no method uses the attribute, so this avoids all allocation.
         let hasAnyPriority =
-            enriched |> List.exists (fun (_, _, prio) -> prio <> 0)
+            twoOrMoreCandidates
+            |> List.exists (fun c -> (getMeth c).GetOverloadResolutionPriority() <> 0)
 
         if not hasAnyPriority then
             candidates
         else
+            let enriched =
+                twoOrMoreCandidates
+                |> List.map (fun c ->
+                    let m = getMeth c
+
+                    let stamp =
+                        match tryTcrefOfAppTy g m.ApparentEnclosingType with
+                        | ValueSome tcref -> tcref.Stamp
+                        | ValueNone -> 0L
+
+                    (c, stamp, m.GetOverloadResolutionPriority()))
+
             enriched
             |> List.groupBy (fun (_, stamp, _) -> stamp)
             |> List.collect (fun (_, group) ->
