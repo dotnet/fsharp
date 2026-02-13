@@ -1044,13 +1044,31 @@ type outref<'T> with
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; FileInlineData("UseSpanFromLocalByref.fs")>]
+    [<Theory; FileInlineData("ReturnFieldSetBySpan.fs")>]
     let``UseSpanFromLocalByref_fs`` compilation =
         compilation
         |> getCompilation
         |> asExe
         |> withLangVersionPreview
         |> compileExeAndRun
+        |> shouldSucceed
+
+    // Old behavior preserved: error cases must compile successfully without preview lang version
+    [<Theory; FileInlineData("E_ReturnSpanFromLocalByref.fs")>]
+    let``E_ReturnSpanFromLocalByref_fs_without_preview`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("E_ReturnSpanFromLocalByref02.fs")>]
+    let``E_ReturnSpanFromLocalByref02_fs_without_preview`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compile
         |> shouldSucceed
 #endif
 
