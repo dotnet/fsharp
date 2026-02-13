@@ -405,30 +405,30 @@ let private unnamedArgsRule: TiebreakRule =
         Compare =
             fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
                 if candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs then
-                    // For extension members, we also include the object argument type, if any in the comparison set
-                    // This matches C#, where all extension members are treated and resolved as "static" methods calls
-                    let objArgResult =
-                        if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then
-                            let objArgTys1 = candidate.CalledObjArgTys(ctx.m)
-                            let objArgTys2 = other.CalledObjArgTys(ctx.m)
+                    // Build a single flat list of all individual comparisons, then apply dominance.
+                    // Both obj-arg and unnamed-arg comparisons must be in one list so that
+                    // cross-group incomparability is detected correctly.
+                    let cs =
+                        (if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then
+                             let objArgTys1 = candidate.CalledObjArgTys(ctx.m)
+                             let objArgTys2 = other.CalledObjArgTys(ctx.m)
 
-                            if objArgTys1.Length = objArgTys2.Length then
-                                aggregateMap2 (compareTypes ctx) objArgTys1 objArgTys2
-                            else
-                                0
-                        else
-                            0
+                             if objArgTys1.Length = objArgTys2.Length then
+                                 List.map2 (compareTypes ctx) objArgTys1 objArgTys2
+                             else
+                                 []
+                         else
+                             [])
+                        @ (List.map2 (compareArg ctx) candidate.AllUnnamedCalledArgs other.AllUnnamedCalledArgs)
 
-                    let unnamedResult =
-                        aggregateMap2 (compareArg ctx) candidate.AllUnnamedCalledArgs other.AllUnnamedCalledArgs
-
-                    // Combine the two sub-results using dominance
-                    let hasPositive = objArgResult > 0 || unnamedResult > 0
-                    let hasNegative = objArgResult < 0 || unnamedResult < 0
-
-                    if not hasNegative && hasPositive then 1
-                    elif not hasPositive && hasNegative then -1
-                    else 0
+                    // "all args are at least as good, and one argument is actually better"
+                    if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then
+                        1
+                    // "all args are at least as bad, and one argument is actually worse"
+                    elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then
+                        -1
+                    else
+                        0
                 else
                     0
     }

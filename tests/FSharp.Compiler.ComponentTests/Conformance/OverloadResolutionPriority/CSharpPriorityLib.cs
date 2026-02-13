@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 
 namespace PriorityTests
 {
-    /// Basic priority within same type - higher priority should win
     public static class BasicPriority
     {
         [OverloadResolutionPriority(1)]
@@ -22,7 +21,6 @@ namespace PriorityTests
         public static string Invoke(int i) => "priority-0-int";
     }
     
-    /// Negative priority - should be deprioritized (used for backward compat scenarios)
     public static class NegativePriority
     {
         [OverloadResolutionPriority(-1)]
@@ -39,7 +37,6 @@ namespace PriorityTests
         public static string Obsolete(int i) => "new"; // default priority 0
     }
     
-    /// Priority overrides type concreteness
     public static class PriorityVsConcreteness
     {
         [OverloadResolutionPriority(1)]
@@ -54,7 +51,6 @@ namespace PriorityTests
         public static string Handle(int[] arr) => "array-int-default";
     }
     
-    /// Priority is scoped per-declaring-type for extension methods
     public static class ExtensionTypeA
     {
         [OverloadResolutionPriority(1)]
@@ -71,7 +67,6 @@ namespace PriorityTests
         public static string ExtMethod(this string s, object o) => "TypeB-priority0";
     }
     
-    /// Default priority is 0 when attribute is absent
     public static class DefaultPriority
     {
         public static string NoAttr(object o) => "no-attr";
@@ -113,7 +108,6 @@ namespace ExtensionPriorityTests
     
     // ===== Same priority, normal tiebreakers apply =====
     
-    /// Multiple overloads with same priority - concreteness should break tie
     public static class SamePriorityTiebreaker
     {
         [OverloadResolutionPriority(1)]
@@ -126,7 +120,6 @@ namespace ExtensionPriorityTests
         public static string Process(string value) => "string";
     }
     
-    /// Same priority with array types - concreteness on element type
     public static class SamePriorityArrayTypes
     {
         [OverloadResolutionPriority(1)]
