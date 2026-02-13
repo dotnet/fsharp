@@ -305,6 +305,7 @@ jobs:
       displayName: Extract compiler timing from binlogs for ${{ item.displayName }}
       condition: always()
       continueOnError: true
+      workingDirectory: '$(Pipeline.Workspace)/BinaryLogs'
 
     - task: PublishPipelineArtifact@1
       displayName:  Publish ${{ item.displayName }} Binary Logs
