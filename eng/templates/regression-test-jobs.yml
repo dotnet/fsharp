@@ -196,13 +196,8 @@ jobs:
           }
         }
 
-        $script:blIndex = 0
         function Run-Command {
           param([string]$cmd)
-          if ($cmd -match '^dotnet\s+(build|test|msbuild)') {
-            $script:blIndex++
-            $cmd = "$cmd -bl:build_$($script:blIndex).binlog"
-          }
           if ($cmd -like "dotnet*") {
             Write-Host "Executing built-in command:  $cmd"
             if ($IsWindows) {
@@ -294,17 +289,21 @@ jobs:
           exit 0
         }
         
+        # Copy script to BinaryLogs dir so dotnet fsi doesn't inherit fsharp repo's global.json
+        # (which pins an SDK version not installed in the regression test job)
+        Copy-Item $script $binlogDir/
+        $localScript = Join-Path $binlogDir (Split-Path $script -Leaf)
+        
         Write-Host "##[group]F# Compiler Timing Summary for ${{ item.displayName }}"
         foreach ($bl in $binlogs) {
           Write-Host ""
           Write-Host "--- Timings from $($bl.Name) ---"
-          dotnet fsi $script "$($bl.FullName)"
+          dotnet fsi $localScript "$($bl.FullName)"
         }
         Write-Host "##[endgroup]"
       displayName: Extract compiler timing from binlogs for ${{ item.displayName }}
       condition: always()
       continueOnError: true
-      workingDirectory: '$(Pipeline.Workspace)'
 
     - task: PublishPipelineArtifact@1
       displayName:  Publish ${{ item.displayName }} Binary Logs
