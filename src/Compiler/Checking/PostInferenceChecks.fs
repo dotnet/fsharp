@@ -949,17 +949,24 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
     let isReturnByref = isByrefTy cenv.g returnTy
     let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
 
+    let improvedEscapeAnalysis =
+        cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
+
     // If return is a byref, and being used as a return, then a single argument cannot be a local-byref or a stack referring span-like.
     let isReturnLimitedByRef =
-        isReturnByref &&
-        (HasLimitFlag LimitFlags.ByRef limitArgs ||
-         HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs)
+        isReturnByref
+        && (HasLimitFlag LimitFlags.ByRef limitArgs
+            || HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs)
 
-    // If return is a byref, and being used as a return, then a single argument cannot be a stack referring span-like or a local-byref of a stack referring span-like.
+    // If return is a span-like, and being used as a return, check if arguments make it limited.
+    // With improved escape analysis, a byref argument referring to a local can be captured as a ref field in the returned span-like.
     let isReturnLimitedSpanLike =
-        isReturnSpanLike &&
-        (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
-         HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs)
+        isReturnSpanLike
+        && (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs
+            || HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs
+            || (improvedEscapeAnalysis
+                && HasLimitFlag LimitFlags.ByRef limitArgs
+                && limitArgs.scope >= 1))
 
     if cenv.reportErrors then
         if ctxt.PermitOnlyReturnable && ((isReturnLimitedByRef && IsLimitEscapingScope env ctxt limitArgs) || isReturnLimitedSpanLike) then
@@ -1022,14 +1029,21 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
             | ctxt :: ctxts -> ctxt, ctxts
 
         let receiverLimit = CheckExpr cenv env receiverArg receiverContext
+
+        let improvedEscapeAnalysis =
+            cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
+
         let limitArgs =
             let limitArgs = CheckExprs cenv env args ctxts
             // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
             if HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike receiverLimit then
                 // Scope is 1 to ensure any by-refs returned can only be prevented for out of scope of the function/method, not visibility.
                 CombineTwoLimits limitArgs { receiverLimit with scope = 1 }
+            elif improvedEscapeAnalysis && HasLimitFlag LimitFlags.ByRef receiverLimit then
+                CombineTwoLimits limitArgs receiverLimit
             else
                 limitArgs
+
         CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
 
 and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (contf : Limit -> Limit) : Limit =

@@ -998,6 +998,60 @@ type outref<'T> with
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
+
+    // --- Improved byref-like escape analysis (ref fields) ---
+
+    [<Theory; FileInlineData("E_ReturnSpanFromLocalByref.fs")>]
+    let``E_ReturnSpanFromLocalByref_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3234, Line 8, Col 5, Line 8, Col 9, "The Span or IsByRefLike variable 'span' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3228, Line 10, Col 4, Line 10, Col 21, "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
+
+    [<Theory; FileInlineData("E_ReturnSpanFromLocalByref02.fs")>]
+    let``E_ReturnSpanFromLocalByref02_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 9, Col 5, Line 9, Col 22, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
+
+    [<Theory; FileInlineData("ReturnSpanFromParamByref.fs")>]
+    let``ReturnSpanFromParamByref_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("ReturnSpanFromArray.fs")>]
+    let``ReturnSpanFromArray_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("UseSpanFromLocalByref.fs")>]
+    let``UseSpanFromLocalByref_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
