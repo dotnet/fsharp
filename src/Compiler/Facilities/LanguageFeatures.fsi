@@ -95,6 +95,7 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | WarnWhenFunctionValueUsedAsInterpolatedStringArg
 
 /// LanguageVersion management
 type LanguageVersion =

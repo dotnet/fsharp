@@ -7592,6 +7592,13 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
     if argTys.Length <> synFillExprs.Length then
         error (Error(FSComp.SR.tcInterpolationMixedWithPercent(), m))
 
+    let warnForFunctionValuesInFillExprs () =
+        if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg then
+            (argTys, synFillExprs)
+            ||> List.iter2 (fun argTy synFillExpr ->
+                if isFunTy g argTy then
+                    warning (Error(FSComp.SR.tcFunctionValueUsedAsInterpolatedStringArg (), synFillExpr.Range)))
+
     match stringKind with
 
     // The case for $"..." used as type string and $"...%d{x}..." used as type PrintfFormat - create a PrintfFormat that captures
@@ -7614,6 +7621,8 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
         else
             // Type check the expressions filling the holes
             let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
+
+            warnForFunctionValuesInFillExprs ()
 
             // Take all interpolated string parts and typed fill expressions
             // and convert them to typed expressions that can be used as args to System.String.Concat
@@ -7683,6 +7692,8 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
         // Type check the expressions filling the holes
         let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
+
+        warnForFunctionValuesInFillExprs ()
 
         let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
