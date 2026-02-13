@@ -11,7 +11,9 @@ open System.Reflection
 open FSharp.Test.Compiler
 open FSharp.Test
 
+#if NETCOREAPP
 open System.Runtime.Loader
+#endif
 
 type TypeForwardingResult =
     | TFSuccess of stdout: string
@@ -28,6 +30,7 @@ module TypeForwardingHelpers =
         diags |> List.map (fun d -> d.Message) |> String.concat "\n"
 
     let private tryRunAssembly (dllPath: string) =
+#if NETCOREAPP
         try
             let alc = new AssemblyLoadContext(Guid.NewGuid().ToString("N"), isCollectible = true)
             try
@@ -47,6 +50,10 @@ module TypeForwardingHelpers =
         with
         | :? TargetInvocationException as tie -> TFExecutionFailure tie.InnerException
         | ex -> TFExecutionFailure ex
+#else
+        ignore dllPath
+        TFExecutionFailure(System.NotSupportedException("TypeForwarding runtime tests require .NET Core"))
+#endif
 
     /// Verify type forwarding: compile original C# lib, compile F# exe referencing it,
     /// compile target + forwarder, swap DLLs, run the F# exe via reflection.
