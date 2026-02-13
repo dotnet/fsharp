@@ -124,6 +124,24 @@ let testFSharpUsingORP () =
     test "F# extension ORP - obj wins by priority" "fsharp-ext-obj-priority1" ("test".FsExtend(42))
 
 // ============================================================================
+// Virtual Base ORPA Inheritance Tests
+// ============================================================================
+
+let testVirtualBaseOrpa () =
+    // When called via Base type, priority1 object overload should win over priority0 string
+    let baseObj = VirtualBaseWithPriority()
+    test "Virtual base - object wins by priority" "base-object-priority1" (baseObj.Compute("hello"))
+
+    // When called via Derived instance, base priority should still apply
+    // Derived overrides don't change priority - it's read from base declaration
+    let derived = DerivedOverridesVirtual()
+    test "Derived virtual - base priority respected, object wins" "derived-object" (derived.Compute("hello"))
+
+    // Int has priority -1, should lose to both object(1) and string(0)
+    let intResult = derived.Compute(42)
+    test "Derived virtual - int with neg priority" "derived-int" intResult
+
+// ============================================================================
 // Main entry point
 // ============================================================================
 
@@ -162,6 +180,10 @@ let main _ =
     
     printfn "=== F# Using ORP Attribute Tests ==="
     testFSharpUsingORP ()
+    printfn ""
+    
+    printfn "=== Virtual Base ORPA Tests ==="
+    testVirtualBaseOrpa ()
     printfn ""
     
     printfn "========================================"

@@ -220,4 +220,25 @@ namespace ExtensionPriorityTests
         [OverloadResolutionPriority(0)]
         public string this[object index1, object index2] => "two-object-indexer-priority0";
     }
+
+    // ===== Virtual Base with ORP =====
+
+    public class VirtualBaseWithPriority
+    {
+        [OverloadResolutionPriority(1)]
+        public virtual string Compute(object o) => "base-object-priority1";
+
+        [OverloadResolutionPriority(0)]
+        public virtual string Compute(string s) => "base-string-priority0";
+
+        [OverloadResolutionPriority(-1)]
+        public virtual string Compute(int i) => "base-int-priority-neg1";
+    }
+
+    public class DerivedOverridesVirtual : VirtualBaseWithPriority
+    {
+        public override string Compute(object o) => "derived-object";
+        public override string Compute(string s) => "derived-string";
+        public override string Compute(int i) => "derived-int";
+    }
 }
