@@ -64,3 +64,49 @@ run ()
         |> compileAndRun
         |> shouldSucceed
         |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``OverloadResolutionPriority - error on F# override`` () =
+        Fs """
+module TestORPOnOverride
+
+open System.Runtime.CompilerServices
+
+type Base() =
+    abstract member DoWork: int -> string
+    default _.DoWork(x: int) = "base"
+
+    abstract member DoWork: string -> string
+    default _.DoWork(s: string) = "base-string"
+
+type Derived() =
+    inherit Base()
+
+    [<OverloadResolutionPriority(1)>]
+    override _.DoWork(x: int) = "derived"
+"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3586
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``OverloadResolutionPriority - allowed on non-override F# member`` () =
+        Fs """
+module TestORPOnNonOverride
+
+open System.Runtime.CompilerServices
+
+type MyClass() =
+    [<OverloadResolutionPriority(1)>]
+    member _.Work(x: obj) = "obj"
+
+    member _.Work(x: string) = "string"
+
+let result = MyClass().Work("hello")
+"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore

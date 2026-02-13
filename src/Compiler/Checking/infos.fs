@@ -1265,8 +1265,10 @@ type MethInfo =
             | Some ([ ILAttribElem.Int32 priority ], _) -> priority
             | _ -> 0
         | FSMeth(g, _, vref, _) ->
-            TryFindFSharpInt32AttributeOpt g g.attrib_OverloadResolutionPriorityAttribute vref.Attribs 
-            |> Option.defaultValue 0
+            match TryFindFSharpInt32AttributeOpt g g.attrib_OverloadResolutionPriorityAttribute vref.Attribs with
+            | Some _ when vref.IsDefiniteFSharpOverrideMember -> 0
+            | Some priority -> priority
+            | None -> 0
         | MethInfoWithModifiedReturnType(mi, _) -> mi.GetOverloadResolutionPriority()
         | DefaultStructCtor _ -> 0
 #if !NO_TYPEPROVIDERS
