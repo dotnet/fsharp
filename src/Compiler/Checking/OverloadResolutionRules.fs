@@ -169,11 +169,7 @@ let compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
 
         | TType_measure _, TType_measure _ -> 0
 
-        | TType_forall(tps1, body1), TType_forall(tps2, body2) ->
-            if tps1.Length <> tps2.Length then
-                0
-            else
-                loop body1 body2
+        | TType_forall(tps1, body1), TType_forall(tps2, body2) -> if tps1.Length <> tps2.Length then 0 else loop body1 body2
 
         | _ -> 0
 
