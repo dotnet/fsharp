@@ -1379,6 +1379,74 @@ let result = Example.Handle([|1; 2; 3|])
         |> withErrorCode 41
         |> ignore
 
+    let moreConcreteTestCases: obj[] seq =
+        let case desc source = [| desc :> obj; source :> obj |]
+
+        [
+            case "Option<'T> vs Option<'T list> - nested list more concrete"
+                 "module Test\ntype Resolver =\n    static member Resolve<'t>(x: Option<'t>) = \"generic\"\n    static member Resolve<'t>(x: Option<'t list>) = \"list\"\nlet result = Resolver.Resolve(Some [1;2;3])\nif result <> \"list\" then failwithf \"Expected 'list' but got '%s'\" result"
+
+            case "Result<'T,'E> vs Result<'T, string> - partial concreteness"
+                 "module Test\ntype Handler =\n    static member Handle<'t,'e>(x: Result<'t,'e>) = \"generic\"\n    static member Handle<'t>(x: Result<'t, string>) = \"string err\"\nlet result = Handler.Handle(Ok 42 : Result<int, string>)\nif result <> \"string err\" then failwithf \"Expected 'string err' but got '%s'\" result"
+
+            case "'T vs Option<'T> - wrapped more concrete than bare"
+                 "module Test\ntype Picker =\n    static member Pick<'t>(x: 't) = \"bare\"\n    static member Pick<'t>(x: Option<'t>) = \"option\"\nlet result = Picker.Pick(Some 1)\nif result <> \"option\" then failwithf \"Expected 'option' but got '%s'\" result"
+
+            case "Option<'T> vs Option<Option<'T>> - double wrap more concrete"
+                 "module Test\ntype Deep =\n    static member Go<'t>(x: Option<'t>) = \"single\"\n    static member Go<'t>(x: Option<Option<'t>>) = \"double\"\nlet result = Deep.Go(Some(Some 1))\nif result <> \"double\" then failwithf \"Expected 'double' but got '%s'\" result"
+
+            case "list<'T> vs list<int * 'T> - tuple element more concrete"
+                 "module Test\ntype Proc =\n    static member Run<'t>(x: list<'t>) = \"generic\"\n    static member Run<'t>(x: list<int * 't>) = \"paired\"\nlet result = Proc.Run([(1, \"a\")])\nif result <> \"paired\" then failwithf \"Expected 'paired' but got '%s'\" result"
+        ]
+
+    [<Theory>]
+    [<MemberData(nameof moreConcreteTestCases)>]
+    let ``MoreConcrete tiebreaker resolves both-generic overloads`` (_description: string) (source: string) =
+        FSharp source
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``MoreConcrete - function type concreteness - concrete domain preferred`` () =
+        FSharp """
+module Test
+
+type Mapper =
+    static member Map<'a, 'b>(f: 'a -> 'b, items: 'a list) = "generic"
+    static member Map<'b>(f: int -> 'b, items: int list) = "int domain"
+
+let result = Mapper.Map((fun x -> string x), [1; 2; 3])
+if result <> "int domain" then
+    failwithf "Expected 'int domain' but got '%s'" result
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``MoreConcrete - tuple type concreteness - concrete element preferred`` () =
+        FSharp """
+module Test
+
+type Tupler =
+    static member Pack<'a, 'b>(x: 'a * 'b) = "generic"
+    static member Pack<'b>(x: int * 'b) = "int first"
+
+let result = Tupler.Pack((42, "hello"))
+if result <> "int first" then
+    failwithf "Expected 'int first' but got '%s'" result
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
     let orpIgnoredTestCases: obj[] seq =
         [
             [| "higher priority does not win"; "BasicPriority.Invoke(\"test\")"; "priority-1-string" |]
