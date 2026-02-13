@@ -836,7 +836,7 @@ let main3
             ApplyAllOptimizations(
                 tcConfig,
                 tcGlobals,
-                (LightweightTcValForUsingInBuildMethodCall tcGlobals),
+                (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
                 outfile,
                 importMap,
                 false,
@@ -954,7 +954,7 @@ let main4
 
     // Create the Abstract IL generator
     let ilxGenerator =
-        CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
+        CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), generatedCcu)
 
     let codegenBackend =
         (if Option.isSome dynamicAssemblyCreator then

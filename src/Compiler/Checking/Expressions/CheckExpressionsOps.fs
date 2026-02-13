@@ -24,10 +24,10 @@ let TryAllowFlexibleNullnessInControlFlow isFirst (g: TcGlobals.TcGlobals) ty =
     | true, true, ValueSome tp -> tp.SetSupportsNullFlex(true)
     | _ -> ()
 
-let CopyAndFixupTypars g m rigid tpsorig =
-    FreshenAndFixupTypars g m rigid [] [] tpsorig
+let CopyAndFixupTypars g traitCtxt m rigid tpsorig =
+    FreshenAndFixupTypars g traitCtxt m rigid [] [] tpsorig
 
-let FreshenPossibleForallTy g m rigid ty =
+let FreshenPossibleForallTy g traitCtxt m rigid ty =
     let origTypars, tau = tryDestForallTy g ty
 
     if isNil origTypars then
@@ -35,12 +35,12 @@ let FreshenPossibleForallTy g m rigid ty =
     else
         // tps may be have been equated to other tps in equi-recursive type inference and units-of-measure type inference. Normalize them here
         let origTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g origTypars
-        let tps, renaming, tinst = CopyAndFixupTypars g m rigid origTypars
+        let tps, renaming, tinst = CopyAndFixupTypars g traitCtxt m rigid origTypars
         origTypars, tps, tinst, instType renaming tau
 
 /// simplified version of TcVal used in calls to BuildMethodCall (typrelns.fs)
 /// this function is used on typechecking step for making calls to provided methods and on optimization step (for the same purpose).
-let LightweightTcValForUsingInBuildMethodCall g (vref: ValRef) vrefFlags (vrefTypeInst: TTypes) m =
+let LightweightTcValForUsingInBuildMethodCall g traitCtxt (vref: ValRef) vrefFlags (vrefTypeInst: TTypes) m =
     let v = vref.Deref
     let vTy = vref.Type
     // byref-typed values get dereferenced
@@ -49,14 +49,14 @@ let LightweightTcValForUsingInBuildMethodCall g (vref: ValRef) vrefFlags (vrefTy
     else
         match v.LiteralValue with
         | Some literalConst ->
-            let _, _, _, tau = FreshenPossibleForallTy g m TyparRigidity.Flexible vTy
+            let _, _, _, tau = FreshenPossibleForallTy g traitCtxt m TyparRigidity.Flexible vTy
             Expr.Const(literalConst, m, tau), tau
 
         | None ->
             // Instantiate the value
             let tau =
                 // If we have got an explicit instantiation then use that
-                let _, tps, tpTys, tau = FreshenPossibleForallTy g m TyparRigidity.Flexible vTy
+                let _, tps, tpTys, tau = FreshenPossibleForallTy g traitCtxt m TyparRigidity.Flexible vTy
 
                 if tpTys.Length <> vrefTypeInst.Length then
                     error (Error(FSComp.SR.tcTypeParameterArityMismatch (tps.Length, vrefTypeInst.Length), m))
@@ -90,7 +90,7 @@ let CompilePatternForMatch
             g
             env.DisplayEnv
             cenv.amap
-            (LightweightTcValForUsingInBuildMethodCall g)
+            (LightweightTcValForUsingInBuildMethodCall g traitCtxtNone)
             cenv.infoReader
             mExpr
             mMatch

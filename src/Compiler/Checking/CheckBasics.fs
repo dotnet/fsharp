@@ -248,6 +248,17 @@ type TcEnv =
 
     member tenv.AccessRights = tenv.eAccessRights
 
+    /// Makes this environment available in a form that can be stored into a trait during solving.
+    member tenv.TraitContext = Some (tenv :> ITraitContext)
+
+    interface ITraitContext with
+        member tenv.SelectExtensionMethods(traitInfo, m, infoReader) =
+            let infoReader = unbox<InfoReader>(infoReader)
+            SelectExtensionMethInfosForTrait(traitInfo, m, tenv.eNameResEnv, infoReader)
+            |> List.map (fun (supportTy, minfo) -> supportTy, (minfo :> obj))
+
+        member tenv.AccessRights = (tenv.eAccessRights :> ITraitAccessorDomain)
+
     override tenv.ToString() = "TcEnv(...)"
 
 /// Represents the compilation environment for typechecking a single file in an assembly.
@@ -340,7 +351,7 @@ type TcFileState =
 
         let niceNameGen = NiceNameGenerator()
         let infoReader = InfoReader(g, amap)
-        let instantiationGenerator m tpsorig = FreshenTypars g m tpsorig
+        let instantiationGenerator m tpsorig = FreshenTypars g traitCtxtNone m tpsorig
         let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g
           amap = amap

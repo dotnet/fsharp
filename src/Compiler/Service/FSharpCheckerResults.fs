@@ -3852,7 +3852,7 @@ type FSharpCheckProjectResults
         let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
         let tcConfig = getTcConfig ()
         let isIncrementalFragment = false
-        let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals
+        let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone
 
         let optimizedImpls, _optimizationData, _ =
             ApplyAllOptimizations(tcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv0, thisCcu, mimpls)

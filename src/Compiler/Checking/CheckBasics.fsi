@@ -141,6 +141,11 @@ type TcEnv =
 
     member AccessRights: AccessorDomain
 
+    /// Makes this environment available in a form that can be stored into a trait during solving.
+    member TraitContext: ITraitContext option
+
+    interface ITraitContext
+
 /// Represents the current environment of type variables that have implicit scope
 /// (i.e. are without explicit declaration).
 type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>

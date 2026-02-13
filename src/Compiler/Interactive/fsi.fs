@@ -2181,7 +2181,7 @@ type internal FsiDynamicCompiler
             ApplyAllOptimizations(
                 tcConfig,
                 tcGlobals,
-                LightweightTcValForUsingInBuildMethodCall tcGlobals,
+                LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone,
                 outfile,
                 importMap,
                 isIncrementalFragment,
@@ -3098,7 +3098,7 @@ type internal FsiDynamicCompiler
             GetInitialTcState(rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, tcEnv, openDecls0)
 
         let ilxGenerator =
-            CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu)
+            CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), tcState.Ccu)
 
         {
             optEnv = optEnv0

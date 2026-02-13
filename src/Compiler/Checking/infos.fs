@@ -1351,9 +1351,9 @@ type MethInfo =
             let tcref =  tcrefOfAppTy g x.ApparentEnclosingAppType
             let formalEnclosingTyparsOrig = tcref.Typars m
             let formalEnclosingTypars = copyTypars false formalEnclosingTyparsOrig
-            let _, formalEnclosingTyparTys = FixupNewTypars m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
+            let _, formalEnclosingTyparTys = FixupNewTypars traitCtxtNone m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
             let formalMethTypars = copyTypars false x.FormalMethodTypars
-            let _, formalMethTyparTys = FixupNewTypars m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
+            let _, formalMethTyparTys = FixupNewTypars traitCtxtNone m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
 
             let formalRetTy, formalParams =
                 match x with

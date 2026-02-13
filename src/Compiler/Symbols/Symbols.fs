@@ -59,7 +59,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
 type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amap: Import.ImportMap, infoReader: InfoReader) = 
 
-    let tcVal = LightweightTcValForUsingInBuildMethodCall g
+    let tcVal = LightweightTcValForUsingInBuildMethodCall g traitCtxtNone
 
     new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) =
         let amap = tcImports.GetImportMap()
@@ -389,7 +389,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
         | Some ccu -> ccuEq ccu cenv.g.fslibCcu
 
     new(cenv: SymbolEnv, tcref: TyconRef) =
-        let _, _, tyargs = FreshenTypeInst cenv.g range0 (tcref.Typars range0)
+        let _, _, tyargs = FreshenTypeInst cenv.g traitCtxtNone range0 (tcref.Typars range0)
         FSharpEntity(cenv, tcref, tyargs)
 
     member _.Entity = entity

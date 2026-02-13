@@ -168,11 +168,12 @@ val ImportReturnTypeFromMetadata:
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-val CopyTyparConstraints: m: range -> tprefInst: TyparInstantiation -> tporig: Typar -> TyparConstraint list
+val CopyTyparConstraints: traitCtxt: ITraitContext option -> m: range -> tprefInst: TyparInstantiation -> tporig: Typar -> TyparConstraint list
 
 /// The constraints for each typar copied from another typar can only be fixed up once
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ...
 val FixupNewTypars:
+    traitCtxt: ITraitContext option ->
     m: range ->
     formalEnclosingTypars: Typars ->
     tinst: TType list ->

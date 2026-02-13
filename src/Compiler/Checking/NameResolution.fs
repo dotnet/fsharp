@@ -1608,27 +1608,48 @@ let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
 // abstract generic method slot. But we later check the generalization 
 // condition anyway, so we could get away with a non-rigid typar. This 
 // would sort of be cleaner, though give errors later. 
-let FreshenAndFixupTypars g m rigid fctps tinst tpsorig =
+let FreshenAndFixupTypars g (traitCtxt: ITraitContext option) m rigid fctps tinst tpsorig =
     let tps = tpsorig |> List.map (FreshenTypar g rigid)
-    let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
+    let renaming, tinst = FixupNewTypars traitCtxt m fctps tinst tpsorig tps
     tps, renaming, tinst
 
-let FreshenTypeInst g m tpsorig =
-    FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] tpsorig
+let FreshenTypeInst g traitCtxt m tpsorig =
+    FreshenAndFixupTypars g traitCtxt m TyparRigidity.Flexible [] [] tpsorig
 
-let FreshMethInst g m fctps tinst tpsorig =
-    FreshenAndFixupTypars g m TyparRigidity.Flexible fctps tinst tpsorig
+let FreshMethInst g traitCtxt m fctps tinst tpsorig =
+    FreshenAndFixupTypars g traitCtxt m TyparRigidity.Flexible fctps tinst tpsorig
 
-let FreshenTypars g m tpsorig =
+let FreshenTypars g traitCtxt m tpsorig =
     match tpsorig with 
     | [] -> []
     | _ -> 
-        let _, _, tpTys = FreshenTypeInst g m tpsorig
+        let _, _, tpTys = FreshenTypeInst g traitCtxt m tpsorig
         tpTys
 
-let FreshenMethInfo m (minfo: MethInfo) =
-    let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+let FreshenMethInfo g traitCtxt m (minfo: MethInfo) =
+    let _, _, tpTys = FreshMethInst g traitCtxt m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tpTys
+
+/// Select extension method infos that are relevant to solving a trait constraint.
+/// Looks up extension members in the name resolution environment by the TyconRef of each
+/// support type, and filters to those matching the trait's member name.
+let SelectExtensionMethInfosForTrait (traitInfo: TraitConstraintInfo, m: range, nenv: NameResolutionEnv, infoReader: InfoReader) : (TType * MethInfo) list =
+    let g = infoReader.g
+    let nm = traitInfo.MemberLogicalName
+
+    [ for supportTy in traitInfo.SupportTypes do
+        match tryTcrefOfAppTy g supportTy with
+        | ValueSome tcref ->
+            let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
+            let methInfos = SelectMethInfosFromExtMembers infoReader (Some nm) supportTy m extMemInfos
+            for minfo in methInfos do
+                yield (supportTy, minfo)
+        | _ -> ()
+      // Also check unindexed extension members
+      for supportTy in traitInfo.SupportTypes do
+        let methInfos = SelectMethInfosFromExtMembers infoReader (Some nm) supportTy m nenv.eUnindexedExtensionMembers
+        for minfo in methInfos do
+            yield (supportTy, minfo) ]
 
 /// This must be called after fetching unqualified items that may need to be freshened 
 /// or have type instantiations
@@ -3203,7 +3224,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                     match tyconSearch () with
                     | Result((resInfo, tcref) :: _) ->
-                        let _, _, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+                        let _, _, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars m)
                         let item = Item.Types(id.idText, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
                         success (resInfo, item)
                     | _ ->
@@ -3580,7 +3601,7 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResIn
             ForceRaise (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty PermitDirectReferenceToGeneratedType.No 0 m tcref id rest)
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.Use, ad, resInfo, ResultTyparChecker(fun () -> true))
 
-    let _, tinst, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+    let _, tinst, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars m)
     let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
     CallNameResolutionSink sink (rangeOfLid lid, nenv, item, tinst, ItemOccurrence.UseInType, ad)
 
@@ -3743,7 +3764,7 @@ let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurrence fullyQualified
     | Result (resInfo, tcref) ->
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
 
-        let _, tinst, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+        let _, tinst, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars m)
         let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
         CallNameResolutionSink sink (m, nenv, item, tinst, occurrence, ad)
 
