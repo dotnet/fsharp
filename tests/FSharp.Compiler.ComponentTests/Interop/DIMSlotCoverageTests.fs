@@ -75,6 +75,22 @@ namespace ExplicitIADIM {
     public interface IA { int M(); }
     public interface IB : IA { new int M(); int IA.M() => this.M() + 100; }
 }
+namespace SealedDIM {
+    public interface IA { sealed int M() => 42; }
+    public interface IB : IA { }
+}
+namespace EventDIM {
+    public interface IA {
+        event System.EventHandler E;
+    }
+    public interface IB : IA {
+        event System.EventHandler E;
+        event System.EventHandler IA.E {
+            add { this.E += value; }
+            remove { this.E -= value; }
+        }
+    }
+}
         """
         |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8
         |> withName "DIMTestLib"
@@ -190,7 +206,7 @@ let obj : IB = { new IB with member x.M(y) = y + 3 }
     let ``Old language version (pre-feature) requires explicit implementation`` () =
         fsharpImplementingInterface "DIMTest" "type C() = interface IB with member _.M() = 42"
         |> shouldFailWithoutFeature dimTestLib "10.0" 361
-        |> withDiagnosticMessageMatches "implements"
+        |> withDiagnosticMessageMatches "more than one abstract slot"
 
     [<FactForNETCOREAPP>]
     let ``Runtime - DIM forwarding calls correct method`` () =
@@ -303,4 +319,31 @@ type C() =
     interface IB with member _.M() = 42
     interface IA"""
         |> shouldFailWithDIM dimTestLib 366
+
+    [<FactForNETCOREAPP>]
+    let ``Sealed DIM method - implementing derived interface succeeds without override`` () =
+        fsharpImplementingInterface "SealedDIM" "type C() = interface IB"
+        |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
+    let ``Event with DIM coverage - IB-only implementation succeeds`` () =
+        fsharpImplementingInterface "EventDIM" """type C() =
+    let e = Event<System.EventHandler, System.EventArgs>()
+    interface IB with
+        [<CLIEvent>]
+        member _.E = e.Publish"""
+        |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
+    let ``Object expression - diamond with conflicting DIMs errors with FS3352`` () =
+        fsharpImplementingInterface "DiamondConflictDIM" "let obj : ID = { new ID }"
+        |> shouldFailWithDIM dimTestLib 3352
+        |> withDiagnosticMessageMatches "most specific implementation"
+
+    [<FactForNETCOREAPP>]
+    let ``Diamond conflict resolved via explicit IA override`` () =
+        fsharpImplementingInterface "DiamondConflictDIM" """type C() =
+    interface ID
+    interface IA with member _.M() = 99"""
+        |> shouldCompileWithDIM dimTestLib
 
