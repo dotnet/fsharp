@@ -1110,6 +1110,19 @@ module Array =
 
         res1, res2
 
+    [<CompiledName("PartitionWith")>]
+    let partitionWith (partitioner: 'T -> Choice<'T1, 'T2>) (array: 'T array) =
+        checkNonNull "array" array
+        let mutable coll1 = ArrayCollector<'T1>()
+        let mutable coll2 = ArrayCollector<'T2>()
+
+        for i = 0 to array.Length - 1 do
+            match partitioner array.[i] with
+            | Choice1Of2 x -> coll1.Add(x)
+            | Choice2Of2 x -> coll2.Add(x)
+
+        coll1.Close(), coll2.Close()
+
     [<CompiledName("Find")>]
     let find predicate (array: _ array) =
         checkNonNull "array" array
