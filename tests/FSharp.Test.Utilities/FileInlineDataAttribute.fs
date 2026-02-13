@@ -120,6 +120,32 @@ type CompilationHelper internal (filename: obj, directory: obj, realsig: obj, op
             | _ -> ""
         file + realsig + optimize
 
+    static member private SerializeNullableBool (info: IXunitSerializationInfo) (key: string) (value: obj) =
+        let strValue =
+            match value with
+            | :? bool as b -> if b then "true" else "false"
+            | _ -> (null : string)
+        info.AddValue(key, strValue)
+
+    static member private DeserializeNullableBool (info: IXunitSerializationInfo) (key: string) : obj =
+        match info.GetValue<string>(key) with
+        | "true" -> box true
+        | "false" -> box false
+        | _ -> null
+
+    interface IXunitSerializable with
+        member _.Serialize(info: IXunitSerializationInfo) =
+            info.AddValue("filename", (if isNull filename then null else string filename))
+            info.AddValue("directory", (if isNull directory then null else string directory))
+            CompilationHelper.SerializeNullableBool info "realsig" realsig
+            CompilationHelper.SerializeNullableBool info "optimize" optimize
+
+        member _.Deserialize(info: IXunitSerializationInfo) =
+            filename <- info.GetValue<string>("filename")
+            directory <- info.GetValue<string>("directory")
+            realsig <- CompilationHelper.DeserializeNullableBool info "realsig"
+            optimize <- CompilationHelper.DeserializeNullableBool info "optimize"
+
 /// Attribute to use with Xunit's TheoryAttribute.
 /// Takes a file, relative to current test suite's root.
 /// Returns a CompilationUnit with encapsulated source code, error baseline and IL baseline (if any).

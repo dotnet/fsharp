@@ -43,7 +43,6 @@
     <Compile Include="SurfaceArea.fs" />
     <Compile Include="XunitHelpers.fs" />
     <Compile Include="XunitSetup.fs" />
-    <Compile Include="Tests.fs" />
   </ItemGroup>
 
 
