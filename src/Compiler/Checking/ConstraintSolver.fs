@@ -3663,28 +3663,22 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
 
 and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m =
     let infoReader = csenv.InfoReader
+    let moreConcretEnabled = csenv.g.langVersion.SupportsFeature LanguageFeature.MoreConcreteTiebreaker
 
-    let ctx: OverloadResolutionContext = { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep; paramDataCache = System.Collections.Generic.Dictionary(); srtpCache = System.Collections.Generic.Dictionary() }
+    let ctx: OverloadResolutionContext =
+        { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep
+          paramDataCache = (if moreConcretEnabled then System.Collections.Generic.Dictionary() else Unchecked.defaultof<_>)
+          srtpCache = (if moreConcretEnabled then System.Collections.Generic.Dictionary() else Unchecked.defaultof<_>) }
 
-    let decidingRuleCache = System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>()
-
-    // Precompute warning counts once per method to avoid redundant List.length calls across pairs
-    let warnCountCache = System.Collections.Generic.Dictionary<obj, int>()
-    let getWarnCount (meth: CalledMeth<_>) (warnings: _ list) =
-        let key = meth :> obj
-        match warnCountCache.TryGetValue(key) with
-        | true, v -> v
-        | _ ->
-            let v = List.length warnings
-            warnCountCache[key] <- v
-            v
+    let decidingRuleCache =
+        if moreConcretEnabled then System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>()
+        else Unchecked.defaultof<_>
 
     /// Check whether one overload is better than another
-    let better (candidate: CalledMeth<_>, candidateWarnings, _, usesTDC1) (other: CalledMeth<_>, otherWarnings, _, usesTDC2) =
-        let candidateWarnCount = getWarnCount candidate candidateWarnings
-        let otherWarnCount = getWarnCount other otherWarnings
-        let struct (result, decidingRule) = findDecidingRule ctx (struct (candidate, usesTDC1, candidateWarnCount)) (struct (other, usesTDC2, otherWarnCount))
-        decidingRuleCache[struct(candidate :> obj, other :> obj)] <- decidingRule
+    let better (candidate: CalledMeth<_>, candidateWarnings: _ list, _, usesTDC1) (other: CalledMeth<_>, otherWarnings: _ list, _, usesTDC2) =
+        let struct (result, decidingRule) = findDecidingRule ctx (struct (candidate, usesTDC1, candidateWarnings.Length)) (struct (other, usesTDC2, otherWarnings.Length))
+        if moreConcretEnabled then
+            decidingRuleCache[struct(candidate :> obj, other :> obj)] <- decidingRule
         result
     
     let bestMethods =
@@ -3702,6 +3696,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
     | [(calledMeth, warns, t, _)] ->
         // Only compute concreteness warnings when the MoreConcrete rule was used as deciding factor
         let anyMoreConcreteUsed =
+            moreConcretEnabled &&
             decidingRuleCache.Values
             |> Seq.exists (fun v -> match v with ValueSome TiebreakRuleId.MoreConcrete -> true | _ -> false)
 

@@ -107,71 +107,77 @@ let private isStaticallyResolvedTypeParam (tp: Typar) =
     | TyparStaticReq.HeadType -> true
     | TyparStaticReq.None -> false
 
-let rec private containsSRTPTypeVar (g: TcGlobals) (ty: TType) : bool =
-    let sty = stripTyEqns g ty
+let private containsSRTPTypeVar (g: TcGlobals) (ty: TType) : bool =
+    let rec loop (ty: TType) : bool =
+        let sty = stripTyEqns g ty
 
-    match sty with
-    | TType_var(tp, _) -> isStaticallyResolvedTypeParam tp
-    | TType_app(_, args, _) -> args |> List.exists (containsSRTPTypeVar g)
-    | TType_tuple(_, elems) -> elems |> List.exists (containsSRTPTypeVar g)
-    | TType_fun(dom, rng, _) -> containsSRTPTypeVar g dom || containsSRTPTypeVar g rng
-    | TType_anon(_, tys) -> tys |> List.exists (containsSRTPTypeVar g)
-    | TType_forall(_, body) -> containsSRTPTypeVar g body
-    | TType_measure _ -> false
-    | TType_ucase _ -> false
+        match sty with
+        | TType_var(tp, _) -> isStaticallyResolvedTypeParam tp
+        | TType_app(_, args, _) -> args |> List.exists loop
+        | TType_tuple(_, elems) -> elems |> List.exists loop
+        | TType_fun(dom, rng, _) -> loop dom || loop rng
+        | TType_anon(_, tys) -> tys |> List.exists loop
+        | TType_forall(_, body) -> loop body
+        | TType_measure _ -> false
+        | TType_ucase _ -> false
+
+    loop ty
 
 /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
-let rec compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
-    let sty1 = stripTyEqns g ty1
-    let sty2 = stripTyEqns g ty2
+let compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
+    let rec loop ty1 ty2 =
+        let sty1 = stripTyEqns g ty1
+        let sty2 = stripTyEqns g ty2
 
-    match sty1, sty2 with
-    // Neither F# nor C# allows constraint-only method overloads, so comparing
-    // constraint counts would be dead code. Both type vars are treated as equal.
-    | TType_var _, TType_var _ -> 0
+        match sty1, sty2 with
+        // Neither F# nor C# allows constraint-only method overloads, so comparing
+        // constraint counts would be dead code. Both type vars are treated as equal.
+        | TType_var _, TType_var _ -> 0
 
-    | TType_var(tp, _), _ when isStaticallyResolvedTypeParam tp -> 0
-    | _, TType_var(tp, _) when isStaticallyResolvedTypeParam tp -> 0
-    | TType_var _, _ -> -1
-    | _, TType_var _ -> 1
+        | TType_var(tp, _), _ when isStaticallyResolvedTypeParam tp -> 0
+        | _, TType_var(tp, _) when isStaticallyResolvedTypeParam tp -> 0
+        | TType_var _, _ -> -1
+        | _, TType_var _ -> 1
 
-    | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) ->
-        if not (tyconRefEq g tcref1 tcref2) then 0
-        elif args1.Length <> args2.Length then 0
-        else aggregateMap2 (compareTypeConcreteness g) args1 args2
+        | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) ->
+            if not (tyconRefEq g tcref1 tcref2) then 0
+            elif args1.Length <> args2.Length then 0
+            else aggregateMap2 loop args1 args2
 
-    | TType_tuple(_, elems1), TType_tuple(_, elems2) ->
-        if elems1.Length <> elems2.Length then
-            0
-        else
-            aggregateMap2 (compareTypeConcreteness g) elems1 elems2
+        | TType_tuple(_, elems1), TType_tuple(_, elems2) ->
+            if elems1.Length <> elems2.Length then
+                0
+            else
+                aggregateMap2 loop elems1 elems2
 
-    | TType_fun(dom1, rng1, _), TType_fun(dom2, rng2, _) ->
-        let cDomain = compareTypeConcreteness g dom1 dom2
-        let cRange = compareTypeConcreteness g rng1 rng2
-        // Inline aggregation for 2 elements to avoid list allocation
-        let hasPositive = cDomain > 0 || cRange > 0
-        let hasNegative = cDomain < 0 || cRange < 0
+        | TType_fun(dom1, rng1, _), TType_fun(dom2, rng2, _) ->
+            let cDomain = loop dom1 dom2
+            let cRange = loop rng1 rng2
+            // Inline aggregation for 2 elements to avoid list allocation
+            let hasPositive = cDomain > 0 || cRange > 0
+            let hasNegative = cDomain < 0 || cRange < 0
 
-        if not hasNegative && hasPositive then 1
-        elif not hasPositive && hasNegative then -1
-        else 0
+            if not hasNegative && hasPositive then 1
+            elif not hasPositive && hasNegative then -1
+            else 0
 
-    | TType_anon(info1, tys1), TType_anon(info2, tys2) ->
-        if not (anonInfoEquiv info1 info2) then
-            0
-        else
-            aggregateMap2 (compareTypeConcreteness g) tys1 tys2
+        | TType_anon(info1, tys1), TType_anon(info2, tys2) ->
+            if not (anonInfoEquiv info1 info2) then
+                0
+            else
+                aggregateMap2 loop tys1 tys2
 
-    | TType_measure _, TType_measure _ -> 0
+        | TType_measure _, TType_measure _ -> 0
 
-    | TType_forall(tps1, body1), TType_forall(tps2, body2) ->
-        if tps1.Length <> tps2.Length then
-            0
-        else
-            compareTypeConcreteness g body1 body2
+        | TType_forall(tps1, body1), TType_forall(tps2, body2) ->
+            if tps1.Length <> tps2.Length then
+                0
+            else
+                loop body1 body2
 
-    | _ -> 0
+        | _ -> 0
+
+    loop ty1 ty2
 
 /// Represents why two methods are incomparable under concreteness ordering.
 type IncomparableConcretenessInfo =

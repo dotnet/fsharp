@@ -20,55 +20,28 @@ type Example =
 let result = Example.Invoke(Some([1]))
         """
 
-    [<Fact>]
-    let ``Example 1 - Basic Generic vs Concrete - Option of t vs Option of int`` () =
-        FSharp """
-module Test
+    let genericVsConcreteNestingCases: obj[] seq =
+        let case desc source =
+            [| desc :> obj; source :> obj |]
 
-type Example =
-    static member Invoke(value: Option<'t>) = "generic"
-    static member Invoke(value: Option<int>) = "int"
+        [
+            case
+                "Basic - Option<'t> vs Option<int>"
+                "module Test\ntype Example =\n    static member Invoke(value: Option<'t>) = \"generic\"\n    static member Invoke(value: Option<int>) = \"int\"\nlet result = Example.Invoke(Some 42)\nif result <> \"int\" then failwithf \"Expected 'int' but got '%s' - wrong overload selected\" result"
 
-let result = Example.Invoke(Some 42)
-if result <> "int" then
-    failwithf "Expected 'int' but got '%s' - wrong overload selected" result
-        """
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
+            case
+                "Nested - Option<Option<'t>> vs Option<Option<int>>"
+                "module Test\ntype Example =\n    static member Handle(value: Option<Option<'t>>) = \"nested generic\"\n    static member Handle(value: Option<Option<int>>) = \"nested int\"\nlet result = Example.Handle(Some(Some 42))\nif result <> \"nested int\" then failwithf \"Expected 'nested int' but got '%s' - wrong overload selected\" result"
 
-    [<Fact>]
-    let ``Example 3 - Nested Generics - Option of Option of t vs Option of Option of int`` () =
-        FSharp """
-module Test
+            case
+                "Triple nesting - list<Option<Result<'t, exn>>> vs list<Option<Result<int, exn>>>"
+                "module Test\ntype Example =\n    static member Deep(value: list<Option<Result<'t, exn>>>) = \"generic\"\n    static member Deep(value: list<Option<Result<int, exn>>>) = \"int\"\nlet result = Example.Deep([Some(Ok 42)])\nif result <> \"int\" then failwithf \"Expected 'int' but got '%s' - wrong overload selected\" result"
+        ]
 
-type Example =
-    static member Handle(value: Option<Option<'t>>) = "nested generic"
-    static member Handle(value: Option<Option<int>>) = "nested int"
-
-let result = Example.Handle(Some(Some 42))
-if result <> "nested int" then
-    failwithf "Expected 'nested int' but got '%s' - wrong overload selected" result
-        """
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Example 4 - Triple Nesting Depth - list Option Result deep nesting`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Deep(value: list<Option<Result<'t, exn>>>) = "generic"
-    static member Deep(value: list<Option<Result<int, exn>>>) = "int"
-
-let result = Example.Deep([Some(Ok 42)])
-if result <> "int" then
-    failwithf "Expected 'int' but got '%s' - wrong overload selected" result
-        """
+    [<Theory>]
+    [<MemberData(nameof genericVsConcreteNestingCases)>]
+    let ``Generic vs concrete at varying nesting depths`` (_description: string) (source: string) =
+        FSharp source
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -1278,34 +1251,24 @@ let result = t.Invoke(42)
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``LangVersion Latest - MoreConcrete disabled - fully generic vs wrapped generic remains ambiguous`` () =
-        FSharp """
-module Test
+    let moreConcretDisabledAmbiguousCases: obj[] seq =
+        let case desc source =
+            [| desc :> obj; source :> obj |]
 
-type Example =
-    static member Process(value: 't) = "fully generic"
-    static member Process(value: Option<'t>) = "wrapped"
+        [
+            case
+                "fully generic vs wrapped generic"
+                "module Test\ntype Example =\n    static member Process(value: 't) = \"fully generic\"\n    static member Process(value: Option<'t>) = \"wrapped\"\nlet result = Example.Process(Some 42)"
 
-let result = Example.Process(Some 42)
-        """
-        |> withLangVersion "latest"
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 41
-        |> ignore
+            case
+                "array generic vs bare generic"
+                "module Test\ntype Example =\n    static member Handle(value: 't) = \"bare\"\n    static member Handle(value: 't array) = \"array\"\nlet result = Example.Handle([|1; 2; 3|])"
+        ]
 
-    [<Fact>]
-    let ``LangVersion Latest - MoreConcrete disabled - array generic vs bare generic remains ambiguous`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Handle(value: 't) = "bare"
-    static member Handle(value: 't array) = "array"
-
-let result = Example.Handle([|1; 2; 3|])
-        """
+    [<Theory>]
+    [<MemberData(nameof moreConcretDisabledAmbiguousCases)>]
+    let ``LangVersion Latest - MoreConcrete disabled - overloads remain ambiguous`` (_description: string) (source: string) =
+        FSharp source
         |> withLangVersion "latest"
         |> typecheck
         |> shouldFail
