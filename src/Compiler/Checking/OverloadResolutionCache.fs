@@ -43,7 +43,6 @@ type OverloadResolutionCacheResult =
     /// Resolution succeeded - index of the resolved method in the original calledMethGroup list
     | CachedResolved of methodIndex: int
 
-
 /// Gets a per-TcGlobals overload resolution cache.
 /// Uses WeakMap to tie cache lifetime to TcGlobals (per-compilation isolation).
 let getOverloadResolutionCache =
@@ -163,13 +162,8 @@ let tryComputeOverloadCacheKey
                     | Some retTy ->
                         match tryGetTypeStructureForOverloadCache g retTy with
                         | ValueSome ts -> ValueSome ts
-                        | ValueNone ->
-                            if anyHasOutArgs then
-                                ValueNone
-                            else
-                                ValueSome(Stable [||])
-                    | None ->
-                        ValueSome(Stable [||])
+                        | ValueNone -> if anyHasOutArgs then ValueNone else ValueSome(Stable [||])
+                    | None -> ValueSome(Stable [||])
 
                 match retTyStructure with
                 | ValueNone -> ValueNone

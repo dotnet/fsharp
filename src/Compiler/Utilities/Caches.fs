@@ -140,8 +140,7 @@ module CacheMetrics =
                         match tags[0].Value with
                         | :? string as name when name = filterName -> true
                         | _ -> false
-                    | None ->
-                        tags[0] = cacheTags[0] && tags[1] = cacheTags[1]
+                    | None -> tags[0] = cacheTags[0] && tags[1] = cacheTags[1]
 
                 if shouldIncrement then
                     stats.Incr instrument.Name v)
