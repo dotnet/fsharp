@@ -187,33 +187,14 @@ module Limit =
         (NoLimit, limits)
         ||> List.fold CombineTwoLimits
 
-    /// Try to resolve an ILMethodRef to an ILMethodDef and build a mask of which parameters are scoped.
-    /// Returns an array where scopedMask.[i] = true means IL parameter i has ScopedRefAttribute.
-    /// If resolution fails or the attribute is not available, returns None.
-    let tryGetScopedParamMask (g: TcGlobals) (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : bool array option =
-        match g.attrib_ScopedRefAttribute_opt with
-        | None -> None
-        | Some scopedRefAttrib ->
-            try
-                let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
-
-                match tyconRef.TypeReprInfo with
-                | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
-                    let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
-                    let parameters = methDef.Parameters
-
-                    if parameters.IsEmpty then
-                        None
-                    else
-                        let mask =
-                            parameters
-                            |> List.toArray
-                            |> Array.map (fun p -> TryFindILAttribute scopedRefAttrib p.CustomAttrs)
-
-                        if Array.exists id mask then Some mask else None
-                | _ -> None
-            with _ ->
-                None
+    /// Apply a scoped parameter mask to limits, zeroing out limits for scoped parameters.
+    let ApplyScopedMask (scopedMask: bool array) (limits: Limit list) =
+        limits
+        |> List.mapi (fun i limit ->
+            if i < scopedMask.Length && scopedMask.[i] then
+                NoLimit
+            else
+                limit)
 
 type cenv =
     { boundVals: Dictionary<Stamp, int> // really a hash set
@@ -853,6 +834,34 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
+/// Try to resolve an ILMethodRef to an ILMethodDef and build a mask of which parameters are scoped.
+/// Returns an array where scopedMask.[i] = true means IL parameter i has ScopedRefAttribute.
+/// If resolution fails or the attribute is not available, returns None.
+let tryGetScopedParamMask (g: TcGlobals) (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : bool array option =
+    match g.attrib_ScopedRefAttribute_opt with
+    | None -> None
+    | Some scopedRefAttrib ->
+        try
+            let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
+
+            match tyconRef.TypeReprInfo with
+            | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
+                let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
+                let parameters = methDef.Parameters
+
+                if parameters.IsEmpty then
+                    None
+                else
+                    let mask =
+                        parameters
+                        |> List.toArray
+                        |> Array.map (fun p -> TryFindILAttribute scopedRefAttrib p.CustomAttrs)
+
+                    if Array.exists id mask then Some mask else None
+            | _ -> None
+        with _ ->
+            None
+
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
     CheckExpr cenv env expr PermitByRefExpr.No |> ignore
@@ -1046,22 +1055,16 @@ and CheckExprsIndividual cenv env exprs ctxts : Limit list =
     let argArity i = if i < ctxts.Length then ctxts[i] else PermitByRefExpr.No
     exprs |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i))
 
-/// Apply a scoped parameter mask to limits, zeroing out limits for scoped parameters.
-and ApplyScopedMask (limits: Limit list) (scopedMask: bool array) =
-    limits
-    |> List.mapi (fun i limit ->
-        if i < scopedMask.Length && scopedMask.[i] then
-            NoLimit
-        else
-            limit)
-
 /// Check call arguments, including the return argument.
 /// When scopedMask is provided, scoped parameters are excluded from escape limits.
 and CheckCall cenv env m returnTy args ctxts ctxt (scopedMask: bool array option) =
     let limitArgs =
         match scopedMask with
         | None -> CheckExprs cenv env args ctxts
-        | Some mask -> CheckExprsIndividual cenv env args ctxts |> ApplyScopedMask <| mask |> CombineLimits
+        | Some mask ->
+            CheckExprsIndividual cenv env args ctxts
+            |> ApplyScopedMask mask
+            |> CombineLimits
 
     CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
 
@@ -1086,7 +1089,10 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt (scopedMask: bool 
             let limitArgs =
                 match scopedMask with
                 | None -> CheckExprs cenv env args ctxts
-                | Some mask -> CheckExprsIndividual cenv env args ctxts |> ApplyScopedMask <| mask |> CombineLimits
+                | Some mask ->
+                    CheckExprsIndividual cenv env args ctxts
+                    |> ApplyScopedMask mask
+                    |> CombineLimits
 
             // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
             if HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike receiverLimit then
@@ -1977,10 +1983,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
         limit
 
 and CheckExprs cenv env exprs ctxts : Limit =
-    let ctxts = Array.ofList ctxts
-    let argArity i = if i < ctxts.Length then ctxts[i] else PermitByRefExpr.No
-    exprs
-    |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i))
+    CheckExprsIndividual cenv env exprs ctxts
     |> CombineLimits
 
 and CheckExprsNoByRefLike cenv env exprs : Limit =
