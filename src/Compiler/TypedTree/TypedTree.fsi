@@ -1734,6 +1734,17 @@ type TraitWitnessInfo =
     /// Get the return type recorded in the member constraint.
     member ReturnType: TType option
 
+/// Marker interface for accessibility domains used in trait constraint resolution
+type ITraitAccessorDomain = interface end
+
+/// Represents information about the extension methods available at the point an SRTP constraint was created.
+/// This is used during constraint solving to find extension method solutions.
+type ITraitContext =
+    /// Select extension methods relevant to solving a trait constraint
+    abstract SelectExtensionMethods: traitInfo: TraitConstraintInfo * range: Text.range * infoReader: obj -> (TType * obj) list
+    /// Get the accessibility domain for the trait context
+    abstract AccessRights: ITraitAccessorDomain
+
 /// The specification of a member constraint that must be solved
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo =
@@ -1748,7 +1759,8 @@ type TraitConstraintInfo =
         objAndArgTys: TTypes *
         returnTyOpt: TType option *
         source: string option ref *
-        solution: TraitConstraintSln option ref
+        solution: TraitConstraintSln option ref *
+        traitCtxt: ITraitContext option
 
     override ToString: unit -> string
 
@@ -1778,6 +1790,9 @@ type TraitConstraintInfo =
     /// Get or set the solution of the member constraint during inference
     member Solution: TraitConstraintSln option with get, set
 
+    /// Get the trait context (extension method scope) associated with this constraint
+    member TraitContext: ITraitContext option
+
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
     /// the extension property MemberDisplayNameCore
     member WithMemberKind: SynMemberKind -> TraitConstraintInfo
@@ -1785,6 +1800,8 @@ type TraitConstraintInfo =
     member WithSupportTypes: TTypes -> TraitConstraintInfo
 
     member WithMemberName: string -> TraitConstraintInfo
+
+val traitCtxtNone: ITraitContext option
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]

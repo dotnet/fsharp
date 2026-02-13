@@ -4245,7 +4245,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
             let item = Item.OtherName (Some id, memberConstraintTy, None, None, id.idRange)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.AccessRights)
 
-            TTrait(tys, logicalCompiledName, memberFlags, argTys, returnTy, ref None, ref None), tpenv
+            TTrait(tys, logicalCompiledName, memberFlags, argTys, returnTy, ref None, ref None, None), tpenv
 
         | _ -> error(Error(FSComp.SR.tcInvalidConstraint(), m))
 
@@ -9180,7 +9180,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
 
     let memberFlags = StaticMemberFlags SynMemberKind.Member
     let logicalCompiledName = ComputeLogicalName id memberFlags
-    let traitInfo = TTrait(argTys, logicalCompiledName, memberFlags, argTys, Some retTy, ref None, sln)
+    let traitInfo = TTrait(argTys, logicalCompiledName, memberFlags, argTys, Some retTy, ref None, sln, None)
 
     let expr = Expr.Op (TOp.TraitCall traitInfo, [], ves, mItem)
     let expr = mkLambdas g mItem [] vs (expr, retTy)

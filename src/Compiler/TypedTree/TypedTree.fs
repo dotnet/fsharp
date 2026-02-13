@@ -2575,6 +2575,12 @@ type TraitWitnessInfo =
 
     override x.ToString() = "TraitWitnessInfo(" + x.MemberName + ")"
     
+type ITraitAccessorDomain = interface end
+
+type ITraitContext =
+    abstract SelectExtensionMethods: traitInfo: TraitConstraintInfo * range: range * infoReader: obj -> (TType * obj) list
+    abstract AccessRights: ITraitAccessorDomain
+
 /// The specification of a member constraint that must be solved 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo = 
@@ -2589,7 +2595,8 @@ type TraitConstraintInfo =
         objAndArgTys: TTypes * 
         returnTyOpt: TType option * 
         source: string option ref * 
-        solution: TraitConstraintSln option ref 
+        solution: TraitConstraintSln option ref *
+        traitCtxt: ITraitContext option
 
     /// Get the types that may provide solutions for the traits
     member x.SupportTypes = (let (TTrait(tys = tys)) = x in tys)
@@ -2610,16 +2617,20 @@ type TraitConstraintInfo =
         with get() = (let (TTrait(solution = sln)) = x in sln.Value)
         and set v = (let (TTrait(solution = sln)) = x in sln.Value <- v)
 
-    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g))
+    member x.TraitContext = (let (TTrait(traitCtxt = tc)) = x in tc)
 
-    member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g)) = x in TTrait(tys, b, c, d, e, f, g))
+    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g, h)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g, h))
 
-    member x.WithMemberName(name) = (let (TTrait(a, _, c, d, e, f, g)) = x in TTrait(a, name, c, d, e, f, g))
+    member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g, h)) = x in TTrait(tys, b, c, d, e, f, g, h))
+
+    member x.WithMemberName(name) = (let (TTrait(a, _, c, d, e, f, g, h)) = x in TTrait(a, name, c, d, e, f, g, h))
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
     override x.ToString() = "TTrait(" + x.MemberLogicalName + ")"
+
+let traitCtxtNone : ITraitContext option = None
     
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]

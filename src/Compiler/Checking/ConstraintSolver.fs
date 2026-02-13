@@ -1654,7 +1654,7 @@ and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 /// 2. Some additional solutions are forced prior to generalization (permitWeakResolution= Yes or YesDuringCodeGen). See above
 and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> =
     trackErrors {
-        let (TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, source, sln)) = traitInfo
+        let (TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, source, sln, _)) = traitInfo
         // Do not re-solve if already solved
         if sln.Value.IsSome then 
             return true 
