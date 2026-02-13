@@ -21,7 +21,7 @@ module MultiTargetingTests =
             |> compile
             |> shouldFail
             |> withErrorCode 0084
-            |> withErrorMessage "I_DO_NOT_EXIST"
+            |> withDiagnosticMessageMatches "I_DO_NOT_EXIST"
 
     [<FactForDESKTOP>]
     let ``E_BadPathToFSharpCore fsx - FSI variant with invalid path`` () =
@@ -36,7 +36,7 @@ module MultiTargetingTests =
             |> compile
             |> shouldFail
             |> withErrorCode 0084
-            |> withErrorMessage "I_DO_NOT_EXIST"
+            |> withDiagnosticMessageMatches "I_DO_NOT_EXIST"
 
     [<FactForDESKTOP>]
     let ``E_MissingReferenceToFSharpCore - Compiles without FSharp.Core (no ICE)`` () =

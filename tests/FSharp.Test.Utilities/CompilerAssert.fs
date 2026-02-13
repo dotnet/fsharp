@@ -180,6 +180,15 @@ type TestCompilation =
                 let (_, data) = result.Value
                 File.WriteAllBytes (outputPath, data)
 
+    member this.EmitToDirectory (outputDir: DirectoryInfo) =
+        let fileName =
+            match this with
+            | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
+            | _ -> getTemporaryFileNameInDirectory outputDir
+        let outputPath = Path.Combine(outputDir.FullName, Path.ChangeExtension(fileName, ".dll"))
+        this.EmitAsFile outputPath
+        outputPath
+
 type CSharpLanguageVersion =
     | CSharp8 = 0
     | CSharp9 = 1
@@ -561,12 +570,7 @@ module CompilerAssertHelpers =
                         | CompilationReference (cmpl, staticLink) ->
                             compileCompilationAux outputDir ignoreWarnings cmpl, staticLink
                         | TestCompilationReference (cmpl) ->
-                            let fileName =
-                                match cmpl with
-                                | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
-                                | _ -> getTemporaryFileNameInDirectory outputDir
-                            let tmp = Path.Combine(outputDir.FullName, Path.ChangeExtension(fileName, ".dll"))
-                            cmpl.EmitAsFile tmp
+                            let tmp = cmpl.EmitToDirectory outputDir
                             (([||], None, tmp), []), false)
 
             let compilationRefs =

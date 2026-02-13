@@ -2122,6 +2122,7 @@ exit 0
             |> Seq.append (Directory.EnumerateFiles(errorTestCasesDir, "E_*.fs"))
             |> Seq.toArray
             |> Array.map Path.GetFileName
+            |> Array.filter (fun f -> f <> "E_EmptyFilename.fsx") // FSI-only test, uses #q;; which doesn't fail under compilation
             |> Array.map (fun f -> [|f :> obj|])
         else
             [||]

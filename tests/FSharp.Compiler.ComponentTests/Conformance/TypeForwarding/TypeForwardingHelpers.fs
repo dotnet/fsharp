@@ -11,6 +11,8 @@ open System.Reflection
 open FSharp.Test.Compiler
 open FSharp.Test
 
+open System.Runtime.Loader
+
 type TypeForwardingResult =
     | TFSuccess of stdout: string
     | TFExecutionFailure of exn: exn
@@ -27,13 +29,21 @@ module TypeForwardingHelpers =
 
     let private tryRunAssembly (dllPath: string) =
         try
-            let asm = Assembly.LoadFrom(dllPath)
-            let entryPoint = asm.EntryPoint
-            if isNull entryPoint then
-                TFCompilationFailure("NoEntryPoint", "No entry point found in F# assembly")
-            else
-                entryPoint.Invoke(null, [| [||] :> obj |]) |> ignore
-                TFSuccess ""
+            let alc = new AssemblyLoadContext(Guid.NewGuid().ToString("N"), isCollectible = true)
+            try
+                let dllDir = Path.GetDirectoryName(dllPath)
+                alc.add_Resolving(fun _ name ->
+                    let candidate = Path.Combine(dllDir, name.Name + ".dll")
+                    if File.Exists(candidate) then alc.LoadFromAssemblyPath(candidate) else null)
+                let asm = alc.LoadFromAssemblyPath(dllPath)
+                let entryPoint = asm.EntryPoint
+                if isNull entryPoint then
+                    TFCompilationFailure("NoEntryPoint", "No entry point found in F# assembly")
+                else
+                    entryPoint.Invoke(null, [| (Array.empty<string> :> obj) |]) |> ignore
+                    TFSuccess ""
+            finally
+                alc.Unload()
         with
         | :? TargetInvocationException as tie -> TFExecutionFailure tie.InnerException
         | ex -> TFExecutionFailure ex
@@ -116,7 +126,6 @@ module TypeForwardingHelpers =
         finally
             try outputDir.Delete(true) with _ -> ()
 
-    /// Assert that a type forwarding result is TFSuccess.
     let shouldSucceed (result: TypeForwardingResult) : unit =
         match result with
         | TFSuccess _ -> ()

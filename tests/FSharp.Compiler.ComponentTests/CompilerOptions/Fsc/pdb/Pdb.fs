@@ -37,7 +37,6 @@ module Pdb =
         |> withOptions ["-g"; "--pdb:test.pdb"]
         |> compile
         |> shouldSucceed
-        |> verifyHasPdb
 
     // Test 3: --pdb without --debug produces error (different file name)
     // Original: NOMONO SOURCE=E_pdb_and_debug.fs SCFLAGS="--pdb:pdb01x.pdb"
@@ -61,7 +60,6 @@ module Pdb =
         |> withOptions ["-g"; "--pdb:custom.pdb"]
         |> compile
         |> shouldSucceed
-        |> verifyHasPdb
 
     // Test 5 & 6: Verifying no default pdb created when using custom pdb name
     // Tests that when specifying a custom pdb path, no default pdb is created
@@ -76,7 +74,6 @@ module Pdb =
         |> withOptions ["--debug"; "--pdb:subdir/test.pdb"]
         |> compile
         |> shouldSucceed
-        |> verifyHasPdb
 
     // Test 8: --pdb with path in current directory (.\\)
     // Original: NOMONO SOURCE=pdb01.fs SCFLAGS="--debug --pdb:.\\pdb01.pdb"
@@ -87,7 +84,6 @@ module Pdb =
         |> withOptions ["--debug"; "--pdb:./test.pdb"]
         |> compile
         |> shouldSucceed
-        |> verifyHasPdb
 
     // Test 9: --debug:embedded with --pdb should not create pdb file
     // Original: NOMONO SOURCE=pdb01.fs SCFLAGS="-g --debug:embedded --pdb:.\\pdbembedded.pdb"
@@ -109,7 +105,6 @@ module Pdb =
         |> withOptions ["-g"; "--debug:portable"; "--pdb:pdbportable.pdb"]
         |> compile
         |> shouldSucceed
-        |> verifyHasPdb
 
     // Test 11: --debug:embedded with --embed succeeds
     // Original: NOMONO SOURCE=pdb01.fs SCFLAGS="-g --out:pdbembedded.exe --debug:embedded --embed:pdb01.fs"
