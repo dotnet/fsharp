@@ -1050,7 +1050,7 @@ module MutRecBindingChecking =
                         AddLocalTyconRefs true g cenv.amap tcref.Range [tcref] initialEnvForTycon
 
                 // Make fresh version of the class type for type checking the members and lets *
-                let _, copyOfTyconTypars, _, objTy, thisTy = FreshenObjectArgType cenv traitCtxtNone tcref.Range TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
+                let _, copyOfTyconTypars, _, objTy, thisTy = FreshenObjectArgType cenv envForTycon.TraitContext tcref.Range TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
 
                 // The basic iteration over the declarations in a single type definition
                 let initialInnerState = (None, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
@@ -5786,7 +5786,7 @@ let CheckOneImplFile
             cenv.Create (g, isScript, amap, thisCcu, false, Option.isSome rootSigOpt,
                 conditionalDefines,
                 tcSink,
-                LightweightTcValForUsingInBuildMethodCall g traitCtxtNone,
+                LightweightTcValForUsingInBuildMethodCall g (env: TcEnv).TraitContext,
                 isInternalTestSpanStackReferring,
                 diagnosticOptions,
                 tcPat=TcPat,
@@ -5874,7 +5874,7 @@ let CheckOneImplFile
 
                 try  
                     let reportErrors = not (checkForErrors())
-                    let tcVal = LightweightTcValForUsingInBuildMethodCall g traitCtxtNone
+                    let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
                     use _ =
                         Activity.start "PostTypeCheckSemanticChecks.CheckImplFile"
                             [|
@@ -5919,7 +5919,7 @@ let CheckOneImplFile
 
 
 /// Check an entire signature file
-let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring, diagnosticOptions) tcEnv (sigFile: ParsedSigFileInput) =
+let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring, diagnosticOptions) (tcEnv: TcEnv) (sigFile: ParsedSigFileInput) =
  cancellable {     
     use _ =
         Activity.start "CheckDeclarations.CheckOneSigFile"
@@ -5931,7 +5931,7 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
         cenv.Create(g, false, amap, thisCcu, true, false,
             conditionalDefines,
             tcSink,
-            LightweightTcValForUsingInBuildMethodCall g traitCtxtNone,
+            LightweightTcValForUsingInBuildMethodCall g tcEnv.TraitContext,
             isInternalTestSpanStackReferring,
             diagnosticOptions,
             tcPat=TcPat,

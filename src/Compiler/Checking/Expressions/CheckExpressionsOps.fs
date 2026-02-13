@@ -90,7 +90,7 @@ let CompilePatternForMatch
             g
             env.DisplayEnv
             cenv.amap
-            (LightweightTcValForUsingInBuildMethodCall g traitCtxtNone)
+            (LightweightTcValForUsingInBuildMethodCall g env.TraitContext)
             cenv.infoReader
             mExpr
             mMatch
