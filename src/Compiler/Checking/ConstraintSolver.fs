@@ -1654,7 +1654,7 @@ and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 /// 2. Some additional solutions are forced prior to generalization (permitWeakResolution= Yes or YesDuringCodeGen). See above
 and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> =
     trackErrors {
-        let (TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, source, sln, _)) = traitInfo
+        let (TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, source, sln, traitCtxt)) = traitInfo
         // Do not re-solve if already solved
         if sln.Value.IsSome then 
             return true 
@@ -1664,6 +1664,15 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
             let amap = csenv.amap
             let aenv = csenv.EquivEnv
             let denv = csenv.DisplayEnv
+
+            // Work out the relevant accessibility domain for the trait
+            let traitAD =
+                if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+                    match traitCtxt with
+                    | Some c -> (c.AccessRights :?> AccessorDomain)
+                    | None -> AccessibleFromEverywhere
+                else
+                    AccessibleFromEverywhere
 
             let ndeep = ndeep + 1
             do! DepthCheck ndeep m
@@ -1701,9 +1710,17 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
             let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
 
+            // For built-in rule matching, only consider intrinsic methods so that
+            // extension methods don't prevent built-in constraint solutions for primitives
+            let intrinsicMinfos =
+                if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+                    minfos |> List.filter (fun (_, minfo) -> not minfo.IsExtensionMember)
+                else
+                    minfos
+
             let! res = 
                 trackErrors {
-                    match minfos, supportTys, memFlags.IsInstance, nm, argTys with
+                    match intrinsicMinfos, supportTys, memFlags.IsInstance, nm, argTys with
                     | _, _, false, ("op_Division" | "op_Multiply"), [argTy1;argTy2]
                         when 
                             // This simulates the existence of 
@@ -1958,11 +1975,11 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                 let propName = nm[4..]
                                 let props = 
                                     supportTys |> List.choose (fun ty ->
-                                        match TryFindIntrinsicNamedItemOfType csenv.InfoReader (propName, AccessibleFromEverywhere, false) FindMemberFlag.IgnoreOverrides m ty with
+                                        match TryFindIntrinsicNamedItemOfType csenv.InfoReader (propName, traitAD, false) FindMemberFlag.IgnoreOverrides m ty with
                                         | Some (RecdFieldItem rfinfo) 
                                             when (isGetProp || rfinfo.RecdField.IsMutable) && 
                                                 (rfinfo.IsStatic = not memFlags.IsInstance) && 
-                                                IsRecdFieldAccessible amap m AccessibleFromEverywhere rfinfo.RecdFieldRef &&
+                                                IsRecdFieldAccessible amap m traitAD rfinfo.RecdFieldRef &&
                                                 not rfinfo.LiteralValue.IsSome && 
                                                 not rfinfo.RecdField.IsCompilerGenerated -> 
                                             Some (rfinfo, isSetProp)
@@ -2042,14 +2059,14 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                                     Unnamed = [ (argTys |> List.map (fun argTy -> CallerArg(argTy, m, false, dummyExpr))) ]
                                                     Named = [ [ ] ]
                                                 }
-                                            let minst = FreshenMethInfo g traitCtxtNone m minfo
+                                            let minst = FreshenMethInfo g traitCtxt m minfo
                                             let objtys = minfo.GetObjArgTypes(amap, m, minst)
-                                            Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo g traitCtxtNone, m, AccessibleFromEverywhere, minfo, minst, minst, None, objtys, callerArgs, false, false, None, Some staticTy)))
+                                            Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo g traitCtxt, m, traitAD, minfo, minst, minst, None, objtys, callerArgs, false, false, None, Some staticTy)))
 
                             let methOverloadResult, errors = 
                                 trace.CollectThenUndoOrCommit
                                     (fun (a, _) -> Option.isSome a)
-                                    (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some (MustEqual retTy)))
+                                    (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty traitAD calledMethGroup false (Some (MustEqual retTy)))
 
                             match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
                             | Some (anonInfo, tinst, i), None, None -> 
@@ -2227,11 +2244,31 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
             
             /// Check that the available members aren't hiding a member from the parent (depth 1 only)
             let relevantMinfos = minfos |> List.filter(fun (_, minfo) -> not minfo.IsDispatchSlot && not minfo.IsVirtual && minfo.IsInstance)
-            minfos
-            |> List.filter(fun (_, minfo1) ->
-                not(minfo1.IsDispatchSlot && 
-                    relevantMinfos
-                    |> List.exists (fun (_, minfo2) -> MethInfosEquivByNameAndSig EraseAll true csenv.g csenv.amap m minfo2 minfo1)))
+            let minfos =
+                minfos
+                |> List.filter(fun (_, minfo1) ->
+                    not(minfo1.IsDispatchSlot && 
+                        relevantMinfos
+                        |> List.exists (fun (_, minfo2) -> MethInfosEquivByNameAndSig EraseAll true csenv.g csenv.amap m minfo2 minfo1)))
+
+            // Also collect extension methods from the trait context if the feature is enabled.
+            // Extension methods are appended after intrinsic methods so intrinsic methods are preferred.
+            // Filter out extension methods that duplicate an intrinsic method by signature.
+            let extMinfos =
+                if csenv.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+                    match traitInfo.TraitContext with
+                    | Some traitCtxt ->
+                        let results = traitCtxt.SelectExtensionMethods(traitInfo, m, csenv.SolverState.InfoReader :> obj)
+                        results
+                        |> List.map (fun (ty, methObj) -> (ty, (methObj :?> MethInfo)))
+                        |> List.filter (fun (_, extMinfo) ->
+                            not (minfos |> List.exists (fun (_, intrinsicMinfo) ->
+                                MethInfosEquivByNameAndSig EraseAll true csenv.g csenv.amap m intrinsicMinfo extMinfo)))
+                    | None -> []
+                else
+                    []
+
+            minfos @ extMinfos
         else 
             []
 

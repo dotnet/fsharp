@@ -1831,3 +1831,151 @@ let _x3 = curryN f3 1 2 3
         FSharp "module T\nopen CsLib\nlet _ = IP.Get()" |> asExe |> withOptions iwsamWarnings |> withReferences [csLib]
         |> compileAndRun |> shouldSucceed
 
+    [<Fact>]
+    let ``Extension operator on string resolves with langversion preview`` () =
+        FSharp """
+module TestExtOp
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+let r4 = "r" * 4
+if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
+
+let spaces n = " " * n
+if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%s'" (spaces 3))
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on string fails without langversion preview`` () =
+        FSharp """
+module TestExtOp
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+let r4 = "r" * 4
+        """
+        |> asExe
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
+
+    [<Fact>]
+    let ``Built-in numeric operators still work with extension methods in scope`` () =
+        FSharp """
+module TestBuiltIn
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+let x = 3 * 4
+if x <> 12 then failwith (sprintf "Expected 12 but got %d" x)
+
+let y = 2.0 + 3.0
+if y <> 5.0 then failwith (sprintf "Expected 5.0 but got %f" y)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline SRTP function uses extension method on custom type`` () =
+        FSharp """
+module TestInlineSRTP
+
+type Repeatable = { Value: string }
+
+type Repeatable with
+    static member ( + ) (a: Repeatable, b: Repeatable) = { Value = a.Value + b.Value }
+
+let inline add (x: ^T) (y: ^T) : ^T = x + y
+
+let r = add { Value = "hello" } { Value = "world" }
+if r.Value <> "helloworld" then failwith (sprintf "Expected 'helloworld' but got '%s'" r.Value)
+
+// Inline function should also work with built-in numeric types
+let n = add 5 3
+if n <> 8 then failwith (sprintf "Expected 8 but got %d" n)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension method on custom type resolves via SRTP`` () =
+        FSharp """
+module TestCustomType
+
+type Widget = { Name: string; Count: int }
+
+type Widget with
+    static member ( + ) (a: Widget, b: Widget) = { Name = a.Name + b.Name; Count = a.Count + b.Count }
+
+let inline add (a: ^T) (b: ^T) : ^T = a + b
+
+let w1 = { Name = "A"; Count = 1 }
+let w2 = { Name = "B"; Count = 2 }
+let w3 = add w1 w2
+if w3.Name <> "AB" then failwith (sprintf "Expected 'AB' but got '%s'" w3.Name)
+if w3.Count <> 3 then failwith (sprintf "Expected 3 but got %d" w3.Count)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Intrinsic method takes priority over extension method`` () =
+        FSharp """
+module TypeDefs =
+    type MyNum =
+        { Value: int }
+        static member ( + ) (a: MyNum, b: MyNum) = { Value = a.Value + b.Value + 1000 }
+
+module Consumer =
+    open TypeDefs
+
+    // Extension operator in a different module — this is a genuine optional extension
+    type MyNum with
+        static member ( - ) (a: MyNum, b: MyNum) = { Value = a.Value - b.Value }
+
+    let a = { Value = 1 }
+    let b = { Value = 2 }
+    // Uses intrinsic (+), result should include the +1000 bias
+    let c = a + b
+    if c.Value <> 1003 then failwith (sprintf "Expected 1003 (intrinsic) but got %d" c.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on custom type typechecks in separate module`` () =
+        FSharp """
+module TypeDefs =
+    type MyNum =
+        { Value: int }
+        static member ( + ) (a: MyNum, b: MyNum) = { Value = a.Value + b.Value + 1000 }
+
+module Consumer =
+    open TypeDefs
+
+    type MyNum with
+        static member ( - ) (a: MyNum, b: MyNum) = { Value = a.Value - b.Value }
+
+    let a = { Value = 1 }
+    let b = { Value = 2 }
+    // Extension operator typechecks
+    let d = a - b
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
