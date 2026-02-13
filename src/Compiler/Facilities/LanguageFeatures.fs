@@ -106,6 +106,7 @@ type LanguageFeature =
     | ReturnFromFinal
     | MethodOverloadsCache
     | ImplicitDIMCoverage
+    | ImprovedByRefLikeEscapeAnalysis
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -252,6 +253,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
 
                 // F# preview (still preview in 10.0)
+                LanguageFeature.ImprovedByRefLikeEscapeAnalysis, previewVersion
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.MethodOverloadsCache, previewVersion // Performance optimization for overload resolution
                 LanguageFeature.ImplicitDIMCoverage, languageVersion110
@@ -446,6 +448,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
         | LanguageFeature.MethodOverloadsCache -> FSComp.SR.featureMethodOverloadsCache ()
         | LanguageFeature.ImplicitDIMCoverage -> FSComp.SR.featureImplicitDIMCoverage ()
+        | LanguageFeature.ImprovedByRefLikeEscapeAnalysis -> FSComp.SR.featureImprovedByRefLikeEscapeAnalysis ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

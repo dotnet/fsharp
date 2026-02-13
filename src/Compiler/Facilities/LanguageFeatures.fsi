@@ -97,6 +97,7 @@ type LanguageFeature =
     | ReturnFromFinal
     | MethodOverloadsCache
     | ImplicitDIMCoverage
+    | ImprovedByRefLikeEscapeAnalysis
 
 /// LanguageVersion management
 type LanguageVersion =
