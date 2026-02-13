@@ -302,5 +302,5 @@ type C() =
         fsharpImplementingInterface "ExplicitIADIM" """type C() =
     interface IB with member _.M() = 42
     interface IA"""
-        |> shouldCompileWithDIM dimTestLib
+        |> shouldFailWithDIM dimTestLib 366
 

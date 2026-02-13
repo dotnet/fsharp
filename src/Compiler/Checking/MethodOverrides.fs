@@ -337,6 +337,7 @@ module DispatchSlotChecking =
                                           nenv, sink: TcResultsSink,
                                           isOverallTyAbstract,
                                           isObjExpr,
+                                          isExplicitInterfaceImpl,
                                           reqdTy,
                                           dispatchSlots: RequiredSlot list,
                                           availPriorOverrides: OverrideInfo list,
@@ -377,7 +378,11 @@ module DispatchSlotChecking =
                     let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
                     CallNameResolutionSink sink (ovd.Range, nenv, item, dispatchSlot.FormalMethodTyparInst, ItemOccurrence.Implemented, AccessorDomain.AccessibleFromSomewhere)
             | [] -> 
-                if not reqdSlot.IsOptional &&
+                if (not reqdSlot.IsOptional ||
+                    (isExplicitInterfaceImpl
+                     && reqdSlot.HasImplicitDIMCoverage g
+                     && reqdSlot.MethodInfo.IsAbstract
+                     && typeEquiv g reqdTy reqdSlot.MethodInfo.ApparentEnclosingType)) &&
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then 
@@ -850,7 +855,12 @@ module DispatchSlotChecking =
                 
                 if isImplementation && not (isInterfaceTy g overallTy) then 
                     let overrides = allImmediateMembersThatMightImplementDispatchSlots |> List.map snd
-                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, false, reqdTy, dispatchSlots, availPriorOverrides, overrides)
+                    let isExplicitInterfaceImpl =
+                        isInterfaceTy g reqdTy
+                        && tycon.ImmediateInterfacesOfFSharpTycon
+                           |> List.exists (fun (ty, compgen, _) -> not compgen && typeEquiv g ty reqdTy)
+
+                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, false, isExplicitInterfaceImpl, reqdTy, dispatchSlots, availPriorOverrides, overrides)
                     
                     // Tell the user to mark the thing abstract if it was missing implementations
                     if not allCorrect && not tcaug.tcaug_abstract && (isClassTy g reqdTy) then
