@@ -29,4 +29,3 @@ module DebuggerTestHelpers =
         |> compile
         |> shouldSucceed
         |> verifyPdb [ VerifyMethodSequencePointsInRange(methodName, startLine, endLine) ]
-        |> ignore
