@@ -58,3 +58,110 @@ match expr with
         |> withLangVersion80
         |> compileAndRun
         |> shouldSucceed
+
+    // Tests for issues #11131 and #15648 - anonymous record field ordering
+    // Note: The fix is in FSharp.Core/Linq.fs - these tests verify that queries 
+    // with anonymous records work correctly regardless of field order.
+    // The expression tree structure tests are in FSharp.Core.UnitTests which directly
+    // references the modified FSharp.Core.
+    
+    [<Fact>]
+    let ``Anonymous records with both field orders produce equivalent results - issue 11131 and 15648`` () =
+        Fsx """
+open System.Linq
+
+type Person = { Name: string; Id : int }
+type Wrapper = { Person: Person }
+
+let data = [
+    { Person = { Name = "One"; Id = 1 } }
+    { Person = { Name = "Two"; Id = 2 } }
+  ]
+
+// Both orders should produce same results when executed
+let resultsAlpha = 
+    data.AsQueryable().Select(fun x -> {| A = x.Person.Name; B = x.Person.Id |}).ToList()
+      
+let resultsNonAlpha = 
+    data.AsQueryable().Select(fun x -> {| B = x.Person.Id; A = x.Person.Name |}).ToList()
+
+// Verify results are equivalent
+if resultsAlpha.Count <> resultsNonAlpha.Count then
+    failwith "Result counts don't match"
+
+for i in 0 .. resultsAlpha.Count - 1 do
+    if resultsAlpha.[i].A <> resultsNonAlpha.[i].A then
+        failwithf "A values don't match at index %d" i
+    if resultsAlpha.[i].B <> resultsNonAlpha.[i].B then
+        failwithf "B values don't match at index %d" i
+    
+printfn "Both field orders produce equivalent results: %d items" resultsAlpha.Count
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Nested anonymous records work correctly`` () =
+        Fsx """
+open System.Linq
+
+type Person = { Name: string; Id : int }
+type Wrapper = { Person: Person }
+
+let data = [
+    { Person = { Name = "One"; Id = 1 } }
+  ]
+
+// Nested anonymous records should work
+let queryNested = 
+    data.AsQueryable().Select(fun x -> {| Other = {| Name = x.Person.Name; Id = x.Person.Id |} |}).ToList()
+
+if queryNested.Count <> 1 then
+    failwith "Expected 1 result"
+    
+if queryNested.[0].Other.Name <> "One" then
+    failwithf "Expected Name='One', got '%s'" queryNested.[0].Other.Name
+    
+if queryNested.[0].Other.Id <> 1 then
+    failwithf "Expected Id=1, got %d" queryNested.[0].Other.Id
+    
+printfn "Nested anonymous record works correctly"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``F# record with non-declaration field order works correctly`` () =
+        Fsx """
+open System.Linq
+
+type Person = { Name: string; Id : int }
+type PartialPerson = { LastName: string; ID : int }
+
+let data = [ { Name = "One"; Id = 1 }; { Name = "Two"; Id = 2 } ]
+
+// Declaration order
+let query1 = data.AsQueryable().Select(fun p -> { LastName = p.Name; ID = p.Id }).ToList()
+      
+// Non-declaration order (swapped)
+let query2 = data.AsQueryable().Select(fun p -> { ID = p.Id; LastName = p.Name }).ToList()
+
+if query1.Count <> query2.Count then
+    failwith "Result counts don't match"
+
+for i in 0 .. query1.Count - 1 do
+    if query1.[i].LastName <> query2.[i].LastName then
+        failwithf "LastName values don't match at index %d" i
+    if query1.[i].ID <> query2.[i].ID then
+        failwithf "ID values don't match at index %d" i
+    
+printfn "Both F# record field orderings produce equivalent results"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed

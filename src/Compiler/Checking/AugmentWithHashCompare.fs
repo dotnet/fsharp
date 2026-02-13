@@ -1678,7 +1678,7 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
     |> List.map (fun uc ->
         // Unlike other generated items, the 'IsABC' properties are visible, not considered compiler-generated
         let v =
-            mkImpliedValSpec g uc.Range tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
+            mkImpliedValSpec g uc.Range tcref tmty vis None (PrettyNaming.unionCaseTesterPropertyPrefix + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
 
         g.AddValGeneratedAttributes v m
         v)

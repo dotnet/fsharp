@@ -23,6 +23,7 @@ module FSharpFindUsagesService =
         externalDefinitionItem
         definitionItems
         isExternal
+        symbolName
         (onReferenceFoundAsync: FSharpSourceReferenceItem -> Task)
         (doc: Document)
         (symbolUse: range)
@@ -34,8 +35,10 @@ module FSharpFindUsagesService =
             match declarationRange, RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
             | Some declRange, _ when Range.equals declRange symbolUse -> ()
             | _, ValueNone -> ()
+            | _, ValueSome _ when not allReferences -> ()
             | _, ValueSome textSpan ->
-                if allReferences then
+                match textSpan with
+                | Tokenizer.FixedSpan sourceText symbolName fixedSpan ->
                     let definitionItem =
                         if isExternal then
                             externalDefinitionItem
@@ -46,16 +49,17 @@ module FSharpFindUsagesService =
                             |> Option.defaultValue externalDefinitionItem
 
                     let referenceItem =
-                        FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, textSpan))
+                        FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, fixedSpan))
                     // REVIEW: OnReferenceFoundAsync is throwing inside Roslyn, putting a try/with so find-all refs doesn't fail.
                     try
                         do! onReferenceFoundAsync referenceItem
                     with _ ->
                         ()
+                | _ -> ()
         }
 
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
-    let rangeToDocumentSpans (solution: Solution, range: range) =
+    let rangeToDocumentSpans (solution: Solution, range: range, symbolName: string) =
         if range.Start = range.End then
             CancellableTask.singleton [||]
         else
@@ -70,10 +74,8 @@ module FSharpFindUsagesService =
                                 let! cancellationToken = CancellableTask.getCancellationToken ()
                                 let! sourceText = doc.GetTextAsync(cancellationToken)
 
-                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
-                                | ValueSome span ->
-                                    let span = Tokenizer.fixupSpan (sourceText, span)
-                                    return Some(FSharpDocumentSpan(doc, span))
+                                match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, range, symbolName) with
+                                | ValueSome fixedSpan -> return Some(FSharpDocumentSpan(doc, fixedSpan))
                                 | ValueNone -> return None
                             }
                     }
@@ -117,7 +119,7 @@ module FSharpFindUsagesService =
 
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range -> rangeToDocumentSpans (document.Project.Solution, range)
+                        | Some range -> rangeToDocumentSpans (document.Project.Solution, range, symbol.Ident.idText)
                         | None -> CancellableTask.singleton [||]
 
                     let declarationSpans =
@@ -154,6 +156,7 @@ module FSharpFindUsagesService =
                             externalDefinitionItem
                             definitionItems
                             isExternal
+                            symbol.Ident.idText
                             context.OnReferenceFoundAsync
 
                     do! SymbolHelpers.findSymbolUses symbolUse document checkFileResults onFound
