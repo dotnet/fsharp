@@ -8681,7 +8681,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
                 // Propagate captured argument range so nullness warnings point to the original nullable value.
                 let env =
-                    if isFunTy g domainTy then
+                    if g.checkNullness && isFunTy g domainTy then
                         match leftExpr with
                         | ApplicableExpr(expr=Expr.App (_, _, _, capturedArgs, _)) when not capturedArgs.IsEmpty ->
                             let lastCapturedArg = List.last capturedArgs
