@@ -187,6 +187,34 @@ module Limit =
         (NoLimit, limits)
         ||> List.fold CombineTwoLimits
 
+    /// Try to resolve an ILMethodRef to an ILMethodDef and build a mask of which parameters are scoped.
+    /// Returns an array where scopedMask.[i] = true means IL parameter i has ScopedRefAttribute.
+    /// If resolution fails or the attribute is not available, returns None.
+    let tryGetScopedParamMask (g: TcGlobals) (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : bool array option =
+        match g.attrib_ScopedRefAttribute_opt with
+        | None -> None
+        | Some scopedRefAttrib ->
+            try
+                let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
+
+                match tyconRef.TypeReprInfo with
+                | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
+                    let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
+                    let parameters = methDef.Parameters
+
+                    if parameters.IsEmpty then
+                        None
+                    else
+                        let mask =
+                            parameters
+                            |> List.toArray
+                            |> Array.map (fun p -> TryFindILAttribute scopedRefAttrib p.CustomAttrs)
+
+                        if Array.exists id mask then Some mask else None
+                | _ -> None
+            with _ ->
+                None
+
 type cenv =
     { boundVals: Dictionary<Stamp, int> // really a hash set
 
@@ -1012,13 +1040,34 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
     else
         { scope = 1; flags = LimitFlags.None }
 
+/// Compute individual limits for expressions, tolerant of mismatched list lengths (like CheckExprs).
+and CheckExprsIndividual cenv env exprs ctxts : Limit list =
+    let ctxts = Array.ofList ctxts
+    let argArity i = if i < ctxts.Length then ctxts[i] else PermitByRefExpr.No
+    exprs |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i))
+
+/// Apply a scoped parameter mask to limits, zeroing out limits for scoped parameters.
+and ApplyScopedMask (limits: Limit list) (scopedMask: bool array) =
+    limits
+    |> List.mapi (fun i limit ->
+        if i < scopedMask.Length && scopedMask.[i] then
+            NoLimit
+        else
+            limit)
+
 /// Check call arguments, including the return argument.
-and CheckCall cenv env m returnTy args ctxts ctxt =
-    let limitArgs = CheckExprs cenv env args ctxts
+/// When scopedMask is provided, scoped parameters are excluded from escape limits.
+and CheckCall cenv env m returnTy args ctxts ctxt (scopedMask: bool array option) =
+    let limitArgs =
+        match scopedMask with
+        | None -> CheckExprs cenv env args ctxts
+        | Some mask -> CheckExprsIndividual cenv env args ctxts |> ApplyScopedMask <| mask |> CombineLimits
+
     CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
 
 /// Check call arguments, including the return argument. The receiver argument is handled differently.
-and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
+/// When scopedMask is provided, indices correspond to IL parameters (0-based, NOT including receiver).
+and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt (scopedMask: bool array option) =
     match args with
     | [] -> failwith "CheckCallWithReceiver: Argument list is empty."
     | receiverArg :: args ->
@@ -1034,7 +1083,11 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
             cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
 
         let limitArgs =
-            let limitArgs = CheckExprs cenv env args ctxts
+            let limitArgs =
+                match scopedMask with
+                | None -> CheckExprs cenv env args ctxts
+                | Some mask -> CheckExprsIndividual cenv env args ctxts |> ApplyScopedMask <| mask |> CombineLimits
+
             // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
             if HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike receiverLimit then
                 // Scope is 1 to ensure any by-refs returned can only be prevented for out of scope of the function/method, not visibility.
@@ -1440,9 +1493,9 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
 
     let ctxts = mkArgsForAppliedExpr false argsl f
     if hasReceiver then
-        CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt
+        CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt None
     else
-        CheckCall cenv env m returnTy argsl ctxts ctxt
+        CheckCall cenv env m returnTy argsl ctxts ctxt None
 
 and CheckLambda cenv env expr (argvs, m, bodyTy) =
     let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
@@ -1584,15 +1637,21 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
         match retTypes with
         | [ty] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m ty ->
+            let scopedMask =
+                if g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
+                    tryGetScopedParamMask g cenv.amap m ilMethRef
+                else
+                    None
+
             if hasReceiver then
-                CheckCallWithReceiver cenv env m returnTy args argContexts ctxt
+                CheckCallWithReceiver cenv env m returnTy args argContexts ctxt scopedMask
             else
-                CheckCall cenv env m returnTy args argContexts ctxt
+                CheckCall cenv env m returnTy args argContexts ctxt scopedMask
         | _ ->
             if hasReceiver then
-                CheckCallWithReceiver cenv env m returnTy args argContexts PermitByRefExpr.Yes
+                CheckCallWithReceiver cenv env m returnTy args argContexts PermitByRefExpr.Yes None
             else
-                CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes
+                CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes None
 
     | TOp.Tuple tupInfo, _, _ when not (evalTupInfoIsStruct tupInfo) ->
         match ctxt with

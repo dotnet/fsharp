@@ -1070,6 +1070,151 @@ type outref<'T> with
         |> withOptions ["--nowarn:988"]
         |> compile
         |> shouldSucceed
+
+    // --- ScopedRefAttribute consumption (Sprint 03) ---
+
+    [<Fact>]
+    let ``Scoped ref param does not trigger escape error`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public static class ScopedHelper
+{
+    public static Span<int> NotCapturing(scoped ref int x, int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+
+    public static Span<int> NotCapturingIn(scoped in int x, int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "ScopedLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+
+open System
+
+let test () : Span<int> =
+    let mutable local = 42
+    ScopedHelper.NotCapturing(&local, [| 1; 2; 3 |])
+
+let test2 () : Span<int> =
+    let mutable local = 42
+    ScopedHelper.NotCapturingIn(&local, [| 1; 2; 3 |])
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Non-scoped ref param still triggers escape error`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public static class UnscopedHelper
+{
+    public static Span<int> MayCapture(ref int x)
+    {
+        return default;
+    }
+}
+"""         |> withName "UnscopedLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+
+open System
+
+let test () : Span<int> =
+    let mutable local = 42
+    UnscopedHelper.MayCapture(&local)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 8, Col 5, Line 8, Col 38, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
+
+    [<Fact>]
+    let ``Scoped ref on instance method does not trigger escape error`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public class SpanFactory
+{
+    private int[] _data;
+    public SpanFactory(int[] arr) { _data = arr; }
+    public Span<int> GetData(scoped ref int x) { return new Span<int>(_data); }
+}
+"""         |> withName "ScopedInstanceLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+
+open System
+
+let test (factory: SpanFactory) : Span<int> =
+    let mutable local = 42
+    factory.GetData(&local)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Mixed scoped and non-scoped params - non-scoped still errors`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public static class MixedHelper
+{
+    public static Span<int> Mixed(scoped ref int safe, ref int unsafeRef)
+    {
+        return default;
+    }
+}
+"""         |> withName "MixedScopedLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+
+open System
+
+let test () : Span<int> =
+    let mutable safe = 1
+    let mutable unsafe' = 2
+    MixedHelper.Mixed(&safe, &unsafe')
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 9, Col 5, Line 9, Col 39, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
