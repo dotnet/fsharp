@@ -18,3 +18,19 @@ module OverloadResolutionPriorityTests =
         |> compileAndRun
         |> shouldSucceed
         |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``OverloadResolutionPriority - Debug.Assert selects two-arg overload`` () =
+        Fs """
+module TestDebugAssert
+
+open System.Diagnostics
+
+let run () =
+    Debug.Assert(true)
+    Debug.Assert(false, "explicit message")
+"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore
