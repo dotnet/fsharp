@@ -95,6 +95,7 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | PreprocessorElif
 
 /// LanguageVersion management
 type LanguageVersion =
