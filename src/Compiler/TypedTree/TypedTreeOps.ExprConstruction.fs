@@ -1070,7 +1070,8 @@ module internal TypeTesters =
             || isReprHiddenTy g ty
             || isFSharpObjModelRefTy g ty
             || isUnitTy g ty
-            || (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty)))
+            || (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty))
+            || isAnonTtUnionTy g ty)
 
     let isForallFunctionTy g ty =
         let _, tau = tryDestForallTy g ty
@@ -1250,10 +1251,9 @@ module internal TypeTesters =
 
             | TType_ucase(_, b)
             | TType_anon(_, b)
-            | TType_tuple(_, b) -> List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
-
-            // TODO: Anonymous type-tagged union
-            | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+            | TType_tuple(_, b)
+            | TType_anon_tt_union (_, b) ->
+                List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
 
             | TType_fun(domainTy, rangeTy, nullness) ->
                 match checkForNullness, nullness.Evaluate() with

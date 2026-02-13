@@ -334,8 +334,8 @@ module internal FreeTypeVars =
 
         | TType_anon(anonInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
 
-        // TODO: Anonymous type-tagged union
-        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+        | TType_anon_tt_union (_, l) ->
+            accFreeInTypes opts l acc
 
         | TType_app(tcref, tinst, _) ->
             let acc = accFreeTycon opts tcref acc
@@ -453,9 +453,6 @@ module internal FreeTypeVars =
             let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc anonInfo.TupInfo
             accFreeInTypesLeftToRight g cxFlag thruFlag acc anonTys
 
-        // TODO: Anonymous type-tagged union
-        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
-
         | TType_tuple(tupInfo, tupTys) ->
             let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc tupInfo
             accFreeInTypesLeftToRight g cxFlag thruFlag acc tupTys
@@ -463,6 +460,9 @@ module internal FreeTypeVars =
         | TType_app(_, tinst, _) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst
 
         | TType_ucase(_, tinst) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst
+
+        | TType_anon_tt_union (_, tinst) ->
+            accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst
 
         | TType_fun(domainTy, rangeTy, _) ->
             let dacc = accFreeInTypeLeftToRight g cxFlag thruFlag acc domainTy
@@ -1138,10 +1138,8 @@ module internal MemberRepresentation =
             | TType_app(_, tys, _)
             | TType_ucase(_, tys)
             | TType_anon(_, tys)
+            | TType_anon_tt_union (_, tys)
             | TType_tuple(_, tys) -> List.fold (foldTypeButNotConstraints normalizeType f) z tys
-
-            // TODO: Anonymous type-tagged union
-            | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
 
             | TType_fun(domainTy, rangeTy, _) ->
                 foldTypeButNotConstraints normalizeType f (foldTypeButNotConstraints normalizeType f z domainTy) rangeTy
