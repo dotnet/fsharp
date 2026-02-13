@@ -1421,3 +1421,51 @@ type ListModule() =
         let choice = list |> List.randomSampleBy (fun () -> 1.0) 0
 
         Assert.AreEqual([], choice)
+
+    [<Fact>]
+    member _.PartitionWith() =
+        // basic test - split ints into even/odd with type change
+        let evens, odds =
+            [1; 2; 3; 4; 5]
+            |> List.partitionWith (fun x ->
+                if x % 2 = 0 then Choice1Of2 (x * 10)
+                else Choice2Of2 (string x))
+        Assert.AreEqual([20; 40], evens)
+        Assert.AreEqual(["1"; "3"; "5"], odds)
+
+        // empty list
+        let e1, e2 =
+            []
+            |> List.partitionWith (fun (x: int) -> Choice1Of2 x)
+        Assert.AreEqual(List.empty<int>, e1)
+        Assert.AreEqual(List.empty<int>, e2)
+
+        // all Choice1Of2
+        let all1, none2 =
+            [1; 2; 3]
+            |> List.partitionWith (fun x -> Choice1Of2 (x * 2))
+        Assert.AreEqual([2; 4; 6], all1)
+        Assert.AreEqual(List.empty<int>, none2)
+
+        // all Choice2Of2
+        let none1, all2 =
+            [1; 2; 3]
+            |> List.partitionWith (fun x -> Choice2Of2 (string x))
+        Assert.AreEqual(List.empty<string>, none1)
+        Assert.AreEqual(["1"; "2"; "3"], all2)
+
+        // single element
+        let s1, s2 =
+            [42]
+            |> List.partitionWith (fun x -> Choice1Of2 (float x))
+        Assert.AreEqual([42.0], s1)
+        Assert.AreEqual(List.empty<int>, s2)
+
+        // order preservation
+        let left, right =
+            [1; 2; 3; 4; 5; 6]
+            |> List.partitionWith (fun x ->
+                if x % 2 = 0 then Choice1Of2 x
+                else Choice2Of2 x)
+        Assert.AreEqual([2; 4; 6], left)
+        Assert.AreEqual([1; 3; 5], right)
