@@ -3661,6 +3661,44 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
         // Otherwise pass the overload resolution failure for error printing in CompileOps
         UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
 
+and private computeConcretenessWarnings
+    (cache: System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>)
+    (applicableMeths: (CalledMeth<Expr> * exn list * Trace * TypeDirectedConversionUsed) list)
+    (calledMeth: CalledMeth<Expr>)
+    (baseWarns: exn list)
+    (m: range)
+    : exn list =
+    let anyMoreConcreteUsed =
+        cache.Values
+        |> Seq.exists (fun v -> match v with ValueSome TiebreakRuleId.MoreConcrete -> true | _ -> false)
+
+    if not anyMoreConcreteUsed then
+        baseWarns
+    else
+        let concretenessWarns =
+            applicableMeths
+            |> List.choose (fun loser ->
+                let (loserMeth, _, _, _) = loser
+
+                if System.Object.ReferenceEquals(loserMeth, calledMeth) then
+                    None
+                else
+                    match cache.TryGetValue(struct(calledMeth :> obj, loserMeth :> obj)) with
+                    | true, ValueSome TiebreakRuleId.MoreConcrete ->
+                        Some(calledMeth.Method.DisplayName, loserMeth.Method.DisplayName)
+                    | _ -> None)
+
+        match concretenessWarns with
+        | [] -> baseWarns
+        | (winnerName, loserName) :: _ ->
+            let warn3575 =
+                Error(FSComp.SR.tcMoreConcreteTiebreakerUsed (winnerName, winnerName, loserName), m)
+            let warn3576List =
+                concretenessWarns
+                |> List.map (fun (winner, loser) -> Error(FSComp.SR.tcGenericOverloadBypassed (loser, winner), m))
+
+            warn3575 :: warn3576List @ baseWarns
+
 and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m =
     let infoReader = csenv.InfoReader
     let moreConcretEnabled = csenv.g.langVersion.SupportsFeature LanguageFeature.MoreConcreteTiebreaker
@@ -3696,44 +3734,10 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     match bestMethods with 
     | [(calledMeth, warns, t, _)] ->
-        // Only compute concreteness warnings when the MoreConcrete rule was used as deciding factor
-        let anyMoreConcreteUsed =
-            match decidingRuleCache with
-            | ValueNone -> false
-            | ValueSome cache ->
-                cache.Values
-                |> Seq.exists (fun v -> match v with ValueSome TiebreakRuleId.MoreConcrete -> true | _ -> false)
-
         let allWarns =
-            if not anyMoreConcreteUsed then
-                warns
-            else
-                match decidingRuleCache with
-                | ValueNone -> warns
-                | ValueSome cache ->
-                    let concretenessWarns =
-                        applicableMeths
-                        |> List.choose (fun loser ->
-                            let (loserMeth, _, _, _) = loser
-
-                            if System.Object.ReferenceEquals(loserMeth, calledMeth) then
-                                None
-                            else
-                                match cache.TryGetValue(struct(calledMeth :> obj, loserMeth :> obj)) with
-                                | true, ValueSome TiebreakRuleId.MoreConcrete ->
-                                    Some(calledMeth.Method.DisplayName, loserMeth.Method.DisplayName)
-                                | _ -> None)
-
-                    match concretenessWarns with
-                    | [] -> warns
-                    | (winnerName, loserName) :: _ ->
-                        let warn3575 =
-                            Error(FSComp.SR.tcMoreConcreteTiebreakerUsed (winnerName, winnerName, loserName), m)
-                        let warn3576List =
-                            concretenessWarns
-                            |> List.map (fun (winner, loser) -> Error(FSComp.SR.tcGenericOverloadBypassed (loser, winner), m))
-
-                        warn3575 :: warn3576List @ warns
+            match decidingRuleCache with
+            | ValueNone -> warns
+            | ValueSome cache -> computeConcretenessWarnings cache applicableMeths calledMeth warns m
 
         Some calledMeth, OkResult(allWarns, ()), WithTrace t
 
