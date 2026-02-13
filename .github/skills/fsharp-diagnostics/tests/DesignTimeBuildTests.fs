@@ -10,7 +10,7 @@ let ``defaultConfig has expected values`` () =
 
 [<Fact>]
 let ``DtbResult can hold compiler args`` () =
-    let result = { CompilerArgs = [| "--debug"; "src/A.fs" |] }
+    let result = { CompilerArgs = [| "--debug"; "src/A.fs" |]; IntermediateOutputPath = "obj/Release/" }
     Assert.Equal(2, result.CompilerArgs.Length)
     Assert.Equal("--debug", result.CompilerArgs.[0])
 
@@ -24,5 +24,5 @@ let ``DtbConfig construction preserves values`` (tfm: string, cfg: string) =
 
 [<Fact>]
 let ``DtbResult with empty CompilerArgs`` () =
-    let result = { CompilerArgs = [||] }
+    let result = { CompilerArgs = [||]; IntermediateOutputPath = "" }
     Assert.Empty(result.CompilerArgs)
