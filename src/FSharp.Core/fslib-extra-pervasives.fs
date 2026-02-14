@@ -277,6 +277,14 @@ module ExtraTopLevelOperators =
     let eprintfn format =
         Printf.eprintfn format
 
+    [<CompiledName("PrintValue")>]
+    let inline print (value: 'T) =
+        Console.Out.Write(string value)
+
+    [<CompiledName("PrintValueLine")>]
+    let inline println (value: 'T) =
+        Console.Out.WriteLine(string value)
+
     [<CompiledName("DefaultAsyncBuilder")>]
     let async = AsyncBuilder()
 
