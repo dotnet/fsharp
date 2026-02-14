@@ -267,6 +267,24 @@ module internal SetTree =
                 elif c = 0 then true
                 else mem comparer k tn.Right
 
+    let rec tryGet (comparer: IComparer<'T>) k (t: SetTree<'T>) =
+        if isEmpty t then
+            ValueNone
+        else
+            let c = comparer.Compare(k, t.Key)
+
+            if t.Height = 1 then
+                if c = 0 then
+                    ValueSome t.Key
+                else
+                    ValueNone
+            else
+                let tn = asNode t
+
+                if c < 0 then tryGet comparer k tn.Left
+                elif c = 0 then ValueSome tn.Key
+                else tryGet comparer k tn.Right
+
     let rec iter f (t: SetTree<'T>) =
         if isEmpty t then
             ()
@@ -391,6 +409,24 @@ module internal SetTree =
 
                 balance comparer (union comparer t2n.Left lo) t2n.Key (union comparer t2n.Right hi)
 
+    let rec intersectionAuxFromSmall comparer a (t: SetTree<'T>) acc =
+        if isEmpty t then
+            acc
+        else if t.Height = 1 then
+            match tryGet comparer t.Key a with
+            | ValueSome v -> add comparer v acc
+            | ValueNone -> acc
+        else
+            let tn = asNode t
+            let acc = intersectionAuxFromSmall comparer a tn.Right acc
+
+            let acc =
+                match tryGet comparer tn.Key a with
+                | ValueSome v -> add comparer v acc
+                | ValueNone -> acc
+
+            intersectionAuxFromSmall comparer a tn.Left acc
+
     let rec intersectionAux comparer b (t: SetTree<'T>) acc =
         if isEmpty t then
             acc
@@ -412,7 +448,13 @@ module internal SetTree =
             intersectionAux comparer b tn.Left acc
 
     let intersection comparer a b =
-        intersectionAux comparer b a empty
+        let h1 = height a
+        let h2 = height b
+
+        if h1 <= h2 then
+            intersectionAux comparer b a empty
+        else
+            intersectionAuxFromSmall comparer a b empty
 
     let partition1 comparer f k (acc1, acc2) =
         if f k then
