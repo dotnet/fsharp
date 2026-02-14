@@ -2449,6 +2449,10 @@ let u_tyar_spec st =
 
 let u_tyar_specs = (u_list u_tyar_spec)
 
+let u_anonTtUnionInfo st =
+    let (commonAncestor, unsortedIndices) = u_tup2 u_ty (u_array u_int) st
+    AnonTtUnionInfo.Create(commonAncestor, unsortedIndices)
+
 /// Write nullness information to stream B for a type.
 /// Always writes exactly one byte to keep stream B aligned with unconditional reads in u_ty.
 /// Other data (e.g. typar constraints) is also written to stream B unconditionally,
@@ -2521,14 +2525,17 @@ let _ =
             p_ucref uc st
             p_tys tinst st
 
-        // TODO: Anonymous type-tagged union
-        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
-
         // p_byte 8 taken by TType_tuple above
         | TType_anon(anonInfo, l) ->
             p_byte 9 st
             p_anonInfo anonInfo st
+            p_tys l st
+
+        | TType_anon_tt_union (unionInfo, l) ->
+            p_byte 10 st
+            p_tup2 p_ty (p_array p_int) (unionInfo.CommonAncestorTy, unionInfo.UnsortedCaseSourceIndices) st
             p_tys l st)
+            
 
 let _ =
     fill_u_ty (fun st ->
@@ -2612,6 +2619,11 @@ let _ =
             let anonInfo = u_anonInfo st
             let l = u_tys st
             TType_anon(anonInfo, l)
+
+        | 10 ->
+            let anonTtUnionInfo = u_anonTtUnionInfo st
+            let l = u_tys st
+            TType_anon_tt_union(anonTtUnionInfo, l)
 
         | _ -> ufailwith st "u_typ")
 
