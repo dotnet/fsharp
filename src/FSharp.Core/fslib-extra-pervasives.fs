@@ -280,10 +280,19 @@ module ExtraTopLevelOperators =
     [<CompiledName("PrintValue")>]
     let inline print (value: 'T) =
         Console.Out.Write(string value)
+        // Culture-independent types can bypass 'string' and use TextWriter overloads directly.
+        // Numeric types must go through 'string' to ensure InvariantCulture formatting,
+        // since TextWriter.Write(int/float/...) uses the writer's FormatProvider (CurrentCulture).
+        when 'T : string = Console.Out.Write((# "" value : string #))
+        when 'T : char   = Console.Out.Write((# "" value : char #))
+        when 'T : bool   = Console.Out.Write((# "" value : bool #))
 
     [<CompiledName("PrintValueLine")>]
     let inline println (value: 'T) =
         Console.Out.WriteLine(string value)
+        when 'T : string = Console.Out.WriteLine((# "" value : string #))
+        when 'T : char   = Console.Out.WriteLine((# "" value : char #))
+        when 'T : bool   = Console.Out.WriteLine((# "" value : bool #))
 
     [<CompiledName("DefaultAsyncBuilder")>]
     let async = AsyncBuilder()

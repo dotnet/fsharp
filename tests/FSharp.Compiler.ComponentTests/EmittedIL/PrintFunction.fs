@@ -40,7 +40,7 @@ let printlnInt () = println 42
              """callvirt   instance void [netstandard]System.IO.TextWriter::WriteLine(string)"""]
 
     [<Fact>]
-    let ``print with string writes to Console Out``() =
+    let ``print with string calls Write directly``() =
         FSharp """
 module PrintString
 
@@ -52,6 +52,34 @@ let printStr () = print "hello"
          |> verifyIL [
              """call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()"""
              """callvirt   instance void [netstandard]System.IO.TextWriter::Write(string)"""]
+
+    [<Fact>]
+    let ``print with char calls Write char overload``() =
+        FSharp """
+module PrintChar
+
+let printChar () = print 'A'
+         """
+         |> withOptimize
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+             """call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()"""
+             """callvirt   instance void [netstandard]System.IO.TextWriter::Write(char)"""]
+
+    [<Fact>]
+    let ``print with bool calls Write bool overload``() =
+        FSharp """
+module PrintBool
+
+let printBool () = print true
+         """
+         |> withOptimize
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+             """call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()"""
+             """callvirt   instance void [netstandard]System.IO.TextWriter::Write(bool)"""]
 
     [<Fact>]
     let ``println with float specializes to Double ToString with InvariantCulture``() =
