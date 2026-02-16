@@ -118,6 +118,28 @@ jobs:
         version: '10.0.100'
         installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
 
+    # Install the SDK that built the compiler (version from global.json)
+    # into the regression test's .dotnet so fsc.dll can find the runtime.
+    # Tries default feed first, then ci.dot.net/public (same fallback as eng/common).
+    - pwsh: |
+        $v = (Get-Content "$(Build.SourcesDirectory)/global.json" | ConvertFrom-Json).tools.dotnet
+        $d = "$(Pipeline.Workspace)/TestRepo/.dotnet"
+        $u = "https://builds.dotnet.microsoft.com/dotnet/scripts/v1"
+        if ($IsWindows) {
+          Invoke-WebRequest "$u/dotnet-install.ps1" -OutFile "$d/dotnet-install.ps1"
+          & "$d/dotnet-install.ps1" -Version $v -InstallDir $d -SkipNonVersionedFiles
+          if ($LASTEXITCODE -ne 0) {
+            & "$d/dotnet-install.ps1" -Version $v -InstallDir $d -SkipNonVersionedFiles -AzureFeed "https://ci.dot.net/public"
+          }
+        } else {
+          Invoke-WebRequest "$u/dotnet-install.sh" -OutFile "$d/dotnet-install.sh"
+          chmod +x "$d/dotnet-install.sh"
+          bash "$d/dotnet-install.sh" --version $v --install-dir $d --skip-non-versioned-files ||
+            bash "$d/dotnet-install.sh" --version $v --install-dir $d --skip-non-versioned-files --azure-feed "https://ci.dot.net/public"
+        }
+      displayName: Install compiler SDK for ${{ item.displayName }}
+      continueOnError: true
+
     - pwsh: |
         Set-Location $(Pipeline.Workspace)/TestRepo
         
