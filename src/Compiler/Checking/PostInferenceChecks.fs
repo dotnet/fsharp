@@ -1609,7 +1609,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         let limit2 = CheckExpr cenv env e3 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         CombineTwoLimits limit1 limit2
 
-    | TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), _, _ ->
+    | TOp.ILCall (_, _, _, isCtor, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), _, _ ->
 
         CheckTypeInstNoByrefs cenv env m tyargs
 
@@ -1639,6 +1639,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
         let hasReceiver =
             (ilMethRef.CallingConv.IsInstance || ilMethRef.CallingConv.IsInstanceExplicit) &&
+            not isCtor &&
             not args.IsEmpty
 
         let returnTy = tyOfExpr g expr

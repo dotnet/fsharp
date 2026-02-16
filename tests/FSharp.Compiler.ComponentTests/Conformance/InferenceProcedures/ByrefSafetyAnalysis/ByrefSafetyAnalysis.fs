@@ -1625,6 +1625,192 @@ let f () : Span<int> =
         |> compile
         |> shouldSucceed
 
+    [<Fact>]
+    let ``ScopedRef on constructor does not trigger escape error`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public class ScopedCtorWrapper
+{
+    private int[] _data;
+
+    public ScopedCtorWrapper(scoped ref int x, int[] arr)
+    {
+        _data = arr;
+    }
+
+    public Span<int> AsSpan() => new Span<int>(_data);
+}
+"""         |> withName "ScopedCtorLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+
+let test () =
+    let mutable local = 42
+    ScopedCtorWrapper(&local, [| 1; 2; 3 |])
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``ScopedRef on IsByRefLike constructor does not trigger escape error`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public ref struct ScopedRefStruct
+{
+    private Span<int> _span;
+
+    public ScopedRefStruct(scoped ref int x, int[] arr)
+    {
+        _span = new Span<int>(arr);
+    }
+}
+"""         |> withName "ScopedRefStructLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+
+let test () =
+    let mutable local = 42
+    ScopedRefStruct(&local, [| 1; 2; 3 |])
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_NonScopedIsByRefLikeConstructorEscapes`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public ref struct UnscopedRefStruct
+{
+    private ref int _ref;
+
+    public UnscopedRefStruct(ref int x)
+    {
+        _ref = ref x;
+    }
+}
+"""         |> withName "UnscopedRefStructLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+
+let test () =
+    let mutable local = 42
+    UnscopedRefStruct(&local)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_NonScopedIsByRefLikeConstructorEscapes - backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public ref struct UnscopedRefStruct
+{
+    private ref int _ref;
+
+    public UnscopedRefStruct(ref int x)
+    {
+        _ref = ref x;
+    }
+}
+"""         |> withName "UnscopedRefStructLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+
+let test () =
+    let mutable local = 42
+    UnscopedRefStruct(&local)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_AllowsRefStructGenericEscapes`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public static class GenericFactory
+{
+    public static Span<int> Create(ref int x) => new Span<int>(ref x);
+}
+"""         |> withName "AllowsRefStructLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+
+        let fsharpSource = """
+module Test
+open System
+
+let test () : Span<int> =
+    let mutable local = 42
+    GenericFactory.Create(&local)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_AllowsRefStructGenericEscapes - backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public static class GenericFactory
+{
+    public static Span<int> Create(ref int x) => new Span<int>(ref x);
+}
+"""         |> withName "AllowsRefStructLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+
+        let fsharpSource = """
+module Test
+open System
+
+let test () : Span<int> =
+    let mutable local = 42
+    GenericFactory.Create(&local)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
