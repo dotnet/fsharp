@@ -349,7 +349,11 @@ type LowerStateMachine(g: TcGlobals) =
 
     // Repeated top-down rewrite
     let makeRewriteEnv (env: env) = 
-        { PreIntercept = Some (fun cont e -> match TryReduceExpr env e [] id with Some e2 -> Some (cont e2) | None -> None)
+        { PreIntercept = Some (fun cont e ->
+            match e with
+            | IfUseResumableStateMachinesExpr g (thenExpr, _) -> Some (cont thenExpr)
+            | _ ->
+            match TryReduceExpr env e [] id with Some e2 -> Some (cont e2) | None -> None)
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
           RewriteQuotations=true 
