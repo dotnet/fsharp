@@ -861,7 +861,7 @@ let tryGetScopedParamMask (g: TcGlobals) (amap: Import.ImportMap) (m: range) (il
 
                     if Array.exists id mask then Some mask else None
             | _ -> None
-        with _ ->
+        with :? System.Exception ->
             None
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
