@@ -108,22 +108,22 @@ module IfdefStore =
 
         visit expr
 
-    let SaveIfHash (lexbuf: Lexbuf, lexed: string, expr: LexerIfdefExpression, range: range) =
+    let private saveConditionalHash ctor (lexbuf: Lexbuf, lexed: string, expr: LexerIfdefExpression, range: range) =
         let store = getStore lexbuf
         let expr = convertIfdefExpression expr
         let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.If(expr, m))
+        store.Add(ctor (expr, m))
+
+    let SaveIfHash (lexbuf, lexed, expr, range) =
+        saveConditionalHash ConditionalDirectiveTrivia.If (lexbuf, lexed, expr, range)
 
     let SaveElseHash (lexbuf: Lexbuf, lexed: string, range: range) =
         let store = getStore lexbuf
         let m = mkRangeWithoutLeadingWhitespace lexed range
         store.Add(ConditionalDirectiveTrivia.Else(m))
 
-    let SaveElifHash (lexbuf: Lexbuf, lexed: string, expr: LexerIfdefExpression, range: range) =
-        let store = getStore lexbuf
-        let expr = convertIfdefExpression expr
-        let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.Elif(expr, m))
+    let SaveElifHash (lexbuf, lexed, expr, range) =
+        saveConditionalHash ConditionalDirectiveTrivia.Elif (lexbuf, lexed, expr, range)
 
     let SaveEndIfHash (lexbuf: Lexbuf, lexed: string, range: range) =
         let store = getStore lexbuf

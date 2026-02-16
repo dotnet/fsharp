@@ -1148,6 +1148,12 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
     { let lexed = (lexeme lexbuf)
       let m = lexbuf.LexemeRange
 
+      let evalAndSaveElif () =
+        let lookup id = List.contains id args.conditionalDefines
+        let result, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
+        IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
+        result
+
       // If #elif is the first thing on the line then process it, otherwise ignore
       if (m.StartColumn <> 0) then
         if not skip then INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m))
@@ -1159,9 +1165,7 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
          | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashElifAfterElse())
          | (IfDefIf,_) :: rest ->
            // No branch taken yet - evaluate condition
-           let lookup id = List.contains id args.conditionalDefines
-           let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
-           IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
+           let isTrue = evalAndSaveElif ()
            if isTrue then
              args.ifdefStack <- (IfDefElif,m) :: rest
              if not skip then HASH_ELIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
@@ -1171,17 +1175,13 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
              else endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf
          | (IfDefElif,_) :: _rest ->
            // A branch was already taken - skip regardless
-           let lookup id = List.contains id args.conditionalDefines
-           let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
-           IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
+           evalAndSaveElif () |> ignore
            if not skip then HASH_ELIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
            else endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf
       else
          // Nested - don't change depth, just save trivia and continue skipping
          lexbuf.CheckLanguageFeatureAndRecover LanguageFeature.PreprocessorElif m
-         let lookup id = List.contains id args.conditionalDefines
-         let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
-         IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
+         evalAndSaveElif () |> ignore
          if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n, m)))
          else endline (LexerEndlineContinuation.IfdefSkip(n, m)) args skip lexbuf }
 

@@ -752,23 +752,23 @@ module Structure =
                 match directives with
                 | [] -> ()
                 | ConditionalDirectiveTrivia.If _ as ifDirective :: directives -> group directives (ifDirective :: stack) sourceLines
-                | ConditionalDirectiveTrivia.Else elseRange as elseDirective :: directives ->
+                | (ConditionalDirectiveTrivia.Else elseOrElifRange | ConditionalDirectiveTrivia.Elif(_, elseOrElifRange)) as directive :: directives ->
                     match stack with
-                    | top :: stack when stackTopRange top |> ValueOption.isSome ->
-                        addSectionFold (stackTopRange top).Value elseRange.StartLine sourceLines
-                        group directives (elseDirective :: stack) sourceLines
-                    | _ -> group directives stack sourceLines
-                | ConditionalDirectiveTrivia.Elif(_, elifRange) as elifDirective :: directives ->
-                    match stack with
-                    | top :: stack when stackTopRange top |> ValueOption.isSome ->
-                        addSectionFold (stackTopRange top).Value elifRange.StartLine sourceLines
-                        group directives (elifDirective :: stack) sourceLines
+                    | top :: stack ->
+                        match stackTopRange top with
+                        | ValueSome range ->
+                            addSectionFold range elseOrElifRange.StartLine sourceLines
+                            group directives (directive :: stack) sourceLines
+                        | ValueNone -> group directives (directive :: stack) sourceLines
                     | _ -> group directives stack sourceLines
                 | ConditionalDirectiveTrivia.EndIf endIfRange :: directives ->
                     match stack with
-                    | top :: stack when stackTopRange top |> ValueOption.isSome ->
-                        addEndpointFold (stackTopRange top).Value endIfRange
-                        group directives stack sourceLines
+                    | top :: stack ->
+                        match stackTopRange top with
+                        | ValueSome range ->
+                            addEndpointFold range endIfRange
+                            group directives stack sourceLines
+                        | ValueNone -> group directives stack sourceLines
                     | _ -> group directives stack sourceLines
 
             group directives [] sourceLines
