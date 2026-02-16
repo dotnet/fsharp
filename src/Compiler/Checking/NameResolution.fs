@@ -719,6 +719,18 @@ let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy 
                 | _ -> ()
     ]
 
+/// Look up extension method infos for a single type from both indexed and unindexed extension members.
+let private SelectExtMethInfosForType (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+    let g = infoReader.g
+    let indexedResults =
+        match tryTcrefOfAppTy g ty with
+        | ValueSome tcref ->
+            let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
+            SelectMethInfosFromExtMembers infoReader optFilter ty m extMemInfos
+        | _ -> []
+    let unindexedResults = SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
+    indexedResults @ unindexedResults
+
 /// Query the available extension methods of a type (including extension methods for inherited types)
 let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter isInstanceFilter m ty =
     let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
@@ -1634,21 +1646,10 @@ let FreshenMethInfo g traitCtxt m (minfo: MethInfo) =
 /// Looks up extension members in the name resolution environment by the TyconRef of each
 /// support type, and filters to those matching the trait's member name.
 let SelectExtensionMethInfosForTrait (traitInfo: TraitConstraintInfo, m: range, nenv: NameResolutionEnv, infoReader: InfoReader) : (TType * MethInfo) list =
-    let g = infoReader.g
     let nm = traitInfo.MemberLogicalName
 
     [ for supportTy in traitInfo.SupportTypes do
-        match tryTcrefOfAppTy g supportTy with
-        | ValueSome tcref ->
-            let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
-            let methInfos = SelectMethInfosFromExtMembers infoReader (Some nm) supportTy m extMemInfos
-            for minfo in methInfos do
-                yield (supportTy, minfo)
-        | _ -> ()
-      // Also check unindexed extension members
-      for supportTy in traitInfo.SupportTypes do
-        let methInfos = SelectMethInfosFromExtMembers infoReader (Some nm) supportTy m nenv.eUnindexedExtensionMembers
-        for minfo in methInfos do
+        for minfo in SelectExtMethInfosForType infoReader nenv (Some nm) m supportTy do
             yield (supportTy, minfo) ]
 
 /// This must be called after fetching unqualified items that may need to be freshened 

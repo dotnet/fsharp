@@ -1664,12 +1664,16 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
             let amap = csenv.amap
             let aenv = csenv.EquivEnv
             let denv = csenv.DisplayEnv
+            let extensionsEnabled = g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions
 
             // Work out the relevant accessibility domain for the trait
             let traitAD =
-                if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+                if extensionsEnabled then
                     match traitCtxt with
-                    | Some c -> (c.AccessRights :?> AccessorDomain)
+                    | Some c ->
+                        match c.AccessRights with
+                        | :? AccessorDomain as ad -> ad
+                        | x -> failwith $"SolveMemberConstraint: expected AccessorDomain but got {x.GetType().Name}"
                     | None -> AccessibleFromEverywhere
                 else
                     AccessibleFromEverywhere
@@ -1713,7 +1717,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
             // For built-in rule matching, only consider intrinsic methods so that
             // extension methods don't prevent built-in constraint solutions for primitives
             let intrinsicMinfos =
-                if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+                if extensionsEnabled then
                     minfos |> List.filter (fun (_, minfo) -> not minfo.IsExtensionMember)
                 else
                     minfos
@@ -1759,7 +1763,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                     // When extension constraint solutions are enabled and the trait context is missing
                                     // (e.g. from inline expansion of FSharp.Core operators), don't fire the built-in rule
                                     // for concrete non-numeric types since extension methods may provide the solution.
-                                    (not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) ||
+                                    (not extensionsEnabled ||
                                      not (isNil minfos) ||
                                      isTyparTy g argTy2 || IsNumericOrIntegralEnumType g argTy2) in
 
@@ -2260,13 +2264,18 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
             // Also collect extension methods from the trait context if the feature is enabled.
             // Extension methods are appended after intrinsic methods so intrinsic methods are preferred.
             // Filter out extension methods that duplicate an intrinsic method by signature.
+            let extensionsEnabled = csenv.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions
+
             let extMinfos =
-                if csenv.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+                if extensionsEnabled then
                     match traitInfo.TraitContext with
                     | Some traitCtxt ->
                         let results = traitCtxt.SelectExtensionMethods(traitInfo, m, csenv.SolverState.InfoReader :> obj)
                         results
-                        |> List.map (fun (ty, methObj) -> (ty, (methObj :?> MethInfo)))
+                        |> List.map (fun (ty, methObj) ->
+                            match methObj with
+                            | :? MethInfo as mi -> (ty, mi)
+                            | _ -> failwith $"GetRelevantMethodsForTrait: expected MethInfo but got {methObj.GetType().Name}")
                         |> List.filter (fun (_, extMinfo) ->
                             not (minfos |> List.exists (fun (_, intrinsicMinfo) ->
                                 MethInfosEquivByNameAndSig EraseAll true csenv.g csenv.amap m intrinsicMinfo extMinfo)))
