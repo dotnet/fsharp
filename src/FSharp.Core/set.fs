@@ -434,6 +434,28 @@ module internal SetTree =
     let partition comparer f s =
         partitionAux comparer f s (empty, empty)
 
+    let partitionWith (comparer1: IComparer<'T1>) (comparer2: IComparer<'T2>) (partitioner: 'T -> Choice<'T1, 'T2>) (t: SetTree<'T>) =
+        // Traverse right-to-left (descending) so inserts into output trees
+        // go largest-first, reducing AVL rotations — same strategy as partitionAux.
+        let rec go (t: SetTree<'T>) acc1 acc2 =
+            if isEmpty t then
+                struct (acc1, acc2)
+            else if t.Height = 1 then
+                match partitioner t.Key with
+                | Choice1Of2 v -> struct (add comparer1 v acc1, acc2)
+                | Choice2Of2 v -> struct (acc1, add comparer2 v acc2)
+            else
+                let tn = asNode t
+                let struct (acc1, acc2) = go tn.Right acc1 acc2
+                let struct (acc1, acc2) =
+                    match partitioner tn.Key with
+                    | Choice1Of2 v -> struct (add comparer1 v acc1, acc2)
+                    | Choice2Of2 v -> struct (acc1, add comparer2 v acc2)
+                go tn.Left acc1 acc2
+
+        let struct (t1, t2) = go t empty empty
+        t1, t2
+
     let rec minimumElementAux (t: SetTree<'T>) n =
         if isEmpty t then
             n
@@ -791,6 +813,12 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
         else
             let t1, t2 = SetTree.partition s.Comparer f s.Tree in Set(s.Comparer, t1), Set(s.Comparer, t2)
 
+    member internal s.PartitionWith (partitioner: 'T -> Choice<'T1, 'T2>) : Set<'T1> * Set<'T2> =
+        let comparer1 = LanguagePrimitives.FastGenericComparer<'T1>
+        let comparer2 = LanguagePrimitives.FastGenericComparer<'T2>
+        let t1, t2 = SetTree.partitionWith comparer1 comparer2 partitioner s.Tree
+        Set(comparer1, t1), Set(comparer2, t2)
+
     member s.Filter f : Set<'T> =
         if SetTree.isEmpty s.Tree then
             s
@@ -1105,13 +1133,7 @@ module Set =
 
     [<CompiledName("PartitionWith")>]
     let partitionWith (partitioner: 'T -> Choice<'T1, 'T2>) (set: Set<'T>) =
-        SetTree.fold
-            (fun (set1: Set<'T1>, set2: Set<'T2>) x ->
-                match partitioner x with
-                | Choice1Of2 x -> (set1.Add x, set2)
-                | Choice2Of2 x -> (set1, set2.Add x))
-            (Set<'T1>.Empty, Set<'T2>.Empty)
-            set.Tree
+        set.PartitionWith partitioner
 
     [<CompiledName("Fold")>]
     let fold<'T, 'State when 'T: comparison> folder (state: 'State) (set: Set<'T>) =
