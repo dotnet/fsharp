@@ -1846,7 +1846,7 @@ if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%s'" (sp
         """
         |> asExe
         |> withLangVersionPreview
-        |> typecheck
+        |> compileAndRun
         |> shouldSucceed
 
     [<Fact>]
@@ -1978,4 +1978,28 @@ module Consumer =
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
+
+    [<Fact>]
+    let ``FS1215 warning fires for extension operator without langversion preview`` () =
+        FSharp """
+module TestFS1215
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+        """
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 1215, Line 4, Col 21, Line 4, Col 22, "Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.")
+
+    [<Fact>]
+    let ``FS1215 warning does not fire for extension operator with langversion preview`` () =
+        FSharp """
+module TestFS1215NoWarn
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> withDiagnostics []
 
