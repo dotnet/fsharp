@@ -475,6 +475,16 @@ type SetModule() =
         Assert.AreEqual(Set.ofList [0; 1; 2], dedup2)
 
     [<Fact>]
+    member _.PartitionWithThrowingPartitioner() =
+        let ex = System.InvalidOperationException("test error")
+        Assert.Throws<System.InvalidOperationException>(fun () ->
+            Set.ofList [1; 2; 3]
+            |> Set.partitionWith (fun x ->
+                if x = 2 then raise ex
+                else Choice1Of2 x)
+            |> ignore) |> ignore
+
+    [<Fact>]
     member _.Remove() =
         
         let emptySet : Set<int> = Set.empty

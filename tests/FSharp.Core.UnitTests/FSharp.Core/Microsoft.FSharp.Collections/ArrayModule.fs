@@ -1825,6 +1825,16 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.partitionWith (fun x -> Choice1Of2 x) nullArr |> ignore)
 
     [<Fact>]
+    member _.PartitionWithThrowingPartitioner() =
+        let ex = System.InvalidOperationException("test error")
+        Assert.Throws<System.InvalidOperationException>(fun () ->
+            [|1; 2; 3|]
+            |> Array.partitionWith (fun x ->
+                if x = 2 then raise ex
+                else Choice1Of2 x)
+            |> ignore) |> ignore
+
+    [<Fact>]
     member _.Singleton() =
         Assert.AreEqual([|null|],Array.singleton null)
         Assert.AreEqual([|"1"|],Array.singleton "1")

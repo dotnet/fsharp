@@ -1469,3 +1469,24 @@ type ListModule() =
                 else Choice2Of2 x)
         Assert.AreEqual([2; 4; 6], left)
         Assert.AreEqual([1; 3; 5], right)
+
+    [<Fact>]
+    member _.PartitionWithLargeListStackSafety() =
+        // Verify tail recursion — should not stack overflow
+        let left, right =
+            [1..100_000]
+            |> List.partitionWith (fun x ->
+                if x % 2 = 0 then Choice1Of2 x
+                else Choice2Of2 x)
+        Assert.AreEqual(50_000, left.Length)
+        Assert.AreEqual(50_000, right.Length)
+
+    [<Fact>]
+    member _.PartitionWithThrowingPartitioner() =
+        let ex = System.InvalidOperationException("test error")
+        Assert.Throws<System.InvalidOperationException>(fun () ->
+            [1; 2; 3]
+            |> List.partitionWith (fun x ->
+                if x = 2 then raise ex
+                else Choice1Of2 x)
+            |> ignore) |> ignore
