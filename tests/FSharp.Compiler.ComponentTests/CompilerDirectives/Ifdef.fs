@@ -288,24 +288,23 @@ let x =
         |> compile
         |> withDiagnosticMessageMatches "#elif preprocessor directive"
 
-    // FS3882 / FS1163: shouldStartLine diagnostic for directives not at column 0.
-    // #if and #elif both call shouldStartLine, which fires ErrorR when StartColumn <> 0.
-    // Test via #if at non-zero column (FS1163), which exercises the same shouldStartLine
-    // function used by #elif (FS3882).
-    let directiveNotAtStartOfLine =
+    // Error FS3882: #elif not at first column
+    let elifMustBeFirst =
         """
 module A
-let a = 1; #if true
-let b = 2
+#if DEFINED
+let x = 1; #elif OTHER
+let y = 2
 #endif
 """
 
     [<Fact>]
     let elifMustBeFirstWarning () =
-        FSharp directiveNotAtStartOfLine
+        FSharp elifMustBeFirst
+        |> withDefines [ "DEFINED" ]
         |> withLangVersion "11.0"
         |> compile
-        |> withDiagnosticMessageMatches "#if directive must appear as the first non-whitespace character on a line"
+        |> withDiagnosticMessageMatches "#elif directive must appear as the first non-whitespace character on a line"
 
     // Error FS3883: bare #elif without expression
     let elifMustHaveIdent =
