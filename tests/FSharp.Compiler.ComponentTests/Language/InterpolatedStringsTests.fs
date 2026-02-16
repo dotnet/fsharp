@@ -308,3 +308,35 @@ let s = $"{f}"
         |> withLangVersionPreview
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Warn when System.Action delegate is used as interpolated string argument`` () =
+        Fsx """
+let a = System.Action(fun () -> ())
+let s = $"{a}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3882, Line 3, Col 12, Line 3, Col 13, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+
+    [<Fact>]
+    let ``Warn when System.Func delegate is used as interpolated string argument`` () =
+        Fsx """
+let f = System.Func<int, string>(fun x -> string x)
+let s = $"{f}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3882, Line 3, Col 12, Line 3, Col 13, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+
+    [<Fact>]
+    let ``No warn when delegate is invoked in interpolated string argument`` () =
+        Fsx """
+let f = System.Func<int, string>(fun x -> string x)
+let s = $"{f.Invoke(42)}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed

@@ -7596,7 +7596,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
         if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg then
             (argTys, synFillExprs)
             ||> List.iter2 (fun argTy synFillExpr ->
-                if isFunTy g argTy then
+                if isFunTy g argTy || isDelegateTy g argTy then
                     warning (Error(FSComp.SR.tcFunctionValueUsedAsInterpolatedStringArg (), synFillExpr.Range)))
 
     match stringKind with
