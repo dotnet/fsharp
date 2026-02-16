@@ -1103,6 +1103,16 @@ module Set =
     let partition predicate (set: Set<'T>) =
         set.Partition predicate
 
+    [<CompiledName("PartitionWith")>]
+    let partitionWith (partitioner: 'T -> Choice<'T1, 'T2>) (set: Set<'T>) =
+        SetTree.fold
+            (fun (set1: Set<'T1>, set2: Set<'T2>) x ->
+                match partitioner x with
+                | Choice1Of2 x -> (set1.Add x, set2)
+                | Choice2Of2 x -> (set1, set2.Add x))
+            (Set<'T1>.Empty, Set<'T2>.Empty)
+            set.Tree
+
     [<CompiledName("Fold")>]
     let fold<'T, 'State when 'T: comparison> folder (state: 'State) (set: Set<'T>) =
         SetTree.fold folder state set.Tree
