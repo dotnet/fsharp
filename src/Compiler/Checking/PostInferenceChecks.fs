@@ -4,6 +4,8 @@
 /// is complete.
 module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 
+#nowarn "67" // type test in exception handler (intentional narrowing to System.Exception)
+
 open System
 open System.Collections.Generic
 
@@ -189,6 +191,8 @@ module Limit =
 
     /// Apply a scoped parameter mask to limits, zeroing out limits for scoped parameters.
     let ApplyScopedMask (scopedMask: bool array) (limits: Limit list) =
+        System.Diagnostics.Debug.Assert(limits.Length = scopedMask.Length, "ApplyScopedMask: scopedMask length should match limits length")
+
         limits
         |> List.mapi (fun i limit ->
             if i < scopedMask.Length && scopedMask.[i] then
@@ -859,7 +863,7 @@ let tryGetScopedParamMask (g: TcGlobals) (amap: Import.ImportMap) (m: range) (il
 
                     if Array.exists id mask then Some mask else None
             | _ -> None
-        with _ ->
+        with :? System.Exception ->
             None
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
@@ -1055,17 +1059,19 @@ and CheckExprsIndividual cenv env exprs ctxts : Limit list =
     let argArity i = if i < ctxts.Length then ctxts[i] else PermitByRefExpr.No
     exprs |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i))
 
+/// Check expressions, applying scoped parameter mask if available to zero out limits for scoped parameters.
+and CheckExprsWithScopedMask cenv env args ctxts (scopedMask: bool array option) =
+    match scopedMask with
+    | None -> CheckExprs cenv env args ctxts
+    | Some mask ->
+        CheckExprsIndividual cenv env args ctxts
+        |> ApplyScopedMask mask
+        |> CombineLimits
+
 /// Check call arguments, including the return argument.
 /// When scopedMask is provided, scoped parameters are excluded from escape limits.
 and CheckCall cenv env m returnTy args ctxts ctxt (scopedMask: bool array option) =
-    let limitArgs =
-        match scopedMask with
-        | None -> CheckExprs cenv env args ctxts
-        | Some mask ->
-            CheckExprsIndividual cenv env args ctxts
-            |> ApplyScopedMask mask
-            |> CombineLimits
-
+    let limitArgs = CheckExprsWithScopedMask cenv env args ctxts scopedMask
     CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
 
 /// Check call arguments, including the return argument. The receiver argument is handled differently.
@@ -1086,18 +1092,16 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt (scopedMask: bool 
             cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
 
         let limitArgs =
-            let limitArgs =
-                match scopedMask with
-                | None -> CheckExprs cenv env args ctxts
-                | Some mask ->
-                    CheckExprsIndividual cenv env args ctxts
-                    |> ApplyScopedMask mask
-                    |> CombineLimits
+            let limitArgs = CheckExprsWithScopedMask cenv env args ctxts scopedMask
 
             // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
             if HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike receiverLimit then
                 // Scope is 1 to ensure any by-refs returned can only be prevented for out of scope of the function/method, not visibility.
                 CombineTwoLimits limitArgs { receiverLimit with scope = 1 }
+            // With improved escape analysis, include the receiver's byref limit because C# [UnscopedRef] struct methods
+            // can return spans pointing into 'this'. Unlike ByRefOfStackReferringSpanLike above, we keep the original
+            // scope (rather than forcing scope=1) because the receiver may or may not be a local — the scope value
+            // already encodes that information correctly.
             elif improvedEscapeAnalysis && HasLimitFlag LimitFlags.ByRef receiverLimit then
                 CombineTwoLimits limitArgs receiverLimit
             else
