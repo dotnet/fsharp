@@ -1218,9 +1218,7 @@ let test () : Span<int> =
 
     // --- ReadOnlySpan, inref, MemoryMarshal, and nested scope tests (Sprint 02) ---
 
-    [<Fact>]
-    let ``E_ReturnReadOnlySpanFromLocalByref`` () =
-        let fsharpSource = """
+    let private returnReadOnlySpanFromLocalByrefSource = """
 module Test
 open System
 
@@ -1228,7 +1226,51 @@ let f () =
     let mutable x = 1
     ReadOnlySpan<int>(&x)
 """
-        FSharp fsharpSource
+
+    let private nestedScopePropagationSource = """
+module Test
+open System
+
+let passThrough (s: Span<int>) : Span<int> = s
+
+let f () =
+    let mutable x = 1
+    passThrough(Span<int>(&x))
+"""
+
+    let private returnReadOnlySpanFromLocalInrefSource = """
+module Test
+open System
+
+let f () =
+    let mutable x = 1
+    let y = &x
+    ReadOnlySpan<int>(&y)
+"""
+
+    let private memoryMarshalCreateSpanSource = """
+module Test
+open System
+open System.Runtime.InteropServices
+
+let f () =
+    let mutable x = 1
+    MemoryMarshal.CreateSpan(&x, 1)
+"""
+
+    let private memoryMarshalCreateReadOnlySpanSource = """
+module Test
+open System
+open System.Runtime.InteropServices
+
+let f () =
+    let mutable x = 1
+    MemoryMarshal.CreateReadOnlySpan(&x, 1)
+"""
+
+    [<Fact>]
+    let ``E_ReturnReadOnlySpanFromLocalByref`` () =
+        FSharp returnReadOnlySpanFromLocalByrefSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -1254,17 +1296,7 @@ let f (x: inref<int>) =
 
     [<Fact>]
     let ``E_NestedScopePropagation`` () =
-        let fsharpSource = """
-module Test
-open System
-
-let passThrough (s: Span<int>) : Span<int> = s
-
-let f () =
-    let mutable x = 1
-    passThrough(Span<int>(&x))
-"""
-        FSharp fsharpSource
+        FSharp nestedScopePropagationSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -1275,16 +1307,7 @@ let f () =
 
     [<Fact>]
     let ``E_ReturnReadOnlySpanFromLocalInref`` () =
-        let fsharpSource = """
-module Test
-open System
-
-let f () =
-    let mutable x = 1
-    let y = &x
-    ReadOnlySpan<int>(&y)
-"""
-        FSharp fsharpSource
+        FSharp returnReadOnlySpanFromLocalInrefSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -1296,16 +1319,7 @@ let f () =
     // TODO: This should error but currently doesn't - escape analysis gap
     [<Fact>]
     let ``E_MemoryMarshalCreateSpan`` () =
-        let fsharpSource = """
-module Test
-open System
-open System.Runtime.InteropServices
-
-let f () =
-    let mutable x = 1
-    MemoryMarshal.CreateSpan(&x, 1)
-"""
-        FSharp fsharpSource
+        FSharp memoryMarshalCreateSpanSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -1314,16 +1328,7 @@ let f () =
     // TODO: This should error but currently doesn't - escape analysis gap
     [<Fact>]
     let ``E_MemoryMarshalCreateReadOnlySpan`` () =
-        let fsharpSource = """
-module Test
-open System
-open System.Runtime.InteropServices
-
-let f () =
-    let mutable x = 1
-    MemoryMarshal.CreateReadOnlySpan(&x, 1)
-"""
-        FSharp fsharpSource
+        FSharp memoryMarshalCreateReadOnlySpanSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -1333,90 +1338,43 @@ let f () =
 
     [<Fact>]
     let ``E_ReturnReadOnlySpanFromLocalByref - backward compat`` () =
-        let fsharpSource = """
-module Test
-open System
-
-let f () =
-    let mutable x = 1
-    ReadOnlySpan<int>(&x)
-"""
-        FSharp fsharpSource
+        FSharp returnReadOnlySpanFromLocalByrefSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let ``E_NestedScopePropagation - backward compat`` () =
-        let fsharpSource = """
-module Test
-open System
-
-let passThrough (s: Span<int>) : Span<int> = s
-
-let f () =
-    let mutable x = 1
-    passThrough(Span<int>(&x))
-"""
-        FSharp fsharpSource
+        FSharp nestedScopePropagationSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let ``E_ReturnReadOnlySpanFromLocalInref - backward compat`` () =
-        let fsharpSource = """
-module Test
-open System
-
-let f () =
-    let mutable x = 1
-    let y = &x
-    ReadOnlySpan<int>(&y)
-"""
-        FSharp fsharpSource
+        FSharp returnReadOnlySpanFromLocalInrefSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let ``E_MemoryMarshalCreateSpan - backward compat`` () =
-        let fsharpSource = """
-module Test
-open System
-open System.Runtime.InteropServices
-
-let f () =
-    let mutable x = 1
-    MemoryMarshal.CreateSpan(&x, 1)
-"""
-        FSharp fsharpSource
+        FSharp memoryMarshalCreateSpanSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let ``E_MemoryMarshalCreateReadOnlySpan - backward compat`` () =
-        let fsharpSource = """
-module Test
-open System
-open System.Runtime.InteropServices
-
-let f () =
-    let mutable x = 1
-    MemoryMarshal.CreateReadOnlySpan(&x, 1)
-"""
-        FSharp fsharpSource
+        FSharp memoryMarshalCreateReadOnlySpanSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     // --- C# Interop: Custom IsByRefLike and Struct Receiver tests (Sprint 03 Part 1) ---
 
-    [<Fact>]
-    let ``E_CustomIsByRefLikeStructEscapesLocal`` () =
-        let csharpLib =
-            CSharp """
+    let private customIsByRefLikeCSharpLib =
+        CSharp """
 using System;
 
 public ref struct MySpan<T>
@@ -1432,20 +1390,73 @@ public ref struct MySpan<T>
 
     public ref T this[int index] => ref _ref;
 }
-"""         |> withName "CustomSpanLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+"""     |> withName "CustomSpanLib"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
-        let fsharpSource = """
+    let private customIsByRefLikeFSharpSource = """
 module Test
 
 let f () =
     let mutable local = 42
     MySpan<int>(&local)
 """
-        FSharp fsharpSource
+
+    let private unscopedRefEscapesCSharpLib =
+        CSharp """
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public struct EvilStruct
+{
+    public int Field;
+
+    [UnscopedRef]
+    public Span<int> AsSpan()
+    {
+        return new Span<int>(ref Field);
+    }
+}
+"""     |> withName "UnscopedRefLib"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+    let private unscopedRefEscapesFSharpSource = """
+module Test
+open System
+
+let f () : Span<int> =
+    let mutable s = EvilStruct(Field = 42)
+    s.AsSpan()
+"""
+
+    let private safeStructConservativeCSharpLib =
+        CSharp """
+using System;
+
+public struct SafeStruct
+{
+    public Span<int> GetSpan(int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""     |> withName "SafeStructLib"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+    let private safeStructConservativeFSharpSource = """
+module Test
+open System
+
+let f () : Span<int> =
+    let mutable s = SafeStruct()
+    s.GetSpan([| 1; 2; 3 |])
+"""
+
+    [<Fact>]
+    let ``E_CustomIsByRefLikeStructEscapesLocal`` () =
+        FSharp customIsByRefLikeFSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [csharpLib]
+        |> withReferences [customIsByRefLikeCSharpLib]
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -1454,71 +1465,18 @@ let f () =
 
     [<Fact>]
     let ``E_CustomIsByRefLikeStructEscapesLocal - backward compat`` () =
-        let csharpLib =
-            CSharp """
-using System;
-
-public ref struct MySpan<T>
-{
-    private ref T _ref;
-    private int _length;
-
-    public MySpan(ref T reference)
-    {
-        _ref = ref reference;
-        _length = 1;
-    }
-
-    public ref T this[int index] => ref _ref;
-}
-"""         |> withName "CustomSpanLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        let fsharpSource = """
-module Test
-
-let f () =
-    let mutable local = 42
-    MySpan<int>(&local)
-"""
-        FSharp fsharpSource
+        FSharp customIsByRefLikeFSharpSource
         |> asLibrary
-        |> withReferences [csharpLib]
+        |> withReferences [customIsByRefLikeCSharpLib]
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let ``E_StructReceiverUnscopedRefEscapes`` () =
-        let csharpLib =
-            CSharp """
-using System;
-using System.Diagnostics.CodeAnalysis;
-
-public struct EvilStruct
-{
-    public int Field;
-
-    [UnscopedRef]
-    public Span<int> AsSpan()
-    {
-        return new Span<int>(ref Field);
-    }
-}
-"""         |> withName "UnscopedRefLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        let fsharpSource = """
-module Test
-open System
-
-let f () : Span<int> =
-    let mutable s = EvilStruct(Field = 42)
-    s.AsSpan()
-"""
-        FSharp fsharpSource
+        FSharp unscopedRefEscapesFSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [csharpLib]
+        |> withReferences [unscopedRefEscapesCSharpLib]
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -1527,35 +1485,9 @@ let f () : Span<int> =
 
     [<Fact>]
     let ``E_StructReceiverUnscopedRefEscapes - backward compat`` () =
-        let csharpLib =
-            CSharp """
-using System;
-using System.Diagnostics.CodeAnalysis;
-
-public struct EvilStruct
-{
-    public int Field;
-
-    [UnscopedRef]
-    public Span<int> AsSpan()
-    {
-        return new Span<int>(ref Field);
-    }
-}
-"""         |> withName "UnscopedRefLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        let fsharpSource = """
-module Test
-open System
-
-let f () : Span<int> =
-    let mutable s = EvilStruct(Field = 42)
-    s.AsSpan()
-"""
-        FSharp fsharpSource
+        FSharp unscopedRefEscapesFSharpSource
         |> asLibrary
-        |> withReferences [csharpLib]
+        |> withReferences [unscopedRefEscapesCSharpLib]
         |> compile
         |> shouldSucceed
 
@@ -1563,32 +1495,10 @@ let f () : Span<int> =
     let ``E_StructReceiverSafeCaseConservativeError`` () =
         // Conservative: struct receiver triggers escape error even for safe methods.
         // This is a known false positive. Future work: read [UnscopedRef] to distinguish.
-        let csharpLib =
-            CSharp """
-using System;
-
-public struct SafeStruct
-{
-    public Span<int> GetSpan(int[] arr)
-    {
-        return new Span<int>(arr);
-    }
-}
-"""         |> withName "SafeStructLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        let fsharpSource = """
-module Test
-open System
-
-let f () : Span<int> =
-    let mutable s = SafeStruct()
-    s.GetSpan([| 1; 2; 3 |])
-"""
-        FSharp fsharpSource
+        FSharp safeStructConservativeFSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [csharpLib]
+        |> withReferences [safeStructConservativeCSharpLib]
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -1597,31 +1507,9 @@ let f () : Span<int> =
 
     [<Fact>]
     let ``E_StructReceiverSafeCaseConservativeError - backward compat`` () =
-        let csharpLib =
-            CSharp """
-using System;
-
-public struct SafeStruct
-{
-    public Span<int> GetSpan(int[] arr)
-    {
-        return new Span<int>(arr);
-    }
-}
-"""         |> withName "SafeStructLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        let fsharpSource = """
-module Test
-open System
-
-let f () : Span<int> =
-    let mutable s = SafeStruct()
-    s.GetSpan([| 1; 2; 3 |])
-"""
-        FSharp fsharpSource
+        FSharp safeStructConservativeFSharpSource
         |> asLibrary
-        |> withReferences [csharpLib]
+        |> withReferences [safeStructConservativeCSharpLib]
         |> compile
         |> shouldSucceed
 
