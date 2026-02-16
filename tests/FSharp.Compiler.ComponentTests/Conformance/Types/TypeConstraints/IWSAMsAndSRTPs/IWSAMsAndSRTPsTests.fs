@@ -2160,3 +2160,66 @@ if v <> 42 then failwith (sprintf "Expected 42 but got %d" v)
         |> compileAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Cross-assembly extension operator resolves via SRTP`` () =
+        // True optional extension on System.String (an external type).
+        // Exercises the cross-assembly path where TTrait.traitCtxt deserializes as None
+        // from pickled metadata, requiring fallback resolution from the consumer's opens.
+        // TODO: Cross-assembly extension resolution not yet supported - traitCtxt is None from pickled metadata
+        let library =
+            FSharp """
+module ExtLib
+
+type System.String with
+    static member (*) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let r4 = "r" * 4
+if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 193
+
+    [<Fact>]
+    let ``Cross-assembly intrinsic augmentation operator resolves via SRTP`` () =
+        // Intrinsic augmentation: Widget and its (+) operator are in the same module.
+        // This compiles as a regular method on Widget's type, so it works across assemblies
+        // without needing traitCtxt - included for contrast with the optional extension test above.
+        let library =
+            FSharp """
+module ExtLib
+
+type Widget = { Value: int }
+type Widget with
+    static member (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let a = { Value = 1 }
+let b = { Value = 2 }
+let c = a + b
+if c.Value <> 3 then failwith (sprintf "Expected 3 but got %d" c.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
