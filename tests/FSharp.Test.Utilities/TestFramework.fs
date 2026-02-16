@@ -515,12 +515,6 @@ module Command =
 
     let exec dir envVars (redirect:RedirectInfo) path args =
 
-        // Diagnostic logging to file - same location as scriptlib.fsx uses
-        let diagLogFile = Path.Combine(dir, "fsi_stdin_diag.log")
-        let diagLog msg = 
-            let timestamp = DateTime.Now.ToString("HH:mm:ss.fff")
-            try File.AppendAllText(diagLogFile, sprintf "[%s] %s%s" timestamp msg Environment.NewLine) with _ -> ()
-
 #if !NETCOREAPP
         let ensureConsole () =
             // Set UTF-8 encoding for console input/output to ensure FSI receives UTF-8 data.
@@ -535,35 +529,21 @@ module Command =
         let inputWriter sources (writer: StreamWriter) =
             let pipeFile name = async {
                 let path = Commands.getfullpath dir name
-                diagLog (sprintf "[inputWriter] pipeFile called: name='%s' resolved='%s'" name path)
-                diagLog (sprintf "[inputWriter] File.Exists=%b" (File.Exists path))
                 
                 // Read file content as text using UTF-8 (the standard encoding for F# source files)
                 let! content = async {
                     use reader = new StreamReader(path, Text.Encoding.UTF8, detectEncodingFromByteOrderMarks = true)
                     return! reader.ReadToEndAsync() |> Async.AwaitTask
                 }
-                diagLog (sprintf "[inputWriter] File read, content.Length=%d chars" content.Length)
-                
-                // Log content being written (first 200 chars)
-                let contentPreview = if content.Length > 200 then content.Substring(0, 200) + "..." else content
-                diagLog (sprintf "[inputWriter] Content to write: [%s]" (contentPreview.Replace("\r", "\\r").Replace("\n", "\\n")))
                 
                 // Write using the StreamWriter which now uses UTF-8 encoding (set in ensureConsole).
-                // The StreamWriter handles encoding the Unicode string to UTF-8 bytes.
                 try
-                    diagLog (sprintf "[inputWriter] writer.Encoding=%s" writer.Encoding.EncodingName)
                     do! writer.WriteAsync(content) |> Async.AwaitTask
-                    diagLog "[inputWriter] WriteAsync completed"
                     do! writer.FlushAsync() |> (Async.AwaitIAsyncResult >> Async.Ignore)
-                    diagLog "[inputWriter] FlushAsync completed"
                 with
-                | :? System.IO.IOException as ex -> 
-                    diagLog (sprintf "[inputWriter] IOException (may be OK if process closed): %s" ex.Message)
+                | :? System.IO.IOException -> ()
                 }
-            diagLog (sprintf "[inputWriter] Starting pipeFile for '%s'" sources)
             sources |> pipeFile |> Async.RunSynchronously
-            diagLog "[inputWriter] pipeFile completed"
 
         let inF fCont cmdArgs =
             match redirect.Input with
