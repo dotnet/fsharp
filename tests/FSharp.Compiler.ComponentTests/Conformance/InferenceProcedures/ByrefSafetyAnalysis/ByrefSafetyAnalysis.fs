@@ -1691,10 +1691,8 @@ let test () =
         |> compile
         |> shouldSucceed
 
-    [<Fact>]
-    let ``E_NonScopedIsByRefLikeConstructorEscapes`` () =
-        let csharpLib =
-            CSharp """
+    let private unscopedRefStructCSharpLib =
+        CSharp """
 using System;
 
 public ref struct UnscopedRefStruct
@@ -1706,69 +1704,50 @@ public ref struct UnscopedRefStruct
         _ref = ref x;
     }
 }
-"""         |> withName "UnscopedRefStructLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+"""     |> withName "UnscopedRefStructLib"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
-        let fsharpSource = """
+    let private unscopedRefStructFSharpSource = """
 module Test
 
 let test () =
     let mutable local = 42
     UnscopedRefStruct(&local)
 """
-        FSharp fsharpSource
+
+    [<Fact>]
+    let ``E_NonScopedIsByRefLikeConstructorEscapes`` () =
+        FSharp unscopedRefStructFSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [csharpLib]
+        |> withReferences [unscopedRefStructCSharpLib]
         |> compile
         |> shouldFail
         |> withErrorCodes [3235]
 
     [<Fact>]
     let ``E_NonScopedIsByRefLikeConstructorEscapes - backward compat`` () =
-        let csharpLib =
-            CSharp """
-using System;
-
-public ref struct UnscopedRefStruct
-{
-    private ref int _ref;
-
-    public UnscopedRefStruct(ref int x)
-    {
-        _ref = ref x;
-    }
-}
-"""         |> withName "UnscopedRefStructLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        let fsharpSource = """
-module Test
-
-let test () =
-    let mutable local = 42
-    UnscopedRefStruct(&local)
-"""
-        FSharp fsharpSource
+        FSharp unscopedRefStructFSharpSource
         |> asLibrary
-        |> withReferences [csharpLib]
+        |> withReferences [unscopedRefStructCSharpLib]
         |> compile
         |> shouldSucceed
 
-    [<Fact>]
-    let ``E_AllowsRefStructGenericEscapes`` () =
-        let csharpLib =
-            CSharp """
+    // Simplified from `allows ref struct` generic (C# 13 required) to a direct Span<int>
+    // return. The `allows ref struct` constraint is not available in the current test
+    // infrastructure, so this tests the equivalent ref int → Span<int> escape path directly.
+    let private genericFactoryCSharpLib =
+        CSharp """
 using System;
 
 public static class GenericFactory
 {
     public static Span<int> Create(ref int x) => new Span<int>(ref x);
 }
-"""         |> withName "AllowsRefStructLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+"""     |> withName "AllowsRefStructLib"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
 
-        let fsharpSource = """
+    let private genericFactoryFSharpSource = """
 module Test
 open System
 
@@ -1776,38 +1755,22 @@ let test () : Span<int> =
     let mutable local = 42
     GenericFactory.Create(&local)
 """
-        FSharp fsharpSource
+
+    [<Fact>]
+    let ``E_AllowsRefStructGenericEscapes`` () =
+        FSharp genericFactoryFSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [csharpLib]
+        |> withReferences [genericFactoryCSharpLib]
         |> compile
         |> shouldFail
         |> withErrorCodes [3235]
 
     [<Fact>]
     let ``E_AllowsRefStructGenericEscapes - backward compat`` () =
-        let csharpLib =
-            CSharp """
-using System;
-
-public static class GenericFactory
-{
-    public static Span<int> Create(ref int x) => new Span<int>(ref x);
-}
-"""         |> withName "AllowsRefStructLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
-
-        let fsharpSource = """
-module Test
-open System
-
-let test () : Span<int> =
-    let mutable local = 42
-    GenericFactory.Create(&local)
-"""
-        FSharp fsharpSource
+        FSharp genericFactoryFSharpSource
         |> asLibrary
-        |> withReferences [csharpLib]
+        |> withReferences [genericFactoryCSharpLib]
         |> compile
         |> shouldSucceed
 
