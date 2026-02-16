@@ -729,7 +729,8 @@ type internal TypeCheckInfo
         let quals =
             sResolutions.CapturedExpressionTypings
             |> Seq.filter (fun (ty, nenv, _, m) ->
-                not m.IsSynthetic &&
+                not m.IsSynthetic
+                &&
 
                 // We only want expression types that end at the particular position in the file we are looking at.
                 posEq m.End endOfExprPos
