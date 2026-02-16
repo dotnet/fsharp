@@ -1780,7 +1780,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("PartitionWith")>]
-    val partitionWith: partitioner: ('T -> Choice<'T1, 'T2>) -> list: 'T list -> 'T1 list * 'T2 list
+    val inline partitionWith: partitioner: ('T -> Choice<'T1, 'T2>) -> list: 'T list -> 'T1 list * 'T2 list
 
     /// <summary>Applies the given function to successive elements, returning the first
     /// result where function returns <c>Some(x)</c> for some x. If no such

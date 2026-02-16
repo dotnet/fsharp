@@ -574,22 +574,16 @@ module List =
         Microsoft.FSharp.Primitives.Basics.List.partition predicate list
 
     [<CompiledName("PartitionWith")>]
-    let partitionWith (partitioner: 'T -> Choice<'T1, 'T2>) (list: 'T list) =
-        let mutable coll1 = ListCollector<'T1>()
-        let mutable coll2 = ListCollector<'T2>()
+    let inline partitionWith ([<InlineIfLambda>] partitioner: 'T -> Choice<'T1, 'T2>) (list: 'T list) =
+        let mutable collector1 = ListCollector()
+        let mutable collector2 = ListCollector()
 
-        let rec loop l =
-            match l with
-            | [] -> ()
-            | h :: t ->
-                match partitioner h with
-                | Choice1Of2 x -> coll1.Add(x)
-                | Choice2Of2 x -> coll2.Add(x)
+        for x in list do
+            match partitioner x with
+            | Choice1Of2 v -> collector1.Add v
+            | Choice2Of2 v -> collector2.Add v
 
-                loop t
-
-        loop list
-        coll1.Close(), coll2.Close()
+        collector1.Close(), collector2.Close()
 
     [<CompiledName("Unzip")>]
     let unzip list =
