@@ -1827,12 +1827,12 @@ type ArrayModule() =
     [<Fact>]
     member _.PartitionWithThrowingPartitioner() =
         let ex = System.InvalidOperationException("test error")
-        Assert.Throws<System.InvalidOperationException>(fun () ->
+        CheckThrowsInvalidOperationExn (fun () ->
             [|1; 2; 3|]
             |> Array.partitionWith (fun x ->
                 if x = 2 then raise ex
                 else Choice1Of2 x)
-            |> ignore) |> ignore
+            |> ignore)
 
     [<Fact>]
     member _.Singleton() =
