@@ -8,7 +8,7 @@
 .assembly extern netstandard
 {
   .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
-  .ver 2:0:0:0
+  .ver 2:1:0:0
 }
 .assembly assembly
 {
@@ -21,16 +21,6 @@
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
-}
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
 }
 .module assembly.exe
 
@@ -140,7 +130,6 @@
   } 
 
 } 
-
 
 
 
