@@ -2003,3 +2003,54 @@ type System.String with
         |> shouldSucceed
         |> withDiagnostics []
 
+    [<Fact>]
+    let ``Multiple extension operators with different signatures resolve or error clearly`` () =
+        FSharp """
+module TestAmbiguity
+
+module ExtA =
+    type Widget = { Value: int }
+    type Widget with
+        static member (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+
+module ExtB =
+    open ExtA
+    type Widget with
+        static member (+) (a: Widget, b: int) = { Value = a.Value + b }
+
+module Consumer =
+    open ExtA
+    open ExtB
+    // Same-type addition: should resolve to ExtA's (Widget, Widget) -> Widget
+    let inline add (x: ^T) (y: ^T) = x + y
+    let r = add { Value = 1 } { Value = 2 }
+    if r.Value <> 3 then failwith (sprintf "Expected 3 but got %d" r.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Intrinsic operator takes priority over extension with same name and signature`` () =
+        FSharp """
+module TestIntrinsicPriority
+
+type Gadget =
+    { Value: int }
+    static member (+) (a: Gadget, b: Gadget) = { Value = a.Value + b.Value }
+
+module GadgetExt =
+    type Gadget with
+        static member (+) (a: Gadget, b: Gadget) = { Value = 999 }
+
+open GadgetExt
+let inline add (x: ^T) (y: ^T) = x + y
+let result = add { Value = 1 } { Value = 2 }
+if result.Value <> 3 then failwith (sprintf "Expected 3 (intrinsic wins) but got %d" result.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
