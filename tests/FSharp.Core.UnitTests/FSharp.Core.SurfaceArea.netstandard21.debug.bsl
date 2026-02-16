@@ -605,6 +605,7 @@ Microsoft.FSharp.Collections.SetModule: Microsoft.FSharp.Collections.FSharpSet`1
 Microsoft.FSharp.Collections.SetModule: Microsoft.FSharp.Collections.FSharpSet`1[T] Union[T](Microsoft.FSharp.Collections.FSharpSet`1[T], Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: System.Collections.Generic.IEnumerable`1[T] ToSeq[T](Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: System.Tuple`2[Microsoft.FSharp.Collections.FSharpSet`1[T],Microsoft.FSharp.Collections.FSharpSet`1[T]] Partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Collections.FSharpSet`1[T])
+Microsoft.FSharp.Collections.SetModule: System.Tuple`2[Microsoft.FSharp.Collections.FSharpSet`1[T1],Microsoft.FSharp.Collections.FSharpSet`1[T2]] PartitionWith[T,T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]], Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: T MaxElement[T](Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: T MinElement[T](Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: TState FoldBack[T,TState](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TState,TState]], Microsoft.FSharp.Collections.FSharpSet`1[T], TState)
