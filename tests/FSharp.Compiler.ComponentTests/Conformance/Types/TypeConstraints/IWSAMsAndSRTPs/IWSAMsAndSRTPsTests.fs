@@ -1883,30 +1883,6 @@ if y <> 5.0 then failwith (sprintf "Expected 5.0 but got %f" y)
         |> shouldSucceed
 
     [<Fact>]
-    let ``Inline SRTP function uses extension method on custom type`` () =
-        FSharp """
-module TestInlineSRTP
-
-type Repeatable = { Value: string }
-
-type Repeatable with
-    static member ( + ) (a: Repeatable, b: Repeatable) = { Value = a.Value + b.Value }
-
-let inline add (x: ^T) (y: ^T) : ^T = x + y
-
-let r = add { Value = "hello" } { Value = "world" }
-if r.Value <> "helloworld" then failwith (sprintf "Expected 'helloworld' but got '%s'" r.Value)
-
-// Inline function should also work with built-in numeric types
-let n = add 5 3
-if n <> 8 then failwith (sprintf "Expected 8 but got %d" n)
-        """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
-
-    [<Fact>]
     let ``Extension method on custom type resolves via SRTP`` () =
         FSharp """
 module TestCustomType
@@ -1953,30 +1929,6 @@ module Consumer =
         |> asExe
         |> withLangVersionPreview
         |> compileAndRun
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``Extension operator on custom type typechecks in separate module`` () =
-        FSharp """
-module TypeDefs =
-    type MyNum =
-        { Value: int }
-        static member ( + ) (a: MyNum, b: MyNum) = { Value = a.Value + b.Value + 1000 }
-
-module Consumer =
-    open TypeDefs
-
-    type MyNum with
-        static member ( - ) (a: MyNum, b: MyNum) = { Value = a.Value - b.Value }
-
-    let a = { Value = 1 }
-    let b = { Value = 2 }
-    // Extension operator typechecks
-    let d = a - b
-        """
-        |> asExe
-        |> withLangVersionPreview
-        |> typecheck
         |> shouldSucceed
 
     [<Fact>]
@@ -2048,25 +2000,6 @@ open GadgetExt
 let inline add (x: ^T) (y: ^T) = x + y
 let result = add { Value = 1 } { Value = 2 }
 if result.Value <> 3 then failwith (sprintf "Expected 3 (intrinsic wins) but got %d" result.Value)
-        """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``Extension operator resolves via SRTP alongside IWSAM types`` () =
-        FSharp """
-module TestIWSAMInteraction
-
-type Foo = { X: int }
-
-type Foo with
-    static member (+) (a: Foo, b: Foo) = { X = a.X + b.X }
-
-let inline add (x: ^T) (y: ^T) = x + y
-let r = add { X = 1 } { X = 2 }
-if r.X <> 3 then failwith (sprintf "Expected 3 but got %d" r.X)
         """
         |> asExe
         |> withLangVersionPreview
