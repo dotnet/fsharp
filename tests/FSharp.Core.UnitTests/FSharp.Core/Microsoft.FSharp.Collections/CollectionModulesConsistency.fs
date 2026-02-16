@@ -785,6 +785,32 @@ let ``partition is consistent`` () =
     smallerSizeCheck partition<string>
     smallerSizeCheck partition<NormalFloat>
 
+let partitionWithListArray<'a when 'a : comparison> (xs : 'a []) =
+    let partitioner x = if hash x % 2 = 0 then Choice1Of2 x else Choice2Of2 x
+    let l1,l2 = xs |> List.ofArray |> List.partitionWith partitioner
+    let a1,a2 = xs |> Array.partitionWith partitioner
+    List.toArray l1 = a1 &&
+      List.toArray l2 = a2
+
+[<Fact>]
+let ``partitionWith is consistent for List and Array`` () =
+    smallerSizeCheck partitionWithListArray<int>
+    smallerSizeCheck partitionWithListArray<string>
+    smallerSizeCheck partitionWithListArray<NormalFloat>
+
+let partitionWithSet<'a when 'a : comparison> (xs : 'a []) =
+    let partitioner x = if hash x % 2 = 0 then Choice1Of2 x else Choice2Of2 x
+    let a1,a2 = xs |> Array.partitionWith partitioner
+    let s1,s2 = xs |> Set.ofArray |> Set.partitionWith partitioner
+    Set.ofArray a1 = s1 &&
+      Set.ofArray a2 = s2
+
+[<Fact>]
+let ``partitionWith is consistent for Set`` () =
+    smallerSizeCheck partitionWithSet<int>
+    smallerSizeCheck partitionWithSet<string>
+    smallerSizeCheck partitionWithSet<NormalFloat>
+
 let permute<'a when 'a : comparison> (xs' : list<int*'a>) =
     let xs = List.map snd xs'
  
