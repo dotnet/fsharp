@@ -46,6 +46,7 @@ Microsoft.FSharp.Collections.ArrayModule+Parallel: Microsoft.FSharp.Core.FSharpO
 Microsoft.FSharp.Collections.ArrayModule+Parallel: Microsoft.FSharp.Core.FSharpOption`1[TResult] TryPick[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[TResult]], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: Microsoft.FSharp.Core.FSharpOption`1[T] TryFind[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: System.Tuple`2[T1,T2][] Zip[T1,T2](T1[], T2[])
+Microsoft.FSharp.Collections.ArrayModule+Parallel: System.Tuple`2[T1[],T2[]] PartitionWith[T,T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: System.Tuple`2[TKey,T[]][] GroupBy[T,TKey](Microsoft.FSharp.Core.FSharpFunc`2[T,TKey], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: System.Tuple`2[T[],T[]] Partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: T Average$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T[])

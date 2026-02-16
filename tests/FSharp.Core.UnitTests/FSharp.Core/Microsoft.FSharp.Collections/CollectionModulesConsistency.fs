@@ -811,6 +811,18 @@ let ``partitionWith is consistent for Set`` () =
     smallerSizeCheck partitionWithSet<string>
     smallerSizeCheck partitionWithSet<NormalFloat>
 
+let partitionWithParallel<'a when 'a : comparison> (xs : 'a []) =
+    let partitioner x = if hash x % 2 = 0 then Choice1Of2 x else Choice2Of2 x
+    let a1,a2 = xs |> Array.partitionWith partitioner
+    let p1,p2 = xs |> Array.Parallel.partitionWith partitioner
+    a1 = p1 && a2 = p2
+
+[<Fact>]
+let ``partitionWith is consistent for Array and Array.Parallel`` () =
+    smallerSizeCheck partitionWithParallel<int>
+    smallerSizeCheck partitionWithParallel<string>
+    smallerSizeCheck partitionWithParallel<NormalFloat>
+
 let permute<'a when 'a : comparison> (xs' : list<int*'a>) =
     let xs = List.map snd xs'
  

@@ -4357,6 +4357,35 @@ module Array =
         [<CompiledName("Partition")>]
         val partition: predicate: ('T -> bool) -> array: 'T array -> 'T array * 'T array
 
+        /// <summary>Splits the collection into two arrays, by applying the given partitioning function
+        /// to each element. Returns <c>Choice1Of2</c> elements in the first array and
+        /// <c>Choice2Of2</c> elements in the second array. Element order is preserved in both of the created arrays.</summary>
+        ///
+        /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
+        /// The order in which the given function is applied to indices is not specified. This is an O(n) operation, where n is the length of the array.</remarks>
+        ///
+        /// <param name="partitioner">The function to transform and classify each input element into one of two output types.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>A tuple of two arrays. The first containing values from <c>Choice1Of2</c> results and the second
+        /// containing values from <c>Choice2Of2</c> results.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="parallel-partitionWith-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 2; 3; 4; 5 |]
+        ///
+        /// let evens, odds =
+        ///     inputs |> Array.Parallel.partitionWith (fun x ->
+        ///         if x % 2 = 0 then Choice1Of2 (x * 10)
+        ///         else Choice2Of2 (string x))
+        /// </code>
+        /// Evaluates <c>evens</c> to <c>[|20; 40|]</c> and <c>odds</c> to <c>[|"1"; "3"; "5"|]</c>.
+        /// </example>
+        [<CompiledName("PartitionWith")>]
+        val inline partitionWith: partitioner: ('T -> Choice<'T1, 'T2>) -> array: 'T array -> 'T1 array * 'T2 array
+
         /// <summary>Sorts the elements of an array in parallel, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
