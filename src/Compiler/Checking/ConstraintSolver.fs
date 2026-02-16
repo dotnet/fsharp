@@ -1755,7 +1755,13 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                     //   - Neither type contributes any methods OR
                                     //   - We have the special case "decimal<_> * decimal". In this case we have some 
                                     //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                                    (isNil minfos || (Option.isSome (getMeasureOfType g argTy1) && isDecimalTy g argTy2)) in
+                                    (isNil minfos || (Option.isSome (getMeasureOfType g argTy1) && isDecimalTy g argTy2)) &&
+                                    // When extension constraint solutions are enabled and the trait context is missing
+                                    // (e.g. from inline expansion of FSharp.Core operators), don't fire the built-in rule
+                                    // for concrete non-numeric types since extension methods may provide the solution.
+                                    (not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) ||
+                                     not (isNil minfos) ||
+                                     isTyparTy g argTy2 || IsNumericOrIntegralEnumType g argTy2) in
 
                                 checkRuleAppliesInPreferenceToMethods argTy1 argTy2 || 
                                 checkRuleAppliesInPreferenceToMethods argTy2 argTy1) ->
@@ -4212,6 +4218,58 @@ let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstrai
         let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
         return GenWitnessExpr amap g m traitInfo argExprs
     }
+
+/// Create an ITraitContext from the expression tree contents of implementation files.
+/// Walks ModuleOrNamespaceContents bindings to find extension member Val objects,
+/// ensuring the Val stamps match those bound in the expression tree (not the
+/// deep-copied signature vals in the CcuThunk).
+let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) : ITraitContext =
+    let extensionVals =
+        lazy
+            (let result = HashMultiMap<Stamp, ValRef>(10, HashIdentity.Structural)
+
+             let rec collectFromContents (x: ModuleOrNamespaceContents) =
+                 match x with
+                 | TMDefRec(_, _, _, binds, _) ->
+                     for bind in binds do
+                         match bind with
+                         | ModuleOrNamespaceBinding.Binding b ->
+                             let v = b.Var
+                             if v.IsExtensionMember && v.MemberInfo.IsSome then
+                                 let vref = mkLocalValRef v
+                                 let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
+                                 result.Add(tcref.Stamp, vref)
+                         | ModuleOrNamespaceBinding.Module(_, mdef) ->
+                             collectFromContents mdef
+                 | TMDefLet(b, _) ->
+                     let v = b.Var
+                     if v.IsExtensionMember && v.MemberInfo.IsSome then
+                         let vref = mkLocalValRef v
+                         let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
+                         result.Add(tcref.Stamp, vref)
+                 | TMDefs defs ->
+                     for d in defs do collectFromContents d
+                 | TMDefOpens _ | TMDefDo _ -> ()
+
+             for contents in implFileContents do
+                 collectFromContents contents
+
+             result)
+
+    { new ITraitContext with
+        member _.SelectExtensionMethods(traitInfo, _m, _infoReader) =
+            let nm = traitInfo.MemberLogicalName
+
+            [ for supportTy in traitInfo.SupportTypes do
+                  match tryTcrefOfAppTy g supportTy with
+                  | ValueSome tcref ->
+                      for vref in extensionVals.Value.FindAll(tcref.Stamp) do
+                          if vref.LogicalName = nm then
+                              let minfo = MethInfo.FSMeth(g, supportTy, vref, None)
+                              yield (supportTy, minfo :> obj)
+                  | _ -> () ]
+
+        member _.AccessRights = (AccessibleFromEverywhere :> ITraitAccessorDomain) }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
 let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs =

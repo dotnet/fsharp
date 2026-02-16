@@ -320,6 +320,9 @@ val ApplyTyparDefaultAtPriority: DisplayEnv -> ConstraintSolverState -> priority
 val CodegenWitnessExprForTraitConstraint:
     TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
+/// Create an ITraitContext from implementation file contents for use during optimization/codegen
+val CreateImplFileTraitContext: TcGlobals -> ModuleOrNamespaceContents list -> ITraitContext
+
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 val CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs:
     TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> OperationResult<bool>
