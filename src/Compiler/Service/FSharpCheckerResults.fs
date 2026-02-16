@@ -2114,7 +2114,10 @@ type internal TypeCheckInfo
         let amap = tcImports.GetImportMap()
         let assemblyRef = ILAssemblyRef.Create("", None, None, false, None, None)
         let scopeRef = ILScopeRef.Assembly assemblyRef
-        let typ = ImportILTypeFromMetadata amap range0 scopeRef [] [] NullableAttributesSource.Empty ty
+
+        let typ =
+            ImportILTypeFromMetadata amap range0 scopeRef [] [] NullableAttributesSource.Empty ty
+
         FSharpType(cenv, typ)
 
     /// Get the auto-complete items at a location
