@@ -287,3 +287,68 @@ let x =
         |> withLangVersion "10.0"
         |> compile
         |> withDiagnosticMessageMatches "#elif preprocessor directive"
+
+    // Indented #elif with leading whitespace compiles correctly
+    let elifIndented =
+        """
+[<EntryPoint>]
+let main _ =
+    #if BRANCH_A
+    1
+    #elif BRANCH_B
+    2
+    #else
+    3
+    #endif
+"""
+
+    [<InlineData("BRANCH_A", 1)>]
+    [<InlineData("BRANCH_B", 2)>]
+    [<InlineData("OTHER", 3)>]
+    [<Theory>]
+    let elifIndentedTest (mydefine, expectedExitCode) =
+        FSharp elifIndented
+        |> withDefines [ mydefine ]
+        |> withLangVersion "11.0"
+        |> compileExeAndRun
+        |> withExitCode expectedExitCode
+
+    // Bare #elif without expression and without matching #if produces a parse error
+    let elifMustHaveIdent =
+        """
+module A
+#elif
+let y = 2
+#endif
+"""
+
+    [<Fact>]
+    let elifMustHaveIdentError () =
+        FSharp elifMustHaveIdent
+        |> withLangVersion "11.0"
+        |> compile
+        |> shouldFail
+
+    // All branches false, no #else fallback
+    let elifAllFalseNoElse =
+        """
+[<EntryPoint>]
+let main _ =
+    let mutable x = 0
+    #if BRANCH_A
+    x <- 1
+    #elif BRANCH_B
+    x <- 2
+    #elif BRANCH_C
+    x <- 3
+    #endif
+    x
+"""
+
+    [<Fact>]
+    let elifAllFalseNoElseTest () =
+        FSharp elifAllFalseNoElse
+        |> withDefines [ "OTHER" ]
+        |> withLangVersion "11.0"
+        |> compileExeAndRun
+        |> withExitCode 0
