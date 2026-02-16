@@ -3520,12 +3520,17 @@ and ResolveOverloading
         (methodName = "op_Explicit") ||
         (methodName = "op_Implicit")
 
+    let hasAllowOverloadOnReturnType =
+        calledMethGroup |> List.exists (fun cmeth -> cmeth.Method.HasAllowOverloadOnReturnType)
+
+    let alwaysConsiderReturnType = isOpConversion || hasAllowOverloadOnReturnType
+
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
 
     let calledMethOpt, errors, calledMethTrace = 
         match calledMethGroup, candidates with 
-        | _, [calledMeth] when not isOpConversion ->
+        | _, [calledMeth] when not alwaysConsiderReturnType ->
             // See what candidates we have based on static/virtual/abstract
             
             // If false then is a static method call directly on an interface e.g.
@@ -3545,19 +3550,20 @@ and ResolveOverloading
                 None, ErrorD (Error (FSComp.SR.chkStaticAbstractInterfaceMembers(minfo.LogicalName), m)), NoTrace
             | _ -> Some calledMeth, CompleteD, NoTrace
 
-        | [], _ when not isOpConversion -> 
+        | [], _ when not alwaysConsiderReturnType -> 
             None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
 
-        | _, [] when not isOpConversion -> 
+        | _, [] when not alwaysConsiderReturnType -> 
             None, ReportNoCandidatesErrorExpr csenv callerArgs.CallerArgCounts methodName ad calledMethGroup, NoTrace
             
         | _, _ -> 
 
           // Always take the return type into account for
           //    -- op_Explicit, op_Implicit
+          //    -- methods with AllowOverloadOnReturnType attribute
           //    -- candidate method sets that potentially use tupling of unfilled out args
           let alwaysCheckReturn =
-              isOpConversion ||
+              alwaysConsiderReturnType ||
               candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs) 
 
           // Exact match rule.

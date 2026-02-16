@@ -1535,6 +1535,7 @@ type TcGlobals(
   member val attrib_CompilationRepresentationAttribute     = mk_MFCore_attrib "CompilationRepresentationAttribute"
   member val attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
+  member val attrib_AllowOverloadOnReturnTypeAttribute      = mk_MFCore_attrib "AllowOverloadOnReturnTypeAttribute"
   member val attrib_CLIEventAttribute                      = mk_MFCore_attrib "CLIEventAttribute"
   member val attrib_InlineIfLambdaAttribute                = mk_MFCore_attrib "InlineIfLambdaAttribute"
   member val attrib_CLIMutableAttribute                    = mk_MFCore_attrib "CLIMutableAttribute"

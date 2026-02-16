@@ -316,6 +316,8 @@ type internal TcGlobals =
 
     member attrib_AutoSerializableAttribute: BuiltinAttribInfo
 
+    member attrib_AllowOverloadOnReturnTypeAttribute: BuiltinAttribInfo
+
     member attrib_CLIEventAttribute: BuiltinAttribInfo
 
     member attrib_CLIMutableAttribute: BuiltinAttribInfo

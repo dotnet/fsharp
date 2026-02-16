@@ -2368,7 +2368,9 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             | None -> []
 
         let namesOfMethodsThatMayDifferOnlyInReturnType = ["op_Explicit";"op_Implicit"] (* hardwired *)
-        let methodUniquenessIncludesReturnType (minfo: MethInfo) = List.contains minfo.LogicalName namesOfMethodsThatMayDifferOnlyInReturnType
+        let methodUniquenessIncludesReturnType (minfo: MethInfo) =
+            List.contains minfo.LogicalName namesOfMethodsThatMayDifferOnlyInReturnType ||
+            minfo.HasAllowOverloadOnReturnType
         let MethInfosEquivWrtUniqueness eraseFlag m minfo minfo2 =
             if methodUniquenessIncludesReturnType minfo
             then MethInfosEquivByNameAndSig        eraseFlag true g cenv.amap m minfo minfo2

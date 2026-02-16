@@ -984,6 +984,17 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsILMethod
         | _ -> false
 
+    /// Indicates if the method has the AllowOverloadOnReturnType attribute.
+    member x.HasAllowOverloadOnReturnType =
+        match x with
+        | ILMeth(g, ilmeth, _) -> TryFindILAttribute g.attrib_AllowOverloadOnReturnTypeAttribute ilmeth.RawMetadata.CustomAttrs
+        | FSMeth(g, _, vref, _) -> HasFSharpAttribute g g.attrib_AllowOverloadOnReturnTypeAttribute vref.Attribs
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.HasAllowOverloadOnReturnType
+        | DefaultStructCtor _ -> false
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth _ -> false
+#endif
+
     /// Check if this method is an explicit implementation of an interface member
     member x.IsFSharpExplicitInterfaceImplementation =
         match x with

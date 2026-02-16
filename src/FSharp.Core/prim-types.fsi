@@ -292,6 +292,18 @@ namespace Microsoft.FSharp.Core
         /// <returns>LiteralAttribute</returns>
         new: unit -> LiteralAttribute
 
+    /// <summary>Adding this attribute to a method causes the return type to be considered during overload resolution.</summary>
+    ///
+    /// <category>Attributes</category>
+    [<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]
+    [<Sealed>]
+    type AllowOverloadOnReturnTypeAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>AllowOverloadOnReturnTypeAttribute</returns>
+        new: unit -> AllowOverloadOnReturnTypeAttribute
+
     /// <summary>Adding this attribute to a property with event type causes it to be compiled with as a CLI
     /// metadata event, through a syntactic translation to a pair of 'add_EventName' and 
     /// 'remove_EventName' methods.</summary>

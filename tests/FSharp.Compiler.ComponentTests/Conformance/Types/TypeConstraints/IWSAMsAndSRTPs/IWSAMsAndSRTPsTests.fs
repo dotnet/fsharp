@@ -2156,3 +2156,40 @@ if c.Value <> 3 then failwith (sprintf "Expected 3 but got %d" c.Value)
         |> compileAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``AllowOverloadOnReturnType resolves overloads by return type`` () =
+        FSharp """
+module TestReturnTypeOverload
+
+type Converter =
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : int = int x
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : float = float x
+
+let result: int = Converter.Convert("42")
+if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
+
+let result2: float = Converter.Convert("42")
+if result2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" result2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Overloads without AllowOverloadOnReturnType produce ambiguity error`` () =
+        FSharp """
+module TestNoReturnTypeOverload
+
+type Converter =
+    static member Convert(x: string) : int = int x
+    static member Convert(x: string) : float = float x
+
+let result: int = Converter.Convert("42")
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+
