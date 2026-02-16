@@ -605,6 +605,10 @@ let voidCheck m g permits ty =
 [<Struct>]
 type DuFieldCoordinates = { CaseIdx: int; FieldIdx: int }
 
+/// Flags propagated from interface slot signatures to parameter metadata.
+[<Struct>]
+type SlotParamFlags = { IsIn: bool; IsOut: bool }
+
 /// Structure for maintaining field reuse across struct unions
 type UnionFieldReuseMap = MultiMap<string, DuFieldCoordinates>
 
@@ -3491,7 +3495,6 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
         if preSteps && GenExprPreSteps cenv cgbuf eenv expr sequel then
             contf Fake
         else
-
             // This case implemented here to get a guaranteed tailcall
             // Make sure we generate the debug point outside the scope of the variable
             let startMark, endMark as scopeMarks = StartDelayedLocalScope "let" cgbuf
@@ -5423,6 +5426,7 @@ and GenILCall
     (virt, valu, newobj, valUseFlags, isDllImport, ilMethRef: ILMethodRef, enclArgTys, methArgTys, argExprs, returnTys, m)
     sequel
     =
+    let g = cenv.g
     let hasByrefArg = ilMethRef.ArgTypes |> List.exists IsILTypeByref
 
     let isSuperInit =
@@ -5445,6 +5449,24 @@ and GenILCall
     let makesNoCriticalTailcalls = (newobj || not virt) // Don't tailcall for 'newobj', or 'call' to IL code
     let hasStructObjArg = valu && ilMethRef.CallingConv.IsInstance
 
+    let ilEnclArgTys = GenTypeArgs cenv m eenv.tyenv enclArgTys
+    let ilMethArgTys = GenTypeArgs cenv m eenv.tyenv methArgTys
+    let ilReturnTys = GenTypes cenv m eenv.tyenv returnTys
+    let ilMethSpec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
+
+    let useICallVirt =
+        (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
+        && ilMethRef.CallingConv.IsInstance
+
+    let ccallInfo =
+        ccallInfo
+        |> Option.orElseWith (fun () ->
+            match argExprs with
+            | objArgExpr :: _ when useICallVirt ->
+                let objArgTy = tyOfExpr g objArgExpr
+                if isStructTy g objArgTy then Some objArgTy else None
+            | _ -> None)
+
     let tail =
         CanTailcall(
             hasStructObjArg,
@@ -5458,15 +5480,6 @@ and GenILCall
             cgbuf,
             sequel
         )
-
-    let ilEnclArgTys = GenTypeArgs cenv m eenv.tyenv enclArgTys
-    let ilMethArgTys = GenTypeArgs cenv m eenv.tyenv methArgTys
-    let ilReturnTys = GenTypes cenv m eenv.tyenv returnTys
-    let ilMethSpec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
-
-    let useICallVirt =
-        (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
-        && ilMethRef.CallingConv.IsInstance
 
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not
     // in the expression tree since it can't be treated like an ordinary value
@@ -8975,6 +8988,7 @@ and GenParams
     (argInfos: ArgReprInfo list)
     methArgTys
     (implValsOpt: Val list option)
+    (slotSigParamFlags: SlotParamFlags list option)
     =
     let g = cenv.g
     let ilWitnessParams = GenWitnessParams cenv eenv m witnessInfos
@@ -8993,10 +9007,17 @@ and GenParams
         | _ -> List.map (fun x -> x, None) ilArgTysAndInfos
 
     let ilParams, _ =
-        (Set.empty, List.zip methArgTys ilArgTysAndInfoAndVals)
-        ||> List.mapFold (fun takenNames (methodArgTy, ((ilArgTy, topArgInfo), implValOpt)) ->
+        ((Set.empty, 0), List.zip methArgTys ilArgTysAndInfoAndVals)
+        ||> List.mapFold (fun (takenNames, paramIdx) (methodArgTy, ((ilArgTy, topArgInfo), implValOpt)) ->
             let inFlag, outFlag, optionalFlag, defaultParamValue, Marshal, attribs =
                 GenParamAttribs cenv methodArgTy topArgInfo.Attribs
+
+            let inFlag, outFlag =
+                match slotSigParamFlags with
+                | Some flags when paramIdx < flags.Length ->
+                    let slotFlags = flags[paramIdx]
+                    (inFlag || slotFlags.IsIn, outFlag || slotFlags.IsOut)
+                | _ -> (inFlag, outFlag)
 
             let idOpt =
                 match topArgInfo.Name with
@@ -9036,7 +9057,7 @@ and GenParams
                     MetadataIndex = NoMetadataIdx
                 }
 
-            param, takenNames)
+            param, (takenNames, paramIdx + 1))
 
     ilWitnessParams @ ilParams
 
@@ -9389,8 +9410,18 @@ and GenMethodForBinding
 
     let ilTypars = GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
 
+    let slotSigParamFlags =
+        match v.ImplementedSlotSigs with
+        | slotsig :: _ ->
+            let slotParams = slotsig.FormalParams |> List.concat
+
+            slotParams
+            |> List.map (fun (TSlotParam(_, _, inFlag, outFlag, _, _)) -> { IsIn = inFlag; IsOut = outFlag })
+            |> Some
+        | [] -> None
+
     let ilParams =
-        GenParams cenv eenvUnderMethTypeTypars m mspec witnessInfos paramInfos argTys (Some nonUnitNonSelfMethodVars)
+        GenParams cenv eenvUnderMethTypeTypars m mspec witnessInfos paramInfos argTys (Some nonUnitNonSelfMethodVars) slotSigParamFlags
 
     let ilReturn =
         GenReturnInfo cenv eenvUnderMethTypeTypars (Some returnTy) mspec.FormalReturnType retInfo
@@ -10720,7 +10751,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         let ilReturn =
             GenReturnInfo cenv eenvForMeth returnTy mspec.FormalReturnType retInfo
 
-        let ilParams = GenParams cenv eenvForMeth m mspec [] argInfos methArgTys None
+        let ilParams = GenParams cenv eenvForMeth m mspec [] argInfos methArgTys None None
 
         let compileAsInstance = ValRefIsCompiledAsInstanceMember g vref
 
