@@ -2054,3 +2054,109 @@ if result.Value <> 3 then failwith (sprintf "Expected 3 (intrinsic wins) but got
         |> compileAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Extension operator resolves via SRTP alongside IWSAM types`` () =
+        FSharp """
+module TestIWSAMInteraction
+
+type Foo = { X: int }
+
+type Foo with
+    static member (+) (a: Foo, b: Foo) = { X = a.X + b.X }
+
+let inline add (x: ^T) (y: ^T) = x + y
+let r = add { X = 1 } { X = 2 }
+if r.X <> 3 then failwith (sprintf "Expected 3 but got %d" r.X)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``IWSAM extension wins over interface impl for same operator via SRTP`` () =
+        FSharp """
+module TestIWSAMPriority
+open System
+
+type IAddable<'T> =
+    static abstract member op_Addition: 'T * 'T -> 'T
+
+type Bar = 
+    { X: int }
+    interface IAddable<Bar> with
+        static member op_Addition(a, b) = { X = a.X + b.X }
+
+module BarExt =
+    type Bar with
+        static member (+) (a: Bar, b: Bar) = { X = 999 }
+
+open BarExt
+let inline add (x: ^T) (y: ^T) = x + y
+let r = add { X = 1 } { X = 2 }
+// Extension operator wins over IWSAM interface impl in SRTP resolution
+if r.X <> 999 then failwith (sprintf "Expected 999 (extension wins) but got %d" r.X)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptions ["--nowarn:3535"]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator not visible without opening defining module`` () =
+        FSharp """
+module TestScopeNotVisible
+
+module Ext =
+    type System.String with
+        static member (*) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+// Ext is NOT opened — extension should not be visible
+let r = "a" * 3
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+
+    [<Fact>]
+    let ``Inline SRTP function resolves using consumers scope for extensions`` () =
+        FSharp """
+module TestConsumerScope
+
+module Lib =
+    let inline add (x: ^T) (y: ^T) = x + y
+
+module Consumer =
+    type Widget = { V: int }
+    type Widget with
+        static member (+) (a: Widget, b: Widget) = { V = a.V + b.V }
+    
+    open Lib
+    let r = add { V = 1 } { V = 2 }
+    if r.V <> 3 then failwith (sprintf "Expected 3 but got %d" r.V)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Internal record field resolves via SRTP within same compilation unit`` () =
+        FSharp """
+module TestInternalField
+
+module Internal =
+    type internal Rec = { X: int }
+    let internal make x = { X = x }
+
+let inline getX (r: ^T) = (^T : (member X : int) r)
+let v = getX (Internal.make 42)
+if v <> 42 then failwith (sprintf "Expected 42 but got %d" v)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
