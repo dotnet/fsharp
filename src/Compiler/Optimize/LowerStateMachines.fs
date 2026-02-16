@@ -351,6 +351,14 @@ type LowerStateMachine(g: TcGlobals) =
     let makeRewriteEnv (env: env) = 
         { PreIntercept = Some (fun cont e ->
             match e with
+            // Don't recurse into nested state machine expressions - they will be
+            // processed by their own LowerStateMachineExpr during codegen.
+            // This prevents modification of the nested machine's internal
+            // 'if __useResumableCode' patterns which select its dynamic fallback.
+            | _ when Option.isSome (IsStateMachineExpr g e) -> Some e
+            // Eliminate 'if __useResumableCode' - nested state machines are already
+            // guarded above, so any remaining occurrences at this level are from
+            // beta-reduced inline helpers and should take the static branch.
             | IfUseResumableStateMachinesExpr g (thenExpr, _) -> Some (cont thenExpr)
             | _ ->
             match TryReduceExpr env e [] id with Some e2 -> Some (cont e2) | None -> None)
