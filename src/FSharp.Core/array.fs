@@ -1111,17 +1111,42 @@ module Array =
         res1, res2
 
     [<CompiledName("PartitionWith")>]
-    let partitionWith (partitioner: 'T -> Choice<'T1, 'T2>) (array: 'T array) =
+    let inline partitionWith ([<InlineIfLambda>] partitioner: 'T -> Choice<'T1, 'T2>) (array: 'T array) =
         checkNonNull "array" array
-        let mutable coll1 = ArrayCollector<'T1>()
-        let mutable coll2 = ArrayCollector<'T2>()
+        let len = array.Length
 
-        for i = 0 to array.Length - 1 do
-            match partitioner array.[i] with
-            | Choice1Of2 x -> coll1.Add(x)
-            | Choice2Of2 x -> coll2.Add(x)
+        let results: Choice<'T1, 'T2> array =
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
 
-        coll1.Close(), coll2.Close()
+        let mutable count1 = 0
+
+        for i = 0 to len - 1 do
+            let c = partitioner array.[i]
+            results.[i] <- c
+
+            match c with
+            | Choice1Of2 _ -> count1 <- count1 + 1
+            | Choice2Of2 _ -> ()
+
+        let res1 =
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count1
+
+        let res2 =
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len - count1)
+
+        let mutable i1 = 0
+        let mutable i2 = 0
+
+        for i = 0 to len - 1 do
+            match results.[i] with
+            | Choice1Of2 x ->
+                res1.[i1] <- x
+                i1 <- i1 + 1
+            | Choice2Of2 x ->
+                res2.[i2] <- x
+                i2 <- i2 + 1
+
+        res1, res2
 
     [<CompiledName("Find")>]
     let find predicate (array: _ array) =

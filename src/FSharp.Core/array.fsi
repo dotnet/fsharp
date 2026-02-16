@@ -2102,7 +2102,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the array.</remarks>
     [<CompiledName("PartitionWith")>]
-    val partitionWith: partitioner: ('T -> Choice<'T1, 'T2>) -> array: 'T array -> 'T1 array * 'T2 array
+    val inline partitionWith: partitioner: ('T -> Choice<'T1, 'T2>) -> array: 'T array -> 'T1 array * 'T2 array
 
     /// <summary>Returns an array with all elements permuted according to the
     /// specified permutation.</summary>
