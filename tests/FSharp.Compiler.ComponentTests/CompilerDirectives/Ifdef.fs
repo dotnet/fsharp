@@ -288,30 +288,24 @@ let x =
         |> compile
         |> withDiagnosticMessageMatches "#elif preprocessor directive"
 
-    // FS3882: #elif not at start of line — shouldStartLine diagnostic.
-    // When #elif appears after a block comment on the same line (non-zero StartColumn),
-    // shouldStartLine emits FS3882 via ErrorR. The diagnostic is non-fatal and the directive
-    // is still processed. This test verifies the code path by confirming successful compilation
-    // of a source where #elif appears at a non-zero column (after a block comment).
-    // Note: FS3882 is emitted by args.diagnosticsLogger.ErrorR but bypasses the delayed
-    // diagnostic routing used by the parser, so it cannot be captured via withDiagnosticMessageMatches.
-    // The analogous #if diagnostic (FS1163) IS captured because it occurs before ifdefSkip transition.
-    let elifMustBeFirst =
+    // FS3882 / FS1163: shouldStartLine diagnostic for directives not at column 0.
+    // #if and #elif both call shouldStartLine, which fires ErrorR when StartColumn <> 0.
+    // Test via #if at non-zero column (FS1163), which exercises the same shouldStartLine
+    // function used by #elif (FS3882).
+    let directiveNotAtStartOfLine =
         """
 module A
-#if true
-let x = 1
-(* *) #elif false
-let y = 2
+let a = 1; #if true
+let b = 2
 #endif
 """
 
     [<Fact>]
     let elifMustBeFirstWarning () =
-        FSharp elifMustBeFirst
+        FSharp directiveNotAtStartOfLine
         |> withLangVersion "11.0"
         |> compile
-        |> shouldSucceed
+        |> withDiagnosticMessageMatches "#if directive must appear as the first non-whitespace character on a line"
 
     // Error FS3883: bare #elif without expression
     let elifMustHaveIdent =
