@@ -264,3 +264,26 @@ let x =
         |> withLangVersion "10.0"
         |> compile
         |> withDiagnosticMessageMatches "#elif preprocessor directive"
+
+    // Language version gating for nested-inactive #elif (n > 0 path in ifdefSkip)
+    let elifNestedLangVersionSource =
+        """
+module A
+let x =
+    #if UNDEFINED_OUTER
+    #if UNDEFINED_INNER
+    1
+    #elif SOMETHING
+    2
+    #endif
+    #else
+    3
+    #endif
+"""
+
+    [<Fact>]
+    let elifNestedLangVersionError () =
+        FSharp elifNestedLangVersionSource
+        |> withLangVersion "10.0"
+        |> compile
+        |> withDiagnosticMessageMatches "#elif preprocessor directive"
