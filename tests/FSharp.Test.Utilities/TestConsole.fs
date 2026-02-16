@@ -32,12 +32,11 @@ module TestConsole =
     let private localOut = new RedirectingTextWriter()
     let private localError = new RedirectingTextWriter()
     
-    // Track if we've already installed console redirection
-    let mutable private isInstalled = false
+    let private isInstalled = ref 0
 
+    /// Installs console redirection. Idempotent and thread-safe.
     let install () =
-        if not isInstalled then
-            isInstalled <- true
+        if Interlocked.CompareExchange(isInstalled, 1, 0) = 0 then
             Console.SetIn localIn
             Console.SetOut localOut
             Console.SetError localError
@@ -61,8 +60,7 @@ module TestConsole =
     /// Can be used to capture just a single compilation or eval as well as the whole test case execution output.
     type ExecutionCapture() =
         do
-            // Ensure console redirection is installed
-            install()
+            install ()
             Console.Out.Flush()
             Console.Error.Flush()
 
@@ -85,9 +83,7 @@ module TestConsole =
             string error
 
     type ProvideInput(input: string) =
-        do
-            // Ensure console redirection is installed before providing input
-            install()
+        do install ()
         let oldIn = localIn.Reader
         do
             localIn.Reader <- new StringReader(input)
