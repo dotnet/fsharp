@@ -1411,6 +1411,220 @@ let f () =
         |> compile
         |> shouldSucceed
 
+    // --- C# Interop: Custom IsByRefLike and Struct Receiver tests (Sprint 03 Part 1) ---
+
+    [<Fact>]
+    let ``E_CustomIsByRefLikeStructEscapesLocal`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public ref struct MySpan<T>
+{
+    private ref T _ref;
+    private int _length;
+
+    public MySpan(ref T reference)
+    {
+        _ref = ref reference;
+        _length = 1;
+    }
+
+    public ref T this[int index] => ref _ref;
+}
+"""         |> withName "CustomSpanLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+
+let f () =
+    let mutable local = 42
+    MySpan<int>(&local)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 6, Col 5, Line 6, Col 24, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
+
+    [<Fact>]
+    let ``E_CustomIsByRefLikeStructEscapesLocal - backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public ref struct MySpan<T>
+{
+    private ref T _ref;
+    private int _length;
+
+    public MySpan(ref T reference)
+    {
+        _ref = ref reference;
+        _length = 1;
+    }
+
+    public ref T this[int index] => ref _ref;
+}
+"""         |> withName "CustomSpanLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+
+let f () =
+    let mutable local = 42
+    MySpan<int>(&local)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_StructReceiverUnscopedRefEscapes`` () =
+        let csharpLib =
+            CSharp """
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public struct EvilStruct
+{
+    public int Field;
+
+    [UnscopedRef]
+    public Span<int> AsSpan()
+    {
+        return new Span<int>(ref Field);
+    }
+}
+"""         |> withName "UnscopedRefLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+open System
+
+let f () : Span<int> =
+    let mutable s = EvilStruct(Field = 42)
+    s.AsSpan()
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 7, Col 5, Line 7, Col 15, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
+
+    [<Fact>]
+    let ``E_StructReceiverUnscopedRefEscapes - backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public struct EvilStruct
+{
+    public int Field;
+
+    [UnscopedRef]
+    public Span<int> AsSpan()
+    {
+        return new Span<int>(ref Field);
+    }
+}
+"""         |> withName "UnscopedRefLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+open System
+
+let f () : Span<int> =
+    let mutable s = EvilStruct(Field = 42)
+    s.AsSpan()
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_StructReceiverSafeCaseConservativeError`` () =
+        // Conservative: struct receiver triggers escape error even for safe methods.
+        // This is a known false positive. Future work: read [UnscopedRef] to distinguish.
+        let csharpLib =
+            CSharp """
+using System;
+
+public struct SafeStruct
+{
+    public Span<int> GetSpan(int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "SafeStructLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+open System
+
+let f () : Span<int> =
+    let mutable s = SafeStruct()
+    s.GetSpan([| 1; 2; 3 |])
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 7, Col 5, Line 7, Col 29, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
+
+    [<Fact>]
+    let ``E_StructReceiverSafeCaseConservativeError - backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public struct SafeStruct
+{
+    public Span<int> GetSpan(int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "SafeStructLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        let fsharpSource = """
+module Test
+open System
+
+let f () : Span<int> =
+    let mutable s = SafeStruct()
+    s.GetSpan([| 1; 2; 3 |])
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
