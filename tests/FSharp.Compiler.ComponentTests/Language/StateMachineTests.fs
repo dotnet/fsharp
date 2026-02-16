@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 
 
 // Inlined helper containing a "if __useResumableCode ..." construct failed to expand correctly,
-// executing the dynmamic branch at runtime even when the state maching was compiled statically.
+// executing the dynmamic branch at runtime even when the state machine was compiled statically.
 // see https://github.com/dotnet/fsharp/issues/19296
 module FailingInlinedHelper =
     open FSharp.Core.CompilerServices
@@ -19,8 +19,6 @@ module FailingInlinedHelper =
         x.MoveNext()
         x.Data
 
-    // An inline helper returning ResumableCode must be fully expanded
-    // before the compiler tries to recognize the enclosing __stateMachine construct.
     let inline helper x =
         ResumableCode<int, int>(fun sm ->
             if __useResumableCode then
@@ -29,7 +27,7 @@ module FailingInlinedHelper =
             else
                 failwith "unexpected dynamic branch at runtime")
 
-    #nowarn 3513
+    #nowarn 3513 // Resumable code invocation.
     let inline repro x =
         if __useResumableCode then
             __stateMachine<int, int>
@@ -38,6 +36,7 @@ module FailingInlinedHelper =
                 (AfterCode<_, _>(fun sm -> MoveOnce(&sm)))
         else
             failwith "dynamic state machine"
+    #warnon 3513
 
 module StateMachineTests =
 
