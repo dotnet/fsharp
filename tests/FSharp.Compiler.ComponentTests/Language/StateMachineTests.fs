@@ -5,6 +5,7 @@ namespace Language
 open Xunit
 open FSharp.Test.Compiler
 open FSharp.Test
+open FSharp.Test.Assert
 
 module StateMachineTests =
 
@@ -241,3 +242,47 @@ let test = task { return 42 }
   IL_0059:  ret
 } 
 """ ]
+
+    [<Fact>]
+    let ``Nested __useResumableCode is expanded correctly`` () =
+        FSharp """
+module TestStateMachine
+
+open FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices.StateMachineHelpers
+open System.Runtime.CompilerServices
+
+let inline MoveOnce(x: byref<'T> when 'T :> IAsyncStateMachine and 'T :> IResumableStateMachine<'Data>) =
+    x.MoveNext()
+    x.Data
+
+// An inline helper returning ResumableCode must be fully expanded
+// before the compiler tries to recognize the enclosing __stateMachine construct.
+let inline helper x =
+    ResumableCode<int, int>(fun sm ->
+        if __useResumableCode then
+            sm.Data <- x
+            true
+        else
+            failwith "unexpected dynamic branch at runtime")
+
+#nowarn 3513
+let inline repro x =
+    if __useResumableCode then
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> (helper x).Invoke(&sm) |> ignore))
+            (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+            (AfterCode<_, _>(fun sm -> MoveOnce(&sm)))
+    else
+        failwith "dynamic state machine"
+
+[<EntryPoint>]
+let main _ =
+    let result = repro 42
+    if result <> 42 then
+        failwithf "Expected 42 but got %d" result
+    0
+"""
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
