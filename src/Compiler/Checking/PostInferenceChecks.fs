@@ -4,8 +4,6 @@
 /// is complete.
 module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 
-#nowarn "67" // type test in exception handler (intentional narrowing to System.Exception)
-
 open System
 open System.Collections.Generic
 
@@ -863,7 +861,7 @@ let tryGetScopedParamMask (g: TcGlobals) (amap: Import.ImportMap) (m: range) (il
 
                     if Array.exists id mask then Some mask else None
             | _ -> None
-        with :? System.Exception ->
+        with _ ->
             None
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
