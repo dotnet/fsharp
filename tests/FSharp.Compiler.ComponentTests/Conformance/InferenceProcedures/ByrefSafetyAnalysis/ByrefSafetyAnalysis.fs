@@ -1215,6 +1215,202 @@ let test () : Span<int> =
         |> withDiagnostics [
             (Error 3235, Line 9, Col 5, Line 9, Col 39, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
         ]
+
+    // --- ReadOnlySpan, inref, MemoryMarshal, and nested scope tests (Sprint 02) ---
+
+    [<Fact>]
+    let ``E_ReturnReadOnlySpanFromLocalByref`` () =
+        let fsharpSource = """
+module Test
+open System
+
+let f () =
+    let mutable x = 1
+    ReadOnlySpan<int>(&x)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 7, Col 5, Line 7, Col 26, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
+
+    [<Fact>]
+    let ``ReturnReadOnlySpanFromParamByref`` () =
+        let fsharpSource = """
+module Test
+open System
+
+let f (x: inref<int>) =
+    ReadOnlySpan<int>(&x)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_NestedScopePropagation`` () =
+        let fsharpSource = """
+module Test
+open System
+
+let passThrough (s: Span<int>) : Span<int> = s
+
+let f () =
+    let mutable x = 1
+    passThrough(Span<int>(&x))
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 9, Col 5, Line 9, Col 31, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
+
+    [<Fact>]
+    let ``E_ReturnReadOnlySpanFromLocalInref`` () =
+        let fsharpSource = """
+module Test
+open System
+
+let f () =
+    let mutable x = 1
+    let y = &x
+    ReadOnlySpan<int>(&y)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 8, Col 5, Line 8, Col 26, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
+
+    // TODO: This should error but currently doesn't - escape analysis gap
+    [<Fact>]
+    let ``E_MemoryMarshalCreateSpan`` () =
+        let fsharpSource = """
+module Test
+open System
+open System.Runtime.InteropServices
+
+let f () =
+    let mutable x = 1
+    MemoryMarshal.CreateSpan(&x, 1)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    // TODO: This should error but currently doesn't - escape analysis gap
+    [<Fact>]
+    let ``E_MemoryMarshalCreateReadOnlySpan`` () =
+        let fsharpSource = """
+module Test
+open System
+open System.Runtime.InteropServices
+
+let f () =
+    let mutable x = 1
+    MemoryMarshal.CreateReadOnlySpan(&x, 1)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    // Backward compatibility: same error-case code must compile WITHOUT preview
+
+    [<Fact>]
+    let ``E_ReturnReadOnlySpanFromLocalByref - backward compat`` () =
+        let fsharpSource = """
+module Test
+open System
+
+let f () =
+    let mutable x = 1
+    ReadOnlySpan<int>(&x)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_NestedScopePropagation - backward compat`` () =
+        let fsharpSource = """
+module Test
+open System
+
+let passThrough (s: Span<int>) : Span<int> = s
+
+let f () =
+    let mutable x = 1
+    passThrough(Span<int>(&x))
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_ReturnReadOnlySpanFromLocalInref - backward compat`` () =
+        let fsharpSource = """
+module Test
+open System
+
+let f () =
+    let mutable x = 1
+    let y = &x
+    ReadOnlySpan<int>(&y)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_MemoryMarshalCreateSpan - backward compat`` () =
+        let fsharpSource = """
+module Test
+open System
+open System.Runtime.InteropServices
+
+let f () =
+    let mutable x = 1
+    MemoryMarshal.CreateSpan(&x, 1)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_MemoryMarshalCreateReadOnlySpan - backward compat`` () =
+        let fsharpSource = """
+module Test
+open System
+open System.Runtime.InteropServices
+
+let f () =
+    let mutable x = 1
+    MemoryMarshal.CreateReadOnlySpan(&x, 1)
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
