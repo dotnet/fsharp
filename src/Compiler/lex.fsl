@@ -1042,6 +1042,8 @@ rule token (args: LexArgs) (skip: bool) = parse
      | (IfDefIf,_) :: rest | (IfDefElif,_) :: rest ->
        shouldStartLine args lexbuf m (FSComp.SR.lexHashElifMustBeFirst())
        let lookup id = List.contains id args.conditionalDefines
+       // Result is discarded: in active code, a prior #if/#elif branch is executing,
+       // so this #elif always transitions to skipping. Eval is needed for trivia storage.
        let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
        args.ifdefStack <- (IfDefElif,m) :: rest
        IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
@@ -1176,6 +1178,7 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
            else endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf
       else
          // Nested - don't change depth, just save trivia and continue skipping
+         lexbuf.CheckLanguageFeatureAndRecover LanguageFeature.PreprocessorElif m
          let lookup id = List.contains id args.conditionalDefines
          let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
          IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
