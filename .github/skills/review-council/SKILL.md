@@ -90,7 +90,7 @@ Search the codebase for existing patterns that match the new code's structure. F
 Assess complexity of added/changed code:
 
 - **Pyramid of nested doom**: deeply nested `if/then/else`, heavily nested `match`or interleaving with `for` and other branching constructs. Any nesting beyond 2 levels should be questioned — is there a flatter way?
-- **F# offers better tools**: pattern matching and active patterns handle non-trivial branching logic flatter and more readably than chains of `if/elif/else`. Suggest them as alternatives.
+- **F# offers better tools**: pattern matching and active patterns for non-trivial branching logic — flatter and easier to read than chains of `if/elif/else`. Suggest them as alternatives.
 - **Active patterns for complex conditions**: when a match guard or if-condition encodes domain logic, an active pattern names it and makes it reusable.
 - **Pipelines over nesting**: sequential operations should be pipelined, not nested. Collections, Result, Option, ValueOption all support this — use `|>`, `bind`, `map` chains instead of nested `match` or `if/then`.
 - **High branch count**: functions with many `match` arms or `if` branches — consider whether the cases can be grouped, or whether the function is doing too much and should be split.
