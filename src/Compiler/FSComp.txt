@@ -1504,7 +1504,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3232,chkStructsMayNotReturnAddressesOfContents,"Struct members cannot return the address of fields of the struct by reference"
 3233,chkNoByrefLikeFunctionCall,"The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope."
 3234,chkNoSpanLikeVariable,"The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
-3235,chkNoSpanLikeValueFromExpression,"A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope."
+3235,chkNoSpanLikeValueFromExpression,"A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
 3236,tastCantTakeAddressOfExpression,"Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address."
 3237,tcCannotCallExtensionMethodInrefToByref,"Cannot call the byref extension method '%s. 'this' parameter requires the value to be mutable or a non-readonly byref type."
 3238,tcByrefsMayNotHaveTypeExtensions,"Byref types are not allowed to have optional type extensions."

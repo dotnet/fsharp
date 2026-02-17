@@ -8788,7 +8788,7 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNoSpanLikeValueFromExpression">
-        <source>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</source>
+        <source>A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
         <target state="translated">此時不可使用運算式傳回值的 Span 或 IsByRefLike。如此可確保本機值的位址不會逸出其範圍。</target>
         <note />
       </trans-unit>

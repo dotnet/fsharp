@@ -1022,7 +1022,7 @@ type outref<'T> with
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3235, Line 9, Col 5, Line 9, Col 22, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 9, Col 5, Line 9, Col 22, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     [<Theory; FileInlineData("ReturnSpanFromParamByref.fs")>]
@@ -1145,7 +1145,7 @@ let test () : Span<int> =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3235, Line 8, Col 5, Line 8, Col 38, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 8, Col 5, Line 8, Col 38, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     [<Fact>]
@@ -1212,7 +1212,7 @@ let test () : Span<int> =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3235, Line 9, Col 5, Line 9, Col 39, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 9, Col 5, Line 9, Col 39, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     // --- ReadOnlySpan, inref, MemoryMarshal, and nested scope tests (Sprint 02) ---
@@ -1275,7 +1275,7 @@ let f () =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3235, Line 7, Col 5, Line 7, Col 26, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 7, Col 5, Line 7, Col 26, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     [<Fact>]
@@ -1301,7 +1301,7 @@ let f (x: inref<int>) =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3235, Line 9, Col 5, Line 9, Col 31, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 9, Col 5, Line 9, Col 31, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     [<Fact>]
@@ -1312,7 +1312,7 @@ let f (x: inref<int>) =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3235, Line 8, Col 5, Line 8, Col 26, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 8, Col 5, Line 8, Col 26, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     [<Fact>]
@@ -1323,7 +1323,7 @@ let f (x: inref<int>) =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3235, Line 8, Col 5, Line 8, Col 36, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 8, Col 5, Line 8, Col 36, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     [<Fact>]
@@ -1334,7 +1334,7 @@ let f (x: inref<int>) =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3235, Line 8, Col 5, Line 8, Col 44, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 8, Col 5, Line 8, Col 44, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     // Backward compatibility: same error-case code must compile WITHOUT preview
@@ -1463,7 +1463,7 @@ let f () : Span<int> =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3235, Line 6, Col 5, Line 6, Col 24, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 6, Col 5, Line 6, Col 24, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     [<Fact>]
@@ -1483,7 +1483,7 @@ let f () : Span<int> =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3235, Line 7, Col 5, Line 7, Col 15, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 7, Col 5, Line 7, Col 15, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     [<Fact>]
@@ -1976,5 +1976,112 @@ let f () =
         |> withDiagnostics [
             (Error 406, Line 8, Col 34, Line 8, Col 45, "The byref-typed variable 'span' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
         ]
+
+    // --- Miscellaneous escape analysis tests ---
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInFsx`` () =
+        Fsx """
+open System
+
+let f () =
+    let mutable x = 1
+    Span<int>(&x)
+
+f () |> ignore
+"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInFsx - backward compat`` () =
+        Fsx """
+open System
+
+let f () =
+    let mutable x = 1
+    Span<int>(&x)
+
+f () |> ignore
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInObjExpr`` () =
+        FSharp """
+module Test
+open System
+
+type ISpanProvider =
+    abstract GetSpan: unit -> Span<int>
+
+let makeProvider () =
+    { new ISpanProvider with
+        member _.GetSpan() =
+            let mutable x = 1
+            Span<int>(&x) }
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInObjExpr - backward compat`` () =
+        FSharp """
+module Test
+open System
+
+type ISpanProvider =
+    abstract GetSpan: unit -> Span<int>
+
+let makeProvider () =
+    { new ISpanProvider with
+        member _.GetSpan() =
+            let mutable x = 1
+            Span<int>(&x) }
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInNestedFun`` () =
+        FSharp """
+module Test
+open System
+
+let outer () =
+    let inner () =
+        let mutable x = 1
+        Span<int>(&x)
+    inner ()
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInNestedFun - backward compat`` () =
+        FSharp """
+module Test
+open System
+
+let outer () =
+    let inner () =
+        let mutable x = 1
+        Span<int>(&x)
+    inner ()
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
 #endif
 
