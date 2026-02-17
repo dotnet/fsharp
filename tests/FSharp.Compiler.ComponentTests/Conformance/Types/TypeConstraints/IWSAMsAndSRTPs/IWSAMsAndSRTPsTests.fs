@@ -2098,7 +2098,6 @@ if v <> 42 then failwith (sprintf "Expected 42 but got %d" v)
         // True optional extension on System.String (an external type).
         // Exercises the cross-assembly path where TTrait.traitCtxt deserializes as None
         // from pickled metadata, requiring fallback resolution from the consumer's opens.
-        // TODO: Cross-assembly extension resolution not yet supported - traitCtxt is None from pickled metadata
         let library =
             FSharp """
 module ExtLib
@@ -2120,9 +2119,8 @@ if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
         |> asExe
         |> withLangVersionPreview
         |> withReferences [library]
-        |> compile
-        |> shouldFail
-        |> withErrorCode 193
+        |> compileAndRun
+        |> shouldSucceed
 
     [<Fact>]
     let ``Cross-assembly intrinsic augmentation operator resolves via SRTP`` () =
@@ -2153,6 +2151,46 @@ if c.Value <> 3 then failwith (sprintf "Expected 3 but got %d" c.Value)
         |> asExe
         |> withLangVersionPreview
         |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Transitive cross-assembly extension operator resolves via SRTP`` () =
+        // A→B→C chain: A defines the extension, B uses it in an inline function, C uses B's inline.
+        // Tests that traitCtxt injection works through multiple levels of freshening.
+        let libraryA =
+            FSharp """
+module ExtLib
+
+type System.String with
+    static member (*) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        let libraryB =
+            FSharp """
+module MiddleLib
+
+open ExtLib
+
+let inline repeat (s: string) (n: int) = s * n
+            """
+            |> withName "MiddleLib"
+            |> withLangVersionPreview
+            |> withReferences [libraryA]
+
+        FSharp """
+module Consumer
+
+open MiddleLib
+
+let r4 = repeat "r" 4
+if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [libraryA; libraryB]
         |> compileAndRun
         |> shouldSucceed
 

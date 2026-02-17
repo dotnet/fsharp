@@ -470,7 +470,10 @@ type IncrementalOptimizationEnv =
 
       methEnv: MethodEnv
 
-      globalModuleInfos: LayeredMap<string, LazyModuleInfo>   
+      globalModuleInfos: LayeredMap<string, LazyModuleInfo>
+
+      /// Referenced CCUs collected via BindCcu, used for cross-assembly extension member resolution
+      referencedCcus: CcuThunk list
     }
 
     static member Empty = 
@@ -482,7 +485,8 @@ type IncrementalOptimizationEnv =
           disableMethodSplitting = false
           localExternalVals = LayeredMap.Empty 
           globalModuleInfos = LayeredMap.Empty 
-          methEnv = { pipelineCount = 0 } }
+          methEnv = { pipelineCount = 0 }
+          referencedCcus = [] }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -623,7 +627,9 @@ let BindTyparsToUnknown (tps: Typar list) env =
     List.fold (fun sofar arg -> BindTypar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
-    { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
+    { env with
+        globalModuleInfos = env.globalModuleInfos.Add(ccu.AssemblyName, mval)
+        referencedCcus = ccu :: env.referencedCcus }
 
 /// Lookup information about values 
 let GetInfoForLocalValue cenv env (v: Val) m = 
@@ -4406,7 +4412,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
 let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls: CheckedImplFile) =
     let traitCtxt =
         if tcGlobals.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
-            Some(ConstraintSolver.CreateImplFileTraitContext tcGlobals [mimpls.Contents])
+            Some(ConstraintSolver.CreateImplFileTraitContext tcGlobals [mimpls.Contents] optEnv.referencedCcus)
         else
             None
 

@@ -4238,7 +4238,8 @@ let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstrai
 /// Walks ModuleOrNamespaceContents bindings to find extension member Val objects,
 /// ensuring the Val stamps match those bound in the expression tree (not the
 /// deep-copied signature vals in the CcuThunk).
-let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) : ITraitContext =
+/// Also searches referenced CCU module types for cross-assembly extension members.
+let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) (referencedCcus: CcuThunk list) : ITraitContext =
     let extensionVals =
         lazy
             (let result = HashMultiMap<Stamp, ValRef>(10, HashIdentity.Structural)
@@ -4268,6 +4269,20 @@ let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespa
 
              for contents in implFileContents do
                  collectFromContents contents
+
+             let rec collectFromModuleOrNamespaceType (mty: ModuleOrNamespaceType) =
+                 for v in mty.AllValsAndMembers do
+                     if v.IsExtensionMember && v.MemberInfo.IsSome && v.HasDeclaringEntity then
+                         let vref = mkNestedValRef v.DeclaringEntity v
+                         let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
+                         result.Add(tcref.Stamp, vref)
+                 for entity in mty.AllEntities do
+                     if entity.IsModuleOrNamespace then
+                         collectFromModuleOrNamespaceType entity.ModuleOrNamespaceType
+
+             for ccu in referencedCcus do
+                 try collectFromModuleOrNamespaceType ccu.Contents.ModuleOrNamespaceType
+                 with _ -> ()
 
              result)
 
