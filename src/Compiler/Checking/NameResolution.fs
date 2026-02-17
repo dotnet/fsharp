@@ -719,6 +719,16 @@ let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy 
                 | _ -> ()
     ]
 
+/// Look up extension method infos for a single type from indexed extension members only.
+let private SelectIndexedExtMethInfosForType (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+    let g = infoReader.g
+
+    match tryTcrefOfAppTy g ty with
+    | ValueSome tcref ->
+        let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
+        SelectMethInfosFromExtMembers infoReader optFilter ty m extMemInfos
+    | _ -> []
+
 /// Look up extension method infos for a single type from both indexed and unindexed extension members.
 let private SelectExtMethInfosForType (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
     let g = infoReader.g
@@ -732,21 +742,15 @@ let private SelectExtMethInfosForType (infoReader: InfoReader) (nenv: NameResolu
     indexedResults @ unindexedResults
 
 /// Query the available extension methods of a type (including extension methods for inherited types)
-let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter isInstanceFilter m ty =
-    let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
-    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
-        extMemsDangling
-    else
-        let extMemsFromHierarchy =
-            infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
-            |> List.collect (fun ty ->
-                let g = infoReader.g
-                match tryTcrefOfAppTy g ty with
-                | ValueSome tcref ->
-                    let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
-                    SelectMethInfosFromExtMembers infoReader optFilter ty  m extValRefs
-                | _ -> [])
-        extMemsDangling @ extMemsFromHierarchy
+let ExtensionMethInfosOfTypeInScope (_collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter isInstanceFilter m ty =
+    let rootResults = SelectExtMethInfosForType infoReader nenv optFilter m ty
+
+    let baseIndexedResults =
+        match infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty) with
+        | _ :: baseTys -> baseTys |> List.collect (SelectIndexedExtMethInfosForType infoReader nenv optFilter m)
+        | [] -> []
+
+    (rootResults @ baseIndexedResults)
     |> List.filter (fun minfo ->
         match isInstanceFilter with
         | LookupIsInstance.Ambivalent -> true
