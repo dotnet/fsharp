@@ -189,6 +189,11 @@ type LowerStateMachine(g: TcGlobals) =
             if sm_verbose then printfn "eliminating 'if __useResumableCode...'"
             BindResumableCodeDefinitions env thenExpr
 
+         // Look through debug points to find resumable code bindings inside
+         | Expr.DebugPoint (_, innerExpr) ->
+            let envR, _ = BindResumableCodeDefinitions env innerExpr
+            (envR, expr)
+
          | _ ->
             (env, expr)
 
