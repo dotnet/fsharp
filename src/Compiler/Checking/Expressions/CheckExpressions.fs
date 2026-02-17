@@ -7147,7 +7147,10 @@ and TcObjectExprBinding (cenv: cenv) (env: TcEnv) implTy tpenv (absSlotInfo, bin
             | _ ->
                 declaredTypars
         // Canonicalize constraints prior to generalization
-        CanonicalizePartialInferenceProblem cenv.css denv m declaredTypars
+        // For inline bindings with extension constraint solutions enabled, skip canonicalization
+        // so SRTP constraints stay generic per RFC FS-1043 claim #6.
+        if not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions && inlineFlag = ValInline.Always) then
+            CanonicalizePartialInferenceProblem cenv.css denv m declaredTypars
 
         let freeInEnv = GeneralizationHelpers.ComputeUngeneralizableTypars env
 
@@ -11609,14 +11612,20 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
     let (ContainerInfo(altActualParent, _)) = containerInfo
 
     // Canonicalize constraints prior to generalization
+    // For inline bindings with extension constraint solutions enabled, skip canonicalization
+    // so SRTP constraints stay generic per RFC FS-1043 claim #6.
     let denv = env.DisplayEnv
+    let extensionsEnabled = g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions
     try
         CanonicalizePartialInferenceProblem cenv.css denv synBindsRange
             (checkedBinds |> List.collect (fun tbinfo ->
-                let (CheckedBindingInfo(_, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) = tbinfo
-                let (ExplicitTyparInfo(_, declaredTypars, _)) = explicitTyparInfo
-                let maxInferredTypars = (freeInTypeLeftToRight g false tauTy)
-                declaredTypars @ maxInferredTypars))
+                let (CheckedBindingInfo(inlineFlag, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) = tbinfo
+                if extensionsEnabled && inlineFlag = ValInline.Always then
+                    []
+                else
+                    let (ExplicitTyparInfo(_, declaredTypars, _)) = explicitTyparInfo
+                    let maxInferredTypars = (freeInTypeLeftToRight g false tauTy)
+                    declaredTypars @ maxInferredTypars))
     with RecoverableException _ -> ()
 
     let lazyFreeInEnv = lazy (GeneralizationHelpers.ComputeUngeneralizableTypars env)
@@ -12637,7 +12646,15 @@ and TcIncrementalLetRecGeneralization cenv scopem
                 [], tpenv
             else
 
-                let supportForBindings = newGeneralizableBindings |> List.collect (TcLetrecComputeSupportForBinding cenv)
+                let extensionsEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions
+                let supportForBindings =
+                    newGeneralizableBindings
+                    |> List.collect (fun pgrbind ->
+                        let (CheckedBindingInfo(inlineFlag, _, _, _, _, _, _, _, _, _, _, _, _, _)) = pgrbind.CheckedBinding
+                        if extensionsEnabled && inlineFlag = ValInline.Always then
+                            []
+                        else
+                            TcLetrecComputeSupportForBinding cenv pgrbind)
                 CanonicalizePartialInferenceProblem cenv.css denv scopem supportForBindings
 
                 let generalizedTyparsL = newGeneralizableBindings |> List.map (TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv)
