@@ -141,4 +141,4 @@ These are non-breaking changes since `#elif` was previously a syntax error, so n
 ## Compatibility
 
 - **Backward compatible**: Old code without `#elif` continues to work unchanged.
-- **Forward compatible**: Code using `#elif` will produce a clear error on older compilers (the `#elif` token is currently unrecognized and produces a parse error).
+- **Forward compatible**: Code using `#elif` will produce a clear error on older compilers when `#elif` appears in active code. However, if `#elif` appears inside an inactive `#if` branch (e.g., `#if FALSE` / `#elif X` / `#endif`), older compilers silently skip the `#elif` line as inactive text without error, potentially producing wrong branch selection. The language version gate (`LanguageFeature.PreprocessorElif` at F# 11.0) prevents this scenario in practice by requiring a compiler that understands `#elif`.
