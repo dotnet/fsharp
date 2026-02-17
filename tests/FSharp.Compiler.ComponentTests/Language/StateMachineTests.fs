@@ -246,6 +246,93 @@ let test = task {
         |> compile
         |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
 
+    // see https://github.com/dotnet/fsharp/pull/14930#issuecomment-1528981395
+    [<Fact>]
+    let ``Task with some anonymous records`` () =
+        FSharp """
+module TestStateMachine
+let bad () = task {
+    let res = {| ResultSet2 = [| {| im = Some 1; lc = 3 |} |] |}
+
+    match [| |] with
+    | [| |] ->
+        let c = res.ResultSet2 |> Array.map (fun x -> {| Name = x.lc |})
+        let c = res.ResultSet2 |> Array.map (fun x -> {| Name = x.lc |})
+        let c = res.ResultSet2 |> Array.map (fun x -> {| Name = x.lc |})
+        return Some c
+    | _ ->
+        return None
+}
+"""
+        |> compile
+        |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
+
+
+
+    // repro of https://github.com/dotnet/fsharp/issues/12839
+    [<Fact>]
+    let ``Big record`` () =
+        FSharp """
+module TestStateMachine
+type Foo = { X: int option }
+
+type BigRecord =
+    {
+        a1: string
+        a2: string
+        a3: string
+        a4: string
+        a5: string
+        a6: string
+        a7: string
+        a8: string
+        a9: string
+        a10: string
+        a11: string
+        a12: string
+        a13: string
+        a14: string
+        a15: string
+        a16: string
+        a17: string
+        a18: string
+        a19: string
+        a20: string
+        a21: string
+        a22: string
+        a23: string
+        a24: string
+        a25: string
+        a26: string
+        a27: string
+        a28: string
+        a29: string
+        a30: string
+        a31: string
+        a32: string
+        a33: string
+        a34: string
+        a35: string
+        a36: string // no warning if at least one field removed
+
+        a37Optional: string option
+    }
+
+let testStateMachine (bigRecord: BigRecord) =
+    task {
+        match Some 5 with // no warn if this match removed and only inner one kept
+        | Some _ ->
+            match Unchecked.defaultof<Foo>.X with // no warning if replaced with `match Some 5 with`
+            | Some _ ->
+                let d = { bigRecord with a37Optional = None } // no warning if d renamed as _ or ignore function used
+                ()
+            | None -> ()
+        | _ -> ()
+    }
+"""
+        |> compile
+        |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
+
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/12839#issuecomment-1292310944
     let ``Tasks with a for loop over tuples are statically compilable``() =
