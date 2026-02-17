@@ -1680,9 +1680,7 @@ let test () : Span<int> =
 
     // --- Control flow and chaining tests ---
 
-    [<Fact>]
-    let ``E_IfElseSpanFromLocalByref`` () =
-        FSharp """
+    let private ifElseSpanFromLocalByrefSource = """
 module Test
 open System
 
@@ -1690,6 +1688,51 @@ let f flag (arr: int[]) =
     let mutable x = 1
     if flag then Span<int>(&x) else Span<int>(arr)
 """
+
+    let private matchSpanFromLocalByrefSource = """
+module Test
+open System
+
+let f (choice: bool) (arr: int[]) =
+    let mutable x = 1
+    match choice with
+    | true -> Span<int>(&x)
+    | false -> Span<int>(arr)
+"""
+
+    let private tryWithSpanFromLocalByrefSource = """
+module Test
+open System
+
+let f (arr: int[]) =
+    let mutable x = 1
+    try Span<int>(&x)
+    with _ -> Span<int>(arr)
+"""
+
+    let private sliceOnEscapedSpanSource = """
+module Test
+open System
+
+let f () =
+    let mutable x = 1
+    let s = Span<int>(&x)
+    s.Slice(0)
+"""
+
+    let private implicitConversionEscapedSpanSource = """
+module Test
+#nowarn "3391"
+open System
+
+let f () : ReadOnlySpan<int> =
+    let mutable x = 1
+    Span<int>(&x)
+"""
+
+    [<Fact>]
+    let ``E_IfElseSpanFromLocalByref`` () =
+        FSharp ifElseSpanFromLocalByrefSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -1698,30 +1741,14 @@ let f flag (arr: int[]) =
 
     [<Fact>]
     let ``E_IfElseSpanFromLocalByref - backward compat`` () =
-        FSharp """
-module Test
-open System
-
-let f flag (arr: int[]) =
-    let mutable x = 1
-    if flag then Span<int>(&x) else Span<int>(arr)
-"""
+        FSharp ifElseSpanFromLocalByrefSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let ``E_MatchSpanFromLocalByref`` () =
-        FSharp """
-module Test
-open System
-
-let f (choice: bool) (arr: int[]) =
-    let mutable x = 1
-    match choice with
-    | true -> Span<int>(&x)
-    | false -> Span<int>(arr)
-"""
+        FSharp matchSpanFromLocalByrefSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -1730,31 +1757,14 @@ let f (choice: bool) (arr: int[]) =
 
     [<Fact>]
     let ``E_MatchSpanFromLocalByref - backward compat`` () =
-        FSharp """
-module Test
-open System
-
-let f (choice: bool) (arr: int[]) =
-    let mutable x = 1
-    match choice with
-    | true -> Span<int>(&x)
-    | false -> Span<int>(arr)
-"""
+        FSharp matchSpanFromLocalByrefSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let ``E_TryWithSpanFromLocalByref`` () =
-        FSharp """
-module Test
-open System
-
-let f (arr: int[]) =
-    let mutable x = 1
-    try Span<int>(&x)
-    with _ -> Span<int>(arr)
-"""
+        FSharp tryWithSpanFromLocalByrefSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -1763,30 +1773,14 @@ let f (arr: int[]) =
 
     [<Fact>]
     let ``E_TryWithSpanFromLocalByref - backward compat`` () =
-        FSharp """
-module Test
-open System
-
-let f (arr: int[]) =
-    let mutable x = 1
-    try Span<int>(&x)
-    with _ -> Span<int>(arr)
-"""
+        FSharp tryWithSpanFromLocalByrefSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let ``E_SliceOnEscapedSpan`` () =
-        FSharp """
-module Test
-open System
-
-let f () =
-    let mutable x = 1
-    let s = Span<int>(&x)
-    s.Slice(0)
-"""
+        FSharp sliceOnEscapedSpanSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -1795,30 +1789,14 @@ let f () =
 
     [<Fact>]
     let ``E_SliceOnEscapedSpan - backward compat`` () =
-        FSharp """
-module Test
-open System
-
-let f () =
-    let mutable x = 1
-    let s = Span<int>(&x)
-    s.Slice(0)
-"""
+        FSharp sliceOnEscapedSpanSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let ``E_ImplicitConversionEscapedSpan`` () =
-        FSharp """
-module Test
-#nowarn "3391"
-open System
-
-let f () : ReadOnlySpan<int> =
-    let mutable x = 1
-    Span<int>(&x)
-"""
+        FSharp implicitConversionEscapedSpanSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -1827,15 +1805,7 @@ let f () : ReadOnlySpan<int> =
 
     [<Fact>]
     let ``E_ImplicitConversionEscapedSpan - backward compat`` () =
-        FSharp """
-module Test
-#nowarn "3391"
-open System
-
-let f () : ReadOnlySpan<int> =
-    let mutable x = 1
-    Span<int>(&x)
-"""
+        FSharp implicitConversionEscapedSpanSource
         |> asLibrary
         |> compile
         |> shouldSucceed
