@@ -2194,7 +2194,7 @@ if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
         |> compileAndRun
         |> shouldSucceed
 
-    [<Fact(Skip = "AllowOverloadOnReturnType feature not yet complete - overload resolution by return type not implemented")>]
+    [<Fact>]
     let ``AllowOverloadOnReturnType resolves overloads by return type`` () =
         FSharp """
 module TestReturnTypeOverload
@@ -2230,6 +2230,41 @@ let result: int = Converter.Convert("42")
         |> withLangVersionPreview
         |> compile
         |> shouldFail
+
+    [<Fact>]
+    let ``AllowOverloadOnReturnType with no annotation produces ambiguity error`` () =
+        FSharp """
+module TestNoAnnotation
+
+type Converter =
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : int = int x
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : float = float x
+
+let result = Converter.Convert("42")
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+
+    [<Fact>]
+    let ``AllowOverloadOnReturnType mixed attributed and non-attributed overloads`` () =
+        FSharp """
+module TestMixed
+
+type Converter =
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : int = int x
+    static member Convert(x: int) : string = string x
+
+let result: int = Converter.Convert("42")
+let result2: string = Converter.Convert(42)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
 
     [<Fact>]
     let ``Inline DateTime addition stays generic with langversion preview`` () =
