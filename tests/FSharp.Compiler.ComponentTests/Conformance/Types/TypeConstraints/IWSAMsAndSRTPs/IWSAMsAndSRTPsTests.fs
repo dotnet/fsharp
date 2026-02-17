@@ -2252,8 +2252,8 @@ let result = Converter.Convert("42")
 
     [<Fact>]
     let ``AllowOverloadOnReturnType mixed attributed and non-attributed overloads`` () =
-        // AllowOverloadOnReturnType attribute is not yet defined in FSharp.Core,
-        // so using it produces a compilation error.
+        // AllowOverloadOnReturnType attribute is defined in FSharp.Core, but full
+        // return-type disambiguation is not yet implemented, so mixed overloads still fail.
         FSharp """
 module TestMixed
 

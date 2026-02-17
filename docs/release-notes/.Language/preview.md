@@ -17,9 +17,8 @@
   - Intrinsic members take priority over extension members
   - FS1215 warning suppressed when defining extension operators with preview langversion
   - Weak resolution disabled for inline code, keeping SRTP constraints generic
-  - `[<AllowOverloadOnReturnType>]` attribute for return-type-based overload disambiguation (suggestion #820)
-
-  **Known limitation:** Extension operators defined in a referenced assembly (cross-assembly resolution) are not yet supported.
+  - `[<AllowOverloadOnReturnType>]` attribute for defining overloads that differ only by return type (suggestion #820). **Note:** The attribute allows defining such overloads; full return-type-based disambiguation at call sites is not yet implemented.
+  - Cross-assembly resolution: extension operators defined in referenced assemblies are resolved via SRTP constraints
 
 ### Fixed
 

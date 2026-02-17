@@ -54,7 +54,6 @@ module Consumer =
 
 ### Known Limitations
 
-- **Cross-assembly resolution**: Extension operators defined in a referenced NuGet package or project are not yet resolved via SRTP. The extension must be in the same compilation unit.
 - **FSharpPlus compatibility**: Code using return types as support types in SRTP constraints may fail to compile. See workarounds below.
 
 ## Weak Resolution Changes
