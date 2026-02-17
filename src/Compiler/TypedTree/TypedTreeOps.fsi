@@ -2400,8 +2400,9 @@ val TyconRefHasAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef ->
 /// Try to find an attribute with a specific full name on a type definition
 val TyconRefHasAttributeByName: range -> string -> TyconRef -> bool
 
-/// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
-val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
+/// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter.
+/// The getSuper function is used to walk the inheritance chain for both F# and IL-imported types.
+val TryFindAttributeUsageAttribute: TcGlobals -> range -> (TyconRef -> TyconRef option) -> TyconRef -> bool option
 
 #if !NO_TYPEPROVIDERS
 /// returns Some(assemblyName) for success

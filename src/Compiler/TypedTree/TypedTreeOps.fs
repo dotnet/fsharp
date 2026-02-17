@@ -3489,12 +3489,12 @@ let superOfTycon (g: TcGlobals) (tycon: Tycon) =
     | None -> g.obj_ty_noNulls 
     | Some ty -> ty 
 
-/// walk a TyconRef's inheritance tree, yielding any parent types as an array
-let supersOfTyconRef (tcref: TyconRef) =
+/// Walk a TyconRef's inheritance tree using the provided super-type resolver, yielding parent types as an array.
+let supersOfTyconRefWith (getSuper: TyconRef -> TyconRef option) (tcref: TyconRef) =
     tcref |> Array.unfold (fun tcref ->
-        match tcref.TypeContents.tcaug_super with
-        | Some (TType_app(sup, _, _)) -> Some(sup, sup)
-        | _ -> None)
+        match getSuper tcref with
+        | Some sup -> Some(sup, sup)
+        | None -> None)
 
 //----------------------------------------------------------------------------
 // Detect attributes
@@ -3629,10 +3629,11 @@ let TryFindTyconRefBoolAttribute g m attribSpec tcref =
                    | [ Some (:? bool as v : obj) ], _ -> Some v 
                    | _ -> None)
 
-/// Try to find the resolved attributeusage for an type by walking its inheritance tree and picking the correct attribute usage value
-let TryFindAttributeUsageAttribute g m tcref =
+/// Try to find the resolved AttributeUsage for a type by walking its inheritance tree and picking the correct attribute usage value.
+/// The getSuper function is used to resolve the super-type of each type in the chain, allowing correct handling of both F# and IL-imported types.
+let TryFindAttributeUsageAttribute g m (getSuper: TyconRef -> TyconRef option) tcref =
     [| yield tcref
-       yield! supersOfTyconRef tcref |]
+       yield! supersOfTyconRefWith getSuper tcref |]
     |> Array.tryPick (fun tcref ->
         TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref
                 (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", _, _, ILAttribElem.Bool res -> Some res | _ -> None))

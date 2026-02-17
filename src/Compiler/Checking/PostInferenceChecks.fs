@@ -2037,7 +2037,16 @@ and CheckAttribs cenv env (attribs: Attribs) =
         |> Seq.map fst
         |> Seq.toList
         // Filter for allowMultiple = false
-        |> List.filter (fun (tcref, _, m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some true)
+        |> List.filter (fun (tcref, _, m) ->
+            let getSuper (tcref: TyconRef) =
+                let ty = generalizedTyconRef cenv.g tcref
+                match GetSuperTypeOfType cenv.g cenv.amap m ty with
+                | Some superTy ->
+                    match tryTcrefOfAppTy cenv.g superTy with
+                    | ValueSome sup -> Some sup
+                    | ValueNone -> None
+                | None -> None
+            TryFindAttributeUsageAttribute cenv.g m getSuper tcref <> Some true)
 
     if cenv.reportErrors then
        for tcref, _, m in duplicates do
