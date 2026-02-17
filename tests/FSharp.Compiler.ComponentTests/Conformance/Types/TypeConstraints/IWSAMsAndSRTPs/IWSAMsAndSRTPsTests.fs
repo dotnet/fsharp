@@ -2498,3 +2498,102 @@ if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
         |> compileAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Internal type extension in same assembly resolves via SRTP`` () =
+        FSharp """
+module TestInternalExtension
+
+type Widget = { Value: int }
+    with
+        // Intrinsic augmentation with internal accessibility
+        static member internal Combine (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+
+let inline combine (x: ^T) (y: ^T) = (^T : (static member Combine : ^T * ^T -> ^T) (x, y))
+let result = combine { Value = 1 } { Value = 2 }
+if result.Value <> 3 then failwith (sprintf "Expected 3 but got %d" result.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP constraints from different accessibility domains flow together`` () =
+        FSharp """
+module TestAccessibilityDomains
+
+type Widget = { Value: int }
+
+// Public extension in module A
+module ExtA =
+    type Widget with
+        static member (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+
+// Public extension in module B
+module ExtB =
+    type Widget with
+        static member (-) (a: Widget, b: Widget) = { Value = a.Value - b.Value }
+
+open ExtA
+open ExtB
+
+// Both extensions should be available via SRTP in the same scope
+let inline addThenSub (x: ^T) (y: ^T) (z: ^T) =
+    let sum = x + y
+    sum - z
+
+let result = addThenSub { Value = 10 } { Value = 5 } { Value = 3 }
+if result.Value <> 12 then failwith (sprintf "Expected 12 but got %d" result.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Internal record field resolves via SRTP within same assembly`` () =
+        FSharp """
+module TestInternalRecordField
+
+module Internal =
+    type Rec = internal { X: int }
+    let make x = { X = x }
+
+open Internal
+
+let inline getX (r: ^T) = (^T : (member get_X : unit -> int) r)
+let v = getX (Internal.make 42)
+if v <> 42 then failwith (sprintf "Expected 42 but got %d" v)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Cross-assembly internal extension is not visible via SRTP`` () =
+        let library =
+            FSharp """
+module ExtLib
+
+type Widget = { Value: int }
+
+type Widget with
+    static member internal (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let inline add (x: ^T) (y: ^T) = x + y
+let result = add { Value = 1 } { Value = 2 }
+        """
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compile
+        |> shouldFail
+
