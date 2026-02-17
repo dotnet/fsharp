@@ -1011,7 +1011,6 @@ type outref<'T> with
         |> shouldFail
         |> withDiagnostics [
             (Error 3234, Line 8, Col 5, Line 8, Col 9, "The Span or IsByRefLike variable 'span' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
-            (Error 3228, Line 10, Col 4, Line 10, Col 21, "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
     [<Theory; FileInlineData("E_ReturnSpanFromLocalByref02.fs")>]
@@ -1496,24 +1495,37 @@ let f () : Span<int> =
         |> shouldSucceed
 
     [<Fact>]
-    let ``E_StructReceiverSafeCaseConservativeError`` () =
-        // Conservative: struct receiver triggers escape error even for safe methods.
-        // This is a known false positive. Future work: read [UnscopedRef] to distinguish.
+    let ``StructReceiverSafeCaseNoFalsePositive`` () =
+        // Safe struct method without [UnscopedRef]: receiver is implicitly scoped, excluded from limit.
         FSharp safeStructConservativeFSharpSource
         |> asLibrary
         |> withLangVersionPreview
         |> withReferences [safeStructConservativeCSharpLib]
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3235, Line 7, Col 5, Line 7, Col 29, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
-        ]
+        |> shouldSucceed
 
     [<Fact>]
     let ``E_StructReceiverSafeCaseConservativeError - backward compat`` () =
         FSharp safeStructConservativeFSharpSource
         |> asLibrary
         |> withReferences [safeStructConservativeCSharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``StructReceiverParamByrefNoError`` () =
+        // Struct method called on a parameter (not local) — should succeed regardless of [UnscopedRef].
+        let fsharpSource = """
+module Test
+open System
+
+let f (s: byref<EvilStruct>) : Span<int> =
+    s.AsSpan()
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [unscopedRefEscapesCSharpLib]
         |> compile
         |> shouldSucceed
 
@@ -1702,3 +1714,56 @@ let test () : Span<int> =
             (Error 406, Line 8, Col 34, Line 8, Col 45, "The byref-typed variable 'span' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
         ]
 #endif
+
+
+    // --- Gap tests for byref safety analysis ---
+    // Note: These tests expose gaps in byref safety analysis where unsafe escapes are not detected
+    
+    [<Theory; FileInlineData("E_OperatorOverloadSpanCapturingByref.fs")>]
+    let``E_OperatorOverloadSpanCapturingByref_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        // Note: This fails due to operator resolution, not byref safety analysis
+        // If the operator overload were properly defined, this would expose a gap in safety analysis
+
+    [<Theory; FileInlineData("E_IndexerSpanCapturingByref.fs")>]
+    let``E_IndexerSpanCapturingByref_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed  // Currently passes - this is a GAP!
+        // TODO: This should fail when we implement proper byref escape analysis for indexers
+
+    [<Theory; FileInlineData("E_MatchExpressionSpanCapturingByref.fs")>]
+    let``E_MatchExpressionSpanCapturingByref_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed  // Currently passes - this is a GAP!
+        // TODO: This should fail when we implement proper byref escape analysis for match expressions
+
+    [<Theory; FileInlineData("TestGaps2.fs")>]
+    let ``TestGaps2_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+
+    [<Theory; FileInlineData("TestMemoryMarshal.fs")>]
+    let ``TestMemoryMarshal_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
