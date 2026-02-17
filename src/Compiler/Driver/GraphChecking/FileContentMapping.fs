@@ -368,7 +368,8 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.Const _ -> continuation []
         | SynExpr.Paren(expr = expr) -> visit expr continuation
         | SynExpr.Quote(operator = operator; quotedExpr = quotedExpr) ->
-            visit operator (fun operatorNodes -> visit quotedExpr (fun quotedNodes -> operatorNodes @ quotedNodes |> continuation))
+            let continuations = List.map visit [ operator; quotedExpr ]
+            Continuation.concatenate continuations continuation
         | SynExpr.Typed(expr, targetType, _) -> visit expr (fun nodes -> nodes @ visitSynType targetType |> continuation)
         | SynExpr.Tuple(exprs = exprs) ->
             let continuations: ((FileContentEntry list -> FileContentEntry list) -> FileContentEntry list) list =
@@ -408,20 +409,27 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             ]
             |> continuation
         | SynExpr.While(whileExpr = whileExpr; doExpr = doExpr) ->
-            visit whileExpr (fun whileNodes -> visit doExpr (fun doNodes -> whileNodes @ doNodes |> continuation))
+            let continuations = List.map visit [ whileExpr; doExpr ]
+            Continuation.concatenate continuations continuation
         | SynExpr.For(identBody = identBody; toBody = toBody; doBody = doBody) ->
             let continuations = List.map visit [ identBody; toBody; doBody ]
             Continuation.concatenate continuations continuation
         | SynExpr.ForEach(pat = pat; enumExpr = enumExpr; bodyExpr = bodyExpr) ->
-            visit enumExpr (fun enumNodes ->
-                visit bodyExpr (fun bodyNodes -> [ yield! visitPat pat; yield! enumNodes; yield! bodyNodes ] |> continuation))
+            let continuations = List.map visit [ enumExpr; bodyExpr ]
+
+            let finalContinuation nodes =
+                [ yield! visitPat pat; yield! List.concat nodes ] |> continuation
+
+            Continuation.sequence continuations finalContinuation
         | SynExpr.ArrayOrListComputed(expr = expr) -> visit expr continuation
         | SynExpr.IndexRange(expr1 = expr1; expr2 = expr2) ->
             match expr1, expr2 with
             | None, None -> continuation []
             | Some e, None
             | None, Some e -> visit e continuation
-            | Some e1, Some e2 -> visit e1 (fun e1Nodes -> visit e2 (fun e2Nodes -> e1Nodes @ e2Nodes |> continuation))
+            | Some e1, Some e2 ->
+                let continuations = List.map visit [ e1; e2 ]
+                Continuation.concatenate continuations continuation
         | SynExpr.IndexFromEnd(expr, _) -> visit expr continuation
         | SynExpr.ComputationExpr(expr = expr) -> visit expr continuation
         | SynExpr.Lambda(args = args; body = body) -> visit body (fun bodyNodes -> visitSynSimplePats args @ bodyNodes |> continuation)
@@ -434,7 +442,8 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.Do(expr, _) -> visit expr continuation
         | SynExpr.Assert(expr, _) -> visit expr continuation
         | SynExpr.App(funcExpr = funcExpr; argExpr = argExpr) ->
-            visit funcExpr (fun funcNodes -> visit argExpr (fun argNodes -> funcNodes @ argNodes |> continuation))
+            let continuations = List.map visit [ funcExpr; argExpr ]
+            Continuation.concatenate continuations continuation
         | SynExpr.TypeApp(expr = expr; typeArgs = typeArgs) ->
             visit expr (fun exprNodes -> exprNodes @ List.collect visitSynType typeArgs |> continuation)
         | SynExpr.LetOrUse({ Bindings = bindings; Body = body }) ->
@@ -442,10 +451,12 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.TryWith(tryExpr = tryExpr; withCases = withCases) ->
             visit tryExpr (fun nodes -> nodes @ List.collect visitSynMatchClause withCases |> continuation)
         | SynExpr.TryFinally(tryExpr = tryExpr; finallyExpr = finallyExpr) ->
-            visit tryExpr (fun tNodes -> visit finallyExpr (fun fNodes -> tNodes @ fNodes |> continuation))
+            let continuations = List.map visit [ tryExpr; finallyExpr ]
+            Continuation.concatenate continuations continuation
         | SynExpr.Lazy(expr, _) -> visit expr continuation
         | SynExpr.Sequential(expr1 = expr1; expr2 = expr2) ->
-            visit expr1 (fun nodes1 -> visit expr2 (fun nodes2 -> nodes1 @ nodes2 |> continuation))
+            let continuations = List.map visit [ expr1; expr2 ]
+            Continuation.concatenate continuations continuation
         | SynExpr.IfThenElse(ifExpr = ifExpr; thenExpr = thenExpr; elseExpr = elseExpr) ->
             let continuations = List.map visit (ifExpr :: thenExpr :: Option.toList elseExpr)
             Continuation.concatenate continuations continuation
@@ -456,10 +467,14 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.DotGet(expr = expr; longDotId = longDotId) ->
             visit expr (fun nodes -> visitSynLongIdent longDotId @ nodes |> continuation)
         | SynExpr.DotSet(targetExpr, longDotId, rhsExpr, _) ->
-            visit targetExpr (fun tNodes ->
-                visit rhsExpr (fun rNodes ->
-                    [ yield! tNodes; yield! visitSynLongIdent longDotId; yield! rNodes ]
-                    |> continuation))
+            let continuations = List.map visit [ targetExpr; rhsExpr ]
+
+            let finalContinuation nodes =
+                match nodes with
+                | [ tNodes; rNodes ] -> [ yield! tNodes; yield! visitSynLongIdent longDotId; yield! rNodes ] |> continuation
+                | _ -> List.concat nodes |> continuation
+
+            Continuation.sequence continuations finalContinuation
         | SynExpr.Set(targetExpr, rhsExpr, _) ->
             let continuations = List.map visit [ targetExpr; rhsExpr ]
             Continuation.concatenate continuations continuation
@@ -470,10 +485,12 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             let continuations = List.map visit [ objectExpr; indexArgs; valueExpr ]
             Continuation.concatenate continuations continuation
         | SynExpr.NamedIndexedPropertySet(longDotId, expr1, expr2, _) ->
-            visit expr1 (fun nodes1 ->
-                visit expr2 (fun nodes2 ->
-                    [ yield! visitSynLongIdent longDotId; yield! nodes1; yield! nodes2 ]
-                    |> continuation))
+            let continuations = List.map visit [ expr1; expr2 ]
+
+            let finalContinuation nodes =
+                visitSynLongIdent longDotId @ List.concat nodes |> continuation
+
+            Continuation.sequence continuations finalContinuation
         | SynExpr.DotNamedIndexedPropertySet(targetExpr, longDotId, argExpr, rhsExpr, _) ->
             let continuations = List.map visit [ targetExpr; argExpr; rhsExpr ]
 
@@ -511,7 +528,8 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 |> continuation)
         | SynExpr.DoBang(expr = expr) -> visit expr continuation
         | SynExpr.WhileBang(whileExpr = whileExpr; doExpr = doExpr) ->
-            visit whileExpr (fun whileNodes -> visit doExpr (fun doNodes -> whileNodes @ doNodes |> continuation))
+            let continuations = List.map visit [ whileExpr; doExpr ]
+            Continuation.concatenate continuations continuation
         | SynExpr.LibraryOnlyILAssembly(typeArgs = typeArgs; args = args; retTy = retTy) ->
             let typeNodes = List.collect visitSynType (typeArgs @ retTy)
             let continuations = List.map visit args
@@ -527,19 +545,22 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                     | SynStaticOptimizationConstraint.WhenTyparTyconEqualsTycon(rhsType = t) -> Some t
                     | SynStaticOptimizationConstraint.WhenTyparIsStruct _ -> None)
 
-            visit expr (fun eNodes ->
-                visit optimizedExpr (fun oNodes ->
-                    [
-                        yield! List.collect visitSynType constraintTypes
-                        yield! eNodes
-                        yield! oNodes
-                    ]
-                    |> continuation))
+            let continuations = List.map visit [ expr; optimizedExpr ]
+
+            let finalContinuation nodes =
+                List.collect visitSynType constraintTypes @ List.concat nodes
+                |> continuation
+
+            Continuation.sequence continuations finalContinuation
         | SynExpr.LibraryOnlyUnionCaseFieldGet(expr, longId, _, _) ->
             visit expr (fun eNodes -> visitLongIdent longId @ eNodes |> continuation)
         | SynExpr.LibraryOnlyUnionCaseFieldSet(expr, longId, _, rhsExpr, _) ->
-            visit expr (fun eNodes ->
-                visit rhsExpr (fun rhsNodes -> [ yield! visitLongIdent longId; yield! eNodes; yield! rhsNodes ] |> continuation))
+            let continuations = List.map visit [ expr; rhsExpr ]
+
+            let finalContinuation nodes =
+                visitLongIdent longId @ List.concat nodes |> continuation
+
+            Continuation.sequence continuations finalContinuation
         | SynExpr.ArbitraryAfterError _ -> continuation []
         | SynExpr.FromParseError _ -> continuation []
         | SynExpr.DiscardAfterMissingQualificationAfterDot _ -> continuation []
