@@ -836,48 +836,43 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
-/// Try to resolve an ILMethodRef to an ILMethodDef and build a mask of which parameters are scoped.
+/// Try to resolve an ILMethodRef to its ILMethodDef via the type's IL representation.
+/// Returns None if the type is not an IL type or resolution fails.
+let tryResolveILMethodDef (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : ILMethodDef option =
+    try
+        let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
+
+        match tyconRef.TypeReprInfo with
+        | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
+            Some(resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef)
+        | _ -> None
+    with :? System.Exception ->
+        None
+
+/// Build a mask of which IL parameters have ScopedRefAttribute.
 /// Returns an array where scopedMask.[i] = true means IL parameter i has ScopedRefAttribute.
-/// If resolution fails or the attribute is not available, returns None.
-let tryGetScopedParamMask (g: TcGlobals) (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : bool array option =
+/// If the attribute is not available or no parameters are scoped, returns None.
+let tryGetScopedParamMask (g: TcGlobals) (methDef: ILMethodDef) : bool array option =
     match g.attrib_ScopedRefAttribute_opt with
     | None -> None
     | Some scopedRefAttrib ->
-        try
-            let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
+        let parameters = methDef.Parameters
 
-            match tyconRef.TypeReprInfo with
-            | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
-                let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
-                let parameters = methDef.Parameters
-
-                if parameters.IsEmpty then
-                    None
-                else
-                    let mask =
-                        parameters
-                        |> List.toArray
-                        |> Array.map (fun p -> TryFindILAttribute scopedRefAttrib p.CustomAttrs)
-
-                    if Array.exists id mask then Some mask else None
-            | _ -> None
-        with :? System.Exception ->
+        if parameters.IsEmpty then
             None
+        else
+            let mask =
+                parameters
+                |> List.toArray
+                |> Array.map (fun p -> TryFindILAttribute scopedRefAttrib p.CustomAttrs)
 
-let hasUnscopedRefAttribute (g: TcGlobals) (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : bool =
+            if Array.exists id mask then Some mask else None
+
+/// Check whether the given IL method has UnscopedRefAttribute.
+let hasUnscopedRefAttribute (g: TcGlobals) (methDef: ILMethodDef) : bool =
     match g.attrib_UnscopedRefAttribute_opt with
     | None -> false
-    | Some unscopedRefAttrib ->
-        try
-            let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
-
-            match tyconRef.TypeReprInfo with
-            | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
-                let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
-                TryFindILAttribute unscopedRefAttrib methDef.CustomAttrs
-            | _ -> false
-        with :? System.Exception ->
-            false
+    | Some unscopedRefAttrib -> TryFindILAttribute unscopedRefAttrib methDef.CustomAttrs
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
@@ -1660,24 +1655,26 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
         match retTypes with
         | [_] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m returnTy ->
-            let scopedMask =
+            let methDefOpt =
                 if g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
+                    tryResolveILMethodDef cenv.amap m ilMethRef
+                else
+                    None
+
+            let scopedMask =
+                match methDefOpt with
+                | Some methDef when methInst.IsEmpty ->
                     // For generic methods (non-empty methInst), C# 11 implicit scoping rules
                     // mark all ref parameters as scoped by default. This is unsound for methods
                     // like MemoryMarshal.CreateSpan<T> that capture the ref in the returned span.
                     // Only trust explicit scoped annotations (non-generic methods).
-                    if methInst.IsEmpty then
-                        tryGetScopedParamMask g cenv.amap m ilMethRef
-                    else
-                        None
-                else
-                    None
+                    tryGetScopedParamMask g methDef
+                | _ -> None
 
             let hasUnscopedRef =
-                if g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis && hasReceiver then
-                    hasUnscopedRefAttribute g cenv.amap m ilMethRef
-                else
-                    false
+                match methDefOpt with
+                | Some methDef when hasReceiver -> hasUnscopedRefAttribute g methDef
+                | _ -> false
 
             if hasReceiver then
                 CheckCallWithReceiver cenv env m returnTy args argContexts ctxt scopedMask hasUnscopedRef
