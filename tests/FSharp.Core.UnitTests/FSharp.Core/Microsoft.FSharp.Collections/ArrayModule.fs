@@ -1840,6 +1840,25 @@ type ArrayModule() =
             |> ignore)
 
     [<Fact>]
+    member _.PartitionWithNullElements() =
+        // Verify null reference-type elements are handled correctly
+        // and zeroCreateUnchecked scratch slots don't leak into results
+        let left, right =
+            [| "a"; null; "b"; null; "c" |]
+            |> Array.partitionWith (fun x ->
+                if isNull x then Choice2Of2 x
+                else Choice1Of2 (x.ToUpper()))
+        Assert.AreEqual([|"A"; "B"; "C"|], left)
+        Assert.AreEqual([|null; null|], right)
+
+        // All nulls going one way
+        let allLeft, emptyRight =
+            [| null; null; null |]
+            |> Array.partitionWith (fun (x: string) -> Choice1Of2 x)
+        Assert.AreEqual([|null; null; null|], allLeft)
+        Assert.AreEqual(Array.empty<string>, emptyRight)
+
+    [<Fact>]
     member _.Singleton() =
         Assert.AreEqual([|null|],Array.singleton null)
         Assert.AreEqual([|"1"|],Array.singleton "1")
@@ -1863,6 +1882,20 @@ type ArrayModule() =
         let par1, par2 = Array.Parallel.partitionWith partitioner input
         Assert.AreEqual(seq1, par1)
         Assert.AreEqual(seq2, par2)
+
+    [<Fact>]
+    member _.``Parallel.PartitionWithThrowingPartitioner``() =
+        let ex = System.InvalidOperationException("test error")
+        let thrown =
+            Assert.Throws<System.AggregateException>(fun () ->
+                [|1..100|]
+                |> Array.Parallel.partitionWith (fun x ->
+                    if x = 50 then raise ex
+                    else Choice1Of2 x)
+                |> ignore)
+        Assert.True(
+            thrown.InnerExceptions |> Seq.exists (fun e -> e :? System.InvalidOperationException),
+            "AggregateException should contain the InvalidOperationException")
 
     [<Fact>]
     member _.Contains() =

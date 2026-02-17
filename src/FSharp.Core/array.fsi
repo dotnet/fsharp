@@ -4362,7 +4362,8 @@ module Array =
         /// <c>Choice2Of2</c> elements in the second array. Element order is preserved in both of the created arrays.</summary>
         ///
         /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
-        /// The order in which the given function is applied to indices is not specified. This is an O(n) operation, where n is the length of the array.</remarks>
+        /// The order in which the given function is applied to elements of the input array is not specified.
+        /// The partitioner function must be thread-safe. This is an O(n) operation, where n is the length of the array.</remarks>
         ///
         /// <param name="partitioner">The function to transform and classify each input element into one of two output types.</param>
         /// <param name="array">The input array.</param>
