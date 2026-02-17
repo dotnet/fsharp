@@ -471,7 +471,9 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
 
             let finalContinuation nodes =
                 match nodes with
-                | [ tNodes; rNodes ] -> [ yield! tNodes; yield! visitSynLongIdent longDotId; yield! rNodes ] |> continuation
+                | [ tNodes; rNodes ] ->
+                    [ yield! tNodes; yield! visitSynLongIdent longDotId; yield! rNodes ]
+                    |> continuation
                 | _ -> List.concat nodes |> continuation
 
             Continuation.sequence continuations finalContinuation
@@ -548,8 +550,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             let continuations = List.map visit [ expr; optimizedExpr ]
 
             let finalContinuation nodes =
-                List.collect visitSynType constraintTypes @ List.concat nodes
-                |> continuation
+                List.collect visitSynType constraintTypes @ List.concat nodes |> continuation
 
             Continuation.sequence continuations finalContinuation
         | SynExpr.LibraryOnlyUnionCaseFieldGet(expr, longId, _, _) ->
