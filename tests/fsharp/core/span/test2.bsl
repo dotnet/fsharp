@@ -29,23 +29,23 @@ test2.fsx(118,14,118,37): typecheck error FS3228: The address of a value returne
 
 test2.fsx(123,14,123,15): typecheck error FS3209: The address of the variable 'y' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-test2.fsx(127,13,127,42): typecheck error FS3235: A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
+test2.fsx(127,13,127,42): typecheck error FS3235: A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(131,14,131,42): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(135,14,135,72): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-test2.fsx(139,13,139,52): typecheck error FS3235: A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
+test2.fsx(139,13,139,52): typecheck error FS3235: A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(143,13,143,14): typecheck error FS3234: The Span or IsByRefLike variable 's' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-test2.fsx(148,13,148,52): typecheck error FS3235: A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
+test2.fsx(148,13,148,52): typecheck error FS3235: A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(152,21,152,84): typecheck error FS3233: The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(153,13,153,14): typecheck error FS3234: The Span or IsByRefLike variable 'y' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-test2.fsx(157,13,157,83): typecheck error FS3235: A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
+test2.fsx(157,13,157,83): typecheck error FS3235: A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(162,13,162,14): typecheck error FS3234: The Span or IsByRefLike variable 'y' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 

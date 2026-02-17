@@ -1941,6 +1941,87 @@ let f () =
         |> compile
         |> shouldSucceed
 
+    // --- Miscellaneous escape analysis tests ---
+
+    let private spanFromLocalByrefInFsxSource = """
+open System
+
+let f () =
+    let mutable x = 1
+    Span<int>(&x)
+"""
+
+    let private spanFromLocalByrefInObjExprSource = """
+module Test
+open System
+
+type ISpanProvider =
+    abstract GetSpan: unit -> Span<int>
+
+let makeProvider () =
+    { new ISpanProvider with
+        member _.GetSpan() =
+            let mutable x = 1
+            Span<int>(&x) }
+"""
+
+    let private spanFromLocalByrefInNestedScopeSource = """
+module Test
+open System
+
+let outer () =
+    let result =
+        let mutable x = 1
+        Span<int>(&x)
+    result
+"""
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInFsx`` () =
+        Fsx spanFromLocalByrefInFsxSource
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInFsx - backward compat`` () =
+        Fsx spanFromLocalByrefInFsxSource
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInObjExpr`` () =
+        FSharp spanFromLocalByrefInObjExprSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInObjExpr - backward compat`` () =
+        FSharp spanFromLocalByrefInObjExprSource
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInNestedScope`` () =
+        FSharp spanFromLocalByrefInNestedScopeSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3234]
+
+    [<Fact>]
+    let ``E_SpanFromLocalByrefInNestedScope - backward compat`` () =
+        FSharp spanFromLocalByrefInNestedScopeSource
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
@@ -1976,112 +2057,6 @@ let f () =
         |> withDiagnostics [
             (Error 406, Line 8, Col 34, Line 8, Col 45, "The byref-typed variable 'span' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
         ]
-
-    // --- Miscellaneous escape analysis tests ---
-
-    [<Fact>]
-    let ``E_SpanFromLocalByrefInFsx`` () =
-        Fsx """
-open System
-
-let f () =
-    let mutable x = 1
-    Span<int>(&x)
-
-f () |> ignore
-"""
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCodes [3235]
-
-    [<Fact>]
-    let ``E_SpanFromLocalByrefInFsx - backward compat`` () =
-        Fsx """
-open System
-
-let f () =
-    let mutable x = 1
-    Span<int>(&x)
-
-f () |> ignore
-"""
-        |> compile
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``E_SpanFromLocalByrefInObjExpr`` () =
-        FSharp """
-module Test
-open System
-
-type ISpanProvider =
-    abstract GetSpan: unit -> Span<int>
-
-let makeProvider () =
-    { new ISpanProvider with
-        member _.GetSpan() =
-            let mutable x = 1
-            Span<int>(&x) }
-"""
-        |> asLibrary
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCodes [3235]
-
-    [<Fact>]
-    let ``E_SpanFromLocalByrefInObjExpr - backward compat`` () =
-        FSharp """
-module Test
-open System
-
-type ISpanProvider =
-    abstract GetSpan: unit -> Span<int>
-
-let makeProvider () =
-    { new ISpanProvider with
-        member _.GetSpan() =
-            let mutable x = 1
-            Span<int>(&x) }
-"""
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``E_SpanFromLocalByrefInNestedFun`` () =
-        FSharp """
-module Test
-open System
-
-let outer () =
-    let inner () =
-        let mutable x = 1
-        Span<int>(&x)
-    inner ()
-"""
-        |> asLibrary
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCodes [3235]
-
-    [<Fact>]
-    let ``E_SpanFromLocalByrefInNestedFun - backward compat`` () =
-        FSharp """
-module Test
-open System
-
-let outer () =
-    let inner () =
-        let mutable x = 1
-        Span<int>(&x)
-    inner ()
-"""
-        |> asLibrary
-        |> compile
-        |> shouldSucceed
 
 #endif
 
