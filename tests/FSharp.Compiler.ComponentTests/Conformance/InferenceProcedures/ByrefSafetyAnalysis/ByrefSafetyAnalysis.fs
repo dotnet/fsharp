@@ -1810,6 +1810,137 @@ let f () : ReadOnlySpan<int> =
         |> compile
         |> shouldSucceed
 
+    // --- C# Interop edge case tests ---
+
+    [<Fact>]
+    let ``AllScopedParamsNoError`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public static class AllScopedHelper
+{
+    public static Span<int> AllScoped(scoped ref int a, scoped ref int b, int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "AllScopedLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+
+let f () =
+    let mutable a = 1
+    let mutable b = 2
+    AllScopedHelper.AllScoped(&a, &b, [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``ScopedWithOptionalParamNoError`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public static class OptionalScopedHelper
+{
+    public static Span<int> WithOptional(scoped ref int x, int[] arr, int y = 0)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "OptionalScopedLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+
+let f () =
+    let mutable x = 1
+    OptionalScopedHelper.WithOptional(&x, [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``ScopedValueParamNoError`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public static class ScopedValueHelper
+{
+    public static Span<int> FromScopedValue(scoped Span<int> input, int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "ScopedValueLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+
+let f () =
+    let mutable x = 1
+    ScopedValueHelper.FromScopedValue(Span<int>(&x), [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    let private refReturnChainingCSharpLib =
+        CSharp """
+using System;
+
+public static class RefReturnHelper
+{
+    public static ref int RefIdentity(ref int x) => ref x;
+}
+"""     |> withName "RefReturnLib"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+    let private refReturnChainingFSharpSource = """
+module Test
+open System
+
+let f () =
+    let mutable local = 1
+    Span<int>(&RefReturnHelper.RefIdentity(&local))
+"""
+
+    [<Fact>]
+    let ``E_RefReturnChainingIntoSpan`` () =
+        FSharp refReturnChainingFSharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [refReturnChainingCSharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_RefReturnChainingIntoSpan - backward compat`` () =
+        FSharp refReturnChainingFSharpSource
+        |> asLibrary
+        |> withReferences [refReturnChainingCSharpLib]
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
