@@ -344,3 +344,73 @@ let main _ =
         |> withLangVersion "11.0"
         |> compileExeAndRun
         |> withExitCode 0
+
+    // B1: When #elif branch is taken (IfDefElif on stack), #else must be skipped.
+    // Tests lex.fsl ifdefSkip: (IfDefElif,_) :: rest -> #else stays inactive.
+    let elifTakenThenElseSkippedSource =
+        """
+[<EntryPoint>]
+let main _ =
+    #if UNDEF
+    1
+    #elif BRANCH
+    2
+    #else
+    3
+    #endif
+"""
+
+    [<Fact>]
+    let elifTakenThenElseSkipped () =
+        FSharp elifTakenThenElseSkippedSource
+        |> withDefines [ "BRANCH" ]
+        |> withLangVersion "11.0"
+        |> compileExeAndRun
+        |> withExitCode 2
+
+    // B2: When #elif branch is taken (IfDefElif on stack), subsequent #elif is skipped
+    // even if its condition is also true. Tests ifdefSkip: (IfDefElif,_) :: _rest path.
+    let elifSecondElifAfterTakenSkippedSource =
+        """
+[<EntryPoint>]
+let main _ =
+    #if UNDEF
+    1
+    #elif A
+    2
+    #elif A
+    3
+    #else
+    4
+    #endif
+"""
+
+    [<Fact>]
+    let elifSecondElifAfterTakenSkipped () =
+        FSharp elifSecondElifAfterTakenSkippedSource
+        |> withDefines [ "A" ]
+        |> withLangVersion "11.0"
+        |> compileExeAndRun
+        |> withExitCode 2
+
+    // B3: #elif after #else in skip context (ifdefSkip path, not token rule).
+    // When #if is true, #else enters ifdefSkip; #elif inside that skip must error.
+    let elifAfterElseInSkipContextSource =
+        """
+module A
+#if DEFINED
+let x = 1
+#else
+let x = 2
+#elif Y
+let x = 3
+#endif
+"""
+
+    [<Fact>]
+    let elifAfterElseErrorInSkipContext () =
+        FSharp elifAfterElseInSkipContextSource
+        |> withDefines [ "DEFINED" ]
+        |> withLangVersion "11.0"
+        |> compile
+        |> withDiagnosticMessageMatches "#elif is not allowed after #else"
