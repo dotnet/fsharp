@@ -1127,18 +1127,16 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
          | []->  LEX_FAILURE (FSComp.SR.lexHashElseNoMatchingIf())
          | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashEndifRequiredForElse())
          | (IfDefIf,_) :: rest ->
-           let m = lexbuf.LexemeRange
-           IfdefStore.SaveElseHash(lexbuf, lexed, m)
-           args.ifdefStack <- (IfDefElse,m) :: rest
-           if not skip then HASH_ELSE(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
-           else endline LexerEndlineContinuation.Token args skip lexbuf
+            IfdefStore.SaveElseHash(lexbuf, lexed, m)
+            args.ifdefStack <- (IfDefElse,m) :: rest
+            if not skip then HASH_ELSE(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
+            else endline LexerEndlineContinuation.Token args skip lexbuf
          | (IfDefElif,_) :: rest ->
-           // A branch was already taken - #else stays inactive
-           let m = lexbuf.LexemeRange
-           IfdefStore.SaveElseHash(lexbuf, lexed, m)
-           args.ifdefStack <- (IfDefElse,m) :: rest
-           if not skip then HASH_ELSE(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
-           else endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf
+            // A branch was already taken - #else stays inactive
+            IfdefStore.SaveElseHash(lexbuf, lexed, m)
+            args.ifdefStack <- (IfDefElse,m) :: rest
+            if not skip then HASH_ELSE(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
+            else endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf
       else
          IfdefStore.SaveElseHash(lexbuf, lexed, m)
          if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n, m)))
@@ -1165,8 +1163,7 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
          | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashElifAfterElse())
          | (IfDefIf,_) :: rest ->
            // No branch taken yet - evaluate condition
-           let isTrue = evalAndSaveElif ()
-           if isTrue then
+           if evalAndSaveElif () then
              args.ifdefStack <- (IfDefElif,m) :: rest
              if not skip then HASH_ELIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
              else endline LexerEndlineContinuation.Token args skip lexbuf
@@ -1174,7 +1171,8 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
              if not skip then HASH_ELIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
              else endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf
          | (IfDefElif,_) :: _rest ->
-           // A branch was already taken - skip regardless
+           // A prior #elif was already taken — stack unchanged (IfDefElif persists to keep
+           // subsequent #elif/#else branches inactive), just save trivia and stay in skip mode.
            evalAndSaveElif () |> ignore
            if not skip then HASH_ELIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
            else endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf
