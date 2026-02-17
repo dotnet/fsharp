@@ -323,19 +323,22 @@ let sr2 = { sr with (*2*)Count = 1 }
 
         let text = SourceText.From(sourceText)
         let ranges = getRanges sourceText
-        
+
         // DEBUG: Print all classifications around (*1*)
         let line1 = text.Lines.GetLinePosition(sourceText.IndexOf("(*1*)") + 5)
         let markerPos1 = Position.mkPos (Line.fromZ line1.Line) (line1.Character + 1)
-        
-        let overlappingRanges1 = 
-            ranges 
-            |> List.filter (fun item -> Range.rangeContainsPos item.Range markerPos1)
-        
+
+        let overlappingRanges1 =
+            ranges |> List.filter (fun item -> Range.rangeContainsPos item.Range markerPos1)
+
         printfn "=== Classifications overlapping with (*1*) at position %A ===" markerPos1
+
         for item in overlappingRanges1 do
-            let classificationType = FSharpClassificationTypes.getClassificationTypeName item.Type
+            let classificationType =
+                FSharpClassificationTypes.getClassificationTypeName item.Type
+
             printfn "  Range: %A, Type: %s (%A)" item.Range classificationType item.Type
+
         if List.isEmpty overlappingRanges1 then
             printfn "  (No classifications found)"
 
@@ -379,10 +382,7 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
                 FSharpClassificationTypes.getClassificationTypeName item.Type = ClassificationTypeNames.EnumName
                 && Range.rangeContainsPos item.Range isCirclePos)
 
-        Assert.True(
-            unionCaseAtIdentifier.Length > 0,
-            "Expected a UnionCase classification covering 'IsCircle'"
-        )
+        Assert.True(unionCaseAtIdentifier.Length > 0, "Expected a UnionCase classification covering 'IsCircle'")
 
         // No UnionCase classification should include the dot position.
         // Before the fix, the identifier range was computed by shifting m.Start by +1,
@@ -400,5 +400,18 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
                 (unionCaseAtDot |> List.map (fun i -> i.Range))
         )
 
-        // Also verify the long case name
-        verifyClassificationAtEndOfMarker (sourceText, "(*2*)", ClassificationTypeNames.EnumName)
+        // Also verify the long case name has a UnionCase (EnumName) classification.
+        // Use explicit filter instead of verifyClassificationAtEndOfMarker, because both
+        // Property and UnionCase classifications overlap at the same position.
+        let longCasePos =
+            let idx = sourceText.IndexOf("(*2*)IsHyperbolicCaseWithLongName") + "(*2*)".Length
+            let linePos = text.Lines.GetLinePosition(idx)
+            Position.mkPos (Line.fromZ linePos.Line) linePos.Character
+
+        let longCaseUnionItems =
+            ranges
+            |> List.filter (fun item ->
+                FSharpClassificationTypes.getClassificationTypeName item.Type = ClassificationTypeNames.EnumName
+                && Range.rangeContainsPos item.Range longCasePos)
+
+        Assert.True(longCaseUnionItems.Length > 0, "Expected a UnionCase classification covering 'IsHyperbolicCaseWithLongName'")
