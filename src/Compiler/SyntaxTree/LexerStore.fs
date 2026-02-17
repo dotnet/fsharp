@@ -117,18 +117,19 @@ module IfdefStore =
     let SaveIfHash (lexbuf, lexed, expr, range) =
         saveConditionalHash ConditionalDirectiveTrivia.If (lexbuf, lexed, expr, range)
 
-    let SaveElseHash (lexbuf: Lexbuf, lexed: string, range: range) =
-        let store = getStore lexbuf
-        let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.Else(m))
-
     let SaveElifHash (lexbuf, lexed, expr, range) =
         saveConditionalHash ConditionalDirectiveTrivia.Elif (lexbuf, lexed, expr, range)
 
-    let SaveEndIfHash (lexbuf: Lexbuf, lexed: string, range: range) =
+    let private saveSimpleHash ctor (lexbuf: Lexbuf, lexed: string, range: range) =
         let store = getStore lexbuf
         let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.EndIf(m))
+        store.Add(ctor m)
+
+    let SaveElseHash (lexbuf, lexed, range) =
+        saveSimpleHash ConditionalDirectiveTrivia.Else (lexbuf, lexed, range)
+
+    let SaveEndIfHash (lexbuf, lexed, range) =
+        saveSimpleHash ConditionalDirectiveTrivia.EndIf (lexbuf, lexed, range)
 
     let GetTrivia (lexbuf: Lexbuf) : ConditionalDirectiveTrivia list =
         let store = getStore lexbuf
