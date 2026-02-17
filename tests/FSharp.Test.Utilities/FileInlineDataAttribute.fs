@@ -152,7 +152,7 @@ type CompilationHelper internal (filename: obj, directory: obj, realsig: obj, op
 [<AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = true)>]
 [<NoComparison; NoEquality>]
 type FileInlineData(filenameArg: string, realsig: BooleanOptions option, optimize: BooleanOptions option, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) =
-    inherit Attribute()
+    inherit DataAttributeBase()
     
     let mutable directory: string = directory
     let mutable filename: string = filenameArg
@@ -179,32 +179,18 @@ type FileInlineData(filenameArg: string, realsig: BooleanOptions option, optimiz
 
     member _.Realsig with set v = realsig <- Some v
 
-    interface IDataAttribute with
-        member _.GetData(_testMethod: MethodInfo, _disposalTracker: DisposalTracker) =
-            let getOptions realsig optimize =
-                let compilationHelper = CompilationHelper(filename, directory, convertToBoxed realsig, convertToBoxed optimize)
-                [| box (compilationHelper) |]
+    override _.GetData(_testMethod: MethodInfo, _disposalTracker: DisposalTracker) =
+        let getOptions realsig optimize =
+            let compilationHelper = CompilationHelper(filename, directory, convertToBoxed realsig, convertToBoxed optimize)
+            [| box (compilationHelper) |]
 
-            let results =
-                let rsValues = computeBoolValues realsig
-                let optValues = computeBoolValues optimize
-                [|
-                    for r in rsValues do
-                        for o in optValues do
-                            getOptions r o
-                |]
+        let results =
+            let rsValues = computeBoolValues realsig
+            let optValues = computeBoolValues optimize
+            [|
+                for r in rsValues do
+                    for o in optValues do
+                        getOptions r o
+            |]
 
-            let rows = results |> Seq.map (fun row -> Xunit.TheoryDataRow(row) :> Xunit.ITheoryDataRow) |> Seq.toArray :> Collections.Generic.IReadOnlyCollection<_>
-            // Use ValueTask constructor for net472 compatibility (ValueTask.FromResult not available)
-            ValueTask<Collections.Generic.IReadOnlyCollection<Xunit.ITheoryDataRow>>(rows)
-        
-        member _.Explicit = Nullable()
-        member _.Label = null
-        member _.Skip = null
-        member _.SkipType = null
-        member _.SkipUnless = null
-        member _.SkipWhen = null
-        member _.TestDisplayName = null
-        member _.Timeout = Nullable()
-        member _.Traits = null
-        member _.SupportsDiscoveryEnumeration() = true
+        DataAttributeBase.WrapRows(results)

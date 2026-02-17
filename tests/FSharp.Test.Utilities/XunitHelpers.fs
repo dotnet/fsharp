@@ -28,25 +28,11 @@ type RunTestCasesInSequenceAttribute() = inherit Attribute()
 // Runs a test case many times in parallel.
 // Example usage: [<Theory; Stress(Count = 1000)>]
 type StressAttribute([<ParamArray>] data: obj array) =
-    inherit Attribute()
+    inherit DataAttributeBase()
     member val Count = 1 with get, set
-    interface IDataAttribute with
-        member this.GetData(_testMethod: MethodInfo, _disposalTracker: DisposalTracker) =
-            let results = Seq.init this.Count (fun i -> [| yield! data; yield box i |])
-            let rows = results |> Seq.map (fun row -> Xunit.TheoryDataRow(row) :> Xunit.ITheoryDataRow) |> Seq.toArray :> Collections.Generic.IReadOnlyCollection<_>
-            // Use ValueTask constructor for net472 compatibility (ValueTask.FromResult not available)
-            ValueTask<Collections.Generic.IReadOnlyCollection<Xunit.ITheoryDataRow>>(rows)
-        
-        member _.Explicit = Nullable()
-        member _.Label = null
-        member _.Skip = null
-        member _.SkipType = null
-        member _.SkipUnless = null
-        member _.SkipWhen = null
-        member _.TestDisplayName = null
-        member _.Timeout = Nullable()
-        member _.Traits = null
-        member _.SupportsDiscoveryEnumeration() = true
+    override this.GetData(_testMethod: MethodInfo, _disposalTracker: DisposalTracker) =
+        let results = Seq.init this.Count (fun i -> [| yield! data; yield box i |])
+        DataAttributeBase.WrapRows(results)
 
 #if XUNIT_EXTRAS
 

@@ -37,6 +37,7 @@
     <Compile Include="ScriptHelpers.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="ILVerifierModule.fs" />
+    <Compile Include="DataAttributeBase.fs" />
     <Compile Include="DirectoryAttribute.fs" />
     <Compile Include="FileInlineDataAttribute.fs" />
     <Compile Include="ReflectionHelper.fs" />

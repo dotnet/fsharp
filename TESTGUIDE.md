@@ -108,11 +108,7 @@ The F# tests are split as follows:
 
 ### FSharp Suite
 
-This is compiled using [tests\fsharp\FSharp.Tests.FSharpSuite.fsproj](tests/fsharp/FSharp.Tests.FSharpSuite.fsproj) to a unit test DLL which acts as a driver script. Each individual test is an xUnit test case, and so you can run it like any other xUnit test.
-
-```shell
-.\build.cmd net40 test-net40-fsharp
-```
+This is compiled using [tests\fsharp\FSharpSuite.Tests.fsproj](tests/fsharp/FSharpSuite.Tests.fsproj) as a test executable. Each individual test is an xUnit test case, and so you can run it like any other xUnit test.
 
 Tests are grouped in folders per area. Each test compiles and executes a `test.fsx|fs` file in its folder using some combination of compiler or FSI flags specified in the FSharpSuite test project.  
 If the compilation and execution encounter no errors, the test is considered to have passed. 
@@ -231,37 +227,59 @@ To get an idea of how long it may take, or how much coffee you'll need while wai
 
 ## Test Infrastructure
 
-### Current Testing Framework
+### Testing Framework
 
-The F# repository uses **xUnit 2.9.0** for unit testing with the following key components:
+The F# repository uses **xUnit v3** (3.2.2) for unit testing, running on the **Microsoft Testing Platform (MTP)** instead of the legacy VSTest runner. Key components:
 
-- **xUnit**: 2.9.0 (test framework)
-- **xUnit Runner**: 2.8.2 (test execution)
-- **FsCheck**: 2.16.5 (property-based testing)
-- **Microsoft.NET.Test.Sdk**: 17.11.1 (test platform integration)
+- **xunit.v3.mtp-v2**: 3.2.2 (test framework + MTP integration)
+- **xunit.v3.runner.console**: 3.2.2 (console runner)
+- **FsCheck**: 2.16.6 (property-based testing)
+- **Microsoft.Testing.Extensions.HangDump**: 2.0.2 (hang detection, replaces VSTest blame-hang-timeout)
+
+All test projects are `<OutputType>Exe</OutputType>` executables (an xUnit v3 requirement). Package references are centrally managed in `tests/Directory.Build.props`.
+
+### Test Execution
+
+Tests run via `dotnet test` using the MTP runner (enabled via `<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>`). The build script function `TestUsingMSBuild` in `eng/Build.ps1` handles test invocation with xUnit-flavored TRX reporting (`--report-xunit-trx`) and hang dump timeouts.
+
+To run a specific test project directly:
+
+```shell
+dotnet test --project tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj -c Release -f net10.0
+```
+
+To filter tests by method name:
+
+```shell
+dotnet test --project <project> -c Release -- --filter-method "*YourTestName*"
+```
 
 ### Custom Test Utilities
 
-The repository includes custom xUnit extensions in `tests/FSharp.Test.Utilities/` to enhance test capabilities:
+The repository includes custom xUnit v3 extensions in `tests/FSharp.Test.Utilities/`:
 
-- **Console output capture**: Each test case captures and reports its console output
-- **Parallel test execution**: Internal parallelization of test classes and theory cases
-- **Batch traits**: Tests are tagged with batch numbers for CI multi-agent testing (use `--filter batch=N`)
-- **Custom data attributes**: `DirectoryAttribute` for file-based test discovery
+**Active:**
+
+- **Console output capture** (`TestConsole`): Each test case captures and reports its console output via `TestConsole.ExecutionCapture`. Note: xUnit v3's built-in `[<assembly: CaptureTrace>]` is intentionally disabled because it intercepts console output before `TestConsole`'s redirectors, breaking FSI test capture.
+- **Custom data attributes**: `DirectoryAttribute` and `FileInlineDataAttribute` for file-based test discovery, `StressAttribute` for repeated parallel stress testing.
+- **Assembly initialization** (`XunitSetup`): Installs `TestConsole` and (on .NET Framework) the `AssemblyResolver` once per assembly via a lazy module initializer, replacing the old `FSharpXunitFramework` approach.
+
+**Disabled (pending xUnit v3 API adaptation):**
+
+- **`FSharpXunitFramework`** (`XunitHelpers.fs`): The custom `XunitTestFramework` subclass is commented out. It previously handled one-time setup, OpenTelemetry tracing/metrics export for test runs, and post-run temp directory cleanup. xUnit v3 changed the `XunitTestFramework`/`XunitTestFrameworkExecutor` APIs, making the override incompatible.
+- **`XUNIT_EXTRAS` — internal parallelization and batch traits** (`XunitHelpers.fs`, gated by the `XUNIT_EXTRAS` define which is commented out in `FSharp.Test.Utilities.fsproj`): This included `CustomTestCase`/`CustomTheoryTestCase` types and a custom discoverer that assigned each test case a unique test collection for fine-grained parallelization, and injected `batch=1..4` traits for CI multi-agent filtering (`--filter-trait batch=N`). xUnit v3 changed the `XunitTestCase`, `XunitTheoryTestCase`, and discovery APIs. The test suite now relies on xUnit v3's default collection-level parallelization.
 
 ### Test Configuration
 
-Test execution behavior is controlled by `xunit.runner.json` files in each test project:
+Test execution behavior is controlled by `testconfig.json` files (xUnit v3 format) in test projects that need non-default settings. Example from `tests/fsharp/testconfig.json`:
 
 ```json
 {
-  "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
-  "parallelizeAssembly": true,
-  "parallelizeTestCollections": true,
-  "maxParallelThreads": 4
+  "xUnit": {
+    "parallelizeTestCollections": false,
+    "maxParallelThreads": 1
+  }
 }
 ```
 
-### Future Migration to xUnit3
-
-**Note**: The test infrastructure is prepared for migration to xUnit3 when it becomes stable. Currently, xUnit3 is in preview and not suitable for production use. Configuration files have been updated to the xUnit3 schema format (backward compatible with xUnit2). For detailed migration planning, see `XUNIT3_MIGRATION_STATUS.md`.
+.NET Framework (`net472`) test projects are forced to `x64` via `<PlatformTarget>x64</PlatformTarget>` in `tests/Directory.Build.props` to avoid OOM issues.

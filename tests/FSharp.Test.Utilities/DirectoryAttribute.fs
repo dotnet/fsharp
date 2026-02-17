@@ -23,7 +23,7 @@ open TestFramework
 [<AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = true)>]
 [<NoComparison; NoEquality>]
 type DirectoryAttribute(dir: string) =
-    inherit Attribute()
+    inherit DataAttributeBase()
     
     do if String.IsNullOrWhiteSpace(dir) then
             invalidArg "dir" "Directory cannot be null, empty or whitespace only."
@@ -37,20 +37,6 @@ type DirectoryAttribute(dir: string) =
     member _.BaselineSuffix with get() = baselineSuffix and set v = baselineSuffix <- v
     member _.Includes with get() = includes and set v = includes <- v
 
-    interface IDataAttribute with
-        member _.GetData(_testMethod: MethodInfo, _disposalTracker: DisposalTracker) =
-            let data = createCompilationUnitForFiles baselineSuffix directoryPath includes
-            let rows = data |> Seq.map (fun row -> Xunit.TheoryDataRow(row) :> Xunit.ITheoryDataRow) |> Seq.toArray :> Collections.Generic.IReadOnlyCollection<_>
-            // Use ValueTask constructor for net472 compatibility (ValueTask.FromResult not available)
-            ValueTask<Collections.Generic.IReadOnlyCollection<Xunit.ITheoryDataRow>>(rows)
-        
-        member _.Explicit = Nullable()
-        member _.Label = null
-        member _.Skip = null
-        member _.SkipType = null
-        member _.SkipUnless = null
-        member _.SkipWhen = null
-        member _.TestDisplayName = null
-        member _.Timeout = Nullable()
-        member _.Traits = null
-        member _.SupportsDiscoveryEnumeration() = true
+    override _.GetData(_testMethod: MethodInfo, _disposalTracker: DisposalTracker) =
+        let data = createCompilationUnitForFiles baselineSuffix directoryPath includes
+        DataAttributeBase.WrapRows(data)
