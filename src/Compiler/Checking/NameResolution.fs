@@ -2243,7 +2243,8 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
 
 // (#16621) Register union case tester properties as references to their underlying union case.
 // For union case testers (e.g., IsB property), this ensures "Find All References" on a union case
-// includes usages of its tester property. Uses a shifted range to avoid duplicate filtering in ItemKeyStore.
+// includes usages of its tester property. Uses the identifier range computed from the end of the
+// member access range to avoid coloring the dot in "x.IsA" as a union case.
 let RegisterUnionCaseTesterForProperty
     (sink: TcResultsSink)
     (m: range)
@@ -2265,10 +2266,12 @@ let RegisterUnionCaseTesterForProperty
                 let ucref = tcref.MakeNestedUnionCaseRef ucase
                 let ucinfo = UnionCaseInfo([], ucref)
                 let ucItem = Item.UnionCase(ucinfo, false)
-                // Shift start by 1 column to distinguish from the property reference
-                let shiftedStart = Position.mkPos m.StartLine (m.StartColumn + 1)
-                let shiftedRange = Range.withStart shiftedStart m
-                currentSink.NotifyNameResolution(shiftedRange.End, ucItem, emptyTyparInst, occurrenceType, nenv, ad, shiftedRange, false)
+                // Compute the range of just the property identifier (e.g., "IsA") from the end of the
+                // member access range, so it excludes any dot or qualifier prefix (e.g., "x." in "x.IsA").
+                let propertyNameLength = 2 + caseName.Length // "Is" + caseName
+                let identStart = Position.mkPos m.EndLine (m.EndColumn - propertyNameLength)
+                let identRange = Range.mkRange m.FileName identStart m.End
+                currentSink.NotifyNameResolution(identRange.End, ucItem, emptyTyparInst, occurrenceType, nenv, ad, identRange, false)
             | None -> ()
     | _ -> ()
 
