@@ -20,7 +20,11 @@ jobs:
     dependsOn: ${{ parameters.dependsOn }}
     ${{ if item.useVmImage }}:
       pool:
-        vmImage: ${{ item.useVmImage }}
+        ${{ if item.usePool }}:
+          name: ${{ item.usePool }}
+          demands: ImageOverride -equals ${{ item.useVmImage }}
+        ${{ else }}:
+          vmImage: ${{ item.useVmImage }}
     ${{ else }}:
       pool:
         name: $(DncEngPublicBuildPool)
