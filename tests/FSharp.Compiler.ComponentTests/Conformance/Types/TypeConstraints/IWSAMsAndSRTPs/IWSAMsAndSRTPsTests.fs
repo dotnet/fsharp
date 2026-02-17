@@ -2358,3 +2358,81 @@ let r2 = f 3.0 4.0
         |> compile
         |> shouldSucceed
 
+    [<Fact>]
+    let ``FSharpPlus-style InvokeMap pattern compiles with preview langversion`` () =
+        FSharp """
+module TestFSharpPlusPattern
+
+type Default1 = class end
+
+type InvokeMap =
+    static member inline Invoke (mapping: 'T -> 'U, source: ^Functor) : ^Result =
+        ((^Functor or ^Result) : (static member Map : ^Functor * ('T -> 'U) -> ^Result) source, mapping)
+
+type InvokeApply =
+    static member inline Invoke (f: ^ApplicativeFunctor, x: ^ApplicativeFunctor2) : ^ApplicativeFunctor3 =
+        ((^ApplicativeFunctor or ^ApplicativeFunctor2 or ^ApplicativeFunctor3) : (static member (<*>) : ^ApplicativeFunctor * ^ApplicativeFunctor2 -> ^ApplicativeFunctor3) f, x)
+
+type ZipList<'T> = { Values: 'T list } with
+    static member Map (x: ZipList<'T>, f: 'T -> 'U) : ZipList<'U> = { Values = List.map f x.Values }
+    static member (<*>) (f: ZipList<'T -> 'U>, x: ZipList<'T>) : ZipList<'U> =
+        { Values = List.map2 (fun f x -> f x) f.Values x.Values }
+
+let inline add3 (x: ^T) : ZipList< ^T -> ^T -> ^T> = 
+    InvokeMap.Invoke ((fun a b c -> a + b + c), { Values = [x] })
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``FSharpPlus-style pattern with explicit type annotation workaround compiles`` () =
+        FSharp """
+module TestFSharpPlusWorkaround
+
+type InvokeMap =
+    static member inline Invoke (mapping: 'T -> 'U, source: ^Functor) : ^Result =
+        ((^Functor or ^Result) : (static member Map : ^Functor * ('T -> 'U) -> ^Result) source, mapping)
+
+type ZipList<'T> = { Values: 'T list } with
+    static member Map (x: ZipList<'T>, f: 'T -> 'U) : ZipList<'U> = { Values = List.map f x.Values }
+
+// Workaround: explicit type annotation on the call
+let inline add3 (x: ^T) : ZipList< ^T -> ^T -> ^T> = 
+    (InvokeMap.Invoke ((fun a b c -> a + b + c), { Values = [x] }) : ZipList< ^T -> ^T -> ^T>)
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Non-inline code canonicalization is unaffected by ExtensionConstraintSolutions`` () =
+        FSharp """
+module TestNonInlineUnaffected
+
+// Non-inline: weak resolution should still run, resolving y to TimeSpan
+let f1 (x: System.DateTime) y = x + y
+// This call MUST work — y should be inferred as TimeSpan
+let r = f1 (System.DateTime.Now) (System.TimeSpan.FromHours(1.0))
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline numeric operators with multiple overloads stay generic with preview`` () =
+        FSharp """
+module TestInlineNumericGeneric
+
+let inline addThenMultiply x y z = (x + y) * z
+let r1 = addThenMultiply 3 4 5
+let r2 = addThenMultiply 3.0 4.0 5.0
+if r1 <> 35 then failwith (sprintf "Expected 35 but got %d" r1)
+if r2 <> 35.0 then failwith (sprintf "Expected 35.0 but got %f" r2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
