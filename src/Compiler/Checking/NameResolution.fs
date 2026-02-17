@@ -731,13 +731,7 @@ let private SelectIndexedExtMethInfosForType (infoReader: InfoReader) (nenv: Nam
 
 /// Look up extension method infos for a single type from both indexed and unindexed extension members.
 let private SelectExtMethInfosForType (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
-    let g = infoReader.g
-    let indexedResults =
-        match tryTcrefOfAppTy g ty with
-        | ValueSome tcref ->
-            let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
-            SelectMethInfosFromExtMembers infoReader optFilter ty m extMemInfos
-        | _ -> []
+    let indexedResults = SelectIndexedExtMethInfosForType infoReader nenv optFilter m ty
     let unindexedResults = SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
     indexedResults @ unindexedResults
 
