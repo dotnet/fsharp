@@ -304,6 +304,7 @@ let y = 2
         |> withDefines [ "DEFINED" ]
         |> withLangVersion "11.0"
         |> compile
+        |> withErrorCode 3882
         |> withDiagnosticMessageMatches "#elif directive must appear as the first non-whitespace character on a line"
 
     // Error FS3883: bare #elif without expression
@@ -319,6 +320,7 @@ let y = 2
         FSharp elifMustHaveIdent
         |> withLangVersion "11.0"
         |> compile
+        |> withErrorCode 3883
         |> withDiagnosticMessageMatches "#elif directive should be immediately followed by an identifier"
 
     // All branches false, no #else fallback
