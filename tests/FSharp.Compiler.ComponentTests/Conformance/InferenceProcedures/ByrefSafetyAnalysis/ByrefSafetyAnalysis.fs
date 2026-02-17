@@ -1678,6 +1678,168 @@ let test () : Span<int> =
         |> compile
         |> shouldSucceed
 
+    // --- Control flow and chaining tests ---
+
+    [<Fact>]
+    let ``E_IfElseSpanFromLocalByref`` () =
+        FSharp """
+module Test
+open System
+
+let f flag (arr: int[]) =
+    let mutable x = 1
+    if flag then Span<int>(&x) else Span<int>(arr)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_IfElseSpanFromLocalByref - backward compat`` () =
+        FSharp """
+module Test
+open System
+
+let f flag (arr: int[]) =
+    let mutable x = 1
+    if flag then Span<int>(&x) else Span<int>(arr)
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_MatchSpanFromLocalByref`` () =
+        FSharp """
+module Test
+open System
+
+let f (choice: bool) (arr: int[]) =
+    let mutable x = 1
+    match choice with
+    | true -> Span<int>(&x)
+    | false -> Span<int>(arr)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_MatchSpanFromLocalByref - backward compat`` () =
+        FSharp """
+module Test
+open System
+
+let f (choice: bool) (arr: int[]) =
+    let mutable x = 1
+    match choice with
+    | true -> Span<int>(&x)
+    | false -> Span<int>(arr)
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_TryWithSpanFromLocalByref`` () =
+        FSharp """
+module Test
+open System
+
+let f (arr: int[]) =
+    let mutable x = 1
+    try Span<int>(&x)
+    with _ -> Span<int>(arr)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_TryWithSpanFromLocalByref - backward compat`` () =
+        FSharp """
+module Test
+open System
+
+let f (arr: int[]) =
+    let mutable x = 1
+    try Span<int>(&x)
+    with _ -> Span<int>(arr)
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_SliceOnEscapedSpan`` () =
+        FSharp """
+module Test
+open System
+
+let f () =
+    let mutable x = 1
+    let s = Span<int>(&x)
+    s.Slice(0)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_SliceOnEscapedSpan - backward compat`` () =
+        FSharp """
+module Test
+open System
+
+let f () =
+    let mutable x = 1
+    let s = Span<int>(&x)
+    s.Slice(0)
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_ImplicitConversionEscapedSpan`` () =
+        FSharp """
+module Test
+#nowarn "3391"
+open System
+
+let f () : ReadOnlySpan<int> =
+    let mutable x = 1
+    Span<int>(&x)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_ImplicitConversionEscapedSpan - backward compat`` () =
+        FSharp """
+module Test
+#nowarn "3391"
+open System
+
+let f () : ReadOnlySpan<int> =
+    let mutable x = 1
+    Span<int>(&x)
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
