@@ -1673,7 +1673,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                     | Some c ->
                         match c.AccessRights with
                         | :? AccessorDomain as ad -> ad
-                        | x -> failwith $"SolveMemberConstraint: expected AccessorDomain but got {x.GetType().Name}"
+                        | x -> error (InternalError($"SolveMemberConstraint: expected AccessorDomain but got {x.GetType().Name}", m))
                     | None -> AccessibleFromEverywhere
                 else
                     AccessibleFromEverywhere
@@ -2275,7 +2275,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
                         |> List.map (fun (ty, methObj) ->
                             match methObj with
                             | :? MethInfo as mi -> (ty, mi)
-                            | _ -> failwith $"GetRelevantMethodsForTrait: expected MethInfo but got {methObj.GetType().Name}")
+                            | _ -> error (InternalError($"GetRelevantMethodsForTrait: expected MethInfo but got {methObj.GetType().Name}", m)))
                         |> List.filter (fun (_, extMinfo) ->
                             not (minfos |> List.exists (fun (_, intrinsicMinfo) ->
                                 MethInfosEquivByNameAndSig EraseAll true csenv.g csenv.amap m intrinsicMinfo extMinfo)))

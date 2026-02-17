@@ -256,7 +256,7 @@ type TcEnv =
             let infoReader =
                 match infoReader with
                 | :? InfoReader as ir -> ir
-                | _ -> failwith "ITraitContext.SelectExtensionMethods: expected InfoReader instance"
+                | _ -> error (InternalError("ITraitContext.SelectExtensionMethods: expected InfoReader instance", m))
             SelectExtensionMethInfosForTrait(traitInfo, m, tenv.eNameResEnv, infoReader)
             |> List.map (fun (supportTy, minfo) -> supportTy, (minfo :> obj))
 
