@@ -736,15 +736,21 @@ let private SelectExtMethInfosForType (infoReader: InfoReader) (nenv: NameResolu
     indexedResults @ unindexedResults
 
 /// Query the available extension methods of a type (including extension methods for inherited types)
-let ExtensionMethInfosOfTypeInScope (_collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter isInstanceFilter m ty =
+let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter isInstanceFilter m ty =
     let rootResults = SelectExtMethInfosForType infoReader nenv optFilter m ty
 
-    let baseIndexedResults =
-        match infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty) with
-        | _ :: baseTys -> baseTys |> List.collect (SelectIndexedExtMethInfosForType infoReader nenv optFilter m)
-        | [] -> []
+    let combined =
+        if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil rootResults) then
+            rootResults
+        else
+            let baseIndexedResults =
+                match infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty) with
+                | _ :: baseTys -> baseTys |> List.collect (SelectIndexedExtMethInfosForType infoReader nenv optFilter m)
+                | [] -> []
 
-    (rootResults @ baseIndexedResults)
+            rootResults @ baseIndexedResults
+
+    combined
     |> List.filter (fun minfo ->
         match isInstanceFilter with
         | LookupIsInstance.Ambivalent -> true
