@@ -2425,3 +2425,76 @@ if r2 <> 35.0 then failwith (sprintf "Expected 35.0 but got %f" r2)
         |> compileAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Instance extension method resolves via SRTP`` () =
+        FSharp """
+module TestInstanceExtension
+
+type System.String with
+    member this.Duplicate() = this + this
+
+let inline duplicate (x: ^T) : ^T = (^T : (member Duplicate : unit -> ^T) x)
+let result = duplicate "hello"
+if result <> "hellohello" then failwith (sprintf "Expected 'hellohello' but got '%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Instance extension method with parameter resolves via SRTP`` () =
+        FSharp """
+module TestInstanceExtensionWithParam
+
+type System.String with
+    member this.Foo (x: string) = this + x
+
+let inline foo (x: ^T) (y: ^R) : ^R = (^T : (member Foo : ^R -> ^R) (x, y))
+let result = foo "foo" "bar"
+if result <> "foobar" then failwith (sprintf "Expected 'foobar' but got '%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Instance extension does not satisfy static SRTP constraint`` () =
+        FSharp """
+module TestInstanceVsStatic
+
+type System.String with
+    member this.Transform() = this.ToUpper()
+
+// This SRTP asks for a STATIC member — instance extension should NOT satisfy it
+let inline transform (x: ^T) : ^T = (^T : (static member Transform : ^T -> ^T) x)
+let result = transform "hello"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+
+    [<Fact>]
+    let ``Intrinsic instance method takes priority over instance extension`` () =
+        FSharp """
+module TestInstancePriority
+
+type Widget = { Value: int } with
+    member this.GetValue() = this.Value
+
+module WidgetExt =
+    type Widget with
+        member this.GetValue() = 999  // extension — should lose
+
+open WidgetExt
+
+let inline getValue (x: ^T) : int = (^T : (member GetValue : unit -> int) x)
+let result = getValue { Value = 42 }
+if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
