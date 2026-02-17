@@ -1645,10 +1645,17 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
 
         match retTypes with
-        | [ty] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m ty ->
+        | [_] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m returnTy ->
             let scopedMask =
                 if g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
-                    tryGetScopedParamMask g cenv.amap m ilMethRef
+                    // For generic methods (non-empty methInst), C# 11 implicit scoping rules
+                    // mark all ref parameters as scoped by default. This is unsound for methods
+                    // like MemoryMarshal.CreateSpan<T> that capture the ref in the returned span.
+                    // Only trust explicit scoped annotations (non-generic methods).
+                    if methInst.IsEmpty then
+                        tryGetScopedParamMask g cenv.amap m ilMethRef
+                    else
+                        None
                 else
                     None
 

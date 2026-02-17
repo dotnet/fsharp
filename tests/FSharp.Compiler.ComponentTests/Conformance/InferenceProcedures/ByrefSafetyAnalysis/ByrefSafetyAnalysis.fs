@@ -1316,23 +1316,27 @@ let f (x: inref<int>) =
             (Error 3235, Line 8, Col 5, Line 8, Col 26, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
-    // TODO: This should error but currently doesn't - escape analysis gap
     [<Fact>]
     let ``E_MemoryMarshalCreateSpan`` () =
         FSharp memoryMarshalCreateSpanSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 8, Col 5, Line 8, Col 36, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
-    // TODO: This should error but currently doesn't - escape analysis gap
     [<Fact>]
     let ``E_MemoryMarshalCreateReadOnlySpan`` () =
         FSharp memoryMarshalCreateReadOnlySpanSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3235, Line 8, Col 5, Line 8, Col 44, "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     // Backward compatibility: same error-case code must compile WITHOUT preview
 
