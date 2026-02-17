@@ -1,4 +1,5 @@
-﻿module FSharp.Compiler.Service.Tests.TokenizerTests
+﻿#nowarn "57" // FSharpLexer.Tokenize is experimental
+module FSharp.Compiler.Service.Tests.TokenizerTests
 
 open FSharp.Compiler.Tokenization
 open FSharp.Test
@@ -237,6 +238,19 @@ let ``Tokenizer test - elif directive produces HASH_ELIF token``() =
     // Line 3: let x = 2 → should be INACTIVECODE (since DEBUG is defined, #elif branch is skipped)
     let line3Names = allTokens.[3] |> List.map (fun (_, tok) -> tok.TokenName)
     Assert.Contains("INACTIVECODE", line3Names)
+
+[<Fact>]
+let ``FSharpLexer.Tokenize produces HashElif token kind``() =
+    let source = """#if DEBUG
+let x = 1
+#elif RELEASE
+let x = 2
+#endif"""
+    let tokens = ResizeArray<FSharpToken>()
+    let flags = FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.SkipTrivia
+    FSharpLexer.Tokenize(FSharp.Compiler.Text.SourceText.ofString source, tokens.Add, langVersion = "preview", conditionalDefines = ["DEBUG"], flags = flags)
+    let hasHashElif = tokens |> Seq.exists (fun t -> t.Kind = FSharpTokenKind.HashElif)
+    Assert.True(hasHashElif, "Expected at least one token with Kind = FSharpTokenKind.HashElif")
 
 [<Fact>]
 let ``Unfinished idents``() =
