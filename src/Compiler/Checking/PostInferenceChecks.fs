@@ -846,7 +846,7 @@ let tryResolveILMethodDef (amap: Import.ImportMap) (m: range) (ilMethRef: ILMeth
         | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
             Some(resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef)
         | _ -> None
-    with :? System.Exception ->
+    with _ ->
         None
 
 /// Build a mask of which IL parameters have ScopedRefAttribute.
