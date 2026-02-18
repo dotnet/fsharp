@@ -153,7 +153,7 @@ type AsyncType() =
     member _.CreateTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-        use t : Task<string> = Async.StartAsTask a
+        let t : Task<string> = Async.StartAsTask a
         waitASec t
         Assert.True (t.IsCompleted)
         Assert.AreEqual(s, t.Result)
@@ -167,7 +167,7 @@ type AsyncType() =
             doSpinloop()
         }
 
-        use t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
+        let t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
         // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
             let result = t.Wait(300)
@@ -235,7 +235,7 @@ type AsyncType() =
         let a = async {
             do raise (Exception ())
          }
-        use t = Async.StartAsTask a
+        let t = Async.StartAsTask a
         let mutable exceptionThrown = false
         try
             // waitASec t
@@ -250,7 +250,7 @@ type AsyncType() =
         let a = async {
                 while true do ()
             }
-        use t = Async.StartAsTask a
+        let t = Async.StartAsTask a
         Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
@@ -270,7 +270,7 @@ type AsyncType() =
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        use t = Async.StartAsTask(a, cancellationToken=token)
+        let t = Async.StartAsTask(a, cancellationToken=token)
 //        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.True
         cts.Cancel()
@@ -287,7 +287,7 @@ type AsyncType() =
     member _.CreateImmediateAsTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-        use t : Task<string> = Async.StartImmediateAsTask a
+        let t : Task<string> = Async.StartImmediateAsTask a
         waitASec t
         Assert.True (t.IsCompleted)
         Assert.AreEqual(s, t.Result)
@@ -296,7 +296,7 @@ type AsyncType() =
     member _.StartImmediateAsTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-        use t = Async.StartImmediateAsTask a
+        let t = Async.StartImmediateAsTask a
         waitASec t
         Assert.True (t.IsCompleted)
         Assert.AreEqual(s, t.Result)
@@ -307,7 +307,7 @@ type AsyncType() =
         let a = async {
             do raise (Exception ())
          }
-        use t = Async.StartImmediateAsTask a
+        let t = Async.StartImmediateAsTask a
         let mutable exceptionThrown = false
         try
             t.Wait()
@@ -322,7 +322,7 @@ type AsyncType() =
                 while true do
                     do! Async.Sleep 100
             }
-        use t = Async.StartImmediateAsTask a
+        let t = Async.StartImmediateAsTask a
         Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
@@ -343,7 +343,7 @@ type AsyncType() =
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        use t =
+        let t =
             Async.StartImmediateAsTask(a, cancellationToken=token)
         ewh.WaitOne() |> Assert.True
         cts.Cancel()
