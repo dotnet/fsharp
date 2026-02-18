@@ -1362,6 +1362,28 @@ Actual:
 
     let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
 
+    /// Verifies that the compiled assembly contains an assembly reference whose name starts with the given prefix.
+    let verifyAssemblyReference (prefix: string) (result: CompilationResult) : CompilationResult =
+        match result with
+        | CompilationResult.Success s ->
+            match s.OutputPath with
+            | None -> failwith "Operation didn't produce any output!"
+            | Some p ->
+                let bytes = File.ReadAllBytes(p)
+                use peReader = new PEReader(bytes.ToImmutableArray())
+                let mdReader = peReader.GetMetadataReader()
+                let refs =
+                    [ for h in mdReader.AssemblyReferences do
+                        mdReader.GetString(mdReader.GetAssemblyReference(h).Name) ]
+                if refs |> List.exists (fun name -> name.StartsWith(prefix, StringComparison.Ordinal)) then
+                    result
+                else
+                    failwith $"Expected assembly reference starting with '{prefix}'. Found: %A{refs}"
+        | CompilationResult.Failure f ->
+            printfn "Failure:"
+            printfn $"{f}"
+            failwith "Result should be \"Success\" in order to verify assembly references."
+
     let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
 
     let private verifyFSILBaseline (baseline: Baseline) (result: CompilationOutput) : unit =
