@@ -2250,6 +2250,29 @@ if resultFloat <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" resultF
         |> shouldSucceed
 
     [<Fact>]
+    let ``AllowOverloadOnReturnType disambiguates at call site with type annotation`` () =
+        // When [<AllowOverloadOnReturnType>] is applied and the call site
+        // provides a type annotation, return-type-based disambiguation works.
+        FSharp """
+module TestAllowOverloadOnReturnType
+
+type Converter =
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : int = int x
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : float = float x
+
+let resultInt: int = Converter.Convert("42")
+let resultFloat: float = Converter.Convert("42")
+if resultInt <> 42 then failwith (sprintf "Expected 42 but got %d" resultInt)
+if resultFloat <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" resultFloat)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Overloads with different parameter types resolve without ambiguity`` () =
         // Overloads that differ by parameter types (string vs int) resolve
         // normally — no [<AllowOverloadOnReturnType>] needed.
