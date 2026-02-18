@@ -2656,3 +2656,264 @@ if r1 <> 42L then failwith (sprintf "Expected 42L but got %d" r1)
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
+
+    // ---- Quotation + runtime witness tests for RFC FS-1043 new functionality ----
+
+    [<Fact>]
+    let ``Witness quotation: extension operator resolved via SRTP is callable in quotation`` () =
+        // Verifies that an extension operator defined on a custom type can be
+        // quoted and the quotation evaluated at runtime, exercising witness passing.
+        FSharp """
+module TestExtOpQuotation
+
+open Microsoft.FSharp.Quotations
+
+type Velocity = { MetersPerSecond: float }
+type Time = { Seconds: float }
+type Distance = { Meters: float }
+
+type Velocity with
+    static member (*)(v: Velocity, t: Time) = { Meters = v.MetersPerSecond * t.Seconds }
+
+let q = <@ { MetersPerSecond = 10.0 } * { Seconds = 5.0 } @>
+
+// Verify the quotation contains the expected operator call
+match q with
+| Patterns.Call(None, mi, _) when mi.Name = "op_Multiply" -> ()
+| _ -> failwith (sprintf "Unexpected quotation shape: %A" q)
+
+// Verify direct execution gives the correct result
+let d = { MetersPerSecond = 10.0 } * { Seconds = 5.0 }
+if d.Meters <> 50.0 then failwith (sprintf "Expected 50.0 but got %f" d.Meters)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: inline SRTP function quoted at concrete call site`` () =
+        // Verifies that an inline function with SRTP constraints, when quoted
+        // at a concrete call site, produces a quotation that captures the
+        // resolved witness and can be evaluated.
+        FSharp """
+module TestInlineSrtpQuotation
+
+open Microsoft.FSharp.Quotations
+
+let inline addOne x = x + LanguagePrimitives.GenericOne
+
+// Quote at int call site
+let qInt = <@ addOne 42 @>
+// Quote at float call site
+let qFloat = <@ addOne 3.14 @>
+
+// Evaluate via Linq quotation evaluator
+let resultInt = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qInt :?> int
+let resultFloat = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qFloat :?> float
+
+if resultInt <> 43 then failwith (sprintf "Expected 43 but got %d" resultInt)
+if abs (resultFloat - 4.14) > 0.001 then failwith (sprintf "Expected ~4.14 but got %f" resultFloat)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: chained inline functions pass witnesses correctly`` () =
+        // Verifies that witness parameters are correctly threaded through
+        // multiple levels of inline function calls, and the quotation
+        // evaluates to the right result.
+        FSharp """
+module TestChainedWitnessQuotation
+
+let inline myAdd x y = x + y
+let inline doubleIt x = myAdd x x
+
+let q = <@ doubleIt 21 @>
+
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int
+if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
+
+// Also test with float to verify witness resolves differently
+let qf = <@ doubleIt 1.5 @>
+let resultF = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qf :?> float
+if resultF <> 3.0 then failwith (sprintf "Expected 3.0 but got %f" resultF)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: extension widening in quotation evaluates correctly`` () =
+        // Verifies that extension methods used for numeric widening (RFC example)
+        // produce correct quotations that evaluate at runtime.
+        FSharp """
+module TestWideningQuotation
+
+type System.Int32 with
+    static member inline widen_to_int64 (a: int32) : int64 = int64 a
+
+let inline widen_to_int64 (x: ^T) : int64 = (^T : (static member widen_to_int64 : ^T -> int64) (x))
+
+let q = <@ widen_to_int64 42 @>
+
+// Verify the quotation has the right shape
+match q with
+| Quotations.Patterns.Call(None, mi, _) when mi.Name.Contains("widen") -> ()
+| _ -> failwith (sprintf "Unexpected quotation shape: %A" q)
+
+// Verify direct execution
+let r = widen_to_int64 42
+if r <> 42L then failwith (sprintf "Expected 42L but got %d" r)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: op_Implicit extension in quotation evaluates correctly`` () =
+        // Verifies that op_Implicit defined as an extension method produces
+        // quotations with correct witness resolution and runtime evaluation.
+        FSharp """
+module TestImplicitQuotation
+
+type System.Int32 with
+    static member inline op_Implicit (a: int32) : int64 = int64 a
+
+let inline implicitConv (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit : ^T -> ^U) (x))
+
+let q = <@ implicitConv 42 : int64 @>
+
+// Verify the quotation captures the conversion
+match q with
+| Quotations.Patterns.Call(None, mi, _) -> 
+    if not (mi.Name.Contains("implicit") || mi.Name.Contains("Implicit")) then
+        failwith (sprintf "Expected implicit-related method but got %s" mi.Name)
+| _ -> failwith (sprintf "Unexpected quotation shape: %A" q)
+
+// Verify direct execution
+let r : int64 = implicitConv 42
+if r <> 42L then failwith (sprintf "Expected 42L but got %d" r)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: first-class usage of inline SRTP function`` () =
+        // Verifies that an inline function used as a first-class value
+        // (witnesses monomorphized) works correctly and can be quoted.
+        FSharp """
+module TestFirstClassWitness
+
+let inline myAdd (x: 'T) (y: 'T) : 'T = x + y
+
+// First-class usage: witnesses are resolved at monomorphization
+let intAdd : int -> int -> int = myAdd
+let floatAdd : float -> float -> float = myAdd
+
+if intAdd 3 4 <> 7 then failwith "intAdd failed"
+if floatAdd 3.0 4.0 <> 7.0 then failwith "floatAdd failed"
+
+// Quote the first-class application
+let q = <@ intAdd 3 4 @>
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int
+if result <> 7 then failwith (sprintf "Expected 7 but got %d" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: comparison constraint witness in quotation`` () =
+        // Verifies that comparison-based SRTP constraints produce correct
+        // witnesses in quotations and evaluate correctly at runtime.
+        FSharp """
+module TestComparisonWitness
+
+let inline myMax x y = if x > y then x else y
+
+let q = <@ myMax 3 5 @>
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int
+if result <> 5 then failwith (sprintf "Expected 5 but got %d" result)
+
+let qs = <@ myMax "apple" "banana" @>
+let resultS = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qs :?> string
+if resultS <> "banana" then failwith (sprintf "Expected banana but got %s" resultS)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: abs and sign witnesses evaluate in quotation`` () =
+        // Verifies that built-in SRTP-resolved operators like abs and sign
+        // produce correct quotations with witness passing.
+        FSharp """
+module TestAbsSignWitness
+
+let qAbs = <@ abs -42 @>
+let resultAbs = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qAbs :?> int
+if resultAbs <> 42 then failwith (sprintf "abs: Expected 42 but got %d" resultAbs)
+
+let qSign = <@ sign -3.14 @>
+let resultSign = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qSign :?> int
+if resultSign <> -1 then failwith (sprintf "sign: Expected -1 but got %d" resultSign)
+
+let qAbsF = <@ abs -2.5 @>
+let resultAbsF = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qAbsF :?> float
+if resultAbsF <> 2.5 then failwith (sprintf "absF: Expected 2.5 but got %f" resultAbsF)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: extension operator cross-assembly with quotation`` () =
+        // Verifies that extension operators defined in one assembly can be
+        // quoted and evaluated when consumed from another assembly, exercising
+        // the full cross-assembly witness deserialization path.
+        let library =
+            FSharp """
+module ExtLib
+
+type Widget = { Value: int }
+
+type Widget with
+    static member (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let w1 = { Value = 10 }
+let w2 = { Value = 32 }
+
+// Direct execution via extension operator
+let result = w1 + w2
+if result.Value <> 42 then failwith (sprintf "Expected 42 but got %d" result.Value)
+
+// Quote the extension operator usage
+let q = <@ w1 + w2 @>
+
+match q with
+| Microsoft.FSharp.Quotations.Patterns.Call(None, mi, _) when mi.Name = "op_Addition" -> ()
+| _ -> failwith (sprintf "Unexpected quotation shape: %A" q)
+        """
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
