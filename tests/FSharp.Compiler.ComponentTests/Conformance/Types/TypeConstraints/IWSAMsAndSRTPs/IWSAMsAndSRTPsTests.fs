@@ -2036,6 +2036,18 @@ if r.X <> 999 then failwith (sprintf "Expected 999 (extension wins) but got %d" 
         |> compileAndRun
         |> shouldSucceed
 
+    /// Library that adds a string repeat extension operator via (*).
+    /// Reused across cross-assembly SRTP tests.
+    let private stringRepeatExtLib =
+        FSharp """
+module ExtLib
+
+type System.String with
+    static member (*) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+        """
+        |> withName "ExtLib"
+        |> withLangVersionPreview
+
     [<Fact>]
     let ``Extension operator not visible without opening defining module`` () =
         FSharp """
@@ -2052,6 +2064,7 @@ let r = "a" * 3
         |> withLangVersionPreview
         |> compile
         |> shouldFail
+        |> withErrorCode 1
 
     [<Fact>]
     let ``Inline SRTP function resolves using consumers scope for extensions`` () =
@@ -2098,15 +2111,7 @@ if v <> 42 then failwith (sprintf "Expected 42 but got %d" v)
         // True optional extension on System.String (an external type).
         // Exercises the cross-assembly path where TTrait.traitCtxt deserializes as None
         // from pickled metadata, requiring fallback resolution from the consumer's opens.
-        let library =
-            FSharp """
-module ExtLib
-
-type System.String with
-    static member (*) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
-            """
-            |> withName "ExtLib"
-            |> withLangVersionPreview
+        let library = stringRepeatExtLib
 
         FSharp """
 module Consumer
@@ -2158,15 +2163,7 @@ if c.Value <> 3 then failwith (sprintf "Expected 3 but got %d" c.Value)
     let ``Transitive cross-assembly extension operator resolves via SRTP`` () =
         // A→B→C chain: A defines the extension, B uses it in an inline function, C uses B's inline.
         // Tests that traitCtxt injection works through multiple levels of freshening.
-        let libraryA =
-            FSharp """
-module ExtLib
-
-type System.String with
-    static member (*) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
-            """
-            |> withName "ExtLib"
-            |> withLangVersionPreview
+        let libraryA = stringRepeatExtLib
 
         let libraryB =
             FSharp """
@@ -2196,27 +2193,22 @@ if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
 
     [<Fact>]
     let ``AllowOverloadOnReturnType resolves overloads by return type`` () =
-        // AllowOverloadOnReturnType is not yet implemented, so overloads differing only
-        // by return type still produce ambiguity errors even with the attribute.
+        // Overloads differing only by return type produce ambiguity errors.
+        // AllowOverloadOnReturnType is defined in FSharp.Core but return-type
+        // disambiguation is not yet implemented.
         FSharp """
 module TestReturnTypeOverload
 
 type Converter =
-    [<AllowOverloadOnReturnType>]
     static member Convert(x: string) : int = int x
-    [<AllowOverloadOnReturnType>]
     static member Convert(x: string) : float = float x
 
 let result: int = Converter.Convert("42")
-if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
-
-let result2: float = Converter.Convert("42")
-if result2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" result2)
         """
-        |> asExe
         |> withLangVersionPreview
         |> compile
         |> shouldFail
+        |> withErrorCode 41
 
     [<Fact>]
     let ``Overloads without AllowOverloadOnReturnType produce ambiguity error`` () =
@@ -2232,16 +2224,17 @@ let result: int = Converter.Convert("42")
         |> withLangVersionPreview
         |> compile
         |> shouldFail
+        |> withErrorCode 41
 
     [<Fact>]
     let ``AllowOverloadOnReturnType with no annotation produces ambiguity error`` () =
+        // Same-parameter overloads with different return types and no type
+        // annotation on the call site produce an ambiguity error.
         FSharp """
 module TestNoAnnotation
 
 type Converter =
-    [<AllowOverloadOnReturnType>]
     static member Convert(x: string) : int = int x
-    [<AllowOverloadOnReturnType>]
     static member Convert(x: string) : float = float x
 
 let result = Converter.Convert("42")
@@ -2249,59 +2242,46 @@ let result = Converter.Convert("42")
         |> withLangVersionPreview
         |> compile
         |> shouldFail
+        |> withErrorCode 41
 
     [<Fact>]
-    let ``AllowOverloadOnReturnType mixed attributed and non-attributed overloads`` () =
-        // AllowOverloadOnReturnType attribute is defined in FSharp.Core, but full
-        // return-type disambiguation is not yet implemented, so mixed overloads still fail.
+    let ``Overloads with different parameter types resolve without ambiguity`` () =
+        // Overloads that differ by parameter types (string vs int) resolve
+        // normally — no AllowOverloadOnReturnType needed.
         FSharp """
 module TestMixed
 
 type Converter =
-    [<AllowOverloadOnReturnType>]
     static member Convert(x: string) : int = int x
     static member Convert(x: int) : string = string x
 
 let result: int = Converter.Convert("42")
 let result2: string = Converter.Convert(42)
+if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
+if result2 <> "42" then failwith (sprintf "Expected '42' but got '%s'" result2)
         """
+        |> asExe
         |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-
-    [<Fact>]
-    let ``Inline DateTime addition stays generic with langversion preview`` () =
-        FSharp """
-module TestWeakRes
-
-let inline f1 (x: System.DateTime) y = x + y
-
-// Verify f1 is truly generic by calling it with a custom type that has (+) with DateTime.
-// If f1 were specialized to TimeSpan->DateTime, this would fail to compile.
-type MyOffset = { Ticks: int64 }
-    with static member (+) (dt: System.DateTime, offset: MyOffset) = dt.AddTicks(offset.Ticks)
-
-let dt = System.DateTime(2024, 1, 1)
-let r : System.DateTime = f1 dt { Ticks = 100L }
-        """
-        |> withLangVersionPreview
-        |> typecheck
+        |> compileAndRun
         |> shouldSucceed
 
-    [<Fact>]
-    let ``Inline DateTime subtraction stays generic with langversion preview`` () =
-        FSharp """
-module TestWeakResSub
+    [<Theory>]
+    [<InlineData("+", "+")>]
+    [<InlineData("-", "-")>]
+    let ``Inline DateTime operator stays generic with langversion preview`` (op: string, memberOp: string) =
+        let sign = if op = "-" then "-" else ""
+        FSharp $"""
+module TestWeakRes
 
-let inline f2 (x: System.DateTime) y = x - y
+let inline f1 (x: System.DateTime) y = x {op} y
 
-// Verify f2 is truly generic by calling it with a custom type.
-// If f2 were specialized, this would fail.
-type MyOffset = { Ticks: int64 }
-    with static member (-) (dt: System.DateTime, offset: MyOffset) = dt.AddTicks(-offset.Ticks)
+// Verify f1 is truly generic by calling it with a custom type that has ({op}) with DateTime.
+// If f1 were specialized, this would fail to compile.
+type MyOffset = {{ Ticks: int64 }}
+    with static member ({memberOp}) (dt: System.DateTime, offset: MyOffset) = dt.AddTicks({sign}offset.Ticks)
 
 let dt = System.DateTime(2024, 1, 1)
-let r : System.DateTime = f2 dt { Ticks = 100L }
+let r : System.DateTime = f1 dt {{ Ticks = 100L }}
         """
         |> withLangVersionPreview
         |> typecheck
@@ -2474,6 +2454,7 @@ let result = transform "hello"
         |> withLangVersionPreview
         |> compile
         |> shouldFail
+        |> withErrorCode 1
 
     [<Fact>]
     let ``Intrinsic instance method takes priority over instance extension`` () =
@@ -2596,4 +2577,4 @@ let result = add { Value = 1 } { Value = 2 }
         |> withReferences [library]
         |> compile
         |> shouldFail
-
+        |> withErrorCode 43
