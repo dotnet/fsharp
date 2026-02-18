@@ -1123,6 +1123,17 @@ type FSharpType =
     /// Indicates if the type is a struct tuple type. The GenericArguments property returns the elements of the tuple type.
     member IsStructTupleType: bool
 
+    member IsArrayType: bool
+    member IsNativePointerType: bool
+    member IsUnitType: bool
+    member IsFSharpList: bool
+    member IsFSharpChoice: bool
+    member IsFSharpOption: bool
+    member IsFSharpValueOption: bool
+    member IsStringType: bool
+    member IsObjectType: bool
+    member IsBooleanType: bool
+
     /// Indicates if the type is a function type. The GenericArguments property returns the domain and range of the function type.
     member IsFunctionType: bool
 
