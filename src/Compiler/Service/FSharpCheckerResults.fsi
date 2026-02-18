@@ -535,6 +535,18 @@ type public FSharpCheckProjectResults =
     /// Get an optimized view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
     member GetOptimizedAssemblyContents: unit -> FSharpAssemblyContents
 
+    /// Get the internal compilation data needed for CompileFromCheckedProject.
+    /// Requires keepAssemblyContents=true.
+    member internal CompilationData:
+        TcConfig *
+        TcGlobals *
+        TcImports *
+        CcuThunk *
+        ModuleOrNamespaceType *
+        TopAttribs option *
+        ILAssemblyRef *
+        CheckedImplFile list option
+
     /// Get the resolution of the ProjectOptions
     member ProjectContext: FSharpProjectContext
 

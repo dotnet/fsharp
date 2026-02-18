@@ -5,5 +5,8 @@
     <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
     <BaseOutputPath>$(MSBuildThisFileDirectory)../../../../.tools/fsharp-diag/bin/</BaseOutputPath>
     <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../../../../.tools/fsharp-diag/obj/</BaseIntermediateOutputPath>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)../../../../buildtools/keys/MSFT.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 </Project>

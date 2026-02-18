@@ -1,0 +1,251 @@
+<!--
+  FastBuildFromCache.targets
+  ==========================
+  When /p:FastBuildFromCache=true is passed, this intercepts the build of
+  eligible projects (FSharp.Compiler.Service, FSharp.Compiler.ComponentTests)
+  to emit the DLL from a local diagnostics server's cached
+  FSharpCheckProjectResults instead of running the full Fsc compiler.
+
+  ARCHITECTURE
+  ============
+  _FastBuildEmitFromCache is a REPLACEMENT for CoreCompile's Fsc invocation.
+  It mirrors CoreCompile's exact Inputs/Outputs so MSBuild treats it identically
+  for incremental build purposes: when outputs are fresh, both targets skip;
+  when inputs are stale, the cache target fires first, emits the DLL, and
+  CoreCompile's Fsc becomes a no-op via SkipCompilerExecution=true.
+
+  We cannot redefine CoreCompile directly (MSBuild's "last definition wins"
+  would affect all projects, since FastBuildFromCache is a global property).
+  Instead:
+
+  1. _FastBuildEmitFromCache (BeforeTargets="CoreCompile") — same Inputs/Outputs
+     as CoreCompile. Calls the diagnostics server to emit the DLL. On success,
+     sets SkipCompilerExecution=true. On failure, falls back to normal Fsc.
+
+  2. SkipCompilerExecution=true — built-in Fsc task property (Fsc.fs line 739).
+     Makes Fsc return exit code 0 without invoking the compiler.
+
+  WHY THIS IS SAFE
+  ================
+  - Scoped by AssemblyName: only activates for FSharp.Compiler.Service
+    and FSharp.Compiler.ComponentTests.
+  - Does NOT redefine any existing target — no "last-wins" collisions.
+  - Non-FCS projects: _FastBuildFromCacheActive is unset, both targets are
+    skipped via Condition, SkipCompilerExecution is never set. Zero impact.
+  - Server down: _FastBuildExitCode != 0, SkipCompilerExecution stays unset,
+    normal Fsc runs. The developer sees a warning and the build proceeds.
+
+  COPY CHAIN (PRESERVED)
+  ======================
+  CoreCompile → CopyFilesToOutputDirectory → done (for FCS itself)
+  ResolveProjectReferences → _CopyFilesMarkedCopyLocal → copies DLL to test
+  output. All of this works because:
+  - @(IntermediateAssembly) is populated with the DLL (by our server or by Fsc)
+  - No targets are skipped or removed
+
+  UP-TO-DATE CHECK
+  ================
+  MSBuild's incremental build compares CoreCompile's Inputs vs Outputs. If ALL
+  outputs (DLL, PDB, ref assembly, XML doc, etc.) are newer than ALL inputs,
+  CoreCompile is skipped entirely. HOWEVER, BeforeTargets targets like
+  _FastBuildEmitFromCache still run even when CoreCompile itself is skipped —
+  MSBuild only skips the task body of targets with matching Inputs/Outputs.
+
+  SOLUTION: _FastBuildEmitFromCache mirrors CoreCompile's exact Inputs/Outputs.
+  When all outputs are fresh, BOTH targets are skipped — zero server calls,
+  zero overhead. The build behaves exactly like vanilla: ~1s for a no-change
+  build.
+
+  CRITICAL: When the cache path succeeds, Fsc is a no-op and does NOT produce
+  PDB, ref assembly, or XML doc files. If we only touch @(IntermediateAssembly),
+  the other outputs remain stale/missing, and MSBuild considers CoreCompile
+  out-of-date on the NEXT build — causing it to always re-run (~28s instead of
+  ~7s). The _FastBuildTouchOutputs target therefore touches ALL CoreCompile
+  outputs so the incremental check passes on subsequent builds.
+
+  If a source file changes, CoreCompile re-runs, our target fires first, the
+  server checks its cache. If cache is valid (server saw the same edit via LSP),
+  it emits the DLL. If not, it returns an error and Fsc handles it.
+
+  IMPORT LOCATION
+  ===============
+  Imported from FSharpBuild.Directory.Build.targets (at the end), guarded by
+  Condition="'$(FastBuildFromCache)' == 'true'" on the Import element.
+
+  PROPERTY FLOW
+  =============
+  dotnet test tests/FSharp.Compiler.ComponentTests.fsproj -c Release /p:FastBuildFromCache=true
+    → FastBuildFromCache is a GLOBAL property → propagates to ALL ProjectReference builds
+    → FSharpBuild.Directory.Build.targets imports this file (for src/ projects)
+    → _FastBuildFromCacheActive is set for AssemblyName==FSharp.Compiler.Service
+      or AssemblyName==FSharp.Compiler.ComponentTests
+    → Other projects (fsc, FSharp.Core, other test projects) are unaffected
+
+  SOCKET PROTOCOL
+  ===============
+  The shell script client (get-fsharp-errors.sh with the compile flag) handles socket path
+  derivation (SHA256 of repo root), server auto-start, and UDS communication.
+  It sends: {"command": "compile", "project": "<fsproj>", "output": "<dll-path>"}
+  Server writes DLL to the output path and responds with OK or error.
+  Client exits 0 on success, non-zero on any failure.
+-->
+<Project>
+
+  <!--
+    ═══════════════════════════════════════════════════════════════════════
+    GUARD: Set _FastBuildFromCacheActive for FSharp.Compiler.Service only.
+    Other projects build normally via fsc.
+    ═══════════════════════════════════════════════════════════════════════
+  -->
+  <PropertyGroup Condition="'$(FastBuildFromCache)' == 'true'
+                             AND '$(AssemblyName)' == 'FSharp.Compiler.Service'">
+    <_FastBuildFromCacheActive>true</_FastBuildFromCacheActive>
+    <_FastBuildScript>$(RepoRoot).github/skills/fsharp-diagnostics/scripts/get-fsharp-errors.sh</_FastBuildScript>
+  </PropertyGroup>
+
+  <!--
+    ═══════════════════════════════════════════════════════════════════════
+    TARGET: _FastBuildEmitFromCache
+    Runs BEFORE CoreCompile, AFTER all CoreCompile dependencies.
+    Calls the diagnostics server to emit the DLL. On success, sets
+    SkipCompilerExecution=true so the Fsc task in CoreCompile is a no-op.
+    ═══════════════════════════════════════════════════════════════════════
+  -->
+  <Target
+      Name="_FastBuildEmitFromCache"
+      Condition="'$(_FastBuildFromCacheActive)' == 'true'"
+      BeforeTargets="CoreCompile"
+      Inputs="$(MSBuildAllProjects);
+              @(CompileBefore);
+              @(Compile);
+              @(CompileAfter);
+              @(FscCompilerTools);
+              @(_CoreCompileResourceInputs);
+              @(ManifestNonResxWithNoCultureOnDisk);
+              $(ApplicationIcon);
+              $(AssemblyOriginatorKeyFile);
+              @(ReferencePathWithRefAssemblies);
+              @(CompiledLicenseFile);
+              @(EmbeddedDocumentation);
+              $(Win32Resource);
+              $(Win32Manifest);
+              @(CustomAdditionalCompileInputs);
+              $(VersionFile);
+              $(KeyOriginatorFile);
+              $(UseSource);
+              $(LoadSource);
+              $(SourceLink)"
+      Outputs="@(DocFileItem);
+               @(IntermediateAssembly);
+               @(IntermediateRefAssembly);
+               @(_DebugSymbolsIntermediatePath);
+               $(NonExistentFile);
+               @(CustomAdditionalCompileOutputs)"
+  >
+
+    <Message Importance="high"
+             Text="FastBuildFromCache: Requesting cached compilation for $(AssemblyName)..." />
+    <Message Importance="normal"
+             Text="FastBuildFromCache: Output = @(IntermediateAssembly->'%(FullPath)')" />
+
+    <!--
+      Call the existing diagnostics server client. It handles:
+      - Auto-starting the server if not running
+      - Socket path derivation from repo root (SHA256 hash)
+      - Sending compile command with output path
+      Using IgnoreExitCode + ContinueOnError so server failure → Fsc fallback.
+    -->
+    <Exec
+        Command="bash &quot;$(_FastBuildScript)&quot; --compile &quot;$(MSBuildProjectFullPath)&quot; &quot;@(IntermediateAssembly->'%(FullPath)')&quot;"
+        ConsoleToMSBuild="true"
+        IgnoreExitCode="true"
+        StandardOutputImportance="normal"
+        StandardErrorImportance="high"
+        ContinueOnError="true"
+    >
+      <Output TaskParameter="ExitCode" PropertyName="_FastBuildExitCode" />
+    </Exec>
+
+    <!--
+      SUCCESS PATH: Server emitted the DLL → skip Fsc.
+      SkipCompilerExecution is the existing Fsc task property (Fsc.fs:739)
+      that makes Fsc return 0 without invoking the compiler.
+    -->
+    <PropertyGroup Condition="'$(_FastBuildExitCode)' == '0'">
+      <SkipCompilerExecution>true</SkipCompilerExecution>
+    </PropertyGroup>
+
+    <Message Importance="high"
+             Condition="'$(_FastBuildExitCode)' == '0'"
+             Text="FastBuildFromCache: Emitted from cache. Skipping Fsc." />
+
+    <!--
+      FAILURE PATH: Server unavailable or cache stale → let Fsc run normally.
+      SkipCompilerExecution remains unset (or whatever it was before).
+    -->
+    <Message Importance="high"
+             Condition="'$(_FastBuildExitCode)' != '0'"
+             Text="FastBuildFromCache: Server unavailable or cache stale (exit=$(_FastBuildExitCode)). Falling back to normal Fsc compilation." />
+
+  </Target>
+
+  <!--
+    ═══════════════════════════════════════════════════════════════════════
+    TARGET: _FastBuildTouchOutputs
+    Runs AFTER CoreCompile. When we used the cache path, CoreCompile's Fsc
+    was a no-op (SkipCompilerExecution=true), so it didn't produce a PDB or
+    update timestamps.
+
+    CRITICAL FOR INCREMENTAL BUILD: We must touch ALL files listed in
+    CoreCompile's Outputs — not just @(IntermediateAssembly). CoreCompile
+    declares these Outputs (in Microsoft.FSharp.Targets):
+
+        @(DocFileItem)
+        @(IntermediateAssembly)
+        @(IntermediateRefAssembly)
+        @(_DebugSymbolsIntermediatePath)
+        $(NonExistentFile)                  ← empty for CLI builds, ignored
+        @(CustomAdditionalCompileOutputs)
+
+    If any of these are stale or missing, MSBuild considers CoreCompile
+    out-of-date on the NEXT build and re-runs it (+ our BeforeTargets),
+    defeating the purpose of caching. By touching all of them, the next
+    build's incremental check passes and CoreCompile is skipped (~7s).
+
+    We also handle TargetsTriggeredByCompilation which CoreCompile's Fsc
+    skipped due to SkipCompilerExecution.
+    ═══════════════════════════════════════════════════════════════════════
+  -->
+  <Target
+      Name="_FastBuildTouchOutputs"
+      Condition="'$(_FastBuildFromCacheActive)' == 'true' AND '$(_FastBuildExitCode)' == '0'"
+      AfterTargets="CoreCompile"
+  >
+    <!--
+      Touch ALL CoreCompile outputs so the next build's incremental check
+      sees every output as newer than every input → CoreCompile is skipped.
+      AlwaysCreate="true" ensures files exist even if Fsc never ran (e.g.
+      PDB, ref assembly, XML doc). Empty marker files are harmless because
+      they are only used for timestamp comparison; real content was already
+      written by the cache for @(IntermediateAssembly).
+    -->
+    <Touch Files="@(IntermediateAssembly)" AlwaysCreate="true" />
+    <Touch Files="@(_DebugSymbolsIntermediatePath)"
+           Condition="'@(_DebugSymbolsIntermediatePath)' != ''"
+           AlwaysCreate="true" />
+    <Touch Files="@(IntermediateRefAssembly)"
+           Condition="'@(IntermediateRefAssembly)' != ''"
+           AlwaysCreate="true" />
+    <Touch Files="@(DocFileItem)"
+           Condition="'@(DocFileItem)' != ''"
+           AlwaysCreate="true" />
+    <Touch Files="@(CustomAdditionalCompileOutputs)"
+           Condition="'@(CustomAdditionalCompileOutputs)' != ''"
+           AlwaysCreate="true" />
+
+    <!-- Fire any post-compilation targets that Fsc normally triggers -->
+    <CallTarget Targets="$(TargetsTriggeredByCompilation)"
+                Condition="'$(TargetsTriggeredByCompilation)' != ''" />
+  </Target>
+
+</Project>

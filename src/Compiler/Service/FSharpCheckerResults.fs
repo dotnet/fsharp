@@ -3849,6 +3849,13 @@ type FSharpCheckProjectResults
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
+    member internal _.CompilationData =
+        let tcGlobals, tcImports, thisCcu, ccuSig, _, topAttribs, _, ilAssemRef, _, tcAssemblyExpr, _, _ =
+            getDetails ()
+
+        let tcConfig = getTcConfig ()
+        (tcConfig, tcGlobals, tcImports, thisCcu, ccuSig, topAttribs, ilAssemRef, tcAssemblyExpr)
+
     member _.GetOptimizedAssemblyContents() =
         if not keepAssemblyContents then
             invalidOp

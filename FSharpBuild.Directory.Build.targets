@@ -162,4 +162,8 @@
     </PropertyGroup>
   </Target>
 
+  <!-- FastBuildFromCache: when /p:FastBuildFromCache=true, intercepts CoreCompile
+       for FSharp.Compiler.Service with a diagnostics server call via BeforeTargets. -->
+  <Import Project="eng\targets\FastBuildFromCache.targets" Condition="'$(FastBuildFromCache)' == 'true'" />
+
 </Project>

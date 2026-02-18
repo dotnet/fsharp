@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="xunit" Version="2.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
+    <PackageReference Include="FSharp.Compiler.Service" Version="43.*" />
+    <PackageReference Update="FSharp.Core" Version="10.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../server/DesignTimeBuild.fs" Link="DesignTimeBuild.fs" />
+    <Compile Include="../server/ProjectRouting.fs" Link="ProjectRouting.fs" />
+    <Compile Include="../server/ProjectManager.fs" Link="ProjectManager.fs" />
+    <Compile Include="ProjectManagerTests.fs" />
+    <Compile Include="ResolveProjectTests.fs" />
+    <Compile Include="DesignTimeBuildTests.fs" />
+  </ItemGroup>
+
+</Project>
