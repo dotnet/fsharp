@@ -1,12 +1,12 @@
 // #Conformance #TypeInference #ByRef 
+module E_OperatorOverloadSpanCapturingByref
 open System
 
-// Scenario 1: Operator overloading returning Span capturing byref
+// Scenario 1: Static method returning Span capturing byref
 type OpTest() =
-    static member (+) (x: byref<int>, y: byref<int>) = Span<int>(&x)
+    static member Combine(x: byref<int>, y: byref<int>) : Span<int> = Span<int>(&x)
 
-let testOp() =
+let testOp() : Span<int> =
     let mutable x = 1
     let mutable y = 2
-    let _s = &x + &y // Should error - cannot escape local byref to Span
-    ()
+    OpTest.Combine(&x, &y) // Should error - cannot return Span capturing local byref

@@ -2022,6 +2022,97 @@ let outer () =
         |> compile
         |> shouldSucceed
 
+    [<Theory; FileInlineData("E_IndexerSpanCapturingByref.fs")>]
+    let``E_IndexerSpanCapturingByref_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Theory; FileInlineData("E_IndexerSpanCapturingByref.fs")>]
+    let``E_IndexerSpanCapturingByref_fs_without_preview`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("E_OperatorOverloadSpanCapturingByref.fs")>]
+    let``E_OperatorOverloadSpanCapturingByref_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Theory; FileInlineData("E_OperatorOverloadSpanCapturingByref.fs")>]
+    let``E_OperatorOverloadSpanCapturingByref_fs_without_preview`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("E_MatchExpressionSpanCapturingByref.fs")>]
+    let``E_MatchExpressionSpanCapturingByref_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Theory; FileInlineData("E_MatchExpressionSpanCapturingByref.fs")>]
+    let``E_MatchExpressionSpanCapturingByref_fs_without_preview`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("TestMemoryMarshal.fs")>]
+    let``TestMemoryMarshal_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3234]
+
+    [<Theory; FileInlineData("TestMemoryMarshal.fs")>]
+    let``TestMemoryMarshal_fs_without_preview`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("TestGaps2.fs")>]
+    let``TestGaps2_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [412]
+
+    [<Theory; FileInlineData("TestGaps2.fs")>]
+    let``TestGaps2_fs_without_preview`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [412]
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
