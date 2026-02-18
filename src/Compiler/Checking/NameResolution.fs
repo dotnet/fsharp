@@ -2241,13 +2241,10 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
     | None -> ()
     | Some sink -> sink.NotifyEnvWithScope(scopem, nenv, ad)
 
-// (#16621) Register union case tester properties as references to their underlying union case.
-// For union case testers (e.g., IsB property), this ensures "Find All References" on a union case
-// includes usages of its tester property. Uses the identifier range computed from the end of the
-// member access range to avoid coloring the dot in "x.IsA" as a union case.
+// #16621
 let RegisterUnionCaseTesterForProperty
     (sink: TcResultsSink)
-    (m: range)
+    (identRange: range)
     (nenv: NameResolutionEnv)
     (pinfos: PropInfo list)
     (occurrenceType: ItemOccurrence)
@@ -2266,11 +2263,6 @@ let RegisterUnionCaseTesterForProperty
                 let ucref = tcref.MakeNestedUnionCaseRef ucase
                 let ucinfo = UnionCaseInfo([], ucref)
                 let ucItem = Item.UnionCase(ucinfo, false)
-                // Compute the range of just the property identifier (e.g., "IsA") from the end of the
-                // member access range, so it excludes any dot or qualifier prefix (e.g., "x." in "x.IsA").
-                let propertyNameLength = 2 + caseName.Length // "Is" + caseName
-                let identStart = Position.mkPos m.EndLine (m.EndColumn - propertyNameLength)
-                let identRange = Range.mkRange m.FileName identStart m.End
                 currentSink.NotifyNameResolution(identRange.End, ucItem, emptyTyparInst, occurrenceType, nenv, ad, identRange, false)
             | None -> ()
     | _ -> ()
@@ -2281,20 +2273,12 @@ let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, 
     | None -> ()
     | Some currentSink ->
         currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, false)
-        // (#16621) For union case tester properties, also register the underlying union case
-        match item with
-        | Item.Property(_, pinfos, _) -> RegisterUnionCaseTesterForProperty sink m nenv pinfos occurrenceType ad
-        | _ -> ()
 
 let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some currentSink ->
         currentSink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, false)
-        // (#16621) For union case tester properties, also register the underlying union case
-        match item with
-        | Item.Property(_, pinfos, _) -> RegisterUnionCaseTesterForProperty sink m nenv pinfos occurrenceType ad
-        | _ -> ()
 
 let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
@@ -4204,6 +4188,12 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
 
             CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, item, tpinst, occurrence, ad)
 
+            // #16621
+            match refinedItem with
+            | Item.Property(_, pinfos, _) ->
+                RegisterUnionCaseTesterForProperty sink (rangeOfLid lid) nenv pinfos occurrence ad
+            | _ -> ()
+
     let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
         let refinedItem =
             match pinfoOpt with
@@ -4272,6 +4262,12 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
                 let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
                 CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurrence.Use, ad)
+
+                // #16621
+                match refinedItem with
+                | Item.Property(_, pinfos, _) ->
+                    RegisterUnionCaseTesterForProperty sink (rangeOfLid lid) nenv pinfos ItemOccurrence.Use ad
+                | _ -> ()
 
             let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
                 let refinedItem =
