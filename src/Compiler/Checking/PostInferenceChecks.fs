@@ -189,7 +189,8 @@ module Limit =
 
     /// Apply a scoped parameter mask to limits, zeroing out limits for scoped parameters.
     let ApplyScopedMask (scopedMask: bool array) (limits: Limit list) =
-        System.Diagnostics.Debug.Assert(limits.Length = scopedMask.Length, "ApplyScopedMask: scopedMask length should match limits length")
+        if limits.Length <> scopedMask.Length then
+            failwith "ApplyScopedMask: scopedMask length should match limits length"
 
         limits
         |> List.mapi (fun i limit ->
