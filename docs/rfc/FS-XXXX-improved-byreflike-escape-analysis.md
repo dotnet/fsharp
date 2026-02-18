@@ -128,6 +128,8 @@ Applied to: IL calls returning byref-like types in returnable context, and F# ca
 | Resolution failure → conservative | — | Yes: mask = None → all params treated as non-scoped | May cause false positives, never false negatives |
 | `RefSafetyRulesAttribute` version | C# checks assembly-level attribute to select C#7.2 vs C#11 rules | **No** — F# applies its own rules unconditionally | May over-reject old assemblies; see Required Work |
 | `scoped` variance in overrides | C# allows adding `scoped` (narrowing) but not removing (widening) in overrides | **No** — see Out of Scope | Independent diagnostic concern |
+| `[UnscopedRef]` on F# struct methods | C# reads from IL metadata | **Partial** — honored cross-assembly (IL path), not same-assembly (F# path) | F# has no syntax for this; manual attribute application is rare |
+| Generic method scoped mask | C# reads `ScopedRefAttribute` on all methods | **No** — skipped for generic methods (`methInst.IsEmpty` guard) | C# may emit implicit `ScopedRefAttribute` via `RefSafetyRulesAttribute` on `allows ref struct` methods. Without reading `RefSafetyRulesAttribute`, F# cannot distinguish explicit vs implicit — conservative skip prevents unsoundness |
 
 ## Errors
 

@@ -2377,6 +2377,37 @@ let f () =
         |> compile
         |> shouldSucceed
 
+    [<Fact>]
+    let ``FSharpScopedRefParam cross-assembly does not trigger escape error`` () =
+        let fsharpLib =
+            FSharp
+                """
+module Lib
+open System
+open System.Runtime.CompilerServices
+
+let safeFactory ([<ScopedRef>] x: byref<int>) (arr: int[]) : Span<int> =
+    x <- 42
+    Span<int>(arr)
+"""
+            |> withName "ScopedRefLib"
+            |> asLibrary
+            |> withLangVersionPreview
+
+        FSharp
+            """
+module Test
+open System
+let f () : Span<int> =
+    let mutable local = 1
+    Lib.safeFactory &local [| 1; 2; 3 |]
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [ fsharpLib ]
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
