@@ -852,13 +852,12 @@ let tryResolveILMethodDef (amap: Import.ImportMap) (m: range) (ilMethRef: ILMeth
     with _ ->
         None
 
-/// Build a mask of which IL parameters have ScopedRefAttribute.
-/// Returns an array where scopedMask.[i] = true means IL parameter i has ScopedRefAttribute.
-/// If the attribute is not available or no parameters are scoped, returns None.
-let tryGetScopedParamMask (g: TcGlobals) (methDef: ILMethodDef) : bool array option =
-    match g.attrib_ScopedRefAttribute_opt with
+/// Build a boolean mask of which IL parameters have the given attribute.
+/// Returns None if the attribute is unavailable or no parameters match.
+let tryGetILParamAttrMask (attribOpt: BuiltinAttribInfo option) (methDef: ILMethodDef) : bool array option =
+    match attribOpt with
     | None -> None
-    | Some scopedRefAttrib ->
+    | Some attrib ->
         let parameters = methDef.Parameters
 
         if parameters.IsEmpty then
@@ -867,9 +866,12 @@ let tryGetScopedParamMask (g: TcGlobals) (methDef: ILMethodDef) : bool array opt
             let mask =
                 parameters
                 |> List.toArray
-                |> Array.map (fun p -> TryFindILAttribute scopedRefAttrib p.CustomAttrs)
+                |> Array.map (fun p -> TryFindILAttribute attrib p.CustomAttrs)
 
             if Array.exists id mask then Some mask else None
+
+let tryGetScopedParamMask (g: TcGlobals) (methDef: ILMethodDef) =
+    tryGetILParamAttrMask g.attrib_ScopedRefAttribute_opt methDef
 
 /// Build a scoped parameter mask from F# parameter attributes.
 /// Reads ScopedRefAttribute from ArgReprInfo.Attribs for same-assembly F#-to-F# calls.
@@ -893,23 +895,8 @@ let hasUnscopedRefAttribute (g: TcGlobals) (methDef: ILMethodDef) : bool =
     | None -> false
     | Some unscopedRefAttrib -> TryFindILAttribute unscopedRefAttrib methDef.CustomAttrs
 
-/// Build a mask of which IL parameters have UnscopedRefAttribute.
-/// When [UnscopedRef] is on a parameter, that parameter's implicit scoped status is negated.
-let tryGetUnscopedRefParamMask (g: TcGlobals) (methDef: ILMethodDef) : bool array option =
-    match g.attrib_UnscopedRefAttribute_opt with
-    | None -> None
-    | Some unscopedRefAttrib ->
-        let parameters = methDef.Parameters
-
-        if parameters.IsEmpty then
-            None
-        else
-            let mask =
-                parameters
-                |> List.toArray
-                |> Array.map (fun p -> TryFindILAttribute unscopedRefAttrib p.CustomAttrs)
-
-            if Array.exists id mask then Some mask else None
+let tryGetUnscopedRefParamMask (g: TcGlobals) (methDef: ILMethodDef) =
+    tryGetILParamAttrMask g.attrib_UnscopedRefAttribute_opt methDef
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
