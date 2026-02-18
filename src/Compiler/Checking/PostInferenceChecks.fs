@@ -871,6 +871,22 @@ let tryGetScopedParamMask (g: TcGlobals) (methDef: ILMethodDef) : bool array opt
 
             if Array.exists id mask then Some mask else None
 
+/// Build a scoped parameter mask from F# parameter attributes.
+/// Reads ScopedRefAttribute from ArgReprInfo.Attribs for same-assembly F#-to-F# calls.
+let tryGetScopedParamMaskFromFSharpAttribs (g: TcGlobals) (argInfos: ArgReprInfo list) : bool array option =
+    match g.attrib_ScopedRefAttribute_opt with
+    | None -> None
+    | Some scopedRefAttrib ->
+        if argInfos.IsEmpty then
+            None
+        else
+            let mask =
+                argInfos
+                |> List.toArray
+                |> Array.map (fun ai -> HasFSharpAttribute g scopedRefAttrib ai.Attribs)
+
+            if Array.exists id mask then Some mask else None
+
 /// Check whether the given IL method has UnscopedRefAttribute.
 let hasUnscopedRefAttribute (g: TcGlobals) (methDef: ILMethodDef) : bool =
     match g.attrib_UnscopedRefAttribute_opt with
@@ -1530,10 +1546,41 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
         | _ -> false
 
     let ctxts = mkArgsForAppliedExpr false argsl f
+
+    // Compute scoped mask for F#-to-F# calls with [<ScopedRef>] params
+    let scopedMask =
+        if cenv.improvedByRefLikeEscapeAnalysis then
+            match f with
+            | Expr.Val(vref, _, _) ->
+                match vref.ValReprInfo with
+                | Some valReprInfo ->
+                    let flatArgInfos = valReprInfo.ArgInfos |> List.concat
+                    // For instance members, argsl includes receiver at [0], and
+                    // ValReprInfo.ArgInfos also includes receiver at [0].
+                    // CheckCallWithReceiver splits receiver off from both argsl
+                    // and the scoped mask. So we exclude the receiver's ArgReprInfo.
+                    let paramArgInfos =
+                        if hasReceiver && not flatArgInfos.IsEmpty then
+                            flatArgInfos.Tail
+                        else
+                            flatArgInfos
+
+                    let expectedArgCount =
+                        if hasReceiver then argsl.Length - 1 else argsl.Length
+
+                    if paramArgInfos.Length = expectedArgCount then
+                        tryGetScopedParamMaskFromFSharpAttribs cenv.g paramArgInfos
+                    else
+                        None // partial application or mismatch — conservative, no mask
+                | None -> None
+            | _ -> None
+        else
+            None
+
     if hasReceiver then
-        CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt None false
+        CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt scopedMask false
     else
-        CheckCall cenv env m returnTy argsl ctxts ctxt None
+        CheckCall cenv env m returnTy argsl ctxts ctxt scopedMask
 
 and CheckLambda cenv env expr (argvs, m, bodyTy) =
     let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
