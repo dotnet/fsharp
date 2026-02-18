@@ -1796,7 +1796,9 @@ let f () : ReadOnlySpan<int> =
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withErrorCodes [3235]
+        |> withDiagnostics [
+            (Error 3235, Line 7, Col 18, Line 7, Col 31, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Fact>]
     let ``E_IfElseSpanFromLocalByref - backward compat`` () =
@@ -1812,7 +1814,9 @@ let f () : ReadOnlySpan<int> =
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withErrorCodes [3235]
+        |> withDiagnostics [
+            (Error 3235, Line 8, Col 15, Line 8, Col 28, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Fact>]
     let ``E_MatchSpanFromLocalByref - backward compat`` () =
@@ -1828,7 +1832,9 @@ let f () : ReadOnlySpan<int> =
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withErrorCodes [3235]
+        |> withDiagnostics [
+            (Error 3235, Line 7, Col 9, Line 7, Col 22, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Fact>]
     let ``E_TryWithSpanFromLocalByref - backward compat`` () =
