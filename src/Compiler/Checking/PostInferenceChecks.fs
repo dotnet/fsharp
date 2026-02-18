@@ -1081,7 +1081,7 @@ and CheckExprsWithScopedMask cenv env args ctxts (scopedMask: bool array option)
 
 /// Check call arguments, including the return argument.
 /// When scopedMask is provided, scoped parameters are excluded from escape limits.
-and CheckCall cenv env m returnTy args ctxts ctxt (scopedMask: bool array option) (_hasUnscopedRef: bool) =
+and CheckCall cenv env m returnTy args ctxts ctxt (scopedMask: bool array option) =
     let limitArgs = CheckExprsWithScopedMask cenv env args ctxts scopedMask
     CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
 
@@ -1515,7 +1515,7 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
     if hasReceiver then
         CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt None false
     else
-        CheckCall cenv env m returnTy argsl ctxts ctxt None false
+        CheckCall cenv env m returnTy argsl ctxts ctxt None
 
 and CheckLambda cenv env expr (argvs, m, bodyTy) =
     let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
@@ -1682,12 +1682,12 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
             if hasReceiver then
                 CheckCallWithReceiver cenv env m returnTy args argContexts ctxt scopedMask hasUnscopedRef
             else
-                CheckCall cenv env m returnTy args argContexts ctxt scopedMask false
+                CheckCall cenv env m returnTy args argContexts ctxt scopedMask
         | _ ->
             if hasReceiver then
                 CheckCallWithReceiver cenv env m returnTy args argContexts PermitByRefExpr.Yes None false
             else
-                CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes None false
+                CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes None
 
     | TOp.Tuple tupInfo, _, _ when not (evalTupInfoIsStruct tupInfo) ->
         match ctxt with
