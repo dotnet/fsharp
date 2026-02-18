@@ -85,3 +85,58 @@ Enable with: `--langversion:preview`
 Feature name: `ExtensionConstraintSolutions`
 
 This feature is gated at the preview language version and will be stabilized in a future F# release.
+
+## AllowOverloadOnReturnType Attribute
+
+The `[<AllowOverloadOnReturnType>]` attribute (in `FSharp.Core`) enables return-type-based overload resolution for any method, extending behavior previously reserved for `op_Explicit` and `op_Implicit`:
+
+```fsharp
+type Converter =
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : int = int x
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : float = float x
+
+let resultInt: int = Converter.Convert("42")       // resolves to int overload
+let resultFloat: float = Converter.Convert("42")   // resolves to float overload
+```
+
+Without the attribute, these overloads would produce an ambiguity error. Note that the call site must provide enough type context (e.g., a type annotation) for the compiler to select the correct overload.
+
+## Advanced Examples
+
+### Numeric Widening via Extension Operators
+
+Extension members can retrofit widening conversions onto primitive types, enabling expressions like `1 + 2.0`:
+
+```fsharp
+type System.Int32 with
+    static member inline widen_to_double (a: int32) : double = double a
+
+let inline widen_to_double (x: ^T) : double = (^T : (static member widen_to_double : ^T -> double) (x))
+
+type System.Double with
+    static member inline (+)(a: double, b: 'T) : double = a + widen_to_double b
+    static member inline (+)(a: 'T, b: double) : double = widen_to_double a + b
+
+let result = 1 + 2.0  // double
+```
+
+> **Note:** This pattern is powerful but can degrade error messages for existing code. Use judiciously.
+
+### Defining op_Implicit via Extension Members
+
+Extension members can populate a generic implicit conversion function for primitive types:
+
+```fsharp
+let inline implicitConv (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit : ^T -> ^U) (x))
+
+type System.Int32 with
+    static member inline op_Implicit (a: int32) : int64 = int64 a
+    static member inline op_Implicit (a: int32) : double = double a
+
+let r1: int64 = implicitConv 42   // 42L
+let r2: double = implicitConv 42  // 42.0
+```
+
+> **Note:** These conversions are explicit in F# code (you must call `implicitConv`), not implicit as in C#.

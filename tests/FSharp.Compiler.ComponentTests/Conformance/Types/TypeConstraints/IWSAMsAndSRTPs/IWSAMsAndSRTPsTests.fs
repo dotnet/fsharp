@@ -2192,10 +2192,9 @@ if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
         |> shouldSucceed
 
     [<Fact>]
-    let ``Overloads differing only by return type produce ambiguity error`` () =
-        // Overloads differing only by return type produce ambiguity errors.
-        // AllowOverloadOnReturnType is defined in FSharp.Core but return-type
-        // disambiguation is not yet implemented.
+    let ``Overloads differing only by return type produce ambiguity error without attribute`` () =
+        // Overloads differing only by return type produce ambiguity errors
+        // when the [<AllowOverloadOnReturnType>] attribute is NOT applied.
         FSharp """
 module TestReturnTypeOverload
 
@@ -2211,9 +2210,9 @@ let result: int = Converter.Convert("42")
         |> withErrorCode 41
 
     [<Fact>]
-    let ``AllowOverloadOnReturnType with no annotation produces ambiguity error`` () =
-        // Same-parameter overloads with different return types and no type
-        // annotation on the call site produce an ambiguity error.
+    let ``AllowOverloadOnReturnType without type annotation produces ambiguity error`` () =
+        // Without the attribute, same-parameter overloads with different return
+        // types and no type annotation on the call site produce ambiguity error.
         FSharp """
 module TestNoAnnotation
 
@@ -2229,9 +2228,31 @@ let result = Converter.Convert("42")
         |> withErrorCode 41
 
     [<Fact>]
+    let ``Return-type-based disambiguation works for op_Explicit`` () =
+        // op_Explicit has built-in return-type-based overload resolution,
+        // the same mechanism AllowOverloadOnReturnType extends to arbitrary methods.
+        FSharp """
+module TestReturnTypeDisambiguation
+
+type MyNum =
+    { Value: int }
+    static member op_Explicit(x: MyNum) : int = x.Value
+    static member op_Explicit(x: MyNum) : float = float x.Value
+
+let resultInt: int = MyNum.op_Explicit({ Value = 42 })
+let resultFloat: float = MyNum.op_Explicit({ Value = 42 })
+if resultInt <> 42 then failwith (sprintf "Expected 42 but got %d" resultInt)
+if resultFloat <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" resultFloat)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Overloads with different parameter types resolve without ambiguity`` () =
         // Overloads that differ by parameter types (string vs int) resolve
-        // normally — no AllowOverloadOnReturnType needed.
+        // normally — no [<AllowOverloadOnReturnType>] needed.
         FSharp """
 module TestMixed
 
@@ -2562,3 +2583,53 @@ let result = add { Value = 1 } { Value = 2 }
         |> compile
         |> shouldFail
         |> withErrorCode 43
+
+    [<Fact>]
+    let ``RFC widening example: extension methods satisfy SRTP constraints`` () =
+        // From RFC FS-1043: extension members enable widening numeric operations.
+        // Tests that SRTP constraints like widen_to_double are satisfied by
+        // extension methods on primitive types.
+        FSharp """
+module TestWidening
+
+type System.Int32 with
+    static member inline widen_to_int64 (a: int32) : int64 = int64 a
+    static member inline widen_to_double (a: int32) : double = double a
+
+type System.Int64 with
+    static member inline widen_to_double (a: int64) : double = double a
+
+let inline widen_to_int64 (x: ^T) : int64 = (^T : (static member widen_to_int64 : ^T -> int64) (x))
+let inline widen_to_double (x: ^T) : double = (^T : (static member widen_to_double : ^T -> double) (x))
+
+let r1: int64 = widen_to_int64 42
+let r2: double = widen_to_double 42
+let r3: double = widen_to_double 42L
+if r1 <> 42L then failwith (sprintf "Expected 42L but got %d" r1)
+if r2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" r2)
+if r3 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" r3)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``RFC op_Implicit extension example compiles with preview langversion`` () =
+        // From RFC FS-1043: defining op_Implicit via extension methods to
+        // populate a generic implicitConv function for primitive types.
+        FSharp """
+module TestImplicitExtension
+
+type System.Int32 with
+    static member inline op_Implicit (a: int32) : int64 = int64 a
+
+let inline implicitConv (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit : ^T -> ^U) (x))
+
+let r1: int64 = implicitConv 42
+if r1 <> 42L then failwith (sprintf "Expected 42L but got %d" r1)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
