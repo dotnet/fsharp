@@ -24,12 +24,6 @@ module internal IEnumerator =
 
     val Empty: unit -> IEnumerator<'T>
 
-    [<NoEqualityAttribute; NoComparisonAttribute>]
-    type EmptyEnumerable<'T> =
-        | EmptyEnumerable
-
-        interface IEnumerable
-        interface IEnumerable<'T>
 
     [<SealedAttribute>]
     type Singleton<'T> =

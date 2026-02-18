@@ -2067,3 +2067,15 @@ type SeqModule2() =
         Assert.AreEqual([0; 0], Seq.insertManyAt 0 [0; 0] [] |> Seq.toList)
         CheckThrowsArgumentException (fun () -> Seq.insertManyAt -1 [0; 0] [1] |> Seq.toList |> ignore)
         CheckThrowsArgumentException (fun () -> Seq.insertManyAt 2 [0; 0] [1] |> Seq.toList |> ignore)
+
+    [<Fact>]
+    member _.EmptySerializesAsEmptyArray() =
+        let json = System.Text.Json.JsonSerializer.Serialize(Seq.empty<int>)
+        Assert.AreEqual("[]", json)
+
+    [<Fact>]
+    member _.EmptyFormatsCorrectly() =
+        // Seq.empty uses Enumerable.Empty which returns a cached empty array,
+        // so %A formats it with array notation
+        let formatted = sprintf "%A" Seq.empty<int>
+        Assert.AreEqual("[||]", formatted)

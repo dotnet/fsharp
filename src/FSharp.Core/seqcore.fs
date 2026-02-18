@@ -62,16 +62,6 @@ module internal IEnumerator =
             
     let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
 
-    [<NoEquality; NoComparison>]
-    type EmptyEnumerable<'T> =
-
-        | EmptyEnumerable
-
-        interface IEnumerable<'T> with
-            member _.GetEnumerator() = Empty<'T>()
-
-        interface IEnumerable with
-            member _.GetEnumerator() = (Empty<'T>() :> IEnumerator)
 
     type GeneratedEnumerable<'T, 'State>(openf: unit -> 'State, compute: 'State -> 'T option, closef: 'State -> unit) =
         let mutable started = false
@@ -313,17 +303,10 @@ module RuntimeHelpers =
                         let rec takeOuter() =
                             if outerEnum.MoveNext() then
                                 let ie = outerEnum.Current
-                                // Optimization to detect the statically-allocated empty IEnumerables
-                                match box ie with
-                                | :? EmptyEnumerable<'T> ->
-                                     // This one is empty, just skip, don't call GetEnumerator, try again
-                                     takeOuter()
-                                | _ ->
-                                     // OK, this one may not be empty.
-                                     // Don't forget to dispose of the enumerator for the inner list now we're done with it
-                                     currInnerEnum.Dispose()
-                                     currInnerEnum <- ie.GetEnumerator()
-                                     takeInner ()
+                                // Don't forget to dispose of the enumerator for the inner list now we're done with it
+                                currInnerEnum.Dispose()
+                                currInnerEnum <- ie.GetEnumerator()
+                                takeInner ()
                             else
                                 // We're done
                                 x.Finish()
