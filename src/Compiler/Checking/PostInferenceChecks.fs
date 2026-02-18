@@ -193,11 +193,7 @@ module Limit =
             failwith "ApplyScopedMask: scopedMask length should match limits length"
 
         limits
-        |> List.mapi (fun i limit ->
-            if i < scopedMask.Length && scopedMask.[i] then
-                NoLimit
-            else
-                limit)
+        |> List.mapi (fun i limit -> if scopedMask.[i] then NoLimit else limit)
 
 type cenv =
     { boundVals: Dictionary<Stamp, int> // really a hash set
@@ -1539,13 +1535,11 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
         if cenv.improvedByRefLikeEscapeAnalysis then
             match f with
             | Expr.Val(vref, _, _) ->
-                match vref.ValReprInfo with
-                | Some valReprInfo ->
+                vref.ValReprInfo
+                |> Option.bind (fun valReprInfo ->
                     let flatArgInfos = valReprInfo.ArgInfos |> List.concat
-                    // For instance members, argsl includes receiver at [0], and
-                    // ValReprInfo.ArgInfos also includes receiver at [0].
-                    // CheckCallWithReceiver splits receiver off from both argsl
-                    // and the scoped mask. So we exclude the receiver's ArgReprInfo.
+                    // For instance members, argsl includes receiver at [0], and ValReprInfo.ArgInfos
+                    // also includes receiver. CheckCallWithReceiver splits receiver off, so exclude it.
                     let paramArgInfos =
                         if hasReceiver && not flatArgInfos.IsEmpty then
                             flatArgInfos.Tail
@@ -1558,8 +1552,7 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
                     if paramArgInfos.Length = expectedArgCount then
                         tryGetScopedParamMaskFromFSharpAttribs cenv.g paramArgInfos
                     else
-                        None // partial application or mismatch — conservative, no mask
-                | None -> None
+                        None)
             | _ -> None
         else
             None
@@ -1719,17 +1712,12 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
             let scopedMask, hasUnscopedRef =
                 match methDefOpt with
                 | Some methDef ->
-                    // For generic methods, we skip scoped mask reading. While ScopedRefAttribute
-                    // in IL is always an explicit annotation, C# 11 may emit it for implicitly-scoped
-                    // parameters on methods with `allows ref struct` constraints. Since F# does not
-                    // read RefSafetyRulesAttribute to distinguish explicit vs implicit, the guard
-                    // prevents potential unsoundness for generic methods.
                     let mask =
                         if methInst.IsEmpty then
-                            match tryGetScopedParamMask g methDef with
-                            | Some scopedArr ->
-                                // Negate scoped status for parameters with [UnscopedRef].
-                                // C# emits [UnscopedRef] on `out` params to override implicit scoping.
+                            // For generic methods, skip scoped mask reading: C# 11 may emit implicit
+                            // ScopedRefAttribute via RefSafetyRulesAttribute which F# does not read.
+                            tryGetScopedParamMask g methDef
+                            |> Option.bind (fun scopedArr ->
                                 match tryGetUnscopedRefParamMask g methDef with
                                 | Some unscopedArr ->
                                     let effective =
@@ -1740,8 +1728,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
                                         Some effective
                                     else
                                         None
-                                | None -> Some scopedArr
-                            | None -> None
+                                | None -> Some scopedArr)
                         else
                             None
 
