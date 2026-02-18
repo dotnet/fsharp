@@ -33,14 +33,15 @@ TOp.ILCall → CheckExprOp → CheckCall/CheckCallWithReceiver
 
 4. **methInst.IsEmpty guard**: Skip scoped mask reading for generic IL methods. C# may emit implicit `ScopedRefAttribute` via `RefSafetyRulesAttribute` which F# does not read. Without this guard, generic methods could be wrongly treated as having scoped params.
 
-## Helpers
+## Helpers (current)
 
-- `tryGetILParamAttrMask attribOpt methDef` — generic IL parameter attribute mask builder
 - `tryGetScopedParamMask g methDef` — ScopedRefAttribute mask (IL)
 - `tryGetUnscopedRefParamMask g methDef` — UnscopedRefAttribute mask (IL)
 - `tryGetScopedParamMaskFromFSharpAttribs g argInfos` — ScopedRefAttribute mask (F# Attribs)
 - `hasUnscopedRefAttribute g methDef` — method-level UnscopedRef check (struct `this`)
 - `ApplyScopedMask mask limits` — zero out limits for scoped params (lengths must match)
+
+Note: `tryGetScopedParamMask` and `tryGetUnscopedRefParamMask` are near-identical and should be refactored into a shared `tryGetILParamAttrMask` (see Refactors below).
 
 ## Test conventions
 
@@ -71,6 +72,8 @@ C# interop tests use inline `CSharp """..."""` with `withCSharpLanguageVersion C
 4. **Share IL method resolution**: The `TOp.ILCall` arm resolves the same `ilMethRef` twice (once for `HasAllowsRefStruct`, once for scoped mask). Resolve once and reuse.
 
 5. **Remove dead guard in `ApplyScopedMask`**: The `i < scopedMask.Length` check at line 197 is unreachable after the `failwith` precondition at line 192.
+
+6. **Upgrade test assertions**: ~15 tests use `withErrorCodes [3235]` instead of full `withDiagnostics` with line/col/message. At minimum upgrade the control-flow tests (IfElse, Match, TryWith) where error location matters.
 
 ### RFC updates
 
