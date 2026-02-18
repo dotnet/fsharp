@@ -1831,18 +1831,34 @@ let _x3 = curryN f3 1 2 3
         FSharp "module T\nopen CsLib\nlet _ = IP.Get()" |> asExe |> withOptions iwsamWarnings |> withReferences [csLib]
         |> compileAndRun |> shouldSucceed
 
+    /// Inline F# definition of the string repeat extension operator.
+    /// Reused across single-file and cross-assembly SRTP tests to avoid duplication.
+    [<Literal>]
+    let private stringRepeatExtDef =
+        "type System.String with\n    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))"
+
+    /// Library that adds a string repeat extension operator via (*).
+    /// Reused across cross-assembly SRTP tests.
+    let private stringRepeatExtLib =
+        FSharp $"""
+module ExtLib
+
+{stringRepeatExtDef}
+        """
+        |> withName "ExtLib"
+        |> withLangVersionPreview
+
     [<Fact>]
     let ``Extension operator on string resolves with langversion preview`` () =
-        FSharp """
+        FSharp $"""
 module TestExtOp
-type System.String with
-    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+{stringRepeatExtDef}
 
 let r4 = "r" * 4
-if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
+if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%%s'" r4)
 
 let spaces n = " " * n
-if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%s'" (spaces 3))
+if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%%s'" (spaces 3))
         """
         |> asExe
         |> withLangVersionPreview
@@ -1851,10 +1867,9 @@ if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%s'" (sp
 
     [<Fact>]
     let ``Extension operator on string fails without langversion preview`` () =
-        FSharp """
+        FSharp $"""
 module TestExtOp
-type System.String with
-    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+{stringRepeatExtDef}
 
 let r4 = "r" * 4
         """
@@ -1866,16 +1881,15 @@ let r4 = "r" * 4
 
     [<Fact>]
     let ``Built-in numeric operators still work with extension methods in scope`` () =
-        FSharp """
+        FSharp $"""
 module TestBuiltIn
-type System.String with
-    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+{stringRepeatExtDef}
 
 let x = 3 * 4
-if x <> 12 then failwith (sprintf "Expected 12 but got %d" x)
+if x <> 12 then failwith (sprintf "Expected 12 but got %%d" x)
 
 let y = 2.0 + 3.0
-if y <> 5.0 then failwith (sprintf "Expected 5.0 but got %f" y)
+if y <> 5.0 then failwith (sprintf "Expected 5.0 but got %%f" y)
         """
         |> asExe
         |> withLangVersionPreview
@@ -1933,10 +1947,9 @@ module Consumer =
 
     [<Fact>]
     let ``FS1215 warning fires for extension operator without langversion preview`` () =
-        FSharp """
+        FSharp $"""
 module TestFS1215
-type System.String with
-    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+{stringRepeatExtDef}
         """
         |> withLangVersion80
         |> compile
@@ -1945,10 +1958,9 @@ type System.String with
 
     [<Fact>]
     let ``FS1215 warning does not fire for extension operator with langversion preview`` () =
-        FSharp """
+        FSharp $"""
 module TestFS1215NoWarn
-type System.String with
-    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+{stringRepeatExtDef}
         """
         |> withLangVersionPreview
         |> compile
@@ -2035,18 +2047,6 @@ if r.X <> 999 then failwith (sprintf "Expected 999 (extension wins) but got %d" 
         |> withOptions ["--nowarn:3535"]
         |> compileAndRun
         |> shouldSucceed
-
-    /// Library that adds a string repeat extension operator via (*).
-    /// Reused across cross-assembly SRTP tests.
-    let private stringRepeatExtLib =
-        FSharp """
-module ExtLib
-
-type System.String with
-    static member (*) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
-        """
-        |> withName "ExtLib"
-        |> withLangVersionPreview
 
     [<Fact>]
     let ``Extension operator not visible without opening defining module`` () =
@@ -2192,28 +2192,12 @@ if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
         |> shouldSucceed
 
     [<Fact>]
-    let ``AllowOverloadOnReturnType resolves overloads by return type`` () =
+    let ``Overloads differing only by return type produce ambiguity error`` () =
         // Overloads differing only by return type produce ambiguity errors.
         // AllowOverloadOnReturnType is defined in FSharp.Core but return-type
         // disambiguation is not yet implemented.
         FSharp """
 module TestReturnTypeOverload
-
-type Converter =
-    static member Convert(x: string) : int = int x
-    static member Convert(x: string) : float = float x
-
-let result: int = Converter.Convert("42")
-        """
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 41
-
-    [<Fact>]
-    let ``Overloads without AllowOverloadOnReturnType produce ambiguity error`` () =
-        FSharp """
-module TestNoReturnTypeOverload
 
 type Converter =
     static member Convert(x: string) : int = int x
