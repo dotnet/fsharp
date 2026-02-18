@@ -877,6 +877,24 @@ let hasUnscopedRefAttribute (g: TcGlobals) (methDef: ILMethodDef) : bool =
     | None -> false
     | Some unscopedRefAttrib -> TryFindILAttribute unscopedRefAttrib methDef.CustomAttrs
 
+/// Build a mask of which IL parameters have UnscopedRefAttribute.
+/// When [UnscopedRef] is on a parameter, that parameter's implicit scoped status is negated.
+let tryGetUnscopedRefParamMask (g: TcGlobals) (methDef: ILMethodDef) : bool array option =
+    match g.attrib_UnscopedRefAttribute_opt with
+    | None -> None
+    | Some unscopedRefAttrib ->
+        let parameters = methDef.Parameters
+
+        if parameters.IsEmpty then
+            None
+        else
+            let mask =
+                parameters
+                |> List.toArray
+                |> Array.map (fun p -> TryFindILAttribute unscopedRefAttrib p.CustomAttrs)
+
+            if Array.exists id mask then Some mask else None
+
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
     CheckExpr cenv env expr PermitByRefExpr.No |> ignore
@@ -1674,7 +1692,22 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
                     // prevents potential unsoundness for generic methods.
                     let mask =
                         if methInst.IsEmpty then
-                            tryGetScopedParamMask g methDef
+                            match tryGetScopedParamMask g methDef with
+                            | Some scopedArr ->
+                                // Negate scoped status for parameters with [UnscopedRef].
+                                // C# emits [UnscopedRef] on `out` params to override implicit scoping.
+                                match tryGetUnscopedRefParamMask g methDef with
+                                | Some unscopedArr ->
+                                    let effective =
+                                        scopedArr
+                                        |> Array.mapi (fun i scoped -> scoped && not (i < unscopedArr.Length && unscopedArr.[i]))
+
+                                    if Array.exists id effective then
+                                        Some effective
+                                    else
+                                        None
+                                | None -> Some scopedArr
+                            | None -> None
                         else
                             None
 
