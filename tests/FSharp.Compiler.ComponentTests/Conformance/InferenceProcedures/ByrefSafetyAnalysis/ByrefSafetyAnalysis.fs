@@ -2113,6 +2113,270 @@ let outer () =
         |> shouldFail
         |> withErrorCodes [412]
 
+    // ---- T11a: Non-scoped 'in T' (RFC row 17) ----
+    [<Fact>]
+    let ``NonScopedInParam triggers escape error`` () =
+        let csharpLib =
+            CSharp """
+using System;
+public static class InHelper
+{
+    public static Span<int> FromIn(in int x, int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "InLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+let f () =
+    let mutable local = 42
+    InHelper.FromIn(&local, [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``NonScopedInParam backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+public static class InHelper
+{
+    public static Span<int> FromIn(in int x, int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "InLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+let f () =
+    let mutable local = 42
+    InHelper.FromIn(&local, [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    // ---- T11b: [UnscopedRef] out T (RFC row 22) ----
+    [<Fact>]
+    let ``UnscopedRefOutParam triggers escape error`` () =
+        let csharpLib =
+            CSharp """
+using System;
+using System.Diagnostics.CodeAnalysis;
+public static class UnscopedOutHelper
+{
+    public static Span<int> ViaOut([UnscopedRef] out int x, int[] arr)
+    {
+        x = 42;
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "UnscopedOutLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+let f () =
+    let mutable local = 0
+    UnscopedOutHelper.ViaOut(&local, [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``UnscopedRefOutParam backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+using System.Diagnostics.CodeAnalysis;
+public static class UnscopedOutHelper
+{
+    public static Span<int> ViaOut([UnscopedRef] out int x, int[] arr)
+    {
+        x = 42;
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "UnscopedOutLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+let f () =
+    let mutable local = 0
+    UnscopedOutHelper.ViaOut(&local, [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    // ---- T11c: F#-to-F# [<ScopedRef>] positive ----
+    [<Fact>]
+    let ``FSharpScopedRefParam does not trigger escape error`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+let safeFactory ([<ScopedRef>] x: byref<int>) (arr: int[]) : Span<int> =
+    x <- 42
+    Span<int>(arr)
+
+let test () : Span<int> =
+    let mutable local = 1
+    safeFactory &local [| 1; 2; 3 |]
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    // ---- T11d: F#-to-F# non-scoped byref negative ----
+    [<Fact>]
+    let ``FSharpNonScopedByrefParam triggers escape error`` () =
+        FSharp """
+module Test
+open System
+
+let unsafeFactory (x: byref<int>) : Span<int> =
+    Span<int>(&x)
+
+let test () : Span<int> =
+    let mutable local = 1
+    unsafeFactory &local
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``FSharpNonScopedByrefParam backward compat`` () =
+        FSharp """
+module Test
+open System
+
+let unsafeFactory (x: byref<int>) : Span<int> =
+    Span<int>(&x)
+
+let test () : Span<int> =
+    let mutable local = 1
+    unsafeFactory &local
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    // ---- T11e: scoped in int x positive (RFC row 16) ----
+    [<Fact>]
+    let ``ScopedInParam does not trigger escape error`` () =
+        let csharpLib =
+            CSharp """
+using System;
+public static class ScopedInHelper
+{
+    public static Span<int> FromScopedIn(scoped in int x, int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "ScopedInLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+let f () =
+    let mutable local = 42
+    ScopedInHelper.FromScopedIn(&local, [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    // ---- T11f: Plain out T — F# treats as non-scoped (no RefSafetyRulesAttribute support) ----
+    [<Fact>]
+    let ``OutParam without explicit scoped triggers escape error`` () =
+        let csharpLib =
+            CSharp """
+using System;
+public static class OutHelper
+{
+    public static Span<int> ViaPlainOut(out int x, int[] arr)
+    {
+        x = 42;
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "OutLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+let f () =
+    let mutable local = 0
+    OutHelper.ViaPlainOut(&local, [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``OutParam without explicit scoped backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+public static class OutHelper
+{
+    public static Span<int> ViaPlainOut(out int x, int[] arr)
+    {
+        x = 42;
+        return new Span<int>(arr);
+    }
+}
+"""         |> withName "OutLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+let f () =
+    let mutable local = 0
+    OutHelper.ViaPlainOut(&local, [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
