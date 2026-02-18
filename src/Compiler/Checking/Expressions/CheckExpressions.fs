@@ -470,7 +470,7 @@ type CheckedBindingInfo =
 
 type cenv = TcFileState
 
-/// Extract nullness-specific context, filtering out all other context kinds to avoid side effects on non-nullness diagnostics.
+// Extract nullness-specific context, filtering out all other context kinds to avoid side effects on non-nullness diagnostics.
 let nullnessContextOnly (env: TcEnv) =
     match env.eContextInfo with
     | ContextInfo.NullnessCheckOfCapturedArg _ -> env.eContextInfo
