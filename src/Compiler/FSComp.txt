@@ -1803,5 +1803,6 @@ featureAllowLetOrUseBangTypeAnnotationWithoutParens,"Allow let! and use! type an
 3878,tcAttributeIsNotValidForUnionCaseWithFields,"This attribute is not valid for use on union cases with fields."
 3879,xmlDocNotFirstOnLine,"XML documentation comments should be the first non-whitespace text on a line."
 featureReturnFromFinal,"Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder."
+featureImplicitDIMCoverage,"Implicit dispatch slot coverage for default interface member implementations"
 3880,optsLangVersionOutOfSupport,"Language version '%s' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/%s"
 3881,optsUnrecognizedLanguageFeature,"Unrecognized language feature name: '%s'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'."
