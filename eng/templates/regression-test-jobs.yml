@@ -210,7 +210,9 @@ jobs:
                 Process-BuildOutput $_
               }
             } else {
-              bash -c "$cmd" 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
+              # Escape semicolons for bash -c to prevent them being treated as command separators
+              $escapedCmd = $cmd -replace ';', '\;'
+              bash -c "$escapedCmd" 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
                 Process-BuildOutput $_
               }
             }
@@ -277,6 +279,38 @@ jobs:
       condition: always()
       continueOnError: true
 
+    - pwsh: |
+        $binlogDir = "$(Pipeline.Workspace)/BinaryLogs"
+        $script = "$(Build.SourcesDirectory)/eng/scripts/ExtractTimingsFromBinlog.fsx"
+        
+        if (-not (Test-Path $binlogDir)) {
+          Write-Host "No binary logs directory found, skipping timing extraction"
+          exit 0
+        }
+        
+        $binlogs = Get-ChildItem -Path $binlogDir -Filter "*.binlog" -ErrorAction SilentlyContinue
+        if ($binlogs.Count -eq 0) {
+          Write-Host "No binlog files found, skipping timing extraction"
+          exit 0
+        }
+        
+        # Copy script to BinaryLogs dir so dotnet fsi doesn't inherit fsharp repo's global.json
+        # (which pins an SDK version not installed in the regression test job)
+        Copy-Item $script $binlogDir/
+        $localScript = Join-Path $binlogDir (Split-Path $script -Leaf)
+        
+        Write-Host "##[group]F# Compiler Timing Summary for ${{ item.displayName }}"
+        foreach ($bl in $binlogs) {
+          Write-Host ""
+          Write-Host "--- Timings from $($bl.Name) ---"
+          dotnet fsi $localScript "$($bl.FullName)"
+        }
+        Write-Host "##[endgroup]"
+      displayName: Extract compiler timing from binlogs for ${{ item.displayName }}
+      condition: always()
+      continueOnError: true
+      workingDirectory: '$(Pipeline.Workspace)/BinaryLogs'
+
     - task: PublishPipelineArtifact@1
       displayName:  Publish ${{ item.displayName }} Binary Logs
       inputs: 
@@ -295,7 +329,7 @@ jobs:
         Write-Host "Commit: ${{ item.commit }}"
         Write-Host "Build Script: ${{ item.buildScript }}"
         
-        if ($env:AGENT_JOBSTATUS -eq "Succeeded") {
+        if ($env:AGENT_JOBSTATUS -eq "Succeeded" -or $env:AGENT_JOBSTATUS -eq "SucceededWithIssues") {
           Write-Host "Status: SUCCESS"
           Write-Host "The ${{ item.displayName }} library builds successfully with the new F# compiler"
         } else {
