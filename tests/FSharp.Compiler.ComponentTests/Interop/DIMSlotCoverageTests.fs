@@ -192,6 +192,17 @@ let obj : IB = { new IB with member x.M(y) = y + 3 }
         |> shouldCompileWithDIM dimTestLib
 
     [<FactForNETCOREAPP>]
+    let ``Object expression - re-abstracted member requires implementation`` () =
+        fsharpImplementingInterface "ReabstractTest" "let obj : IB = { new IB }"
+        |> shouldFailWithDIM dimTestLib 366
+
+    [<FactForNETCOREAPP>]
+    let ``Object expression - re-abstracted with explicit implementation succeeds`` () =
+        fsharpImplementingInterface "ReabstractTest" """let obj : IB = { new IB
+                                                                        interface IA with member _.M() = 42 }"""
+        |> shouldCompileWithDIM dimTestLib
+
+    [<FactForNETCOREAPP>]
     let ``Generic interfaces partial DIM coverage`` () =
         fsharpImplementingInterface "GenericDIMTest" """type C() =
     interface IContainer with member _.Get() : string = "hello" """
