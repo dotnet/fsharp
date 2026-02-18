@@ -228,6 +228,8 @@ type cenv =
 
       isInternalTestSpanStackReferring: bool
 
+      improvedByRefLikeEscapeAnalysis: bool
+
       // outputs
       mutable usesQuotations: bool
 
@@ -999,7 +1001,7 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
     let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
 
     let improvedEscapeAnalysis =
-        cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
+        cenv.improvedByRefLikeEscapeAnalysis
 
     // If return is a byref, and being used as a return, then a single argument cannot be a local-byref or a stack referring span-like.
     let isReturnLimitedByRef =
@@ -1097,7 +1099,7 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt (scopedMask: bool 
         let receiverLimit = CheckExpr cenv env receiverArg receiverContext
 
         let improvedEscapeAnalysis =
-            cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
+            cenv.improvedByRefLikeEscapeAnalysis
 
         let limitArgs =
             let limitArgs = CheckExprsWithScopedMask cenv env args ctxts scopedMask
@@ -1656,7 +1658,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         match retTypes with
         | [_] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m returnTy ->
             let methDefOpt =
-                if g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
+                if cenv.improvedByRefLikeEscapeAnalysis then
                     tryResolveILMethodDef cenv.amap m ilMethRef
                 else
                     None
@@ -2882,6 +2884,7 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           viewCcu = viewCcu
           isLastCompiland = isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
+          improvedByRefLikeEscapeAnalysis = g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
           tcVal = tcValF
           entryPointGiven = false}
 
