@@ -1017,7 +1017,7 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
             || HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs
             || (improvedEscapeAnalysis
                 && HasLimitFlag LimitFlags.ByRef limitArgs
-                && limitArgs.scope >= 1))
+                && limitArgs.IsLocal))
 
     if cenv.reportErrors then
         if ctxt.PermitOnlyReturnable && ((isReturnLimitedByRef && IsLimitEscapingScope env ctxt limitArgs) || isReturnLimitedSpanLike) then
