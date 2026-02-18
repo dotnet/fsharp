@@ -57,6 +57,8 @@ variables:
     value: true
   - name: _WindowsMachineQueueName
     value: windows.vs2026preview.scout.amd64.open
+  - name: LinuxMachineQueueName
+    value: build.azurelinux.3.amd64.open
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
@@ -140,7 +142,8 @@ stages:
           # Check FSComp.txt error code sorting and code formatting
         - job: CheckCodeFormatting
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           steps:
           - checkout: self
             clean: true
@@ -167,7 +170,8 @@ stages:
         #       It is also helping the release notes automation to be up to date with packages versions.
         - job: Check_Published_Package_Versions
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           strategy:
             maxParallel: 2
             matrix:
@@ -178,17 +182,8 @@ stages:
           steps:
           - checkout: self
             clean: true
-          # We first download a publicly available .NET SDK. That one has support for `path` in global.json. dotnet.cmd script can then download a version which is not yet shipped, but matches global.json.
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              version: '10.x'
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: ./eng/common/dotnet.sh
-          - pwsh: ./check.ps1 -project $(_project)
+          - script: ./check.sh $(_project)
             workingDirectory: $(Build.SourcesDirectory)/buildtools/checkpackages
             env:
                 DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
@@ -605,7 +600,8 @@ stages:
         # Linux
         - job: Linux
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           timeoutInMinutes: 120
           variables:
           - name: _SignType
@@ -777,7 +773,8 @@ stages:
         # Plain FCS build Linux
         - job: Plain_Build_Linux
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
@@ -900,7 +897,7 @@ stages:
         testMatrix:
         - repo: marklam/SlowBuildRepro
           commit: bbe2dec4d0379b5d7d0480997858c30d442fbb42
-          buildScript: dotnet build
+          buildScript: dotnet build -bl
           displayName: UMX_Slow_Repro        
         - repo: fsprojects/FSharpPlus
           commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
@@ -910,42 +907,44 @@ stages:
           commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
           buildScript: build.sh
           displayName: FSharpPlus_Linux
-          useVmImage: $(UbuntuMachineQueueName)
+          useVmImage: $(LinuxMachineQueueName)
+          usePool: $(DncEngPublicBuildPool)
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: build.cmd
-          displayName: FsharpPlus_NET10
+          buildScript: dotnet build tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj -c Release -bl
+          displayName: FsharpPlus_NET10_Build_Lib_Tests
          # remove this before merging
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: dotnet msbuild build.proj -t:Build;Test
+          buildScript: dotnet msbuild build.proj -t:Build;Test -bl
           displayName: FsharpPlus_NET10_Test
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: dotnet msbuild build.proj -t:Build;AllDocs
+          buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
           displayName: FsharpPlus_NET10_Docs
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
           buildScript: build.sh
           displayName: FsharpPlus_Net10_Linux
-          useVmImage: $(UbuntuMachineQueueName)
+          useVmImage: $(LinuxMachineQueueName)
+          usePool: $(DncEngPublicBuildPool)
         - repo: TheAngryByrd/IcedTasks
           commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
-          buildScript: dotnet build IcedTasks.sln
+          buildScript: dotnet build IcedTasks.sln -bl
           displayName: IcedTasks_Build
         - repo: TheAngryByrd/IcedTasks
           commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
-          buildScript: dotnet test IcedTasks.sln
+          buildScript: dotnet test IcedTasks.sln -bl
           displayName: IcedTasks_Test
         - repo: demystifyfp/FsToolkit.ErrorHandling
           commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
-          buildScript: dotnet build FsToolkit.ErrorHandling.sln
+          buildScript: dotnet build FsToolkit.ErrorHandling.sln -bl
           displayName: FsToolkit_ErrorHandling_Build
         - repo: demystifyfp/FsToolkit.ErrorHandling
           commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
-          buildScript: dotnet test FsToolkit.ErrorHandling.sln
+          buildScript: dotnet test FsToolkit.ErrorHandling.sln -bl
           displayName: FsToolkit_ErrorHandling_Test
         - repo: opentk/opentk
           commit: 60c20cca65a7df6e8335e8d6060d91b30909fbea
-          buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release
+          buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release -bl:build_1.binlog ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release -bl:build_2.binlog
           displayName: OpenTK_FSharp_Build

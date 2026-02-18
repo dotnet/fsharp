@@ -96,6 +96,7 @@ type LanguageFeature =
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
     | MethodOverloadsCache
+    | ImplicitDIMCoverage
 
 /// LanguageVersion management
 type LanguageVersion =
