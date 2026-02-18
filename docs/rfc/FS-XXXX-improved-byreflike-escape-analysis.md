@@ -104,7 +104,7 @@ Applied to: IL calls returning byref-like types in returnable context, and F# ca
 |---|---|---|
 | `ref T` | bare byref | Limits span-like return (follows C# default) |
 | `in T` | `[In]` + `IsReadOnlyAttribute` | Same as `ref` — limits return |
-| `out T` | `[Out]` | **Unchanged** — follows C# (`out` is implicitly `scoped ref` in C# 11+, F# `outref` already doesn't contribute to escape) |
+| `out T` | `[Out]` | Limits span-like return — `out` does NOT get `ScopedRefAttribute` in IL (implicit scoping communicated via `RefSafetyRulesAttribute` which F# does not read). Conservative: may over-reject. |
 | `scoped ref T` | `ScopedRefAttribute` | Excluded from limit computation |
 | `scoped in T` | `ScopedRefAttribute` | Excluded from limit computation |
 | `scoped Span<T>` (value) | `ScopedRefAttribute` | Excluded from limit computation (mask reads all params, not just byrefs) |
@@ -118,7 +118,7 @@ Applied to: IL calls returning byref-like types in returnable context, and F# ca
 
 | Decision | C# rule | F# follows? | Notes |
 |---|---|---|---|
-| `out` implicitly scoped | [C# spec](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#out-compat-change): `out` has ref-safe-context of function-member | Yes (existing F# behavior: `outref` args don't contribute) | No change needed |
+| `out` implicitly scoped | [C# spec](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#out-compat-change): `out` has ref-safe-context of function-member | **No** — C# communicates implicit scoping via `RefSafetyRulesAttribute` (not `ScopedRefAttribute`); F# does not read it | Conservative: `out` treated as non-scoped, which may over-reject but never under-rejects |
 | `this` on struct implicitly scoped | [C# spec](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#implicitly-scoped): struct `this` is implicitly `scoped ref` | Yes: receiver excluded unless `[UnscopedRef]` | Reads `UnscopedRefAttribute` |
 | `[UnscopedRef]` opts out of scoped | C# `[UnscopedRef]` allows `this`/param to escape | Yes: reads attribute, includes in limit | — |
 | `[UnscopedRef]` on `out` param | C# `[UnscopedRef] out T` makes `out` escapable again | Yes: read attribute, treat as non-scoped `ref` | Falls out from UnscopedRef reading |
@@ -127,7 +127,7 @@ Applied to: IL calls returning byref-like types in returnable context, and F# ca
 | `ref` return chaining | C# ref return carries ref-safe-context of argument | Yes: FS-1053 byref return propagation, this RFC adds span capture on top | `Span(ref M(ref local))` errors |
 | Resolution failure → conservative | — | Yes: mask = None → all params treated as non-scoped | May cause false positives, never false negatives |
 | `RefSafetyRulesAttribute` version | C# checks assembly-level attribute to select C#7.2 vs C#11 rules | **No** — F# applies its own rules unconditionally | May over-reject old assemblies; see Required Work |
-| `scoped` variance in overrides | C# allows adding `scoped` (narrowing) but not removing (widening) in overrides | **No** — F# does not validate scope variance | F# override could accidentally widen scope |
+| `scoped` variance in overrides | C# allows adding `scoped` (narrowing) but not removing (widening) in overrides | **No** — see Out of Scope | Independent diagnostic concern |
 
 ## Errors
 
@@ -170,12 +170,20 @@ let f (x: byref<int>) =     // Workaround
 
 ## Required Work (before shipping)
 
-| Item | Work | Impact if not done |
+| Item | Status | Notes |
 |---|---|---|
-| MemoryMarshal.CreateSpan soundness | Fix generic IL return type resolution in `isByrefLikeTy` check | Dangling spans compile without error |
-| `[UnscopedRef]` reading | Add `attrib_UnscopedRefAttribute_opt` to TcGlobals, check in `CheckCallWithReceiver` and param limit | Safe struct methods wrongly rejected; `[UnscopedRef] out` not handled |
-| `[<ScopedRef>]` on F# params | Emit + honor attribute, read in scoped mask for F# calls | F# wrappers cause false positives |
-| Scope variance validation | Warn when F# override removes `scoped` from a base method parameter | F# class could silently widen scope, breaking callers' escape assumptions |
+| MemoryMarshal.CreateSpan soundness | ✅ Done | Fixed generic IL return type resolution using `tyOfExpr g expr` |
+| `[UnscopedRef]` reading | ✅ Done | Method-level for struct `this`, per-parameter for `[UnscopedRef] out T` |
+| `[<ScopedRef>]` on F# params | ✅ Done | Emit via GenAttrs, honor in CheckApplication for same-assembly F#-to-F# calls |
+
+## Non-gated fixes
+
+These bugfixes apply at **all language versions** (not gated by `--langversion:preview`):
+
+| Fix | Commit | Impact |
+|---|---|---|
+| Constructor exclusion from receiver | `not isCtor` guard | `.ctor` calls no longer incorrectly treated as instance method calls with `this` receiver |
+| Return type resolution | `tyOfExpr g expr` instead of raw IL return type | Correctly identifies `Span<T>` when generic type parameters are instantiated |
 
 ### Out of scope (separate RFC)
 
@@ -184,3 +192,4 @@ let f (x: byref<int>) =     // Workaround
 | `ref` field declaration in F# | Different feature, different syntax design |
 | `stackalloc` improvements | Consistent with FS-1053 approach |
 | `RefSafetyRulesAttribute` | Minimal impact; F# rules are always at least as strict as C# 11; false negatives unlikely |
+| Scope variance validation | F# override checking compares only types, not parameter attributes. An F# override removing `[<ScopedRef>]` doesn't create unsoundness for F# callers. Risk is narrow: C# callers of the F# override only. Independent diagnostic concern. |
