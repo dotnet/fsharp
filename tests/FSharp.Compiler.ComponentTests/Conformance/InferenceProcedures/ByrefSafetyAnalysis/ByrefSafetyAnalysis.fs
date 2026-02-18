@@ -1149,6 +1149,36 @@ let test () : Span<int> =
         ]
 
     [<Fact>]
+    let ``Non-scoped ref param still triggers escape error - backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public static class UnscopedHelper
+{
+    public static Span<int> MayCapture(ref int x)
+    {
+        return default;
+    }
+}
+"""         |> withName "UnscopedLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+
+open System
+
+let test () : Span<int> =
+    let mutable local = 42
+    UnscopedHelper.MayCapture(&local)
+"""
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Scoped ref on instance method does not trigger escape error`` () =
         let csharpLib =
             CSharp """
@@ -1215,7 +1245,36 @@ let test () : Span<int> =
             (Error 3235, Line 9, Col 5, Line 9, Col 39, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
-    // --- ReadOnlySpan, inref, MemoryMarshal, and nested scope tests (Sprint 02) ---
+    [<Fact>]
+    let ``Mixed scoped and non-scoped params - backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+
+public static class MixedHelper
+{
+    public static Span<int> Mixed(scoped ref int safe, ref int unsafeRef)
+    {
+        return default;
+    }
+}
+"""         |> withName "MixedScopedLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+
+open System
+
+let test () : Span<int> =
+    let mutable safe = 1
+    let mutable unsafe' = 2
+    MixedHelper.Mixed(&safe, &unsafe')
+"""
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
 
     let private returnReadOnlySpanFromLocalByrefSource = """
 module Test
@@ -2407,6 +2466,76 @@ let f () : Span<int> =
         |> withReferences [ fsharpLib ]
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline function escape caught at call site`` () =
+        FSharp
+            """
+module Test
+open System
+let inline createSpan (x: byref<int>) : Span<int> = Span<int>(&x)
+let test () : Span<int> =
+    let mutable local = 1
+    createSpan &local
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [ 3235 ]
+
+    [<Fact>]
+    let ``Inline function escape caught at call site - backward compat`` () =
+        FSharp
+            """
+module Test
+open System
+let inline createSpan (x: byref<int>) : Span<int> = Span<int>(&x)
+let test () : Span<int> =
+    let mutable local = 1
+    createSpan &local
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``UnscopedRef on out param negates scoping in mixed params`` () =
+        let csharpLib =
+            CSharp
+                """
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public static class Helper
+{
+    // scoped ref int => byref is scoped (safe)
+    // [UnscopedRef] out int => out is UN-scoped (can escape)
+    public static Span<int> MixedCapture(scoped ref int safe, [UnscopedRef] out int escapable)
+    {
+        escapable = 0;
+        return default;
+    }
+}
+"""
+            |> withName "UnscopedRefParamLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp
+            """
+module Test
+open System
+let f () : Span<int> =
+    let mutable safe = 1
+    let mutable escapable = 2
+    Helper.MixedCapture(&safe, &escapable)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [ csharpLib ]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [ 3235 ]
 
 #endif
 
