@@ -4191,7 +4191,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
             // #16621
             match refinedItem with
             | Item.Property(_, pinfos, _) ->
-                RegisterUnionCaseTesterForProperty sink (rangeOfLid lid) nenv pinfos occurrence ad
+                RegisterUnionCaseTesterForProperty sink itemRange nenv pinfos occurrence ad
             | _ -> ()
 
     let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
@@ -4266,7 +4266,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 // #16621
                 match refinedItem with
                 | Item.Property(_, pinfos, _) ->
-                    RegisterUnionCaseTesterForProperty sink (rangeOfLid lid) nenv pinfos ItemOccurrence.Use ad
+                    RegisterUnionCaseTesterForProperty sink itemRange nenv pinfos ItemOccurrence.Use ad
                 | _ -> ()
 
             let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
