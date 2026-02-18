@@ -1664,20 +1664,28 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
                 else
                     None
 
-            let scopedMask =
+            let scopedMask, hasUnscopedRef =
                 match methDefOpt with
-                | Some methDef when methInst.IsEmpty ->
-                    // For generic methods (non-empty methInst), C# 11 implicit scoping rules
-                    // mark all ref parameters as scoped by default. This is unsound for methods
-                    // like MemoryMarshal.CreateSpan<T> that capture the ref in the returned span.
-                    // Only trust explicit scoped annotations (non-generic methods).
-                    tryGetScopedParamMask g methDef
-                | _ -> None
+                | Some methDef ->
+                    // For generic methods, we skip scoped mask reading. While ScopedRefAttribute
+                    // in IL is always an explicit annotation, C# 11 may emit it for implicitly-scoped
+                    // parameters on methods with `allows ref struct` constraints. Since F# does not
+                    // read RefSafetyRulesAttribute to distinguish explicit vs implicit, the guard
+                    // prevents potential unsoundness for generic methods.
+                    let mask =
+                        if methInst.IsEmpty then
+                            tryGetScopedParamMask g methDef
+                        else
+                            None
 
-            let hasUnscopedRef =
-                match methDefOpt with
-                | Some methDef when hasReceiver -> hasUnscopedRefAttribute g methDef
-                | _ -> false
+                    let unscoped =
+                        if hasReceiver then
+                            hasUnscopedRefAttribute g methDef
+                        else
+                            false
+
+                    mask, unscoped
+                | None -> None, false
 
             if hasReceiver then
                 CheckCallWithReceiver cenv env m returnTy args argContexts ctxt scopedMask hasUnscopedRef
