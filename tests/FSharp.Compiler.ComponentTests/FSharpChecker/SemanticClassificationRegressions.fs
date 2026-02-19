@@ -63,9 +63,36 @@ let updated = { x with ValidationErrors = [] }
             (typeItemsCoveringField |> Array.map (fun i -> i.Range, i.Type))
     )
 
+/// (#16621) Helper: assert UnionCase classifications on expected lines.
+/// Each entry is (line, expectedCount, maxRangeWidth).
+/// maxRangeWidth guards against dot-coloring regressions (range including "x." prefix).
+let expectUnionCaseClassifications source (expectations: (int * int * int) list) =
+    let items = getClassifications source
+
+    for (line, expectedCount, maxWidth) in expectations do
+        let found =
+            items
+            |> Array.filter (fun item ->
+                item.Type = SemanticClassificationType.UnionCase
+                && item.Range.StartLine = line)
+
+        Assert.True(
+            found.Length = expectedCount,
+            sprintf "Line %d: expected %d UnionCase classification(s), got %d. Items on that line: %A" line expectedCount found.Length
+                (items
+                 |> Array.filter (fun i -> i.Range.StartLine = line)
+                 |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+        )
+
+        for item in found do
+            let width = item.Range.EndColumn - item.Range.StartColumn
+
+            Assert.True(
+                width <= maxWidth,
+                sprintf "Line %d: UnionCase range is too wide (%d columns, max %d): %A" line width maxWidth item.Range
+            )
+
 /// (#16621 regression) Union case tester classification must not include the dot.
-/// Before the fix, RegisterUnionCaseTesterForProperty shifted m.Start by +1,
-/// producing range ".IsCircle" whose dot survived fixupSpan.
 [<Fact>]
 let ``Union case tester classification range should not include dot`` () =
     let source =
@@ -77,42 +104,35 @@ let s = Circle
 let r1 = s.IsCircle
 let r2 = s.IsHyperbolicCaseWithLongName
 """
+    //                        line, count, maxWidth
+    expectUnionCaseClassifications source [ (6, 1, 8); (7, 1, 30) ]
 
-    let items = getClassifications source
+/// (#16621) Union case tester classification across scenarios: chaining, RequireQualifiedAccess,
+/// multiple testers on one line, and self-referential members.
+[<Fact>]
+let ``Union case tester classification across scenarios`` () =
+    let source =
+        """
+module Test
 
-    // Find UnionCase classification items on lines 6 and 7
-    let unionCaseItems =
-        items
-        |> Array.filter (fun item ->
-            item.Type = SemanticClassificationType.UnionCase
-            && (item.Range.StartLine = 6 || item.Range.StartLine = 7))
+type Shape = Circle | Square
+let s = Circle
+let chained = s.IsCircle.ToString()
+let both = s.IsCircle && s.IsSquare
 
-    // There should be union case classifications for the tester properties
-    Assert.True(
-        unionCaseItems.Length > 0,
-        "Expected UnionCase classification for case tester properties"
-    )
+[<RequireQualifiedAccess>]
+type Token = Ident of string | Keyword
+let t = Token.Keyword
+let rqa = t.IsIdent
 
-    // For each union case item, the range must NOT extend before the "Is" prefix.
-    // "s.IsCircle" — dot is at some column, "IsCircle" starts 1 column later.
-    // The union case range must start at or after the "Is" column.
-    for item in unionCaseItems do
-        // The range should cover at most the property name (e.g., "IsCircle" length 8)
-        // It should NOT start at or before the dot position.
-        let rangeWidth = item.Range.EndColumn - item.Range.StartColumn
-
-        if item.Range.StartLine = 6 then
-            // "let r1 = s.IsCircle" — "IsCircle" has length 8
-            // The dot is at column 11 (0-based: "let r1 = s" is 10 chars, dot at 10)
-            // "IsCircle" starts at column 11 (after the dot)
-            Assert.True(
-                rangeWidth <= 8,
-                sprintf "UnionCase range for IsCircle is too wide (%d columns): %A" rangeWidth item.Range
-            )
-
-        if item.Range.StartLine = 7 then
-            // "let r2 = s.IsHyperbolicCaseWithLongName" — property name length = 2 + 28 = 30
-            Assert.True(
-                rangeWidth <= 30,
-                sprintf "UnionCase range for IsHyperbolicCaseWithLongName is too wide (%d columns): %A" rangeWidth item.Range
-            )
+type Animal =
+    | Cat
+    | Dog
+    member this.IsFeline = this.IsCat
+"""
+    //                        line, count, maxWidth
+    expectUnionCaseClassifications source
+        [ (6, 1, 8)    // s.IsCircle.ToString() — chained
+          (7, 2, 8)    // s.IsCircle && s.IsSquare — two on same line
+          (12, 1, 7)   // t.IsIdent — RequireQualifiedAccess
+          (17, 1, 5) ] // this.IsCat — self-referential member

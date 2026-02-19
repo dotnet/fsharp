@@ -2263,7 +2263,7 @@ let RegisterUnionCaseTesterForProperty
                 let ucref = tcref.MakeNestedUnionCaseRef ucase
                 let ucinfo = UnionCaseInfo([], ucref)
                 let ucItem = Item.UnionCase(ucinfo, false)
-                currentSink.NotifyNameResolution(identRange.End, ucItem, emptyTyparInst, occurrenceType, nenv, ad, identRange, false)
+                currentSink.NotifyNameResolution(identRange.End, ucItem, emptyTyparInst, occurrenceType, nenv, ad, identRange, true)
             | None -> ()
     | _ -> ()
 
@@ -4191,7 +4191,8 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
             // #16621
             match refinedItem with
             | Item.Property(_, pinfos, _) ->
-                RegisterUnionCaseTesterForProperty sink itemRange nenv pinfos occurrence ad
+                let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
+                RegisterUnionCaseTesterForProperty sink propIdentRange nenv pinfos occurrence ad
             | _ -> ()
 
     let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
@@ -4266,7 +4267,8 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 // #16621
                 match refinedItem with
                 | Item.Property(_, pinfos, _) ->
-                    RegisterUnionCaseTesterForProperty sink itemRange nenv pinfos ItemOccurrence.Use ad
+                    let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
+                    RegisterUnionCaseTesterForProperty sink propIdentRange nenv pinfos ItemOccurrence.Use ad
                 | _ -> ()
 
             let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
