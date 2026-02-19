@@ -6,12 +6,12 @@
     <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
-    <OutputType>Library</OutputType>
+    <!-- xUnit3 requires test projects to be executable -->
+    <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
-    <UnitTestType>xunit</UnitTestType>
     <NoWarn>3186</NoWarn>
   </PropertyGroup>
 
@@ -97,8 +97,11 @@
     <EmbeddedResource Remove="**" />
   </ItemGroup>
 
+  <!-- xUnit3 configuration for this test project (MTP mode) -->
   <ItemGroup>
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="testconfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

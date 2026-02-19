@@ -267,10 +267,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
+              testResultsFormat: 'VSTest'
               testRunTitle: WindowsNoRealsig_testCoreclr
               mergeTestResults: true
-              testResultsFiles: '*.xml'
+              testResultsFiles: '*.trx'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
 
@@ -298,13 +298,11 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
-          strategy:
-            parallel: 4
           steps:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release -testBatch $(System.JobPositionInPhase)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
@@ -316,16 +314,15 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: WindowsNoRealsig_testDesktop batch $(System.JobPositionInPhase)
+              testResultsFormat: 'VSTest'
+              testRunTitle: WindowsNoRealsig_testDesktop
               mergeTestResults: true
-              testResultsFiles: '*.xml'
+              testResultsFiles: '*.trx'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
             continueOnError: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
@@ -338,7 +335,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps $(System.JobPositionInPhase)'
+                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -465,10 +462,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
+              testResultsFormat: 'VSTest'
               testRunTitle: WindowsCompressedMetadata $(_testKind) $(transparentCompiler)
               mergeTestResults: true
-              testResultsFiles: '*.xml'
+              testResultsFiles: '*.trx'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
             condition: succeededOrFailed()
@@ -521,14 +518,12 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
-          strategy:
-            parallel: 4
 
           steps:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop -testBatch $(System.JobPositionInPhase)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
@@ -540,17 +535,16 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: WindowsCompressedMetadata testDesktop batch $(System.JobPositionInPhase)
+              testResultsFormat: 'VSTest'
+              testRunTitle: WindowsCompressedMetadata testDesktop
               mergeTestResults: true
-              testResultsFiles: '*.xml'
+              testResultsFiles: '*.trx'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             continueOnError: true
             condition: succeededOrFailed()
 
           - task: PublishBuildArtifacts@1
             displayName: Publish BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
@@ -563,14 +557,14 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop process dumps $(System.JobPositionInPhase)'
+                ArtifactName: 'Windows testDesktop process dumps'
                 ArtifactType: Container
                 parallel: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop test logs batch $(System.JobPositionInPhase)'
+              ArtifactName: 'Windows testDesktop test logs'
               publishLocation: Container
             continueOnError: true
             condition: always()
@@ -581,7 +575,7 @@ stages:
             displayName: Publish NuGet cache contents
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop $(System.JobPositionInPhase)'
+              ArtifactName: 'NuGetPackageContents Windows testDesktop'
               publishLocation: Container
             continueOnError: true
             condition: failed()
@@ -614,9 +608,9 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
+              testResultsFormat: 'VSTest'
               testRunTitle: Linux
-              testResultsFiles: '*.xml'
+              testResultsFiles: '*.trx'
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
@@ -659,8 +653,8 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
-              testResultsFiles: '*.xml'
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '*.trx'
               testRunTitle: MacOS
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'

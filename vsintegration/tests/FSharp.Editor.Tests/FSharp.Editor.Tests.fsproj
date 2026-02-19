@@ -2,17 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <UnitTestType>xunit</UnitTestType>
+    <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
-
-  <ItemGroup>
-   
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\XunitSetup.fs">
@@ -105,6 +101,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.v3.runner.console" Version="$(XunitRunnerConsoleVersion)" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
   </ItemGroup>
 
 </Project>

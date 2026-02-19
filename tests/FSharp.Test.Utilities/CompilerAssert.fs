@@ -17,6 +17,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
+open FSharp.Compiler.BuildGraph
 #if NETCOREAPP
 open System.Runtime.Loader
 #endif
@@ -989,34 +990,45 @@ Updated automatically, please check diffs in your pull request, changes must be 
         compileLibraryAndVerifyILWithOptions [|"--realsig+"|] (SourceCodeFileKind.Create("test.fs", source)) f
 
     static member RunScriptWithOptionsAndReturnResult options (source: string) =
-        // Initialize output and input streams
-        use inStream = new StringReader("")
-        use outStream = new StringWriter()
-        use errStream = new StringWriter()
+        // Save CurrentUICulture and GraphNode.culture to restore after FSI session
+        // FSI may change these via --preferreduilang option, and the change persists
+        // in the static GraphNode.culture which affects async computations in other tests
+        let originalUICulture = System.Threading.Thread.CurrentThread.CurrentUICulture
+        let originalGraphNodeCulture = GraphNode.culture
+        
+        try
+            // Initialize output and input streams
+            use inStream = new StringReader("")
+            use outStream = new StringWriter()
+            use errStream = new StringWriter()
 
-        // Build command line arguments & start FSI session
-        let argv = [| "C:\\fsi.exe" |]
+            // Build command line arguments & start FSI session
+            let argv = [| "C:\\fsi.exe" |]
 #if NETCOREAPP
-        let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
+            let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
 #else
-        let args = Array.append argv [|"--noninteractive"; "--targetprofile:mscorlib"|]
+            let args = Array.append argv [|"--noninteractive"; "--targetprofile:mscorlib"|]
 #endif
-        let allArgs = Array.append args options
+            let allArgs = Array.append args options
 
-        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-        use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
+            let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
+            use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
 
-        let ch, errors = fsiSession.EvalInteractionNonThrowing source
+            let ch, errors = fsiSession.EvalInteractionNonThrowing source
 
-        let errorMessages = ResizeArray()
-        errors
-        |> Seq.iter (fun error -> errorMessages.Add(error.Message))
+            let errorMessages = ResizeArray()
+            errors
+            |> Seq.iter (fun error -> errorMessages.Add(error.Message))
 
-        match ch with
-        | Choice2Of2 ex -> errorMessages.Add(ex.Message)
-        | _ -> ()
+            match ch with
+            | Choice2Of2 ex -> errorMessages.Add(ex.Message)
+            | _ -> ()
 
-        errorMessages, string outStream, string errStream
+            errorMessages, string outStream, string errStream
+        finally
+            // Restore CurrentUICulture and GraphNode.culture to prevent culture leaking between tests
+            System.Threading.Thread.CurrentThread.CurrentUICulture <- originalUICulture
+            GraphNode.culture <- originalGraphNodeCulture
 
     static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
         let errorMessages, _, _ = CompilerAssert.RunScriptWithOptionsAndReturnResult options source

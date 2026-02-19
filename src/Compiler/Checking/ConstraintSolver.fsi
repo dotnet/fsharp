@@ -9,6 +9,7 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.OverloadResolutionCache
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text

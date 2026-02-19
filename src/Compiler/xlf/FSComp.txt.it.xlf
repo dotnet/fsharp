@@ -612,6 +612,11 @@
         <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMethodOverloadsCache">
+        <source>Support for caching method overload resolution results for improved compilation performance.</source>
+        <target state="new">Support for caching method overload resolution results for improved compilation performance.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
         <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
         <target state="translated">Condividi i campi sottostanti in un'unione discriminata di [&lt;Struct&gt;] purché abbiano lo stesso nome e tipo</target>

@@ -574,6 +574,51 @@ type CalledMeth<'T>
         | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWithOrdinal("set_") && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
         | _ -> false
 
+    // Deferred until needed - property lookups are expensive and most candidates get filtered out
+    let computeAssignedNamedProps (unassignedItems: CallerNamedArg<'T> list) =
+        let returnedObjTy = methodRetTy
+        unassignedItems |> List.splitChoose (fun (CallerNamedArg(id, e) as arg) -> 
+            let nm = id.idText
+            let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides id.idRange returnedObjTy
+            let pinfos = pinfos |> ExcludeHiddenOfPropInfos g infoReader.amap m 
+            match pinfos with 
+            | [pinfo] when pinfo.HasSetter && not pinfo.IsStatic && not pinfo.IsIndexer -> 
+                let pminfo = pinfo.SetterMethod
+                let pminst = freshenMethInfo m pminfo
+                let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None
+                Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(propStaticTyOpt, pinfo, pminfo, pminst), e))
+            | _ ->
+                let epinfos = 
+                    match nameEnv with  
+                    | Some ne -> ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader ne (Some nm) LookupIsInstance.Ambivalent ad m returnedObjTy
+                    | _ -> []
+
+                match epinfos with 
+                | [pinfo] when pinfo.HasSetter && not pinfo.IsStatic && not pinfo.IsIndexer -> 
+                    let pminfo = pinfo.SetterMethod
+                    let pminst =
+                        match minfo with
+                        | MethInfo.FSMeth(_, TType_app(_, types, _), _, _) -> types
+                        | _ -> freshenMethInfo m pminfo
+
+                    let pminst =
+                        match tyargsOpt with
+                        | Some(TType_app(_, types, _)) -> types
+                        | _ -> pminst
+
+                    let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None
+                    Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(propStaticTyOpt, pinfo, pminfo, pminst), e))
+                |  _ ->    
+                    match infoReader.GetILFieldInfosOfType(Some(nm), ad, m, returnedObjTy) with
+                    | finfo :: _ when not finfo.IsStatic -> 
+                        Choice1Of2(AssignedItemSetter(id, AssignedILFieldSetter(finfo), e))
+                    | _ ->              
+                      match infoReader.TryFindRecdOrClassFieldInfoOfType(nm, m, returnedObjTy) with
+                      | ValueSome rfinfo when not rfinfo.IsStatic -> 
+                          Choice1Of2(AssignedItemSetter(id, AssignedRecdFieldSetter(rfinfo), e))
+                      | _ -> 
+                          Choice2Of2(arg))
+
     let argSetInfos = 
         (callerArgs.CurriedCallerArgs, fullCurriedCalledArgs) ||> List.map2 (fun (unnamedCallerArgs, namedCallerArgs) fullCalledArgs -> 
             // Find the arguments not given by name 
@@ -670,50 +715,6 @@ type CalledMeth<'T>
                  else 
                     []
 
-            let assignedNamedProps, unassignedNamedItems = 
-                let returnedObjTy = methodRetTy
-                unassignedNamedItems |> List.splitChoose (fun (CallerNamedArg(id, e) as arg) -> 
-                    let nm = id.idText
-                    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides id.idRange returnedObjTy
-                    let pinfos = pinfos |> ExcludeHiddenOfPropInfos g infoReader.amap m 
-                    match pinfos with 
-                    | [pinfo] when pinfo.HasSetter && not pinfo.IsStatic && not pinfo.IsIndexer -> 
-                        let pminfo = pinfo.SetterMethod
-                        let pminst = freshenMethInfo m pminfo
-                        let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None
-                        Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(propStaticTyOpt, pinfo, pminfo, pminst), e))
-                    | _ ->
-                        let epinfos = 
-                            match nameEnv with  
-                            | Some ne -> ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader ne (Some nm) LookupIsInstance.Ambivalent ad m returnedObjTy
-                            | _ -> []
-
-                        match epinfos with 
-                        | [pinfo] when pinfo.HasSetter && not pinfo.IsStatic && not pinfo.IsIndexer -> 
-                            let pminfo = pinfo.SetterMethod
-                            let pminst =
-                                match minfo with
-                                | MethInfo.FSMeth(_, TType_app(_, types, _), _, _) -> types
-                                | _ -> freshenMethInfo m pminfo
-
-                            let pminst =
-                                match tyargsOpt with
-                                | Some(TType_app(_, types, _)) -> types
-                                | _ -> pminst
-
-                            let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None
-                            Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(propStaticTyOpt, pinfo, pminfo, pminst), e))
-                        |  _ ->    
-                            match infoReader.GetILFieldInfosOfType(Some(nm), ad, m, returnedObjTy) with
-                            | finfo :: _ when not finfo.IsStatic -> 
-                                Choice1Of2(AssignedItemSetter(id, AssignedILFieldSetter(finfo), e))
-                            | _ ->              
-                              match infoReader.TryFindRecdOrClassFieldInfoOfType(nm, m, returnedObjTy) with
-                              | ValueSome rfinfo when not rfinfo.IsStatic -> 
-                                  Choice1Of2(AssignedItemSetter(id, AssignedRecdFieldSetter(rfinfo), e))
-                              | _ -> 
-                                  Choice2Of2(arg))
-
             let names = System.Collections.Generic.HashSet<_>() 
             for CallerNamedArg(nm, _) in namedCallerArgs do 
                 if not (names.Add nm.idText) then
@@ -721,14 +722,21 @@ type CalledMeth<'T>
                 
             let argSet = { UnnamedCalledArgs=unnamedCalledArgs; UnnamedCallerArgs=unnamedCallerArgs; ParamArrayCalledArgOpt=paramArrayCalledArgOpt; ParamArrayCallerArgs=paramArrayCallerArgs; AssignedNamedArgs=assignedNamedArgs }
 
-            (argSet, assignedNamedProps, unassignedNamedItems, attributeAssignedNamedItems, unnamedCalledOptArgs, unnamedCalledOutArgs))
+            (argSet, unassignedNamedItems, attributeAssignedNamedItems, unnamedCalledOptArgs, unnamedCalledOutArgs))
 
-    let argSets                     = argSetInfos |> List.map     (fun (x, _, _, _, _, _) -> x)
-    let assignedNamedProps          = argSetInfos |> List.collect (fun (_, x, _, _, _, _) -> x)
-    let unassignedNamedItems        = argSetInfos |> List.collect (fun (_, _, x, _, _, _) -> x)
-    let attributeAssignedNamedItems = argSetInfos |> List.collect (fun (_, _, _, x, _, _) -> x)
-    let unnamedCalledOptArgs        = argSetInfos |> List.collect (fun (_, _, _, _, x, _) -> x)
-    let unnamedCalledOutArgs        = argSetInfos |> List.collect (fun (_, _, _, _, _, x) -> x)
+    let argSets                     = argSetInfos |> List.map     (fun (x, _, _, _, _) -> x)
+    let unassignedNamedItemsRaw     = argSetInfos |> List.collect (fun (_, x, _, _, _) -> x)
+    let attributeAssignedNamedItems = argSetInfos |> List.collect (fun (_, _, x, _, _) -> x)
+    let unnamedCalledOptArgs        = argSetInfos |> List.collect (fun (_, _, _, x, _) -> x)
+    let unnamedCalledOutArgs        = argSetInfos |> List.collect (fun (_, _, _, _, x) -> x)
+
+    let lazyAssignedNamedPropsAndUnassigned = lazy (computeAssignedNamedProps unassignedNamedItemsRaw)
+    let assignedNamedProps () = fst (lazyAssignedNamedPropsAndUnassigned.Value)
+    let unassignedNamedItems () = snd (lazyAssignedNamedPropsAndUnassigned.Value)
+    
+    let hasNoUnassignedNamedItems () = 
+        if isNil unassignedNamedItemsRaw then true  // Fast path: no items to look up
+        else isNil (unassignedNamedItems())         // Slow path: force lazy and check
 
     member x.infoReader = infoReader
 
@@ -771,13 +779,13 @@ type CalledMeth<'T>
             else mkRefTupledTy g (retTy :: outArgTys)
 
     /// Named setters
-    member x.AssignedItemSetters = assignedNamedProps
+    member x.AssignedItemSetters = assignedNamedProps()
 
     /// The property related to the method we're attempting to call, if any  
     member x.AssociatedPropertyInfo = pinfoOpt
 
     /// Unassigned args
-    member x.UnassignedNamedArgs = unassignedNamedItems
+    member x.UnassignedNamedArgs = unassignedNamedItems()
 
     /// Args assigned to specify values for attribute fields and properties (these are not necessarily "property sets")
     member x.AttributeAssignedNamedArgs = attributeAssignedNamedItems
@@ -820,7 +828,7 @@ type CalledMeth<'T>
 
     member x.NumCallerTyArgs = x.CallerTyArgs.Length 
 
-    member x.AssignsAllNamedArgs = isNil x.UnassignedNamedArgs
+    member x.AssignsAllNamedArgs = hasNoUnassignedNamedItems()
 
     member x.HasCorrectArity =
       (x.NumCalledTyArgs = x.NumCallerTyArgs)  &&

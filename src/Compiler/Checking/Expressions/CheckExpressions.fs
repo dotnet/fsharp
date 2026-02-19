@@ -10099,6 +10099,8 @@ and TcMethodApplication_UniqueOverloadInference
 
     let callerArgs = { Unnamed = unnamedCurriedCallerArgs; Named = namedCurriedCallerArgs }
 
+    let arityFilteredCandidates = candidateMethsAndProps
+
     let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
         let minst = FreshenMethInfo mItem minfo
         let callerTyArgs =
@@ -10108,7 +10110,7 @@ and TcMethodApplication_UniqueOverloadInference
         CalledMeth<SynExpr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt, staticTyOpt)
 
     let preArgumentTypeCheckingCalledMethGroup =
-        [ for minfo, pinfoOpt in candidateMethsAndProps do
+        [ for minfo, pinfoOpt in arityFilteredCandidates do
             let meth = makeOneCalledMeth (minfo, pinfoOpt, true)
             yield meth
             if meth.UsesParamArrayConversion then

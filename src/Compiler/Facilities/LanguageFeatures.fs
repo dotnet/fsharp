@@ -104,6 +104,7 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | MethodOverloadsCache
     | ImplicitDIMCoverage
 
 /// LanguageVersion management
@@ -252,6 +253,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.MethodOverloadsCache, previewVersion // Performance optimization for overload resolution
                 LanguageFeature.ImplicitDIMCoverage, languageVersion110
             ]
 
@@ -442,6 +444,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions -> FSComp.SR.featureErrorOnInvalidDeclsInTypeDefinitions ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
+        | LanguageFeature.MethodOverloadsCache -> FSComp.SR.featureMethodOverloadsCache ()
         | LanguageFeature.ImplicitDIMCoverage -> FSComp.SR.featureImplicitDIMCoverage ()
 
     /// Get a version string associated with the given feature.
