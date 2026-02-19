@@ -948,3 +948,11 @@ stages:
           commit: 60c20cca65a7df6e8335e8d6060d91b30909fbea
           buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release -bl:build_1.binlog ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release -bl:build_2.binlog
           displayName: OpenTK_FSharp_Build
+        - repo: bryanedds/Prime
+          commit: 8d55f4e8e1d76e42f5fb3c9ba69eb79fe695e9fa
+          buildScript: dotnet build Prime.sln --configuration Release
+          displayName: Prime_Build
+        - repo: bryanedds/Nu
+          commit: b35cbe02029e0e33d72a4846816cf22714eb3aac
+          buildScript: dotnet build Nu.sln --configuration Release
+          displayName: Nu_Build

@@ -470,6 +470,12 @@ type CheckedBindingInfo =
 
 type cenv = TcFileState
 
+// Extract nullness-specific context, filtering out all other context kinds to avoid side effects on non-nullness diagnostics.
+let nullnessContextOnly (env: TcEnv) =
+    match env.eContextInfo with
+    | ContextInfo.NullnessCheckOfCapturedArg _ -> env.eContextInfo
+    | _ -> ContextInfo.NoContext
+
 // If the overall type admits subsumption or type directed conversion, and the original unify would have failed,
 // then allow subsumption or type directed conversion.
 //
@@ -482,7 +488,8 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
         let actualTy = tryNormalizeMeasureInType g actualTy
         let reqdTy = tryNormalizeMeasureInType g reqdTy
         let reqTyForUnification = reqTyForArgumentNullnessInference g actualTy reqdTy
-        if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqTyForUnification actualTy then
+        let nullnessContext = nullnessContextOnly env
+        if AddCxTypeEqualsTypeUndoIfFailedWithContext nullnessContext env.DisplayEnv cenv.css m reqTyForUnification actualTy then
             ()
         else
             // try adhoc type-directed conversions
@@ -595,7 +602,8 @@ let ShrinkContext env oldRange newRange =
     | ContextInfo.YieldInComputationExpression
     | ContextInfo.RuntimeTypeTest _
     | ContextInfo.DowncastUsedInsteadOfUpcast _
-    | ContextInfo.SequenceExpression _ ->
+    | ContextInfo.SequenceExpression _
+    | ContextInfo.NullnessCheckOfCapturedArg _ ->
         env
     | ContextInfo.CollectionElement (b,m) ->
         if not (equals m oldRange) then env else
@@ -5395,7 +5403,7 @@ and TcExprFlex (cenv: cenv) flex compat (desiredTy: TType) (env: TcEnv) tpenv (s
         if compat then
             (destTyparTy g argTy).SetIsCompatFlex(true)
 
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argTy
+        AddCxTypeMustSubsumeType (nullnessContextOnly env) env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argTy
 
         let expr2, tpenv = TcExprFlex2 cenv argTy env false tpenv synExpr
         let expr3 = mkCoerceIfNeeded g desiredTy argTy expr2
@@ -5932,7 +5940,12 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcExprArrayOrList cenv overallTy env tpenv (isArray, args, m)
 
     | SynExpr.New (superInit, synObjTy, arg, mNewExpr) ->
+        let g = cenv.g
         let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes env tpenv synObjTy
+
+        // Stamp constructor result as KnownFromConstructor so the constraint solver
+        // knows this is provably non-null (even for AllowNullLiteral types).
+        let objTy = if g.checkNullness then replaceNullnessOfTy Nullness.KnownFromConstructor objTy else objTy
 
         TcNonControlFlowExpr env <| fun env ->
         TcPropagatingExprLeafThenConvert cenv overallTy objTy env (* true *) mNewExpr (fun () ->
@@ -6872,6 +6885,13 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
         // skip this check if this ctor call is either 'inherit(...)' or call is located within constructor shape
         if not (superInit || AreWithinCtorShape env)
             then CheckSuperInit cenv objTy mWholeCall
+
+        // Pre-unify expected type with KnownFromConstructor nullness so the constraint solver
+        // sees constructor results as provably non-null (issue #18021).
+        // Skip when args is empty: the constructor is used as a first-class function (e.g. |> ClassName)
+        // and overallTy is a function type, not the return type.
+        if g.checkNullness && not args.IsEmpty && TypeNullIsExtraValueNew g mWholeCall objTy then
+            UnifyTypes cenv env mWholeCall overallTy.Commit (replaceNullnessOfTy Nullness.KnownFromConstructor objTy)
 
         let afterResolution =
             match mObjTyOpt, afterTcOverloadResolutionOpt with
@@ -8659,6 +8679,20 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                            || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
                     | _ -> env
 
+                // Propagate captured argument range so nullness warnings point to the original nullable value.
+                let env =
+                    if g.checkNullness && isFunTy g domainTy then
+                        match leftExpr with
+                        | ApplicableExpr(expr=Expr.App (_, _, _, capturedArgs, _)) when not capturedArgs.IsEmpty ->
+                            let lastCapturedArg = List.last capturedArgs
+                            if not (isFunTy g (tyOfExpr g lastCapturedArg)) then
+                                { env with eContextInfo = ContextInfo.NullnessCheckOfCapturedArg lastCapturedArg.Range }
+                            else
+                                env
+                        | _ -> env
+                    else
+                        env
+
                 TcExprFlex2 cenv domainTy env false tpenv synArg
 
             let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
@@ -9045,6 +9079,7 @@ and TcCtorItemThen (cenv: cenv) overallTy env item nm minfos tinstEnclosing tpen
         match minfos with
         | minfo :: _ -> minfo.ApparentEnclosingType
         | [] -> error(Error(FSComp.SR.tcTypeHasNoAccessibleConstructor(), mItem))
+
     match delayed with
     | DelayedApp(_, _, _, arg, mExprAndArg) :: otherDelayed ->
 
@@ -9314,6 +9349,15 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
                 vTy
         // Always allow subsumption on assignment to fields
         let expr2R, tpenv = TcExprFlex cenv true false vty2 env tpenv expr2
+        // After assignment, strip KnownFromConstructor from the val's type so subsequent
+        // reads no longer bypass AllowNullLiteral warnings for 'not null' constraints.
+        if g.checkNullness && not (isByrefTy g vTy) then
+            match stripTyparEqns vTy with
+            | TType_app(_, _, Nullness.KnownFromConstructor)
+            | TType_var(_, Nullness.KnownFromConstructor) ->
+                vref.Deref.SetType(replaceNullnessOfTy (Nullness.Known NullnessInfo.WithoutNull) vTy)
+            | _ -> ()
+
         let vExpr =
             if isInByrefTy g vTy then
                 errorR(Error(FSComp.SR.writeToReadOnlyByref(), mStmt))
@@ -10803,14 +10847,14 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
             | TPat_tuple (_,pats,_,_) -> pats |> List.forall isWild
             | _ -> false
 
-        let rec eliminateNull (ty:TType) (p:Pattern)  =
+        let rec eliminateNull (ty:TType) (p:Pattern) =
             match p with
             | TPat_null _ -> removeNull ty
             | TPat_as (p,_,_) -> eliminateNull ty p
             | TPat_disjs(patterns,_) -> (ty,patterns) ||> List.fold eliminateNull
             | TPat_tuple (_,pats,_,_) ->
                 match stripTyparEqns ty with
-                // In a tuple of size N, if 1 elem is matched for null and N-1 are wild => subsequent clauses can strip nullness
+                // In a tuple, if 1 elem is matched for null and the rest are wild => subsequent clauses can strip nullness
                 | TType_tuple(ti,tys) when tys.Length = pats.Length && (pats |> List.count (isWild >> not)) = 1 ->
                     TType_tuple(ti, List.map2 eliminateNull tys pats)
                 | _ -> ty
@@ -12822,7 +12866,27 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
     | Some _ ->
        match PartitionValTyparsForApparentEnclosingType g vspec with
        | Some(parentTypars, memberParentTypars, _, _, _) ->
+          // Temporarily strip extra nullness constraints (e.g. NotSupportsNull) from member type params
+          // before checking signature conformance against parent type params.
+          // These constraints may be inferred by the solver but are not present on the parent,
+          // causing false signature mismatch errors. We restore the original constraints afterward.
+          let savedConstraints = memberParentTypars |> List.map (fun tp -> tp, tp.Constraints)
+
+          if g.checkNullness then
+              (memberParentTypars, parentTypars)
+              ||> List.iter2 (fun mtp ptp ->
+                  let parentHasConstraint c =
+                      List.exists (typarConstraintsAEquiv g TypeEquivEnv.EmptyIgnoreNulls c) ptp.Constraints
+
+                  mtp.SetConstraints(
+                      mtp.Constraints
+                      |> List.filter (fun c -> not (isConstraintAllowedAsExtra c) || parentHasConstraint c)
+                  ))
+
           ignore(SignatureConformance.Checker(g, cenv.amap, denv, SignatureRepackageInfo.Empty, false).CheckTypars vspec.Range TypeEquivEnv.EmptyIgnoreNulls memberParentTypars parentTypars)
+
+          for tp, cs in savedConstraints do
+              tp.SetConstraints cs
        | None ->
           errorR(Error(FSComp.SR.tcMemberIsNotSufficientlyGeneric(), vspec.Range))
     | _ -> ()

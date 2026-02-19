@@ -595,7 +595,8 @@ module rec Compiler =
     let withOutputDirectory (path: DirectoryInfo option) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with OutputDirectory = path }
-        | _ -> failwith "withOutputDirectory is only supported on F#"
+        | CS cs -> CS { cs with OutputDirectory = path }
+        | _ -> failwith "withOutputDirectory is only supported on F# and C#"
 
     let withCheckNulls (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper ["--checknulls+"] "checknulls is only supported in F#" cUnit
@@ -779,7 +780,10 @@ module rec Compiler =
                 match s.OutputPath with
                     | None -> failwith "Operation didn't produce any output!"
                     | Some p -> p |> MetadataReference.CreateFromFile
-        | _ -> failwith "Conversion isn't possible"
+        | TestCompilationReference cmpl ->
+            let outputDirectory = createTemporaryDirectory()
+            let tmp = cmpl.EmitToDirectory outputDirectory
+            tmp |> MetadataReference.CreateFromFile
 
     let private processReferences (references: CompilationUnit list) defaultOutputDirectory =
         let rec loop acc = function
@@ -1361,6 +1365,28 @@ Actual:
     let verifyIL = doILCheck ILChecker.checkIL
 
     let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
+
+    /// Verifies that the compiled assembly contains an assembly reference whose name starts with the given prefix.
+    let verifyAssemblyReference (prefix: string) (result: CompilationResult) : CompilationResult =
+        match result with
+        | CompilationResult.Success s ->
+            match s.OutputPath with
+            | None -> failwith "Operation didn't produce any output!"
+            | Some p ->
+                let bytes = File.ReadAllBytes(p)
+                use peReader = new PEReader(bytes.ToImmutableArray())
+                let mdReader = peReader.GetMetadataReader()
+                let refs =
+                    [ for h in mdReader.AssemblyReferences do
+                        mdReader.GetString(mdReader.GetAssemblyReference(h).Name) ]
+                if refs |> List.exists (fun name -> name.StartsWith(prefix, StringComparison.Ordinal)) then
+                    result
+                else
+                    failwith $"Expected assembly reference starting with '{prefix}'. Found: %A{refs}"
+        | CompilationResult.Failure f ->
+            printfn "Failure:"
+            printfn $"{f}"
+            failwith "Result should be \"Success\" in order to verify assembly references."
 
     let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
 
@@ -2074,3 +2100,26 @@ Actual:
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
+
+    /// Result type for CLI subprocess execution (runFsiProcess / runFscProcess).
+    type ProcessResult = { ExitCode: int; StdOut: string; StdErr: string }
+
+    /// Run an F# tool (FSI or FSC) as a subprocess. Shared helper for runFsiProcess / runFscProcess.
+    let private runToolProcess (toolPath: string) (args: string list) : ProcessResult =
+#if NETCOREAPP
+        let exe = TestFramework.initialConfig.DotNetExe
+        let arguments = toolPath + " " + (args |> String.concat " ")
+#else
+        let exe = toolPath
+        let arguments = args |> String.concat " "
+#endif
+        let exitCode, stdout, stderr = Commands.executeProcess exe arguments (Directory.GetCurrentDirectory())
+        { ExitCode = exitCode; StdOut = stdout; StdErr = stderr }
+
+    /// Run FSI as a subprocess with the given arguments. For CLI-level tests only (--help, exit codes, etc.).
+    let runFsiProcess (args: string list) : ProcessResult =
+        runToolProcess TestFramework.initialConfig.FSI args
+
+    /// Run FSC as a subprocess with the given arguments. For CLI-level tests only (missing files, exit codes, etc.).
+    let runFscProcess (args: string list) : ProcessResult =
+        runToolProcess TestFramework.initialConfig.FSC args
