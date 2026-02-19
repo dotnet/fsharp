@@ -14,7 +14,7 @@
   <PropertyGroup>
     <!-- Don't use the built in support for pre-release iteration. The nuget repack task doesn't support
          the iteration format at the moment. https://github.com/dotnet/arcade/issues/15919 -->
-    <FSharpPreReleaseIteration>2</FSharpPreReleaseIteration>
+    <FSharpPreReleaseIteration>3</FSharpPreReleaseIteration>
     <PreReleaseVersionLabel>preview$(FSharpPreReleaseIteration)</PreReleaseVersionLabel>
     <!-- F# Version components -->
     <FSMajorVersion>11</FSMajorVersion>
