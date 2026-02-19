@@ -2233,9 +2233,7 @@ let test () : Span<int> =
         |> shouldSucceed
 
     // ---- T11d: F#-to-F# non-scoped byref negative ----
-    [<Fact>]
-    let ``FSharpNonScopedByrefParam triggers escape error`` () =
-        FSharp """
+    let private fsharpNonScopedByrefParamSource = """
 module Test
 open System
 
@@ -2246,6 +2244,10 @@ let test () : Span<int> =
     let mutable local = 1
     unsafeFactory &local
 """
+
+    [<Fact>]
+    let ``FSharpNonScopedByrefParam triggers escape error`` () =
+        FSharp fsharpNonScopedByrefParamSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -2254,17 +2256,7 @@ let test () : Span<int> =
 
     [<Fact>]
     let ``FSharpNonScopedByrefParam backward compat`` () =
-        FSharp """
-module Test
-open System
-
-let unsafeFactory (x: byref<int>) : Span<int> =
-    Span<int>(&x)
-
-let test () : Span<int> =
-    let mutable local = 1
-    unsafeFactory &local
-"""
+        FSharp fsharpNonScopedByrefParamSource
         |> asLibrary
         |> compile
         |> shouldSucceed
@@ -2369,10 +2361,7 @@ let f () : Span<int> =
         |> compile
         |> shouldSucceed
 
-    [<Fact>]
-    let ``Inline function escape caught at call site`` () =
-        FSharp
-            """
+    let private inlineFunctionEscapeSource = """
 module Test
 open System
 let inline createSpan (x: byref<int>) : Span<int> = Span<int>(&x)
@@ -2380,6 +2369,10 @@ let test () : Span<int> =
     let mutable local = 1
     createSpan &local
 """
+
+    [<Fact>]
+    let ``Inline function escape caught at call site`` () =
+        FSharp inlineFunctionEscapeSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -2388,15 +2381,7 @@ let test () : Span<int> =
 
     [<Fact>]
     let ``Inline function escape caught at call site - backward compat`` () =
-        FSharp
-            """
-module Test
-open System
-let inline createSpan (x: byref<int>) : Span<int> = Span<int>(&x)
-let test () : Span<int> =
-    let mutable local = 1
-    createSpan &local
-"""
+        FSharp inlineFunctionEscapeSource
         |> asLibrary
         |> compile
         |> shouldSucceed
