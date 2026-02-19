@@ -31,6 +31,8 @@ type internal InterfaceState =
     }
 
 // TODO: rewrite token arithmetics properly here
+// state machine not statically compilable (let rec in state machine)
+#nowarn "3511"
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ImplementInterface); Shared>]
 type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
@@ -171,7 +173,6 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
 
     interface IFSharpMultiCodeFixProvider with
         member _.GetCodeFixesAsync context =
-            #nowarn 3511 // let rec in state machine
             cancellableTask {
                 let! cancellationToken = CancellableTask.getCancellationToken ()
 
@@ -288,4 +289,3 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
                                         )
                                 | _ -> return Seq.empty
             }
-            #warnon 3511
