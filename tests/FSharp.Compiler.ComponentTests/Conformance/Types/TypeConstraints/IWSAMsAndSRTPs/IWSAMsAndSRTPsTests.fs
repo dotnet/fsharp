@@ -3038,3 +3038,56 @@ let inline f x = let y = x + 1 in string y
         """
         |> withLangVersionPreview
         |> signaturesShouldContain "val inline f: x: int -> string"
+
+    // -- Additional operator dimensions --
+
+    [<Fact>]
+    let ``Breaking change: unary negate inline stays generic`` () =
+        // Unary minus with no literal — single support type, was already generic.
+        FSharp """
+module Test
+let inline f x = -x
+let g = f
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val g: (int -> int)"
+
+    [<Fact>]
+    let ``Breaking change: multiply with literal`` () =
+        // Same pattern as x + 1 but with *.
+        FSharp """
+module Test
+let inline f x = x * 2
+let g = f
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val g: (int -> int)"
+
+    [<Fact>]
+    let ``Breaking change: non-inline wrapper of multiply with literal`` () =
+        FSharp """
+module Test
+let inline f x = x * 2
+let run x = f x
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val run: x: int -> int"
+
+    [<Fact>]
+    let ``Breaking change S4: delegate from inline SRTP throws at runtime`` () =
+        // S4 (council score 39): delegate/reflection invocation of newly-generic
+        // inline function hits NotSupportedException in non-witness fallback body.
+        FSharp """
+module Test
+let inline addOne x = x + 1
+let d = System.Func<int,int>(addOne)
+try
+    let result = d.Invoke(41)
+    if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
+with
+| :? System.NotSupportedException -> failwith "NotSupportedException: delegate invocation of inline SRTP failed"
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed

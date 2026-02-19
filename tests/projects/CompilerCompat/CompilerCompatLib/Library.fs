@@ -22,11 +22,16 @@ module Library =
     let inline addOne x = x + 1
     let addOneConcrete (x: int) : int = addOne x
 
+    /// Inline unary negate (T4b)
+    let inline negate x = -x
+    let negateConcrete (x: int) : int = negate x
+
     /// Takes a function int -> int (T4c)
     let applyToInt (f: int -> int) (x: int) = f x
 
-    /// Custom type with extension operator (T5)
+    /// Custom type with intrinsic operator (T5)
     type Num = { V: int }
         with static member (+) (a: Num, b: Num) = { V = a.V + b.V }
 
-    let addNumsConcrete (a: Num) (b: Num) : Num = a + b
+    let inline addNums (a: Num) (b: Num) = a + b
+    let addNumsConcrete (a: Num) (b: Num) : Num = addNums a b

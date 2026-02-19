@@ -59,25 +59,33 @@ let main _argv =
             else
                 printfn "SUCCESS: addOneConcrete test passed"
 
-                // T4c: pass concrete wrapper as function value
-                let applyResult = Library.applyToInt Library.addOneConcrete 41
-                if applyResult <> 42 then
-                    printfn "ERROR: applyToInt addOneConcrete 41 = %d, expected 42" applyResult
+                // T4b: inline negate via concrete wrapper
+                let negateResult = Library.negateConcrete 7
+                if negateResult <> -7 then
+                    printfn "ERROR: negateConcrete 7 = %d, expected -7" negateResult
                     1
                 else
-                    printfn "SUCCESS: applyToInt test passed"
+                    printfn "SUCCESS: negateConcrete test passed"
 
-                    // T5: custom type operator via concrete wrapper
-                    let n1 = { Library.V = 3 }
-                    let n2 = { Library.V = 4 }
-                    let numResult = Library.addNumsConcrete n1 n2
-                    if numResult.V <> 7 then
-                        printfn "ERROR: addNumsConcrete {V=3} {V=4} = {V=%d}, expected {V=7}" numResult.V
+                    // T4c: pass concrete wrapper as function value
+                    let applyResult = Library.applyToInt Library.addOneConcrete 41
+                    if applyResult <> 42 then
+                        printfn "ERROR: applyToInt addOneConcrete 41 = %d, expected 42" applyResult
                         1
                     else
-                        printfn "SUCCESS: extension operator compat test passed"
-                        printfn "SUCCESS: All compiler compatibility tests passed"
-                        0
+                        printfn "SUCCESS: applyToInt test passed"
+
+                        // T5: custom type operator via concrete wrapper
+                        let n1 = { Library.V = 3 }
+                        let n2 = { Library.V = 4 }
+                        let numResult = Library.addNumsConcrete n1 n2
+                        if numResult.V <> 7 then
+                            printfn "ERROR: addNumsConcrete {V=3} {V=4} = {V=%d}, expected {V=7}" numResult.V
+                            1
+                        else
+                            printfn "SUCCESS: custom type operator compat test passed"
+                            printfn "SUCCESS: All compiler compatibility tests passed"
+                            0
                 
     with ex ->
         printfn "ERROR: Exception occurred: %s" ex.Message
