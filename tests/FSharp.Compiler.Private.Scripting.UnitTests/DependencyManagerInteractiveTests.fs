@@ -734,6 +734,7 @@ x |> Seq.iter(fun r ->
     #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
     #clear;;                                      // Clear screen
     #quit;;                                       // Exit
+    #exit;;                                       // Exit
 
   F# Interactive command line options:"""
 
@@ -766,6 +767,7 @@ x |> Seq.iter(fun r ->
     #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
     #clear;;                                      // Clear screen
     #quit;;                                       // Exit
+    #exit;;                                       // Exit
 
   F# Interactive command line options:"""
 
