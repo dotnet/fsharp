@@ -557,7 +557,7 @@ type CalledMeth<'T>
             g.checkNullness 
             && minfo.DisplayName = "ToString"
             && minfo.IsNullary
-            && (isAnonRecdTy g objTy || isRecdTy g objTy || isUnionTy g objTy)
+            && (isAnonRecdTy g objTy || isRecdTy g objTy || isUnionTy g objTy || isMeasureableValueType g objTy)
             && (  typeEquiv g g.obj_ty_noNulls minfo.ApparentEnclosingAppType
                || typeEquiv g g.system_Value_ty minfo.ApparentEnclosingAppType)  -> 
                 MethInfoWithModifiedReturnType(minfo, g.string_ty)

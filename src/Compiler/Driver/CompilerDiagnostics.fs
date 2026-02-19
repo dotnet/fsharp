@@ -779,6 +779,7 @@ type Exception with
         | ErrorFromAddingTypeEquation(_, _, _, _, (ConstraintSolverTypesNotInEqualityRelation(_, _, _, _, _, contextInfo) as e), _) when
             (match contextInfo with
              | ContextInfo.NoContext -> false
+             | ContextInfo.NullnessCheckOfCapturedArg _ -> false
              | _ -> true)
             ->
             e.Output(os, suggestNames)

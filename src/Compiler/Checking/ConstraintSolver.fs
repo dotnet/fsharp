@@ -180,6 +180,10 @@ type ContextInfo =
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
 
+    /// The type equation comes from a nullness check of a captured argument (e.g., pipe operators).
+    /// The range points to the original argument location.
+    | NullnessCheckOfCapturedArg of range
+
 /// Captures relevant information for a particular failed overload resolution.
 type OverloadInformation = 
     {
@@ -1032,9 +1036,17 @@ and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
     csenv.g.checkNullness &&
     csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome    
 
+and getNullnessWarningRange (csenv: ConstraintSolverEnv) =
+    match csenv.eContextInfo with
+    | ContextInfo.NullnessCheckOfCapturedArg capturedArgRange -> capturedArgRange
+    | _ -> csenv.m
+
 // nullness1: actual
 // nullness2: expected
-and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
+and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 (nullness1: Nullness) (nullness2: Nullness) =
+    // KnownFromConstructor behaves identically to WithoutNull for unification
+    let nullness1 = nullness1.Normalize()
+    let nullness2 = nullness2.Normalize()
     match nullness1, nullness2 with
     | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
         CompleteD
@@ -1062,13 +1074,16 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
             if csenv.g.checkNullness then 
-                WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2))
+                WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, getNullnessWarningRange csenv, m2))
             else
                 CompleteD
+    | Nullness.KnownFromConstructor, _ | _, Nullness.KnownFromConstructor -> CompleteD // Unreachable after Normalize()
 
 // nullness1: target
 // nullness2: source
-and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
+and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 (nullness1: Nullness) (nullness2: Nullness) =
+    let nullness1 = nullness1.Normalize()
+    let nullness2 = nullness2.Normalize()
     match nullness1, nullness2 with
     | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
         CompleteD
@@ -1099,9 +1114,10 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then               
-                WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
+                WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, getNullnessWarningRange csenv, m2))
             else
                 CompleteD
+    | Nullness.KnownFromConstructor, _ | _, Nullness.KnownFromConstructor -> CompleteD // Unreachable after Normalize()
 
 and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty1 ty =
     trackErrors {
@@ -2697,6 +2713,7 @@ and SolveLegacyTypeUseSupportsNullLiteral (csenv: ConstraintSolverEnv) ndeep m2 
     }
 
 and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness =
+    let nullness = nullness.Normalize()
     trackErrors {
         let g = csenv.g
         let m = csenv.m
@@ -2718,9 +2735,10 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
                     // If a type would allow null in older rules of F#, we can just emit a warning.
                     // In the opposite case, we keep this as an error to avoid generating incorrect code (e.g. assigning null to an int)
                     if (TypeNullIsExtraValue g m ty) then
-                        return! WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, m, m2))
+                        return! WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, getNullnessWarningRange csenv, m2))
                     else
                         return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+        | Nullness.KnownFromConstructor -> () // Unreachable after Normalize()
     }
 
 and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
@@ -2732,10 +2750,16 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
         if TypeNullIsTrueValue g ty then 
             // We can only give warnings here as F# 5.0 introduces these constraints into existing
             // code via Option.ofObj and Option.toObj
-            do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
+            do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), getNullnessWarningRange csenv, m2))
         elif TypeNullIsExtraValueNew g m ty then 
             if g.checkNullness then
-                do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfTypeWithNullness denv ty), m, m2))
+                // Constructor results are provably non-null even for AllowNullLiteral types
+                let isFromConstructor =
+                    match stripTyEqns g ty with
+                    | TType_app(_, _, Nullness.KnownFromConstructor) -> true
+                    | _ -> false
+                if not isFromConstructor then
+                    do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfTypeWithNullness denv ty), getNullnessWarningRange csenv, m2))
         else
             match tryDestTyparTy g ty with
             | ValueSome tp ->
@@ -2746,6 +2770,7 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     }
 
 and SolveNullnessNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness =
+    let nullness = nullness.Normalize()
     trackErrors {
         let g = csenv.g
         let m = csenv.m
@@ -2762,7 +2787,8 @@ and SolveNullnessNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: O
             | NullnessInfo.WithoutNull -> ()
             | NullnessInfo.WithNull -> 
                 if g.checkNullness && TypeNullIsExtraValueNew g m ty then
-                    return! WarnD(ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfTypeWithNullness denv ty), m, m2))
+                    return! WarnD(ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfTypeWithNullness denv ty), getNullnessWarningRange csenv, m2))
+        | Nullness.KnownFromConstructor -> () // Unreachable after Normalize()
     }
 
 and SolveTypeCanCarryNullness (csenv: ConstraintSolverEnv)  ty nullness =
@@ -3989,11 +4015,14 @@ let UndoIfFailedOrWarnings f =
         trace.Undo()
         false
 
-let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
+let AddCxTypeEqualsTypeUndoIfFailedWithContext contextInfo denv css m ty1 ty2 =
     UndoIfFailed (fun trace -> 
-     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+     let csenv = MakeConstraintSolverEnv contextInfo css m denv
      let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = true }
      SolveTypeEqualsTypeKeepAbbrevs csenv 0 m (WithTrace trace) ty1 ty2)
+
+let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
+    AddCxTypeEqualsTypeUndoIfFailedWithContext ContextInfo.NoContext denv css m ty1 ty2
 
 let AddCxTypeEqualsTypeUndoIfFailedOrWarnings denv css m ty1 ty2 =
     UndoIfFailedOrWarnings (fun trace -> 

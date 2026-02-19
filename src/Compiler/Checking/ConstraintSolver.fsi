@@ -61,6 +61,10 @@ type ContextInfo =
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
 
+    /// The type equation comes from a nullness check of a captured argument (e.g., pipe operators).
+    /// The range points to the original argument location.
+    | NullnessCheckOfCapturedArg of range
+
 /// Captures relevant information for a particular failed overload resolution.
 type OverloadInformation =
     { methodSlot: CalledMeth<Expr>
@@ -272,6 +276,9 @@ val CheckDeclaredTypars: DisplayEnv -> ConstraintSolverState -> range -> Typars 
 val AddCxTypeEqualsType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
 
 val AddCxTypeEqualsTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+
+val AddCxTypeEqualsTypeUndoIfFailedWithContext:
+    ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 
 val AddCxTypeEqualsTypeUndoIfFailedOrWarnings: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 
