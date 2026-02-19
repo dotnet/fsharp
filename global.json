@@ -19,7 +19,7 @@
     "xcopy-msbuild": "18.0.0"
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "10.0.0-beta.26110.1",
+    "Microsoft.DotNet.Arcade.Sdk": "10.0.0-beta.26117.6",
     "Microsoft.DotNet.Helix.Sdk": "8.0.0-beta.23255.2"
   }
 }
