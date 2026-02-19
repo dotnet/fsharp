@@ -4269,13 +4269,19 @@ module TcDeclarations =
             let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)
 
+            let checkTyparsForExtension () =
+                if g.checkNullness then
+                    typarsAEquivWithAddedNotNullConstraintsAllowed g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars
+                else
+                    typarsAEquiv g TypeEquivEnv.EmptyIgnoreNulls reqTypars declaredTypars
+
             if tcref.TypeAbbrev.IsSome then
                 ExtrinsicExtensionBinding, tcref, declaredTypars
             elif isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
                 if nReqTypars <> synTypars.Length then 
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                if not (typarsAEquiv g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars) then 
+                if not (checkTyparsForExtension()) then
                     warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
                 IntrinsicExtensionBinding, tcref, reqTypars
@@ -4284,7 +4290,7 @@ module TcDeclarations =
                     errorR(Error(FSComp.SR.tcMembersThatExtendInterfaceMustBePlacedInSeparateModule(), tcref.Range))
                 if nReqTypars <> synTypars.Length then 
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                if not (typarsAEquiv g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars) then 
+                if not (checkTyparsForExtension()) then
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 ExtrinsicExtensionBinding, tcref, declaredTypars
 

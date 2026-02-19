@@ -437,6 +437,11 @@
         <target state="translated">divisão começando no final</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImplicitDIMCoverage">
+        <source>Implicit dispatch slot coverage for default interface member implementations</source>
+        <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
         <target state="translated">yield implícito</target>
@@ -605,6 +610,11 @@
       <trans-unit id="featureReturnFromFinal">
         <source>Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</source>
         <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMethodOverloadsCache">
+        <source>Support for caching method overload resolution results for improved compilation performance.</source>
+        <target state="new">Support for caching method overload resolution results for improved compilation performance.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
