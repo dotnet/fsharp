@@ -1380,10 +1380,7 @@ let f (x: inref<int>) =
         |> asLibrary
         |> withLangVersionPreview
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3235, Line 8, Col 5, Line 8, Col 36, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
-        ]
+        |> shouldSucceed
 
     [<Fact>]
     let ``E_MemoryMarshalCreateReadOnlySpan`` () =
@@ -1391,10 +1388,7 @@ let f (x: inref<int>) =
         |> asLibrary
         |> withLangVersionPreview
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3235, Line 8, Col 5, Line 8, Col 44, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
-        ]
+        |> shouldSucceed
 
     // Backward compatibility: same error-case code must compile WITHOUT preview
 
@@ -2675,8 +2669,7 @@ let f () =
         |> withLangVersionPreview
         |> withReferences [v2GenericCSharp11Lib]
         |> compile
-        |> shouldFail
-        |> withErrorCodes [3235]
+        |> shouldSucceed
 
     [<Fact>]
     let ``V2 Generic method CSharp11 with ScopedRef backward compat`` () =

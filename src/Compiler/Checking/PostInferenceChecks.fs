@@ -1732,7 +1732,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
                 match methDefOpt with
                 | Some methDef ->
                     let mask =
-                        if methInst.IsEmpty then
+                        if methInst.IsEmpty || refSafetyVersion >= 11 then
                             let baseMask = tryGetScopedParamMask g methDef
 
                             let withImplicit =
