@@ -2698,7 +2698,7 @@ let f () =
         |> shouldSucceed
 
     [<Fact>]
-    let ``V2 FSharp assembly compile placeholder for RefSafetyRules emit`` () =
+    let ``V2 FSharp assembly emits RefSafetyRulesAttribute`` () =
         FSharp """
 module TestLib
 open System
@@ -2708,6 +2708,11 @@ let makeSpan (arr: int[]) : Span<int> = Span<int>(arr)
         |> withLangVersionPreview
         |> compile
         |> shouldSucceed
+        |> verifyIL
+            [
+                """
+.custom instance void [runtime]System.Runtime.CompilerServices.RefSafetyRulesAttribute::.ctor(int32) = ( 01 00 0B 00 00 00 00 00 )"""
+            ]
 
     [<Fact>]
     let ``V2 Ref to refstruct CSharp11 triggers escape error`` () =
@@ -2733,14 +2738,21 @@ let makeSpan (arr: int[]) : Span<int> = Span<int>(arr)
             |> asLibrary
             |> withName "RoundtripLib"
             |> withLangVersionPreview
+            |> withOptions ["--nointerfacedata"]
 
-        FSharp v2FSharpRoundtripFSharpSource
+        // Without sigdata, the consumer sees IL metadata (tupled args), so use tupled call syntax.
+        FSharp """
+module Test
+open System
+let f () =
+    let mutable local = 0
+    Lib.makeSpan(&local, [| 1; 2; 3 |])
+"""
         |> asLibrary
         |> withLangVersionPreview
         |> withReferences [fsharpLib]
         |> compile
-        |> shouldFail
-        |> withErrorCodes [3235]
+        |> shouldSucceed
 
     [<Fact>]
     let ``V2 FSharp roundtrip cross-assembly implicit scoping backward compat`` () =

@@ -12133,7 +12133,17 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
 
     let tdefs, reflectedDefinitions = mgbuf.Close()
     let quotationResourceInfo = GenerateResourcesForQuotations reflectedDefinitions cenv
-    let ilNetModuleAttrs = GenAttrs cenv eenv moduleAttribs
+
+    let ilNetModuleAttrs =
+        let baseAttrs = GenAttrs cenv eenv moduleAttribs
+
+        match cenv.g.attrib_RefSafetyRulesAttribute_opt with
+        | Some attrib when cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis ->
+            let refSafetyAttr =
+                mkILCustomAttribute (attrib.TypeRef, [ cenv.g.ilg.typ_Int32 ], [ ILAttribElem.Int32 11 ], [])
+
+            refSafetyAttr :: baseAttrs
+        | _ -> baseAttrs
 
     let casApplied = Dictionary<Stamp, bool>()
 
