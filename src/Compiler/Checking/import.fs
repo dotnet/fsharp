@@ -849,12 +849,10 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
 
 let GetRefSafetyRulesVersion (ilModule: ILModuleDef) : int =
     let tref =
-        ILTypeRef.Create(ILScopeRef.Local, [ "System"; "Runtime"; "CompilerServices" ], "RefSafetyRulesAttribute")
+        ILTypeRef.Create(ILScopeRef.Local, [], "System.Runtime.CompilerServices.RefSafetyRulesAttribute")
 
-    let attrs =
-        match ilModule.Manifest with
-        | Some m -> m.CustomAttrs
-        | None -> ilModule.CustomAttrs
+    // RefSafetyRulesAttribute targets Module, not Assembly
+    let attrs = ilModule.CustomAttrs
 
     match TryDecodeILAttribute tref attrs with
     | Some([ ILAttribElem.Int32 version ], _) -> version

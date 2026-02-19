@@ -1722,7 +1722,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
                 else
                     None
 
-            let _refSafetyVersion =
+            let refSafetyVersion =
                 if cenv.improvedByRefLikeEscapeAnalysis then
                     getRefSafetyRulesVersion cenv.amap m ilMethRef
                 else
@@ -1733,9 +1733,47 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
                 | Some methDef ->
                     let mask =
                         if methInst.IsEmpty then
-                            // For generic methods, skip scoped mask reading: C# 11 may emit implicit
-                            // ScopedRefAttribute via RefSafetyRulesAttribute which F# does not read.
-                            tryGetScopedParamMask g methDef
+                            let baseMask = tryGetScopedParamMask g methDef
+
+                            let withImplicit =
+                                if refSafetyVersion >= 11 then
+                                    let implicitMask =
+                                        methDef.Parameters
+                                        |> List.toArray
+                                        |> Array.map (fun p ->
+                                            // V2-3: out T → always implicitly scoped when version ≥ 11
+                                            (p.IsOut && not p.IsIn)
+                                            ||
+                                            // V2-4: ref/in T where T is ref struct → implicitly scoped
+                                            (match p.Type with
+                                             | ILType.Byref inner ->
+                                                 match inner with
+                                                 | ILType.TypeVar _ -> false // Can't resolve type vars without instantiation
+                                                 | _ ->
+                                                     try
+                                                         let fsTy = Import.ImportILType cenv.amap m [] inner
+                                                         isByrefLikeTy g m fsTy
+                                                     with _ ->
+                                                         false
+                                             | _ -> false))
+
+                                    match baseMask with
+                                    | Some scopedArr ->
+                                        let merged = Array.map2 (||) scopedArr implicitMask
+
+                                        if Array.exists id merged then
+                                            Some merged
+                                        else
+                                            None
+                                    | None ->
+                                        if Array.exists id implicitMask then
+                                            Some implicitMask
+                                        else
+                                            None
+                                else
+                                    baseMask
+
+                            withImplicit
                             |> Option.bind (fun scopedArr ->
                                 match tryGetUnscopedRefParamMask g methDef with
                                 | Some unscopedArr ->
