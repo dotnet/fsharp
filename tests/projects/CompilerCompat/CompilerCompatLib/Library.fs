@@ -15,3 +15,18 @@ module Library =
     /// Function that takes an anonymous record as parameter
     let processAnonymousRecord (record: {| X: int; Y: string |}) =
         sprintf "Processed: X=%d, Y=%s" record.X record.Y
+
+    // ---- RFC FS-1043 breaking change compat tests ----
+
+    /// Inline function with operator + literal (T4a)
+    let inline addOne x = x + 1
+    let addOneConcrete (x: int) : int = addOne x
+
+    /// Takes a function int -> int (T4c)
+    let applyToInt (f: int -> int) (x: int) = f x
+
+    /// Custom type with extension operator (T5)
+    type Num = { V: int }
+        with static member (+) (a: Num, b: Num) = { V = a.V + b.V }
+
+    let addNumsConcrete (a: Num) (b: Num) : Num = a + b

@@ -2917,3 +2917,124 @@ match q with
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
+    // ---- Breaking change regression tests for RFC FS-1043 top 5 scenarios ----
+    // These test the most impactful breaking changes identified by the 20-agent council.
+
+    // -- T1: Value capture / partial application of newly-generic inline (S2) --
+
+    [<Fact>]
+    let ``Breaking change S2: value binding of inline SRTP function`` () =
+        FSharp """
+module Test
+let inline f x = x + 1
+let g = f
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val g: (int -> int)"
+
+    [<Fact>]
+    let ``Breaking change S2: List.map of inline SRTP function`` () =
+        FSharp """
+module Test
+let inline f x = x + 1
+let result = List.map f [1;2;3]
+if result <> [2;3;4] then failwith (sprintf "Expected [2;3;4] but got %A" result)
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Breaking change S2: monomorphic annotation on inline SRTP function`` () =
+        FSharp """
+module Test
+let inline f x = x + 1
+let g : int -> int = f
+if g 41 <> 42 then failwith "Expected 42"
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Breaking change S2: control case - x + x was already generic`` () =
+        FSharp """
+module Test
+let inline f x = x + x
+let g = f
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val g: (int -> int)"
+
+    // -- T2: Non-inline wrapper of inline function (S3) --
+
+    [<Fact>]
+    let ``Breaking change S3: non-inline wrapper monomorphizes`` () =
+        FSharp """
+module Test
+let inline f x = x + 1
+let run x = f x
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val run: x: int -> int"
+
+    [<Fact>]
+    let ``Breaking change S3: inline wrapper propagates SRTP`` () =
+        FSharp """
+module Test
+let inline f x = x + 1
+let inline run x = f x
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val inline run: x: ^a -> 'b when (^a or int) : (static member (+) : ^a * int -> 'b)"
+
+    [<Fact>]
+    let ``Breaking change S3: non-inline wrapper with DateTime`` () =
+        FSharp """
+module Test
+open System
+let inline f (x: DateTime) y = x + y
+let run (d: DateTime) (t: TimeSpan) = f d t
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val run: d: System.DateTime -> t: System.TimeSpan -> System.DateTime"
+
+    // -- T3: Inline chain + concrete-typed library call (S6) --
+
+    [<Fact>]
+    let ``Breaking change S6: inline chain with Math.Abs constrains to int`` () =
+        FSharp """
+module Test
+let inline f x = let y = x + 1 in System.Math.Abs(y)
+if f -5 <> 4 then failwith (sprintf "Expected 4 but got %d" (f -5))
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Breaking change S6: inline chain with printfn constrains to int`` () =
+        FSharp """
+module Test
+let inline f x = let y = x + 1 in printfn "%d" y
+f 41
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Breaking change S6: inline chain with string resolves to int`` () =
+        // string function constrains the result to a concrete type,
+        // which propagates back through x + 1 and resolves to int.
+        FSharp """
+module Test
+let inline f x = let y = x + 1 in string y
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val inline f: x: int -> string"
