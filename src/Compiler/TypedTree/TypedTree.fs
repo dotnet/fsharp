@@ -5731,6 +5731,9 @@ type CcuData =
       
       /// The table of .NET CLI type forwarders for this assembly
       TypeForwarders: CcuTypeForwarderTable
+
+      /// RefSafetyRules version from assembly-level attribute. 0 = absent (pre-C# 11). 11 = C# 11+.
+      RefSafetyRulesVersion: int
       
       XmlDocumentationInfo: XmlDocumentationInfo option }
 

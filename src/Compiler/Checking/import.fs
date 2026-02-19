@@ -847,6 +847,19 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
         )
         |> fun root -> { Root = root }
 
+let GetRefSafetyRulesVersion (ilModule: ILModuleDef) : int =
+    let tref =
+        ILTypeRef.Create(ILScopeRef.Local, [ "System"; "Runtime"; "CompilerServices" ], "RefSafetyRulesAttribute")
+
+    let attrs =
+        match ilModule.Manifest with
+        | Some m -> m.CustomAttrs
+        | None -> ilModule.CustomAttrs
+
+    match TryDecodeILAttribute tref attrs with
+    | Some([ ILAttribElem.Int32 version ], _) -> version
+    | _ -> 0
+
 /// Import an IL assembly as a new TAST CCU
 let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, fileName, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) =
     invalidateCcu |> ignore
@@ -878,6 +891,7 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
           MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (amap()).g ty1 ty2)
           TryGetILModuleDef = (fun () -> Some ilModule)
           TypeForwarders = forwarders
+          RefSafetyRulesVersion = GetRefSafetyRulesVersion ilModule
           XmlDocumentationInfo =
               match xmlDocInfoLoader, fileName with
               | Some xmlDocInfoLoader, Some fileName -> xmlDocInfoLoader.TryLoad(fileName)

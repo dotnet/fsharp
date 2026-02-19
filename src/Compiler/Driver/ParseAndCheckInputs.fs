@@ -1087,6 +1087,7 @@ let GetInitialTcState (m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcI
             Contents = ccuContents
             MemberSignatureEquality = typeEquivAux EraseAll tcGlobals
             TypeForwarders = CcuTypeForwarderTable.Empty
+            RefSafetyRulesVersion = 0
             XmlDocumentationInfo = None
         }
 

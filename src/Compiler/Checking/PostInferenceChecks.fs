@@ -848,6 +848,19 @@ let tryResolveILMethodDef (amap: Import.ImportMap) (m: range) (ilMethRef: ILMeth
     with _ ->
         None
 
+/// Get the RefSafetyRulesVersion from the assembly containing the given IL method.
+/// Returns 0 if the method's assembly doesn't have the attribute or resolution fails.
+let getRefSafetyRulesVersion (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : int =
+    try
+        let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
+
+        if tyconRef.IsLocalRef then
+            0
+        else
+            tyconRef.nlr.Ccu.Deref.RefSafetyRulesVersion
+    with _ ->
+        0
+
 /// Build a boolean mask of which IL parameters have the given attribute.
 /// Returns None if the attribute is unavailable or no parameters match.
 let tryGetILParamAttrMask (attribOpt: BuiltinAttribInfo option) (methDef: ILMethodDef) : bool array option =
@@ -1708,6 +1721,12 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
                     tryResolveILMethodDef cenv.amap m ilMethRef
                 else
                     None
+
+            let _refSafetyVersion =
+                if cenv.improvedByRefLikeEscapeAnalysis then
+                    getRefSafetyRulesVersion cenv.amap m ilMethRef
+                else
+                    0
 
             let scopedMask, hasUnscopedRef =
                 match methDefOpt with

@@ -463,6 +463,7 @@ type internal TcGlobals =
     member attrib_ScopedRefAttribute_opt: BuiltinAttribInfo option
 
     member attrib_UnscopedRefAttribute_opt: BuiltinAttribInfo option
+    member attrib_RefSafetyRulesAttribute_opt: BuiltinAttribInfo option
 
     member attrib_SealedAttribute: BuiltinAttribInfo
 

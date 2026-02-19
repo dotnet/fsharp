@@ -107,6 +107,10 @@ val internal ImportILGenericParameters:
     ILGenericParameterDef list ->
         Typar list
 
+/// Read the RefSafetyRules version from an IL module's assembly-level attributes.
+/// Returns 0 if the attribute is absent.
+val internal GetRefSafetyRulesVersion: ILModuleDef -> int
+
 /// Import an IL assembly as a new TAST CCU
 val internal ImportILAssembly:
     (unit -> ImportMap) *
