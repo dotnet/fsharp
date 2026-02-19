@@ -437,6 +437,11 @@
         <target state="translated">découpage depuis la fin</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImplicitDIMCoverage">
+        <source>Implicit dispatch slot coverage for default interface member implementations</source>
+        <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
         <target state="translated">yield implicite</target>
