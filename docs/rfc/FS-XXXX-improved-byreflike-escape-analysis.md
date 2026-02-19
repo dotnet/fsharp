@@ -118,7 +118,7 @@ Applied to: IL calls returning byref-like types in returnable context, and F# ca
 
 | Decision | C# rule | F# follows? | Notes |
 |---|---|---|---|
-| `out` implicitly scoped | [C# spec](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#out-compat-change): `out` has ref-safe-context of function-member | **No** — C# communicates implicit scoping via `RefSafetyRulesAttribute` (not `ScopedRefAttribute`); F# does not read it | Conservative: `out` treated as non-scoped, which may over-reject but never under-rejects |
+| `out` implicitly scoped | [C# spec](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#out-compat-change): `out` has ref-safe-context of function-member | **Yes (V2)** — when `RefSafetyRulesVersion >= 11`, `out` is implicitly scoped (excluded from limit). Without `RefSafetyRulesAttribute`, treated conservatively as non-scoped. | Reads `RefSafetyRulesAttribute` from assembly; `[UnscopedRef]` overrides implicit scoping |
 | `this` on struct implicitly scoped | [C# spec](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#implicitly-scoped): struct `this` is implicitly `scoped ref` | Yes: receiver excluded unless `[UnscopedRef]` | Reads `UnscopedRefAttribute` |
 | `[UnscopedRef]` opts out of scoped | C# `[UnscopedRef]` allows `this`/param to escape | Yes: reads attribute, includes in limit | — |
 | `[UnscopedRef]` on `out` param | C# `[UnscopedRef] out T` makes `out` escapable again | Yes: read attribute, treat as non-scoped `ref` | Falls out from UnscopedRef reading |
@@ -196,5 +196,4 @@ These bugfixes apply at **all language versions** (not gated by `--langversion:p
 |---|---|
 | `ref` field declaration in F# | Different feature, different syntax design |
 | `stackalloc` improvements | Consistent with FS-1053 approach |
-| `RefSafetyRulesAttribute` | Minimal impact; F# rules are always at least as strict as C# 11; false negatives unlikely |
 | Scope variance validation | F# override checking compares only types, not parameter attributes. An F# override removing `[<ScopedRef>]` doesn't create unsoundness for F# callers. Risk is narrow: C# callers of the F# override only. Independent diagnostic concern. |
