@@ -2543,6 +2543,225 @@ let f () : Span<int> =
         |> shouldFail
         |> withErrorCodes [ 3235 ]
 
+    // --- V2: RefSafetyRulesAttribute test data ---
+
+    let private v2OutParamCSharp8Lib =
+        CSharp """
+using System;
+public static class OutHelperOld
+{
+    public static Span<int> ViaPlainOut(out int x, int[] arr)
+    {
+        x = 42;
+        return new Span<int>(arr);
+    }
+}
+"""     |> withName "OutLibOld"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8
+
+    let private v2OutParamCSharp8FSharpSource = """
+module Test
+open System
+let f () =
+    let mutable local = 0
+    OutHelperOld.ViaPlainOut(&local, [| 1; 2; 3 |])
+"""
+
+    let private v2GenericCSharp8Lib =
+        CSharp """
+using System;
+public static class GenericHelperOld
+{
+    public static Span<T> Create<T>(ref T value, T[] arr)
+    {
+        return new Span<T>(arr);
+    }
+}
+"""     |> withName "GenericLib8"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8
+
+    let private v2GenericCSharp8FSharpSource = """
+module Test
+open System
+let f () =
+    let mutable local = 1
+    GenericHelperOld.Create(&local, [| 1; 2; 3 |])
+"""
+
+    let private v2GenericCSharp11Lib =
+        CSharp """
+using System;
+using System.Runtime.CompilerServices;
+public static class GenericHelper
+{
+    public static Span<T> Create<T>(scoped ref T value, T[] arr)
+    {
+        return new Span<T>(arr);
+    }
+}
+"""     |> withName "GenericLib11"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+    let private v2GenericCSharp11FSharpSource = """
+module Test
+open System
+let f () =
+    let mutable local = 1
+    GenericHelper.Create(&local, [| 1; 2; 3 |])
+"""
+
+    let private v2RefSpanCSharp11Lib =
+        CSharp """
+using System;
+public static class RefSpanHelper
+{
+    public static Span<int> ViaRefSpan(ref Span<int> input, int[] arr)
+    {
+        return new Span<int>(arr);
+    }
+}
+"""     |> withName "RefSpanLib"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+    let private v2RefSpanCSharp11FSharpSource = """
+module Test
+open System
+let f () =
+    let mutable local = Span<int>.Empty
+    RefSpanHelper.ViaRefSpan(&local, [| 1; 2; 3 |])
+"""
+
+    let private v2FSharpRoundtripLibSource = """
+module Lib
+open System
+let makeSpan (x: outref<int>) (arr: int[]) : Span<int> =
+    x <- 42
+    Span<int>(arr)
+"""
+
+    let private v2FSharpRoundtripFSharpSource = """
+module Test
+open System
+let f () =
+    let mutable local = 0
+    Lib.makeSpan &local [| 1; 2; 3 |]
+"""
+
+    // --- V2: RefSafetyRulesAttribute tests ---
+
+    [<Fact>]
+    let ``V2 OutParam CSharp8 no RefSafetyRules triggers escape error`` () =
+        FSharp v2OutParamCSharp8FSharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [v2OutParamCSharp8Lib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``V2 OutParam CSharp8 no RefSafetyRules backward compat`` () =
+        FSharp v2OutParamCSharp8FSharpSource
+        |> asLibrary
+        |> withReferences [v2OutParamCSharp8Lib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``V2 Generic method CSharp11 with ScopedRef triggers escape error`` () =
+        FSharp v2GenericCSharp11FSharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [v2GenericCSharp11Lib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``V2 Generic method CSharp11 with ScopedRef backward compat`` () =
+        FSharp v2GenericCSharp11FSharpSource
+        |> asLibrary
+        |> withReferences [v2GenericCSharp11Lib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``V2 Generic method CSharp8 without RefSafetyRules triggers escape error`` () =
+        FSharp v2GenericCSharp8FSharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [v2GenericCSharp8Lib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``V2 Generic method CSharp8 without RefSafetyRules backward compat`` () =
+        FSharp v2GenericCSharp8FSharpSource
+        |> asLibrary
+        |> withReferences [v2GenericCSharp8Lib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``V2 FSharp assembly compile placeholder for RefSafetyRules emit`` () =
+        FSharp """
+module TestLib
+open System
+let makeSpan (arr: int[]) : Span<int> = Span<int>(arr)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``V2 Ref to refstruct CSharp11 triggers escape error`` () =
+        FSharp v2RefSpanCSharp11FSharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [v2RefSpanCSharp11Lib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``V2 Ref to refstruct CSharp11 backward compat`` () =
+        FSharp v2RefSpanCSharp11FSharpSource
+        |> asLibrary
+        |> withReferences [v2RefSpanCSharp11Lib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``V2 FSharp roundtrip cross-assembly implicit scoping`` () =
+        let fsharpLib =
+            FSharp v2FSharpRoundtripLibSource
+            |> asLibrary
+            |> withName "RoundtripLib"
+            |> withLangVersionPreview
+
+        FSharp v2FSharpRoundtripFSharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [fsharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``V2 FSharp roundtrip cross-assembly implicit scoping backward compat`` () =
+        let fsharpLib =
+            FSharp v2FSharpRoundtripLibSource
+            |> asLibrary
+            |> withName "RoundtripLib"
+
+        FSharp v2FSharpRoundtripFSharpSource
+        |> asLibrary
+        |> withReferences [fsharpLib]
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
