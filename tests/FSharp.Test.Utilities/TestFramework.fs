@@ -521,7 +521,6 @@ module Command =
             // This is needed because on net472 ProcessStartInfo.StandardInputEncoding is unavailable,
             // so the spawned process inherits the console's encoding settings.
             Console.InputEncoding <- Text.UTF8Encoding(false)
-            Console.OutputEncoding <- Text.UTF8Encoding(false)
 #else
         let ensureConsole () = ()
 #endif
