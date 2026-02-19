@@ -167,7 +167,7 @@ type LoweredStateMachineResult =
     | NotAStateMachine
 
 /// Used to scope the action of lowering a state machine expression
-type LowerStateMachine(g: TcGlobals) =
+type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
 
     let mutable pcCount = 0
     let genPC() =
@@ -409,7 +409,9 @@ type LowerStateMachine(g: TcGlobals) =
     [<return: Struct>]
     let (|ExpandedStateMachineInContext|_|) inputExpr = 
         // All expanded resumable code state machines e.g. 'task { .. }' begin with a bind of @builder or 'defn'
-        let env, expr = BindResumableCodeDefinitions env.Empty inputExpr 
+        // Seed the env with any expand-var definitions from outer scopes (e.g. across lambda boundaries)
+        let initialEnv = { env.Empty with ResumableCodeDefns = outerResumableCodeDefns }
+        let env, expr = BindResumableCodeDefinitions initialEnv inputExpr 
         match expr with
         | StructStateMachineExpr g 
                (dataTy, 
@@ -892,8 +894,8 @@ type LowerStateMachine(g: TcGlobals) =
             let env, codeExprR = RepeatBindAndApplyOuterDefinitions env codeExpr
             let frees = (freeInExpr CollectLocals overallExpr).FreeLocals
 
-            if frees |> Zset.exists (isExpandVar g) then 
-                let nonfree = frees |> Zset.elements |> List.filter (isExpandVar g) |> List.map (fun v -> v.DisplayName) |> String.concat ","
+            if frees |> Zset.exists (fun v -> isExpandVar g v && not (env.ResumableCodeDefns.ContainsVal v)) then 
+                let nonfree = frees |> Zset.elements |> List.filter (fun v -> isExpandVar g v && not (env.ResumableCodeDefns.ContainsVal v)) |> List.map (fun v -> v.DisplayName) |> String.concat ","
                 let msg = FSComp.SR.reprResumableCodeValueHasNoDefinition(nonfree)
                 fallback msg
             else
@@ -947,7 +949,7 @@ type LowerStateMachine(g: TcGlobals) =
             let msg = FSComp.SR.reprStateMachineInvalidForm()
             fallback msg
 
-let LowerStateMachineExpr g (overallExpr: Expr) : LoweredStateMachineResult =
+let LowerStateMachineExpr g (outerResumableCodeDefns: ValMap<Expr>) (overallExpr: Expr) : LoweredStateMachineResult =
     // Detect a state machine and convert it
     let stateMachine = IsStateMachineExpr g overallExpr
 
@@ -955,4 +957,4 @@ let LowerStateMachineExpr g (overallExpr: Expr) : LoweredStateMachineResult =
     | None -> LoweredStateMachineResult.NotAStateMachine
     | Some altExprOpt ->
 
-    LowerStateMachine(g).Apply(overallExpr, altExprOpt)
+    LowerStateMachine(g, outerResumableCodeDefns).Apply(overallExpr, altExprOpt)
