@@ -104,7 +104,7 @@ Applied to: IL calls returning byref-like types in returnable context, and F# ca
 |---|---|---|
 | `ref T` | bare byref | Limits span-like return (follows C# default) |
 | `in T` | `[In]` + `IsReadOnlyAttribute` | Same as `ref` — limits return |
-| `out T` | `[Out]` | Limits span-like return — `out` does NOT get `ScopedRefAttribute` in IL (implicit scoping communicated via `RefSafetyRulesAttribute` which F# does not read). Conservative: may over-reject. |
+| `out T` | `[Out]` | **V2**: When `RefSafetyRulesVersion >= 11`, `out` is implicitly scoped (excluded from limit). Otherwise, limits span-like return (conservative). |
 | `scoped ref T` | `ScopedRefAttribute` | Excluded from limit computation |
 | `scoped in T` | `ScopedRefAttribute` | Excluded from limit computation |
 | `scoped Span<T>` (value) | `ScopedRefAttribute` | Excluded from limit computation (mask reads all params, not just byrefs) |
@@ -112,7 +112,7 @@ Applied to: IL calls returning byref-like types in returnable context, and F# ca
 | `[UnscopedRef]` on param | `UnscopedRefAttribute` | Read: param NOT excluded from limit (escape allowed) |
 | `[UnscopedRef] out T` | `UnscopedRefAttribute` + `[Out]` | Read: `out` no longer implicitly scoped — limits return |
 | `ref` return chaining | byref return → byref arg | Handled: `Span(ref M(ref local))` → inner byref propagates limit via FS-1053, outer span captures it |
-| `RefSafetyRulesAttribute` on assembly | version negotiation | **Not read** — F# always applies its own rules regardless of target assembly version |
+| `RefSafetyRulesAttribute` on assembly | version negotiation | **V2**: Read from referenced assemblies; emitted on F# assemblies. Gates implicit scoping and generic method mask. |
 
 ### Decisions following C#
 
@@ -126,10 +126,13 @@ Applied to: IL calls returning byref-like types in returnable context, and F# ca
 | `scoped` on value params | C# `scoped Span<T>` emits `ScopedRefAttribute` on value param | Yes: mask reads all params, not just byrefs | Working — mask applies to all IL params |
 | `ref` return chaining | C# ref return carries ref-safe-context of argument | Yes: FS-1053 byref return propagation, this RFC adds span capture on top | `Span(ref M(ref local))` errors |
 | Resolution failure → conservative | — | Yes: mask = None → all params treated as non-scoped | May cause false positives, never false negatives |
-| `RefSafetyRulesAttribute` version | C# checks assembly-level attribute to select C#7.2 vs C#11 rules | **No** — F# applies its own rules unconditionally | May over-reject old assemblies; see Required Work |
+| `RefSafetyRulesAttribute` version | C# checks assembly-level attribute to select C#7.2 vs C#11 rules | **Yes (V2)** — reads and emits `[module: RefSafetyRules(11)]` | Used to gate implicit scoping and generic method mask |
 | `scoped` variance in overrides | C# allows adding `scoped` (narrowing) but not removing (widening) in overrides | **No** — see Out of Scope | Independent diagnostic concern |
 | `[UnscopedRef]` on F# struct methods | C# reads from IL metadata | **Partial** — honored cross-assembly (IL path), not same-assembly (F# path) | F# has no syntax for this; manual attribute application is rare |
-| Generic method scoped mask | C# reads `ScopedRefAttribute` on all methods | **No** — skipped for generic methods (`methInst.IsEmpty` guard) | C# may emit implicit `ScopedRefAttribute` via `RefSafetyRulesAttribute` on `allows ref struct` methods. Without reading `RefSafetyRulesAttribute`, F# cannot distinguish explicit vs implicit — conservative skip prevents unsoundness |
+| Generic method scoped mask | C# reads `ScopedRefAttribute` on all methods | **Yes (V2)** — when `RefSafetyRulesVersion >= 11`, scoped mask is read even on generic methods | V2 reads `RefSafetyRulesAttribute`; when version >= 11, attributes are authoritative (not implicit) |
+| `RefSafetyRulesAttribute` reading | C# checks assembly-level attribute to select C#7.2 vs C#11 rules | **Yes (V2)** — reads `[module: RefSafetyRules(11)]` from referenced assemblies | Stored in `CcuData.RefSafetyRulesVersion`; gates implicit `out`/`ref`-to-refstruct scoping and generic method mask |
+| `RefSafetyRulesAttribute` emission | C# emits `[module: RefSafetyRules(11)]` on every C#11+ assembly | **Yes (V2)** — F# emits `[module: RefSafetyRules(11)]` when `--langversion:preview` and attribute type is available | C# consumers apply C#11 rules to F# assemblies |
+| Implicit `out` / `ref`-to-refstruct scoping | C# `out` and `ref`/`in` to ref struct params are implicitly scoped in C#11 | **Yes (V2)** — when `RefSafetyRulesVersion >= 11`, `out T` and `ref`/`in` to byref-like are implicitly scoped | Merged with explicit `ScopedRefAttribute`; `UnscopedRefAttribute` can override |
 
 ## Errors
 

@@ -61,3 +61,24 @@ All items from the review council round 2 have been implemented:
 - ✅ Flattened TOp.ILCall and CheckApplication nesting with `Option.bind`
 - ✅ Removed dead guard in `ApplyScopedMask`
 - ✅ Upgraded control-flow test assertions to `withDiagnostics`
+
+## V2: RefSafetyRulesAttribute support
+
+V2 adds reading and emission of `[module: RefSafetyRules(11)]`:
+
+### New plumbing
+- `TcGlobals.attrib_RefSafetyRulesAttribute_opt` — attribute type lookup
+- `CcuData.RefSafetyRulesVersion` — stored per-assembly (0 = absent, 11 = C# 11+)
+- `GetRefSafetyRulesVersion` (import.fs) — reads attribute from ILModuleDef
+- `getRefSafetyRulesVersion` (PostInferenceChecks.fs) — resolves version from ILMethodRef
+
+### TOp.ILCall arm changes
+- `refSafetyVersion` computed before mask pipeline
+- Guard relaxed: `methInst.IsEmpty || refSafetyVersion >= 11`
+- Implicit mask merged between `tryGetScopedParamMask` and `tryGetUnscopedRefParamMask`:
+  - `out T` (IsOut && not IsIn) → implicitly scoped
+  - `ref`/`in` to ref struct (ILType.Byref inner where inner is byref-like) → implicitly scoped
+- `UnscopedRefAttribute` negation still applies after merge
+
+### Emission
+- `IlxGen.fs`: `[module: RefSafetyRules(11)]` added to `ilNetModuleAttrs` when feature is enabled
