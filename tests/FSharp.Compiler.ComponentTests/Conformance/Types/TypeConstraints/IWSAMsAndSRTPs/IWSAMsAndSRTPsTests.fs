@@ -3112,41 +3112,76 @@ if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%%s'" (s
         FSharp """
 module TestWideningPlus
 
-// Part 1: Extension widen_to_X methods on numeric types satisfy SRTP constraints (RFC FS-1043).
 type System.Int32 with
     static member inline widen_to_int64 (a: int32) : int64 = int64 a
+    static member inline widen_to_single (a: int32) : single = single a
     static member inline widen_to_double (a: int32) : double = double a
 
-type System.Int64 with
-    static member inline widen_to_double (a: int64) : double = double a
+type System.Single with
+    static member inline widen_to_double (a: int) : double = double a
 
 let inline widen_to_int64 (x: ^T) : int64 = (^T : (static member widen_to_int64 : ^T -> int64) (x))
+let inline widen_to_single (x: ^T) : single = (^T : (static member widen_to_single : ^T -> single) (x))
 let inline widen_to_double (x: ^T) : double = (^T : (static member widen_to_double : ^T -> double) (x))
 
-// Widening via SRTP extension methods:
-widen_to_int64 1     |> ignore<int64>
-widen_to_double 1    |> ignore<double>
-widen_to_double 1L   |> ignore<double>
+type System.Int64 with
+    static member inline (+)(a: int64, b: 'T) : int64 = a + widen_to_int64 b
+    static member inline (+)(a: 'T, b: int64) : int64 = widen_to_int64 a + b
 
-// Part 2: Extension (+) operators demonstrate cross-type addition (RFC concept).
-// Analogous to "1 + 2.0": a narrow type added to a wide type yields the wide type.
-type Precise = { P: double }
-type Approx = { A: int }
+type System.Single with
+    static member inline (+)(a: single, b: 'T) : single = a + widen_to_single b
+    static member inline (+)(a: 'T, b: single) : single = widen_to_single a + b
 
-type Precise with
-    static member (+)(a: Approx, b: Precise) : Precise = { P = double a.A + b.P }
-    static member (+)(a: Precise, b: Approx) : Precise = { P = a.P + double b.A }
+type System.Double with
+    static member inline (+)(a: double, b: 'T) : double = a + widen_to_double b
+    static member inline (+)(a: 'T, b: double) : double = widen_to_double a + b
 
-let r1 = { A = 1 } + { P = 2.0 }
-if r1.P <> 3.0 then failwith (sprintf "Expected 3.0 but got %f" r1.P)
-
-let r2 = { P = 1.0 } + { A = 2 }
-if r2.P <> 3.0 then failwith (sprintf "Expected 3.0 but got %f" r2.P)
+(1 + 2L)   |> ignore<int64>
+(1 + 2.0f) |> ignore<single>
+(1 + 2.0)  |> ignore<double>
+(1L + 2)   |> ignore<int64>
+(1L + 2.0) |> ignore<double>
         """
         |> asExe
         |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compile
+        // The RFC example (docs/RFC_Changes.md) cannot compile: the (+) in each extension operator body
+        // self-resolves to the operator being defined, constraining 'T to the same numeric type and
+        // preventing cross-type addition (e.g., int + double). This is a known limitation.
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 64, Line 21, Col 61, Line 21, Col 62, "This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'single'.")
+            (Error 1, Line 21, Col 79, Line 21, Col 80, "The type 'single' does not support the operator 'widen_to_single'")
+            (Warning 64, Line 25, Col 61, Line 25, Col 62, "This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'double'.")
+            (Error 1, Line 25, Col 79, Line 25, Col 80, "The type 'double' does not support the operator 'widen_to_double'")
+            (Error 1, Line 28, Col 6, Line 28, Col 8, "The type 'int64' does not match the type 'int'")
+            (Error 1, Line 28, Col 15, Line 28, Col 28, "Type mismatch. Expecting a
+    'int64 -> 'a'    
+but given a
+    'int64 -> unit'    
+The type 'int64' does not match the type 'int'")
+            (Error 1, Line 31, Col 7, Line 31, Col 8, "The type 'int' does not match the type 'int64'")
+            (Error 1, Line 31, Col 15, Line 31, Col 28, "Type mismatch. Expecting a
+    'int64 -> 'a'    
+but given a
+    'int64 -> unit'    
+The type 'int' does not match the type 'int64'")
+            (Error 1, Line 32, Col 15, Line 32, Col 29, "Type mismatch. Expecting a
+    'double -> 'a'    
+but given a
+    'double -> unit'    
+No overloads match for method 'op_Addition'.
+
+Known return type: double
+
+Known type parameters: < int64 , float >
+
+Available overloads:
+ - static member System.Double.(+) : a: ^T * b: double -> double when ^T: (static member widen_to_double: ^T -> double) // Argument 'a' doesn't match
+ - static member System.Double.(+) : a: double * b: double -> double // Argument 'a' doesn't match
+ - static member System.Int64.(+) : a: ^T * b: int64 -> int64 when ^T: (static member widen_to_int64: ^T -> int64) // Argument 'a' doesn't match
+ - static member System.Int64.(+) : a: int64 * b: ^T -> int64 when ^T: (static member widen_to_int64: ^T -> int64) // Argument 'b' doesn't match")
+        ]
 
     [<Fact>]
     let ``Recursive inline SRTP function with extension constraints`` () =
