@@ -1325,7 +1325,12 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
     // 3. If some are missing, produce a diagnostic which missing ones.
     if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport)
         && minfo.IsConstructor
-        && not (TryFindILAttribute g.attrib_SetsRequiredMembersAttribute (minfo.GetCustomAttrs())) then
+        && not (
+            match minfo with
+            | ILMeth(_, ilMethInfo, _) ->
+                ilMethInfo.RawMetadata.HasWellKnownAttribute(g, WellKnownILAttributes.SetsRequiredMembersAttribute)
+            | _ -> TryFindILAttribute g.attrib_SetsRequiredMembersAttribute (minfo.GetCustomAttrs())
+        ) then
 
         let requiredProps =
             [

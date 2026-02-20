@@ -2374,6 +2374,25 @@ val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
 val TryFindILAttributeOpt: BuiltinAttribInfo option -> ILAttributes -> bool
 
+/// Compute well-known attribute flags for an ILAttributes collection.
+val computeILWellKnownFlags: g: TcGlobals -> attrs: ILAttributes -> WellKnownILAttributes
+
+type ILAttributesStored with
+
+    member HasWellKnownAttribute: g: TcGlobals * flag: WellKnownILAttributes -> bool
+
+type ILTypeDef with
+
+    member HasWellKnownAttribute: g: TcGlobals * flag: WellKnownILAttributes -> bool
+
+type ILMethodDef with
+
+    member HasWellKnownAttribute: g: TcGlobals * flag: WellKnownILAttributes -> bool
+
+type ILFieldDef with
+
+    member HasWellKnownAttribute: g: TcGlobals * flag: WellKnownILAttributes -> bool
+
 val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 
 val IsMatchingFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attrib -> bool

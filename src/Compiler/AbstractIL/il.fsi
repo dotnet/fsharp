@@ -903,14 +903,19 @@ type WellKnownILAttributes =
     | NotComputed = 0x80000000u
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
-[<NoEquality; NoComparison>]
+[<Sealed; NoEquality; NoComparison>]
 type ILAttributesStored =
-    /// Computed by ilread.fs based on metadata index
-    | Reader of (int32 -> ILAttribute[])
-    /// Already computed
-    | Given of ILAttributes
-
+    member CustomAttrs: ILAttributes
     member GetCustomAttrs: int32 -> ILAttributes
+    member MetadataIndex: int32
+
+    member HasWellKnownAttribute:
+        flag: WellKnownILAttributes * compute: (ILAttributes -> WellKnownILAttributes) -> bool
+
+    member GetOrComputeWellKnownFlags: compute: (ILAttributes -> WellKnownILAttributes) -> WellKnownILAttributes
+    static member CreateReader: idx: int32 * f: (int32 -> ILAttribute[]) -> ILAttributesStored
+    static member CreateGiven: attrs: ILAttributes -> ILAttributesStored
+    static member CreateGiven: idx: int32 * attrs: ILAttributes -> ILAttributesStored
 
 /// Method parameters and return values.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -2307,6 +2312,7 @@ val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
 val storeILCustomAttrs: ILAttributes -> ILAttributesStored
 val mkILCustomAttrsComputed: (unit -> ILAttribute[]) -> ILAttributesStored
 val internal mkILCustomAttrsReader: (int32 -> ILAttribute[]) -> ILAttributesStored
+val internal mkILCustomAttrsReaderWithIndex: int32 -> (int32 -> ILAttribute[]) -> ILAttributesStored
 val emptyILCustomAttrs: ILAttributes
 val emptyILCustomAttrsStored: ILAttributesStored
 

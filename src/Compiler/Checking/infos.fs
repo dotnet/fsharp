@@ -208,9 +208,8 @@ type OptionalArgInfo =
                         match ilParam.Marshal with
                         | Some(ILNativeType.IUnknown | ILNativeType.IDispatch | ILNativeType.Interface) -> Constant ILFieldInit.Null
                         | _ ->
-                            let attrs = ilParam.CustomAttrs
-                            if   TryFindILAttributeOpt g.attrib_IUnknownConstantAttribute attrs then WrapperForIUnknown
-                            elif TryFindILAttributeOpt g.attrib_IDispatchConstantAttribute attrs then WrapperForIDispatch
+                            if   ilParam.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.IUnknownConstantAttribute) then WrapperForIUnknown
+                            elif ilParam.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.IDispatchConstantAttribute) then WrapperForIDispatch
                             else MissingValue
                     else
                         DefaultValue
@@ -441,8 +440,7 @@ type ILTypeInfo =
 
     /// Indicates if the type is marked with the [<IsReadOnly>] attribute.
     member x.IsReadOnly (g: TcGlobals) =
-        x.RawMetadata.CustomAttrs
-        |> TryFindILAttribute g.attrib_IsReadOnlyAttribute
+        x.RawMetadata.HasWellKnownAttribute(g, WellKnownILAttributes.IsReadOnlyAttribute)
 
     member x.Instantiate inst =
         let (ILTypeInfo(g, ty, tref, tdef)) = x
@@ -585,7 +583,7 @@ type ILMethInfo =
             match x with
             | ILMethInfo(ilType=CSharpStyleExtension(declaring= t)) when t.IsILTycon -> AttributesFromIL(t.ILTyconRawMetadata.MetadataIndex,t.ILTyconRawMetadata.CustomAttrsStored)
             // C#-style extension defined in F# -> we do not support manually adding NullableContextAttribute by F# users.
-            | ILMethInfo(ilType=CSharpStyleExtension _)  -> AttributesFromIL(0,Given(ILAttributes.Empty))
+            | ILMethInfo(ilType=CSharpStyleExtension _)  -> AttributesFromIL(0,ILAttributesStored.CreateGiven(ILAttributes.Empty))
             | ILMethInfo(ilType=IlType(t)) -> t.NullableAttributes
 
         FromMethodAndClass(AttributesFromIL(raw.MetadataIndex,raw.CustomAttrsStored),classAttrs)
@@ -628,8 +626,7 @@ type ILMethInfo =
     /// Indicates if the method is marked with the [<IsReadOnly>] attribute. This is done by looking at the IL custom attributes on
     /// the method.
     member x.IsReadOnly (g: TcGlobals) =
-        x.RawMetadata.CustomAttrs
-        |> TryFindILAttribute g.attrib_IsReadOnlyAttribute
+        x.RawMetadata.HasWellKnownAttribute(g, WellKnownILAttributes.IsReadOnlyAttribute)
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method.
     /// An instance extension method returns one object argument.
@@ -1263,7 +1260,7 @@ type MethInfo =
         | ILMeth(g, ilMethInfo, _) ->
             [ [ for p in ilMethInfo.ParamMetadata do
                  let attrs = p.CustomAttrs
-                 let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute attrs
+                 let isParamArrayArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.ParamArrayAttribute)
                  let reflArgInfo =
                      match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef attrs with
                      | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
@@ -1274,9 +1271,9 @@ type MethInfo =
                  // Note: we get default argument values from VB and other .NET language metadata
                  let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
 
-                 let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute attrs
-                 let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute attrs
-                 let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute attrs
+                 let isCallerLineNumberArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerLineNumberAttribute)
+                 let isCallerFilePathArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerFilePathAttribute)
+                 let isCallerMemberNameArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerMemberNameAttribute)
 
                  let callerInfo =
                     match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with

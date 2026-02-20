@@ -1935,7 +1935,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
                 [|
                     yield! attrsBefore.AsArray()
-                    if attrsBefore |> TryFindILAttribute g.attrib_AllowNullLiteralAttribute then
+                    if tdef.HasWellKnownAttribute(g, WellKnownILAttributes.AllowNullLiteralAttribute) then
                         yield GetNullableAttribute g [ NullnessInfo.WithNull ]
                     if (gmethods.Count + gfields.Count + gproperties.Count) > 0 then
                         yield GetNullableContextAttribute g 1uy
@@ -10881,7 +10881,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                     let customAttrs =
                         if checkNullness then
-                            GenAdditionalAttributesForTy g x |> mkILCustomAttrs |> ILAttributesStored.Given
+                            GenAdditionalAttributesForTy g x
+                            |> mkILCustomAttrs
+                            |> ILAttributesStored.CreateGiven
                         else
                             emptyILCustomAttrsStored
 

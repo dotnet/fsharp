@@ -1253,19 +1253,47 @@ type WellKnownILAttributes =
     | DefaultMemberAttribute = 0x40000u
     | NotComputed = 0x80000000u
 
-[<NoEquality; NoComparison>]
-type ILAttributesStored =
-
-    /// Computed by ilread.fs based on metadata index
+type internal ILAttributesStoredRepr =
     | Reader of (int32 -> ILAttribute[])
-
-    /// Already computed
     | Given of ILAttributes
+    | Computed of ILAttributes * WellKnownILAttributes
 
-    member x.GetCustomAttrs metadataIndex =
-        match x with
-        | Reader f -> ILAttributes(f metadataIndex)
-        | Given attrs -> attrs
+[<Sealed; NoEquality; NoComparison>]
+type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStoredRepr) =
+    let mutable repr = initial
+
+    member _.MetadataIndex = metadataIndex
+
+    member x.CustomAttrs: ILAttributes =
+        match repr with
+        | Computed(a, _)
+        | Given a -> a
+        | Reader f ->
+            let r = ILAttributes(f metadataIndex)
+            repr <- Given r
+            r
+
+    /// Backward compat — old callers that still pass metadataIndex.
+    member x.GetCustomAttrs(_metadataIndex: int32) : ILAttributes = x.CustomAttrs
+
+    member x.HasWellKnownAttribute(flag: WellKnownILAttributes, compute: ILAttributes -> WellKnownILAttributes) : bool =
+        x.GetOrComputeWellKnownFlags(compute) &&& flag <> WellKnownILAttributes.None
+
+    member x.GetOrComputeWellKnownFlags(compute: ILAttributes -> WellKnownILAttributes) : WellKnownILAttributes =
+        match repr with
+        | Computed(_, flags) -> flags
+        | _ ->
+            let a = x.CustomAttrs
+            let f = compute a
+            repr <- Computed(a, f)
+            f
+
+    static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) =
+        ILAttributesStored(idx, Reader f)
+
+    static member CreateGiven(attrs: ILAttributes) = ILAttributesStored(-1, Given attrs)
+
+    static member CreateGiven(idx: int32, attrs: ILAttributes) = ILAttributesStored(idx, Given attrs)
 
 let emptyILCustomAttrs = ILAttributes [||]
 
@@ -1280,18 +1308,21 @@ let mkILCustomAttrs l =
     | [] -> emptyILCustomAttrs
     | _ -> mkILCustomAttrsFromArray (List.toArray l)
 
-let emptyILCustomAttrsStored = ILAttributesStored.Given emptyILCustomAttrs
+let emptyILCustomAttrsStored = ILAttributesStored.CreateGiven emptyILCustomAttrs
 
 let storeILCustomAttrs (attrs: ILAttributes) =
     if attrs.AsArray().Length = 0 then
         emptyILCustomAttrsStored
     else
-        ILAttributesStored.Given attrs
+        ILAttributesStored.CreateGiven attrs
 
 let mkILCustomAttrsComputed f =
-    ILAttributesStored.Reader(fun _ -> f ())
+    ILAttributesStored.CreateReader(-1, fun _ -> f ())
 
-let mkILCustomAttrsReader f = ILAttributesStored.Reader f
+let mkILCustomAttrsReader f = ILAttributesStored.CreateReader(-1, f)
+
+let mkILCustomAttrsReaderWithIndex idx f =
+    ILAttributesStored.CreateReader(idx, f)
 
 type ILCodeLabel = int
 
@@ -1815,7 +1846,7 @@ type ILParameter =
         MetadataIndex: int32
     }
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     override x.ToString() =
         x.Name |> Option.defaultValue "<no name>"
@@ -1833,7 +1864,7 @@ type ILReturn =
 
     override x.ToString() = "<return>"
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     member x.WithCustomAttrs(customAttrs) =
         { x with
@@ -1894,7 +1925,7 @@ type ILGenericParameterDef =
         MetadataIndex: int32
     }
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -1940,13 +1971,7 @@ type InterfaceImpl =
         mutable CustomAttrsStored: ILAttributesStored
     }
 
-    member x.CustomAttrs =
-        match x.CustomAttrsStored with
-        | ILAttributesStored.Reader f ->
-            let res = ILAttributes(f x.Idx)
-            x.CustomAttrsStored <- ILAttributesStored.Given res
-            res
-        | ILAttributesStored.Given attrs -> attrs
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     static member Create(ilType: ILType, customAttrsStored: ILAttributesStored) =
         {
@@ -2053,7 +2078,7 @@ type ILMethodDef
                  | Some attrs -> attrs)
         )
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs metadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
@@ -2290,7 +2315,7 @@ type ILEventDef
 
     member _.MetadataIndex = metadataIndex
 
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = customAttrsStored.CustomAttrs
 
     member x.With(?eventType, ?name, ?attributes, ?addMethod, ?removeMethod, ?fireMethod, ?otherMethods, ?customAttrs) =
         ILEventDef(
@@ -2366,7 +2391,7 @@ type ILPropertyDef
     member x.Init = init
     member x.Args = args
     member x.CustomAttrsStored = customAttrsStored
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = customAttrsStored.CustomAttrs
     member x.MetadataIndex = metadataIndex
 
     member x.With(?name, ?attributes, ?setMethod, ?getMethod, ?callingConv, ?propertyType, ?init, ?args, ?customAttrs) =
@@ -2442,7 +2467,7 @@ type ILFieldDef
     member _.Offset = offset
     member _.Marshal = marshal
     member x.CustomAttrsStored = customAttrsStored
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = customAttrsStored.CustomAttrs
     member x.MetadataIndex = metadataIndex
 
     member x.With
@@ -2701,8 +2726,6 @@ type ILTypeDef
         metadataIndex: int32
     ) =
 
-    let mutable customAttrsStored = customAttrsStored
-
     let hasFlag flag = additionalFlags &&& flag = flag
 
     new
@@ -2853,13 +2876,7 @@ type ILTypeDef
             customAttrs = defaultArg customAttrs x.CustomAttrsStored
         )
 
-    member x.CustomAttrs: ILAttributes =
-        match customAttrsStored with
-        | ILAttributesStored.Reader f ->
-            let res = ILAttributes(f x.MetadataIndex)
-            customAttrsStored <- ILAttributesStored.Given res
-            res
-        | ILAttributesStored.Given res -> res
+    member x.CustomAttrs: ILAttributes = customAttrsStored.CustomAttrs
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
@@ -3017,7 +3034,7 @@ type ILNestedExportedType =
         MetadataIndex: int32
     }
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     override x.ToString() = "exported type " + x.Name
 
@@ -3041,7 +3058,7 @@ and [<NoComparison; NoEquality>] ILExportedTypeOrForwarder =
 
     member x.IsForwarder = x.Attributes &&& enum<TypeAttributes> 0x00200000 <> enum 0
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     override x.ToString() = "exported type " + x.Name
 
@@ -3081,7 +3098,7 @@ type ILResource =
         | ILResourceLocation.Local bytes -> bytes.GetByteMemory()
         | _ -> failwith "GetBytes"
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     override x.ToString() = "resource " + x.Name
 
@@ -3128,7 +3145,7 @@ type ILAssemblyManifest =
         MetadataIndex: int32
     }
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
@@ -3175,7 +3192,7 @@ type ILModuleDef =
         | None -> false
         | _ -> true
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     override x.ToString() = "assembly " + x.Name
 
