@@ -301,25 +301,16 @@ FSharp.Compiler.AbstractIL.IL+ILAttribute: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILAttribute: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILAttributes: ILAttribute[] AsArray()
 FSharp.Compiler.AbstractIL.IL+ILAttributes: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute] AsList()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Given: ILAttributes Item
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Given: ILAttributes get_Item()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Reader: Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]] Item
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Reader: Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]] get_Item()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Tags: Int32 Given
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Tags: Int32 Reader
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean IsGiven
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean IsReader
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean get_IsGiven()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean get_IsReader()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Given
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Reader
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Tags
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean HasWellKnownAttribute(WellKnownILAttributes, Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.AbstractIL.IL+ILAttributes,FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes])
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributes GetCustomAttrs(Int32)
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored NewGiven(ILAttributes)
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored NewReader(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]])
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Int32 Tag
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Int32 get_Tag()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributes get_CustomAttrs()
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored CreateGiven(ILAttributes)
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored CreateGiven(Int32, ILAttributes)
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored CreateReader(Int32, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]])
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Int32 MetadataIndex
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Int32 get_MetadataIndex()
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: WellKnownILAttributes GetOrComputeWellKnownFlags(Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.AbstractIL.IL+ILAttributes,FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes])
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object)
@@ -1827,6 +1818,28 @@ FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey KeyAsToken(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey NewPublicKey(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey NewPublicKeyToken(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: UInt32 value__
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AllowNullLiteralAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AutoOpenAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerFilePathAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerLineNumberAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerMemberNameAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes DefaultMemberAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ExtensionAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IDispatchConstantAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IUnknownConstantAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes InternalsVisibleToAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IsByRefLikeAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IsReadOnlyAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IsUnmanagedAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NoEagerConstraintApplicationAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes None
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NotComputed
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NullableAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ParamArrayAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ReflectedDefinitionAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes RequiresLocationAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes SetsRequiredMembersAttribute
 FSharp.Compiler.AbstractIL.IL: Boolean |HasFlag|_|(ILTypeDefAdditionalFlags, ILTypeDefAdditionalFlags)
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILArgConvention
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILArrayShape
@@ -1891,6 +1904,7 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILVersionInfo
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+InterfaceImpl
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+MethodBody
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+PublicKey
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes
 FSharp.Compiler.AbstractIL.IL: ILAttributes emptyILCustomAttrs
 FSharp.Compiler.AbstractIL.IL: ILAttributes get_emptyILCustomAttrs()
 FSharp.Compiler.AbstractIL.IL: ILAttributes mkILCustomAttrs(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute])

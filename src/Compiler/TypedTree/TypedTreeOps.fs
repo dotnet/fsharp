@@ -3637,52 +3637,57 @@ let computeILWellKnownFlags (g: TcGlobals) (attrs: ILAttributes) : WellKnownILAt
     let (AttribInfo(nullableRef, _)) = g.attrib_NullableAttribute
     let (AttribInfo(noEagerConstraintRef, _)) = g.attrib_NoEagerConstraintApplicationAttribute
 
+    // Compare by name and enclosing only (not scope), matching isILAttrib semantics.
+    // BCL reference assemblies may use ILScopeRef.Local while TcGlobals uses ILScopeRef.Assembly.
+    let inline nameMatch (a: ILTypeRef) (b: ILTypeRef) =
+        a.Name = b.Name && a.Enclosing = b.Enclosing
+
     for attr in attrs.AsArray() do
         let atref = attr.Method.DeclaringType.TypeSpec.TypeRef
 
-        if atref = isReadOnlyRef then
+        if nameMatch atref isReadOnlyRef then
             flags <- flags ||| WellKnownILAttributes.IsReadOnlyAttribute
-        elif atref = isUnmanagedRef then
+        elif nameMatch atref isUnmanagedRef then
             flags <- flags ||| WellKnownILAttributes.IsUnmanagedAttribute
-        elif atref = extensionRef then
+        elif nameMatch atref extensionRef then
             flags <- flags ||| WellKnownILAttributes.ExtensionAttribute
-        elif atref = paramArrayRef then
+        elif nameMatch atref paramArrayRef then
             flags <- flags ||| WellKnownILAttributes.ParamArrayAttribute
-        elif atref = allowNullLiteralRef then
+        elif nameMatch atref allowNullLiteralRef then
             flags <- flags ||| WellKnownILAttributes.AllowNullLiteralAttribute
-        elif atref = reflectedDefRef then
+        elif nameMatch atref reflectedDefRef then
             flags <- flags ||| WellKnownILAttributes.ReflectedDefinitionAttribute
-        elif atref = autoOpenRef then
+        elif nameMatch atref autoOpenRef then
             flags <- flags ||| WellKnownILAttributes.AutoOpenAttribute
-        elif atref = internalsVisibleToRef then
+        elif nameMatch atref internalsVisibleToRef then
             flags <- flags ||| WellKnownILAttributes.InternalsVisibleToAttribute
-        elif atref = callerMemberNameRef then
+        elif nameMatch atref callerMemberNameRef then
             flags <- flags ||| WellKnownILAttributes.CallerMemberNameAttribute
-        elif atref = callerFilePathRef then
+        elif nameMatch atref callerFilePathRef then
             flags <- flags ||| WellKnownILAttributes.CallerFilePathAttribute
-        elif atref = callerLineNumberRef then
+        elif nameMatch atref callerLineNumberRef then
             flags <- flags ||| WellKnownILAttributes.CallerLineNumberAttribute
-        elif atref = defaultMemberRef then
+        elif nameMatch atref defaultMemberRef then
             flags <- flags ||| WellKnownILAttributes.DefaultMemberAttribute
-        elif atref = setsRequiredMembersRef then
+        elif nameMatch atref setsRequiredMembersRef then
             flags <- flags ||| WellKnownILAttributes.SetsRequiredMembersAttribute
-        elif atref = requiresLocationRef then
+        elif nameMatch atref requiresLocationRef then
             flags <- flags ||| WellKnownILAttributes.RequiresLocationAttribute
-        elif atref = nullableRef then
+        elif nameMatch atref nullableRef then
             flags <- flags ||| WellKnownILAttributes.NullableAttribute
-        elif atref = noEagerConstraintRef then
+        elif nameMatch atref noEagerConstraintRef then
             flags <- flags ||| WellKnownILAttributes.NoEagerConstraintApplicationAttribute
         else
             match g.attrib_IsByRefLikeAttribute_opt with
-            | Some(AttribInfo(r, _)) when atref = r ->
+            | Some(AttribInfo(r, _)) when nameMatch atref r ->
                 flags <- flags ||| WellKnownILAttributes.IsByRefLikeAttribute
             | _ ->
                 match g.attrib_IDispatchConstantAttribute with
-                | Some(AttribInfo(r, _)) when atref = r ->
+                | Some(AttribInfo(r, _)) when nameMatch atref r ->
                     flags <- flags ||| WellKnownILAttributes.IDispatchConstantAttribute
                 | _ ->
                     match g.attrib_IUnknownConstantAttribute with
-                    | Some(AttribInfo(r, _)) when atref = r ->
+                    | Some(AttribInfo(r, _)) when nameMatch atref r ->
                         flags <- flags ||| WellKnownILAttributes.IUnknownConstantAttribute
                     | _ -> ()
 

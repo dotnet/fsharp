@@ -1288,8 +1288,7 @@ type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStor
             repr <- Computed(a, f)
             f
 
-    static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) =
-        ILAttributesStored(idx, Reader f)
+    static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) = ILAttributesStored(idx, Reader f)
 
     static member CreateGiven(attrs: ILAttributes) = ILAttributesStored(-1, Given attrs)
 
@@ -1321,8 +1320,7 @@ let mkILCustomAttrsComputed f =
 
 let mkILCustomAttrsReader f = ILAttributesStored.CreateReader(-1, f)
 
-let mkILCustomAttrsReaderWithIndex idx f =
-    ILAttributesStored.CreateReader(idx, f)
+let mkILCustomAttrsReaderWithIndex idx f = ILAttributesStored.CreateReader(idx, f)
 
 type ILCodeLabel = int
 

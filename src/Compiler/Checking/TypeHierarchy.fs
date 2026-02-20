@@ -377,8 +377,8 @@ let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSou
     let (AttributesFromIL(_, storedAttrs)) = nullnessSource.DirectAttributes
 
     if isByrefTy amap.g ty
-       && (TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute storedAttrs.CustomAttrs
-           || TryFindILAttribute amap.g.attrib_RequiresLocationAttribute storedAttrs.CustomAttrs) then
+       && (storedAttrs.HasWellKnownAttribute(amap.g, WellKnownILAttributes.IsReadOnlyAttribute)
+           || storedAttrs.HasWellKnownAttribute(amap.g, WellKnownILAttributes.RequiresLocationAttribute)) then
         mkInByrefTy amap.g (destByrefTy amap.g ty)
     else
         ty

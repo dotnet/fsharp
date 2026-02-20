@@ -909,8 +909,7 @@ type ILAttributesStored =
     member GetCustomAttrs: int32 -> ILAttributes
     member MetadataIndex: int32
 
-    member HasWellKnownAttribute:
-        flag: WellKnownILAttributes * compute: (ILAttributes -> WellKnownILAttributes) -> bool
+    member HasWellKnownAttribute: flag: WellKnownILAttributes * compute: (ILAttributes -> WellKnownILAttributes) -> bool
 
     member GetOrComputeWellKnownFlags: compute: (ILAttributes -> WellKnownILAttributes) -> WellKnownILAttributes
     static member CreateReader: idx: int32 * f: (int32 -> ILAttribute[]) -> ILAttributesStored
