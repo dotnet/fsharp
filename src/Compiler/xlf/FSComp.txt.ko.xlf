@@ -4328,8 +4328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNotSufficientlyGenericBecauseOfScope">
-        <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope.</source>
-        <target state="translated">이 코드는 충분히 일반적이지 않습니다. 형식 변수 {0}을(를) 일반화하면 범위를 벗어나게 되므로 일반화할 수 없습니다.</target>
+        <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding 'inline' to the member or function definition.</source>
+        <target state="new">이 코드는 충분히 일반적이지 않습니다. 형식 변수 {0}을(를) 일반화하면 범위를 벗어나게 되므로 일반화할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyRequiresExplicitTypeParameters">

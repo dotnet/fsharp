@@ -3,7 +3,7 @@ neg08.fs(7,24,7,55): typecheck error FS0033: The type 'System.Collections.Generi
 
 neg08.fs(9,24,9,67): typecheck error FS0033: The type 'System.Collections.Generic.List<_>' expects 1 type argument(s) but is given 2
 
-neg08.fs(16,8,16,10): typecheck error FS0670: This code is not sufficiently generic. The type variable 'b could not be generalized because it would escape its scope.
+neg08.fs(16,8,16,10): typecheck error FS0670: This code is not sufficiently generic. The type variable 'b could not be generalized because it would escape its scope. Consider adding 'inline' to the member or function definition.
 
 neg08.fs(21,1,21,28): typecheck error FS0919: Exception abbreviations must refer to existing exceptions or F# types deriving from System.Exception
 
