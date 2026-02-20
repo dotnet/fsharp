@@ -11908,6 +11908,49 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
             match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
             | Some serializationInfoType, Some streamingContextType ->
 
+                let emitSerializationFieldIL emitPerField =
+                    [
+                        for (ilPropName, ilFieldName, ilPropType, _) in fieldNamesAndTypes do
+                            yield! emitPerField ilPropName ilFieldName ilPropType
+                    ]
+
+                let isILValueType (ty: ILType) =
+                    ty.IsNominal && ty.Boxity = ILBoxity.AsValue
+
+                let ilInstrsToRestoreFields =
+                    emitSerializationFieldIL (fun ilPropName ilFieldName ilPropType ->
+                        [
+                            mkLdarg0
+                            mkLdarg 1us
+                            I_ldstr ilPropName
+                            I_ldtoken(ILToken.ILType ilPropType)
+
+                            mkNormalCall (
+                                mkILNonGenericStaticMethSpecInTy (
+                                    g.ilg.typ_Type,
+                                    "GetTypeFromHandle",
+                                    [ g.iltyp_RuntimeTypeHandle ],
+                                    g.ilg.typ_Type
+                                )
+                            )
+
+                            mkNormalCallvirt (
+                                mkILNonGenericInstanceMethSpecInTy (
+                                    serializationInfoType,
+                                    "GetValue",
+                                    [ g.ilg.typ_String; g.ilg.typ_Type ],
+                                    g.ilg.typ_Object
+                                )
+                            )
+
+                            if isILValueType ilPropType then
+                                I_unbox_any ilPropType
+                            else
+                                I_castclass ilPropType
+
+                            mkNormalStfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
+                        ])
+
                 let ilInstrsForSerialization =
                     [
                         mkLdarg0
@@ -11915,6 +11958,10 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         mkLdarg 2us
                         mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [ serializationInfoType; streamingContextType ]))
                     ]
+                    @ (if fieldNamesAndTypes.IsEmpty then
+                           []
+                       else
+                           ilInstrsToRestoreFields)
                     |> nonBranchingInstrsToCode
 
                 let ilCtorDefForSerialization =
@@ -11927,7 +11974,60 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         mkMethodBody (false, [], 8, ilInstrsForSerialization, None, eenv.imports)
                     )
 
-                [ ilCtorDefForSerialization ]
+                let ilInstrsToSaveFields =
+                    emitSerializationFieldIL (fun ilPropName ilFieldName ilPropType ->
+                        [
+                            mkLdarg 1us
+                            I_ldstr ilPropName
+                            mkLdarg0
+                            mkNormalLdfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
+
+                            if isILValueType ilPropType then
+                                I_box ilPropType
+
+                            mkNormalCallvirt (
+                                mkILNonGenericInstanceMethSpecInTy (
+                                    serializationInfoType,
+                                    "AddValue",
+                                    [ g.ilg.typ_String; g.ilg.typ_Object ],
+                                    ILType.Void
+                                )
+                            )
+                        ])
+
+                let ilInstrsForGetObjectData =
+                    [
+                        mkLdarg0
+                        mkLdarg 1us
+                        mkLdarg 2us
+                        mkNormalCall (
+                            mkILNonGenericInstanceMethSpecInTy (
+                                g.iltyp_Exception,
+                                "GetObjectData",
+                                [ serializationInfoType; streamingContextType ],
+                                ILType.Void
+                            )
+                        )
+                    ]
+                    @ ilInstrsToSaveFields
+                    |> nonBranchingInstrsToCode
+
+                let ilGetObjectDataDef =
+                    mkILNonGenericVirtualInstanceMethod (
+                        "GetObjectData",
+                        ILMemberAccess.Public,
+                        [
+                            mkILParamNamed ("info", serializationInfoType)
+                            mkILParamNamed ("context", streamingContextType)
+                        ],
+                        mkILReturn ILType.Void,
+                        mkMethodBody (false, [], 8, ilInstrsForGetObjectData, None, eenv.imports)
+                    )
+
+                if fieldNamesAndTypes.IsEmpty then
+                    [ ilCtorDefForSerialization ]
+                else
+                    [ ilCtorDefForSerialization; ilGetObjectDataDef ]
             | _ -> []
 
         let ilTypeName = tref.Name
