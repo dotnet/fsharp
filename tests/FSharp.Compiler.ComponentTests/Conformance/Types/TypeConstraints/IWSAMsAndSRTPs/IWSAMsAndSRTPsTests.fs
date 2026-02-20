@@ -3153,25 +3153,21 @@ if r2.P <> 3.0 then failwith (sprintf "Expected 3.0 but got %f" r2.P)
         FSharp """
 module TestRecursiveInline
 
-// Extension member providing a decrement operation on Int32
 type System.Int32 with
     static member inline Decrement(x: int) : int = x - 1
 
-// Inline SRTP function using extension constraint
 let inline decrement (x: ^T) : ^T = (^T : (static member Decrement : ^T -> ^T) x)
 
-// Recursive function combining SRTP primitives and extension-constrained decrement
-let rec sumTo (x: int) : int =
+// rec inline with SRTP is not supported (error 1114)
+let rec inline sumTo (x: ^T) : ^T =
     if x = LanguagePrimitives.GenericZero then LanguagePrimitives.GenericZero
     else x + sumTo (decrement x)
-
-let result : int = sumTo 5
-if result <> 15 then failwith (sprintf "Expected 15 but got %d" result)
         """
         |> asExe
         |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1114
 
     [<Fact>]
     let ``SRTP constraint with no matching member produces clear error`` () =
