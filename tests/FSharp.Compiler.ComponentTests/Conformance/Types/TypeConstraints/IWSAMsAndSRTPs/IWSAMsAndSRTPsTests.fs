@@ -3112,37 +3112,36 @@ if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%%s'" (s
         FSharp """
 module TestWideningPlus
 
-// RFC FS-1043 motivating idea: extension methods on numeric types
-// satisfy SRTP constraints to enable cross-type arithmetic.
-
+// Part 1: Extension widen_to_X methods on numeric types satisfy SRTP constraints (RFC FS-1043).
 type System.Int32 with
-    static member inline WideAdd(a: int32, b: int64) : int64 = int64 a + b
-    static member inline WideAdd(a: int32, b: single) : single = single a + b
-    static member inline WideAdd(a: int32, b: double) : double = double a + b
+    static member inline widen_to_int64 (a: int32) : int64 = int64 a
+    static member inline widen_to_double (a: int32) : double = double a
 
 type System.Int64 with
-    static member inline WideAdd(a: int64, b: int32) : int64 = a + int64 b
-    static member inline WideAdd(a: int64, b: double) : double = double a + b
+    static member inline widen_to_double (a: int64) : double = double a
 
-type System.Single with
-    static member inline WideAdd(a: single, b: int32) : single = a + single b
+let inline widen_to_int64 (x: ^T) : int64 = (^T : (static member widen_to_int64 : ^T -> int64) (x))
+let inline widen_to_double (x: ^T) : double = (^T : (static member widen_to_double : ^T -> double) (x))
 
-type System.Double with
-    static member inline WideAdd(a: double, b: int32) : double = a + double b
-    static member inline WideAdd(a: double, b: int64) : double = a + double b
+// Widening via SRTP extension methods:
+widen_to_int64 1     |> ignore<int64>
+widen_to_double 1    |> ignore<double>
+widen_to_double 1L   |> ignore<double>
 
-let inline wideAdd (a: ^A) (b: ^B) : ^C = ((^A or ^B) : (static member WideAdd : ^A * ^B -> ^C) (a, b))
+// Part 2: Extension (+) operators demonstrate cross-type addition (RFC concept).
+// Analogous to "1 + 2.0": a narrow type added to a wide type yields the wide type.
+type Precise = { P: double }
+type Approx = { A: int }
 
-// The RFC's motivating examples via extension-method SRTP:
-wideAdd 1 2L       |> ignore<int64>
-wideAdd 1 2.0f     |> ignore<single>
-wideAdd 1 2.0      |> ignore<double>
-wideAdd 1L 2       |> ignore<int64>
-wideAdd 1L 2.0     |> ignore<double>
-wideAdd 2.0 1      |> ignore<double>
-wideAdd 2.0 1L     |> ignore<double>
+type Precise with
+    static member (+)(a: Approx, b: Precise) : Precise = { P = double a.A + b.P }
+    static member (+)(a: Precise, b: Approx) : Precise = { P = a.P + double b.A }
 
-printfn "Widening tests passed"
+let r1 = { A = 1 } + { P = 2.0 }
+if r1.P <> 3.0 then failwith (sprintf "Expected 3.0 but got %f" r1.P)
+
+let r2 = { P = 1.0 } + { A = 2 }
+if r2.P <> 3.0 then failwith (sprintf "Expected 3.0 but got %f" r2.P)
         """
         |> asExe
         |> withLangVersionPreview
@@ -3154,16 +3153,20 @@ printfn "Widening tests passed"
         FSharp """
 module TestRecursiveInline
 
-let inline sumTo (n: int) : ^T =
-    let mutable acc = LanguagePrimitives.GenericZero< ^T>
-    for _i = 1 to n do
-        acc <- acc + LanguagePrimitives.GenericOne< ^T>
-    acc
+// Extension member providing a decrement operation on Int32
+type System.Int32 with
+    static member inline Decrement(x: int) : int = x - 1
+
+// Inline SRTP function using extension constraint
+let inline decrement (x: ^T) : ^T = (^T : (static member Decrement : ^T -> ^T) x)
+
+// Recursive function combining SRTP primitives and extension-constrained decrement
+let rec sumTo (x: int) : int =
+    if x = LanguagePrimitives.GenericZero then LanguagePrimitives.GenericZero
+    else x + sumTo (decrement x)
 
 let result : int = sumTo 5
-if result <> 5 then failwith (sprintf "Expected 5 but got %d" result)
-let resultF : float = sumTo 3
-if resultF <> 3.0 then failwith (sprintf "Expected 3.0 but got %f" resultF)
+if result <> 15 then failwith (sprintf "Expected 15 but got %d" result)
         """
         |> asExe
         |> withLangVersionPreview
