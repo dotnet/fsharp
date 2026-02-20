@@ -454,7 +454,7 @@ parsConsiderUsingSeparateRecordType,"Consider using a separate record type inste
 594,parsIdentifierExpected,"Identifier expected"
 595,parsInOrEqualExpected,"'in' or '=' expected"
 596,parsArrowUseIsLimited,"The use of '->' in sequence and computation expressions is limited to the form 'for pat in expr -> expr'. Use the syntax 'for ... in ... do ... yield...' to generate elements in more complex sequence expressions."
-597,parsSuccessiveArgsShouldBeSpacedOrTupled,"Successive arguments should be separated by spaces or tupled, and arguments involving function or method applications should be parenthesized"
+597,parsSuccessiveArgsShouldBeSpacedOrTupled,"This argument expression needs parentheses. Expressions involving function or method calls must be parenthesized when passed as arguments, e.g. 'printfn \"%%s\" (arg.Trim())'."
 598,parsUnmatchedBracket,"Unmatched '['"
 599,parsMissingQualificationAfterDot,"Missing qualification after '.'"
 parsParenFormIsForML,"In F# code you may use 'expr.[expr]'. A type annotation may be required to indicate the first expression is an array"

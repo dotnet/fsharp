@@ -3998,8 +3998,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsSuccessiveArgsShouldBeSpacedOrTupled">
-        <source>Successive arguments should be separated by spaces or tupled, and arguments involving function or method applications should be parenthesized</source>
-        <target state="translated">应使用空格来分隔连续参数或将这些连续参数组成元组，并且应使用括号将涉及函数或方法应用的参数括起来</target>
+        <source>This argument expression needs parentheses. Expressions involving function or method calls must be parenthesized when passed as arguments, e.g. 'printfn "%s" (arg.Trim())'.</source>
+        <target state="new">This argument expression needs parentheses. Expressions involving function or method calls must be parenthesized when passed as arguments, e.g. 'printfn "%s" (arg.Trim())'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnmatchedBracket">
