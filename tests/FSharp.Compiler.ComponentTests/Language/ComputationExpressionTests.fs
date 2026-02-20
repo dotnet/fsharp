@@ -175,7 +175,7 @@ let x = lb {1; 2;()}
         """
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 10, Col 18, Line 10, Col 20, "The type 'ListBuilder' does not define the field, constructor or member 'Zero'.")
+        |> withSingleDiagnostic (Error 39, Line 10, Col 18, Line 10, Col 20, "The type 'ListBuilder' does not have a field, property, or member named 'Zero'.")
         |> ignore
 
     [<Fact>]

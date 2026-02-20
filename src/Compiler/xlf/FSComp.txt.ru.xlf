@@ -1843,8 +1843,8 @@
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
-        <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
-        <target state="translated">Тип "{0}" не определяет поле, конструктор или член "{1}".</target>
+        <source>The type '{0}' does not have a field, property, or member named '{1}'.</source>
+        <target state="new">The type '{0}' does not have a field, property, or member named '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
