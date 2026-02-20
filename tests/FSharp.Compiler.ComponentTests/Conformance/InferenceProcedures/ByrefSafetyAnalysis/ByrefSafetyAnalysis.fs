@@ -2469,6 +2469,42 @@ let f () : Span<int> =
         |> shouldFail
         |> withErrorCodes [ 3235 ]
 
+    [<Fact>]
+    let ``UnscopedRef on out param negates scoping in mixed params - backward compat`` () =
+        let csharpLib =
+            CSharp
+                """
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public static class Helper
+{
+    // scoped ref int => byref is scoped (safe)
+    // [UnscopedRef] out int => out is UN-scoped (can escape)
+    public static Span<int> MixedCapture(scoped ref int safe, [UnscopedRef] out int escapable)
+    {
+        escapable = 0;
+        return default;
+    }
+}
+"""
+            |> withName "UnscopedRefParamLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp
+            """
+module Test
+open System
+let f () : Span<int> =
+    let mutable safe = 1
+    let mutable escapable = 2
+    Helper.MixedCapture(&safe, &escapable)
+"""
+        |> asLibrary
+        |> withReferences [ csharpLib ]
+        |> compile
+        |> shouldSucceed
+
     // --- V2: RefSafetyRulesAttribute test data ---
 
     let private v2OutParamCSharp8Lib =
