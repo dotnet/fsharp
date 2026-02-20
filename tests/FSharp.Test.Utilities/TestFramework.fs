@@ -516,11 +516,7 @@ module Command =
     let exec dir envVars (redirect:RedirectInfo) path args =
 
 #if !NETCOREAPP
-        let ensureConsole () =
-            // Set UTF-8 encoding for console input/output to ensure FSI receives UTF-8 data.
-            // This is needed because on net472 ProcessStartInfo.StandardInputEncoding is unavailable,
-            // so the spawned process inherits the console's encoding settings.
-            Console.InputEncoding <- Text.UTF8Encoding(false)
+        let ensureConsole () = ()
 #else
         let ensureConsole () = ()
 #endif
