@@ -1384,6 +1384,51 @@ let f (x: inref<int>) =
         |> compile
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Constructor_NotAsReceiver_DefaultLangVersion`` () =
+        FSharp """
+module Test
+open System
+
+let f (x: byref<int>) =
+    Span<int>(&x)
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``GenericSpanReturn_CorrectTypeResolution_DefaultLangVersion`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.InteropServices
+
+let f (x: byref<int>) =
+    MemoryMarshal.CreateSpan(&x, 1)
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``TaskCE_ByrefInClosure_FiresFS0412_BeforeEscapeAnalysis`` () =
+        FSharp """
+module Test
+open System
+open System.Threading.Tasks
+
+let f () = task {
+    let mutable x = 1
+    return Span<int>(&x)
+}
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [412]
+
     // --- C# Interop: Custom IsByRefLike and Struct Receiver tests (Sprint 03 Part 1) ---
 
     let private customIsByRefLikeCSharpLib =
