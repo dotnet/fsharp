@@ -80,7 +80,7 @@ pickleErrorReadingWritingMetadata,"Error reading/writing metadata for the F# com
 245,tastTypeOrModuleNotConcrete,"The type/module '%s' is not a concrete module or type"
 tastTypeHasAssemblyCodeRepresentation,"The type '%s' has an inline assembly code representation"
 246,optsUnrecognizedLanguageVersion,"Unrecognized value '%s' for --langversion use --langversion:? for complete list"
-247,tastNamespaceAndModuleWithSameNameInAssembly,"A namespace and a module named '%s' both occur in two parts of this assembly"
+247,tastNamespaceAndModuleWithSameNameInAssembly,"The name '%s' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict."
 248,tastTwoModulesWithSameNameInAssembly,"Two modules named '%s' occur in two parts of this assembly"
 249,tastDuplicateTypeDefinitionInAssembly,"Two type definitions named '%s' occur in namespace '%s' in two parts of this assembly"
 250,tastConflictingModuleAndTypeDefinitionInAssembly,"A module and a type definition named '%s' occur in namespace '%s' in two parts of this assembly"

@@ -2238,8 +2238,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tastNamespaceAndModuleWithSameNameInAssembly">
-        <source>A namespace and a module named '{0}' both occur in two parts of this assembly</source>
-        <target state="translated">In due parti di questo assembly sono presenti uno spazio dei nomi e un modulo entrambi denominati '{0}'</target>
+        <source>The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</source>
+        <target state="new">In due parti di questo assembly sono presenti uno spazio dei nomi e un modulo entrambi denominati '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="tastTwoModulesWithSameNameInAssembly">
