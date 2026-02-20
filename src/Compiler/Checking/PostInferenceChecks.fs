@@ -835,31 +835,30 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
-/// Try to resolve an ILMethodRef to its ILMethodDef via the type's IL representation.
-/// Returns None if the type is not an IL type or resolution fails.
-let tryResolveILMethodDef (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : ILMethodDef option =
+/// Try to resolve an ILMethodRef to its ILMethodDef and get the RefSafetyRulesVersion
+/// from the assembly. Returns None if the type is not an IL type or resolution fails.
+/// When resolved, refSafetyVersion is 0 for local refs or assemblies without the attribute.
+let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : (ILMethodDef * int) option =
     try
         let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
+
+        let refSafetyVersion =
+            if tyconRef.IsLocalRef then
+                0
+            else
+                tyconRef.nlr.Ccu.Deref.RefSafetyRulesVersion
 
         match tyconRef.TypeReprInfo with
         | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
-            Some(resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef)
+            let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
+            Some(methDef, refSafetyVersion)
         | _ -> None
-    with _ ->
+    with :? System.Exception ->
         None
 
-/// Get the RefSafetyRulesVersion from the assembly containing the given IL method.
-/// Returns 0 if the method's assembly doesn't have the attribute or resolution fails.
-let getRefSafetyRulesVersion (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : int =
-    try
-        let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
-
-        if tyconRef.IsLocalRef then
-            0
-        else
-            tyconRef.nlr.Ccu.Deref.RefSafetyRulesVersion
-    with _ ->
-        0
+/// Return Some mask if any element is true, else None.
+let private nonEmptyMask (arr: bool array) =
+    if Array.exists id arr then Some arr else None
 
 /// Build a boolean mask of which IL parameters have the given attribute.
 /// Returns None if the attribute is unavailable or no parameters match.
@@ -877,7 +876,7 @@ let tryGetILParamAttrMask (attribOpt: BuiltinAttribInfo option) (methDef: ILMeth
                 |> List.toArray
                 |> Array.map (fun p -> TryFindILAttribute attrib p.CustomAttrs)
 
-            if Array.exists id mask then Some mask else None
+            nonEmptyMask mask
 
 let tryGetScopedParamMask (g: TcGlobals) (methDef: ILMethodDef) =
     tryGetILParamAttrMask g.attrib_ScopedRefAttribute_opt methDef
@@ -896,7 +895,7 @@ let tryGetScopedParamMaskFromFSharpAttribs (g: TcGlobals) (argInfos: ArgReprInfo
                 |> List.toArray
                 |> Array.map (fun ai -> HasFSharpAttribute g scopedRefAttrib ai.Attribs)
 
-            if Array.exists id mask then Some mask else None
+            nonEmptyMask mask
 
 /// Check whether the given IL method has UnscopedRefAttribute.
 let hasUnscopedRefAttribute (g: TcGlobals) (methDef: ILMethodDef) : bool =
@@ -921,7 +920,7 @@ let isImplicitlyScopedParam (g: TcGlobals) (amap: Import.ImportMap) (m: range) (
              try
                  let fsTy = Import.ImportILType amap m [] inner
                  isByrefLikeTy g m fsTy
-             with _ ->
+             with :? System.Exception ->
                  false
      | _ -> false)
 
@@ -941,9 +940,9 @@ let computeScopedMask (cenv: cenv) (m: range) (methDef: ILMethodDef) (methInst: 
                 match baseMask with
                 | Some scopedArr ->
                     let merged = Array.map2 (||) scopedArr implicitMask
-                    if Array.exists id merged then Some merged else None
+                    nonEmptyMask merged
                 | None ->
-                    if Array.exists id implicitMask then Some implicitMask else None
+                    nonEmptyMask implicitMask
             else
                 baseMask
 
@@ -955,7 +954,7 @@ let computeScopedMask (cenv: cenv) (m: range) (methDef: ILMethodDef) (methInst: 
                     scopedArr
                     |> Array.mapi (fun i scoped -> scoped && not (i < unscopedArr.Length && unscopedArr.[i]))
 
-                if Array.exists id effective then Some effective else None
+                nonEmptyMask effective
             | None -> Some scopedArr)
     else
         None
@@ -1770,21 +1769,15 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         let effectiveCtxt, scopedMask, hasUnscopedRef =
             match retTypes with
             | [_] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m returnTy ->
-                let methDefOpt =
+                let methContext =
                     if cenv.improvedByRefLikeEscapeAnalysis then
-                        tryResolveILMethodDef cenv.amap m ilMethRef
+                        tryResolveILMethodContext cenv.amap m ilMethRef
                     else
                         None
 
-                let refSafetyVersion =
-                    if cenv.improvedByRefLikeEscapeAnalysis then
-                        getRefSafetyRulesVersion cenv.amap m ilMethRef
-                    else
-                        0
-
                 let mask, unscoped =
-                    match methDefOpt with
-                    | Some methDef ->
+                    match methContext with
+                    | Some(methDef, refSafetyVersion) ->
                         let mask = computeScopedMask cenv m methDef methInst refSafetyVersion
 
                         let unscoped =
