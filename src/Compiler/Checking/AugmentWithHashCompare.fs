@@ -1645,7 +1645,7 @@ let rec TypeDefinitelyHasEquality g ty =
     let appTy = tryAppTy g ty
 
     match appTy with
-    | ValueSome(tcref, _) when HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs -> false
+    | ValueSome(tcref, _) when EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoEqualityAttribute tcref.Deref -> false
     | _ ->
         if ty |> IsTyparTyWithConstraint g _.IsSupportsEquality then
             true

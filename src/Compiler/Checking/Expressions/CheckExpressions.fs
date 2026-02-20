@@ -7274,7 +7274,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
     let isRecordTy = tcref.IsRecordTycon
     let isInterfaceTy = isInterfaceTy g objTy
     let isFSharpObjModelTy = isFSharpObjModelTy g objTy
-    let isOverallTyAbstract = HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs || isAbstractTycon tcref.Deref
+    let isOverallTyAbstract = EntityHasWellKnownAttribute g WellKnownEntityAttributes.AbstractClassAttribute tcref.Deref || isAbstractTycon tcref.Deref
 
     if not isRecordTy && not isInterfaceTy && isSealedTy g objTy then errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(), mNewExpr))
 

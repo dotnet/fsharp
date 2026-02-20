@@ -1267,7 +1267,7 @@ and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m
             | Choice1Of2 (tcref, extMemInfo) -> tab1.Add (tcref, extMemInfo), tab2
             | Choice2Of2 extMemInfo -> tab1, extMemInfo :: tab2)
 
-    let isILOrRequiredQualifiedAccess = isIL || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs)
+    let isILOrRequiredQualifiedAccess = isIL || (not ownDefinition && EntityHasWellKnownAttribute g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tcref.Deref)
 
     // Record labels
     let eFieldLabels =
@@ -2969,7 +2969,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (type
             | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) ->
                 let ucref = mkUnionCaseRef (modref.NestedTyconRef tycon) id.idText
                 let ucinfo = FreshenUnionCaseRef ncenv m ucref
-                let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                let hasRequireQualifiedAccessAttribute = EntityHasWellKnownAttribute ncenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
                 success [resInfo, Item.UnionCase(ucinfo, hasRequireQualifiedAccessAttribute), rest], hasRequireQualifiedAccessAttribute
             | _ -> NoResultsOrUsefulErrors, false
 
@@ -3030,7 +3030,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (type
                         addToBuffer e.DisplayName
 
                         if e.IsUnionTycon then
-                            let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Attribs
+                            let hasRequireQualifiedAccessAttribute = EntityHasWellKnownAttribute ncenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute e
                             if not hasRequireQualifiedAccessAttribute then
                                 for uc in e.UnionCasesArray do
                                     addToBuffer uc.DisplayName
@@ -3211,7 +3211,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                         // check if the user forgot to use qualified access
                         for e in nenv.eTyconsByDemangledNameAndArity do                                    
-                            let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
+                            let hasRequireQualifiedAccessAttribute = EntityHasWellKnownAttribute ncenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute e.Value.Deref
                             if hasRequireQualifiedAccessAttribute then
                                 if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
                                     addToBuffer (e.Value.DisplayName + "." + id.idText)
@@ -3329,7 +3329,7 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv nu
     | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) ->
         let tcref = modref.NestedTyconRef tycon
         let ucref = mkUnionCaseRef tcref id.idText
-        let showDeprecated = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+        let showDeprecated = EntityHasWellKnownAttribute ncenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
         let ucinfo = FreshenUnionCaseRef ncenv m ucref
         success (resInfo, Item.UnionCase(ucinfo, showDeprecated), rest)
     | _ ->
@@ -3756,7 +3756,7 @@ let rec ResolveFieldInModuleOrNamespace (ncenv: NameResolver) nenv ad (resInfo: 
     let modulScopedFieldNames =
         match TryFindTypeWithRecdField modref id  with
         | Some tycon when IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) ->
-            let showDeprecated = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+            let showDeprecated = EntityHasWellKnownAttribute ncenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
             success [resInfo, FieldResolution(FreshenRecdFieldRef ncenv m (modref.RecdFieldRefInNestedTycon tycon id), showDeprecated), rest]
         | _ -> raze (UndefinedName(depth, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
 
@@ -3839,7 +3839,7 @@ let SuggestLabelsOfRelatedRecords g (nenv: NameResolutionEnv) (id: Ident) (allFi
         else
             // check if the user forgot to use qualified access
             for e in nenv.eTyconsByDemangledNameAndArity do
-                let hasRequireQualifiedAccessAttribute = HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
+                let hasRequireQualifiedAccessAttribute = EntityHasWellKnownAttribute g WellKnownEntityAttributes.RequireQualifiedAccessAttribute e.Value.Deref
                 if hasRequireQualifiedAccessAttribute then
                     if e.Value.IsRecordTycon && e.Value.AllFieldsArray |> Seq.exists (fun x -> x.LogicalName = id.idText) then
                         addToBuffer (e.Value.DisplayName + "." + id.idText)
@@ -4788,7 +4788,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
          // Collect up the accessible discriminated union cases in the module
        @ (UnionCaseRefsInModuleOrNamespace modref
           |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m allowObsolete >> not)
-          |> List.filter (fun ucref -> not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute ucref.TyconRef.Attribs))
+          |> List.filter (fun ucref -> not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.RequireQualifiedAccessAttribute ucref.TyconRef.Deref))
           |> List.map (fun x -> Item.UnionCase(GeneralizeUnionCaseRef x, false)))
 
          // Collect up the accessible active patterns in the module
@@ -5351,7 +5351,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                   yield!
                       UnionCaseRefsInModuleOrNamespace modref
                       |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m false >> not)
-                      |> List.filter (fun ucref -> not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute ucref.TyconRef.Attribs))
+                      |> List.filter (fun ucref -> not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.RequireQualifiedAccessAttribute ucref.TyconRef.Deref))
                       |> List.map (fun x -> Item.UnionCase(GeneralizeUnionCaseRef x,  false))
 
              | Item.ActivePatternCase _ ->

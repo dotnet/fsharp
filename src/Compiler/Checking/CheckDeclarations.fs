@@ -730,11 +730,11 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
         // Allow "open Foo" for "Microsoft.Foo" from FSharp.Core
 
     modrefs |> List.iter (fun (_, modref, _) ->
-       if modref.IsModule && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute modref.Attribs then 
+       if modref.IsModule && EntityHasWellKnownAttribute g WellKnownEntityAttributes.RequireQualifiedAccessAttribute modref.Deref then 
            errorR(Error(FSComp.SR.tcModuleRequiresQualifiedAccess(fullDisplayTextOfModRef modref), m)))
 
     // Bug FSharp 1.0 3133: 'open Lexing'. Skip this warning if we successfully resolved to at least a module name
-    if not (modrefs |> List.exists (fun (_, modref, _) -> modref.IsModule && not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute modref.Attribs))) then
+    if not (modrefs |> List.exists (fun (_, modref, _) -> modref.IsModule && not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.RequireQualifiedAccessAttribute modref.Deref))) then
         modrefs |> List.iter (fun (_, modref, _) ->
             if IsPartiallyQualifiedNamespace modref then 
                  errorR(Error(FSComp.SR.tcOpenUsedWithPartiallyQualifiedPath(fullDisplayTextOfModRef modref), m)))
@@ -2085,7 +2085,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
               let (MutRecDefnsPhase2DataForTycon(tyconOpt, _x, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
               
               // If a tye uses both [<Sealed>] and [<AbstractClass>] attributes it means it is a static class.
-              let isStaticClass = HasFSharpAttribute g g.attrib_SealedAttribute tcref.Attribs && HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs
+              let isStaticClass = EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute tcref.Deref && EntityHasWellKnownAttribute g WellKnownEntityAttributes.AbstractClassAttribute tcref.Deref
               if isStaticClass && g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
                   ReportErrorOnStaticClass synMembers
                   match tyconOpt with
@@ -2175,7 +2175,7 @@ module TyconConstraintInference =
                                 ExistsSameHeadTypeInHierarchy g cenv.amap range0 ty g.mk_IStructuralComparable_ty)
                             &&
                             // Check it isn't ruled out by the user
-                            not (HasFSharpAttribute g g.attrib_NoComparisonAttribute tcref.Attribs)
+                            not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoComparisonAttribute tcref.Deref)
                             &&
                             // Check the structural dependencies
                             (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> 
@@ -2192,8 +2192,8 @@ module TyconConstraintInference =
 
                    if cenv.g.compilingFSharpCore && 
                       AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithCompare g tycon && 
-                      not (HasFSharpAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs) && 
-                      not (HasFSharpAttribute g g.attrib_NoComparisonAttribute tycon.Attribs) then 
+                      not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.StructuralComparisonAttribute tycon) && 
+                      not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoComparisonAttribute tycon) then 
                        errorR(Error(FSComp.SR.tcFSharpCoreRequiresExplicit(), tycon.Range)) 
 
                    let res = (structuralTypes |> List.forall (fst >> checkIfFieldTypeSupportsComparison tycon))
@@ -2299,7 +2299,7 @@ module TyconConstraintInference =
                                 true) 
                              &&
                              // Check it isn't ruled out by the user
-                             not (HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs)
+                             not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoEqualityAttribute tcref.Deref)
                              &&
                              // Check the structural dependencies
                              (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> 
@@ -2317,8 +2317,8 @@ module TyconConstraintInference =
 
                    if cenv.g.compilingFSharpCore && 
                       AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon && 
-                      not (HasFSharpAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs) && 
-                      not (HasFSharpAttribute g g.attrib_NoEqualityAttribute tycon.Attribs) then 
+                      not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.StructuralEqualityAttribute tycon) && 
+                      not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoEqualityAttribute tycon) then 
                        errorR(Error(FSComp.SR.tcFSharpCoreRequiresExplicit(), tycon.Range)) 
 
                    // Remove structural types with incomparable elements from the assumedTycons
@@ -3544,7 +3544,7 @@ module EstablishTypeDefinitionCores =
                     structLayoutAttributeCheck false
                     noAllowNullLiteralAttributeCheck()
 
-                    let hasRQAAttribute = HasFSharpAttribute cenv.g cenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                    let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
                     TcRecdUnionAndEnumDeclarations.CheckUnionCaseName cenv unionCaseName hasRQAAttribute
                     let unionCase = Construct.NewUnionCase unionCaseName [] thisTy [] XmlDoc.Empty tycon.Accessibility
                     writeFakeUnionCtorsToSink [ unionCase ]
@@ -3576,7 +3576,7 @@ module EstablishTypeDefinitionCores =
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
 
-                    let hasRQAAttribute = HasFSharpAttribute cenv.g cenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                    let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
                     multiCaseUnionStructCheck unionCases
 

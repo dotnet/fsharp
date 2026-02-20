@@ -2123,7 +2123,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                // Also check the enclosing type for members - for historical reasons, in the TAST member values
                // are stored in the entity that encloses the type, hence we will not have noticed the ReflectedDefinition
                // on the enclosing type at this point.
-               HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute v.DeclaringEntity.Attribs) then
+               EntityHasWellKnownAttribute g WellKnownEntityAttributes.ReflectedDefinitionAttribute v.DeclaringEntity.Deref) then
 
                 if v.IsInstanceMember && v.MemberApparentEntity.IsStructOrEnumTycon then
                     errorR(Error(FSComp.SR.chkNoReflectedDefinitionOnStructMember(), v.Range))
@@ -2347,7 +2347,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     let tcref = mkLocalTyconRef tycon
     let ty = generalizedTyconRef g tcref
 
-    let env = { env with reflect = env.reflect || HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute tycon.Attribs }
+    let env = { env with reflect = env.reflect || EntityHasWellKnownAttribute g WellKnownEntityAttributes.ReflectedDefinitionAttribute tycon }
     let env = BindTypars g env (tycon.Typars m)
 
     CheckAttribs cenv env tycon.Attribs

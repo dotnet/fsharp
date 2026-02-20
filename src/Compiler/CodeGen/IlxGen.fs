@@ -8433,7 +8433,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                 initLocals =
                     eenv.initLocals
                     && (match vspec.ApparentEnclosingEntity with
-                        | Parent ref -> not (HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute ref.Attribs)
+                        | Parent ref -> not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.SkipLocalsInitAttribute ref.Deref)
                         | _ -> true)
             }
 
@@ -11023,7 +11023,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             let generateDebugProxies =
                 not (tyconRefEq g tcref g.unit_tcr_canon)
-                && not (HasFSharpAttribute g g.attrib_DebuggerTypeProxyAttribute tycon.Attribs)
+                && not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.DebuggerTypeProxyAttribute tycon)
 
             let permissionSets = CreatePermissionSets cenv eenv securityAttrs
 
