@@ -4627,6 +4627,68 @@ type Measure =
         | One(range= m) -> m
         | RationalPower(measure= ms) -> ms.Range
 
+[<Flags>]
+type WellKnownEntityAttributes =
+    | None = 0UL
+    | RequireQualifiedAccessAttribute = 0x1UL
+    | AutoOpenAttribute = 0x2UL
+    | AbstractClassAttribute = 0x4UL
+    | SealedAttribute = 0x8UL
+    | NoEqualityAttribute = 0x10UL
+    | NoComparisonAttribute = 0x20UL
+    | StructuralEqualityAttribute = 0x40UL
+    | StructuralComparisonAttribute = 0x80UL
+    | CustomEqualityAttribute = 0x100UL
+    | CustomComparisonAttribute = 0x200UL
+    | ReferenceEqualityAttribute = 0x400UL
+    | DefaultAugmentationAttribute = 0x800UL
+    | CLIMutableAttribute = 0x1000UL
+    | AutoSerializableAttribute = 0x2000UL
+    | StructLayoutAttribute = 0x4000UL
+    | DllImportAttribute = 0x8000UL
+    | ReflectedDefinitionAttribute = 0x10000UL
+    | GeneralizableValueAttribute = 0x20000UL
+    | SkipLocalsInitAttribute = 0x40000UL
+    | DebuggerTypeProxyAttribute = 0x80000UL
+    | ComVisibleAttribute = 0x100000UL
+    | IsReadOnlyAttribute = 0x200000UL
+    | IsByRefLikeAttribute = 0x400000UL
+    | ExtensionAttribute = 0x800000UL
+    | AttributeUsageAttribute = 0x1000000UL
+    | WarnOnWithoutNullArgumentAttribute = 0x2000000UL
+    | AllowNullLiteralAttribute = 0x4000000UL
+    | NotComputed = 0x8000000000000000UL
+
+[<Flags>]
+type WellKnownValAttributes =
+    | None = 0UL
+    | DllImportAttribute = 0x1UL
+    | EntryPointAttribute = 0x2UL
+    | LiteralAttribute = 0x4UL
+    | ConditionalAttribute = 0x8UL
+    | ReflectedDefinitionAttribute = 0x10UL
+    | RequiresExplicitTypeArgumentsAttribute = 0x20UL
+    | DefaultValueAttribute = 0x40UL
+    | SkipLocalsInitAttribute = 0x80UL
+    | ThreadStaticAttribute = 0x100UL
+    | ContextStaticAttribute = 0x200UL
+    | VolatileFieldAttribute = 0x400UL
+    | NoDynamicInvocationAttribute = 0x800UL
+    | ExtensionAttribute = 0x1000UL
+    | OptionalArgumentAttribute = 0x2000UL
+    | InAttribute = 0x4000UL
+    | OutAttribute = 0x8000UL
+    | ParamArrayAttribute = 0x10000UL
+    | CallerMemberNameAttribute = 0x20000UL
+    | CallerFilePathAttribute = 0x40000UL
+    | CallerLineNumberAttribute = 0x80000UL
+    | DefaultParameterValueAttribute = 0x100000UL
+    | ProjectionParameterAttribute = 0x200000UL
+    | InlineIfLambdaAttribute = 0x400000UL
+    | OptionalAttribute = 0x800000UL
+    | StructAttribute = 0x1000000UL
+    | NotComputed = 0x8000000000000000UL
+
 type Attribs = Attrib list 
 
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]

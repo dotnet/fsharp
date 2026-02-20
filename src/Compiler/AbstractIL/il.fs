@@ -1229,6 +1229,30 @@ type ILAttributes(array: ILAttribute[]) =
 
     static member val internal Empty = ILAttributes([||])
 
+[<Flags>]
+type WellKnownILAttributes =
+    | None = 0u
+    | IsReadOnlyAttribute = 0x1u
+    | IsUnmanagedAttribute = 0x2u
+    | IsByRefLikeAttribute = 0x4u
+    | ExtensionAttribute = 0x8u
+    | NullableAttribute = 0x10u
+    | ParamArrayAttribute = 0x20u
+    | AllowNullLiteralAttribute = 0x40u
+    | ReflectedDefinitionAttribute = 0x80u
+    | AutoOpenAttribute = 0x100u
+    | InternalsVisibleToAttribute = 0x200u
+    | CallerMemberNameAttribute = 0x400u
+    | CallerFilePathAttribute = 0x800u
+    | CallerLineNumberAttribute = 0x1000u
+    | IDispatchConstantAttribute = 0x2000u
+    | IUnknownConstantAttribute = 0x4000u
+    | RequiresLocationAttribute = 0x8000u
+    | SetsRequiredMembersAttribute = 0x10000u
+    | NoEagerConstraintApplicationAttribute = 0x20000u
+    | DefaultMemberAttribute = 0x40000u
+    | NotComputed = 0x80000000u
+
 [<NoEquality; NoComparison>]
 type ILAttributesStored =
 
