@@ -233,8 +233,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IndeterminateType">
-        <source>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</source>
-        <target state="translated">Поиск объекта неопределенного типа, основанного на информации до данной точки программы. Возможно, перед данной точкой программы потребуется аннотация типа, с целью ограничения типа объекта. Возможно, это позволит разрешить поиск.</target>
+        <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
+        <target state="new">Поиск объекта неопределенного типа, основанного на информации до данной точки программы. Возможно, перед данной точкой программы потребуется аннотация типа, с целью ограничения типа объекта. Возможно, это позволит разрешить поиск.</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">

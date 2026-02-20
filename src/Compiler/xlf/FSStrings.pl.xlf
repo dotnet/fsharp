@@ -233,8 +233,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IndeterminateType">
-        <source>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</source>
-        <target state="translated">Odnośnik do obiektu nieokreślonego typu na podstawie informacji przed tym punktem programu. Może być wymagana adnotacja typu przed tym punktem programu w celu ograniczenia typu obiektu. Może to umożliwić rozpoznanie odnośnika.</target>
+        <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
+        <target state="new">Odnośnik do obiektu nieokreślonego typu na podstawie informacji przed tym punktem programu. Może być wymagana adnotacja typu przed tym punktem programu w celu ograniczenia typu obiektu. Może to umożliwić rozpoznanie odnośnika.</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">

@@ -233,8 +233,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IndeterminateType">
-        <source>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</source>
-        <target state="translated">Ricerca in un oggetto di tipo non determinato basato su informazioni che si trovano prima di questo punto del programma. Potrebbe essere necessaria un'annotazione di tipo prima di questo punto del programma per vincolare il tipo dell'oggetto. Questa modifica potrebbe consentire la risoluzione della ricerca.</target>
+        <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
+        <target state="new">Ricerca in un oggetto di tipo non determinato basato su informazioni che si trovano prima di questo punto del programma. Potrebbe essere necessaria un'annotazione di tipo prima di questo punto del programma per vincolare il tipo dell'oggetto. Questa modifica potrebbe consentire la risoluzione della ricerca.</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">
