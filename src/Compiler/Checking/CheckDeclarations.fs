@@ -3294,7 +3294,7 @@ module EstablishTypeDefinitionCores =
                 let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
 
                 if firstPass then 
-                    tycon.entity_attribs <- attrs
+                    tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
 
                 let implementedTys, inheritedTys = 
                     match synTyconRepr with 
@@ -3421,7 +3421,7 @@ module EstablishTypeDefinitionCores =
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
 
-            tycon.entity_attribs <- attrs
+            tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
             let noAbstractClassAttributeCheck() = 
                 if hasAbstractAttr then errorR (Error(FSComp.SR.tcOnlyClassesCanHaveAbstract(), m))
                 
@@ -4177,7 +4177,7 @@ module EstablishTypeDefinitionCores =
                 let tyconOpt, fixupFinalAttrs = 
                     match tyconAndAttrsOpt with
                     | None -> None, (fun () -> ())
-                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) -> Some tycon, (fun () -> tycon.entity_attribs <- getFinalAttrs())
+                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) -> Some tycon, (fun () -> tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs()))
 
                 (origInfo, tyconOpt, fixupFinalAttrs, info))
                 
@@ -4813,7 +4813,7 @@ module TcDeclarations =
                     match extensionAttributeOnVals, typeEntity with
                     | Some extensionAttribute, Some typeEntity ->
                         if Option.isNone (tryFindExtensionAttribute g typeEntity.Attribs) then
-                            typeEntity.entity_attribs <- extensionAttribute :: typeEntity.Attribs
+                            typeEntity.entity_attribs <- WellKnownEntityAttribs.Create(extensionAttribute :: typeEntity.Attribs)
                     | _ -> ()
 
                     vals, env

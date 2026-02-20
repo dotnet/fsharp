@@ -2393,6 +2393,12 @@ type ILFieldDef with
 
     member HasWellKnownAttribute: g: TcGlobals * flag: WellKnownILAttributes -> bool
 
+/// Compute well-known attribute flags for an Entity's Attrib list.
+val computeEntityWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownEntityAttributes
+
+/// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
+val EntityHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownEntityAttributes -> entity: Entity -> bool
+
 val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 
 val IsMatchingFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attrib -> bool

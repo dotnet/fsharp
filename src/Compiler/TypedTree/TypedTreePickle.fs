@@ -2799,7 +2799,7 @@ and p_entity_spec_data (x: Entity) st =
     p_option p_pubpath x.entity_pubpath st
     p_access x.Accessibility st
     p_access x.TypeReprAccessibility st
-    p_attribs x.entity_attribs st
+    p_attribs (x.entity_attribs.AsList()) st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_ty x.TypeAbbrev st
     p_tcaug x.entity_tycon_tcaug st
@@ -3145,7 +3145,7 @@ and u_entity_spec_data st : Entity =
         entity_logical_name = x2a
         entity_range = x2c
         entity_pubpath = x3
-        entity_attribs = x6
+        entity_attribs = WellKnownEntityAttribs.Create(x6)
         entity_tycon_repr = x7
         entity_tycon_tcaug = x9
         entity_flags = EntityFlags x11

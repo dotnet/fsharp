@@ -648,7 +648,7 @@ type Entity =
       /// The declared attributes for the type 
       // MUTABILITY; used during creation and remapping of tycons 
       // MUTABILITY; used when propagating signature attributes into the implementation.
-      mutable entity_attribs: Attribs     
+      mutable entity_attribs: WellKnownEntityAttribs     
                 
       /// The declared representation of the type, i.e. record, union, class etc. 
       //
@@ -813,7 +813,9 @@ type Entity =
 
     /// The F#-defined custom attributes of the entity, if any. If the entity is backed by Abstract IL or provided metadata
     /// then this does not include any attributes from those sources.
-    member x.Attribs = x.entity_attribs
+    member x.Attribs = x.entity_attribs.AsList()
+
+    member x.EntityAttribs = x.entity_attribs
 
     /// The XML documentation of the entity, if any. If the entity is backed by provided metadata
     /// then this _does_ include this documentation. If the entity is backed by Abstract IL metadata
@@ -1105,7 +1107,7 @@ type Entity =
 
 
     /// Indicates if the entity is linked to backing data. Only used during unpickling of F# metadata.
-    member x.IsLinked = match box x.entity_attribs with null -> false | _ -> true 
+    member x.IsLinked = not (obj.ReferenceEquals(x.entity_attribs.AsList(), null))
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
     member x.FSharpTyconRepresentationData = 
@@ -1350,7 +1352,9 @@ type Entity =
     member x.HasSignatureFile = x.SigRange <> x.DefinitionRange
 
     /// Set the custom attributes on an F# type definition.
-    member x.SetAttribs attribs = x.entity_attribs <- attribs
+    member x.SetAttribs attribs = x.entity_attribs <- WellKnownEntityAttribs.Create(attribs)
+
+    member x.SetEntityAttribs (attribs: WellKnownEntityAttribs) = x.entity_attribs <- attribs
 
     /// Sets the structness of a record or union type definition
     member x.SetIsStructRecordOrUnion b = let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
@@ -4627,6 +4631,84 @@ type Measure =
         | One(range= m) -> m
         | RationalPower(measure= ms) -> ms.Range
 
+/// Flags enum for well-known attributes on Entity (types and modules).
+/// Used to avoid O(N) linear scans of attribute lists.
+[<System.Flags>]
+type WellKnownEntityAttributes =
+    | None = 0u
+    | RequireQualifiedAccessAttribute = 0x1u
+    | AutoOpenAttribute = 0x2u
+    | AbstractClassAttribute = 0x4u
+    | SealedAttribute = 0x8u
+    | NoEqualityAttribute = 0x10u
+    | NoComparisonAttribute = 0x20u
+    | StructuralEqualityAttribute = 0x40u
+    | StructuralComparisonAttribute = 0x80u
+    | CustomEqualityAttribute = 0x100u
+    | CustomComparisonAttribute = 0x200u
+    | ReferenceEqualityAttribute = 0x400u
+    | DefaultAugmentationAttribute = 0x800u
+    | CLIMutableAttribute = 0x1000u
+    | AutoSerializableAttribute = 0x2000u
+    | StructLayoutAttribute = 0x4000u
+    | DllImportAttribute = 0x8000u
+    | ReflectedDefinitionAttribute = 0x10000u
+    | GeneralizableValueAttribute = 0x20000u
+    | SkipLocalsInitAttribute = 0x40000u
+    | DebuggerTypeProxyAttribute = 0x80000u
+    | ComVisibleAttribute = 0x100000u
+    | IsReadOnlyAttribute = 0x200000u
+    | IsByRefLikeAttribute = 0x400000u
+    | ExtensionAttribute = 0x800000u
+    | AttributeUsageAttribute = 0x1000000u
+    | WarnOnWithoutNullArgumentAttribute = 0x2000000u
+    | AllowNullLiteralAttribute = 0x4000000u
+    | NotComputed = 0x80000000u
+
+/// Wraps an Attrib list together with cached WellKnownEntityAttributes flags for O(1) lookup.
+[<Struct; NoEquality; NoComparison>]
+type WellKnownEntityAttribs =
+    val private attribs: Attrib list
+    val private flags: WellKnownEntityAttributes
+
+    new(attribs: Attrib list, flags: WellKnownEntityAttributes) = { attribs = attribs; flags = flags }
+
+    /// Check if a specific well-known attribute flag is set.
+    member x.HasWellKnownAttribute(flag: WellKnownEntityAttributes) : bool =
+        x.flags &&& flag <> WellKnownEntityAttributes.None
+
+    /// Get the underlying attribute list (for remap/display/serialization/full-data extraction).
+    member x.AsList() = x.attribs
+
+    /// Get the current flags value.
+    member x.Flags = x.flags
+
+    /// Create from an attribute list. If empty, flags = None. Otherwise NotComputed.
+    static member Create(attribs: Attrib list) =
+        if attribs.IsEmpty then
+            WellKnownEntityAttribs([], WellKnownEntityAttributes.None)
+        else
+            WellKnownEntityAttribs(attribs, WellKnownEntityAttributes.NotComputed)
+
+    /// Create with precomputed flags (used when flags are already known).
+    static member CreateWithFlags(attribs: Attrib list, flags: WellKnownEntityAttributes) =
+        WellKnownEntityAttribs(attribs, flags)
+
+    /// Add a single attribute and OR-in its flag.
+    member x.Add(attrib: Attrib, flag: WellKnownEntityAttributes) =
+        WellKnownEntityAttribs(attrib :: x.attribs, x.flags ||| flag)
+
+    /// Append attributes and OR-in flags.
+    member x.Append(others: Attrib list, flags: WellKnownEntityAttributes) =
+        WellKnownEntityAttribs(x.attribs @ others, x.flags ||| flags)
+
+    /// Returns a copy with recomputed flags (flags set to NotComputed).
+    member x.WithRecomputedFlags() =
+        if x.attribs.IsEmpty then
+            WellKnownEntityAttribs([], WellKnownEntityAttributes.None)
+        else
+            WellKnownEntityAttribs(x.attribs, WellKnownEntityAttributes.NotComputed)
+
 type Attribs = Attrib list 
 
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -6132,7 +6214,7 @@ type Construct() =
             entity_logical_name=name
             entity_range=m
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-            entity_attribs=[] // fetched on demand via est.fs API
+            entity_attribs=WellKnownEntityAttribs.Create([]) // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
@@ -6164,7 +6246,7 @@ type Construct() =
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
-            entity_attribs=attribs
+            entity_attribs=WellKnownEntityAttribs.Create(attribs)
             entity_il_repr_cache = newCache()
             entity_opt_data =
                 match xml, access with
@@ -6233,7 +6315,7 @@ type Construct() =
     static member NewExn cpath (id: Ident) access repr attribs (doc: XmlDoc) = 
         Tycon.New "exnc"
           { entity_stamp = newStamp()
-            entity_attribs = attribs
+            entity_attribs = WellKnownEntityAttribs.Create(attribs)
             entity_logical_name = id.idText
             entity_range = id.idRange
             entity_tycon_tcaug = TyconAugmentation.Create()
@@ -6275,7 +6357,7 @@ type Construct() =
             entity_logical_name=nm
             entity_range=m
             entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordOrUnionType=false)
-            entity_attribs=[] // fixed up after
+            entity_attribs=WellKnownEntityAttribs.Create([]) // fixed up after
             entity_typars=typars
             entity_tycon_repr = TNoRepr
             entity_tycon_tcaug=TyconAugmentation.Create()

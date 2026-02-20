@@ -279,7 +279,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 checkTypars m aenv implTypars sigTypars &&
                 checkTypeRepr m aenv infoReader implTycon sigTycon &&
                 checkTypeAbbrev m aenv implTycon sigTycon &&
-                checkAttribs aenv implTycon.Attribs sigTycon.Attribs (fun attribs -> implTycon.entity_attribs <- attribs) &&
+                checkAttribs aenv implTycon.Attribs sigTycon.Attribs (fun attribs -> implTycon.entity_attribs <- WellKnownEntityAttribs.Create(attribs)) &&
                 checkModuleOrNamespaceContents implTycon.Range aenv infoReader (mkLocalEntityRef implTycon) sigTycon.ModuleOrNamespaceType
             
         and checkValInfo aenv err (implVal : Val) (sigVal : Val) = 

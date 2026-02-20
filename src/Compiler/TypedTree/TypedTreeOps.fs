@@ -3713,6 +3713,89 @@ type ILFieldDef with
     member x.HasWellKnownAttribute(g: TcGlobals, flag: WellKnownILAttributes) =
         x.CustomAttrsStored.HasWellKnownAttribute(g, flag)
 
+/// Compute well-known attribute flags for an Entity's Attrib list.
+let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEntityAttributes =
+    let mutable flags = WellKnownEntityAttributes.None
+
+    for attrib in attribs do
+        let (Attrib(tcref, _, _, _, _, _, _)) = attrib
+
+        if tyconRefEq g tcref g.attrib_RequireQualifiedAccessAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.RequireQualifiedAccessAttribute
+        elif tyconRefEq g tcref g.attrib_AutoOpenAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.AutoOpenAttribute
+        elif tyconRefEq g tcref g.attrib_AbstractClassAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.AbstractClassAttribute
+        elif tyconRefEq g tcref g.attrib_SealedAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.SealedAttribute
+        elif tyconRefEq g tcref g.attrib_NoEqualityAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.NoEqualityAttribute
+        elif tyconRefEq g tcref g.attrib_NoComparisonAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.NoComparisonAttribute
+        elif tyconRefEq g tcref g.attrib_StructuralEqualityAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.StructuralEqualityAttribute
+        elif tyconRefEq g tcref g.attrib_StructuralComparisonAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.StructuralComparisonAttribute
+        elif tyconRefEq g tcref g.attrib_CustomEqualityAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.CustomEqualityAttribute
+        elif tyconRefEq g tcref g.attrib_CustomComparisonAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.CustomComparisonAttribute
+        elif tyconRefEq g tcref g.attrib_ReferenceEqualityAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.ReferenceEqualityAttribute
+        elif tyconRefEq g tcref g.attrib_DefaultAugmentationAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.DefaultAugmentationAttribute
+        elif tyconRefEq g tcref g.attrib_CLIMutableAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.CLIMutableAttribute
+        elif tyconRefEq g tcref g.attrib_AutoSerializableAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.AutoSerializableAttribute
+        elif tyconRefEq g tcref g.attrib_StructLayoutAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.StructLayoutAttribute
+        elif
+            (match g.attrib_DllImportAttribute with
+             | Some a -> tyconRefEq g tcref a.TyconRef
+             | None -> false)
+        then
+            flags <- flags ||| WellKnownEntityAttributes.DllImportAttribute
+        elif tyconRefEq g tcref g.attrib_ReflectedDefinitionAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.ReflectedDefinitionAttribute
+        elif tyconRefEq g tcref g.attrib_GeneralizableValueAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.GeneralizableValueAttribute
+        elif tyconRefEq g tcref g.attrib_SkipLocalsInitAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.SkipLocalsInitAttribute
+        elif tyconRefEq g tcref g.attrib_DebuggerTypeProxyAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.DebuggerTypeProxyAttribute
+        elif tyconRefEq g tcref g.attrib_ComVisibleAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.ComVisibleAttribute
+        elif tyconRefEq g tcref g.attrib_IsReadOnlyAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.IsReadOnlyAttribute
+        elif
+            (match g.attrib_IsByRefLikeAttribute_opt with
+             | Some a -> tyconRefEq g tcref a.TyconRef
+             | None -> false)
+        then
+            flags <- flags ||| WellKnownEntityAttributes.IsByRefLikeAttribute
+        elif tyconRefEq g tcref g.attrib_ExtensionAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.ExtensionAttribute
+        elif tyconRefEq g tcref g.attrib_AttributeUsageAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.AttributeUsageAttribute
+        elif tyconRefEq g tcref g.attrib_WarnOnWithoutNullArgumentAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.WarnOnWithoutNullArgumentAttribute
+        elif tyconRefEq g tcref g.attrib_AllowNullLiteralAttribute.TyconRef then
+            flags <- flags ||| WellKnownEntityAttributes.AllowNullLiteralAttribute
+
+    flags
+
+/// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
+let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes) (entity: Entity) : bool =
+    let ea = entity.EntityAttribs
+
+    if ea.Flags &&& WellKnownEntityAttributes.NotComputed <> WellKnownEntityAttributes.None then
+        let flags = computeEntityWellKnownFlags g (ea.AsList())
+        entity.SetEntityAttribs(WellKnownEntityAttribs.CreateWithFlags(ea.AsList(), flags))
+        flags &&& flag <> WellKnownEntityAttributes.None
+    else
+        ea.HasWellKnownAttribute(flag)
+
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
 //
@@ -6529,7 +6612,7 @@ and copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs =
         let lookupTycon tycon = lookupTycon tycon
         let tpsR, tmenvinner2 = tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenvinner) tmenvinner (tcd.entity_typars.Force(tcd.entity_range))
         tcdR.entity_typars <- LazyWithContext.NotLazy tpsR
-        tcdR.entity_attribs <- tcd.entity_attribs |> remapAttribs ctxt tmenvinner2
+        tcdR.entity_attribs <- WellKnownEntityAttribs.Create(tcd.entity_attribs.AsList() |> remapAttribs ctxt tmenvinner2)
         tcdR.entity_tycon_repr <- tcd.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner2
         let typeAbbrevR = tcd.TypeAbbrev |> Option.map (remapType tmenvinner2)
         tcdR.entity_tycon_tcaug <- tcd.entity_tycon_tcaug |> remapTyconAug tmenvinner2
@@ -10064,7 +10147,7 @@ let MakeExportRemapping viewedCcu (mspec: ModuleOrNamespace) =
 let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) = 
     let tpsR, tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv (d.entity_typars.Force(d.entity_range))
     let typarsR = LazyWithContext.NotLazy tpsR
-    let attribsR = d.entity_attribs |> remapAttribs ctxt tmenvinner
+    let attribsR = d.entity_attribs.AsList() |> remapAttribs ctxt tmenvinner
     let tyconReprR = d.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner
     let tyconAbbrevR = d.TypeAbbrev |> Option.map (remapType tmenvinner)
     let tyconTcaugR = d.entity_tycon_tcaug |> remapTyconAug tmenvinner
@@ -10074,7 +10157,7 @@ let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) =
     let exnInfoR = d.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner
     { d with 
           entity_typars = typarsR
-          entity_attribs = attribsR
+          entity_attribs = WellKnownEntityAttribs.Create(attribsR)
           entity_tycon_repr = tyconReprR
           entity_tycon_tcaug = tyconTcaugR
           entity_modul_type = modulContentsR
@@ -11553,7 +11636,7 @@ let CombineCcuContentFragments l =
         entity1 |> Construct.NewModifiedTycon (fun data1 -> 
             let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
             { data1 with 
-                entity_attribs = entity1.Attribs @ entity2.Attribs
+                entity_attribs = WellKnownEntityAttribs.Create(entity1.Attribs @ entity2.Attribs)
                 entity_modul_type = MaybeLazy.Lazy (InterruptibleLazy(fun _ -> CombineModuleOrNamespaceTypes path2 entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
                 entity_opt_data = 
                 match data1.entity_opt_data with
@@ -11911,7 +11994,7 @@ let tryAddExtensionAttributeIfNotAlreadyPresentForModule
         match tryFindExtensionAttributeIn (tryFindExtensionAttribute g) with
         | None -> moduleEntity
         | Some extensionAttrib ->
-            { moduleEntity with entity_attribs = extensionAttrib :: moduleEntity.Attribs }
+            { moduleEntity with entity_attribs = WellKnownEntityAttribs.Create(extensionAttrib :: moduleEntity.Attribs) }
 
 let tryAddExtensionAttributeIfNotAlreadyPresentForType
     (g: TcGlobals)
@@ -11928,7 +12011,7 @@ let tryAddExtensionAttributeIfNotAlreadyPresentForType
         | Some extensionAttrib ->
             moduleOrNamespaceTypeAccumulator.Value.AllEntitiesByLogicalMangledName.TryFind(typeEntity.LogicalName)
             |> Option.iter (fun e ->
-                e.entity_attribs <- extensionAttrib :: e.Attribs
+                e.entity_attribs <- WellKnownEntityAttribs.Create(extensionAttrib :: e.Attribs)
             )
             typeEntity
 

@@ -423,7 +423,7 @@ type Entity =
         mutable entity_range: range
 
         /// The declared attributes for the type
-        mutable entity_attribs: Attribs
+        mutable entity_attribs: WellKnownEntityAttribs
 
         /// The declared representation of the type, i.e. record, union, class etc.
         mutable entity_tycon_repr: TyconRepresentation
@@ -470,6 +470,9 @@ type Entity =
 
     /// Set the custom attributes on an F# type definition.
     member SetAttribs: attribs: Attribs -> unit
+
+    /// Set the custom attributes wrapper on an F# type definition.
+    member SetEntityAttribs: WellKnownEntityAttribs -> unit
 
     member SetCompiledName: name: string option -> unit
 
@@ -527,6 +530,9 @@ type Entity =
     /// The F#-defined custom attributes of the entity, if any. If the entity is backed by Abstract IL or provided metadata
     /// then this does not include any attributes from those sources.
     member Attribs: Attribs
+
+    /// The wrapped F#-defined custom attributes of the entity with cached well-known flags.
+    member EntityAttribs: WellKnownEntityAttribs
 
     /// Get a blob of data indicating how this type is nested inside other namespaces, modules type types.
     member CompilationPath: CompilationPath
@@ -3233,6 +3239,54 @@ type Measure =
     override ToString: unit -> string
 
     member Range: range
+
+/// Flags enum for well-known attributes on Entity (types and modules).
+[<System.Flags>]
+type WellKnownEntityAttributes =
+    | None = 0u
+    | RequireQualifiedAccessAttribute = 0x1u
+    | AutoOpenAttribute = 0x2u
+    | AbstractClassAttribute = 0x4u
+    | SealedAttribute = 0x8u
+    | NoEqualityAttribute = 0x10u
+    | NoComparisonAttribute = 0x20u
+    | StructuralEqualityAttribute = 0x40u
+    | StructuralComparisonAttribute = 0x80u
+    | CustomEqualityAttribute = 0x100u
+    | CustomComparisonAttribute = 0x200u
+    | ReferenceEqualityAttribute = 0x400u
+    | DefaultAugmentationAttribute = 0x800u
+    | CLIMutableAttribute = 0x1000u
+    | AutoSerializableAttribute = 0x2000u
+    | StructLayoutAttribute = 0x4000u
+    | DllImportAttribute = 0x8000u
+    | ReflectedDefinitionAttribute = 0x10000u
+    | GeneralizableValueAttribute = 0x20000u
+    | SkipLocalsInitAttribute = 0x40000u
+    | DebuggerTypeProxyAttribute = 0x80000u
+    | ComVisibleAttribute = 0x100000u
+    | IsReadOnlyAttribute = 0x200000u
+    | IsByRefLikeAttribute = 0x400000u
+    | ExtensionAttribute = 0x800000u
+    | AttributeUsageAttribute = 0x1000000u
+    | WarnOnWithoutNullArgumentAttribute = 0x2000000u
+    | AllowNullLiteralAttribute = 0x4000000u
+    | NotComputed = 0x80000000u
+
+/// Wraps an Attrib list together with cached WellKnownEntityAttributes flags for O(1) lookup.
+[<Struct; NoEquality; NoComparison>]
+type WellKnownEntityAttribs =
+    val private attribs: Attrib list
+    val private flags: WellKnownEntityAttributes
+    new: attribs: Attrib list * flags: WellKnownEntityAttributes -> WellKnownEntityAttribs
+    member HasWellKnownAttribute: flag: WellKnownEntityAttributes -> bool
+    member AsList: unit -> Attrib list
+    member Flags: WellKnownEntityAttributes
+    static member Create: attribs: Attrib list -> WellKnownEntityAttribs
+    static member CreateWithFlags: attribs: Attrib list * flags: WellKnownEntityAttributes -> WellKnownEntityAttribs
+    member Add: attrib: Attrib * flag: WellKnownEntityAttributes -> WellKnownEntityAttribs
+    member Append: others: Attrib list * flags: WellKnownEntityAttributes -> WellKnownEntityAttribs
+    member WithRecomputedFlags: unit -> WellKnownEntityAttribs
 
 type Attribs = Attrib list
 
