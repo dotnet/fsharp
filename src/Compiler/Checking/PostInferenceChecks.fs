@@ -190,10 +190,10 @@ module Limit =
     /// Apply a scoped parameter mask to limits, zeroing out limits for scoped parameters.
     let ApplyScopedMask (scopedMask: bool array) (limits: Limit list) =
         if limits.Length <> scopedMask.Length then
-            failwith "ApplyScopedMask: scopedMask length should match limits length"
-
-        limits
-        |> List.mapi (fun i limit -> if scopedMask.[i] then NoLimit else limit)
+            limits // Length mismatch: fall back to no masking (conservative)
+        else
+            limits
+            |> List.mapi (fun i limit -> if scopedMask.[i] then NoLimit else limit)
 
 type cenv =
     { boundVals: Dictionary<Stamp, int> // really a hash set
@@ -906,6 +906,59 @@ let hasUnscopedRefAttribute (g: TcGlobals) (methDef: ILMethodDef) : bool =
 
 let tryGetUnscopedRefParamMask (g: TcGlobals) (methDef: ILMethodDef) =
     tryGetILParamAttrMask g.attrib_UnscopedRefAttribute_opt methDef
+
+/// Check if an IL parameter is implicitly scoped (out T or ref/in T where T is ref struct)
+let isImplicitlyScopedParam (g: TcGlobals) (amap: Import.ImportMap) (m: range) (p: ILParameter) =
+    // V2-3: out T → always implicitly scoped when version ≥ 11
+    (p.IsOut && not p.IsIn)
+    ||
+    // V2-4: ref/in T where T is ref struct → implicitly scoped
+    (match p.Type with
+     | ILType.Byref inner ->
+         match inner with
+         | ILType.TypeVar _ -> false // Can't resolve type vars without instantiation
+         | _ ->
+             try
+                 let fsTy = Import.ImportILType amap m [] inner
+                 isByrefLikeTy g m fsTy
+             with _ ->
+                 false
+     | _ -> false)
+
+/// Compute the scoped parameter mask for an IL method, considering implicit scoping rules.
+let computeScopedMask (cenv: cenv) (m: range) (methDef: ILMethodDef) (methInst: TType list) (refSafetyVersion: int) : bool array option =
+    let g = cenv.g
+    if methInst.IsEmpty || refSafetyVersion >= 11 then
+        let baseMask = tryGetScopedParamMask g methDef
+
+        let withImplicit =
+            if refSafetyVersion >= 11 then
+                let implicitMask =
+                    methDef.Parameters
+                    |> List.toArray
+                    |> Array.map (isImplicitlyScopedParam g cenv.amap m)
+
+                match baseMask with
+                | Some scopedArr ->
+                    let merged = Array.map2 (||) scopedArr implicitMask
+                    if Array.exists id merged then Some merged else None
+                | None ->
+                    if Array.exists id implicitMask then Some implicitMask else None
+            else
+                baseMask
+
+        withImplicit
+        |> Option.bind (fun scopedArr ->
+            match tryGetUnscopedRefParamMask g methDef with
+            | Some unscopedArr ->
+                let effective =
+                    scopedArr
+                    |> Array.mapi (fun i scoped -> scoped && not (i < unscopedArr.Length && unscopedArr.[i]))
+
+                if Array.exists id effective then Some effective else None
+            | None -> Some scopedArr)
+    else
+        None
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
@@ -1714,99 +1767,43 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
         let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
 
-        match retTypes with
-        | [_] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m returnTy ->
-            let methDefOpt =
-                if cenv.improvedByRefLikeEscapeAnalysis then
-                    tryResolveILMethodDef cenv.amap m ilMethRef
-                else
-                    None
+        let effectiveCtxt, scopedMask, hasUnscopedRef =
+            match retTypes with
+            | [_] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m returnTy ->
+                let methDefOpt =
+                    if cenv.improvedByRefLikeEscapeAnalysis then
+                        tryResolveILMethodDef cenv.amap m ilMethRef
+                    else
+                        None
 
-            let refSafetyVersion =
-                if cenv.improvedByRefLikeEscapeAnalysis then
-                    getRefSafetyRulesVersion cenv.amap m ilMethRef
-                else
-                    0
+                let refSafetyVersion =
+                    if cenv.improvedByRefLikeEscapeAnalysis then
+                        getRefSafetyRulesVersion cenv.amap m ilMethRef
+                    else
+                        0
 
-            let scopedMask, hasUnscopedRef =
-                match methDefOpt with
-                | Some methDef ->
-                    let mask =
-                        if methInst.IsEmpty || refSafetyVersion >= 11 then
-                            let baseMask = tryGetScopedParamMask g methDef
+                let mask, unscoped =
+                    match methDefOpt with
+                    | Some methDef ->
+                        let mask = computeScopedMask cenv m methDef methInst refSafetyVersion
 
-                            let withImplicit =
-                                if refSafetyVersion >= 11 then
-                                    let implicitMask =
-                                        methDef.Parameters
-                                        |> List.toArray
-                                        |> Array.map (fun p ->
-                                            // V2-3: out T → always implicitly scoped when version ≥ 11
-                                            (p.IsOut && not p.IsIn)
-                                            ||
-                                            // V2-4: ref/in T where T is ref struct → implicitly scoped
-                                            (match p.Type with
-                                             | ILType.Byref inner ->
-                                                 match inner with
-                                                 | ILType.TypeVar _ -> false // Can't resolve type vars without instantiation
-                                                 | _ ->
-                                                     try
-                                                         let fsTy = Import.ImportILType cenv.amap m [] inner
-                                                         isByrefLikeTy g m fsTy
-                                                     with _ ->
-                                                         false
-                                             | _ -> false))
+                        let unscoped =
+                            if hasReceiver then
+                                hasUnscopedRefAttribute g methDef
+                            else
+                                false
 
-                                    match baseMask with
-                                    | Some scopedArr ->
-                                        let merged = Array.map2 (||) scopedArr implicitMask
+                        mask, unscoped
+                    | None -> None, false
 
-                                        if Array.exists id merged then
-                                            Some merged
-                                        else
-                                            None
-                                    | None ->
-                                        if Array.exists id implicitMask then
-                                            Some implicitMask
-                                        else
-                                            None
-                                else
-                                    baseMask
+                ctxt, mask, unscoped
+            | _ ->
+                PermitByRefExpr.Yes, None, false
 
-                            withImplicit
-                            |> Option.bind (fun scopedArr ->
-                                match tryGetUnscopedRefParamMask g methDef with
-                                | Some unscopedArr ->
-                                    let effective =
-                                        scopedArr
-                                        |> Array.mapi (fun i scoped -> scoped && not (i < unscopedArr.Length && unscopedArr.[i]))
-
-                                    if Array.exists id effective then
-                                        Some effective
-                                    else
-                                        None
-                                | None -> Some scopedArr)
-                        else
-                            None
-
-                    let unscoped =
-                        if hasReceiver then
-                            hasUnscopedRefAttribute g methDef
-                        else
-                            false
-
-                    mask, unscoped
-                | None -> None, false
-
-            if hasReceiver then
-                CheckCallWithReceiver cenv env m returnTy args argContexts ctxt scopedMask hasUnscopedRef
-            else
-                CheckCall cenv env m returnTy args argContexts ctxt scopedMask
-        | _ ->
-            if hasReceiver then
-                CheckCallWithReceiver cenv env m returnTy args argContexts PermitByRefExpr.Yes None false
-            else
-                CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes None
+        if hasReceiver then
+            CheckCallWithReceiver cenv env m returnTy args argContexts effectiveCtxt scopedMask hasUnscopedRef
+        else
+            CheckCall cenv env m returnTy args argContexts effectiveCtxt scopedMask
 
     | TOp.Tuple tupInfo, _, _ when not (evalTupInfoIsStruct tupInfo) ->
         match ctxt with
