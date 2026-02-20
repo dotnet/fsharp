@@ -3343,8 +3343,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenFunction">
-        <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function.</source>
-        <target state="translated">'{0}' 연산자를 지원하는 형식이 필요하지만 함수 형식이 지정되었습니다. 함수에 대한 인수가 없을 수 있습니다.</target>
+        <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
+        <target state="new">'{0}' 연산자를 지원하는 형식이 필요하지만 함수 형식이 지정되었습니다. 함수에 대한 인수가 없을 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">

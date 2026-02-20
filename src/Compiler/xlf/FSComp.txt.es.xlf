@@ -3343,8 +3343,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenFunction">
-        <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function.</source>
-        <target state="translated">Se espera un tipo que admita el operador '{0}', pero se ha proporcionado un tipo de función. Quizá falta un argumento en una función.</target>
+        <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
+        <target state="new">Se espera un tipo que admita el operador '{0}', pero se ha proporcionado un tipo de función. Quizá falta un argumento en una función.</target>
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">

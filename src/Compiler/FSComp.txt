@@ -310,7 +310,7 @@ csTypeCannotBeResolvedAtCompileTime,"The declared type parameter '%s' cannot be 
 465,csTypeInferenceMaxDepth,"Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations."
 csExpectedArguments,"Expected arguments to an instance member"
 csIndexArgumentMismatch,"This indexer expects %d arguments but is here given %d"
-csExpectTypeWithOperatorButGivenFunction,"Expecting a type supporting the operator '%s' but given a function type. You may be missing an argument to a function."
+csExpectTypeWithOperatorButGivenFunction,"Expecting a type supporting the operator '%s' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace."
 csExpectTypeWithOperatorButGivenTuple,"Expecting a type supporting the operator '%s' but given a tuple type"
 csTypesDoNotSupportOperator,"None of the types '%s' support the operator '%s'"
 csTypeDoesNotSupportOperator,"The type '%s' does not support the operator '%s'"
