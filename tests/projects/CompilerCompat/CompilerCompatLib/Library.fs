@@ -35,3 +35,15 @@ module Library =
 
     let inline addNums (a: Num) (b: Num) = a + b
     let addNumsConcrete (a: Num) (b: Num) : Num = addNums a b
+
+    // ---- RFC FS-1043 extension operator on external type compat test ----
+
+    /// Extension operator (*) on System.String for string repetition.
+    type System.String with
+        static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+    /// Inline function using extension operator — SRTP constraint resolved via extension.
+    let inline repeatStr (s: string) (n: int) = s * n
+
+    /// Concrete wrapper that captures the resolved call.
+    let repeatStrConcrete (s: string) (n: int) : string = repeatStr s n
