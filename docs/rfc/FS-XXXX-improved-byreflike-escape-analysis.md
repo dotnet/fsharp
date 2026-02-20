@@ -71,7 +71,7 @@ Applied to: IL calls returning byref-like types in returnable context, and F# ca
 | 5 | `let f () = let mutable x = 1 in let s = Span<int>(&x) in s[0]` (no return) | OK | local use, span doesn't escape |
 | 6 | `let wrap (x: byref<int>) : Span<int> = Span<int>(&x)` then `let g () = let mutable x = 1 in wrap &x` | **FS3235** | propagated: `wrap` returns span-like taking byref |
 | 7 | `let f () = let mutable x = 1 in passThrough(Span<int>(&x))` | **FS3235** | nested: inner span limited, outer inherits |
-| 8 | `let f () = let mutable x = 1 in MemoryMarshal.CreateSpan(&x, 1)` | **FS3235** | generic static method, same rule |
+| 8 | `let f () = let mutable x = 1 in MemoryMarshal.CreateSpan(&x, 1)` | OK | `scoped ref T` parameter (V2: RefSafetyRulesAttribute from System.Runtime) |
 | 9 | `if flag then Span<int>(&local) else Span<int>(arr)` | **FS3235** | branches combined, worst wins |
 | 10 | Same code without `--langversion:preview` | old behavior | feature-gated |
 

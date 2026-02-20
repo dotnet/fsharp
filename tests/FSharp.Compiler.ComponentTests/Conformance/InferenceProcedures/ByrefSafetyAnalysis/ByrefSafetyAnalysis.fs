@@ -1332,7 +1332,7 @@ let f (x: inref<int>) =
         ]
 
     [<Fact>]
-    let ``E_MemoryMarshalCreateSpan`` () =
+    let ``MemoryMarshalCreateSpan_ScopedParam_Succeeds`` () =
         FSharp memoryMarshalCreateSpanSource
         |> asLibrary
         |> withLangVersionPreview
@@ -1340,7 +1340,7 @@ let f (x: inref<int>) =
         |> shouldSucceed
 
     [<Fact>]
-    let ``E_MemoryMarshalCreateReadOnlySpan`` () =
+    let ``MemoryMarshalCreateReadOnlySpan_ScopedParam_Succeeds`` () =
         FSharp memoryMarshalCreateReadOnlySpanSource
         |> asLibrary
         |> withLangVersionPreview
@@ -1371,14 +1371,14 @@ let f (x: inref<int>) =
         |> shouldSucceed
 
     [<Fact>]
-    let ``E_MemoryMarshalCreateSpan - backward compat`` () =
+    let ``MemoryMarshalCreateSpan_ScopedParam_Succeeds - backward compat`` () =
         FSharp memoryMarshalCreateSpanSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``E_MemoryMarshalCreateReadOnlySpan - backward compat`` () =
+    let ``MemoryMarshalCreateReadOnlySpan_ScopedParam_Succeeds - backward compat`` () =
         FSharp memoryMarshalCreateReadOnlySpanSource
         |> asLibrary
         |> compile
