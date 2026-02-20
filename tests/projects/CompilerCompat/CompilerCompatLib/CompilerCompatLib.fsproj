@@ -8,7 +8,6 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>preview</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     
     <!-- Ensure output goes to local bin directory, not repo artifacts -->
