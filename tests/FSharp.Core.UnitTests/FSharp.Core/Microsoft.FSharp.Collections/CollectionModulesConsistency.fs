@@ -844,6 +844,17 @@ let partitionWithHeteroParallel (xs : int []) =
 let ``partitionWith heterogeneous is consistent for Array and Array.Parallel`` () =
     smallerSizeCheck partitionWithHeteroParallel
 
+let partitionWithHeteroSet (xs : int []) =
+    let partitioner x = if x % 2 = 0 then Choice1Of2 (x * 10) else Choice2Of2 (string x)
+    let a1,a2 = xs |> Array.partitionWith partitioner
+    let s1,s2 = xs |> Set.ofArray |> Set.partitionWith partitioner
+    Set.ofArray a1 = s1 &&
+      Set.ofArray a2 = s2
+
+[<Fact>]
+let ``partitionWith heterogeneous is consistent for Set`` () =
+    smallerSizeCheck partitionWithHeteroSet
+
 let permute<'a when 'a : comparison> (xs' : list<int*'a>) =
     let xs = List.map snd xs'
  

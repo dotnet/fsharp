@@ -1898,6 +1898,16 @@ type ArrayModule() =
             "AggregateException should contain the InvalidOperationException")
 
     [<Fact>]
+    member _.``Parallel.PartitionWithNullElements``() =
+        let left, right =
+            [| "a"; null; "b"; null; "c" |]
+            |> Array.Parallel.partitionWith (fun x ->
+                if isNull x then Choice2Of2 x
+                else Choice1Of2 (x.ToUpper()))
+        Assert.AreEqual([|"A"; "B"; "C"|], left)
+        Assert.AreEqual([|null; null|], right)
+
+    [<Fact>]
     member _.Contains() =
         // integer array
         let intArr = [| 2;4;6;8 |]
