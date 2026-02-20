@@ -66,7 +66,7 @@ module EmptyBodied =
             |> compile
             |> shouldFail
             |> withErrorCode 3
-            |> withErrorMessage "This value is not a function and cannot be applied."
+            |> withErrorMessage "This value is not a function and cannot be applied. It has type 'AsyncBuilder', which does not accept arguments."
 
         [<Fact>]
         let ``task { } does not compile`` () =
@@ -80,7 +80,7 @@ module EmptyBodied =
             |> compile
             |> shouldFail
             |> withErrorCode 3
-            |> withErrorMessage "This value is not a function and cannot be applied."
+            |> withErrorMessage "This value is not a function and cannot be applied. It has type 'TaskBuilder', which does not accept arguments."
 
         [<Fact>]
         let ``builder { } does not compile`` () =
@@ -99,7 +99,7 @@ module EmptyBodied =
             |> compile
             |> shouldFail
             |> withErrorCode 3
-            |> withErrorMessage "This value is not a function and cannot be applied."
+            |> withErrorMessage "This value is not a function and cannot be applied. It has type 'Builder', which does not accept arguments."
 
         [<Fact>]
         let ``builder { () } and no Zero: FS0708`` () =

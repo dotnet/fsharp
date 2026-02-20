@@ -1,2 +1,2 @@
 
-neg123.fs(19,18,19,27): typecheck error FS0003: This value is not a function and cannot be applied.
+neg123.fs(19,18,19,27): typecheck error FS0003: This value is not a function and cannot be applied. It has type 'unit', which does not accept arguments.

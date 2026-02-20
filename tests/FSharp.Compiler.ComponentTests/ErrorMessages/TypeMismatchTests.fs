@@ -370,3 +370,44 @@ let main args =
             (Error 1, Line 8, Col 25, Line 8, Col 37, "The tuples have differing lengths of 3 and 2")
         ]
 
+    module ``Not a function`` =
+
+        [<Theory>]
+        [<InlineData("let x = 5", "x", "int")>]
+        [<InlineData("let s = \"hello\"", "s", "string")>]
+        [<InlineData("let b = true", "b", "bool")>]
+        [<InlineData("let t = (1, 2)", "t", "(int * int)")>]
+        let ``Value applied as function shows concrete type`` (valueDef: string) (varName: string) (expectedType: string) =
+            FSharp
+                $"""
+{valueDef}
+let y = {varName} 10
+            """
+            |> typecheck
+            |> shouldFail
+            |> withSingleDiagnostic
+                (Error 3,
+                 Line 3,
+                 Col 9,
+                 Line 3,
+                 Col 10,
+                 $"This value is not a function and cannot be applied. It has type '{expectedType}', which does not accept arguments.")
+
+        [<Fact>]
+        let ``Record value applied as function shows type`` () =
+            FSharp
+                """
+type MyRecord = { Name: string }
+let r = { Name = "hello" }
+let y = r 10
+            """
+            |> typecheck
+            |> shouldFail
+            |> withSingleDiagnostic
+                (Error 3,
+                 Line 4,
+                 Col 9,
+                 Line 4,
+                 Col 10,
+                 "This value is not a function and cannot be applied. It has type 'MyRecord', which does not accept arguments.")
+

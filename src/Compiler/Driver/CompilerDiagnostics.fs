@@ -1009,11 +1009,13 @@ type Exception with
                 | Some name -> os.AppendString(FSComp.SR.notAFunctionButMaybeIndexerWithName2 name)
                 | _ -> os.AppendString(FSComp.SR.notAFunctionButMaybeIndexer2 ())
 
-        | NotAFunction(_, _, _, marg) ->
+        | NotAFunction(denv, ty, _, marg) ->
             if marg.StartColumn = 0 then
                 os.AppendString(FSComp.SR.notAFunctionButMaybeDeclaration ())
-            else
+            elif isTyparTy denv.g ty then
                 os.AppendString(FSComp.SR.notAFunction ())
+            else
+                os.AppendString(FSComp.SR.notAFunctionWithType (NicePrint.prettyStringOfTy denv ty))
 
         | TyconBadArgs(_, tcref, d, _) ->
             let exp = tcref.TyparsNoRange.Length

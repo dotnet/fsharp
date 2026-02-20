@@ -44,8 +44,8 @@ module PrecedenceAndOperators =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3, Line 14, Col 11, Line 14, Col 20, "This value is not a function and cannot be applied.")
-            (Error 3, Line 15, Col 12, Line 15, Col 21, "This value is not a function and cannot be applied.")
+            (Error 3, Line 14, Col 11, Line 14, Col 20, "This value is not a function and cannot be applied. It has type 'int list', which does not accept arguments.")
+            (Error 3, Line 15, Col 12, Line 15, Col 21, "This value is not a function and cannot be applied. It has type 'int list', which does not accept arguments.")
         ]
 
     // SOURCE=E_Negation01.fs          SCFLAGS="--test:ErrorRanges -a"  # E_Negation01.fs

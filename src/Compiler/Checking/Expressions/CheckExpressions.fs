@@ -8410,13 +8410,13 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                                 let old = not (g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot)
                                 error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, old))
                             else
-                                error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
+                                error (NotAFunction(denv, exprTy, mExpr, mArg))
 
                 // f x  (where 'f' is not a function)
                 | _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutionsDelayed cenv env tpenv delayed
-                    error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
+                    error (NotAFunction(denv, exprTy, mExpr, mArg))
 
     propagate false delayed expr.Range exprTy
 
@@ -8735,7 +8735,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed
 
         | _ ->
-            error (NotAFunction(denv, overallTy.Commit, mLeftExpr, mArg))
+            error (NotAFunction(denv, exprTy, mLeftExpr, mArg))
 
 //-------------------------------------------------------------------------
 // TcLongIdentThen: Typecheck "A.B.C<D>.E.F ... " constructs
