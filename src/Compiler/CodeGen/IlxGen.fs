@@ -5541,7 +5541,6 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
             // Resolution may fail for generic inline code with unsolved constraints (e.g. rigid typars);
             // treat as dynamic invocation not supported.
             | ErrorResult _ ->
-                System.Diagnostics.Debug.Assert(false, sprintf "CodegenWitnessExprForTraitConstraint failed for '%s' at %s" traitInfo.MemberLogicalName (stringOfRange m))
                 None
 
         match exprOpt with
@@ -7339,9 +7338,12 @@ and ExprRequiresWitness cenv m expr =
         match ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo with
         | OkResult(_, res) -> res
         // When constraint resolution fails (e.g. on rigid generalized typars), witnesses are needed
+        // However, if we return true here, we claim witnesses are needed but cannot be provided (since resolution failed).
+        // This leads to broken code generation or further assertions.
+        // Instead, we should return false to indicate that witness-based optimization/invocation is NOT possible,
+        // which forces the caller to use the fallback (dynamic invocation or error).
         | ErrorResult _ ->
-            System.Diagnostics.Debug.Assert(false, sprintf "ExprRequiresWitness: constraint resolution failed for '%s' at %s" traitInfo.MemberLogicalName (stringOfRange m))
-            true
+            false
     | _ -> false
 
 /// Generate statically-resolved conditionals used for type-directed optimizations in FSharp.Core only.
