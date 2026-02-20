@@ -621,6 +621,7 @@ module CompilerAssertHelpers =
 {{
     "runtimeOptions": {{
         "tfm": "{productTfm}",
+        "rollForward": "LatestMinor",
         "framework": {{
             "name": "Microsoft.NETCore.App",
             "version": "{runtimeVersion}"
