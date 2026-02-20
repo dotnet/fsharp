@@ -4282,7 +4282,7 @@ let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespa
 
              for ccu in referencedCcus do
                  try collectFromModuleOrNamespaceType ccu.Contents.ModuleOrNamespaceType
-                 with _ -> ()
+                 with RecoverableException _ -> ()
 
              result)
 
