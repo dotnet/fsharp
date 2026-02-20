@@ -3091,3 +3091,96 @@ with
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on string works in FSI with langversion preview`` () =
+        Fsx $"""
+{stringRepeatExtDef}
+
+let r4 = "r" * 4
+if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%%s'" r4)
+
+let spaces n = " " * n
+if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%%s'" (spaces 3))
+        """
+        |> withLangVersionPreview
+        |> runFsi
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``RFC widening example: 1 + 2.0 with extension plus operators`` () =
+        FSharp """
+module TestWideningPlus
+
+// RFC FS-1043 motivating idea: extension methods on numeric types
+// satisfy SRTP constraints to enable cross-type arithmetic.
+
+type System.Int32 with
+    static member inline WideAdd(a: int32, b: int64) : int64 = int64 a + b
+    static member inline WideAdd(a: int32, b: single) : single = single a + b
+    static member inline WideAdd(a: int32, b: double) : double = double a + b
+
+type System.Int64 with
+    static member inline WideAdd(a: int64, b: int32) : int64 = a + int64 b
+    static member inline WideAdd(a: int64, b: double) : double = double a + b
+
+type System.Single with
+    static member inline WideAdd(a: single, b: int32) : single = a + single b
+
+type System.Double with
+    static member inline WideAdd(a: double, b: int32) : double = a + double b
+    static member inline WideAdd(a: double, b: int64) : double = a + double b
+
+let inline wideAdd (a: ^A) (b: ^B) : ^C = ((^A or ^B) : (static member WideAdd : ^A * ^B -> ^C) (a, b))
+
+// The RFC's motivating examples via extension-method SRTP:
+wideAdd 1 2L       |> ignore<int64>
+wideAdd 1 2.0f     |> ignore<single>
+wideAdd 1 2.0      |> ignore<double>
+wideAdd 1L 2       |> ignore<int64>
+wideAdd 1L 2.0     |> ignore<double>
+wideAdd 2.0 1      |> ignore<double>
+wideAdd 2.0 1L     |> ignore<double>
+
+printfn "Widening tests passed"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive inline SRTP function with extension constraints`` () =
+        FSharp """
+module TestRecursiveInline
+
+let inline sumTo (n: int) : ^T =
+    let mutable acc = LanguagePrimitives.GenericZero< ^T>
+    for _i = 1 to n do
+        acc <- acc + LanguagePrimitives.GenericOne< ^T>
+    acc
+
+let result : int = sumTo 5
+if result <> 5 then failwith (sprintf "Expected 5 but got %d" result)
+let resultF : float = sumTo 3
+if resultF <> 3.0 then failwith (sprintf "Expected 3.0 but got %f" resultF)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP constraint with no matching member produces clear error`` () =
+        FSharp """
+module TestNoMatch
+
+type Foo = { X: int }
+let inline bar (x: ^T) = (^T : (static member Nope : ^T -> int) x)
+let r = bar { X = 1 }
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
