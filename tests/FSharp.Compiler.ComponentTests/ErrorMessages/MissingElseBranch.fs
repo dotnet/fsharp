@@ -44,3 +44,30 @@ let y =
         |> shouldFail
         |> withSingleDiagnostic (Error 1, Line 4, Col 20, Line 4, Col 26,
                                  "This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type 'string'.")
+
+    [<Fact>]
+    let ``Fail if else branch is missing in elif chain``() =
+        FSharp """
+let x = 10
+let y =
+   if x > 10 then "test"
+   elif x > 2 then "blah"
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 5, Col 4, Line 5, Col 26,
+                                 "This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type 'string'.")
+
+    [<Fact>]
+    let ``Fail if else branch is missing in nested elif chain``() =
+        FSharp """
+let x = 10
+let y =
+   if x > 10 then "test"
+   elif x > 5 then "middle"
+   elif x > 2 then "blah"
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 6, Col 4, Line 6, Col 26,
+                                 "This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type 'string'.")

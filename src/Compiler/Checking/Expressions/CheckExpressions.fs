@@ -10741,6 +10741,13 @@ and CheckRecursiveBindingIds binds =
         if nm <> "" && not (hashOfBinds.Add nm) then
             error(Duplicate("value", nm, m))
 
+/// Returns true if the expression is an elif chain that ends without a final 'else' branch.
+and elifChainMissingElse =
+    function
+    | SynExpr.IfThenElse(elseExpr = None) -> true
+    | SynExpr.IfThenElse(elseExpr = Some elseExpr) -> elifChainMissingElse elseExpr
+    | _ -> false
+
 /// Process a sequence of sequentials mixed with iterated lets "let ... in let ... in ..." in a tail recursive way
 /// This avoids stack overflow on really large "let" and "letrec" lists
 and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
@@ -10788,10 +10795,14 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
         let thenExpr, tpenv =
             let env =
                 match env.eContextInfo with
+                | ContextInfo.ElseBranchResult _ when Option.isNone synElseExprOpt ->
+                    { env with eContextInfo = ContextInfo.OmittedElseBranch m }
                 | ContextInfo.ElseBranchResult _ -> { env with eContextInfo = ContextInfo.ElseBranchResult synThenExpr.Range }
                 | _ ->
                     match synElseExprOpt with
                     | None -> { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
+                    | Some elseExpr when elifChainMissingElse elseExpr ->
+                        { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
                     | _ -> { env with eContextInfo = ContextInfo.IfExpression synThenExpr.Range }
 
             if not isRecovery && Option.isNone synElseExprOpt then
