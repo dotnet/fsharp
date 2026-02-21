@@ -8937,6 +8937,11 @@
           <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
           <note />
         </trans-unit>
+        <trans-unit id="tcListLiteralWithSingleTupleElement">
+          <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
+          <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
+          <note />
+        </trans-unit>
     </body>
   </file>
 </xliff>

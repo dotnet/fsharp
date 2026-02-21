@@ -6257,6 +6257,11 @@ and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
 and TcExprArrayOrList (cenv: cenv) overallTy env tpenv (isArray, args, m) =
     let g = cenv.g
 
+    match isArray, args with
+    | false, [ SynExpr.Tuple(_, _, _, _) ] ->
+        warning (Error(FSComp.SR.tcListLiteralWithSingleTupleElement (), m))
+    | _ -> ()
+
     CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
     let argTy = NewInferenceType g
     let actualTy = if isArray then mkArrayType g argTy else mkListTy g argTy

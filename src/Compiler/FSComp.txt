@@ -1809,3 +1809,4 @@ featureImplicitDIMCoverage,"Implicit dispatch slot coverage for default interfac
 3880,optsLangVersionOutOfSupport,"Language version '%s' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/%s"
 3881,optsUnrecognizedLanguageFeature,"Unrecognized language feature name: '%s'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'."
 3882,parsLetBangCannotBeLastInCE,"'%s' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression."
+3883,tcListLiteralWithSingleTupleElement,"This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?"
