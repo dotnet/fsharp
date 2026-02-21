@@ -74,6 +74,15 @@ let x = [1, 2, 3]
         |> withDiagnostics []
 
     [<Fact>]
+    let ``No warning on struct tuple in list``() =
+        FSharp """
+let x = [struct(1, 2, 3)]
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> withDiagnostics []
+
+    [<Fact>]
     let ``No warning on empty list``() =
         FSharp """
 let x: int list = []

@@ -6258,7 +6258,7 @@ and TcExprArrayOrList (cenv: cenv) overallTy env tpenv (isArray, args, m) =
     let g = cenv.g
 
     match isArray, args with
-    | false, [ SynExpr.Tuple(_, _, _, _) ] ->
+    | false, [ SynExpr.Tuple(false, _, _, _) ] ->
         warning (Error(FSComp.SR.tcListLiteralWithSingleTupleElement (), m))
     | _ -> ()
 
