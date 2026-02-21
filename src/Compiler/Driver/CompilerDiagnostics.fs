@@ -125,7 +125,7 @@ type Exception with
         | InternalException(_, _, m)
         | InterfaceNotRevealed(_, _, m)
         | WrappedError(_, m)
-        | PatternMatchCompilation.MatchIncomplete(_, _, m)
+        | PatternMatchCompilation.MatchIncomplete(_, _, m, _)
         | PatternMatchCompilation.EnumMatchIncomplete(_, _, m)
         | PatternMatchCompilation.RuleNeverMatched m
         | ValNotMutable(_, _, m)
@@ -564,6 +564,7 @@ module OldStyleMessages =
     let MatchIncomplete2E () = Message("MatchIncomplete2", "%s")
     let MatchIncomplete3E () = Message("MatchIncomplete3", "%s")
     let MatchIncomplete4E () = Message("MatchIncomplete4", "")
+    let MatchIncompleteForLoopE () = Message("MatchIncompleteForLoop", "")
     let RuleNeverMatchedE () = Message("RuleNeverMatched", "")
     let EnumMatchIncomplete1E () = Message("EnumMatchIncomplete1", "")
     let ValNotMutableE () = Message("ValNotMutable", "%s")
@@ -1779,8 +1780,11 @@ type Exception with
 
         | WrappedError(e, _) -> e.Output(os, suggestNames)
 
-        | PatternMatchCompilation.MatchIncomplete(isComp, cexOpt, _) ->
+        | PatternMatchCompilation.MatchIncomplete(isComp, cexOpt, _, isForLoop) ->
             os.AppendString(MatchIncomplete1E().Format)
+
+            if isForLoop then
+                os.AppendString(MatchIncompleteForLoopE().Format)
 
             match cexOpt with
             | None -> ()

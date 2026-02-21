@@ -8243,6 +8243,34 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
     // Add the pattern match compilation
     let bodyExpr =
         let valsDefinedByMatching = ListSet.remove valEq elemVar vspecs
+
+        let isConstantPattern =
+            match synPat with
+            | SynPat.Const _
+            | SynPat.Paren(SynPat.Const _, _) -> true
+            | _ -> false
+
+        use _diagnostics =
+            if isConstantPattern then
+                UseTransformedDiagnosticsLogger(fun oldLogger ->
+                    { new DiagnosticsLogger("forLoopPatternMatch") with
+                        member _.DiagnosticSink(diagnostic) =
+                            let diagnostic =
+                                match diagnostic.Exception with
+                                | MatchIncomplete(isComp, cexOpt, m, _) ->
+                                    { diagnostic with Exception = MatchIncomplete(isComp, cexOpt, m, true) }
+                                | _ -> diagnostic
+
+                            oldLogger.DiagnosticSink(diagnostic)
+
+                        member _.ErrorCount = oldLogger.ErrorCount
+                        member _.CheckForRealErrorsIgnoringWarnings = oldLogger.CheckForRealErrorsIgnoringWarnings
+                    })
+            else
+                { new System.IDisposable with
+                    member _.Dispose() = ()
+                }
+
         CompilePatternForMatch
             cenv env synEnumExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None)
             [MatchClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, None), mIn)]

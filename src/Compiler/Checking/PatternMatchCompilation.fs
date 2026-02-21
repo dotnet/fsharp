@@ -24,7 +24,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 open type System.MemoryExtensions
 
-exception MatchIncomplete of bool * (string * bool) option * range
+exception MatchIncomplete of bool * (string * bool) option * range * bool
 exception RuleNeverMatched of range
 exception EnumMatchIncomplete of bool * (string * bool) option * range
 
@@ -1016,10 +1016,10 @@ let CompilePatternBasic
                     warning (EnumMatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), mMatch))
                     warningsGenerated.Add CounterExampleType.EnumCoversKnown
                 | Some(text, failingWhenClause, CounterExampleType.WithoutEnum) when not(warningsGenerated.Contains(CounterExampleType.WithoutEnum))  ->
-                    warning (MatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), mMatch))
+                    warning (MatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), mMatch, false))
                     warningsGenerated.Add CounterExampleType.WithoutEnum
                 | None when not(warningsGenerated.Contains(CounterExampleType.WithoutEnum)) ->
-                    warning (MatchIncomplete(ignoreWithWarning, None, mMatch))
+                    warning (MatchIncomplete(ignoreWithWarning, None, mMatch, false))
                     warningsGenerated.Add CounterExampleType.WithoutEnum
                 | _ -> ()
             | _ ->

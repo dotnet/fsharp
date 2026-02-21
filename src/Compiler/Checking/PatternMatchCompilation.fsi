@@ -71,7 +71,7 @@ val internal CompilePattern:
         TType ->
             DecisionTree * DecisionTreeTarget list
 
-exception internal MatchIncomplete of bool * (string * bool) option * range
+exception internal MatchIncomplete of bool * (string * bool) option * range * bool
 
 exception internal RuleNeverMatched of range
 

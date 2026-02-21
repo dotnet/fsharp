@@ -1557,6 +1557,11 @@
         <target state="translated"> 将忽略不匹配的元素。</target>
         <note />
       </trans-unit>
+      <trans-unit id="MatchIncompleteForLoop">
+        <source> Did you use a constant where a loop variable was expected?</source>
+        <target state="new"> Did you use a constant where a loop variable was expected?</target>
+        <note />
+      </trans-unit>
       <trans-unit id="EnumMatchIncomplete1">
         <source>Enums may take values outside known cases.</source>
         <target state="translated">枚举可能使用已知用例外的值。</target>
