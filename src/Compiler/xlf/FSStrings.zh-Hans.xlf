@@ -172,6 +172,16 @@
         <target state="translated">此表达式应具有类型\n    “{1}”    \n而此处具有类型\n    “{0}”    {2}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquation1Tuple">
+        <source>This expression was expected to have type\n    '{1}'    \nbut is a tuple of type\n    '{0}'    {2}</source>
+        <target state="new">This expression was expected to have type\n    '{1}'    \nbut is a tuple of type\n    '{0}'    {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquation2Tuple">
+        <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a tuple of type\n    '{1}'    {2}\n</source>
+        <target state="new">Type mismatch. Expecting a\n    '{0}'    \nbut given a tuple of type\n    '{1}'    {2}\n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquation2">
         <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</source>
         <target state="translated">类型不匹配。应为\n    “{0}”    \n而给定的是\n    “{1}”    {2}\n</target>

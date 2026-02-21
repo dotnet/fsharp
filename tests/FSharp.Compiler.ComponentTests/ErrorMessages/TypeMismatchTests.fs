@@ -411,3 +411,23 @@ let y = r 10
                  Col 10,
                  "This value is not a function and cannot be applied. It has type 'MyRecord', which does not accept arguments.")
 
+    [<Fact>]
+    let ``Tuple actual type says 'is a tuple of type'``() =
+        FSharp """
+let f (x: int) (y: int) : string = x, y
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 2, Col 36, Line 2, Col 40,
+                                 "This expression was expected to have type\n    'string'    \nbut is a tuple of type\n    'int * int'    ")
+
+    [<Fact>]
+    let ``Non-tuple actual type says 'but here has type'``() =
+        FSharp """
+let f (x: int) : string = x
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 2, Col 27, Line 2, Col 28,
+                                 "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    ")
+

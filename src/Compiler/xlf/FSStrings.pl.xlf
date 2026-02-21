@@ -172,6 +172,16 @@
         <target state="translated">Oczekiwany typ tego wyrażenia:\n    „{1}”    \nTyp w tym miejscu:\n    „{0}”    {2}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquation1Tuple">
+        <source>This expression was expected to have type\n    '{1}'    \nbut is a tuple of type\n    '{0}'    {2}</source>
+        <target state="new">This expression was expected to have type\n    '{1}'    \nbut is a tuple of type\n    '{0}'    {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquation2Tuple">
+        <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a tuple of type\n    '{1}'    {2}\n</source>
+        <target state="new">Type mismatch. Expecting a\n    '{0}'    \nbut given a tuple of type\n    '{1}'    {2}\n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquation2">
         <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</source>
         <target state="translated">Niezgodność typów. Oczekiwany typ:\n    „{0}”    \nOtrzymany typ:\n    „{1}”    {2}\n</target>

@@ -449,7 +449,9 @@ module OldStyleMessages =
     let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
     let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
     let ErrorFromAddingTypeEquation1E () = Message("ErrorFromAddingTypeEquation1", "%s%s%s")
+    let ErrorFromAddingTypeEquation1TupleE () = Message("ErrorFromAddingTypeEquation1Tuple", "%s%s%s")
     let ErrorFromAddingTypeEquation2E () = Message("ErrorFromAddingTypeEquation2", "%s%s%s")
+    let ErrorFromAddingTypeEquation2TupleE () = Message("ErrorFromAddingTypeEquation2Tuple", "%s%s%s")
     let ErrorFromAddingTypeEquationTuplesE () = Message("ErrorFromAddingTypeEquationTuples", "%d%s%d%s%s")
     let ErrorFromApplyingDefault1E () = Message("ErrorFromApplyingDefault1", "%s")
     let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
@@ -765,17 +767,24 @@ type Exception with
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, ConstraintSolverTypesNotInEqualityRelation(_, ty1b, ty2b, m, _, contextInfo), _) when
             typeEquiv g ty1 ty1b && typeEquiv g ty2 ty2b
             ->
+            let isActualTuple = isAnyTupleTy g ty2
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+            let typeEquation1E =
+                if isActualTuple then
+                    ErrorFromAddingTypeEquation1TupleE
+                else
+                    ErrorFromAddingTypeEquation1E
 
             OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m os (fun contextInfo ->
                 match contextInfo with
                 | ContextInfo.TupleInRecordFields ->
-                    os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs)
+                    os.AppendString(typeEquation1E().Format ty2 ty1 tpcs)
                     os.AppendString(Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord ())
                 | _ when ty2 = "bool" && ty1.EndsWithOrdinal(" ref") ->
-                    os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs)
+                    os.AppendString(typeEquation1E().Format ty2 ty1 tpcs)
                     os.AppendString(Environment.NewLine + FSComp.SR.derefInsteadOfNot ())
-                | _ -> os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs))
+                | _ -> os.AppendString(typeEquation1E().Format ty2 ty1 tpcs))
 
         | ErrorFromAddingTypeEquation(_, _, _, _, (ConstraintSolverTypesNotInEqualityRelation(_, _, _, _, _, contextInfo) as e), _) when
             (match contextInfo with
@@ -813,12 +822,17 @@ type Exception with
                     os.AppendString(SeeAlsoE().Format(stringOfRange m1))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, e, _) ->
+            let isActualTuple = isAnyTupleTy g ty2
+
             let e =
                 if not (typeEquiv g ty1 ty2) then
                     let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
                     if ty1 <> ty2 + tpcs then
-                        os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
+                        if isActualTuple then
+                            os.AppendString(ErrorFromAddingTypeEquation2TupleE().Format ty1 ty2 tpcs)
+                        else
+                            os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
 
                     e
 
