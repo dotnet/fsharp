@@ -3785,6 +3785,19 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
 
     flags
 
+#if !NO_TYPEPROVIDERS
+/// Map a WellKnownILAttributes flag to its AttribInfo equivalent.
+let mapILFlagToAttribInfo (g: TcGlobals) (flag: WellKnownILAttributes) : BuiltinAttribInfo option =
+    match flag with
+    | WellKnownILAttributes.IsReadOnlyAttribute -> Some g.attrib_IsReadOnlyAttribute
+    | WellKnownILAttributes.IsByRefLikeAttribute -> g.attrib_IsByRefLikeAttribute_opt
+    | WellKnownILAttributes.ExtensionAttribute -> Some g.attrib_ExtensionAttribute
+    | WellKnownILAttributes.AllowNullLiteralAttribute -> Some g.attrib_AllowNullLiteralAttribute
+    | WellKnownILAttributes.AutoOpenAttribute -> Some g.attrib_AutoOpenAttribute
+    | WellKnownILAttributes.ReflectedDefinitionAttribute -> Some g.attrib_ReflectedDefinitionAttribute
+    | _ -> None
+#endif
+
 /// Map a WellKnownILAttributes flag to its WellKnownEntityAttributes equivalent.
 /// Used for hybrid check sites that dispatch on IL vs F# metadata.
 let mapILFlagToEntityFlag (flag: WellKnownILAttributes) : WellKnownEntityAttributes =
@@ -3993,34 +4006,10 @@ let TyconRefHasAttribute g m attribSpec tcref =
 let TyconRefHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownILAttributes) (tcref: TyconRef) : bool =
     match metadataOfTycon tcref.Deref with
 #if !NO_TYPEPROVIDERS
-    | ProvidedTypeMetadata info ->
-        let provAttribs =
-            info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), tcref.Range)
-
-        let attrFullName =
-            match flag with
-            | WellKnownILAttributes.IsReadOnlyAttribute -> g.attrib_IsReadOnlyAttribute.TypeRef.FullName
-            | WellKnownILAttributes.IsByRefLikeAttribute ->
-                match g.attrib_IsByRefLikeAttribute_opt with
-                | Some attr -> attr.TypeRef.FullName
-                | None -> ""
-            | WellKnownILAttributes.ExtensionAttribute -> g.attrib_ExtensionAttribute.TypeRef.FullName
-            | WellKnownILAttributes.AllowNullLiteralAttribute -> g.attrib_AllowNullLiteralAttribute.TypeRef.FullName
-            | WellKnownILAttributes.AutoOpenAttribute -> g.attrib_AutoOpenAttribute.TypeRef.FullName
-            | WellKnownILAttributes.ReflectedDefinitionAttribute -> g.attrib_ReflectedDefinitionAttribute.TypeRef.FullName
-            | _ -> ""
-
-        if attrFullName = "" then
-            false
-        else
-            provAttribs
-                .PUntaint(
-                    (fun a ->
-                        a
-                            .GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, attrFullName)),
-                    tcref.Range
-                )
-                .IsSome
+    | ProvidedTypeMetadata _ ->
+        match mapILFlagToAttribInfo g flag with
+        | Some attribInfo -> TyconRefHasAttribute g tcref.Range attribInfo tcref
+        | None -> false
 #endif
     | ILTypeMetadata(TILObjectReprData(_, _, tdef)) -> tdef.HasWellKnownAttribute(g, flag)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
