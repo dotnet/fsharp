@@ -233,7 +233,7 @@ module rec HashTypes =
     // Hash a single argument, including its name and type
     let private hashArgInfo (g: TcGlobals) (ty, argInfo: ArgReprInfo) =
 
-        let attributesHash = hashAttributeList argInfo.Attribs
+        let attributesHash = hashAttributeList (argInfo.Attribs.AsList())
 
         let nameHash =
             match argInfo.Name with

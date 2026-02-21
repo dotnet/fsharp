@@ -901,7 +901,7 @@ type Exception with
                         tTy,
                         {
                             ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range0))
-                            ArgReprInfo.Attribs = []
+                            ArgReprInfo.Attribs = WellKnownValAttribs.Create([])
                             ArgReprInfo.OtherRange = None
                         })
 

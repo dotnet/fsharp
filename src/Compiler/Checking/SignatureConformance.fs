@@ -308,14 +308,14 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   // the implementation. This also propagates argument names from signature to implementation
                   let res = 
                       (implArgInfos, sigArgInfos) ||> List.forall2 (List.forall2 (fun implArgInfo sigArgInfo -> 
-                          checkAttribs aenv implArgInfo.Attribs sigArgInfo.Attribs (fun attribs -> 
+                          checkAttribs aenv (implArgInfo.Attribs.AsList()) (sigArgInfo.Attribs.AsList()) (fun attribs -> 
                               match implArgInfo.Name, sigArgInfo.Name with 
                               | Some iname, Some sname when sname.idText <> iname.idText ->
                                    warning(ArgumentsInSigAndImplMismatch(sname, iname))
                               | _ -> ()
                               
-                              let sigHasInlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute sigArgInfo.Attribs
-                              let implHasInlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute implArgInfo.Attribs
+                              let sigHasInlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute (sigArgInfo.Attribs.AsList())
+                              let implHasInlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute (implArgInfo.Attribs.AsList())
                               let m = 
                                   match implArgInfo.Name with 
                                   | Some iname-> iname.idRange
@@ -327,11 +327,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                               sigArgInfo.OtherRange <- implArgInfo.Name |> Option.map (fun ident -> ident.idRange)
 
                               implArgInfo.Name <- implArgInfo.Name |> Option.orElse sigArgInfo.Name
-                              implArgInfo.Attribs <- attribs))) &&
+                              implArgInfo.Attribs <- WellKnownValAttribs.Create(attribs)))) &&
 
-                      checkAttribs aenv implRetInfo.Attribs sigRetInfo.Attribs (fun attribs -> 
+                      checkAttribs aenv (implRetInfo.Attribs.AsList()) (sigRetInfo.Attribs.AsList()) (fun attribs -> 
                           implRetInfo.Name <- sigRetInfo.Name
-                          implRetInfo.Attribs <- attribs)
+                          implRetInfo.Attribs <- WellKnownValAttribs.Create(attribs))
                   
                   implVal.SetValReprInfo (Some (ValReprInfo (sigTyparNames, implArgInfos, implRetInfo)))
                   res

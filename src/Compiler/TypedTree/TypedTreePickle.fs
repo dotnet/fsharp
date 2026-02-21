@@ -2591,7 +2591,7 @@ let fill_u_constraints, u_constraints = u_hole ()
 let fill_u_Vals, u_Vals = u_hole ()
 
 let p_ArgReprInfo (x: ArgReprInfo) st =
-    p_attribs x.Attribs st
+    p_attribs (x.Attribs.AsList()) st
     p_option p_ident x.Name st
 
 let p_TyparReprInfo (TyparReprInfo(a, b)) st =
@@ -2611,7 +2611,7 @@ let u_ArgReprInfo st =
     | [], None -> ValReprInfo.unnamedTopArg1
     | _ ->
         {
-            Attribs = a
+            Attribs = WellKnownValAttribs.Create(a)
             Name = b
             OtherRange = None
         }
@@ -3313,7 +3313,7 @@ and u_ValData st =
                         val_member_info = x8
                         val_declaring_entity = x13b
                         val_xmldocsig = x12
-                        val_attribs = x9
+                        val_attribs = WellKnownValAttribs.Create(x9)
                     }
     }
 

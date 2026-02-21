@@ -2774,7 +2774,7 @@ type ValOptionalData =
 
       /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
       /// these value references after copying a collection of values. 
-      mutable val_attribs: Attribs
+      mutable val_attribs: WellKnownValAttribs
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2817,7 +2817,7 @@ type Val =
           val_member_info = None
           val_declaring_entity = ParentNone
           val_xmldocsig = String.Empty
-          val_attribs = [] }
+          val_attribs = WellKnownValAttribs.Create([]) }
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
     member x.DefinitionRange = 
@@ -3051,8 +3051,14 @@ type Val =
     /// Get the declared attributes for the value
     member x.Attribs = 
         match x.val_opt_data with
-        | Some optData -> optData.val_attribs
+        | Some optData -> optData.val_attribs.AsList()
         | _ -> []
+
+    /// Get the declared attributes wrapper for the value
+    member x.ValAttribs =
+        match x.val_opt_data with
+        | Some optData -> optData.val_attribs
+        | _ -> WellKnownValAttribs.Create([])
 
     /// Get the declared documentation for the value
     member x.XmlDoc =
@@ -3310,7 +3316,13 @@ type Val =
         | Some optData -> optData.val_declaring_entity <- parent
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_declaring_entity = parent }
 
-    member x.SetAttribs attribs = 
+    member x.SetAttribs (attribs: Attribs) = 
+        let wa = WellKnownValAttribs.Create(attribs)
+        match x.val_opt_data with
+        | Some optData -> optData.val_attribs <- wa
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_attribs = wa }
+
+    member x.SetValAttribs (attribs: WellKnownValAttribs) =
         match x.val_opt_data with
         | Some optData -> optData.val_attribs <- attribs
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_attribs = attribs }
@@ -4709,6 +4721,82 @@ type WellKnownEntityAttribs =
         else
             WellKnownEntityAttribs(x.attribs, WellKnownEntityAttributes.NotComputed)
 
+/// Flags enum for well-known attributes on Val (values and members).
+/// Used to avoid O(N) linear scans of attribute lists.
+[<System.Flags>]
+type WellKnownValAttributes =
+    | None = 0uL
+    | DllImportAttribute = 0x1uL
+    | EntryPointAttribute = 0x2uL
+    | LiteralAttribute = 0x4uL
+    | ConditionalAttribute = 0x8uL
+    | ReflectedDefinitionAttribute = 0x10uL
+    | RequiresExplicitTypeArgumentsAttribute = 0x20uL
+    | DefaultValueAttribute = 0x40uL
+    | SkipLocalsInitAttribute = 0x80uL
+    | ThreadStaticAttribute = 0x100uL
+    | ContextStaticAttribute = 0x200uL
+    | VolatileFieldAttribute = 0x400uL
+    | NoDynamicInvocationAttribute = 0x800uL
+    | ExtensionAttribute = 0x1000uL
+    | OptionalArgumentAttribute = 0x2000uL
+    | InAttribute = 0x4000uL
+    | OutAttribute = 0x8000uL
+    | ParamArrayAttribute = 0x10000uL
+    | CallerMemberNameAttribute = 0x20000uL
+    | CallerFilePathAttribute = 0x40000uL
+    | CallerLineNumberAttribute = 0x80000uL
+    | DefaultParameterValueAttribute = 0x100000uL
+    | ProjectionParameterAttribute = 0x200000uL
+    | InlineIfLambdaAttribute = 0x400000uL
+    | OptionalAttribute = 0x800000uL
+    | StructAttribute = 0x1000000uL
+    | NotComputed = 0x8000000000000000uL
+
+/// Wraps an Attrib list together with cached WellKnownValAttributes flags for O(1) lookup.
+[<Struct; NoEquality; NoComparison>]
+type WellKnownValAttribs =
+    val private attribs: Attrib list
+    val private flags: WellKnownValAttributes
+
+    new(attribs: Attrib list, flags: WellKnownValAttributes) = { attribs = attribs; flags = flags }
+
+    /// Check if a specific well-known attribute flag is set.
+    member x.HasWellKnownAttribute(flag: WellKnownValAttributes) : bool =
+        x.flags &&& flag <> WellKnownValAttributes.None
+
+    /// Get the underlying attribute list.
+    member x.AsList() = x.attribs
+
+    /// Get the current flags value.
+    member x.Flags = x.flags
+
+    /// Create from an attribute list. If empty, flags = None. Otherwise NotComputed.
+    static member Create(attribs: Attrib list) =
+        if attribs.IsEmpty then
+            WellKnownValAttribs([], WellKnownValAttributes.None)
+        else
+            WellKnownValAttribs(attribs, WellKnownValAttributes.NotComputed)
+
+    /// Create with precomputed flags (used when flags are already known).
+    static member CreateWithFlags(attribs: Attrib list, flags: WellKnownValAttributes) =
+        WellKnownValAttribs(attribs, flags)
+
+    /// Add a single attribute and OR-in its flag.
+    member x.Add(attrib: Attrib, flag: WellKnownValAttributes) =
+        WellKnownValAttribs(attrib :: x.attribs, x.flags ||| flag)
+
+    /// Append attributes and OR-in flags.
+    member x.Append(others: Attrib list, flags: WellKnownValAttributes) =
+        WellKnownValAttribs(x.attribs @ others, x.flags ||| flags)
+
+    /// Returns a copy with recomputed flags (flags set to NotComputed).
+    member x.WithRecomputedFlags() =
+        if x.attribs.IsEmpty then
+            WellKnownValAttribs([], WellKnownValAttributes.None)
+        else
+            WellKnownValAttribs(x.attribs, WellKnownValAttributes.NotComputed)
+
 type Attribs = Attrib list 
 
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -5063,7 +5151,7 @@ type ArgReprInfo =
     {
       /// The attributes for the argument
       // MUTABILITY: used when propagating signature attributes into the implementation.
-      mutable Attribs: Attribs 
+      mutable Attribs: WellKnownValAttribs 
 
       /// The name for the argument at this position, if any
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
@@ -6416,7 +6504,7 @@ type Construct() =
                     val_xmldoc = doc
                     val_member_info = specialRepr
                     val_declaring_entity = actualParent
-                    val_attribs = attribs }
+                    val_attribs = WellKnownValAttribs.Create(attribs) }
                 |> Some
 
         let flags = ValFlags(recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal)

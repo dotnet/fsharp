@@ -8996,7 +8996,7 @@ and GenParams
         (Set.empty, List.zip methArgTys ilArgTysAndInfoAndVals)
         ||> List.mapFold (fun takenNames (methodArgTy, ((ilArgTy, topArgInfo), implValOpt)) ->
             let inFlag, outFlag, optionalFlag, defaultParamValue, Marshal, attribs =
-                GenParamAttribs cenv methodArgTy topArgInfo.Attribs
+                GenParamAttribs cenv methodArgTy (topArgInfo.Attribs.AsList())
 
             let idOpt =
                 match topArgInfo.Name with
@@ -9042,7 +9042,7 @@ and GenParams
 
 /// Generate IL method return information
 and GenReturnInfo cenv eenv returnTy ilRetTy (retInfo: ArgReprInfo) : ILReturn =
-    let marshal, attribs = GenMarshal cenv retInfo.Attribs
+    let marshal, attribs = GenMarshal cenv (retInfo.Attribs.AsList())
     let ilAttribs = GenAttrs cenv eenv attribs
 
     let ilAttribs =

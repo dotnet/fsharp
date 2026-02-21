@@ -1677,7 +1677,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
                     [],
                     [],
                     {
-                        Attribs = []
+                        Attribs = WellKnownValAttribs.Create([])
                         Name = None
                         OtherRange = None
                     }

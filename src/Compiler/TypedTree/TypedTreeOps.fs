@@ -3796,6 +3796,96 @@ let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes)
     else
         ea.HasWellKnownAttribute(flag)
 
+let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAttributes =
+    let mutable flags = WellKnownValAttributes.None
+
+    for attrib in attribs do
+        let (Attrib(tcref, _, _, _, _, _, _)) = attrib
+
+        if
+            (match g.attrib_DllImportAttribute with
+             | Some a -> tyconRefEq g tcref a.TyconRef
+             | None -> false)
+        then
+            flags <- flags ||| WellKnownValAttributes.DllImportAttribute
+        elif tyconRefEq g tcref g.attrib_EntryPointAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.EntryPointAttribute
+        elif tyconRefEq g tcref g.attrib_LiteralAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.LiteralAttribute
+        elif tyconRefEq g tcref g.attrib_ConditionalAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.ConditionalAttribute
+        elif tyconRefEq g tcref g.attrib_ReflectedDefinitionAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.ReflectedDefinitionAttribute
+        elif tyconRefEq g tcref g.attrib_RequiresExplicitTypeArgumentsAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
+        elif tyconRefEq g tcref g.attrib_DefaultValueAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.DefaultValueAttribute
+        elif tyconRefEq g tcref g.attrib_SkipLocalsInitAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.SkipLocalsInitAttribute
+        elif
+            (match g.attrib_ThreadStaticAttribute with
+             | Some a -> tyconRefEq g tcref a.TyconRef
+             | None -> false)
+        then
+            flags <- flags ||| WellKnownValAttributes.ThreadStaticAttribute
+        elif
+            (match g.attrib_ContextStaticAttribute with
+             | Some a -> tyconRefEq g tcref a.TyconRef
+             | None -> false)
+        then
+            flags <- flags ||| WellKnownValAttributes.ContextStaticAttribute
+        elif tyconRefEq g tcref g.attrib_VolatileFieldAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.VolatileFieldAttribute
+        elif tyconRefEq g tcref g.attrib_NoDynamicInvocationAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.NoDynamicInvocationAttribute
+        elif tyconRefEq g tcref g.attrib_ExtensionAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.ExtensionAttribute
+        elif tyconRefEq g tcref g.attrib_OptionalArgumentAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.OptionalArgumentAttribute
+        elif tyconRefEq g tcref g.attrib_InAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.InAttribute
+        elif tyconRefEq g tcref g.attrib_OutAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.OutAttribute
+        elif tyconRefEq g tcref g.attrib_ParamArrayAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.ParamArrayAttribute
+        elif tyconRefEq g tcref g.attrib_CallerMemberNameAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.CallerMemberNameAttribute
+        elif tyconRefEq g tcref g.attrib_CallerFilePathAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.CallerFilePathAttribute
+        elif tyconRefEq g tcref g.attrib_CallerLineNumberAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.CallerLineNumberAttribute
+        elif
+            (match g.attrib_DefaultParameterValueAttribute with
+             | Some a -> tyconRefEq g tcref a.TyconRef
+             | None -> false)
+        then
+            flags <- flags ||| WellKnownValAttributes.DefaultParameterValueAttribute
+        elif tyconRefEq g tcref g.attrib_ProjectionParameterAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.ProjectionParameterAttribute
+        elif tyconRefEq g tcref g.attrib_InlineIfLambdaAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.InlineIfLambdaAttribute
+        elif
+            (match g.attrib_OptionalAttribute with
+             | Some a -> tyconRefEq g tcref a.TyconRef
+             | None -> false)
+        then
+            flags <- flags ||| WellKnownValAttributes.OptionalAttribute
+        elif tyconRefEq g tcref g.attrib_StructAttribute.TyconRef then
+            flags <- flags ||| WellKnownValAttributes.StructAttribute
+
+    flags
+
+/// Check if a Val has a specific well-known attribute, computing and caching flags if needed.
+let ValHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (v: Val) : bool =
+    let va = v.ValAttribs
+
+    if va.Flags &&& WellKnownValAttributes.NotComputed <> WellKnownValAttributes.None then
+        let flags = computeValWellKnownFlags g (va.AsList())
+        v.SetValAttribs(WellKnownValAttribs.CreateWithFlags(va.AsList(), flags))
+        flags &&& flag <> WellKnownValAttributes.None
+    else
+        va.HasWellKnownAttribute(flag)
+
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
 //
@@ -5938,9 +6028,9 @@ let InferValReprInfoOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL re
             let attribs = 
                 if partialAttribs.Length = tys.Length then partialAttribs 
                 else tys |> List.map (fun _ -> [])
-            (ids, attribs) ||> List.map2 (fun id attribs -> { Name = id; Attribs = attribs; OtherRange = None }: ArgReprInfo ))
+            (ids, attribs) ||> List.map2 (fun id attribs -> { Name = id; Attribs = WellKnownValAttribs.Create(attribs); OtherRange = None }: ArgReprInfo ))
 
-    let retInfo: ArgReprInfo = { Attribs = retAttribs; Name = None; OtherRange = None }
+    let retInfo: ArgReprInfo = { Attribs = WellKnownValAttribs.Create(retAttribs); Name = None; OtherRange = None }
     let info = ValReprInfo (ValReprInfo.InferTyparInfo tps, curriedArgInfos, retInfo)
     if ValReprInfo.IsEmpty info then ValReprInfo.emptyValData else info
 
@@ -6143,7 +6233,7 @@ and remapPossibleForallTyImpl ctxt tmenv ty =
     remapTypeFull (remapAttribs ctxt tmenv) tmenv ty
 
 and remapArgData ctxt tmenv (argInfo: ArgReprInfo) : ArgReprInfo =
-    { Attribs = remapAttribs ctxt tmenv argInfo.Attribs; Name = argInfo.Name; OtherRange = argInfo.OtherRange }
+    { Attribs = WellKnownValAttribs.Create(remapAttribs ctxt tmenv (argInfo.Attribs.AsList())); Name = argInfo.Name; OtherRange = argInfo.OtherRange }
 
 and remapValReprInfo ctxt tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
     ValReprInfo(tpNames, List.mapSquared (remapArgData ctxt tmenv) arginfosl, remapArgData ctxt tmenv retInfo)
@@ -6165,7 +6255,7 @@ and remapValData ctxt tmenv (d: ValData) =
                          val_declaring_entity = declaringEntityR
                          val_repr_info = reprInfoR
                          val_member_info = memberInfoR
-                         val_attribs = attribsR }
+                         val_attribs = WellKnownValAttribs.Create(attribsR) }
             | None -> None }
 
 and remapParentRef tyenv p =

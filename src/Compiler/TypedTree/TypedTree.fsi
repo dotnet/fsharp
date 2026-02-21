@@ -1932,7 +1932,7 @@ type ValOptionalData =
 
         /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup
         /// these value references after copying a collection of values.
-        mutable val_attribs: Attribs
+        mutable val_attribs: WellKnownValAttribs
     }
 
     override ToString: unit -> string
@@ -1986,6 +1986,8 @@ type Val =
     member Link: tg: ValData -> unit
 
     member SetAttribs: attribs: Attribs -> unit
+
+    member SetValAttribs: attribs: WellKnownValAttribs -> unit
 
     /// Set all the data on a value
     member SetData: tg: ValData -> unit
@@ -2042,6 +2044,9 @@ type Val =
 
     /// Get the declared attributes for the value
     member Attribs: Attrib list
+
+    /// Get the declared attributes wrapper for the value
+    member ValAttribs: WellKnownValAttribs
 
     /// Indicates if this is a 'base' or 'this' value?
     member BaseOrThisInfo: ValBaseOrThisInfo
@@ -3288,6 +3293,52 @@ type WellKnownEntityAttribs =
     member Append: others: Attrib list * flags: WellKnownEntityAttributes -> WellKnownEntityAttribs
     member WithRecomputedFlags: unit -> WellKnownEntityAttribs
 
+/// Flags enum for well-known attributes on Val (values and members).
+[<System.Flags>]
+type WellKnownValAttributes =
+    | None = 0uL
+    | DllImportAttribute = 0x1uL
+    | EntryPointAttribute = 0x2uL
+    | LiteralAttribute = 0x4uL
+    | ConditionalAttribute = 0x8uL
+    | ReflectedDefinitionAttribute = 0x10uL
+    | RequiresExplicitTypeArgumentsAttribute = 0x20uL
+    | DefaultValueAttribute = 0x40uL
+    | SkipLocalsInitAttribute = 0x80uL
+    | ThreadStaticAttribute = 0x100uL
+    | ContextStaticAttribute = 0x200uL
+    | VolatileFieldAttribute = 0x400uL
+    | NoDynamicInvocationAttribute = 0x800uL
+    | ExtensionAttribute = 0x1000uL
+    | OptionalArgumentAttribute = 0x2000uL
+    | InAttribute = 0x4000uL
+    | OutAttribute = 0x8000uL
+    | ParamArrayAttribute = 0x10000uL
+    | CallerMemberNameAttribute = 0x20000uL
+    | CallerFilePathAttribute = 0x40000uL
+    | CallerLineNumberAttribute = 0x80000uL
+    | DefaultParameterValueAttribute = 0x100000uL
+    | ProjectionParameterAttribute = 0x200000uL
+    | InlineIfLambdaAttribute = 0x400000uL
+    | OptionalAttribute = 0x800000uL
+    | StructAttribute = 0x1000000uL
+    | NotComputed = 0x8000000000000000uL
+
+/// Wraps an Attrib list together with cached WellKnownValAttributes flags for O(1) lookup.
+[<Struct; NoEquality; NoComparison>]
+type WellKnownValAttribs =
+    val private attribs: Attrib list
+    val private flags: WellKnownValAttributes
+    new: attribs: Attrib list * flags: WellKnownValAttributes -> WellKnownValAttribs
+    member HasWellKnownAttribute: flag: WellKnownValAttributes -> bool
+    member AsList: unit -> Attrib list
+    member Flags: WellKnownValAttributes
+    static member Create: attribs: Attrib list -> WellKnownValAttribs
+    static member CreateWithFlags: attribs: Attrib list * flags: WellKnownValAttributes -> WellKnownValAttribs
+    member Add: attrib: Attrib * flag: WellKnownValAttributes -> WellKnownValAttribs
+    member Append: others: Attrib list * flags: WellKnownValAttributes -> WellKnownValAttribs
+    member WithRecomputedFlags: unit -> WellKnownValAttribs
+
 type Attribs = Attrib list
 
 [<NoEquality; NoComparison>]
@@ -3589,7 +3640,7 @@ type ArgReprInfo =
     {
 
         /// The attributes for the argument
-        mutable Attribs: Attribs
+        mutable Attribs: WellKnownValAttribs
 
         /// The name for the argument at this position, if any
         mutable Name: Ident option

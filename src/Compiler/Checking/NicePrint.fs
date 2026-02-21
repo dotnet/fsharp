@@ -1084,14 +1084,14 @@ module PrintTypes =
         let g = denv.g
        
         // Detect an optional argument 
-        let isOptionalArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
+        let isOptionalArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute (argInfo.Attribs.AsList())
 
         match argInfo.Name, isOptionalArg, tryDestOptionTy g ty with 
         // Layout an optional argument 
         | Some id, true, ValueSome ty -> 
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> rightL) id.idText
             let attrsLayout =
-                argInfo.Attribs
+                argInfo.Attribs.AsList()
                 |> List.filter (fun a -> not (IsMatchingFSharpAttribute g g.attrib_OptionalArgumentAttribute a))
                 |> layoutAttribsOneline denv 
             
@@ -1113,7 +1113,7 @@ module PrintTypes =
         // Layout a named argument 
         | Some id, _, _ -> 
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> wordL) id.idText
-            let prefix = layoutAttribsOneline denv argInfo.Attribs ^^ idL
+            let prefix = layoutAttribsOneline denv (argInfo.Attribs.AsList()) ^^ idL
             (prefix |> addColonL) ^^ layoutTypeWithInfoAndPrec denv env 2 ty
 
     let layoutCurriedArgInfos denv env argInfos =
@@ -1363,7 +1363,7 @@ module PrintTastMemberOrVals =
         if short then
             for argInfo in argInfos do
                 for _,info in argInfo do
-                    info.Attribs <- []
+                    info.Attribs <- WellKnownValAttribs.Create([])
                     info.Name <- None
         let supportAccessModifiersBeforeGetSet =
             denv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters

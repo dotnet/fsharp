@@ -93,7 +93,7 @@ let ReparentSlotSigToUseMethodTypars g m ovByMethValRef slotsig =
 
 /// Construct the data representing a parameter in the signature of an abstract method slot
 let MakeSlotParam (ty, argInfo: ArgReprInfo) =
-    TSlotParam(Option.map textOfId argInfo.Name, ty, false, false, false, argInfo.Attribs)
+    TSlotParam(Option.map textOfId argInfo.Name, ty, false, false, false, argInfo.Attribs.AsList())
 
 /// Construct the data representing the signature of an abstract method slot
 let MakeSlotSig (nm, ty, ctps, mtps, paraml, retTy) =
@@ -274,20 +274,21 @@ type ParamData =
 type ParamAttribs = ParamAttribs of isParamArrayArg: bool * isInArg: bool * isOutArg: bool * optArgInfo: OptionalArgInfo * callerInfo: CallerInfo * reflArgInfo: ReflectedArgInfo
 
 let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
-    let isParamArrayArg = HasFSharpAttribute g g.attrib_ParamArrayAttribute argInfo.Attribs
+    let attribs = argInfo.Attribs.AsList()
+    let isParamArrayArg = HasFSharpAttribute g g.attrib_ParamArrayAttribute attribs
     let reflArgInfo =
-        match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute argInfo.Attribs  with
+        match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute attribs  with
         | Some b -> ReflectedArgInfo.Quote b
         | None -> ReflectedArgInfo.None
-    let isOutArg = (HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty) || isOutByrefTy g ty
-    let isInArg = (HasFSharpAttribute g g.attrib_InAttribute argInfo.Attribs && isByrefTy g ty) || isInByrefTy g ty
-    let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
-    let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute argInfo.Attribs
+    let isOutArg = (HasFSharpAttribute g g.attrib_OutAttribute attribs && isByrefTy g ty) || isOutByrefTy g ty
+    let isInArg = (HasFSharpAttribute g g.attrib_InAttribute attribs && isByrefTy g ty) || isInByrefTy g ty
+    let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute attribs
+    let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute attribs
     let optArgInfo =
         if isCalleeSideOptArg then
             CalleeSide
         elif isCallerSideOptArg then
-            let defaultParameterValueAttribute = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute argInfo.Attribs
+            let defaultParameterValueAttribute = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute attribs
             match defaultParameterValueAttribute with
             | None ->
                 // Do a type-directed analysis of the type to determine the default value to pass.
@@ -310,9 +311,9 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
                     NotOptional
         else NotOptional
 
-    let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
-    let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
-    let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
+    let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute attribs
+    let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute attribs
+    let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute attribs
 
     let callerInfo =
         match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
@@ -321,7 +322,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | false, true, false -> CallerFilePath
         | false, false, true -> CallerMemberName
         | false, true, true -> 
-            match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
+            match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute attribs with
             | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
                 warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath

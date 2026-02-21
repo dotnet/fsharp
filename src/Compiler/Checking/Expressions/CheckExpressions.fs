@@ -1005,14 +1005,14 @@ let TranslateTopArgSynInfo (cenv: cenv) isArg m tcAttributes (SynArgInfo(Attribu
             if found then
                 Some info
             else None)
-        |> Option.defaultValue ({ Attribs = attribs; Name = nm; OtherRange = None }: ArgReprInfo)
+        |> Option.defaultValue ({ Attribs = WellKnownValAttribs.Create(attribs); Name = nm; OtherRange = None }: ArgReprInfo)
 
     match key with
     | Some k -> cenv.argInfoCache.[k] <- argInfo
     | None -> ()
 
     // Set freshly computed attribs in case they are different in the cache
-    argInfo.Attribs <- attribs
+    argInfo.Attribs <- WellKnownValAttribs.Create(attribs)
 
     argInfo
 
@@ -6545,7 +6545,7 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
                  if infos.Length = vspecs.Length then
                     (vspecs, infos) ||> List.iter2 (fun v argInfo ->
                         v.SetArgReprInfoForDisplay (Some argInfo)
-                        let inlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute argInfo.Attribs
+                        let inlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute (argInfo.Attribs.AsList())
                         if inlineIfLambda then
                             v.SetInlineIfLambda())
                  { envinner with eLambdaArgInfos = rest }

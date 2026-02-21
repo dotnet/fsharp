@@ -2050,7 +2050,7 @@ and CheckValInfo cenv env (ValReprInfo(_, args, ret)) =
     ret |> CheckArgInfo cenv env
 
 and CheckArgInfo cenv env (argInfo : ArgReprInfo)  =
-    CheckAttribs cenv env argInfo.Attribs
+    CheckAttribs cenv env (argInfo.Attribs.AsList())
 
 and CheckValSpecAux permitByRefLike cenv env (v: Val) onInnerByrefError =
     v.Attribs |> CheckAttribs cenv env

@@ -3720,11 +3720,11 @@ module EstablishTypeDefinitionCores =
                                             // and needs wrapping to int option.
                                             // Explicit [<OptionalArgument>] path: string option already has wrapped type.
                                             let ty =
-                                              if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
+                                              if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute (argInfo.Attribs.AsList()) then
                                                   if isOptionTy g ty || isValueOptionTy g ty then
                                                       ty
                                                   else
-                                                      match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
+                                                      match TryFindFSharpAttribute g g.attrib_StructAttribute (argInfo.Attribs.AsList()) with
                                                       | Some (Attrib(range=m)) ->
                                                           checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
                                                           mkValueOptionTy g ty
@@ -3735,7 +3735,7 @@ module EstablishTypeDefinitionCores =
                                             // Extract parameter attributes including optional and caller info flags
                                             // This ensures delegates have proper metadata for optional parameters
                                             let (ParamAttribs(_, isInArg, isOutArg, optArgInfo, _, _)) = CrackParamAttribsInfo g (ty, argInfo)
-                                            TSlotParam(Option.map textOfId argInfo.Name, ty, isInArg, isOutArg, optArgInfo.IsOptional, argInfo.Attribs)) 
+                                            TSlotParam(Option.map textOfId argInfo.Name, ty, isInArg, isOutArg, optArgInfo.IsOptional, argInfo.Attribs.AsList())) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))
