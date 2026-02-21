@@ -528,7 +528,7 @@ let IsTyconRefUsedForCSharpStyleExtensionMembers g m (tcref: TyconRef) =
     match metadataOfTycon tcref.Deref with
     | ILTypeMetadata(TILObjectReprData(_, _, tdef)) -> tdef.CanContainExtensionMethods
     | _ -> true
-    && isNil(tcref.Typars m) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcref
+    && isNil(tcref.Typars m) && TyconRefHasWellKnownAttribute g WellKnownILAttributes.ExtensionAttribute tcref
 
 /// Checks if the type is used for C# style extension members.
 let IsTypeUsedForCSharpStyleExtensionMembers g m ty =

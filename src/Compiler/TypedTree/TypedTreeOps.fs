@@ -3785,6 +3785,31 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
 
     flags
 
+/// Map a WellKnownILAttributes flag to its WellKnownEntityAttributes equivalent.
+/// Used for hybrid check sites that dispatch on IL vs F# metadata.
+let mapILFlagToEntityFlag (flag: WellKnownILAttributes) : WellKnownEntityAttributes =
+    match flag with
+    | WellKnownILAttributes.IsReadOnlyAttribute -> WellKnownEntityAttributes.IsReadOnlyAttribute
+    | WellKnownILAttributes.IsByRefLikeAttribute -> WellKnownEntityAttributes.IsByRefLikeAttribute
+    | WellKnownILAttributes.ExtensionAttribute -> WellKnownEntityAttributes.ExtensionAttribute
+    | WellKnownILAttributes.AllowNullLiteralAttribute -> WellKnownEntityAttributes.AllowNullLiteralAttribute
+    | WellKnownILAttributes.AutoOpenAttribute -> WellKnownEntityAttributes.AutoOpenAttribute
+    | WellKnownILAttributes.ReflectedDefinitionAttribute -> WellKnownEntityAttributes.ReflectedDefinitionAttribute
+    | WellKnownILAttributes.DefaultMemberAttribute -> WellKnownEntityAttributes.None
+    | WellKnownILAttributes.NoEagerConstraintApplicationAttribute -> WellKnownEntityAttributes.None
+    | _ -> WellKnownEntityAttributes.None
+
+/// Map a WellKnownILAttributes flag to its WellKnownValAttributes equivalent.
+let mapILFlagToValFlag (flag: WellKnownILAttributes) : WellKnownValAttributes =
+    match flag with
+    | WellKnownILAttributes.ExtensionAttribute -> WellKnownValAttributes.ExtensionAttribute
+    | WellKnownILAttributes.ParamArrayAttribute -> WellKnownValAttributes.ParamArrayAttribute
+    | WellKnownILAttributes.CallerMemberNameAttribute -> WellKnownValAttributes.CallerMemberNameAttribute
+    | WellKnownILAttributes.CallerFilePathAttribute -> WellKnownValAttributes.CallerFilePathAttribute
+    | WellKnownILAttributes.CallerLineNumberAttribute -> WellKnownValAttributes.CallerLineNumberAttribute
+    | WellKnownILAttributes.NoEagerConstraintApplicationAttribute -> WellKnownValAttributes.None
+    | _ -> WellKnownValAttributes.None
+
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
 let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes) (entity: Entity) : bool =
     let ea = entity.EntityAttribs
@@ -3963,6 +3988,49 @@ let TyconRefHasAttribute g m attribSpec tcref =
                     (fun _ -> Some ())
         |> Option.isSome
 
+/// Check if a TyconRef has a well-known attribute, handling both IL and F# metadata.
+/// Uses O(1) flag tests on both paths.
+let TyconRefHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownILAttributes) (tcref: TyconRef) : bool =
+    match metadataOfTycon tcref.Deref with
+#if !NO_TYPEPROVIDERS
+    | ProvidedTypeMetadata info ->
+        let provAttribs =
+            info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), tcref.Range)
+
+        let attrFullName =
+            match flag with
+            | WellKnownILAttributes.IsReadOnlyAttribute -> g.attrib_IsReadOnlyAttribute.TypeRef.FullName
+            | WellKnownILAttributes.IsByRefLikeAttribute ->
+                match g.attrib_IsByRefLikeAttribute_opt with
+                | Some attr -> attr.TypeRef.FullName
+                | None -> ""
+            | WellKnownILAttributes.ExtensionAttribute -> g.attrib_ExtensionAttribute.TypeRef.FullName
+            | WellKnownILAttributes.AllowNullLiteralAttribute -> g.attrib_AllowNullLiteralAttribute.TypeRef.FullName
+            | WellKnownILAttributes.AutoOpenAttribute -> g.attrib_AutoOpenAttribute.TypeRef.FullName
+            | WellKnownILAttributes.ReflectedDefinitionAttribute -> g.attrib_ReflectedDefinitionAttribute.TypeRef.FullName
+            | _ -> ""
+
+        if attrFullName = "" then
+            false
+        else
+            provAttribs
+                .PUntaint(
+                    (fun a ->
+                        a
+                            .GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, attrFullName)),
+                    tcref.Range
+                )
+                .IsSome
+#endif
+    | ILTypeMetadata(TILObjectReprData(_, _, tdef)) -> tdef.HasWellKnownAttribute(g, flag)
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        let entityFlag = mapILFlagToEntityFlag flag
+
+        if entityFlag <> WellKnownEntityAttributes.None then
+            EntityHasWellKnownAttribute g entityFlag tcref.Deref
+        else
+            false
+
 let HasDefaultAugmentationAttribute g (tcref: TyconRef) =
     match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
     | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
@@ -4003,14 +4071,15 @@ let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) =
     tyconRefEqOpt g g.system_RuntimeArgumentHandle_tcref tcref
 
 // See RFC FS-1053.md
-let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) = 
+let isByrefLikeTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) = 
+    ignore m
     tcref.CanDeref &&
     match tcref.TryIsByRefLike with 
     | ValueSome res -> res
     | _ -> 
        let res = 
            isByrefTyconRef g tcref ||
-           (isStructTyconRef tcref && TyconRefHasAttributeByName m tname_IsByRefLikeAttribute tcref)
+           (isStructTyconRef tcref && TyconRefHasWellKnownAttribute g WellKnownILAttributes.IsByRefLikeAttribute tcref)
        tcref.SetIsByRefLike res
        res
 
@@ -7361,13 +7430,14 @@ let isRecdOrStructTyconRefAssumedImmutable (g: TcGlobals) (tcref: TyconRef) =
     tyconRefEq g tcref g.decimal_tcr || 
     tyconRefEq g tcref g.date_tcr
 
-let isTyconRefReadOnly g m (tcref: TyconRef) =
+let isTyconRefReadOnly g (m: range) (tcref: TyconRef) =
+    ignore m
     tcref.CanDeref &&
     if
         match tcref.TryIsReadOnly with 
         | ValueSome res -> res
         | _ ->
-            let res = TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
+            let res = TyconRefHasWellKnownAttribute g WellKnownILAttributes.IsReadOnlyAttribute tcref
             tcref.SetIsReadOnly res
             res 
     then true

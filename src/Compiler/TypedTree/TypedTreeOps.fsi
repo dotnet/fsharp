@@ -2399,6 +2399,12 @@ val computeEntityWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownEn
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
 val EntityHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownEntityAttributes -> entity: Entity -> bool
 
+/// Map a WellKnownILAttributes flag to its WellKnownEntityAttributes equivalent.
+val mapILFlagToEntityFlag: flag: WellKnownILAttributes -> WellKnownEntityAttributes
+
+/// Map a WellKnownILAttributes flag to its WellKnownValAttributes equivalent.
+val mapILFlagToValFlag: flag: WellKnownILAttributes -> WellKnownValAttributes
+
 val computeValWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownValAttributes
 
 /// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
@@ -2442,6 +2448,9 @@ val TyconRefHasAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef ->
 
 /// Try to find an attribute with a specific full name on a type definition
 val TyconRefHasAttributeByName: range -> string -> TyconRef -> bool
+
+/// Check if a TyconRef has a well-known attribute, handling both IL and F# metadata with O(1) flag tests.
+val TyconRefHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownILAttributes -> tcref: TyconRef -> bool
 
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
 val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option

@@ -2567,10 +2567,10 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedTypeWithSuffix nm, m))
 
 
-    if TyconRefHasAttributeByName m tname_IsByRefLikeAttribute tcref && not tycon.IsStructOrEnumTycon then
+    if TyconRefHasWellKnownAttribute g WellKnownILAttributes.IsByRefLikeAttribute tcref && not tycon.IsStructOrEnumTycon then
         errorR(Error(FSComp.SR.tcByRefLikeNotStruct(), tycon.Range))
 
-    if TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref && not tycon.IsStructOrEnumTycon then
+    if TyconRefHasWellKnownAttribute g WellKnownILAttributes.IsReadOnlyAttribute tcref && not tycon.IsStructOrEnumTycon then
         errorR(Error(FSComp.SR.tcIsReadOnlyNotStruct(), tycon.Range))
 
     // Considers TFSharpTyconRepr and TFSharpUnionRepr.
