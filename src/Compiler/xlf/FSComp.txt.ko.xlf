@@ -7599,7 +7599,7 @@
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
         <source>No static parameter exists with name '{0}'. Available parameters: {1}.</source>
-        <target state="needs-review-translation">이름이 '{0}'인 정적 매개 변수가 없습니다.</target>
+        <target state="new">No static parameter exists with name '{0}'. Available parameters: {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="etStaticParameterAlreadyHasValue">
@@ -8932,6 +8932,11 @@
         <target state="translated">종속성 관리자 확장 {0}을(를) 로드할 수 없습니다. 메시지: {1}</target>
         <note />
       </trans-unit>
+        <trans-unit id="parsLetBangCannotBeLastInCE">
+          <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
+          <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
+          <note />
+        </trans-unit>
     </body>
   </file>
 </xliff>

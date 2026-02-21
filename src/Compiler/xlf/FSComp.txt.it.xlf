@@ -7599,7 +7599,7 @@
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
         <source>No static parameter exists with name '{0}'. Available parameters: {1}.</source>
-        <target state="needs-review-translation">Non sono presenti parametri statici denominati '{0}'</target>
+        <target state="new">No static parameter exists with name '{0}'. Available parameters: {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="etStaticParameterAlreadyHasValue">
@@ -8932,6 +8932,11 @@
         <target state="translated">Non è stato possibile caricare l'estensione {0} di gestione delle dipendenze. Messaggio: {1}</target>
         <note />
       </trans-unit>
+        <trans-unit id="parsLetBangCannotBeLastInCE">
+          <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
+          <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
+          <note />
+        </trans-unit>
     </body>
   </file>
 </xliff>

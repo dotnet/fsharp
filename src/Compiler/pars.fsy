@@ -4575,6 +4575,8 @@ declExpr:
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
        if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
        
+       errorR(Error(FSComp.SR.parsLetBangCannotBeLastInCE($1 + "!"), rhs parseState 1))
+       
        let mKeyword = rhs parseState 1
        let keyword = if $1 = "let" then SynLeadingKeyword.LetBang mKeyword else SynLeadingKeyword.UseBang mKeyword
        let mEquals = Some(rhs parseState 3)
@@ -4586,6 +4588,26 @@ declExpr:
        
        // Use ImplicitZero as the continuation expression for error recovery
        mkLetBangExpression(mIn, mAll, SynExpr.ImplicitZero m, (pat, returnInfo, $4, [], keyword, mEquals, isUse)) }
+
+  | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders error %prec expr_let
+     { // Error recovery for let!/use! as the final expression in a computation expression
+       let pat, mPat, isInline, isMutable, returnInfo = $2
+       
+       if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       
+       errorR(Error(FSComp.SR.parsLetBangCannotBeLastInCE($1 + "!"), rhs parseState 1))
+       
+       let mKeyword = rhs parseState 1
+       let keyword = if $1 = "let" then SynLeadingKeyword.LetBang mKeyword else SynLeadingKeyword.UseBang mKeyword
+       let mEquals = Some(rhs parseState 3)
+       let mAll = unionRanges mKeyword (rhs parseState 8)
+       let m = $4.Range.EndRange
+       let _, mIn, _ = $5
+       
+       let isUse = ($1 = "use")
+       
+       mkLetBangExpression(mIn, mAll, SynExpr.ImplicitZero m, (pat, returnInfo, $4, $7, keyword, mEquals, isUse)) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo

@@ -1808,3 +1808,4 @@ featureMethodOverloadsCache,"Support for caching method overload resolution resu
 featureImplicitDIMCoverage,"Implicit dispatch slot coverage for default interface member implementations"
 3880,optsLangVersionOutOfSupport,"Language version '%s' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/%s"
 3881,optsUnrecognizedLanguageFeature,"Unrecognized language feature name: '%s'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'."
+3882,parsLetBangCannotBeLastInCE,"'%s' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression."

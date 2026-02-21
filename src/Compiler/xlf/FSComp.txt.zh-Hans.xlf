@@ -7599,7 +7599,7 @@
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
         <source>No static parameter exists with name '{0}'. Available parameters: {1}.</source>
-        <target state="needs-review-translation">不存在名称为“{0}”的静态参数</target>
+        <target state="new">No static parameter exists with name '{0}'. Available parameters: {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="etStaticParameterAlreadyHasValue">
@@ -8932,6 +8932,11 @@
         <target state="translated">无法加载依赖项管理器扩展 {0}。消息: {1}</target>
         <note />
       </trans-unit>
+        <trans-unit id="parsLetBangCannotBeLastInCE">
+          <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
+          <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
+          <note />
+        </trans-unit>
     </body>
   </file>
 </xliff>

@@ -7599,7 +7599,7 @@
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
         <source>No static parameter exists with name '{0}'. Available parameters: {1}.</source>
-        <target state="needs-review-translation">Neexistuje žádný statický parametr s názvem {0}.</target>
+        <target state="new">No static parameter exists with name '{0}'. Available parameters: {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="etStaticParameterAlreadyHasValue">
@@ -8932,6 +8932,11 @@
         <target state="translated">Rozšíření správce závislostí {0} nešlo načíst. Zpráva: {1}</target>
         <note />
       </trans-unit>
+        <trans-unit id="parsLetBangCannotBeLastInCE">
+          <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
+          <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
+          <note />
+        </trans-unit>
     </body>
   </file>
 </xliff>
