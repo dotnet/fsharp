@@ -7598,8 +7598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
-        <source>No static parameter exists with name '{0}'</source>
-        <target state="translated">이름이 '{0}'인 정적 매개 변수가 없습니다.</target>
+        <source>No static parameter exists with name '{0}'. Available parameters: {1}.</source>
+        <target state="needs-review-translation">이름이 '{0}'인 정적 매개 변수가 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="etStaticParameterAlreadyHasValue">

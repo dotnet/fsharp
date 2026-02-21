@@ -1690,7 +1690,7 @@ let ``Test TPProject errors`` () =
          (11, 8, 11, 35, "The static parameter 'pattern1' of the provided type or method 'IsMatch' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'IsMatch<pattern1=...>'.");
          (12, 8, 12, 41, "The static parameter 'pattern1' of the provided type or method 'IsMatch' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'IsMatch<pattern1=...>'.");
          (14, 46, 14, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ");
-         (15, 33, 15, 38, "No static parameter exists with name ''");
+         (15, 33, 15, 38, "No static parameter exists with name ''. Available parameters: pattern1.");
          (16, 40, 16, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ")]
 
 let internal extractToolTipText (ToolTipText(els)) =

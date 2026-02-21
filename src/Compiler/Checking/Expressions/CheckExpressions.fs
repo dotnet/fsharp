@@ -4995,7 +4995,13 @@ and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<Pr
              if staticParameters |> Array.exists (fun sp -> n.idText = sp.PUntaint((fun sp -> sp.Name), n.idRange)) then
                  error (Error(FSComp.SR.etStaticParameterAlreadyHasValue n.idText, n.idRange))
              else
-                 error (Error(FSComp.SR.etNoStaticParameterWithName n.idText, n.idRange))
+                 let availableNames =
+                     staticParameters
+                     |> Array.map (fun sp -> sp.PUntaint((fun sp -> sp.Name), n.idRange))
+                     |> Array.truncate 5
+                     |> String.concat ", "
+
+                 error (Error(FSComp.SR.etNoStaticParameterWithName (n.idText, availableNames), n.idRange))
          | [_] -> ()
          | _ -> error (Error(FSComp.SR.etMultipleStaticParameterWithName n.idText, n.idRange))
 

@@ -7598,8 +7598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
-        <source>No static parameter exists with name '{0}'</source>
-        <target state="translated">Nie istnieje parametr statyczny o nazwie „{0}”</target>
+        <source>No static parameter exists with name '{0}'. Available parameters: {1}.</source>
+        <target state="needs-review-translation">Nie istnieje parametr statyczny o nazwie „{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="etStaticParameterAlreadyHasValue">
