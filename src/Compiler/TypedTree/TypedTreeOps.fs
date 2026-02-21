@@ -4060,17 +4060,20 @@ let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) =
     tyconRefEqOpt g g.system_RuntimeArgumentHandle_tcref tcref
 
 // See RFC FS-1053.md
-let isByrefLikeTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) = 
-    ignore m
-    tcref.CanDeref &&
-    match tcref.TryIsByRefLike with 
-    | ValueSome res -> res
-    | _ -> 
-       let res = 
-           isByrefTyconRef g tcref ||
-           (isStructTyconRef tcref && TyconRefHasWellKnownAttribute g WellKnownILAttributes.IsByRefLikeAttribute tcref)
-       tcref.SetIsByRefLike res
-       res
+// Must use name-based matching (not type-identity) because user code can define
+// its own IsByRefLikeAttribute per RFC FS-1053.
+let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
+    tcref.CanDeref
+    && match tcref.TryIsByRefLike with
+       | ValueSome res -> res
+       | _ ->
+           let res =
+               isByrefTyconRef g tcref
+               || (isStructTyconRef tcref
+                   && TyconRefHasAttributeByName m tname_IsByRefLikeAttribute tcref)
+
+           tcref.SetIsByRefLike res
+           res
 
 let isSpanLikeTyconRef g m tcref =
     isByrefLikeTyconRef g m tcref &&
