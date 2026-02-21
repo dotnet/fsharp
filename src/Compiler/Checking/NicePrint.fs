@@ -1084,7 +1084,7 @@ module PrintTypes =
         let g = denv.g
        
         // Detect an optional argument 
-        let isOptionalArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute (argInfo.Attribs.AsList())
+        let isOptionalArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptionalArgumentAttribute argInfo
 
         match argInfo.Name, isOptionalArg, tryDestOptionTy g ty with 
         // Layout an optional argument 

@@ -863,7 +863,7 @@ let GenFieldSpecForStaticField (isInteractive, g: TcGlobals, ilContainerTy, vspe
 
     let fieldName = vspec.CompiledName g.CompilerGlobalState
 
-    if HasFSharpAttribute g g.attrib_LiteralAttribute vspec.Attribs then
+    if ValHasWellKnownAttribute g WellKnownValAttributes.LiteralAttribute vspec then
         mkILFieldSpecInTy (ilContainerTy, fieldName, ilTy)
     elif isInteractive then
         mkILFieldSpecInTy (ilContainerTy, CompilerGeneratedName fieldName, ilTy)
@@ -9258,7 +9258,7 @@ and GenMethodForBinding
         let eenvForMeth =
             if
                 eenvForMeth.initLocals
-                && HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute v.Attribs
+                && ValHasWellKnownAttribute g WellKnownValAttributes.SkipLocalsInitAttribute v
             then
                 { eenvForMeth with initLocals = false }
             else
@@ -10361,7 +10361,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
                 cloc = CompLocForFixedModule cenv.options.fragName qname.Text mspec
                 initLocals =
                     eenv.initLocals
-                    && not (HasFSharpAttribute cenv.g cenv.g.attrib_SkipLocalsInitAttribute mspec.Attribs)
+                    && not (EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.SkipLocalsInitAttribute mspec)
             }
 
         // Create the class to hold the contents of this module. No class needed if

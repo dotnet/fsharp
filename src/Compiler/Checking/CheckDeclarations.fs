@@ -1406,7 +1406,7 @@ module MutRecBindingChecking =
 
                             // Check to see that local bindings and members don't have the same name and check some other adhoc conditions
                             for bind in binds do
-                                if not isStatic && HasFSharpAttributeOpt g g.attrib_DllImportAttribute bind.Var.Attribs then 
+                                if not isStatic && ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute bind.Var then 
                                     errorR(Error(FSComp.SR.tcDllImportNotAllowed(), bind.Var.Range))
                                     
                                 let nm = bind.Var.DisplayName
@@ -3720,7 +3720,7 @@ module EstablishTypeDefinitionCores =
                                             // and needs wrapping to int option.
                                             // Explicit [<OptionalArgument>] path: string option already has wrapped type.
                                             let ty =
-                                              if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute (argInfo.Attribs.AsList()) then
+                                              if ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptionalArgumentAttribute argInfo then
                                                   if isOptionTy g ty || isValueOptionTy g ty then
                                                       ty
                                                   else

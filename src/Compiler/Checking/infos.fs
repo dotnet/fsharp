@@ -275,15 +275,15 @@ type ParamAttribs = ParamAttribs of isParamArrayArg: bool * isInArg: bool * isOu
 
 let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
     let attribs = argInfo.Attribs.AsList()
-    let isParamArrayArg = HasFSharpAttribute g g.attrib_ParamArrayAttribute attribs
+    let isParamArrayArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ParamArrayAttribute argInfo
     let reflArgInfo =
         match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute attribs  with
         | Some b -> ReflectedArgInfo.Quote b
         | None -> ReflectedArgInfo.None
-    let isOutArg = (HasFSharpAttribute g g.attrib_OutAttribute attribs && isByrefTy g ty) || isOutByrefTy g ty
-    let isInArg = (HasFSharpAttribute g g.attrib_InAttribute attribs && isByrefTy g ty) || isInByrefTy g ty
-    let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute attribs
-    let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute attribs
+    let isOutArg = (ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OutAttribute argInfo && isByrefTy g ty) || isOutByrefTy g ty
+    let isInArg = (ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InAttribute argInfo && isByrefTy g ty) || isInByrefTy g ty
+    let isCalleeSideOptArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptionalArgumentAttribute argInfo
+    let isCallerSideOptArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptionalAttribute argInfo
     let optArgInfo =
         if isCalleeSideOptArg then
             CalleeSide
@@ -311,9 +311,9 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
                     NotOptional
         else NotOptional
 
-    let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute attribs
-    let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute attribs
-    let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute attribs
+    let isCallerLineNumberArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.CallerLineNumberAttribute argInfo
+    let isCallerFilePathArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.CallerFilePathAttribute argInfo
+    let isCallerMemberNameArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.CallerMemberNameAttribute argInfo
 
     let callerInfo =
         match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with

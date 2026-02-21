@@ -2832,7 +2832,7 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
                       match instantiationInfoOpt with
                       // No explicit instantiation (the normal case)
                       | None ->
-                          if HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute v.Attribs then
+                          if ValHasWellKnownAttribute g WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute v then
                                errorR(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(v.DisplayName), m))
 
                           match valRecInfo with
@@ -6545,7 +6545,7 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
                  if infos.Length = vspecs.Length then
                     (vspecs, infos) ||> List.iter2 (fun v argInfo ->
                         v.SetArgReprInfoForDisplay (Some argInfo)
-                        let inlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute (argInfo.Attribs.AsList())
+                        let inlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute argInfo
                         if inlineIfLambda then
                             v.SetInlineIfLambda())
                  { envinner with eLambdaArgInfos = rest }
@@ -11121,14 +11121,16 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
             retAttribs, valAttribs, valSynData
 
-        let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute valAttribs
+        let valAttribFlags = computeValWellKnownFlags g valAttribs
+
+        let isVolatile = valAttribFlags &&& WellKnownValAttributes.VolatileFieldAttribute <> WellKnownValAttributes.None
         let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable g valAttribs mBinding
 
         let argAttribs =
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter false))
 
         // Assert the return type of an active pattern. A [<return:Struct>] attribute may be used on a partial active pattern.
-        let isStructRetTy = HasFSharpAttribute g g.attrib_StructAttribute retAttribs
+        let isStructRetTy = computeValWellKnownFlags g retAttribs &&& WellKnownValAttributes.StructAttribute <> WellKnownValAttributes.None
 
         let argAndRetAttribs = ArgAndRetAttribs(argAttribs, retAttribs)
 
@@ -11145,7 +11147,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 | _ -> false
             | _ -> false
 
-        if HasFSharpAttribute g g.attrib_DefaultValueAttribute valAttribs && not isZeroMethod then
+        if valAttribFlags &&& WellKnownValAttributes.DefaultValueAttribute <> WellKnownValAttributes.None && not isZeroMethod then
             errorR(Error(FSComp.SR.tcDefaultValueAttributeRequiresVal(), mBinding))
 
         let isThreadStatic = isThreadOrContextStatic g valAttribs
@@ -11163,13 +11165,13 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             errorR(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
         if (not declKind.CanBeDllImport || (match memberFlagsOpt with Some memberFlags -> memberFlags.IsInstance | _ -> false)) &&
-            HasFSharpAttributeOpt g g.attrib_DllImportAttribute valAttribs then
+            valAttribFlags &&& WellKnownValAttributes.DllImportAttribute <> WellKnownValAttributes.None then
             errorR(Error(FSComp.SR.tcDllImportNotAllowed(), mBinding))
 
-        if Option.isNone memberFlagsOpt && HasFSharpAttribute g g.attrib_ConditionalAttribute valAttribs then
+        if Option.isNone memberFlagsOpt && valAttribFlags &&& WellKnownValAttributes.ConditionalAttribute <> WellKnownValAttributes.None then
             errorR(Error(FSComp.SR.tcConditionalAttributeRequiresMembers(), mBinding))
 
-        if HasFSharpAttribute g g.attrib_EntryPointAttribute valAttribs then
+        if valAttribFlags &&& WellKnownValAttributes.EntryPointAttribute <> WellKnownValAttributes.None then
             if Option.isSome memberFlagsOpt then
                 errorR(Error(FSComp.SR.tcEntryPointAttributeRequiresFunctionInModule(), mBinding))
             else

@@ -2181,10 +2181,10 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             [ for argTys in argTysl do 
                  yield 
                    [ for argTy, argInfo in argTys do 
-                        let isParamArrayArg = HasFSharpAttribute cenv.g cenv.g.attrib_ParamArrayAttribute (argInfo.Attribs.AsList())
-                        let isInArg = HasFSharpAttribute cenv.g cenv.g.attrib_InAttribute (argInfo.Attribs.AsList()) && isByrefTy cenv.g argTy
-                        let isOutArg = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute (argInfo.Attribs.AsList()) && isByrefTy cenv.g argTy
-                        let isOptionalArg = HasFSharpAttribute cenv.g cenv.g.attrib_OptionalArgumentAttribute (argInfo.Attribs.AsList())
+                        let isParamArrayArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.ParamArrayAttribute argInfo
+                        let isInArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.InAttribute argInfo && isByrefTy cenv.g argTy
+                        let isOutArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.OutAttribute argInfo && isByrefTy cenv.g argTy
+                        let isOptionalArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.OptionalArgumentAttribute argInfo
                         let m =
                             match argInfo.Name with
                             | Some v -> v.idRange

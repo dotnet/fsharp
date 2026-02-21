@@ -314,8 +314,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                    warning(ArgumentsInSigAndImplMismatch(sname, iname))
                               | _ -> ()
                               
-                              let sigHasInlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute (sigArgInfo.Attribs.AsList())
-                              let implHasInlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute (implArgInfo.Attribs.AsList())
+                              let sigHasInlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute sigArgInfo
+                              let implHasInlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute implArgInfo
                               let m = 
                                   match implArgInfo.Name with 
                                   | Some iname-> iname.idRange

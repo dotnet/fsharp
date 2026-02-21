@@ -3875,6 +3875,17 @@ let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAtt
 
     flags
 
+/// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
+let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (argInfo: ArgReprInfo) : bool =
+    let wa = argInfo.Attribs
+
+    if wa.Flags &&& WellKnownValAttributes.NotComputed <> WellKnownValAttributes.None then
+        let flags = computeValWellKnownFlags g (wa.AsList())
+        argInfo.Attribs <- WellKnownValAttribs.CreateWithFlags(wa.AsList(), flags)
+        flags &&& flag <> WellKnownValAttributes.None
+    else
+        wa.HasWellKnownAttribute(flag)
+
 /// Check if a Val has a specific well-known attribute, computing and caching flags if needed.
 let ValHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (v: Val) : bool =
     let va = v.ValAttribs

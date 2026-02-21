@@ -580,7 +580,7 @@ let isCustomOperationProjectionParameter ceenv i (nm: Ident) =
                 | Some argInfos ->
                     i < argInfos.Length
                     && let _, argInfo = List.item i argInfos in
-                       HasFSharpAttribute ceenv.cenv.g ceenv.cenv.g.attrib_ProjectionParameterAttribute (argInfo.Attribs.AsList()))
+                       ArgReprInfoHasWellKnownAttribute ceenv.cenv.g WellKnownValAttributes.ProjectionParameterAttribute argInfo)
 
         if List.allEqual vs then
             vs[0]
