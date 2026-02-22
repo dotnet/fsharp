@@ -42,7 +42,6 @@
     <Compile Include="FileInlineDataAttribute.fs" />
     <Compile Include="ReflectionHelper.fs" />
     <Compile Include="SurfaceArea.fs" />
-    <Compile Include="XunitHelpers.fs" />
     <Compile Include="XunitSetup.fs" />
   </ItemGroup>
 
@@ -104,7 +103,7 @@
  <!-- 44: AssemblyName.CodeBase is deprecated but needed for assembly resolution in VS integration tests -->
 </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" GeneratePathProperty="true"  />
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(RoslynForTestingButNotForVSLayer)" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynForTestingButNotForVSLayer)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
