@@ -34,7 +34,7 @@ module FscCliTests =
     /// Original: SOURCE="E_MissingSourceFile02.fs X:\doesnotexist.fs"
     /// Expected: //<Expects id="FS0225" status="error">Source file ['"].+['"] could not be found</Expects>
     /// CLI Test: FSC with non-existent absolute path (Windows-style)
-    [<FactForWINDOWS>]
+    [<FactForDESKTOP>]
     let ``fsc missing source file - absolute Windows path reports FS0225`` () =
         let result = runFscProcess ["X:\\doesnotexist.fs"]
         Assert.NotEqual(0, result.ExitCode)
@@ -54,7 +54,7 @@ module FscCliTests =
     /// Original: SOURCE="E_MissingSourceFile03.fs \\qwerty\y\doesnotexist.fs"
     /// Expected: //<Expects id="FS0225" status="error">Source file ['"].+['"] could not be found</Expects>
     /// CLI Test: FSC with non-existent UNC path
-    [<FactForWINDOWS>]
+    [<FactForDESKTOP>]
     let ``fsc missing source file - UNC path reports FS0225`` () =
         let result = runFscProcess ["\\\\qwerty\\y\\doesnotexist.fs"]
         Assert.NotEqual(0, result.ExitCode)
