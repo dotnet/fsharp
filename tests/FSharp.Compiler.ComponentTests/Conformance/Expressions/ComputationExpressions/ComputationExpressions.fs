@@ -261,3 +261,32 @@ module EmptyBodied =
             |> shouldFail
             |> withErrorCode 789
             |> withErrorMessage "'{ }' is not a valid expression. Records must include at least one field. Empty sequences are specified by using Seq.empty or an empty list '[]'."
+
+module LetUseBangTests =
+
+    [<Fact>]
+    let ``let! isn't allowed outside of Computation Expression`` () =
+        FSharp """
+        let test =
+            let! a = 1 + 1
+            ()
+        """
+        |> asExe
+        |> compile
+        |> withErrorCode 750
+        |> withErrorMessage "This construct may only be used within computation expressions"
+
+    [<Fact>]
+    let ``use! isn't allowed outside of Computation Expression`` () =
+        FSharp """
+        let test =
+            use! a = 
+                { new IDisposable with 
+                    member this.Dispose() = () 
+                }
+            ()
+        """
+        |> asExe
+        |> compile
+        |> withErrorCode 750
+        |> withErrorMessage "This construct may only be used within computation expressions"
