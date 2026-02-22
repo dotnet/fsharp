@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Threading
 open System.Diagnostics
 open System.Diagnostics.Metrics
+open Internal.Utilities.Library
 
 module CacheMetrics =
     let Meter = FSharp.Compiler.Diagnostics.Metrics.Meter
@@ -329,16 +330,13 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         | _ -> ()
 
     let startEvictionProcessor ct =
-        MailboxProcessor.Start(
+        MailboxProcessor2.Start(
             (fun mb ->
-                let rec processNext () =
-                    async {
+                async2 {
+                    while true do
                         let! message = mb.Receive()
                         processEvictionMessage message
-                        return! processNext ()
-                    }
-
-                processNext ()),
+                }),
             ct
         )
 
@@ -350,15 +348,9 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         | EvictionMode.NoEviction -> ignore, ignore
         | EvictionMode.Immediate -> immediate, ignore
         | EvictionMode.MailboxProcessor ->
-            let cts = new CancellationTokenSource()
-            let evictionProcessor = startEvictionProcessor cts.Token
+            let evictionProcessor = startEvictionProcessor CancellationToken.None
             let post = evictionProcessor.Post
-
-            let dispose () =
-                cts.Cancel()
-                cts.Dispose()
-                evictionProcessor.Dispose()
-
+            let dispose () = evictionProcessor.Dispose()
             post, dispose
 
 #if DEBUG

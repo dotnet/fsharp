@@ -1,6 +1,7 @@
 ﻿namespace Internal.Utilities.Library
 
 open System
+open System.Collections.Concurrent
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
@@ -306,11 +307,7 @@ module Async2Implementation =
                     Immediate state
 
             let resumptionInfo awaited =
-                let initialState =
-                    if awaited then
-                        maybeBounce Running
-                    else
-                        Immediate Running
+                let initialState = if awaited then maybeBounce Running else Immediate Running
 
                 { new Async2ResumptionDynamicInfo<'T>(initialResumptionFunc, ResumptionData = initialState) with
                     member info.MoveNext(sm) =
@@ -404,8 +401,7 @@ open Async2Implementation
 module LowPriority =
     type Async2Builder with
         [<NoEagerConstraintApplication>]
-        member inline this.Bind(awaitable, [<InlineIfLambda>] continuation) =
-            bindAwaitable (awaitable, continuation)
+        member inline this.Bind(awaitable, [<InlineIfLambda>] continuation) = bindAwaitable (awaitable, continuation)
 
         [<NoEagerConstraintApplication>]
         member inline this.ReturnFrom(awaitable) = this.Bind(awaitable, this.Return)
@@ -531,7 +527,8 @@ type Async2 =
         async2 {
             let! ct = Async2.CancellationToken
             use lcts = CancellationTokenSource.CreateLinkedTokenSource ct
-            try 
+
+            try
                 let tasks = computations |> Seq.map (Async2.startInThreadPool lcts.Token)
                 return! Task.WhenAll tasks
             with exn ->
@@ -604,3 +601,58 @@ type Async2 =
             finally
                 handle.Unregister(waitHandle) |> ignore
         }
+
+/// An async2-native message processing agent, analogous to MailboxProcessor but using Async2.
+[<Sealed>]
+type MailboxProcessor2<'Msg> private (body: MailboxProcessor2<'Msg> -> Async2<unit>, cts: CancellationTokenSource) =
+
+    let queue = ConcurrentQueue<'Msg>()
+    let semaphore = new SemaphoreSlim(0)
+    let errorEvent = Event<Exception>()
+
+    /// Post a message to the agent's mailbox.
+    member _.Post(msg: 'Msg) =
+        queue.Enqueue(msg)
+        semaphore.Release() |> ignore
+
+    /// Receive the next message from the mailbox, suspending until one arrives.
+    member _.Receive() : Async2<'Msg> =
+        async2 {
+            let! ct = Async2.CancellationToken
+            do! semaphore.WaitAsync(ct)
+
+            match queue.TryDequeue() with
+            | true, msg -> return msg
+            | _ -> return failwith "MailboxProcessor2: queue unexpectedly empty after semaphore signal"
+        }
+
+    [<CLIEvent>]
+    member _.Error = errorEvent.Publish
+
+    member private this.StartBody() =
+        Async2.Start(
+            async2 {
+                try
+                    do! body this
+                with exn ->
+                    errorEvent.Trigger exn
+            },
+            cts.Token
+        )
+
+    member _.Dispose() =
+        cts.Cancel()
+        cts.Dispose()
+
+    interface IDisposable with
+        member this.Dispose() = this.Dispose()
+
+    static member Start(body: MailboxProcessor2<'Msg> -> Async2<unit>, ?cancellationToken: CancellationToken) =
+        let cts =
+            match cancellationToken with
+            | Some ct -> CancellationTokenSource.CreateLinkedTokenSource(ct)
+            | None -> new CancellationTokenSource()
+
+        let mbp = new MailboxProcessor2<'Msg>(body, cts)
+        mbp.StartBody()
+        mbp
