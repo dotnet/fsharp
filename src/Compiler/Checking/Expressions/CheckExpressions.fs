@@ -6004,7 +6004,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.LetOrUse letOrUse ->
         match letOrUse with
-        | { Bindings = [ SynBinding(trivia = { LeadingKeyword = leadingKeyword }) ]} 
+        | { Bindings = SynBinding(trivia = { LeadingKeyword = leadingKeyword }) :: _ } 
             when letOrUse.IsBang ->
             errorR(Error(FSComp.SR.tcConstructRequiresComputationExpression(), leadingKeyword.Range))
         | _ -> ()
