@@ -279,6 +279,8 @@ module LetUseBangTests =
     [<Fact>]
     let ``use! isn't allowed outside of Computation Expression`` () =
         FSharp """
+        open System
+
         let test =
             use! a = 
                 { new IDisposable with 
@@ -290,3 +292,16 @@ module LetUseBangTests =
         |> compile
         |> withErrorCode 750
         |> withErrorMessage "This construct may only be used within computation expressions"
+
+    [<Fact>]
+    let ``When let! is outside of Computation Expression, the analysis lasts`` () =
+        FSharp """
+        let test =
+            let! a = 1 + 1
+            let! b = 1 + 1
+            ()
+        """
+        |> asExe
+        |> compile
+        |> withErrorCodes [750; 750]
+        |> withErrorMessages (List.replicate 2 "This construct may only be used within computation expressions")
