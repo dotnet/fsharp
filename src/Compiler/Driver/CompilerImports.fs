@@ -1455,7 +1455,7 @@ and [<Sealed>] TcImports
         | _ -> None
 
 #if !NO_TYPEPROVIDERS
-    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly MaybeNull>) =
+    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<(ProvidedAssembly | null)>) =
         match assembly with
         | Tainted.Null -> false, None
         | Tainted.NonNull assembly ->
@@ -2593,7 +2593,6 @@ and [<Sealed>] TcImports
                     ilGlobals,
                     fslibCcu,
                     tcConfig.implicitIncludeDir,
-                    tcConfig.mlCompatibility,
                     tcConfig.isInteractive,
                     tcConfig.checkNullness,
                     tcConfig.useReflectionFreeCodeGen,

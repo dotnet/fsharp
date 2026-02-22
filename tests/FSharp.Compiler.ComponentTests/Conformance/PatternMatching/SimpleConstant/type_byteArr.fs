@@ -2,7 +2,7 @@
 // Pattern Matching - Simple Constants
 // Type: byte[]
 // This is a regression test for FSHARP1.0:2036
-#light
+
 
 let isZero x =
     match x with

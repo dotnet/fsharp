@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #TypeTests 
-#light
+
 
 // Verify error associated with doing a dynamic type
 // test on a variable type.

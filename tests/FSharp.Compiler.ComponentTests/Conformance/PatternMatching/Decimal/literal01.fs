@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Pattern match decimal literals
 

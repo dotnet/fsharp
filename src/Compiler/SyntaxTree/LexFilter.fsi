@@ -5,7 +5,6 @@
 module internal FSharp.Compiler.LexFilter
 
 open Internal.Utilities.Text.Lexing
-open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Parser
 
 /// Match the close of '>' of a set of type parameters.
@@ -19,11 +18,7 @@ type LexFilter =
 
     /// Create a lex filter
     new:
-        indentationSyntaxStatus: IndentationAwareSyntaxStatus *
-        compilingFSharpCore: bool *
-        lexer: (LexBuffer<char> -> token) *
-        lexbuf: LexBuffer<char> *
-        debug: bool ->
+        compilingFSharpCore: bool * lexer: (LexBuffer<char> -> token) * lexbuf: LexBuffer<char> * debug: bool ->
             LexFilter
 
     /// The LexBuffer associated with the filter

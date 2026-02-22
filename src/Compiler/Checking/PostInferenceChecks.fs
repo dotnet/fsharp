@@ -294,7 +294,6 @@ let LimitVal cenv (v: Val) limit =
         cenv.limitVals[v.Stamp] <- limit
 
 let BindVal cenv env (v: Val) =
-    //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
 
@@ -315,7 +314,10 @@ let BindVal cenv env (v: Val) =
        not v.HasBeenReferenced &&
        (not v.IsCompiledAsTopLevel || topLevelBindingHiddenBySignatureFile ()) &&
        not (v.DisplayName.StartsWithOrdinal("_")) &&
-       not v.IsCompilerGenerated then
+       not v.IsCompilerGenerated &&
+       // Don't warn for variables with synthetic ranges - these are compiler-generated
+       // rebinding patterns in query/CE translation. See https://github.com/dotnet/fsharp/issues/422
+       not v.Range.IsSynthetic then
 
         if v.IsCtorThisVal then
             warning (Error(FSComp.SR.chkUnusedThisVariable v.DisplayName, v.Range))
@@ -635,6 +637,24 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
     | Expr.Op (TOp.Coerce, _, [f], _) -> mkArgsForAppliedExpr isBaseCall argsl f
     | _  -> []
 
+/// Check if a type argument is an interface with unimplemented static abstract members
+/// when used with a type parameter that has interface constraints.
+/// See: https://github.com/dotnet/fsharp/issues/19184
+let CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers (cenv: cenv) m (typar: Typar) (typeArg: TType) =
+    if cenv.reportErrors then
+        // Only check if the type parameter has interface constraints
+        let hasInterfaceConstraint =
+            typar.Constraints |> List.exists (function
+                | TyparConstraint.CoercesTo(constraintTy, _) -> isInterfaceTy cenv.g constraintTy
+                | _ -> false)
+
+        if hasInterfaceConstraint && isInterfaceTy cenv.g typeArg then
+            match cenv.infoReader.TryFindUnimplementedStaticAbstractMemberOfType m typeArg with
+            | Some memberName ->
+                let interfaceTypeName = NicePrint.minimalStringOfType cenv.denv typeArg
+                errorR(Error(FSComp.SR.chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument(interfaceTypeName, memberName), m))
+            | None -> ()
+
 /// Check types occurring in the TAST.
 let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
     if cenv.reportErrors then
@@ -681,6 +701,15 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
                         if isByrefTyconRef cenv.g tcref2 then
                             errorR(Error(FSComp.SR.chkNoByrefsOfByrefs(NicePrint.minimalStringOfType cenv.denv ty), m))
                 CheckTypesDeep cenv (visitType, None, None, None, None) cenv.g env tinst
+            
+            // Check for interfaces with unimplemented static abstract members used as type arguments
+            // This only applies when the type parameter has an interface constraint - using interfaces
+            // with unconstrained generics (like List<ITest> or Dictionary<K, ITest>) is fine.
+            // See: https://github.com/dotnet/fsharp/issues/19184
+            if tcref.CanDeref then
+                let typars = tcref.Typars m
+                if typars.Length = tinst.Length then
+                    (typars, tinst) ||> List.iter2 (CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m)
 
         let visitTraitSolution info =
             match info with
@@ -1374,6 +1403,20 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
     let env = { env with isInAppExpr = true }
 
     CheckTypeInstNoByrefs cenv env m tyargs
+    
+    // Check for interfaces with unimplemented static abstract members used as type arguments
+    // See: https://github.com/dotnet/fsharp/issues/19184
+    if not tyargs.IsEmpty then
+        match f with
+        | Expr.Val (vref, _, _) ->
+            match vref.TryDeref with
+            | ValueSome v ->
+                let typars = v.Typars
+                if typars.Length = tyargs.Length then
+                    (typars, tyargs) ||> List.iter2 (CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m)
+            | _ -> ()
+        | _ -> ()
+    
     CheckExprNoByrefs cenv env f
 
     let hasReceiver =
@@ -2639,6 +2682,42 @@ let CheckEntityDefns cenv env tycons =
 // check modules
 //--------------------------------------------------------------------------
 
+/// Check for duplicate static extension member names that would cause IL conflicts.
+/// Static extension members for types with the same simple name but different fully qualified names
+/// compile to static methods in the same module IL type without a distinguishing first parameter,
+/// so they can produce duplicate IL method signatures.
+/// Instance extension members are safe because they compile with the extended type as the first
+/// parameter, which differentiates the IL signatures.
+let CheckForDuplicateExtensionMemberNames (cenv: cenv) (vals: Val seq) =
+    if cenv.reportErrors then
+        let staticExtensionMembers = 
+            vals 
+            |> Seq.filter (fun v ->
+                v.IsExtensionMember
+                && v.IsMember
+                && not (v.IsInstanceMember))
+            |> Seq.toList
+
+        if not staticExtensionMembers.IsEmpty then
+            // Group by LogicalName which includes generic arity suffix (e.g., Expr`1 for Expr<'T>)
+            // This matches how types are compiled to IL, so Expr and Expr<'T> are separate groups
+            let groupedByLogicalName =
+                staticExtensionMembers
+                |> List.groupBy (fun v -> v.MemberApparentEntity.LogicalName)
+            
+            for (logicalName, members) in groupedByLogicalName do
+                // Check if members extend types from different namespaces/assemblies
+                let distinctNamespacePaths = 
+                    members 
+                    |> List.map (fun v -> v.MemberApparentEntity.CompilationPath.MangledPath)
+                    |> List.distinct
+                
+                if distinctNamespacePaths.Length > 1 then
+                    // Found extensions for types with same LogicalName but different fully qualified names
+                    // Report error on the second (and subsequent) extensions
+                    for v in members |> List.skip 1 do
+                        errorR(Error(FSComp.SR.tcDuplicateExtensionMemberNames(logicalName), v.Range))
+
 let rec CheckDefnsInModule cenv env mdefs =
     for mdef in mdefs do
         CheckDefnInModule cenv env mdef
@@ -2648,6 +2727,7 @@ and CheckNothingAfterEntryPoint cenv m =
         errorR(Error(FSComp.SR.chkEntryPointUsage(), m))
 
 and CheckDefnInModule cenv env mdef =
+    CheckForDuplicateExtensionMemberNames cenv (allTopLevelValsOfModDef mdef)
     match mdef with
     | TMDefRec(isRec, _opens, tycons, mspecs, m) ->
         CheckNothingAfterEntryPoint cenv m

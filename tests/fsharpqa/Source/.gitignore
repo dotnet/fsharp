@@ -1,9 +1,0 @@
-*test*fsharpqa-errors.env
-*test*fsharpqa-errors.lst
-*test*,*.lst
-
-#ignore all build outputs
-*.exe
-*.dll
-*.pdb
-*.il

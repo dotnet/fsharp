@@ -14,15 +14,10 @@ open FSharp.Test
 
 [<RequireQualifiedAccess>]
 type LangVersion =
-    | V47
-    | V50
-    | V60
-    | V70
     | V80
     | V90
     | Preview
     | Latest
-    | SupportsMl
 
 type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
 
@@ -41,19 +36,15 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         "--targetprofile:" + computedProfile
         if quiet then "--quiet"
         match langVersion with
-        | LangVersion.V47 -> "--langversion:4.7"
-        | LangVersion.V50 | LangVersion.SupportsMl -> "--langversion:5.0"
         | LangVersion.Preview -> "--langversion:preview"
         | LangVersion.Latest -> "--langversion:latest"
-        | LangVersion.V60 -> "--langversion:6.0"
-        | LangVersion.V70 -> "--langversion:7.0"
         | LangVersion.V80 -> "--langversion:8.0"
         | LangVersion.V90 -> "--langversion:9.0"
         |]
 
     let argv = Array.append baseArgs additionalArgs
 
-    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
+    let fsi = FsiEvaluationSession.Create (config, argv, TextReader.Null, stdout, stderr)
 
     member _.ValueBound = fsi.ValueBound
 
@@ -61,6 +52,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     member this.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
         let originalCulture = Thread.CurrentThread.CurrentCulture
+        let originalUICulture = Thread.CurrentThread.CurrentUICulture
         Thread.CurrentThread.CurrentCulture <- Option.defaultValue Globalization.CultureInfo.InvariantCulture desiredCulture
 
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
@@ -70,6 +62,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
                 fsi.EvalInteractionNonThrowing(code, cancellationToken)
 
         Thread.CurrentThread.CurrentCulture <- originalCulture
+        Thread.CurrentThread.CurrentUICulture <- originalUICulture
 
         match ch with
         | Choice1Of2 v -> Ok(v), errors

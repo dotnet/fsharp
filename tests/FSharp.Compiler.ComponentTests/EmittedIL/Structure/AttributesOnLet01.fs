@@ -1,5 +1,5 @@
 // #NoMT #CodeGen #Interop 
-#light
+
 
 // Verify the ability to put attributes on let-bindings
 module AttributesOnLet01

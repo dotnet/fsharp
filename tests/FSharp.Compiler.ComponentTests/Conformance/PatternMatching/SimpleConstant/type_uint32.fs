@@ -1,7 +1,7 @@
 // #Conformance #PatternMatching #Constants 
 // Pattern Matching - Simple Constants
 // Type: uint32
-#light
+
 
 let isZero x =
     match x with

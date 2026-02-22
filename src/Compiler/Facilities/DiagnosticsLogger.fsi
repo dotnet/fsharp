@@ -180,10 +180,12 @@ module BuildPhaseSubcategory =
 
 type PhasedDiagnostic =
     { Exception: exn
-      Phase: BuildPhase }
+      Phase: BuildPhase
+      Severity: FSharpDiagnosticSeverity
+      DefaultSeverity: FSharpDiagnosticSeverity }
 
     /// Construct a phased error
-    static member Create: exn: exn * phase: BuildPhase -> PhasedDiagnostic
+    static member Create: exn: exn * phase: BuildPhase * severity: FSharpDiagnosticSeverity -> PhasedDiagnostic
 
     /// Return true if the textual phase given is from the compile part of the build process.
     /// This set needs to be equal to the set of subcategories that the language service can produce.
@@ -210,7 +212,7 @@ type DiagnosticsLogger =
     member DebugDisplay: unit -> string
 
     /// Emit a diagnostic to the logger
-    abstract DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    abstract DiagnosticSink: diagnostic: PhasedDiagnostic -> unit
 
     /// Get the number of error diagnostics reported
     abstract ErrorCount: int
@@ -237,9 +239,9 @@ type CapturingDiagnosticsLogger =
 
     member CommitDelayedDiagnostics: diagnosticsLogger: DiagnosticsLogger -> unit
 
-    override DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    override DiagnosticSink: diagnostic: PhasedDiagnostic -> unit
 
-    member Diagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+    member Diagnostics: PhasedDiagnostic list
 
     override ErrorCount: int
 
@@ -315,11 +317,7 @@ val informationalWarning: exn: exn -> unit
 
 val simulateError: diagnostic: PhasedDiagnostic -> 'T
 
-val diagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
-
-val errorSink: diagnostic: PhasedDiagnostic -> unit
-
-val warnSink: diagnostic: PhasedDiagnostic -> unit
+val diagnosticSink: diagnostic: PhasedDiagnostic -> unit
 
 val errorRecovery: exn: exn -> m: range -> unit
 
@@ -334,10 +332,6 @@ val libraryOnlyError: m: range -> unit
 val libraryOnlyWarning: m: range -> unit
 
 val deprecatedOperator: m: range -> unit
-
-val mlCompatWarning: s: string -> m: range -> unit
-
-val mlCompatError: s: string -> m: range -> unit
 
 val suppressErrorReporting: f: (unit -> 'T) -> 'T
 

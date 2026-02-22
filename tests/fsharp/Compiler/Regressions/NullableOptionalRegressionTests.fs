@@ -29,7 +29,7 @@ let test () =
     let c1 = OverloadMeths.Map(b1, fun x -> x.child)
     ()
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore

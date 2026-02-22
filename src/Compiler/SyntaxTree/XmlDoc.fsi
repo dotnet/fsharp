@@ -61,6 +61,10 @@ type internal XmlDocCollector =
     /// Check if XmlDoc comments are at invalid positions, and if so report them
     member CheckInvalidXmlDocPositions: unit -> range list
 
+    member SetLastNonCommentTokenLine: int -> unit
+
+    member LastNonCommentTokenLine: int
+
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 [<Sealed>]
 type public PreXmlDoc =

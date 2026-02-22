@@ -2,11 +2,15 @@
 
 module internal FSharp.Compiler.BuildGraph
 
+open System.Globalization
 open Internal.Utilities.Library
-
 /// Contains helpers related to the build graph
 [<RequireQualifiedAccess>]
 module internal GraphNode =
+
+    /// The culture used for async computations in the build graph.
+    /// This is set by SetPreferredUILang and applied to threads running GraphNode computations.
+    val mutable culture: CultureInfo
 
     /// Allows to specify the language for error messages
     val SetPreferredUILang: preferredUiLang: string option -> unit

@@ -7,16 +7,37 @@
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
-  <!-- Do it the same way .NET Interactive does it, when skipping arcade, we should include test SDK explicitly -->
-  <ItemGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.Test.Utilities')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(DISABLE_ARCADE)' == 'true'">
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkVersion)" />
+  <!-- xUnit3 packages for all test projects (except Test.Utilities which is a library) -->
+  <ItemGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(ExcludeFromTestPackageReferences)' != 'true'">
+    <PackageReference Include="xunit.v3.mtp-v2" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.v3.runner.console" Version="$(XunitRunnerConsoleVersion)" />
+    <!-- MTP HangDump extension for hang detection (replaces VSTest blame-hang-timeout) -->
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
   </ItemGroup>
+
+  <!-- Enable Microsoft.Testing.Platform runner for all test projects -->
+  <PropertyGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(ExcludeFromTestPackageReferences)' != 'true'">
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
 
   <PropertyGroup>
     <NoOptimizationData>false</NoOptimizationData>
     <NoInterfaceData>false</NoInterfaceData>
     <CompressMetadata>true</CompressMetadata>
     <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <!-- Test-specific settings for xUnit3/MTP migration -->
+  <!-- Force x64 for .NET Framework test executables to avoid OOM and sizeof issues.
+       Note: OutputType isn't available at props evaluation time, so we apply to all net472 test projects
+       Only apply to actual test runner projects (*.Tests, *.ComponentTests, *.UnitTests), not dynamically generated test fixtures -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472' AND ($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests')))">
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Clear RuntimeIdentifier(s) to avoid conflict with PlatformTarget -->
+    <RuntimeIdentifier />
+    <RuntimeIdentifiers />
+    <!-- Suppress architecture mismatch warnings for test projects that reference x86 compiler tools -->
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
   </PropertyGroup>
 
 </Project>

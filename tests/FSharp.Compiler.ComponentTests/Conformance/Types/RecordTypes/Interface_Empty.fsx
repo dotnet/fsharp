@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Records 
 // Record type may implement interfaces
 // In this case, the interface has no member
-#light
+
 
 type I = interface
          end

@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions 
-#light
+
 
 type Shape =
     | Shape

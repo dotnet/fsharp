@@ -131,6 +131,7 @@ type XmlDocCollector() =
     let mutable savedGrabPoints = Dictionary<pos, struct (int * int * bool)>()
     let mutable currentGrabPointCommentsCount = 0
     let mutable delayedGrabPoint = ValueNone
+    let mutable lastNonCommentTokenLine = 0
 
     member _.AddGrabPoint(pos: pos) =
         if currentGrabPointCommentsCount = 0 then
@@ -186,6 +187,10 @@ type XmlDocCollector() =
 
     member _.HasComments grabPointPos =
         savedGrabPoints.TryGetValue grabPointPos |> fst
+
+    member _.SetLastNonCommentTokenLine(line: int) = lastNonCommentTokenLine <- line
+
+    member _.LastNonCommentTokenLine = lastNonCommentTokenLine
 
     member _.CheckInvalidXmlDocPositions() =
         let comments = ResizeArray<range>(savedLines.Count)

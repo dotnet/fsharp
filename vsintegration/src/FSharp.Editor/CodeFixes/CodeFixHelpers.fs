@@ -139,7 +139,6 @@ module internal CodeFixExtensions =
 
 // This cannot be an extension on the code fix context
 // because the underlying GetFixAllProvider method doesn't take the context in.
-#nowarn "3511" // state machine not statically compilable
 
 [<AutoOpen>]
 module IFSharpCodeFixProviderExtensions =

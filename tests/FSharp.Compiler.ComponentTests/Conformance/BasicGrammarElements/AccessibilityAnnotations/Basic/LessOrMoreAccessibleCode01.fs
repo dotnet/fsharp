@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #Accessibility 
-#light
+
 
 // Regression test for FSHARP1.0:4137 - CTP: Encapsulation/accessibility in F#
 

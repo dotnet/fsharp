@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #Constants 
-#light
+
 
 // Test ability to match a const literal value
 

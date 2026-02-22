@@ -4,7 +4,7 @@
 // when multiple modules declared without declaring namespace
 
 
-#light
+
 
 module MyModule1 =
     let irrelevant = 10

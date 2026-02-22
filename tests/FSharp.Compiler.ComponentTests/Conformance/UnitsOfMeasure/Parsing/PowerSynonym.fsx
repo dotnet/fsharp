@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:4125
 // Units of measure: implicit product + powers in measure type synonyms
 
-#light
+
 
 [<Measure>] type s
 [<Measure>] type m

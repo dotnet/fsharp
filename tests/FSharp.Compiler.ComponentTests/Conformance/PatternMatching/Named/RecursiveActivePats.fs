@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #ActivePatterns 
-#light
+
 
 // Single Case
 let rec (|SCAP|) (x : obj) =

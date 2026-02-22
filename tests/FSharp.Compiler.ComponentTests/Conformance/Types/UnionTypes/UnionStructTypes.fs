@@ -196,7 +196,7 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> withLangVersion70
+        |> withLangVersion80
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -227,7 +227,7 @@ type StructUnion =
     | B of b: string
     | C of string
         """
-        |> withLangVersion70
+        |> withLangVersion80
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -270,7 +270,7 @@ type StructUnion =
     | A of Item: int
     | B of string
         """
-        |> withLangVersion70
+        |> withLangVersion80
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -314,7 +314,7 @@ type StructUnion =
     | A of item: int
     | B of item: string
         """
-        |> withLangVersion70
+        |> withLangVersion80
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -331,7 +331,7 @@ type StructUnion =
     | A of Item: int * string
     | B of string
         """
-        |> withLangVersion70
+        |> withLangVersion80
         |> typecheck
         |> shouldFail
         |> withDiagnostics [

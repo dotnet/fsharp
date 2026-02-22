@@ -3715,17 +3715,27 @@ module EstablishTypeDefinitionCores =
                                   let fparams =
                                       curriedArgInfos.Head
                                       |> List.map (fun (ty, argInfo: ArgReprInfo) ->
+                                            // Handle type wrapping for optional parameters
+                                            // The ?param syntax provides unwrapped type (e.g., int) with OptionalArgumentAttribute
+                                            // and needs wrapping to int option.
+                                            // Explicit [<OptionalArgument>] path: string option already has wrapped type.
                                             let ty =
                                               if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
-                                                  match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
-                                                  | Some (Attrib(range=m)) ->
-                                                      checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
-                                                      mkValueOptionTy g ty
-                                                  | _ ->
-                                                      mkOptionTy g ty            
+                                                  if isOptionTy g ty || isValueOptionTy g ty then
+                                                      ty
+                                                  else
+                                                      match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
+                                                      | Some (Attrib(range=m)) ->
+                                                          checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
+                                                          mkValueOptionTy g ty
+                                                      | _ ->
+                                                          mkOptionTy g ty            
                                               else ty
 
-                                            MakeSlotParam(ty, argInfo)) 
+                                            // Extract parameter attributes including optional and caller info flags
+                                            // This ensures delegates have proper metadata for optional parameters
+                                            let (ParamAttribs(_, isInArg, isOutArg, optArgInfo, _, _)) = CrackParamAttribsInfo g (ty, argInfo)
+                                            TSlotParam(Option.map textOfId argInfo.Name, ty, isInArg, isOutArg, optArgInfo.IsOptional, argInfo.Attribs)) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))
@@ -4259,13 +4269,19 @@ module TcDeclarations =
             let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)
 
+            let checkTyparsForExtension () =
+                if g.checkNullness then
+                    typarsAEquivWithAddedNotNullConstraintsAllowed g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars
+                else
+                    typarsAEquiv g TypeEquivEnv.EmptyIgnoreNulls reqTypars declaredTypars
+
             if tcref.TypeAbbrev.IsSome then
                 ExtrinsicExtensionBinding, tcref, declaredTypars
             elif isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
                 if nReqTypars <> synTypars.Length then 
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                if not (typarsAEquiv g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars) then 
+                if not (checkTyparsForExtension()) then
                     warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
                 IntrinsicExtensionBinding, tcref, reqTypars
@@ -4274,7 +4290,7 @@ module TcDeclarations =
                     errorR(Error(FSComp.SR.tcMembersThatExtendInterfaceMustBePlacedInSeparateModule(), tcref.Range))
                 if nReqTypars <> synTypars.Length then 
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                if not (typarsAEquiv g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars) then 
+                if not (checkTyparsForExtension()) then
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 ExtrinsicExtensionBinding, tcref, declaredTypars
 
@@ -5652,10 +5668,13 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m moduleContents extraAttribs =
                     // the defaults will be propagated to the new type variable. 
                     ApplyTyparDefaultAtPriority denvAtEnd cenv.css priority tp)
 
-        // OK, now apply defaults for any unsolved TyparStaticReq.HeadType 
+        // OK, now apply defaults for any unsolved TyparStaticReq.HeadType or typars with SRTP (MayResolveMember) constraints
+        // Note: We also check for MayResolveMember constraints because some SRTP typars may not have StaticReq set
+        // (this can happen when the typar is involved in an SRTP constraint but isn't the "head type" itself)
         unsolved |> List.iter (fun tp ->     
             if not tp.IsSolved then 
-                if (tp.StaticReq <> TyparStaticReq.None) then
+                let hasSRTPConstraint = tp.Constraints |> List.exists (function TyparConstraint.MayResolveMember _ -> true | _ -> false)
+                if (tp.StaticReq <> TyparStaticReq.None) || hasSRTPConstraint then
                     ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
     with RecoverableException exn ->
         errorRecovery exn m

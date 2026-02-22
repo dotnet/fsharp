@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
-#light
+
 
 // Test that all types exposed in the base class library have 'named params'
 let sl = new System.Collections.Specialized.StringCollection()

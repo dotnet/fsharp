@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Verify the first vertical bar in a pattern match is optional.
 

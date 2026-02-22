@@ -1,7 +1,7 @@
 // #Regression #Conformance #TypesAndModules 
 // Abbreviation: the constraints on the right-hand-side are not sufficient
 
-#light
+
 
 type IA = 
     abstract AbstractMember : int -> int

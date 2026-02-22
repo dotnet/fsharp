@@ -257,8 +257,8 @@ module SynExpr =
 
         match trimmed[0], originalNotation with
         | _, ":=" -> ValueSome ColonEquals
-        | _, ("||" | "or") -> ValueSome(BarBar(OriginalNotation originalNotation))
-        | _, ("&" | "&&") -> ValueSome(AmpAmp(OriginalNotation originalNotation))
+        | _, "||" -> ValueSome(BarBar(OriginalNotation originalNotation))
+        | _, "&&" -> ValueSome(AmpAmp(OriginalNotation originalNotation))
         | '|', _
         | '&', _
         | '<', _

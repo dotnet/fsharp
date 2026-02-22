@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #LetBindings 
-#light
+
 
 let f x y = x * y
 

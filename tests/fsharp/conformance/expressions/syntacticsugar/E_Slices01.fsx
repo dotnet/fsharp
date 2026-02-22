@@ -1,5 +1,5 @@
 // #Regression #Conformance #SyntacticSugar 
-#light
+
 
 // Verify errors related to ambiguous slicing overloads
 

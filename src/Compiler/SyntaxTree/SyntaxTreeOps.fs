@@ -507,18 +507,6 @@ let mkSynDotBrackGet m mDot a b = SynExpr.DotIndexedGet(a, b, mDot, m)
 
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
 
-let mkSynDotParenGet mLhs mDot a b =
-    match b with
-    | SynExpr.Tuple(false, [ _; _ ], _, _) ->
-        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
-        SynExpr.Const(SynConst.Unit, mLhs)
-
-    | SynExpr.Tuple(false, [ _; _; _ ], _, _) ->
-        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
-        SynExpr.Const(SynConst.Unit, mLhs)
-
-    | _ -> mkSynInfix mDot a parenGet b
-
 let mkSynUnit m = SynExpr.Const(SynConst.Unit, m)
 
 let mkSynUnitPat m = SynPat.Const(SynConst.Unit, m)

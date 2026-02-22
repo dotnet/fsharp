@@ -74,10 +74,10 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
 
     override _.ErrorCount = errors
 
-    override x.DiagnosticSink(diagnostic, severity) =
+    override x.DiagnosticSink(diagnostic) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions) with
         | FSharpDiagnosticSeverity.Error ->
             if errors >= tcConfig.maxErrors then
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
@@ -89,9 +89,8 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
 
             match diagnostic.Exception, tcConfigB.simulateException with
             | InternalError(msg, _), None
-            | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (diagnostic.Exception.ToString()))
-            | :? KeyNotFoundException, None ->
-                Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (diagnostic.Exception.ToString()))
+            | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (diagnostic.ToString()))
+            | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (diagnostic.ToString()))
             | _ -> ()
 
         | FSharpDiagnosticSeverity.Hidden -> ()
@@ -318,11 +317,7 @@ module InterfaceFileWriter =
             Printf.fprintf os "%s\n\n" text
 
         let writeHeader filePath os =
-            if
-                filePath <> ""
-                && not (List.exists (FileSystemUtils.checkSuffix filePath) FSharpIndentationAwareSyntaxFileSuffixes)
-            then
-                fprintfn os "#light"
+            if filePath <> "" then
                 fprintfn os ""
 
         let writeAllToSameFile declaredImpls =
@@ -341,16 +336,9 @@ module InterfaceFileWriter =
             if tcConfig.printSignatureFile <> "" then
                 os.Dispose()
 
-        let extensionForFile (filePath: string) =
-            if (List.exists (FileSystemUtils.checkSuffix filePath) FSharpMLCompatFileSuffixes) then
-                ".mli"
-            else
-                ".fsi"
-
         let writeToSeparateFiles (declaredImpls: CheckedImplFile list) =
             for CheckedImplFile(qualifiedNameOfFile = name) as impl in declaredImpls do
-                let fileName =
-                    !!Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
+                let fileName = !!Path.ChangeExtension(name.Range.FileName, ".fsi")
 
                 printfn "writing impl file to %s" fileName
                 use os = FileSystem.OpenFileForWriteShim(fileName, FileMode.Create).GetWriter()

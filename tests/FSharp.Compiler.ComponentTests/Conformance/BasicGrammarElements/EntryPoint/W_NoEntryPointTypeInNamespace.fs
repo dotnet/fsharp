@@ -4,7 +4,7 @@
 // when source file declares type inside namespace
 
 
-#light
+
 namespace MyNamespace1
 
 type T = T of int

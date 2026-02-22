@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-module RealInternalSignature =
+module RealInternalSignatureTests =
 
     let withRealInternalSignature realSig compilation =
         compilation
@@ -720,277 +720,6 @@ module doit =
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
-        |> verifyIL [
-            if realSig = false then
-                // Initialization
-                """
-.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Test
-       extends [runtime]System.Object
-{
-  .field static assembly class FSharp.Compiler.CodeAnalysis.FSharpSource arg@1
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly int32 init@
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public static void  main@() cil managed
-  {
-    .entrypoint
-    
-    .maxstack  8
-    IL_0000:  ldstr      "Hello"
-    IL_0005:  newobj     instance void FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile::.ctor(string)
-    IL_000a:  stsfld     class FSharp.Compiler.CodeAnalysis.FSharpSource '<StartupCode$assembly>'.$Test::arg@1
-    IL_000f:  ldstr      "Main program"
-    IL_0014:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_0019:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_001e:  pop
-    IL_001f:  ret
-  }"""
-
-                // FSharpSource visibility
-                """.class public abstract auto ansi serializable FSharp.Compiler.CodeAnalysis.FSharpSource
-       extends [runtime]System.Object
-{
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.AbstractClassAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-  .method public hidebysig specialname abstract virtual 
-          instance string  get_FilePath() cil managed
-  {
-  } 
-
-  .method public specialname rtspecialname 
-          instance void  .ctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  pop
-    IL_0008:  ret
-  } 
-
-  .method public static class FSharp.Compiler.CodeAnalysis.FSharpSource 
-          CreateFromFile(string filePath) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile::.ctor(string)
-    IL_0006:  ret
-  } 
-
-  .property instance string FilePath()
-  {
-    .get instance string FSharp.Compiler.CodeAnalysis.FSharpSource::get_FilePath()
-  } 
-}"""
-
-                /// FSharpSourceFromFile
-                """.class private auto ansi serializable FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile
-       extends FSharp.Compiler.CodeAnalysis.FSharpSource
-{
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-  .field assembly string filePath
-  .method public specialname rtspecialname 
-          instance void  .ctor(string filePath) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  callvirt   instance void FSharp.Compiler.CodeAnalysis.FSharpSource::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  pop
-    IL_0008:  ldarg.0
-    IL_0009:  ldarg.1
-    IL_000a:  stfld      string FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile::filePath
-    IL_000f:  ret
-  } 
-
-  .method public hidebysig specialname virtual 
-          instance string  get_FilePath() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld      string FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile::filePath
-    IL_0006:  ret
-  } 
-
-  .property instance string FilePath()
-  {
-    .get instance string FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile::get_FilePath()
-  } 
-}"""
-                //doit
-                """.class public abstract auto ansi sealed FSharp.Compiler.CodeAnalysis.doit
-       extends [runtime]System.Object
-{
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method assembly specialname static class FSharp.Compiler.CodeAnalysis.FSharpSource 
-          get_arg@1() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     class FSharp.Compiler.CodeAnalysis.FSharpSource '<StartupCode$assembly>'.$Test::arg@1
-    IL_0005:  ret
-  } 
-
-  .property class FSharp.Compiler.CodeAnalysis.FSharpSource
-          arg@1()
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class FSharp.Compiler.CodeAnalysis.FSharpSource FSharp.Compiler.CodeAnalysis.doit::get_arg@1()
-  } 
-}"""
-        else
-                // Initialization
-                """.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Test
-       extends [runtime]System.Object
-{
-  .field static assembly int32 init@
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public static void  main@() cil managed
-  {
-    .entrypoint
-    
-    .maxstack  8
-    IL_0000:  call       void FSharp.Compiler.CodeAnalysis.doit::staticInitialization@()
-    IL_0005:  ret
-  }"""
-
-                // FSharpSource visibility
-                """.class public abstract auto ansi serializable FSharp.Compiler.CodeAnalysis.FSharpSource
-       extends [runtime]System.Object
-{
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.AbstractClassAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-  .method public hidebysig specialname abstract virtual 
-          instance string  get_FilePath() cil managed
-  {
-  } 
-
-  .method public specialname rtspecialname 
-          instance void  .ctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  pop
-    IL_0008:  ret
-  } 
-
-  .method public static class FSharp.Compiler.CodeAnalysis.FSharpSource 
-          CreateFromFile(string filePath) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile::.ctor(string)
-    IL_0006:  ret
-  } 
-
-  .property instance string FilePath()
-  {
-    .get instance string FSharp.Compiler.CodeAnalysis.FSharpSource::get_FilePath()
-  } 
-}"""
-
-                // FSharpSourceFromFile
-                """.class private auto ansi serializable FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile
-       extends FSharp.Compiler.CodeAnalysis.FSharpSource
-{
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-  .field assembly string filePath
-  .method assembly specialname rtspecialname 
-          instance void  .ctor(string filePath) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  callvirt   instance void FSharp.Compiler.CodeAnalysis.FSharpSource::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  pop
-    IL_0008:  ldarg.0
-    IL_0009:  ldarg.1
-    IL_000a:  stfld      string FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile::filePath
-    IL_000f:  ret
-  } 
-
-  .method public hidebysig specialname virtual 
-          instance string  get_FilePath() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld      string FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile::filePath
-    IL_0006:  ret
-  } 
-
-  .property instance string FilePath()
-  {
-    .get instance string FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile::get_FilePath()
-  } 
-}"""
-
-                // doit
-                """.class public abstract auto ansi sealed FSharp.Compiler.CodeAnalysis.doit
-       extends [runtime]System.Object
-{
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .field static assembly class FSharp.Compiler.CodeAnalysis.FSharpSource arg@1
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .method assembly specialname static class FSharp.Compiler.CodeAnalysis.FSharpSource 
-          get_arg@1() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     class FSharp.Compiler.CodeAnalysis.FSharpSource FSharp.Compiler.CodeAnalysis.doit::arg@1
-    IL_0005:  ret
-  } 
-
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Test::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Test::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
-  .method assembly static void  staticInitialization@() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldstr      "Hello"
-    IL_0005:  newobj     instance void FSharp.Compiler.CodeAnalysis.FSharpSourceFromFile::.ctor(string)
-    IL_000a:  stsfld     class FSharp.Compiler.CodeAnalysis.FSharpSource FSharp.Compiler.CodeAnalysis.doit::arg@1
-    IL_000f:  ldstr      "Main program"
-    IL_0014:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_0019:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_001e:  pop
-    IL_001f:  ret
-  } 
-
-  .property class FSharp.Compiler.CodeAnalysis.FSharpSource
-          arg@1()
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class FSharp.Compiler.CodeAnalysis.FSharpSource FSharp.Compiler.CodeAnalysis.doit::get_arg@1()
-  } 
-}"""
-          ]
-        //|> withStdOutContainsAllInOrder [
-        //    "Main program"
-        //]
 
 
     [<InlineData(true)>]        // RealSig
@@ -1134,7 +863,7 @@ type public FSharpSourceFromFile private (filePath: string) =
 
     override _.FilePath = filePath
 
-    static public MakeOne() =
+    static member public MakeOne() =
         my {
             let! file = new  FSharpSourceFromFile ("Hello, World")
             return file
@@ -1254,8 +983,6 @@ module M =
        0
         """
         |> withRealInternalSignature true
-        |> asLibrary
-        |> compile
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
@@ -1281,7 +1008,5 @@ module M =
        0
         """
         |> withRealInternalSignature false
-        |> asLibrary
-        |> compile
         |> compileExeAndRun
         |> shouldFail

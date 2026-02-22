@@ -1,0 +1,12 @@
+<Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TestFSCorePackageVersion>9.0.100</TestFSCorePackageVersion>
+  </PropertyGroup>
+  <Import Project="FSharpCoreVersionTest.props" />
+  <PropertyGroup>
+    <TestResolvedVersion>9.0.200</TestResolvedVersion>
+    <ExpectedMaxMajor>9</ExpectedMaxMajor>
+    <ExpectWarning>false</ExpectWarning>
+  </PropertyGroup>
+  <Import Project="FSharpCoreVersionTest.targets" />
+</Project>

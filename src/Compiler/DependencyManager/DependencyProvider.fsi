@@ -106,11 +106,11 @@ type DependencyProvider =
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
     member GetRegisteredDependencyManagerHelpText:
-        string seq * string MaybeNull * sdkDirOverride: string option * ResolvingErrorReport -> string[]
+        string seq * (string | null) * sdkDirOverride: string option * ResolvingErrorReport -> string[]
 
     /// Clear the DependencyManager results caches
     member ClearResultsCache:
-        string seq * string MaybeNull * sdkDirOverride: string option * ResolvingErrorReport -> unit
+        string seq * (string | null) * sdkDirOverride: string option * ResolvingErrorReport -> unit
 
     /// Returns a formatted error message for the host to present
     member CreatePackageManagerUnknownError:
@@ -123,7 +123,7 @@ type DependencyProvider =
         packageManagerTextLines: (string * string) seq *
         reportError: ResolvingErrorReport *
         executionTfm: string *
-        [<Optional; DefaultParameterValue(null: string MaybeNull)>] executionRid: string MaybeNull *
+        [<Optional; DefaultParameterValue(null: (string | null))>] executionRid: (string | null) *
         [<Optional; DefaultParameterValue("")>] implicitIncludeDir: string *
         [<Optional; DefaultParameterValue("")>] mainScriptName: string *
         [<Optional; DefaultParameterValue("")>] fileName: string *

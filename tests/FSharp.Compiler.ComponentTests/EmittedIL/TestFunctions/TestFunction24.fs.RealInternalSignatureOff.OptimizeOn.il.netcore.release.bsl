@@ -681,32 +681,31 @@
     
     .maxstack  6
     .locals init (native int V_0,
-             string pinned V_1)
+             char& pinned V_1)
     IL_0000:  nop
     IL_0001:  ldstr      "Hello World"
-    IL_0006:  stloc.1
-    IL_0007:  ldstr      "Hello World"
-    IL_000c:  conv.i
-    IL_000d:  call       int32 [runtime]System.Runtime.CompilerServices.RuntimeHelpers::get_OffsetToStringData()
-    IL_0012:  add
-    IL_0013:  stloc.0
-    IL_0014:  ldloc.0
-    IL_0015:  ldc.i4.0
-    IL_0016:  conv.i
-    IL_0017:  sizeof     [runtime]System.Char
-    IL_001d:  mul
-    IL_001e:  add
-    IL_001f:  ldobj      [runtime]System.Char
-    IL_0024:  ldloc.0
-    IL_0025:  ldc.i4.1
-    IL_0026:  conv.i
-    IL_0027:  sizeof     [runtime]System.Char
-    IL_002d:  mul
-    IL_002e:  add
-    IL_002f:  ldobj      [runtime]System.Char
-    IL_0034:  newobj     instance void class [runtime]System.Tuple`2<char,char>::.ctor(!0,
+    IL_0006:  callvirt   instance char& modreq([runtime]System.Runtime.InteropServices.InAttribute) [runtime]System.String::GetPinnableReference()
+    IL_000b:  stloc.1
+    IL_000c:  ldloc.1
+    IL_000d:  conv.i
+    IL_000e:  stloc.0
+    IL_000f:  ldloc.0
+    IL_0010:  ldc.i4.0
+    IL_0011:  conv.i
+    IL_0012:  sizeof     [runtime]System.Char
+    IL_0018:  mul
+    IL_0019:  add
+    IL_001a:  ldobj      [runtime]System.Char
+    IL_001f:  ldloc.0
+    IL_0020:  ldc.i4.1
+    IL_0021:  conv.i
+    IL_0022:  sizeof     [runtime]System.Char
+    IL_0028:  mul
+    IL_0029:  add
+    IL_002a:  ldobj      [runtime]System.Char
+    IL_002f:  newobj     instance void class [runtime]System.Tuple`2<char,char>::.ctor(!0,
                                                                                               !1)
-    IL_0039:  ret
+    IL_0034:  ret
   } 
 
 } 
@@ -723,7 +722,6 @@
   } 
 
 } 
-
 
 
 

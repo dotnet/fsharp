@@ -4,7 +4,7 @@
 // on structs/records/union while overriding GetHashCode/Equals.
 // Also do verify there's no need in explicit attribute for class types.
 
-#light
+
 
 [<CustomEquality>]
 [<NoComparison>]

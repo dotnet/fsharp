@@ -2192,7 +2192,7 @@ let _ = (2 + 2) { return 5 }
                         match s[0], s with
                         | '*', _ when s.Length > 1 && s[1] = '*' -> "**op"
                         | ':', _
-                        | _, ("$" | "||" | "or" | "&" | "&&") -> s
+                        | _, ("$" | "||" | "&&") -> s
                         | '!', _ -> "!=op"
                         | c, _ -> $"{c}op"
 
@@ -2242,12 +2242,12 @@ let _ = (2 + 2) { return 5 }
                     | OuterLeft(_, ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> fixable pair
                     | OuterLeft(("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> unfixable pair
                     | OuterLeft(_, (":>" | ":?>")) -> fixable pair
-                    | OuterLeft(("&" | "&&"), ("&" | "&&")) -> if pair.Identical then fixable pair else unfixable pair
-                    | OuterLeft(_, ("&" | "&&")) -> fixable pair
-                    | OuterLeft(("&" | "&&"), _) -> unfixable pair
-                    | OuterLeft(("||" | "or"), ("||" | "or")) -> if pair.Identical then fixable pair else unfixable pair
-                    | OuterLeft(_, ("||" | "or")) -> fixable pair
-                    | OuterLeft(("||" | "or"), _) -> unfixable pair
+                    | OuterLeft("&&", "&&") -> fixable pair
+                    | OuterLeft(_, "&&") -> fixable pair
+                    | OuterLeft("&&", _) -> unfixable pair
+                    | OuterLeft("||", "||") -> fixable pair
+                    | OuterLeft(_, "||") -> fixable pair
+                    | OuterLeft("||", _) -> unfixable pair
                     | OuterLeft(":=", ":=") -> fixable pair
 
                     | OuterRight((":?" | ":>" | ":?>"), _) -> invalidPairing
@@ -2267,10 +2267,10 @@ let _ = (2 + 2) { return 5 }
                     | OuterRight(("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> fixable pair
                     | OuterRight(_, ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> unfixable pair
                     | OuterRight(_, (":>" | ":?>")) -> unfixable pair
-                    | OuterRight(("&" | "&&"), _) -> fixable pair
-                    | OuterRight(_, ("&" | "&&")) -> unfixable pair
-                    | OuterRight(("||" | "or"), _) -> fixable pair
-                    | OuterRight(_, ("||" | "or")) -> unfixable pair
+                    | OuterRight("&&", _) -> fixable pair
+                    | OuterRight(_, "&&") -> unfixable pair
+                    | OuterRight("||", _) -> fixable pair
+                    | OuterRight(_, "||") -> unfixable pair
                     | OuterRight(":=", ":=") -> unfixable pair
 
                     | _ -> unfixable pair
@@ -2303,9 +2303,7 @@ let _ = (2 + 2) { return 5 }
                     ":>"
                     ":?>"
                     "&&"
-                    "&"
                     "||"
-                    "or"
                     ":="
                 ]
 

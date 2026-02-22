@@ -1,5 +1,5 @@
 // #Regression #NoMT #Printing 
-#light
+
 
 // Test for FSharp1.0:2581 - FSI should display bound values, not just evaluated expressions (was: FSI should print the value of the last declared value is there is no last expression)
 

@@ -20,55 +20,56 @@ type public Fsc() as this =
 
     inherit ToolTask()
 
-    let mutable baseAddress: string MaybeNull = null
+    let mutable baseAddress: string | null = null
     let mutable capturedArguments: string list = [] // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames: string list = [] // list of individual source filenames, to pass to HostObject Compile()
-    let mutable checksumAlgorithm: string MaybeNull = null
-    let mutable codePage: string MaybeNull = null
+    let mutable checksumAlgorithm: string | null = null
+    let mutable codePage: string | null = null
     let mutable commandLineArgs: ITaskItem list = []
     let mutable compilerTools: ITaskItem[] = [||]
     let mutable compressmetadata: bool option = None
     let mutable debugSymbols = false
-    let mutable debugType: string MaybeNull = null
+    let mutable debugType: string | null = null
     let mutable defineConstants: ITaskItem[] = [||]
     let mutable delaySign: bool = false
     let mutable deterministic: bool = false
-    let mutable disabledWarnings: string MaybeNull = null
-    let mutable documentationFile: string MaybeNull = null
-    let mutable dotnetFscCompilerPath: string MaybeNull = null
+    let mutable disabledWarnings: string | null = null
+    let mutable documentationFile: string | null = null
+    let mutable dotnetFscCompilerPath: string | null = null
     let mutable embedAllSources = false
     let mutable embeddedFiles: ITaskItem[] = [||]
-    let mutable generateInterfaceFile: string MaybeNull = null
+    let mutable generateInterfaceFile: string | null = null
     let mutable highEntropyVA: bool = false
-    let mutable keyFile: string MaybeNull = null
-    let mutable langVersion: string MaybeNull = null
+    let mutable keyFile: string | null = null
+    let mutable langVersion: string | null = null
+    let mutable disabledLanguageFeatures: ITaskItem[] = [||]
     let mutable noFramework = false
     let mutable noInterfaceData = false
     let mutable noOptimizationData = false
     let mutable optimize: bool = true
-    let mutable otherFlags: string MaybeNull = null
-    let mutable outputAssembly: string MaybeNull = null
-    let mutable outputRefAssembly: string MaybeNull = null
+    let mutable otherFlags: string | null = null
+    let mutable outputAssembly: string | null = null
+    let mutable outputRefAssembly: string | null = null
     let mutable parallelCompilation: bool option = None
-    let mutable pathMap: string MaybeNull = null
-    let mutable pdbFile: string MaybeNull = null
-    let mutable platform: string MaybeNull = null
+    let mutable pathMap: string | null = null
+    let mutable pdbFile: string | null = null
+    let mutable platform: string | null = null
     let mutable prefer32bit: bool = false
-    let mutable preferredUILang: string MaybeNull = null
+    let mutable preferredUILang: string | null = null
     let mutable publicSign: bool = false
     let mutable provideCommandLineArgs: bool = false
     let mutable realsig: bool option = None
     let mutable references: ITaskItem[] = [||]
-    let mutable referencePath: string MaybeNull = null
+    let mutable referencePath: string | null = null
     let mutable refOnly: bool = false
     let mutable resources: ITaskItem[] = [||]
     let mutable skipCompilerExecution: bool = false
     let mutable sources: ITaskItem[] = [||]
-    let mutable sourceLink: string MaybeNull = null
-    let mutable subsystemVersion: string MaybeNull = null
+    let mutable sourceLink: string | null = null
+    let mutable subsystemVersion: string | null = null
     let mutable tailcalls: bool = true
-    let mutable targetProfile: string MaybeNull = null
-    let mutable targetType: string MaybeNull = null
+    let mutable targetProfile: string | null = null
+    let mutable targetType: string | null = null
 
     let defaultToolPath =
         let locationOfThisDll =
@@ -83,16 +84,16 @@ type public Fsc() as this =
 
     let mutable treatWarningsAsErrors: bool = false
     let mutable useStandardResourceNames: bool = false
-    let mutable warningsAsErrors: string MaybeNull = null
-    let mutable warningsNotAsErrors: string MaybeNull = null
-    let mutable versionFile: string MaybeNull = null
-    let mutable warningLevel: string MaybeNull = null
-    let mutable warnOn: string MaybeNull = null
-    let mutable win32icon: string MaybeNull = null
-    let mutable win32res: string MaybeNull = null
-    let mutable win32manifest: string MaybeNull = null
+    let mutable warningsAsErrors: string | null = null
+    let mutable warningsNotAsErrors: string | null = null
+    let mutable versionFile: string | null = null
+    let mutable warningLevel: string | null = null
+    let mutable warnOn: string | null = null
+    let mutable win32icon: string | null = null
+    let mutable win32res: string | null = null
+    let mutable win32manifest: string | null = null
     let mutable vserrors: bool = false
-    let mutable vslcid: string MaybeNull = null
+    let mutable vslcid: string | null = null
     let mutable utf8output: bool = false
     let mutable useReflectionFreeCodeGen: bool = false
     let mutable nullable: bool option = None
@@ -100,7 +101,7 @@ type public Fsc() as this =
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
 
-    let splitAndWsTrim (s: string MaybeNull) =
+    let splitAndWsTrim (s: string | null) =
         match s with
         | Null -> [||]
         | NonNull s ->
@@ -130,16 +131,17 @@ type public Fsc() as this =
         // DebugType
         builder.AppendSwitchIfNotNull(
             "--debug:",
-            match debugType with
-            | Null -> null
-            | NonNull debugType ->
-                match debugType.ToUpperInvariant() with
-                | "NONE" -> null
-                | "PORTABLE" -> "portable"
-                | "PDBONLY" -> "pdbonly"
-                | "EMBEDDED" -> "embedded"
-                | "FULL" -> "full"
-                | _ -> null
+            (match debugType with
+             | Null -> null
+             | NonNull debugType ->
+                 match debugType.ToUpperInvariant() with
+                 | "NONE" -> null
+                 | "PORTABLE" -> "portable"
+                 | "PDBONLY" -> "pdbonly"
+                 | "EMBEDDED" -> "embedded"
+                 | "FULL" -> "full"
+                 | _ -> null
+            : string | null)
         )
 
         if embedAllSources then
@@ -151,6 +153,9 @@ type public Fsc() as this =
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
 
         builder.AppendSwitchIfNotNull("--langversion:", langVersion)
+
+        for item in disabledLanguageFeatures do
+            builder.AppendSwitchIfNotNull("--disableLanguageFeature:", item.ItemSpec)
 
         // NoFramework
         if noFramework then
@@ -216,32 +221,34 @@ type public Fsc() as this =
         builder.AppendSwitchIfNotNull(
             "--platform:",
 
-            let ToUpperInvariant (s: string MaybeNull) =
+            let ToUpperInvariant (s: string | null) =
                 match s with
                 | Null -> null
                 | NonNull s -> s.ToUpperInvariant()
 
-            match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
-            | "ANYCPU", true, "EXE"
-            | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
-            | "ANYCPU", _, _ -> "anycpu"
-            | "X86", _, _ -> "x86"
-            | "X64", _, _ -> "x64"
-            | "ARM", _, _ -> "arm"
-            | "ARM64", _, _ -> "arm64"
-            | _ -> null
+            (match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
+             | "ANYCPU", true, "EXE"
+             | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
+             | "ANYCPU", _, _ -> "anycpu"
+             | "X86", _, _ -> "x86"
+             | "X64", _, _ -> "x64"
+             | "ARM", _, _ -> "arm"
+             | "ARM64", _, _ -> "arm64"
+             | _ -> null
+            : string | null)
         )
 
         // checksumAlgorithm
         builder.AppendSwitchIfNotNull(
             "--checksumalgorithm:",
-            match checksumAlgorithm with
-            | Null -> null
-            | NonNull checksumAlgorithm ->
-                match checksumAlgorithm.ToUpperInvariant() with
-                | "SHA1" -> "Sha1"
-                | "SHA256" -> "Sha256"
-                | _ -> null
+            (match checksumAlgorithm with
+             | Null -> null
+             | NonNull checksumAlgorithm ->
+                 match checksumAlgorithm.ToUpperInvariant() with
+                 | "SHA1" -> "Sha1"
+                 | "SHA256" -> "Sha256"
+                 | _ -> null
+            : string | null)
         )
 
         // Resources
@@ -271,15 +278,16 @@ type public Fsc() as this =
         // TargetType
         builder.AppendSwitchIfNotNull(
             "--target:",
-            match targetType with
-            | Null -> null
-            | NonNull targetType ->
-                match targetType.ToUpperInvariant() with
-                | "LIBRARY" -> "library"
-                | "EXE" -> "exe"
-                | "WINEXE" -> "winexe"
-                | "MODULE" -> "module"
-                | _ -> null
+            (match targetType with
+             | Null -> null
+             | NonNull targetType ->
+                 match targetType.ToUpperInvariant() with
+                 | "LIBRARY" -> "library"
+                 | "EXE" -> "exe"
+                 | "WINEXE" -> "winexe"
+                 | "MODULE" -> "module"
+                 | _ -> null
+            : string | null)
         )
 
         // NoWarn
@@ -462,6 +470,10 @@ type public Fsc() as this =
     member _.LangVersion
         with get () = langVersion
         and set (s) = langVersion <- s
+
+    member _.DisabledLanguageFeatures
+        with get () = disabledLanguageFeatures
+        and set (a) = disabledLanguageFeatures <- a
 
     member _.LCID
         with get () = vslcid

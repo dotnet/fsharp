@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Unions 
-#light
+
 
 // Verify additional checks when using a dynamic type cast to ensure
 // Discriminated Unions cannot be null

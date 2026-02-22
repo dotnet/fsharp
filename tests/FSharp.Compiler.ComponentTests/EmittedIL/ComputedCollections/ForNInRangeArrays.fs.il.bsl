@@ -43,6 +43,356 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable sealed nested assembly beforefieldinit f33@47
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field static assembly initonly class assembly/f33@47 @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  tail.
+      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
+      IL_0008:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/f33@47::.ctor()
+      IL_0005:  stsfld     class assembly/f33@47 assembly/f33@47::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f33@47-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class assembly/'f33@47-1' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'f33@47-1'::.ctor()
+      IL_0005:  stsfld     class assembly/'f33@47-1' assembly/'f33@47-1'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit f34@48
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field static assembly initonly class assembly/f34@48 @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  tail.
+      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
+      IL_0008:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/f34@48::.ctor()
+      IL_0005:  stsfld     class assembly/f34@48 assembly/f34@48::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f34@48-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class assembly/'f34@48-1' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'f34@48-1'::.ctor()
+      IL_0005:  stsfld     class assembly/'f34@48-1' assembly/'f34@48-1'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f34@48-2'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field static assembly initonly class assembly/'f34@48-2' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  tail.
+      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
+      IL_0008:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'f34@48-2'::.ctor()
+      IL_0005:  stsfld     class assembly/'f34@48-2' assembly/'f34@48-2'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f34@48-3'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class assembly/'f34@48-3' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'f34@48-3'::.ctor()
+      IL_0005:  stsfld     class assembly/'f34@48-3' assembly/'f34@48-3'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit f35@49
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field static assembly initonly class assembly/f35@49 @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  tail.
+      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
+      IL_0008:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/f35@49::.ctor()
+      IL_0005:  stsfld     class assembly/f35@49 assembly/f35@49::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f35@49-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class assembly/'f35@49-1' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'f35@49-1'::.ctor()
+      IL_0005:  stsfld     class assembly/'f35@49-1' assembly/'f35@49-1'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f35@49-2'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field static assembly initonly class assembly/'f35@49-2' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  tail.
+      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
+      IL_0008:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'f35@49-2'::.ctor()
+      IL_0005:  stsfld     class assembly/'f35@49-2' assembly/'f35@49-2'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f35@49-3'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class assembly/'f35@49-3' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'f35@49-3'::.ctor()
+      IL_0005:  stsfld     class assembly/'f35@49-3' assembly/'f35@49-3'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
   .method public static int32[]  f0(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f) cil managed
   {
     
@@ -3037,6 +3387,418 @@
 
     IL_003a:  ldloc.1
     IL_003b:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Core.Unit[] 
+          f33<a>(int32 start,
+                 int32 finish,
+                 !!a f) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
+                                                                                                                    00 00 00 00 ) 
+    
+    .maxstack  7
+    .locals init (uint64 V_0,
+             uint64 V_1,
+             class [FSharp.Core]Microsoft.FSharp.Core.Unit[] V_2,
+             uint64 V_3,
+             int32 V_4,
+             int32 V_5)
+    IL_0000:  nop
+    IL_0001:  ldarg.1
+    IL_0002:  ldarg.0
+    IL_0003:  bge.s      IL_000a
+
+    IL_0005:  ldc.i4.0
+    IL_0006:  conv.i8
+    IL_0007:  nop
+    IL_0008:  br.s       IL_0012
+
+    IL_000a:  ldarg.1
+    IL_000b:  ldarg.0
+    IL_000c:  sub
+    IL_000d:  conv.i8
+    IL_000e:  ldc.i4.1
+    IL_000f:  conv.i8
+    IL_0010:  add
+    IL_0011:  nop
+    IL_0012:  stloc.0
+    IL_0013:  ldloc.0
+    IL_0014:  stloc.1
+    IL_0015:  ldloc.1
+    IL_0016:  brtrue.s   IL_001e
+
+    IL_0018:  call       !!0[] [runtime]System.Array::Empty<class [FSharp.Core]Microsoft.FSharp.Core.Unit>()
+    IL_001d:  ret
+
+    IL_001e:  ldloc.1
+    IL_001f:  conv.ovf.i.un
+    IL_0020:  newarr     [FSharp.Core]Microsoft.FSharp.Core.Unit
+    IL_0025:  stloc.2
+    IL_0026:  ldc.i4.0
+    IL_0027:  conv.i8
+    IL_0028:  stloc.3
+    IL_0029:  ldarg.0
+    IL_002a:  stloc.s    V_4
+    IL_002c:  br.s       IL_0055
+
+    IL_002e:  ldloc.2
+    IL_002f:  ldloc.3
+    IL_0030:  conv.i
+    IL_0031:  ldloc.s    V_4
+    IL_0033:  stloc.s    V_5
+    IL_0035:  ldsfld     class assembly/f33@47 assembly/f33@47::@_instance
+    IL_003a:  ldsfld     class assembly/'f33@47-1' assembly/'f33@47-1'::@_instance
+    IL_003f:  ldnull
+    IL_0040:  call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::InvokeFast<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,
+                                                                                                                                                                                                                                                                                                                                                !0,
+                                                                                                                                                                                                                                                                                                                                                !1)
+    IL_0045:  stelem     [FSharp.Core]Microsoft.FSharp.Core.Unit
+    IL_004a:  ldloc.s    V_4
+    IL_004c:  ldc.i4.1
+    IL_004d:  add
+    IL_004e:  stloc.s    V_4
+    IL_0050:  ldloc.3
+    IL_0051:  ldc.i4.1
+    IL_0052:  conv.i8
+    IL_0053:  add
+    IL_0054:  stloc.3
+    IL_0055:  ldloc.3
+    IL_0056:  ldloc.0
+    IL_0057:  blt.un.s   IL_002e
+
+    IL_0059:  ldloc.2
+    IL_005a:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Core.Unit[] 
+          f34<a>(int64 start,
+                 int64 finish,
+                 !!a f) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
+                                                                                                                    00 00 00 00 ) 
+    
+    .maxstack  7
+    .locals init (uint64 V_0,
+             bool V_1,
+             uint64 V_2,
+             class [FSharp.Core]Microsoft.FSharp.Core.Unit[] V_3,
+             bool V_4,
+             uint64 V_5,
+             int64 V_6,
+             int64 V_7,
+             uint64 V_8)
+    IL_0000:  nop
+    IL_0001:  ldarg.1
+    IL_0002:  ldarg.0
+    IL_0003:  bge.s      IL_000a
+
+    IL_0005:  ldc.i4.0
+    IL_0006:  conv.i8
+    IL_0007:  nop
+    IL_0008:  br.s       IL_000e
+
+    IL_000a:  ldarg.1
+    IL_000b:  ldarg.0
+    IL_000c:  sub
+    IL_000d:  nop
+    IL_000e:  stloc.0
+    IL_000f:  ldloc.0
+    IL_0010:  ldc.i4.m1
+    IL_0011:  conv.i8
+    IL_0012:  ceq
+    IL_0014:  stloc.1
+    IL_0015:  ldarg.1
+    IL_0016:  ldarg.0
+    IL_0017:  bge.s      IL_001e
+
+    IL_0019:  ldc.i4.0
+    IL_001a:  conv.i8
+    IL_001b:  nop
+    IL_001c:  br.s       IL_0025
+
+    IL_001e:  ldarg.1
+    IL_001f:  ldarg.0
+    IL_0020:  sub
+    IL_0021:  ldc.i4.1
+    IL_0022:  conv.i8
+    IL_0023:  add.ovf.un
+    IL_0024:  nop
+    IL_0025:  stloc.2
+    IL_0026:  ldloc.2
+    IL_0027:  brtrue.s   IL_002f
+
+    IL_0029:  call       !!0[] [runtime]System.Array::Empty<class [FSharp.Core]Microsoft.FSharp.Core.Unit>()
+    IL_002e:  ret
+
+    IL_002f:  ldloc.2
+    IL_0030:  conv.ovf.i.un
+    IL_0031:  newarr     [FSharp.Core]Microsoft.FSharp.Core.Unit
+    IL_0036:  stloc.3
+    IL_0037:  ldloc.1
+    IL_0038:  brfalse.s  IL_0080
+
+    IL_003a:  ldc.i4.1
+    IL_003b:  stloc.s    V_4
+    IL_003d:  ldc.i4.0
+    IL_003e:  conv.i8
+    IL_003f:  stloc.s    V_5
+    IL_0041:  ldarg.0
+    IL_0042:  stloc.s    V_6
+    IL_0044:  br.s       IL_0079
+
+    IL_0046:  ldloc.3
+    IL_0047:  ldloc.s    V_5
+    IL_0049:  conv.i
+    IL_004a:  ldloc.s    V_6
+    IL_004c:  stloc.s    V_7
+    IL_004e:  ldsfld     class assembly/f34@48 assembly/f34@48::@_instance
+    IL_0053:  ldsfld     class assembly/'f34@48-1' assembly/'f34@48-1'::@_instance
+    IL_0058:  ldnull
+    IL_0059:  call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::InvokeFast<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,
+                                                                                                                                                                                                                                                                                                                                                !0,
+                                                                                                                                                                                                                                                                                                                                                !1)
+    IL_005e:  stelem     [FSharp.Core]Microsoft.FSharp.Core.Unit
+    IL_0063:  ldloc.s    V_6
+    IL_0065:  ldc.i4.1
+    IL_0066:  conv.i8
+    IL_0067:  add
+    IL_0068:  stloc.s    V_6
+    IL_006a:  ldloc.s    V_5
+    IL_006c:  ldc.i4.1
+    IL_006d:  conv.i8
+    IL_006e:  add
+    IL_006f:  stloc.s    V_5
+    IL_0071:  ldloc.s    V_5
+    IL_0073:  ldc.i4.0
+    IL_0074:  conv.i8
+    IL_0075:  cgt.un
+    IL_0077:  stloc.s    V_4
+    IL_0079:  ldloc.s    V_4
+    IL_007b:  brtrue.s   IL_0046
+
+    IL_007d:  nop
+    IL_007e:  br.s       IL_00cd
+
+    IL_0080:  ldarg.1
+    IL_0081:  ldarg.0
+    IL_0082:  bge.s      IL_0089
+
+    IL_0084:  ldc.i4.0
+    IL_0085:  conv.i8
+    IL_0086:  nop
+    IL_0087:  br.s       IL_0090
+
+    IL_0089:  ldarg.1
+    IL_008a:  ldarg.0
+    IL_008b:  sub
+    IL_008c:  ldc.i4.1
+    IL_008d:  conv.i8
+    IL_008e:  add.ovf.un
+    IL_008f:  nop
+    IL_0090:  stloc.s    V_5
+    IL_0092:  ldc.i4.0
+    IL_0093:  conv.i8
+    IL_0094:  stloc.s    V_8
+    IL_0096:  ldarg.0
+    IL_0097:  stloc.s    V_6
+    IL_0099:  br.s       IL_00c6
+
+    IL_009b:  ldloc.3
+    IL_009c:  ldloc.s    V_8
+    IL_009e:  conv.i
+    IL_009f:  ldloc.s    V_6
+    IL_00a1:  stloc.s    V_7
+    IL_00a3:  ldsfld     class assembly/'f34@48-2' assembly/'f34@48-2'::@_instance
+    IL_00a8:  ldsfld     class assembly/'f34@48-3' assembly/'f34@48-3'::@_instance
+    IL_00ad:  ldnull
+    IL_00ae:  call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::InvokeFast<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,
+                                                                                                                                                                                                                                                                                                                                                !0,
+                                                                                                                                                                                                                                                                                                                                                !1)
+    IL_00b3:  stelem     [FSharp.Core]Microsoft.FSharp.Core.Unit
+    IL_00b8:  ldloc.s    V_6
+    IL_00ba:  ldc.i4.1
+    IL_00bb:  conv.i8
+    IL_00bc:  add
+    IL_00bd:  stloc.s    V_6
+    IL_00bf:  ldloc.s    V_8
+    IL_00c1:  ldc.i4.1
+    IL_00c2:  conv.i8
+    IL_00c3:  add
+    IL_00c4:  stloc.s    V_8
+    IL_00c6:  ldloc.s    V_8
+    IL_00c8:  ldloc.s    V_5
+    IL_00ca:  blt.un.s   IL_009b
+
+    IL_00cc:  nop
+    IL_00cd:  ldloc.3
+    IL_00ce:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Core.Unit[] 
+          f35<a>(uint64 start,
+                 uint64 finish,
+                 !!a f) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
+                                                                                                                    00 00 00 00 ) 
+    
+    .maxstack  7
+    .locals init (uint64 V_0,
+             bool V_1,
+             uint64 V_2,
+             class [FSharp.Core]Microsoft.FSharp.Core.Unit[] V_3,
+             bool V_4,
+             uint64 V_5,
+             uint64 V_6,
+             uint64 V_7,
+             uint64 V_8)
+    IL_0000:  nop
+    IL_0001:  ldarg.1
+    IL_0002:  ldarg.0
+    IL_0003:  bge.un.s   IL_000a
+
+    IL_0005:  ldc.i4.0
+    IL_0006:  conv.i8
+    IL_0007:  nop
+    IL_0008:  br.s       IL_000e
+
+    IL_000a:  ldarg.1
+    IL_000b:  ldarg.0
+    IL_000c:  sub
+    IL_000d:  nop
+    IL_000e:  stloc.0
+    IL_000f:  ldloc.0
+    IL_0010:  ldc.i4.m1
+    IL_0011:  conv.i8
+    IL_0012:  ceq
+    IL_0014:  stloc.1
+    IL_0015:  ldarg.1
+    IL_0016:  ldarg.0
+    IL_0017:  bge.un.s   IL_001e
+
+    IL_0019:  ldc.i4.0
+    IL_001a:  conv.i8
+    IL_001b:  nop
+    IL_001c:  br.s       IL_0025
+
+    IL_001e:  ldarg.1
+    IL_001f:  ldarg.0
+    IL_0020:  sub
+    IL_0021:  ldc.i4.1
+    IL_0022:  conv.i8
+    IL_0023:  add.ovf.un
+    IL_0024:  nop
+    IL_0025:  stloc.2
+    IL_0026:  ldloc.2
+    IL_0027:  brtrue.s   IL_002f
+
+    IL_0029:  call       !!0[] [runtime]System.Array::Empty<class [FSharp.Core]Microsoft.FSharp.Core.Unit>()
+    IL_002e:  ret
+
+    IL_002f:  ldloc.2
+    IL_0030:  conv.ovf.i.un
+    IL_0031:  newarr     [FSharp.Core]Microsoft.FSharp.Core.Unit
+    IL_0036:  stloc.3
+    IL_0037:  ldloc.1
+    IL_0038:  brfalse.s  IL_0080
+
+    IL_003a:  ldc.i4.1
+    IL_003b:  stloc.s    V_4
+    IL_003d:  ldc.i4.0
+    IL_003e:  conv.i8
+    IL_003f:  stloc.s    V_5
+    IL_0041:  ldarg.0
+    IL_0042:  stloc.s    V_6
+    IL_0044:  br.s       IL_0079
+
+    IL_0046:  ldloc.3
+    IL_0047:  ldloc.s    V_5
+    IL_0049:  conv.i
+    IL_004a:  ldloc.s    V_6
+    IL_004c:  stloc.s    V_7
+    IL_004e:  ldsfld     class assembly/f35@49 assembly/f35@49::@_instance
+    IL_0053:  ldsfld     class assembly/'f35@49-1' assembly/'f35@49-1'::@_instance
+    IL_0058:  ldnull
+    IL_0059:  call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::InvokeFast<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,
+                                                                                                                                                                                                                                                                                                                                                !0,
+                                                                                                                                                                                                                                                                                                                                                !1)
+    IL_005e:  stelem     [FSharp.Core]Microsoft.FSharp.Core.Unit
+    IL_0063:  ldloc.s    V_6
+    IL_0065:  ldc.i4.1
+    IL_0066:  conv.i8
+    IL_0067:  add
+    IL_0068:  stloc.s    V_6
+    IL_006a:  ldloc.s    V_5
+    IL_006c:  ldc.i4.1
+    IL_006d:  conv.i8
+    IL_006e:  add
+    IL_006f:  stloc.s    V_5
+    IL_0071:  ldloc.s    V_5
+    IL_0073:  ldc.i4.0
+    IL_0074:  conv.i8
+    IL_0075:  cgt.un
+    IL_0077:  stloc.s    V_4
+    IL_0079:  ldloc.s    V_4
+    IL_007b:  brtrue.s   IL_0046
+
+    IL_007d:  nop
+    IL_007e:  br.s       IL_00cd
+
+    IL_0080:  ldarg.1
+    IL_0081:  ldarg.0
+    IL_0082:  bge.un.s   IL_0089
+
+    IL_0084:  ldc.i4.0
+    IL_0085:  conv.i8
+    IL_0086:  nop
+    IL_0087:  br.s       IL_0090
+
+    IL_0089:  ldarg.1
+    IL_008a:  ldarg.0
+    IL_008b:  sub
+    IL_008c:  ldc.i4.1
+    IL_008d:  conv.i8
+    IL_008e:  add.ovf.un
+    IL_008f:  nop
+    IL_0090:  stloc.s    V_5
+    IL_0092:  ldc.i4.0
+    IL_0093:  conv.i8
+    IL_0094:  stloc.s    V_6
+    IL_0096:  ldarg.0
+    IL_0097:  stloc.s    V_7
+    IL_0099:  br.s       IL_00c6
+
+    IL_009b:  ldloc.3
+    IL_009c:  ldloc.s    V_6
+    IL_009e:  conv.i
+    IL_009f:  ldloc.s    V_7
+    IL_00a1:  stloc.s    V_8
+    IL_00a3:  ldsfld     class assembly/'f35@49-2' assembly/'f35@49-2'::@_instance
+    IL_00a8:  ldsfld     class assembly/'f35@49-3' assembly/'f35@49-3'::@_instance
+    IL_00ad:  ldnull
+    IL_00ae:  call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::InvokeFast<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,
+                                                                                                                                                                                                                                                                                                                                                !0,
+                                                                                                                                                                                                                                                                                                                                                !1)
+    IL_00b3:  stelem     [FSharp.Core]Microsoft.FSharp.Core.Unit
+    IL_00b8:  ldloc.s    V_7
+    IL_00ba:  ldc.i4.1
+    IL_00bb:  conv.i8
+    IL_00bc:  add
+    IL_00bd:  stloc.s    V_7
+    IL_00bf:  ldloc.s    V_6
+    IL_00c1:  ldc.i4.1
+    IL_00c2:  conv.i8
+    IL_00c3:  add
+    IL_00c4:  stloc.s    V_6
+    IL_00c6:  ldloc.s    V_6
+    IL_00c8:  ldloc.s    V_5
+    IL_00ca:  blt.un.s   IL_009b
+
+    IL_00cc:  nop
+    IL_00cd:  ldloc.3
+    IL_00ce:  ret
   } 
 
 } 

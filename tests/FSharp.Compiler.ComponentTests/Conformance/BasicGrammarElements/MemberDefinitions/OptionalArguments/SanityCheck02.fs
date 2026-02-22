@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments 
-#light
+
 
 // Test optional parameters with prim types, obj types, disc unions, option types, ref types, mutable types, etc.
 

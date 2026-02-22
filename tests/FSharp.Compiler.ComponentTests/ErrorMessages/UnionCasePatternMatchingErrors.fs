@@ -91,7 +91,7 @@ let myVal =
         |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
  
     [<Fact>]
-    let ``Union Pattern discard allowed for union case that takes no data with Lang version 7`` () =
+    let ``Union Pattern discard allowed for union case that takes no data with Lang version preview`` () =
          FSharp """
 module Tests
 type X = X
@@ -101,12 +101,13 @@ let x: X = X
 let myVal =
     match x with
     | X _ -> ()"""
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
     
     [<Fact>]
-    let ``Union function Pattern discard allowed for union case that takes no data with Lang version 7`` () =
+    let ``Union function Pattern discard allowed for union case that takes no data with Lang version preview`` () =
          FSharp """
 module Tests
 type X = X
@@ -116,9 +117,10 @@ let x: X = X
 let myVal =
     function
     | X _ -> ()"""
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
     
     [<Fact>]
     let ``Union function Pattern discard not allowed for union case that takes no data with Lang version preview`` () =
@@ -179,7 +181,7 @@ let myVal =
         |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
     
     [<Fact>]
-    let ``Pattern discard allowed for union case that takes no data with Lang version 7`` () =
+    let ``Pattern discard allowed for union case that takes no data with Lang version preview`` () =
          FSharp """
 module Tests
 type U =
@@ -194,9 +196,10 @@ let myVal =
     | A _ -> 15
     | B (x, _, _) -> 16
     | C _ -> 17"""
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
  
     [<Fact>]
     let ``Grouped Pattern discard not allowed for union case that takes no data with Lang preview`` () =
@@ -248,7 +251,7 @@ let myVal =
         ]
     
     [<Fact>]
-    let ``Multiple pattern discards not allowed for union case that takes no data with Lang 7`` () =
+    let ``Multiple pattern discards not allowed for union case that takes no data with Lang preview2`` () =
          FSharp """
 module Tests
 type U =
@@ -267,9 +270,13 @@ let myVal =
     | A _, D -> 15
     | B (x, _, _), D _ -> 16
     | C _, _ -> 17"""
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3548, Line 16, Col 7, Line 16, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+            (Warning 3548, Line 17, Col 20, Line 17, Col 23, "Pattern discard is not allowed for union case that takes no data.")
+        ]
     
     [<Fact>]
     let ``Multiple function pattern discards is not allowed for union case that takes no data with Lang preview`` () =
@@ -300,7 +307,7 @@ let myVal =
         ]
     
     [<Fact>]
-    let ``Multiple function pattern discards is not allowed for union case that takes no data with Lang 7`` () =
+    let ``Multiple function pattern discards is not allowed for union case that takes no data with Lang preview2`` () =
          FSharp """
 module Tests
 type U =
@@ -320,36 +327,12 @@ let myVal =
     | A _, D -> 15
     | B (x, _, _), D _ -> 16
     | C _, _ -> 17"""
-        |> withLangVersion70
-        |> typecheck
-        |> shouldSucceed
-    
-    [<Theory; FileInlineData("E_UnionCaseTakesNoArguments.fs")>]
-    let ``Pattern named not allowed union case does not take any arguments with Lang 7`` compilation =
-        compilation
-        |> getCompilation
-        |> asFs
-        |> withLangVersion70
-        |> withOptions ["--nowarn:25"]
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 725, Line 8, Col 3, Line 8, Col 9, "This union case does not take arguments");
-            (Error 725, Line 11, Col 3, Line 11, Col 14, "This union case does not take arguments")
-            (Error 725, Line 14, Col 3, Line 14, Col 10, "This union case does not take arguments")
-            (Error 725, Line 17, Col 3, Line 17, Col 12, "This union case does not take arguments")
-            (Error 725, Line 20, Col 3, Line 20, Col 17, "This union case does not take arguments")
-            (Error 725, Line 23, Col 3, Line 23, Col 13, "This union case does not take arguments")
-            (Error 725, Line 26, Col 3, Line 26, Col 14, "This union case does not take arguments")
-            (Error 725, Line 29, Col 3, Line 29, Col 13, "This union case does not take arguments")
-            (Error 725, Line 35, Col 3, Line 35, Col 9, "This union case does not take arguments")
-            (Error 725, Line 38, Col 3, Line 38, Col 14, "This union case does not take arguments")
-            (Error 725, Line 42, Col 3, Line 42, Col 11, "This union case does not take arguments")
-            (Error 725, Line 48, Col 3, Line 48, Col 8, "This union case does not take arguments")
-            (Error 725, Line 51, Col 3, Line 51, Col 7, "This union case does not take arguments")
-            (Error 725, Line 55, Col 25, Line 55, Col 28, "This union case does not take arguments")
-            (Error 725, Line 57, Col 25, Line 57, Col 29, "This union case does not take arguments")
-            (Error 725, Line 59, Col 24, Line 59, Col 32, "This union case does not take arguments")
+            (Warning 3548, Line 17, Col 7, Line 17, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+            (Warning 3548, Line 18, Col 20, Line 18, Col 23, "Pattern discard is not allowed for union case that takes no data.")
         ]
     
     [<Theory; FileInlineData("E_UnionCaseTakesNoArguments.fs")>]
@@ -357,7 +340,7 @@ let myVal =
         compilation
         |> getCompilation
         |> asFs
-        |> withLangVersion80
+        |> withLangVersionPreview
         |> withOptions ["--nowarn:25"]
         |> typecheck
         |> shouldFail

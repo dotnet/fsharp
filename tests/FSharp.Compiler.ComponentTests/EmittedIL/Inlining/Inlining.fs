@@ -229,3 +229,10 @@ printfn $"{(SecondType ()).SecondMethod()}"
         |> compileAndRun
         |> shouldSucceed
 
+
+    // Test empty string pattern optimization in inlining
+    [<Theory; FileInlineData("EmptyStringPattern.fs")>]
+    let ``EmptyStringPattern_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation

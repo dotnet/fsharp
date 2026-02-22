@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Unions 
 // Parentheses are significant in DU definitions
 //<Expects status="success"></Expects>
-#light
+
 
 type T = | C of int * int
          | D of (int * int)

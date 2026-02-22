@@ -2329,14 +2329,20 @@ Microsoft.FSharp.Linq.QueryRunExtensions.LowPriority: T RunQueryAsValue[T](Micro
 Microsoft.FSharp.Linq.QuerySource`2[T,Q]: System.Collections.Generic.IEnumerable`1[T] Source
 Microsoft.FSharp.Linq.QuerySource`2[T,Q]: System.Collections.Generic.IEnumerable`1[T] get_Source()
 Microsoft.FSharp.Linq.QuerySource`2[T,Q]: Void .ctor(System.Collections.Generic.IEnumerable`1[T])
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`1[T1]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`1[T1]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`1[T1]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`1[T1]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`1[T1]: Void .ctor(T1)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: T2 Item2
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: T2 get_Item2()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[T1,T2]: Void .ctor(T1, T2)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T2 Item2
@@ -2344,6 +2350,8 @@ Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T2 get_Item2()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T3 Item3
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: T3 get_Item3()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`3[T1,T2,T3]: Void .ctor(T1, T2, T3)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T2 Item2
@@ -2353,6 +2361,8 @@ Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T3 get_Item
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T4 Item4
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: T4 get_Item4()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`4[T1,T2,T3,T4]: Void .ctor(T1, T2, T3, T4)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T2 Item2
@@ -2364,6 +2374,8 @@ Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T4 get_I
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T5 Item5
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: T5 get_Item5()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`5[T1,T2,T3,T4,T5]: Void .ctor(T1, T2, T3, T4, T5)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T2 Item2
@@ -2377,6 +2389,8 @@ Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T5 ge
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T6 Item6
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: T6 get_Item6()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`6[T1,T2,T3,T4,T5,T6]: Void .ctor(T1, T2, T3, T4, T5, T6)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T2 Item2
@@ -2392,6 +2406,8 @@ Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T6
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T7 Item7
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: T7 get_Item7()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`7[T1,T2,T3,T4,T5,T6,T7]: Void .ctor(T1, T2, T3, T4, T5, T6, T7)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`8[T1,T2,T3,T4,T5,T6,T7,T8]: Boolean Equals(System.Object)
+Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`8[T1,T2,T3,T4,T5,T6,T7,T8]: Int32 GetHashCode()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`8[T1,T2,T3,T4,T5,T6,T7,T8]: T1 Item1
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`8[T1,T2,T3,T4,T5,T6,T7,T8]: T1 get_Item1()
 Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`8[T1,T2,T3,T4,T5,T6,T7,T8]: T2 Item2

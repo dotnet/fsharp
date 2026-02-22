@@ -1,5 +1,5 @@
 // #Conformance #UnitsOfMeasure #ObjectOrientedTypes 
-#light
+
 
 // Test adding static methods and properties to Measure types.
 

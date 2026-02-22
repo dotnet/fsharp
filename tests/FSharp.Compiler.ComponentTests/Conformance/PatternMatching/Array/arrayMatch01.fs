@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #Arrays 
-#light
+
 
 // Verify ability to match against arrays
 

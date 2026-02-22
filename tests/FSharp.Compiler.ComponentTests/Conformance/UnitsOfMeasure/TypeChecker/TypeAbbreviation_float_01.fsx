@@ -3,7 +3,7 @@
 // 
 //<Expects status="success"></Expects>
 
-#light
+
 
 module WithFloat =
     [<Measure>] type A

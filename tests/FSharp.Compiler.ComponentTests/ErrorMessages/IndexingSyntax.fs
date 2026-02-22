@@ -19,7 +19,7 @@ namespace N
         let h () = f[1] // should warn
         """
         |> FSharp
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withResults
@@ -54,7 +54,7 @@ namespace N
             c.MyFunc[42]    // should warn
         """
         |> FSharp
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withResults

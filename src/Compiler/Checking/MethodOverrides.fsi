@@ -114,6 +114,7 @@ module DispatchSlotChecking =
         sink: TcResultsSink *
         isOverallTyAbstract: bool *
         isObjExpr: bool *
+        isExplicitInterfaceImpl: bool *
         reqdTy: TType *
         dispatchSlots: RequiredSlot list *
         availPriorOverrides: OverrideInfo list *

@@ -7,6 +7,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.Caches
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open FSharp.Compiler.CompilerConfig
@@ -30,8 +31,8 @@ module CompileHelpers =
         let diagnosticsLogger =
             { new DiagnosticsLogger("CompileAPI") with
 
-                member _.DiagnosticSink(diag, isError) =
-                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, true, flatErrors, None)) // Suggest names for errors
+                member _.DiagnosticSink(diagnostic) =
+                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diagnostic, true, flatErrors, None)) // Suggest names for errors
 
                 member _.ErrorCount =
                     diagnostics
@@ -641,6 +642,9 @@ type FSharpChecker
     static member ActualCheckFileCount = BackgroundCompiler.ActualCheckFileCount
 
     static member Instance = globalInstance.Force()
+
+    static member internal CreateOverloadCacheMetricsListener() =
+        new CacheMetrics.CacheMetricsListener("overloadResolutionCache")
 
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 

@@ -4,7 +4,7 @@
 // Entry point function does not have to be called 'main'
 //<Expects status="success"></Expects>
 
-#light
+
 
 module M =
     let func (a : string []) = 

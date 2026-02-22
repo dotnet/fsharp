@@ -37,16 +37,11 @@ let (++) x s = x @ [ s ]
 // Some Globals
 //--------------------------------------------------------------------------
 
-let FSharpSigFileSuffixes = [ ".mli"; ".fsi" ]
+let FSharpSigFileSuffixes = [ ".fsi" ]
 
-let FSharpMLCompatFileSuffixes = [ ".mli"; ".ml" ]
-
-let FSharpImplFileSuffixes = [ ".ml"; ".fs"; ".fsscript"; ".fsx" ]
+let FSharpImplFileSuffixes = [ ".fs"; ".fsscript"; ".fsx" ]
 
 let FSharpScriptFileSuffixes = [ ".fsscript"; ".fsx" ]
-
-let FSharpIndentationAwareSyntaxFileSuffixes =
-    [ ".fs"; ".fsscript"; ".fsx"; ".fsi" ]
 
 let FSharpExperimentalFeaturesEnabledAutomatically =
     String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES"))
@@ -467,7 +462,6 @@ type TcConfigBuilder =
         mutable implicitlyReferenceDotNetAssemblies: bool
         mutable resolutionEnvironment: LegacyResolutionEnvironment
         mutable implicitlyResolveAssemblies: bool
-        mutable indentationAwareSyntax: bool option
         mutable conditionalDefines: string list
         mutable loadedSources: (range * string * string) list
         mutable compilerToolPaths: string list
@@ -482,7 +476,6 @@ type TcConfigBuilder =
         mutable clearResultsCache: bool
         mutable embedResources: string list
         mutable diagnosticsOptions: FSharpDiagnosticOptions
-        mutable mlCompatibility: bool
         mutable checkNullness: bool
         mutable checkOverflow: bool
         mutable showReferenceResolutions: bool
@@ -644,6 +637,8 @@ type TcConfigBuilder =
 
         mutable langVersion: LanguageVersion
 
+        mutable disabledLanguageFeatures: Set<LanguageFeature>
+
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
@@ -701,7 +696,6 @@ type TcConfigBuilder =
         // These are all default values, many can be overridden using the command line switch
         {
             primaryAssembly = PrimaryAssembly.Mscorlib
-            indentationAwareSyntax = None
             noFeedback = false
             stackReserveSize = None
             conditionalDefines = []
@@ -725,7 +719,6 @@ type TcConfigBuilder =
             clearResultsCache = false
             subsystemVersion = 4, 0 // per spec for 357994
             useHighEntropyVA = false
-            mlCompatibility = false
             checkNullness = false
             checkOverflow = false
             showReferenceResolutions = false
@@ -836,6 +829,7 @@ type TcConfigBuilder =
             pathMap = PathMap.empty
             applyLineDirectives = true
             langVersion = LanguageVersion.Default
+            disabledLanguageFeatures = Set.empty
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
             reduceMemoryUsage = reduceMemoryUsage
@@ -960,10 +954,6 @@ type TcConfigBuilder =
         match GetWarningNumber(m, WarningDescription.String s, tcConfigB.langVersion, WarningNumberSource.CommandLineOption) with
         | None -> ()
         | Some n ->
-            // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
-            if n = 62 then
-                tcConfigB.mlCompatibility <- true
-
             tcConfigB.diagnosticsOptions <-
                 { tcConfigB.diagnosticsOptions with
                     WarnOff = ListSet.insert (=) n tcConfigB.diagnosticsOptions.WarnOff
@@ -975,10 +965,6 @@ type TcConfigBuilder =
         match GetWarningNumber(m, WarningDescription.String s, tcConfigB.langVersion, WarningNumberSource.CommandLineOption) with
         | None -> ()
         | Some n ->
-            // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
-            if n = 62 then
-                tcConfigB.mlCompatibility <- false
-
             tcConfigB.diagnosticsOptions <-
                 { tcConfigB.diagnosticsOptions with
                     WarnOn = ListSet.insert (=) n tcConfigB.diagnosticsOptions.WarnOn
@@ -1284,7 +1270,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.implicitlyReferenceDotNetAssemblies = data.implicitlyReferenceDotNetAssemblies
     member _.implicitlyResolveAssemblies = data.implicitlyResolveAssemblies
     member _.resolutionEnvironment = data.resolutionEnvironment
-    member _.indentationAwareSyntax = data.indentationAwareSyntax
     member _.conditionalDefines = data.conditionalDefines
     member _.loadedSources = data.loadedSources
     member _.compilerToolPaths = data.compilerToolPaths
@@ -1298,7 +1283,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.clearResultsCache = data.clearResultsCache
     member _.embedResources = data.embedResources
     member _.diagnosticsOptions = data.diagnosticsOptions
-    member _.mlCompatibility = data.mlCompatibility
     member _.checkNullness = data.checkNullness
     member _.checkOverflow = data.checkOverflow
     member _.showReferenceResolutions = data.showReferenceResolutions
@@ -1421,6 +1405,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.CloneToBuilder() =
         { data with
             conditionalDefines = data.conditionalDefines
+            disabledLanguageFeatures = data.disabledLanguageFeatures
         }
 
     member tcConfig.ComputeCanContainEntryPoint(sourceFiles: string list) =
@@ -1428,17 +1413,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     // This call can fail if no CLR is found (this is the path to mscorlib)
     member _.GetTargetFrameworkDirectories() = targetFrameworkDirectories
-
-    member tcConfig.ComputeIndentationAwareSyntaxInitialStatus fileName =
-        use _unwindBuildPhase = UseBuildPhase BuildPhase.Parameter
-
-        let indentationAwareSyntaxOnByDefault =
-            List.exists (FileSystemUtils.checkSuffix fileName) FSharpIndentationAwareSyntaxFileSuffixes
-
-        if indentationAwareSyntaxOnByDefault then
-            (tcConfig.indentationAwareSyntax <> Some false)
-        else
-            (tcConfig.indentationAwareSyntax = Some true)
 
     member tcConfig.GetAvailableLoadedSources() =
         use _unwindBuildPhase = UseBuildPhase BuildPhase.Parameter

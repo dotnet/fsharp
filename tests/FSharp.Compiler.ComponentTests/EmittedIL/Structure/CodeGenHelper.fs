@@ -1,5 +1,5 @@
 // #NoMT #CodeGen #Interop
-#light
+
 
 module CodeGenHelper
 

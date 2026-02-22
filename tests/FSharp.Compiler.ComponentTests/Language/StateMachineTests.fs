@@ -3,8 +3,40 @@
 namespace Language
 
 open Xunit
+open FSharp.Test.Assert
 open FSharp.Test.Compiler
-open FSharp.Test
+
+
+// Inlined helper containing a "if __useResumableCode ..." construct failed to expand correctly,
+// executing the dynmamic branch at runtime even when the state machine was compiled statically.
+// see https://github.com/dotnet/fsharp/issues/19296
+module FailingInlinedHelper =
+    open FSharp.Core.CompilerServices
+    open FSharp.Core.CompilerServices.StateMachineHelpers
+    open System.Runtime.CompilerServices
+
+    let inline MoveOnce(x: byref<'T> when 'T :> IAsyncStateMachine and 'T :> IResumableStateMachine<'Data>) =
+        x.MoveNext()
+        x.Data
+
+    let inline helper x =
+        ResumableCode<int, int>(fun sm ->
+            if __useResumableCode then
+                sm.Data <- x
+                true
+            else
+                failwith "unexpected dynamic branch at runtime")
+
+    #nowarn 3513 // Resumable code invocation.
+    let inline repro x =
+        if __useResumableCode then
+            __stateMachine<int, int>
+                (MoveNextMethodImpl<_>(fun sm -> (helper x).Invoke(&sm) |> ignore))
+                (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+                (AfterCode<_, _>(fun sm -> MoveOnce(&sm)))
+        else
+            failwith "dynamic state machine"
+    #warnon 3513
 
 module StateMachineTests =
 
@@ -20,6 +52,11 @@ module StateMachineTests =
         |> withNoOptimize
         |> withOptions ["--nowarn:3511"]
         |> compileExeAndRun
+
+    [<Fact>]
+    let ``Nested __useResumableCode is expanded correctly`` () =
+        FailingInlinedHelper.repro 42
+        |> shouldEqual 42
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/13067
     let ``Local function with a flexible type``() = 
@@ -181,63 +218,212 @@ module TestStateMachine
 let test = task { return 42 }
 """
         |> compile
-        |> verifyIL [ """
-.method public strict virtual instance void MoveNext() cil managed
-{
-  .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
-  
-  .maxstack  4
-  .locals init (int32 V_0,
-           class [runtime]System.Exception V_1,
-           bool V_2,
-           class [runtime]System.Exception V_3)
-  IL_0000:  ldarg.0
-  IL_0001:  ldfld      int32 TestStateMachine/test@3::ResumptionPoint
-  IL_0006:  stloc.0
-  .try
-  {
-    IL_0007:  ldarg.0
-    IL_0008:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> TestStateMachine/test@3::Data
-    IL_000d:  ldc.i4.s   42
-    IL_000f:  stfld      !0 valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::Result
-    IL_0014:  ldc.i4.1
-    IL_0015:  stloc.2
-    IL_0016:  ldloc.2
-    IL_0017:  brfalse.s  IL_0036
+        |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
 
-    IL_0019:  ldarg.0
-    IL_001a:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> TestStateMachine/test@3::Data
-    IL_001f:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
-    IL_0024:  ldarg.0
-    IL_0025:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> TestStateMachine/test@3::Data
-    IL_002a:  ldfld      !0 valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::Result
-    IL_002f:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::SetResult(!0)
-    IL_0034:  leave.s    IL_0042
+    // The original repro from https://github.com/dotnet/fsharp/pull/14930
+    [<Fact>]
+    let ``Task with for loop over tuples compiles statically`` () =
+        FSharp """
+module TestStateMachine
+let what (f: seq<string * string>) = task {
+    for name, _whatever in f do
+        System.Console.Write name
+}
+    """
+        |> compile
+        |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
 
-    IL_0036:  leave.s    IL_0042
+    // The original repro from https://github.com/dotnet/fsharp/issues/12839#issuecomment-2562121004
+    [<Fact>]
+    let ``Task with for loop over tuples compiles statically 2`` () =
+        FSharp """
+module TestStateMachine
+let test = task {
+    for _ in [ "a", "b" ] do
+        ()
+}
+    """
+        |> compile
+        |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
 
-  }  
-  catch [runtime]System.Object 
-  {
-    IL_0038:  castclass  [runtime]System.Exception
-    IL_003d:  stloc.3
-    IL_003e:  ldloc.3
-    IL_003f:  stloc.1
-    IL_0040:  leave.s    IL_0042
+    // see https://github.com/dotnet/fsharp/pull/14930#issuecomment-1528981395
+    [<Fact>]
+    let ``Task with some anonymous records`` () =
+        FSharp """
+module TestStateMachine
+let bad () = task {
+    let res = {| ResultSet2 = [| {| im = Some 1; lc = 3 |} |] |}
 
-  }  
-  IL_0042:  ldloc.1
-  IL_0043:  stloc.3
-  IL_0044:  ldloc.3
-  IL_0045:  brtrue.s   IL_0048
+    match [| |] with
+    | [| |] ->
+        let c = res.ResultSet2 |> Array.map (fun x -> {| Name = x.lc |})
+        let c = res.ResultSet2 |> Array.map (fun x -> {| Name = x.lc |})
+        let c = res.ResultSet2 |> Array.map (fun x -> {| Name = x.lc |})
+        return Some c
+    | _ ->
+        return None
+}
+"""
+        |> compile
+        |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
 
-  IL_0047:  ret
 
-  IL_0048:  ldarg.0
-  IL_0049:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> TestStateMachine/test@3::Data
-  IL_004e:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
-  IL_0053:  ldloc.3
-  IL_0054:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::SetException(class [netstandard]System.Exception)
-  IL_0059:  ret
-} 
-""" ]
+
+    // repro of https://github.com/dotnet/fsharp/issues/12839
+    [<Fact>]
+    let ``Big record`` () =
+        FSharp """
+module TestStateMachine
+type Foo = { X: int option }
+
+type BigRecord =
+    {
+        a1: string
+        a2: string
+        a3: string
+        a4: string
+        a5: string
+        a6: string
+        a7: string
+        a8: string
+        a9: string
+        a10: string
+        a11: string
+        a12: string
+        a13: string
+        a14: string
+        a15: string
+        a16: string
+        a17: string
+        a18: string
+        a19: string
+        a20: string
+        a21: string
+        a22: string
+        a23: string
+        a24: string
+        a25: string
+        a26: string
+        a27: string
+        a28: string
+        a29: string
+        a30: string
+        a31: string
+        a32: string
+        a33: string
+        a34: string
+        a35: string
+        a36: string // no warning if at least one field removed
+
+        a37Optional: string option
+    }
+
+let testStateMachine (bigRecord: BigRecord) =
+    task {
+        match Some 5 with // no warn if this match removed and only inner one kept
+        | Some _ ->
+            match Unchecked.defaultof<Foo>.X with // no warning if replaced with `match Some 5 with`
+            | Some _ ->
+                let d = { bigRecord with a37Optional = None } // no warning if d renamed as _ or ignore function used
+                ()
+            | None -> ()
+        | _ -> ()
+    }
+"""
+        |> compile
+        |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
+
+
+    [<Fact>] // https://github.com/dotnet/fsharp/issues/12839#issuecomment-1292310944
+    let ``Tasks with a for loop over tuples are statically compilable``() =
+        FSharp """
+module TestProject1
+
+let ret i = task { return i }
+
+let one (f: seq<string * string * int>) = task {
+    let mutable sum = 0
+
+    let! x = ret 1
+    sum <- sum + x
+
+    for name, _whatever, i in f do
+        let! x = ret i
+        sum <- sum + x
+
+        System.Console.Write name
+
+        let! x = ret i
+        sum <- sum + x
+
+    let! x = ret 1
+    sum <- sum + x
+
+    return sum
+}
+
+let two (f: seq<string * string * int>) = task {
+    let mutable sum = 0
+
+    let! x = ret 1
+    sum <- sum + x
+
+    for name, _whatever, i in f do
+        let! x = ret i
+        sum <- sum + x
+
+        System.Console.Write name
+
+    let! x = ret 1
+    sum <- sum + x
+
+    return sum
+}
+
+let three (f: seq<string * string * int>) = task {
+    let mutable sum = 0
+
+    let! x = ret 1
+    sum <- sum + x
+
+    for name, _whatever, i in f do
+        let! x = ret i
+        sum <- sum + x
+
+        System.Console.Write name
+
+    return sum
+}
+
+let four (f: seq<string * int>) = task {
+    let mutable sum = 0
+
+    let! x = ret 5
+    sum <- sum + x
+
+    for name, _i in f do
+        System.Console.Write name
+
+    let! x = ret 1
+    sum <- sum + x
+
+    return sum
+}
+
+if (one [ ("", "", 1); ("", "", 2) ]).Result <> 8 then
+    failwith "unexpected result one"
+if (one []).Result <> 2 then
+    failwith "unexpected result one"
+if (two [ ("", "", 2) ]).Result <> 4 then
+    failwith "unexpected result two"
+if (three [ ("", "", 5) ]).Result <> 6 then
+    failwith "unexpected result three"
+if (four [ ("", 10) ]).Result <> 6 then
+    failwith "unexpected result four"
+"""
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+
+

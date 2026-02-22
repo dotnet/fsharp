@@ -1,5 +1,5 @@
 // #NoMT #CodeGen #Interop 
-#light
+
 
 // Verify events can be added to interfaces
 

@@ -45,6 +45,11 @@ module internal HashingPrimitives =
 
     let (@@) (h1: Hash) (h2: Hash) = combineHash h1 h2
 
+    /// Maximum number of tokens emitted when generating type structure fingerprints.
+    /// Limits memory usage and prevents infinite type loops.
+    [<Literal>]
+    let MaxTokenCount = 256
+
 [<AutoOpen>]
 module internal HashUtilities =
 
@@ -410,7 +415,7 @@ module StructuralUtilities =
 
     type private GenerationContext() =
         member val TyparMap = System.Collections.Generic.Dictionary<Stamp, int>(4)
-        member val Tokens = ResizeArray<TypeToken>(256)
+        member val Tokens = ResizeArray<TypeToken>(MaxTokenCount)
         member val EmitNullness = false with get, set
         member val Stable = true with get, set
 
@@ -440,7 +445,7 @@ module StructuralUtilities =
 
             let out = ctx.Tokens
 
-            if out.Count < 256 then
+            if out.Count < MaxTokenCount then
                 match n.TryEvaluate() with
                 | ValueSome k -> out.Add(TypeToken.Nullness(encodeNullness k))
                 | ValueNone -> out.Add(TypeToken.NullnessUnsolved)
@@ -448,20 +453,20 @@ module StructuralUtilities =
     let inline private emitStamp (ctx: GenerationContext) (stamp: Stamp) =
         let out = ctx.Tokens
 
-        if out.Count < 256 then
+        if out.Count < MaxTokenCount then
             // Emit low 32 bits first
             let lo = int (stamp &&& 0xFFFFFFFFL)
             out.Add(TypeToken.Stamp lo)
             // If high 32 bits are non-zero, emit them as another token
             let hi64 = stamp >>> 32
 
-            if hi64 <> 0L && out.Count < 256 then
+            if hi64 <> 0L && out.Count < MaxTokenCount then
                 out.Add(TypeToken.Stamp(int hi64))
 
     let rec private emitMeasure (ctx: GenerationContext) (m: Measure) =
         let out = ctx.Tokens
 
-        if out.Count >= 256 then
+        if out.Count >= MaxTokenCount then
             ()
         else
             match m with
@@ -475,21 +480,21 @@ module StructuralUtilities =
             | Measure.RationalPower(m1, r) ->
                 emitMeasure ctx m1
 
-                if out.Count < 256 then
+                if out.Count < MaxTokenCount then
                     out.Add(TypeToken.MeasureNumerator(GetNumerator r))
                     out.Add(TypeToken.MeasureDenominator(GetDenominator r))
 
     let rec private emitTType (ctx: GenerationContext) (ty: TType) =
         let out = ctx.Tokens
 
-        if out.Count >= 256 then
+        if out.Count >= MaxTokenCount then
             ()
         else
             match ty with
             | TType_ucase(u, tinst) ->
                 emitStamp ctx u.TyconRef.Stamp
 
-                if out.Count < 256 then
+                if out.Count < MaxTokenCount then
                     out.Add(TypeToken.UCase(hashText u.CaseName))
 
                 for arg in tinst do
@@ -545,7 +550,7 @@ module StructuralUtilities =
                 match r.Solution with
                 | Some ty -> emitTType ctx ty
                 | None ->
-                    if out.Count < 256 then
+                    if out.Count < MaxTokenCount then
                         if r.Rigidity = TyparRigidity.Rigid then
                             out.Add(TypeToken.Rigid typarId)
                         else
@@ -560,7 +565,7 @@ module StructuralUtilities =
         let out = ctx.Tokens
 
         // If the sequence got too long, just drop it, we could be dealing with an infinite type.
-        if out.Count >= 256 then PossiblyInfinite
+        if out.Count >= MaxTokenCount then PossiblyInfinite
         elif not ctx.Stable then Unstable(out.ToArray())
         else Stable(out.ToArray())
 

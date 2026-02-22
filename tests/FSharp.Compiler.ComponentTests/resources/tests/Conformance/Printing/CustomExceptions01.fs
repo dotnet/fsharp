@@ -1,5 +1,5 @@
 // #Regression #NoMT #Printing 
-#light
+
 
 // Test for FSharp1.0:4045 - exception printing adds Exception to name of exn constructor
 // Test for FSharp1.0:4054 - exception printing of constant exceptions adds a unit value (no arguments)

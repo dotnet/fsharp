@@ -5,6 +5,7 @@
     <TargetFrameworks>net9.0</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>3879</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -16,23 +17,19 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <LocalFSharpBuildBinPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/net10.0</LocalFSharpBuildBinPath>    
+    <LocalFSharpBuildBinPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/$(FSharpNetCoreProductTargetFramework)</LocalFSharpBuildBinPath>    
     <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile> 
     <DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</DotnetFscCompilerPath>
     <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>  
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
+    <!-- 
+      Use FSharpTargetsShim to redirect to the locally built targets file.
+      This is how the .NET SDK supports testing against local F# builds.
+      See https://github.com/dotnet/sdk/blob/main/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
+    -->
+    <FSharpTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
   </PropertyGroup>
-  
-  <UsingTask TaskName="GenerateILLinkSubstitutions" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
-  
-  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="AssignTargetPaths">
-    <GenerateILLinkSubstitutions
-      AssemblyName="$(AssemblyName)"
-      IntermediateOutputPath="$(IntermediateOutputPath)">
-      <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
-    </GenerateILLinkSubstitutions>
-  </Target>
 
   <ItemGroup>
     <Compile Include="..\Program.fs" />

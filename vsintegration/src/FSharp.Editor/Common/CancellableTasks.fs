@@ -123,11 +123,9 @@ module CancellableTasks =
         member inline _.Delay
             ([<InlineIfLambda>] generator: unit -> CancellableTaskCode<'TOverall, 'T>)
             : CancellableTaskCode<'TOverall, 'T> =
-            ResumableCode.Delay(fun () ->
-                CancellableTaskCode(fun sm ->
-                    sm.Data.ThrowIfCancellationRequested()
-                    (generator ()).Invoke(&sm)
-                )
+            CancellableTaskCode(fun sm ->
+                sm.Data.ThrowIfCancellationRequested()
+                (generator ()).Invoke(&sm)
             )
 
 

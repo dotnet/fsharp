@@ -1,0 +1,27 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$(TargetsDirectory)\Microsoft.FSharp.NetSdk.targets" />
+
+  <Target Name="Test">
+    <Message Importance="High" Text="Testing: $(MSBuildProjectName)" />
+
+    <!-- Simulate version comparison -->
+    <PropertyGroup Condition="'$(TestResolvedVersion)' != ''">
+      <_TestResolvedMajor>$([System.Version]::Parse('$(TestResolvedVersion.Split('-')[0])').Major)</_TestResolvedMajor>
+      <_TestShouldWarn Condition="$(_TestResolvedMajor) &gt; $(FSharpCoreMaximumMajorVersion)">true</_TestShouldWarn>
+    </PropertyGroup>
+
+    <!-- Assertions -->
+    <Error Condition="'$(ExpectedMaxMajor)' != '' and '$(FSharpCoreMaximumMajorVersion)' != '$(ExpectedMaxMajor)'" 
+           Text="FSharpCoreMaximumMajorVersion: expected '$(ExpectedMaxMajor)' actual '$(FSharpCoreMaximumMajorVersion)'" />
+    
+    <Error Condition="'$(ExpectWarning)' == 'true' and '$(_TestShouldWarn)' != 'true'" 
+           Text="Expected warning but didn't get one" />
+    
+    <Error Condition="'$(ExpectWarning)' == 'false' and '$(_TestShouldWarn)' == 'true'" 
+           Text="Did not expect warning but got one" />
+
+    <Message Importance="High" Text="PASSED: $(MSBuildProjectName)" />
+  </Target>
+
+</Project>

@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Verify 'as pattern' construct
 

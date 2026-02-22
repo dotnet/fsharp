@@ -17,7 +17,6 @@
 namespace FSharp.Core.UnitTests.Control.TasksDynamic
 
 #nowarn "1204" // construct only for use in compiled code
-#nowarn "3511" // state machine not statically compilable - the one in 'Run'
 open System
 open System.Collections
 open System.Collections.Generic
@@ -33,7 +32,9 @@ open System.Runtime.CompilerServices
 type TaskBuilderDynamic() =
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
+    #nowarn 3511
     member _.Run(code) = task.Run(code) // warning 3511 is generated here: state machine not compilable
+    #warnon 3511
 
     member inline _.Delay f = task.Delay(f)
     [<DefaultValue>]
@@ -55,7 +56,9 @@ type TaskBuilderDynamic() =
 type BackgroundTaskBuilderDynamic() =
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
+    #nowarn 3511
     member _.Run(code) = backgroundTask.Run(code) // warning 3511 is generated here: state machine not compilable
+    #warnon 3511
 
     member inline _.Delay f = backgroundTask.Delay(f)
     [<DefaultValue>]

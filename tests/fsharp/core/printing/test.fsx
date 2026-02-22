@@ -1006,7 +1006,7 @@ let functionWhichTakesAParameterPreciselyPlusButNotOpAddition (``+``: int -> int
 let functionWhichTakesAParameterOpAddition ((+): int -> int -> int) = 1 + 1
 ;;
 
-let functionWhichTakesAParameterCalled_land (``land``: int -> int -> int) = 1 + 1
+let functionWhichTakesAParameterCalled_land (land: int -> int -> int) = 1 + 1
 ;;
 
 type RecordWithStrangeNames =
@@ -1014,7 +1014,7 @@ type RecordWithStrangeNames =
        ``funky name`` : obj 
        op_Addition : obj 
        ``+`` : obj 
-       ``land`` : obj 
+       land : obj 
        ``base`` : obj 
        }
 ;;
@@ -1034,7 +1034,7 @@ type op_Addition = // Check this doesn't go to (+) for types
     | B
 ;;
 
-type ``land`` = // Check this doesn't go to (land) for types, it gets double ticks because (land) is deprecated
+type land =
     | A
     | B
 ;;
@@ -1047,7 +1047,7 @@ module op_Addition = // Check this doesn't go to (+) for modules, nor get double
     let x = 1
 ;;
 
-module ``land`` = // Check this doesn't go to (land) for modules, it gets double ticks because (land) is deprecated
+module land =
     let x = 1
 ;;
 
@@ -1066,7 +1066,7 @@ let ``mod`` = 2  // This is a value called 'mod' in .NET IL, but we can't distin
 let ``or`` = 2  // This is a value called 'or' in .NET IL, legacy, but we can't distinguish from  (or), so print it as ``or``
 ;;
 
-let ``land`` = 2  // This is a value called 'land' in .NET IL, legacy, but we can't distinguish from legacy unused (land), so print it as ``land``
+let land = 2
 ;;
 
 let ``.ctor`` = 2  // This is a value called '.ctor' in .NET IL, and has no special properties

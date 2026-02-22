@@ -1,5 +1,5 @@
 // #Conformance #TypeInference #Recursion 
-#light
+
 
 // Define a set of mutually recursive types. Verify compiles and works OK
 

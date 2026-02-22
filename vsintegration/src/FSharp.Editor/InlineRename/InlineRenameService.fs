@@ -63,7 +63,8 @@ type internal InlineRenameLocationSet
             let replacementText =
                 match symbolKind with
                 | LexerSymbolKind.GenericTypeParameter
-                | LexerSymbolKind.StaticallyResolvedTypeParameter -> replacementText
+                | LexerSymbolKind.StaticallyResolvedTypeParameter
+                | LexerSymbolKind.Operator -> replacementText
                 | _ -> FSharpKeywords.NormalizeIdentifierBackticks replacementText
 
             let replacementTextValid =
@@ -99,6 +100,8 @@ type internal InlineRenameInfo
     let symbolUses =
         SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document) ct
 
+    let symbolDisplayName = symbolUse.Symbol.DisplayName
+
     override _.CanRename = true
     override _.LocalizedErrorMessage = null
     override _.TriggerSpan = triggerSpan
@@ -119,7 +122,6 @@ type internal InlineRenameInfo
         ImmutableArray.Create(new FSharpInlineRenameLocation(document, triggerSpan))
 
     override _.GetReferenceEditSpan(location, cancellationToken) =
-
         let text =
             if location.Document = document then
                 sourceText
@@ -161,10 +163,8 @@ type internal InlineRenameInfo
                             return
                                 [|
                                     for symbolUse in symbolUses do
-                                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
-                                        | ValueSome span ->
-                                            let textSpan = Tokenizer.fixupSpan (sourceText, span)
-                                            yield FSharpInlineRenameLocation(document, textSpan)
+                                        match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse, symbolDisplayName) with
+                                        | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
                                         | ValueNone -> ()
                                 |]
                         }
@@ -212,16 +212,17 @@ type internal InlineRenameService [<ImportingConstructor>] () =
                 match symbolUse with
                 | None -> return Unchecked.defaultof<_>
                 | Some symbolUse ->
-                    let span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
-
-                    match span with
+                    match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
                     | ValueNone -> return Unchecked.defaultof<_>
-                    | ValueSome span ->
-                        let triggerSpan = Tokenizer.fixupSpan (sourceText, span)
+                    | ValueSome textSpan ->
+                        match textSpan with
+                        | Tokenizer.FixedSpan sourceText symbolUse.Symbol.DisplayName triggerSpan ->
+                            let result =
+                                InlineRenameInfo(document, triggerSpan, sourceText, symbol, symbolUse, checkFileResults, ct)
 
-                        let result =
-                            InlineRenameInfo(document, triggerSpan, sourceText, symbol, symbolUse, checkFileResults, ct)
-
-                        return result :> FSharpInlineRenameInfo
+                            return result :> FSharpInlineRenameInfo
+                        | _ ->
+                            // #18270: Abort if user clicked on phantom get/set accessor keyword
+                            return Unchecked.defaultof<_>
         }
         |> CancellableTask.start cancellationToken

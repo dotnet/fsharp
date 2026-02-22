@@ -283,6 +283,7 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
 let addNullnessToTy (nullness: Nullness) (ty:TType) =
     match nullness with
     | Nullness.Known NullnessInfo.WithoutNull -> ty
+    | Nullness.KnownFromConstructor -> ty
     | Nullness.Variable nv when nv.IsFullySolved && nv.TryEvaluate() = ValueSome NullnessInfo.WithoutNull -> ty
     | _ -> 
     match ty with

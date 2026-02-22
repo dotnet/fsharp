@@ -1287,6 +1287,18 @@ type T() =
 
         Assert.False hasPropertySymbols
 
+    [<Fact>]
+    let ``CLIEvent 01 - Synthetic range`` () =
+        let _, checkResults = getParseAndCheckResults """
+type T() =
+    [<CLIEvent>]
+    member this.Event = Event<int>().Publish
+"""
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.exists (fun symbolUse -> symbolUse.Symbol.DisplayNameCore = "handler")
+        |> shouldEqual false
+
+
 module Delegates =
     [<Fact>]
     let ``IL metadata`` () =

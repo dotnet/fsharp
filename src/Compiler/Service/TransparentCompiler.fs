@@ -60,7 +60,7 @@ type internal TcInfo =
         latestCcuSigForFile: ModuleOrNamespaceType option
 
         /// Accumulated diagnostics, last file first
-        tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+        tcDiagnosticsRev: PhasedDiagnostic[] list
 
         tcDependencyFiles: string list
 
@@ -85,7 +85,7 @@ type internal TcIntermediate =
         moduleNamesDict: ModuleNamesDict
 
         /// Accumulated diagnostics, last file first
-        tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+        tcDiagnosticsRev: PhasedDiagnostic[] list
 
         tcDependencyFiles: string list
 
@@ -490,7 +490,12 @@ type internal TransparentCompiler
 
         let applyCompilerOptions tcConfig =
             let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
-            ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
+
+            try
+                ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
+            with
+            | :? OperationCanceledException -> reraise ()
+            | exn -> errorRecovery exn range0
 
         let closure =
             LoadClosure.ComputeClosureOfScriptText(
@@ -898,8 +903,16 @@ type internal TransparentCompiler
             tcConfigB.useSimpleResolution <- useSimpleResolution
 
             // Apply command-line arguments and collect more source files if they are in the arguments
+            // Wrap in try/catch to ensure command-line parsing errors are properly captured
+            // as diagnostics rather than escaping as exceptions
             let sourceFilesNew =
-                ApplyCommandLineArgs(tcConfigB, projectSnapshot.SourceFileNames, commandLineArgs)
+                try
+                    ApplyCommandLineArgs(tcConfigB, projectSnapshot.SourceFileNames, commandLineArgs)
+                with
+                | :? OperationCanceledException -> reraise ()
+                | exn ->
+                    errorRecovery exn range0
+                    projectSnapshot.SourceFileNames
 
             // Never open PDB files for the language service, even if --standalone is specified
             tcConfigB.openDebugInformationForLaterStaticLinking <- false
@@ -946,6 +959,33 @@ type internal TransparentCompiler
 
                 // Prepare the frameworkTcImportsCache
                 let! tcGlobals, frameworkTcImports = ComputeFrameworkImports tcConfig frameworkDLLs nonFrameworkResolutions
+
+                // If the tcGlobals was loaded from a different project, langVersion and realsig may be different
+                // for each cached project.  So here we create a new tcGlobals, with the existing framework values
+                // and updated realsig and langversion
+                let tcGlobals =
+                    if
+                        tcGlobals.langVersion <> tcConfig.langVersion
+                        || tcGlobals.realsig <> tcConfig.realsig
+                    then
+                        TcGlobals(
+                            tcGlobals.compilingFSharpCore,
+                            tcGlobals.ilg,
+                            tcGlobals.fslibCcu,
+                            tcGlobals.directoryToResolveRelativePaths,
+                            tcGlobals.isInteractive,
+                            tcGlobals.checkNullness,
+                            tcGlobals.useReflectionFreeCodeGen,
+                            tcGlobals.tryFindSysTypeCcuHelper,
+                            tcGlobals.emitDebugInfoInQuotations,
+                            tcGlobals.noDebugAttributes,
+                            tcGlobals.pathMap,
+                            tcConfig.langVersion,
+                            tcConfig.realsig,
+                            tcConfig.compilationMode
+                        )
+                    else
+                        tcGlobals
 
                 // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
                 // This is ok because not much can actually go wrong here.
@@ -1011,7 +1051,6 @@ type internal TransparentCompiler
 
     let computeBootstrapInfoInner (projectSnapshot: ProjectSnapshot) =
         async2 {
-
             let! tcConfigB, sourceFiles, loadClosureOpt = ComputeTcConfigBuilder projectSnapshot
 
             // If this is a builder for a script, re-apply the settings inferred from the
@@ -1118,13 +1157,13 @@ type internal TransparentCompiler
                         delayedLogger.CommitDelayedDiagnostics diagnosticsLogger
                         diagnosticsLogger.GetDiagnostics()
                     | _ -> Array.ofList delayedLogger.Diagnostics
-                    |> Array.map (fun (diagnostic, severity) ->
+                    |> Array.map (fun (diagnostic) ->
                         let flatErrors =
                             bootstrapInfoOpt
                             |> Option.map (fun bootstrapInfo -> bootstrapInfo.TcConfig.flatErrors)
                             |> Option.defaultValue false // TODO: do we need to figure this out?
 
-                        FSharpDiagnostic.CreateFromException(diagnostic, severity, suggestNamesForErrors, flatErrors, None))
+                        FSharpDiagnostic.CreateFromException(diagnostic, suggestNamesForErrors, flatErrors, None))
 
                 return bootstrapInfoOpt, diagnostics
             }
@@ -1405,7 +1444,7 @@ type internal TransparentCompiler
 
                 let hadParseErrors =
                     file.ParseDiagnostics
-                    |> Array.exists (snd >> (=) FSharpDiagnosticSeverity.Error)
+                    |> Array.exists (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
 
                 let input, moduleNamesDict =
                     DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
@@ -2058,8 +2097,8 @@ type internal TransparentCompiler
                         sResolutions.CapturedNameResolutions
                         |> Seq.iter (fun cnr ->
                             let r = cnr.Range
-
-                            if preventDuplicates.Add struct (r.Start, r.End) then
+                            // Skip synthetic ranges (e.g., compiler-generated event handler values) (#4136)
+                            if not r.IsSynthetic && preventDuplicates.Add struct (r.Start, r.End) then
                                 builder.Write(cnr.Range, cnr.Item))
 
                         builder.TryBuildAndReset())
@@ -2136,7 +2175,6 @@ type internal TransparentCompiler
                                 yield options.ApplyLineDirectives
                                 yield options.DiagnosticOptions.GlobalWarnAsError
                                 yield options.IsInteractive
-                                yield! (Option.toList options.IndentationAwareSyntax)
                                 yield! (Option.toList options.StrictIndentation)
                                 yield options.CompilingFSharpCore
                                 yield options.IsExe
@@ -2468,7 +2506,7 @@ type internal TransparentCompiler
                     let flaterrors = otherFlags |> List.contains "--flaterrors"
 
                     loadClosure.LoadClosureRootFileDiagnostics
-                    |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, false, flaterrors, None))
+                    |> List.map (fun diagnostic -> FSharpDiagnostic.CreateFromException(diagnostic, false, flaterrors, None))
 
                 return snapshot, (diags @ diagnostics.Diagnostics)
             }

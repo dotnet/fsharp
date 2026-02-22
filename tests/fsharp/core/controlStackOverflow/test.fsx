@@ -4,7 +4,7 @@
 module Core_controlStackOverflow
 #endif
 
-#light
+
 
 #nowarn "40" // recursive references
 

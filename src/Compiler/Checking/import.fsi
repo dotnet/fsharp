@@ -28,7 +28,7 @@ type AssemblyLoader =
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
     abstract GetProvidedAssemblyInfo:
-        CompilationThreadToken * range * Tainted<ProvidedAssembly MaybeNull> ->
+        CompilationThreadToken * range * Tainted<(ProvidedAssembly | null)> ->
             bool * ProvidedAssemblyStaticLinkingMap option
 
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation

@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #Tuples 
-#light
+
 
 // Verify warning if all DU tags are matched with and
 // a wildcard is included.

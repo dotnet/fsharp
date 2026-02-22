@@ -3,7 +3,7 @@
 module Core_int32
 #endif
 
-#light
+
 
 let failures = ref []
 

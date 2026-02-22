@@ -3,7 +3,7 @@
 // Function parameter attributes are ignored and do not appear in the resulting assembly
 // Attribute is placed on the argument of a let-binding function definition
 //<Expects status="success"></Expects>
-#light
+
 open System.Reflection
 
 type A1() = class

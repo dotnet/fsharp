@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Test guarded patterns
 let success =

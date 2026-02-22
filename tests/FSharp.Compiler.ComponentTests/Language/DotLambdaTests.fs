@@ -185,14 +185,6 @@ let c = ( _ :> obj) """
         Error 10, Line 3, Col 13, Line 3, Col 15, "Unexpected symbol ':>' in expression. Expected '.' or other token."
         Error 10, Line 4, Col 13, Line 4, Col 15, "Unexpected symbol ':>' in expression. Expected '.' or other token."]
         
-[<Fact>]
-let ``ToString with F# 7`` () =
-    Fsx """let x = "a" |> _.ToString()"""
-    |> withLangVersion70
-    |> typecheck
-    |> shouldFail
-    |> withSingleDiagnostic (Error 3350, Line 1, Col 16, Line 1, Col 18, "Feature 'underscore dot shorthand for accessor only function' is not available in F# 7.0. Please use language version 8.0 or greater." )
-  
 [<Theory>]
 [<InlineData("let f (a, (b, c)) = _.ToString()")>]
 [<InlineData("""let c = let _ = "test" in "asd" |> _.ToString() """)>]

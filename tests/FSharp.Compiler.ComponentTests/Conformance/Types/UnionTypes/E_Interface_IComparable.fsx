@@ -3,7 +3,7 @@
 // Q: Is this a bug? I've reported it to fscore for now.
 
 
-#light
+
 
 type I = A | B
 

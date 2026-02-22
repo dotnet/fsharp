@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #ActivePatterns 
-#light
+
 
 // Test ability to specify multiple active patterns in the same pattern match
 

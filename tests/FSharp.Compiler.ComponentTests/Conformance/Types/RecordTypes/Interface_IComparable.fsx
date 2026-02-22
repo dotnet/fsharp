@@ -2,7 +2,7 @@
 // By default, record types implement IComparable
 //<Expects status="success"></Expects>
  
-#light
+
 
 [<Measure>] type Kg
 

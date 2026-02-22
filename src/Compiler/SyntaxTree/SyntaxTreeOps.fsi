@@ -157,8 +157,6 @@ val mkSynQMarkSet: m: range -> a: SynExpr -> b: SynExpr -> c: SynExpr -> SynExpr
 
 //val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
 
-val mkSynDotParenGet: mLhs: range -> mDot: range -> a: SynExpr -> b: SynExpr -> SynExpr
-
 val mkSynUnit: m: range -> SynExpr
 
 val mkSynUnitPat: m: range -> SynPat

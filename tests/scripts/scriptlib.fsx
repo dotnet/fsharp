@@ -30,6 +30,8 @@ module Scripting =
             p.BeginOutputReadLine()
             p.BeginErrorReadLine()
             p.WaitForExit()
+            // Second WaitForExit ensures async output handlers complete
+            p.WaitForExit()
             p.ExitCode
         else
             0
@@ -147,16 +149,17 @@ module Scripting =
             cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
 
             cmdArgs.RedirectInput |> Option.iter (fun input -> 
-               async {
                 let inputWriter = p.StandardInput
-                do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
                 input inputWriter
-                do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
-                inputWriter.Dispose ()
-               } 
-               |> Async.Start)
+                inputWriter.Flush()
+                inputWriter.Dispose()
+            )
 
-            p.WaitForExit() 
+            p.WaitForExit()
+            
+            // Second WaitForExit call ensures async output handlers (OutputDataReceived/ErrorDataReceived) complete.
+            // See: https://learn.microsoft.com/dotnet/api/system.diagnostics.process.waitforexit
+            p.WaitForExit()
 
             printf $"{string out}"
             eprintf $"{string err}"

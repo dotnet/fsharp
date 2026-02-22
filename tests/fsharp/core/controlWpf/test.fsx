@@ -1,4 +1,4 @@
-#light
+
 #r "WindowsBase"
 #r "PresentationFramework"
 #r "System.Xaml"

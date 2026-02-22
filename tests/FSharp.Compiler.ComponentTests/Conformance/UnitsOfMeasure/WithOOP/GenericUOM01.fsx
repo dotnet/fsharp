@@ -1,5 +1,5 @@
 // #Regression #Conformance #UnitsOfMeasure #ObjectOrientedTypes 
-#light 
+
 
 // Regression for FSB-3572
 // false error 'Expected type, not a unit-of-measure' when it in fact is.

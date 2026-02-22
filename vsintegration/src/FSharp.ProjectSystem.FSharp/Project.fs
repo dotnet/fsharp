@@ -814,22 +814,18 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // note that .fsx files do not compile in project
                      (String.Compare(Path.GetExtension(strFileName), ".fs", StringComparison.OrdinalIgnoreCase) = 0)
                   || (String.Compare(Path.GetExtension(strFileName), ".fsi", StringComparison.OrdinalIgnoreCase) = 0)
-                  || (String.Compare(Path.GetExtension(strFileName), ".ml", StringComparison.OrdinalIgnoreCase) = 0)
-                  || (String.Compare(Path.GetExtension(strFileName), ".mli", StringComparison.OrdinalIgnoreCase) = 0)
 
             static member internal IsFSharpCodeFileIconwise(strFileName:string ) =
                 if (String.IsNullOrEmpty(strFileName)) then 
                     false
                 else
                      (String.Compare(Path.GetExtension(strFileName), ".fs", StringComparison.OrdinalIgnoreCase) = 0)
-                  || (String.Compare(Path.GetExtension(strFileName), ".ml", StringComparison.OrdinalIgnoreCase) = 0)
 
             static member internal IsFSharpSignatureFileIconwise(strFileName:string ) =
                 if (String.IsNullOrEmpty(strFileName)) then 
                     false
                 else
                      (String.Compare(Path.GetExtension(strFileName), ".fsi", StringComparison.OrdinalIgnoreCase) = 0)
-                  || (String.Compare(Path.GetExtension(strFileName), ".mli", StringComparison.OrdinalIgnoreCase) = 0)
 
             static member internal IsFSharpScriptFileIconwise(strFileName:string ) =
                 if (String.IsNullOrEmpty(strFileName)) then 

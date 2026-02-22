@@ -1,5 +1,5 @@
 // #Regression #Conformance #UnitsOfMeasure 
-#light
+
 
 // Regression test for FSHARP1.0:3456 - Unsupported syntax for units is not reported as an error
 //<Expects id="FS0714" span="(12,19-12,20)" status="error">Anonymous unit-of-measure cannot be nested inside another unit-of-measure expression</Expects>

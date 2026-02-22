@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.LowerStateMachines
 
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
 type LoweredStateMachine =
@@ -30,4 +31,5 @@ type LoweredStateMachineResult =
 
 /// Analyze a TAST expression to detect the elaborated form of a state machine expression, a special kind
 /// of object expression that uses special code generation constructs.
-val LowerStateMachineExpr: g: TcGlobals -> overallExpr: Expr -> LoweredStateMachineResult
+val LowerStateMachineExpr:
+    g: TcGlobals -> outerResumableCodeDefns: ValMap<Expr> -> overallExpr: Expr -> LoweredStateMachineResult

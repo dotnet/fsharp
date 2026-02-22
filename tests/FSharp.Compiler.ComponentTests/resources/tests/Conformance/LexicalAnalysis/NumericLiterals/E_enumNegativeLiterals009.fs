@@ -5,7 +5,7 @@
 // As per FSHARP1.0:3714, enums can't be based on floats (pos/neg)
 
 
-#light
+
 
 type EnumDouble     = | A1 = -1.2   // err
 type EnumSingle     = | A1 = -1.2f  // err

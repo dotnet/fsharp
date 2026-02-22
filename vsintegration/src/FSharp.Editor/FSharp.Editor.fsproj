@@ -63,6 +63,7 @@
     <Compile Include="LanguageService\WorkspaceExtensions.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
+    <Compile Include="LanguageService\ProjectFiltering.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ClassificationService.fs" />

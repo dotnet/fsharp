@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-	<Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs" />
+	<Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullHelpers.fs" />
     <EmbeddedText Include="VFSIstrings.txt" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="FSharp.VS.FSI.Attributes.fs" />

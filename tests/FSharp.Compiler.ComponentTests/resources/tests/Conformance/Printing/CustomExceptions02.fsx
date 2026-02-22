@@ -1,5 +1,5 @@
 // #Regression #NoMT #Printing 
-#light
+
 
 // Test for FSharp1.0:4086 - accessibility not printed for exceptions
 //<Expects status="success">exception internal A of int</Expects>

@@ -1,7 +1,7 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #Overloading 
 // Regression test for FSHARP1.0:1494 
 // New tiebreaker rules for method overloading? 
-#light
+
 
 open System.Reflection
 open System.Linq.Expressions

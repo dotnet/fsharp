@@ -23,7 +23,6 @@ module PrimitiveConstraints =
     [<Fact>]
     let ``Test primitive : constraints``() =
         FSharp"""
-#light
 
 type Foo(x : int) =
     member   this.Value      = x
@@ -49,7 +48,6 @@ else ()
     [<Fact>]
     let ``Test primitive :> constraints``() =
         FSharp"""
-#light
 type Foo(x : int) =
     member   this.Value      = x
     override this.ToString() = "Foo"

@@ -224,7 +224,7 @@ let evaluateSession (argv: string[]) =
             else
                 let fsiTy = fsiAssembly.GetType("FSharp.Compiler.Interactive.Settings")
 
-                if isNull fsiAssembly then
+                if isNull fsiTy then
                     failwith "failed to find type FSharp.Compiler.Interactive.Settings in FSharp.Compiler.Interactive.Settings.dll"
 
                 Some(callStaticMethod fsiTy "get_fsi" [])

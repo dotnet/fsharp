@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #Accessibility 
-#light
+
 
 // See bug 1537.
 

@@ -14,7 +14,9 @@ $nodeReuse = if (Test-Path variable:nodeReuse) { $nodeReuse } else { $false }
 $bootstrapDir = if (Test-Path variable:bootstrapDir) { $bootstrapDir } else { "" }
 $bootstrapConfiguration = if (Test-Path variable:bootstrapConfiguration) { $bootstrapConfiguration } else { "Proto" }
 $bootstrapTfm = if (Test-Path variable:bootstrapTfm) { $bootstrapTfm } else { "net472" }
-$fsharpNetCoreProductTfm = if (Test-Path variable:fsharpNetCoreProductTfm) { $fsharpNetCoreProductTfm } else { "net10.0" }
+# Read product TFM from centralized source of truth via MSBuild
+$fsharpNetCoreProductTfmDefault = (& $PSScriptRoot/common/dotnet.ps1 msbuild $PSScriptRoot/TargetFrameworks.props --getProperty:FSharpNetCoreProductTargetFramework).Trim()
+$fsharpNetCoreProductTfm = if (Test-Path variable:fsharpNetCoreProductTfm) { $fsharpNetCoreProductTfm } else { $fsharpNetCoreProductTfmDefault }
 $properties = if (Test-Path variable:properties) { $properties } else { @() }
 
 function GetProjectOutputBinary([string]$fileName, [string]$projectName = "", [string]$configuration = $script:configuration, [string]$tfm = "net472", [string]$rid = "", [bool]$published = $false) {

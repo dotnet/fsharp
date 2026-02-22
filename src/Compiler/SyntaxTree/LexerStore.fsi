@@ -23,6 +23,10 @@ module XmlDocStore =
 
     val ReportInvalidXmlDocPositions: lexbuf: Lexbuf -> range list
 
+    val SetLastNonCommentTokenLine: lexbuf: Lexbuf -> line: int -> unit
+
+    val GetLastNonCommentTokenLine: lexbuf: Lexbuf -> int
+
 type LexerIfdefExpression =
     | IfdefAnd of LexerIfdefExpression * LexerIfdefExpression
     | IfdefOr of LexerIfdefExpression * LexerIfdefExpression

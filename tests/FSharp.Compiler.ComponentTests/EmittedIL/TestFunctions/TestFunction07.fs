@@ -1,5 +1,5 @@
 // #NoMono #NoMT #CodeGen #EmittedIL 
-#light
+
 
 let TestFunction7() =
     let mutable r = 0

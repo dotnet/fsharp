@@ -184,8 +184,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
     | res -> failwithf "Parsing did not finish... (%A)" res
 
 let parseAndCheckScript (file, input) = parseAndCheckScriptWithOptions (file, input, [| |])
-let parseAndCheckScript50 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:5.0" |])
-let parseAndCheckScript70 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:7.0" |])
+let parseAndCheckScript80 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:8.0" |])
 let parseAndCheckScriptPreview (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:preview" |])
 
 let getParseFileResults (name: string) (code: string) =
@@ -367,11 +366,8 @@ let getParseAndCheckResultsOfSignatureFile (source: string) =
 let getParseAndCheckResultsPreview (source: string) =
     parseAndCheckScriptPreview("Test.fsx", source)
 
-let getParseAndCheckResults50 (source: string) =
-    parseAndCheckScript50("Test.fsx", source)
-
-let getParseAndCheckResults70 (source: string) =
-    parseAndCheckScript70("Test.fsx", source)
+let getParseAndCheckResults80 (source: string) =
+    parseAndCheckScript80("Test.fsx", source)
 
 
 let inline dumpDiagnostics (results: FSharpCheckFileResults) =

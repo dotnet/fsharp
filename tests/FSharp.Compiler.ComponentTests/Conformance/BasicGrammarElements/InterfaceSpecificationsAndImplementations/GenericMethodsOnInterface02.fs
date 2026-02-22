@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #InterfacesAndImplementations 
-#light 
+
 
 // FSB 1147, implementing interfaces with generic members gives internal error - undefined type variable
 

@@ -153,7 +153,7 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.ExactlyOneError.Bug4861``() =  
         let code = 
-                                      ["#light" // First line is important in this repro
+                                      ["//" // First line is important in this repro
                                        "#r \"Nonexistent\""
                                        ]
         let (project, _) = createSingleFileFsxFromLines code
@@ -162,7 +162,6 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.InvalidHashLoad.ShouldBeASquiggle.Bug3012``() =  
         let fileContent = """
-            #light
             #load "Bar.fs"
             """
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"Bar.fs") 
@@ -217,7 +216,7 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.HashR.AddedIn``() =  
         let code =
-                                    ["#light"
+                                    [
                                      "//#r \"System.Transactions.dll\"" // Pick anything that isn't in the standard set of assemblies.
                                      "open System.Transactions"
                                      ]
@@ -226,7 +225,7 @@ type UsingMSBuild() as this =
         
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         ReplaceFileInMemory file
-                        ["#light"
+                        [
                          "#r \"System.Transactions.dll\"" // <-- Uncomment this line
                          "open System.Transactions"
                          ]
@@ -240,14 +239,14 @@ type UsingMSBuild() as this =
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         let fs = AddFileFromText(project,"File1.fs",
-                                    ["#light"
+                                    [
                                      "namespace MyNamespace" 
                                      "    module MyModule ="
                                      "        let x = 1" 
                                      ])            
         
         let fsx = AddFileFromText(project,"File2.fsx",
-                                    ["#light"
+                                    [
                                      "//#load \"File1.fs\"" 
                                      "open MyNamespace.MyModule"
                                      "printfn \"%d\" x"
@@ -256,7 +255,7 @@ type UsingMSBuild() as this =
         VerifyErrorListContainedExpectedStr("MyNamespace",project)
         
         ReplaceFileInMemory fsx
-                         ["#light"
+                         [
                           "#load \"File1.fs\"" 
                           "open MyNamespace.MyModule"
                           "printfn \"%d\" x"
@@ -271,14 +270,14 @@ type UsingMSBuild() as this =
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         let fs = AddFileFromText(project,"File1.fs",
-                                    ["#light"
+                                    [
                                      "namespace MyNamespace" 
                                      "    module MyModule ="
                                      "        let x = 1" 
                                      ])            
         
         let fsx = AddFileFromText(project,"File2.fsx",
-                                    ["#light"
+                                    [
                                      "#load \"File1.fs\"" 
                                      "open MyNamespace.MyModule"
                                      "printfn \"%d\" x"
@@ -287,7 +286,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)
         
         ReplaceFileInMemory fsx
-                         ["#light"
+                         [
                           "//#load \"File1.fs\"" 
                           "open MyNamespace.MyModule"
                           "printfn \"%d\" x"
@@ -333,7 +332,7 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.HashR.Removed``() =  
         let code =
-                                    ["#light"
+                                    [
                                      "#r \"System.Transactions.dll\"" // Pick anything that isn't in the standard set of assemblies.
                                      "open System.Transactions"
                                      ]
@@ -343,7 +342,7 @@ type UsingMSBuild() as this =
         
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         ReplaceFileInMemory file
-                        ["#light"
+                        [
                          "//#r \"System.Transactions.dll\"" // <-- Comment this line
                          "open System.Transactions"
                          ]
@@ -524,7 +523,6 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.NoError.HashR.DllWithNoPath``() =  
         let fileContent = """
-            #light
             #r "System.Transactions.dll"
             open System.Transactions"""
         this.VerifyFSXNoErrorList(fileContent)
@@ -534,7 +532,6 @@ type UsingMSBuild() as this =
     // 'System' is in the default set. Make sure we can still resolve it.
     member public this.``Fsx.NoError.HashR.BugDefaultReferenceFileIsAlsoResolved``() =  
         let fileContent = """
-            #light
             #r "System"
             """
         this.VerifyFSXNoErrorList(fileContent)
@@ -542,7 +539,6 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.NoError.HashR.DoubleReference``() =  
         let fileContent = """
-            #light
             #r "System"
             #r "System"
             """
@@ -552,7 +548,6 @@ type UsingMSBuild() as this =
     // 'CustomMarshalers' is loaded from the GAC _and_ it is available on XP and above.
     member public this.``Fsx.NoError.HashR.ResolveFromGAC``() =  
         let fileContent = """
-            #light
             #r "CustomMarshalers"
             """
         this.VerifyFSXNoErrorList(fileContent)
@@ -560,7 +555,7 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.NoError.HashR.ResolveFromFullyQualifiedPath``() =
         let fullyqualifiepathtoddll = System.IO.Path.Combine( System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.configuration.dll" )
-        let code = ["#light";"#r @\"" + fullyqualifiepathtoddll + "\""]
+        let code = ["#r @\"" + fullyqualifiepathtoddll + "\""]
         let (project, _) = createSingleFileFsxFromLines code
         AssertNoErrorsOrWarnings(project)
 
@@ -643,14 +638,14 @@ type UsingMSBuild() as this =
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         let fs = AddFileFromText(project,"File1.fs",
-                                    ["#light"
+                                    [
                                      "namespace MyNamespace" 
                                      "    module MyModule ="
                                      "        let x = 1" 
                                      ])            
         
         let fsx = AddFileFromText(project,"File2.fsx",
-                                    ["#light"
+                                    [
                                      "#load \"File1.fs\"" 
                                      "open MyNamespace.MyModule"
                                      "printfn \"%d\" x"
@@ -682,7 +677,6 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.NoError.AutomaticImportsForFsxFiles``() =
         let fileContent = """
-            #light
             open System
             open System.Xml
             open System.Drawing
@@ -942,9 +936,7 @@ type UsingMSBuild() as this =
 
     [<Fact>]
     member public this.``Fsx.InvalidHashReference.ShouldBeASquiggle.Bug3012``() =  
-        let code = 
-            ["#light"
-             "#r \"Bar.dll\""]
+        let code = ["#r \"Bar.dll\""]
         let (project, file) = createSingleFileFsxFromLines code
         MoveCursorToEndOfMarker(file,"#r \"Ba") 
         let squiggle = GetSquiggleAtCursor(file)
@@ -973,7 +965,7 @@ type UsingMSBuild() as this =
     
     member private this.TestFsxHashDirectivesAreErrors(mark : string, expectedStr : string) = 
         let code = 
-                                    ["#light"
+                                    [
                                      "#r \"JoeBob\""
                                      "#I \".\""
                                      "#load \"Dooby\""
@@ -1005,7 +997,7 @@ type UsingMSBuild() as this =
     member public this.``Fsx.HashReferenceAgainstNonAssemblyExe``() = 
         let windows = System.Environment.GetEnvironmentVariable("windir")
         let code =
-                                    ["#light"
+                                    [
                                      sprintf "#reference @\"%s\"" (Path.Combine(windows,"notepad.exe"))
                                      "    let x = 1"]
         let (_, file) = createSingleFileFsxFromLines code
@@ -1024,13 +1016,13 @@ type UsingMSBuild() as this =
         let project = CreateProject(solution,"testproject")
         
         let file1 = AddFileFromText(project,"File1.fs", 
-                                    ["#light"
+                                    [
                                      "module File1" 
                                      "DogChow" // <-- error
                                     ])
 
         let file2 = AddFileFromText(project,"File2.fsx",
-                                    ["#light"
+                                    [
                                      "#load @\"File1.fs\""
                                      ])
         let file2 = OpenFile(project,"File2.fsx")
@@ -1055,7 +1047,7 @@ type UsingMSBuild() as this =
                                     ])
 
         let file2 = AddFileFromText(project,"File2.fsx",
-                                    ["#light"
+                                    [
                                      "#load @\"File1.fs\""
                                      ])
         let file2 = OpenFile(project,"File2.fsx")
@@ -1072,14 +1064,14 @@ type UsingMSBuild() as this =
         let project = CreateProject(solution,"testproject")
         
         let file1 = AddFileFromText(project,"File1.fs", 
-                                    [ "#light"
+                                    [
                                       "module File1" 
                                       "let a = 1 + \"\""
                                       "let c = new obj()"
                                       "let b = c.foo()"
                                     ])
         let file2 = AddFileFromText(project,"File2.fsx",
-                                    ["#light"
+                                    [
                                      "#load @\"File1.fs\""
                                      ])
         let file2 = OpenFile(project,"File2.fsx")
@@ -1103,13 +1095,13 @@ type UsingMSBuild() as this =
             result
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
-        let file1 = AddFileFromText(project,"File1.fs", ["#light"])
+        let file1 = AddFileFromText(project,"File1.fs", [])
         let projectOutput = time1 Build project "Time to build project"
         printfn "Output of building project was %s" projectOutput.ExecutableOutput
         printfn "Project directory is %s" (ProjectDirectory project)
         
         let file2 = AddFileFromText(project,"File2.fsx",
-                                    ["#light"
+                                    [
                                      "#reference @\"bin\\Debug\\testproject.exe\""
                                      ])
         let file2 = OpenFile(project,"File2.fsx")
@@ -1137,7 +1129,7 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.Bug2530FsiObject``() =  
         let code = 
-                                    ["#light"
+                                    [
                                      "fsi."
                                      ]
         let (_, file) = createSingleFileFsxFromLines code
@@ -1170,7 +1162,7 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.HashReferenceAgainstStrongName``() = 
         let code =
-                                            ["#light"
+                                            [
                                              sprintf "#reference \"System.Core, Version=%s, Culture=neutral, PublicKeyToken=b77a5c561934e089\"" (System.Environment.Version.ToString())
                                              "open System."]
         let (_, file) = createSingleFileFsxFromLines code
@@ -1436,7 +1428,7 @@ type UsingMSBuild() as this =
     member public this.``Fsx.SyntheticTokens``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
-              ["#light"
+              [
                "#r \"\""
                "#reference \"\""
                "#load \"\""
@@ -1448,7 +1440,7 @@ type UsingMSBuild() as this =
     [<Fact>]
     member public this.``Fsx.ShouldBeAbleToReference30Assemblies.Bug2050``() =     
         let code = 
-                                    ["#light"
+                                    [
                                      "#r \"System.Core.dll\""
                                      "open System."
                                      ]
@@ -1462,7 +1454,7 @@ type UsingMSBuild() as this =
     member public this.``Fsx.UnclosedHashReference.Case1``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
-           ["#light"
+           [
             "#reference \"" // Unclosed
             "#reference \"Hello There\""]    
             )
@@ -1470,7 +1462,7 @@ type UsingMSBuild() as this =
     member public this.``Fsx.UnclosedHashReference.Case2``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
-          ["#light"
+          [
            "#r \"" // Unclosed
            "# \"Hello There\""]                                            
            )
@@ -1480,7 +1472,7 @@ type UsingMSBuild() as this =
     member public this.``Fsx.UnclosedHashLoad``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner, 
-            [ "#light"
+            [
               "#load \"" // Unclosed
               "#load \"Hello There\""]
             ) 

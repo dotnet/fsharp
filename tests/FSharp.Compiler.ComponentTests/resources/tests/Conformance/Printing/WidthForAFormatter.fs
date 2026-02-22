@@ -1,5 +1,5 @@
 // #Regression #NoMT #Printing 
-#light
+
 
 // Regression test for FSHARP1.0:4139 - %A formatter does not accept width, e.g. printf "%10000A"
 

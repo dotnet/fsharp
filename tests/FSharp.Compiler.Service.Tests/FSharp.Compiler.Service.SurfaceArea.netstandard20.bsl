@@ -2011,6 +2011,18 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Double Ratio
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Double get_Ratio()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 Hits
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 Misses
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 get_Hits()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 get_Misses()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Microsoft.FSharp.Collections.FSharpMap`2[System.String,System.Int64] GetTotals()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: System.String ToString()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Void .ctor(System.String)
+FSharp.Compiler.Caches.CacheMetrics: FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener
+FSharp.Compiler.Caches.CacheMetrics: System.Diagnostics.Metrics.Meter Meter
+FSharp.Compiler.Caches.CacheMetrics: System.Diagnostics.Metrics.Meter get_Meter()
 FSharp.Compiler.Cancellable: Void CheckAndThrow()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String get_OutputFile()
@@ -2080,6 +2092,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FShar
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpDisplayContext] TryGetCapturedDisplayContext(FSharp.Compiler.Text.Range)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpImplementationFileContents] ImplementationFile
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpImplementationFileContents] get_ImplementationFile()
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] ImportILType(ILType)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] TryGetCapturedType(FSharp.Compiler.Text.Range)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText] GenerateSignature(Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSymbolUse]] GetMethodsAsSymbols(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String])
@@ -2230,16 +2243,14 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.FSharpList`1[System.String] ConditionalDefines
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_ConditionalDefines()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] IndentationAwareSyntax
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] StrictIndentation
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] get_IndentationAwareSyntax()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] get_StrictIndentation()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String LangVersionText
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String get_LangVersionText()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] SourceFiles
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] get_SourceFiles()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.String, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.String, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions ProjectOptions
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions get_ProjectOptions()
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.Symbols.FSharpAccessibilityRights AccessibilityRights
@@ -2895,7 +2906,9 @@ FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedDa
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ValueNotContainedDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnostic Create(FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity, System.String, Int32, FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity DefaultSeverity
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity Severity
+FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity get_DefaultSeverity()
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity get_Severity()
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Text.Position End
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Text.Position Start
@@ -4979,7 +4992,7 @@ FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`2[Microsoft
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`2[Microsoft.FSharp.Core.FSharpChoice`2[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Interactive.Shell+FsiValue],System.Exception],FSharp.Compiler.Diagnostics.FSharpDiagnostic[]] EvalInteractionNonThrowing(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`2[Microsoft.FSharp.Core.FSharpChoice`2[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Interactive.Shell+FsiValue],System.Exception],FSharp.Compiler.Diagnostics.FSharpDiagnostic[]] EvalInteractionNonThrowing(System.String, System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`2[Microsoft.FSharp.Core.FSharpChoice`2[Microsoft.FSharp.Core.Unit,System.Exception],FSharp.Compiler.Diagnostics.FSharpDiagnostic[]] EvalScriptNonThrowing(System.String)
-FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`3[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults] ParseAndCheckInteraction(System.String)
+FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`3[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults] ParseAndCheckInteraction(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Void AddBoundValue(System.String, System.Object)
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Void EvalInteraction(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Void EvalInteraction(System.String, System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
@@ -5262,12 +5275,16 @@ FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FShar
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] BaseType
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] get_BaseType()
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText] TryGetMetadataText()
+FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] BasicQualifiedName
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] Namespace
+FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] QualifiedName
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryFullName
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryGetFullCompiledName()
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryGetFullDisplayName()
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryGetFullName()
+FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_BasicQualifiedName()
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_Namespace()
+FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_QualifiedName()
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_TryFullName()
 FSharp.Compiler.Symbols.FSharpEntity: System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Symbols.FSharpEntity] GetPublicNestedEntities()
 FSharp.Compiler.Symbols.FSharpEntity: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] Attributes
@@ -5292,21 +5309,17 @@ FSharp.Compiler.Symbols.FSharpEntity: System.Collections.Generic.IList`1[FSharp.
 FSharp.Compiler.Symbols.FSharpEntity: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpUnionCase] UnionCases
 FSharp.Compiler.Symbols.FSharpEntity: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpUnionCase] get_UnionCases()
 FSharp.Compiler.Symbols.FSharpEntity: System.String AccessPath
-FSharp.Compiler.Symbols.FSharpEntity: System.String BasicQualifiedName
 FSharp.Compiler.Symbols.FSharpEntity: System.String CompiledName
 FSharp.Compiler.Symbols.FSharpEntity: System.String DisplayName
 FSharp.Compiler.Symbols.FSharpEntity: System.String FullName
 FSharp.Compiler.Symbols.FSharpEntity: System.String LogicalName
-FSharp.Compiler.Symbols.FSharpEntity: System.String QualifiedName
 FSharp.Compiler.Symbols.FSharpEntity: System.String ToString()
 FSharp.Compiler.Symbols.FSharpEntity: System.String XmlDocSig
 FSharp.Compiler.Symbols.FSharpEntity: System.String get_AccessPath()
-FSharp.Compiler.Symbols.FSharpEntity: System.String get_BasicQualifiedName()
 FSharp.Compiler.Symbols.FSharpEntity: System.String get_CompiledName()
 FSharp.Compiler.Symbols.FSharpEntity: System.String get_DisplayName()
 FSharp.Compiler.Symbols.FSharpEntity: System.String get_FullName()
 FSharp.Compiler.Symbols.FSharpEntity: System.String get_LogicalName()
-FSharp.Compiler.Symbols.FSharpEntity: System.String get_QualifiedName()
 FSharp.Compiler.Symbols.FSharpEntity: System.String get_XmlDocSig()
 FSharp.Compiler.Symbols.FSharpExpr: FSharp.Compiler.Symbols.FSharpType Type
 FSharp.Compiler.Symbols.FSharpExpr: FSharp.Compiler.Symbols.FSharpType get_Type()
@@ -5866,6 +5879,8 @@ FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Text.TaggedText[] FormatLayo
 FSharp.Compiler.Symbols.FSharpType: Int32 GetHashCode()
 FSharp.Compiler.Symbols.FSharpType: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] BaseType
 FSharp.Compiler.Symbols.FSharpType: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] get_BaseType()
+FSharp.Compiler.Symbols.FSharpType: Microsoft.FSharp.Core.FSharpOption`1[System.String] BasicQualifiedName
+FSharp.Compiler.Symbols.FSharpType: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_BasicQualifiedName()
 FSharp.Compiler.Symbols.FSharpType: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter] Prettify(System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter])
 FSharp.Compiler.Symbols.FSharpType: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] AllInterfaces
 FSharp.Compiler.Symbols.FSharpType: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] GenericArguments
@@ -5873,11 +5888,9 @@ FSharp.Compiler.Symbols.FSharpType: System.Collections.Generic.IList`1[FSharp.Co
 FSharp.Compiler.Symbols.FSharpType: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] get_AllInterfaces()
 FSharp.Compiler.Symbols.FSharpType: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpType] get_GenericArguments()
 FSharp.Compiler.Symbols.FSharpType: System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]] Prettify(System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]])
-FSharp.Compiler.Symbols.FSharpType: System.String BasicQualifiedName
 FSharp.Compiler.Symbols.FSharpType: System.String Format(FSharp.Compiler.Symbols.FSharpDisplayContext)
 FSharp.Compiler.Symbols.FSharpType: System.String FormatWithConstraints(FSharp.Compiler.Symbols.FSharpDisplayContext)
 FSharp.Compiler.Symbols.FSharpType: System.String ToString()
-FSharp.Compiler.Symbols.FSharpType: System.String get_BasicQualifiedName()
 FSharp.Compiler.Symbols.FSharpType: System.Tuple`2[System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]],FSharp.Compiler.Symbols.FSharpParameter] Prettify(System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]], FSharp.Compiler.Symbols.FSharpParameter)
 FSharp.Compiler.Symbols.FSharpUnionCase: Boolean Equals(System.Object)
 FSharp.Compiler.Symbols.FSharpUnionCase: Boolean HasFields
@@ -11194,7 +11207,6 @@ FSharp.Compiler.Tokenization.FSharpLexer: Void Tokenize(FSharp.Compiler.Text.ISo
 FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags Compiling
 FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags CompilingFSharpCore
 FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags Default
-FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags LightSyntaxOn
 FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags SkipTrivia
 FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags UseLexFilter
 FSharp.Compiler.Tokenization.FSharpLexerFlags: Int32 value__
@@ -11276,7 +11288,6 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Ampersand
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 AmpersandAmpersand
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 And
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 As
-FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Asr
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Assert
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Bar
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 BarBar
@@ -11334,7 +11345,6 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Hash
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HashElse
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HashEndIf
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HashIf
-FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HashLight
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HashLine
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HighPrecedenceBracketApp
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 HighPrecedenceParenthesisApp
@@ -11346,15 +11356,9 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 If
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 In
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InactiveCode
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixAmpersandOperator
-FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixAsr
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixAtHatOperator
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixBarOperator
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixCompareOperator
-FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixLand
-FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixLor
-FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixLsl
-FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixLsr
-FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixLxor
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixMod
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixStarDivideModuloOperator
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 InfixStarStarOperator
@@ -11474,7 +11478,6 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsAmpersand
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsAmpersandAmpersand
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsAnd
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsAs
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsAsr
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsAssert
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsBar
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsBarBar
@@ -11532,7 +11535,6 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHash
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHashElse
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHashEndIf
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHashIf
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHashLight
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHashLine
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHighPrecedenceBracketApp
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHighPrecedenceParenthesisApp
@@ -11544,15 +11546,9 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsIf
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsIn
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInactiveCode
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixAmpersandOperator
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixAsr
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixAtHatOperator
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixBarOperator
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixCompareOperator
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixLand
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixLor
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixLsl
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixLsr
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixLxor
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixMod
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixStarDivideModuloOperator
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsInfixStarStarOperator
@@ -11668,7 +11664,6 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsAmpersand()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsAmpersandAmpersand()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsAnd()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsAs()
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsAsr()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsAssert()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsBar()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsBarBar()
@@ -11726,7 +11721,6 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHash()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHashElse()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHashEndIf()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHashIf()
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHashLight()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHashLine()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHighPrecedenceBracketApp()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHighPrecedenceParenthesisApp()
@@ -11738,15 +11732,9 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsIf()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsIn()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInactiveCode()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixAmpersandOperator()
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixAsr()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixAtHatOperator()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixBarOperator()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixCompareOperator()
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixLand()
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixLor()
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixLsl()
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixLsr()
-FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixLxor()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixMod()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixStarDivideModuloOperator()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsInfixStarStarOperator()
@@ -11862,7 +11850,6 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind AmpersandAmpersand
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind And
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind As
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Asr
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Assert
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Bar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind BarBar
@@ -11920,7 +11907,6 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HashElse
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HashEndIf
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HashIf
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HashLight
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HashLine
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HighPrecedenceBracketApp
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind HighPrecedenceParenthesisApp
@@ -11932,15 +11918,9 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind In
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InactiveCode
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixAmpersandOperator
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixAsr
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixAtHatOperator
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixBarOperator
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixCompareOperator
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixLand
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixLor
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixLsl
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixLsr
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixLxor
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixMod
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixStarDivideModuloOperator
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind InfixStarStarOperator
@@ -12056,7 +12036,6 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_AmpersandAmpersand()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_And()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_As()
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Asr()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Assert()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Bar()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_BarBar()
@@ -12114,7 +12093,6 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HashElse()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HashEndIf()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HashIf()
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HashLight()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HashLine()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HighPrecedenceBracketApp()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_HighPrecedenceParenthesisApp()
@@ -12126,15 +12104,9 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_In()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InactiveCode()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixAmpersandOperator()
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixAsr()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixAtHatOperator()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixBarOperator()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixCompareOperator()
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixLand()
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixLor()
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixLsl()
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixLsr()
-FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixLxor()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixMod()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixStarDivideModuloOperator()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_InfixStarStarOperator()
@@ -12390,7 +12362,6 @@ FSharp.Compiler.Tokenization.FSharpTokenTriggerClass: FSharp.Compiler.Tokenizati
 FSharp.Compiler.Tokenization.FSharpTokenTriggerClass: FSharp.Compiler.Tokenization.FSharpTokenTriggerClass ParamNext
 FSharp.Compiler.Tokenization.FSharpTokenTriggerClass: FSharp.Compiler.Tokenization.FSharpTokenTriggerClass ParamStart
 FSharp.Compiler.Tokenization.FSharpTokenTriggerClass: Int32 value__
-FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState CamlOnly
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState Comment
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState EndLineThenSkip
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState EndLineThenToken

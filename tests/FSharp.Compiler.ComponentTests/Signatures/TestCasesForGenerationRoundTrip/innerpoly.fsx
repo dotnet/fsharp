@@ -34,25 +34,6 @@ let f (x:'a) =
   g1 "a" 1, g1 1 "a", g2 "a" "b", g2 3 4
 
 
-#if OCAML_RECORD_FIELDS
-type z = { x : 'a. int -> 'a }
-
-let z2 = { x = (fun x -> failwith "a") }
-
-let f3 (x:int) = failwith "a"
-let z3 = { x = f3 }
-
-let f2 n = 
-  let z2 = { x = (fun (x:int) -> failwith (string_of_int (x+n))) } in 
-  let f3 (x:int) = failwith "a" in
-  z2
-
-let _ : string = try (f2 3).x(3) ^ "unused" with Failure _ -> ""
-#endif
-
-
-
-
 let id x = x    
 
 type ('a,'b) r = {a : 'a list; b: 'b list list }

@@ -1,4 +1,7 @@
 <Project>
+    <!-- Import target frameworks from single source of truth -->
+    <Import Project="$(MSBuildThisFileDirectory)..\..\eng\TargetFrameworks.props" />
+
     <PropertyGroup>
         <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <CachePath>$(MSBuildProjectDirectory)\..\..\artifacts\tmp\$([System.Guid]::NewGuid())</CachePath>

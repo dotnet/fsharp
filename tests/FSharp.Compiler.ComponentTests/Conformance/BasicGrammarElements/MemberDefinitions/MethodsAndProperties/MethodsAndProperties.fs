@@ -598,7 +598,7 @@ type I =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IndexedPropertiesSameType.fs"|])>]
     let ``IndexedPropertiesSameType_fs`` compilation =
         compilation
-        |> withLangVersion70
+        |> withLangVersion80
         |> verifyCompileAndRun
         |> shouldSucceed
         

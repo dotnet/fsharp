@@ -12,8 +12,8 @@ let reportFailure s =
   stdout.WriteLine "\n................TEST FAILED...............\n"; failures := !failures @ [s]
 
 let check s e r = 
-  if r = e then  stdout.WriteLine (s^": YES") 
-  else (stdout.WriteLine ("\n***** "^s^": FAIL\n"); reportFailure s)
+  if r = e then  stdout.WriteLine (s+": YES") 
+  else (stdout.WriteLine ("\n***** "+s+": FAIL\n"); reportFailure s)
 
 let test s b = 
   if b then ( (* stdout.WriteLine ("passed: " + s) *) ) 
@@ -1283,7 +1283,7 @@ let _ = pri "concat" (List.concat [[1;2]; [3;4]; [5;6]])
 let prs s l = printString s; printString ": "; List.iter printString l; printNewLine ()
 let _ = prs "none" ["1";"2";"3";"4";"5";"6"]
 let _ = prs "rev" (List.rev ["6";"5";"4";"3";"2";"1"])
-let _ = prs "map" (List.map (fun x -> x ^ ".0") (["1";"2";"3"]))
+let _ = prs "map" (List.map (fun x -> x + ".0") (["1";"2";"3"]))
 let _ = prs "@" (["1";"2";"3"] @ ["4";"5";"6"])
 let _ = prs "concat" (List.concat [["1";"2"]; ["3";"4"]; ["5";"6"]])
 
@@ -2015,8 +2015,8 @@ let _ = sort_test compare [0;1;2;3;4;5]
 let _ = sort_test (fun x y -> -(compare x y)) [5;4;3;2;1;0]
 *)
 module StrangeOperatorTest = 
-    let (&&&) x y = x^y
-    let (<<<) (x:string) (y:string) = x ^y^x
+    let (&&&) x y = x+y
+    let (<<<) (x:string) (y:string) = x + y + x
 
     let e1 = ("0" &&& ("1" <<< "2"))
     let e2= (("0" &&& "1") <<< "2") 
@@ -2292,9 +2292,9 @@ module IEnumerableTests = begin
   do check "IEnumerableTest.exists" (Seq.forall ((=) "a") [| "1"; "a" |]) false
   do check "IEnumerableTest.map on finite" ([| "a" |] |> Seq.map (fun x -> x.Length) |> Seq.toArray) [| 1 |]
   do check "IEnumerableTest.filter on finite" ([| "a";"ab";"a" |] |> Seq.filter (fun x -> x.Length = 1) |> Seq.toArray) [| "a";"a" |]
-  do check "IEnumerableTest.choose on finite" ([| "a";"ab";"a" |] |> Seq.choose (fun x -> if x.Length = 1 then Some(x^"a") else None) |> Seq.toArray) [| "aa";"aa" |]
-  do check "Seq.tryPick on finite (succeeding)" ([| "a";"ab";"a" |] |> Seq.tryPick (fun x -> if x.Length = 1 then Some(x^"a") else None)) (Some "aa")
-  do check "Seq.tryPick on finite (failing)" ([| "a";"ab";"a" |] |> Seq.tryPick (fun x -> if x.Length = 6 then Some(x^"a") else None)) None
+  do check "IEnumerableTest.choose on finite" ([| "a";"ab";"a" |] |> Seq.choose (fun x -> if x.Length = 1 then Some(x+"a") else None) |> Seq.toArray) [| "aa";"aa" |]
+  do check "Seq.tryPick on finite (succeeding)" ([| "a";"ab";"a" |] |> Seq.tryPick (fun x -> if x.Length = 1 then Some(x+"a") else None)) (Some "aa")
+  do check "Seq.tryPick on finite (failing)" ([| "a";"ab";"a" |] |> Seq.tryPick (fun x -> if x.Length = 6 then Some(x+"a") else None)) None
   do check "IEnumerableTest.find on finite (succeeding)" ([| "a";"ab";"a" |] |> Seq.find (fun x -> x.Length = 1)) "a"
   do check "IEnumerableTest.find on finite (failing)" (try Some ([| "a";"ab";"a" |] |> Seq.find (fun x -> x.Length = 6)) with :? System.Collections.Generic.KeyNotFoundException -> None) None
   do check "IEnumerableTest.map_with_type (string up to obj,finite)" ([| "a" |] |> Seq.cast |> Seq.toArray) [| ("a" :> obj) |]
@@ -2553,13 +2553,13 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
    do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.filter on finite" ([| "a";"ab";"a" |] |> Seq.filter (fun x -> x.Length = 1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| "a";"a" |]
    do check "<disposal>" numActiveEnumerators 0
-   do check "IEnumerableTest.choose on finite" ([| "a";"ab";"a" |] |> Seq.choose (fun x -> if x.Length = 1 then Some(x^"a") else None) |> Seq.toArray) [| "aa";"aa" |]
+   do check "IEnumerableTest.choose on finite" ([| "a";"ab";"a" |] |> Seq.choose (fun x -> if x.Length = 1 then Some(x+"a") else None) |> Seq.toArray) [| "aa";"aa" |]
    do check "<disposal>" numActiveEnumerators 0
-   do check "Seq.pick on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.pick (fun x -> if x.Length = 1 then Some(x^"a") else None)) "aa"
+   do check "Seq.pick on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.pick (fun x -> if x.Length = 1 then Some(x+"a") else None)) "aa"
    do check "<disposal>" numActiveEnumerators 0
-   do check "Seq.tryPick on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryPick (fun x -> if x.Length = 1 then Some(x^"a") else None)) (Some "aa")
+   do check "Seq.tryPick on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryPick (fun x -> if x.Length = 1 then Some(x+"a") else None)) (Some "aa")
    do check "<disposal>" numActiveEnumerators 0
-   do check "Seq.tryPick on finite (failing)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryPick (fun x -> if x.Length = 6 then Some(x^"a") else None)) None
+   do check "Seq.tryPick on finite (failing)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryPick (fun x -> if x.Length = 6 then Some(x+"a") else None)) None
    do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.find on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.find (fun x -> x.Length = 1)) "a"
    do check "<disposal>" numActiveEnumerators 0
@@ -2724,24 +2724,6 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
 #endif
 
 end
-
-let (lsr) (a:int) (b:int) = int32 (uint32 a >>> b)
-let (lsl) (a:int) (b:int) = a <<< b
-let (lor) (a:int) (b:int) = a ||| b
-let (lxor) (a:int) (b:int) = a ^^^ b
-let (land) (a:int) (b:int) = a &&& b
-// check precedence of lsl, lsr etc.
-let _ = fun (x:int) -> x > x lsr 1
-let _ = fun (x:int) -> x > (x lsr 1)
-let _ = fun (x:int) -> x > x lsl 1
-let _ = fun (x:int) -> x > (x lsl 1)
-let _ = fun (x:int) -> x > x lor 1
-let _ = fun (x:int) -> x > (x lor 1)
-let _ = fun (x:int) -> x > x lxor 1
-let _ = fun (x:int) -> x > (x lxor 1)
-let _ = fun (x:int) -> x > x land 1
-let _ = fun (x:int) -> x > (x land 1)
-
 
 // check ordering of NaN
 (*
@@ -4176,8 +4158,8 @@ do printf "FilterTests: next:\n"; stdout.Flush()
 module FilterTests = begin
     do printf "FilterTests: start:\n"          
     let check s e r = 
-      if r = e then  stdout.WriteLine (s^": YES") 
-      else (stdout.WriteLine ("\n***** "^s^": FAIL\n"); reportFailure "basic test Q")
+      if r = e then  stdout.WriteLine (s+": YES") 
+      else (stdout.WriteLine ("\n***** "+s+": FAIL\n"); reportFailure "basic test Q")
         
     let degen() = 
         let map = 

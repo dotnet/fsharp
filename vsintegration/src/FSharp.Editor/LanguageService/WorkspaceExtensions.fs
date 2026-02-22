@@ -697,6 +697,7 @@ type Project with
 
             let documents =
                 this.Documents
+                |> Seq.filter (fun document -> isFSharpSourceFile document.FilePath)
                 |> Seq.filter (fun document -> not (canSkipDocuments.Contains document.FilePath))
 
             if this.IsFastFindReferencesEnabled then

@@ -25,7 +25,7 @@ module private Atomic =
                 exchanged <- true
 
 [<CompiledName("FSharpDelegateEvent`1")>]
-type DelegateEvent<'Delegate when 'Delegate :> Delegate>() =
+type DelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate: not null>() =
     let mutable multicast: Delegate = null
 
     member x.Trigger(args: objnull array) =
@@ -77,7 +77,8 @@ type EventDelegee<'Args>(observer: IObserver<'Args>) =
 type EventWrapper<'Delegate, 'Args> = delegate of 'Delegate * objnull * 'Args -> unit
 
 [<CompiledName("FSharpEvent`2")>]
-type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct>()
+type Event<'Delegate, 'Args
+    when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct and 'Delegate: not null>()
     =
 
     let mutable multicast: 'Delegate = Unchecked.defaultof<_>

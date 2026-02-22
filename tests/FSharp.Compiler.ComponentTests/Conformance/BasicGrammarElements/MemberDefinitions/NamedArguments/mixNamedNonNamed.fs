@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
-#light
+
 
 type Foo() =
     static member MethodWithNamedArgs (one:int, two:int, three:float, four:float) = 

@@ -2,7 +2,7 @@
 #r @"../test/BasicProvider.dll"
 #endif
 
-module BasicProvider.Tests
+module BasicProviderTests
 
 open BasicProvider.Provided
 open Xunit

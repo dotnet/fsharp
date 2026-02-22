@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #LetBindings 
-#light  
+
 
 // FSB 1124, Implement constant literals
 

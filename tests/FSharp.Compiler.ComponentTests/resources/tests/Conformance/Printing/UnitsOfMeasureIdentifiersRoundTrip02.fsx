@@ -4,7 +4,7 @@
 //<Expects status="success">val it: decimal+</Expects>
 //<Expects status="success">val it: float32+</Expects>
 //<Expects status="success">val it: float+</Expects>
-#light
+
 
 #r "UnitsOfMeasureIdentifiersRoundTrip02.dll"
 

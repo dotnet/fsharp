@@ -175,7 +175,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
                 "test.fs",
                 ``Many Instantiations of the same interface - SetUp`` + ``Many Instantiations of the same interface - Asserts``,Library,
                 options = [|
-                    "--langversion:5.0";
+                    "--langversion:8.0";
 #if !NETSTANDARD
                 |])
 #else
@@ -188,24 +188,10 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
         CompilerAssert.Compile fsCmpl
 
     [<Fact>]
-    let MultipleTypedInterfacesFSharp47() =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [|
-                "--langversion:4.7";
-#if NETSTANDARD
-                "--define:NETSTANDARD";
-#endif
-            |]
-            ``Many Instantiations of the same interface``
-            [|
-                (FSharpDiagnosticSeverity.Error, 3350, (24, 6, 24, 20), "Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 5.0 or greater.")
-            |]
-
-    [<Fact>]
     let MultipleTypedInterfacesFSharp50VerifyIl() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
             [|
-                "--langversion:5.0";
+                "--langversion:8.0";
                 "--deterministic+";
                 "--define:NO_ANONYMOUS";
 #if NETSTANDARD

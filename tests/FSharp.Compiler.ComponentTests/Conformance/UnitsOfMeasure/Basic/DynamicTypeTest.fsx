@@ -1,5 +1,5 @@
 // #Regression #Conformance #UnitsOfMeasure 
-#light
+
 
 // Bug 3688 - This was crashing the compiler before.
 

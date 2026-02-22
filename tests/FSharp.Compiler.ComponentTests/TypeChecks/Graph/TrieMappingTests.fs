@@ -329,6 +329,93 @@ let _ = ()
     let aNode = trie.Children.["A"]
     Assert.Equal<Set<FileIndex>>(set [| 0 |], aNode.Files)
 
+let private assertModuleMergePromotesToNamespace (fileCount: int) =
+    let sourceFiles =
+        [| for i in 0 .. fileCount - 1 do
+               {
+                   Idx = i
+                   FileName = $"M{i + 1}.fs"
+                   ParsedInput = parseSourceCode ($"M{i + 1}.fs", $"module N.M\n\nlet v{i} = {i}")
+               }
+           {
+               Idx = fileCount
+               FileName = "Dummy.fs"
+               ParsedInput = Unchecked.defaultof<FSharp.Compiler.Syntax.ParsedInput>
+           } |]
+
+    let trie = getLastTrie sourceFiles
+    let nNode = trie.Children.["N"]
+    let mNode = nNode.Children.["M"]
+    let expectedIndices = set [| 0 .. fileCount - 1 |]
+    Assert.Equal<Set<FileIndex>>(expectedIndices, mNode.Files)
+
+    match mNode.Current with
+    | TrieNodeInfo.Namespace(_, filesThatExposeTypes, filesDefiningNamespaceWithoutTypes) ->
+        Assert.Equal<Set<FileIndex>>(expectedIndices, set filesThatExposeTypes)
+        Assert.True(filesDefiningNamespaceWithoutTypes.Count = 0, "filesDefiningNamespaceWithoutTypes should be empty after Module+Module merge")
+    | other -> Assert.Fail($"Expected Namespace after Module+Module merge of {fileCount} files, got {other}")
+
+[<Theory>]
+[<InlineData(2)>]
+[<InlineData(3)>]
+let ``Module+Module merge promotes to Namespace and preserves all file indices`` (fileCount: int) =
+    assertModuleMergePromotesToNamespace fileCount
+
+[<Fact>]
+let ``Module+Module merge preserves children from both sides`` () =
+    let trie =
+        getLastTrie
+            [|
+                {
+                    Idx = 0
+                    FileName = "M1.fs"
+                    ParsedInput =
+                        parseSourceCode (
+                            "M1.fs",
+                            """
+namespace N
+
+module M =
+    module Child1 =
+        let x = 1
+"""
+                        )
+                }
+                {
+                    Idx = 1
+                    FileName = "M2.fs"
+                    ParsedInput =
+                        parseSourceCode (
+                            "M2.fs",
+                            """
+namespace N
+
+module M =
+    module Child2 =
+        let y = 2
+"""
+                        )
+                }
+                {
+                    Idx = 2
+                    FileName = "Dummy.fs"
+                    ParsedInput = Unchecked.defaultof<FSharp.Compiler.Syntax.ParsedInput>
+                }
+            |]
+
+    let nNode = trie.Children.["N"]
+    let mNode = nNode.Children.["M"]
+    Assert.Equal<Set<FileIndex>>(set [| 0; 1 |], mNode.Files)
+
+    match mNode.Current with
+    | TrieNodeInfo.Namespace(_, filesThatExposeTypes, _) ->
+        Assert.Equal<Set<FileIndex>>(set [| 0; 1 |], set filesThatExposeTypes)
+    | other -> Assert.Fail($"Expected Namespace after Module+Module merge, got {other}")
+
+    Assert.True(mNode.Children.ContainsKey("Child1"), "Child1 from file 0 should survive merge")
+    Assert.True(mNode.Children.ContainsKey("Child2"), "Child2 from file 1 should survive merge")
+    Assert.Equal(2, mNode.Children.Count)
+
 [<Fact>]
 let ``Two nested modules with the same name, in named namespace`` () =
     let trie =

@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Records 
-#light
+
 
 // By default, Union types implement dispatch slot Equals
 // Also minimal test on the expected implementation.

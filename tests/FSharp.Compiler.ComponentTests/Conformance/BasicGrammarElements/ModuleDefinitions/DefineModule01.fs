@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Modules 
-#light
+
 
 // Define a simple module and access its values
 

@@ -10,10 +10,10 @@ trigger:
     - '*'
     exclude:
     - .github/*
-    - docs/
+    - docs/*
     - .vscode/*
     - .devcontainer/*
-    - tests/scripts/
+    - tests/scripts/*
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -43,11 +43,11 @@ variables:
   - name: _SignType
     value: Real
   - name: _PublishUsingPipelines
-    value: true
+    value: "true"
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
-    value: true
+    value: "true"
   - group: DotNet-FSharp-SDLValidation-Params
   - template: /eng/common/templates-official/variables/pool-providers.yml@self
 
@@ -152,8 +152,8 @@ extends:
             - task: PublishTestResults@2
               displayName: Publish Test Results
               inputs:
-                testResultsFormat: 'XUnit'
-                testResultsFiles: '*.xml'
+                testResultsFormat: 'VSTest'
+                testResultsFiles: '*.trx'
                 searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
               continueOnError: true
               condition: ne(variables['SkipTests'], 'true')

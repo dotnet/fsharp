@@ -1,5 +1,5 @@
 // #Regression #NoMT #EntryPoint 
-#light
+
 
 // Verify error when signature for the [<EntryPoint>] doesn't
 // match expected.

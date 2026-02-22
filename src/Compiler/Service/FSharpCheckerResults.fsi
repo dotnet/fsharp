@@ -224,8 +224,6 @@ type public FSharpParsingOptions =
 
         IsInteractive: bool
 
-        IndentationAwareSyntax: bool option
-
         StrictIndentation: bool option
 
         CompilingFSharpCore: bool
@@ -275,6 +273,9 @@ type public FSharpCheckFileResults =
 
     member TryGetCapturedType: range -> FSharpType option
     member TryGetCapturedDisplayContext: range -> FSharpDisplayContext option
+
+    /// Imports a compiled type for subsequent Symbols API use
+    member ImportILType: ILType -> FSharpType option
 
     /// <summary>Get the items for a declaration list</summary>
     ///
@@ -499,7 +500,7 @@ type public FSharpCheckFileResults =
         tcState: TcState *
         moduleNamesDict: ModuleNamesDict *
         loadClosure: LoadClosure option *
-        backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *
+        backgroundDiagnostics: PhasedDiagnostic[] *
         isIncompleteTypeCheckEnvironment: bool *
         projectOptions: FSharpProjectOptions *
         builder: IncrementalBuilder option *
@@ -612,7 +613,7 @@ module internal ParseAndCheckFile =
 
         member AnyErrors: bool
 
-        member CollectedPhasedDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+        member CollectedPhasedDiagnostics: PhasedDiagnostic array
 
         member CollectedDiagnostics: symbolEnv: SymbolEnv option -> FSharpDiagnostic array
 
@@ -620,11 +621,16 @@ module internal ParseAndCheckFile =
 // Used internally to provide intellisense over F# Interactive.
 type internal FsiInteractiveChecker =
     internal new:
-        LegacyReferenceResolver * tcConfig: TcConfig * tcGlobals: TcGlobals * tcImports: TcImports * tcState: TcState ->
+        LegacyReferenceResolver *
+        tcConfig: TcConfig *
+        tcGlobals: TcGlobals *
+        tcImports: TcImports *
+        tcState: TcState *
+        ?keepAssemblyContents: bool ->
             FsiInteractiveChecker
 
     member internal ParseAndCheckInteraction:
-        sourceText: ISourceText * ?userOpName: string ->
+        sourceText: ISourceText * ?userOpName: string * ?asmName: string ->
             Async2<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
 
 module internal FSharpCheckerResultsSettings =
