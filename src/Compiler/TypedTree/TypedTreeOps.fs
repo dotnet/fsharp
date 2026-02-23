@@ -3864,76 +3864,83 @@ let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAtt
     for attrib in attribs do
         let (Attrib(tcref, _, _, _, _, _, _)) = attrib
 
-        if
-            (match g.attrib_DllImportAttribute with
-             | Some a -> tyconRefEq g tcref a.TyconRef
-             | None -> false)
-        then
-            flags <- flags ||| WellKnownValAttributes.DllImportAttribute
-        elif tyconRefEq g tcref g.attrib_EntryPointAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.EntryPointAttribute
-        elif tyconRefEq g tcref g.attrib_LiteralAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.LiteralAttribute
-        elif tyconRefEq g tcref g.attrib_ConditionalAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.ConditionalAttribute
-        elif tyconRefEq g tcref g.attrib_ReflectedDefinitionAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.ReflectedDefinitionAttribute
-        elif tyconRefEq g tcref g.attrib_RequiresExplicitTypeArgumentsAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
-        elif tyconRefEq g tcref g.attrib_DefaultValueAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.DefaultValueAttribute
-        elif tyconRefEq g tcref g.attrib_SkipLocalsInitAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.SkipLocalsInitAttribute
-        elif
-            (match g.attrib_ThreadStaticAttribute with
-             | Some a -> tyconRefEq g tcref a.TyconRef
-             | None -> false)
-        then
-            flags <- flags ||| WellKnownValAttributes.ThreadStaticAttribute
-        elif
-            (match g.attrib_ContextStaticAttribute with
-             | Some a -> tyconRefEq g tcref a.TyconRef
-             | None -> false)
-        then
-            flags <- flags ||| WellKnownValAttributes.ContextStaticAttribute
-        elif tyconRefEq g tcref g.attrib_VolatileFieldAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.VolatileFieldAttribute
-        elif tyconRefEq g tcref g.attrib_NoDynamicInvocationAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.NoDynamicInvocationAttribute
-        elif tyconRefEq g tcref g.attrib_ExtensionAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.ExtensionAttribute
-        elif tyconRefEq g tcref g.attrib_OptionalArgumentAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.OptionalArgumentAttribute
-        elif tyconRefEq g tcref g.attrib_InAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.InAttribute
-        elif tyconRefEq g tcref g.attrib_OutAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.OutAttribute
-        elif tyconRefEq g tcref g.attrib_ParamArrayAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.ParamArrayAttribute
-        elif tyconRefEq g tcref g.attrib_CallerMemberNameAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.CallerMemberNameAttribute
-        elif tyconRefEq g tcref g.attrib_CallerFilePathAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.CallerFilePathAttribute
-        elif tyconRefEq g tcref g.attrib_CallerLineNumberAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.CallerLineNumberAttribute
-        elif
-            (match g.attrib_DefaultParameterValueAttribute with
-             | Some a -> tyconRefEq g tcref a.TyconRef
-             | None -> false)
-        then
-            flags <- flags ||| WellKnownValAttributes.DefaultParameterValueAttribute
-        elif tyconRefEq g tcref g.attrib_ProjectionParameterAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.ProjectionParameterAttribute
-        elif tyconRefEq g tcref g.attrib_InlineIfLambdaAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.InlineIfLambdaAttribute
-        elif
-            (match g.attrib_OptionalAttribute with
-             | Some a -> tyconRefEq g tcref a.TyconRef
-             | None -> false)
-        then
-            flags <- flags ||| WellKnownValAttributes.OptionalAttribute
-        elif tyconRefEq g tcref g.attrib_StructAttribute.TyconRef then
-            flags <- flags ||| WellKnownValAttributes.StructAttribute
+        let fsharpCorePath =
+            if not tcref.IsLocalRef then
+                let nlr = tcref.nlr
+
+                if ccuEq nlr.Ccu g.fslibCcu then
+                    ValueSome nlr.Path
+                else
+                    // ── System / BCL assemblies ──
+                    match nlr.Path with
+                    | [| "System"; "Runtime"; "CompilerServices"; name |] ->
+                        match name with
+                        | "SkipLocalsInitAttribute" -> flags <- flags ||| WellKnownValAttributes.SkipLocalsInitAttribute
+                        | "ExtensionAttribute" -> flags <- flags ||| WellKnownValAttributes.ExtensionAttribute
+                        | "CallerMemberNameAttribute" ->
+                            flags <- flags ||| WellKnownValAttributes.CallerMemberNameAttribute
+                        | "CallerFilePathAttribute" -> flags <- flags ||| WellKnownValAttributes.CallerFilePathAttribute
+                        | "CallerLineNumberAttribute" ->
+                            flags <- flags ||| WellKnownValAttributes.CallerLineNumberAttribute
+                        | _ -> ()
+
+                    | [| "System"; "Runtime"; "InteropServices"; name |] ->
+                        match name with
+                        | "DllImportAttribute" -> flags <- flags ||| WellKnownValAttributes.DllImportAttribute
+                        | "InAttribute" -> flags <- flags ||| WellKnownValAttributes.InAttribute
+                        | "OutAttribute" -> flags <- flags ||| WellKnownValAttributes.OutAttribute
+                        | "DefaultParameterValueAttribute" ->
+                            flags <- flags ||| WellKnownValAttributes.DefaultParameterValueAttribute
+                        | "OptionalAttribute" -> flags <- flags ||| WellKnownValAttributes.OptionalAttribute
+                        | _ -> ()
+
+                    | [| "System"; "Diagnostics"; name |] ->
+                        match name with
+                        | "ConditionalAttribute" -> flags <- flags ||| WellKnownValAttributes.ConditionalAttribute
+                        | _ -> ()
+
+                    | [| "System"; name |] ->
+                        match name with
+                        | "ThreadStaticAttribute" -> flags <- flags ||| WellKnownValAttributes.ThreadStaticAttribute
+                        | "ContextStaticAttribute" -> flags <- flags ||| WellKnownValAttributes.ContextStaticAttribute
+                        | "ParamArrayAttribute" -> flags <- flags ||| WellKnownValAttributes.ParamArrayAttribute
+                        | _ -> ()
+
+                    | _ -> ()
+
+                    ValueNone
+            elif g.compilingFSharpCore then
+                match tcref.Deref.PublicPath with
+                | Some(PubPath pp) -> ValueSome pp
+                | None -> ValueNone
+            else
+                ValueNone
+
+        // ── FSharp.Core attributes ──
+        match fsharpCorePath with
+        | ValueSome path ->
+            match path with
+            | [| "Microsoft"; "FSharp"; "Core"; name |] ->
+                match name with
+                | "EntryPointAttribute" -> flags <- flags ||| WellKnownValAttributes.EntryPointAttribute
+                | "LiteralAttribute" -> flags <- flags ||| WellKnownValAttributes.LiteralAttribute
+                | "ReflectedDefinitionAttribute" ->
+                    flags <- flags ||| WellKnownValAttributes.ReflectedDefinitionAttribute
+                | "RequiresExplicitTypeArgumentsAttribute" ->
+                    flags <- flags ||| WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
+                | "DefaultValueAttribute" -> flags <- flags ||| WellKnownValAttributes.DefaultValueAttribute
+                | "VolatileFieldAttribute" -> flags <- flags ||| WellKnownValAttributes.VolatileFieldAttribute
+                | "NoDynamicInvocationAttribute" ->
+                    flags <- flags ||| WellKnownValAttributes.NoDynamicInvocationAttribute
+                | "OptionalArgumentAttribute" ->
+                    flags <- flags ||| WellKnownValAttributes.OptionalArgumentAttribute
+                | "ProjectionParameterAttribute" ->
+                    flags <- flags ||| WellKnownValAttributes.ProjectionParameterAttribute
+                | "InlineIfLambdaAttribute" -> flags <- flags ||| WellKnownValAttributes.InlineIfLambdaAttribute
+                | "StructAttribute" -> flags <- flags ||| WellKnownValAttributes.StructAttribute
+                | _ -> ()
+            | _ -> ()
+        | ValueNone -> ()
 
     flags
 
