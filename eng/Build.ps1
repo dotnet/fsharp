@@ -383,7 +383,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
         $reportArgs = "--report-xunit-trx --report-xunit-trx-filename ""$testLogFileName"""
     }
     
-    $test_args = "run $testTarget --filter-method ""*fsiAndModifiers"" -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
+    $test_args = "run $testTarget --filter-method ""*fsiAndModifiers"" --no-progress --output detailed -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
 
     if (-not $noVisualStudio -or $norestore) {
         $test_args += " --no-restore"
