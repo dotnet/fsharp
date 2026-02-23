@@ -4412,7 +4412,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
 let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls: CheckedImplFile) =
     let traitCtxt =
         if tcGlobals.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
-            Some(ConstraintSolver.CreateImplFileTraitContext tcGlobals [mimpls.Contents] optEnv.referencedCcus)
+            Some(ConstraintSolver.CreateImplFileTraitContext tcGlobals [mimpls.Contents] optEnv.referencedCcus :> ITraitContext)
         else
             None
 

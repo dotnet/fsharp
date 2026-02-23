@@ -2575,11 +2575,16 @@ type TraitWitnessInfo =
 
     override x.ToString() = "TraitWitnessInfo(" + x.MemberName + ")"
     
-type ITraitAccessorDomain = interface end
+/// Non-generic marker interface for storing in TraitConstraintInfo.
+/// The actual typed contract is ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader>.
+type ITraitContext = interface end
 
-type ITraitContext =
-    abstract SelectExtensionMethods: traitInfo: TraitConstraintInfo * range: range * infoReader: obj -> (TType * obj) list
-    abstract AccessRights: ITraitAccessorDomain
+/// Generic typed interface for trait context operations.
+/// 'AccessRights = AccessorDomain, 'MethodInfo = MethInfo, 'InfoReader = InfoReader at use sites.
+type ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader> =
+    inherit ITraitContext
+    abstract SelectExtensionMethods: traitInfo: TraitConstraintInfo * range: range * infoReader: 'InfoReader -> (TType * 'MethodInfo) list
+    abstract AccessRights: 'AccessRights
 
 /// The specification of a member constraint that must be solved 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]

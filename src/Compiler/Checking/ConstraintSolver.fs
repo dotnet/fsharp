@@ -74,6 +74,9 @@ open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.TypeProviders
 #endif
 
+/// Concrete ITraitContext used throughout the compiler.
+type TraitContext = ITraitContext<AccessorDomain, MethInfo, InfoReader>
+
 //-------------------------------------------------------------------------
 // Generate type variables and record them in within the scope of the
 // compilation environment, which currently corresponds to the scope
@@ -1670,10 +1673,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
             let traitAD =
                 if extensionsEnabled then
                     match traitCtxt with
-                    | Some c ->
-                        match c.AccessRights with
-                        | :? AccessorDomain as ad -> ad
-                        | x -> error (InternalError($"SolveMemberConstraint: expected AccessorDomain but got {x.GetType().Name}", m))
+                    | Some (:? TraitContext as tc) -> tc.AccessRights
+                    | Some _ -> error (InternalError("SolveMemberConstraint: unexpected ITraitContext implementation", m))
                     | None -> AccessibleFromEverywhere
                 else
                     AccessibleFromEverywhere
@@ -2269,16 +2270,13 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
             let extMinfos =
                 if extensionsEnabled then
                     match traitInfo.TraitContext with
-                    | Some traitCtxt ->
-                        let results = traitCtxt.SelectExtensionMethods(traitInfo, m, csenv.SolverState.InfoReader :> obj)
-                        results
-                        |> List.map (fun (ty, methObj) ->
-                            match methObj with
-                            | :? MethInfo as mi -> (ty, mi)
-                            | _ -> error (InternalError($"GetRelevantMethodsForTrait: expected MethInfo but got {methObj.GetType().Name}", m)))
+                    | Some (:? TraitContext as traitCtxt) ->
+                        traitCtxt.SelectExtensionMethods(traitInfo, m, csenv.SolverState.InfoReader)
                         |> List.filter (fun (_, extMinfo) ->
                             not (minfos |> List.exists (fun (_, intrinsicMinfo) ->
                                 MethInfosEquivByNameAndSig EraseAll true csenv.g csenv.amap m intrinsicMinfo extMinfo)))
+                    | Some _ ->
+                        error (InternalError("GetRelevantMethodsForTrait: unexpected ITraitContext implementation", m))
                     | None -> []
                 else
                     []
@@ -4239,7 +4237,7 @@ let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstrai
 /// ensuring the Val stamps match those bound in the expression tree (not the
 /// deep-copied signature vals in the CcuThunk).
 /// Also searches referenced CCU module types for cross-assembly extension members.
-let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) (referencedCcus: CcuThunk list) : ITraitContext =
+let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) (referencedCcus: CcuThunk list) : TraitContext =
     let extensionVals =
         lazy
             (let result = HashMultiMap<Stamp, ValRef>(10, HashIdentity.Structural)
@@ -4286,7 +4284,7 @@ let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespa
 
              result)
 
-    { new ITraitContext with
+    { new TraitContext with
         member _.SelectExtensionMethods(traitInfo, _m, _infoReader) =
             let nm = traitInfo.MemberLogicalName
 
@@ -4296,10 +4294,10 @@ let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespa
                       for vref in extensionVals.Value.FindAll(tcref.Stamp) do
                           if vref.LogicalName = nm then
                               let minfo = MethInfo.FSMeth(g, supportTy, vref, None)
-                              yield (supportTy, minfo :> obj)
+                              yield (supportTy, minfo)
                   | _ -> () ]
 
-        member _.AccessRights = (AccessibleFromEverywhere :> ITraitAccessorDomain) }
+        member _.AccessRights = AccessibleFromEverywhere }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
 let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs =

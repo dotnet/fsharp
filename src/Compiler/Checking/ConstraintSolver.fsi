@@ -15,6 +15,9 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
+/// Concrete ITraitContext used throughout the compiler.
+type TraitContext = ITraitContext<AccessorDomain, MethInfo, InfoReader>
+
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =
@@ -321,7 +324,7 @@ val CodegenWitnessExprForTraitConstraint:
     TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
 /// Create an ITraitContext from implementation file contents for use during optimization/codegen
-val CreateImplFileTraitContext: TcGlobals -> ModuleOrNamespaceContents list -> CcuThunk list -> ITraitContext
+val CreateImplFileTraitContext: TcGlobals -> ModuleOrNamespaceContents list -> CcuThunk list -> TraitContext
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 val CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs:

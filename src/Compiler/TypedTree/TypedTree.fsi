@@ -1734,16 +1734,16 @@ type TraitWitnessInfo =
     /// Get the return type recorded in the member constraint.
     member ReturnType: TType option
 
-/// Marker interface for accessibility domains used in trait constraint resolution
-type ITraitAccessorDomain = interface end
+/// Non-generic marker interface for storing in TraitConstraintInfo.
+type ITraitContext = interface end
 
-/// Represents information about the extension methods available at the point an SRTP constraint was created.
-/// This is used during constraint solving to find extension method solutions.
-type ITraitContext =
+/// Generic typed interface for trait context operations.
+type ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader> =
+    inherit ITraitContext
     /// Select extension methods relevant to solving a trait constraint
-    abstract SelectExtensionMethods: traitInfo: TraitConstraintInfo * range: Text.range * infoReader: obj -> (TType * obj) list
+    abstract SelectExtensionMethods: traitInfo: TraitConstraintInfo * range: Text.range * infoReader: 'InfoReader -> (TType * 'MethodInfo) list
     /// Get the accessibility domain for the trait context
-    abstract AccessRights: ITraitAccessorDomain
+    abstract AccessRights: 'AccessRights
 
 /// The specification of a member constraint that must be solved
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]

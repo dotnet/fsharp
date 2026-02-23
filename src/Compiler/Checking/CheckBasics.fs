@@ -14,6 +14,7 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
@@ -251,16 +252,11 @@ type TcEnv =
     /// Makes this environment available in a form that can be stored into a trait during solving.
     member tenv.TraitContext = Some (tenv :> ITraitContext)
 
-    interface ITraitContext with
+    interface ITraitContext<AccessorDomain, MethInfo, InfoReader> with
         member tenv.SelectExtensionMethods(traitInfo, m, infoReader) =
-            let infoReader =
-                match infoReader with
-                | :? InfoReader as ir -> ir
-                | _ -> error (InternalError("ITraitContext.SelectExtensionMethods: expected InfoReader instance", m))
             SelectExtensionMethInfosForTrait(traitInfo, m, tenv.eNameResEnv, infoReader)
-            |> List.map (fun (supportTy, minfo) -> supportTy, (minfo :> obj))
 
-        member tenv.AccessRights = (tenv.eAccessRights :> ITraitAccessorDomain)
+        member tenv.AccessRights = tenv.eAccessRights
 
     override tenv.ToString() = "TcEnv(...)"
 
