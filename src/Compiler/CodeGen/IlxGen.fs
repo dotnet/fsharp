@@ -12137,6 +12137,9 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let ilNetModuleAttrs =
         let baseAttrs = GenAttrs cenv eenv moduleAttribs
 
+        // Emit [module: RefSafetyRules(11)] so C# consumers apply C#11 scoping rules to this assembly.
+        // No dedup needed: F# source cannot target module-level attributes for this type,
+        // and the compiler is the sole emitter (matching C# behavior).
         match cenv.g.attrib_RefSafetyRulesAttribute_opt with
         | Some attrib when cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis ->
             let refSafetyAttr =

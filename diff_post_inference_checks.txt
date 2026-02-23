@@ -1,0 +1,382 @@
+diff --git a/src/Compiler/Checking/PostInferenceChecks.fs b/src/Compiler/Checking/PostInferenceChecks.fs
+index 16b29b71a..67c0a1e4a 100644
+--- a/src/Compiler/Checking/PostInferenceChecks.fs
++++ b/src/Compiler/Checking/PostInferenceChecks.fs
+@@ -187,6 +187,14 @@ module Limit =
+         (NoLimit, limits)
+         ||> List.fold CombineTwoLimits
+ 
++    /// Apply a scoped parameter mask to limits, zeroing out limits for scoped parameters.
++    let ApplyScopedMask (scopedMask: bool array) (limits: Limit list) =
++        if limits.Length <> scopedMask.Length then
++            failwith "ApplyScopedMask: scopedMask length should match limits length"
++
++        limits
++        |> List.mapi (fun i limit -> if scopedMask.[i] then NoLimit else limit)
++
+ type cenv =
+     { boundVals: Dictionary<Stamp, int> // really a hash set
+ 
+@@ -217,6 +225,8 @@ type cenv =
+ 
+       isInternalTestSpanStackReferring: bool
+ 
++      improvedByRefLikeEscapeAnalysis: bool
++
+       // outputs
+       mutable usesQuotations: bool
+ 
+@@ -825,6 +835,78 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
+     | None -> ()
+     | Some e -> errorR(e)
+ 
++/// Try to resolve an ILMethodRef to its ILMethodDef via the type's IL representation.
++/// Returns None if the type is not an IL type or resolution fails.
++let tryResolveILMethodDef (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : ILMethodDef option =
++    try
++        let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
++
++        match tyconRef.TypeReprInfo with
++        | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
++            Some(resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef)
++        | _ -> None
++    with _ ->
++        None
++
++/// Get the RefSafetyRulesVersion from the assembly containing the given IL method.
++/// Returns 0 if the method's assembly doesn't have the attribute or resolution fails.
++let getRefSafetyRulesVersion (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : int =
++    try
++        let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
++
++        if tyconRef.IsLocalRef then
++            0
++        else
++            tyconRef.nlr.Ccu.Deref.RefSafetyRulesVersion
++    with _ ->
++        0
++
++/// Build a boolean mask of which IL parameters have the given attribute.
++/// Returns None if the attribute is unavailable or no parameters match.
++let tryGetILParamAttrMask (attribOpt: BuiltinAttribInfo option) (methDef: ILMethodDef) : bool array option =
++    match attribOpt with
++    | None -> None
++    | Some attrib ->
++        let parameters = methDef.Parameters
++
++        if parameters.IsEmpty then
++            None
++        else
++            let mask =
++                parameters
++                |> List.toArray
++                |> Array.map (fun p -> TryFindILAttribute attrib p.CustomAttrs)
++
++            if Array.exists id mask then Some mask else None
++
++let tryGetScopedParamMask (g: TcGlobals) (methDef: ILMethodDef) =
++    tryGetILParamAttrMask g.attrib_ScopedRefAttribute_opt methDef
++
++/// Build a scoped parameter mask from F# parameter attributes.
++/// Reads ScopedRefAttribute from ArgReprInfo.Attribs for same-assembly F#-to-F# calls.
++let tryGetScopedParamMaskFromFSharpAttribs (g: TcGlobals) (argInfos: ArgReprInfo list) : bool array option =
++    match g.attrib_ScopedRefAttribute_opt with
++    | None -> None
++    | Some scopedRefAttrib ->
++        if argInfos.IsEmpty then
++            None
++        else
++            let mask =
++                argInfos
++                |> List.toArray
++                |> Array.map (fun ai -> HasFSharpAttribute g scopedRefAttrib ai.Attribs)
++
++            if Array.exists id mask then Some mask else None
++
++/// Check whether the given IL method has UnscopedRefAttribute.
++let hasUnscopedRefAttribute (g: TcGlobals) (methDef: ILMethodDef) : bool =
++    match g.attrib_UnscopedRefAttribute_opt with
++    | None -> false
++    | Some unscopedRefAttrib -> TryFindILAttribute unscopedRefAttrib methDef.CustomAttrs
++
++let tryGetUnscopedRefParamMask (g: TcGlobals) (methDef: ILMethodDef) =
++    tryGetILParamAttrMask g.attrib_UnscopedRefAttribute_opt methDef
++
+ /// Check an expression, where the expression is in a position where byrefs can be generated
+ let rec CheckExprNoByrefs cenv env expr =
+     CheckExpr cenv env expr PermitByRefExpr.No |> ignore
+@@ -949,17 +1031,24 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
+     let isReturnByref = isByrefTy cenv.g returnTy
+     let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
+ 
++    let improvedEscapeAnalysis =
++        cenv.improvedByRefLikeEscapeAnalysis
++
+     // If return is a byref, and being used as a return, then a single argument cannot be a local-byref or a stack referring span-like.
+     let isReturnLimitedByRef =
+-        isReturnByref &&
+-        (HasLimitFlag LimitFlags.ByRef limitArgs ||
+-         HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs)
++        isReturnByref
++        && (HasLimitFlag LimitFlags.ByRef limitArgs
++            || HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs)
+ 
+-    // If return is a byref, and being used as a return, then a single argument cannot be a stack referring span-like or a local-byref of a stack referring span-like.
++    // If return is a span-like, and being used as a return, check if arguments make it limited.
++    // With improved escape analysis, a byref argument referring to a local can be captured as a ref field in the returned span-like.
+     let isReturnLimitedSpanLike =
+-        isReturnSpanLike &&
+-        (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
+-         HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs)
++        isReturnSpanLike
++        && (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs
++            || HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs
++            || (improvedEscapeAnalysis
++                && HasLimitFlag LimitFlags.ByRef limitArgs
++                && limitArgs.IsLocal))
+ 
+     if cenv.reportErrors then
+         if ctxt.PermitOnlyReturnable && ((isReturnLimitedByRef && IsLimitEscapingScope env ctxt limitArgs) || isReturnLimitedSpanLike) then
+@@ -1005,13 +1094,30 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
+     else
+         { scope = 1; flags = LimitFlags.None }
+ 
++/// Compute individual limits for expressions, tolerant of mismatched list lengths (like CheckExprs).
++and CheckExprsIndividual cenv env exprs ctxts : Limit list =
++    let ctxts = Array.ofList ctxts
++    let argArity i = if i < ctxts.Length then ctxts[i] else PermitByRefExpr.No
++    exprs |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i))
++
++/// Check expressions, applying scoped parameter mask if available to zero out limits for scoped parameters.
++and CheckExprsWithScopedMask cenv env args ctxts (scopedMask: bool array option) =
++    match scopedMask with
++    | None -> CheckExprs cenv env args ctxts
++    | Some mask ->
++        CheckExprsIndividual cenv env args ctxts
++        |> ApplyScopedMask mask
++        |> CombineLimits
++
+ /// Check call arguments, including the return argument.
+-and CheckCall cenv env m returnTy args ctxts ctxt =
+-    let limitArgs = CheckExprs cenv env args ctxts
++/// When scopedMask is provided, scoped parameters are excluded from escape limits.
++and CheckCall cenv env m returnTy args ctxts ctxt (scopedMask: bool array option) =
++    let limitArgs = CheckExprsWithScopedMask cenv env args ctxts scopedMask
+     CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
+ 
+ /// Check call arguments, including the return argument. The receiver argument is handled differently.
+-and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
++/// When scopedMask is provided, indices correspond to IL parameters (0-based, NOT including receiver).
++and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt (scopedMask: bool array option) (hasUnscopedRef: bool) =
+     match args with
+     | [] -> failwith "CheckCallWithReceiver: Argument list is empty."
+     | receiverArg :: args ->
+@@ -1022,14 +1128,25 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
+             | ctxt :: ctxts -> ctxt, ctxts
+ 
+         let receiverLimit = CheckExpr cenv env receiverArg receiverContext
++
++        let improvedEscapeAnalysis =
++            cenv.improvedByRefLikeEscapeAnalysis
++
+         let limitArgs =
+-            let limitArgs = CheckExprs cenv env args ctxts
++            let limitArgs = CheckExprsWithScopedMask cenv env args ctxts scopedMask
++
+             // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
+             if HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike receiverLimit then
+                 // Scope is 1 to ensure any by-refs returned can only be prevented for out of scope of the function/method, not visibility.
+                 CombineTwoLimits limitArgs { receiverLimit with scope = 1 }
++            // With improved escape analysis, include the receiver's byref limit only when [UnscopedRef] is present.
++            // C# struct `this` is implicitly scoped. [UnscopedRef] opts out, allowing `this` to escape.
++            // Without [UnscopedRef], the receiver is scoped and excluded from the limit.
++            elif improvedEscapeAnalysis && hasUnscopedRef && HasLimitFlag LimitFlags.ByRef receiverLimit then
++                CombineTwoLimits limitArgs receiverLimit
+             else
+                 limitArgs
++
+         CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
+ 
+ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (contf : Limit -> Limit) : Limit =
+@@ -1425,10 +1542,38 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
+         | _ -> false
+ 
+     let ctxts = mkArgsForAppliedExpr false argsl f
++
++    // Compute scoped mask for F#-to-F# calls with [<ScopedRef>] params
++    let scopedMask =
++        if cenv.improvedByRefLikeEscapeAnalysis then
++            match f with
++            | Expr.Val(vref, _, _) ->
++                vref.ValReprInfo
++                |> Option.bind (fun valReprInfo ->
++                    let flatArgInfos = valReprInfo.ArgInfos |> List.concat
++                    // For instance members, argsl includes receiver at [0], and ValReprInfo.ArgInfos
++                    // also includes receiver. CheckCallWithReceiver splits receiver off, so exclude it.
++                    let paramArgInfos =
++                        if hasReceiver && not flatArgInfos.IsEmpty then
++                            flatArgInfos.Tail
++                        else
++                            flatArgInfos
++
++                    let expectedArgCount =
++                        if hasReceiver then argsl.Length - 1 else argsl.Length
++
++                    if paramArgInfos.Length = expectedArgCount then
++                        tryGetScopedParamMaskFromFSharpAttribs cenv.g paramArgInfos
++                    else
++                        None)
++            | _ -> None
++        else
++            None
++
+     if hasReceiver then
+-        CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt
++        CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt scopedMask false
+     else
+-        CheckCall cenv env m returnTy argsl ctxts ctxt
++        CheckCall cenv env m returnTy argsl ctxts ctxt scopedMask
+ 
+ and CheckLambda cenv env expr (argvs, m, bodyTy) =
+     let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
+@@ -1532,7 +1677,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
+         let limit2 = CheckExpr cenv env e3 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
+         CombineTwoLimits limit1 limit2
+ 
+-    | TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), _, _ ->
++    | TOp.ILCall (_, _, _, isCtor, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), _, _ ->
+ 
+         CheckTypeInstNoByrefs cenv env m tyargs
+ 
+@@ -1562,6 +1707,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
+ 
+         let hasReceiver =
+             (ilMethRef.CallingConv.IsInstance || ilMethRef.CallingConv.IsInstanceExplicit) &&
++            not isCtor &&
+             not args.IsEmpty
+ 
+         let returnTy = tyOfExpr g expr
+@@ -1569,16 +1715,98 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
+         let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
+ 
+         match retTypes with
+-        | [ty] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m ty ->
++        | [_] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m returnTy ->
++            let methDefOpt =
++                if cenv.improvedByRefLikeEscapeAnalysis then
++                    tryResolveILMethodDef cenv.amap m ilMethRef
++                else
++                    None
++
++            let refSafetyVersion =
++                if cenv.improvedByRefLikeEscapeAnalysis then
++                    getRefSafetyRulesVersion cenv.amap m ilMethRef
++                else
++                    0
++
++            let scopedMask, hasUnscopedRef =
++                match methDefOpt with
++                | Some methDef ->
++                    let mask =
++                        if methInst.IsEmpty || refSafetyVersion >= 11 then
++                            let baseMask = tryGetScopedParamMask g methDef
++
++                            let withImplicit =
++                                if refSafetyVersion >= 11 then
++                                    let implicitMask =
++                                        methDef.Parameters
++                                        |> List.toArray
++                                        |> Array.map (fun p ->
++                                            // V2-3: out T → always implicitly scoped when version ≥ 11
++                                            (p.IsOut && not p.IsIn)
++                                            ||
++                                            // V2-4: ref/in T where T is ref struct → implicitly scoped
++                                            (match p.Type with
++                                             | ILType.Byref inner ->
++                                                 match inner with
++                                                 | ILType.TypeVar _ -> false // Can't resolve type vars without instantiation
++                                                 | _ ->
++                                                     try
++                                                         let fsTy = Import.ImportILType cenv.amap m [] inner
++                                                         isByrefLikeTy g m fsTy
++                                                     with _ ->
++                                                         false
++                                             | _ -> false))
++
++                                    match baseMask with
++                                    | Some scopedArr ->
++                                        let merged = Array.map2 (||) scopedArr implicitMask
++
++                                        if Array.exists id merged then
++                                            Some merged
++                                        else
++                                            None
++                                    | None ->
++                                        if Array.exists id implicitMask then
++                                            Some implicitMask
++                                        else
++                                            None
++                                else
++                                    baseMask
++
++                            withImplicit
++                            |> Option.bind (fun scopedArr ->
++                                match tryGetUnscopedRefParamMask g methDef with
++                                | Some unscopedArr ->
++                                    let effective =
++                                        scopedArr
++                                        |> Array.mapi (fun i scoped -> scoped && not (i < unscopedArr.Length && unscopedArr.[i]))
++
++                                    if Array.exists id effective then
++                                        Some effective
++                                    else
++                                        None
++                                | None -> Some scopedArr)
++                        else
++                            None
++
++                    let unscoped =
++                        if hasReceiver then
++                            hasUnscopedRefAttribute g methDef
++                        else
++                            false
++
++                    mask, unscoped
++                | None -> None, false
++
+             if hasReceiver then
+-                CheckCallWithReceiver cenv env m returnTy args argContexts ctxt
++                CheckCallWithReceiver cenv env m returnTy args argContexts ctxt scopedMask hasUnscopedRef
+             else
+-                CheckCall cenv env m returnTy args argContexts ctxt
++                CheckCall cenv env m returnTy args argContexts ctxt scopedMask
+         | _ ->
+             if hasReceiver then
+-                CheckCallWithReceiver cenv env m returnTy args argContexts PermitByRefExpr.Yes
++                CheckCallWithReceiver cenv env m returnTy args argContexts PermitByRefExpr.Yes None false
+             else
+-                CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes
++                CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes None
+ 
+     | TOp.Tuple tupInfo, _, _ when not (evalTupInfoIsStruct tupInfo) ->
+         match ctxt with
+@@ -1904,10 +2132,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
+         limit
+ 
+ and CheckExprs cenv env exprs ctxts : Limit =
+-    let ctxts = Array.ofList ctxts
+-    let argArity i = if i < ctxts.Length then ctxts[i] else PermitByRefExpr.No
+-    exprs
+-    |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i))
++    CheckExprsIndividual cenv env exprs ctxts
+     |> CombineLimits
+ 
+ and CheckExprsNoByRefLike cenv env exprs : Limit =
+@@ -2779,6 +3004,7 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
+           viewCcu = viewCcu
+           isLastCompiland = isLastCompiland
+           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
++          improvedByRefLikeEscapeAnalysis = g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
+           tcVal = tcValF
+           entryPointGiven = false}
+ 

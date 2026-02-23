@@ -853,7 +853,7 @@ let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: IL
             let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
             Some(methDef, refSafetyVersion)
         | _ -> None
-    with :? System.Exception ->
+    with _ ->
         None
 
 /// Return Some mask if any element is true, else None.
@@ -908,10 +908,10 @@ let tryGetUnscopedRefParamMask (g: TcGlobals) (methDef: ILMethodDef) =
 
 /// Check if an IL parameter is implicitly scoped (out T or ref/in T where T is ref struct)
 let isImplicitlyScopedParam (g: TcGlobals) (amap: Import.ImportMap) (m: range) (p: ILParameter) =
-    // V2-3: out T → always implicitly scoped when version ≥ 11
+    // out T → always implicitly scoped when version ≥ 11
     (p.IsOut && not p.IsIn)
     ||
-    // V2-4: ref/in T where T is ref struct → implicitly scoped
+    // ref/in T where T is ref struct → implicitly scoped
     (match p.Type with
      | ILType.Byref inner ->
          match inner with
@@ -920,7 +920,7 @@ let isImplicitlyScopedParam (g: TcGlobals) (amap: Import.ImportMap) (m: range) (
              try
                  let fsTy = Import.ImportILType amap m [] inner
                  isByrefLikeTy g m fsTy
-             with :? System.Exception ->
+             with _ ->
                  false
      | _ -> false)
 
@@ -1623,6 +1623,9 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
             None
 
     if hasReceiver then
+        // hasUnscopedRef = false: F# has no syntax for [UnscopedRef] on struct members.
+        // Same-assembly F# struct receivers are always treated as implicitly scoped (C# default).
+        // Cross-assembly calls go through the IL path in CheckExprOp which reads the attribute.
         CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt scopedMask false
     else
         CheckCall cenv env m returnTy argsl ctxts ctxt scopedMask

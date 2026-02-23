@@ -1070,7 +1070,7 @@ type outref<'T> with
         |> compile
         |> shouldSucceed
 
-    // --- ScopedRefAttribute consumption (Sprint 03) ---
+    // --- ScopedRefAttribute consumption ---
 
     [<Fact>]
     let ``Scoped ref param does not trigger escape error`` () =
@@ -1429,7 +1429,7 @@ let f () = task {
         |> shouldFail
         |> withErrorCodes [412]
 
-    // --- C# Interop: Custom IsByRefLike and Struct Receiver tests (Sprint 03 Part 1) ---
+    // --- C# Interop: Custom IsByRefLike and Struct Receiver tests ---
 
     let private customIsByRefLikeCSharpLib =
         CSharp """
