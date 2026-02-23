@@ -168,7 +168,7 @@ module Scripting =
             | 0 ->
                 Success(string out)
             | errCode ->
-                System.Environment.FailFast($"Console input encoding is '{System.Console.InputEncoding}' and for child process it's '{p.StandardInput}'. \r\nStdOut:\r\n{out}\r\n\r\nStdErr:\r\n{err}")
+                System.Environment.FailFast($"Console input encoding is '{System.Console.InputEncoding}'. Child process redirects input? '{p.StartInfo.RedirectStandardInput}'. \r\nStdOut:\r\n{out}\r\n\r\nStdErr:\r\n{err}")
                 let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'" exePath arguments workDir
                 ErrorLevel (msg, errCode)
 
