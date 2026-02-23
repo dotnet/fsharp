@@ -49,6 +49,7 @@ param (
     [switch]$dontUseGlobalNuGetCache = $false,
     [switch]$warnAsError = $true,
     [switch][Alias('test')]$testDesktop,
+    [string]$testDesktopBatch = "",
     [switch]$testCoreClr,
     [switch]$testCambridge,
     [switch]$testCompiler,
@@ -121,6 +122,7 @@ function Print-Usage() {
     Write-Host "  -testCompilerService          Run FSharpCompilerService unit tests"
     Write-Host "  -testCompilerComponentTests   Run FSharpCompilerService component tests"
     Write-Host "  -testDesktop                  Run tests against full .NET Framework"
+    Write-Host "  -testDesktopBatch <1|2|3>       Run a specific batch of the desktop test split (implies -testDesktop)"
     Write-Host "  -testCoreClr                  Run tests against CoreCLR"
     Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
     Write-Host "  -testIntegration              Run F# integration tests"
@@ -191,6 +193,10 @@ function Process-Arguments() {
 
     if($script:testVs) {
         $script:testEditor = $True
+    }
+
+    if ($script:testDesktopBatch -ne "") {
+        $script:testDesktop = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
@@ -605,7 +611,23 @@ try {
     }
 
     if ($testDesktop) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
+        if ($testDesktopBatch -ne "") {
+            $dotnetPath = InitializeDotNetCli
+            $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+            $splitScript = Join-Path $RepoRoot "eng\tests\TestSplit.fsx"
+            $splitOutput = & $dotnetExe fsi $splitScript $testDesktopBatch
+            if ($LASTEXITCODE -ne 0) { throw "TestSplit.fsx failed with exit code $LASTEXITCODE" }
+            foreach ($line in $splitOutput) {
+                if ($line -match '^dotnet test (\S+) --no-build -c Release\s*(.*)$') {
+                    $proj = $Matches[1] -replace '/', '\'
+                    $projPath = Join-Path $RepoRoot $proj
+                    $settings = $Matches[2].Trim()
+                    TestUsingMSBuild -testProject $projPath -targetFramework $script:desktopTargetFramework -settings $settings
+                }
+            }
+        } else {
+            TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
+        }
     }
 
     if ($testFSharpCore) {

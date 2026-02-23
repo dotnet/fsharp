@@ -1,0 +1,73 @@
+/// Test split table for parallel CI.
+/// Edit the batch assignments below, then run:
+///   dotnet fsi eng/tests/TestSplit.fsx <batchNumber>
+/// to get the dotnet test commands for that batch.
+
+let totalBatches = 3
+let residualBatch = 2 // uses negation filter; catches unlisted atoms + future namespaces
+
+// MTP --filter-namespace uses starts-with matching on the test namespace.
+// Unlisted atoms go to the residual batch automatically via --filter-not-namespace.
+
+let componentTestsAtoms =
+    [// atom                    batch
+        "CompilerDirectives",   1
+        "CompilerService",      1
+        "ErrorMessages",        1
+        "FSharpChecker",        1
+        "Import",               1
+        "Language",             1
+        "Miscellaneous",        1
+        "XmlComments",          1
+
+        "Libraries",            2
+        "Globalization",        2
+
+        "EmittedIL",            3
+        "Interop",              3
+        "InteractiveSession",   3
+        "CompilerOptions",      3
+        "Conformance",          3
+        "Diagnostics",          3
+        "Signatures",           3
+        "ConstraintSolver",     3
+        "Debugger",             3
+        "Scripting",            3
+        "TypeChecks",           3
+    ]
+
+let otherProjects =
+    [// project path                                                                         batch
+        "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          1
+        "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          1
+        "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 3
+        "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        3
+    ]
+
+// ── filter generation ──
+
+let batch =
+    match fsi.CommandLineArgs with
+    | [| _; n |] ->
+        let v = int n
+        if v < 1 || v > totalBatches then failwith $"Batch number must be between 1 and {totalBatches}, got {v}"
+        v
+    | _ -> failwith "Usage: dotnet fsi eng/tests/TestSplit.fsx <batchNumber>"
+
+let atomsForBatch b = componentTestsAtoms |> List.filter (fun (_, ba) -> ba = b) |> List.map fst |> List.sort
+let otherBatchesAtoms = componentTestsAtoms |> List.filter (fun (_, b) -> b <> batch) |> List.map fst |> List.sort
+
+let filterArgs =
+    if batch = residualBatch then
+        let atoms = otherBatchesAtoms |> String.concat " "
+        $"--filter-not-namespace {atoms}"
+    else
+        let atoms = atomsForBatch batch |> String.concat " "
+        $"--filter-namespace {atoms}"
+
+let componentTests = "tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj"
+
+printfn $"dotnet test {componentTests} --no-build -c Release {filterArgs}"
+
+for (proj, _) in otherProjects |> List.filter (fun (_, b) -> b = batch) do
+    printfn $"dotnet test {proj} --no-build -c Release"
