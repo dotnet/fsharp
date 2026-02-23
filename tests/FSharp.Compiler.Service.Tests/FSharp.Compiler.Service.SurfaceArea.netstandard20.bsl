@@ -5847,6 +5847,7 @@ FSharp.Compiler.Symbols.FSharpType: Boolean IsMeasureType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsNativePointerType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsNullAmbivalent
 FSharp.Compiler.Symbols.FSharpType: Boolean IsObjectType
+FSharp.Compiler.Symbols.FSharpType: Boolean IsReferenceTupleType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsStringType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsStructTupleType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsTupleType
@@ -5868,6 +5869,7 @@ FSharp.Compiler.Symbols.FSharpType: Boolean get_IsMeasureType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsNativePointerType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsNullAmbivalent()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsObjectType()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsReferenceTupleType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsStringType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsStructTupleType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsTupleType()

@@ -2561,6 +2561,10 @@ type FSharpType(cenv, ty:TType) =
 
     member _.IsTupleType = 
        isResolved() &&
+       protect <| fun () -> isAnyTupleTy cenv.g ty
+
+    member _.IsReferenceTupleType = 
+       isResolved() &&
        protect <| fun () -> isRefTupleTy cenv.g ty
 
     member _.IsStructTupleType = 

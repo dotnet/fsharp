@@ -1120,6 +1120,9 @@ type FSharpType =
     /// Indicates if the type is a tuple type (reference or struct). The GenericArguments property returns the elements of the tuple type.
     member IsTupleType: bool
 
+    /// Indicates if the type is a reference tuple type. The GenericArguments property returns the elements of the tuple type.
+    member IsReferenceTupleType: bool
+
     /// Indicates if the type is a struct tuple type. The GenericArguments property returns the elements of the tuple type.
     member IsStructTupleType: bool
 
