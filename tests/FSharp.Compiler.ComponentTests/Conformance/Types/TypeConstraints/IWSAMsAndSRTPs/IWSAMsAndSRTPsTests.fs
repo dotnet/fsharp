@@ -3284,3 +3284,15 @@ let result : int = multiply 5 3
         |> withOptions [ "--nowarn:3882" ]
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Warning 3882 emitted when SRTP constraint not statically resolved at codegen`` () =
+        FSharp """
+module Test
+let inline f x = x + 1
+let g : int -> int = f
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "could not be statically resolved"
