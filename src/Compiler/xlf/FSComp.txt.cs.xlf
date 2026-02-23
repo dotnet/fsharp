@@ -5807,6 +5807,11 @@
         <target state="translated">Dynamické vyvolání {0} se nepodporuje.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilTraitCallNotStaticallyResolved">
+        <source>The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</source>
+        <target state="new">The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilAddressOfLiteralFieldIsInvalid">
         <source>Taking the address of a literal field is invalid</source>
         <target state="translated">Přebírání adresy pole literálu je neplatné.</target>

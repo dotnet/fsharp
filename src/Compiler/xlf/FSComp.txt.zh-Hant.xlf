@@ -5807,6 +5807,11 @@
         <target state="translated">不支援 {0} 的動態引動</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilTraitCallNotStaticallyResolved">
+        <source>The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</source>
+        <target state="new">The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilAddressOfLiteralFieldIsInvalid">
         <source>Taking the address of a literal field is invalid</source>
         <target state="translated">接受常值欄位的位址無效</target>

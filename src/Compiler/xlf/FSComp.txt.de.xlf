@@ -5807,6 +5807,11 @@
         <target state="translated">Der dynamische Aufruf von {0} wird nicht unterstützt.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilTraitCallNotStaticallyResolved">
+        <source>The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</source>
+        <target state="new">The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilAddressOfLiteralFieldIsInvalid">
         <source>Taking the address of a literal field is invalid</source>
         <target state="translated">Das Übernehmen der Adresse eines Literalfelds ist unzulässig.</target>

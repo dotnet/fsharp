@@ -5538,9 +5538,11 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         let exprOpt =
             match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs with
             | OkResult(_, res) -> res
-            // Resolution may fail for generic inline code with unsolved constraints (e.g. rigid typars);
-            // treat as dynamic invocation not supported.
             | ErrorResult _ ->
+                // Emit a diagnostic so the user knows about the runtime throw.
+                // This is defensive — type-checking should have caught it — but
+                // extension constraint changes can leave unsolved constraints in codegen.
+                warning(Error(FSComp.SR.ilTraitCallNotStaticallyResolved(traitInfo.MemberLogicalName), m))
                 None
 
         match exprOpt with
@@ -7337,13 +7339,20 @@ and ExprRequiresWitness cenv m expr =
     | Expr.Op(TOp.TraitCall(traitInfo), _, _, _) ->
         match ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo with
         | OkResult(_, res) -> res
-        // When constraint resolution fails (e.g. on rigid generalized typars), witnesses are needed
-        // However, if we return true here, we claim witnesses are needed but cannot be provided (since resolution failed).
-        // This leads to broken code generation or further assertions.
-        // Instead, we should return false to indicate that witness-based optimization/invocation is NOT possible,
-        // which forces the caller to use the fallback (dynamic invocation or error).
         | ErrorResult _ ->
-            false
+            // If all support types are concrete (not typars), this is a real failure
+            // that should not silently take the non-witness path.
+            let allConcrete =
+                traitInfo.SupportTypes
+                |> List.forall (fun ty -> not (isTyparTy g ty))
+            if allConcrete then
+                // This shouldn't happen — type-checking should have caught it.
+                // But defensively, returning false means "don't use witness path"
+                // which leads to the dynamic invocation fallback (safer than broken witnesses).
+                false
+            else
+                // Unsolved typars — genuinely don't know. false = don't use witness path.
+                false
     | _ -> false
 
 /// Generate statically-resolved conditionals used for type-directed optimizations in FSharp.Core only.

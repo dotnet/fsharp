@@ -2948,6 +2948,7 @@ with
 | :? System.NotSupportedException -> () // Acceptable: reified SRTP may lack witnesses
         """
         |> withLangVersionPreview
+        |> withOptions [ "--nowarn:3882" ]
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -2966,6 +2967,7 @@ with
 | :? System.NotSupportedException -> () // Acceptable: reified SRTP may lack witnesses
         """
         |> withLangVersionPreview
+        |> withOptions [ "--nowarn:3882" ]
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -3100,6 +3102,7 @@ with
 | :? System.NotSupportedException -> () // Acceptable: delegate from SRTP may lack witnesses
         """
         |> withLangVersionPreview
+        |> withOptions [ "--nowarn:3882" ]
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -3266,6 +3269,7 @@ let r1 = multiply "a" 3
 let r2 = multiply 5 3
         """
         |> withLangVersionPreview
+        |> withOptions [ "--nowarn:3882" ]
         |> compile
         |> shouldSucceed
 
@@ -3277,5 +3281,6 @@ let inline multiply (x: ^T) (n: int) = x * n
 let result : int = multiply 5 3
         """
         |> withLangVersionPreview
+        |> withOptions [ "--nowarn:3882" ]
         |> compile
         |> shouldSucceed

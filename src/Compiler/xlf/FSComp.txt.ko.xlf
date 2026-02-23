@@ -5807,6 +5807,11 @@
         <target state="translated">{0}을(를) 동적으로 호출하는 작업은 지원되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilTraitCallNotStaticallyResolved">
+        <source>The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</source>
+        <target state="new">The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilAddressOfLiteralFieldIsInvalid">
         <source>Taking the address of a literal field is invalid</source>
         <target state="translated">리터럴 필드의 주소를 사용하는 것은 올바르지 않습니다.</target>
