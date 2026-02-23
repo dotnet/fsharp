@@ -3230,3 +3230,52 @@ let r = bar { X = 1 }
         |> typecheck
         |> shouldFail
         |> withErrorCode 1
+
+    [<Fact>]
+    let ``Inline numeric square stays monomorphic with preview when no extensions in scope`` () =
+        FSharp """
+module Test
+let inline square x = x * x
+let result : int = square 5
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline DateTime add resolves eagerly with preview when no extensions in scope`` () =
+        FSharp """
+module Test
+open System
+let inline addDay (x: DateTime) = x + TimeSpan.FromDays(1.0)
+let result : DateTime = addDay DateTime.Now
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline multiply stays generic when extension operator is in scope`` () =
+        FSharp """
+module Test
+type System.String with
+    static member (*) (s: string, n: int) = System.String(s.[0], n)
+
+let inline multiply (x: ^T) (n: int) = x * n
+let r1 = multiply "a" 3
+let r2 = multiply 5 3
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline multiply resolves to int when no extension operator is in scope`` () =
+        FSharp """
+module Test
+let inline multiply (x: ^T) (n: int) = x * n
+let result : int = multiply 5 3
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed

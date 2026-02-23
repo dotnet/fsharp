@@ -7147,9 +7147,11 @@ and TcObjectExprBinding (cenv: cenv) (env: TcEnv) implTy tpenv (absSlotInfo, bin
             | _ ->
                 declaredTypars
         // Canonicalize constraints prior to generalization
-        // For inline bindings with extension constraint solutions enabled, skip canonicalization
-        // so SRTP constraints stay generic per RFC FS-1043 claim #6.
-        if not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions && inlineFlag = ValInline.Always) then
+        // For inline bindings with extension constraint solutions enabled, use selective canonicalization
+        // that keeps extension-context constraints open per RFC FS-1043 claim #6.
+        if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions && inlineFlag = ValInline.Always then
+            CanonicalizePartialInferenceProblemForExtensions cenv.css denv m declaredTypars
+        else
             CanonicalizePartialInferenceProblem cenv.css denv m declaredTypars
 
         let freeInEnv = GeneralizationHelpers.ComputeUngeneralizableTypars env
@@ -11612,21 +11614,35 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
     let (ContainerInfo(altActualParent, _)) = containerInfo
 
     // Canonicalize constraints prior to generalization
-    // For inline bindings with extension constraint solutions enabled, skip canonicalization
-    // so SRTP constraints stay generic per RFC FS-1043 claim #6.
+    // For inline bindings with extension constraint solutions enabled, use selective canonicalization
+    // that keeps extension-context constraints open per RFC FS-1043 claim #6.
     let denv = env.DisplayEnv
     let extensionsEnabled = g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions
+
     try
-        CanonicalizePartialInferenceProblem cenv.css denv synBindsRange
-            (checkedBinds |> List.collect (fun tbinfo ->
-                let (CheckedBindingInfo(inlineFlag, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) = tbinfo
-                if extensionsEnabled && inlineFlag = ValInline.Always then
-                    []
-                else
+        let nonExtensionTypars, extensionTypars =
+            checkedBinds
+            |> List.fold
+                (fun (nonExt, ext) tbinfo ->
+                    let (CheckedBindingInfo(inlineFlag, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) =
+                        tbinfo
+
                     let (ExplicitTyparInfo(_, declaredTypars, _)) = explicitTyparInfo
                     let maxInferredTypars = (freeInTypeLeftToRight g false tauTy)
-                    declaredTypars @ maxInferredTypars))
-    with RecoverableException _ -> ()
+                    let allTypars = declaredTypars @ maxInferredTypars
+
+                    if extensionsEnabled && inlineFlag = ValInline.Always then
+                        (nonExt, ext @ allTypars)
+                    else
+                        (nonExt @ allTypars, ext))
+                ([], [])
+
+        CanonicalizePartialInferenceProblem cenv.css denv synBindsRange nonExtensionTypars
+
+        if not (List.isEmpty extensionTypars) then
+            CanonicalizePartialInferenceProblemForExtensions cenv.css denv synBindsRange extensionTypars
+    with RecoverableException _ ->
+        ()
 
     let lazyFreeInEnv = lazy (GeneralizationHelpers.ComputeUngeneralizableTypars env)
 
@@ -12647,15 +12663,26 @@ and TcIncrementalLetRecGeneralization cenv scopem
             else
 
                 let extensionsEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions
-                let supportForBindings =
+
+                let nonExtensionSupport, extensionSupport =
                     newGeneralizableBindings
-                    |> List.collect (fun pgrbind ->
-                        let (CheckedBindingInfo(inlineFlag, _, _, _, _, _, _, _, _, _, _, _, _, _)) = pgrbind.CheckedBinding
-                        if extensionsEnabled && inlineFlag = ValInline.Always then
-                            []
-                        else
-                            TcLetrecComputeSupportForBinding cenv pgrbind)
-                CanonicalizePartialInferenceProblem cenv.css denv scopem supportForBindings
+                    |> List.fold
+                        (fun (nonExt, ext) pgrbind ->
+                            let (CheckedBindingInfo(inlineFlag, _, _, _, _, _, _, _, _, _, _, _, _, _)) =
+                                pgrbind.CheckedBinding
+
+                            let support = TcLetrecComputeSupportForBinding cenv pgrbind
+
+                            if extensionsEnabled && inlineFlag = ValInline.Always then
+                                (nonExt, ext @ support)
+                            else
+                                (nonExt @ support, ext))
+                        ([], [])
+
+                CanonicalizePartialInferenceProblem cenv.css denv scopem nonExtensionSupport
+
+                if not (List.isEmpty extensionSupport) then
+                    CanonicalizePartialInferenceProblemForExtensions cenv.css denv scopem extensionSupport
 
                 let generalizedTyparsL = newGeneralizableBindings |> List.map (TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv)
 

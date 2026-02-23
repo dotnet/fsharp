@@ -4355,6 +4355,64 @@ let CanonicalizePartialInferenceProblem css denv m tps =
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m))) 
     |> RaiseOperationResult
 
+/// Like CanonicalizePartialInferenceProblem, but for the ExtensionConstraintSolutions feature:
+/// constraints without extension context (TraitContext=None) use weak resolution (Yes) as before;
+/// constraints with extension context (TraitContext=Some) use non-weak resolution (No),
+/// keeping them open for future extension method resolution.
+let CanonicalizePartialInferenceProblemForExtensions css denv m tps =
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = true }
+
+    IgnoreFailedMemberConstraintResolution
+        (fun () ->
+            RepeatWhileD
+                0
+                (fun ndeep ->
+                    tps
+                    |> AtLeastOneD (fun tp ->
+                        let ty = mkTyparTy tp
+
+                        match tryAnyParTy csenv.g ty with
+                        | ValueSome tp ->
+                            let cxst = csenv.SolverState.ExtraCxs
+                            let tpn = tp.Stamp
+                            let cxs = cxst.FindAll tpn
+
+                            if isNil cxs then
+                                ResultD false
+                            else
+                                // Partition: constraints with extension context vs without
+                                let withCtxt, withoutCtxt =
+                                    cxs |> List.partition (fun (traitInfo, _) -> traitInfo.TraitContext.IsSome)
+
+                                // Remove all constraints, then solve them with appropriate weak resolution
+                                NoTrace.Exec
+                                    (fun () -> cxs |> List.iter (fun _ -> cxst.Remove tpn))
+                                    (fun () -> cxs |> List.iter (fun cx -> cxst.Add(tpn, cx)))
+
+                                assert (isNil (cxst.FindAll tpn))
+
+                                trackErrors {
+                                    // Solve without-context constraints eagerly (weak=Yes, same as before)
+                                    let! r1 =
+                                        withoutCtxt
+                                        |> AtLeastOneD (fun (traitInfo, m2) ->
+                                            let csenv = { csenv with m = m2 }
+                                            SolveMemberConstraint csenv true PermitWeakResolution.Yes (ndeep + 1) m2 NoTrace traitInfo)
+
+                                    // Attempt non-weak resolution on with-context constraints (weak=No)
+                                    let! r2 =
+                                        withCtxt
+                                        |> AtLeastOneD (fun (traitInfo, m2) ->
+                                            let csenv = { csenv with m = m2 }
+                                            SolveMemberConstraint csenv true PermitWeakResolution.No (ndeep + 1) m2 NoTrace traitInfo)
+
+                                    return r1 || r2
+                                }
+                        | ValueNone -> ResultD false)))
+        (fun res -> ErrorD(ErrorFromAddingConstraint(denv, res, m)))
+    |> RaiseOperationResult
+
 /// An approximation used during name resolution for intellisense to eliminate extension members which will not
 /// apply to a particular object argument. This is given as the isApplicableMeth argument to the partial name resolution
 /// functions in nameres.fs.
