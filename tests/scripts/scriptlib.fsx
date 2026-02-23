@@ -207,7 +207,10 @@ module Scripting =
                         if n > 0 then System.Console.Error.Write(buffer, 0, n)
                     with _ -> () } |> Async.Start
             async { try 
-                      while true do 
+                      while true do
+                        if not (System.Console.InputEncoding.Equals(p.StandardInput.Encoding)) then
+                            System.Environment.FailFast($"Console input encoding is '{System.Console.InputEncoding}' while for child process it's '{p.StandardInput}'")
+
                         let c = System.Console.In.ReadLine()
                         p.StandardInput.WriteLine(c)
                     with _ -> () } |> Async.Start

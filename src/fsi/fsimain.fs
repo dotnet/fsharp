@@ -357,8 +357,8 @@ let evaluateSession (argv: string[]) =
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]
 let MainMain argv =
     ignore argv
+    // let _ = Debugger.Launch()
     let argv = System.Environment.GetCommandLineArgs()
-
     let timesFlag = argv |> Array.exists (fun x -> x = "/times" || x = "--times")
 
     if timesFlag then
