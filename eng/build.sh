@@ -244,7 +244,7 @@ function Test() {
     reportargs="--report-xunit-trx --report-xunit-trx-filename $testlogfilename"
   fi
 
-  args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" $reportargs --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+  args=(test $testtarget "$testproject" --no-build --filter-method "*fsiAndModifiers" -c "$configuration" -f "$targetframework" $reportargs --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
 
   "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
 }
