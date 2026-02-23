@@ -168,6 +168,7 @@ module Scripting =
             | 0 ->
                 Success(string out)
             | errCode ->
+                System.Environment.FailFast($"Console input encoding is '{System.Console.InputEncoding}' and for child process it's '{p.StandardInput}'. \r\nStdOut:\r\n{out}\r\n\r\nStdErr:\r\n{err}")
                 let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'" exePath arguments workDir
                 ErrorLevel (msg, errCode)
 
@@ -208,9 +209,6 @@ module Scripting =
                     with _ -> () } |> Async.Start
             async { try 
                       while true do
-                        if not (System.Console.InputEncoding.Equals(p.StandardInput.Encoding)) then
-                            System.Environment.FailFast($"Console input encoding is '{System.Console.InputEncoding}' while for child process it's '{p.StandardInput}'")
-
                         let c = System.Console.In.ReadLine()
                         p.StandardInput.WriteLine(c)
                     with _ -> () } |> Async.Start
