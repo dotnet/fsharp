@@ -2736,6 +2736,62 @@ let f () =
         |> compile
         |> shouldSucceed
 
+    [<Fact>]
+    let ``V2 FSharp assembly does not emit RefSafetyRulesAttribute without preview`` () =
+        FSharp """
+module TestLib
+open System
+let makeSpan (arr: int[]) : Span<int> = Span<int>(arr)
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> verifyILNotPresent
+            [
+                "RefSafetyRulesAttribute"
+            ]
+
+    [<Fact>]
+    let ``Curried F# ScopedRef function does not crash`` () =
+        // Same-assembly curried call: argsl in the typed tree is flat [&local; arr],
+        // and ArgInfos [[x]; [arr]] flattens to length 2. ScopedRef on x should be honored.
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+let safeFactory ([<ScopedRef>] x: byref<int>) (arr: int[]) : Span<int> =
+    x <- 42
+    Span<int>(arr)
+
+let f () : Span<int> =
+    let mutable local = 1
+    safeFactory &local [| 1; 2; 3 |]
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Curried F# ScopedRef function does not crash - backward compat`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+let safeFactory ([<ScopedRef>] x: byref<int>) (arr: int[]) : Span<int> =
+    x <- 42
+    Span<int>(arr)
+
+let f () : Span<int> =
+    let mutable local = 1
+    safeFactory &local [| 1; 2; 3 |]
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
