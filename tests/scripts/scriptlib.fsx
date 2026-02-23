@@ -164,6 +164,8 @@ module Scripting =
             printf $"{string out}"
             eprintf $"{string err}"
 
+            System.Environment.FailFast($"Console input encoding is '{System.Console.InputEncoding}'. Child process redirects input? '{p.StartInfo.RedirectStandardInput}'. \r\nStdOut:\r\n{out}\r\n\r\nStdErr:\r\n{err}")
+
             match p.ExitCode with
             | 0 ->
                 Success(string out)
