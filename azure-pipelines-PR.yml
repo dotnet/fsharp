@@ -226,6 +226,7 @@ stages:
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
+              DOTNET_CLI_CONSOLE_USE_DEFAULT_ENCODING: 1
             displayName: Build
 
           - task: PublishBuildArtifacts@1
@@ -262,6 +263,7 @@ stages:
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
+              DOTNET_CLI_CONSOLE_USE_DEFAULT_ENCODING: 1
             displayName: Build
 
           - task: PublishTestResults@2
@@ -309,6 +311,7 @@ stages:
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
+              DOTNET_CLI_CONSOLE_USE_DEFAULT_ENCODING: 1
             displayName: Build
 
           - task: PublishTestResults@2
@@ -354,6 +357,7 @@ stages:
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
+              DOTNET_CLI_CONSOLE_USE_DEFAULT_ENCODING: 1
             displayName: Build
 
           - task: PublishBuildArtifacts@1
@@ -390,6 +394,7 @@ stages:
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
+              DOTNET_CLI_CONSOLE_USE_DEFAULT_ENCODING: 1
             displayName: Build
 
           - task: PublishBuildArtifacts@1
@@ -457,6 +462,7 @@ stages:
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
+              DOTNET_CLI_CONSOLE_USE_DEFAULT_ENCODING: 1
             displayName: Build and Test $(_testKind) $(transparentCompiler)
 
           - task: PublishTestResults@2
@@ -530,6 +536,7 @@ stages:
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
+              DOTNET_CLI_CONSOLE_USE_DEFAULT_ENCODING: 1
             displayName: Build / Test
 
           - task: PublishTestResults@2
