@@ -383,7 +383,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
         $reportArgs = "--report-xunit-trx --report-xunit-trx-filename ""$testLogFileName"""
     }
     
-    $test_args = "test $testTarget --filter-method ""*fsiAndModifiers"" -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
+    $test_args = "run $testTarget --filter-method ""*fsiAndModifiers"" -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
     # MTP HangDump extension replaces VSTest --blame-hang-timeout
     $test_args += " --hangdump --hangdump-timeout 5m --hangdump-type Full"
 
@@ -601,11 +601,11 @@ try {
     $script:BuildMessage = "Failure running tests"
 
     if ($testCoreClr) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework
+        TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:coreclrTargetFramework
     }
 
     if ($testDesktop) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
+        TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework
     }
 
     if ($testFSharpCore) {
