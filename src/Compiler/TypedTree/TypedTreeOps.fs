@@ -3618,78 +3618,65 @@ let IsILAttrib  (AttribInfo (builtInAttrRef, _)) attr = isILAttrib builtInAttrRe
 /// Compute well-known attribute flags for an ILAttributes collection.
 /// This is the 'compute' callback passed to ILAttributesStored.HasWellKnownAttribute.
 let computeILWellKnownFlags (g: TcGlobals) (attrs: ILAttributes) : WellKnownILAttributes =
+    ignore g
     let mutable flags = WellKnownILAttributes.None
-
-    let (AttribInfo(isReadOnlyRef, _)) = g.attrib_IsReadOnlyAttribute
-    let (AttribInfo(isUnmanagedRef, _)) = g.attrib_IsUnmanagedAttribute
-    let (AttribInfo(extensionRef, _)) = g.attrib_ExtensionAttribute
-    let (AttribInfo(paramArrayRef, _)) = g.attrib_ParamArrayAttribute
-    let (AttribInfo(allowNullLiteralRef, _)) = g.attrib_AllowNullLiteralAttribute
-    let (AttribInfo(reflectedDefRef, _)) = g.attrib_ReflectedDefinitionAttribute
-    let (AttribInfo(autoOpenRef, _)) = g.attrib_AutoOpenAttribute
-    let (AttribInfo(internalsVisibleToRef, _)) = g.attrib_InternalsVisibleToAttribute
-    let (AttribInfo(callerMemberNameRef, _)) = g.attrib_CallerMemberNameAttribute
-    let (AttribInfo(callerFilePathRef, _)) = g.attrib_CallerFilePathAttribute
-    let (AttribInfo(callerLineNumberRef, _)) = g.attrib_CallerLineNumberAttribute
-    let (AttribInfo(defaultMemberRef, _)) = g.attrib_DefaultMemberAttribute
-    let (AttribInfo(setsRequiredMembersRef, _)) = g.attrib_SetsRequiredMembersAttribute
-    let (AttribInfo(requiresLocationRef, _)) = g.attrib_RequiresLocationAttribute
-    let (AttribInfo(nullableRef, _)) = g.attrib_NullableAttribute
-    let (AttribInfo(noEagerConstraintRef, _)) = g.attrib_NoEagerConstraintApplicationAttribute
-
-    // Compare by name and enclosing only (not scope), matching isILAttrib semantics.
-    // BCL reference assemblies may use ILScopeRef.Local while TcGlobals uses ILScopeRef.Assembly.
-    let inline nameMatch (a: ILTypeRef) (b: ILTypeRef) =
-        a.Name = b.Name && a.Enclosing = b.Enclosing
 
     for attr in attrs.AsArray() do
         let atref = attr.Method.DeclaringType.TypeSpec.TypeRef
 
-        if nameMatch atref isReadOnlyRef then
-            flags <- flags ||| WellKnownILAttributes.IsReadOnlyAttribute
-        elif nameMatch atref isUnmanagedRef then
-            flags <- flags ||| WellKnownILAttributes.IsUnmanagedAttribute
-        elif nameMatch atref extensionRef then
-            flags <- flags ||| WellKnownILAttributes.ExtensionAttribute
-        elif nameMatch atref paramArrayRef then
-            flags <- flags ||| WellKnownILAttributes.ParamArrayAttribute
-        elif nameMatch atref allowNullLiteralRef then
-            flags <- flags ||| WellKnownILAttributes.AllowNullLiteralAttribute
-        elif nameMatch atref reflectedDefRef then
-            flags <- flags ||| WellKnownILAttributes.ReflectedDefinitionAttribute
-        elif nameMatch atref autoOpenRef then
-            flags <- flags ||| WellKnownILAttributes.AutoOpenAttribute
-        elif nameMatch atref internalsVisibleToRef then
-            flags <- flags ||| WellKnownILAttributes.InternalsVisibleToAttribute
-        elif nameMatch atref callerMemberNameRef then
-            flags <- flags ||| WellKnownILAttributes.CallerMemberNameAttribute
-        elif nameMatch atref callerFilePathRef then
-            flags <- flags ||| WellKnownILAttributes.CallerFilePathAttribute
-        elif nameMatch atref callerLineNumberRef then
-            flags <- flags ||| WellKnownILAttributes.CallerLineNumberAttribute
-        elif nameMatch atref defaultMemberRef then
-            flags <- flags ||| WellKnownILAttributes.DefaultMemberAttribute
-        elif nameMatch atref setsRequiredMembersRef then
-            flags <- flags ||| WellKnownILAttributes.SetsRequiredMembersAttribute
-        elif nameMatch atref requiresLocationRef then
-            flags <- flags ||| WellKnownILAttributes.RequiresLocationAttribute
-        elif nameMatch atref nullableRef then
-            flags <- flags ||| WellKnownILAttributes.NullableAttribute
-        elif nameMatch atref noEagerConstraintRef then
-            flags <- flags ||| WellKnownILAttributes.NoEagerConstraintApplicationAttribute
-        else
-            match g.attrib_IsByRefLikeAttribute_opt with
-            | Some(AttribInfo(r, _)) when nameMatch atref r ->
-                flags <- flags ||| WellKnownILAttributes.IsByRefLikeAttribute
-            | _ ->
-                match g.attrib_IDispatchConstantAttribute with
-                | Some(AttribInfo(r, _)) when nameMatch atref r ->
+        if atref.Enclosing.IsEmpty then
+            let name = atref.Name
+
+            if name.StartsWith("System.Runtime.CompilerServices.") then
+                match name with
+                | "System.Runtime.CompilerServices.IsReadOnlyAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.IsReadOnlyAttribute
+                | "System.Runtime.CompilerServices.IsUnmanagedAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.IsUnmanagedAttribute
+                | "System.Runtime.CompilerServices.ExtensionAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.ExtensionAttribute
+                | "System.Runtime.CompilerServices.IsByRefLikeAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.IsByRefLikeAttribute
+                | "System.Runtime.CompilerServices.InternalsVisibleToAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.InternalsVisibleToAttribute
+                | "System.Runtime.CompilerServices.CallerMemberNameAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.CallerMemberNameAttribute
+                | "System.Runtime.CompilerServices.CallerFilePathAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.CallerFilePathAttribute
+                | "System.Runtime.CompilerServices.CallerLineNumberAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.CallerLineNumberAttribute
+                | "System.Runtime.CompilerServices.RequiresLocationAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.RequiresLocationAttribute
+                | "System.Runtime.CompilerServices.NullableAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.NullableAttribute
+                | "System.Runtime.CompilerServices.IDispatchConstantAttribute" ->
                     flags <- flags ||| WellKnownILAttributes.IDispatchConstantAttribute
-                | _ ->
-                    match g.attrib_IUnknownConstantAttribute with
-                    | Some(AttribInfo(r, _)) when nameMatch atref r ->
-                        flags <- flags ||| WellKnownILAttributes.IUnknownConstantAttribute
-                    | _ -> ()
+                | "System.Runtime.CompilerServices.IUnknownConstantAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.IUnknownConstantAttribute
+                | "System.Runtime.CompilerServices.SetsRequiredMembersAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.SetsRequiredMembersAttribute
+                | _ -> ()
+
+            elif name.StartsWith("Microsoft.FSharp.Core.") then
+                match name with
+                | "Microsoft.FSharp.Core.AllowNullLiteralAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.AllowNullLiteralAttribute
+                | "Microsoft.FSharp.Core.ReflectedDefinitionAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.ReflectedDefinitionAttribute
+                | "Microsoft.FSharp.Core.AutoOpenAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.AutoOpenAttribute
+                | "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.NoEagerConstraintApplicationAttribute
+                | _ -> ()
+
+            else
+                match name with
+                | "System.ParamArrayAttribute" -> flags <- flags ||| WellKnownILAttributes.ParamArrayAttribute
+                | "System.Reflection.DefaultMemberAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.DefaultMemberAttribute
+                | "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute" ->
+                    flags <- flags ||| WellKnownILAttributes.SetsRequiredMembersAttribute
+                | _ -> ()
 
     flags
 
