@@ -3720,68 +3720,92 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
     for attrib in attribs do
         let (Attrib(tcref, _, _, _, _, _, _)) = attrib
 
-        if tyconRefEq g tcref g.attrib_RequireQualifiedAccessAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.RequireQualifiedAccessAttribute
-        elif tyconRefEq g tcref g.attrib_AutoOpenAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.AutoOpenAttribute
-        elif tyconRefEq g tcref g.attrib_AbstractClassAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.AbstractClassAttribute
-        elif tyconRefEq g tcref g.attrib_SealedAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.SealedAttribute
-        elif tyconRefEq g tcref g.attrib_NoEqualityAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.NoEqualityAttribute
-        elif tyconRefEq g tcref g.attrib_NoComparisonAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.NoComparisonAttribute
-        elif tyconRefEq g tcref g.attrib_StructuralEqualityAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.StructuralEqualityAttribute
-        elif tyconRefEq g tcref g.attrib_StructuralComparisonAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.StructuralComparisonAttribute
-        elif tyconRefEq g tcref g.attrib_CustomEqualityAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.CustomEqualityAttribute
-        elif tyconRefEq g tcref g.attrib_CustomComparisonAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.CustomComparisonAttribute
-        elif tyconRefEq g tcref g.attrib_ReferenceEqualityAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.ReferenceEqualityAttribute
-        elif tyconRefEq g tcref g.attrib_DefaultAugmentationAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.DefaultAugmentationAttribute
-        elif tyconRefEq g tcref g.attrib_CLIMutableAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.CLIMutableAttribute
-        elif tyconRefEq g tcref g.attrib_AutoSerializableAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.AutoSerializableAttribute
-        elif tyconRefEq g tcref g.attrib_StructLayoutAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.StructLayoutAttribute
-        elif
-            (match g.attrib_DllImportAttribute with
-             | Some a -> tyconRefEq g tcref a.TyconRef
-             | None -> false)
-        then
-            flags <- flags ||| WellKnownEntityAttributes.DllImportAttribute
-        elif tyconRefEq g tcref g.attrib_ReflectedDefinitionAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.ReflectedDefinitionAttribute
-        elif tyconRefEq g tcref g.attrib_GeneralizableValueAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.GeneralizableValueAttribute
-        elif tyconRefEq g tcref g.attrib_SkipLocalsInitAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.SkipLocalsInitAttribute
-        elif tyconRefEq g tcref g.attrib_DebuggerTypeProxyAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.DebuggerTypeProxyAttribute
-        elif tyconRefEq g tcref g.attrib_ComVisibleAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.ComVisibleAttribute
-        elif tyconRefEq g tcref g.attrib_IsReadOnlyAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.IsReadOnlyAttribute
-        elif
-            (match g.attrib_IsByRefLikeAttribute_opt with
-             | Some a -> tyconRefEq g tcref a.TyconRef
-             | None -> false)
-        then
-            flags <- flags ||| WellKnownEntityAttributes.IsByRefLikeAttribute
-        elif tyconRefEq g tcref g.attrib_ExtensionAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.ExtensionAttribute
-        elif tyconRefEq g tcref g.attrib_AttributeUsageAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.AttributeUsageAttribute
-        elif tyconRefEq g tcref g.attrib_WarnOnWithoutNullArgumentAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.WarnOnWithoutNullArgumentAttribute
-        elif tyconRefEq g tcref g.attrib_AllowNullLiteralAttribute.TyconRef then
-            flags <- flags ||| WellKnownEntityAttributes.AllowNullLiteralAttribute
+        // Resolve the path for this attribute's type.
+        // Non-local refs from FSharp.Core → ValueSome path
+        // Local refs when compilingFSharpCore → ValueSome path (via PublicPath)
+        // Everything else → ValueNone (system attrs handled inline, user attrs skipped)
+        let fsharpCorePath =
+            if not tcref.IsLocalRef then
+                let nlr = tcref.nlr
+
+                if ccuEq nlr.Ccu g.fslibCcu then
+                    ValueSome nlr.Path
+                else
+                    // ── System / BCL assemblies ──
+                    match nlr.Path with
+                    | [| "System"; "Runtime"; "CompilerServices"; name |] ->
+                        match name with
+                        | "ExtensionAttribute" -> flags <- flags ||| WellKnownEntityAttributes.ExtensionAttribute
+                        | "IsReadOnlyAttribute" -> flags <- flags ||| WellKnownEntityAttributes.IsReadOnlyAttribute
+                        | "SkipLocalsInitAttribute" -> flags <- flags ||| WellKnownEntityAttributes.SkipLocalsInitAttribute
+                        | "IsByRefLikeAttribute" -> flags <- flags ||| WellKnownEntityAttributes.IsByRefLikeAttribute
+                        | _ -> ()
+
+                    | [| "System"; "Runtime"; "InteropServices"; name |] ->
+                        match name with
+                        | "StructLayoutAttribute" -> flags <- flags ||| WellKnownEntityAttributes.StructLayoutAttribute
+                        | "DllImportAttribute" -> flags <- flags ||| WellKnownEntityAttributes.DllImportAttribute
+                        | "ComVisibleAttribute" -> flags <- flags ||| WellKnownEntityAttributes.ComVisibleAttribute
+                        | _ -> ()
+
+                    | [| "System"; "Diagnostics"; name |] ->
+                        match name with
+                        | "DebuggerTypeProxyAttribute" -> flags <- flags ||| WellKnownEntityAttributes.DebuggerTypeProxyAttribute
+                        | _ -> ()
+
+                    | [| "System"; name |] ->
+                        match name with
+                        | "AttributeUsageAttribute" -> flags <- flags ||| WellKnownEntityAttributes.AttributeUsageAttribute
+                        | _ -> ()
+
+                    | _ -> ()
+
+                    ValueNone
+            elif g.compilingFSharpCore then
+                match tcref.Deref.PublicPath with
+                | Some(PubPath pp) -> ValueSome pp
+                | None -> ValueNone
+            else
+                ValueNone
+
+        // ── FSharp.Core attributes (written once, used for both paths) ──
+        match fsharpCorePath with
+        | ValueSome path ->
+            match path with
+            | [| "Microsoft"; "FSharp"; "Core"; name |] ->
+                match name with
+                | "SealedAttribute" -> flags <- flags ||| WellKnownEntityAttributes.SealedAttribute
+                | "AbstractClassAttribute" -> flags <- flags ||| WellKnownEntityAttributes.AbstractClassAttribute
+                | "RequireQualifiedAccessAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.RequireQualifiedAccessAttribute
+                | "AutoOpenAttribute" -> flags <- flags ||| WellKnownEntityAttributes.AutoOpenAttribute
+                | "NoEqualityAttribute" -> flags <- flags ||| WellKnownEntityAttributes.NoEqualityAttribute
+                | "NoComparisonAttribute" -> flags <- flags ||| WellKnownEntityAttributes.NoComparisonAttribute
+                | "StructuralEqualityAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.StructuralEqualityAttribute
+                | "StructuralComparisonAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.StructuralComparisonAttribute
+                | "CustomEqualityAttribute" -> flags <- flags ||| WellKnownEntityAttributes.CustomEqualityAttribute
+                | "CustomComparisonAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.CustomComparisonAttribute
+                | "ReferenceEqualityAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.ReferenceEqualityAttribute
+                | "DefaultAugmentationAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.DefaultAugmentationAttribute
+                | "CLIMutableAttribute" -> flags <- flags ||| WellKnownEntityAttributes.CLIMutableAttribute
+                | "AutoSerializableAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.AutoSerializableAttribute
+                | "ReflectedDefinitionAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.ReflectedDefinitionAttribute
+                | "GeneralizableValueAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.GeneralizableValueAttribute
+                | "AllowNullLiteralAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.AllowNullLiteralAttribute
+                | "WarnOnWithoutNullArgumentAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.WarnOnWithoutNullArgumentAttribute
+                | _ -> ()
+            | _ -> ()
+        | ValueNone -> ()
 
     flags
 
