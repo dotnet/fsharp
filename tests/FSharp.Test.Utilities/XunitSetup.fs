@@ -24,17 +24,6 @@ type NotThreadSafeResourceCollection() = class end
 
 module XUnitSetup =
 
-    // NOTE: Custom TestFramework temporarily disabled due to xUnit3 API incompatibilities
-    // TODO: Reimplement FSharpXunitFramework for xUnit3 if needed
-    // [<assembly: TestFramework("FSharp.Test.FSharpXunitFramework", "FSharp.Test.Utilities")>]
-    
-    // NOTE: CaptureTrace is disabled because it conflicts with TestConsole.ExecutionCapture
-    // which is used by FSI tests to capture console output. xUnit3's trace capture intercepts
-    // console output before it can reach TestConsole's redirectors.
-    // [<assembly: CaptureTrace>]
-    
-    /// Call this to ensure TestConsole is installed. Safe to call multiple times.
-    let initialize() = XUnitInit.initialize()
-    
-    // Force initialization when module is loaded
-    do initialize()
+    [<assembly: TestFramework(typeof<FSharpXunitFramework>)>]
+    do ()
+

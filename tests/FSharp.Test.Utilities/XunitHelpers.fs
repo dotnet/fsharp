@@ -189,35 +189,29 @@ module OneTimeSetup =
         // Ensure that the initialization is done only once per test run.
         init.Force()
 
-/// `XunitTestFramework` providing parallel console support and conditionally enabling optional xUnit customizations.
-/// NOTE: Temporarily disabled due to xUnit3 API incompatibilities
-/// TODO: Reimplement for xUnit3 if OneTimeSetup, OpenTelemetry, or cleanup functionality is needed
-(*
-type FSharpXunitFramework(sink: IMessageSink) =
-    inherit XunitTestFramework(sink)
+type FSharpXunitFramework() =
+    inherit XunitTestFramework()
 
     do OneTimeSetup.EnsureInitialized()
             
-    override this.CreateExecutor (assemblyName) =
-        { new XunitTestFrameworkExecutor(assemblyName, this.SourceInformationProvider, this.DiagnosticMessageSink) with
+    override this.CreateExecutor (assembly) =
+        { new XunitTestFrameworkExecutor(new XunitTestAssembly(assembly)) with
             
-            // Because xUnit v2 lacks assembly fixture, this is a good place to ensure things get called right at the start of the test run.
-            override x.RunTestCases(testCases, executionMessageSink, executionOptions) =
+            // Because xUnit v3 lacks assembly fixture, this is a good place to ensure things get called right at the start of the test run.
+            override x.RunTestCases(testCases, executionMessageSink, executionOptions, cancellationToken) =
 
-                let testRunName = $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
+                let testRunName = $"RunTests_{assembly.GetName().Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
 
                 use _ = new OpenTelemetryExport(testRunName, Environment.GetEnvironmentVariable("FSHARP_OTEL_EXPORT") <> null)                 
   
                 begin
                     use _ = Activity.startNoTags testRunName
-                    // We can't just call base.RunTestCases here, because it's implementation is async void.
-                    use runner = new XunitTestAssemblyRunner (x.TestAssembly, testCases, x.DiagnosticMessageSink, executionMessageSink, executionOptions)
-                    runner.RunAsync().Wait()
+                    base.RunTestCases(testCases, executionMessageSink, executionOptions, cancellationToken).AsTask().Wait()
                 end
 
                 cleanUpTemporaryDirectoryOfThisTestRun ()
+                new ValueTask()
         }
-*)
 
 #if XUNIT_EXTRAS
     // Rewrites discovered test cases to support extra parallelization and batch trait injection.
