@@ -371,7 +371,9 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
 
-    Write-Host [Console]::InputEncoding
+    [Console]::InputEncoding | Write-Host
+
+    [Console]::InputEncoding
 
     # MTP requires --solution flag for .sln files
     $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
