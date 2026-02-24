@@ -1,0 +1,5 @@
+{
+  "xUnit": {
+    "maxParallelThreads": "0.5x"
+  }
+}

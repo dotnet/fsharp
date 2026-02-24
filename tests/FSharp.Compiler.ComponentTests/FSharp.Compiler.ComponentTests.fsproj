@@ -380,6 +380,7 @@
     <Compile Include="TypeChecks\Graph\Scenarios.fs" />
     <Compile Include="TypeChecks\Graph\DependencyResolutionTests.fs" />
     <Compile Include="TypeChecks\Graph\CompilationTests.fs" />
+    <Content Include="testconfig.json" />
     <Content Include="TypeChecks\Graph\scrape.fsx" CopyToOutputDirectory="Never" />
     <Compile Include="TypeChecks\Graph\CompilationFromCmdlineArgsTests.fs" />
     <Compile Include="TypeChecks\Graph\TypedTreeGraph.fs" />
@@ -482,6 +483,13 @@
     <None Include="**\*.bsl">
       <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
     </None>
+  </ItemGroup>
+
+  <!-- xUnit3 configuration for this test project (MTP mode) -->
+  <ItemGroup>
+    <Content Include="testconfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
