@@ -11,6 +11,8 @@ open FSharp.Compiler.Diagnostics
 
 open Xunit
 
+type FactWithTimeoutAttribute() = inherit FactAttribute(Timeout = 300_000) // 5 minutes for good measure.
+
 let internal observe (cache: AsyncMemoize<_,_,_>) =
 
     let collected = new MailboxProcessor<_>(fun _ -> async {})
@@ -66,7 +68,7 @@ let assertTaskCanceled (task: Task<_>) =
 
 let awaitHandle h = h |> Async.AwaitWaitHandle |> Async.Ignore
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``Basics``() =
     let computation key = async {
         do! Async.Sleep 1
@@ -102,7 +104,7 @@ let ``Basics``() =
             Assert.Equal<Set<(JobEvent * int)>>(Set [ Requested, key; Started, key; Finished, key ], Set events)
     }
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``We can disconnect a request from a running job`` () =
 
     let cts = new CancellationTokenSource()
@@ -133,7 +135,7 @@ let ``We can disconnect a request from a running job`` () =
                 Finished, key ]
     }
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``We can cancel a job`` () =
 
     let cts = new CancellationTokenSource()
@@ -164,7 +166,7 @@ let ``We can cancel a job`` () =
                 Canceled, key ]
     }
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``Job is restarted if first requestor cancels`` () =
     let jobCanComplete = new ManualResetEvent(false)
 
@@ -210,7 +212,7 @@ let ``Job is restarted if first requestor cancels`` () =
                 Finished, key ]
     }
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``Job is actually cancelled and restarted`` () =
     let jobCanComplete = new ManualResetEvent(false)
     let mutable finishedCount = 0
@@ -247,7 +249,7 @@ let ``Job is actually cancelled and restarted`` () =
         Assert.Equal(1, finishedCount)
     }
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``Job keeps running if only one requestor cancels`` () =
 
     let jobCanComplete = new ManualResetEvent(false)
@@ -294,7 +296,7 @@ let ``Job keeps running if only one requestor cancels`` () =
 type ExpectedException() =
     inherit Exception()
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``Stress test`` () =
 
     let seed = System.Random().Next()
@@ -413,7 +415,7 @@ let ``Stress test`` () =
     }
 
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``Cancel running jobs with the same key`` () =
     let cache = AsyncMemoize(cancelUnawaitedJobs = false, cancelDuplicateRunningJobs = true)
 
@@ -473,7 +475,7 @@ let ``Cancel running jobs with the same key`` () =
 type DummyException(msg) =
     inherit Exception(msg)
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``Preserve thread static diagnostics`` () = 
 
     let seed = System.Random().Next()
@@ -549,7 +551,7 @@ let ``Preserve thread static diagnostics`` () =
     }
 
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``Preserve thread static diagnostics already completed job`` () =
 
     let cache = AsyncMemoize()
@@ -579,7 +581,7 @@ let ``Preserve thread static diagnostics already completed job`` () =
     }
 
 
-[<Fact>]
+[<FactWithTimeout>]
 let ``We get diagnostics from the job that failed`` () =
 
     let cache = AsyncMemoize()
