@@ -168,7 +168,7 @@ module Scripting =
             | 0 ->
                 Success(string out)
             | errCode ->
-                let msg = $"Console input encoding is '{System.Console.InputEncoding}'. Child process redirects input? '{p.StartInfo.RedirectStandardInput}'. \r\nStdOut:\r\n{out}\r\n\r\nStdErr:\r\n{err}"
+                let msg = $"Console input encoding is '{System.Console.InputEncoding}', console is {System.Console.In}. Child process redirects input? '{p.StartInfo.RedirectStandardInput}'. \r\nStdOut:\r\n{out}\r\n\r\nStdErr:\r\n{err}"
                 ErrorLevel (msg, errCode)
 
     type OutPipe (writer: TextWriter) =
