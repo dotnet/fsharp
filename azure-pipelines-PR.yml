@@ -508,7 +508,15 @@ stages:
             condition: failed()
 
           # Windows With Compressed Metadata Desktop (split into 3 batches)
-        - job: WindowsCompressedMetadata_Desktop_Batch1
+        - job: WindowsCompressedMetadata_Desktop
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
+              Batch3:
+                batchNumber: 3
           variables:
           - name: XUNIT_LOGS
             value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
@@ -523,7 +531,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktopBatch 1
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktopBatch $(batchNumber)
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
@@ -536,7 +544,7 @@ stages:
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'VSTest'
-              testRunTitle: WindowsCompressedMetadata testDesktop Batch1
+              testRunTitle: WindowsCompressedMetadata testDesktop Batch$(batchNumber)
               mergeTestResults: true
               testResultsFiles: '*.trx'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
@@ -548,7 +556,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows testDesktop Batch1 binlogs'
+                ArtifactName: 'Windows testDesktop Batch$(batchNumber) binlogs'
                 ArtifactType: Container
                 parallel: true
           - task: PublishBuildArtifacts@1
@@ -557,14 +565,14 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop Batch1 process dumps'
+                ArtifactName: 'Windows testDesktop Batch$(batchNumber) process dumps'
                 ArtifactType: Container
                 parallel: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop Batch1 test logs'
+              ArtifactName: 'Windows testDesktop Batch$(batchNumber) test logs'
               publishLocation: Container
             continueOnError: true
             condition: always()
@@ -575,151 +583,7 @@ stages:
             displayName: Publish NuGet cache contents
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop Batch1'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-
-        - job: WindowsCompressedMetadata_Desktop_Batch2
-          variables:
-          - name: XUNIT_LOGS
-            value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
-          - name: __VSNeverShowWhatsNew
-            value: 1
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          timeoutInMinutes: 120
-
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktopBatch 2
-            env:
-              FSharp_CacheEvictionImmediate: true
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build / Test
-
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'VSTest'
-              testRunTitle: WindowsCompressedMetadata testDesktop Batch2
-              mergeTestResults: true
-              testResultsFiles: '*.trx'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            continueOnError: true
-            condition: succeededOrFailed()
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish BinLog
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows testDesktop Batch2 binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop Batch2 process dumps'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop Batch2 test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: always()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop Batch2'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-
-        - job: WindowsCompressedMetadata_Desktop_Batch3
-          variables:
-          - name: XUNIT_LOGS
-            value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
-          - name: __VSNeverShowWhatsNew
-            value: 1
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          timeoutInMinutes: 120
-
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktopBatch 3
-            env:
-              FSharp_CacheEvictionImmediate: true
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build / Test
-
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'VSTest'
-              testRunTitle: WindowsCompressedMetadata testDesktop Batch3
-              mergeTestResults: true
-              testResultsFiles: '*.trx'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            continueOnError: true
-            condition: succeededOrFailed()
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish BinLog
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows testDesktop Batch3 binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop Batch3 process dumps'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop Batch3 test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: always()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop Batch3'
+              ArtifactName: 'NuGetPackageContents Windows testDesktop Batch$(batchNumber)'
               publishLocation: Container
             continueOnError: true
             condition: failed()
