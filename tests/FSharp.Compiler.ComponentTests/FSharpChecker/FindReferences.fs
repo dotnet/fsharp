@@ -959,17 +959,7 @@ let o2 = { o with I.X = 2 }
 module UnionCaseTesters =
     
     [<Fact>]
-    let ``Find references of union case B includes IsB usage`` () =
-        let source = """
-type X = A | B
-
-let c = A
-let result = c.IsB
-"""
-        testFindAllRefsMin source "B" 2  // Definition + IsB usage
-    
-    [<Fact>]
-    let ``Find references of union case A includes IsA usage`` () =
+    let ``Find references of union case includes tester usage`` () =
         let source = """
 type MyUnion = CaseA | CaseB of int
 
@@ -977,7 +967,60 @@ let x = CaseA
 let useA = x.IsCaseA
 let useB = x.IsCaseB
 """
-        testFindAllRefsMin source "CaseA" 3  // Definition, construction, IsCaseA
+        testFindAllRefsMin source "CaseA" 3 |> ignore // Definition, construction, IsCaseA
+        testFindAllRefsMin source "CaseB" 2  // Definition + IsCaseB
+
+    [<Fact>]
+    let ``Find references of union case includes chained tester usage`` () =
+        let source = """
+type X = A | B
+
+let c = A
+let result = c.IsB.ToString()
+"""
+        testFindAllRefsMin source "B" 2  // Definition + IsB even when chained
+
+    [<Fact>]
+    let ``Find references of generic union case includes tester usage`` () =
+        let source = """
+type Result<'T> = Ok of 'T | Error of string
+
+let r: Result<int> = Ok 42
+let isOk = r.IsOk
+"""
+        testFindAllRefsMin source "Ok" 3  // Definition, construction, IsOk
+
+    [<Fact>]
+    let ``Find references includes tester on RequireQualifiedAccess union`` () =
+        let source = """
+[<RequireQualifiedAccess>]
+type Token = Ident of string | Keyword
+
+let t = Token.Keyword
+let isIdent = t.IsIdent
+"""
+        testFindAllRefsMin source "Ident" 2  // Definition + IsIdent
+
+    [<Fact>]
+    let ``Find references includes multiple testers on same line`` () =
+        let source = """
+type X = A | B
+
+let c = A
+let result = c.IsA && c.IsB
+"""
+        testFindAllRefsMin source "A" 3 |> ignore // Definition, construction, IsA
+        testFindAllRefsMin source "B" 2  // Definition + IsB
+
+    [<Fact>]
+    let ``Find references includes self-referential tester in member`` () =
+        let source = """
+type Shape =
+    | Circle
+    | Square
+    member this.IsRound = this.IsCircle
+"""
+        testFindAllRefsMin source "Circle" 2  // Definition + this.IsCircle
 
 /// https://github.com/dotnet/fsharp/issues/14902
 module AdditionalConstructors =
