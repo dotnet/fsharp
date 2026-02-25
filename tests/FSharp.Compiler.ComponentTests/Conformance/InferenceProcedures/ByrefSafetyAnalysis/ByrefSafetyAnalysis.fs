@@ -2726,11 +2726,7 @@ let makeSpan (arr: int[]) : Span<int> = Span<int>(arr)
                 "RefSafetyRulesAttribute"
             ]
 
-    [<Fact>]
-    let ``Curried F# ScopedRef function does not crash`` () =
-        // Same-assembly curried call: argsl in the typed tree is flat [&local; arr],
-        // and ArgInfos [[x]; [arr]] flattens to length 2. ScopedRef on x should be honored.
-        FSharp """
+    let private curriedScopedRefSource = """
 module Test
 open System
 open System.Runtime.CompilerServices
@@ -2743,6 +2739,12 @@ let f () : Span<int> =
     let mutable local = 1
     safeFactory &local [| 1; 2; 3 |]
 """
+
+    [<Fact>]
+    let ``Curried F# ScopedRef function does not crash`` () =
+        // Same-assembly curried call: argsl in the typed tree is flat [&local; arr],
+        // and ArgInfos [[x]; [arr]] flattens to length 2. ScopedRef on x should be honored.
+        FSharp curriedScopedRefSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -2750,19 +2752,7 @@ let f () : Span<int> =
 
     [<Fact>]
     let ``Curried F# ScopedRef function does not crash - backward compat`` () =
-        FSharp """
-module Test
-open System
-open System.Runtime.CompilerServices
-
-let safeFactory ([<ScopedRef>] x: byref<int>) (arr: int[]) : Span<int> =
-    x <- 42
-    Span<int>(arr)
-
-let f () : Span<int> =
-    let mutable local = 1
-    safeFactory &local [| 1; 2; 3 |]
-"""
+        FSharp curriedScopedRefSource
         |> asLibrary
         |> compile
         |> shouldSucceed
