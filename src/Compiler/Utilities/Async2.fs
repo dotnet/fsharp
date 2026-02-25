@@ -599,7 +599,7 @@ type Async2 =
             try
                 return! tcs.Task
             finally
-                handle.Unregister(waitHandle) |> ignore
+                handle.Unregister null |> ignore
         }
 
 /// An async2-native message processing agent, analogous to MailboxProcessor but using Async2.
