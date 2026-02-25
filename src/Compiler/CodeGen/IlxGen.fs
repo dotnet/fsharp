@@ -791,7 +791,7 @@ and ComputeUnionHasHelpers g (tcref: TyconRef) =
     elif tyconRefEq g tcref g.option_tcr_canon then
         SpecialFSharpOptionHelpers
     else
-        match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
+        match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with // TODO: WELLKNOWN_ATTRIB - bool extraction
         | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> if b then AllHelpers else NoHelpers
         | Some(Attrib(_, _, _, _, _, _, m)) ->
             errorR (Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded (), m))
@@ -1531,10 +1531,9 @@ let ComputeStorageForFSharpValue cenv cloc optIntraAssemblyInfo optShadowLocal i
         GenType cenv m TypeReprEnv.Empty returnTy (* TypeReprEnv.Empty ok: not a field in a generic class *)
 
     let ilTyForProperty = mkILTyForCompLoc cloc
-    let attribs = vspec.Attribs
 
     let hasLiteralAttr =
-        HasFSharpAttribute cenv.g cenv.g.attrib_LiteralAttribute attribs
+        ValHasWellKnownAttribute cenv.g WellKnownValAttributes.LiteralAttribute vspec
 
     let ilTypeRefForProperty = ilTyForProperty.TypeRef
 
@@ -9305,7 +9304,7 @@ and GenMethodForBinding
             // on the attribute. Older compilers
             let bodyExpr =
                 let attr =
-                    TryFindFSharpBoolAttributeAssumeFalse cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs
+                    TryFindFSharpBoolAttributeAssumeFalse cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs // TODO: WELLKNOWN_ATTRIB
 
                 if
                     (not generateWitnessArgs && attr.IsSome)
@@ -9613,7 +9612,7 @@ and GenMethodForBinding
                 mdef
 
         // Does the function have an explicit [<EntryPoint>] attribute?
-        let isExplicitEntryPoint = HasFSharpAttribute g g.attrib_EntryPointAttribute attrs
+        let isExplicitEntryPoint = ValHasWellKnownAttribute g WellKnownValAttributes.EntryPointAttribute v
 
         let mdef =
             mdef
@@ -11084,7 +11083,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             // Compute a bunch of useful things for each field
             let isCLIMutable =
-                (TryFindFSharpBoolAttribute g g.attrib_CLIMutableAttribute tycon.Attribs = Some true)
+                (EntityHasWellKnownAttribute g WellKnownEntityAttributes.CLIMutableAttribute tycon)
 
             let fieldSummaries =
 
@@ -11426,7 +11425,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         if
                             not isStructRecord
                             && (isCLIMutable
-                                || (TryFindFSharpBoolAttribute g g.attrib_ComVisibleAttribute tycon.Attribs = Some true))
+                                || (EntityHasWellKnownAttribute g WellKnownEntityAttributes.ComVisibleAttribute tycon
+                                    && TryFindFSharpBoolAttribute g g.attrib_ComVisibleAttribute tycon.Attribs = Some true))
                         then
                             yield mkILSimpleStorageCtor (Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess, None, eenv.imports)
 
@@ -11483,7 +11483,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             let tdef, tdefDiscards =
                 let isSerializable =
-                    (TryFindFSharpBoolAttribute g g.attrib_AutoSerializableAttribute tycon.Attribs
+                    (TryFindFSharpBoolAttribute g g.attrib_AutoSerializableAttribute tycon.Attribs // TODO: WELLKNOWN_ATTRIB
                      <> Some false)
 
                 match tycon.TypeReprInfo with
@@ -11566,7 +11566,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             tdef
 
                     let tdLayout, tdEncoding =
-                        match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
+                        match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with // TODO: WELLKNOWN_ATTRIB - value extraction
                         | Some(Attrib(_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
                             let decoder = AttributeDecoder namedArgs
                             let ilPack = decoder.FindInt32 "Pack" 0x0

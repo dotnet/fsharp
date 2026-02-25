@@ -2200,8 +2200,7 @@ module TyconConstraintInference =
 
                    // If the type was excluded, say why
                    if not res then 
-                       match TryFindFSharpBoolAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs with
-                       | Some true -> 
+                       if EntityHasWellKnownAttribute g WellKnownEntityAttributes.StructuralComparisonAttribute tycon then
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
@@ -2211,10 +2210,7 @@ module TyconConstraintInference =
                                    errorR(Error(FSComp.SR.tcStructuralComparisonNotSatisfied1(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
                                else 
                                    errorR(Error(FSComp.SR.tcStructuralComparisonNotSatisfied2(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
-                       | Some false -> 
-                           ()
-                       
-                       | None -> 
+                       else
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
@@ -2326,8 +2322,7 @@ module TyconConstraintInference =
 
                    // If the type was excluded, say why
                    if not res then 
-                       match TryFindFSharpBoolAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs with
-                       | Some true -> 
+                       if EntityHasWellKnownAttribute g WellKnownEntityAttributes.StructuralEqualityAttribute tycon then
                            if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon then 
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
@@ -2338,11 +2333,7 @@ module TyconConstraintInference =
                                        errorR(Error(FSComp.SR.tcStructuralEqualityNotSatisfied1(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
                                    else 
                                        errorR(Error(FSComp.SR.tcStructuralEqualityNotSatisfied2(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
-                           else
-                               ()
-                       | Some false -> 
-                           ()
-                       | None -> 
+                       else
                            if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon then 
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
@@ -2860,12 +2851,13 @@ module EstablishTypeDefinitionCores =
         // 'Check' the attributes. We return the results to avoid having to re-check them in all other phases. 
         // Allow failure of constructor resolution because Vals for members in the same recursive group are not yet available
         let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
+        let entityFlags = computeEntityWellKnownFlags g attrs
         let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
         let hasStructAttr = HasFSharpAttribute g g.attrib_StructAttribute attrs
-        let hasCLIMutable = HasFSharpAttribute g g.attrib_CLIMutableAttribute attrs
-        let hasAllowNullLiteralAttr = HasFSharpAttribute g g.attrib_AllowNullLiteralAttribute attrs
-        let hasSealedAttr = HasFSharpAttribute g g.attrib_SealedAttribute attrs
-        let structLayoutAttr = HasFSharpAttribute g g.attrib_StructLayoutAttribute attrs
+        let hasCLIMutable = entityFlags &&& WellKnownEntityAttributes.CLIMutableAttribute <> WellKnownEntityAttributes.None
+        let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute <> WellKnownEntityAttributes.None
+        let hasSealedAttr = entityFlags &&& WellKnownEntityAttributes.SealedAttribute <> WellKnownEntityAttributes.None
+        let structLayoutAttr = entityFlags &&& WellKnownEntityAttributes.StructLayoutAttribute <> WellKnownEntityAttributes.None
 
         // We want to keep these special attributes treatment and avoid having two errors for the same attribute.
         let reportAttributeTargetsErrors =
@@ -2883,7 +2875,7 @@ module EstablishTypeDefinitionCores =
             | SynTypeDefnSimpleRepr.Record _ 
             | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) _
             | SynTypeDefnSimpleRepr.Union _ ->
-                HasFSharpAttribute g g.attrib_StructAttribute attrs
+                hasStructAttr
             | _ -> 
                 false
 
@@ -3402,7 +3394,8 @@ module EstablishTypeDefinitionCores =
             let innerParent = Parent thisTyconRef
             let thisTyInst, thisTy = generalizeTyconRef g thisTyconRef
 
-            let hasAbstractAttr = HasFSharpAttribute g g.attrib_AbstractClassAttribute attrs
+            let entityFlags = computeEntityWellKnownFlags g attrs
+            let hasAbstractAttr = entityFlags &&& WellKnownEntityAttributes.AbstractClassAttribute <> WellKnownEntityAttributes.None
             let hasSealedAttr = 
                 // The special case is needed for 'unit' because the 'Sealed' attribute is not yet available when this type is defined.
                 if g.compilingFSharpCore && id.idText = "Unit" then 
@@ -3421,7 +3414,7 @@ module EstablishTypeDefinitionCores =
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
 
-            tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
+            tycon.entity_attribs <- WellKnownEntityAttribs.CreateWithFlags(attrs, entityFlags)
             let noAbstractClassAttributeCheck() = 
                 if hasAbstractAttr then errorR (Error(FSComp.SR.tcOnlyClassesCanHaveAbstract(), m))
                 
