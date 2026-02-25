@@ -195,8 +195,8 @@ These are deliberate design choices where the compiler rejects valid code rather
 
 | Behavior | What happens | Why |
 |---|---|---|
-| Curried partial application with `[<ScopedRef>]` | Scoped mask is `None` — all params treated as non-scoped. May over-reject. | Argument count mismatch makes mask alignment unsafe. Fixing requires tracking scoped attributes through curried function types. |
-| `ref T` where `T` is a type variable | Falls back to non-scoped (no implicit scoping applied). | Cannot determine at the call site whether `T` is byref-like. Over-rejecting is safe; under-rejecting is unsound. |
+| Curried partial application with `[<ScopedRef>]` | Scoped mask is `None` — all params treated as non-scoped. | Unreachable in practice: byref and byref-like types cannot appear in curried positions (FS0412, FS0421). Defense-in-depth only. |
+| `ref T` where `T` is a type variable | Falls back to non-scoped (no implicit scoping applied). | Matches C# behavior: implicit scoping requires knowing `T` is byref-like, which is not available at the call site for open type parameters. |
 | Scope variance in overrides | Not validated. | C# validates that overrides don't widen scoping. F# override checking compares types, not parameter attributes. Risk surface: a C# caller of an F# override that drops `[<ScopedRef>]` could observe wider escaping. This is an independent diagnostic that does not affect the analysis itself. |
 | `[UnscopedRef]` on F# struct methods (same-assembly) | Struct `this` always treated as scoped. | Honored cross-assembly via IL. Same-assembly: F# has no syntax for `[UnscopedRef]` on methods, and manually applying the attribute is not checked against `ArgReprInfo.Attribs` in the same-assembly path. |
 
