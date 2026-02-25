@@ -2817,7 +2817,7 @@ type Val =
           val_member_info = None
           val_declaring_entity = ParentNone
           val_xmldocsig = String.Empty
-          val_attribs = WellKnownValAttribs.Create([]) }
+          val_attribs = WellKnownValAttribs.Empty }
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
     member x.DefinitionRange = 
@@ -3058,7 +3058,7 @@ type Val =
     member x.ValAttribs =
         match x.val_opt_data with
         | Some optData -> optData.val_attribs
-        | _ -> WellKnownValAttribs.Create([])
+        | _ -> WellKnownValAttribs.Empty
 
     /// Get the declared documentation for the value
     member x.XmlDoc =
@@ -4675,6 +4675,10 @@ type WellKnownEntityAttributes =
     | AttributeUsageAttribute = 0x1000000u
     | WarnOnWithoutNullArgumentAttribute = 0x2000000u
     | AllowNullLiteralAttribute = 0x4000000u
+    | ClassAttribute = 0x8000000u
+    | InterfaceAttribute = 0x10000000u
+    | StructAttribute = 0x20000000u
+    | MeasureAttribute = 0x40000000u
     | NotComputed = 0x80000000u
 
 /// Wraps an Attrib list together with cached WellKnownEntityAttributes flags for O(1) lookup.
@@ -4684,6 +4688,9 @@ type WellKnownEntityAttribs =
     val private flags: WellKnownEntityAttributes
 
     new(attribs: Attrib list, flags: WellKnownEntityAttributes) = { attribs = attribs; flags = flags }
+
+    /// Shared singleton for entities with no attributes.
+    static member val Empty = WellKnownEntityAttribs([], WellKnownEntityAttributes.None)
 
     /// Check if a specific well-known attribute flag is set.
     member x.HasWellKnownAttribute(flag: WellKnownEntityAttributes) : bool =
@@ -4698,7 +4705,7 @@ type WellKnownEntityAttribs =
     /// Create from an attribute list. If empty, flags = None. Otherwise NotComputed.
     static member Create(attribs: Attrib list) =
         if attribs.IsEmpty then
-            WellKnownEntityAttribs([], WellKnownEntityAttributes.None)
+            WellKnownEntityAttribs.Empty
         else
             WellKnownEntityAttribs(attribs, WellKnownEntityAttributes.NotComputed)
 
@@ -4717,7 +4724,7 @@ type WellKnownEntityAttribs =
     /// Returns a copy with recomputed flags (flags set to NotComputed).
     member x.WithRecomputedFlags() =
         if x.attribs.IsEmpty then
-            WellKnownEntityAttribs([], WellKnownEntityAttributes.None)
+            WellKnownEntityAttribs.Empty
         else
             WellKnownEntityAttribs(x.attribs, WellKnownEntityAttributes.NotComputed)
 
@@ -4751,6 +4758,7 @@ type WellKnownValAttributes =
     | InlineIfLambdaAttribute = 0x400000uL
     | OptionalAttribute = 0x800000uL
     | StructAttribute = 0x1000000uL
+    | NoCompilerInliningAttribute = 0x2000000uL
     | NotComputed = 0x8000000000000000uL
 
 /// Wraps an Attrib list together with cached WellKnownValAttributes flags for O(1) lookup.
@@ -4760,6 +4768,9 @@ type WellKnownValAttribs =
     val private flags: WellKnownValAttributes
 
     new(attribs: Attrib list, flags: WellKnownValAttributes) = { attribs = attribs; flags = flags }
+
+    /// Shared singleton for vals with no attributes.
+    static member val Empty = WellKnownValAttribs([], WellKnownValAttributes.None)
 
     /// Check if a specific well-known attribute flag is set.
     member x.HasWellKnownAttribute(flag: WellKnownValAttributes) : bool =
@@ -4774,7 +4785,7 @@ type WellKnownValAttribs =
     /// Create from an attribute list. If empty, flags = None. Otherwise NotComputed.
     static member Create(attribs: Attrib list) =
         if attribs.IsEmpty then
-            WellKnownValAttribs([], WellKnownValAttributes.None)
+            WellKnownValAttribs.Empty
         else
             WellKnownValAttribs(attribs, WellKnownValAttributes.NotComputed)
 
@@ -4793,7 +4804,7 @@ type WellKnownValAttribs =
     /// Returns a copy with recomputed flags (flags set to NotComputed).
     member x.WithRecomputedFlags() =
         if x.attribs.IsEmpty then
-            WellKnownValAttribs([], WellKnownValAttributes.None)
+            WellKnownValAttribs.Empty
         else
             WellKnownValAttribs(x.attribs, WellKnownValAttributes.NotComputed)
 
@@ -6302,7 +6313,7 @@ type Construct() =
             entity_logical_name=name
             entity_range=m
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-            entity_attribs=WellKnownEntityAttribs.Create([]) // fetched on demand via est.fs API
+            entity_attribs=WellKnownEntityAttribs.Empty // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
@@ -6445,7 +6456,7 @@ type Construct() =
             entity_logical_name=nm
             entity_range=m
             entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordOrUnionType=false)
-            entity_attribs=WellKnownEntityAttribs.Create([]) // fixed up after
+            entity_attribs=WellKnownEntityAttribs.Empty // fixed up after
             entity_typars=typars
             entity_tycon_repr = TNoRepr
             entity_tycon_tcaug=TyconAugmentation.Create()

@@ -3790,6 +3790,10 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
                     flags <- flags ||| WellKnownEntityAttributes.AllowNullLiteralAttribute
                 | "WarnOnWithoutNullArgumentAttribute" ->
                     flags <- flags ||| WellKnownEntityAttributes.WarnOnWithoutNullArgumentAttribute
+                | "ClassAttribute" -> flags <- flags ||| WellKnownEntityAttributes.ClassAttribute
+                | "InterfaceAttribute" -> flags <- flags ||| WellKnownEntityAttributes.InterfaceAttribute
+                | "StructAttribute" -> flags <- flags ||| WellKnownEntityAttributes.StructAttribute
+                | "MeasureAttribute" -> flags <- flags ||| WellKnownEntityAttributes.MeasureAttribute
                 | _ -> ()
             | _ -> ()
         | ValueNone -> ()
@@ -3839,8 +3843,9 @@ let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes)
     let ea = entity.EntityAttribs
 
     if ea.Flags &&& WellKnownEntityAttributes.NotComputed <> WellKnownEntityAttributes.None then
-        let flags = computeEntityWellKnownFlags g (ea.AsList())
-        entity.SetEntityAttribs(WellKnownEntityAttribs.CreateWithFlags(ea.AsList(), flags))
+        let attribs = ea.AsList()
+        let flags = computeEntityWellKnownFlags g attribs
+        entity.SetEntityAttribs(WellKnownEntityAttribs.CreateWithFlags(attribs, flags))
         flags &&& flag <> WellKnownEntityAttributes.None
     else
         ea.HasWellKnownAttribute(flag)
@@ -3925,6 +3930,8 @@ let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAtt
                     flags <- flags ||| WellKnownValAttributes.ProjectionParameterAttribute
                 | "InlineIfLambdaAttribute" -> flags <- flags ||| WellKnownValAttributes.InlineIfLambdaAttribute
                 | "StructAttribute" -> flags <- flags ||| WellKnownValAttributes.StructAttribute
+                | "NoCompilerInliningAttribute" ->
+                    flags <- flags ||| WellKnownValAttributes.NoCompilerInliningAttribute
                 | _ -> ()
             | _ -> ()
         | ValueNone -> ()
@@ -3936,8 +3943,9 @@ let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttribute
     let wa = argInfo.Attribs
 
     if wa.Flags &&& WellKnownValAttributes.NotComputed <> WellKnownValAttributes.None then
-        let flags = computeValWellKnownFlags g (wa.AsList())
-        argInfo.Attribs <- WellKnownValAttribs.CreateWithFlags(wa.AsList(), flags)
+        let attribs = wa.AsList()
+        let flags = computeValWellKnownFlags g attribs
+        argInfo.Attribs <- WellKnownValAttribs.CreateWithFlags(attribs, flags)
         flags &&& flag <> WellKnownValAttributes.None
     else
         wa.HasWellKnownAttribute(flag)
@@ -3947,8 +3955,9 @@ let ValHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (v: V
     let va = v.ValAttribs
 
     if va.Flags &&& WellKnownValAttributes.NotComputed <> WellKnownValAttributes.None then
-        let flags = computeValWellKnownFlags g (va.AsList())
-        v.SetValAttribs(WellKnownValAttribs.CreateWithFlags(va.AsList(), flags))
+        let attribs = va.AsList()
+        let flags = computeValWellKnownFlags g attribs
+        v.SetValAttribs(WellKnownValAttribs.CreateWithFlags(attribs, flags))
         flags &&& flag <> WellKnownValAttributes.None
     else
         va.HasWellKnownAttribute(flag)
@@ -4039,7 +4048,7 @@ let TyconRefHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownILAttributes) (
             false
 
 let HasDefaultAugmentationAttribute g (tcref: TyconRef) =
-    match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
+    match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with // TODO: WELLKNOWN_ATTRIB - bool extraction
     | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
     | Some (Attrib(_, _, _, _, _, _, m)) ->
         errorR(Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded(), m))
@@ -9934,7 +9943,7 @@ let isSealedTy g ty =
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
        if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then 
           let tcref = tcrefOfAppTy g ty
-          TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some true
+          TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some true // TODO: WELLKNOWN_ATTRIB
        else 
           // All other F# types, array, byref, tuple types are sealed
           true

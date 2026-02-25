@@ -3276,6 +3276,10 @@ type WellKnownEntityAttributes =
     | AttributeUsageAttribute = 0x1000000u
     | WarnOnWithoutNullArgumentAttribute = 0x2000000u
     | AllowNullLiteralAttribute = 0x4000000u
+    | ClassAttribute = 0x8000000u
+    | InterfaceAttribute = 0x10000000u
+    | StructAttribute = 0x20000000u
+    | MeasureAttribute = 0x40000000u
     | NotComputed = 0x80000000u
 
 /// Wraps an Attrib list together with cached WellKnownEntityAttributes flags for O(1) lookup.
@@ -3284,6 +3288,7 @@ type WellKnownEntityAttribs =
     val private attribs: Attrib list
     val private flags: WellKnownEntityAttributes
     new: attribs: Attrib list * flags: WellKnownEntityAttributes -> WellKnownEntityAttribs
+    static member Empty: WellKnownEntityAttribs
     member HasWellKnownAttribute: flag: WellKnownEntityAttributes -> bool
     member AsList: unit -> Attrib list
     member Flags: WellKnownEntityAttributes
@@ -3322,6 +3327,7 @@ type WellKnownValAttributes =
     | InlineIfLambdaAttribute = 0x400000uL
     | OptionalAttribute = 0x800000uL
     | StructAttribute = 0x1000000uL
+    | NoCompilerInliningAttribute = 0x2000000uL
     | NotComputed = 0x8000000000000000uL
 
 /// Wraps an Attrib list together with cached WellKnownValAttributes flags for O(1) lookup.
@@ -3330,6 +3336,7 @@ type WellKnownValAttribs =
     val private attribs: Attrib list
     val private flags: WellKnownValAttributes
     new: attribs: Attrib list * flags: WellKnownValAttributes -> WellKnownValAttribs
+    static member Empty: WellKnownValAttribs
     member HasWellKnownAttribute: flag: WellKnownValAttributes -> bool
     member AsList: unit -> Attrib list
     member Flags: WellKnownValAttributes
