@@ -3938,7 +3938,8 @@ let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAtt
                         else
                             flags <- flags ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False
                     | _ ->
-                        flags <- flags ||| WellKnownValAttributes.ReflectedDefinitionAttribute_True
+                        // TryFindFSharpBoolAttributeAssumeFalse semantics: no explicit arg defaults to false
+                        flags <- flags ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False
                 | "RequiresExplicitTypeArgumentsAttribute" ->
                     flags <- flags ||| WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
                 | "DefaultValueAttribute" ->
@@ -3959,7 +3960,8 @@ let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAtt
                         else
                             flags <- flags ||| WellKnownValAttributes.NoDynamicInvocationAttribute_False
                     | _ ->
-                        flags <- flags ||| WellKnownValAttributes.NoDynamicInvocationAttribute_True
+                        // TryFindFSharpBoolAttributeAssumeFalse semantics: no explicit arg defaults to false
+                        flags <- flags ||| WellKnownValAttributes.NoDynamicInvocationAttribute_False
                 | "OptionalArgumentAttribute" ->
                     flags <- flags ||| WellKnownValAttributes.OptionalArgumentAttribute
                 | "ProjectionParameterAttribute" ->
