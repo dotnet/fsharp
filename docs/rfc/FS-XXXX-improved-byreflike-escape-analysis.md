@@ -86,7 +86,7 @@ On resolution failure, mask = None → all params treated as non-scoped. May cau
 | `[UnscopedRef]` on param | `UnscopedRefAttribute` | Param NOT excluded (escape allowed) | — |
 | `[UnscopedRef] out T` | both attributes | `out` no longer implicitly scoped — limits return | — |
 | `ref` return → span capture | byref return → byref arg | Propagated via FS-1053; span captures it | — |
-| `scoped` variance in overrides | — | **Not validated** — see Limitations | Yes |
+| `scoped` variance in overrides | — | **Not validated** — see Known conservative behaviors | Yes |
 | `[UnscopedRef]` on F# struct methods | `UnscopedRefAttribute` | **Partial** — honored cross-assembly (IL path), not same-assembly | Yes |
 | Generic method `ScopedRefAttribute` | — | Read when `RefSafetyRulesVersion >= 11`; skipped otherwise (conservative) | — |
 
@@ -153,7 +153,7 @@ On resolution failure, mask = None → all params treated as non-scoped. May cau
 | Alternative | Why not |
 |---|---|
 | Do nothing | Unsound: `Span<int>(&local)` compiles and crashes at runtime |
-| `scoped` keyword | Language design scope — can be added later as sugar for `[<ScopedRef>]` without breaking changes |
+| `scoped` keyword | Not needed — `[<ScopedRef>]` attribute is what C#'s `scoped` compiles to. No expressiveness gap. |
 | Conservative-only (no attribute reading) | Too many false positives on real C# libraries (`MemoryMarshal`, `CollectionsMarshal`) |
 
 ## Compatibility
@@ -181,22 +181,25 @@ These are correctness fixes for pre-existing bugs. They may allow previously ove
 2. Move byref source to parameter
 3. For struct receiver false positives: bind data to array before calling span-returning method
 
-## Limitations and deferrals
+## What this RFC does not cover
 
-Everything in this section is **not implemented** in this RFC. Each item is either explicitly out of scope or a known gap.
+The following are **not part of this RFC** and require their own design work:
 
-| Item | Status | Why |
+- **`ref` field declaration in F#** — requires new syntax (`val ref field: T`), a new SynMemberDefn case, and changes to the struct layout checker. This RFC handles *consuming* ref fields (reading `[UnscopedRef]`, `[ScopedRef]`, `RefSafetyRulesAttribute`); *declaring* them is a different language design problem ([fslang-suggestions#1143](https://github.com/fsharp/fslang-suggestions/issues/1143)).
+- **`stackalloc` improvements** — consistent with [FS-1053](https://github.com/fsharp/fslang-design/blob/main/FSharp-4.5/FS-1053-span.md) which excluded `stackalloc` enhancements.
+- **`scoped` keyword** — F# does not add a `scoped` keyword. Use `[<ScopedRef>]` attribute on parameters. The attribute is the underlying mechanism that C#'s `scoped` keyword compiles to, so there is no expressiveness gap — only a syntactic one.
+
+## Known conservative behaviors
+
+These are deliberate design choices where the compiler rejects valid code rather than risk unsoundness:
+
+| Behavior | What happens | Why |
 |---|---|---|
-| `ref` field declaration in F# | **Out of scope** | Different feature, different syntax design. Separate RFC. |
-| `stackalloc` improvements | **Out of scope** | Consistent with FS-1053 approach. Separate RFC. |
-| `scoped` keyword for F# | **Not implemented** | Can be added later as sugar for `[<ScopedRef>]`. No breaking change needed — the attribute is the underlying mechanism. |
-| Scope variance validation in overrides | **Not implemented** | C# validates that overrides don't widen scoping. F# override checking compares types only, not parameter attributes. Risk is narrow: only C# callers of an F# override that removes `[<ScopedRef>]`. Independent diagnostic concern. |
-| `[UnscopedRef]` on F# struct methods (same-assembly) | **Not implemented** | Honored cross-assembly via IL path. Same-assembly F# calls always treat struct `this` as scoped. F# has no syntax for `[UnscopedRef]` on methods; manual attribute application would require checking `ArgReprInfo.Attribs` in `CheckApplication`. |
-| `[<ScopedRef>]` on curried partial applications | **Conservative fallback** | When arg count doesn't match (partial application), scoped mask is `None` — all params treated as non-scoped. May over-reject. |
-| `ILType.TypeVar` implicit scoping | **Conservative fallback** | For `ref T` where `T` is a type variable, can't determine at the call site whether `T` is byref-like. Falls back to non-scoped. |
-| Multi-TFM cross-reference testing | **Not tested** | E.g., `netstandard2.0` (LangVersion=8) referencing `net9.0` (LangVersion=preview) in the same solution. The design handles this (conditional on `RefSafetyRulesVersion` per assembly), but no integration test exists. |
+| Curried partial application with `[<ScopedRef>]` | Scoped mask is `None` — all params treated as non-scoped. May over-reject. | Argument count mismatch makes mask alignment unsafe. Fixing requires tracking scoped attributes through curried function types. |
+| `ref T` where `T` is a type variable | Falls back to non-scoped (no implicit scoping applied). | Cannot determine at the call site whether `T` is byref-like. Over-rejecting is safe; under-rejecting is unsound. |
+| Scope variance in overrides | Not validated. | C# validates that overrides don't widen scoping. F# override checking compares types, not parameter attributes. Risk surface: a C# caller of an F# override that drops `[<ScopedRef>]` could observe wider escaping. This is an independent diagnostic that does not affect the analysis itself. |
+| `[UnscopedRef]` on F# struct methods (same-assembly) | Struct `this` always treated as scoped. | Honored cross-assembly via IL. Same-assembly: F# has no syntax for `[UnscopedRef]` on methods, and manually applying the attribute is not checked against `ArgReprInfo.Attribs` in the same-assembly path. |
 
 ## Unresolved questions
 
-- Should F# add a `scoped` keyword in a future RFC? The attribute works but is verbose.
-- Should F# validate scope variance in overrides? The risk surface is narrow (C# callers only), but it's a gap relative to C# 11.
+None.
