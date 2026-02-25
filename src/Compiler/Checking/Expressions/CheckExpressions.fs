@@ -4091,6 +4091,10 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOK
     | NoNewTypars
 
+/// Formats a list of names for display in diagnostics, truncating to at most 5 entries.
+let formatAvailableNames (names: string array) =
+    names |> Array.truncate 5 |> String.concat ", "
+
 //-------------------------------------------------------------------------
 // Checking types and type constraints
 //-------------------------------------------------------------------------
@@ -4998,8 +5002,7 @@ and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<Pr
                  let availableNames =
                      staticParameters
                      |> Array.map (fun sp -> sp.PUntaint((fun sp -> sp.Name), n.idRange))
-                     |> Array.truncate 5
-                     |> String.concat ", "
+                     |> formatAvailableNames
 
                  error (Error(FSComp.SR.etNoStaticParameterWithName (n.idText, availableNames), n.idRange))
          | [_] -> ()
