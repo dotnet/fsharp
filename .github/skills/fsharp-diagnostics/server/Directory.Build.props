@@ -1,0 +1,9 @@
+<Project>
+  <!-- Stops repo-level Directory.Build.props traversal (this file is the first found).
+       Also blocks Directory.Build.targets import. -->
+  <PropertyGroup>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)../../../../.tools/fsharp-diag/bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../../../../.tools/fsharp-diag/obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>
