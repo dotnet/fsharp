@@ -2505,9 +2505,9 @@ let f () : Span<int> =
         |> compile
         |> shouldSucceed
 
-    // --- V2: RefSafetyRulesAttribute test data ---
+    // --- RefSafetyRulesAttribute test data ---
 
-    let private v2OutParamCSharp8Lib =
+    let private outParamCSharp8Lib =
         CSharp """
 using System;
 public static class OutHelperOld
@@ -2521,7 +2521,7 @@ public static class OutHelperOld
 """     |> withName "OutLibOld"
         |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8
 
-    let private v2OutParamCSharp8FSharpSource = """
+    let private outParamCSharp8FSharpSource = """
 module Test
 open System
 let f () =
@@ -2529,7 +2529,7 @@ let f () =
     OutHelperOld.ViaPlainOut(&local, [| 1; 2; 3 |])
 """
 
-    let private v2GenericCSharp8Lib =
+    let private genericCSharp8Lib =
         CSharp """
 using System;
 public static class GenericHelperOld
@@ -2542,7 +2542,7 @@ public static class GenericHelperOld
 """     |> withName "GenericLib8"
         |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp8
 
-    let private v2GenericCSharp8FSharpSource = """
+    let private genericCSharp8FSharpSource = """
 module Test
 open System
 let f () =
@@ -2550,7 +2550,7 @@ let f () =
     GenericHelperOld.Create(&local, [| 1; 2; 3 |])
 """
 
-    let private v2GenericCSharp11Lib =
+    let private genericCSharp11Lib =
         CSharp """
 using System;
 using System.Runtime.CompilerServices;
@@ -2564,7 +2564,7 @@ public static class GenericHelper
 """     |> withName "GenericLib11"
         |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
-    let private v2GenericCSharp11FSharpSource = """
+    let private genericCSharp11FSharpSource = """
 module Test
 open System
 let f () =
@@ -2572,7 +2572,7 @@ let f () =
     GenericHelper.Create(&local, [| 1; 2; 3 |])
 """
 
-    let private v2RefSpanCSharp11Lib =
+    let private refSpanCSharp11Lib =
         CSharp """
 using System;
 public static class RefSpanHelper
@@ -2585,7 +2585,7 @@ public static class RefSpanHelper
 """     |> withName "RefSpanLib"
         |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
-    let private v2RefSpanCSharp11FSharpSource = """
+    let private refSpanCSharp11FSharpSource = """
 module Test
 open System
 let f () =
@@ -2593,7 +2593,7 @@ let f () =
     RefSpanHelper.ViaRefSpan(&local, [| 1; 2; 3 |])
 """
 
-    let private v2FSharpRoundtripLibSource = """
+    let private fsharpRoundtripLibSource = """
 module Lib
 open System
 let makeSpan (x: outref<int>) (arr: int[]) : Span<int> =
@@ -2601,7 +2601,7 @@ let makeSpan (x: outref<int>) (arr: int[]) : Span<int> =
     Span<int>(arr)
 """
 
-    let private v2FSharpRoundtripFSharpSource = """
+    let private fsharpRoundtripFSharpSource = """
 module Test
 open System
 let f () =
@@ -2609,65 +2609,65 @@ let f () =
     Lib.makeSpan &local [| 1; 2; 3 |]
 """
 
-    // --- V2: RefSafetyRulesAttribute tests ---
+    // --- RefSafetyRulesAttribute tests ---
 
     [<Fact>]
-    let ``V2 OutParam CSharp8 no RefSafetyRules is implicitly scoped`` () =
+    let ``OutParam CSharp8 no RefSafetyRules is implicitly scoped`` () =
         // Note: Even with CSharp8 language version, modern Roslyn (.NET 10+) emits
         // RefSafetyRulesAttribute(11) when the type is available in the target framework.
         // So the out param IS implicitly scoped, and this correctly succeeds.
-        FSharp v2OutParamCSharp8FSharpSource
+        FSharp outParamCSharp8FSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [v2OutParamCSharp8Lib]
+        |> withReferences [outParamCSharp8Lib]
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``V2 OutParam CSharp8 no RefSafetyRules backward compat`` () =
-        FSharp v2OutParamCSharp8FSharpSource
+    let ``OutParam CSharp8 no RefSafetyRules backward compat`` () =
+        FSharp outParamCSharp8FSharpSource
         |> asLibrary
-        |> withReferences [v2OutParamCSharp8Lib]
+        |> withReferences [outParamCSharp8Lib]
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``V2 Generic method CSharp11 with ScopedRef succeeds`` () =
-        FSharp v2GenericCSharp11FSharpSource
-        |> asLibrary
-        |> withLangVersionPreview
-        |> withReferences [v2GenericCSharp11Lib]
-        |> compile
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``V2 Generic method CSharp11 with ScopedRef backward compat`` () =
-        FSharp v2GenericCSharp11FSharpSource
-        |> asLibrary
-        |> withReferences [v2GenericCSharp11Lib]
-        |> compile
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``V2 Generic method CSharp8 without RefSafetyRules triggers escape error`` () =
-        FSharp v2GenericCSharp8FSharpSource
+    let ``Generic method CSharp11 with ScopedRef succeeds`` () =
+        FSharp genericCSharp11FSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [v2GenericCSharp8Lib]
+        |> withReferences [genericCSharp11Lib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Generic method CSharp11 with ScopedRef backward compat`` () =
+        FSharp genericCSharp11FSharpSource
+        |> asLibrary
+        |> withReferences [genericCSharp11Lib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Generic method CSharp8 without RefSafetyRules triggers escape error`` () =
+        FSharp genericCSharp8FSharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [genericCSharp8Lib]
         |> compile
         |> shouldFail
         |> withErrorCodes [3235]
 
     [<Fact>]
-    let ``V2 Generic method CSharp8 without RefSafetyRules backward compat`` () =
-        FSharp v2GenericCSharp8FSharpSource
+    let ``Generic method CSharp8 without RefSafetyRules backward compat`` () =
+        FSharp genericCSharp8FSharpSource
         |> asLibrary
-        |> withReferences [v2GenericCSharp8Lib]
+        |> withReferences [genericCSharp8Lib]
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``V2 FSharp assembly emits RefSafetyRulesAttribute`` () =
+    let ``FSharp assembly emits RefSafetyRulesAttribute`` () =
         FSharp """
 module TestLib
 open System
@@ -2684,26 +2684,26 @@ let makeSpan (arr: int[]) : Span<int> = Span<int>(arr)
             ]
 
     [<Fact>]
-    let ``V2 Ref to refstruct CSharp11 is implicitly scoped`` () =
-        FSharp v2RefSpanCSharp11FSharpSource
+    let ``Ref to refstruct CSharp11 is implicitly scoped`` () =
+        FSharp refSpanCSharp11FSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [v2RefSpanCSharp11Lib]
+        |> withReferences [refSpanCSharp11Lib]
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``V2 Ref to refstruct CSharp11 backward compat`` () =
-        FSharp v2RefSpanCSharp11FSharpSource
+    let ``Ref to refstruct CSharp11 backward compat`` () =
+        FSharp refSpanCSharp11FSharpSource
         |> asLibrary
-        |> withReferences [v2RefSpanCSharp11Lib]
+        |> withReferences [refSpanCSharp11Lib]
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``V2 FSharp roundtrip cross-assembly implicit scoping`` () =
+    let ``FSharp roundtrip cross-assembly implicit scoping`` () =
         let fsharpLib =
-            FSharp v2FSharpRoundtripLibSource
+            FSharp fsharpRoundtripLibSource
             |> asLibrary
             |> withName "RoundtripLib"
             |> withLangVersionPreview
@@ -2724,20 +2724,20 @@ let f () =
         |> shouldSucceed
 
     [<Fact>]
-    let ``V2 FSharp roundtrip cross-assembly implicit scoping backward compat`` () =
+    let ``FSharp roundtrip cross-assembly implicit scoping backward compat`` () =
         let fsharpLib =
-            FSharp v2FSharpRoundtripLibSource
+            FSharp fsharpRoundtripLibSource
             |> asLibrary
             |> withName "RoundtripLib"
 
-        FSharp v2FSharpRoundtripFSharpSource
+        FSharp fsharpRoundtripFSharpSource
         |> asLibrary
         |> withReferences [fsharpLib]
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``V2 FSharp assembly does not emit RefSafetyRulesAttribute without preview`` () =
+    let ``FSharp assembly does not emit RefSafetyRulesAttribute without preview`` () =
         FSharp """
 module TestLib
 open System
