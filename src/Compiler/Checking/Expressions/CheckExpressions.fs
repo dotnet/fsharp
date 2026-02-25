@@ -2164,7 +2164,7 @@ module GeneralizationHelpers =
 
         // Applications of type functions are _not_ normally generalizable unless explicitly marked so
         | Expr.App (Expr.Val (vref, _, _), _, _, [], _) when vref.IsTypeFunction ->
-            HasFSharpAttribute g g.attrib_GeneralizableValueAttribute vref.Attribs
+            HasFSharpAttribute g g.attrib_GeneralizableValueAttribute vref.Attribs // TODO: WELLKNOWN_ATTRIB
 
         | Expr.App (expr1, _, _, [], _) -> IsGeneralizableValue g expr1
         | Expr.TyChoose (_, b, _) -> IsGeneralizableValue g b
@@ -11147,7 +11147,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 | _ -> false
             | _ -> false
 
-        if valAttribFlags &&& WellKnownValAttributes.DefaultValueAttribute <> WellKnownValAttributes.None && not isZeroMethod then
+        if valAttribFlags &&& (WellKnownValAttributes.DefaultValueAttribute_True ||| WellKnownValAttributes.DefaultValueAttribute_False) <> WellKnownValAttributes.None && not isZeroMethod then
             errorR(Error(FSComp.SR.tcDefaultValueAttributeRequiresVal(), mBinding))
 
         let isThreadStatic = isThreadOrContextStatic g valAttribs
@@ -11447,7 +11447,7 @@ and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt
             | _ ->
                 (validOnDefault, inheritedDefault)
         else
-            match (TryFindFSharpAttribute g g.attrib_AttributeUsageAttribute tcref.Attribs) with
+            match (TryFindFSharpAttribute g g.attrib_AttributeUsageAttribute tcref.Attribs) with // TODO: WELLKNOWN_ATTRIB - value extraction
             | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn ])) ->
                 validOn, inheritedDefault
             | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn; AttribBoolArg(_allowMultiple); AttribBoolArg inherited])) ->

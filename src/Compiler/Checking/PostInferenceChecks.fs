@@ -2119,7 +2119,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
               (// Check the attributes on any enclosing module
                env.reflect ||
                // Check the attributes on the value
-               ValHasWellKnownAttribute g WellKnownValAttributes.ReflectedDefinitionAttribute v ||
+               ValHasWellKnownAttribute g WellKnownValAttributes.ReflectedDefinitionAttribute_True v ||
                // Also check the enclosing type for members - for historical reasons, in the TAST member values
                // are stored in the entity that encloses the type, hence we will not have noticed the ReflectedDefinition
                // on the enclosing type at this point.
@@ -2226,9 +2226,9 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             let tcref = v.DeclaringEntity
             let hasDefaultAugmentation =
                 tcref.IsUnionTycon &&
-                match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
-                | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
-                | _ -> true (* not hiddenRepr *)
+                match EntityTryGetBoolAttribute g WellKnownEntityAttributes.DefaultAugmentationAttribute_True WellKnownEntityAttributes.DefaultAugmentationAttribute_False tcref.Deref with
+                | Some b -> b
+                | None -> true
 
             let kind = (if v.IsMember then "member" else "value")
             let check skipValCheck nm =

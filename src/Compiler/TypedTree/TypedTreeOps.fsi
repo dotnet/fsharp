@@ -2413,6 +2413,18 @@ val ArgReprInfoHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownValAttribut
 /// Check if a Val has a specific well-known attribute, computing and caching flags if needed.
 val ValHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownValAttributes -> v: Val -> bool
 
+/// Query a three-state bool attribute on an entity. Returns bool option.
+val EntityTryGetBoolAttribute:
+    g: TcGlobals ->
+    trueFlag: WellKnownEntityAttributes ->
+    falseFlag: WellKnownEntityAttributes ->
+    entity: Entity ->
+        bool option
+
+/// Query a three-state bool attribute on a Val. Returns bool option.
+val ValTryGetBoolAttribute:
+    g: TcGlobals -> trueFlag: WellKnownValAttributes -> falseFlag: WellKnownValAttributes -> v: Val -> bool option
+
 val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 
 val IsMatchingFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attrib -> bool

@@ -791,12 +791,16 @@ and ComputeUnionHasHelpers g (tcref: TyconRef) =
     elif tyconRefEq g tcref g.option_tcr_canon then
         SpecialFSharpOptionHelpers
     else
-        match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with // TODO: WELLKNOWN_ATTRIB - bool extraction
-        | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> if b then AllHelpers else NoHelpers
-        | Some(Attrib(_, _, _, _, _, _, m)) ->
-            errorR (Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded (), m))
-            AllHelpers
-        | _ -> AllHelpers (* not hiddenRepr *)
+        match
+            EntityTryGetBoolAttribute
+                g
+                WellKnownEntityAttributes.DefaultAugmentationAttribute_True
+                WellKnownEntityAttributes.DefaultAugmentationAttribute_False
+                tcref.Deref
+        with
+        | Some true -> AllHelpers
+        | Some false -> NoHelpers
+        | None -> AllHelpers
 
 and GenUnionSpec (cenv: cenv) m tyenv tcref tyargs =
     let curef = GenUnionRef cenv m tcref
@@ -9303,12 +9307,15 @@ and GenMethodForBinding
             // For witness-passing methods, don't do this if `isLegacy` flag specified
             // on the attribute. Older compilers
             let bodyExpr =
-                let attr =
-                    TryFindFSharpBoolAttributeAssumeFalse cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs // TODO: WELLKNOWN_ATTRIB
+                let hasNoDynInvocTrue =
+                    ValHasWellKnownAttribute cenv.g WellKnownValAttributes.NoDynamicInvocationAttribute_True v
+
+                let hasNoDynInvocFalse =
+                    ValHasWellKnownAttribute cenv.g WellKnownValAttributes.NoDynamicInvocationAttribute_False v
 
                 if
-                    (not generateWitnessArgs && attr.IsSome)
-                    || (generateWitnessArgs && attr = Some false)
+                    (not generateWitnessArgs && (hasNoDynInvocTrue || hasNoDynInvocFalse))
+                    || (generateWitnessArgs && hasNoDynInvocFalse)
                 then
                     let exnArg =
                         mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported (v.CompiledName g.CompilerGlobalState))
@@ -9612,7 +9619,8 @@ and GenMethodForBinding
                 mdef
 
         // Does the function have an explicit [<EntryPoint>] attribute?
-        let isExplicitEntryPoint = ValHasWellKnownAttribute g WellKnownValAttributes.EntryPointAttribute v
+        let isExplicitEntryPoint =
+            ValHasWellKnownAttribute g WellKnownValAttributes.EntryPointAttribute v
 
         let mdef =
             mdef
@@ -11483,8 +11491,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             let tdef, tdefDiscards =
                 let isSerializable =
-                    (TryFindFSharpBoolAttribute g g.attrib_AutoSerializableAttribute tycon.Attribs // TODO: WELLKNOWN_ATTRIB
-                     <> Some false)
+                    (not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoSerializableAttribute_False tycon))
 
                 match tycon.TypeReprInfo with
                 | TILObjectRepr _ ->

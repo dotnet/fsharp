@@ -277,9 +277,16 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
     let attribs = argInfo.Attribs.AsList()
     let isParamArrayArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ParamArrayAttribute argInfo
     let reflArgInfo =
-        match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute attribs  with
-        | Some b -> ReflectedArgInfo.Quote b
-        | None -> ReflectedArgInfo.None
+        let _ = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ReflectedDefinitionAttribute_True argInfo
+
+        let wa = argInfo.Attribs
+
+        if wa.HasWellKnownAttribute(WellKnownValAttributes.ReflectedDefinitionAttribute_True) then
+            ReflectedArgInfo.Quote true
+        elif wa.HasWellKnownAttribute(WellKnownValAttributes.ReflectedDefinitionAttribute_False) then
+            ReflectedArgInfo.Quote false
+        else
+            ReflectedArgInfo.None
     let isOutArg = (ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OutAttribute argInfo && isByrefTy g ty) || isOutByrefTy g ty
     let isInArg = (ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InAttribute argInfo && isByrefTy g ty) || isInByrefTy g ty
     let isCalleeSideOptArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptionalArgumentAttribute argInfo

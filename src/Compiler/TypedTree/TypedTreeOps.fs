@@ -3778,10 +3778,24 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
                 | "ReferenceEqualityAttribute" ->
                     flags <- flags ||| WellKnownEntityAttributes.ReferenceEqualityAttribute
                 | "DefaultAugmentationAttribute" ->
-                    flags <- flags ||| WellKnownEntityAttributes.DefaultAugmentationAttribute
+                    match attrib with
+                    | Attrib(_, _, [ AttribBoolArg b ], _, _, _, _) ->
+                        if b then
+                            flags <- flags ||| WellKnownEntityAttributes.DefaultAugmentationAttribute_True
+                        else
+                            flags <- flags ||| WellKnownEntityAttributes.DefaultAugmentationAttribute_False
+                    | _ ->
+                        flags <- flags ||| WellKnownEntityAttributes.DefaultAugmentationAttribute_True
                 | "CLIMutableAttribute" -> flags <- flags ||| WellKnownEntityAttributes.CLIMutableAttribute
                 | "AutoSerializableAttribute" ->
-                    flags <- flags ||| WellKnownEntityAttributes.AutoSerializableAttribute
+                    match attrib with
+                    | Attrib(_, _, [ AttribBoolArg b ], _, _, _, _) ->
+                        if b then
+                            flags <- flags ||| WellKnownEntityAttributes.AutoSerializableAttribute_True
+                        else
+                            flags <- flags ||| WellKnownEntityAttributes.AutoSerializableAttribute_False
+                    | _ ->
+                        flags <- flags ||| WellKnownEntityAttributes.AutoSerializableAttribute_True
                 | "ReflectedDefinitionAttribute" ->
                     flags <- flags ||| WellKnownEntityAttributes.ReflectedDefinitionAttribute
                 | "GeneralizableValueAttribute" ->
@@ -3917,13 +3931,35 @@ let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAtt
                 | "EntryPointAttribute" -> flags <- flags ||| WellKnownValAttributes.EntryPointAttribute
                 | "LiteralAttribute" -> flags <- flags ||| WellKnownValAttributes.LiteralAttribute
                 | "ReflectedDefinitionAttribute" ->
-                    flags <- flags ||| WellKnownValAttributes.ReflectedDefinitionAttribute
+                    match attrib with
+                    | Attrib(_, _, [ AttribBoolArg b ], _, _, _, _) ->
+                        if b then
+                            flags <- flags ||| WellKnownValAttributes.ReflectedDefinitionAttribute_True
+                        else
+                            flags <- flags ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False
+                    | _ ->
+                        flags <- flags ||| WellKnownValAttributes.ReflectedDefinitionAttribute_True
                 | "RequiresExplicitTypeArgumentsAttribute" ->
                     flags <- flags ||| WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
-                | "DefaultValueAttribute" -> flags <- flags ||| WellKnownValAttributes.DefaultValueAttribute
+                | "DefaultValueAttribute" ->
+                    match attrib with
+                    | Attrib(_, _, [ AttribBoolArg b ], _, _, _, _) ->
+                        if b then
+                            flags <- flags ||| WellKnownValAttributes.DefaultValueAttribute_True
+                        else
+                            flags <- flags ||| WellKnownValAttributes.DefaultValueAttribute_False
+                    | _ ->
+                        flags <- flags ||| WellKnownValAttributes.DefaultValueAttribute_True
                 | "VolatileFieldAttribute" -> flags <- flags ||| WellKnownValAttributes.VolatileFieldAttribute
                 | "NoDynamicInvocationAttribute" ->
-                    flags <- flags ||| WellKnownValAttributes.NoDynamicInvocationAttribute
+                    match attrib with
+                    | Attrib(_, _, [ AttribBoolArg b ], _, _, _, _) ->
+                        if b then
+                            flags <- flags ||| WellKnownValAttributes.NoDynamicInvocationAttribute_True
+                        else
+                            flags <- flags ||| WellKnownValAttributes.NoDynamicInvocationAttribute_False
+                    | _ ->
+                        flags <- flags ||| WellKnownValAttributes.NoDynamicInvocationAttribute_True
                 | "OptionalArgumentAttribute" ->
                     flags <- flags ||| WellKnownValAttributes.OptionalArgumentAttribute
                 | "ProjectionParameterAttribute" ->
@@ -3961,6 +3997,24 @@ let ValHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (v: V
         flags &&& flag <> WellKnownValAttributes.None
     else
         va.HasWellKnownAttribute(flag)
+
+/// Query a three-state bool attribute on an entity. Returns bool option.
+let EntityTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownEntityAttributes) (falseFlag: WellKnownEntityAttributes) (entity: Entity) : bool option =
+    let _ = EntityHasWellKnownAttribute g trueFlag entity
+    let ea = entity.EntityAttribs
+
+    if ea.HasWellKnownAttribute(trueFlag) then Some true
+    elif ea.HasWellKnownAttribute(falseFlag) then Some false
+    else Option.None
+
+/// Query a three-state bool attribute on a Val. Returns bool option.
+let ValTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownValAttributes) (falseFlag: WellKnownValAttributes) (v: Val) : bool option =
+    let _ = ValHasWellKnownAttribute g trueFlag v
+    let va = v.ValAttribs
+
+    if va.HasWellKnownAttribute(trueFlag) then Some true
+    elif va.HasWellKnownAttribute(falseFlag) then Some false
+    else Option.None
 
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
@@ -4048,12 +4102,9 @@ let TyconRefHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownILAttributes) (
             false
 
 let HasDefaultAugmentationAttribute g (tcref: TyconRef) =
-    match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with // TODO: WELLKNOWN_ATTRIB - bool extraction
-    | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
-    | Some (Attrib(_, _, _, _, _, _, m)) ->
-        errorR(Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded(), m))
-        true
-    | _ -> true
+    match EntityTryGetBoolAttribute g WellKnownEntityAttributes.DefaultAugmentationAttribute_True WellKnownEntityAttributes.DefaultAugmentationAttribute_False tcref.Deref with
+    | Some b -> b
+    | None -> true
 
 /// Check if a type definition has an attribute with a specific full name
 let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) = 
@@ -9943,7 +9994,7 @@ let isSealedTy g ty =
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
        if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then 
           let tcref = tcrefOfAppTy g ty
-          TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some true // TODO: WELLKNOWN_ATTRIB
+          EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute tcref.Deref
        else 
           // All other F# types, array, byref, tuple types are sealed
           true
