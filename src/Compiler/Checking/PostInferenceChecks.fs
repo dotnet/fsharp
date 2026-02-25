@@ -2036,6 +2036,31 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
         let syntacticArgs = thisAndBase @ restArgs
         let env = BindArgVals env restArgs
 
+        // When improved escape analysis is enabled, enforce [<ScopedRef>] in the function body.
+        // A scoped parameter promises callers it won't escape via the return value.
+        // Mark it as scope=1 (non-returnable) so escape checks reject returning it.
+        if cenv.improvedByRefLikeEscapeAnalysis then
+            let flatArgInfos = valReprInfo.ArgInfos |> List.concat
+
+            let paramArgInfos =
+                match memInfo with
+                | Some mi when mi.MemberFlags.IsInstance && not flatArgInfos.IsEmpty ->
+                    flatArgInfos.Tail
+                | _ -> flatArgInfos
+
+            if paramArgInfos.Length = restArgs.Length then
+                (restArgs, paramArgInfos)
+                ||> List.iter2 (fun v ai ->
+                    match cenv.g.attrib_ScopedRefAttribute_opt with
+                    | Some scopedRefAttrib when HasFSharpAttribute cenv.g scopedRefAttrib ai.Attribs ->
+                        let flags =
+                            if isByrefTy cenv.g v.Type then LimitFlags.ByRef
+                            elif isSpanLikeTy cenv.g mOrig v.Type then LimitFlags.StackReferringSpanLike
+                            else LimitFlags.None
+
+                        LimitVal cenv v { scope = 1; flags = flags }
+                    | _ -> ())
+
         match memInfo with
         | None -> ()
         | Some mi ->

@@ -2792,6 +2792,97 @@ let f () : Span<int> =
         |> compile
         |> shouldSucceed
 
+    // ---- GAP-1: ScopedRef body enforcement ----
+
+    [<Fact>]
+    let ``ScopedRef param cannot escape via Span ctor in body`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+let leak ([<ScopedRef>] x: byref<int>) : Span<int> = Span<int>(&x)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``ScopedRef param cannot escape via Span ctor in body - backward compat`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+let leak ([<ScopedRef>] x: byref<int>) : Span<int> = Span<int>(&x)
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``ScopedRef param cannot be returned as byref`` () =
+        FSharp """
+module Test
+open System.Runtime.CompilerServices
+let leak ([<ScopedRef>] x: byref<int>) : byref<int> = &x
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3209]
+
+    [<Fact>]
+    let ``ScopedRef param cannot be returned as byref - backward compat`` () =
+        FSharp """
+module Test
+open System.Runtime.CompilerServices
+let leak ([<ScopedRef>] x: byref<int>) : byref<int> = &x
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``ScopedRef param not returned is OK`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+let safe ([<ScopedRef>] x: byref<int>) (arr: int[]) : Span<int> = Span<int>(arr)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``ScopedRef span param cannot escape in body`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+let leak ([<ScopedRef>] s: Span<int>) : Span<int> = s
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3234]
+
+    [<Fact>]
+    let ``ScopedRef span param cannot escape in body - backward compat`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+let leak ([<ScopedRef>] s: Span<int>) : Span<int> = s
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
