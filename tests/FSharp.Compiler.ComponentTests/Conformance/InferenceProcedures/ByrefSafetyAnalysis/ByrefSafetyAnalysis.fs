@@ -2903,6 +2903,81 @@ let safeFactory ([<ScopedRef>] x: byref<int>) (arr: int[]) : Span<int> = Span<in
 .custom instance void [runtime]System.Runtime.CompilerServices.ScopedRefAttribute::.ctor() = ( 01 00 00 00 )"""
             ]
 
+    // ---- GAP-3: Override scope variance ----
+
+    let private scopeVarianceCSharpBaseLib =
+        CSharp """
+using System;
+public abstract class Base {
+    public abstract Span<int> M(scoped ref int x, int[] arr);
+}
+"""     |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+        |> withName "ScopeVarianceBase"
+
+    let private scopeVarianceWideningFSharpSource = """
+module Test
+open System
+
+type Derived() =
+    inherit Base()
+    override _.M(x: byref<int>, arr: int[]) = Span<int>(arr)
+"""
+
+    [<Fact>]
+    let ``Override cannot widen scoped parameter from CSharp base`` () =
+        FSharp scopeVarianceWideningFSharpSource
+        |> withReferences [scopeVarianceCSharpBaseLib]
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withWarningCode 3882
+
+    [<Fact>]
+    let ``Override keeps scoped parameter is OK`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+type Derived() =
+    inherit Base()
+    override _.M([<ScopedRef>] x: byref<int>, arr: int[]) = Span<int>(arr)
+"""
+        |> withReferences [scopeVarianceCSharpBaseLib]
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Override widens scoped parameter backward compat`` () =
+        FSharp scopeVarianceWideningFSharpSource
+        |> withReferences [scopeVarianceCSharpBaseLib]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``F# abstract override widens scoped parameter`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+[<AbstractClass>]
+type Base() =
+    abstract M : x: byref<int> * arr: int[] -> Span<int>
+
+type Derived() =
+    inherit Base()
+    override _.M(x: byref<int>, arr: int[]) = Span<int>(arr)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER

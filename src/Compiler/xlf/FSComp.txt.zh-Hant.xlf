@@ -1096,6 +1096,11 @@
         <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</source>
         <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</target>
         <note />
+      <trans-unit id="chkScopedRefParamWidenedInOverride">
+        <source>The override of '{0}' widens the 'scoped' constraint on parameter '{1}'. The base method declares this parameter as 'scoped' (it cannot escape), but the override allows it to escape. This may cause unsoundness when callers use the base type.</source>
+        <target state="new">The override of '{0}' widens the 'scoped' constraint on parameter '{1}'. The base method declares this parameter as 'scoped' (it cannot escape), but the override allows it to escape. This may cause unsoundness when callers use the base type.</target>
+        <note />
+      </trans-unit>
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
         <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>

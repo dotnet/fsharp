@@ -2405,6 +2405,69 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
 
     | _ -> ()
 
+    // GAP-3: Check override does not widen scoped parameters
+    if cenv.improvedByRefLikeEscapeAnalysis && cenv.reportErrors then
+        match v.MemberInfo with
+        | Some mi when mi.MemberFlags.IsOverrideOrExplicitImpl ->
+            for slotSig in mi.ImplementedSlotSigs do
+                let baseParams = slotSig.FormalParams |> List.concat
+
+                let overrideArgInfos =
+                    match v.ValReprInfo with
+                    | Some vri -> vri.ArgInfos |> List.concat
+                    | None -> []
+
+                let overrideParams =
+                    if mi.MemberFlags.IsInstance && not overrideArgInfos.IsEmpty then
+                        overrideArgInfos.Tail
+                    else
+                        overrideArgInfos
+
+                if baseParams.Length = overrideParams.Length then
+                    // Reuse tryGetScopedParamMask for IL-based scoped attribute detection (C# interop)
+                    let ilScopedMask =
+                        let declaringTy = slotSig.DeclaringType
+
+                        if isAppTy g declaringTy then
+                            let tcRef = tcrefOfAppTy g declaringTy
+
+                            match tcRef.TypeReprInfo with
+                            | TILObjectRepr(TILObjectReprData(_scoref, _, tdef)) ->
+                                tdef.Methods.FindByName(slotSig.Name)
+                                |> List.tryFind (fun (md: ILMethodDef) -> md.Parameters.Length = baseParams.Length)
+                                |> Option.bind (fun md -> tryGetScopedParamMask g md)
+                            | _ -> None
+                        else
+                            None
+
+                    (baseParams, overrideParams)
+                    ||> List.iteri2 (fun i (TSlotParam(_, _, _, _, _, baseAttribs)) overridePi ->
+                        match g.attrib_ScopedRefAttribute_opt with
+                        | Some scopedRefAttrib ->
+                            let baseIsScoped =
+                                HasFSharpAttribute g scopedRefAttrib baseAttribs
+                                || (match ilScopedMask with
+                                    | Some mask when i < mask.Length -> mask.[i]
+                                    | _ -> false)
+
+                            let overrideIsScoped =
+                                HasFSharpAttribute g scopedRefAttrib overridePi.Attribs
+
+                            if baseIsScoped && not overrideIsScoped then
+                                let paramName =
+                                    match overridePi.Name with
+                                    | Some id -> id.idText
+                                    | None -> "unknown"
+
+                                warning (
+                                    Error(
+                                        FSComp.SR.chkScopedRefParamWidenedInOverride (v.DisplayName, paramName),
+                                        v.Range
+                                    )
+                                )
+                        | None -> ())
+        | _ -> ()
+
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
 
     // If the method has ResumableCode argument or return type it must be inline
