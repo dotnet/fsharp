@@ -128,6 +128,9 @@ module CheckResultsExtensions =
         member this.GetCodeCompletionSuggestions(context: CodeCompletionContext, parseResults: FSharpParseFileResults, options: FSharpCodeCompletionOptions) =
             this.GetDeclarationListInfo(Some parseResults, context.Pos.Line, context.LineText, context.PartialIdentifier, options = options)
 
+        member this.GetMethodOverloads(context: ResolveContext, names: string list) =
+            this.GetMethodsAsSymbols(context.Pos.Line, context.Pos.Column, context.LineText, names)
+
 [<RequireQualifiedAccess>]
 module Checker =
     let getResolveContext (markedSource: string) =
@@ -180,3 +183,7 @@ module Checker =
 
     let getTooltip (markedSource: string) =
         getTooltipWithOptions [||] markedSource
+
+    let getMethodOverloads names (markedSource: string) =
+        let context, checkResults = getCheckedResolveContext markedSource
+        checkResults.GetMethodOverloads(context, names)

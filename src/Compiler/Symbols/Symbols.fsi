@@ -79,6 +79,13 @@ type FSharpDisplayContext =
     /// for example, `int list seq` becomes `seq<int list>`
     member WithTopLevelPrefixGenericParameters: unit -> FSharpDisplayContext
 
+[<Struct>]
+type ObsoleteDiagnosticInfo =
+    { IsError: bool
+      DiagnosticId: string option
+      Message: string option
+      UrlFormat: string option }
+
 /// Represents a symbol in checked F# source code or a compiled .NET component.
 ///
 /// The subtype of the symbol may reveal further information and can be one of FSharpEntity, FSharpUnionCase
@@ -147,6 +154,8 @@ type FSharpSymbol =
 
     /// Indicates if this symbol has an attribute matching the full name of the given type parameter
     member HasAttribute<'T> : unit -> bool
+
+    abstract ObsoleteDiagnosticInfo: ObsoleteDiagnosticInfo option
 
 /// Represents an assembly as seen by the F# language
 type FSharpAssembly =

@@ -87,6 +87,13 @@ exception DiagnosticWithSuggestions of
     identifier: string *
     suggestions: Suggestions
 
+type ObsoleteDiagnosticInfo =
+    | ObsoleteDiagnosticInfo of
+        isError: bool *
+        diagnosticId: string option *
+        message: string option *
+        urlFormat: string option
+
 exception ObsoleteDiagnostic of
     isError: bool *
     diagnosticId: string option *
