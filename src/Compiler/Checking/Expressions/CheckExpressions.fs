@@ -10802,16 +10802,13 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
         let env = { env with eIsControlFlow = true }
         let thenExpr, tpenv =
             let env =
-                match env.eContextInfo with
-                | ContextInfo.ElseBranchResult _ when Option.isNone synElseExprOpt ->
-                    { env with eContextInfo = ContextInfo.OmittedElseBranch m }
-                | ContextInfo.ElseBranchResult _ -> { env with eContextInfo = ContextInfo.ElseBranchResult synThenExpr.Range }
-                | _ ->
-                    match synElseExprOpt with
-                    | None -> { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
-                    | Some elseExpr when elifChainMissingElse elseExpr ->
-                        { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
-                    | _ -> { env with eContextInfo = ContextInfo.IfExpression synThenExpr.Range }
+                match env.eContextInfo, synElseExprOpt with
+                | ContextInfo.ElseBranchResult _, None -> { env with eContextInfo = ContextInfo.OmittedElseBranch m }
+                | ContextInfo.ElseBranchResult _, _ -> { env with eContextInfo = ContextInfo.ElseBranchResult synThenExpr.Range }
+                | _, None -> { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
+                | _, Some elseExpr when elifChainMissingElse elseExpr ->
+                    { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
+                | _ -> { env with eContextInfo = ContextInfo.IfExpression synThenExpr.Range }
 
             if not isRecovery && Option.isNone synElseExprOpt then
                 UnifyTypes cenv env m g.unit_ty overallTy.Commit
