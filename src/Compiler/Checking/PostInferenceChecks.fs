@@ -1623,10 +1623,24 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
             None
 
     if hasReceiver then
-        // hasUnscopedRef = false: F# has no syntax for [UnscopedRef] on struct members.
-        // Same-assembly F# struct receivers are always treated as implicitly scoped (C# default).
-        // Cross-assembly calls go through the IL path in CheckExprOp which reads the attribute.
-        CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt scopedMask false
+        // Check if the struct instance member has [<UnscopedRef>], allowing `this` to escape.
+        // This mirrors the IL path in CheckExprOp which reads UnscopedRefAttribute from ILMethodDef.
+        let hasUnscopedRef =
+            if cenv.improvedByRefLikeEscapeAnalysis then
+                match f with
+                | Expr.Val(vref, _, _) ->
+                    match vref.TryDeref with
+                    | ValueSome v ->
+                        v.MemberApparentEntity.IsStructOrEnumTycon
+                        && (match cenv.g.attrib_UnscopedRefAttribute_opt with
+                            | Some unscopedRefAttrib -> HasFSharpAttribute cenv.g unscopedRefAttrib v.Attribs
+                            | None -> false)
+                    | ValueNone -> false
+                | _ -> false
+            else
+                false
+
+        CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt scopedMask hasUnscopedRef
     else
         CheckCall cenv env m returnTy argsl ctxts ctxt scopedMask
 

@@ -2978,6 +2978,116 @@ type Derived() =
         |> compile
         |> shouldSucceed
 
+    // ---- GAP-4: UnscopedRef on F# struct methods same-assembly ----
+
+    let private unscopedRefSameAssemblySource = """
+module Test
+open System
+open System.Runtime.CompilerServices
+open System.Diagnostics.CodeAnalysis
+
+[<Struct; IsByRefLike>]
+type S =
+    val mutable X: int
+    [<UnscopedRef>]
+    member this.AsSpan() : Span<int> = Span<int>(&this.X)
+
+let test (s: byref<S>) : Span<int> =
+    s.AsSpan()
+"""
+
+    [<Fact>]
+    let ``UnscopedRef on F# struct method allows this to escape same-assembly`` () =
+        FSharp unscopedRefSameAssemblySource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``UnscopedRef on F# struct method allows this to escape same-assembly - backward compat`` () =
+        FSharp unscopedRefSameAssemblySource
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Struct method without UnscopedRef has scoped receiver same-assembly`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+[<Struct; IsByRefLike>]
+type S =
+    val mutable X: int
+    member this.GetSpan(arr: int[]) : Span<int> = Span<int>(arr)
+
+let test () : Span<int> =
+    let mutable s = S()
+    s.X <- 42
+    s.GetSpan([| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Local struct receiver without UnscopedRef is still scoped`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+[<Struct; IsByRefLike>]
+type S =
+    val mutable X: int
+    member this.AsSpan() : Span<int> = Span<int>(&this.X)
+
+let test () : Span<int> =
+    let mutable s = S()
+    s.X <- 42
+    s.AsSpan()
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    let private unscopedRefLocalReceiverSource = """
+module Test
+open System
+open System.Runtime.CompilerServices
+open System.Diagnostics.CodeAnalysis
+
+[<Struct; IsByRefLike>]
+type S =
+    val mutable X: int
+    [<UnscopedRef>]
+    member this.AsSpan() : Span<int> = Span<int>(&this.X)
+
+let test () : Span<int> =
+    let mutable s = S()
+    s.AsSpan()
+"""
+
+    [<Fact>]
+    let ``E_UnscopedRef local struct receiver escapes same-assembly`` () =
+        FSharp unscopedRefLocalReceiverSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``E_UnscopedRef local struct receiver escapes same-assembly - backward compat`` () =
+        FSharp unscopedRefLocalReceiverSource
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
