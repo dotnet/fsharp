@@ -2641,13 +2641,15 @@ let f () =
         |> compile
         |> shouldSucceed
 
-    [<Fact>]
-    let ``FSharp assembly emits RefSafetyRulesAttribute`` () =
-        FSharp """
+    let private refSafetyRulesSource = """
 module TestLib
 open System
 let makeSpan (arr: int[]) : Span<int> = Span<int>(arr)
 """
+
+    [<Fact>]
+    let ``FSharp assembly emits RefSafetyRulesAttribute`` () =
+        FSharp refSafetyRulesSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -2713,11 +2715,7 @@ let f () =
 
     [<Fact>]
     let ``FSharp assembly does not emit RefSafetyRulesAttribute without preview`` () =
-        FSharp """
-module TestLib
-open System
-let makeSpan (arr: int[]) : Span<int> = Span<int>(arr)
-"""
+        FSharp refSafetyRulesSource
         |> asLibrary
         |> compile
         |> shouldSucceed
