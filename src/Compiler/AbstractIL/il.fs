@@ -1256,17 +1256,16 @@ type WellKnownILAttributes =
 type internal ILAttributesStoredRepr =
     | Reader of (int32 -> ILAttribute[])
     | Given of ILAttributes
-    | Computed of ILAttributes * WellKnownILAttributes
 
 [<Sealed; NoEquality; NoComparison>]
 type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStoredRepr) =
     let mutable repr = initial
+    let mutable wellKnownFlags = WellKnownILAttributes.NotComputed
 
     member _.MetadataIndex = metadataIndex
 
     member x.CustomAttrs: ILAttributes =
         match repr with
-        | Computed(a, _)
         | Given a -> a
         | Reader f ->
             let r = ILAttributes(f metadataIndex)
@@ -1280,13 +1279,15 @@ type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStor
         x.GetOrComputeWellKnownFlags(compute) &&& flag <> WellKnownILAttributes.None
 
     member x.GetOrComputeWellKnownFlags(compute: ILAttributes -> WellKnownILAttributes) : WellKnownILAttributes =
-        match repr with
-        | Computed(_, flags) -> flags
-        | _ ->
-            let a = x.CustomAttrs
-            let f = compute a
-            repr <- Computed(a, f)
+        let f = wellKnownFlags
+
+        if f <> WellKnownILAttributes.NotComputed then
             f
+        else
+            let a = x.CustomAttrs
+            let computed = compute a
+            wellKnownFlags <- computed
+            computed
 
     static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) = ILAttributesStored(idx, Reader f)
 
