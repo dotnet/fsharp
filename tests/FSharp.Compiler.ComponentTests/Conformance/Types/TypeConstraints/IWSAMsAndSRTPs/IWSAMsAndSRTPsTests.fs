@@ -2294,6 +2294,141 @@ if result2 <> "42" then failwith (sprintf "Expected '42' but got '%s'" result2)
         |> compileAndRun
         |> shouldSucceed
 
+    // TC5: Ambiguity error messages from extension operators
+
+    [<Fact>]
+    let ``Two extension operators with same signature on same type compile without error`` () =
+        // When two modules define the same extension operator on the same type
+        // and both are opened, F# resolves without ambiguity (last opened wins).
+        FSharp """
+module TestAmbigExt
+
+module A =
+    type System.Int32 with
+        static member ( %% ) (x: int, y: int) = x + y
+
+module B =
+    type System.Int32 with
+        static member ( %% ) (x: int, y: int) = x * y
+
+open A
+open B
+
+let inline useOp (x: ^T) (y: ^T) = x %% y
+let r = useOp 3 4
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension vs intrinsic with same operator signature produces ambiguity error`` () =
+        // When an extension adds an operator with the exact same signature as
+        // an intrinsic, SRTP resolution sees both and reports ambiguity.
+        FSharp """
+module TestIntrinsicPriority
+
+type Num = { V: int }
+    with static member (+) (a: Num, b: Num) = { V = a.V + b.V }
+
+type Num with
+    static member (+) (a: Num, b: Num) = { V = a.V * b.V }
+
+let inline add (a: ^T) (b: ^T) = a + b
+let result = add { V = 2 } { V = 3 }
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 43
+
+    // AO2: op_Explicit return-type resolution via int/float conversion operators
+
+    [<Fact>]
+    let ``op_Explicit return-type resolution works via int and float conversion operators`` () =
+        // op_Explicit has built-in return-type-based overload resolution.
+        // This tests it via the `int` and `float` conversion functions,
+        // verifying the same mechanism AllowOverloadOnReturnType generalizes.
+        FSharp """
+module TestAORT_OpExplicit
+
+type Wrapper = { V: int }
+    with
+        static member op_Explicit (w: Wrapper) : int = w.V
+        static member op_Explicit (w: Wrapper) : float = float w.V
+
+let w = { V = 42 }
+let i : int = int w
+let f : float = float w
+if i <> 42 then failwith (sprintf "Expected int 42 but got %d" i)
+if f <> 42.0 then failwith (sprintf "Expected float 42.0 but got %f" f)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    // AO3: op_Explicit-based SRTP return-type resolution
+
+    [<Fact>]
+    let ``op_Explicit SRTP resolution disambiguates by return type`` () =
+        // op_Explicit overloads differing only by return type are resolved
+        // via int/float conversion functions which use op_Explicit internally.
+        FSharp """
+module TestAORT_VsExtension
+
+type Converter = { V: int }
+    with
+        static member op_Explicit (c: Converter) : int = c.V
+        static member op_Explicit (c: Converter) : float = float c.V
+
+let c = { V = 42 }
+let i : int = int c
+let f : float = float c
+if i <> 42 then failwith (sprintf "Expected 42 but got %d" i)
+if f <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" f)
+
+// Also verify direct calls with type annotations
+let i2 : int = Converter.op_Explicit c
+let f2 : float = Converter.op_Explicit c
+if i2 <> 42 then failwith (sprintf "Expected 42 but got %d" i2)
+if f2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" f2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    // AO4: op_Explicit return-type resolution in quotations
+
+    [<Fact>]
+    let ``op_Explicit return-type resolution is deterministic in quotations`` () =
+        // Verifies that op_Explicit overloads differing by return type
+        // resolve correctly inside quotations and produce the right result.
+        FSharp """
+module TestAORT_Quotation
+open Microsoft.FSharp.Quotations
+
+type Conv = { V: int }
+    with
+        static member op_Explicit (c: Conv) : int = c.V
+        static member op_Explicit (c: Conv) : float = float c.V
+
+let q1 : Expr<int> = <@ Conv.op_Explicit { V = 42 } : int @>
+let q2 : Expr<float> = <@ Conv.op_Explicit { V = 42 } : float @>
+
+let r1 = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q1 :?> int
+let r2 = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q2 :?> float
+if r1 <> 42 then failwith (sprintf "Expected 42 but got %d" r1)
+if r2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" r2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
     [<Theory>]
     [<InlineData("+", "+")>]
     [<InlineData("-", "-")>]
