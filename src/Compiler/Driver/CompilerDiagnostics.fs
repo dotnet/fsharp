@@ -660,6 +660,8 @@ type Exception with
 
     member exn.Output(os: StringBuilder, suggestNames) =
 
+        let typeEquationMessage g ty2 normalE tupleE = if isAnyTupleTy g ty2 then tupleE else normalE
+
         match exn with
         // TODO: this is now unused...?
         | ConstraintSolverTupleDiffLengths(_, _, tl1, tl2, m, m2) ->
@@ -767,14 +769,10 @@ type Exception with
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, ConstraintSolverTypesNotInEqualityRelation(_, ty1b, ty2b, m, _, contextInfo), _) when
             typeEquiv g ty1 ty1b && typeEquiv g ty2 ty2b
             ->
-            let isActualTuple = isAnyTupleTy g ty2
-            let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-
             let typeEquation1E =
-                if isActualTuple then
-                    ErrorFromAddingTypeEquation1TupleE
-                else
-                    ErrorFromAddingTypeEquation1E
+                typeEquationMessage g ty2 ErrorFromAddingTypeEquation1E ErrorFromAddingTypeEquation1TupleE
+
+            let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
             OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m os (fun contextInfo ->
                 match contextInfo with
@@ -822,17 +820,15 @@ type Exception with
                     os.AppendString(SeeAlsoE().Format(stringOfRange m1))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, e, _) ->
-            let isActualTuple = isAnyTupleTy g ty2
+            let typeEquation2E =
+                typeEquationMessage g ty2 ErrorFromAddingTypeEquation2E ErrorFromAddingTypeEquation2TupleE
 
             let e =
                 if not (typeEquiv g ty1 ty2) then
                     let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
                     if ty1 <> ty2 + tpcs then
-                        if isActualTuple then
-                            os.AppendString(ErrorFromAddingTypeEquation2TupleE().Format ty1 ty2 tpcs)
-                        else
-                            os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
+                        os.AppendString(typeEquation2E().Format ty1 ty2 tpcs)
 
                     e
 
