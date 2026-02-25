@@ -615,12 +615,17 @@ module CompilerAssertHelpers =
         let fileName = "dotnet"
         let arguments = outputFilePath
 
-        // Derive the runtime version from productTfm (e.g., "net10.0" -> "10.0.0")
-        let runtimeVersion = productTfm.Replace("net", "") + ".0"
+        // Use the actual runtime version so framework resolution works on preview SDKs
+        // (preview versions like 11.0.0-preview.1 are semver-lower than 11.0.0).
+        let runtimeVersion =
+            let desc = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+            // ".NET 11.0.0-preview.1.26078.121" → "11.0.0-preview.1.26078.121"
+            desc.Replace(".NET ", "")
         let runtimeconfig = $"""
 {{
     "runtimeOptions": {{
         "tfm": "{productTfm}",
+        "rollForward": "LatestMinor",
         "framework": {{
             "name": "Microsoft.NETCore.App",
             "version": "{runtimeVersion}"
