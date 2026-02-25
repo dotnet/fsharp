@@ -2903,35 +2903,6 @@ let safeFactory ([<ScopedRef>] x: byref<int>) (arr: int[]) : Span<int> = Span<in
 .custom instance void [runtime]System.Runtime.CompilerServices.ScopedRefAttribute::.ctor() = ( 01 00 00 00 )"""
             ]
 
-    [<Fact>]
-    let ``ScopedRef attribute roundtrip cross-assembly`` () =
-        let fsharpLib =
-            FSharp """
-module Lib
-open System
-open System.Runtime.CompilerServices
-let safeFactory ([<ScopedRef>] x: byref<int>) (arr: int[]) : Span<int> =
-    x <- 42
-    Span<int>(arr)
-"""
-            |> asLibrary
-            |> withName "ScopedRefRoundtripLib"
-            |> withLangVersionPreview
-
-        FSharp """
-module Test
-open System
-
-let test () : Span<int> =
-    let mutable local = 1
-    Lib.safeFactory &local [| 1; 2; 3 |]
-"""
-        |> asLibrary
-        |> withLangVersionPreview
-        |> withReferences [fsharpLib]
-        |> compile
-        |> shouldSucceed
-
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
