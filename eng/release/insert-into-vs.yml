@@ -15,7 +15,7 @@ stages:
   - job: Insert_VS
     pool:
       name: NetCore1ESPool-Svc-Internal
-      image: windows.vs2022preview.amd64
+      image: windows.vs2026preview.scout.amd64
     variables:
     - group: DotNet-VSTS-Infra-Access
     - name: InsertAccessToken
