@@ -3867,6 +3867,7 @@ type FSharpCheckProjectResults
         let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
         let tcConfig = getTcConfig ()
         let isIncrementalFragment = false
+        // traitCtxtNone: checker results API — post-typecheck, SRTP constraints already resolved (audited for RFC FS-1043)
         let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone
 
         let optimizedImpls, _optimizationData, _ =

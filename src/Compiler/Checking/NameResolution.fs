@@ -3229,6 +3229,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                     match tyconSearch () with
                     | Result((resInfo, tcref) :: _) ->
+                        // traitCtxtNone: type freshening for name resolution result — SRTP solving happens later in ConstraintSolver (audited for RFC FS-1043)
                         let _, _, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars m)
                         let item = Item.Types(id.idText, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
                         success (resInfo, item)
@@ -3606,6 +3607,7 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResIn
             ForceRaise (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty PermitDirectReferenceToGeneratedType.No 0 m tcref id rest)
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.Use, ad, resInfo, ResultTyparChecker(fun () -> true))
 
+    // traitCtxtNone: type freshening for name resolution result — SRTP solving happens later in ConstraintSolver (audited for RFC FS-1043)
     let _, tinst, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars m)
     let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
     CallNameResolutionSink sink (rangeOfLid lid, nenv, item, tinst, ItemOccurrence.UseInType, ad)
@@ -3769,6 +3771,7 @@ let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurrence fullyQualified
     | Result (resInfo, tcref) ->
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
 
+        // traitCtxtNone: type freshening for name resolution result — SRTP solving happens later in ConstraintSolver (audited for RFC FS-1043)
         let _, tinst, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars m)
         let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
         CallNameResolutionSink sink (m, nenv, item, tinst, occurrence, ad)

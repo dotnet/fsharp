@@ -2181,6 +2181,7 @@ type internal FsiDynamicCompiler
             ApplyAllOptimizations(
                 tcConfig,
                 tcGlobals,
+                // traitCtxtNone: FSI codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
                 LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone,
                 outfile,
                 importMap,
@@ -3098,6 +3099,7 @@ type internal FsiDynamicCompiler
             GetInitialTcState(rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, tcEnv, openDecls0)
 
         let ilxGenerator =
+            // traitCtxtNone: FSI codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
             CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), tcState.Ccu)
 
         {

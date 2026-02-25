@@ -4304,6 +4304,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs =
     trackErrors {
         let css = CreateCodegenState tcVal g amap
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
+        // traitCtxtNone: codegen witness generation — constraints already resolved at this point (audited for RFC FS-1043)
         let ftps, _renaming, tinst = FreshenTypeInst g traitCtxtNone m typars
         let traitInfos = GetTraitConstraintInfosOfTypars g ftps
         let! _res = SolveTyparsEqualTypes csenv 0 m NoTrace tinst tyargs
@@ -4428,6 +4429,7 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               PostInferenceChecksFinal = ResizeArray()
               WarnWhenUsingWithoutNullOnAWithNullTarget = None}
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
+        // traitCtxtNone: codegen witness generation — constraints already resolved at this point (audited for RFC FS-1043)
         let minst = FreshenMethInfo g traitCtxtNone m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with
         | [reqdObjTy] -> 

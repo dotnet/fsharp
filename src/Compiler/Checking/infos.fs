@@ -1362,8 +1362,10 @@ type MethInfo =
             let tcref =  tcrefOfAppTy g x.ApparentEnclosingAppType
             let formalEnclosingTyparsOrig = tcref.Typars m
             let formalEnclosingTypars = copyTypars false formalEnclosingTyparsOrig
+            // traitCtxtNone: slot signature computation — structural matching, not SRTP constraint solving (audited for RFC FS-1043)
             let _, formalEnclosingTyparTys = FixupNewTypars traitCtxtNone m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
             let formalMethTypars = copyTypars false x.FormalMethodTypars
+            // traitCtxtNone: slot signature computation — structural matching, not SRTP constraint solving (audited for RFC FS-1043)
             let _, formalMethTyparTys = FixupNewTypars traitCtxtNone m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
 
             let formalRetTy, formalParams =
