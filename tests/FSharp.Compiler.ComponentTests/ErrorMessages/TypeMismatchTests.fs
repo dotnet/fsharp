@@ -422,6 +422,20 @@ let f (x: int) (y: int) : string = x, y
                                  "This expression was expected to have type\n    'string'    \nbut is a tuple of type\n    'int * int'    ")
 
     [<Fact>]
+    let ``Catch-all tuple type says 'but given a tuple of type'``() =
+        FSharp """
+let rec f () = f (), f ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 16, Line 2, Col 20,
+             "Type mismatch. Expecting a\n    ''a'    \nbut given a tuple of type\n    ''a * 'b'    \nThe types ''a' and ''a * 'b' cannot be unified.")
+            (Error 1, Line 2, Col 22, Line 2, Col 26,
+             "Type mismatch. Expecting a\n    ''a'    \nbut given a tuple of type\n    ''b * 'a'    \nThe types ''a' and ''b * 'a' cannot be unified.")
+        ]
+
+    [<Fact>]
     let ``Non-tuple actual type says 'but here has type'``() =
         FSharp """
 let f (x: int) : string = x
