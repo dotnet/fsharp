@@ -80,7 +80,7 @@ type FSharpDisplayContext =
     member WithTopLevelPrefixGenericParameters: unit -> FSharpDisplayContext
 
 [<Struct>]
-type ObsoleteDiagnosticInfo =
+type FSharpObsoleteDiagnosticInfo =
     { IsError: bool
       DiagnosticId: string option
       Message: string option
@@ -155,7 +155,7 @@ type FSharpSymbol =
     /// Indicates if this symbol has an attribute matching the full name of the given type parameter
     member HasAttribute<'T> : unit -> bool
 
-    abstract ObsoleteDiagnosticInfo: ObsoleteDiagnosticInfo option
+    abstract ObsoleteDiagnosticInfo: FSharpObsoleteDiagnosticInfo option
 
 /// Represents an assembly as seen by the F# language
 type FSharpAssembly =

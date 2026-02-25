@@ -222,7 +222,7 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
 
 
 [<Struct>]
-type ObsoleteDiagnosticInfo =
+type FSharpObsoleteDiagnosticInfo =
     { IsError: bool
       DiagnosticId: string option
       Message: string option
@@ -373,7 +373,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
     member sym.TryGetAttribute<'T>() =
         sym.Attributes |> Seq.tryFind (fun attr -> attr.IsAttribute<'T>())
 
-    abstract ObsoleteDiagnosticInfo: ObsoleteDiagnosticInfo option
+    abstract ObsoleteDiagnosticInfo: FSharpObsoleteDiagnosticInfo option
     default _.ObsoleteDiagnosticInfo = None
 
 type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) = 
@@ -872,7 +872,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
         try x.MembersFunctionsAndValues with _ -> [||] :> _
 
     override this.ObsoleteDiagnosticInfo =
-        TryGetEntityObsoleteInfo cenv.g entity |> Option.map ObsoleteDiagnosticInfo.FromDiagnosticInfo
+        TryGetEntityObsoleteInfo cenv.g entity |> Option.map FSharpObsoleteDiagnosticInfo.FromDiagnosticInfo
 
     member this.TryGetMetadataText() =
         match entity.TryDeref with
@@ -1317,7 +1317,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
             | Choice2Of3 ilFieldInfo -> TryGetILFieldObsoleteInfo cenv.g ilFieldInfo
             | Choice3Of3 _ -> None
 
-        infoOption |> Option.map ObsoleteDiagnosticInfo.FromDiagnosticInfo
+        infoOption |> Option.map FSharpObsoleteDiagnosticInfo.FromDiagnosticInfo
 
     member private x.V = d
 
@@ -2568,7 +2568,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | C minfo -> TryGetMethodObsoleteInfo minfo
             | V vref -> TryGetFSharpObsoleteInfo cenv.g vref.Attribs
         
-        infoOption |> Option.map ObsoleteDiagnosticInfo.FromDiagnosticInfo
+        infoOption |> Option.map FSharpObsoleteDiagnosticInfo.FromDiagnosticInfo
 
 type FSharpType(cenv, ty:TType) =
 
