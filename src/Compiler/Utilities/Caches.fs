@@ -353,10 +353,6 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
             let dispose () = evictionProcessor.Dispose()
             post, dispose
 
-#if DEBUG
-    let debugListener = new CacheMetrics.CacheMetricsListener(tags)
-#endif
-
     do CacheMetrics.Created &tags
 
     member val Evicted = evicted.Publish
@@ -437,7 +433,3 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
     // Finalizer to ensure eviction loop is cancelled if Dispose wasn't called.
     override this.Finalize() = this.Dispose()
-
-#if DEBUG
-    member _.DebugDisplay() = debugListener.ToString()
-#endif
