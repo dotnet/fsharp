@@ -1,7 +1,7 @@
 # F# RFC FS-XXXX — Improved Escape Analysis for Byref-Like Types
 
 * [x] [Suggestion](https://github.com/fsharp/fslang-suggestions/issues/1143)
-* [ ] Approved in principle
+* [x] Approved in principle
 * [x] Implementation: [PR](TBD)
 * [ ] [Discussion](TBD)
 
@@ -85,7 +85,7 @@ On resolution failure, mask = None → all params treated as non-scoped. May cau
 | `[UnscopedRef]` on member | `UnscopedRefAttribute` | Receiver NOT excluded (escape allowed) | — |
 | `[UnscopedRef]` on param | `UnscopedRefAttribute` | Param NOT excluded (escape allowed) | — |
 | `[UnscopedRef] out T` | both attributes | `out` no longer implicitly scoped — limits return | — |
-| `ref` return → span capture | byref return → byref arg | Propagated via FS-1053; span captures it | — |
+| `ref` return → span capture | byref return → byref arg | Byref return (FS-1053) becomes a `ByRef` arg to span ctor; limited by this RFC | — |
 | `scoped` variance in overrides | — | **Not validated** — see Known conservative behaviors | Yes |
 | `[UnscopedRef]` on F# struct methods | `UnscopedRefAttribute` | **Partial** — honored cross-assembly (IL path), not same-assembly | Yes |
 | Generic method `ScopedRefAttribute` | — | Read when `RefSafetyRulesVersion >= 11`; skipped otherwise (conservative) | — |
@@ -121,7 +121,7 @@ On resolution failure, mask = None → all params treated as non-scoped. May cau
 | 15 | `Span<int> M(scoped ref int a, ref int b)` | `M(&s, &u)` | **FS3235** (`b`) |
 | 16 | `Span<int> M(scoped Span<int> s)` | `M(Span(&local))` | OK |
 | 17 | `Span<int> M([UnscopedRef] out int x)` | `M(&local)` | **FS3235** |
-| 18 | `ref int M(ref int x)` then `Span(ref M(ref local))` | chained | **FS3235** |
+| 18 | `ref int M(ref int x)` then `Span(ref M(ref local))` | **FS3235** | chained ref return |
 
 ## Errors
 
@@ -145,7 +145,6 @@ On resolution failure, mask = None → all params treated as non-scoped. May cau
 ## Drawbacks
 
 - **False positives.** Resolution failure (e.g., malformed IL, unresolvable type) falls back to treating all params as non-scoped. Correct code may be rejected until the referenced assembly is updated.
-- **Attribute-only authoring.** `[<ScopedRef>]` is verbose compared to C#'s `scoped` keyword. Users may expect a keyword.
 - **No same-assembly `[UnscopedRef]` on struct methods.** F# has no syntax for this; manual attribute application works cross-assembly but not same-assembly.
 
 ## Alternatives
@@ -160,7 +159,7 @@ On resolution failure, mask = None → all params treated as non-scoped. May cau
 
 **Is this a breaking change for existing source?** Yes, under `--langversion:preview` only. Code that returns `Span<int>(&local)` will error with FS3235.
 
-**Is this a breaking change for existing binaries?** No. No IL changes; only new compile-time checks.
+**Is this a breaking change for existing binaries?** No. Method bodies are unchanged. A module-level `[RefSafetyRules(11)]` attribute is added when the feature is enabled, which is ignored by compilers that don't understand it.
 
 **Is this a breaking change for existing packages?** No.
 
@@ -187,7 +186,7 @@ The following are **not part of this RFC** and require their own design work:
 
 - **`ref` field declaration in F#** — requires new syntax (`val ref field: T`), a new SynMemberDefn case, and changes to the struct layout checker. This RFC handles *consuming* ref fields (reading `[UnscopedRef]`, `[ScopedRef]`, `RefSafetyRulesAttribute`); *declaring* them is a different language design problem ([fslang-suggestions#1143](https://github.com/fsharp/fslang-suggestions/issues/1143)).
 - **`stackalloc` improvements** — consistent with [FS-1053](https://github.com/fsharp/fslang-design/blob/main/FSharp-4.5/FS-1053-span.md) which excluded `stackalloc` enhancements.
-- **`scoped` keyword** — F# does not add a `scoped` keyword. Use `[<ScopedRef>]` attribute on parameters. The attribute is the underlying mechanism that C#'s `scoped` keyword compiles to, so there is no expressiveness gap — only a syntactic one.
+- **`scoped` keyword** — not added; see Alternatives.
 
 ## Known conservative behaviors
 
