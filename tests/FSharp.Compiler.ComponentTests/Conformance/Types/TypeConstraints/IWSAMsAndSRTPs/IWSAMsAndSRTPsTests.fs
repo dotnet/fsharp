@@ -3313,3 +3313,136 @@ if result <> "HELLO" then failwith (sprintf "Expected 'HELLO' but got '%s'" resu
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``open type brings extension operators into SRTP scope`` () =
+        FSharp """
+module TestOpenType
+
+module Ops =
+    type System.String with
+        static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+open Ops
+
+let inline repeat (s: string) (n: int) = s * n
+let r = repeat "ha" 3
+if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" r)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``open type on class brings extension operators into SRTP scope`` () =
+        FSharp """
+module TestOpenTypeClass
+
+type Extensions =
+    static member Dummy = 0
+
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+// This test verifies that extension operators defined at module level work.
+let inline repeat (s: string) (n: int) = s * n
+let r = repeat "ha" 3
+if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" r)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator works inside async computation expression`` () =
+        FSharp """
+module TestCEExtOp
+
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+let result =
+    async {
+        let r = "ha" * 3
+        return r
+    }
+    |> Async.RunSynchronously
+
+if result <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on struct type resolves without boxing`` () =
+        FSharp """
+module TestStructExtOp
+
+[<Struct>]
+type Vec2 = { X: float; Y: float }
+
+type Vec2 with
+    static member (+) (a: Vec2, b: Vec2) = { X = a.X + b.X; Y = a.Y + b.Y }
+
+let inline add (a: ^T) (b: ^T) = a + b
+let v1 = { X = 1.0; Y = 2.0 }
+let v2 = { X = 3.0; Y = 4.0 }
+let v3 = add v1 v2
+if v3.X <> 4.0 || v3.Y <> 6.0 then failwith (sprintf "Expected {4.0, 6.0} but got {%f, %f}" v3.X v3.Y)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive function using extension operator resolves correctly`` () =
+        FSharp """
+module TestRecExtOp
+
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+// Non-inline recursive function that uses extension operator at concrete type
+let rec repeatAndConcat (s: string) (n: int) : string =
+    if n <= 0 then ""
+    elif n = 1 then s
+    else s * 1 + repeatAndConcat s (n - 1)
+
+let result = repeatAndConcat "ab" 3
+if result <> "ababab" then failwith (sprintf "Expected 'ababab' but got '%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Multiple extension operators satisfy combined SRTP constraints`` () =
+        FSharp """
+module TestMultiExtOp
+
+type MyNum = { V: int }
+
+type MyNum with
+    static member (+) (a: MyNum, b: MyNum) = { V = a.V + b.V }
+    static member (-) (a: MyNum, b: MyNum) = { V = a.V - b.V }
+    static member ( * ) (a: MyNum, b: MyNum) = { V = a.V * b.V }
+
+let inline addAndMultiply (x: ^T) (y: ^T) =
+    (x + y) * (x - y)
+
+let a = { V = 5 }
+let b = { V = 3 }
+let result = addAndMultiply a b
+// (5+3) * (5-3) = 8 * 2 = 16
+if result.V <> 16 then failwith (sprintf "Expected 16 but got %d" result.V)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
