@@ -1363,7 +1363,7 @@ module PrintTastMemberOrVals =
         if short then
             for argInfo in argInfos do
                 for _,info in argInfo do
-                    info.Attribs <- WellKnownValAttribs.Create([])
+                    info.Attribs <- WellKnownValAttribs.Empty
                     info.Name <- None
         let supportAccessModifiersBeforeGetSet =
             denv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters

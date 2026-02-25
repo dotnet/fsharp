@@ -2126,7 +2126,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             [ [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in p.GetParamDatas(cenv.amap, range0) do 
                     // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                     // either .NET or F# parameters
-                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=WellKnownValAttribs.Create([]); OtherRange=None }
+                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=WellKnownValAttribs.Empty; OtherRange=None }
                     let m =
                         match nmOpt with
                         | Some v -> v.idRange
@@ -2145,7 +2145,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                    [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in argTys do 
                 // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                 // either .NET or F# parameters
-                        let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=WellKnownValAttribs.Create([]); OtherRange=None }
+                        let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=WellKnownValAttribs.Empty; OtherRange=None }
                         let m =
                             match nmOpt with
                             | Some v -> v.idRange
@@ -2500,7 +2500,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let nm = String.uncapitalize witnessInfo.MemberName
                 let nm = if used.Contains nm then nm + string i else nm
                 let m = x.DeclarationLocation
-                let argReprInfo : ArgReprInfo = { Attribs=WellKnownValAttribs.Create([]); Name=Some (mkSynId m nm); OtherRange=None }
+                let argReprInfo : ArgReprInfo = { Attribs=WellKnownValAttribs.Empty; Name=Some (mkSynId m nm); OtherRange=None }
                 let p = FSharpParameter(cenv, paramTy, argReprInfo, None, m, false, false, false, false, true)
                 p, (used.Add nm, i + 1))
             |> fst
@@ -2884,7 +2884,7 @@ type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, m:
                          (fun _ _ _ -> true))
 
     new (cenv, idOpt, ty, ownerOpt, m) =
-        let argInfo: ArgReprInfo = { Name = idOpt; Attribs = WellKnownValAttribs.Create([]); OtherRange = None }
+        let argInfo: ArgReprInfo = { Name = idOpt; Attribs = WellKnownValAttribs.Empty; OtherRange = None }
         FSharpParameter(cenv, ty, argInfo, ownerOpt, m, false, false, false, false, false)
 
     new (cenv, ty, argInfo: ArgReprInfo, m: range) =
