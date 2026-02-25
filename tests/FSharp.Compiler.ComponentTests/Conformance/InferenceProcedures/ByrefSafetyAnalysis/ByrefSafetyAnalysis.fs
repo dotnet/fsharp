@@ -2769,14 +2769,31 @@ let f () : Span<int> =
 
     // ---- GAP-1: ScopedRef body enforcement ----
 
-    [<Fact>]
-    let ``ScopedRef param cannot escape via Span ctor in body`` () =
-        FSharp """
+    // --- ScopedRef body enforcement test data ---
+
+    let private scopedRefSpanCtorEscapeSource = """
 module Test
 open System
 open System.Runtime.CompilerServices
 let leak ([<ScopedRef>] x: byref<int>) : Span<int> = Span<int>(&x)
 """
+
+    let private scopedRefByrefReturnSource = """
+module Test
+open System.Runtime.CompilerServices
+let leak ([<ScopedRef>] x: byref<int>) : byref<int> = &x
+"""
+
+    let private scopedRefSpanEscapeSource = """
+module Test
+open System
+open System.Runtime.CompilerServices
+let leak ([<ScopedRef>] s: Span<int>) : Span<int> = s
+"""
+
+    [<Fact>]
+    let ``ScopedRef param cannot escape via Span ctor in body`` () =
+        FSharp scopedRefSpanCtorEscapeSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -2785,23 +2802,14 @@ let leak ([<ScopedRef>] x: byref<int>) : Span<int> = Span<int>(&x)
 
     [<Fact>]
     let ``ScopedRef param cannot escape via Span ctor in body - backward compat`` () =
-        FSharp """
-module Test
-open System
-open System.Runtime.CompilerServices
-let leak ([<ScopedRef>] x: byref<int>) : Span<int> = Span<int>(&x)
-"""
+        FSharp scopedRefSpanCtorEscapeSource
         |> asLibrary
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let ``ScopedRef param cannot be returned as byref`` () =
-        FSharp """
-module Test
-open System.Runtime.CompilerServices
-let leak ([<ScopedRef>] x: byref<int>) : byref<int> = &x
-"""
+        FSharp scopedRefByrefReturnSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -2810,11 +2818,7 @@ let leak ([<ScopedRef>] x: byref<int>) : byref<int> = &x
 
     [<Fact>]
     let ``ScopedRef param cannot be returned as byref - backward compat`` () =
-        FSharp """
-module Test
-open System.Runtime.CompilerServices
-let leak ([<ScopedRef>] x: byref<int>) : byref<int> = &x
-"""
+        FSharp scopedRefByrefReturnSource
         |> asLibrary
         |> compile
         |> shouldSucceed
@@ -2834,12 +2838,7 @@ let safe ([<ScopedRef>] x: byref<int>) (arr: int[]) : Span<int> = Span<int>(arr)
 
     [<Fact>]
     let ``ScopedRef span param cannot escape in body`` () =
-        FSharp """
-module Test
-open System
-open System.Runtime.CompilerServices
-let leak ([<ScopedRef>] s: Span<int>) : Span<int> = s
-"""
+        FSharp scopedRefSpanEscapeSource
         |> asLibrary
         |> withLangVersionPreview
         |> compile
@@ -2848,12 +2847,7 @@ let leak ([<ScopedRef>] s: Span<int>) : Span<int> = s
 
     [<Fact>]
     let ``ScopedRef span param cannot escape in body - backward compat`` () =
-        FSharp """
-module Test
-open System
-open System.Runtime.CompilerServices
-let leak ([<ScopedRef>] s: Span<int>) : Span<int> = s
-"""
+        FSharp scopedRefSpanEscapeSource
         |> asLibrary
         |> compile
         |> shouldSucceed
