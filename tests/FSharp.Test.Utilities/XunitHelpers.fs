@@ -198,9 +198,8 @@ type FSharpXunitFramework() =
     override this.CreateExecutor (assembly) =
         { new XunitTestFrameworkExecutor(new XunitTestAssembly(assembly)) with
             
-            // Because xUnit v3 lacks assembly fixture, this is a good place to ensure things get called right at the start of the test run.
+            // TODO: Consider moving most of that to ITestPipelineStartup implementation.
             override x.RunTestCases(testCases, executionMessageSink, executionOptions, cancellationToken) =
-
                 // When running in Azure DevOps, we end up with codepage 65001 (UTF-8).
                 // So, the process where the tests are running has UTF-8 with BOM, by default.
                 // The child fsi.exe process is started with CreateNoWindow, causing it to not inherit the same encoding.
