@@ -18,6 +18,7 @@ open FSharp.Compiler.Diagnostics
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 open OpenTelemetry.Metrics
+open System.Text
 
 /// Disables custom internal parallelization added with XUNIT_EXTRAS.
 /// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
@@ -199,6 +200,16 @@ type FSharpXunitFramework() =
             
             // Because xUnit v3 lacks assembly fixture, this is a good place to ensure things get called right at the start of the test run.
             override x.RunTestCases(testCases, executionMessageSink, executionOptions, cancellationToken) =
+
+                // When running in Azure DevOps, we end up with codepage 65001 (UTF-8).
+                // So, the process where the tests are running has UTF-8 with BOM, by default.
+                // The child fsi.exe process is started with CreateNoWindow, causing it to not inherit the same encoding.
+                // So, when we attempt to write to its standard input, we right with BOM, but the child process isn't expecting the BOM character.
+                // To workaround this, we set the console input encoding to UTF-8 without BOM, explicitly.
+                // This is probably a bug in .NET Framework Process API when CreateNoWindow is set to true.
+                // It looks like the following logic assumes that the child process always inherits the same input encoding:
+                // https://github.com/microsoft/referencesource/blob/ec9fa9ae770d522a5b5f0607898044b7478574a3/System/services/monitoring/system/diagnosticts/Process.cs#L2153-L2156
+                Console.InputEncoding <- UTF8Encoding(false)
 
                 let testRunName = $"RunTests_{assembly.GetName().Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
 
