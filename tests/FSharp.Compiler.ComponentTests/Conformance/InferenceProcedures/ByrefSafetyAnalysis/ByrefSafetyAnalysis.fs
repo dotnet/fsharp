@@ -2431,11 +2431,11 @@ let test () : Span<int> =
         |> compile
         |> shouldSucceed
 
-    [<Fact>]
-    let ``UnscopedRef on out param negates scoping in mixed params`` () =
-        let csharpLib =
-            CSharp
-                """
+    // --- UnscopedRef on out param mixed params test data ---
+
+    let private unscopedRefOutParamMixedCSharpLib =
+        CSharp
+            """
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -2450,11 +2450,10 @@ public static class Helper
     }
 }
 """
-            |> withName "UnscopedRefParamLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+        |> withName "UnscopedRefParamLib"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
-        FSharp
-            """
+    let private unscopedRefOutParamMixedFSharpSource = """
 module Test
 open System
 let f () : Span<int> =
@@ -2462,46 +2461,22 @@ let f () : Span<int> =
     let mutable escapable = 2
     Helper.MixedCapture(&safe, &escapable)
 """
+
+    [<Fact>]
+    let ``UnscopedRef on out param negates scoping in mixed params`` () =
+        FSharp unscopedRefOutParamMixedFSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [ csharpLib ]
+        |> withReferences [ unscopedRefOutParamMixedCSharpLib ]
         |> compile
         |> shouldFail
         |> withErrorCodes [ 3235 ]
 
     [<Fact>]
     let ``UnscopedRef on out param negates scoping in mixed params - backward compat`` () =
-        let csharpLib =
-            CSharp
-                """
-using System;
-using System.Diagnostics.CodeAnalysis;
-
-public static class Helper
-{
-    // scoped ref int => byref is scoped (safe)
-    // [UnscopedRef] out int => out is UN-scoped (can escape)
-    public static Span<int> MixedCapture(scoped ref int safe, [UnscopedRef] out int escapable)
-    {
-        escapable = 0;
-        return default;
-    }
-}
-"""
-            |> withName "UnscopedRefParamLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        FSharp
-            """
-module Test
-open System
-let f () : Span<int> =
-    let mutable safe = 1
-    let mutable escapable = 2
-    Helper.MixedCapture(&safe, &escapable)
-"""
+        FSharp unscopedRefOutParamMixedFSharpSource
         |> asLibrary
-        |> withReferences [ csharpLib ]
+        |> withReferences [ unscopedRefOutParamMixedCSharpLib ]
         |> compile
         |> shouldSucceed
 

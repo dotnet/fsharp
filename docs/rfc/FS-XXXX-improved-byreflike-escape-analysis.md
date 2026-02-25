@@ -38,7 +38,7 @@ Gated: `--langversion:preview` / `LanguageFeature.ImprovedByRefLikeEscapeAnalysi
 
 **Consumption:** Reads `ScopedRefAttribute` from IL metadata. Scoped parameters are excluded from the escape limit. Follows [C# `scoped`](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#rules-scoped).
 
-**Authoring:** F# parameters annotated with `[<ScopedRef>]` emit `ScopedRefAttribute` and are excluded from escape analysis at **call sites** for same-assembly calls. The function body is **not** constrained — the author can still return the scoped parameter. This differs from C# where `scoped` restricts the body ([ref-safe-to-escape = function-member](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#rules-scoped)).
+**Authoring:** F# parameters annotated with `[<ScopedRef>]` emit `ScopedRefAttribute` and are excluded from escape analysis at **call sites** for same-assembly calls. The function body **is** constrained — a scoped parameter is given `scope=1` (non-returnable), so attempting to return it produces an error. This matches C# where `scoped` restricts the body ([ref-safe-to-escape = function-member](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#rules-scoped)).
 
 ```fsharp
 open System.Runtime.CompilerServices
@@ -86,8 +86,8 @@ On resolution failure, mask = None → all params treated as non-scoped. May cau
 | `[UnscopedRef]` on param | `UnscopedRefAttribute` | Param NOT excluded (escape allowed) | — |
 | `[UnscopedRef] out T` | both attributes | `out` no longer implicitly scoped — limits return | — |
 | `ref` return → span capture | byref return → byref arg | Byref return (FS-1053) becomes a `ByRef` arg to span ctor; limited by this RFC | — |
-| `scoped` variance in overrides | — | **Not validated** — see Known conservative behaviors | Yes |
-| `[UnscopedRef]` on F# struct methods | `UnscopedRefAttribute` | **Partial** — honored cross-assembly (IL path), not same-assembly | Yes |
+| `scoped` variance in overrides | — | Validated — warning FS3882 if override widens scoping | — |
+| `[UnscopedRef]` on F# struct methods | `UnscopedRefAttribute` | Honored both cross-assembly (IL path) and same-assembly | — |
 | Generic method `ScopedRefAttribute` | — | Read when `RefSafetyRulesVersion >= 11`; skipped otherwise (conservative) | — |
 
 ## Examples
@@ -145,7 +145,7 @@ On resolution failure, mask = None → all params treated as non-scoped. May cau
 ## Drawbacks
 
 - **False positives.** Resolution failure (e.g., malformed IL, unresolvable type) falls back to treating all params as non-scoped. Correct code may be rejected until the referenced assembly is updated.
-- **No same-assembly `[UnscopedRef]` on struct methods.** F# has no syntax for this; manual attribute application works cross-assembly but not same-assembly.
+- **`[UnscopedRef]` on struct methods requires manual attribute application.** F# has no dedicated syntax for this; the `[<UnscopedRef>]` attribute must be applied manually. It is honored both cross-assembly and same-assembly.
 
 ## Alternatives
 
@@ -194,11 +194,11 @@ These are deliberate design choices where the compiler rejects valid code rather
 
 | Behavior | What happens | Why |
 |---|---|---|
-| `[<ScopedRef>]` body not constrained | A function can return a scoped parameter. Only the **call site** excludes scoped args from the limit. | F# does not narrow `ref-safe-to-escape` for scoped parameters inside the function body. C# does ([CS9075](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#rules-scoped)). Misuse requires the **author** to violate their own contract — callers are protected. |
+| `[<ScopedRef>]` body constrained | A scoped parameter is given `scope=1` in the function body. Returning it produces an error. Both the call site and the function body enforce the contract. | Matches C# behavior ([CS9075](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#rules-scoped)). |
 | Curried partial application with `[<ScopedRef>]` | Scoped mask is `None` — all params treated as non-scoped. | Unreachable in practice: byref and byref-like types cannot appear in curried positions (FS0412, FS0421). Defense-in-depth only. |
 | `ref T` where `T` is a type variable | Falls back to non-scoped (no implicit scoping applied). | Matches C# behavior: implicit scoping requires knowing `T` is byref-like, which is not available at the call site for open type parameters. |
-| Scope variance in overrides | Not validated. | C# validates that overrides don't widen scoping. F# override checking compares types, not parameter attributes. Risk surface: a C# caller of an F# override that drops `[<ScopedRef>]` could observe wider escaping. This is an independent diagnostic that does not affect the analysis itself. |
-| `[UnscopedRef]` on F# struct methods (same-assembly) | Struct `this` always treated as scoped. | Honored cross-assembly via IL. Same-assembly: F# has no syntax for `[UnscopedRef]` on methods, and manually applying the attribute is not checked against `ArgReprInfo.Attribs` in the same-assembly path. |
+| Scope variance in overrides | Warning FS3882 if an override drops `[<ScopedRef>]` that the base method has (widening). | Matches C# behavior: overrides must not widen scoping. Warning (not error) to avoid breaking existing code. |
+| `[UnscopedRef]` on F# struct methods (same-assembly) | Honored. Struct `this` treated as non-scoped when `[<UnscopedRef>]` is present. | The manually applied `[<UnscopedRef>]` attribute is checked both cross-assembly (IL path) and same-assembly (F# attribute path). |
 
 ## Unresolved questions
 

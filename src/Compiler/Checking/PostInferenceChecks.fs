@@ -860,6 +860,11 @@ let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: IL
 let private nonEmptyMask (arr: bool array) =
     if Array.exists id arr then Some arr else None
 
+/// Flatten curried ArgInfos into a single list and skip the receiver for instance members.
+let flattenArgInfosSkipReceiver (argInfos: ArgReprInfo list list) (isInstance: bool) =
+    let flat = argInfos |> List.concat
+    if isInstance && not flat.IsEmpty then flat.Tail else flat
+
 /// Build a boolean mask of which IL parameters have the given attribute.
 /// Returns None if the attribute is unavailable or no parameters match.
 let tryGetILParamAttrMask (attribOpt: BuiltinAttribInfo option) (methDef: ILMethodDef) : bool array option =
@@ -927,37 +932,45 @@ let isImplicitlyScopedParam (g: TcGlobals) (amap: Import.ImportMap) (m: range) (
 /// Compute the scoped parameter mask for an IL method, considering implicit scoping rules.
 let computeScopedMask (cenv: cenv) (m: range) (methDef: ILMethodDef) (methInst: TType list) (refSafetyVersion: int) : bool array option =
     let g = cenv.g
-    if methInst.IsEmpty || refSafetyVersion >= 11 then
-        let baseMask = tryGetScopedParamMask g methDef
+    // Compute base mask (explicit attributes)
+    let baseMask = 
+        if methInst.IsEmpty || refSafetyVersion >= 11 then
+            tryGetScopedParamMask g methDef
+        else
+            None
 
-        let withImplicit =
-            if refSafetyVersion >= 11 then
-                let implicitMask =
-                    methDef.Parameters
-                    |> List.toArray
-                    |> Array.map (isImplicitlyScopedParam g cenv.amap m)
+    // Compute implicit mask (from ref/out/in rules)
+    let implicitMask =
+        if refSafetyVersion >= 11 then
+            methDef.Parameters
+            |> List.toArray
+            |> Array.map (isImplicitlyScopedParam g cenv.amap m)
+            |> Some
+        else
+            None
 
-                match baseMask with
-                | Some scopedArr ->
-                    let merged = Array.map2 (||) scopedArr implicitMask
-                    nonEmptyMask merged
-                | None ->
-                    nonEmptyMask implicitMask
-            else
-                baseMask
+    // Merge base and implicit masks
+    let mergedMask =
+        match baseMask, implicitMask with
+        | Some baseArr, Some implicitArr ->
+            Array.map2 (||) baseArr implicitArr |> nonEmptyMask
+        | Some baseArr, None -> 
+            Some baseArr
+        | None, Some implicitArr -> 
+            nonEmptyMask implicitArr
+        | None, None -> 
+            None
 
-        withImplicit
-        |> Option.bind (fun scopedArr ->
-            match tryGetUnscopedRefParamMask g methDef with
-            | Some unscopedArr ->
-                let effective =
-                    scopedArr
-                    |> Array.mapi (fun i scoped -> scoped && not (i < unscopedArr.Length && unscopedArr.[i]))
-
-                nonEmptyMask effective
-            | None -> Some scopedArr)
-    else
-        None
+    // Apply unscoped ref (struct this) negation
+    mergedMask
+    |> Option.bind (fun scopedArr ->
+        match tryGetUnscopedRefParamMask g methDef with
+        | Some unscopedArr ->
+            let effective =
+                scopedArr
+                |> Array.mapi (fun i scoped -> scoped && not (i < unscopedArr.Length && unscopedArr.[i]))
+            nonEmptyMask effective
+        | None -> Some scopedArr)
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
@@ -1596,49 +1609,42 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
     let ctxts = mkArgsForAppliedExpr false argsl f
 
     // Compute scoped mask for F#-to-F# calls with [<ScopedRef>] params
+    let getScopedMask () =
+        match f with
+        | Expr.Val(vref, _, _) ->
+            vref.ValReprInfo
+            |> Option.bind (fun valReprInfo ->
+                let paramArgInfos = flattenArgInfosSkipReceiver valReprInfo.ArgInfos hasReceiver
+
+                let expectedArgCount =
+                    if hasReceiver then argsl.Length - 1 else argsl.Length
+
+                if paramArgInfos.Length = expectedArgCount then
+                    tryGetScopedParamMaskFromFSharpAttribs cenv.g paramArgInfos
+                else
+                    None)
+        | _ -> None
+
     let scopedMask =
-        if cenv.improvedByRefLikeEscapeAnalysis then
-            match f with
-            | Expr.Val(vref, _, _) ->
-                vref.ValReprInfo
-                |> Option.bind (fun valReprInfo ->
-                    let flatArgInfos = valReprInfo.ArgInfos |> List.concat
-                    // For instance members, argsl includes receiver at [0], and ValReprInfo.ArgInfos
-                    // also includes receiver. CheckCallWithReceiver splits receiver off, so exclude it.
-                    let paramArgInfos =
-                        if hasReceiver && not flatArgInfos.IsEmpty then
-                            flatArgInfos.Tail
-                        else
-                            flatArgInfos
-
-                    let expectedArgCount =
-                        if hasReceiver then argsl.Length - 1 else argsl.Length
-
-                    if paramArgInfos.Length = expectedArgCount then
-                        tryGetScopedParamMaskFromFSharpAttribs cenv.g paramArgInfos
-                    else
-                        None)
-            | _ -> None
-        else
-            None
+        if cenv.improvedByRefLikeEscapeAnalysis then getScopedMask() else None
 
     if hasReceiver then
         // Check if the struct instance member has [<UnscopedRef>], allowing `this` to escape.
         // This mirrors the IL path in CheckExprOp which reads UnscopedRefAttribute from ILMethodDef.
+        let getHasUnscopedRef () =
+            match f with
+            | Expr.Val(vref, _, _) ->
+                match vref.TryDeref with
+                | ValueSome v ->
+                    v.MemberApparentEntity.IsStructOrEnumTycon
+                    && (match cenv.g.attrib_UnscopedRefAttribute_opt with
+                        | Some unscopedRefAttrib -> HasFSharpAttribute cenv.g unscopedRefAttrib v.Attribs
+                        | None -> false)
+                | ValueNone -> false
+            | _ -> false
+
         let hasUnscopedRef =
-            if cenv.improvedByRefLikeEscapeAnalysis then
-                match f with
-                | Expr.Val(vref, _, _) ->
-                    match vref.TryDeref with
-                    | ValueSome v ->
-                        v.MemberApparentEntity.IsStructOrEnumTycon
-                        && (match cenv.g.attrib_UnscopedRefAttribute_opt with
-                            | Some unscopedRefAttrib -> HasFSharpAttribute cenv.g unscopedRefAttrib v.Attribs
-                            | None -> false)
-                    | ValueNone -> false
-                | _ -> false
-            else
-                false
+            if cenv.improvedByRefLikeEscapeAnalysis then getHasUnscopedRef() else false
 
         CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt scopedMask hasUnscopedRef
     else
@@ -1783,26 +1789,20 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
         let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
 
+        let getILMethodContext () =
+            if cenv.improvedByRefLikeEscapeAnalysis then
+                tryResolveILMethodContext cenv.amap m ilMethRef
+            else
+                None
+        
         let effectiveCtxt, scopedMask, hasUnscopedRef =
             match retTypes with
             | [_] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m returnTy ->
-                let methContext =
-                    if cenv.improvedByRefLikeEscapeAnalysis then
-                        tryResolveILMethodContext cenv.amap m ilMethRef
-                    else
-                        None
-
                 let mask, unscoped =
-                    match methContext with
+                    match getILMethodContext() with
                     | Some(methDef, refSafetyVersion) ->
                         let mask = computeScopedMask cenv m methDef methInst refSafetyVersion
-
-                        let unscoped =
-                            if hasReceiver then
-                                hasUnscopedRefAttribute g methDef
-                            else
-                                false
-
+                        let unscoped = if hasReceiver then hasUnscopedRefAttribute g methDef else false
                         mask, unscoped
                     | None -> None, false
 
@@ -2054,13 +2054,12 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
         // A scoped parameter promises callers it won't escape via the return value.
         // Mark it as scope=1 (non-returnable) so escape checks reject returning it.
         if cenv.improvedByRefLikeEscapeAnalysis then
-            let flatArgInfos = valReprInfo.ArgInfos |> List.concat
-
-            let paramArgInfos =
+            let isInstance =
                 match memInfo with
-                | Some mi when mi.MemberFlags.IsInstance && not flatArgInfos.IsEmpty ->
-                    flatArgInfos.Tail
-                | _ -> flatArgInfos
+                | Some mi -> mi.MemberFlags.IsInstance
+                | None -> false
+
+            let paramArgInfos = flattenArgInfosSkipReceiver valReprInfo.ArgInfos isInstance
 
             if paramArgInfos.Length = restArgs.Length then
                 (restArgs, paramArgInfos)
@@ -2420,31 +2419,23 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
     | _ -> ()
 
     // GAP-3: Check override does not widen scoped parameters
-    if cenv.improvedByRefLikeEscapeAnalysis && cenv.reportErrors then
+    let checkOverrideVariance () =
         match v.MemberInfo with
         | Some mi when mi.MemberFlags.IsOverrideOrExplicitImpl ->
             for slotSig in mi.ImplementedSlotSigs do
                 let baseParams = slotSig.FormalParams |> List.concat
 
-                let overrideArgInfos =
-                    match v.ValReprInfo with
-                    | Some vri -> vri.ArgInfos |> List.concat
-                    | None -> []
-
                 let overrideParams =
-                    if mi.MemberFlags.IsInstance && not overrideArgInfos.IsEmpty then
-                        overrideArgInfos.Tail
-                    else
-                        overrideArgInfos
+                    match v.ValReprInfo with
+                    | Some vri -> flattenArgInfosSkipReceiver vri.ArgInfos mi.MemberFlags.IsInstance
+                    | None -> []
 
                 if baseParams.Length = overrideParams.Length then
                     // Reuse tryGetScopedParamMask for IL-based scoped attribute detection (C# interop)
                     let ilScopedMask =
                         let declaringTy = slotSig.DeclaringType
-
                         if isAppTy g declaringTy then
                             let tcRef = tcrefOfAppTy g declaringTy
-
                             match tcRef.TypeReprInfo with
                             | TILObjectRepr(TILObjectReprData(_scoref, _, tdef)) ->
                                 tdef.Methods.FindByName(slotSig.Name)
@@ -2481,6 +2472,9 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                                 )
                         | None -> ())
         | _ -> ()
+
+    if cenv.improvedByRefLikeEscapeAnalysis && cenv.reportErrors then
+        checkOverrideVariance()
 
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
 
