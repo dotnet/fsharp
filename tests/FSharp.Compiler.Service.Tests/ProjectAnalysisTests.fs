@@ -491,9 +491,6 @@ let ``Test project1 all uses of all symbols`` () =
                 "file2", ((18, 6), (18, 18)), ["class"]);
                ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
                 "file2", ((18, 6), (18, 18)), ["member"]);
-               // #14902
-               ("``.ctor``", "Microsoft.FSharp.Core.``.ctor``", "file2",
-                ((18, 7), (18, 18)), ["member"]);
                ("x", "N.D3.x", "file2", ((19, 16), (19, 17)),
                 ["field"; "default"; "mutable"]);
                ("D3", "N.D3", "file2", ((15, 5), (15, 7)), ["class"]);
@@ -556,16 +553,12 @@ let ``Test project1 all uses of all symbols`` () =
                ("M", "M", "file2", ((38, 22), (38, 23)), ["module"]);
                ("C", "M.C", "file2", ((38, 22), (38, 25)), ["class"]);
                ("C", "M.C", "file2", ((38, 22), (38, 25)), ["member"; "ctor"]);
-               // #14902
-               ("``.ctor``", "M.C.``.ctor``", "file2", ((38, 23), (38, 25)), ["member"; "ctor"]);
                ("mmmm1", "N.mmmm1", "file2", ((38, 4), (38, 9)), ["val"]);
                ("M", "M", "file2", ((39, 12), (39, 13)), ["module"]);
                ("CAbbrev", "M.CAbbrev", "file2", ((39, 12), (39, 21)), ["abbrev"]);
                ("M", "M", "file2", ((39, 28), (39, 29)), ["module"]);
                ("CAbbrev", "M.CAbbrev", "file2", ((39, 28), (39, 37)), ["abbrev"]);
                ("C", "M.C", "file2", ((39, 28), (39, 37)), ["member"; "ctor"]);
-               // #14902
-               ("``.ctor``", "M.C.``.ctor``", "file2", ((39, 29), (39, 37)), ["member"; "ctor"]);
                ("mmmm2", "N.mmmm2", "file2", ((39, 4), (39, 9)), ["val"]);
                ("N", "N", "file2", ((1, 7), (1, 8)), ["module"])]
 
@@ -2383,10 +2376,6 @@ let ``Test Project14 all symbols`` () =
           [|
             ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
             ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
-            // #14902
-            ("member .ctor", "``.ctor``", "file1", ((4, 3), (4, 8)), []);
-            ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
-            ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
             ("S", "S", "file1", ((5, 5), (5, 6)), ["defn"]);
@@ -2542,14 +2531,6 @@ let ``Test Project16 all symbols`` () =
     allUsesOfAllSymbols |> shouldEqual
           [|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
-            // #14902
-            ("member .ctor", "``.ctor``", "sig1", ((8, 7), (8, 11)), [], ["member"]);
-            ("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
-            ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
-            ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
-            ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
-            // #14902
-            ("member .ctor", "``.ctor``", "sig1", ((12, 7), (12, 11)), [], ["member"]);
             ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
             ("int", "int", "sig1", ((16, 19), (16, 22)), ["type"], ["abbrev"]);
@@ -5175,12 +5156,6 @@ let ``Test Project40 all symbols`` () =
             ("x", ((4, 33), (4, 34)), []);
             ("IsNone", ((4, 33), (4, 41)), ["member"; "prop"; "funky"]);
             ("f", ((4, 4), (4, 5)), ["val"]);
-            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
-            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
-            // #14902
-            ("``.ctor``", ((6, 3), (6, 27)), ["member"]);
-            ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
-            ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
             ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
             ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
             ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
