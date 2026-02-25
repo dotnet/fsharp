@@ -289,6 +289,7 @@
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
     <Compile Include="ErrorMessages\ClassesTests.fs" />
+    <Compile Include="ErrorMessages\OperatorTests.fs" />
     <Compile Include="ErrorMessages\CommaSemicolonListTests.fs" />
     <Compile Include="ErrorMessages\ConstructorTests.fs" />
     <Compile Include="ErrorMessages\DontSuggestTests.fs" />
