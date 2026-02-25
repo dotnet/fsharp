@@ -368,6 +368,8 @@
     <Compile Include="Checking\MethodCalls.fs" />
     <Compile Include="Checking\PatternMatchCompilation.fsi" />
     <Compile Include="Checking\PatternMatchCompilation.fs" />
+    <Compile Include="Checking\OverloadResolutionCache.fsi" />
+    <Compile Include="Checking\OverloadResolutionCache.fs" />
     <Compile Include="Checking\ConstraintSolver.fsi" />
     <Compile Include="Checking\ConstraintSolver.fs" />
     <Compile Include="Checking\CheckFormatStrings.fsi" />

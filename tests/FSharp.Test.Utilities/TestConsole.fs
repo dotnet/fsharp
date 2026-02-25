@@ -31,11 +31,15 @@ module TestConsole =
     let private localIn = new RedirectingTextReader()
     let private localOut = new RedirectingTextWriter()
     let private localError = new RedirectingTextWriter()
+    
+    let private isInstalled = ref 0
 
-    let install () = 
-        Console.SetIn localIn
-        Console.SetOut localOut
-        Console.SetError localError
+    /// Installs console redirection. Idempotent and thread-safe.
+    let install () =
+        if Interlocked.CompareExchange(isInstalled, 1, 0) = 0 then
+            Console.SetIn localIn
+            Console.SetOut localOut
+            Console.SetError localError
     
     // Taps into the redirected console stream.
     type private CapturingWriter(redirecting: RedirectingTextWriter) as this =
@@ -43,7 +47,9 @@ module TestConsole =
         let wrapped = redirecting.Writer
         do redirecting.Writer <- this
         override _.Encoding = Encoding.UTF8
-        override _.Write(value: char) = wrapped.Write(value); base.Write(value)
+        override _.Write(value: char) = 
+            wrapped.Write(value)
+            base.Write(value)
         override _.Dispose (disposing: bool) =
             redirecting.Writer <- wrapped
             base.Dispose(disposing: bool)
@@ -54,6 +60,7 @@ module TestConsole =
     /// Can be used to capture just a single compilation or eval as well as the whole test case execution output.
     type ExecutionCapture() =
         do
+            install ()
             Console.Out.Flush()
             Console.Error.Flush()
 
@@ -76,6 +83,7 @@ module TestConsole =
             string error
 
     type ProvideInput(input: string) =
+        do install ()
         let oldIn = localIn.Reader
         do
             localIn.Reader <- new StringReader(input)

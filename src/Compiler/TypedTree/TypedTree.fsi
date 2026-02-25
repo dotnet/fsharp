@@ -3102,6 +3102,11 @@ type NullnessInfo =
 type Nullness =
     | Known of NullnessInfo
     | Variable of NullnessVar
+    /// The value is known to be non-null because it was produced by a constructor call.
+    | KnownFromConstructor
+
+    /// Returns Known WithoutNull if KnownFromConstructor, otherwise identity.
+    member Normalize: unit -> Nullness
 
     member Evaluate: unit -> NullnessInfo
 

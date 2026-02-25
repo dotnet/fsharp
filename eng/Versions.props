@@ -159,17 +159,17 @@
     <!-- -->
     <!-- other packages -->
     <BenchmarkDotNetVersion>0.13.10</BenchmarkDotNetVersion>
-    <FsCheckVersion>2.16.5</FsCheckVersion>
+    <FsCheckVersion>2.16.6</FsCheckVersion>
     <MicrosoftCompositionVersion>1.0.31</MicrosoftCompositionVersion>
     <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
      <!-- Making diff way too large, update separately later. e.g. to 6.0.0-rtm.21518.12 and 9.0.0-rc.2.24462.10 or via darc -->
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
-    <MicrosoftNETTestSdkVersion>17.14.1</MicrosoftNETTestSdkVersion>
+    <MicrosoftTestPlatformVersion>17.14.1</MicrosoftTestPlatformVersion>
+    <MicrosoftTestingExtensionsHangDumpVersion>2.0.2</MicrosoftTestingExtensionsHangDumpVersion>
     <NewtonsoftJsonVersion>13.0.3</NewtonsoftJsonVersion>
-    <XUnitVersion>2.9.0</XUnitVersion>
-    <XUnitRunnerVersion>3.1.4</XUnitRunnerVersion>
-    <XunitXmlTestLoggerVersion>3.1.17</XunitXmlTestLoggerVersion>
+    <XunitVersion>3.2.2</XunitVersion>
+    <XunitRunnerConsoleVersion>3.2.2</XunitRunnerConsoleVersion>
     <!-- -->
   </PropertyGroup>
 
