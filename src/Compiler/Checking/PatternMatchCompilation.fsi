@@ -71,6 +71,10 @@ val internal CompilePattern:
         TType ->
             DecisionTree * DecisionTreeTarget list
 
+/// Exception raised when a pattern match is incomplete.
+/// Fields: isComputationExpression * (counterExample * isShownAsFieldPattern) option * range * isForLoopBinding
+/// The isForLoopBinding flag indicates the match originated from a for-loop pattern (e.g., `for 1 in xs`),
+/// which changes the diagnostic hint to suggest using a wildcard pattern.
 exception internal MatchIncomplete of bool * (string * bool) option * range * bool
 
 exception internal RuleNeverMatched of range

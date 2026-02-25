@@ -8255,6 +8255,8 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
             | SynPat.Paren(SynPat.Const _, _) -> true
             | _ -> false
 
+        // Intercept MatchIncomplete diagnostics to mark them as originating from a for-loop binding,
+        // which adds a context-specific hint in the error message (e.g., "consider using a wildcard pattern").
         use _diagnostics =
             if isConstantPattern then
                 UseTransformedDiagnosticsLogger(fun oldLogger ->
@@ -8263,7 +8265,8 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
                             let diagnostic =
                                 match diagnostic.Exception with
                                 | MatchIncomplete(isComp, cexOpt, m, _) ->
-                                    { diagnostic with Exception = MatchIncomplete(isComp, cexOpt, m, true) }
+                                    { diagnostic with
+                                        Exception = MatchIncomplete(isComp, cexOpt, m, (* isForLoopBinding: *) true) }
                                 | _ -> diagnostic
 
                             oldLogger.DiagnosticSink(diagnostic)
