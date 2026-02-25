@@ -92,8 +92,16 @@ let main _argv =
                                 1
                             else
                                 printfn "SUCCESS: extension operator compat test passed"
-                                printfn "SUCCESS: All compiler compatibility tests passed"
-                                0
+
+                                // TC10: numeric widening via extension operators (RFC FS-1043)
+                                let widenResult = Library.addWidenedConcrete 1.5 2
+                                if widenResult <> 3.5 then
+                                    printfn "ERROR: addWidenedConcrete 1.5 2 = %f, expected 3.5" widenResult
+                                    1
+                                else
+                                    printfn "SUCCESS: widening extension operator compat test passed"
+                                    printfn "SUCCESS: All compiler compatibility tests passed"
+                                    0
                 
     with ex ->
         printfn "ERROR: Exception occurred: %s" ex.Message

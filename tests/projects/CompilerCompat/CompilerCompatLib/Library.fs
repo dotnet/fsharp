@@ -47,3 +47,18 @@ module Library =
 
     /// Concrete wrapper that captures the resolved call.
     let repeatStrConcrete (s: string) (n: int) : string = repeatStr s n
+
+    // ---- RFC FS-1043 numeric widening via extension operators compat test ----
+
+    /// Helper to add two floats using the built-in operator (defined before the extension to avoid self-reference).
+    let private addFloats (x: float) (y: float) : float = x + y
+
+    /// Extension operator that widens int to float for addition.
+    type System.Double with
+        static member (+) (x: float, y: int) = addFloats x (float y)
+
+    /// Inline widening function: uses extension (+) to add int to float.
+    let inline addWidened (x: float) (y: int) = x + y
+
+    /// Concrete wrapper that captures the resolved widening call.
+    let addWidenedConcrete (x: float) (y: int) : float = addWidened x y
