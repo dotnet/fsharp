@@ -434,7 +434,9 @@ type public FSharpCheckFileResults =
     member GetAllUsesOfAllSymbolsInFile: ?cancellationToken: CancellationToken -> seq<FSharpSymbolUse>
 
     /// Get the textual usages that resolved to the given symbol throughout the file
-    member GetUsesOfSymbolInFile: symbol: FSharpSymbol * ?cancellationToken: CancellationToken -> FSharpSymbolUse[]
+    member GetUsesOfSymbolInFile:
+        symbol: FSharpSymbol * ?relatedSymbolKinds: RelatedSymbolUseKind * ?cancellationToken: CancellationToken ->
+            FSharpSymbolUse[]
 
     member internal GetVisibleNamespacesAndModulesAtPoint: pos -> ModuleOrNamespaceRef[]
 

@@ -3554,13 +3554,13 @@ type FSharpCheckFileResults
                             FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurrence, symbolUse.Range)
             }
 
-    member _.GetUsesOfSymbolInFile(symbol: FSharpSymbol, ?cancellationToken: CancellationToken) =
+    member _.GetUsesOfSymbolInFile(symbol: FSharpSymbol, ?relatedSymbolKinds: RelatedSymbolUseKind, ?cancellationToken: CancellationToken) =
         match details with
         | None -> [||]
         | Some(scope, _builderOpt) ->
             [|
                 for symbolUse in
-                    scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item)
+                    scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item, ?relatedSymbolKinds = relatedSymbolKinds)
                     |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurrence, symbolUse.Range) do
                     cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
 

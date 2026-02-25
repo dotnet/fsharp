@@ -2075,7 +2075,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean IsRelativeNameResol
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean get_HasFullTypeCheckInfo()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext ProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext get_ProjectContext()
-FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse[] GetUsesOfSymbolInFile(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse[] GetUsesOfSymbolInFile(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Diagnostics
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Diagnostics()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.DeclarationListInfo GetDeclarationListInfo(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults], Int32, System.String, FSharp.Compiler.EditorServices.PartialLongName, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol]]], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Position,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.CompletionContext]]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpCodeCompletionOptions])
@@ -2582,6 +2582,11 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.Proje
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind All
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind CopyAndUpdateRecord
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind None
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind UnionCaseTester
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: Int32 value__
 FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes)
 FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(System.Object)

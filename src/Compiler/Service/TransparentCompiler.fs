@@ -2111,6 +2111,11 @@ type internal TransparentCompiler
                             if not r.IsSynthetic && preventDuplicates.Add struct (r.Start, r.End) then
                                 builder.Write(cnr.Range, cnr.Item))
 
+                        sResolutions.CapturedRelatedSymbolUses
+                        |> Seq.iter (fun (m, item, _kind) ->
+                            if not m.IsSynthetic then
+                                builder.Write(m, item))
+
                         builder.TryBuildAndReset())
             }
         )

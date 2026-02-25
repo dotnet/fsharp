@@ -384,6 +384,18 @@ module TcResolutionsExtensions =
 
                         | _, _, m -> add m SemanticClassificationType.Plaintext)
 
+                    // Classify related symbol uses (e.g., union case testers get UnionCase coloring).
+                    // These may overlap with existing classifications at the same range (e.g., Property),
+                    // so we add them directly without the duplicate check.
+                    sResolutions.CapturedRelatedSymbolUses
+                    |> Seq.iter (fun (m, item, _kind) ->
+                        match range with
+                        | Some r when not (rangeContainsPos r m.Start || rangeContainsPos r m.End) -> ()
+                        | _ ->
+                            match item with
+                            | Item.UnionCase _ -> results.Add(SemanticClassificationItem((m, SemanticClassificationType.UnionCase)))
+                            | _ -> ())
+
                     let locs =
                         formatSpecifierLocations
                         |> Array.map (fun (m, _) -> SemanticClassificationItem((m, SemanticClassificationType.Printf)))
