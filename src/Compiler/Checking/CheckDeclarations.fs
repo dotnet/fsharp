@@ -4806,7 +4806,7 @@ module TcDeclarations =
                     match extensionAttributeOnVals, typeEntity with
                     | Some extensionAttribute, Some typeEntity ->
                         if Option.isNone (tryFindExtensionAttribute g typeEntity.Attribs) then
-                            typeEntity.entity_attribs <- WellKnownEntityAttribs.Create(extensionAttribute :: typeEntity.Attribs)
+                            typeEntity.entity_attribs <- typeEntity.EntityAttribs.Add(extensionAttribute, WellKnownEntityAttributes.ExtensionAttribute)
                     | _ -> ()
 
                     vals, env

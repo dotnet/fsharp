@@ -11879,7 +11879,10 @@ let CombineCcuContentFragments l =
         entity1 |> Construct.NewModifiedTycon (fun data1 -> 
             let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
             { data1 with 
-                entity_attribs = WellKnownEntityAttribs.Create(entity1.Attribs @ entity2.Attribs)
+                entity_attribs =
+                    if entity2.Attribs.IsEmpty then entity1.EntityAttribs
+                    elif entity1.Attribs.IsEmpty then entity2.EntityAttribs
+                    else WellKnownEntityAttribs.Create(entity1.Attribs @ entity2.Attribs)
                 entity_modul_type = MaybeLazy.Lazy (InterruptibleLazy(fun _ -> CombineModuleOrNamespaceTypes path2 entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
                 entity_opt_data = 
                 match data1.entity_opt_data with
@@ -12237,7 +12240,7 @@ let tryAddExtensionAttributeIfNotAlreadyPresentForModule
         match tryFindExtensionAttributeIn (tryFindExtensionAttribute g) with
         | None -> moduleEntity
         | Some extensionAttrib ->
-            { moduleEntity with entity_attribs = WellKnownEntityAttribs.Create(extensionAttrib :: moduleEntity.Attribs) }
+            { moduleEntity with entity_attribs = moduleEntity.EntityAttribs.Add(extensionAttrib, WellKnownEntityAttributes.ExtensionAttribute) }
 
 let tryAddExtensionAttributeIfNotAlreadyPresentForType
     (g: TcGlobals)
@@ -12254,7 +12257,7 @@ let tryAddExtensionAttributeIfNotAlreadyPresentForType
         | Some extensionAttrib ->
             moduleOrNamespaceTypeAccumulator.Value.AllEntitiesByLogicalMangledName.TryFind(typeEntity.LogicalName)
             |> Option.iter (fun e ->
-                e.entity_attribs <- WellKnownEntityAttribs.Create(extensionAttrib :: e.Attribs)
+                e.entity_attribs <- e.EntityAttribs.Add(extensionAttrib, WellKnownEntityAttributes.ExtensionAttribute)
             )
             typeEntity
 

@@ -11447,15 +11447,18 @@ and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt
             | _ ->
                 (validOnDefault, inheritedDefault)
         else
-            match (TryFindFSharpAttribute g g.attrib_AttributeUsageAttribute tcref.Attribs) with // TODO: WELLKNOWN_ATTRIB - value extraction
-            | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn ])) ->
-                validOn, inheritedDefault
-            | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn; AttribBoolArg(_allowMultiple); AttribBoolArg inherited])) ->
-                validOn, inherited
-            | Some _ ->
-                warning(Error(FSComp.SR.tcUnexpectedConditionInImportedAssembly(), mAttr))
-                validOnDefault, inheritedDefault
-            | _ ->
+            if EntityHasWellKnownAttribute g WellKnownEntityAttributes.AttributeUsageAttribute tcref.Deref then
+                match TryFindFSharpAttribute g g.attrib_AttributeUsageAttribute tcref.Attribs with
+                | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn ])) ->
+                    validOn, inheritedDefault
+                | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn; AttribBoolArg(_allowMultiple); AttribBoolArg inherited])) ->
+                    validOn, inherited
+                | Some _ ->
+                    warning(Error(FSComp.SR.tcUnexpectedConditionInImportedAssembly(), mAttr))
+                    validOnDefault, inheritedDefault
+                | _ ->
+                    validOnDefault, inheritedDefault
+            else
                 validOnDefault, inheritedDefault
     
     // Determine valid attribute targets
