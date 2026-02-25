@@ -3325,52 +3325,52 @@ module Ops =
 
 open Ops
 
-let inline repeat (s: string) (n: int) = s * n
+let inline repeat (x: ^T) (n: int) = x * n
 let r = repeat "ha" 3
 if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" r)
         """
-        |> asExe
         |> withLangVersionPreview
+        |> withOptions [ "--nowarn:3882" ]
+        |> asExe
         |> compileAndRun
         |> shouldSucceed
 
     [<Fact>]
     let ``open type on class brings extension operators into SRTP scope`` () =
-        FSharp """
+        FSharp $"""
 module TestOpenTypeClass
 
 type Extensions =
     static member Dummy = 0
 
-type System.String with
-    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+{stringRepeatExtDef}
 
-// This test verifies that extension operators defined at module level work.
-let inline repeat (s: string) (n: int) = s * n
+// This test verifies that extension operators defined at module level work with SRTP.
+let inline repeat (x: ^T) (n: int) = x * n
 let r = repeat "ha" 3
-if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" r)
+if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%%s'" r)
         """
-        |> asExe
         |> withLangVersionPreview
+        |> withOptions [ "--nowarn:3882" ]
+        |> asExe
         |> compileAndRun
         |> shouldSucceed
 
     [<Fact>]
     let ``Extension operator works inside async computation expression`` () =
-        FSharp """
+        FSharp $"""
 module TestCEExtOp
 
-type System.String with
-    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+{stringRepeatExtDef}
 
 let result =
-    async {
+    async {{
         let r = "ha" * 3
         return r
-    }
+    }}
     |> Async.RunSynchronously
 
-if result <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" result)
+if result <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%%s'" result)
         """
         |> asExe
         |> withLangVersionPreview
@@ -3401,11 +3401,10 @@ if v3.X <> 4.0 || v3.Y <> 6.0 then failwith (sprintf "Expected {4.0, 6.0} but go
 
     [<Fact>]
     let ``Recursive function using extension operator resolves correctly`` () =
-        FSharp """
+        FSharp $"""
 module TestRecExtOp
 
-type System.String with
-    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+{stringRepeatExtDef}
 
 // Non-inline recursive function that uses extension operator at concrete type
 let rec repeatAndConcat (s: string) (n: int) : string =
@@ -3414,7 +3413,7 @@ let rec repeatAndConcat (s: string) (n: int) : string =
     else s * 1 + repeatAndConcat s (n - 1)
 
 let result = repeatAndConcat "ab" 3
-if result <> "ababab" then failwith (sprintf "Expected 'ababab' but got '%s'" result)
+if result <> "ababab" then failwith (sprintf "Expected 'ababab' but got '%%s'" result)
         """
         |> asExe
         |> withLangVersionPreview
