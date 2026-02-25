@@ -411,6 +411,22 @@ let y = r 10
                  Col 10,
                  "This value is not a function and cannot be applied. It has type 'MyRecord', which does not accept arguments.")
 
+        [<Fact>]
+        let ``Generic value applied as function shows plain error`` () =
+            FSharp
+                """
+let f<'a when 'a : struct> (x: 'a) = x 10
+                """
+            |> typecheck
+            |> shouldFail
+            |> withSingleDiagnostic
+                (Error 3,
+                 Line 2,
+                 Col 38,
+                 Line 2,
+                 Col 39,
+                 "This value is not a function and cannot be applied.")
+
     [<Fact>]
     let ``Tuple actual type says 'is a tuple of type'``() =
         FSharp """
