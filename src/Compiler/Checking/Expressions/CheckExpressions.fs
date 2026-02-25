@@ -1151,6 +1151,11 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, implS
             if n<>3 && opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonTripleArgument(displayName, n), m))
             if not (isNil otherArgs) then warning(Error(FSComp.SR.memberOperatorDefinitionWithCurriedArguments displayName, m))
 
+    // FS1215 is intentionally scoped to logical operator names only (op_Addition, op_Multiply, etc.).
+    // Non-operator extension members (e.g., a method named 'Foo') never triggered this warning
+    // because FS1215 specifically warns about "operator overloads" in extensions.
+    // With ExtensionConstraintSolutions enabled, the warning is suppressed since extension
+    // operators now participate in SRTP constraint resolution (RFC FS-1043).
     if isExtrinsic && IsLogicalOpName id.idText && not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) then
         warning(Error(FSComp.SR.tcMemberOperatorDefinitionInExtrinsic(), id.idRange))
 

@@ -3296,3 +3296,20 @@ let g : int -> int = f
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "could not be statically resolved"
+
+    [<Fact>]
+    let ``Non-operator extension member resolves via SRTP with langversion preview`` () =
+        FSharp """
+module TestNonOpExtSRTP
+
+type System.String with
+    static member DoThing (s: string) = s.ToUpper()
+
+let inline doThing (x: ^T) = (^T : (static member DoThing : ^T -> string) x)
+let result = doThing "hello"
+if result <> "HELLO" then failwith (sprintf "Expected 'HELLO' but got '%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed

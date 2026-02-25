@@ -3518,6 +3518,10 @@ and ResolveOverloading
         (methodName = "op_Explicit") ||
         (methodName = "op_Implicit")
 
+    // AllowOverloadOnReturnType is intentionally attribute-gated rather than language-version-gated.
+    // The attribute is self-gating: it only takes effect when explicitly applied to a method,
+    // and it only exists in locally-built FSharp.Core until shipped in a public NuGet.
+    // No LanguageFeature entry is needed (RFC FS-1043 design decision).
     let hasAllowOverloadOnReturnType =
         calledMethGroup |> List.exists (fun cmeth -> cmeth.Method.HasAllowOverloadOnReturnType)
 
