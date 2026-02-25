@@ -5,7 +5,7 @@
 * [x] Implementation: [PR](TBD)
 * [ ] [Discussion](TBD)
 
-Links: [FS-1053 (Span/byref)](https://github.com/fsharp/fslang-design/blob/main/FSharp-4.5/FS-1053-span.md) · [C# 11 low-level struct improvements](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md)
+Links: [FS-1053 (Span/byref)](https://github.com/fsharp/fslang-design/blob/main/FSharp-4.5/FS-1053-span.md) · [FS-1020 (byref returns)](https://github.com/fsharp/fslang-design/blob/main/FSharp-4.1/FS-1020-byref-returns.md) · [C# 11 low-level struct improvements](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md)
 
 ## Summary
 
@@ -29,16 +29,16 @@ Gated: `--langversion:preview` / `LanguageFeature.ImprovedByRefLikeEscapeAnalysi
 
 | Argument limit | Before (FS-1053) | After (this RFC) |
 |---|---|---|
-| `StackReferringSpanLike` | limited | limited |
-| `ByRefOfStackReferringSpanLike` | limited | limited |
-| `ByRef` to local | **ignored** | **limited** |
-| `ByRef` to param | ignored | ignored |
+| Span referring to stack memory | limited | limited |
+| Byref pointing into a stack-referring span | limited | limited |
+| Byref pointing to a local mutable | **not tracked** | **limited** |
+| Byref pointing to a parameter | not tracked | not tracked |
 
 ### Scoped parameters (`[<ScopedRef>]`)
 
 **Consumption:** Reads `ScopedRefAttribute` from IL metadata. Scoped parameters are excluded from the escape limit. Follows [C# `scoped`](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#rules-scoped).
 
-**Authoring:** F# parameters annotated with `[<ScopedRef>]` emit `ScopedRefAttribute` and are honored in escape analysis for same-assembly calls.
+**Authoring:** F# parameters annotated with `[<ScopedRef>]` emit `ScopedRefAttribute` and are excluded from escape analysis at **call sites** for same-assembly calls. The function body is **not** constrained — the author can still return the scoped parameter. This differs from C# where `scoped` restricts the body ([ref-safe-to-escape = function-member](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#rules-scoped)).
 
 ```fsharp
 open System.Runtime.CompilerServices
@@ -78,7 +78,7 @@ On resolution failure, mask = None → all params treated as non-scoped. May cau
 | C# parameter form | IL representation | F# behavior | Diverges? |
 |---|---|---|---|
 | `ref T` | bare byref | Limits span-like return | — |
-| `in T` | `[In]` + `IsReadOnlyAttribute` | Same as `ref` — limits return | — |
+| `in T` | `T&` + `[In]` + `IsReadOnlyAttribute` | Same as `ref` — limits return | — |
 | `out T` | `[Out]` | Implicitly scoped when `RefSafetyRulesVersion >= 11`; conservative otherwise | — |
 | `scoped ref T` / `scoped in T` | `ScopedRefAttribute` | Excluded from limit | — |
 | `scoped Span<T>` (value) | `ScopedRefAttribute` | Excluded from limit | — |
@@ -98,7 +98,7 @@ On resolution failure, mask = None → all params treated as non-scoped. May cau
 | 2 | `let f (x: byref<int>) = Span<int>(&x)` | OK | param byref |
 | 3 | `let f () = Span<int>([| 1;2;3 |])` | OK | no byref |
 | 4 | `let f () = let mutable x = 1 in let s = Span<int>(&x) in s[0]` | OK | span doesn't escape |
-| 5 | `let wrap (x: byref<int>) = Span<int>(&x)` then `wrap &local` | **FS3235** | propagated |
+| 5 | `let wrap (x: byref<int>) = Span<int>(&x)` then `wrap &local` | **FS3235** | `&local` is non-scoped byref to local |
 | 6 | `if flag then Span<int>(&local) else Span<int>(arr)` | **FS3235** | worst branch wins |
 | 7 | `MemoryMarshal.CreateSpan(&local, 1)` | OK | `scoped ref T` in System.Runtime |
 | 8 | Same code without `--langversion:preview` | old behavior | feature-gated |
@@ -194,6 +194,7 @@ These are deliberate design choices where the compiler rejects valid code rather
 
 | Behavior | What happens | Why |
 |---|---|---|
+| `[<ScopedRef>]` body not constrained | A function can return a scoped parameter. Only the **call site** excludes scoped args from the limit. | F# does not narrow `ref-safe-to-escape` for scoped parameters inside the function body. C# does ([CS9075](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md#rules-scoped)). Misuse requires the **author** to violate their own contract — callers are protected. |
 | Curried partial application with `[<ScopedRef>]` | Scoped mask is `None` — all params treated as non-scoped. | Unreachable in practice: byref and byref-like types cannot appear in curried positions (FS0412, FS0421). Defense-in-depth only. |
 | `ref T` where `T` is a type variable | Falls back to non-scoped (no implicit scoping applied). | Matches C# behavior: implicit scoping requires knowing `T` is byref-like, which is not available at the call site for open type parameters. |
 | Scope variance in overrides | Not validated. | C# validates that overrides don't widen scoping. F# override checking compares types, not parameter attributes. Risk surface: a C# caller of an F# override that drops `[<ScopedRef>]` could observe wider escaping. This is an independent diagnostic that does not affect the analysis itself. |
