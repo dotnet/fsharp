@@ -42,66 +42,65 @@ let main _argv =
             let processed = Library.processAnonymousRecord({| X = 123; Y = "test" |})
             printfn "Processed result: %s" processed
             
-            if processed = "Processed: X=123, Y=test" then
-                printfn "SUCCESS: All compiler compatibility tests passed"
-                0
-            else
+            if processed <> "Processed: X=123, Y=test" then
                 printfn "ERROR: Processed result doesn't match expected"
                 1
-
-            // ---- RFC FS-1043 breaking change compat tests ----
-
-            // T4a: inline addOne via concrete wrapper
-            let addOneResult = Library.addOneConcrete 41
-            if addOneResult <> 42 then
-                printfn "ERROR: addOneConcrete 41 = %d, expected 42" addOneResult
-                1
             else
-                printfn "SUCCESS: addOneConcrete test passed"
+                printfn "SUCCESS: Anonymous record tests passed"
 
-                // T4b: inline negate via concrete wrapper
-                let negateResult = Library.negateConcrete 7
-                if negateResult <> -7 then
-                    printfn "ERROR: negateConcrete 7 = %d, expected -7" negateResult
+                // ---- RFC FS-1043 breaking change compat tests ----
+
+                // T4a: inline addOne via concrete wrapper
+                let addOneResult = Library.addOneConcrete 41
+                if addOneResult <> 42 then
+                    printfn "ERROR: addOneConcrete 41 = %d, expected 42" addOneResult
                     1
                 else
-                    printfn "SUCCESS: negateConcrete test passed"
+                    printfn "SUCCESS: addOneConcrete test passed"
 
-                    // T4c: pass concrete wrapper as function value
-                    let applyResult = Library.applyToInt Library.addOneConcrete 41
-                    if applyResult <> 42 then
-                        printfn "ERROR: applyToInt addOneConcrete 41 = %d, expected 42" applyResult
+                    // T4b: inline negate via concrete wrapper
+                    let negateResult = Library.negateConcrete 7
+                    if negateResult <> -7 then
+                        printfn "ERROR: negateConcrete 7 = %d, expected -7" negateResult
                         1
                     else
-                        printfn "SUCCESS: applyToInt test passed"
+                        printfn "SUCCESS: negateConcrete test passed"
 
-                        // T5: custom type operator via concrete wrapper
-                        let n1 = { Library.V = 3 }
-                        let n2 = { Library.V = 4 }
-                        let numResult = Library.addNumsConcrete n1 n2
-                        if numResult.V <> 7 then
-                            printfn "ERROR: addNumsConcrete {V=3} {V=4} = {V=%d}, expected {V=7}" numResult.V
+                        // T4c: pass concrete wrapper as function value
+                        let applyResult = Library.applyToInt Library.addOneConcrete 41
+                        if applyResult <> 42 then
+                            printfn "ERROR: applyToInt addOneConcrete 41 = %d, expected 42" applyResult
                             1
                         else
-                            printfn "SUCCESS: custom type operator compat test passed"
+                            printfn "SUCCESS: applyToInt test passed"
 
-                            // T6: extension operator on external type (RFC FS-1043)
-                            let repeatResult = Library.repeatStrConcrete "ab" 3
-                            if repeatResult <> "ababab" then
-                                printfn "ERROR: repeatStrConcrete \"ab\" 3 = \"%s\", expected \"ababab\"" repeatResult
+                            // T5: custom type operator via concrete wrapper
+                            let n1 = { Library.V = 3 }
+                            let n2 = { Library.V = 4 }
+                            let numResult = Library.addNumsConcrete n1 n2
+                            if numResult.V <> 7 then
+                                printfn "ERROR: addNumsConcrete {V=3} {V=4} = {V=%d}, expected {V=7}" numResult.V
                                 1
                             else
-                                printfn "SUCCESS: extension operator compat test passed"
+                                printfn "SUCCESS: custom type operator compat test passed"
 
-                                // TC10: numeric widening via extension operators (RFC FS-1043)
-                                let widenResult = Library.addWidenedConcrete 1.5 2
-                                if widenResult <> 3.5 then
-                                    printfn "ERROR: addWidenedConcrete 1.5 2 = %f, expected 3.5" widenResult
+                                // T6: extension operator on external type (RFC FS-1043)
+                                let repeatResult = Library.repeatStrConcrete "ab" 3
+                                if repeatResult <> "ababab" then
+                                    printfn "ERROR: repeatStrConcrete \"ab\" 3 = \"%s\", expected \"ababab\"" repeatResult
                                     1
                                 else
-                                    printfn "SUCCESS: widening extension operator compat test passed"
-                                    printfn "SUCCESS: All compiler compatibility tests passed"
-                                    0
+                                    printfn "SUCCESS: extension operator compat test passed"
+
+                                    // TC10: numeric widening via extension operators (RFC FS-1043)
+                                    let widenResult = Library.addWidenedConcrete 1.5 2
+                                    if widenResult <> 3.5 then
+                                        printfn "ERROR: addWidenedConcrete 1.5 2 = %f, expected 3.5" widenResult
+                                        1
+                                    else
+                                        printfn "SUCCESS: widening extension operator compat test passed"
+                                        printfn "SUCCESS: All compiler compatibility tests passed"
+                                        0
                 
     with ex ->
         printfn "ERROR: Exception occurred: %s" ex.Message

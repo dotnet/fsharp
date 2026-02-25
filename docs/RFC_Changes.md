@@ -387,7 +387,7 @@ let inline (+) (x: ZipList<'a>, y: ZipList<'a>) : ZipList<'a> =
 ```
    This works because the type annotation means the `op_Addition` constraint is immediately associated with the type variable `'a` that is part of the function signature.
 
-3. Another approach (and likely the best) is to **no longer use return types as support types** in this kind of generic code.  (My understanding is that the use of return types as support types in such cases FSharpPlus was basically "only" to delay weak resolution anyway).  This means using this definition:
+3. Another approach (and likely the best) is to **no longer use return types as support types** in this kind of generic code.  (The use of return types as support types in such cases in FSharpPlus was basically "only" to delay weak resolution anyway.)  This means using this definition:
 
 ```fsharp
 let inline CallMapMethod (mapping: ^F, source: ^I, _output: ^R, mthd: ^M) =
@@ -457,8 +457,8 @@ let inline AddZipLists (x: ZipList<'a>, y: ZipList<'a>) : ZipList<'a> =
 # Unresolved questions
 [unresolved]: #unresolved-questions
 
-* [x] Points 2 & 3 (`consistent` and `implies`) are subtle and I will attempt to expand the test cases where constraints flow together from different accessibility
-domains to try to identify a case where this matters. However it's actually very hard and artificial to construct tests where this matters, because SRTP constraints are typically freshened
+* [x] Points 2 & 3 (`consistent` and `implies`) are subtle. The test cases where constraints flow together from different accessibility
+domains were expanded to try to identify a case where this matters. However it is actually very hard and artificial to construct tests where this matters, because SRTP constraints are typically freshened
 and solved within quite small scopes where the available methods and accessibility domain is always consistent.
 
     **Resolution**: Tested with two modules each providing extension operators on the same type; constraints flow correctly when both are opened (see `IWSAMsAndSRTPsTests.fs` and `SRTPExtensionOperatorTests`). The invariant holds because SRTP constraints are freshened locally per use site, so the accessibility domain is always consistent within a single constraint-solving scope. No failing cases found; remaining risk is low.
