@@ -101,24 +101,26 @@ val inline f1 : x:DateTime -> y: ^a ->  ^b when (DateTime or  ^a) : (static memb
 
 Some signatures files may need to be updated to account for this change.
 
-<!-- BEGIN PROPOSED ADDITION -->
-
 ### Concrete inference example
 
-```fsharp
-// Feature disabled:
-let inline f x = x + 1       // val f : int -> int
+When extension operators are in scope, weak resolution is suppressed for inline code:
 
-// Feature enabled:
+```fsharp
+// No extension operators in scope → unchanged behavior:
+let inline f x = x + 1       // val inline f : int -> int
+
+// Extension operator in scope → constraint stays open:
+type System.String with
+    static member (+) (s: string, n: int) = s + string n
+
 let inline f x = x + 1       // val inline f : x: ^a -> ^b when ( ^a or int) : (static member ( + ) : ^a * int -> ^b)
 
-// Explicit annotations are not affected:
-let inline f (x: int) = x + 1  // val f : int -> int  (both modes)
+// Explicit annotations always pin the type:
+let inline f (x: int) = x + 1  // val inline f : int -> int
 ```
 
-Code that binds such a function to a monomorphic type (`let g : int -> int = f`) will need annotation.
+Code that binds such a function to a monomorphic type (`let g : int -> int = f`) will need annotation when the inferred type becomes generic.
 
-<!-- END PROPOSED ADDITION -->
 
 
 # Drawbacks
@@ -257,19 +259,18 @@ type System.Single with
 ```
 
 
-<!-- BEGIN PROPOSED ADDITION -->
-
 # Interop
 
 * C# consumers see no difference — extension SRTP constraints are an F#-only concept resolved at compile time. The emitted IL is standard .NET.
-* Inline functions with unsolved SRTP constraints cannot be invoked dynamically via reflection (the non-witness method body throws at runtime). This is pre-existing behavior for SRTP-constrained functions; this RFC extends it to cases that were previously eagerly resolved.
+* Extension members solve structural SRTP constraints but do *not* make a type satisfy nominal static abstract interface constraints (`INumber<'T>`, `IAdditionOperators<'T,'T,'T>`, etc.). IWSAMs ([FS-1124](https://github.com/fsharp/fslang-design/blob/main/FSharp-7.0/FS-1124-interfaces-with-static-abstract-members.md)) and extension SRTP solving are orthogonal resolution mechanisms.
 
 # Pragmatics
 
 ## Diagnostics
 
-* **FS1215** ("Extension members cannot provide operator overloads"): suppressed when the feature is enabled. Fires as before when the feature is disabled.
-* No new diagnostics are introduced. Overload ambiguity from extension methods uses existing error codes.
+* **FS1215** ("Extension members cannot provide operator overloads"): no longer emitted when the feature is enabled, because extension operators are now valid SRTP witnesses. Fires as before when the feature is disabled.
+* **FS3882** (new warning): *"The member constraint for '%s' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached."* Emitted during code generation when an inline function's SRTP constraint remains unresolved. This warning is new to this RFC — because weak resolution is suppressed for inline code, more constraints remain open at codegen time.
+* Overload ambiguity introduced by extension methods uses existing error codes; no additional diagnostics for that case.
 
 ## Tooling
 
@@ -280,19 +281,12 @@ type System.Single with
 ## Performance
 
 * Extension method lookup during SRTP constraint solving adds overhead proportional to the number of extension methods in scope. The RFC note on `op_Implicit` ("compiler performance is poor when resolving heavily overloaded constraints") applies here as well.
+* Resolution cost is proportional to the candidate set size per constraint. Libraries such as FSharpPlus that define many overloads per operator family may observe measurable slowdown; profiling is ongoing.
 * No impact on generated code performance — the resolved call sites are identical.
-
-## Scaling
-
-* Expected maximum number of extension operator overloads on a single type in hand-written code: ~20
-* Expected reasonable upper bound the compiler should handle: ~100
-* Resolution cost is linear in the number of candidate extension methods per constraint.
 
 ## Witnesses
 
-Extension members now participate as witnesses for SRTP constraints (see [RFC FS-1090](https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1090-static-abstract-constraint-inference.md)). Two consequences:
-
-* Quotations of inline SRTP calls may now capture extension methods as witnesses:
+Extension members now participate as witnesses for SRTP constraints (see [RFC FS-1071](https://github.com/fsharp/fslang-design/blob/main/FSharp-5.0/FS-1071-witness-passing-quotations.md)). Quotations of inline SRTP calls may now capture extension methods as witnesses:
 
 ```fsharp
 type [<Struct>] MyNum = { V: int }
@@ -306,42 +300,40 @@ let inline add x y = x + y
 let q = <@ add { V = 1 } { V = 2 } @>  // witness is MyNumExt.(+)
 ```
 
-* The set of functions whose non-inline invocation throws at runtime grows. Previously, weak resolution eagerly picked a concrete implementation; now the constraint stays open. Non-witness fallback method bodies for such functions throw `NotSupportedException`.
+## Binary compatibility (pickling)
 
-<!-- END PROPOSED ADDITION -->
+The *trait possible extension solutions* and *trait accessor domain* (design points 1–4) are **not** serialized into compiled DLLs. They exist only during in-process constraint solving and are discarded before metadata emission. Consequently:
+
+* Cross-version binary compatibility is unaffected — no new fields are added to the pickled SRTP constraint format.
+* When an `inline` function is consumed from a compiled DLL, extension operators available at the *consumer's* call site are used for constraint solving, not those that were in scope when the library was compiled. This is consistent with how SRTP constraints are freshened at each use site.
+
 
 
 # Compatibility
 [compatibility]: #compatibility
 
-<!-- BEGIN PROPOSED CHANGE: replaced "Status: We are trying to determine" with definitive statement -->
-
 Status: This RFC **is** a breaking change, gated behind `--langversion:preview`.
 
 **What breaks**:
-- Inferred types of inline SRTP functions become more generic (e.g., `val f : int -> int` → `val inline f : x: ^a -> ^b when ...`). Signature files need updating.
+- Inferred types of inline SRTP functions become more generic when extension operators are in scope (e.g., `val inline f : int -> int` → `val inline f : x: ^a -> ^b when ...`). Signature files need updating.
 - `let g : int -> int = f` stops compiling when `f` is now generic — needs annotation.
-- Extension methods in SRTP resolution may introduce new ambiguity.
+- Extension methods in SRTP resolution may introduce new overload ambiguity at call sites, including concretely-typed ones where a new extension candidate is in scope.
+- The set of functions whose non-inline invocation throws `NotSupportedException` at runtime grows: previously, weak resolution eagerly picked a concrete implementation; now the constraint may stay open, and the non-witness fallback method body throws.
+- `AllowOverloadOnReturnTypeAttribute` changes overload resolution behavior: when present on any applicable overload, the return type is unified during resolution. Existing code relying on the current resolution order (which ignores return types except for `op_Explicit`/`op_Implicit`) may select a different overload or become ambiguous.
 
-**What does NOT break**: Call sites with concrete arguments. Call-site operator resolution for primitive types.
+**What does NOT break**:
+- Call sites with concrete arguments **and no extension operators in scope** are unaffected.
+- Call-site operator resolution for primitive types without in-scope extensions.
 
-<!-- END PROPOSED CHANGE -->
+**FSharpPlus coordination**: Deferred; see workarounds documented below.
 
-We assume it must be a breaking change, because additional methods are taken into account in the overload resolution used in SRTP constraint resolution. That must surely cause it to fail where it would have succeeded before. However,
+**Risk mitigation**:
 
-1. All the new methods are extension methods, which are lower priority in overload resolution
+1. Extension methods are lower priority in overload resolution.
+2. For built-in operators like `(+)`, there will be relatively few candidate extension methods in F# code.
+3. Nearly all SRTP constraints for built-in operators are on static members, and C# code can't introduce static extension members.
 
-Even if it's theoretically a breaking change, we may still decide it's worthwhile because the risk of change is low.  This seems plausible because
-
-1. Taking the extra existing extension methods into account is natural and a lot like an addition to the .NET libraries causing overload resolution to fail. We don't really consider that a breaking change (partly because this is measured differently for C# and F#, as they have different sensitivities to adding overloads).
-
-2. For the built-in operators like `(+)`, there will be relatively few such candidate extension methods in F# code because we give warnings when users try to add extension methods for these
-
-3. Nearly all SRTP constraints (at least the ones for built-in operators) are on static members, and C# code can't introduce extension members that are static - just instance ones. So C# extension members will only cause compat concern for F# code using SRTP constraints on instance members, AND where the C# extension methods make a difference to overload resolution.
-
-Still, we're pretty sure this must be a breaking change. We would appreciate help construct test cases where it is/isn't.
-
-I'm examining some consequences of the part of this RFC "Weak Resolution no longer forces overload resolution...".   In general this seems a great improvement.  However, I have found one case where, for the complicated SRTP code such as found in FSharpPlus, existing code no longer compiles.
+Weak resolution changes ("Weak Resolution no longer forces overload resolution...") are a significant improvement. However, one case has been identified where complex SRTP code such as found in FSharpPlus no longer compiles under this change.
 
 ### Example
 
@@ -409,7 +401,7 @@ let inline CallMapMethod (mapping: ^F, source: ^I, _output: ^R, mthd: ^M) =
 
    With this change the code compiles.
 
-This is the only example I've found of this in FSharpPlus.  However I guess there may be client code of FSharpPlus that hits this problems.  In general I suppose it may result whenever we have
+This is the only known example of this pattern in FSharpPlus. However, client code of FSharpPlus may also encounter this issue. In general, this may occur whenever there is
 
 ```
      let inline SomeGenericFunction (...) =
@@ -465,12 +457,10 @@ let inline AddZipLists (x: ZipList<'a>, y: ZipList<'a>) : ZipList<'a> =
 # Unresolved questions
 [unresolved]: #unresolved-questions
 
-<!-- BEGIN PROPOSED CHANGE: marked resolved with findings -->
-
 * [x] Points 2 & 3 (`consistent` and `implies`) are subtle and I will attempt to expand the test cases where constraints flow together from different accessibility
 domains to try to identify a case where this matters. However it's actually very hard and artificial to construct tests where this matters, because SRTP constraints are typically freshened
 and solved within quite small scopes where the available methods and accessibility domain is always consistent.
 
-    **Resolution**: Tested with two modules each providing extension operators on the same type; constraints flow correctly when both are opened. No failing cases found.
+    **Resolution**: Tested with two modules each providing extension operators on the same type; constraints flow correctly when both are opened (see `IWSAMsAndSRTPsTests.fs` and `SRTPExtensionOperatorTests`). The invariant holds because SRTP constraints are freshened locally per use site, so the accessibility domain is always consistent within a single constraint-solving scope. No failing cases found; remaining risk is low.
 
-<!-- END PROPOSED CHANGE -->
+
