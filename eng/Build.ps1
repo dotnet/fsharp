@@ -73,7 +73,6 @@ param (
     [switch]$compressAllMetadata,
     [switch]$buildnorealsig = $true,
     [switch]$verifypackageshipstatus = $false,
-    [string]$testBatch = "",
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
@@ -369,34 +368,38 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
 
-    $testBatchSuffix = ""
-    if ($testBatch) {
-      $testBatchSuffix = "_batch$testBatch"
+    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
+    $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
+    
+    # MTP requires --solution flag for .sln files
+    $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
+    
+    # For solutions, omit --report-xunit-trx-filename so each test assembly generates a unique .trx file.
+    # With a static filename, all assemblies overwrite the same file and only the last one's results survive.
+    if ($testProject.EndsWith('.sln')) {
+        $reportArgs = "--report-xunit-trx"
+    } else {
+        $testLogFileName = "${projectName}_${targetFramework}.trx"
+        $reportArgs = "--report-xunit-trx --report-xunit-trx-filename ""$testLogFileName"""
     }
-
-    # {assembly} and {framework} will expand respectively. See https://github.com/spekt/testlogger/wiki/Logger-Configuration#logfilepath
-    # This is useful to deconflict log filenames when there are many test assemblies, e.g. when testing a whole solution.
-    $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}_{framework}$testBatchSuffix.xml"
-
-    $testBinLogPath = "$LogDir\${projectName}_$targetFramework$testBatch.binlog"
-    $args = "test $testProject -c $configuration -f $targetFramework --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
-    $args += " --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration"
+    
+    $test_args = "test $testTarget -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
+    # MTP HangDump extension replaces VSTest --blame-hang-timeout
+    $test_args += " --hangdump --hangdump-timeout 5m --hangdump-type Full"
 
     if (-not $noVisualStudio -or $norestore) {
-        $args += " --no-restore"
+        $test_args += " --no-restore"
     }
 
     if (-not $noVisualStudio) {
-        $args += " --no-build"
+        $test_args += " --no-build"
     }
 
-    $args += " $settings"
-    if ($testBatch) {
-        $args += " --filter batch=$testBatch"
-    }
+    $test_args += " $settings"
 
-    Write-Host("$args")
-    Exec-Console $dotnetExe $args
+    Write-Host("$test_args")
+    
+    Exec-Console $dotnetExe $test_args
 }
 
 function Prepare-TempDir() {

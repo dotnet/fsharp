@@ -628,6 +628,7 @@ val internal CallMethodGroupNameResolutionSink:
 val internal CallNameResolutionSinkReplacing:
     TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurrence * AccessorDomain -> unit
 
+
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink: TcResultsSink -> range * NameResolutionEnv * TType * AccessorDomain -> unit
 

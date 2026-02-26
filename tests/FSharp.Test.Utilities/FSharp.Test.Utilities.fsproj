@@ -7,12 +7,13 @@
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>xunit</UnitTestType>
-    <IsTestProject>true</IsTestProject>
     <OtherFlags>$(OtherFlags) --realsig-</OtherFlags>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <!--Extra xUnit customizations, not required for the test suite to work, but can speed up local test runs and help with debugging.-->
-    <DefineConstants>XUNIT_EXTRAS</DefineConstants>
+    <!-- Temporarily disabled due to xUnit3 API incompatibilities - custom test cases no longer supported -->
+    <!-- <DefineConstants>XUNIT_EXTRAS</DefineConstants> -->
+    <!-- This is a test utilities library, not a test project -->
+    <ExcludeFromTestPackageReferences>true</ExcludeFromTestPackageReferences>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -21,9 +22,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="xunit.runner.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Compile Include="..\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
     </Compile>
@@ -39,13 +37,13 @@
     <Compile Include="ScriptHelpers.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="ILVerifierModule.fs" />
+    <Compile Include="DataAttributeBase.fs" />
     <Compile Include="DirectoryAttribute.fs" />
     <Compile Include="FileInlineDataAttribute.fs" />
     <Compile Include="ReflectionHelper.fs" />
     <Compile Include="SurfaceArea.fs" />
     <Compile Include="XunitHelpers.fs" />
     <Compile Include="XunitSetup.fs" />
-    <Compile Include="Tests.fs" />
   </ItemGroup>
 
 
@@ -112,6 +110,15 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
+    <!-- xUnit3 extensibility packages for custom test utilities -->
+    <PackageReference Include="xunit.v3.common" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.v3.assert" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.v3.extensibility.core" Version="$(XunitVersion)" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <!-- Explicit reference to xunit.v3.core.dll to ensure F# compiler finds types -->
+  <ItemGroup>
+    <Reference Include="$(Pkgxunit_v3_extensibility_core)/lib/netstandard2.0/xunit.v3.core.dll" />
   </ItemGroup>
 
 	<ItemGroup>
