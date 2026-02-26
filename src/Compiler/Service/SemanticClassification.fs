@@ -6,6 +6,7 @@ open System.Diagnostics
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Library
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
@@ -135,7 +136,7 @@ module TcResolutionsExtensions =
     type TcResolutions with
 
         member sResolutions.GetSemanticClassification
-            (g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int)[], range: range option)
+            (g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int)[], range: range option, ?relatedSymbolKinds: RelatedSymbolUseKind)
             : SemanticClassificationItem[] =
             DiagnosticsScope.Protect
                 range0
@@ -384,17 +385,17 @@ module TcResolutionsExtensions =
 
                         | _, _, m -> add m SemanticClassificationType.Plaintext)
 
-                    // Classify related symbol uses (e.g., union case testers get UnionCase coloring).
-                    // These may overlap with existing classifications at the same range (e.g., Property),
-                    // so we add them directly without the duplicate check.
-                    sResolutions.CapturedRelatedSymbolUses
-                    |> Seq.iter (fun (m, item, _kind) ->
-                        match range with
-                        | Some r when not (rangeContainsPos r m.Start || rangeContainsPos r m.End) -> ()
-                        | _ ->
-                            match item with
-                            | Item.UnionCase _ -> results.Add(SemanticClassificationItem((m, SemanticClassificationType.UnionCase)))
-                            | _ -> ())
+                    // Classify related symbol uses (e.g., union case testers → UnionCase).
+                    // These share ranges with the corresponding property classifications, so we intentionally add a second classification.
+                    match relatedSymbolKinds with
+                    | Some kinds ->
+                        for (m, item, kind) in sResolutions.CapturedRelatedSymbolUses do
+                            if kinds.HasFlag kind then
+                                match range, item with
+                                | Some r, _ when not (rangeContainsPos r m.Start || rangeContainsPos r m.End) -> ()
+                                | _, Item.UnionCase _ -> results.Add(SemanticClassificationItem((m, SemanticClassificationType.UnionCase)))
+                                | _ -> ()
+                    | None -> ()
 
                     let locs =
                         formatSpecifierLocations

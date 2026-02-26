@@ -2067,7 +2067,8 @@ type internal TransparentCompiler
                                 bootstrapInfo.TcGlobals,
                                 bootstrapInfo.TcImports.GetImportMap(),
                                 sink.GetFormatSpecifierLocations(),
-                                None
+                                None,
+                                RelatedSymbolUseKind.All
                             )
 
                         let sckBuilder = SemanticClassificationKeyStoreBuilder()
