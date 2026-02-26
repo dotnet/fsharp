@@ -2284,19 +2284,11 @@ let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, 
     | Some currentSink ->
         currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, false)
 
-        match item with
-        | Item.Property(_, pinfos, _) -> RegisterUnionCaseTesterForProperty sink m nenv pinfos occurrenceType ad
-        | _ -> ()
-
 let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some currentSink ->
         currentSink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, false)
-
-        match item with
-        | Item.Property(_, pinfos, _) -> RegisterUnionCaseTesterForProperty sink m nenv pinfos occurrenceType ad
-        | _ -> ()
 
 let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
