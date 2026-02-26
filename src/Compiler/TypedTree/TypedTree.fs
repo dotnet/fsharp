@@ -4643,175 +4643,41 @@ type Measure =
         | One(range= m) -> m
         | RationalPower(measure= ms) -> ms.Range
 
-/// Flags enum for well-known attributes on Entity (types and modules).
-/// Used to avoid O(N) linear scans of attribute lists.
-[<System.Flags>]
-type WellKnownEntityAttributes =
-    | None = 0uL
-    | RequireQualifiedAccessAttribute = 0x1uL
-    | AutoOpenAttribute = 0x2uL
-    | AbstractClassAttribute = 0x4uL
-    | SealedAttribute = 0x8uL
-    | NoEqualityAttribute = 0x10uL
-    | NoComparisonAttribute = 0x20uL
-    | StructuralEqualityAttribute = 0x40uL
-    | StructuralComparisonAttribute = 0x80uL
-    | CustomEqualityAttribute = 0x100uL
-    | CustomComparisonAttribute = 0x200uL
-    | ReferenceEqualityAttribute = 0x400uL
-    | DefaultAugmentationAttribute_True = 0x800uL
-    | CLIMutableAttribute = 0x1000uL
-    | AutoSerializableAttribute_True = 0x2000uL
-    | StructLayoutAttribute = 0x4000uL
-    | DllImportAttribute = 0x8000uL
-    | ReflectedDefinitionAttribute = 0x10000uL
-    | SkipLocalsInitAttribute = 0x40000uL
-    | DebuggerTypeProxyAttribute = 0x80000uL
-    | ComVisibleAttribute = 0x100000uL
-    | IsReadOnlyAttribute = 0x200000uL
-    | IsByRefLikeAttribute = 0x400000uL
-    | ExtensionAttribute = 0x800000uL
-    | AttributeUsageAttribute = 0x1000000uL
-    | WarnOnWithoutNullArgumentAttribute = 0x2000000uL
-    | AllowNullLiteralAttribute = 0x4000000uL
-    | ClassAttribute = 0x8000000uL
-    | InterfaceAttribute = 0x10000000uL
-    | StructAttribute = 0x20000000uL
-    | MeasureAttribute = 0x40000000uL
-    | DefaultAugmentationAttribute_False = 0x80000000uL
-    | AutoSerializableAttribute_False = 0x100000000uL
-    | NotComputed = 0x8000000000000000uL
-
 /// Wraps an Attrib list together with cached WellKnownEntityAttributes flags for O(1) lookup.
-[<Struct; NoEquality; NoComparison>]
-type WellKnownEntityAttribs =
-    val private attribs: Attrib list
-    val private flags: WellKnownEntityAttributes
+type WellKnownEntityAttribs = WellKnownAttribs<Attrib, WellKnownEntityAttributes>
 
-    new(attribs: Attrib list, flags: WellKnownEntityAttributes) = { attribs = attribs; flags = flags }
-
+module WellKnownEntityAttribs =
     /// Shared singleton for entities with no attributes.
-    static member val Empty = WellKnownEntityAttribs([], WellKnownEntityAttributes.None)
-
-    /// Check if a specific well-known attribute flag is set.
-    member x.HasWellKnownAttribute(flag: WellKnownEntityAttributes) : bool =
-        x.flags &&& flag <> WellKnownEntityAttributes.None
-
-    /// Get the underlying attribute list (for remap/display/serialization/full-data extraction).
-    member x.AsList() = x.attribs
-
-    /// Get the current flags value.
-    member x.Flags = x.flags
+    let Empty = WellKnownAttribs<Attrib, WellKnownEntityAttributes>([], WellKnownEntityAttributes.None)
 
     /// Create from an attribute list. If empty, flags = None. Otherwise NotComputed.
-    static member Create(attribs: Attrib list) =
+    let Create(attribs: Attrib list) =
         if attribs.IsEmpty then
-            WellKnownEntityAttribs.Empty
+            Empty
         else
-            WellKnownEntityAttribs(attribs, WellKnownEntityAttributes.NotComputed)
+            WellKnownAttribs(attribs, WellKnownEntityAttributes.NotComputed)
 
     /// Create with precomputed flags (used when flags are already known).
-    static member CreateWithFlags(attribs: Attrib list, flags: WellKnownEntityAttributes) =
-        WellKnownEntityAttribs(attribs, flags)
-
-    /// Add a single attribute and OR-in its flag.
-    member x.Add(attrib: Attrib, flag: WellKnownEntityAttributes) =
-        WellKnownEntityAttribs(attrib :: x.attribs, x.flags ||| flag)
-
-    /// Append attributes and OR-in flags.
-    member x.Append(others: Attrib list, flags: WellKnownEntityAttributes) =
-        WellKnownEntityAttribs(x.attribs @ others, x.flags ||| flags)
-
-    /// Returns a copy with recomputed flags (flags set to NotComputed).
-    member x.WithRecomputedFlags() =
-        if x.attribs.IsEmpty then
-            WellKnownEntityAttribs.Empty
-        else
-            WellKnownEntityAttribs(x.attribs, WellKnownEntityAttributes.NotComputed)
-
-/// Flags enum for well-known attributes on Val (values and members).
-/// Used to avoid O(N) linear scans of attribute lists.
-[<System.Flags>]
-type WellKnownValAttributes =
-    | None = 0uL
-    | DllImportAttribute = 0x1uL
-    | EntryPointAttribute = 0x2uL
-    | LiteralAttribute = 0x4uL
-    | ConditionalAttribute = 0x8uL
-    | ReflectedDefinitionAttribute_True = 0x10uL
-    | RequiresExplicitTypeArgumentsAttribute = 0x20uL
-    | DefaultValueAttribute_True = 0x40uL
-    | SkipLocalsInitAttribute = 0x80uL
-    | ThreadStaticAttribute = 0x100uL
-    | ContextStaticAttribute = 0x200uL
-    | VolatileFieldAttribute = 0x400uL
-    | NoDynamicInvocationAttribute_True = 0x800uL
-    | ExtensionAttribute = 0x1000uL
-    | OptionalArgumentAttribute = 0x2000uL
-    | InAttribute = 0x4000uL
-    | OutAttribute = 0x8000uL
-    | ParamArrayAttribute = 0x10000uL
-    | CallerMemberNameAttribute = 0x20000uL
-    | CallerFilePathAttribute = 0x40000uL
-    | CallerLineNumberAttribute = 0x80000uL
-    | DefaultParameterValueAttribute = 0x100000uL
-    | ProjectionParameterAttribute = 0x200000uL
-    | InlineIfLambdaAttribute = 0x400000uL
-    | OptionalAttribute = 0x800000uL
-    | StructAttribute = 0x1000000uL
-    | NoCompilerInliningAttribute = 0x2000000uL
-    | ReflectedDefinitionAttribute_False = 0x4000000uL
-    | DefaultValueAttribute_False = 0x8000000uL
-    | NoDynamicInvocationAttribute_False = 0x10000000uL
-    | GeneralizableValueAttribute = 0x20000000uL
-    | NotComputed = 0x8000000000000000uL
+    let CreateWithFlags(attribs: Attrib list, flags: WellKnownEntityAttributes) =
+        WellKnownAttribs(attribs, flags)
 
 /// Wraps an Attrib list together with cached WellKnownValAttributes flags for O(1) lookup.
-[<Struct; NoEquality; NoComparison>]
-type WellKnownValAttribs =
-    val private attribs: Attrib list
-    val private flags: WellKnownValAttributes
+type WellKnownValAttribs = WellKnownAttribs<Attrib, WellKnownValAttributes>
 
-    new(attribs: Attrib list, flags: WellKnownValAttributes) = { attribs = attribs; flags = flags }
-
+module WellKnownValAttribs =
     /// Shared singleton for vals with no attributes.
-    static member val Empty = WellKnownValAttribs([], WellKnownValAttributes.None)
-
-    /// Check if a specific well-known attribute flag is set.
-    member x.HasWellKnownAttribute(flag: WellKnownValAttributes) : bool =
-        x.flags &&& flag <> WellKnownValAttributes.None
-
-    /// Get the underlying attribute list.
-    member x.AsList() = x.attribs
-
-    /// Get the current flags value.
-    member x.Flags = x.flags
+    let Empty = WellKnownAttribs<Attrib, WellKnownValAttributes>([], WellKnownValAttributes.None)
 
     /// Create from an attribute list. If empty, flags = None. Otherwise NotComputed.
-    static member Create(attribs: Attrib list) =
+    let Create(attribs: Attrib list) =
         if attribs.IsEmpty then
-            WellKnownValAttribs.Empty
+            Empty
         else
-            WellKnownValAttribs(attribs, WellKnownValAttributes.NotComputed)
+            WellKnownAttribs(attribs, WellKnownValAttributes.NotComputed)
 
     /// Create with precomputed flags (used when flags are already known).
-    static member CreateWithFlags(attribs: Attrib list, flags: WellKnownValAttributes) =
-        WellKnownValAttribs(attribs, flags)
-
-    /// Add a single attribute and OR-in its flag.
-    member x.Add(attrib: Attrib, flag: WellKnownValAttributes) =
-        WellKnownValAttribs(attrib :: x.attribs, x.flags ||| flag)
-
-    /// Append attributes and OR-in flags.
-    member x.Append(others: Attrib list, flags: WellKnownValAttributes) =
-        WellKnownValAttribs(x.attribs @ others, x.flags ||| flags)
-
-    /// Returns a copy with recomputed flags (flags set to NotComputed).
-    member x.WithRecomputedFlags() =
-        if x.attribs.IsEmpty then
-            WellKnownValAttribs.Empty
-        else
-            WellKnownValAttribs(x.attribs, WellKnownValAttributes.NotComputed)
+    let CreateWithFlags(attribs: Attrib list, flags: WellKnownValAttributes) =
+        WellKnownAttribs(attribs, flags)
 
 type Attribs = Attrib list 
 
