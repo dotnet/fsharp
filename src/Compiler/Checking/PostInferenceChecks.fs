@@ -29,6 +29,12 @@ open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 open Import
 
+// Intentional: `:? System.Exception` narrows IL-level catch clauses to exclude
+// non-CLS-compliant throws. The F# type system considers all exceptions to be
+// System.Exception, so it flags the test as always-true, but the IL distinction
+// is meaningful.
+#nowarn "67"
+
 //--------------------------------------------------------------------------
 // NOTES: reraise safety checks
 //--------------------------------------------------------------------------
@@ -851,7 +857,7 @@ let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: IL
             let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
             Some(methDef, refSafetyVersion)
         | _ -> None
-    with _ ->
+    with :? System.Exception ->
         None
 
 /// Return Some mask if any element is true, else None.
@@ -923,7 +929,7 @@ let isImplicitlyScopedParam (g: TcGlobals) (amap: Import.ImportMap) (m: range) (
              try
                  let fsTy = Import.ImportILType amap m [] inner
                  isByrefLikeTy g m fsTy
-             with _ ->
+             with :? System.Exception ->
                  false
      | _ -> false)
 
