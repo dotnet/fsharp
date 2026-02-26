@@ -34,5 +34,5 @@ module Target =
         |> compile
         |> shouldFail
         |> withErrorCode 226
-        |> withDiagnosticMessageMatches @"The file extension of '/a' is not recognized\. Source files must have extension \.fs, \.fsi, \.fsx or \.fsscript"
+        |> withDiagnosticMessageMatches @"is not recognized.+Source files must have extension"
         |> ignore

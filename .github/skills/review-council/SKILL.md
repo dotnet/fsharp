@@ -40,6 +40,10 @@ Are the goals met? Cross-reference every claim in the PR description, linked iss
 - **Orphan changes**: code changed but not mentioned in any claim — why is this here?
 - **Partial implementations**: claim says X, code does X-minus-something — what's missing?
 
+**Before flagging**, apply these gates:
+- **Execution context**: understand how and where the code runs before judging it. A test harness, a standalone project, and the main compiler have different constraints. Do not assume the worst-case context.
+- **Direction**: classify each behavioral change as regression (breaks something), improvement (fixes bug, removes race, simplifies), or unclear. Only regressions are findings. Improvements are observations at most. For unclear, state uncertainty — do not present as a defect.
+
 ---
 
 ### Dimension 2: Test Coverage
@@ -71,6 +75,7 @@ Assess structural quality of the changes:
 - **Ad-hoc "if/then" patches**: flag any `if condition then specialCase else normalPath` that looks like a band-aid rather than a systematic fix. These are symptoms of not understanding the root cause — the fix should be at the source, not patched at a consumer. A conditional that exists only to work around a bug elsewhere is a code smell.
 - **Duplicated logic within the PR diff**: same or near-same code appearing in multiple places in the changeset
 - **Error handling**: not swallowing exceptions, not ignoring Result values, not using `failwith` where a typed error would be appropriate
+- **Respect intentional deviations**: some projects (standalone tests, isolated builds, special harnesses) deliberately diverge from repo-wide conventions. Before flagging a pattern as wrong, check whether the project has a structural reason to be different. Intentional isolation is not inconsistency.
 
 ---
 
@@ -103,11 +108,17 @@ Assess complexity of added/changed code:
 Collect all findings from the 15 agents. Then:
 
 1. **Deduplicate**: multiple agents will find the same issue. Merge findings that point at the same location and describe the same problem. Keep the best-written description.
-2. **Classify** into three buckets:
+2. **Filter false positives** before classifying:
+   - **Wrong context assumed**: finding assumes a different execution context than the code actually runs in → discard.
+   - **Correct convention**: finding flags a pattern that is idiomatic for the tool/context in use → discard.
+   - **Improvement, not regression**: change makes things better (bugfix, simplification, race fix) → downgrade to informational, do not include in actionable findings.
+   - **"Unexplained" ≠ "wrong"**: if the only concern is missing rationale in the commit message, that is a documentation gap — not a defect. Convert to comment, not finding.
+   - **Speculation consensus**: ≥2 models agree but reasoning relies on "could cause" without evidence it does → LOW confidence.
+3. **Classify** into three buckets:
    - **Behavioral**: missing feature coverage, missing tests, incorrect logic, claims not met — things that affect correctness
    - **Quality**: code structure, readability, complexity, reuse opportunities — it works, but could be better
    - **Nitpick**: typos, naming, formatting, minor style — agents love producing these to have *something* to say. Low priority. Only surface if there are no higher-level findings.
-3. **Rank within each bucket**: prefer findings flagged by more agents (cross-model agreement = higher confidence).
-4. **Present**: Behavioral first, then Quality, then Nitpicks (if any). For each finding: location, dimension, description, how many agents flagged it.
+4. **Rank within each bucket**: prefer findings flagged by more agents (cross-model agreement = higher confidence).
+5. **Present**: Behavioral first, then Quality, then Nitpicks (if any). For each finding: location, dimension, description, how many agents flagged it.
 
 If a model is unavailable at runtime, proceed with the remaining models. Minimum viable council = 2 models.

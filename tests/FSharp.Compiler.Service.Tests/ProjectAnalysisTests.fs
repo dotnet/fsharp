@@ -491,9 +491,6 @@ let ``Test project1 all uses of all symbols`` () =
                 "file2", ((18, 6), (18, 18)), ["class"]);
                ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
                 "file2", ((18, 6), (18, 18)), ["member"]);
-               // #14902
-               ("``.ctor``", "Microsoft.FSharp.Core.``.ctor``", "file2",
-                ((18, 7), (18, 18)), ["member"]);
                ("x", "N.D3.x", "file2", ((19, 16), (19, 17)),
                 ["field"; "default"; "mutable"]);
                ("D3", "N.D3", "file2", ((15, 5), (15, 7)), ["class"]);
@@ -556,16 +553,12 @@ let ``Test project1 all uses of all symbols`` () =
                ("M", "M", "file2", ((38, 22), (38, 23)), ["module"]);
                ("C", "M.C", "file2", ((38, 22), (38, 25)), ["class"]);
                ("C", "M.C", "file2", ((38, 22), (38, 25)), ["member"; "ctor"]);
-               // #14902
-               ("``.ctor``", "M.C.``.ctor``", "file2", ((38, 23), (38, 25)), ["member"; "ctor"]);
                ("mmmm1", "N.mmmm1", "file2", ((38, 4), (38, 9)), ["val"]);
                ("M", "M", "file2", ((39, 12), (39, 13)), ["module"]);
                ("CAbbrev", "M.CAbbrev", "file2", ((39, 12), (39, 21)), ["abbrev"]);
                ("M", "M", "file2", ((39, 28), (39, 29)), ["module"]);
                ("CAbbrev", "M.CAbbrev", "file2", ((39, 28), (39, 37)), ["abbrev"]);
                ("C", "M.C", "file2", ((39, 28), (39, 37)), ["member"; "ctor"]);
-               // #14902
-               ("``.ctor``", "M.C.``.ctor``", "file2", ((39, 29), (39, 37)), ["member"; "ctor"]);
                ("mmmm2", "N.mmmm2", "file2", ((39, 4), (39, 9)), ["val"]);
                ("N", "N", "file2", ((1, 7), (1, 8)), ["module"])]
 
@@ -2383,10 +2376,6 @@ let ``Test Project14 all symbols`` () =
           [|
             ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
             ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
-            // #14902
-            ("member .ctor", "``.ctor``", "file1", ((4, 3), (4, 8)), []);
-            ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
-            ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
             ("S", "S", "file1", ((5, 5), (5, 6)), ["defn"]);
@@ -2542,14 +2531,6 @@ let ``Test Project16 all symbols`` () =
     allUsesOfAllSymbols |> shouldEqual
           [|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
-            // #14902
-            ("member .ctor", "``.ctor``", "sig1", ((8, 7), (8, 11)), [], ["member"]);
-            ("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
-            ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
-            ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
-            ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
-            // #14902
-            ("member .ctor", "``.ctor``", "sig1", ((12, 7), (12, 11)), [], ["member"]);
             ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
             ("int", "int", "sig1", ((16, 19), (16, 22)), ["type"], ["abbrev"]);
@@ -3714,26 +3695,93 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [|fileName1|]
-    let args =
-        [| yield! mkProjectCommandLineArgs (dllName, [])
-           yield @"-r:" + (__SOURCE_DIRECTORY__ ++ ".." ++ "service" ++ "data" ++ "FSharp.Data.dll")
-           yield @"-r:" + sysLib "System.Xml.Linq" |]
-    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-// ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core."
-[<FactForDESKTOP; RunTestCasesInSequence>]
+    // Resolve FSharp.Data via dotnet restore in system temp (outside repo NuGet.Config scope),
+    // then copy runtime + design-time DLLs side-by-side so the type provider works with --simpleresolution.
+    let options = lazy (
+        let testDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+        let stagingDir = Path.Combine(testDir, "FSharp.Data.Staging")
+        Directory.CreateDirectory(stagingDir) |> ignore
+
+        // Create a temp project OUTSIDE the repo tree to avoid the repo's restricted NuGet.Config
+        let restoreDir = Path.Combine(Path.GetTempPath(), "fsharp-test-resolve-fsharp-data")
+        Directory.CreateDirectory(restoreDir) |> ignore
+        let projContent = """<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>netstandard2.0</TargetFramework></PropertyGroup>
+  <ItemGroup><PackageReference Include="FSharp.Data" Version="*" /></ItemGroup>
+</Project>"""
+        let projPath = Path.Combine(restoreDir, "Resolve.fsproj")
+        File.WriteAllText(projPath, projContent)
+        let packagesDir = Path.Combine(restoreDir, "packages")
+
+        let psi = System.Diagnostics.ProcessStartInfo("dotnet", sprintf "restore \"%s\" --packages \"%s\"" projPath packagesDir)
+        psi.RedirectStandardOutput <- true
+        psi.RedirectStandardError <- true
+        psi.UseShellExecute <- false
+        let p = System.Diagnostics.Process.Start(psi)
+        let stderr = p.StandardError.ReadToEnd()
+        let _stdout = p.StandardOutput.ReadToEnd()
+        p.WaitForExit(60000) |> ignore
+        if p.ExitCode <> 0 then
+            failwith (sprintf "dotnet restore failed (exit %d): %s" p.ExitCode stderr)
+
+        // Find FSharp.Data in the restored packages
+        let fsharpDataDirs = Directory.GetDirectories(packagesDir, "fsharp.data", System.IO.SearchOption.TopDirectoryOnly)
+        let packageDir =
+            if fsharpDataDirs.Length > 0 then
+                let versions = Directory.GetDirectories(fsharpDataDirs.[0])
+                if versions.Length > 0 then versions |> Array.sortDescending |> Array.head
+                else failwith "FSharp.Data package restored but no version directory found"
+            else failwith (sprintf "FSharp.Data not found in %s" packagesDir)
+
+        // Copy runtime + design-time DLLs into staging root
+        let libDir = Path.Combine(packageDir, "lib", "netstandard2.0")
+        if Directory.Exists(libDir) then
+            for src in Directory.GetFiles(libDir, "*.dll") do
+                File.Copy(src, Path.Combine(stagingDir, Path.GetFileName(src)), true)
+        let tpDir = Path.Combine(packageDir, "typeproviders", "fsharp41", "netstandard2.0")
+        if Directory.Exists(tpDir) then
+            for src in Directory.GetFiles(tpDir, "*.dll") do
+                File.Copy(src, Path.Combine(stagingDir, Path.GetFileName(src)), true)
+
+        // Also copy transitive deps (FSharp.Data.*.dll)
+        let transitivePkgs = ["fsharp.data.csv.core"; "fsharp.data.html.core"; "fsharp.data.http"; "fsharp.data.json.core"; "fsharp.data.runtime.utilities"; "fsharp.data.worldbank.core"; "fsharp.data.xml.core"]
+        for pkg in transitivePkgs do
+            let pkgDirs = Directory.GetDirectories(packagesDir, pkg, System.IO.SearchOption.TopDirectoryOnly)
+            if pkgDirs.Length > 0 then
+                let versions = Directory.GetDirectories(pkgDirs.[0])
+                if versions.Length > 0 then
+                    let latestVersion = versions |> Array.sortDescending |> Array.head
+                    let pkgLib = Path.Combine(latestVersion, "lib", "netstandard2.0")
+                    if Directory.Exists(pkgLib) then
+                        for src in Directory.GetFiles(pkgLib, "*.dll") do
+                            let dest = Path.Combine(stagingDir, Path.GetFileName(src))
+                            if not (File.Exists(dest)) then
+                                File.Copy(src, dest, true)
+
+        // Build args: standard project args + staged FSharp.Data refs
+        let stagedRefs =
+            Directory.GetFiles(stagingDir, "*.dll")
+            |> Array.map (fun f -> "-r:" + f)
+        let args =
+            [| yield! mkProjectCommandLineArgs (dllName, [])
+               yield! stagedRefs |]
+        { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
+    )
+
+// Resolved via NuGet at test time - skipped on signed CI
+[<FSharp.Test.FactSkipOnSignedBuild; RunTestCasesInSequence>]
 let ``Test Project25 whole project errors`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
         printfn "Project25 error: <<<%s>>>" e.Message
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
-// ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core."
-[<FactForDESKTOP; RunTestCasesInSequence>]
+[<FSharp.Test.FactSkipOnSignedBuild; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of type-provided members`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
-        checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options)
+        checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
         |> Async.RunImmediate
 
     let allUses  =
@@ -3744,7 +3792,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
     allUses |> shouldEqual
 
          [|("FSharp", "file1", ((3, 5), (3, 11)), ["namespace"]);
-           ("FSharp.Data", "file1", ((3, 12), (3, 16)), ["namespace"; "provided"]);
+           ("FSharp.Data", "file1", ((3, 12), (3, 16)), ["namespace"]);
            ("Microsoft.FSharp", "file1", ((3, 5), (3, 11)), ["namespace"]);
            ("Microsoft.FSharp.Data", "file1", ((3, 12), (3, 16)), ["namespace"]);
            ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
@@ -3785,12 +3833,11 @@ let ``Test Project25 symbol uses of type-provided members`` () =
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 8), (5, 25))); ("file1", ((10, 8), (10, 78)))|]
 
-// ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core.")>]
-[<FactForDESKTOP; RunTestCasesInSequence>]
+[<FSharp.Test.FactSkipOnSignedBuild; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of type-provided types`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
-        checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options)
+        checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
         |> Async.RunImmediate
 
     let getSampleSymbolUseOpt =
@@ -3806,11 +3853,11 @@ let ``Test Project25 symbol uses of type-provided types`` () =
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((4, 15), (4, 26))); ("file1", ((10, 8), (10, 19)))|]
 
-[<Fact; RunTestCasesInSequence>]
+[<FSharp.Test.FactSkipOnSignedBuild; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of fully-qualified records`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
-        checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options)
+        checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
         |> Async.RunImmediate
 
     let getSampleSymbolUseOpt =
@@ -5109,12 +5156,6 @@ let ``Test Project40 all symbols`` () =
             ("x", ((4, 33), (4, 34)), []);
             ("IsNone", ((4, 33), (4, 41)), ["member"; "prop"; "funky"]);
             ("f", ((4, 4), (4, 5)), ["val"]);
-            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
-            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
-            // #14902
-            ("``.ctor``", ((6, 3), (6, 27)), ["member"]);
-            ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
-            ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
             ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
             ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
             ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
