@@ -3101,8 +3101,6 @@ type Impl() =
         |> compile
         |> shouldSucceed
 
-#endif
-
     // ---- T3: [UnscopedRef] negating implicit scoping on ref Span<T> ----
 
     let private unscopedRefRefSpanCSharpLib =
@@ -3211,6 +3209,8 @@ let f () =
         |> withReferences [unscopedRefInSpanCSharpLib]
         |> compile
         |> shouldSucceed
+
+#endif
 
 #if NETSTANDARD2_1_OR_GREATER
     [<Theory; FileInlineData("E_TopLevelByref.fs")>]
