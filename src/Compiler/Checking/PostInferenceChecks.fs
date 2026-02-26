@@ -2445,7 +2445,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                                         if tcRef.IsLocalRef then 0
                                         else
                                             try tcRef.nlr.Ccu.Deref.RefSafetyRulesVersion
-                                            with _ -> 0
+                                            with :? System.Exception -> 0
                                     computeScopedMask cenv v.Range methDef [] refSafetyVersion)
                             | _ -> None
                         else
