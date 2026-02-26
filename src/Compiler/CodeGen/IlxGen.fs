@@ -11808,7 +11808,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 || (cuinfo.HasHelpers = AllHelpers
                                     && (pd.Name.StartsWith("Is") && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
                                 || (isNullaryCaseClash pd.Name
-                                    && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
+                                    && (not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)
+                                        || not (tdef2.Methods.FindByName("get_" + pd.Name).IsEmpty))))
                         )
 
                     tdef2, tdefDiscards
