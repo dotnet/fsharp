@@ -267,10 +267,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
+              testResultsFormat: 'VSTest'
               testRunTitle: WindowsNoRealsig_testCoreclr
               mergeTestResults: true
-              testResultsFiles: '*.xml'
+              testResultsFiles: '*.trx'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
 
@@ -298,13 +298,11 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
-          strategy:
-            parallel: 4
           steps:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release -testBatch $(System.JobPositionInPhase)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
@@ -316,16 +314,15 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: WindowsNoRealsig_testDesktop batch $(System.JobPositionInPhase)
+              testResultsFormat: 'VSTest'
+              testRunTitle: WindowsNoRealsig_testDesktop
               mergeTestResults: true
-              testResultsFiles: '*.xml'
+              testResultsFiles: '*.trx'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
             continueOnError: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
@@ -338,7 +335,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps $(System.JobPositionInPhase)'
+                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -465,10 +462,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
+              testResultsFormat: 'VSTest'
               testRunTitle: WindowsCompressedMetadata $(_testKind) $(transparentCompiler)
               mergeTestResults: true
-              testResultsFiles: '*.xml'
+              testResultsFiles: '*.trx'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
             condition: succeededOrFailed()
@@ -521,14 +518,12 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
-          strategy:
-            parallel: 4
 
           steps:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop -testBatch $(System.JobPositionInPhase)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
@@ -540,17 +535,16 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: WindowsCompressedMetadata testDesktop batch $(System.JobPositionInPhase)
+              testResultsFormat: 'VSTest'
+              testRunTitle: WindowsCompressedMetadata testDesktop
               mergeTestResults: true
-              testResultsFiles: '*.xml'
+              testResultsFiles: '*.trx'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             continueOnError: true
             condition: succeededOrFailed()
 
           - task: PublishBuildArtifacts@1
             displayName: Publish BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
@@ -563,14 +557,14 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop process dumps $(System.JobPositionInPhase)'
+                ArtifactName: 'Windows testDesktop process dumps'
                 ArtifactType: Container
                 parallel: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop test logs batch $(System.JobPositionInPhase)'
+              ArtifactName: 'Windows testDesktop test logs'
               publishLocation: Container
             continueOnError: true
             condition: always()
@@ -581,7 +575,7 @@ stages:
             displayName: Publish NuGet cache contents
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop $(System.JobPositionInPhase)'
+              ArtifactName: 'NuGetPackageContents Windows testDesktop'
               publishLocation: Container
             continueOnError: true
             condition: failed()
@@ -614,9 +608,9 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
+              testResultsFormat: 'VSTest'
               testRunTitle: Linux
-              testResultsFiles: '*.xml'
+              testResultsFiles: '*.trx'
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
@@ -659,8 +653,8 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'XUnit'
-              testResultsFiles: '*.xml'
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '*.trx'
               testRunTitle: MacOS
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
@@ -897,7 +891,7 @@ stages:
         testMatrix:
         - repo: marklam/SlowBuildRepro
           commit: bbe2dec4d0379b5d7d0480997858c30d442fbb42
-          buildScript: dotnet build
+          buildScript: dotnet build -bl
           displayName: UMX_Slow_Repro        
         - repo: fsprojects/FSharpPlus
           commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
@@ -911,16 +905,16 @@ stages:
           usePool: $(DncEngPublicBuildPool)
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: build.cmd
-          displayName: FsharpPlus_NET10
+          buildScript: dotnet build tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj -c Release -bl
+          displayName: FsharpPlus_NET10_Build_Lib_Tests
          # remove this before merging
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: dotnet msbuild build.proj -t:Build;Test
+          buildScript: dotnet msbuild build.proj -t:Build;Test -bl
           displayName: FsharpPlus_NET10_Test
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: dotnet msbuild build.proj -t:Build;AllDocs
+          buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
           displayName: FsharpPlus_NET10_Docs
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
@@ -930,21 +924,29 @@ stages:
           usePool: $(DncEngPublicBuildPool)
         - repo: TheAngryByrd/IcedTasks
           commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
-          buildScript: dotnet build IcedTasks.sln
+          buildScript: dotnet build IcedTasks.sln -bl
           displayName: IcedTasks_Build
         - repo: TheAngryByrd/IcedTasks
           commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
-          buildScript: dotnet test IcedTasks.sln
+          buildScript: dotnet test IcedTasks.sln -bl
           displayName: IcedTasks_Test
         - repo: demystifyfp/FsToolkit.ErrorHandling
           commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
-          buildScript: dotnet build FsToolkit.ErrorHandling.sln
+          buildScript: dotnet build FsToolkit.ErrorHandling.sln -bl
           displayName: FsToolkit_ErrorHandling_Build
         - repo: demystifyfp/FsToolkit.ErrorHandling
           commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
-          buildScript: dotnet test FsToolkit.ErrorHandling.sln
+          buildScript: dotnet test FsToolkit.ErrorHandling.sln -bl
           displayName: FsToolkit_ErrorHandling_Test
         - repo: opentk/opentk
           commit: 60c20cca65a7df6e8335e8d6060d91b30909fbea
-          buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release
+          buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release -bl:build_1.binlog ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release -bl:build_2.binlog
           displayName: OpenTK_FSharp_Build
+        - repo: bryanedds/Prime
+          commit: 8d55f4e8e1d76e42f5fb3c9ba69eb79fe695e9fa
+          buildScript: dotnet build Prime.sln --configuration Release
+          displayName: Prime_Build
+        - repo: bryanedds/Nu
+          commit: b35cbe02029e0e33d72a4846816cf22714eb3aac
+          buildScript: dotnet build Nu.sln --configuration Release
+          displayName: Nu_Build

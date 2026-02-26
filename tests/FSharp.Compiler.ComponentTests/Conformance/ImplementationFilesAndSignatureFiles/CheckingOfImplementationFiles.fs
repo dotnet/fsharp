@@ -101,16 +101,15 @@ module CheckingOfImplementationFiles =
 
     // SOURCE="E_GenericTypeConstraint01.fsi E_GenericTypeConstraint01.fs"
     // Original: <Expects status="error" span="(10,47)" id="FS0341">
-    // Note: The original test expected FS0341 (signature constraint mismatch),
-    // but modern .NET's Enum.Parse has overloads that cause FS0041 first.
-    // The test still validates that compilation fails with type-related errors.
+    // Error code is SDK-dependent: FS0041 (ambiguous overload) on modern .NET
+    // with generic Enum.Parse<TEnum>, or FS0341 (constraint mismatch) on older SDKs.
     [<Fact>]
     let ``E_GenericTypeConstraint01 - generic constraint mismatch`` () =
         FsFromPath (resourcePath ++ "E_GenericTypeConstraint01.fsi")
         |> withAdditionalSourceFile (SourceFromPath (resourcePath ++ "E_GenericTypeConstraint01.fs"))
         |> compile
         |> shouldFail
-        |> withErrorCode 0041  // Ambiguous overload error in modern .NET
+        |> withDiagnosticMessageMatches "unique overload|constraint"
         |> ignore
 
     // SOURCE="E_GenericTypeConstraint02.fsi E_GenericTypeConstraint02.fs"
