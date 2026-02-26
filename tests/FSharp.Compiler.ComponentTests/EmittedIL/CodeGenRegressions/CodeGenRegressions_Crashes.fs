@@ -215,7 +215,7 @@ let main _ =
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/13447
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Issue_13447_TailInstructionCorruption`` () =
         let source = """
 module Test
@@ -255,7 +255,7 @@ let test () =
         Assert.DoesNotContain("tail.", methodIL)
 
     // https://github.com/dotnet/fsharp/issues/11132
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Issue_11132_VoidptrDelegate`` () =
         let source = """
 module Test
