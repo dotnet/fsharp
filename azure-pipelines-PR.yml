@@ -207,6 +207,9 @@ stages:
           - name: 'Managed'
             container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-stream9'
             buildArguments: '--source-build'
+          - name: 'Managed_MonoRuntime'
+            container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-stream9'
+            buildArguments: '--source-build /p:DotNetBuildUseMonoRuntime=true'
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
