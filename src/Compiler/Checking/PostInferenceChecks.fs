@@ -294,7 +294,6 @@ let LimitVal cenv (v: Val) limit =
         cenv.limitVals[v.Stamp] <- limit
 
 let BindVal cenv env (v: Val) =
-    //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
 
@@ -315,7 +314,10 @@ let BindVal cenv env (v: Val) =
        not v.HasBeenReferenced &&
        (not v.IsCompiledAsTopLevel || topLevelBindingHiddenBySignatureFile ()) &&
        not (v.DisplayName.StartsWithOrdinal("_")) &&
-       not v.IsCompilerGenerated then
+       not v.IsCompilerGenerated &&
+       // Don't warn for variables with synthetic ranges - these are compiler-generated
+       // rebinding patterns in query/CE translation. See https://github.com/dotnet/fsharp/issues/422
+       not v.Range.IsSynthetic then
 
         if v.IsCtorThisVal then
             warning (Error(FSComp.SR.chkUnusedThisVariable v.DisplayName, v.Range))
@@ -2680,21 +2682,27 @@ let CheckEntityDefns cenv env tycons =
 // check modules
 //--------------------------------------------------------------------------
 
-/// Check for duplicate extension member names that would cause IL conflicts.
-/// Extension members for types with the same simple name but different fully qualified names 
-/// will be emitted into the same IL container type, causing a duplicate member error.
+/// Check for duplicate static extension member names that would cause IL conflicts.
+/// Static extension members for types with the same simple name but different fully qualified names
+/// compile to static methods in the same module IL type without a distinguishing first parameter,
+/// so they can produce duplicate IL method signatures.
+/// Instance extension members are safe because they compile with the extended type as the first
+/// parameter, which differentiates the IL signatures.
 let CheckForDuplicateExtensionMemberNames (cenv: cenv) (vals: Val seq) =
     if cenv.reportErrors then
-        let extensionMembers = 
+        let staticExtensionMembers = 
             vals 
-            |> Seq.filter (fun v -> v.IsExtensionMember && v.IsMember)
+            |> Seq.filter (fun v ->
+                v.IsExtensionMember
+                && v.IsMember
+                && not (v.IsInstanceMember))
             |> Seq.toList
 
-        if not extensionMembers.IsEmpty then
+        if not staticExtensionMembers.IsEmpty then
             // Group by LogicalName which includes generic arity suffix (e.g., Expr`1 for Expr<'T>)
             // This matches how types are compiled to IL, so Expr and Expr<'T> are separate groups
             let groupedByLogicalName =
-                extensionMembers
+                staticExtensionMembers
                 |> List.groupBy (fun v -> v.MemberApparentEntity.LogicalName)
             
             for (logicalName, members) in groupedByLogicalName do

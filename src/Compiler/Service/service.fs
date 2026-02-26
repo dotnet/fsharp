@@ -7,6 +7,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.Caches
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open FSharp.Compiler.CompilerConfig
@@ -621,6 +622,9 @@ type FSharpChecker
     static member ActualCheckFileCount = BackgroundCompiler.ActualCheckFileCount
 
     static member Instance = globalInstance.Force()
+
+    static member internal CreateOverloadCacheMetricsListener() =
+        new CacheMetrics.CacheMetricsListener("overloadResolutionCache")
 
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 

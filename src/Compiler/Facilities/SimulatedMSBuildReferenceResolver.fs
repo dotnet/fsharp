@@ -69,7 +69,7 @@ let private SimulatedMSBuildResolver =
         let isDesktop = typeof<int>.Assembly.GetName().Name = "mscorlib"
 
         if isDesktop then
-            match (System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(): string MaybeNull) with
+            match (System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(): string | null) with
             | null -> []
             | x -> [ x ]
         else
