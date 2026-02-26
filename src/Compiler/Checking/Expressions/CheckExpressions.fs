@@ -801,13 +801,6 @@ let ForNewConstructors tcSink (env: TcEnv) mObjTy methodName meths =
     let callSink (item, minst) = CallMethodGroupNameResolutionSink tcSink (mObjTy, env.NameEnv, item, origItem, minst, ItemOccurrence.Use, env.AccessRights)
     let sendToSink minst refinedMeths = 
         callSink (Item.CtorGroup(methodName, refinedMeths), minst)
-        // #14902: Also register as Item.Value for Find All References
-        for meth in refinedMeths do
-            match meth with
-            | FSMeth(_, _, vref, _) when vref.IsConstructor ->
-                let shiftedRange = Range.mkRange mObjTy.FileName (Position.mkPos mObjTy.StartLine (mObjTy.StartColumn + 1)) mObjTy.End
-                CallNameResolutionSink tcSink (shiftedRange, env.NameEnv, Item.Value vref, minst, ItemOccurrence.Use, env.AccessRights)
-            | _ -> ()
     match meths with
     | [] ->
         AfterResolution.DoNothing
