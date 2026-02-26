@@ -3421,7 +3421,9 @@ let result : int = multiply 5 3
         |> shouldSucceed
 
     [<Fact>]
-    let ``Warning 3882 emitted when SRTP constraint not statically resolved at codegen`` () =
+    let ``Warning 3882 not emitted for inline function stubs with unresolved type variables`` () =
+        // Inline function stubs have unresolved type variables by design;
+        // the warning is suppressed because the stub is dead code when properly inlined.
         FSharp """
 module Test
 let inline f x = x + 1
@@ -3429,8 +3431,7 @@ let g : int -> int = f
         """
         |> withLangVersionPreview
         |> compile
-        |> shouldFail
-        |> withDiagnosticMessageMatches "could not be statically resolved"
+        |> shouldSucceed
 
     [<Fact>]
     let ``Non-operator extension member resolves via SRTP with langversion preview`` () =
