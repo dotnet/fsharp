@@ -225,8 +225,6 @@ type cenv =
 
       isInternalTestSpanStackReferring: bool
 
-      improvedByRefLikeEscapeAnalysis: bool
-
       // outputs
       mutable usesQuotations: bool
 
@@ -1097,7 +1095,7 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
     let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
 
     let improvedEscapeAnalysis =
-        cenv.improvedByRefLikeEscapeAnalysis
+        cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
 
     // If return is a byref, and being used as a return, then a single argument cannot be a local-byref or a stack referring span-like.
     let isReturnLimitedByRef =
@@ -1195,7 +1193,7 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt (scopedMask: bool 
         let receiverLimit = CheckExpr cenv env receiverArg receiverContext
 
         let improvedEscapeAnalysis =
-            cenv.improvedByRefLikeEscapeAnalysis
+            cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
 
         let limitArgs =
             let limitArgs = CheckExprsWithScopedMask cenv env args ctxts scopedMask
@@ -1626,7 +1624,7 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
         | _ -> None
 
     let scopedMask =
-        if cenv.improvedByRefLikeEscapeAnalysis then getScopedMask() else None
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then getScopedMask() else None
 
     if hasReceiver then
         // Check if the struct instance member has [<UnscopedRef>], allowing `this` to escape.
@@ -1644,7 +1642,7 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
             | _ -> false
 
         let hasUnscopedRef =
-            if cenv.improvedByRefLikeEscapeAnalysis then getHasUnscopedRef() else false
+            if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then getHasUnscopedRef() else false
 
         CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt scopedMask hasUnscopedRef
     else
@@ -1790,7 +1788,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
 
         let getILMethodContext () =
-            if cenv.improvedByRefLikeEscapeAnalysis then
+            if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
                 tryResolveILMethodContext cenv.amap m ilMethRef
             else
                 None
@@ -2053,7 +2051,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
         // When improved escape analysis is enabled, enforce [<ScopedRef>] in the function body.
         // A scoped parameter promises callers it won't escape via the return value.
         // Mark it as scope=1 (non-returnable) so escape checks reject returning it.
-        if cenv.improvedByRefLikeEscapeAnalysis then
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
             let isInstance =
                 match memInfo with
                 | Some mi -> mi.MemberFlags.IsInstance
@@ -2473,7 +2471,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                         | None -> ())
         | _ -> ()
 
-    if cenv.improvedByRefLikeEscapeAnalysis && cenv.reportErrors then
+    if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis && cenv.reportErrors then
         checkOverrideVariance()
 
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
@@ -3093,7 +3091,6 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           viewCcu = viewCcu
           isLastCompiland = isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
-          improvedByRefLikeEscapeAnalysis = g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
           tcVal = tcValF
           entryPointGiven = false}
 
