@@ -13,10 +13,6 @@
   <ItemGroup>
     <Compile Include="ComboProvider.Tests.fs" />
 
-    <None Include="xunit.runner.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-
     <PackageReference Include="ComboProvider" Version="1.0.0" />
   </ItemGroup>
 

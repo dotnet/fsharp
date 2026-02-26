@@ -4246,31 +4246,12 @@ let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespa
         lazy
             (let result = HashMultiMap<Stamp, ValRef>(10, HashIdentity.Structural)
 
-             let rec collectFromContents (x: ModuleOrNamespaceContents) =
-                 match x with
-                 | TMDefRec(_, _, _, binds, _) ->
-                     for bind in binds do
-                         match bind with
-                         | ModuleOrNamespaceBinding.Binding b ->
-                             let v = b.Var
-                             if v.IsExtensionMember && v.MemberInfo.IsSome then
-                                 let vref = mkLocalValRef v
-                                 let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
-                                 result.Add(tcref.Stamp, vref)
-                         | ModuleOrNamespaceBinding.Module(_, mdef) ->
-                             collectFromContents mdef
-                 | TMDefLet(b, _) ->
-                     let v = b.Var
+             for contents in implFileContents do
+                 for v in allValsOfModDef contents do
                      if v.IsExtensionMember && v.MemberInfo.IsSome then
                          let vref = mkLocalValRef v
                          let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
                          result.Add(tcref.Stamp, vref)
-                 | TMDefs defs ->
-                     for d in defs do collectFromContents d
-                 | TMDefOpens _ | TMDefDo _ -> ()
-
-             for contents in implFileContents do
-                 collectFromContents contents
 
              let rec collectFromModuleOrNamespaceType (mty: ModuleOrNamespaceType) =
                  for v in mty.AllValsAndMembers do
