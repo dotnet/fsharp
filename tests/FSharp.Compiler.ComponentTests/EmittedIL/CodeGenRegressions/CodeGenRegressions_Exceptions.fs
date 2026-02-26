@@ -36,6 +36,7 @@ exception Foo of x:string * y:int
         result
         |> verifyIL [
             ".method public strict virtual instance void GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed"
+            ".custom instance void [runtime]System.Security.SecurityCriticalAttribute::.ctor() = ( 01 00 00 00 )"
             "call       instance void [runtime]System.Exception::GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo,"
             ".method family specialname rtspecialname instance void  .ctor(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed"
         ]

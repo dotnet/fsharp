@@ -12013,16 +12013,23 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     |> nonBranchingInstrsToCode
 
                 let ilGetObjectDataDef =
-                    mkILNonGenericVirtualInstanceMethod (
-                        "GetObjectData",
-                        ILMemberAccess.Public,
-                        [
-                            mkILParamNamed ("info", serializationInfoType)
-                            mkILParamNamed ("context", streamingContextType)
-                        ],
-                        mkILReturn ILType.Void,
-                        mkMethodBody (false, [], 8, ilInstrsForGetObjectData, None, eenv.imports)
-                    )
+                    let mdef =
+                        mkILNonGenericVirtualInstanceMethod (
+                            "GetObjectData",
+                            ILMemberAccess.Public,
+                            [
+                                mkILParamNamed ("info", serializationInfoType)
+                                mkILParamNamed ("context", streamingContextType)
+                            ],
+                            mkILReturn ILType.Void,
+                            mkMethodBody (false, [], 8, ilInstrsForGetObjectData, None, eenv.imports)
+                        )
+
+                    // SecurityCritical is required for .NET Framework where Exception.GetObjectData is security-critical
+                    let securityCriticalAttr =
+                        mkILCustomAttribute (g.attrib_SecurityCriticalAttribute.TypeRef, [], [], [])
+
+                    mdef.With(customAttrs = mkILCustomAttrs [ securityCriticalAttr ])
 
                 if fieldNamesAndTypes.IsEmpty then
                     [ ilCtorDefForSerialization ]
