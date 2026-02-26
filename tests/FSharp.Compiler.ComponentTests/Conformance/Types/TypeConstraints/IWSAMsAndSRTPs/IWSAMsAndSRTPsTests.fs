@@ -3557,3 +3557,80 @@ if result.V <> 16 then failwith (sprintf "Expected 16 but got %d" result.V)
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Units of measure with extension operators resolve via SRTP`` () =
+        FSharp """
+module TestUoMExtension
+
+[<Measure>] type kg
+[<Measure>] type m
+
+type UoMHelper =
+    static member inline ScaleBy(x: float<'u>, factor: float) : float<'u> =
+        LanguagePrimitives.FloatWithMeasure(float x * factor)
+
+type System.Double with
+    static member inline Scale(x: float<'u>, factor: float) : float<'u> =
+        LanguagePrimitives.FloatWithMeasure(float x * factor)
+
+let inline scale (x: float<'u>) (factor: float) : float<'u> =
+    UoMHelper.ScaleBy(x, factor)
+
+let mass = 5.0<kg>
+let scaled = scale mass 2.0
+if scaled <> 10.0<kg> then failwith (sprintf "Expected 10.0<kg> but got %A" scaled)
+
+// Also test basic UoM arithmetic works with inline
+let inline addMeasured (x: float<'u>) (y: float<'u>) = x + y
+let totalMass = addMeasured 3.0<kg> 7.0<kg>
+if totalMass <> 10.0<kg> then failwith (sprintf "Expected 10.0<kg> but got %A" totalMass)
+
+let dist1 = 100.0<m>
+let dist2 = 50.0<m>
+let totalDist = addMeasured dist1 dist2
+if totalDist <> 150.0<m> then failwith (sprintf "Expected 150.0<m> but got %A" totalDist)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator SRTP resolves correctly under optimization`` () =
+        // This test verifies that CreateImplFileTraitContext (the optimizer/codegen
+        // trait context) correctly finds extension operators. Compiling with --optimize+
+        // exercises the optimizer path which uses a different trait context than
+        // the type-checker.
+        FSharp """
+module TestOptimizedExtSRTP
+
+type Gadget = { Value: int }
+
+module GadgetOps =
+    type Gadget with
+        static member (+) (a: Gadget, b: Gadget) = { Value = a.Value + b.Value }
+        static member (*) (a: Gadget, n: int) = { Value = a.Value * n }
+
+open GadgetOps
+
+let inline add a b = a + b
+let inline scale a n = a * n
+
+let g1 = { Value = 3 }
+let g2 = { Value = 7 }
+let sum = add g1 g2
+if sum.Value <> 10 then failwith (sprintf "Expected 10 but got %d" sum.Value)
+
+let scaled = scale g1 4
+if scaled.Value <> 12 then failwith (sprintf "Expected 12 but got %d" scaled.Value)
+
+// Chain operations
+let result = add (scale g1 2) g2
+if result.Value <> 13 then failwith (sprintf "Expected 13 but got %d" result.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptimize
+        |> compileAndRun
+        |> shouldSucceed
