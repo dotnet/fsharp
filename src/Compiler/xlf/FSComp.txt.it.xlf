@@ -3348,8 +3348,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">
-        <source>Expecting a type supporting the operator '{0}' but given a tuple type</source>
-        <target state="translated">È previsto un tipo che supporti l'operatore '{0}', tuttavia è specificato un tipo di tuple</target>
+        <source>Expecting a type supporting the operator '{0}' but given a tuple type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
+        <target state="needs-review">È previsto un tipo che supporti l'operatore '{0}', tuttavia è specificato un tipo di tuple</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">

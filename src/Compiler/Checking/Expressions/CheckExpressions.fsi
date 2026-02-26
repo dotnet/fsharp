@@ -136,7 +136,7 @@ type ImplicitlyBoundTyparsAllowed =
     | NoNewTypars
 
 /// Formats a list of names for display in diagnostics, truncating to at most 5 entries.
-val formatAvailableNames: names: string array -> string
+val internal formatAvailableNames: names: string array -> string
 
 //-------------------------------------------------------------------------
 // The rest are all helpers needed for declaration checking (CheckDeclarations.fs)

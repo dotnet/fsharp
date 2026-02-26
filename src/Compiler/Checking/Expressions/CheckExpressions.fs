@@ -8259,24 +8259,26 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
             | _ -> false
 
         // Intercept MatchIncomplete diagnostics to mark them as originating from a for-loop binding,
-        // which adds a context-specific hint in the error message (e.g., "consider using a wildcard pattern").
+        // which adds a context-specific hint in the error message (e.g., "Did you use a constant where a loop variable was expected?").
+        let markForLoopMatchIncomplete (oldLogger: DiagnosticsLogger) =
+            { new DiagnosticsLogger("forLoopPatternMatch") with
+                member _.DiagnosticSink(diagnostic) =
+                    let diagnostic =
+                        match diagnostic.Exception with
+                        | MatchIncomplete(isComp, cexOpt, m, _) ->
+                            { diagnostic with
+                                Exception = MatchIncomplete(isComp, cexOpt, m, (* isForLoopBinding: *) true) }
+                        | _ -> diagnostic
+
+                    oldLogger.DiagnosticSink(diagnostic)
+
+                member _.ErrorCount = oldLogger.ErrorCount
+                member _.CheckForRealErrorsIgnoringWarnings = oldLogger.CheckForRealErrorsIgnoringWarnings
+            }
+
         use _diagnostics =
             if isConstantPattern then
-                UseTransformedDiagnosticsLogger(fun oldLogger ->
-                    { new DiagnosticsLogger("forLoopPatternMatch") with
-                        member _.DiagnosticSink(diagnostic) =
-                            let diagnostic =
-                                match diagnostic.Exception with
-                                | MatchIncomplete(isComp, cexOpt, m, _) ->
-                                    { diagnostic with
-                                        Exception = MatchIncomplete(isComp, cexOpt, m, (* isForLoopBinding: *) true) }
-                                | _ -> diagnostic
-
-                            oldLogger.DiagnosticSink(diagnostic)
-
-                        member _.ErrorCount = oldLogger.ErrorCount
-                        member _.CheckForRealErrorsIgnoringWarnings = oldLogger.CheckForRealErrorsIgnoringWarnings
-                    })
+                UseTransformedDiagnosticsLogger(markForLoopMatchIncomplete)
             else
                 { new System.IDisposable with
                     member _.Dispose() = ()
@@ -8453,8 +8455,10 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                         else
                             if IsIndexerType g cenv.amap expr.Type then
                                 let old = not (g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot)
+                                // NotAFunctionButIndexer uses overallTy (expected type) for the indexer suggestion message.
                                 error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, old))
                             else
+                                // NotAFunction uses exprTy (actual type) to show "has type X, which does not accept arguments".
                                 error (NotAFunction(denv, exprTy, mExpr, mArg))
 
                 // f x  (where 'f' is not a function)
@@ -10806,8 +10810,10 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
         let thenExpr, tpenv =
             let env =
                 match env.eContextInfo, synElseExprOpt with
+                // Inside an elif chain with no final else: use full elif range (m) so the error points at the whole elif.
                 | ContextInfo.ElseBranchResult _, None -> { env with eContextInfo = ContextInfo.OmittedElseBranch m }
                 | ContextInfo.ElseBranchResult _, _ -> { env with eContextInfo = ContextInfo.ElseBranchResult synThenExpr.Range }
+                // Top-level if with no else: use then-branch range.
                 | _, None -> { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
                 | _, Some elseExpr when elifChainMissingElse elseExpr ->
                     { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
