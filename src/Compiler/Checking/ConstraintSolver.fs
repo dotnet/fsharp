@@ -4241,6 +4241,19 @@ let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstrai
 /// ensuring the Val stamps match those bound in the expression tree (not the
 /// deep-copied signature vals in the CcuThunk).
 /// Also searches referenced CCU module types for cross-assembly extension members.
+///
+/// NOTE: This function only finds F# Val-based extension members. It does NOT cover
+/// ILExtMem entries (C# extension methods imported from IL metadata). During type-checking,
+/// SelectExtensionMethInfosForTrait (in NameResolution.fs) uses SelectExtMethInfosForType
+/// which additionally searches ILExtMem entries and unindexed extension members. This means
+/// a C# extension method could satisfy an SRTP constraint during type-checking but would
+/// not be found here in the optimizer/codegen path.
+///
+/// Practical impact is negligible: C# extension methods satisfying F# SRTP constraints is
+/// an exotic scenario, and the optimizer trait context is only used for FSharp.Core static
+/// optimizations. Making this function equivalent to SelectExtensionMethInfosForTrait would
+/// require NameResolutionEnv, which is not available in the optimizer — a major architectural
+/// change not warranted by the scenario's rarity.
 let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) (referencedCcus: CcuThunk list) : TraitContext =
     let extensionVals =
         lazy
