@@ -13,6 +13,8 @@
     <PackageReference Include="xunit.v3.runner.console" Version="$(XunitRunnerConsoleVersion)" />
     <!-- MTP HangDump extension for hang detection (replaces VSTest blame-hang-timeout) -->
     <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
+    <!-- Xunit XML test logger for CI-friendly xunit v2 format output -->
+    <PackageReference Include="XunitXml.TestLogger" Version="$(XunitXmlTestLoggerVersion)" />
   </ItemGroup>
 
   <!-- Enable Microsoft.Testing.Platform runner for all test projects -->

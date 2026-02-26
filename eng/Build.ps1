@@ -380,14 +380,10 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     # MTP requires --solution flag for .sln files
     $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
     
-    # For solutions, omit --report-xunit-trx-filename so each test assembly generates a unique .trx file.
-    # With a static filename, all assemblies overwrite the same file and only the last one's results survive.
-    if ($testProject.EndsWith('.sln')) {
-        $reportArgs = "--report-xunit-trx"
-    } else {
-        $testLogFileName = "${projectName}_${targetFramework}.trx"
-        $reportArgs = "--report-xunit-trx --report-xunit-trx-filename ""$testLogFileName"""
-    }
+    # Xunit XML report via XunitXml.TestLogger with CI-friendly filenames
+    $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
+    $xunitLogFileName = "{assembly}.{framework}.${jobName}.xml"
+    $reportArgs = "--report-spekt-xunit --report-spekt-xunit-filename ""$xunitLogFileName"""
     
     $test_args = "test $testTarget -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
     # MTP HangDump extension replaces VSTest --blame-hang-timeout

@@ -233,16 +233,16 @@ function Test() {
   testresultsdir="$artifacts_dir/TestResults/$configuration"
 
   # MTP requires --solution flag for .sln files
-  # For solutions, omit --report-xunit-trx-filename so each test assembly generates a unique .trx file.
-  # With a static filename, all assemblies overwrite the same file and only the last one's results survive.
   if [[ "$testproject" == *.sln ]]; then
     testtarget="--solution"
-    reportargs="--report-xunit-trx"
   else
     testtarget="--project"
-    testlogfilename="${projectname}_${targetframework}.trx"
-    reportargs="--report-xunit-trx --report-xunit-trx-filename $testlogfilename"
   fi
+
+  # Xunit XML report via XunitXml.TestLogger with CI-friendly filenames
+  jobname="${SYSTEM_JOBNAME:-local}"
+  xunitlogfilename="{assembly}.{framework}.${jobname}.xml"
+  reportargs="--report-spekt-xunit --report-spekt-xunit-filename $xunitlogfilename"
 
   args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" $reportargs --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
 

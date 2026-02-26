@@ -1,0 +1,93 @@
+# Template for running test jobs split into parallel batches via strategy:matrix.
+# Place this alongside (not inside) the Arcade jobs.yml template reference,
+# since Arcade's ${{ each job }} loop cannot expand nested template references.
+
+parameters:
+  jobName: ''
+  pool: {}
+  timeoutInMinutes: 120
+  buildCommand: ''          # Full build/test command including $(batchNumber)
+  buildEnv: {}
+  batches: [1, 2, 3]
+  variables: []
+  testRunTitlePrefix: ''    # e.g. 'WindowsCompressedMetadata testDesktop'
+  artifactNamePrefix: ''    # e.g. 'Windows testDesktop'
+  configuration: 'Release'
+  publishBinLog: false
+  binLogPath: ''
+  publishDumps: false
+
+jobs:
+- job: ${{ parameters.jobName }}
+  strategy:
+    matrix:
+      ${{ each batch in parameters.batches }}:
+        Batch${{ batch }}:
+          batchNumber: ${{ batch }}
+  pool: ${{ parameters.pool }}
+  timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
+  variables:
+  - ${{ each var in parameters.variables }}:
+    - name: ${{ var.name }}
+      value: ${{ var.value }}
+  steps:
+  - checkout: self
+    clean: true
+
+  - script: ${{ parameters.buildCommand }}
+    env: ${{ parameters.buildEnv }}
+    displayName: Build / Test
+
+  - task: PublishTestResults@2
+    displayName: Publish Test Results
+    inputs:
+      testResultsFormat: 'VSTest'
+      testRunTitle: ${{ parameters.testRunTitlePrefix }} Batch$(batchNumber)
+      mergeTestResults: true
+      testResultsFiles: '*.trx'
+      searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/${{ parameters.configuration }}'
+    continueOnError: true
+    condition: succeededOrFailed()
+
+  - ${{ if parameters.publishBinLog }}:
+    - task: PublishBuildArtifacts@1
+      displayName: Publish BinLog
+      continueOnError: true
+      inputs:
+        PathToPublish: ${{ parameters.binLogPath }}
+        ArtifactName: '${{ parameters.artifactNamePrefix }} Batch$(batchNumber) binlogs'
+        ArtifactType: Container
+        parallel: true
+
+  - ${{ if parameters.publishDumps }}:
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Dumps
+      condition: failed()
+      continueOnError: true
+      inputs:
+        PathToPublish: '$(Build.SourcesDirectory)/artifacts/log/${{ parameters.configuration }}'
+        ArtifactName: '${{ parameters.artifactNamePrefix }} Batch$(batchNumber) process dumps'
+        ArtifactType: Container
+        parallel: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish Test Logs
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/${{ parameters.configuration }}'
+      ArtifactName: '${{ parameters.artifactNamePrefix }} Batch$(batchNumber) test logs'
+      publishLocation: Container
+    continueOnError: true
+    condition: always()
+
+  - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+    displayName: Dump NuGet cache contents
+    condition: failed()
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish NuGet cache contents
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+      ArtifactName: 'NuGetPackageContents ${{ parameters.artifactNamePrefix }} Batch$(batchNumber)'
+      publishLocation: Container
+    continueOnError: true
+    condition: failed()

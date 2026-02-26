@@ -42,6 +42,7 @@ let otherProjects =
         "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          1
         "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 3
         "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        3
+        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             3
     ]
 
 // ── filter generation ──
