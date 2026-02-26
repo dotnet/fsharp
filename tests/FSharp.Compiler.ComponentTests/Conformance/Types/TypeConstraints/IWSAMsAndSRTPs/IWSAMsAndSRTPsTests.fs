@@ -3070,42 +3070,36 @@ let g = f
         |> signaturesShouldContain "val g: (int -> int)"
 
     [<Fact>]
-    let ``Breaking change S2: List.map of inline SRTP function`` () =
-        // Reified inline SRTP function may throw NotSupportedException (Release)
-        // or work correctly (Debug) depending on codegen path.
+    let ``Breaking change S2: List.map of inline SRTP function emits warning 3882`` () =
+        // When inline SRTP function is reified (passed to List.map), the constraint
+        // cannot be statically resolved. The compiler emits warning 3882.
         FSharp """
 module Test
 let inline f x = x + 1
-try
-    let result = List.map f [1;2;3]
-    if result <> [2;3;4] then failwith (sprintf "Expected [2;3;4] but got %A" result)
-with
-| :? System.NotSupportedException -> () // Acceptable: reified SRTP may lack witnesses
+let result = List.map f [1;2;3]
         """
         |> withLangVersionPreview
-        |> withOptions [ "--nowarn:3882" ]
+        |> ignoreWarnings
         |> asExe
-        |> compileAndRun
+        |> compile
         |> shouldSucceed
+        |> withSingleDiagnostic (Warning 3882, Line 3, Col 18, Line 3, Col 23, "The member constraint for 'op_Addition' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.")
 
     [<Fact>]
-    let ``Breaking change S2: monomorphic annotation on inline SRTP function`` () =
-        // Reified inline SRTP function may throw NotSupportedException (Release)
-        // or work correctly (Debug) depending on codegen path.
+    let ``Breaking change S2: monomorphic annotation on inline SRTP function emits warning 3882`` () =
+        // When inline SRTP function is assigned to a non-inline binding,
+        // the constraint cannot be statically resolved. The compiler emits warning 3882.
         FSharp """
 module Test
 let inline f x = x + 1
 let g : int -> int = f
-try
-    if g 41 <> 42 then failwith "Expected 42"
-with
-| :? System.NotSupportedException -> () // Acceptable: reified SRTP may lack witnesses
         """
         |> withLangVersionPreview
-        |> withOptions [ "--nowarn:3882" ]
+        |> ignoreWarnings
         |> asExe
-        |> compileAndRun
+        |> compile
         |> shouldSucceed
+        |> withSingleDiagnostic (Warning 3882, Line 3, Col 18, Line 3, Col 23, "The member constraint for 'op_Addition' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.")
 
     [<Fact>]
     let ``Breaking change S2: control case - x + x was already generic`` () =
@@ -3222,25 +3216,20 @@ let run x = f x
         |> signaturesShouldContain "val run: x: int -> int"
 
     [<Fact>]
-    let ``Breaking change S4: delegate from inline SRTP throws at runtime`` () =
-        // S4 (council score 39): delegate/reflection invocation of newly-generic
-        // inline function may throw NotSupportedException (Release) or work
-        // correctly (Debug) depending on codegen path.
+    let ``Breaking change S4: delegate from inline SRTP emits warning 3882`` () =
+        // When inline SRTP function is wrapped in a delegate, the constraint
+        // cannot be statically resolved. The compiler emits warning 3882.
         FSharp """
 module Test
 let inline addOne x = x + 1
 let d = System.Func<int,int>(addOne)
-try
-    let result = d.Invoke(41)
-    if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
-with
-| :? System.NotSupportedException -> () // Acceptable: delegate from SRTP may lack witnesses
         """
         |> withLangVersionPreview
-        |> withOptions [ "--nowarn:3882" ]
+        |> ignoreWarnings
         |> asExe
-        |> compileAndRun
+        |> compile
         |> shouldSucceed
+        |> withSingleDiagnostic (Warning 3882, Line 3, Col 23, Line 3, Col 28, "The member constraint for 'op_Addition' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.")
 
     [<Fact>]
     let ``Extension operator on string works in FSI with langversion preview`` () =
@@ -3417,19 +3406,6 @@ let result : int = multiply 5 3
         """
         |> withLangVersionPreview
         |> withOptions [ "--nowarn:3882" ]
-        |> compile
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``Warning 3882 not emitted for inline function stubs with unresolved type variables`` () =
-        // Inline function stubs have unresolved type variables by design;
-        // the warning is suppressed because the stub is dead code when properly inlined.
-        FSharp """
-module Test
-let inline f x = x + 1
-let g : int -> int = f
-        """
-        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
 

@@ -5537,14 +5537,14 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
 
         let exprOpt =
             match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs with
-            | OkResult(_, res) -> res
+            | OkResult(warns, res) ->
+                ReportWarnings warns
+                res
             | ErrorResult _ ->
                 // Emit a diagnostic so the user knows about the runtime throw.
                 // This is defensive — type-checking should have caught it — but
                 // extension constraint changes can leave unsolved constraints in codegen.
-                // Suppress for inline functions where support types are still type variables.
-                if not (traitInfo.SupportTypes |> List.exists (isTyparTy g)) then
-                    warning(Error(FSComp.SR.ilTraitCallNotStaticallyResolved(traitInfo.MemberLogicalName), m))
+                warning(Error(FSComp.SR.ilTraitCallNotStaticallyResolved(traitInfo.MemberLogicalName), m))
                 None
 
         match exprOpt with
@@ -7340,7 +7340,9 @@ and ExprRequiresWitness cenv m expr =
     match expr with
     | Expr.Op(TOp.TraitCall(traitInfo), _, _, _) ->
         match ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo with
-        | OkResult(_, res) -> res
+        | OkResult(warns, res) ->
+            ReportWarnings warns
+            res
         | ErrorResult _ ->
             // If all support types are concrete (not typars), this is a real failure
             // that should not silently take the non-witness path.
