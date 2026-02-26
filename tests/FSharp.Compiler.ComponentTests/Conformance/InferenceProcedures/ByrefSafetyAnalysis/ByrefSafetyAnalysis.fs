@@ -3103,6 +3103,115 @@ type Impl() =
 
 #endif
 
+    // ---- T3: [UnscopedRef] negating implicit scoping on ref Span<T> ----
+
+    let private unscopedRefRefSpanCSharpLib =
+        CSharp """
+using System;
+using System.Diagnostics.CodeAnalysis;
+public static class UnscopedRefSpanHelper
+{
+    // ref Span<int> is implicitly scoped (RefSafetyRules=11, ref to byref-like).
+    // [UnscopedRef] negates the implicit scoping, so the span CAN escape.
+    public static Span<int> ViaUnscopedRefSpan([UnscopedRef] ref Span<int> s)
+    {
+        return s;
+    }
+
+    // For comparison: without [UnscopedRef], ref Span<int> IS scoped.
+    public static Span<int> ViaScopedRefSpan(ref Span<int> s)
+    {
+        return default;
+    }
+}
+"""     |> withName "UnscopedRefSpanLib"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+    let private unscopedRefRefSpanFSharpSource = """
+module Test
+open System
+let f () =
+    let mutable s = Span<int>.Empty
+    UnscopedRefSpanHelper.ViaUnscopedRefSpan(&s)
+"""
+
+    [<Fact>]
+    let ``UnscopedRef on ref Span param negates implicit scoping - triggers escape error`` () =
+        FSharp unscopedRefRefSpanFSharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [unscopedRefRefSpanCSharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``UnscopedRef on ref Span param backward compat`` () =
+        FSharp unscopedRefRefSpanFSharpSource
+        |> asLibrary
+        |> withReferences [unscopedRefRefSpanCSharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Implicitly scoped ref Span param without UnscopedRef is safe`` () =
+        FSharp """
+module Test
+open System
+let f () =
+    let mutable s = Span<int>.Empty
+    UnscopedRefSpanHelper.ViaScopedRefSpan(&s)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [unscopedRefRefSpanCSharpLib]
+        |> compile
+        |> shouldSucceed
+
+    // ---- [UnscopedRef] negating implicit scoping on in Span<T> ----
+
+    let private unscopedRefInSpanCSharpLib =
+        CSharp """
+using System;
+using System.Diagnostics.CodeAnalysis;
+public static class UnscopedInSpanHelper
+{
+    // in Span<int> is implicitly scoped (RefSafetyRules=11, in to byref-like).
+    // [UnscopedRef] negates implicit scoping.
+    public static Span<int> ViaUnscopedInSpan([UnscopedRef] in Span<int> s)
+    {
+        return default;
+    }
+}
+"""     |> withName "UnscopedInSpanLib"
+        |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+    let private unscopedRefInSpanFSharpSource = """
+module Test
+open System
+let f () =
+    let mutable s = Span<int>.Empty
+    UnscopedInSpanHelper.ViaUnscopedInSpan(&s)
+"""
+
+    [<Fact>]
+    let ``UnscopedRef on in Span param negates implicit scoping - triggers escape error`` () =
+        FSharp unscopedRefInSpanFSharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [unscopedRefInSpanCSharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``UnscopedRef on in Span param backward compat`` () =
+        FSharp unscopedRefInSpanFSharpSource
+        |> asLibrary
+        |> withReferences [unscopedRefInSpanCSharpLib]
+        |> compile
+        |> shouldSucceed
+
 #if NETSTANDARD2_1_OR_GREATER
     [<Theory; FileInlineData("E_TopLevelByref.fs")>]
     let``E_TopLevelByref_fs`` compilation =
