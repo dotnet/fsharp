@@ -1495,7 +1495,12 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
         mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
     else
         let methodArgTys, paramInfos = List.unzip flatArgInfos
-        let ilMethodArgTys = GenParamTypes cenv m tyenvUnderTypars false methodArgTys
+
+        let isSlotSig =
+            memberInfo.MemberFlags.IsDispatchSlot
+            || memberInfo.MemberFlags.IsOverrideOrExplicitImpl
+
+        let ilMethodArgTys = GenParamTypes cenv m tyenvUnderTypars isSlotSig methodArgTys
         let ilMethodInst = GenTypeArgs cenv m tyenvUnderTypars (List.map mkTyparTy mtps)
 
         let mspec =
