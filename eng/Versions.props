@@ -84,17 +84,11 @@
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
 
-  <!-- Dependencies from maintenance-packages, source-build specific -->
-  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
+
+  <PropertyGroup>
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-  </PropertyGroup>
-  <!-- Dependencies from maintenance-packages, everything else -->
-  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
-    <SystemBuffersVersion>4.6.0</SystemBuffersVersion>
-    <SystemMemoryVersion>4.6.0</SystemMemoryVersion>
-    <SystemRuntimeCompilerServicesUnsafeVersion>6.1.0</SystemRuntimeCompilerServicesUnsafeVersion>
   </PropertyGroup>
 
   <PropertyGroup>
