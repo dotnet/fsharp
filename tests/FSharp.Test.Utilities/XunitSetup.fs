@@ -15,8 +15,6 @@ type FSharpTestAssemblyFixture() =
         AssemblyResolver.addResolver()
 #endif
         log $"Server GC enabled: {Runtime.GCSettings.IsServerGC}"
-        log "Installing TestConsole redirection"
-        TestConsole.install()
         logConfig initialConfig
 
 /// Exclude from parallelization. Execute test cases in sequence and do not run any other collections at the same time.
@@ -31,10 +29,5 @@ type RunTestCasesInSequenceAttribute() = inherit Attribute()
 
 module XUnitSetup =
 
-    // NOTE: CaptureTrace is disabled because it conflicts with TestConsole.ExecutionCapture
-    // which is used by FSI tests to capture console output. xUnit3's trace capture intercepts
-    // console output before it can reach TestConsole's redirectors.
-    // [<assembly: CaptureTrace>]
-
-    [<assembly: AssemblyFixture(typeof<FSharpTestAssemblyFixture>)>]
+    [<assembly: AssemblyFixture(typeof<FSharpTestAssemblyFixture>); CaptureConsole; CaptureTrace>]
     do ()

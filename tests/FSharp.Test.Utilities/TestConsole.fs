@@ -20,13 +20,16 @@ module TestConsole =
     /// Redirects writes performed on different async execution contexts to the relevant TextWriter held by AsyncLocal.
     type private RedirectingTextWriter() =
         inherit TextWriter()
-        let holder = AsyncLocal<_>()      
+        let holder = AsyncLocal<_>()
+        let original = Console.Out
         member _.Writer
             with get() = holder.Value |> ValueOption.defaultValue TextWriter.Null
             and set v = holder.Value <- ValueSome v
 
         override _.Encoding = Encoding.UTF8
-        override this.Write(value: char) = this.Writer.Write(value)
+        override this.Write(value: char) =
+            this.Writer.Write(value)
+            original.Write(value)
 
     let private localIn = new RedirectingTextReader()
     let private localOut = new RedirectingTextWriter()
