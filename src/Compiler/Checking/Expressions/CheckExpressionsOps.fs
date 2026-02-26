@@ -78,6 +78,7 @@ let CompilePatternForMatch
     mMatch
     warnOnUnused
     actionOnFailure
+    isForLoopBinding
     (inputVal, generalizedTypars, inputExprOpt)
     clauses
     inputTy
@@ -96,6 +97,7 @@ let CompilePatternForMatch
             mMatch
             warnOnUnused
             actionOnFailure
+            isForLoopBinding
             (inputVal, generalizedTypars, inputExprOpt)
             clauses
             inputTy
@@ -119,6 +121,7 @@ let CompilePatternForMatchClauses (cenv: TcFileState) env mExpr mMatch warnOnUnu
                 mMatch
                 warnOnUnused
                 actionOnFailure
+                false
                 (asVal, generalizedTypars, None)
                 [ MatchClause(pat1, None, TTarget(vs2, targetExpr, None), m2) ]
                 inputTy
@@ -136,6 +139,7 @@ let CompilePatternForMatchClauses (cenv: TcFileState) env mExpr mMatch warnOnUnu
                 mMatch
                 warnOnUnused
                 actionOnFailure
+                false
                 (matchValueTmp, [], inputExprOpt)
                 tclauses
                 inputTy

@@ -62,6 +62,8 @@ val internal CompilePattern:
     // warn on unused?
     bool ->
     ActionOnFailure ->
+    // is this a for-loop binding pattern?
+    bool ->
     Val * Typars * Expr option ->
         // input type-checked syntax of pattern matching
         MatchClause list ->

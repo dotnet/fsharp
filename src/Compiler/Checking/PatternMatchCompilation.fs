@@ -991,6 +991,7 @@ let CompilePatternBasic
         warnOnUnused
         warnOnIncomplete
         actionOnFailure
+        isForLoopBinding
         (origInputVal, origInputValTypars, _origInputExprOpt: Expr option)
         (clauses: MatchClause list)
         inputTy
@@ -1018,10 +1019,10 @@ let CompilePatternBasic
                     warning (EnumMatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), mMatch))
                     warningsGenerated.Add CounterExampleType.EnumCoversKnown
                 | Some(text, failingWhenClause, CounterExampleType.WithoutEnum) when not(warningsGenerated.Contains(CounterExampleType.WithoutEnum))  ->
-                    warning (MatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), mMatch, false))
+                    warning (MatchIncomplete(ignoreWithWarning, Some(text, failingWhenClause), mMatch, isForLoopBinding))
                     warningsGenerated.Add CounterExampleType.WithoutEnum
                 | None when not(warningsGenerated.Contains(CounterExampleType.WithoutEnum)) ->
-                    warning (MatchIncomplete(ignoreWithWarning, None, mMatch, false))
+                    warning (MatchIncomplete(ignoreWithWarning, None, mMatch, isForLoopBinding))
                     warningsGenerated.Add CounterExampleType.WithoutEnum
                 | _ -> ()
             | _ ->
@@ -1708,7 +1709,7 @@ let isProblematicClause (clause: MatchClause) =
         let ips = investigationPoints clause.Pattern
         ips.Length > 0 && Span.exists id (ips.AsSpan (0, ips.Length - 1))
 
-let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
+let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused actionOnFailure isForLoopBinding (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
     match clausesL with
     | _ when List.exists isProblematicClause clausesL ->
 
@@ -1716,7 +1717,7 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused a
         let warnOnUnused = false // we can't turn this on since we're pretending all partials fail in order to control the complexity of this.
         let warnOnIncomplete = true
         let clausesPretendAllPartialFail = clausesL |> List.collect (fun (MatchClause(p, whenOpt, tg, m)) -> [MatchClause(erasePartialPatterns p, whenOpt, tg, m)])
-        let _ = CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
+        let _ = CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete actionOnFailure isForLoopBinding (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
         let warnOnIncomplete = false
 
         // Partial and when clauses cause major code explosion if treated naively
@@ -1724,7 +1725,7 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused a
         let rec atMostOneProblematicClauseAtATime clauses =
             match List.takeUntil isProblematicClause clauses with
             | l, [] ->
-                CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) l inputTy resultTy
+                CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete actionOnFailure isForLoopBinding (origInputVal, origInputValTypars, origInputExprOpt) l inputTy resultTy
             | l, h :: t ->
                 // Add the problematic clause.
                 doGroupWithAtMostOneProblematic (l @ [h]) t
@@ -1739,10 +1740,10 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused a
             // Make the clause that represents the remaining cases of the pattern match
             let clauseForRestOfMatch = MatchClause(TPat_wild mMatch, None, TTarget(List.empty, expr, None), mMatch)
 
-            CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (group @ [clauseForRestOfMatch]) inputTy resultTy
+            CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete actionOnFailure isForLoopBinding (origInputVal, origInputValTypars, origInputExprOpt) (group @ [clauseForRestOfMatch]) inputTy resultTy
 
 
         atMostOneProblematicClauseAtATime clausesL
 
     | _ ->
-        CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused true actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesL inputTy resultTy
+        CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused true actionOnFailure isForLoopBinding (origInputVal, origInputValTypars, origInputExprOpt) clausesL inputTy resultTy

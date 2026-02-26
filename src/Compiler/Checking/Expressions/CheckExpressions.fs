@@ -4093,7 +4093,9 @@ type ImplicitlyBoundTyparsAllowed =
 
 /// Formats a list of names for display in diagnostics, truncating to at most 5 entries.
 let formatAvailableNames (names: string array) =
-    names |> Array.truncate 5 |> String.concat ", "
+    let truncated = names |> Array.truncate 5
+    let result = truncated |> String.concat ", "
+    if names.Length > 5 then result + ", ..." else result
 
 //-------------------------------------------------------------------------
 // Checking types and type constraints
@@ -6262,7 +6264,7 @@ and TcExprArrayOrList (cenv: cenv) overallTy env tpenv (isArray, args, m) =
 
     match isArray, args with
     | false, [ SynExpr.Tuple(false, _, _, _) ] ->
-        warning (Error(FSComp.SR.tcListLiteralWithSingleTupleElement (), m))
+        informationalWarning (Error(FSComp.SR.tcListLiteralWithSingleTupleElement (), m))
     | _ -> ()
 
     CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
@@ -8258,34 +8260,8 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
             | SynPat.Paren(SynPat.Const _, _) -> true
             | _ -> false
 
-        // Intercept MatchIncomplete diagnostics to mark them as originating from a for-loop binding,
-        // which adds a context-specific hint in the error message (e.g., "Did you use a constant where a loop variable was expected?").
-        let markForLoopMatchIncomplete (oldLogger: DiagnosticsLogger) =
-            { new DiagnosticsLogger("forLoopPatternMatch") with
-                member _.DiagnosticSink(diagnostic) =
-                    let diagnostic =
-                        match diagnostic.Exception with
-                        | MatchIncomplete(isComp, cexOpt, m, _) ->
-                            { diagnostic with
-                                Exception = MatchIncomplete(isComp, cexOpt, m, (* isForLoopBinding: *) true) }
-                        | _ -> diagnostic
-
-                    oldLogger.DiagnosticSink(diagnostic)
-
-                member _.ErrorCount = oldLogger.ErrorCount
-                member _.CheckForRealErrorsIgnoringWarnings = oldLogger.CheckForRealErrorsIgnoringWarnings
-            }
-
-        use _diagnostics =
-            if isConstantPattern then
-                UseTransformedDiagnosticsLogger(markForLoopMatchIncomplete)
-            else
-                { new System.IDisposable with
-                    member _.Dispose() = ()
-                }
-
         CompilePatternForMatch
-            cenv env synEnumExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None)
+            cenv env synEnumExpr.Range pat.Range false IgnoreWithWarning isConstantPattern (elemVar, [], None)
             [MatchClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, None), mIn)]
             enumElemTy
             overallTy.Commit
@@ -11827,7 +11803,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
         let mkPatBind (bodyExpr, bodyExprTy) =
             let valsDefinedByMatching = ListSet.remove valEq patternInputTmp allValsDefinedByPattern
             let clauses = [MatchClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, None), m)]
-            let matchExpr = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (patternInputTmp, generalizedTypars, Some rhsExpr) clauses tauTy bodyExprTy
+            let matchExpr = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException false (patternInputTmp, generalizedTypars, Some rhsExpr) clauses tauTy bodyExprTy
 
             let matchExpr =
                 if declKind.IsConvertToLinearBindings then
