@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.DocumentHighlighting
 
 open FSharp.Compiler.Text
-open CancellableTasks
+open Internal.Utilities.Library
 
 type internal FSharpHighlightSpan =
     {
@@ -56,8 +56,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
         |> Seq.distinctBy (fun span -> span.TextSpan.Start)
         |> Seq.toArray
 
-    static member GetDocumentHighlights(document: Document, position: int) : CancellableTask<FSharpHighlightSpan[]> =
-        cancellableTask {
+    static member GetDocumentHighlights(document: Document, position: int) : Async2<FSharpHighlightSpan[]> =
+        async2 {
             let! symbol =
                 document.TryFindFSharpLexerSymbolAsync(
                     position,
@@ -70,7 +70,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
             match symbol with
             | None -> return Array.empty
             | Some symbol ->
-                let! ct = CancellableTask.getCancellationToken ()
+                let! ct = Async2.CancellationToken
 
                 let! sourceText = document.GetTextAsync(ct)
                 let textLine = sourceText.Lines.GetLineFromPosition(position)
@@ -112,7 +112,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
         member _.GetDocumentHighlightsAsync
             (document, position, _documentsToSearch, cancellationToken)
             : Task<ImmutableArray<FSharpDocumentHighlights>> =
-            cancellableTask {
+            async2 {
                 let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(document, position)
 
                 let highlightSpans =
@@ -129,4 +129,4 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
 
                 return ImmutableArray.Create(FSharpDocumentHighlights(document, highlightSpans))
             }
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken

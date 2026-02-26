@@ -10,7 +10,7 @@ open System.Diagnostics
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<Export(typeof<IFSharpUnusedDeclarationsDiagnosticAnalyzer>)>]
 type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
@@ -25,7 +25,7 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
                 Threading.Tasks.Task.FromResult(ImmutableArray.Empty)
             else
 
-                cancellableTask {
+                async2 {
 
                     do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
 
@@ -40,4 +40,4 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
                         |> Seq.map (fun m -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
                         |> Seq.toImmutableArray
                 }
-                |> CancellableTask.start cancellationToken
+                |> Async2.startInThreadPool cancellationToken

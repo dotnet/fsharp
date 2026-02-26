@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -17,7 +17,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 module internal UnusedCodeFixHelper =
     let getUnusedSymbol textSpan (document: Document) (sourceText: SourceText) codeFixName =
@@ -26,7 +26,7 @@ module internal UnusedCodeFixHelper =
         // Prefixing operators and backticked identifiers does not make sense.
         // We have to use the additional check for backticks
         if PrettyNaming.IsIdentifierName ident then
-            cancellableTask {
+            async2 {
                 let! lexerSymbol =
                     document.TryFindFSharpLexerSymbolAsync(textSpan.Start, SymbolLookupKind.Greedy, false, false, CodeFix.RenameUnusedValue)
 
@@ -47,7 +47,7 @@ module internal UnusedCodeFixHelper =
                         | _ -> ValueNone)
             }
         else
-            CancellableTask.singleton ValueNone
+            Async2.fromValue ValueNone
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
@@ -77,13 +77,13 @@ module internal CodeFixHelpers =
         CodeAction.Create(
             codeFix.Message,
             (fun cancellationToken ->
-                cancellableTask {
-                    let! sourceText = context.Document.GetTextAsync cancellationToken
+                async2 {
+                    let! sourceText : Text.SourceText = context.Document.GetTextAsync cancellationToken
                     let doc = context.Document.WithText(sourceText.WithChanges(codeFix.Changes))
                     reportCodeFixTelemetry context.Diagnostics context.Document codeFix.Name [||]
                     return doc
                 }
-                |> CancellableTask.start cancellationToken)
+                |> Async2.startInThreadPool cancellationToken)
         )
 
 [<AutoOpen>]
@@ -91,45 +91,45 @@ module internal CodeFixExtensions =
     type CodeFixContext with
 
         member ctx.RegisterFsharpFix(codeFix: IFSharpCodeFixProvider) =
-            cancellableTask {
+            async2 {
                 match! codeFix.GetCodeFixIfAppliesAsync ctx with
                 | ValueSome codeFix ->
                     let codeAction = CodeFixHelpers.createTextChangeCodeFix (codeFix, ctx)
                     ctx.RegisterCodeFix(codeAction, ctx.Diagnostics)
                 | ValueNone -> ()
             }
-            |> CancellableTask.startAsTask ctx.CancellationToken
+            |> Async2.startAsUnitTask ctx.CancellationToken
 
         member ctx.RegisterFsharpFixes(codeFix: IFSharpMultiCodeFixProvider) =
-            cancellableTask {
+            async2 {
                 let! codeFixes = codeFix.GetCodeFixesAsync ctx
 
                 for codeFix in codeFixes do
                     let codeAction = CodeFixHelpers.createTextChangeCodeFix (codeFix, ctx)
                     ctx.RegisterCodeFix(codeAction, ctx.Diagnostics)
             }
-            |> CancellableTask.startAsTask ctx.CancellationToken
+            |> Async2.startAsUnitTask ctx.CancellationToken
 
         member ctx.GetSourceTextAsync() =
-            cancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+            async2 {
+                let! cancellationToken = Async2.CancellationToken
                 return! ctx.Document.GetTextAsync cancellationToken
             }
 
         member ctx.GetSquigglyTextAsync() =
-            cancellableTask {
+            async2 {
                 let! sourceText = ctx.GetSourceTextAsync()
                 return sourceText.GetSubText(ctx.Span).ToString()
             }
 
         member ctx.GetErrorRangeAsync() =
-            cancellableTask {
+            async2 {
                 let! sourceText = ctx.GetSourceTextAsync()
                 return RoslynHelpers.TextSpanToFSharpRange(ctx.Document.FilePath, ctx.Span, sourceText)
             }
 
         member ctx.GetLineNumberAndText position =
-            cancellableTask {
+            async2 {
                 let! sourceText = ctx.GetSourceTextAsync()
                 let textLine = sourceText.Lines.GetLineFromPosition position
                 let textLinePos = sourceText.Lines.GetLinePosition position
@@ -149,11 +149,11 @@ module IFSharpCodeFixProviderExtensions =
     type IFSharpCodeFixProvider with
 
         member private provider.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) =
-            cancellableTask {
+            async2 {
                 let sw = Stopwatch.StartNew()
 
-                let! token = CancellableTask.getCancellationToken ()
-                let! sourceText = doc.GetTextAsync token
+                let! token = Async2.CancellationToken
+                let! sourceText : SourceText = doc.GetTextAsync token
 
                 let! codeFixOpts =
                     allDiagnostics
@@ -165,7 +165,7 @@ module IFSharpCodeFixProviderExtensions =
                     |> Seq.map (fun diag ->
                         let context = CodeFixContext(doc, diag, registerCodeFix, token)
                         provider.GetCodeFixIfAppliesAsync context)
-                    |> CancellableTask.whenAll
+                    |> Async2.whenAll
 
                 let codeFixes = codeFixOpts |> Seq.map ValueOption.toOption |> Seq.choose id
                 let changes = codeFixes |> Seq.collect (fun codeFix -> codeFix.Changes)
@@ -193,11 +193,11 @@ module IFSharpCodeFixProviderExtensions =
         member provider.RegisterFsharpFixAll() =
             FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
                 provider.FixAllAsync fixAllCtx doc allDiagnostics
-                |> CancellableTask.start fixAllCtx.CancellationToken)
+                |> Async2.startInThreadPool fixAllCtx.CancellationToken)
 
         member provider.RegisterFsharpFixAll filter =
             FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
                 let filteredDiagnostics = filter allDiagnostics
 
                 provider.FixAllAsync fixAllCtx doc filteredDiagnostics
-                |> CancellableTask.start fixAllCtx.CancellationToken)
+                |> Async2.startInThreadPool fixAllCtx.CancellationToken)

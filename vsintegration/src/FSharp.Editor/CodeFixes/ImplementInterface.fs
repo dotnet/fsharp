@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -19,7 +19,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<NoEquality; NoComparison>]
 type internal InterfaceState =
@@ -126,7 +126,7 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
         (sourceText: SourceText, results: FSharpCheckFileResults, state: InterfaceState, displayContext, entity, indentSize)
         =
         if InterfaceStubGenerator.HasNoInterfaceMember entity then
-            CancellableTask.singleton Seq.empty
+            Async2.fromValue Seq.empty
         else
             let membersAndRanges =
                 InterfaceStubGenerator.GetMemberNameAndRanges state.InterfaceData
@@ -143,7 +143,7 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
                     let lineStr = sourceText.Lines[range.EndLine - 1].ToString()
                     results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [ name ])
 
-                cancellableTask {
+                async2 {
                     let! implementedMemberSignatures =
                         InterfaceStubGenerator.GetImplementedMemberSignatures getMemberByLocation displayContext state.InterfaceData
 
@@ -165,7 +165,7 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
                 }
 
             else
-                CancellableTask.singleton Seq.empty
+                Async2.fromValue Seq.empty
 
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS0366"
 
@@ -173,8 +173,8 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
 
     interface IFSharpMultiCodeFixProvider with
         member _.GetCodeFixesAsync context =
-            cancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+            async2 {
+                let! cancellationToken = Async2.CancellationToken
 
                 let! parseResults, checkFileResults =
                     context.Document.GetFSharpParseAndCheckResultsAsync(nameof ImplementInterfaceCodeFixProvider)

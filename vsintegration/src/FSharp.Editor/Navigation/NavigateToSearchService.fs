@@ -17,7 +17,7 @@ open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Text.PatternMatching
 
 open FSharp.Compiler.EditorServices
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
 type internal FSharpNavigateToSearchService
@@ -34,8 +34,8 @@ type internal FSharpNavigateToSearchService
                     cache.Clear()
 
     let getNavigableItems (document: Document) =
-        cancellableTask {
-            let! ct = CancellableTask.getCancellationToken ()
+        async2 {
+            let! ct = Async2.CancellationToken
             let! currentVersion = document.GetTextVersionAsync(ct)
 
             match cache.TryGetValue document.Id with
@@ -144,8 +144,8 @@ type internal FSharpNavigateToSearchService
                 |> ValueOption.ofNullable
 
     let processDocument (tryMatch: NavigableItem -> PatternMatch voption) (kinds: IImmutableSet<string>) (document: Document) =
-        cancellableTask {
-            let! ct = CancellableTask.getCancellationToken ()
+        async2 {
+            let! ct = Async2.CancellationToken
 
             let! sourceText = document.GetTextAsync ct
 
@@ -191,7 +191,7 @@ type internal FSharpNavigateToSearchService
         member _.SearchProjectAsync
             (project, _priorityDocuments, searchPattern, kinds, cancellationToken)
             : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
-            cancellableTask {
+            async2 {
                 let tryMatch = createMatcherFor searchPattern
 
                 let tasks =
@@ -200,7 +200,7 @@ type internal FSharpNavigateToSearchService
                             yield processDocument tryMatch kinds doc
                     |]
 
-                let! results = CancellableTask.whenAll tasks
+                let! results = Async2.whenAll tasks
 
                 let results' = ImmutableArray.CreateBuilder()
 
@@ -211,14 +211,14 @@ type internal FSharpNavigateToSearchService
                 return results'.ToImmutable()
 
             }
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken
 
         member _.SearchDocumentAsync(document: Document, searchPattern, kinds, cancellationToken) =
-            cancellableTask {
+            async2 {
                 let! result = processDocument (createMatcherFor searchPattern) kinds document
                 return Array.toImmutableArray result
             }
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken
 
         member _.KindsProvided = kindsProvided
 

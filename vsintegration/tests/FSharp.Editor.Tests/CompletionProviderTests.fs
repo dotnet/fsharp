@@ -2,7 +2,7 @@
 
 namespace FSharp.Editor.Tests
 
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 
 module CompletionProviderTests =
 
@@ -33,11 +33,9 @@ module CompletionProviderTests =
             |> RoslynTestHelpers.GetSingleDocument
 
         let results =
-            let task =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
-                |> CancellableTask.start CancellationToken.None
-
-            task.Result |> Seq.map (fun result -> result.DisplayText)
+            FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
+            |> Async2.RunSynchronously
+            |> Seq.map (fun result -> result.DisplayText)
 
         let expectedFound = expected |> List.filter results.Contains
 
@@ -81,11 +79,8 @@ module CompletionProviderTests =
             |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
-            let task =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
-                |> CancellableTask.start CancellationToken.None
-
-            task.Result
+            FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
+            |> Async2.RunSynchronously
             |> Seq.toList
             // sort items as Roslyn do - by `SortText`
             |> List.sortBy (fun x -> x.SortText)
@@ -116,11 +111,8 @@ module CompletionProviderTests =
             |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
-            let task =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), genBodyForOverriddenMeth)
-                |> CancellableTask.start CancellationToken.None
-
-            task.Result
+            FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), genBodyForOverriddenMeth)
+            |> Async2.RunSynchronously
             |> Seq.toList
             |> List.choose (fun x ->
                 if expected.ContainsKey x.DisplayText then

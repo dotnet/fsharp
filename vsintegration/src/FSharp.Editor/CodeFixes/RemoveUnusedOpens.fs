@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler.Text
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnusedOpens); Shared>]
 type internal RemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] () =
@@ -28,7 +28,7 @@ type internal RemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] () =
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
+            async2 {
                 let! sourceText = context.GetSourceTextAsync()
 
                 let! unusedOpensOpt = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges context.Document

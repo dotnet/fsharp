@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -10,7 +10,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingFunKeyword); Shared>]
 type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
@@ -43,13 +43,13 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
+            async2 {
                 let! textOfError = context.GetSquigglyTextAsync()
 
                 if textOfError <> "->" then
                     return ValueNone
                 else
-                    let! cancellationToken = CancellableTask.getCancellationToken ()
+                    let! cancellationToken = Async2.CancellationToken
                     let document = context.Document
 
                     let! defines, langVersion, strictIndentation =

@@ -9,7 +9,7 @@ open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 
 // AppDomain helper
 type Worker() =
@@ -31,11 +31,8 @@ type Worker() =
         let expected = expected |> Seq.toList
 
         let actual =
-            let x =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
-                |> CancellableTask.start CancellationToken.None
-
-            x.Result
+            FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
+            |> Async2.RunSynchronously
             |> Seq.toList
             // sort items as Roslyn do - by `SortText`
             |> List.sortBy (fun x -> x.SortText)

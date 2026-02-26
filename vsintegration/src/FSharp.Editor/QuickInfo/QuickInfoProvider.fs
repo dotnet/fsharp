@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 
@@ -18,13 +18,13 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Text
 open Microsoft.IO
 open FSharp.Compiler.EditorServices
-open CancellableTasks
+open Internal.Utilities.Library
 
 type internal FSharpAsyncQuickInfoSource
     (xmlMemberIndexService, metadataAsSource: FSharpMetadataAsSourceService, textBuffer: ITextBuffer, editorOptions: EditorOptions) =
 
     let getQuickInfoItem (sourceText, (document: Document), (lexerSymbol: LexerSymbol), (ToolTipText elements)) =
-        cancellableTask {
+        async2 {
             let documentationBuilder =
                 XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService)
 
@@ -74,9 +74,9 @@ type internal FSharpAsyncQuickInfoSource
         }
 
     static member TryGetToolTip(document: Document, position, ?width) =
-        cancellableTask {
+        async2 {
             let userOpName = "getQuickInfo"
-            let! cancellationToken = CancellableTask.getCancellationToken ()
+            let! cancellationToken = Async2.CancellationToken
             let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true, userOpName)
 
             match lexerSymbol with
@@ -118,7 +118,7 @@ type internal FSharpAsyncQuickInfoSource
         override _.Dispose() = () // no cleanup necessary
 
         override _.GetQuickInfoItemAsync(session: IAsyncQuickInfoSession, cancellationToken: CancellationToken) : Task<QuickInfoItem> =
-            cancellableTask {
+            async2 {
                 let document =
                     textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
 
@@ -139,7 +139,7 @@ type internal FSharpAsyncQuickInfoSource
                     | None -> return Unchecked.defaultof<_>
 
             }
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken
 
 [<Export(typeof<IAsyncQuickInfoSourceProvider>)>]
 [<Name("F# Quick Info Provider")>]

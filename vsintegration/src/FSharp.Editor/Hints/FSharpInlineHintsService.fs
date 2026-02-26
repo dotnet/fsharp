@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
@@ -7,7 +7,7 @@ open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlineHints
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
-open CancellableTasks
+open Internal.Utilities.Library
 open System.Threading.Tasks
 
 // So the Roslyn interface is called IFSharpInlineHintsService
@@ -27,18 +27,18 @@ type internal FSharpInlineHintsService [<ImportingConstructor>] (settings: Edito
             if hintKinds.IsEmpty then
                 Task.FromResult ImmutableArray.Empty
             else
-                cancellableTask {
-                    let! cancellationToken = CancellableTask.getCancellationToken ()
+                async2 {
+                    let! cancellationToken = Async2.CancellationToken
 
                     let! sourceText = document.GetTextAsync cancellationToken
                     let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName
 
                     let tasks =
                         nativeHints
-                        |> Seq.map (fun hint -> NativeToRoslynHintConverter.convert sourceText hint cancellationToken)
+                        |> Seq.map (fun hint -> NativeToRoslynHintConverter.convert sourceText hint)
 
-                    let! roslynHints = Task.WhenAll(tasks)
+                    let! roslynHints = tasks |> Async2.Parallel
 
                     return roslynHints.ToImmutableArray()
                 }
-                |> CancellableTask.start cancellationToken
+                |> Async2.startInThreadPool cancellationToken

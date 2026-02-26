@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -26,7 +26,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Symbols
 open System.Composition
 open System.Text.RegularExpressions
-open CancellableTasks
+open Internal.Utilities.Library
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open Microsoft.VisualStudio.Telemetry
 open Microsoft.VisualStudio.Threading
@@ -177,7 +177,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
     /// Use an origin document to provide the solution & workspace used to
     /// find the corresponding textSpan and INavigableItem for the range
     let rangeToNavigableItem (range: range, document: Document) =
-        cancellableTask {
+        async2 {
             let fileName =
                 try
                     System.IO.Path.GetFullPath range.FileName
@@ -189,8 +189,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             if not refDocumentIds.IsEmpty then
                 let refDocumentId = refDocumentIds.First()
                 let refDocument = document.Project.Solution.GetDocument refDocumentId
-                let! cancellationToken = Async.CancellationToken
-                let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! cancellationToken = Async2.CancellationToken
+                let! refSourceText = refDocument.GetTextAsync(cancellationToken)
 
                 match RoslynHelpers.TryFSharpRangeToTextSpan(refSourceText, range) with
                 | ValueNone -> return None
@@ -222,10 +222,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             | _ -> None
 
         match textOpt with
-        | None -> CancellableTask.singleton None
+        | None -> Async2.fromValue None
         | Some(text, fileName) ->
-            foregroundCancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+            async2 {
+                let! cancellationToken = Async2.CancellationToken
                 do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken)
 
                 let tmpProjInfo, tmpDocInfo =
@@ -254,8 +254,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                         |> ValueOption.map (fun x -> x.Range)
 
                     let! span =
-                        cancellableTask {
-                            let! cancellationToken = CancellableTask.getCancellationToken ()
+                        async2 {
+                            let! cancellationToken = Async2.CancellationToken
 
                             match r with
                             | ValueNone -> return TextSpan.empty
@@ -275,9 +275,9 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         let originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, originRange)
 
         match originTextSpan with
-        | ValueNone -> CancellableTask.singleton None
+        | ValueNone -> Async2.fromValue None
         | ValueSome originTextSpan ->
-            cancellableTask {
+            async2 {
                 let userOpName = "FindSymbolHelper"
 
                 let position = originTextSpan.Start
@@ -291,7 +291,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
                     let idRange = lexerSymbol.Ident.idRange
 
-                    let! ct = CancellableTask.getCancellationToken ()
+                    let! ct = Async2.CancellationToken
 
                     let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(nameof (GoToDefinition))
 
@@ -351,15 +351,12 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
     member _.FindSymbolDeclarationInDocument(targetSymbolUse: FSharpSymbolUse, document: Document) =
         asyncMaybe {
             let filePath = document.FilePath
-            let! ct = Async.CancellationToken |> liftAsync
 
             match targetSymbolUse.Symbol.DeclarationLocation with
             | Some decl when decl.FileName = filePath -> return decl
             | _ ->
                 let! _, checkFileResults =
                     document.GetFSharpParseAndCheckResultsAsync("FindSymbolDeclarationInDocument")
-                    |> CancellableTask.start ct
-                    |> Async.AwaitTask
                     |> liftAsync
 
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
@@ -373,9 +370,9 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         }
 
     member internal this.FindDefinitionAtPosition(originDocument: Document, position: int) =
-        cancellableTask {
+        async2 {
             let userOpName = "FindDefinitionAtPosition"
-            let! cancellationToken = CancellableTask.getCancellationToken ()
+            let! cancellationToken = Async2.CancellationToken
             let! sourceText = originDocument.GetTextAsync(cancellationToken)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
@@ -383,7 +380,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
 
-            let! cancellationToken = CancellableTask.getCancellationToken ()
+            let! cancellationToken = Async2.CancellationToken
 
             let preferSignature = isSignatureFile originDocument.FilePath
 
@@ -614,31 +611,31 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
     /// Find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition
     member this.NavigateToSymbolDeclarationAsync(targetDocument: Document, targetSourceText: SourceText, symbolRange: range) =
-        cancellableTask {
+        async2 {
             let! item = this.FindDeclarationOfSymbolAtRange(targetDocument, symbolRange, targetSourceText)
 
             match item with
             | None -> return false
             | Some item ->
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+                let! cancellationToken = Async2.CancellationToken
                 return this.NavigateToItem(item, cancellationToken)
         }
 
     /// Find the definition location (implementation file/.fs) of the target symbol
     member this.NavigateToSymbolDefinitionAsync(targetDocument: Document, targetSourceText: SourceText, symbolRange: range) =
-        cancellableTask {
+        async2 {
             let! item = this.FindDefinitionOfSymbolAtRange(targetDocument, symbolRange, targetSourceText)
 
             match item with
             | None -> return false
             | Some item ->
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+                let! cancellationToken = Async2.CancellationToken
                 return this.NavigateToItem(item, cancellationToken)
         }
 
     member this.NavigateToExternalDeclarationAsync(targetSymbolUse: FSharpSymbolUse, metadataReferences: seq<MetadataReference>) =
-        foregroundCancellableTask {
-            let! cancellationToken = CancellableTask.getCancellationToken ()
+        async2 {
+            let! cancellationToken = Async2.CancellationToken
 
             match! this.TryGetExternalDeclarationAsync(targetSymbolUse, metadataReferences) with
             | Some navItem -> return this.NavigateToItem(navItem, cancellationToken)
@@ -684,9 +681,9 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             match tmpShownDocOpt with
             | ValueSome tmpShownDoc ->
                 let goToAsync =
-                    cancellableTask {
+                    async2 {
 
-                        let! cancellationToken = CancellableTask.getCancellationToken ()
+                        let! cancellationToken = Async2.CancellationToken
 
                         let! _, checkResults = tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration")
 
@@ -712,7 +709,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
                     }
 
-                let span = CancellableTask.runSynchronously cancellationToken goToAsync
+                let span = Async2.run cancellationToken goToAsync
 
                 let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)
                 this.NavigateToItem(navItem, cancellationToken)
@@ -735,14 +732,14 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
             ThreadHelper.JoinableTaskFactory.Run(
                 SR.NavigatingTo(),
                 (fun _progress cancellationToken ->
-                    cancellableTask {
+                    async2 {
                         let targetDoc = solution.TryGetDocumentFromFSharpRange(range, initialDoc.Project.Id)
 
                         match targetDoc with
                         | None -> ()
                         | Some targetDoc ->
 
-                            let! cancellationToken = CancellableTask.getCancellationToken ()
+                            let! cancellationToken = Async2.CancellationToken
 
                             let! targetSource = targetDoc.GetTextAsync(cancellationToken)
                             let targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(targetSource, range)
@@ -768,7 +765,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                                         // In case the above fails, we just navigate to target range.
                                         do gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, cancellationToken)
                     }
-                    |> CancellableTask.start cancellationToken),
+                    |> Async2.startInThreadPool cancellationToken),
                 // Default wait time before VS shows the dialog allowing to cancel the long running task is 2 seconds.
                 // This seems a bit too long to leave the user without any feedback, so we shorten it to 1 second.
                 // Note: it seems anything less than 1 second will get rounded down to zero, resulting in flashing dialog
@@ -779,7 +776,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
             ()
 
     member _.FindDefinitionsAsync(position) =
-        cancellableTask {
+        async2 {
             let gtd = GoToDefinition(metadataAsSource)
             let! result = gtd.FindDefinitionAtPosition(initialDoc, position)
 
@@ -801,7 +798,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
 
             let gtd = GoToDefinition(metadataAsSource)
-            let gtdTask = gtd.FindDefinitionAsync (initialDoc, position) cancellationToken
+            let gtdTask = gtd.FindDefinitionAsync(initialDoc, position) |> Async2.startInThreadPool cancellationToken
 
             gtdTask.Wait()
 
@@ -855,10 +852,10 @@ type internal DocCommentId =
 type FSharpNavigableLocation(metadataAsSource: FSharpMetadataAsSourceService, symbolRange: range, project: Project) =
     interface IFSharpNavigableLocation with
         member _.NavigateToAsync(_options: FSharpNavigationOptions2, cancellationToken: CancellationToken) : Task<bool> =
-            cancellableTask {
+            async2 {
                 let targetPath = symbolRange.FileName
 
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+                let! cancellationToken = Async2.CancellationToken
 
                 let targetDoc =
                     project.Solution.TryGetDocumentFromFSharpRange(symbolRange, project.Id)
@@ -879,7 +876,7 @@ type FSharpNavigableLocation(metadataAsSource: FSharpMetadataAsSourceService, sy
                     | Signature -> return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, symbolRange)
                     | Implementation -> return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, symbolRange)
             }
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken
 
 [<Export(typeof<IFSharpCrossLanguageSymbolNavigationService>)>]
 [<Export(typeof<FSharpCrossLanguageSymbolNavigationService>)>]
@@ -1061,7 +1058,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
             let path =
                 FSharpCrossLanguageSymbolNavigationService.DocCommentIdToPath documentationCommentId
 
-            cancellableTask {
+            async2 {
                 let projects =
                     workspace.CurrentSolution.Projects
                     |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
@@ -1117,4 +1114,4 @@ type FSharpCrossLanguageSymbolNavigationService() =
                 else
                     return Unchecked.defaultof<_> // returning null here, so Roslyn can fallback to default source-as-metadata implementation.
             }
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken

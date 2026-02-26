@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler.Diagnostics
-open CancellableTasks
+open Internal.Utilities.Library
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 [<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
@@ -55,7 +55,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
         }
 
     static member GetDiagnostics(document: Document, diagnosticType: DiagnosticsType) =
-        cancellableTask {
+        async2 {
 
             let eventProps: (string * obj) array =
                 [|
@@ -70,7 +70,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
             use _eventDuration =
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GetDiagnosticsForDocument, eventProps)
 
-            let! ct = CancellableTask.getCancellationToken ()
+            let! ct = Async2.CancellationToken
 
             let! sourceText = document.GetTextAsync(ct)
             let filePath = document.FilePath
@@ -115,7 +115,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 match diagnosticType with
                 | DiagnosticsType.Syntax when document.Project.IsFsharpRemoveParensEnabled ->
                     UnnecessaryParenthesesDiagnosticAnalyzer.GetDiagnostics document
-                | _ -> CancellableTask.singleton ImmutableArray.Empty
+                | _ -> Async2.fromValue ImmutableArray.Empty
 
             if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
                 return ImmutableArray.Empty
@@ -158,7 +158,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 Task.FromResult ImmutableArray.Empty
             else
                 FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-                |> CancellableTask.start cancellationToken
+                |> Async2.startInThreadPool cancellationToken
 
         member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
             if
@@ -168,4 +168,4 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 Task.FromResult ImmutableArray.Empty
             else
                 FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
-                |> CancellableTask.start cancellationToken
+                |> Async2.startInThreadPool cancellationToken

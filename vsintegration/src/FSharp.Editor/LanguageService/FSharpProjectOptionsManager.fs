@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -15,7 +15,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open System.Threading
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 open System.Runtime.CompilerServices
-open CancellableTasks
+open Internal.Utilities.Library
 open Microsoft.VisualStudio.FSharp.Editor.Extensions
 open System.Windows
 open Microsoft.VisualStudio
@@ -197,8 +197,8 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
             fsRefProj
 
     let rec tryComputeOptionsBySingleScriptOrFile (document: Document) userOpName =
-        cancellableTask {
-            let! ct = CancellableTask.getCancellationToken ()
+        async2 {
+            let! ct = Async2.CancellationToken
             let! fileStamp = document.GetTextVersionAsync(ct)
             let textViewAndCaret () : (IVsTextView * Position) option = document.TryGetTextViewAndCaretPos()
 
@@ -322,9 +322,9 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
             | _ -> ValueNone
 
     let rec tryComputeOptions (project: Project) =
-        cancellableTask {
+        async2 {
             let projectId = project.Id
-            let! ct = CancellableTask.getCancellationToken ()
+            let! ct = Async2.CancellationToken
 
             match cache.TryGetValue(projectId) with
             | false, _ ->
@@ -434,7 +434,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
             | true, (oldProject, parsingOptions, projectOptions) ->
                 if isProjectInvalidated oldProject project ct then
                     cache.TryRemove(projectId) |> ignore
-                    return! tryComputeOptions project ct
+                    return! tryComputeOptions project
                 else
                     return ValueSome(parsingOptions, projectOptions)
         }
@@ -454,7 +454,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             elif document.Project.IsFSharpMiscellaneousOrMetadata then
                                 let! options =
                                     tryComputeOptionsBySingleScriptOrFile document userOpName
-                                    |> CancellableTask.start ct
+                                    |> Async2.startInThreadPool ct
                                     |> Async.AwaitTask
 
                                 if ct.IsCancellationRequested then
@@ -468,7 +468,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                     document.Project.Solution.Workspace.CurrentSolution.GetProject(document.Project.Id)
 
                                 if not (isNull project) then
-                                    let! options = tryComputeOptions project |> CancellableTask.start ct |> Async.AwaitTask
+                                    let! options = tryComputeOptions project |> Async2.startInThreadPool ct |> Async.AwaitTask
 
                                     if ct.IsCancellationRequested then
                                         reply.Reply ValueNone
@@ -495,7 +495,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                 let project = project.Solution.Workspace.CurrentSolution.GetProject(project.Id)
 
                                 if not (isNull project) then
-                                    let! options = tryComputeOptions project |> CancellableTask.start ct |> Async.AwaitTask
+                                    let! options = tryComputeOptions project |> Async2.startInThreadPool ct |> Async.AwaitTask
 
                                     if ct.IsCancellationRequested then
                                         reply.Reply ValueNone

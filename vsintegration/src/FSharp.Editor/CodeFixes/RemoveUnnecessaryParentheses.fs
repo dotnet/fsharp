@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -9,7 +9,7 @@ open System.Composition
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor.Extensions
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<AutoOpen>]
 module private Patterns =
@@ -118,7 +118,7 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
         member _.GetCodeFixIfAppliesAsync context =
             assert (context.Span.Length >= 3) // (…)
 
-            cancellableTask {
+            async2 {
                 let! sourceText = context.GetSourceTextAsync()
                 let txt = sourceText.ToString(TextSpan(context.Span.Start, context.Span.Length))
 

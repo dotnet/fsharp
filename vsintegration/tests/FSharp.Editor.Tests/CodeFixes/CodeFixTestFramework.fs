@@ -10,7 +10,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 
 open FSharp.Compiler.Diagnostics
 open FSharp.Editor.Tests.Helpers
@@ -58,7 +58,7 @@ module FSharpDiagnostics =
     let generate mode (document: Document) =
         match mode with
         | Manual(squiggly, diagnostic) ->
-            cancellableTask {
+            async2 {
                 let! sourceText = document.GetTextAsync()
                 let spanStart = sourceText.ToString().IndexOf squiggly
                 let span = TextSpan(spanStart, squiggly.Length)
@@ -82,7 +82,7 @@ module FSharpDiagnostics =
         | WithSignature _
         | WithSettings _ ->
             document.GetFSharpParseAndCheckResultsAsync "test"
-            |> CancellableTask.map (fun (_, checkResults) -> checkResults.Diagnostics)
+            |> Async2.map (fun (_, checkResults) -> checkResults.Diagnostics)
 
 module CodeFixContext =
     let private registerCodeFix =
@@ -108,7 +108,7 @@ type CodeFixProvider with
         this.FixableDiagnosticIds.Contains diagnostic.Id
 
 let tryFix (code: string) mode (fixProvider: 'T when 'T :> IFSharpCodeFixProvider and 'T :> CodeFixProvider) =
-    cancellableTask {
+    async2 {
         let document = Document.create mode code
         let sourceText = SourceText.From code
         let! fsharpDiagnostics = FSharpDiagnostics.generate mode document
@@ -126,13 +126,13 @@ let tryFix (code: string) mode (fixProvider: 'T when 'T :> IFSharpCodeFixProvide
 
         return!
             context
-            |> ValueOption.either fixProvider.GetCodeFixIfAppliesAsync (CancellableTask.singleton ValueNone)
-            |> CancellableTask.map (ValueOption.map (TestCodeFix.ofFSharpCodeFix sourceText) >> ValueOption.toOption)
+            |> ValueOption.either fixProvider.GetCodeFixIfAppliesAsync (Async2.fromValue ValueNone)
+            |> Async2.map (ValueOption.map (TestCodeFix.ofFSharpCodeFix sourceText) >> ValueOption.toOption)
     }
-    |> CancellableTask.runSynchronouslyWithoutCancellation
+    |> Async2.RunSynchronously
 
 let multiFix (code: string) mode (fixProvider: 'T when 'T :> IFSharpMultiCodeFixProvider and 'T :> CodeFixProvider) =
-    cancellableTask {
+    async2 {
         let document = Document.create mode code
         let sourceText = SourceText.From code
         let! fsharpDiagnostics = FSharpDiagnostics.generate mode document
@@ -150,10 +150,10 @@ let multiFix (code: string) mode (fixProvider: 'T when 'T :> IFSharpMultiCodeFix
 
         return!
             context
-            |> ValueOption.either fixProvider.GetCodeFixesAsync (CancellableTask.singleton Seq.empty)
-            |> CancellableTask.map (Seq.map (TestCodeFix.ofFSharpCodeFix sourceText))
+            |> ValueOption.either fixProvider.GetCodeFixesAsync (Async2.fromValue Seq.empty)
+            |> Async2.map (Seq.map (TestCodeFix.ofFSharpCodeFix sourceText))
     }
-    |> CancellableTask.runSynchronouslyWithoutCancellation
+    |> Async2.RunSynchronously
 
 /// Contains types and functions for conveniently making code fix assertions using xUnit.
 [<AutoOpen>]
@@ -201,15 +201,14 @@ module Xunit =
     /// <exception cref="T:FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework.Xunit.UnexpectedCodeFixException">
     /// Thrown if a code fix is applied.
     /// </exception>
-    let expectNoFix (tryFix: string -> CancellableTask<TestCodeFix option>) code =
-        cancellableTask {
-            match! tryFix code with
+    let expectNoFix (tryFix: string -> TestCodeFix option) code : Task =
+        task {
+            match tryFix code with
             | None -> ()
             | Some actual ->
                 let e = Assert.ThrowsAny(fun () -> shouldEqual code actual.FixedCode)
                 raise (UnexpectedCodeFixException("Did not expect a code fix but got one anyway.", e))
         }
-        |> CancellableTask.startWithoutCancellation
 
     /// <summary>
     /// Expects the given code to be fixed as specified, or,
@@ -227,12 +226,12 @@ module Xunit =
     /// <exception cref="T:FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework.Xunit.WrongCodeFixException">
     /// Thrown if the generated fix does not match the expected fixed code.
     /// </exception>
-    let expectFix (tryFix: string -> CancellableTask<TestCodeFix option>) code fixedCode =
+    let expectFix (tryFix: string -> TestCodeFix option) code fixedCode : Task =
         if code = fixedCode then
             expectNoFix tryFix code
         else
-            cancellableTask {
-                match! tryFix code with
+            task {
+                match tryFix code with
                 | None ->
                     let e = Assert.ThrowsAny(fun () -> shouldEqual fixedCode code)
                     return raise (MissingCodeFixException("Expected a code fix but did not get one.", e))
@@ -243,7 +242,6 @@ module Xunit =
                     with :? Xunit.Sdk.XunitException as e ->
                         return raise (WrongCodeFixException("The applied code fix did not match the expected fix.", e))
             }
-            |> CancellableTask.startWithoutCancellation
 
     [<Sealed>]
     type MemberDataBuilder private () =

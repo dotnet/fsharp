@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Classification
 open FSharp.Compiler.EditorServices
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debugging
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<Export(typeof<IFSharpLanguageDebugInfoService>)>]
 type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
@@ -52,10 +52,10 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
         member _.GetDataTipInfoAsync
             (document: Document, position: int, cancellationToken: CancellationToken)
             : Task<FSharpDebugDataTipInfo> =
-            cancellableTask {
+            async2 {
                 let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+                let! cancellationToken = Async2.CancellationToken
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)
 
@@ -80,4 +80,4 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
 
                 return result
             }
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken

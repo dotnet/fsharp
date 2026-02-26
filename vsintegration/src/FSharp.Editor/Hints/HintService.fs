@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
@@ -9,7 +9,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Symbols
 open Hints
-open CancellableTasks
+open Internal.Utilities.Library
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 module HintService =
@@ -40,7 +40,7 @@ module HintService =
         Seq.concat hints
 
     let getHintsForDocument sourceText (document: Document) hintKinds userOpName =
-        cancellableTask {
+        async2 {
             if isSignatureFile document.FilePath then
                 return List.empty
             else
@@ -62,7 +62,7 @@ module HintService =
                             [| ("hints.kinds", hintKindsSerialized); ("cacheHit", false) |]
                         )
 
-                    let! cancellationToken = CancellableTask.getCancellationToken ()
+                    let! cancellationToken = Async2.CancellationToken
                     let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
 
                     let nativeHints =

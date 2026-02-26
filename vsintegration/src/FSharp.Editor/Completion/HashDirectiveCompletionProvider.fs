@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
+open Internal.Utilities.Library
 
 type internal HashCompletion =
     {
@@ -138,7 +139,7 @@ type internal HashDirectiveCompletionProvider
                 let extension = Path.GetExtension document.FilePath
                 Option.guard (extension = ".fsx" || extension = ".fsscript")
 
-            let! ct = liftAsync Async.CancellationToken
+            let! ct = liftAsync Async2.CancellationToken
             let! text = document.GetTextAsync(ct)
             do! Option.guard (isInStringLiteral (text, position))
             let line = text.Lines.GetLineFromPosition(position)
@@ -184,11 +185,11 @@ type internal HashDirectiveCompletionProvider
                 )
 
             let pathThroughLastSlash = getPathThroughLastSlash (text, position, quotedPathGroup)
-            let! items = helper.GetItemsAsync(pathThroughLastSlash, ct) |> Async.AwaitTask |> liftAsync
+            let! items = helper.GetItemsAsync(pathThroughLastSlash, ct)
             context.AddItems(items)
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
+        |> Async2.Ignore
+        |> Async2.startAsUnitTask context.CancellationToken
 
     override _.IsInsertionTrigger(text, position) =
         // Bring up completion when the user types a quote (i.e.: #r "), or if they type a slash

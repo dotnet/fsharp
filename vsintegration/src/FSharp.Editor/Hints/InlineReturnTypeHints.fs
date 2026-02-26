@@ -7,7 +7,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
-open CancellableTasks
+open Internal.Utilities.Library
 
 type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
@@ -21,7 +21,7 @@ type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSh
             ])
 
     let getTooltip _ =
-        cancellableTask {
+        async2 {
             let typeAsString = symbol.ReturnParameter.Type.TypeDefinition.ToString()
             let text = $"type {typeAsString}"
             return [ TaggedText(TextTag.Text, text) ]

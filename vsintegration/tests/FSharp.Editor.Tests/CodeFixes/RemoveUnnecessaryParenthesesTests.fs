@@ -7,7 +7,7 @@ open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 open Xunit
 open CodeFixTestFramework
 
@@ -48,7 +48,7 @@ module private TopLevel =
         sln, projInfo.Id
 
     let private tryFix (code: string) =
-        cancellableTask {
+        async2 {
             let document =
                 let docInfo = RoslynTestHelpers.CreateDocumentInfo projId "C:\\test.fs" code
                 (sln.AddDocument docInfo).GetDocument docInfo.Id
@@ -60,9 +60,10 @@ module private TopLevel =
 
             return!
                 context
-                |> ValueOption.either (fixer :> IFSharpCodeFixProvider).GetCodeFixIfAppliesAsync (CancellableTask.singleton ValueNone)
-                |> CancellableTask.map (ValueOption.map (TestCodeFix.ofFSharpCodeFix sourceText) >> ValueOption.toOption)
+                |> ValueOption.either (fixer :> IFSharpCodeFixProvider).GetCodeFixIfAppliesAsync (Async2.fromValue ValueNone)
+                |> Async2.map (ValueOption.map (TestCodeFix.ofFSharpCodeFix sourceText) >> ValueOption.toOption)
         }
+        |> Async2.RunSynchronously
 
     let expectFix = expectFix tryFix
 

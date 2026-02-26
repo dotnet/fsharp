@@ -8,7 +8,7 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.UseTripleQuotedInterpolation); Shared>]
 type internal UseTripleQuotedInterpolationCodeFixProvider [<ImportingConstructor>] () =
@@ -22,7 +22,7 @@ type internal UseTripleQuotedInterpolationCodeFixProvider [<ImportingConstructor
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
+            async2 {
                 let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof UseTripleQuotedInterpolationCodeFixProvider)
 
                 let! sourceText = context.GetSourceTextAsync()

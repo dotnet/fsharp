@@ -24,7 +24,7 @@ open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
-open CancellableTasks
+open Internal.Utilities.Library
 open FSharp.Compiler.Text
 open Microsoft.VisualStudio.Editor
 
@@ -195,14 +195,14 @@ type internal FSharpWorkspaceServiceFactory
             if enableLiveBuffers && not useTransparentCompiler then
                 workspace.WorkspaceChanged.Add(fun args ->
                     if args.DocumentId <> null then
-                        cancellableTask {
+                        async2 {
                             let document = args.NewSolution.GetDocument(args.DocumentId)
 
                             let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(nameof (workspace.WorkspaceChanged))
 
                             do! checker.NotifyFileChanged(document.FilePath, options)
                         }
-                        |> CancellableTask.startAsTask CancellationToken.None
+                        |> Async2.startAsUnitTask CancellationToken.None
                         |> ignore)
 
             let optionsManager = FSharpProjectOptionsManager(checker, workspace)
@@ -334,7 +334,7 @@ type internal FSharpPackage() as this =
         packageRegistrationTasks.AddTask(
             true,
             (fun _tasks cancellationToken ->
-                foregroundCancellableTask {
+                async2 {
                     let exportProvider = this.ComponentModel.DefaultExportProvider
 
                     let theme = exportProvider.GetExport<ISetThemeColors>().Value
@@ -349,13 +349,13 @@ type internal FSharpPackage() as this =
                     // FSI-LINKAGE-POINT: sited init
                     FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitializeSited (this :> Package) commandService
                 }
-                |> CancellableTask.startAsTask cancellationToken)
+                |> Async2.startAsUnitTask cancellationToken)
         )
 
         packageRegistrationTasks.AddTask(
             false,
             (fun _tasks cancellationToken ->
-                cancellableTask {
+                async2 {
                     let exportProvider = this.ComponentModel.DefaultExportProvider
 
                     let workspace = exportProvider.GetExportedValue<VisualStudioWorkspace>()
@@ -405,7 +405,7 @@ type internal FSharpPackage() as this =
                     globalOptions.BlockForCompletionItems <- false
 
                 }
-                |> CancellableTask.startAsTask cancellationToken)
+                |> Async2.startAsUnitTask cancellationToken)
         )
 
 #if DEBUG
@@ -415,7 +415,7 @@ type internal FSharpPackage() as this =
             fun _ _ ->
                 task {
                     DebugHelpers.FSharpServiceTelemetry.periodicallyDisplayMetrics
-                    |> CancellableTask.start this.DisposalToken
+                    |> Async2.startInThreadPool this.DisposalToken
                     |> ignore
                 }
         )

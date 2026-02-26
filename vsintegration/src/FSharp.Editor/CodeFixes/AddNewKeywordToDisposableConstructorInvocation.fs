@@ -11,7 +11,7 @@ open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddNewKeyword); Shared>]
 type internal AddNewKeywordCodeFixProvider() =
@@ -27,7 +27,7 @@ type internal AddNewKeywordCodeFixProvider() =
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
+            async2 {
                 let! sourceText = context.GetSourceTextAsync()
                 let! parseFileResults = context.Document.GetFSharpParseResultsAsync(nameof AddNewKeywordCodeFixProvider)
 

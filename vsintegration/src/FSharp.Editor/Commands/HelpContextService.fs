@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -14,15 +14,15 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<Shared>]
 [<ExportLanguageService(typeof<IHelpContextService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpHelpContextService [<ImportingConstructor>] () =
 
-    static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : CancellableTask<string> =
-        cancellableTask {
-            let! cancellationToken = CancellableTask.getCancellationToken ()
+    static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : Async2<string> =
+        async2 {
+            let! cancellationToken = Async2.CancellationToken
             let! _, check = document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpHelpContextService))
 
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -108,8 +108,8 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
         member _.Product = FSharpConstants.FSharpLanguageLongName
 
         member _.GetHelpTermAsync(document, textSpan, cancellationToken) =
-            cancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+            async2 {
+                let! cancellationToken = Async2.CancellationToken
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
                 let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
@@ -132,6 +132,6 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
 
                 return! FSharpHelpContextService.GetHelpTerm(document, textSpan, classifiedSpans)
             }
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken
 
         member _.FormatSymbol(_symbol) = Unchecked.defaultof<_>

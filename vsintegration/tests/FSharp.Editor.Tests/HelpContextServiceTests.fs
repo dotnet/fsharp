@@ -10,7 +10,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.IO
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.Text
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 
 type HelpContextServiceTests() =
     let getMarkers (source: string) =
@@ -56,11 +56,8 @@ type HelpContextServiceTests() =
                         CancellationToken.None
                     )
 
-                    let task =
-                        FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)
-                        |> CancellableTask.start CancellationToken.None
-
-                    task.Result
+                    FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)
+                    |> Async2.RunSynchronously
             ]
 
         let equalLength = (expectedKeywords.Length = res.Length)

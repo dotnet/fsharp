@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -8,7 +8,7 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangeRefCellDerefToNotExpression); Shared>]
 type internal ChangeRefCellDerefToNotExpressionCodeFixProvider [<ImportingConstructor>] () =
@@ -22,7 +22,7 @@ type internal ChangeRefCellDerefToNotExpressionCodeFixProvider [<ImportingConstr
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
+            async2 {
                 let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof ChangeRefCellDerefToNotExpressionCodeFixProvider)
 
                 let! sourceText = context.GetSourceTextAsync()

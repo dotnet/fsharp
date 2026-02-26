@@ -9,6 +9,7 @@ open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
+open Internal.Utilities.Library
 
 type BraceMatchingServiceTests() =
     let checker =
@@ -31,7 +32,7 @@ type BraceMatchingServiceTests() =
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
-            |> Async.RunImmediateExceptOnUI
+            |> Async2.RunSynchronously
         with
         | None -> ()
         | Some _ -> failwith $"Found match for brace '{marker}'"
@@ -61,7 +62,7 @@ type BraceMatchingServiceTests() =
                 startMarkerPosition,
                 "UnitTest"
             )
-            |> Async.RunImmediateExceptOnUI
+            |> Async2.RunSynchronously
         with
         | None -> failwith $"Didn't find a match for start brace at position '{startMarkerPosition}"
         | Some(left, right) ->
@@ -281,7 +282,7 @@ let main argv =
         for position in matchingPositions do
             match
                 FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
-                |> Async.RunSynchronously
+                |> Async2.RunSynchronously
             with
             | Some _ -> ()
             | None ->

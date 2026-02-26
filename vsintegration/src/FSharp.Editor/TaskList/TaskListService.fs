@@ -1,4 +1,4 @@
-﻿// Microsoft.CodeAnalysis.ExternalAccess.FSharp.TaskList.FSharpTaskListService
+// Microsoft.CodeAnalysis.ExternalAccess.FSharp.TaskList.FSharpTaskListService
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -13,27 +13,21 @@ open FSharp.Compiler
 open System.Collections.Immutable
 
 open System.Diagnostics
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<Export(typeof<IFSharpTaskListService>)>]
 type internal FSharpTaskListService [<ImportingConstructor>] () as this =
 
     let getDefinesAndLangVersion (doc: Microsoft.CodeAnalysis.Document) =
-        asyncMaybe {
-            let! ct = Async.CancellationToken |> liftAsync
-
+        async2 {
             let! _, _, parsingOptions, _ =
                 doc.GetFSharpCompilationOptionsAsync(nameof (FSharpTaskListService))
-                |> CancellableTask.start ct
-                |> Async.AwaitTask
-                |> liftAsync
 
             return
                 CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions,
                 Some parsingOptions.LangVersionText,
                 parsingOptions.StrictIndentation
         }
-        |> Async.map (Option.defaultValue ([], None, None))
 
     let extractContractedComments (tokens: Tokenizer.SavedTokenInfo[]) =
         let granularTokens =
@@ -117,9 +111,10 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
 
     interface IFSharpTaskListService with
         member _.GetTaskListItemsAsync(doc, desc, cancellationToken) =
-            backgroundTask {
+            async2 {
                 let descriptors = desc |> Seq.map (fun d -> d.Text, d) |> Array.ofSeq
                 let! sourceText = doc.GetTextAsync(cancellationToken)
                 let! defines, langVersion, strictIndentation = doc |> getDefinesAndLangVersion
                 return this.GetTaskListItems(doc, sourceText, defines, langVersion, strictIndentation, descriptors, cancellationToken)
             }
+            |> Async2.startAsTask cancellationToken

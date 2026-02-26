@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -8,7 +8,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<Sealed>]
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangeToUpcast); Shared>]
@@ -24,7 +24,7 @@ type internal AddMissingSeqCodeFixProvider() =
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
+            async2 {
                 let! sourceText = context.GetSourceTextAsync()
                 let! parseFileResults = context.Document.GetFSharpParseResultsAsync(nameof AddMissingSeqCodeFixProvider)
 

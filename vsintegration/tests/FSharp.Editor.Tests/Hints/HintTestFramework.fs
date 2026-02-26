@@ -8,7 +8,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Hints
 open Hints
 open FSharp.Editor.Tests.Helpers
 open System.Threading
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 
 module HintTestFramework =
 
@@ -36,24 +36,17 @@ module HintTestFramework =
         }
 
     let getHints (document: Document) hintKinds =
-        let task =
-            cancellableTask {
-                let! ct = CancellableTask.getCancellationToken ()
+        let sourceText = document.GetTextAsync(CancellationToken.None).Result
+        let hints = HintService.getHintsForDocument sourceText document hintKinds "test" |> Async2.RunSynchronously
 
-                let getTooltip hint =
-                    async {
-                        let! roslynTexts = hint.GetTooltip document
-                        return roslynTexts |> Seq.map (fun roslynText -> roslynText.Text) |> String.concat ""
-                    }
+        let getTooltip hint =
+            hint.GetTooltip document
+            |> Async2.RunSynchronously
+            |> Seq.map (fun roslynText -> roslynText.Text)
+            |> String.concat ""
 
-                let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
-                let! hints = HintService.getHintsForDocument sourceText document hintKinds "test" ct
-                let! tooltips = hints |> Seq.map getTooltip |> Async.Parallel
-                return tooltips |> Seq.zip hints |> Seq.map convert
-            }
-            |> CancellableTask.start CancellationToken.None
-
-        task.Result
+        let tooltips = hints |> Seq.map getTooltip |> Seq.toArray
+        tooltips |> Seq.zip hints |> Seq.map convert
 
     let getTypeHints document =
         getHints document (set [ HintKind.TypeHint ])

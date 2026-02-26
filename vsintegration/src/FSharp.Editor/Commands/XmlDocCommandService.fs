@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -16,8 +16,7 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Utilities
 open FSharp.Compiler.EditorServices
-open CancellableTasks.CancellableTaskBuilder
-open CancellableTasks
+open Internal.Utilities.Library
 
 type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, workspace: VisualStudioWorkspace) =
 
@@ -67,14 +66,11 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
                                     wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber
 
                                 let! document = getLastDocument ()
-                                let! cancellationToken = Async.CancellationToken |> liftAsync
+                                let! cancellationToken = Async2.CancellationToken |> liftAsync
                                 let! sourceText = document.GetTextAsync(cancellationToken)
 
                                 let! parseResults =
-                                    document.GetFSharpParseResultsAsync(nameof (XmlDocCommandFilter))
-                                    |> CancellableTask.start cancellationToken
-                                    |> Async.AwaitTask
-                                    |> liftAsync
+                                    document.GetFSharpParseResultsAsync(nameof (XmlDocCommandFilter)) |> liftAsync
 
                                 let xmlDocables =
                                     XmlDocParser.GetXmlDocables(sourceText.ToFSharpSourceText(), parseResults.ParseTree)
@@ -130,8 +126,8 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
                                 Assert.Exception ex
                                 ()
                         }
-                        |> Async.Ignore
-                        |> Async.StartImmediate
+                        |> Async2.Ignore
+                        |> Async2.Start
                     | Some _
                     | None -> ()
                 | _ -> ()

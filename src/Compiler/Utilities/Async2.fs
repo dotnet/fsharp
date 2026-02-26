@@ -415,11 +415,12 @@ module MediumPriority =
         member inline this.Bind(expr: Async<_>, [<InlineIfLambda>] continuation) =
             bindCancellableAwaiter ((fun ct -> Async.StartAsTask(expr, cancellationToken = ct).GetAwaiter()), continuation)
 
-        member inline this.Bind(task: Task, [<InlineIfLambda>] continuation) =
-            bindAwaiter (task.ConfigureAwait(false).GetAwaiter(), continuation)
+        //member inline this.Bind(task: Task, [<InlineIfLambda>] continuation) =
+        //    bindAwaiter (task.ConfigureAwait(false).GetAwaiter(), continuation)
 
         member inline this.Bind(task: Task<_>, [<InlineIfLambda>] continuation) =
-            bindAwaiter (task.ConfigureAwait(false).GetAwaiter(), continuation)
+            //bindAwaiter (task.ConfigureAwait(false).GetAwaiter(), continuation)
+            bindAwaiter (task.GetAwaiter(), continuation)
 
         member inline this.ReturnFrom(task: Task) = this.Bind(task, this.Return)
         member inline this.ReturnFrom(task: Task<_>) = this.Bind(task, this.Return)
@@ -476,6 +477,10 @@ module Async2 =
         finally
             CheckAndThrowToken.Value <- oldCt
 
+    let startAsTask ct (code: Async2<_>) = startImmediate ct code
+
+    let startAsUnitTask ct (code: Async2<unit>) = startImmediate ct code :> Task
+
     let run ct (code: Async2<'t>) =
         startInThreadPool ct code |> _.GetAwaiter().GetResult()
 
@@ -500,6 +505,28 @@ module Async2 =
                 true)
         )
 
+    let whenAll (computations: Async2<_> seq): Async2<'TResult array> =
+        async2 {
+            let! ct = CancellationToken
+            use lcts = CancellationTokenSource.CreateLinkedTokenSource ct
+
+            try
+                let tasks = computations |> Seq.map (startInThreadPool lcts.Token)
+                return! Task.WhenAll<'TResult>(tasks)
+            with exn ->
+                lcts.Cancel()
+                return raise exn
+        }
+
+    let inline map
+        ([<InlineIfLambda>] mapper: 'input -> 'output)
+        (computation: Async2<'input>)
+        =
+        async2 {
+            let! result = computation
+            return mapper result
+        }
+
 type Async2 =
     static member Ignore(computation: Async2<_>) : Async2<unit> =
         async2 {
@@ -523,18 +550,7 @@ type Async2 =
         let ct = defaultArg cancellationToken CancellationToken.None
         Async2.run ct computation
 
-    static member Parallel(computations: Async2<_> seq) =
-        async2 {
-            let! ct = Async2.CancellationToken
-            use lcts = CancellationTokenSource.CreateLinkedTokenSource ct
-
-            try
-                let tasks = computations |> Seq.map (Async2.startInThreadPool lcts.Token)
-                return! Task.WhenAll tasks
-            with exn ->
-                lcts.Cancel()
-                return raise exn
-        }
+    static member Parallel(computations: Async2<_> seq) = Async2.whenAll computations
 
     static member Sequential(computations: Async2<_> seq) =
         async2 {

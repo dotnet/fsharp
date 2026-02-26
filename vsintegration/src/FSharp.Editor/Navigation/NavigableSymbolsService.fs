@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -16,8 +16,7 @@ open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open Microsoft.VisualStudio.Telemetry
-open CancellableTasks.CancellableTaskBuilder
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<AllowNullLiteral>]
 type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpan, gtd: GoToDefinition) =
@@ -40,14 +39,14 @@ type internal FSharpNavigableSymbolSource(metadataAsSource) =
             if disposed then
                 null
             else
-                cancellableTask {
+                async2 {
                     use _ =
                         TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinitionGetSymbol, [||])
 
                     let snapshot = triggerSpan.Snapshot
                     let position = triggerSpan.Start.Position
                     let document = snapshot.GetOpenDocumentInCurrentContextWithChanges()
-                    let! cancellationToken = CancellableTask.getCancellationToken ()
+                    let! cancellationToken = Async2.CancellationToken
                     let! sourceText = document.GetTextAsync(cancellationToken)
 
                     try
@@ -91,7 +90,7 @@ type internal FSharpNavigableSymbolSource(metadataAsSource) =
                         // The NavigableSymbols API accepts 'null' when there's nothing to navigate to.
                         return null
                 }
-                |> CancellableTask.start cancellationToken
+                |> Async2.startInThreadPool cancellationToken
 
         member _.Dispose() = disposed <- true
 

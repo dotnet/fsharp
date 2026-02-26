@@ -151,18 +151,18 @@ module internal BlockStructure =
             | _, _ -> ValueNone)
 
 open BlockStructure
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<Export(typeof<IFSharpBlockStructureService>)>]
 type internal FSharpBlockStructureService [<ImportingConstructor>] () =
 
-    let emptyValue = FSharpBlockStructure ImmutableArray.empty
+    //let emptyValue = FSharpBlockStructure ImmutableArray.empty
 
     interface IFSharpBlockStructureService with
 
         member _.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
-            cancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+            async2 {
+                let! cancellationToken = Async2.CancellationToken
 
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
@@ -173,5 +173,5 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] () =
                     |> Seq.toImmutableArray
                     |> FSharpBlockStructure
             }
-            |> CancellableTask.ifCanceledReturn emptyValue
-            |> CancellableTask.start cancellationToken
+            //|> CancellableTask.ifCanceledReturn emptyValue
+            |> Async2.startInThreadPool cancellationToken

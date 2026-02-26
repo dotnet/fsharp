@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
@@ -9,12 +9,12 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
-open CancellableTasks
+open Internal.Utilities.Library
 
 type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 
     let getTooltip (symbol: FSharpSymbol) _ =
-        cancellableTask {
+        async2 {
             // This brings little value as of now. Basically just discerns fields from parameters
             // and fills the tooltip bubble which otherwise looks like a visual glitch.
             //

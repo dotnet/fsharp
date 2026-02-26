@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -8,7 +8,7 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddParentheses); Shared>]
 type internal WrapExpressionInParenthesesCodeFixProvider() =
@@ -33,4 +33,4 @@ type internal WrapExpressionInParenthesesCodeFixProvider() =
                         ]
                 }
 
-            CancellableTask.singleton (ValueSome codeFix)
+            Async2.fromValue (ValueSome codeFix)

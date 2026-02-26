@@ -14,17 +14,17 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
 type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static member GetUnusedOpenRanges(document: Document) =
-        cancellableTask {
+        async2 {
             if not document.Project.IsFSharpCodeFixesUnusedOpensEnabled then
                 return ValueNone
             else
-                let! ct = CancellableTask.getCancellationToken ()
+                let! ct = Async2.CancellationToken
                 let! sourceText = document.GetTextAsync ct
 
                 let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof UnusedOpensDiagnosticAnalyzer)
@@ -41,7 +41,7 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
             if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
                 Tasks.Task.FromResult(ImmutableArray.Empty)
             else
-                cancellableTask {
+                async2 {
                     do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
                     let! sourceText = document.GetTextAsync()
                     let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges document
@@ -53,4 +53,4 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
                             Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
                         |> Seq.toImmutableArray
                 }
-                |> CancellableTask.start cancellationToken
+                |> Async2.startInThreadPool cancellationToken

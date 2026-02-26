@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -9,7 +9,7 @@ open System.Composition
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingRecToMutuallyRecFunctions); Shared>]
 type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingConstructor>] () =
@@ -23,8 +23,8 @@ type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingCons
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+            async2 {
+                let! cancellationToken = Async2.CancellationToken
 
                 let! defines, langVersion, strictIndentation =
                     context.Document.GetFsharpParsingOptionsAsync(nameof (AddMissingRecToMutuallyRecFunctionsCodeFixProvider))

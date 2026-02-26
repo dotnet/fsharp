@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -20,7 +20,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Tokenization
-open CancellableTasks
+open Internal.Utilities.Library
 
 type SignatureHelpParameterInfo =
     {
@@ -316,7 +316,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         return adjustedColumnInSource
                 }
 
-            let! ct = Async.CancellationToken |> liftAsync
+            let! ct = liftAsync Async2.CancellationToken
 
             let! lexerSymbol =
                 Tokenizer.getSymbolAtPosition (
@@ -618,11 +618,9 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
             let! parseResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp")
-                |> CancellableTask.start CancellationToken.None
-                |> Async.AwaitTask
                 |> liftAsync
 
-            let! sourceText = document.GetTextAsync() |> liftTaskAsync
+            let! sourceText = document.GetTextAsync()
 
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
@@ -725,7 +723,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         None
 
                 let doWork () =
-                    async {
+                    async2 {
                         let! signatureHelpDataOpt =
                             FSharpSignatureHelpProvider.ProvideSignatureHelp(
                                 document,
@@ -784,5 +782,5 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
                 return! doWork ()
             }
-            |> Async.map Option.toObj
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> Async2.map Option.toObj
+            |> Async2.startAsTask cancellationToken

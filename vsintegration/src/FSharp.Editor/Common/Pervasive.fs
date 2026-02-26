@@ -4,6 +4,7 @@ module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 open System
 open System.IO
 open System.Diagnostics
+open Internal.Utilities.Library
 
 /// Checks if the filePath ends with ".fsi"
 let inline isSignatureFile (filePath: string) =
@@ -105,23 +106,23 @@ let maybe = MaybeBuilder()
 [<Sealed; NoComparison; NoEquality>]
 type AsyncMaybeBuilder() =
     [<DebuggerStepThrough>]
-    member inline _.Return value : Async<'T option> = async.Return(Some value)
+    member inline _.Return value : Async2<'T option> = Async2.fromValue (Some value)
 
     [<DebuggerStepThrough>]
-    member inline _.ReturnFrom value : Async<'T option> = value
+    member inline _.ReturnFrom value : Async2<'T option> = value
 
     [<DebuggerStepThrough>]
-    member inline _.ReturnFrom(value: 'T option) : Async<'T option> = async.Return value
+    member inline _.ReturnFrom(value: 'T option) : Async2<'T option> = Async2.fromValue value
 
     [<DebuggerStepThrough>]
-    member inline _.Zero() : Async<unit option> = async.Return(Some())
+    member inline _.Zero() : Async2<unit option> = Async2.fromValue (Some())
 
     [<DebuggerStepThrough>]
-    member inline _.Delay([<InlineIfLambda>] f: unit -> Async<'T option>) : Async<'T option> = async.Delay f
+    member inline _.Delay([<InlineIfLambda>] f: unit -> Async2<'T option>) : Async2<'T option> = async2 { return! f () }
 
     [<DebuggerStepThrough>]
-    member _.Combine(r1, r2: Async<'T option>) : Async<'T option> =
-        async {
+    member _.Combine(r1, r2: Async2<'T option>) : Async2<'T option> =
+        async2 {
             let! r1' = r1
 
             match r1' with
@@ -130,8 +131,8 @@ type AsyncMaybeBuilder() =
         }
 
     [<DebuggerStepThrough>]
-    member inline _.Bind(value: Async<'T option>, [<InlineIfLambda>] f: 'T -> Async<'U option>) : Async<'U option> =
-        async {
+    member inline _.Bind(value: Async2<'T option>, [<InlineIfLambda>] f: 'T -> Async2<'U option>) : Async2<'U option> =
+        async2 {
             let! value' = value
 
             match value' with
@@ -140,63 +141,71 @@ type AsyncMaybeBuilder() =
         }
 
     [<DebuggerStepThrough>]
-    member inline _.Bind(value: System.Threading.Tasks.Task<'T>, [<InlineIfLambda>] f: 'T -> Async<'U option>) : Async<'U option> =
-        async {
+    member inline _.Bind(value: System.Threading.Tasks.Task<'T>, [<InlineIfLambda>] f: 'T -> Async2<'U option>) : Async2<'U option> =
+        async2 {
             let! value' = Async.AwaitTask value
             return! f value'
         }
 
     [<DebuggerStepThrough>]
-    member inline _.Bind(value: 'T option, [<InlineIfLambda>] f: 'T -> Async<'U option>) : Async<'U option> =
-        async {
+    member inline _.Bind(value: 'T option, [<InlineIfLambda>] f: 'T -> Async2<'U option>) : Async2<'U option> =
+        async2 {
             match value with
             | None -> return None
             | Some result -> return! f result
         }
 
     [<DebuggerStepThrough>]
-    member inline _.Bind(value: 'T voption, [<InlineIfLambda>] f: 'T -> Async<'U option>) : Async<'U option> =
-        async {
+    member inline _.Bind(value: 'T voption, [<InlineIfLambda>] f: 'T -> Async2<'U option>) : Async2<'U option> =
+        async2 {
             match value with
             | ValueNone -> return None
             | ValueSome result -> return! f result
         }
 
     [<DebuggerStepThrough>]
-    member inline _.Using(resource: ('T :> IDisposable), [<InlineIfLambda>] body: 'T -> Async<'U option>) : Async<'U option> =
-        async {
+    member inline _.Using(resource: ('T :> IDisposable), [<InlineIfLambda>] body: 'T -> Async2<'U option>) : Async2<'U option> =
+        async2 {
             use resource = resource
             return! body resource
         }
 
     [<DebuggerStepThrough>]
-    member x.While(guard, body: Async<_ option>) : Async<_ option> =
+    member x.While(guard, body: Async2<_ option>) : Async2<_ option> =
         if guard () then
             x.Bind(body, (fun () -> x.While(guard, body)))
         else
             x.Zero()
 
     [<DebuggerStepThrough>]
-    member inline x.For(sequence: seq<_>, [<InlineIfLambda>] body: 'T -> Async<unit option>) : Async<unit option> =
+    member inline x.For(sequence: seq<_>, [<InlineIfLambda>] body: 'T -> Async2<unit option>) : Async2<unit option> =
         x.Using(sequence.GetEnumerator(), (fun enum -> x.While(enum.MoveNext, x.Delay(fun () -> body enum.Current))))
 
     [<DebuggerStepThrough>]
-    member inline _.TryWith(computation: Async<'T option>, catchHandler: exn -> Async<'T option>) : Async<'T option> =
-        async.TryWith(computation, catchHandler)
+    member inline _.TryWith(computation: Async2<'T option>, catchHandler: exn -> Async2<'T option>) : Async2<'T option> =
+        async2 {
+            try
+                return! computation
+            with ex ->
+                return! catchHandler ex
+        }
 
     [<DebuggerStepThrough>]
-    member inline _.TryFinally(computation: Async<'T option>, compensation: unit -> unit) : Async<'T option> =
-        async.TryFinally(computation, compensation)
+    member inline _.TryFinally(computation: Async2<'T option>, compensation: unit -> unit) : Async2<'T option> =
+        async2 {
+            try
+                return! computation
+            finally
+                compensation ()
+        }
 
 let asyncMaybe = AsyncMaybeBuilder()
 
-let inline liftAsync (computation: Async<'T>) : Async<'T option> =
-    async {
+let inline liftAsync computation : Async2<'T option> =
+    async2 {
         let! a = computation
         return Some a
     }
-
-let liftTaskAsync task = task |> Async.AwaitTask |> liftAsync
 
 module Array =
     /// Returns a new array with an element replaced with a given value.

@@ -20,7 +20,7 @@ open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Shell
 open VisualFSharp.UnitTests.Editor
 open Xunit
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 
 module WorkspaceTests =
 
@@ -167,14 +167,14 @@ module WorkspaceTests =
 
     let assertEmptyDocumentDiagnostics (workspace: Workspace) (filePath: string) =
         let doc = getDocument workspace filePath
-        let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertEmptyDocumentDiagnostics") |> CancellableTask.runSynchronouslyWithoutCancellation
+        let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertEmptyDocumentDiagnostics") |> Async2.RunSynchronously
         
         Assert.Empty(parseResults.Diagnostics)
         Assert.Empty(checkResults.Diagnostics)
 
     let assertHasDocumentDiagnostics (workspace: Workspace) (filePath: string) =
         let doc = getDocument workspace filePath
-        let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertHasDocumentDiagnostics") |> CancellableTask.runSynchronouslyWithoutCancellation
+        let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertHasDocumentDiagnostics") |> Async2.RunSynchronously
         
         Assert.Empty(parseResults.Diagnostics)
         Assert.NotEmpty(checkResults.Diagnostics)

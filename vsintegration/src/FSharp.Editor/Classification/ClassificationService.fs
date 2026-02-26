@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -16,7 +16,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Tokenization
-open CancellableTasks
+open Internal.Utilities.Library
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 // IEditorClassificationService is marked as Obsolete, but is still supported. The replacement (IClassificationService)
@@ -160,10 +160,10 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                 System.Threading.Tasks.Task.CompletedTask
             else
 
-                cancellableTask {
+                async2 {
                     use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
 
-                    let! cancellationToken = CancellableTask.getCancellationToken ()
+                    let! cancellationToken = Async2.CancellationToken
 
                     let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
@@ -203,7 +203,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             cancellationToken
                         )
                 }
-                |> CancellableTask.startAsTask cancellationToken
+                |> Async2.startAsUnitTask cancellationToken
 
         member _.AddSemanticClassificationsAsync
             (document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken)
@@ -213,7 +213,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                 System.Threading.Tasks.Task.CompletedTask
             else
 
-                cancellableTask {
+                async2 {
                     use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
 
                     let! sourceText = document.GetTextAsync(cancellationToken)
@@ -301,8 +301,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                                 addSemanticClassification sourceText textSpan classificationData result
                 }
-                |> CancellableTask.ifCanceledReturn ()
-                |> CancellableTask.startAsTask cancellationToken
+                //|> CancellableTask.ifCanceledReturn ()
+                |> Async2.startAsUnitTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
         member _.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan

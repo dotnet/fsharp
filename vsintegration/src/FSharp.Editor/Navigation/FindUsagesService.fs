@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
-open CancellableTasks
+open Internal.Utilities.Library
 
 module FSharpFindUsagesService =
 
@@ -28,8 +28,8 @@ module FSharpFindUsagesService =
         (doc: Document)
         (symbolUse: range)
         =
-        cancellableTask {
-            let! cancellationToken = CancellableTask.getCancellationToken ()
+        async2 {
+            let! cancellationToken = Async2.CancellationToken
             let! sourceText = doc.GetTextAsync(cancellationToken)
 
             match declarationRange, RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
@@ -61,17 +61,17 @@ module FSharpFindUsagesService =
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
     let rangeToDocumentSpans (solution: Solution, range: range, symbolName: string) =
         if range.Start = range.End then
-            CancellableTask.singleton [||]
+            Async2.fromValue [||]
         else
-            cancellableTask {
+            async2 {
                 let documentIds = solution.GetDocumentIdsWithFilePath(range.FileName)
 
                 let! spans =
                     seq {
                         for documentId in documentIds do
-                            cancellableTask {
+                            async2 {
                                 let doc = solution.GetDocument(documentId)
-                                let! cancellationToken = CancellableTask.getCancellationToken ()
+                                let! cancellationToken = Async2.CancellationToken
                                 let! sourceText = doc.GetTextAsync(cancellationToken)
 
                                 match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, range, symbolName) with
@@ -79,16 +79,16 @@ module FSharpFindUsagesService =
                                 | ValueNone -> return None
                             }
                     }
-                    |> CancellableTask.whenAll
+                    |> Async2.whenAll
 
                 return spans |> Array.choose id
             }
 
     let findReferencedSymbolsAsync
         (document: Document, position: int, context: IFSharpFindUsagesContext, allReferences: bool, userOp: string)
-        : CancellableTask<unit> =
-        cancellableTask {
-            let! cancellationToken = CancellableTask.getCancellationToken ()
+        : Async2<unit> =
+        async2 {
+            let! cancellationToken = Async2.CancellationToken
             let! sourceText = document.GetTextAsync(cancellationToken)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
@@ -120,7 +120,7 @@ module FSharpFindUsagesService =
                     let! declarationSpans =
                         match declarationRange with
                         | Some range -> rangeToDocumentSpans (document.Project.Solution, range, symbol.Ident.idText)
-                        | None -> CancellableTask.singleton [||]
+                        | None -> Async2.fromValue [||]
 
                     let declarationSpans =
                         declarationSpans
@@ -169,8 +169,8 @@ type internal FSharpFindUsagesService [<ImportingConstructor>] () =
     interface IFSharpFindUsagesService with
         member _.FindReferencesAsync(document, position, context) =
             findReferencedSymbolsAsync (document, position, context, true, nameof (FSharpFindUsagesService))
-            |> CancellableTask.startAsTask context.CancellationToken
+            |> Async2.startAsUnitTask context.CancellationToken
 
         member _.FindImplementationsAsync(document, position, context) =
             findReferencedSymbolsAsync (document, position, context, false, nameof (FSharpFindUsagesService))
-            |> CancellableTask.startAsTask context.CancellationToken
+            |> Async2.startAsUnitTask context.CancellationToken

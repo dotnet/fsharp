@@ -13,7 +13,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ReplaceWithSuggestion); Shared>]
 type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] () =
@@ -29,7 +29,7 @@ type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] () =
 
     interface IFSharpMultiCodeFixProvider with
         member _.GetCodeFixesAsync context =
-            cancellableTask {
+            async2 {
                 let! parseFileResults, checkFileResults =
                     context.Document.GetFSharpParseAndCheckResultsAsync(nameof ReplaceWithSuggestionCodeFixProvider)
 

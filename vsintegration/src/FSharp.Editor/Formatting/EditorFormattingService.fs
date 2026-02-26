@@ -15,6 +15,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Tokenization
 open System.Threading
 open System.Windows.Forms
+open Internal.Utilities.Library
 
 [<Export(typeof<IFSharpEditorFormattingService>)>]
 type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: EditorOptions) =
@@ -185,9 +186,9 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
         }
 
     member _.GetFormattingChangesAsync(document: Document, position: int, cancellationToken: CancellationToken) =
-        async {
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
+        async2 {
+            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! options = document.GetOptionsAsync(cancellationToken)
 
             let indentStyle =
                 options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
@@ -210,9 +211,9 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
         }
 
     member _.OnPasteAsync(document: Document, span: TextSpan, currentClipboard: string, cancellationToken: CancellationToken) =
-        async {
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
+        async2 {
+            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! options = document.GetOptionsAsync(cancellationToken)
 
             let tabSize =
                 options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
@@ -253,19 +254,19 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
                 false
 
         override _.GetFormattingChangesAsync(_document, _span, cancellationToken) =
-            async { return ResizeArray() :> IList<_> }
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            async2 { return ResizeArray() :> IList<_> }
+            |> Async2.startAsTask cancellationToken
 
         override this.GetFormattingChangesOnPasteAsync(document, span, cancellationToken) =
             let currentClipboard = Clipboard.GetText()
 
             this.OnPasteAsync(document, span, currentClipboard, cancellationToken)
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> Async2.startAsTask cancellationToken
 
         override this.GetFormattingChangesAsync(document, _typedChar, position, cancellationToken) =
             this.GetFormattingChangesAsync(document, position, cancellationToken)
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> Async2.startAsTask cancellationToken
 
         override this.GetFormattingChangesOnReturnAsync(document, position, cancellationToken) =
             this.GetFormattingChangesAsync(document, position, cancellationToken)
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> Async2.startAsTask cancellationToken

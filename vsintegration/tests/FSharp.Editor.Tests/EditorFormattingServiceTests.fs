@@ -10,6 +10,7 @@ open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis.Formatting
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
+open Internal.Utilities.Library
 
 type EditorFormattingServiceTests() =
     let filePath = "C:\\test.fs"
@@ -82,7 +83,7 @@ marker4"""
                 position,
                 System.Threading.CancellationToken.None
             )
-            |> Async.RunSynchronously
+            |> Async2.RunSynchronously
 
         match changesOpt with
         | None -> failwith "Expected a text change, but got None"
@@ -146,7 +147,7 @@ somethingElseHere
                 clipboard,
                 span
             )
-            |> Async.RunSynchronously
+            |> Async2.RunSynchronously
             |> Option.map List.ofSeq
 
         if enabled then
@@ -213,7 +214,7 @@ somethingElseHere
                 clipboard,
                 span
             )
-            |> Async.RunSynchronously
+            |> Async2.RunSynchronously
             |> Option.map List.ofSeq
 
         match changesOpt with
@@ -277,7 +278,7 @@ somethingElseHere
                 clipboard,
                 span
             )
-            |> Async.RunSynchronously
+            |> Async2.RunSynchronously
             |> Option.map List.ofSeq
 
         match changesOpt with

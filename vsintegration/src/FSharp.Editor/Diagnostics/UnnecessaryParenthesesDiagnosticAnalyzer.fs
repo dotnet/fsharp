@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -12,7 +12,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
-open CancellableTasks
+open Internal.Utilities.Library
 
 // This interface is not defined in Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 // and so we are not currently exporting the type below as an implementation of it
@@ -51,8 +51,8 @@ type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] 
     static let semaphore = new SemaphoreSlim 3
 
     static member GetDiagnostics(document: Document) =
-        cancellableTask {
-            let! cancellationToken = CancellableTask.getCancellationToken ()
+        async2 {
+            let! cancellationToken = Async2.CancellationToken
             let! textVersion = document.GetTextVersionAsync cancellationToken
             let textVersionHash = textVersion.GetHashCode()
 
@@ -122,4 +122,4 @@ type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] 
 
         member _.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) =
             UnnecessaryParenthesesDiagnosticAnalyzer.GetDiagnostics document
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken

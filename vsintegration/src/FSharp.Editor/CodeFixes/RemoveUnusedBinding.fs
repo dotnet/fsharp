@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -10,7 +10,7 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnusedBinding); Shared>]
 type internal RemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
@@ -31,8 +31,8 @@ type internal RemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
-                let! token = CancellableTask.getCancellationToken ()
+            async2 {
+                let! token = Async2.CancellationToken
 
                 let! sourceText = context.Document.GetTextAsync token
                 let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof RemoveUnusedBindingCodeFixProvider)
