@@ -7344,19 +7344,12 @@ and ExprRequiresWitness cenv m expr =
             ReportWarnings warns
             res
         | ErrorResult _ ->
-            // If all support types are concrete (not typars), this is a real failure
-            // that should not silently take the non-witness path.
-            let allConcrete =
-                traitInfo.SupportTypes
-                |> List.forall (fun ty -> not (isTyparTy g ty))
-            if allConcrete then
-                // This shouldn't happen — type-checking should have caught it.
-                // But defensively, returning false means "don't use witness path"
-                // which leads to the dynamic invocation fallback (safer than broken witnesses).
-                false
-            else
-                // Unsolved typars — genuinely don't know. false = don't use witness path.
-                false
+            // Constraint resolution failed. This means either:
+            // - All support types are concrete but resolution still failed (shouldn't happen —
+            //   type-checking should have caught it), or
+            // - Support types contain unsolved typars so we genuinely don't know.
+            // Either way, return false → don't use witness path → fall back to dynamic invocation.
+            false
     | _ -> false
 
 /// Generate statically-resolved conditionals used for type-directed optimizations in FSharp.Core only.
