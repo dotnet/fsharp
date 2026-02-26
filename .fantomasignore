@@ -13,6 +13,7 @@ artifacts/
 
 # For some reason, it tries to format files from remotes (Processing ./.git/refs/remotes/<remote>/FSComp.fsi)
 .git/
+.github/skills/
 
 # Explicitly unformatted implementation
 src/Compiler/Checking/AccessibilityLogic.fs

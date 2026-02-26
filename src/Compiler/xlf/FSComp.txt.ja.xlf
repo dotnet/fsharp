@@ -437,6 +437,11 @@
         <target state="translated">開始と終了を指定したスライス</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImplicitDIMCoverage">
+        <source>Implicit dispatch slot coverage for default interface member implementations</source>
+        <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
         <target state="translated">暗黙的な yield</target>
@@ -605,6 +610,11 @@
       <trans-unit id="featureReturnFromFinal">
         <source>Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</source>
         <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMethodOverloadsCache">
+        <source>Support for caching method overload resolution results for improved compilation performance.</source>
+        <target state="new">Support for caching method overload resolution results for improved compilation performance.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
@@ -1440,6 +1450,11 @@
       <trans-unit id="tcDowncastFromNullableToWithoutNull">
         <source>Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</source>
         <target state="new">Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDuplicateExtensionMemberNames">
+        <source>Extension members extending types with the same simple name '{0}' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.</source>
+        <target state="new">Extension members extending types with the same simple name '{0}' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">

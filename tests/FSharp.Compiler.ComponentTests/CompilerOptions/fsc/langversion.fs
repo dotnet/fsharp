@@ -53,23 +53,23 @@ printfn "Hello, World"
         |> ignore
 
     [<Fact>]
-    let ``fsc langversion supports simple version number - --langversion:5``() =
+    let ``fsc langversion supports simple version number - --langversion:8``() =
         FSharp """
     printfn "Hello, World"
         """
         |> asExe
-        |> withOptions ["--langversion:5"]
+        |> withOptions ["--langversion:8"]
         |> compile
         |> shouldSucceed
         |> ignore
 
     [<Fact>]
-    let ``fsc langversion supports full version number - --langversion:5_0``() =
+    let ``fsc langversion supports full version number - --langversion:8_0``() =
         FSharp """
     printfn "Hello, World"
         """
         |> asExe
-        |> withOptions ["--langversion:5.0"]
+        |> withOptions ["--langversion:8.0"]
         |> compile
         |> shouldSucceed
         |> ignore
