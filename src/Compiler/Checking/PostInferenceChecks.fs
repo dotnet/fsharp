@@ -1641,9 +1641,7 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
                 match vref.TryDeref with
                 | ValueSome v ->
                     v.MemberApparentEntity.IsStructOrEnumTycon
-                    && (match cenv.g.attrib_UnscopedRefAttribute_opt with
-                        | Some unscopedRefAttrib -> HasFSharpAttribute cenv.g unscopedRefAttrib v.Attribs
-                        | None -> false)
+                    && HasFSharpAttributeOpt cenv.g cenv.g.attrib_UnscopedRefAttribute_opt v.Attribs
                 | ValueNone -> false
             | _ -> false
 
@@ -2068,15 +2066,13 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
             if paramArgInfos.Length = restArgs.Length then
                 (restArgs, paramArgInfos)
                 ||> List.iter2 (fun v ai ->
-                    match cenv.g.attrib_ScopedRefAttribute_opt with
-                    | Some scopedRefAttrib when HasFSharpAttribute cenv.g scopedRefAttrib ai.Attribs ->
+                    if HasFSharpAttributeOpt cenv.g cenv.g.attrib_ScopedRefAttribute_opt ai.Attribs then
                         let flags =
                             if isByrefTy cenv.g v.Type then LimitFlags.ByRef
                             elif isSpanLikeTy cenv.g mOrig v.Type then LimitFlags.StackReferringSpanLike
                             else LimitFlags.None
 
-                        LimitVal cenv v { scope = 1; flags = flags }
-                    | _ -> ())
+                        LimitVal cenv v { scope = 1; flags = flags })
 
         match memInfo with
         | None -> ()
@@ -2457,30 +2453,27 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
 
                     (baseParams, overrideParams)
                     ||> List.iteri2 (fun i (TSlotParam(_, _, _, _, _, baseAttribs)) overridePi ->
-                        match g.attrib_ScopedRefAttribute_opt with
-                        | Some scopedRefAttrib ->
-                            let baseIsScoped =
-                                HasFSharpAttribute g scopedRefAttrib baseAttribs
-                                || (match ilScopedMask with
-                                    | Some mask when i < mask.Length -> mask.[i]
-                                    | _ -> false)
+                        let baseIsScoped =
+                            HasFSharpAttributeOpt g g.attrib_ScopedRefAttribute_opt baseAttribs
+                            || (match ilScopedMask with
+                                | Some mask when i < mask.Length -> mask.[i]
+                                | _ -> false)
 
-                            let overrideIsScoped =
-                                HasFSharpAttribute g scopedRefAttrib overridePi.Attribs
+                        let overrideIsScoped =
+                            HasFSharpAttributeOpt g g.attrib_ScopedRefAttribute_opt overridePi.Attribs
 
-                            if baseIsScoped && not overrideIsScoped then
-                                let paramName =
-                                    match overridePi.Name with
-                                    | Some id -> id.idText
-                                    | None -> "unknown"
+                        if baseIsScoped && not overrideIsScoped then
+                            let paramName =
+                                match overridePi.Name with
+                                | Some id -> id.idText
+                                | None -> "unknown"
 
-                                warning (
-                                    Error(
-                                        FSComp.SR.chkScopedRefParamWidenedInOverride (v.DisplayName, paramName),
-                                        v.Range
-                                    )
+                            warning (
+                                Error(
+                                    FSComp.SR.chkScopedRefParamWidenedInOverride (v.DisplayName, paramName),
+                                    v.Range
                                 )
-                        | None -> ())
+                            ))
         | _ -> ()
 
     if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis && cenv.reportErrors then
