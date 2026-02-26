@@ -3045,6 +3045,62 @@ let test () : Span<int> =
         |> compile
         |> shouldSucceed
 
+    // ---- T4: Explicit interface implementation override variance ----
+
+    let private scopeVarianceCSharpInterfaceLib =
+        CSharp """
+using System;
+public interface IFoo
+{
+    Span<int> M(scoped ref int x, int[] arr);
+}
+"""     |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+        |> withName "ScopeVarianceInterface"
+
+    let private interfaceImplWideningFSharpSource = """
+module Test
+open System
+
+type Impl() =
+    interface IFoo with
+        member _.M(x: byref<int>, arr: int[]) = Span<int>(arr)
+"""
+
+    [<Fact>]
+    let ``Explicit interface impl widens scoped parameter from CSharp base`` () =
+        FSharp interfaceImplWideningFSharpSource
+        |> withReferences [scopeVarianceCSharpInterfaceLib]
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withWarningCode 3882
+
+    [<Fact>]
+    let ``Explicit interface impl keeps scoped parameter from CSharp base`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+type Impl() =
+    interface IFoo with
+        member _.M([<ScopedRef>] x: byref<int>, arr: int[]) = Span<int>(arr)
+"""
+        |> withReferences [scopeVarianceCSharpInterfaceLib]
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Explicit interface impl widens scoped parameter backward compat`` () =
+        FSharp interfaceImplWideningFSharpSource
+        |> withReferences [scopeVarianceCSharpInterfaceLib]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER

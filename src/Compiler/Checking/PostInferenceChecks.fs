@@ -2429,7 +2429,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                     | None -> []
 
                 if baseParams.Length = overrideParams.Length then
-                    // Reuse tryGetScopedParamMask for IL-based scoped attribute detection (C# interop)
+                    // Use computeScopedMask for full IL scoped mask (explicit + implicit + UnscopedRef negation)
                     let ilScopedMask =
                         let declaringTy = slotSig.DeclaringType
                         if isAppTy g declaringTy then
@@ -2438,7 +2438,13 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                             | TILObjectRepr(TILObjectReprData(_scoref, _, tdef)) ->
                                 tdef.Methods.FindByName(slotSig.Name)
                                 |> List.tryFind (fun (md: ILMethodDef) -> md.Parameters.Length = baseParams.Length)
-                                |> Option.bind (fun md -> tryGetScopedParamMask g md)
+                                |> Option.bind (fun methDef ->
+                                    let refSafetyVersion =
+                                        if tcRef.IsLocalRef then 0
+                                        else
+                                            try tcRef.nlr.Ccu.Deref.RefSafetyRulesVersion
+                                            with _ -> 0
+                                    computeScopedMask cenv v.Range methDef [] refSafetyVersion)
                             | _ -> None
                         else
                             None
