@@ -978,3 +978,65 @@ type Q3 = struct end
         """
         |> typecheck
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Sealed(false) allows inheritance`` () =
+        Fsx """
+[<Sealed(false)>]
+type Base() =
+    member _.X = 1
+
+type Derived() =
+    inherit Base()
+    member _.Y = 2
+
+let d = Derived()
+if d.X <> 1 || d.Y <> 2 then failwith "unexpected"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Sealed with no arg prevents inheritance`` () =
+        Fsx """
+[<Sealed>]
+type Base() =
+    member _.X = 1
+
+type Derived() =
+    inherit Base()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 945, Line 7, Col 13, Line 7, Col 17, "Cannot inherit a sealed type")
+        ]
+
+    [<Fact>]
+    let ``Sealed(true) prevents inheritance`` () =
+        Fsx """
+[<Sealed(true)>]
+type Base() =
+    member _.X = 1
+
+type Derived() =
+    inherit Base()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 945, Line 7, Col 13, Line 7, Col 17, "Cannot inherit a sealed type")
+        ]
+
+    [<Fact>]
+    let ``DefaultAugmentation(false) suppresses helpers`` () =
+        Fsx """
+[<DefaultAugmentation(false)>]
+type DU = A | B of int
+
+// Without DefaultAugmentation(false), DU would have IsA/IsB properties
+// With it, only tags are available
+let x = match DU.A with A -> 1 | B _ -> 2
+        """
+        |> typecheck
+        |> shouldSucceed

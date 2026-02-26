@@ -4665,7 +4665,6 @@ type WellKnownEntityAttributes =
     | StructLayoutAttribute = 0x4000uL
     | DllImportAttribute = 0x8000uL
     | ReflectedDefinitionAttribute = 0x10000uL
-    | GeneralizableValueAttribute = 0x20000uL
     | SkipLocalsInitAttribute = 0x40000uL
     | DebuggerTypeProxyAttribute = 0x80000uL
     | ComVisibleAttribute = 0x100000uL
@@ -4764,6 +4763,7 @@ type WellKnownValAttributes =
     | ReflectedDefinitionAttribute_False = 0x4000000uL
     | DefaultValueAttribute_False = 0x8000000uL
     | NoDynamicInvocationAttribute_False = 0x10000000uL
+    | GeneralizableValueAttribute = 0x20000000uL
     | NotComputed = 0x8000000000000000uL
 
 /// Wraps an Attrib list together with cached WellKnownValAttributes flags for O(1) lookup.

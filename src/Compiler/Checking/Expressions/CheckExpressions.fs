@@ -2164,7 +2164,7 @@ module GeneralizationHelpers =
 
         // Applications of type functions are _not_ normally generalizable unless explicitly marked so
         | Expr.App (Expr.Val (vref, _, _), _, _, [], _) when vref.IsTypeFunction ->
-            HasFSharpAttribute g g.attrib_GeneralizableValueAttribute vref.Attribs // TODO: WELLKNOWN_ATTRIB
+            ValHasWellKnownAttribute g WellKnownValAttributes.GeneralizableValueAttribute vref.Deref
 
         | Expr.App (expr1, _, _, [], _) -> IsGeneralizableValue g expr1
         | Expr.TyChoose (_, b, _) -> IsGeneralizableValue g b
@@ -11147,7 +11147,8 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 | _ -> false
             | _ -> false
 
-        if valAttribFlags &&& (WellKnownValAttributes.DefaultValueAttribute_True ||| WellKnownValAttributes.DefaultValueAttribute_False) <> WellKnownValAttributes.None && not isZeroMethod then
+        let hasDefaultValueAttr = valAttribFlags &&& (WellKnownValAttributes.DefaultValueAttribute_True ||| WellKnownValAttributes.DefaultValueAttribute_False) <> WellKnownValAttributes.None
+        if hasDefaultValueAttr && not isZeroMethod then
             errorR(Error(FSComp.SR.tcDefaultValueAttributeRequiresVal(), mBinding))
 
         let isThreadStatic = isThreadOrContextStatic g valAttribs

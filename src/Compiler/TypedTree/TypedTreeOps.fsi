@@ -2375,7 +2375,7 @@ val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 val TryFindILAttributeOpt: BuiltinAttribInfo option -> ILAttributes -> bool
 
 /// Compute well-known attribute flags for an ILAttributes collection.
-val computeILWellKnownFlags: g: TcGlobals -> attrs: ILAttributes -> WellKnownILAttributes
+val computeILWellKnownFlags: _g: TcGlobals -> attrs: ILAttributes -> WellKnownILAttributes
 
 type ILAttributesStored with
 
@@ -2420,10 +2420,6 @@ val EntityTryGetBoolAttribute:
     falseFlag: WellKnownEntityAttributes ->
     entity: Entity ->
         bool option
-
-/// Query a three-state bool attribute on a Val. Returns bool option.
-val ValTryGetBoolAttribute:
-    g: TcGlobals -> trueFlag: WellKnownValAttributes -> falseFlag: WellKnownValAttributes -> v: Val -> bool option
 
 val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 

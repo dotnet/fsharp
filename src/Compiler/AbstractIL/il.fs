@@ -1321,7 +1321,6 @@ let mkILCustomAttrsComputed f =
 
 let mkILCustomAttrsReader f = ILAttributesStored.CreateReader(-1, f)
 
-let mkILCustomAttrsReaderWithIndex idx f = ILAttributesStored.CreateReader(idx, f)
 
 type ILCodeLabel = int
 

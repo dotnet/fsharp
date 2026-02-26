@@ -277,13 +277,9 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
     let attribs = argInfo.Attribs.AsList()
     let isParamArrayArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ParamArrayAttribute argInfo
     let reflArgInfo =
-        let _ = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ReflectedDefinitionAttribute_True argInfo
-
-        let wa = argInfo.Attribs
-
-        if wa.HasWellKnownAttribute(WellKnownValAttributes.ReflectedDefinitionAttribute_True) then
+        if ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ReflectedDefinitionAttribute_True argInfo then
             ReflectedArgInfo.Quote true
-        elif wa.HasWellKnownAttribute(WellKnownValAttributes.ReflectedDefinitionAttribute_False) then
+        elif ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ReflectedDefinitionAttribute_False argInfo then
             ReflectedArgInfo.Quote false
         else
             ReflectedArgInfo.None
