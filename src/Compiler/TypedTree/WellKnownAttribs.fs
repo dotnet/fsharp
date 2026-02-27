@@ -89,6 +89,7 @@ type internal WellKnownValAttributes =
     | NoDynamicInvocationAttribute_False = (1uL <<< 28)
     | GeneralizableValueAttribute = (1uL <<< 29)
     | CLIEventAttribute = (1uL <<< 30)
+    | NonSerializedAttribute = (1uL <<< 31)
     | NotComputed = (1uL <<< 63)
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.

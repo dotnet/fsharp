@@ -11155,9 +11155,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             ]
 
                         let ilNotSerialized =
-                            match g.attrib_NonSerializedAttribute with
-                            | Some attr -> HasFSharpAttribute g attr attribs
-                            | None -> false
+                            attribsHaveValFlag g WellKnownValAttributes.NonSerializedAttribute attribs
 
                         let fattribs =
                             attribs

@@ -3915,6 +3915,7 @@ let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAtt
                     | "ThreadStaticAttribute" -> flags <- flags ||| WellKnownValAttributes.ThreadStaticAttribute
                     | "ContextStaticAttribute" -> flags <- flags ||| WellKnownValAttributes.ContextStaticAttribute
                     | "ParamArrayAttribute" -> flags <- flags ||| WellKnownValAttributes.ParamArrayAttribute
+                    | "NonSerializedAttribute" -> flags <- flags ||| WellKnownValAttributes.NonSerializedAttribute
                     | _ -> ()
 
                 | _ -> ())
