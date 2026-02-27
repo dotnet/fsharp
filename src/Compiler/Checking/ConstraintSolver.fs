@@ -1039,6 +1039,10 @@ and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
 // nullness2: expected
 and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
     match nullness1, nullness2 with
+    | Nullness.KnownFromConstructor, _ ->
+        SolveNullnessEquiv csenv m2 trace ty1 ty2 (Nullness.Known NullnessInfo.WithoutNull) nullness2
+    | _, Nullness.KnownFromConstructor ->
+        SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 (Nullness.Known NullnessInfo.WithoutNull)
     | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
         CompleteD
     | Nullness.Variable nv1, _ when nv1.IsSolved ->
@@ -1073,6 +1077,10 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
 // nullness2: source
 and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
     match nullness1, nullness2 with
+    | Nullness.KnownFromConstructor, _ ->
+        SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (Nullness.Known NullnessInfo.WithoutNull) nullness2
+    | _, Nullness.KnownFromConstructor ->
+        SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 (Nullness.Known NullnessInfo.WithoutNull)
     | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
         CompleteD
     | Nullness.Variable nv1, _ when nv1.IsSolved -> 
@@ -2752,6 +2760,8 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
         let m = csenv.m
         let denv = csenv.DisplayEnv
         match nullness with
+        | Nullness.KnownFromConstructor ->
+            do! SolveNullnessSupportsNull csenv ndeep m2 trace ty (Nullness.Known NullnessInfo.WithoutNull)
         | Nullness.Variable nv ->
             if nv.IsSolved then
                 do! SolveNullnessSupportsNull csenv ndeep m2 trace ty nv.Solution
@@ -2801,6 +2811,7 @@ and SolveNullnessNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: O
         let m = csenv.m
         let denv = csenv.DisplayEnv
         match nullness with
+        | Nullness.KnownFromConstructor -> ()
         | Nullness.Variable nv ->
             if nv.IsSolved then
                 do! SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nv.Solution

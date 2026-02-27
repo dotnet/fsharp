@@ -4371,16 +4371,27 @@ type RecdFieldRef =
 type Nullness = 
    | Known of NullnessInfo
    | Variable of NullnessVar
+   /// The value is known to be non-null because it was produced by a constructor call.
+   /// Evaluates as WithoutNull but bypasses AllowNullLiteral warnings for 'not null' constraints.
+   | KnownFromConstructor
+
+   /// Returns Known WithoutNull if KnownFromConstructor, otherwise identity.
+   member n.Normalize() =
+       match n with
+       | KnownFromConstructor -> Known NullnessInfo.WithoutNull
+       | n -> n
 
    member n.Evaluate() = 
        match n with 
        | Known info -> info
        | Variable v -> v.Evaluate()
+       | KnownFromConstructor -> NullnessInfo.WithoutNull
 
    member n.TryEvaluate() = 
        match n with 
        | Known info -> ValueSome info
        | Variable v -> v.TryEvaluate()
+       | KnownFromConstructor -> NullnessInfo.WithoutNull |> ValueSome
 
    override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
 
@@ -4407,6 +4418,7 @@ type NullnessVar() =
         match solution with
         | None -> false
         | Some (Nullness.Known _) -> true
+        | Some (Nullness.KnownFromConstructor) -> true
         | Some (Nullness.Variable v) -> v.IsFullySolved
 
     member nv.Set(nullness) = 
