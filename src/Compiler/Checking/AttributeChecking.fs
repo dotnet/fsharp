@@ -471,13 +471,13 @@ let CheckFSharpAttributesForHidden g attribs =
      | _ -> false)
 
 /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
-let CheckFSharpAttributesForObsolete (g:TcGlobals) attribs = 
-    not (isNil attribs) && 
-    (HasFSharpAttribute g g.attrib_SystemObsolete attribs) &&
-    // Exclude types marked with IsByRefLikeAttribute from being considered obsolete,
-    // even if ObsoleteAttribute is present. This avoids improper suppression of types 
-    // like Span and ReadOnlySpan in completion lists due to their dual attributes.
-    not (HasFSharpAttributeOpt g g.attrib_IsByRefLikeAttribute_opt attribs)
+let CheckFSharpAttributesForObsolete (g: TcGlobals) attribs =
+    not (isNil attribs)
+    && (attribsHaveEntityFlag g WellKnownEntityAttributes.ObsoleteAttribute attribs)
+    && // Exclude types marked with IsByRefLikeAttribute from being considered obsolete,
+       // even if ObsoleteAttribute is present. This avoids improper suppression of types
+       // like Span and ReadOnlySpan in completion lists due to their dual attributes.
+    not (attribsHaveEntityFlag g WellKnownEntityAttributes.IsByRefLikeAttribute attribs)
 
 /// Indicates if a list of F# attributes contains 'ObsoleteAttribute' or CompilerMessageAttribute', which has an IsHidden argument
 /// May be used to suppress items from intellisense.

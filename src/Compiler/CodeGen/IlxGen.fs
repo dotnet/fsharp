@@ -8955,7 +8955,8 @@ and GenParamAttribs cenv paramTy attribs =
         || isOutByrefTy g paramTy
 
     let optionalFlag =
-        valFlags &&& WellKnownValAttributes.OptionalAttribute <> WellKnownValAttributes.None
+        valFlags &&& WellKnownValAttributes.OptionalAttribute
+        <> WellKnownValAttributes.None
 
     let defaultValue =
         TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute attribs
@@ -11154,7 +11155,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             ]
 
                         let ilNotSerialized =
-                            HasFSharpAttributeOpt g g.attrib_NonSerializedAttribute attribs
+                            match g.attrib_NonSerializedAttribute with
+                            | Some attr -> HasFSharpAttribute g attr attribs
+                            | None -> false
 
                         let fattribs =
                             attribs

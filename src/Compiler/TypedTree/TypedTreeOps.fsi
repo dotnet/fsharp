@@ -2428,8 +2428,6 @@ val IsMatchingFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attri
 
 val HasFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool
 
-val HasFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> bool
-
 val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
 
 val TryFindFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> Attrib option
