@@ -3578,12 +3578,6 @@ let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _
 
 let (|AttribElemStringArg|_|) = function ILAttribElem.String(n) -> n | _ -> None
 
-let TryFindFSharpBoolAttribute g nm attrs =
-    match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [], _, _, _, _)) -> Some true
-    | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> Some b
-    | _ -> None
-
 let TryFindFSharpInt32Attribute g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
     | Some(Attrib(_, _, [ AttribInt32Arg b ], _, _, _, _)) -> Some b
