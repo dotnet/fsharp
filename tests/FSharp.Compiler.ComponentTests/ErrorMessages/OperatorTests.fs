@@ -17,3 +17,13 @@ let result = add id id
         |> shouldFail
         |> withSingleDiagnostic (Error 1, Line 3, Col 18, Line 3, Col 20,
                                  "Expecting a type supporting the operator '+' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.")
+
+    [<Fact>]
+    let ``SRTP operator scope hint is shown when tuple type given``() =
+        FSharp """
+let inline add (x: ^a) (y: ^a) = x + y
+let result = add (1, 2) (3, 4)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnosticMessageMatches "Expecting a type supporting the operator '\+' but given a tuple type. You may be missing an argument to a function, or the operator may not be in scope."

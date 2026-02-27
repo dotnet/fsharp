@@ -2382,3 +2382,17 @@ let foo() =
             (Error 10, Line 17, Col 5, Line 17, Col 6, "Unexpected symbol '}' in expression")
             (Error 3882, Line 15, Col 9, Line 15, Col 13, "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
         ]
+
+    [<Fact>]
+    let ``match! at end of computation expression is allowed``() =
+        FSharp """
+module ComputationExpressionTests
+let foo() =
+    async {
+        match! async { return 0 } with
+        | 0 -> return 1
+        | _ -> return 2
+    }
+        """
+        |> typecheck
+        |> shouldSucceed

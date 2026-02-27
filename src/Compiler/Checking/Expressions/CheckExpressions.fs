@@ -8261,7 +8261,9 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
         let isConstantPattern =
             match synPat with
             | SynPat.Const _
-            | SynPat.Paren(SynPat.Const _, _) -> true
+            | SynPat.Paren(SynPat.Const _, _)
+            | SynPat.Typed(SynPat.Const _, _, _)
+            | SynPat.Paren(SynPat.Typed(SynPat.Const _, _, _), _) -> true
             | _ -> false
 
         CompilePatternForMatch
@@ -10736,11 +10738,20 @@ and CheckRecursiveBindingIds binds =
             error(Duplicate("value", nm, m))
 
 /// Returns true if the expression is an elif chain that ends without a final 'else' branch.
-and elifChainMissingElse =
-    function
-    | SynExpr.IfThenElse(elseExpr = None) -> true
-    | SynExpr.IfThenElse(elseExpr = Some elseExpr) -> elifChainMissingElse elseExpr
-    | _ -> false
+and elifChainMissingElse expr =
+    let mutable current = expr
+    let mutable cont = true
+    let mutable result = false
+
+    while cont do
+        match current with
+        | SynExpr.IfThenElse(elseExpr = None) ->
+            result <- true
+            cont <- false
+        | SynExpr.IfThenElse(elseExpr = Some elseExpr) -> current <- elseExpr
+        | _ -> cont <- false
+
+    result
 
 /// Process a sequence of sequentials mixed with iterated lets "let ... in let ... in ..." in a tail recursive way
 /// This avoids stack overflow on really large "let" and "letrec" lists

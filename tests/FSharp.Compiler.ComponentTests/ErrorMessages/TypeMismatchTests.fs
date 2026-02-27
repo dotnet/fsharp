@@ -472,3 +472,12 @@ let f (x: Pair) : string = x
         |> withSingleDiagnostic (Error 1, Line 3, Col 28, Line 3, Col 29,
                                  "This expression was expected to have type\n    'string'    \nbut is a tuple of type\n    'Pair'    ")
 
+    [<Fact>]
+    let ``Struct tuple actual type says 'is a tuple of type'``() =
+        FSharp """
+let f () : string = struct(1, 2)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnosticMessageMatches "but is a tuple of type"
+
