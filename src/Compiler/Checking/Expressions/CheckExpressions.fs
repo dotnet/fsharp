@@ -697,6 +697,20 @@ let UnifyFunctionType extraInfo (cenv: cenv) denv mFunExpr ty =
         | Some argm -> error (NotAFunction(denv, ty, mFunExpr, argm))
         | None -> error (FunctionExpected(denv, ty, mFunExpr))
 
+let UnifyFunctionTypeAndRecover extraInfo (cenv: cenv) denv mFunExpr ty =
+    match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr ty with
+    | ValueSome res -> res
+    | ValueNone ->
+        match extraInfo with
+        | Some argm -> errorR (NotAFunction(denv, ty, mFunExpr, argm))
+        | None -> errorR (FunctionExpected(denv, ty, mFunExpr))
+
+        let g = cenv.g
+        let domainTy = NewInferenceType g
+        let resultTy = NewInferenceType g
+        domainTy, resultTy
+
+
 let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
     let checkExpr m expr =
         match stripDebugPoints expr with
@@ -787,13 +801,6 @@ let ForNewConstructors tcSink (env: TcEnv) mObjTy methodName meths =
     let callSink (item, minst) = CallMethodGroupNameResolutionSink tcSink (mObjTy, env.NameEnv, item, origItem, minst, ItemOccurrence.Use, env.AccessRights)
     let sendToSink minst refinedMeths = 
         callSink (Item.CtorGroup(methodName, refinedMeths), minst)
-        // #14902: Also register as Item.Value for Find All References
-        for meth in refinedMeths do
-            match meth with
-            | FSMeth(_, _, vref, _) when vref.IsConstructor ->
-                let shiftedRange = Range.mkRange mObjTy.FileName (Position.mkPos mObjTy.StartLine (mObjTy.StartColumn + 1)) mObjTy.End
-                CallNameResolutionSink tcSink (shiftedRange, env.NameEnv, Item.Value vref, minst, ItemOccurrence.Use, env.AccessRights)
-            | _ -> ()
     match meths with
     | [] ->
         AfterResolution.DoNothing
@@ -10081,7 +10088,7 @@ and TcMethodApplication_UniqueOverloadInference
         // type we assume the number of arguments is just "1".
         | None, _ ->
 
-            let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy.Commit
+            let domainTy, returnTy = UnifyFunctionTypeAndRecover None cenv denv mMethExpr exprTy.Commit
             let argTys = if isUnitTy g domainTy then [] else tryDestRefTupleTy g domainTy
             // Only apply this rule if a candidate method exists with this number of arguments
             let argTys =
@@ -10163,7 +10170,7 @@ and TcMethodApplication_CheckArguments
                 let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes cenv env exprTy.Commit calledMeth mMethExpr mItem
                 curriedArgTys, paramNamesIfFeatureEnabled g calledMeth, MustEqual returnTy
             | _ ->
-                let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy.Commit
+                let domainTy, returnTy = UnifyFunctionTypeAndRecover None cenv denv mMethExpr exprTy.Commit
                 let argTys = if isUnitTy g domainTy then [] else tryDestRefTupleTy g domainTy
                 // Only apply this rule if a candidate method exists with this number of arguments
                 let argTys, argNames =
