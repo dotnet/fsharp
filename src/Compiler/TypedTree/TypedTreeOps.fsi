@@ -2401,11 +2401,13 @@ val inline attribsHaveEntityFlag: g: TcGlobals -> flag: WellKnownEntityAttribute
 
 val tryFindEntityAttribByFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> Attrib option
 
-val tryFindEntityAttribString: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> string option
-
-val tryFindEntityAttribInt32: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> int option
+[<return: Struct>]
+val (|EntityAttrib|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> Attrib voption
 
 val inline attribsHaveValFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> bool
+
+[<return: Struct>]
+val (|ValAttrib|_|): g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> Attrib voption
 
 val EntityHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownEntityAttributes -> entity: Entity -> bool
 

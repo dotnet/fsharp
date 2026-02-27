@@ -1495,7 +1495,6 @@ type TcGlobals(
   member val attrib_PreserveSigAttribute = tryFindSysAttrib "System.Runtime.InteropServices.PreserveSigAttribute"
   member val attrib_MethodImplAttribute = findSysAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
   member val attrib_ExtensionAttribute = findSysAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
-  member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
   member val attrib_DecimalConstantAttribute = findSysAttrib "System.Runtime.CompilerServices.DecimalConstantAttribute"
   member val attribs_Unsupported = v_attribs_Unsupported
 

@@ -324,9 +324,9 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | true, false, false -> CallerLineNumber
         | false, true, false -> CallerFilePath
         | false, false, true -> CallerMemberName
-        | false, true, true -> 
-            match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute attribs with
-            | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
+        | false, true, true ->
+            match attribs with
+            | ValAttrib g WellKnownValAttributes.CallerMemberNameAttribute (Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
                 warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath
             | _ -> failwith "Impossible"

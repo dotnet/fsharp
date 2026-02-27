@@ -3418,7 +3418,10 @@ module EstablishTypeDefinitionCores =
             // are only used on exactly the right kinds of type definitions and not in conjunction with other attributes.
             let hasMeasureableAttr = entityFlags &&& WellKnownEntityAttributes.MeasureableAttribute <> WellKnownEntityAttributes.None
             
-            let structLayoutAttr = tryFindEntityAttribInt32 g WellKnownEntityAttributes.StructLayoutAttribute attrs
+            let structLayoutAttr =
+                match attrs with
+                | EntityAttrib g WellKnownEntityAttributes.StructLayoutAttribute (Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _)) -> Some v
+                | _ -> None
             let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute_True <> WellKnownEntityAttributes.None
 
             if hasAbstractAttr then 
@@ -3727,8 +3730,8 @@ module EstablishTypeDefinitionCores =
                                                   if isOptionTy g ty || isValueOptionTy g ty then
                                                       ty
                                                   else
-                                                      match TryFindFSharpAttribute g g.attrib_StructAttribute (argInfo.Attribs.AsList()) with
-                                                      | Some (Attrib(range=m)) ->
+                                                      match argInfo.Attribs.AsList() with
+                                                      | ValAttrib g WellKnownValAttributes.StructAttribute (Attrib(range=m)) ->
                                                           checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
                                                           mkValueOptionTy g ty
                                                       | _ ->

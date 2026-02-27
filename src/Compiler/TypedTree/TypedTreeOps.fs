@@ -3825,17 +3825,11 @@ let tryFindEntityAttribByFlag (g: TcGlobals) (flag: WellKnownEntityAttributes) (
     attribs
     |> List.tryFind (fun attrib -> classifyEntityAttrib g attrib &&& flag <> WellKnownEntityAttributes.None)
 
-/// Extract a string value from a well-known entity attribute. O(1) negative via flags.
-let tryFindEntityAttribString (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs: Attribs) : string option =
-    match tryFindEntityAttribByFlag g flag attribs with
-    | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> Some s
-    | _ -> None
-
-/// Extract an int32 value from a well-known entity attribute. O(1) negative via flags.
-let tryFindEntityAttribInt32 (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs: Attribs) : int option =
-    match tryFindEntityAttribByFlag g flag attribs with
-    | Some(Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _)) -> Some v
-    | _ -> None
+/// Active pattern: find a well-known entity attribute and return the full Attrib.
+/// Uses classifyEntityAttrib per-item (no cached flags needed).
+[<return: Struct>]
+let (|EntityAttrib|_|) (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs: Attribs) =
+    tryFindEntityAttribByFlag g flag attribs |> ValueOption.ofOption
 
 #if !NO_TYPEPROVIDERS
 /// Map a WellKnownILAttributes flag to its AttribInfo equivalent.
@@ -3882,86 +3876,93 @@ let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes)
     else
         ea.HasWellKnownAttribute(flag)
 
+/// Classify a single Val-level attribute, returning its well-known flag (or None).
+let classifyValAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownValAttributes =
+    let (Attrib(tcref, _, _, _, _, _, _)) = attrib
+    let mutable flag = WellKnownValAttributes.None
+
+    let fsharpCorePath =
+        resolveAttribPath g tcref (fun path ->
+            match path with
+            | [| "System"; "Runtime"; "CompilerServices"; name |] ->
+                match name with
+                | "SkipLocalsInitAttribute" -> flag <- WellKnownValAttributes.SkipLocalsInitAttribute
+                | "ExtensionAttribute" -> flag <- WellKnownValAttributes.ExtensionAttribute
+                | "CallerMemberNameAttribute" -> flag <- WellKnownValAttributes.CallerMemberNameAttribute
+                | "CallerFilePathAttribute" -> flag <- WellKnownValAttributes.CallerFilePathAttribute
+                | "CallerLineNumberAttribute" -> flag <- WellKnownValAttributes.CallerLineNumberAttribute
+                | "MethodImplAttribute" -> flag <- WellKnownValAttributes.MethodImplAttribute
+                | _ -> ()
+
+            | [| "System"; "Runtime"; "InteropServices"; name |] ->
+                match name with
+                | "DllImportAttribute" -> flag <- WellKnownValAttributes.DllImportAttribute
+                | "InAttribute" -> flag <- WellKnownValAttributes.InAttribute
+                | "OutAttribute" -> flag <- WellKnownValAttributes.OutAttribute
+                | "DefaultParameterValueAttribute" -> flag <- WellKnownValAttributes.DefaultParameterValueAttribute
+                | "OptionalAttribute" -> flag <- WellKnownValAttributes.OptionalAttribute
+                | "PreserveSigAttribute" -> flag <- WellKnownValAttributes.PreserveSigAttribute
+                | "FieldOffsetAttribute" -> flag <- WellKnownValAttributes.FieldOffsetAttribute
+                | _ -> ()
+
+            | [| "System"; "Diagnostics"; name |] ->
+                match name with
+                | "ConditionalAttribute" -> flag <- WellKnownValAttributes.ConditionalAttribute
+                | _ -> ()
+
+            | [| "System"; name |] ->
+                match name with
+                | "ThreadStaticAttribute" -> flag <- WellKnownValAttributes.ThreadStaticAttribute
+                | "ContextStaticAttribute" -> flag <- WellKnownValAttributes.ContextStaticAttribute
+                | "ParamArrayAttribute" -> flag <- WellKnownValAttributes.ParamArrayAttribute
+                | "NonSerializedAttribute" -> flag <- WellKnownValAttributes.NonSerializedAttribute
+                | _ -> ()
+
+            | _ -> ())
+
+    match fsharpCorePath with
+    | ValueSome path ->
+        match path with
+        | [| "Microsoft"; "FSharp"; "Core"; name |] ->
+            match name with
+            | "EntryPointAttribute" -> flag <- WellKnownValAttributes.EntryPointAttribute
+            | "LiteralAttribute" -> flag <- WellKnownValAttributes.LiteralAttribute
+            | "ReflectedDefinitionAttribute" ->
+                flag <- decodeBoolAttribFlag attrib WellKnownValAttributes.ReflectedDefinitionAttribute_True WellKnownValAttributes.ReflectedDefinitionAttribute_False WellKnownValAttributes.ReflectedDefinitionAttribute_False
+            | "RequiresExplicitTypeArgumentsAttribute" -> flag <- WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
+            | "DefaultValueAttribute" ->
+                flag <- decodeBoolAttribFlag attrib WellKnownValAttributes.DefaultValueAttribute_True WellKnownValAttributes.DefaultValueAttribute_False WellKnownValAttributes.DefaultValueAttribute_True
+            | "VolatileFieldAttribute" -> flag <- WellKnownValAttributes.VolatileFieldAttribute
+            | "NoDynamicInvocationAttribute" ->
+                flag <- decodeBoolAttribFlag attrib WellKnownValAttributes.NoDynamicInvocationAttribute_True WellKnownValAttributes.NoDynamicInvocationAttribute_False WellKnownValAttributes.NoDynamicInvocationAttribute_False
+            | "OptionalArgumentAttribute" -> flag <- WellKnownValAttributes.OptionalArgumentAttribute
+            | "ProjectionParameterAttribute" -> flag <- WellKnownValAttributes.ProjectionParameterAttribute
+            | "InlineIfLambdaAttribute" -> flag <- WellKnownValAttributes.InlineIfLambdaAttribute
+            | "StructAttribute" -> flag <- WellKnownValAttributes.StructAttribute
+            | "NoCompilerInliningAttribute" -> flag <- WellKnownValAttributes.NoCompilerInliningAttribute
+            | "GeneralizableValueAttribute" -> flag <- WellKnownValAttributes.GeneralizableValueAttribute
+            | "CLIEventAttribute" -> flag <- WellKnownValAttributes.CLIEventAttribute
+            | _ -> ()
+        | _ -> ()
+    | ValueNone -> ()
+
+    flag
+
 let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAttributes =
     let mutable flags = WellKnownValAttributes.None
-
     for attrib in attribs do
-        let (Attrib(tcref, _, _, _, _, _, _)) = attrib
-
-        let fsharpCorePath =
-            resolveAttribPath g tcref (fun path ->
-                match path with
-                | [| "System"; "Runtime"; "CompilerServices"; name |] ->
-                    match name with
-                    | "SkipLocalsInitAttribute" -> flags <- flags ||| WellKnownValAttributes.SkipLocalsInitAttribute
-                    | "ExtensionAttribute" -> flags <- flags ||| WellKnownValAttributes.ExtensionAttribute
-                    | "CallerMemberNameAttribute" ->
-                        flags <- flags ||| WellKnownValAttributes.CallerMemberNameAttribute
-                    | "CallerFilePathAttribute" -> flags <- flags ||| WellKnownValAttributes.CallerFilePathAttribute
-                    | "CallerLineNumberAttribute" ->
-                        flags <- flags ||| WellKnownValAttributes.CallerLineNumberAttribute
-                    | _ -> ()
-
-                | [| "System"; "Runtime"; "InteropServices"; name |] ->
-                    match name with
-                    | "DllImportAttribute" -> flags <- flags ||| WellKnownValAttributes.DllImportAttribute
-                    | "InAttribute" -> flags <- flags ||| WellKnownValAttributes.InAttribute
-                    | "OutAttribute" -> flags <- flags ||| WellKnownValAttributes.OutAttribute
-                    | "DefaultParameterValueAttribute" ->
-                        flags <- flags ||| WellKnownValAttributes.DefaultParameterValueAttribute
-                    | "OptionalAttribute" -> flags <- flags ||| WellKnownValAttributes.OptionalAttribute
-                    | _ -> ()
-
-                | [| "System"; "Diagnostics"; name |] ->
-                    match name with
-                    | "ConditionalAttribute" -> flags <- flags ||| WellKnownValAttributes.ConditionalAttribute
-                    | _ -> ()
-
-                | [| "System"; name |] ->
-                    match name with
-                    | "ThreadStaticAttribute" -> flags <- flags ||| WellKnownValAttributes.ThreadStaticAttribute
-                    | "ContextStaticAttribute" -> flags <- flags ||| WellKnownValAttributes.ContextStaticAttribute
-                    | "ParamArrayAttribute" -> flags <- flags ||| WellKnownValAttributes.ParamArrayAttribute
-                    | "NonSerializedAttribute" -> flags <- flags ||| WellKnownValAttributes.NonSerializedAttribute
-                    | _ -> ()
-
-                | _ -> ())
-
-        // ── FSharp.Core attributes ──
-        match fsharpCorePath with
-        | ValueSome path ->
-            match path with
-            | [| "Microsoft"; "FSharp"; "Core"; name |] ->
-                match name with
-                | "EntryPointAttribute" -> flags <- flags ||| WellKnownValAttributes.EntryPointAttribute
-                | "LiteralAttribute" -> flags <- flags ||| WellKnownValAttributes.LiteralAttribute
-                | "ReflectedDefinitionAttribute" ->
-                    // TryFindFSharpBoolAttributeAssumeFalse semantics: no explicit arg defaults to false
-                    flags <- flags ||| decodeBoolAttribFlag attrib WellKnownValAttributes.ReflectedDefinitionAttribute_True WellKnownValAttributes.ReflectedDefinitionAttribute_False WellKnownValAttributes.ReflectedDefinitionAttribute_False
-                | "RequiresExplicitTypeArgumentsAttribute" ->
-                    flags <- flags ||| WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
-                | "DefaultValueAttribute" ->
-                    flags <- flags ||| decodeBoolAttribFlag attrib WellKnownValAttributes.DefaultValueAttribute_True WellKnownValAttributes.DefaultValueAttribute_False WellKnownValAttributes.DefaultValueAttribute_True
-                | "VolatileFieldAttribute" -> flags <- flags ||| WellKnownValAttributes.VolatileFieldAttribute
-                | "NoDynamicInvocationAttribute" ->
-                    // TryFindFSharpBoolAttributeAssumeFalse semantics: no explicit arg defaults to false
-                    flags <- flags ||| decodeBoolAttribFlag attrib WellKnownValAttributes.NoDynamicInvocationAttribute_True WellKnownValAttributes.NoDynamicInvocationAttribute_False WellKnownValAttributes.NoDynamicInvocationAttribute_False
-                | "OptionalArgumentAttribute" ->
-                    flags <- flags ||| WellKnownValAttributes.OptionalArgumentAttribute
-                | "ProjectionParameterAttribute" ->
-                    flags <- flags ||| WellKnownValAttributes.ProjectionParameterAttribute
-                | "InlineIfLambdaAttribute" -> flags <- flags ||| WellKnownValAttributes.InlineIfLambdaAttribute
-                | "StructAttribute" -> flags <- flags ||| WellKnownValAttributes.StructAttribute
-                | "NoCompilerInliningAttribute" ->
-                    flags <- flags ||| WellKnownValAttributes.NoCompilerInliningAttribute
-                | "GeneralizableValueAttribute" ->
-                    flags <- flags ||| WellKnownValAttributes.GeneralizableValueAttribute
-                | "CLIEventAttribute" -> flags <- flags ||| WellKnownValAttributes.CLIEventAttribute
-                | _ -> ()
-            | _ -> ()
-        | ValueNone -> ()
-
+        flags <- flags ||| classifyValAttrib g attrib
     flags
+
+/// Find the first attribute in a list that matches a specific well-known val flag.
+let tryFindValAttribByFlag (g: TcGlobals) (flag: WellKnownValAttributes) (attribs: Attribs) : Attrib option =
+    attribs
+    |> List.tryFind (fun attrib -> classifyValAttrib g attrib &&& flag <> WellKnownValAttributes.None)
+
+/// Active pattern: find a well-known val attribute and return the full Attrib.
+[<return: Struct>]
+let (|ValAttrib|_|) (g: TcGlobals) (flag: WellKnownValAttributes) (attribs: Attribs) =
+    tryFindValAttribByFlag g flag attribs |> ValueOption.ofOption
 
 /// Check if a raw attribute list has a specific well-known val flag (ad-hoc, non-caching).
 let inline attribsHaveValFlag g (flag: WellKnownValAttributes) (attribs: Attribs) =

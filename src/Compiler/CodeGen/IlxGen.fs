@@ -9149,14 +9149,12 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let g = cenv.g
 
     let implflags =
-        match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
-        | Some(Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> flags
+        match attrs with
+        | ValAttrib g WellKnownValAttributes.MethodImplAttribute (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> flags
         | _ -> 0x0
 
     let hasPreserveSigAttr =
-        match TryFindFSharpAttributeOpt g g.attrib_PreserveSigAttribute attrs with
-        | Some _ -> true
-        | _ -> false
+        attribsHaveValFlag g WellKnownValAttributes.PreserveSigAttribute attrs
 
     // strip the MethodImpl pseudo-custom attribute
     // The following method implementation flags are used here
@@ -11138,10 +11136,16 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     for useGenuineField, ilFieldName, isFSharpMutable, isStatic, _, ilPropType, isPropHidden, fspec in fieldSummaries do
 
                         let ilFieldOffset =
-                            match TryFindFSharpAttribute g g.attrib_FieldOffsetAttribute fspec.FieldAttribs with
-                            | Some(Attrib(_, _, [ AttribInt32Arg fieldOffset ], _, _, _, _)) -> Some fieldOffset
-                            | Some attrib ->
-                                errorR (Error(FSComp.SR.ilFieldOffsetAttributeCouldNotBeDecoded (), attrib.Range))
+                            match fspec.FieldAttribs with
+                            | ValAttrib g WellKnownValAttributes.FieldOffsetAttribute (Attrib(_,
+                                                                                              _,
+                                                                                              [ AttribInt32Arg fieldOffset ],
+                                                                                              _,
+                                                                                              _,
+                                                                                              _,
+                                                                                              _)) -> Some fieldOffset
+                            | ValAttrib g WellKnownValAttributes.FieldOffsetAttribute (Attrib(_, _, _, _, _, _, m)) ->
+                                errorR (Error(FSComp.SR.ilFieldOffsetAttributeCouldNotBeDecoded (), m))
                                 None
                             | _ -> None
 
@@ -11594,43 +11598,46 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }, ILDefaultPInvokeEncoding.Ansi
                             | _ -> ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
 
-                        if EntityHasWellKnownAttribute g WellKnownEntityAttributes.StructLayoutAttribute tycon then
-                            match tryFindEntityAttribByFlag g WellKnownEntityAttributes.StructLayoutAttribute tycon.Attribs with
-                            | Some(Attrib(_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
-                                let decoder = AttributeDecoder namedArgs
-                                let ilPack = decoder.FindInt32 "Pack" 0x0
-                                let ilSize = decoder.FindInt32 "Size" 0x0
+                        match tycon.Attribs with
+                        | EntityAttrib g WellKnownEntityAttributes.StructLayoutAttribute (Attrib(_,
+                                                                                                 _,
+                                                                                                 [ AttribInt32Arg layoutKind ],
+                                                                                                 namedArgs,
+                                                                                                 _,
+                                                                                                 _,
+                                                                                                 _)) ->
+                            let decoder = AttributeDecoder namedArgs
+                            let ilPack = decoder.FindInt32 "Pack" 0x0
+                            let ilSize = decoder.FindInt32 "Size" 0x0
 
-                                let tdEncoding =
-                                    match (decoder.FindInt32 "CharSet" 0x0) with
-                                    (* enumeration values for System.Runtime.InteropServices.CharSet taken from mscorlib.il *)
-                                    | 0x03 -> ILDefaultPInvokeEncoding.Unicode
-                                    | 0x04 -> ILDefaultPInvokeEncoding.Auto
-                                    | _ -> ILDefaultPInvokeEncoding.Ansi
+                            let tdEncoding =
+                                match (decoder.FindInt32 "CharSet" 0x0) with
+                                (* enumeration values for System.Runtime.InteropServices.CharSet taken from mscorlib.il *)
+                                | 0x03 -> ILDefaultPInvokeEncoding.Unicode
+                                | 0x04 -> ILDefaultPInvokeEncoding.Auto
+                                | _ -> ILDefaultPInvokeEncoding.Ansi
 
-                                let layoutInfo =
-                                    if ilPack = 0x0 && ilSize = 0x0 then
-                                        { Size = None; Pack = None }
-                                    else
-                                        {
-                                            Size = Some ilSize
-                                            Pack = Some(uint16 ilPack)
-                                        }
+                            let layoutInfo =
+                                if ilPack = 0x0 && ilSize = 0x0 then
+                                    { Size = None; Pack = None }
+                                else
+                                    {
+                                        Size = Some ilSize
+                                        Pack = Some(uint16 ilPack)
+                                    }
 
-                                let tdLayout =
-                                    match layoutKind with
-                                    (* enumeration values for System.Runtime.InteropServices.LayoutKind taken from mscorlib.il *)
-                                    | 0x0 -> ILTypeDefLayout.Sequential layoutInfo
-                                    | 0x2 -> ILTypeDefLayout.Explicit layoutInfo
-                                    | _ -> ILTypeDefLayout.Auto
+                            let tdLayout =
+                                match layoutKind with
+                                (* enumeration values for System.Runtime.InteropServices.LayoutKind taken from mscorlib.il *)
+                                | 0x0 -> ILTypeDefLayout.Sequential layoutInfo
+                                | 0x2 -> ILTypeDefLayout.Explicit layoutInfo
+                                | _ -> ILTypeDefLayout.Auto
 
-                                tdLayout, tdEncoding
-                            | Some(Attrib(_, _, _, _, _, _, m)) ->
-                                errorR (Error(FSComp.SR.ilStructLayoutAttributeCouldNotBeDecoded (), m))
-                                ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
-                            | _ -> defaultLayout ()
-                        else
-                            defaultLayout ()
+                            tdLayout, tdEncoding
+                        | EntityAttrib g WellKnownEntityAttributes.StructLayoutAttribute (Attrib(_, _, _, _, _, _, m)) ->
+                            errorR (Error(FSComp.SR.ilStructLayoutAttributeCouldNotBeDecoded (), m))
+                            ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
+                        | _ -> defaultLayout ()
 
                     // if the type's layout is Explicit, ensure that each field has a valid offset
                     let validateExplicit (fdef: ILFieldDef) =

@@ -88,6 +88,9 @@ type internal WellKnownValAttributes =
     | GeneralizableValueAttribute = (1uL <<< 29)
     | CLIEventAttribute = (1uL <<< 30)
     | NonSerializedAttribute = (1uL <<< 31)
+    | MethodImplAttribute = (1uL <<< 32)
+    | PreserveSigAttribute = (1uL <<< 33)
+    | FieldOffsetAttribute = (1uL <<< 34)
     | NotComputed = (1uL <<< 63)
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.

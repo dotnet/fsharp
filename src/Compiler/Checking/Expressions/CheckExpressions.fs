@@ -1354,10 +1354,10 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
                 errorR(Error(FSComp.SR.tcMissingRequiredMembers details, mMethExpr))
 
 let private HasMethodImplNoInliningAttribute g attrs =
-            match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
-            // NO_INLINING = 8
-            | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
-            | _ -> false
+    match attrs with
+    // NO_INLINING = 8
+    | ValAttrib g WellKnownValAttributes.MethodImplAttribute (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
+    | _ -> false
 
 let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =
 
@@ -11457,19 +11457,16 @@ and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt
             | _ ->
                 (validOnDefault, inheritedDefault)
         else
-            if EntityHasWellKnownAttribute g WellKnownEntityAttributes.AttributeUsageAttribute tcref.Deref then
-                match tryFindEntityAttribByFlag g WellKnownEntityAttributes.AttributeUsageAttribute tcref.Attribs with
-                | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn ])) ->
+            match tcref.Attribs with
+                | EntityAttrib g WellKnownEntityAttributes.AttributeUsageAttribute (Attrib(unnamedArgs = [ AttribInt32Arg validOn ])) ->
                     validOn, inheritedDefault
-                | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn; AttribBoolArg(_allowMultiple); AttribBoolArg inherited])) ->
+                | EntityAttrib g WellKnownEntityAttributes.AttributeUsageAttribute (Attrib(unnamedArgs = [ AttribInt32Arg validOn; AttribBoolArg(_allowMultiple); AttribBoolArg inherited])) ->
                     validOn, inherited
-                | Some _ ->
+                | EntityAttrib g WellKnownEntityAttributes.AttributeUsageAttribute _ ->
                     warning(Error(FSComp.SR.tcUnexpectedConditionInImportedAssembly(), mAttr))
                     validOnDefault, inheritedDefault
                 | _ ->
                     validOnDefault, inheritedDefault
-            else
-                validOnDefault, inheritedDefault
     
     // Determine valid attribute targets
     let attributeTargets = enum validOn &&& attrTgt

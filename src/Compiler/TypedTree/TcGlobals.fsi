@@ -319,7 +319,6 @@ type internal TcGlobals =
 
 
 
-    member attrib_CallerMemberNameAttribute: BuiltinAttribInfo
 
     member attrib_ClassAttribute: BuiltinAttribInfo
 
