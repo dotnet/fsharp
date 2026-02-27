@@ -606,7 +606,7 @@ module Range =
     let comparer =
         { new IEqualityComparer<range> with
             member _.Equals(x1, x2) = equals x1 x2
-            member _.GetHashCode o = o.GetHashCode()
+            member _.GetHashCode(o: range) = (box o).GetHashCode()
         }
 
     let mkFirstLineOfFile (file: string) =

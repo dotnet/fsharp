@@ -14,15 +14,15 @@ type internal HashMultiMap<'Key, 'Value when 'Key: not null>(size: int, comparer
 
     let firstEntries: IDictionary<_, _> =
         if defaultArg useConcurrentDictionary false then
-            ConcurrentDictionary<_, _>(comparer)
+            ConcurrentDictionary<_, _>(comparer) :> IDictionary<_, _>
         else
-            Dictionary<_, _>(size, comparer)
+            Dictionary<_, _>(size, comparer) :> IDictionary<_, _>
 
     let rest: IDictionary<_, _> =
         if defaultArg useConcurrentDictionary false then
-            ConcurrentDictionary<_, _>(comparer)
+            ConcurrentDictionary<_, _>(comparer) :> IDictionary<_, _>
         else
-            Dictionary<_, _>(3, comparer)
+            Dictionary<_, _>(3, comparer) :> IDictionary<_, _>
 
     new(comparer: IEqualityComparer<'Key>, ?useConcurrentDictionary: bool) =
         HashMultiMap<'Key, 'Value>(11, comparer, defaultArg useConcurrentDictionary false)
