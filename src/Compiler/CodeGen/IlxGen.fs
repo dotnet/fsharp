@@ -8944,14 +8944,18 @@ and GenMarshal cenv attribs =
 /// Generate special attributes on an IL parameter
 and GenParamAttribs cenv paramTy attribs =
     let g = cenv.g
+    let valFlags = computeValWellKnownFlags g attribs
 
     let inFlag =
-        HasFSharpAttribute g g.attrib_InAttribute attribs || isInByrefTy g paramTy
+        valFlags &&& WellKnownValAttributes.InAttribute <> WellKnownValAttributes.None
+        || isInByrefTy g paramTy
 
     let outFlag =
-        HasFSharpAttribute g g.attrib_OutAttribute attribs || isOutByrefTy g paramTy
+        valFlags &&& WellKnownValAttributes.OutAttribute <> WellKnownValAttributes.None
+        || isOutByrefTy g paramTy
 
-    let optionalFlag = HasFSharpAttributeOpt g g.attrib_OptionalAttribute attribs
+    let optionalFlag =
+        valFlags &&& WellKnownValAttributes.OptionalAttribute <> WellKnownValAttributes.None
 
     let defaultValue =
         TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute attribs
