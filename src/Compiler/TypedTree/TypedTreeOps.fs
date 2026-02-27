@@ -3811,14 +3811,21 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
                 | "ReflectedDefinitionAttribute" ->
                     flags <- flags ||| WellKnownEntityAttributes.ReflectedDefinitionAttribute
                 | "AllowNullLiteralAttribute" ->
-                    flags <- flags ||| WellKnownEntityAttributes.AllowNullLiteralAttribute
+                    flags <-
+                        flags
+                        ||| decodeBoolAttribFlag
+                                attrib
+                                WellKnownEntityAttributes.AllowNullLiteralAttribute_True
+                                WellKnownEntityAttributes.AllowNullLiteralAttribute_False
+                                WellKnownEntityAttributes.AllowNullLiteralAttribute_True
                 | "WarnOnWithoutNullArgumentAttribute" ->
                     flags <- flags ||| WellKnownEntityAttributes.WarnOnWithoutNullArgumentAttribute
                 | "ClassAttribute" -> flags <- flags ||| WellKnownEntityAttributes.ClassAttribute
                 | "InterfaceAttribute" -> flags <- flags ||| WellKnownEntityAttributes.InterfaceAttribute
                 | "StructAttribute" -> flags <- flags ||| WellKnownEntityAttributes.StructAttribute
                 | "MeasureAttribute" -> flags <- flags ||| WellKnownEntityAttributes.MeasureAttribute
-                | "MeasureableAttribute" -> flags <- flags ||| WellKnownEntityAttributes.MeasureableAttribute
+                | "MeasureAnnotatedAbbreviationAttribute" ->
+                    flags <- flags ||| WellKnownEntityAttributes.MeasureableAttribute
                 | "CLIEventAttribute" -> flags <- flags ||| WellKnownEntityAttributes.CLIEventAttribute
                 | "CompilationRepresentationAttribute" ->
                     match attrib with
@@ -3861,7 +3868,7 @@ let mapILFlagToEntityFlag (flag: WellKnownILAttributes) : WellKnownEntityAttribu
     | WellKnownILAttributes.IsReadOnlyAttribute -> WellKnownEntityAttributes.IsReadOnlyAttribute
     | WellKnownILAttributes.IsByRefLikeAttribute -> WellKnownEntityAttributes.IsByRefLikeAttribute
     | WellKnownILAttributes.ExtensionAttribute -> WellKnownEntityAttributes.ExtensionAttribute
-    | WellKnownILAttributes.AllowNullLiteralAttribute -> WellKnownEntityAttributes.AllowNullLiteralAttribute
+    | WellKnownILAttributes.AllowNullLiteralAttribute -> WellKnownEntityAttributes.AllowNullLiteralAttribute_True
     | WellKnownILAttributes.AutoOpenAttribute -> WellKnownEntityAttributes.AutoOpenAttribute
     | WellKnownILAttributes.ReflectedDefinitionAttribute -> WellKnownEntityAttributes.ReflectedDefinitionAttribute
     | WellKnownILAttributes.ObsoleteAttribute -> WellKnownEntityAttributes.ObsoleteAttribute

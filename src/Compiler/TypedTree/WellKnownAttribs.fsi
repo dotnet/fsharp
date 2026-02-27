@@ -33,7 +33,7 @@ type internal WellKnownEntityAttributes =
     | ExtensionAttribute = (1uL <<< 23)
     | AttributeUsageAttribute = (1uL <<< 24)
     | WarnOnWithoutNullArgumentAttribute = (1uL <<< 25)
-    | AllowNullLiteralAttribute = (1uL <<< 26)
+    | AllowNullLiteralAttribute_True = (1uL <<< 26)
     | ClassAttribute = (1uL <<< 27)
     | InterfaceAttribute = (1uL <<< 28)
     | StructAttribute = (1uL <<< 29)
@@ -49,6 +49,7 @@ type internal WellKnownEntityAttributes =
     | CompilationRepresentation_Static = (1uL <<< 39)
     | CLIEventAttribute = (1uL <<< 40)
     | SealedAttribute_False = (1uL <<< 41)
+    | AllowNullLiteralAttribute_False = (1uL <<< 42)
     | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known attributes on Val (values and members).

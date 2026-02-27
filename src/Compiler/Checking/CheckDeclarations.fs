@@ -2860,7 +2860,7 @@ module EstablishTypeDefinitionCores =
         let hasMeasureAttr = entityFlags &&& WellKnownEntityAttributes.MeasureAttribute <> WellKnownEntityAttributes.None
         let hasStructAttr = entityFlags &&& WellKnownEntityAttributes.StructAttribute <> WellKnownEntityAttributes.None
         let hasCLIMutable = entityFlags &&& WellKnownEntityAttributes.CLIMutableAttribute <> WellKnownEntityAttributes.None
-        let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute <> WellKnownEntityAttributes.None
+        let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute_True <> WellKnownEntityAttributes.None
         let hasSealedAttr = entityFlags &&& WellKnownEntityAttributes.SealedAttribute_True <> WellKnownEntityAttributes.None
         let structLayoutAttr = entityFlags &&& WellKnownEntityAttributes.StructLayoutAttribute <> WellKnownEntityAttributes.None
 
@@ -3419,7 +3419,7 @@ module EstablishTypeDefinitionCores =
             let hasMeasureableAttr = entityFlags &&& WellKnownEntityAttributes.MeasureableAttribute <> WellKnownEntityAttributes.None
             
             let structLayoutAttr = TryFindFSharpInt32Attribute g g.attrib_StructLayoutAttribute attrs
-            let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute <> WellKnownEntityAttributes.None
+            let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute_True <> WellKnownEntityAttributes.None
 
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
