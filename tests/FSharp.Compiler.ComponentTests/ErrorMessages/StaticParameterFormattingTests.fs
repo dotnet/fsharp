@@ -11,7 +11,7 @@ module ``Static parameter formatting`` =
     let ``formatAvailableNames truncates at 5`` () =
         let names = [| "A"; "B"; "C"; "D"; "E"; "F"; "G" |]
         let result = formatAvailableNames names
-        Assert.Equal("A, B, C, D, E", result)
+        Assert.Equal("A, B, C, D, E, ...", result)
 
     [<Fact>]
     let ``formatAvailableNames with fewer than 5`` () =

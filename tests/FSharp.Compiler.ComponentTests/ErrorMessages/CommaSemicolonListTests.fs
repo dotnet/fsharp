@@ -14,7 +14,7 @@ let x = [1, 2, 3]
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3883, Line 2, Col 9, Line 2, Col 18,
+        |> withSingleDiagnostic (Information 3883, Line 2, Col 9, Line 2, Col 18,
                                  "This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?")
 
     [<Fact>]
@@ -60,7 +60,7 @@ let x = [1, 2]
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3883, Line 2, Col 9, Line 2, Col 15,
+        |> withSingleDiagnostic (Information 3883, Line 2, Col 9, Line 2, Col 15,
                                  "This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?")
 
     [<Fact>]

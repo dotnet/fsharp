@@ -461,3 +461,14 @@ let f (x: int) : string = x
         |> withSingleDiagnostic (Error 1, Line 2, Col 27, Line 2, Col 28,
                                  "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    ")
 
+    [<Fact>]
+    let ``Type alias for tuple still says 'is a tuple of type'``() =
+        FSharp """
+type Pair = int * int
+let f (x: Pair) : string = x
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 3, Col 28, Line 3, Col 29,
+                                 "This expression was expected to have type\n    'string'    \nbut is a tuple of type\n    'Pair'    ")
+
