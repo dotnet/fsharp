@@ -3549,6 +3549,16 @@ let test (s: byref<S>) : Span<int> =
     s.AsSpan()
 """
 
+    let private unscopedRefLocalCrossAsmConsumerSource = """
+module Test
+open System
+open MyLib
+
+let test () : Span<int> =
+    let mutable s = S()
+    s.AsSpan()
+"""
+
     [<Fact>]
     let ``UnscopedRef on F# struct method cross-assembly allows this to escape`` () =
         let fsharpLib =
@@ -3586,15 +3596,7 @@ let test (s: byref<S>) : Span<int> =
             |> withName "FSharpUnscopedRefLocalCrossAsmLib"
             |> withLangVersionPreview
 
-        FSharp """
-module Test
-open System
-open MyLib
-
-let test () : Span<int> =
-    let mutable s = S()
-    s.AsSpan()
-"""
+        FSharp unscopedRefLocalCrossAsmConsumerSource
         |> asLibrary
         |> withLangVersionPreview
         |> withReferences [fsharpLib]
@@ -3610,15 +3612,7 @@ let test () : Span<int> =
             |> withName "FSharpScopedReceiverCrossAsmLib"
             |> withLangVersionPreview
 
-        FSharp """
-module Test
-open System
-open MyLib
-
-let test () : Span<int> =
-    let mutable s = S()
-    s.AsSpan()
-"""
+        FSharp unscopedRefLocalCrossAsmConsumerSource
         |> asLibrary
         |> withLangVersionPreview
         |> withReferences [fsharpLib]
