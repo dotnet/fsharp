@@ -10,7 +10,7 @@ type internal WellKnownEntityAttributes =
     | RequireQualifiedAccessAttribute = (1uL <<< 0)
     | AutoOpenAttribute = (1uL <<< 1)
     | AbstractClassAttribute = (1uL <<< 2)
-    | SealedAttribute = (1uL <<< 3)
+    | SealedAttribute_True = (1uL <<< 3)
     | NoEqualityAttribute = (1uL <<< 4)
     | NoComparisonAttribute = (1uL <<< 5)
     | StructuralEqualityAttribute = (1uL <<< 6)
@@ -24,6 +24,7 @@ type internal WellKnownEntityAttributes =
     | StructLayoutAttribute = (1uL <<< 14)
     | DllImportAttribute = (1uL <<< 15)
     | ReflectedDefinitionAttribute = (1uL <<< 16)
+    | MeasureableAttribute = (1uL <<< 17)
     | SkipLocalsInitAttribute = (1uL <<< 18)
     | DebuggerTypeProxyAttribute = (1uL <<< 19)
     | ComVisibleAttribute_True = (1uL <<< 20)
@@ -47,6 +48,7 @@ type internal WellKnownEntityAttributes =
     | CompilationRepresentation_Instance = (1uL <<< 38)
     | CompilationRepresentation_Static = (1uL <<< 39)
     | CLIEventAttribute = (1uL <<< 40)
+    | SealedAttribute_False = (1uL <<< 41)
     | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known attributes on Val (values and members).

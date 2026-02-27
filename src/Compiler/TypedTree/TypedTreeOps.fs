@@ -3781,9 +3781,13 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
             | [| "Microsoft"; "FSharp"; "Core"; name |] ->
                 match name with
                 | "SealedAttribute" ->
-                    match attrib with
-                    | Attrib(_, _, [ AttribBoolArg false ], _, _, _, _) -> ()
-                    | _ -> flags <- flags ||| WellKnownEntityAttributes.SealedAttribute
+                    flags <-
+                        flags
+                        ||| decodeBoolAttribFlag
+                                attrib
+                                WellKnownEntityAttributes.SealedAttribute_True
+                                WellKnownEntityAttributes.SealedAttribute_False
+                                WellKnownEntityAttributes.SealedAttribute_True
                 | "AbstractClassAttribute" -> flags <- flags ||| WellKnownEntityAttributes.AbstractClassAttribute
                 | "RequireQualifiedAccessAttribute" ->
                     flags <- flags ||| WellKnownEntityAttributes.RequireQualifiedAccessAttribute
@@ -3814,6 +3818,7 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
                 | "InterfaceAttribute" -> flags <- flags ||| WellKnownEntityAttributes.InterfaceAttribute
                 | "StructAttribute" -> flags <- flags ||| WellKnownEntityAttributes.StructAttribute
                 | "MeasureAttribute" -> flags <- flags ||| WellKnownEntityAttributes.MeasureAttribute
+                | "MeasureableAttribute" -> flags <- flags ||| WellKnownEntityAttributes.MeasureableAttribute
                 | "CLIEventAttribute" -> flags <- flags ||| WellKnownEntityAttributes.CLIEventAttribute
                 | "CompilationRepresentationAttribute" ->
                     match attrib with
@@ -9966,7 +9971,7 @@ let isSealedTy g ty =
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
        if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then 
           let tcref = tcrefOfAppTy g ty
-          EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute tcref.Deref
+          EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute_True tcref.Deref
        else 
           // All other F# types, array, byref, tuple types are sealed
           true

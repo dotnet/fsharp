@@ -2085,7 +2085,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
               let (MutRecDefnsPhase2DataForTycon(tyconOpt, _x, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
               
               // If a tye uses both [<Sealed>] and [<AbstractClass>] attributes it means it is a static class.
-              let isStaticClass = EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute tcref.Deref && EntityHasWellKnownAttribute g WellKnownEntityAttributes.AbstractClassAttribute tcref.Deref
+              let isStaticClass = EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute_True tcref.Deref && EntityHasWellKnownAttribute g WellKnownEntityAttributes.AbstractClassAttribute tcref.Deref
               if isStaticClass && g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
                   ReportErrorOnStaticClass synMembers
                   match tyconOpt with
@@ -2857,7 +2857,7 @@ module EstablishTypeDefinitionCores =
         let hasStructAttr = entityFlags &&& WellKnownEntityAttributes.StructAttribute <> WellKnownEntityAttributes.None
         let hasCLIMutable = entityFlags &&& WellKnownEntityAttributes.CLIMutableAttribute <> WellKnownEntityAttributes.None
         let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute <> WellKnownEntityAttributes.None
-        let hasSealedAttr = entityFlags &&& WellKnownEntityAttributes.SealedAttribute <> WellKnownEntityAttributes.None
+        let hasSealedAttr = entityFlags &&& WellKnownEntityAttributes.SealedAttribute_True <> WellKnownEntityAttributes.None
         let structLayoutAttr = entityFlags &&& WellKnownEntityAttributes.StructLayoutAttribute <> WellKnownEntityAttributes.None
 
         // We want to keep these special attributes treatment and avoid having two errors for the same attribute.
@@ -3397,20 +3397,24 @@ module EstablishTypeDefinitionCores =
 
             let entityFlags = computeEntityWellKnownFlags g attrs
             let hasAbstractAttr = entityFlags &&& WellKnownEntityAttributes.AbstractClassAttribute <> WellKnownEntityAttributes.None
-            let hasSealedAttr = 
+            let hasSealedAttr =
                 // The special case is needed for 'unit' because the 'Sealed' attribute is not yet available when this type is defined.
-                if g.compilingFSharpCore && id.idText = "Unit" then 
+                if g.compilingFSharpCore && id.idText = "Unit" then
                     Some true
+                elif entityFlags &&& WellKnownEntityAttributes.SealedAttribute_True <> WellKnownEntityAttributes.None then
+                    Some true
+                elif entityFlags &&& WellKnownEntityAttributes.SealedAttribute_False <> WellKnownEntityAttributes.None then
+                    Some false
                 else
-                    TryFindFSharpBoolAttribute g g.attrib_SealedAttribute attrs
-            let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
+                    None
+            let hasMeasureAttr = entityFlags &&& WellKnownEntityAttributes.MeasureAttribute <> WellKnownEntityAttributes.None
             
             // REVIEW: for hasMeasureableAttr we need to be stricter about checking these
             // are only used on exactly the right kinds of type definitions and not in conjunction with other attributes.
-            let hasMeasureableAttr = HasFSharpAttribute g g.attrib_MeasureableAttribute attrs
+            let hasMeasureableAttr = entityFlags &&& WellKnownEntityAttributes.MeasureableAttribute <> WellKnownEntityAttributes.None
             
             let structLayoutAttr = TryFindFSharpInt32Attribute g g.attrib_StructLayoutAttribute attrs
-            let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute g g.attrib_AllowNullLiteralAttribute attrs = Some true
+            let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute <> WellKnownEntityAttributes.None
 
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
