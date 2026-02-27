@@ -9773,7 +9773,9 @@ let rec TypeHasDefaultValueAux isNew g m ty =
                 // Note this includes fields implied by the use of the implicit class construction syntax
                 tcref.AllInstanceFieldsAsList
                   // We can ignore fields with the DefaultValue(false) attribute 
-                  |> List.filter (fun fld -> TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs <> Some false)
+                  |> List.filter (fun fld ->
+                      let flags = computeValWellKnownFlags g fld.FieldAttribs
+                      flags &&& WellKnownValAttributes.DefaultValueAttribute_False = WellKnownValAttributes.None)
 
             flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValueAux isNew g m)
 

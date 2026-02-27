@@ -434,10 +434,13 @@ module TcRecdUnionAndEnumDeclarations =
         let attrsForProperty = (List.map snd attrsForProperty) 
         let attrsForField = (List.map snd attrsForField)
         let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
-        let zeroInit = HasFSharpAttribute g g.attrib_DefaultValueAttribute attrsForField
-        let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute attrsForField
+        let fieldFlags = computeValWellKnownFlags g attrsForField
+        let zeroInit = fieldFlags &&& WellKnownValAttributes.DefaultValueAttribute_True <> WellKnownValAttributes.None
+        let isVolatile = fieldFlags &&& WellKnownValAttributes.VolatileFieldAttribute <> WellKnownValAttributes.None
         
-        let isThreadStatic = isThreadOrContextStatic g attrsForField
+        let isThreadStatic =
+            fieldFlags &&& WellKnownValAttributes.ThreadStaticAttribute <> WellKnownValAttributes.None
+            || fieldFlags &&& WellKnownValAttributes.ContextStaticAttribute <> WellKnownValAttributes.None
         if isThreadStatic && (not zeroInit || not isStatic) then 
             errorR(Error(FSComp.SR.tcThreadStaticAndContextStaticMustBeStatic(), m))
 

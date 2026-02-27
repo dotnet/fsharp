@@ -2648,8 +2648,12 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             for f in tycon.AllInstanceFieldsAsList do
                 let m = f.Range
                 // Check if it's marked unsafe
-                let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
-                if zeroInitUnsafe = Some true then
+                let zeroInitUnsafe =
+                    computeValWellKnownFlags g f.FieldAttribs
+                    &&& WellKnownValAttributes.DefaultValueAttribute_True
+                    <> WellKnownValAttributes.None
+
+                if zeroInitUnsafe then
                     let ty = f.FormalType
                     // If the condition is detected because of a variation in logic introduced because
                     // of nullness checking, then only a warning is emitted.
@@ -2664,8 +2668,12 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             for f in tycon.AllInstanceFieldsAsList do
                 let m = f.Range
                 // Check if it's marked unsafe
-                let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
-                if zeroInitUnsafe = Some true then
+                let zeroInitUnsafe =
+                    computeValWellKnownFlags g f.FieldAttribs
+                    &&& WellKnownValAttributes.DefaultValueAttribute_True
+                    <> WellKnownValAttributes.None
+
+                if zeroInitUnsafe then
                     if not (TypeHasDefaultValue g m f.FormalType) then
                         errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
