@@ -3458,9 +3458,6 @@ let f () = async {
 #if NET7_0_OR_GREATER
     [<Fact>]
     let ``Property getter returning span-like from UnscopedRef struct`` () =
-        // Known limitation: property getters with [UnscopedRef] on a struct are not yet caught
-        // by escape analysis (unlike method calls such as E_StructReceiverUnscopedRefEscapes).
-        // Ideally this should fail with FS3235, but currently succeeds.
         let csharpLib =
             CSharp """
 using System;
@@ -3485,7 +3482,8 @@ let f () : Span<int> =
         |> withLangVersionPreview
         |> withReferences [csharpLib]
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withErrorCodes [3235]
 
     [<Fact>]
     let ``Property getter returning span-like from UnscopedRef struct - backward compat`` () =

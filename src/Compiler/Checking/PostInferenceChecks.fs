@@ -835,13 +835,13 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
-/// Try to resolve an ILMethodRef to its ILMethodDef and get the RefSafetyRulesVersion
+/// Try to resolve an ILMethodRef to its ILMethodDef, ILTypeDef, and RefSafetyRulesVersion
 /// from the assembly. Returns None if the type is not an IL type or resolution fails.
 /// When resolved, refSafetyVersion is 0 for local refs or assemblies without the attribute.
 // `:? System.Exception` narrows the IL catch clause to exclude non-CLS-compliant throws.
 // F# considers all exceptions to be System.Exception, so it flags the test as always-true.
 #nowarn "67"
-let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : (ILMethodDef * int) option =
+let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : (ILMethodDef * ILTypeDef * int) option =
     try
         let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
 
@@ -854,7 +854,7 @@ let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: IL
         match tyconRef.TypeReprInfo with
         | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
             let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
-            Some(methDef, refSafetyVersion)
+            Some(methDef, tdef, refSafetyVersion)
         | _ -> None
     with :? System.Exception ->
         None
@@ -911,6 +911,22 @@ let hasUnscopedRefAttribute (g: TcGlobals) (methDef: ILMethodDef) : bool =
     match g.attrib_UnscopedRefAttribute_opt with
     | None -> false
     | Some unscopedRefAttrib -> TryFindILAttribute unscopedRefAttrib methDef.CustomAttrs
+
+/// Check whether a property getter's enclosing property has UnscopedRefAttribute.
+/// In C#, [UnscopedRef] on a property is emitted on the PropertyDef, not on the get_ method.
+let hasUnscopedRefOnPropertyForGetter (g: TcGlobals) (tdef: ILTypeDef) (methDef: ILMethodDef) : bool =
+    match g.attrib_UnscopedRefAttribute_opt with
+    | None -> false
+    | Some unscopedRefAttrib ->
+        let methName = methDef.Name
+
+        if methName.StartsWithOrdinal("get_") then
+            let propName = methName.Substring(4)
+
+            tdef.Properties.LookupByName(propName)
+            |> List.exists (fun pd -> TryFindILAttribute unscopedRefAttrib pd.CustomAttrs)
+        else
+            false
 
 let tryGetUnscopedRefParamMask (g: TcGlobals) (methDef: ILMethodDef) =
     tryGetILParamAttrMask g.attrib_UnscopedRefAttribute_opt methDef
@@ -1805,9 +1821,16 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
             | [_] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m returnTy ->
                 let mask, unscoped =
                     match getILMethodContext() with
-                    | Some(methDef, refSafetyVersion) ->
+                    | Some(methDef, tdef, refSafetyVersion) ->
                         let mask = computeScopedMask cenv m methDef methInst refSafetyVersion
-                        let unscoped = if hasReceiver then hasUnscopedRefAttribute g methDef else false
+
+                        let unscoped =
+                            if hasReceiver then
+                                hasUnscopedRefAttribute g methDef
+                                || hasUnscopedRefOnPropertyForGetter g tdef methDef
+                            else
+                                false
+
                         mask, unscoped
                     | None -> None, false
 
