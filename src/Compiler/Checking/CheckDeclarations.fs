@@ -2548,12 +2548,13 @@ module EstablishTypeDefinitionCores =
             else typars.Length
         mkSynId id.idRange (if erasedArity = 0 then id.idText else id.idText + "`" + string erasedArity)
  
-    let private GetTyconAttribs g attrs = 
-        let hasClassAttr = HasFSharpAttribute g g.attrib_ClassAttribute attrs
-        let hasAbstractClassAttr = HasFSharpAttribute g g.attrib_AbstractClassAttribute attrs
-        let hasInterfaceAttr = HasFSharpAttribute g g.attrib_InterfaceAttribute attrs
-        let hasStructAttr = HasFSharpAttribute g g.attrib_StructAttribute attrs
-        let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
+    let private GetTyconAttribs g attrs =
+        let flags = computeEntityWellKnownFlags g attrs
+        let hasClassAttr = flags &&& WellKnownEntityAttributes.ClassAttribute <> WellKnownEntityAttributes.None
+        let hasAbstractClassAttr = flags &&& WellKnownEntityAttributes.AbstractClassAttribute <> WellKnownEntityAttributes.None
+        let hasInterfaceAttr = flags &&& WellKnownEntityAttributes.InterfaceAttribute <> WellKnownEntityAttributes.None
+        let hasStructAttr = flags &&& WellKnownEntityAttributes.StructAttribute <> WellKnownEntityAttributes.None
+        let hasMeasureAttr = flags &&& WellKnownEntityAttributes.MeasureAttribute <> WellKnownEntityAttributes.None
         (hasClassAttr, hasAbstractClassAttr, hasInterfaceAttr, hasStructAttr, hasMeasureAttr)
 
     //-------------------------------------------------------------------------
@@ -2852,8 +2853,8 @@ module EstablishTypeDefinitionCores =
         // Allow failure of constructor resolution because Vals for members in the same recursive group are not yet available
         let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let entityFlags = computeEntityWellKnownFlags g attrs
-        let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
-        let hasStructAttr = HasFSharpAttribute g g.attrib_StructAttribute attrs
+        let hasMeasureAttr = entityFlags &&& WellKnownEntityAttributes.MeasureAttribute <> WellKnownEntityAttributes.None
+        let hasStructAttr = entityFlags &&& WellKnownEntityAttributes.StructAttribute <> WellKnownEntityAttributes.None
         let hasCLIMutable = entityFlags &&& WellKnownEntityAttributes.CLIMutableAttribute <> WellKnownEntityAttributes.None
         let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute <> WellKnownEntityAttributes.None
         let hasSealedAttr = entityFlags &&& WellKnownEntityAttributes.SealedAttribute <> WellKnownEntityAttributes.None

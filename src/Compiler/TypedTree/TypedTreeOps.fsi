@@ -1872,6 +1872,8 @@ val ModuleNameIsMangled: TcGlobals -> Attribs -> bool
 
 val CompileAsEvent: TcGlobals -> Attribs -> bool
 
+val ValCompileAsEvent: TcGlobals -> Val -> bool
+
 val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
 val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
@@ -2401,9 +2403,6 @@ val EntityHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownEntityAttributes
 
 /// Map a WellKnownILAttributes flag to its WellKnownEntityAttributes equivalent.
 val mapILFlagToEntityFlag: flag: WellKnownILAttributes -> WellKnownEntityAttributes
-
-/// Map a WellKnownILAttributes flag to its WellKnownValAttributes equivalent.
-val mapILFlagToValFlag: flag: WellKnownILAttributes -> WellKnownValAttributes
 
 val computeValWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownValAttributes
 

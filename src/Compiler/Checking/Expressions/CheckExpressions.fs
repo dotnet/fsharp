@@ -11151,7 +11151,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         if hasDefaultValueAttr && not isZeroMethod then
             errorR(Error(FSComp.SR.tcDefaultValueAttributeRequiresVal(), mBinding))
 
-        let isThreadStatic = isThreadOrContextStatic g valAttribs
+        let isThreadStatic = valAttribFlags &&& (WellKnownValAttributes.ThreadStaticAttribute ||| WellKnownValAttributes.ContextStaticAttribute) <> WellKnownValAttributes.None
         if isThreadStatic then errorR(DeprecatedThreadStaticBindingWarning mBinding)
 
         if isVolatile then

@@ -64,6 +64,8 @@ val CheckFSharpAttributes: g: TcGlobals -> attribs: Attrib list -> m: range -> O
 
 val CheckILAttributesForUnseen: g: TcGlobals -> cattrs: ILAttributes -> _m: 'a -> bool
 
+val CheckILAttributesForUnseenStored: g: TcGlobals -> cattrsStored: ILAttributesStored -> _m: 'a -> bool
+
 val CheckFSharpAttributesForHidden: g: TcGlobals -> attribs: Attrib list -> bool
 
 val CheckFSharpAttributesForObsolete: g: TcGlobals -> attribs: Attrib list -> bool

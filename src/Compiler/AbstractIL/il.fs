@@ -1232,26 +1232,27 @@ type ILAttributes(array: ILAttribute[]) =
 [<Flags>]
 type WellKnownILAttributes =
     | None = 0u
-    | IsReadOnlyAttribute = 0x1u
-    | IsUnmanagedAttribute = 0x2u
-    | IsByRefLikeAttribute = 0x4u
-    | ExtensionAttribute = 0x8u
-    | NullableAttribute = 0x10u
-    | ParamArrayAttribute = 0x20u
-    | AllowNullLiteralAttribute = 0x40u
-    | ReflectedDefinitionAttribute = 0x80u
-    | AutoOpenAttribute = 0x100u
-    | InternalsVisibleToAttribute = 0x200u
-    | CallerMemberNameAttribute = 0x400u
-    | CallerFilePathAttribute = 0x800u
-    | CallerLineNumberAttribute = 0x1000u
-    | IDispatchConstantAttribute = 0x2000u
-    | IUnknownConstantAttribute = 0x4000u
-    | RequiresLocationAttribute = 0x8000u
-    | SetsRequiredMembersAttribute = 0x10000u
-    | NoEagerConstraintApplicationAttribute = 0x20000u
-    | DefaultMemberAttribute = 0x40000u
-    | NotComputed = 0x80000000u
+    | IsReadOnlyAttribute = (1u <<< 0)
+    | IsUnmanagedAttribute = (1u <<< 1)
+    | IsByRefLikeAttribute = (1u <<< 2)
+    | ExtensionAttribute = (1u <<< 3)
+    | NullableAttribute = (1u <<< 4)
+    | ParamArrayAttribute = (1u <<< 5)
+    | AllowNullLiteralAttribute = (1u <<< 6)
+    | ReflectedDefinitionAttribute = (1u <<< 7)
+    | AutoOpenAttribute = (1u <<< 8)
+    | InternalsVisibleToAttribute = (1u <<< 9)
+    | CallerMemberNameAttribute = (1u <<< 10)
+    | CallerFilePathAttribute = (1u <<< 11)
+    | CallerLineNumberAttribute = (1u <<< 12)
+    | IDispatchConstantAttribute = (1u <<< 13)
+    | IUnknownConstantAttribute = (1u <<< 14)
+    | RequiresLocationAttribute = (1u <<< 15)
+    | SetsRequiredMembersAttribute = (1u <<< 16)
+    | NoEagerConstraintApplicationAttribute = (1u <<< 17)
+    | DefaultMemberAttribute = (1u <<< 18)
+    | ObsoleteAttribute = (1u <<< 19)
+    | NotComputed = (1u <<< 31)
 
 type internal ILAttributesStoredRepr =
     | Reader of (int32 -> ILAttribute[])
@@ -1259,7 +1260,10 @@ type internal ILAttributesStoredRepr =
 
 [<Sealed; NoEquality; NoComparison>]
 type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStoredRepr) =
+    [<VolatileField>]
     let mutable repr = initial
+
+    [<VolatileField>]
     let mutable wellKnownFlags = WellKnownILAttributes.NotComputed
 
     member _.MetadataIndex = metadataIndex
@@ -1320,7 +1324,6 @@ let mkILCustomAttrsComputed f =
     ILAttributesStored.CreateReader(-1, fun _ -> f ())
 
 let mkILCustomAttrsReader f = ILAttributesStored.CreateReader(-1, f)
-
 
 type ILCodeLabel = int
 

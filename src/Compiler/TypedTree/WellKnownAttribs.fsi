@@ -26,7 +26,7 @@ type internal WellKnownEntityAttributes =
     | ReflectedDefinitionAttribute = (1uL <<< 16)
     | SkipLocalsInitAttribute = (1uL <<< 18)
     | DebuggerTypeProxyAttribute = (1uL <<< 19)
-    | ComVisibleAttribute = (1uL <<< 20)
+    | ComVisibleAttribute_True = (1uL <<< 20)
     | IsReadOnlyAttribute = (1uL <<< 21)
     | IsByRefLikeAttribute = (1uL <<< 22)
     | ExtensionAttribute = (1uL <<< 23)
@@ -39,6 +39,14 @@ type internal WellKnownEntityAttributes =
     | MeasureAttribute = (1uL <<< 30)
     | DefaultAugmentationAttribute_False = (1uL <<< 31)
     | AutoSerializableAttribute_False = (1uL <<< 32)
+    | ComVisibleAttribute_False = (1uL <<< 33)
+    | ObsoleteAttribute = (1uL <<< 34)
+    | ComImportAttribute_True = (1uL <<< 35)
+    | CompilationRepresentation_ModuleSuffix = (1uL <<< 36)
+    | CompilationRepresentation_PermitNull = (1uL <<< 37)
+    | CompilationRepresentation_Instance = (1uL <<< 38)
+    | CompilationRepresentation_Static = (1uL <<< 39)
+    | CLIEventAttribute = (1uL <<< 40)
     | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known attributes on Val (values and members).
@@ -75,6 +83,7 @@ type internal WellKnownValAttributes =
     | DefaultValueAttribute_False = (1uL <<< 27)
     | NoDynamicInvocationAttribute_False = (1uL <<< 28)
     | GeneralizableValueAttribute = (1uL <<< 29)
+    | CLIEventAttribute = (1uL <<< 30)
     | NotComputed = (1uL <<< 63)
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.

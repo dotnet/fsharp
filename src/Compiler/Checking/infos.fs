@@ -30,7 +30,7 @@ open FSharp.Compiler.TypeProviders
 type ValRef with
     /// Indicates if an F#-declared function or member value is a CLIEvent property compiled as a .NET event
     member x.IsFSharpEventProperty g =
-        x.IsMember && CompileAsEvent g x.Attribs && not x.IsExtensionMember
+        x.IsMember && ValCompileAsEvent g x.Deref && not x.IsExtensionMember
 
     /// Check if an F#-declared member value is a virtual method
     member vref.IsVirtualMember =

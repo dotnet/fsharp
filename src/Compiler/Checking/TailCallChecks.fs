@@ -63,7 +63,7 @@ type TailCall =
         | TailCall.No -> TailCall.No
 
 let IsValRefIsDllImport g (vref: ValRef) =
-    vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute
+    ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute vref.Deref
 
 type cenv =
     {

@@ -4315,7 +4315,7 @@ let IsTyconUnseenObsoleteSpec ad g amap m (x: TyconRef) allowObsolete =
     not (IsEntityAccessible amap m ad x) ||
     ((not allowObsolete) &&
       (if x.IsILTycon then
-          CheckILAttributesForUnseen g x.ILTyconRawMetadata.CustomAttrs m
+          CheckILAttributesForUnseenStored g x.ILTyconRawMetadata.CustomAttrsStored m
        else
           CheckFSharpAttributesForUnseen g x.Attribs m allowObsolete))
 

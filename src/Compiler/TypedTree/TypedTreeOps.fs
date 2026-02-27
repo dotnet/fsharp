@@ -3675,6 +3675,7 @@ let computeILWellKnownFlags (_g: TcGlobals) (attrs: ILAttributes) : WellKnownILA
                     flags <- flags ||| WellKnownILAttributes.DefaultMemberAttribute
                 | "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute" ->
                     flags <- flags ||| WellKnownILAttributes.SetsRequiredMembersAttribute
+                | "System.ObsoleteAttribute" -> flags <- flags ||| WellKnownILAttributes.ObsoleteAttribute
                 | _ -> ()
 
     flags
@@ -3745,7 +3746,22 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
                     match name with
                     | "StructLayoutAttribute" -> flags <- flags ||| WellKnownEntityAttributes.StructLayoutAttribute
                     | "DllImportAttribute" -> flags <- flags ||| WellKnownEntityAttributes.DllImportAttribute
-                    | "ComVisibleAttribute" -> flags <- flags ||| WellKnownEntityAttributes.ComVisibleAttribute
+                    | "ComVisibleAttribute" ->
+                        flags <-
+                            flags
+                            ||| decodeBoolAttribFlag
+                                    attrib
+                                    WellKnownEntityAttributes.ComVisibleAttribute_True
+                                    WellKnownEntityAttributes.ComVisibleAttribute_False
+                                    WellKnownEntityAttributes.ComVisibleAttribute_True
+                    | "ComImportAttribute" ->
+                        flags <-
+                            flags
+                            ||| decodeBoolAttribFlag
+                                    attrib
+                                    WellKnownEntityAttributes.ComImportAttribute_True
+                                    WellKnownEntityAttributes.None
+                                    WellKnownEntityAttributes.ComImportAttribute_True
                     | _ -> ()
 
                 | [| "System"; "Diagnostics"; name |] ->
@@ -3756,6 +3772,7 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
                 | [| "System"; name |] ->
                     match name with
                     | "AttributeUsageAttribute" -> flags <- flags ||| WellKnownEntityAttributes.AttributeUsageAttribute
+                    | "ObsoleteAttribute" -> flags <- flags ||| WellKnownEntityAttributes.ObsoleteAttribute
                     | _ -> ()
 
                 | _ -> ())
@@ -3800,6 +3817,22 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
                 | "InterfaceAttribute" -> flags <- flags ||| WellKnownEntityAttributes.InterfaceAttribute
                 | "StructAttribute" -> flags <- flags ||| WellKnownEntityAttributes.StructAttribute
                 | "MeasureAttribute" -> flags <- flags ||| WellKnownEntityAttributes.MeasureAttribute
+                | "CLIEventAttribute" -> flags <- flags ||| WellKnownEntityAttributes.CLIEventAttribute
+                | "CompilationRepresentationAttribute" ->
+                    match attrib with
+                    | Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _) ->
+                        if v &&& 0x01 <> 0 then
+                            flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_Static
+
+                        if v &&& 0x02 <> 0 then
+                            flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_Instance
+
+                        if v &&& 0x04 <> 0 then
+                            flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_ModuleSuffix
+
+                        if v &&& 0x08 <> 0 then
+                            flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_PermitNull
+                    | _ -> ()
                 | _ -> ()
             | _ -> ()
         | ValueNone -> ()
@@ -3829,21 +3862,12 @@ let mapILFlagToEntityFlag (flag: WellKnownILAttributes) : WellKnownEntityAttribu
     | WellKnownILAttributes.AllowNullLiteralAttribute -> WellKnownEntityAttributes.AllowNullLiteralAttribute
     | WellKnownILAttributes.AutoOpenAttribute -> WellKnownEntityAttributes.AutoOpenAttribute
     | WellKnownILAttributes.ReflectedDefinitionAttribute -> WellKnownEntityAttributes.ReflectedDefinitionAttribute
+    | WellKnownILAttributes.ObsoleteAttribute -> WellKnownEntityAttributes.ObsoleteAttribute
     | WellKnownILAttributes.DefaultMemberAttribute -> WellKnownEntityAttributes.None
     | WellKnownILAttributes.NoEagerConstraintApplicationAttribute -> WellKnownEntityAttributes.None
     | _ -> WellKnownEntityAttributes.None
 
 /// Map a WellKnownILAttributes flag to its WellKnownValAttributes equivalent.
-let mapILFlagToValFlag (flag: WellKnownILAttributes) : WellKnownValAttributes =
-    match flag with
-    | WellKnownILAttributes.ExtensionAttribute -> WellKnownValAttributes.ExtensionAttribute
-    | WellKnownILAttributes.ParamArrayAttribute -> WellKnownValAttributes.ParamArrayAttribute
-    | WellKnownILAttributes.CallerMemberNameAttribute -> WellKnownValAttributes.CallerMemberNameAttribute
-    | WellKnownILAttributes.CallerFilePathAttribute -> WellKnownValAttributes.CallerFilePathAttribute
-    | WellKnownILAttributes.CallerLineNumberAttribute -> WellKnownValAttributes.CallerLineNumberAttribute
-    | WellKnownILAttributes.NoEagerConstraintApplicationAttribute -> WellKnownValAttributes.None
-    | _ -> WellKnownValAttributes.None
-
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
 let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes) (entity: Entity) : bool =
     let ea = entity.EntityAttribs
@@ -3929,6 +3953,7 @@ let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAtt
                     flags <- flags ||| WellKnownValAttributes.NoCompilerInliningAttribute
                 | "GeneralizableValueAttribute" ->
                     flags <- flags ||| WellKnownValAttributes.GeneralizableValueAttribute
+                | "CLIEventAttribute" -> flags <- flags ||| WellKnownValAttributes.CLIEventAttribute
                 | _ -> ()
             | _ -> ()
         | ValueNone -> ()
@@ -3961,12 +3986,12 @@ let ValHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (v: V
 
 /// Query a three-state bool attribute on an entity. Returns bool option.
 let EntityTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownEntityAttributes) (falseFlag: WellKnownEntityAttributes) (entity: Entity) : bool option =
-    let _ = EntityHasWellKnownAttribute g trueFlag entity
-    let ea = entity.EntityAttribs
-
-    if ea.HasWellKnownAttribute(trueFlag) then Some true
-    elif ea.HasWellKnownAttribute(falseFlag) then Some false
-    else Option.None
+    if not (EntityHasWellKnownAttribute g (trueFlag ||| falseFlag) entity) then
+        Option.None
+    else
+        let ea = entity.EntityAttribs
+        if ea.HasWellKnownAttribute(trueFlag) then Some true
+        else Some false
 
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
@@ -9534,14 +9559,9 @@ let XmlDocSigOfEntity (eref: EntityRef) =
 let enum_CompilationRepresentationAttribute_Static = 0b0000000000000001
 let enum_CompilationRepresentationAttribute_Instance = 0b0000000000000010
 let enum_CompilationRepresentationAttribute_ModuleSuffix = 0b0000000000000100
-let enum_CompilationRepresentationAttribute_PermitNull = 0b0000000000001000
 
-let HasUseNullAsTrueValueAttribute g attribs =
-     match TryFindFSharpInt32Attribute g g.attrib_CompilationRepresentationAttribute attribs with
-     | Some flags -> ((flags &&& enum_CompilationRepresentationAttribute_PermitNull) <> 0)
-     | _ -> false 
-
-let TyconHasUseNullAsTrueValueAttribute g (tycon: Tycon) = HasUseNullAsTrueValueAttribute g tycon.Attribs 
+let TyconHasUseNullAsTrueValueAttribute g (tycon: Tycon) =
+    EntityHasWellKnownAttribute g WellKnownEntityAttributes.CompilationRepresentation_PermitNull tycon
 
 // WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
 let CanHaveUseNullAsTrueValueAttribute (_g: TcGlobals) (tycon: Tycon) =
@@ -9909,7 +9929,10 @@ let ModuleNameIsMangled g attrs =
     | Some flags -> ((flags &&& enum_CompilationRepresentationAttribute_ModuleSuffix) <> 0)
     | _ -> false 
 
-let CompileAsEvent g attrs = HasFSharpAttribute g g.attrib_CLIEventAttribute attrs 
+let CompileAsEvent g attrs = HasFSharpAttribute g g.attrib_CLIEventAttribute attrs
+
+let ValCompileAsEvent g (v: Val) =
+    ValHasWellKnownAttribute g WellKnownValAttributes.CLIEventAttribute v
 
 let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberInfo) attrs =
     // All extension members are compiled as static members
@@ -9953,9 +9976,7 @@ let isSealedTy g ty =
    
 let isComInteropTy g ty =
     let tcref = tcrefOfAppTy g ty
-    match g.attrib_ComImportAttribute with
-    | None -> false
-    | Some attr -> TryFindFSharpBoolAttribute g attr tcref.Attribs = Some true
+    EntityHasWellKnownAttribute g WellKnownEntityAttributes.ComImportAttribute_True tcref.Deref
   
 let ValSpecIsCompiledAsInstance g (v: Val) =
     match v.MemberInfo with 

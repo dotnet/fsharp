@@ -1034,9 +1034,9 @@ type Derived() =
 [<DefaultAugmentation(false)>]
 type DU = A | B of int
 
-// Without DefaultAugmentation(false), DU would have IsA/IsB properties
-// With it, only tags are available
-let x = match DU.A with A -> 1 | B _ -> 2
+let x = DU.A
+let _ = x.IsA
         """
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withErrorCode 39

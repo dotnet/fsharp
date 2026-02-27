@@ -1396,7 +1396,7 @@ let TryStorageForWitness (_g: TcGlobals) eenv (w: TraitWitnessInfo) =
     | _ -> None
 
 let IsValRefIsDllImport g (vref: ValRef) =
-    vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute
+    ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute vref.Deref
 
 /// Determine how a top level value is represented, when it is being represented
 /// as a method.
@@ -9415,7 +9415,7 @@ and GenMethodForBinding
         not v.IsExtensionMember
         && (match memberInfo.MemberFlags.MemberKind with
             | SynMemberKind.PropertySet
-            | SynMemberKind.PropertyGet -> CompileAsEvent cenv.g v.Attribs
+            | SynMemberKind.PropertyGet -> ValCompileAsEvent cenv.g v
             | _ -> false)
         ->
 
@@ -9549,7 +9549,7 @@ and GenMethodForBinding
                             )
 
                         // Check if we're compiling the property as a .NET event
-                        assert not (CompileAsEvent cenv.g v.Attribs)
+                        assert not (ValCompileAsEvent cenv.g v)
 
                         // Emit the property, but not if it's a private method impl
                         if mdef.Access <> ILMemberAccess.Private then
@@ -10958,7 +10958,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                         if
                             memberInfo.MemberFlags.IsOverrideOrExplicitImpl
-                            && not (CompileAsEvent g vref.Attribs)
+                            && not (ValCompileAsEvent g vref.Deref)
                         then
 
                             for slotsig in memberInfo.ImplementedSlotSigs do
@@ -11433,8 +11433,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         if
                             not isStructRecord
                             && (isCLIMutable
-                                || (EntityHasWellKnownAttribute g WellKnownEntityAttributes.ComVisibleAttribute tycon
-                                    && TryFindFSharpBoolAttribute g g.attrib_ComVisibleAttribute tycon.Attribs = Some true))
+                                || EntityHasWellKnownAttribute g WellKnownEntityAttributes.ComVisibleAttribute_True tycon)
                         then
                             yield mkILSimpleStorageCtor (Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess, None, eenv.imports)
 

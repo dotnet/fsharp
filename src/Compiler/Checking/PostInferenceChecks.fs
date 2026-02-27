@@ -2119,8 +2119,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
               (// Check the attributes on any enclosing module
                env.reflect ||
                // Check the attributes on the value
-               ValHasWellKnownAttribute g WellKnownValAttributes.ReflectedDefinitionAttribute_True v ||
-               ValHasWellKnownAttribute g WellKnownValAttributes.ReflectedDefinitionAttribute_False v ||
+               ValHasWellKnownAttribute g (WellKnownValAttributes.ReflectedDefinitionAttribute_True ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False) v ||
                // Also check the enclosing type for members - for historical reasons, in the TAST member values
                // are stored in the entity that encloses the type, hence we will not have noticed the ReflectedDefinition
                // on the enclosing type at this point.
