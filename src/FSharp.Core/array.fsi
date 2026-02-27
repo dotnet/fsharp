@@ -2076,6 +2076,34 @@ module Array =
     [<CompiledName("Partition")>]
     val partition: predicate: ('T -> bool) -> array: 'T array -> 'T array * 'T array
 
+    /// <summary>Splits the collection into two arrays, by applying the given partitioning function
+    /// to each element. Returns <c>Choice1Of2</c> elements in the first array and
+    /// <c>Choice2Of2</c> elements in the second array. Element order is preserved in both of the created arrays.</summary>
+    ///
+    /// <param name="partitioner">The function to transform and classify each input element into one of two output types.</param>
+    /// <param name="array">The input array.</param>
+    ///
+    /// <returns>A tuple of two arrays. The first containing values from <c>Choice1Of2</c> results and the second
+    /// containing values from <c>Choice2Of2</c> results.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <example id="partitionWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 1; 2; 3; 4; 5 |]
+    ///
+    /// let evens, odds =
+    ///     inputs |> Array.partitionWith (fun x ->
+    ///         if x % 2 = 0 then Choice1Of2 (x * 10)
+    ///         else Choice2Of2 (string x))
+    /// </code>
+    /// Evaluates <c>evens</c> to <c>[|20; 40|]</c> and <c>odds</c> to <c>[|"1"; "3"; "5"|]</c>.
+    /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the array.</remarks>
+    [<CompiledName("PartitionWith")>]
+    val inline partitionWith: partitioner: ('T -> Choice<'T1, 'T2>) -> array: 'T array -> 'T1 array * 'T2 array
+
     /// <summary>Returns an array with all elements permuted according to the
     /// specified permutation.</summary>
     ///
@@ -4328,6 +4356,36 @@ module Array =
         /// </example>
         [<CompiledName("Partition")>]
         val partition: predicate: ('T -> bool) -> array: 'T array -> 'T array * 'T array
+
+        /// <summary>Splits the collection into two arrays, by applying the given partitioning function
+        /// to each element. Returns <c>Choice1Of2</c> elements in the first array and
+        /// <c>Choice2Of2</c> elements in the second array. Element order is preserved in both of the created arrays.</summary>
+        ///
+        /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
+        /// The order in which the given function is applied to elements of the input array is not specified.
+        /// The partitioner function must be thread-safe. This is an O(n) operation, where n is the length of the array.</remarks>
+        ///
+        /// <param name="partitioner">The function to transform and classify each input element into one of two output types.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>A tuple of two arrays. The first containing values from <c>Choice1Of2</c> results and the second
+        /// containing values from <c>Choice2Of2</c> results.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="parallel-partitionWith-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 2; 3; 4; 5 |]
+        ///
+        /// let evens, odds =
+        ///     inputs |> Array.Parallel.partitionWith (fun x ->
+        ///         if x % 2 = 0 then Choice1Of2 (x * 10)
+        ///         else Choice2Of2 (string x))
+        /// </code>
+        /// Evaluates <c>evens</c> to <c>[|20; 40|]</c> and <c>odds</c> to <c>[|"1"; "3"; "5"|]</c>.
+        /// </example>
+        [<CompiledName("PartitionWith")>]
+        val inline partitionWith: partitioner: ('T -> Choice<'T1, 'T2>) -> array: 'T array -> 'T1 array * 'T2 array
 
         /// <summary>Sorts the elements of an array in parallel, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
         ///

@@ -337,7 +337,8 @@ type BoundModel private (
                     sResolutions.CapturedNameResolutions
                     |> Seq.iter (fun cnr ->
                         let r = cnr.Range
-                        if preventDuplicates.Add struct(r.Start, r.End) then
+                        // Skip synthetic ranges (e.g., compiler-generated event handler values) (#4136)
+                        if not r.IsSynthetic && preventDuplicates.Add struct(r.Start, r.End) then
                             builder.Write(cnr.Range, cnr.Item))
                     
                     let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)

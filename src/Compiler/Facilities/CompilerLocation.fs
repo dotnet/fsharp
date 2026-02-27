@@ -122,21 +122,21 @@ module internal FSharpEnvironment =
                 "netstandard2.0"
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
+            let productMajor = FSharp.BuildProperties.fsProductTfmMajorVersion
+            let runningMajor = Environment.Version.Major
+
             [|
-                "net11.0"
-                "net10.0"
-                "net9.0"
-                "net8.0"
-                "net7.0"
-                "net6.0"
-                "net5.0"
-                "netcoreapp3.1"
-                "netcoreapp3.0"
-                "netstandard2.1"
-                "netcoreapp2.2"
-                "netcoreapp2.1"
-                "netcoreapp2.0"
-                "netstandard2.0"
+                for v in max productMajor runningMajor .. -1 .. 5 -> $"net{v}.0"
+                yield!
+                    [|
+                        "netcoreapp3.1"
+                        "netcoreapp3.0"
+                        "netstandard2.1"
+                        "netcoreapp2.2"
+                        "netcoreapp2.1"
+                        "netcoreapp2.0"
+                        "netstandard2.0"
+                    |]
             |]
         else
             Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")

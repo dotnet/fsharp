@@ -1998,6 +1998,15 @@ let ItemsAreEffectivelyEqual g orig other =
     | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
         traitInfo1.MemberLogicalName = traitInfo2.MemberLogicalName
 
+    // Cross-match constructor value refs with constructor groups (for FAR from additional constructor new())
+    | ValUse vref1, Item.CtorGroup(_, meths)
+    | Item.CtorGroup(_, meths), ValUse vref1 ->
+        meths
+        |> List.exists (fun meth ->
+            match meth.ArbitraryValRef with
+            | Some vref2 -> valRefDefnEq g vref1 vref2
+            | _ -> false)
+
     | _ -> false
 
 /// Given the Item 'orig' - returns function 'other: Item -> bool', that will yield true if other and orig represents the same item and false - otherwise
@@ -2006,6 +2015,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | EntityUse tcref -> tyconRefDefnHash g tcref
     | Item.TypeVar (nm, _)-> hash nm
     | Item.Trait traitInfo -> hash traitInfo.MemberLogicalName
+    | ValUse vref when vref.IsConstructor && vref.IsMember -> hash vref.MemberApparentEntity.LogicalName
     | ValUse vref -> valRefDefnHash g vref
     | ActivePatternCaseUse (_, _, idx)-> hash idx
     | MethodUse minfo -> minfo.ComputeHashCode()
@@ -2241,21 +2251,50 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
     | None -> ()
     | Some sink -> sink.NotifyEnvWithScope(scopem, nenv, ad)
 
+// #16621
+let RegisterUnionCaseTesterForProperty
+    (sink: TcResultsSink)
+    (identRange: range)
+    (nenv: NameResolutionEnv)
+    (pinfos: PropInfo list)
+    (occurrenceType: ItemOccurrence)
+    (ad: AccessorDomain)
+    =
+    match sink.CurrentSink, pinfos with
+    | Some currentSink, (pinfo :: _) when pinfo.IsUnionCaseTester ->
+        let logicalName = pinfo.GetterMethod.LogicalName
+
+        if PrettyNaming.IsUnionCaseTesterPropertyName logicalName then
+            let caseName = logicalName.Substring(PrettyNaming.unionCaseTesterPropertyPrefixLength)
+            let tcref = pinfo.ApparentEnclosingTyconRef
+
+            match tcref.GetUnionCaseByName caseName with
+            | Some ucase ->
+                let ucref = tcref.MakeNestedUnionCaseRef ucase
+                let ucinfo = UnionCaseInfo([], ucref)
+                let ucItem = Item.UnionCase(ucinfo, false)
+                currentSink.NotifyNameResolution(identRange.End, ucItem, emptyTyparInst, occurrenceType, nenv, ad, identRange, true)
+            | None -> ()
+    | _ -> ()
+
 /// Report a specific name resolution at a source range
 let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, false)
+    | Some currentSink ->
+        currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, false)
 
 let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, false)
+    | Some currentSink ->
+        currentSink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, false)
 
 let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurrenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, true)
+    | Some currentSink ->
+        currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, true)
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
@@ -4159,6 +4198,13 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
 
             CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, item, tpinst, occurrence, ad)
 
+            // #16621
+            match refinedItem with
+            | Item.Property(_, pinfos, _) ->
+                let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
+                RegisterUnionCaseTesterForProperty sink propIdentRange nenv pinfos occurrence ad
+            | _ -> ()
+
     let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
         let refinedItem =
             match pinfoOpt with
@@ -4227,6 +4273,13 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
                 let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
                 CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurrence.Use, ad)
+
+                // #16621
+                match refinedItem with
+                | Item.Property(_, pinfos, _) ->
+                    let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
+                    RegisterUnionCaseTesterForProperty sink propIdentRange nenv pinfos ItemOccurrence.Use ad
+                | _ -> ()
 
             let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
                 let refinedItem =
