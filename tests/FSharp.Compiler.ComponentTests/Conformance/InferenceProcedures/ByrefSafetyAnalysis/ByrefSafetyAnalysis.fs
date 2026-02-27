@@ -3381,6 +3381,140 @@ let f () =
 
 #endif
 
+    // ---- Finding 2: ref T (type variable) conservative fallback with RefSafetyRules(11) ----
+
+    [<Fact>]
+    let ``ref T type variable is not implicitly scoped even with RefSafetyRules`` () =
+        // C# 11 automatically emits [module: RefSafetyRules(11)].
+        let csharpLib =
+            CSharp """
+using System;
+public class Lib {
+    public static Span<T> M<T>(ref T x) => default;
+}
+"""         |> withName "RefTTypeVarLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+
+let f () =
+    let mutable local = 42
+    Lib.M<int>(&local)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``ref T type variable is not implicitly scoped even with RefSafetyRules - backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+public class Lib {
+    public static Span<T> M<T>(ref T x) => default;
+}
+"""         |> withName "RefTTypeVarLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+
+let f () =
+    let mutable local = 42
+    Lib.M<int>(&local)
+"""
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    // ---- Finding 3: async { } CE interaction ----
+
+    [<Fact>]
+    let ``AsyncCE_ByrefInClosure_FiresFS0412_BeforeEscapeAnalysis`` () =
+        FSharp """
+module Test
+open System
+
+let f () = async {
+    let mutable x = 1
+    return Span<int>(&x)
+}
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [412]
+
+    // ---- Finding 5: Property getter returning span-like ----
+
+#if NET7_0_OR_GREATER
+    [<Fact>]
+    let ``Property getter returning span-like from UnscopedRef struct`` () =
+        // Known limitation: property getters with [UnscopedRef] on a struct are not yet caught
+        // by escape analysis (unlike method calls such as E_StructReceiverUnscopedRefEscapes).
+        // Ideally this should fail with FS3235, but currently succeeds.
+        let csharpLib =
+            CSharp """
+using System;
+using System.Diagnostics.CodeAnalysis;
+public struct Container {
+    public int Field;
+    [UnscopedRef]
+    public Span<int> Data => new Span<int>(ref Field);
+}
+"""         |> withName "PropertyGetterSpanLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+
+let f () : Span<int> =
+    let mutable c = Container(Field = 42)
+    c.Data
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Property getter returning span-like from UnscopedRef struct - backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+using System.Diagnostics.CodeAnalysis;
+public struct Container {
+    public int Field;
+    [UnscopedRef]
+    public Span<int> Data => new Span<int>(ref Field);
+}
+"""         |> withName "PropertyGetterSpanLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+
+let f () : Span<int> =
+    let mutable c = Container(Field = 42)
+    c.Data
+"""
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+#endif
+
 #if NETSTANDARD2_1_OR_GREATER
     [<Theory; FileInlineData("E_TopLevelByref.fs")>]
     let``E_TopLevelByref_fs`` compilation =
