@@ -1011,7 +1011,10 @@ module internal Tokenizer =
         let text = sourceText.GetSubText(span).ToString()
         (text = "get" || text = "set") && text <> symbolName
 
-    /// (#18270) Applies fixupSpan and filters out phantom property accessor references.
+    /// #18270: Parameterized active pattern that applies fixupSpan and filters out
+    /// phantom property accessor references from rename/find-references.
+    /// The symbolName parameter ensures identifiers genuinely named "get"/"set" are kept.
+    /// Usage: match textSpan with FixedSpan sourceText symbolName fixedSpan -> ...
     let (|FixedSpan|_|) (sourceText: SourceText) (symbolName: string) (span: TextSpan) : TextSpan voption =
         let fixedSpan = fixupSpan (sourceText, span)
 
@@ -1020,7 +1023,9 @@ module internal Tokenizer =
         else
             ValueSome fixedSpan
 
-    /// (#18270) Converts F# range to Roslyn TextSpan, filtering out phantom property accessor references.
+    /// #18270: Converts F# range to Roslyn TextSpan with editor-specific filtering.
+    /// Filters out phantom property accessor references that should not appear in
+    /// Find All References or Rename operations.
     let TryFSharpRangeToTextSpanForEditor (sourceText: SourceText, range: range, symbolName: string) : TextSpan voption =
         match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
         | ValueSome textSpan ->

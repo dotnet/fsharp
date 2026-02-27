@@ -2445,8 +2445,8 @@ let ``Test Project15 all symbols`` () =
           [|("val x", "x", "file1", ((4, 6), (4, 7)), ["defn"]);
             ("val x", "x", "file1", ((5, 10), (5, 11)), []);
             ("val h", "h", "file1", ((6, 7), (6, 8)), ["defn"]);
-            ("val h", "h", "file1", ((7, 10), (7, 11)), []);
-            ("val h", "h", "file1", ((8, 13), (8, 14)), []);
+            ("val h", "h", "file1", ((7, 10), (7, 11)), []);    // Or pattern secondary binding -> Use
+            ("val h", "h", "file1", ((8, 13), (8, 14)), []);    // Or pattern secondary binding -> Use
             ("val h", "h", "file1", ((8, 19), (8, 20)), []);
             ("val f", "f", "file1", ((4, 4), (4, 5)), ["defn"]);
             ("UnionPatterns", "UnionPatterns", "file1", ((2, 7), (2, 20)), ["defn"])|]

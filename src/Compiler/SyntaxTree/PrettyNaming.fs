@@ -927,9 +927,11 @@ let splitAroundQuotationWithCount (text: string) (separator: char) (count: int) 
 [<Literal>]
 let FSharpModuleSuffix = "Module"
 
+/// Prefix for union case tester properties (e.g., "get_IsCase" for union case "Case")
 [<Literal>]
 let unionCaseTesterPropertyPrefix = "get_Is"
 
+/// The length of unionCaseTesterPropertyPrefix
 [<Literal>]
 let unionCaseTesterPropertyPrefixLength = 6 // "get_Is".Length
 

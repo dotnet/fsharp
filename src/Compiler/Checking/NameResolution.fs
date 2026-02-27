@@ -2251,7 +2251,7 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
     | None -> ()
     | Some sink -> sink.NotifyEnvWithScope(scopem, nenv, ad)
 
-// (#16621) Register union case tester properties (e.g., IsB) as references to their underlying union case.
+// #16621
 let RegisterUnionCaseTesterForProperty
     (sink: TcResultsSink)
     (identRange: range)
