@@ -56,7 +56,8 @@ let LightweightTcValForUsingInBuildMethodCall g traitCtxt (vref: ValRef) vrefFla
             // Instantiate the value
             let tau =
                 // If we have got an explicit instantiation then use that
-                let _, tps, tpTys, tau = FreshenPossibleForallTy g traitCtxt m TyparRigidity.Flexible vTy
+                let _, tps, tpTys, tau =
+                    FreshenPossibleForallTy g traitCtxt m TyparRigidity.Flexible vTy
 
                 if tpTys.Length <> vrefTypeInst.Length then
                     error (Error(FSComp.SR.tcTypeParameterArityMismatch (tps.Length, vrefTypeInst.Length), m))

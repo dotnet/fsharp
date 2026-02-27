@@ -97,6 +97,7 @@ type LanguageFeature =
     | ReturnFromFinal
     | MethodOverloadsCache
     | ImplicitDIMCoverage
+    | PreprocessorElif
     | ExtensionConstraintSolutions
 
 /// LanguageVersion management

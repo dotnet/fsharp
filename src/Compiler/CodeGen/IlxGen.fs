@@ -5544,7 +5544,7 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
                 // Emit a diagnostic so the user knows about the runtime throw.
                 // This is defensive — type-checking should have caught it — but
                 // extension constraint changes can leave unsolved constraints in codegen.
-                warning(Error(FSComp.SR.ilTraitCallNotStaticallyResolved(traitInfo.MemberLogicalName), m))
+                warning (Error(FSComp.SR.ilTraitCallNotStaticallyResolved (traitInfo.MemberLogicalName), m))
                 None
 
         match exprOpt with
