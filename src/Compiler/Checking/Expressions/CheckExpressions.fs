@@ -11136,7 +11136,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter false))
 
         // Assert the return type of an active pattern. A [<return:Struct>] attribute may be used on a partial active pattern.
-        let isStructRetTy = computeValWellKnownFlags g retAttribs &&& WellKnownValAttributes.StructAttribute <> WellKnownValAttributes.None
+        let isStructRetTy = attribsHaveValFlag g WellKnownValAttributes.StructAttribute retAttribs
 
         let argAndRetAttribs = ArgAndRetAttribs(argAttribs, retAttribs)
 
@@ -11746,7 +11746,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
             | _ when inlineFlag.ShouldInline ->
                 error(Error(FSComp.SR.tcInvalidInlineSpecification(), m))
 
-            | TPat_query _ when computeValWellKnownFlags g attrs &&& WellKnownValAttributes.LiteralAttribute <> WellKnownValAttributes.None ->
+            | TPat_query _ when attribsHaveValFlag g WellKnownValAttributes.LiteralAttribute attrs ->
                 error(Error(FSComp.SR.tcLiteralAttributeCannotUseActivePattern(), m))
 
             | _ ->
@@ -13080,7 +13080,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
             match literalExprOpt with
             | None ->
                 let hasLiteralAttr =
-                    computeValWellKnownFlags g attrs &&& WellKnownValAttributes.LiteralAttribute <> WellKnownValAttributes.None
+                    attribsHaveValFlag g WellKnownValAttributes.LiteralAttribute attrs
                 if hasLiteralAttr then
                     errorR(Error(FSComp.SR.tcLiteralAttributeRequiresConstantValue(), m))
                 None

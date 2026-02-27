@@ -439,8 +439,10 @@ module TcRecdUnionAndEnumDeclarations =
         let isVolatile = fieldFlags &&& WellKnownValAttributes.VolatileFieldAttribute <> WellKnownValAttributes.None
         
         let isThreadStatic =
-            fieldFlags &&& WellKnownValAttributes.ThreadStaticAttribute <> WellKnownValAttributes.None
-            || fieldFlags &&& WellKnownValAttributes.ContextStaticAttribute <> WellKnownValAttributes.None
+            fieldFlags
+            &&& (WellKnownValAttributes.ThreadStaticAttribute
+                 ||| WellKnownValAttributes.ContextStaticAttribute)
+            <> WellKnownValAttributes.None
         if isThreadStatic && (not zeroInit || not isStatic) then 
             errorR(Error(FSComp.SR.tcThreadStaticAndContextStaticMustBeStatic(), m))
 
@@ -2698,8 +2700,7 @@ module EstablishTypeDefinitionCores =
                 try
                     let (SynTyparDecl (attributes = Attributes synAttrs)) = synTypar
                     let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
-                    let flags = computeEntityWellKnownFlags cenv.g attrs
-                    flags &&& WellKnownEntityAttributes.MeasureAttribute <> WellKnownEntityAttributes.None
+                    attribsHaveEntityFlag cenv.g WellKnownEntityAttributes.MeasureAttribute attrs
                 with _ -> false))
 
     let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
@@ -3196,9 +3197,8 @@ module EstablishTypeDefinitionCores =
             let id = tycon.Id
             let thisTyconRef = mkLocalTyconRef tycon
 
-            let entityFlags = computeEntityWellKnownFlags g attrs
-            let hasMeasureAttr = entityFlags &&& WellKnownEntityAttributes.MeasureAttribute <> WellKnownEntityAttributes.None
-            let hasMeasureableAttr = entityFlags &&& WellKnownEntityAttributes.MeasureableAttribute <> WellKnownEntityAttributes.None
+            let hasMeasureAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureAttribute attrs
+            let hasMeasureableAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureableAttribute attrs
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false 
 

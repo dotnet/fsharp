@@ -2649,9 +2649,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 let m = f.Range
                 // Check if it's marked unsafe
                 let zeroInitUnsafe =
-                    computeValWellKnownFlags g f.FieldAttribs
-                    &&& WellKnownValAttributes.DefaultValueAttribute_True
-                    <> WellKnownValAttributes.None
+                    attribsHaveValFlag g WellKnownValAttributes.DefaultValueAttribute_True f.FieldAttribs
 
                 if zeroInitUnsafe then
                     let ty = f.FormalType
@@ -2669,9 +2667,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 let m = f.Range
                 // Check if it's marked unsafe
                 let zeroInitUnsafe =
-                    computeValWellKnownFlags g f.FieldAttribs
-                    &&& WellKnownValAttributes.DefaultValueAttribute_True
-                    <> WellKnownValAttributes.None
+                    attribsHaveValFlag g WellKnownValAttributes.DefaultValueAttribute_True f.FieldAttribs
 
                 if zeroInitUnsafe then
                     if not (TypeHasDefaultValue g m f.FormalType) then

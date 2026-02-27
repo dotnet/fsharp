@@ -3876,6 +3876,10 @@ let mapILFlagToEntityFlag (flag: WellKnownILAttributes) : WellKnownEntityAttribu
     | WellKnownILAttributes.NoEagerConstraintApplicationAttribute -> WellKnownEntityAttributes.None
     | _ -> WellKnownEntityAttributes.None
 
+/// Check if a raw attribute list has a specific well-known entity flag (ad-hoc, non-caching).
+let inline attribsHaveEntityFlag g (flag: WellKnownEntityAttributes) (attribs: Attribs) =
+    computeEntityWellKnownFlags g attribs &&& flag <> WellKnownEntityAttributes.None
+
 /// Map a WellKnownILAttributes flag to its WellKnownValAttributes equivalent.
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
 let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes) (entity: Entity) : bool =
@@ -3968,6 +3972,10 @@ let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAtt
         | ValueNone -> ()
 
     flags
+
+/// Check if a raw attribute list has a specific well-known val flag (ad-hoc, non-caching).
+let inline attribsHaveValFlag g (flag: WellKnownValAttributes) (attribs: Attribs) =
+    computeValWellKnownFlags g attribs &&& flag <> WellKnownValAttributes.None
 
 /// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
 let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (argInfo: ArgReprInfo) : bool =
@@ -9781,8 +9789,7 @@ let rec TypeHasDefaultValueAux isNew g m ty =
                 tcref.AllInstanceFieldsAsList
                   // We can ignore fields with the DefaultValue(false) attribute 
                   |> List.filter (fun fld ->
-                      let flags = computeValWellKnownFlags g fld.FieldAttribs
-                      flags &&& WellKnownValAttributes.DefaultValueAttribute_False = WellKnownValAttributes.None)
+                      not (attribsHaveValFlag g WellKnownValAttributes.DefaultValueAttribute_False fld.FieldAttribs))
 
             flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValueAux isNew g m)
 
