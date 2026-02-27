@@ -267,10 +267,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsNoRealsig_testCoreclr
               mergeTestResults: true
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
 
@@ -314,10 +314,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsNoRealsig_testDesktop
               mergeTestResults: true
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
             continueOnError: true
@@ -462,10 +462,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsCompressedMetadata $(_testKind) $(transparentCompiler)
               mergeTestResults: true
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
             condition: succeededOrFailed()
@@ -543,10 +543,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsCompressedMetadata testDesktop Batch$(batchNumber)
               mergeTestResults: true
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             continueOnError: true
             condition: succeededOrFailed()
@@ -616,9 +616,9 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: Linux
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
@@ -661,8 +661,8 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
-              testResultsFiles: '*.trx'
+              testResultsFormat: 'XUnit'
+              testResultsFiles: '*.xml'
               testRunTitle: MacOS
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
