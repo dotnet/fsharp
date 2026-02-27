@@ -48,8 +48,8 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
 
-open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.DiagnosticsLogger
@@ -59,6 +59,7 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.OverloadResolutionCache
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
@@ -82,6 +83,7 @@ type TraitContext = ITraitContext<AccessorDomain, MethInfo, InfoReader>
 // compilation environment, which currently corresponds to the scope
 // of the constraint resolution carried out by type checking.
 //------------------------------------------------------------------------- 
+
    
 let compgenId = mkSynId range0 unassignedTyparName
 
@@ -183,6 +185,10 @@ type ContextInfo =
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
 
+    /// The type equation comes from a nullness check of a captured argument (e.g., pipe operators).
+    /// The range points to the original argument location.
+    | NullnessCheckOfCapturedArg of range
+
 /// Captures relevant information for a particular failed overload resolution.
 type OverloadInformation = 
     {
@@ -249,11 +255,11 @@ exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType
 
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
-type ConstraintSolverState = 
-    { 
+type ConstraintSolverState =
+    {
       g: TcGlobals
 
-      amap: ImportMap 
+      amap: ImportMap
 
       InfoReader: InfoReader
 
@@ -283,7 +289,7 @@ type ConstraintSolverState =
           TcVal = tcVal
           PostInferenceChecksPreDefaults = ResizeArray()
           PostInferenceChecksFinal = ResizeArray()
-          WarnWhenUsingWithoutNullOnAWithNullTarget = None } 
+          WarnWhenUsingWithoutNullOnAWithNullTarget = None }
 
     member this.PushPostInferenceCheck (preDefaults, check) =
         if preDefaults then
@@ -356,16 +362,16 @@ let MakeConstraintSolverEnv contextInfo css m denv =
     }
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
-/// infinite equations such as 
+/// infinite equations such as
 ///    'a = 'a list
-let rec occursCheck g un ty = 
-    match stripTyEqns g ty with 
+let rec occursCheck g un ty =
+    match stripTyEqns g ty with
     | TType_ucase(_, l)
     | TType_app (_, l, _) 
     | TType_anon(_, l)
     | TType_tuple (_, l) -> List.exists (occursCheck g un) l
     | TType_fun (domainTy, rangeTy, _) -> occursCheck g un domainTy || occursCheck g un rangeTy
-    | TType_var (r, _) ->  typarEq un r 
+    | TType_var (r, _) ->  typarEq un r
     | TType_forall (_, tau) -> occursCheck g un tau
     | _ -> false 
 
@@ -1035,14 +1041,18 @@ and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
     csenv.g.checkNullness &&
     csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome    
 
+and getNullnessWarningRange (csenv: ConstraintSolverEnv) =
+    match csenv.eContextInfo with
+    | ContextInfo.NullnessCheckOfCapturedArg capturedArgRange -> capturedArgRange
+    | _ -> csenv.m
+
 // nullness1: actual
 // nullness2: expected
-and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
+and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 (nullness1: Nullness) (nullness2: Nullness) =
+    // KnownFromConstructor behaves identically to WithoutNull for unification
+    let nullness1 = nullness1.Normalize()
+    let nullness2 = nullness2.Normalize()
     match nullness1, nullness2 with
-    | Nullness.KnownFromConstructor, _ ->
-        SolveNullnessEquiv csenv m2 trace ty1 ty2 (Nullness.Known NullnessInfo.WithoutNull) nullness2
-    | _, Nullness.KnownFromConstructor ->
-        SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 (Nullness.Known NullnessInfo.WithoutNull)
     | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
         CompleteD
     | Nullness.Variable nv1, _ when nv1.IsSolved ->
@@ -1069,18 +1079,17 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
             if csenv.g.checkNullness then 
-                WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2))
+                WarnD(ConstraintSolverNullnessWarningEquivWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, getNullnessWarningRange csenv, m2))
             else
                 CompleteD
+    | Nullness.KnownFromConstructor, _ | _, Nullness.KnownFromConstructor -> CompleteD // Unreachable after Normalize()
 
 // nullness1: target
 // nullness2: source
-and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
+and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 (nullness1: Nullness) (nullness2: Nullness) =
+    let nullness1 = nullness1.Normalize()
+    let nullness2 = nullness2.Normalize()
     match nullness1, nullness2 with
-    | Nullness.KnownFromConstructor, _ ->
-        SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (Nullness.Known NullnessInfo.WithoutNull) nullness2
-    | _, Nullness.KnownFromConstructor ->
-        SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 (Nullness.Known NullnessInfo.WithoutNull)
     | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
         CompleteD
     | Nullness.Variable nv1, _ when nv1.IsSolved -> 
@@ -1110,9 +1119,10 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then               
-                WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
+                WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, getNullnessWarningRange csenv, m2))
             else
                 CompleteD
+    | Nullness.KnownFromConstructor, _ | _, Nullness.KnownFromConstructor -> CompleteD // Unreachable after Normalize()
 
 and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty1 ty =
     trackErrors {
@@ -2755,13 +2765,12 @@ and SolveLegacyTypeUseSupportsNullLiteral (csenv: ConstraintSolverEnv) ndeep m2 
     }
 
 and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness =
+    let nullness = nullness.Normalize()
     trackErrors {
         let g = csenv.g
         let m = csenv.m
         let denv = csenv.DisplayEnv
         match nullness with
-        | Nullness.KnownFromConstructor ->
-            do! SolveNullnessSupportsNull csenv ndeep m2 trace ty (Nullness.Known NullnessInfo.WithoutNull)
         | Nullness.Variable nv ->
             if nv.IsSolved then
                 do! SolveNullnessSupportsNull csenv ndeep m2 trace ty nv.Solution
@@ -2778,9 +2787,10 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
                     // If a type would allow null in older rules of F#, we can just emit a warning.
                     // In the opposite case, we keep this as an error to avoid generating incorrect code (e.g. assigning null to an int)
                     if (TypeNullIsExtraValue g m ty) then
-                        return! WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, m, m2))
+                        return! WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, getNullnessWarningRange csenv, m2))
                     else
                         return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+        | Nullness.KnownFromConstructor -> () // Unreachable after Normalize()
     }
 
 and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
@@ -2792,10 +2802,16 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
         if TypeNullIsTrueValue g ty then 
             // We can only give warnings here as F# 5.0 introduces these constraints into existing
             // code via Option.ofObj and Option.toObj
-            do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
+            do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), getNullnessWarningRange csenv, m2))
         elif TypeNullIsExtraValueNew g m ty then 
             if g.checkNullness then
-                do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfTypeWithNullness denv ty), m, m2))
+                // Constructor results are provably non-null even for AllowNullLiteral types
+                let isFromConstructor =
+                    match stripTyEqns g ty with
+                    | TType_app(_, _, Nullness.KnownFromConstructor) -> true
+                    | _ -> false
+                if not isFromConstructor then
+                    do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfTypeWithNullness denv ty), getNullnessWarningRange csenv, m2))
         else
             match tryDestTyparTy g ty with
             | ValueSome tp ->
@@ -2806,12 +2822,12 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     }
 
 and SolveNullnessNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness =
+    let nullness = nullness.Normalize()
     trackErrors {
         let g = csenv.g
         let m = csenv.m
         let denv = csenv.DisplayEnv
         match nullness with
-        | Nullness.KnownFromConstructor -> ()
         | Nullness.Variable nv ->
             if nv.IsSolved then
                 do! SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nv.Solution
@@ -2823,7 +2839,8 @@ and SolveNullnessNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: O
             | NullnessInfo.WithoutNull -> ()
             | NullnessInfo.WithNull -> 
                 if g.checkNullness && TypeNullIsExtraValueNew g m ty then
-                    return! WarnD(ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfTypeWithNullness denv ty), m, m2))
+                    return! WarnD(ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfTypeWithNullness denv ty), getNullnessWarningRange csenv, m2))
+        | Nullness.KnownFromConstructor -> () // Unreachable after Normalize()
     }
 
 and SolveTypeCanCarryNullness (csenv: ConstraintSolverEnv)  ty nullness =
@@ -3506,9 +3523,122 @@ and AssumeMethodSolvesTrait (csenv: ConstraintSolverEnv) (cx: TraitConstraintInf
     | _ -> 
         None
 
+/// Core implementation of overload resolution (extracted for caching)
+and ResolveOverloadingCore 
+         (csenv: ConstraintSolverEnv)
+         methodName
+         ndeep
+         cx
+         (callerArgs: CallerArgs<Expr>)
+         ad
+         (calledMethGroup: CalledMeth<Expr> list)
+         (candidates: CalledMeth<Expr> list)
+         permitOptArgs
+         (reqdRetTyOpt: OverallTy option)
+         isOpConversion
+         alwaysConsiderReturnType
+         (retTyOpt: TType option)
+         (anyHasOutArgs: bool)
+         (cacheKeyOpt: OverloadResolutionCacheKey voption)
+         (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>)
+         : CalledMeth<Expr> option * OperationResult<unit> * OptionalTrace =
+
+    let infoReader = csenv.InfoReader
+    let m = csenv.m
+
+    // Always take the return type into account for
+    //    -- op_Explicit, op_Implicit
+    //    -- methods with AllowOverloadOnReturnType attribute
+    //    -- candidate method sets that potentially use tupling of unfilled out args
+    let alwaysCheckReturn =
+        alwaysConsiderReturnType || anyHasOutArgs
+
+    // Exact match rule.
+    //
+    // See what candidates we have based on current inferred type information 
+    // and exact matches of argument types. 
+    let exactMatchCandidates =
+        candidates |> FilterEachThenUndo (fun newTrace calledMeth ->
+              let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+              let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
+              CanMemberSigsMatchUpToCheck 
+                  csenv 
+                  permitOptArgs 
+                  alwaysCheckReturn
+                  (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
+                  (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
+                  (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
+                  (ArgsEquivOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome)  // args exact
+                  reqdRetTyOpt 
+                  calledMeth)
+
+    match exactMatchCandidates with
+    | [(calledMeth, warns, _, _usesTDC)] ->
+        OverloadResolutionCache.storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs (ValueSome calledMeth)
+        Some calledMeth, OkResult (warns, ()), NoTrace
+
+    | _ -> 
+      // Now determine the applicable methods.
+      // Subsumption on arguments is allowed.
+      let applicable =
+          candidates |> FilterEachThenUndo (fun newTrace candidate ->
+              let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+              let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) candidate
+              CanMemberSigsMatchUpToCheck 
+                  csenv 
+                  permitOptArgs
+                  alwaysCheckReturn
+                  (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
+                  (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
+                  (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
+                  (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome candidate)  // args can subsume
+                  reqdRetTyOpt 
+                  candidate)
+
+      match applicable with 
+      | [] ->
+          // OK, we failed. Collect up the errors from overload resolution and the possible overloads
+          OverloadResolutionCache.storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs ValueNone
+
+          let errors =
+              candidates 
+              |> List.choose (fun calledMeth -> 
+                      match CollectThenUndo (fun newTrace -> 
+                                   let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+                                   let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
+                                   CanMemberSigsMatchUpToCheck 
+                                       csenv 
+                                       permitOptArgs
+                                       alwaysCheckReturn
+                                       (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln) 
+                                       (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m)
+                                       (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
+                                       (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
+                                       reqdRetTyOpt 
+                                       calledMeth) with 
+                      | OkResult _ -> None
+                      | ErrorResult(_warnings, exn) ->
+                          Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
+
+          let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (NoOverloadsFound (methodName, errors, cx)) m
+
+          None, ErrorD err, NoTrace
+
+      | [(calledMeth, warns, t, _usesTDC)] ->
+          OverloadResolutionCache.storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs (ValueSome calledMeth)
+          Some calledMeth, OkResult (warns, ()), WithTrace t
+
+      | applicableMeths -> 
+          let result = GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m
+          match result with
+          | (Some calledMeth, _, _) ->
+              OverloadResolutionCache.storeCacheResult csenv.g cache cacheKeyOpt calledMethGroup callerArgs retTyOpt anyHasOutArgs (ValueSome calledMeth)
+          | _ -> ()
+          result
+
 // Resolve the overloading of a method 
 // This is used after analyzing the types of arguments 
-and ResolveOverloading 
+and ResolveOverloading
          (csenv: ConstraintSolverEnv) 
          trace           // The undo trace, if any
          methodName      // The name of the method being called, for error reporting
@@ -3522,7 +3652,6 @@ and ResolveOverloading
          : CalledMeth<Expr> option * OperationResult<unit>
      =
     let g = csenv.g
-    let infoReader = csenv.InfoReader
     let m    = csenv.m
 
     let isOpConversion =
@@ -3571,87 +3700,39 @@ and ResolveOverloading
             
         | _, _ -> 
 
-          // Always take the return type into account for
-          //    -- op_Explicit, op_Implicit
-          //    -- methods with AllowOverloadOnReturnType attribute
-          //    -- candidate method sets that potentially use tupling of unfilled out args
-          let alwaysCheckReturn =
-              alwaysConsiderReturnType ||
-              candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs) 
+          let retTyOpt = reqdRetTyOpt |> Option.map (fun oty -> oty.Commit)
+          let anyHasOutArgs = calledMethGroup |> List.exists (fun cm -> cm.HasOutArgs)
 
-          // Exact match rule.
-          //
-          // See what candidates we have based on current inferred type information 
-          // and exact matches of argument types. 
-          let exactMatchCandidates =
-              candidates |> FilterEachThenUndo (fun newTrace calledMeth -> 
-                    let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-                    let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
-                    CanMemberSigsMatchUpToCheck 
-                        csenv 
-                        permitOptArgs 
-                        alwaysCheckReturn
-                        (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
-                        (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
-                        (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
-                        (ArgsEquivOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome)  // args exact
-                        reqdRetTyOpt 
-                        calledMeth)
+          let cacheKeyOpt = 
+              if g.langVersion.SupportsFeature LanguageFeature.MethodOverloadsCache && 
+                 not alwaysConsiderReturnType && cx.IsNone && candidates.Length > 1 then
+                  OverloadResolutionCache.tryComputeOverloadCacheKey g calledMethGroup callerArgs retTyOpt anyHasOutArgs
+              else
+                  ValueNone
 
-          match exactMatchCandidates with
-          | [(calledMeth, warns, _, _usesTDC)] ->
-               Some calledMeth, OkResult (warns, ()), NoTrace
+          let cache = OverloadResolutionCache.getOverloadResolutionCache g
 
-          | _ -> 
-            // Now determine the applicable methods.
-            // Subsumption on arguments is allowed.
-            let applicable =
-                candidates |> FilterEachThenUndo (fun newTrace candidate -> 
-                    let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-                    let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) candidate
-                    CanMemberSigsMatchUpToCheck 
-                        csenv 
-                        permitOptArgs
-                        alwaysCheckReturn
-                        (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
-                        (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
-                        (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
-                        (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome candidate)  // args can subsume
-                        reqdRetTyOpt 
-                        candidate)
+          let cachedHit =
+              match cacheKeyOpt with
+              | ValueSome cacheKey ->
+                  let mutable cachedResult = Unchecked.defaultof<OverloadResolutionCacheResult>
+                  if cache.TryGetValue(cacheKey, &cachedResult) then
+                      match cachedResult with
+                      | CachedResolved idx when idx >= 0 && idx < calledMethGroup.Length ->
+                          let calledMeth = calledMethGroup[idx]
+                          if calledMeth.HasCorrectGenericArity then
+                              Some (Some calledMeth, CompleteD, NoTrace)
+                          else
+                              None
+                      | _ -> None
+                  else
+                      None
+              | ValueNone -> None
 
-            match applicable with 
-            | [] ->
-                // OK, we failed. Collect up the errors from overload resolution and the possible overloads
-                let errors = 
-                    candidates 
-                    |> List.choose (fun calledMeth -> 
-                            match CollectThenUndo (fun newTrace -> 
-                                         let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-                                         let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
-                                         CanMemberSigsMatchUpToCheck 
-                                             csenv 
-                                             permitOptArgs
-                                             alwaysCheckReturn
-                                             (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln) 
-                                             (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m)
-                                             (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
-                                             (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
-                                             reqdRetTyOpt 
-                                             calledMeth) with 
-                            | OkResult _ -> None
-                            | ErrorResult(_warnings, exn) ->
-                                Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
-
-                let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (NoOverloadsFound (methodName, errors, cx)) m
-
-                None, ErrorD err, NoTrace
-
-            | [(calledMeth, warns, t, _usesTDC)] ->
-                Some calledMeth, OkResult (warns, ()), WithTrace t
-
-            | applicableMeths -> 
-                GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m
+          match cachedHit with
+          | Some result -> result
+          | None ->
+              ResolveOverloadingCore csenv methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion alwaysConsiderReturnType retTyOpt anyHasOutArgs cacheKeyOpt cache
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
@@ -3914,7 +3995,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
     | [(calledMeth, warns, t, _)] ->
         Some calledMeth, OkResult (warns, ()), WithTrace t
 
-    | bestMethods -> 
+    | bestMethods ->
         let methods = 
             let getMethodSlotsAndErrors methodSlot errors =
                 [ match errors with
@@ -4060,11 +4141,14 @@ let UndoIfFailedOrWarnings f =
         trace.Undo()
         false
 
-let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
+let AddCxTypeEqualsTypeUndoIfFailedWithContext contextInfo denv css m ty1 ty2 =
     UndoIfFailed (fun trace -> 
-     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+     let csenv = MakeConstraintSolverEnv contextInfo css m denv
      let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = true }
      SolveTypeEqualsTypeKeepAbbrevs csenv 0 m (WithTrace trace) ty1 ty2)
+
+let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
+    AddCxTypeEqualsTypeUndoIfFailedWithContext ContextInfo.NoContext denv css m ty1 ty2
 
 let AddCxTypeEqualsTypeUndoIfFailedOrWarnings denv css m ty1 ty2 =
     UndoIfFailedOrWarnings (fun trace -> 
@@ -4220,7 +4304,7 @@ let CreateCodegenState tcVal g amap =
       InfoReader = InfoReader(g, amap)
       PostInferenceChecksPreDefaults = ResizeArray() 
       PostInferenceChecksFinal = ResizeArray()
-      WarnWhenUsingWithoutNullOnAWithNullTarget = None}
+      WarnWhenUsingWithoutNullOnAWithNullTarget = None }
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) =
@@ -4246,67 +4330,6 @@ let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstrai
         let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
         return GenWitnessExpr amap g m traitInfo argExprs
     }
-
-/// Create an ITraitContext from the expression tree contents of implementation files.
-/// Walks ModuleOrNamespaceContents bindings to find extension member Val objects,
-/// ensuring the Val stamps match those bound in the expression tree (not the
-/// deep-copied signature vals in the CcuThunk).
-/// Also searches referenced CCU module types for cross-assembly extension members.
-///
-/// NOTE: This function only finds F# Val-based extension members. It does NOT cover
-/// ILExtMem entries (C# extension methods imported from IL metadata). During type-checking,
-/// SelectExtensionMethInfosForTrait (in NameResolution.fs) uses SelectExtMethInfosForType
-/// which additionally searches ILExtMem entries and unindexed extension members. This means
-/// a C# extension method could satisfy an SRTP constraint during type-checking but would
-/// not be found here in the optimizer/codegen path.
-///
-/// Practical impact is negligible: C# extension methods satisfying F# SRTP constraints is
-/// an exotic scenario, and the optimizer trait context is only used for FSharp.Core static
-/// optimizations. Making this function equivalent to SelectExtensionMethInfosForTrait would
-/// require NameResolutionEnv, which is not available in the optimizer — a major architectural
-/// change not warranted by the scenario's rarity.
-let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) (referencedCcus: CcuThunk list) : TraitContext =
-    let extensionVals =
-        lazy
-            (let result = HashMultiMap<Stamp, ValRef>(10, HashIdentity.Structural)
-
-             for contents in implFileContents do
-                 for v in allValsOfModDef contents do
-                     if v.IsExtensionMember && v.MemberInfo.IsSome then
-                         let vref = mkLocalValRef v
-                         let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
-                         result.Add(tcref.Stamp, vref)
-
-             let rec collectFromModuleOrNamespaceType (mty: ModuleOrNamespaceType) =
-                 for v in mty.AllValsAndMembers do
-                     if v.IsExtensionMember && v.MemberInfo.IsSome && v.HasDeclaringEntity then
-                         let vref = mkNestedValRef v.DeclaringEntity v
-                         let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
-                         result.Add(tcref.Stamp, vref)
-                 for entity in mty.AllEntities do
-                     if entity.IsModuleOrNamespace then
-                         collectFromModuleOrNamespaceType entity.ModuleOrNamespaceType
-
-             for ccu in referencedCcus do
-                 try collectFromModuleOrNamespaceType ccu.Contents.ModuleOrNamespaceType
-                 with RecoverableException _ -> ()
-
-             result)
-
-    { new TraitContext with
-        member _.SelectExtensionMethods(traitInfo, _m, _infoReader) =
-            let nm = traitInfo.MemberLogicalName
-
-            [ for supportTy in traitInfo.SupportTypes do
-                  match tryTcrefOfAppTy g supportTy with
-                  | ValueSome tcref ->
-                      for vref in extensionVals.Value.FindAll(tcref.Stamp) do
-                          if vref.LogicalName = nm then
-                              let minfo = MethInfo.FSMeth(g, supportTy, vref, None)
-                              yield (supportTy, minfo)
-                  | _ -> () ]
-
-        member _.AccessRights = AccessibleFromEverywhere }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
 let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs =
@@ -4421,6 +4444,50 @@ let CanonicalizePartialInferenceProblemForExtensions css denv m tps =
         (fun res -> ErrorD(ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
+/// Create an ITraitContext from the expression tree contents of implementation files.
+let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) (referencedCcus: CcuThunk list) : TraitContext =
+    let extensionVals =
+        lazy
+            (let result = HashMultiMap<Stamp, ValRef>(10, HashIdentity.Structural)
+
+             for contents in implFileContents do
+                 for v in allValsOfModDef contents do
+                     if v.IsExtensionMember && v.MemberInfo.IsSome then
+                         let vref = mkLocalValRef v
+                         let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
+                         result.Add(tcref.Stamp, vref)
+
+             let rec collectFromModuleOrNamespaceType (mty: ModuleOrNamespaceType) =
+                 for v in mty.AllValsAndMembers do
+                     if v.IsExtensionMember && v.MemberInfo.IsSome && v.HasDeclaringEntity then
+                         let vref = mkNestedValRef v.DeclaringEntity v
+                         let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
+                         result.Add(tcref.Stamp, vref)
+                 for entity in mty.AllEntities do
+                     if entity.IsModuleOrNamespace then
+                         collectFromModuleOrNamespaceType entity.ModuleOrNamespaceType
+
+             for ccu in referencedCcus do
+                 try collectFromModuleOrNamespaceType ccu.Contents.ModuleOrNamespaceType
+                 with RecoverableException _ -> ()
+
+             result)
+
+    { new TraitContext with
+        member _.SelectExtensionMethods(traitInfo, _m, _infoReader) =
+            let nm = traitInfo.MemberLogicalName
+
+            [ for supportTy in traitInfo.SupportTypes do
+                  match tryTcrefOfAppTy g supportTy with
+                  | ValueSome tcref ->
+                      for vref in extensionVals.Value.FindAll(tcref.Stamp) do
+                          if vref.LogicalName = nm then
+                              let minfo = MethInfo.FSMeth(g, supportTy, vref, None)
+                              yield (supportTy, minfo)
+                  | _ -> () ]
+
+        member _.AccessRights = AccessibleFromEverywhere }
+
 /// An approximation used during name resolution for intellisense to eliminate extension members which will not
 /// apply to a particular object argument. This is given as the isApplicableMeth argument to the partial name resolution
 /// functions in nameres.fs.
@@ -4436,9 +4503,8 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               InfoReader = InfoReader(g, amap)
               PostInferenceChecksPreDefaults = ResizeArray() 
               PostInferenceChecksFinal = ResizeArray()
-              WarnWhenUsingWithoutNullOnAWithNullTarget = None}
+              WarnWhenUsingWithoutNullOnAWithNullTarget = None }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-        // traitCtxtNone: codegen witness generation — constraints already resolved at this point (audited for RFC FS-1043)
         let minst = FreshenMethInfo g traitCtxtNone m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with
         | [reqdObjTy] -> 

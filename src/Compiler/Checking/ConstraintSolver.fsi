@@ -9,6 +9,7 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.OverloadResolutionCache
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -63,6 +64,10 @@ type ContextInfo =
 
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
+
+    /// The type equation comes from a nullness check of a captured argument (e.g., pipe operators).
+    /// The range points to the original argument location.
+    | NullnessCheckOfCapturedArg of range
 
 /// Captures relevant information for a particular failed overload resolution.
 type OverloadInformation =
@@ -276,6 +281,9 @@ val AddCxTypeEqualsType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> r
 
 val AddCxTypeEqualsTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 
+val AddCxTypeEqualsTypeUndoIfFailedWithContext:
+    ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+
 val AddCxTypeEqualsTypeUndoIfFailedOrWarnings: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 
 val AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
@@ -323,9 +331,6 @@ val ApplyTyparDefaultAtPriority: DisplayEnv -> ConstraintSolverState -> priority
 val CodegenWitnessExprForTraitConstraint:
     TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
-/// Create an ITraitContext from implementation file contents for use during optimization/codegen
-val CreateImplFileTraitContext: TcGlobals -> ModuleOrNamespaceContents list -> CcuThunk list -> TraitContext
-
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 val CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs:
     TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> OperationResult<bool>
@@ -359,3 +364,6 @@ val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType
 val CanonicalizePartialInferenceProblem: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
 
 val CanonicalizePartialInferenceProblemForExtensions: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+
+/// Create an ITraitContext from implementation file contents for use during optimization/codegen
+val CreateImplFileTraitContext: TcGlobals -> ModuleOrNamespaceContents list -> CcuThunk list -> TraitContext
