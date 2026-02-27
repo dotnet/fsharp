@@ -4,12 +4,24 @@
     <TargetFramework>net472</TargetFramework>
 	<LangVersion>preview</LangVersion>
 	<Nullable>enable</Nullable>
-	<UnitTestType>xunit</UnitTestType>
+	<OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>VSTHRD200;CS1591</NoWarn>
+    <!-- Exclude from automatic xUnit3/MTP package references since this uses VS Extensibility Testing (xUnit2) -->
+    <ExcludeFromTestPackageReferences>true</ExcludeFromTestPackageReferences>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="xunit.runner.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorVersion)" />
