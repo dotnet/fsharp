@@ -11597,7 +11597,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             | _ -> ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
 
                         if EntityHasWellKnownAttribute g WellKnownEntityAttributes.StructLayoutAttribute tycon then
-                            match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
+                            match tryFindEntityAttribByFlag g WellKnownEntityAttributes.StructLayoutAttribute tycon.Attribs with
                             | Some(Attrib(_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
                                 let decoder = AttributeDecoder namedArgs
                                 let ilPack = decoder.FindInt32 "Pack" 0x0

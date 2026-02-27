@@ -2399,6 +2399,8 @@ val computeEntityWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownEn
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
 val inline attribsHaveEntityFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> bool
 
+val tryFindEntityAttribByFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> Attrib option
+
 val inline attribsHaveValFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> bool
 
 val EntityHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownEntityAttributes -> entity: Entity -> bool

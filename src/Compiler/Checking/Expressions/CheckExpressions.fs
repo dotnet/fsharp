@@ -11458,7 +11458,7 @@ and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt
                 (validOnDefault, inheritedDefault)
         else
             if EntityHasWellKnownAttribute g WellKnownEntityAttributes.AttributeUsageAttribute tcref.Deref then
-                match TryFindFSharpAttribute g g.attrib_AttributeUsageAttribute tcref.Attribs with
+                match tryFindEntityAttribByFlag g WellKnownEntityAttributes.AttributeUsageAttribute tcref.Attribs with
                 | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn ])) ->
                     validOn, inheritedDefault
                 | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn; AttribBoolArg(_allowMultiple); AttribBoolArg inherited])) ->
