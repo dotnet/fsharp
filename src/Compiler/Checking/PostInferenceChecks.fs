@@ -29,11 +29,7 @@ open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 open Import
 
-// Intentional: `:? System.Exception` narrows IL-level catch clauses to exclude
-// non-CLS-compliant throws. The F# type system considers all exceptions to be
-// System.Exception, so it flags the test as always-true, but the IL distinction
-// is meaningful.
-#nowarn "67"
+
 
 //--------------------------------------------------------------------------
 // NOTES: reraise safety checks
@@ -842,6 +838,9 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
 /// Try to resolve an ILMethodRef to its ILMethodDef and get the RefSafetyRulesVersion
 /// from the assembly. Returns None if the type is not an IL type or resolution fails.
 /// When resolved, refSafetyVersion is 0 for local refs or assemblies without the attribute.
+// `:? System.Exception` narrows the IL catch clause to exclude non-CLS-compliant throws.
+// F# considers all exceptions to be System.Exception, so it flags the test as always-true.
+#nowarn "67"
 let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : (ILMethodDef * int) option =
     try
         let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
@@ -859,6 +858,7 @@ let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: IL
         | _ -> None
     with :? System.Exception ->
         None
+#warnon "67"
 
 /// Return Some mask if any element is true, else None.
 let private nonEmptyMask (arr: bool array) =
@@ -916,6 +916,8 @@ let tryGetUnscopedRefParamMask (g: TcGlobals) (methDef: ILMethodDef) =
     tryGetILParamAttrMask g.attrib_UnscopedRefAttribute_opt methDef
 
 /// Check if an IL parameter is implicitly scoped (out T or ref/in T where T is ref struct)
+// `:? System.Exception` narrows the IL catch clause to exclude non-CLS-compliant throws.
+#nowarn "67"
 let isImplicitlyScopedParam (g: TcGlobals) (amap: Import.ImportMap) (m: range) (p: ILParameter) =
     // out T → always implicitly scoped when version ≥ 11
     (p.IsOut && not p.IsIn)
@@ -932,6 +934,7 @@ let isImplicitlyScopedParam (g: TcGlobals) (amap: Import.ImportMap) (m: range) (
              with :? System.Exception ->
                  false
      | _ -> false)
+#warnon "67"
 
 /// Compute the scoped parameter mask for an IL method, considering implicit scoping rules.
 let computeScopedMask (cenv: cenv) (m: range) (methDef: ILMethodDef) (methInst: TType list) (refSafetyVersion: int) : bool array option =
@@ -2438,14 +2441,20 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                             let tcRef = tcrefOfAppTy g declaringTy
                             match tcRef.TypeReprInfo with
                             | TILObjectRepr(TILObjectReprData(_scoref, _, tdef)) ->
+                                let methodGenericArity = slotSig.MethodTypars.Length
                                 tdef.Methods.FindByName(slotSig.Name)
-                                |> List.tryFind (fun (md: ILMethodDef) -> md.Parameters.Length = baseParams.Length)
+                                |> List.tryFind (fun (md: ILMethodDef) ->
+                                    md.Parameters.Length = baseParams.Length
+                                    && md.GenericParams.Length = methodGenericArity)
                                 |> Option.bind (fun methDef ->
                                     let refSafetyVersion =
                                         if tcRef.IsLocalRef then 0
                                         else
+                                            // `:? System.Exception` narrows the IL catch clause to exclude non-CLS-compliant throws.
+                                            #nowarn "67"
                                             try tcRef.nlr.Ccu.Deref.RefSafetyRulesVersion
                                             with :? System.Exception -> 0
+                                            #warnon "67"
                                     computeScopedMask cenv v.Range methDef [] refSafetyVersion)
                             | _ -> None
                         else

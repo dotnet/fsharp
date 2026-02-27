@@ -3210,6 +3210,175 @@ let f () =
         |> compile
         |> shouldSucceed
 
+    // ---- Generic method without RefSafetyRules: ScopedRef attribute ignored (methInst guard) ----
+
+    [<Fact>]
+    let ``Generic method ScopedRef ignored without RefSafetyRules`` () =
+        // Simulate a C# library WITHOUT [module: RefSafetyRules(11)] but WITH ScopedRefAttribute on a generic method.
+        // The F# compiler should NOT trust ScopedRefAttribute on generic methods from such assemblies,
+        // so &local should still trigger FS3235 (conservative behavior).
+        let csharpLib =
+            CSharp """
+using System;
+public class Lib {
+    // Without RefSafetyRulesAttribute, this is an older assembly.
+    // scoped ref is compiled to ScopedRefAttribute but cannot be trusted on generics.
+    public static Span<T> Create<T>(ref T x) => default;
+}
+"""         |> withName "GenericNoRefSafetyLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+
+let f () =
+    let mutable local = 42
+    Lib.Create<int>(&local)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``Generic method ScopedRef ignored without RefSafetyRules - backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+public class Lib {
+    public static Span<T> Create<T>(ref T x) => default;
+}
+"""         |> withName "GenericNoRefSafetyLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+
+let f () =
+    let mutable local = 42
+    Lib.Create<int>(&local)
+"""
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    // ---- Override variance with overloaded methods differing in generic arity ----
+
+    [<Fact>]
+    let ``Override variance correctly distinguishes overloads by generic arity`` () =
+        let csharpLib =
+            CSharp """
+using System;
+using System.Runtime.CompilerServices;
+public abstract class Base {
+    // Non-generic overload: scoped ref
+    public abstract Span<int> M(scoped ref int x, int[] arr);
+    // Generic overload with same param count: ref (not scoped)
+    public abstract Span<T> M<T>(ref T x, T[] arr);
+}
+"""         |> withName "OverloadGenericArityLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        // Override the non-generic M without [<ScopedRef>] — should warn (widens scoped)
+        // Override the generic M<T> without [<ScopedRef>] — should NOT warn (was never scoped)
+        FSharp """
+module Test
+open System
+
+type Derived() =
+    inherit Base()
+    override _.M(x: byref<int>, arr: int[]) = Span<int>(arr)
+    override _.M<'T>(x: byref<'T>, arr: 'T[]) = Span<'T>(arr)
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3882, Line 7, Col 16, Line 7, Col 17, "The override of 'M' widens the 'scoped' constraint on parameter 'x'. The base method declares this parameter as 'scoped' (it cannot escape), but the override allows it to escape. This may cause unsoundness when callers use the base type.")
+        ]
+
+    [<Fact>]
+    let ``Override variance with generic overloads backward compat`` () =
+        let csharpLib =
+            CSharp """
+using System;
+using System.Runtime.CompilerServices;
+public abstract class Base {
+    public abstract Span<int> M(scoped ref int x, int[] arr);
+    public abstract Span<T> M<T>(ref T x, T[] arr);
+}
+"""         |> withName "OverloadGenericArityLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module Test
+open System
+
+type Derived() =
+    inherit Base()
+    override _.M(x: byref<int>, arr: int[]) = Span<int>(arr)
+    override _.M<'T>(x: byref<'T>, arr: 'T[]) = Span<'T>(arr)
+"""
+        |> asLibrary
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    // ---- ScopedRef on value-type Span parameter in F# authoring ----
+
+    [<Fact>]
+    let ``ScopedRef on Span value param prevents escape in body`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+let leak ([<ScopedRef>] s: Span<int>) : Span<int> = s
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3234]
+
+    [<Fact>]
+    let ``ScopedRef on Span value param prevents escape in body - backward compat`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+let leak ([<ScopedRef>] s: Span<int>) : Span<int> = s
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``ScopedRef on Span value param excluded at call site`` () =
+        FSharp """
+module Test
+open System
+open System.Runtime.CompilerServices
+
+let safe ([<ScopedRef>] s: Span<int>) (arr: int[]) : Span<int> = Span<int>(arr)
+
+let f () =
+    let mutable x = 1
+    safe (Span<int>(&x)) [| 1; 2; 3 |]
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
