@@ -3513,6 +3513,119 @@ let f () : Span<int> =
         |> shouldSucceed
 #endif
 
+    // ---- Finding 6: Cross-assembly F# [<UnscopedRef>] struct method ----
+
+#if NET7_0_OR_GREATER
+    let private unscopedRefCrossAsmLibSource = """
+module MyLib
+open System
+open System.Runtime.CompilerServices
+open System.Diagnostics.CodeAnalysis
+
+[<Struct; IsByRefLike>]
+type S =
+    val mutable X: int
+    [<UnscopedRef>]
+    member this.AsSpan() : Span<int> = Span<int>(&this.X)
+"""
+
+    let private noUnscopedRefCrossAsmLibSource = """
+module MyLib
+open System
+open System.Runtime.CompilerServices
+
+[<Struct; IsByRefLike>]
+type S =
+    val mutable X: int
+    member this.AsSpan() : Span<int> = Span<int>(&this.X)
+"""
+
+    let private unscopedRefCrossAsmConsumerSource = """
+module Test
+open System
+open MyLib
+
+let test (s: byref<S>) : Span<int> =
+    s.AsSpan()
+"""
+
+    [<Fact>]
+    let ``UnscopedRef on F# struct method cross-assembly allows this to escape`` () =
+        let fsharpLib =
+            FSharp unscopedRefCrossAsmLibSource
+            |> asLibrary
+            |> withName "FSharpUnscopedRefCrossAsmLib"
+            |> withLangVersionPreview
+
+        FSharp unscopedRefCrossAsmConsumerSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [fsharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``UnscopedRef on F# struct method cross-assembly allows this to escape - backward compat`` () =
+        let fsharpLib =
+            FSharp unscopedRefCrossAsmLibSource
+            |> asLibrary
+            |> withName "FSharpUnscopedRefCrossAsmLib"
+            |> withLangVersionPreview
+
+        FSharp unscopedRefCrossAsmConsumerSource
+        |> asLibrary
+        |> withReferences [fsharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``E_UnscopedRef local struct receiver escapes cross-assembly`` () =
+        let fsharpLib =
+            FSharp unscopedRefCrossAsmLibSource
+            |> asLibrary
+            |> withName "FSharpUnscopedRefLocalCrossAsmLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Test
+open System
+open MyLib
+
+let test () : Span<int> =
+    let mutable s = S()
+    s.AsSpan()
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [fsharpLib]
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [3235]
+
+    [<Fact>]
+    let ``Struct method without UnscopedRef cross-assembly has scoped receiver`` () =
+        let fsharpLib =
+            FSharp noUnscopedRefCrossAsmLibSource
+            |> asLibrary
+            |> withName "FSharpScopedReceiverCrossAsmLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Test
+open System
+open MyLib
+
+let test () : Span<int> =
+    let mutable s = S()
+    s.AsSpan()
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [fsharpLib]
+        |> compile
+        |> shouldSucceed
+#endif
+
 #if NETSTANDARD2_1_OR_GREATER
     [<Theory; FileInlineData("E_TopLevelByref.fs")>]
     let``E_TopLevelByref_fs`` compilation =
