@@ -3576,11 +3576,6 @@ let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _
 
 let (|AttribElemStringArg|_|) = function ILAttribElem.String(n) -> n | _ -> None
 
-let TryFindFSharpInt32Attribute g nm attrs = 
-    match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [ AttribInt32Arg b ], _, _, _, _)) -> Some b
-    | _ -> None
-    
 let TryFindFSharpStringAttribute g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
     | Some(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> Some b
@@ -3829,6 +3824,18 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
 let tryFindEntityAttribByFlag (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs: Attribs) : Attrib option =
     attribs
     |> List.tryFind (fun attrib -> classifyEntityAttrib g attrib &&& flag <> WellKnownEntityAttributes.None)
+
+/// Extract a string value from a well-known entity attribute. O(1) negative via flags.
+let tryFindEntityAttribString (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs: Attribs) : string option =
+    match tryFindEntityAttribByFlag g flag attribs with
+    | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> Some s
+    | _ -> None
+
+/// Extract an int32 value from a well-known entity attribute. O(1) negative via flags.
+let tryFindEntityAttribInt32 (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs: Attribs) : int option =
+    match tryFindEntityAttribByFlag g flag attribs with
+    | Some(Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _)) -> Some v
+    | _ -> None
 
 #if !NO_TYPEPROVIDERS
 /// Map a WellKnownILAttributes flag to its AttribInfo equivalent.

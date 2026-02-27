@@ -2401,6 +2401,10 @@ val inline attribsHaveEntityFlag: g: TcGlobals -> flag: WellKnownEntityAttribute
 
 val tryFindEntityAttribByFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> Attrib option
 
+val tryFindEntityAttribString: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> string option
+
+val tryFindEntityAttribInt32: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> int option
+
 val inline attribsHaveValFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> bool
 
 val EntityHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownEntityAttributes -> entity: Entity -> bool
@@ -2437,8 +2441,6 @@ val TryFindFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs 
 val TryFindFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
 
 val TryFindLocalizedFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
-
-val TryFindFSharpInt32Attribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> int32 option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///

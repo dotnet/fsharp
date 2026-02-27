@@ -3418,7 +3418,7 @@ module EstablishTypeDefinitionCores =
             // are only used on exactly the right kinds of type definitions and not in conjunction with other attributes.
             let hasMeasureableAttr = entityFlags &&& WellKnownEntityAttributes.MeasureableAttribute <> WellKnownEntityAttributes.None
             
-            let structLayoutAttr = TryFindFSharpInt32Attribute g g.attrib_StructLayoutAttribute attrs
+            let structLayoutAttr = tryFindEntityAttribInt32 g WellKnownEntityAttributes.StructLayoutAttribute attrs
             let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute_True <> WellKnownEntityAttributes.None
 
             if hasAbstractAttr then 
