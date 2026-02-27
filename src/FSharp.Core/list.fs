@@ -573,6 +573,18 @@ module List =
     let partition predicate list =
         Microsoft.FSharp.Primitives.Basics.List.partition predicate list
 
+    [<CompiledName("PartitionWith")>]
+    let inline partitionWith ([<InlineIfLambda>] partitioner: 'T -> Choice<'T1, 'T2>) (list: 'T list) =
+        let mutable collector1 = ListCollector()
+        let mutable collector2 = ListCollector()
+
+        for x in list do
+            match partitioner x with
+            | Choice1Of2 v -> collector1.Add v
+            | Choice2Of2 v -> collector2.Add v
+
+        collector1.Close(), collector2.Close()
+
     [<CompiledName("Unzip")>]
     let unzip list =
         Microsoft.FSharp.Primitives.Basics.List.unzip list

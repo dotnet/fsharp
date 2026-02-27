@@ -515,19 +515,33 @@ module Command =
 
     let exec dir envVars (redirect:RedirectInfo) path args =
 
+#if !NETCOREAPP
+        let ensureConsole () =
+            // Set UTF-8 encoding for console input/output to ensure FSI receives UTF-8 data.
+            // This is needed because on net472 ProcessStartInfo.StandardInputEncoding is unavailable,
+            // so the spawned process inherits the console's encoding settings.
+            Console.InputEncoding <- Text.UTF8Encoding(false)
+            Console.OutputEncoding <- Text.UTF8Encoding(false)
+#else
+        let ensureConsole () = ()
+#endif
+
         let inputWriter sources (writer: StreamWriter) =
             let pipeFile name = async {
                 let path = Commands.getfullpath dir name
-                use reader = File.OpenRead (path)
-                use ms = new MemoryStream()
-                do! reader.CopyToAsync (ms) |> (Async.AwaitIAsyncResult >> Async.Ignore)
-                ms.Position <- 0L
+                
+                // Read file content as text using UTF-8 (the standard encoding for F# source files)
+                let! content = async {
+                    use reader = new StreamReader(path, Text.Encoding.UTF8, detectEncodingFromByteOrderMarks = true)
+                    return! reader.ReadToEndAsync() |> Async.AwaitTask
+                }
+                
+                // Write using the StreamWriter which now uses UTF-8 encoding (set in ensureConsole).
                 try
-                    do! ms.CopyToAsync(writer.BaseStream) |> (Async.AwaitIAsyncResult >> Async.Ignore)
+                    do! writer.WriteAsync(content) |> Async.AwaitTask
                     do! writer.FlushAsync() |> (Async.AwaitIAsyncResult >> Async.Ignore)
                 with
-                | :? System.IO.IOException -> //input closed is ok if process is closed
-                    ()
+                | :? System.IO.IOException -> ()
                 }
             sources |> pipeFile |> Async.RunSynchronously
 
@@ -571,6 +585,8 @@ module Command =
 
         let exec cmdArgs =
             printfn "%s" (logExec dir path args redirect)
+            if cmdArgs.RedirectInput.IsSome then
+                ensureConsole()
             Process.exec cmdArgs dir envVars path args
 
         { RedirectOutput = None; RedirectError = None; RedirectInput = None }
@@ -618,9 +634,10 @@ let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.F
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
 let getfullpath cfg = Commands.getfullpath cfg.Directory
 let fileExists cfg fileName = Commands.fileExists cfg.Directory fileName |> Option.isSome
-let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)
-let fsiStdinCheckPassed cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdinCheckPassed cfg stdinPath) cfg.FSI)
-let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath = Printf.ksprintf (Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI)
+
+let fsiStdin cfg stdinPath flags sources = Commands.fsi (execStdin cfg stdinPath) cfg.FSI flags sources
+let fsiStdinCheckPassed cfg stdinPath flags sources = Commands.fsi (execStdinCheckPassed cfg stdinPath) cfg.FSI flags sources
+let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath flags sources = Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI flags sources
 let rm cfg x = Commands.rm cfg.Directory x
 let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory

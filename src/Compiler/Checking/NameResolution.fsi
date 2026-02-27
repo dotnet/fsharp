@@ -628,9 +628,9 @@ val internal CallMethodGroupNameResolutionSink:
 val internal CallNameResolutionSinkReplacing:
     TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurrence * AccessorDomain -> unit
 
-/// (#16621) Register union case tester properties as references to their underlying union case
+/// #16621
 val internal RegisterUnionCaseTesterForProperty:
-    TcResultsSink -> range -> NameResolutionEnv -> PropInfo list -> ItemOccurrence -> AccessorDomain -> unit
+    TcResultsSink -> identRange: range -> NameResolutionEnv -> PropInfo list -> ItemOccurrence -> AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink: TcResultsSink -> range * NameResolutionEnv * TType * AccessorDomain -> unit
