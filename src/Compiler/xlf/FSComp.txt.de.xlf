@@ -427,6 +427,11 @@
         <target state="translated">Erweiterte Zeichenfolgeninterpolation ähnlich wie bei C#-Rohzeichenfolgenliteralen.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>Allow extension members to participate in SRTP constraint resolution</source>
+        <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">Segment 3D/4D mit feststehendem Index</target>
@@ -435,6 +440,11 @@
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
         <target state="translated">Segmentierung ab Ende</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureImplicitDIMCoverage">
+        <source>Implicit dispatch slot coverage for default interface member implementations</source>
+        <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitYield">
@@ -567,6 +577,11 @@
         <target state="translated">String.GetPinnableReference in festen Bindungen bevorzugen</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePreprocessorElif">
+        <source>#elif preprocessor directive</source>
+        <target state="new">#elif preprocessor directive</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
         <source>binary formatting for integers</source>
         <target state="translated">binäre Formatierung für ganze Zahlen</target>
@@ -607,9 +622,9 @@
         <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureExtensionConstraintSolutions">
-        <source>Allow extension members to participate in SRTP constraint resolution</source>
-        <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
+      <trans-unit id="featureMethodOverloadsCache">
+        <source>Support for caching method overload resolution results for improved compilation performance.</source>
+        <target state="new">Support for caching method overload resolution results for improved compilation performance.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
@@ -835,6 +850,26 @@
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
         <source>Extended string interpolation is not supported in this version of F#.</source>
         <target state="translated">Die erweiterte Zeichenfolgeninterpolation wird in dieser Version von F# nicht unterstützt.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexHashElifAfterElse">
+        <source>#elif is not allowed after #else</source>
+        <target state="new">#elif is not allowed after #else</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexHashElifMustBeFirst">
+        <source>#elif directive must appear as the first non-whitespace character on a line</source>
+        <target state="new">#elif directive must appear as the first non-whitespace character on a line</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexHashElifMustHaveIdent">
+        <source>#elif directive should be immediately followed by an identifier</source>
+        <target state="new">#elif directive should be immediately followed by an identifier</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexHashElifNoMatchingIf">
+        <source>#elif has no matching #if</source>
+        <target state="new">#elif has no matching #if</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidAsciiByteLiteral">
@@ -5807,11 +5842,6 @@
         <target state="translated">Der dynamische Aufruf von {0} wird nicht unterstützt.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilTraitCallNotStaticallyResolved">
-        <source>The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</source>
-        <target state="new">The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ilAddressOfLiteralFieldIsInvalid">
         <source>Taking the address of a literal field is invalid</source>
         <target state="translated">Das Übernehmen der Adresse eines Literalfelds ist unzulässig.</target>
@@ -7165,6 +7195,11 @@
       <trans-unit id="ilSignInvalidPKBlob">
         <source>Invalid Public Key blob</source>
         <target state="translated">Ungültiger öffentlicher Schlüssel-BLOB.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilTraitCallNotStaticallyResolved">
+        <source>The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</source>
+        <target state="new">The member constraint for '{0}' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTooManyErrors">
