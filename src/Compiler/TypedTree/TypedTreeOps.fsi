@@ -2434,8 +2434,6 @@ val TryFindFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs 
 
 val TryFindFSharpBoolAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool option
 
-val TryFindFSharpBoolAttributeAssumeFalse: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool option
-
 val TryFindFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
 
 val TryFindLocalizedFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option

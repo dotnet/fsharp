@@ -3578,14 +3578,11 @@ let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _
 
 let (|AttribElemStringArg|_|) = function ILAttribElem.String(n) -> n | _ -> None
 
-let TryFindFSharpBoolAttributeWithDefault dflt g nm attrs = 
+let TryFindFSharpBoolAttribute g nm attrs =
     match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [ ], _, _, _, _)) -> Some dflt
+    | Some(Attrib(_, _, [], _, _, _, _)) -> Some true
     | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> Some b
     | _ -> None
-
-let TryFindFSharpBoolAttribute g nm attrs = TryFindFSharpBoolAttributeWithDefault true g nm attrs
-let TryFindFSharpBoolAttributeAssumeFalse g nm attrs = TryFindFSharpBoolAttributeWithDefault false g nm attrs
 
 let TryFindFSharpInt32Attribute g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with

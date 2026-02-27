@@ -1836,6 +1836,7 @@ FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NoEag
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes None
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NotComputed
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NullableAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ObsoleteAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ParamArrayAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ReflectedDefinitionAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes RequiresLocationAttribute
