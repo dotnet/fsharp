@@ -2374,8 +2374,6 @@ val IsILAttrib: BuiltinAttribInfo -> ILAttribute -> bool
 
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
-val TryFindILAttributeOpt: BuiltinAttribInfo option -> ILAttributes -> bool
-
 /// Compute well-known attribute flags for an ILAttributes collection.
 val computeILWellKnownFlags: _g: TcGlobals -> attrs: ILAttributes -> WellKnownILAttributes
 
@@ -2822,8 +2820,6 @@ val allValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 val allTopLevelValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 
 val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
-
-val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 

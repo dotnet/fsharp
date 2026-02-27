@@ -3599,11 +3599,6 @@ let TryFindLocalizedFSharpStringAttribute g nm attrs =
 let TryFindILAttribute (AttribInfo (atref, _)) attrs = 
     HasILAttribute atref attrs
 
-let TryFindILAttributeOpt attr attrs = 
-    match attr with
-    | Some (AttribInfo (atref, _)) -> HasILAttribute atref attrs
-    | _ -> false
-
 let IsILAttrib  (AttribInfo (builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
 
 /// Compute well-known attribute flags for an ILAttributes collection.
@@ -9567,10 +9562,6 @@ let XmlDocSigOfEntity (eref: EntityRef) =
 //--------------------------------------------------------------------------
 
 
-let enum_CompilationRepresentationAttribute_Static = 0b0000000000000001
-let enum_CompilationRepresentationAttribute_Instance = 0b0000000000000010
-let enum_CompilationRepresentationAttribute_ModuleSuffix = 0b0000000000000100
-
 let TyconHasUseNullAsTrueValueAttribute g (tycon: Tycon) =
     EntityHasWellKnownAttribute g WellKnownEntityAttributes.CompilationRepresentation_PermitNull tycon
 
@@ -9937,11 +9928,10 @@ let mkIfThen (g: TcGlobals) m e1 e2 =
     mkCond DebugPointAtBinding.NoneAtInvisible m g.unit_ty e1 e2 (mkUnit g m)
 
 let ModuleNameIsMangled g attrs =
-    match TryFindFSharpInt32Attribute g g.attrib_CompilationRepresentationAttribute attrs with
-    | Some flags -> ((flags &&& enum_CompilationRepresentationAttribute_ModuleSuffix) <> 0)
-    | _ -> false 
+    attribsHaveEntityFlag g WellKnownEntityAttributes.CompilationRepresentation_ModuleSuffix attrs
 
-let CompileAsEvent g attrs = HasFSharpAttribute g g.attrib_CLIEventAttribute attrs
+let CompileAsEvent g attrs =
+    attribsHaveValFlag g WellKnownValAttributes.CLIEventAttribute attrs
 
 let ValCompileAsEvent g (v: Val) =
     ValHasWellKnownAttribute g WellKnownValAttributes.CLIEventAttribute v
@@ -9955,12 +9945,15 @@ let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberIn
         membInfo.MemberFlags.IsInstance
     else 
         // Otherwise check attributes to see if there is an explicit instance or explicit static flag
-        let explicitInstance, explicitStatic = 
-            match TryFindFSharpInt32Attribute g g.attrib_CompilationRepresentationAttribute attrs with
-            | Some flags -> 
-              ((flags &&& enum_CompilationRepresentationAttribute_Instance) <> 0), 
-              ((flags &&& enum_CompilationRepresentationAttribute_Static) <> 0)
-            | _ -> false, false
+        let entityFlags = computeEntityWellKnownFlags g attrs
+
+        let explicitInstance =
+            entityFlags &&& WellKnownEntityAttributes.CompilationRepresentation_Instance
+            <> WellKnownEntityAttributes.None
+
+        let explicitStatic =
+            entityFlags &&& WellKnownEntityAttributes.CompilationRepresentation_Static
+            <> WellKnownEntityAttributes.None
         explicitInstance ||
         (membInfo.MemberFlags.IsInstance &&
          not explicitStatic &&
@@ -11784,10 +11777,6 @@ let BindUnitVars g (mvs: Val list, paramInfos: ArgReprInfo list, body) =
         assert isUnitTy g v.Type
         [], mkLet DebugPointAtBinding.NoneAtInvisible v.Range v (mkUnit g v.Range) body 
     | _ -> mvs, body
-
-let isThreadOrContextStatic g attrs = 
-    HasFSharpAttributeOpt g g.attrib_ThreadStaticAttribute attrs ||
-    HasFSharpAttributeOpt g g.attrib_ContextStaticAttribute attrs 
 
 let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
