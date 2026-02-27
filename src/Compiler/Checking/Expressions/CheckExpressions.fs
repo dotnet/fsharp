@@ -470,6 +470,12 @@ type CheckedBindingInfo =
 
 type cenv = TcFileState
 
+// Extract nullness-specific context, filtering out all other context kinds to avoid side effects on non-nullness diagnostics.
+let nullnessContextOnly (env: TcEnv) =
+    match env.eContextInfo with
+    | ContextInfo.NullnessCheckOfCapturedArg _ -> env.eContextInfo
+    | _ -> ContextInfo.NoContext
+
 // If the overall type admits subsumption or type directed conversion, and the original unify would have failed,
 // then allow subsumption or type directed conversion.
 //
@@ -482,7 +488,8 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
         let actualTy = tryNormalizeMeasureInType g actualTy
         let reqdTy = tryNormalizeMeasureInType g reqdTy
         let reqTyForUnification = reqTyForArgumentNullnessInference g actualTy reqdTy
-        if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqTyForUnification actualTy then
+        let nullnessContext = nullnessContextOnly env
+        if AddCxTypeEqualsTypeUndoIfFailedWithContext nullnessContext env.DisplayEnv cenv.css m reqTyForUnification actualTy then
             ()
         else
             // try adhoc type-directed conversions
@@ -595,7 +602,8 @@ let ShrinkContext env oldRange newRange =
     | ContextInfo.YieldInComputationExpression
     | ContextInfo.RuntimeTypeTest _
     | ContextInfo.DowncastUsedInsteadOfUpcast _
-    | ContextInfo.SequenceExpression _ ->
+    | ContextInfo.SequenceExpression _
+    | ContextInfo.NullnessCheckOfCapturedArg _ ->
         env
     | ContextInfo.CollectionElement (b,m) ->
         if not (equals m oldRange) then env else
@@ -5407,7 +5415,7 @@ and TcExprFlex (cenv: cenv) flex compat (desiredTy: TType) (env: TcEnv) tpenv (s
         if compat then
             (destTyparTy g argTy).SetIsCompatFlex(true)
 
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argTy
+        AddCxTypeMustSubsumeType (nullnessContextOnly env) env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argTy
 
         let expr2, tpenv = TcExprFlex2 cenv argTy env false tpenv synExpr
         let expr3 = mkCoerceIfNeeded g desiredTy argTy expr2
@@ -7352,7 +7360,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
             DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, g, cenv.infoReader, true, implTy, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
             if not hasStaticMembers then
-                DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, isOverallTyAbstract, true, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
+                DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, isOverallTyAbstract, true, false, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
 
         // 3. create the specs of overrides
         let allTypeImpls =
@@ -8678,6 +8686,20 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                          when valRefEq g vref g.and2_vref
                            || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
                     | _ -> env
+
+                // Propagate captured argument range so nullness warnings point to the original nullable value.
+                let env =
+                    if g.checkNullness && isFunTy g domainTy then
+                        match leftExpr with
+                        | ApplicableExpr(expr=Expr.App (_, _, _, capturedArgs, _)) when not capturedArgs.IsEmpty ->
+                            let lastCapturedArg = List.last capturedArgs
+                            if not (isFunTy g (tyOfExpr g lastCapturedArg)) then
+                                { env with eContextInfo = ContextInfo.NullnessCheckOfCapturedArg lastCapturedArg.Range }
+                            else
+                                env
+                        | _ -> env
+                    else
+                        env
 
                 TcExprFlex2 cenv domainTy env false tpenv synArg
 
