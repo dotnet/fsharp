@@ -5,11 +5,10 @@
   <PropertyGroup>
     <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
-    <OutputType>Library</OutputType>
+    <!-- xUnit3 requires test projects to be executable -->
+    <OutputType>Exe</OutputType>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>xunit</UnitTestType>
-    <IsTestProject>true</IsTestProject>
     <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
@@ -91,6 +90,7 @@
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\Type-relatedExpressions\Type-relatedExpressions.fs" />
+    <Compile Include="Conformance\Expressions\OverloadResolutionCacheE2ETests.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\Assertion\Assertion.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\ObjectConstruction\ObjectConstruction.fs" />
     <Compile Include="Conformance\Expressions\ConstantExpressions\ConstantExpressions.fs" />
@@ -450,6 +450,7 @@
     <Compile Include="Miscellaneous\MigratedTypeCheckTests.fs" />
     <Compile Include="Miscellaneous\GraphTests.fs" />
     <Compile Include="Miscellaneous\FileIndex.fs" />
+    <Compile Include="Miscellaneous\TestUtilities.fs" />
     <Compile Include="Miscellaneous\MigratedMisc.fs" />
     <Compile Include="Libraries\NativeInterop.fs" />
     <Compile Include="Signatures\TestHelpers.fs" />
@@ -470,6 +471,7 @@
     <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
+    <Compile Include="FSharpChecker\SemanticClassificationRegressions.fs" />
     <Compile Include="Attributes\AttributeCtorSetPropAccess.fs" />
   </ItemGroup>
 
@@ -487,7 +489,6 @@
     <EmbeddedResource Remove="Properties\**" />
     <None Remove="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <None Remove="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

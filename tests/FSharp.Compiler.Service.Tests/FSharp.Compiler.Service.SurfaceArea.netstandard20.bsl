@@ -2011,6 +2011,18 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Double Ratio
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Double get_Ratio()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 Hits
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 Misses
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 get_Hits()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 get_Misses()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Microsoft.FSharp.Collections.FSharpMap`2[System.String,System.Int64] GetTotals()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: System.String ToString()
+FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Void .ctor(System.String)
+FSharp.Compiler.Caches.CacheMetrics: FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener
+FSharp.Compiler.Caches.CacheMetrics: System.Diagnostics.Metrics.Meter Meter
+FSharp.Compiler.Caches.CacheMetrics: System.Diagnostics.Metrics.Meter get_Meter()
 FSharp.Compiler.Cancellable: Boolean HasCancellationToken
 FSharp.Compiler.Cancellable: Boolean get_HasCancellationToken()
 FSharp.Compiler.Cancellable: System.Threading.CancellationToken Token

@@ -256,11 +256,11 @@ type MailboxProcessorType() =
         let isErrored = mb.Error |> Async.AwaitEvent |> Async.StartAsTask
 
         let post =
-            backgroundTask {
+            async {
                 while not cts.IsCancellationRequested do
                     postEv.WaitOne() |> ignore
                     mb.Post(fun () -> ())
-            }
+            } |> Async.StartAsTask
 
         for i in 0 .. 10000 do
             if i % 2 = 0 then
@@ -298,11 +298,11 @@ type MailboxProcessorType() =
         let isErrored = mb.Error |> Async.AwaitEvent |> Async.StartAsTask
 
         let post =
-            backgroundTask {
+            async {
                 while not cts.IsCancellationRequested do
                     postEv.WaitOne() |> ignore
                     mb.Post(fun () -> ())
-            }
+            } |> Async.StartAsTask
 
         for i in 0 .. 10000 do
             if i % 2 = 0 then
