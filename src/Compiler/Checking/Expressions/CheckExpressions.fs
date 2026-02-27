@@ -1401,8 +1401,10 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
 
     let vis, _ = ComputeAccessAndCompPath g env (Some declKind) id.idRange vis overrideVis actualParent
 
+    let valFlags = computeValWellKnownFlags g attrs
+
     let inlineFlag =
-        if HasFSharpAttributeOpt g g.attrib_DllImportAttribute attrs then
+        if valFlags &&& WellKnownValAttributes.DllImportAttribute <> WellKnownValAttributes.None then
             if inlineFlag = ValInline.Always then
               errorR(Error(FSComp.SR.tcDllImportStubsCannotBeInlined(), m))
             ValInline.Never
@@ -2380,14 +2382,18 @@ module GeneralizationHelpers =
 //-------------------------------------------------------------------------
 
 let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable g attrs m =
-    let hasNoCompilerInliningAttribute () = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute attrs
+    let valFlags = computeValWellKnownFlags g attrs
+
+    let hasNoCompilerInliningAttribute () =
+        valFlags &&& WellKnownValAttributes.NoCompilerInliningAttribute <> WellKnownValAttributes.None
 
     let isCtorOrAbstractSlot () =
         match memFlagsOption with
         | None -> false
         | Some x -> (x.MemberKind = SynMemberKind.Constructor) || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl
 
-    let isExtern () = HasFSharpAttributeOpt g g.attrib_DllImportAttribute attrs
+    let isExtern () =
+        valFlags &&& WellKnownValAttributes.DllImportAttribute <> WellKnownValAttributes.None
 
     let inlineFlag, reportIncorrectInlineKeywordUsage =
         // Mutable values may never be inlined
@@ -11355,7 +11361,10 @@ and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
 
     let g = cenv.g
 
-    let hasLiteralAttr = HasFSharpAttribute g g.attrib_LiteralAttribute attrs
+    let valFlags = computeValWellKnownFlags g attrs
+
+    let hasLiteralAttr =
+        valFlags &&& WellKnownValAttributes.LiteralAttribute <> WellKnownValAttributes.None
 
     if hasLiteralAttr then
         let literalValExpr, _ = TcExpr cenv (MustEqual overallTy) env tpenv synLiteralValExpr
@@ -11737,7 +11746,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
             | _ when inlineFlag.ShouldInline ->
                 error(Error(FSComp.SR.tcInvalidInlineSpecification(), m))
 
-            | TPat_query _ when HasFSharpAttribute g g.attrib_LiteralAttribute attrs ->
+            | TPat_query _ when computeValWellKnownFlags g attrs &&& WellKnownValAttributes.LiteralAttribute <> WellKnownValAttributes.None ->
                 error(Error(FSComp.SR.tcLiteralAttributeCannotUseActivePattern(), m))
 
             | _ ->
@@ -13070,7 +13079,8 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
         let literalValue =
             match literalExprOpt with
             | None ->
-                let hasLiteralAttr = HasFSharpAttribute g g.attrib_LiteralAttribute attrs
+                let hasLiteralAttr =
+                    computeValWellKnownFlags g attrs &&& WellKnownValAttributes.LiteralAttribute <> WellKnownValAttributes.None
                 if hasLiteralAttr then
                     errorR(Error(FSComp.SR.tcLiteralAttributeRequiresConstantValue(), m))
                 None
