@@ -3789,8 +3789,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
         |> Array.ofSeq
         |> Array.map (fun s -> (s.Symbol.FullName, Project25.cleanFileName s.FileName, tups s.Range, attribsOfSymbol s.Symbol))
 
-    allUses |> shouldEqual
-
+    let expected =
          [|("FSharp", "file1", ((3, 5), (3, 11)), ["namespace"]);
            ("FSharp.Data", "file1", ((3, 12), (3, 16)), ["namespace"]);
            ("Microsoft.FSharp", "file1", ((3, 5), (3, 11)), ["namespace"]);
@@ -3820,6 +3819,12 @@ let ``Test Project25 symbol uses of type-provided members`` () =
             ["class"; "provided"; "staticinst"; "erased"]);
            ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((10, 8), (10, 78)),
             ["member"]); ("TypeProviderTests", "file1", ((2, 7), (2, 24)), ["module"])|]
+
+    printfn "actual =\n%A" allUses
+    printfn "expected =\n%A" expected
+
+    allUses |> shouldBeEqualCollections expected
+
     let getSampleSymbolUseOpt =
         backgroundTypedParse1.GetSymbolUseAtLocation(5,25,"",["GetSample"])
 
