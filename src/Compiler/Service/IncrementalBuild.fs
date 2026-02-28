@@ -637,9 +637,19 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
         GetResourceNameAndSignatureDataFuncs sigDataResources
 
-    let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
+    let autoOpenAttrs =
+        topAttrs.assemblyAttrs
+        |> List.choose (fun attr ->
+            match [ attr ] with
+            | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.AutoOpenAttribute s -> Some s
+            | _ -> None)
 
-    let ivtAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute)
+    let ivtAttrs =
+        topAttrs.assemblyAttrs
+        |> List.choose (fun attr ->
+            match [ attr ] with
+            | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.InternalsVisibleToAttribute s -> Some s
+            | _ -> None)
 
     interface IRawFSharpAssemblyData with
         member _.GetAutoOpenAttributes() = autoOpenAttrs
@@ -813,10 +823,16 @@ module IncrementalBuilderHelpers =
                         with exn ->
                             errorRecoveryNoRange exn
                             None
-                    let locale = TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
+                    let locale =
+                        match topAttrs.assemblyAttrs with
+                        | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.AssemblyCultureAttribute s -> Some s
+                        | _ -> None
+
                     let assemVerFromAttrib =
-                        TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs
-                        |> Option.bind  (fun v -> try Some (parseILVersion v) with _ -> None)
+                        match topAttrs.assemblyAttrs with
+                        | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.AssemblyVersionAttribute s ->
+                            try Some(parseILVersion s) with _ -> None
+                        | _ -> None
                     let ver =
                         match assemVerFromAttrib with
                         | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)

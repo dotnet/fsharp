@@ -866,8 +866,9 @@ let main3
         | MetadataAssemblyGeneration.ReferenceOnly
         | MetadataAssemblyGeneration.ReferenceOut _ ->
             let hasIvt =
-                TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
-                |> Option.isSome
+                match topAttrs.assemblyAttrs with
+                | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.InternalsVisibleToAttribute _ -> true
+                | _ -> false
 
             let observer = if hasIvt then PublicAndInternal else PublicOnly
 

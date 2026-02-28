@@ -3821,6 +3821,37 @@ let classifyEntityAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownEntityAttrib
 
     flag
 
+/// Classify a single assembly-level attribute, returning its well-known flag (or None).
+let classifyAssemblyAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownAssemblyAttributes =
+    let (Attrib(tcref, _, _, _, _, _, _)) = attrib
+    let mutable flag = WellKnownAssemblyAttributes.None
+
+    let fsharpCorePath =
+        resolveAttribPath g tcref (fun path ->
+            match path with
+            | [| "System"; "Runtime"; "CompilerServices"; name |] ->
+                match name with
+                | "InternalsVisibleToAttribute" -> flag <- WellKnownAssemblyAttributes.InternalsVisibleToAttribute
+                | _ -> ()
+            | [| "System"; "Reflection"; name |] ->
+                match name with
+                | "AssemblyCultureAttribute" -> flag <- WellKnownAssemblyAttributes.AssemblyCultureAttribute
+                | "AssemblyVersionAttribute" -> flag <- WellKnownAssemblyAttributes.AssemblyVersionAttribute
+                | _ -> ()
+            | _ -> ())
+
+    match fsharpCorePath with
+    | ValueSome path ->
+        match path with
+        | [| "Microsoft"; "FSharp"; "Core"; name |] ->
+            match name with
+            | "AutoOpenAttribute" -> flag <- WellKnownAssemblyAttributes.AutoOpenAttribute
+            | _ -> ()
+        | _ -> ()
+    | ValueNone -> ()
+
+    flag
+
 /// Compute well-known attribute flags for an Entity's Attrib list.
 let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEntityAttributes =
     let mutable flags = WellKnownEntityAttributes.None
@@ -3851,6 +3882,18 @@ let (|EntityAttribInt|_|) (g: TcGlobals) (flag: WellKnownEntityAttributes) (attr
 let (|EntityAttribString|_|) (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs: Attribs) =
     match attribs with
     | EntityAttrib g flag (Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> ValueSome s
+    | _ -> ValueNone
+
+/// Find the first attribute in a list that matches a specific well-known assembly flag.
+let tryFindAssemblyAttribByFlag (g: TcGlobals) (flag: WellKnownAssemblyAttributes) (attribs: Attribs) : Attrib option =
+    attribs
+    |> List.tryFind (fun attrib -> classifyAssemblyAttrib g attrib &&& flag <> WellKnownAssemblyAttributes.None)
+
+/// Active pattern: extract a single string argument from a well-known assembly attribute.
+[<return: Struct>]
+let (|AssemblyAttribString|_|) (g: TcGlobals) (flag: WellKnownAssemblyAttributes) (attribs: Attribs) =
+    match tryFindAssemblyAttribByFlag g flag attribs with
+    | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> ValueSome s
     | _ -> ValueNone
 
 #if !NO_TYPEPROVIDERS

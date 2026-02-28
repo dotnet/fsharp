@@ -2410,6 +2410,11 @@ val (|EntityAttribInt|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> at
 [<return: Struct>]
 val (|EntityAttribString|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> string voption
 
+val tryFindAssemblyAttribByFlag: g: TcGlobals -> flag: WellKnownAssemblyAttributes -> attribs: Attribs -> Attrib option
+
+[<return: Struct>]
+val (|AssemblyAttribString|_|): g: TcGlobals -> flag: WellKnownAssemblyAttributes -> attribs: Attribs -> string voption
+
 val inline attribsHaveValFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> bool
 
 [<return: Struct>]

@@ -1845,21 +1845,18 @@ type internal TransparentCompiler
                             None
 
                     let locale =
-                        TryFindFSharpStringAttribute
-                            tcGlobals
-                            (tcGlobals.FindSysAttrib "System.Reflection.AssemblyCultureAttribute")
-                            topAttrs.assemblyAttrs
+                        match topAttrs.assemblyAttrs with
+                        | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.AssemblyCultureAttribute s -> Some s
+                        | _ -> None
 
                     let assemVerFromAttrib =
-                        TryFindFSharpStringAttribute
-                            tcGlobals
-                            (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute")
-                            topAttrs.assemblyAttrs
-                        |> Option.bind (fun v ->
+                        match topAttrs.assemblyAttrs with
+                        | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.AssemblyVersionAttribute s ->
                             try
-                                Some(parseILVersion v)
+                                Some(parseILVersion s)
                             with _ ->
-                                None)
+                                None
+                        | _ -> None
 
                     let ver =
                         match assemVerFromAttrib with

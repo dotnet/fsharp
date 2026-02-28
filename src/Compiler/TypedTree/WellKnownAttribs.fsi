@@ -57,6 +57,16 @@ type internal WellKnownEntityAttributes =
     | CompiledNameAttribute = (1uL <<< 47)
     | NotComputed = (1uL <<< 63)
 
+/// Flags enum for well-known assembly-level attributes.
+[<System.Flags>]
+type internal WellKnownAssemblyAttributes =
+    | None = 0u
+    | AutoOpenAttribute = (1u <<< 0)
+    | InternalsVisibleToAttribute = (1u <<< 1)
+    | AssemblyCultureAttribute = (1u <<< 2)
+    | AssemblyVersionAttribute = (1u <<< 3)
+    | NotComputed = (1u <<< 31)
+
 /// Flags enum for well-known attributes on Val (values and members).
 [<System.Flags>]
 type internal WellKnownValAttributes =
