@@ -6,8 +6,9 @@ namespace Microsoft.FSharp.Control
 
 open System
 
-/// Attribute applied to computation expression builder types to indicate they use
-/// runtime-async semantics. Methods using such builders will have the async IL flag (0x2000) emitted.
+/// Marker attribute reserved for future library extensibility with runtime-async semantics.
+/// Note: the compiler does not read this attribute to propagate the async IL flag (0x2000).
+/// The async flag is propagated via detection of AsyncHelpers.Await call sites in the method body.
 [<AttributeUsage(AttributeTargets.Class, AllowMultiple = false)>]
 type RuntimeAsyncAttribute() =
     inherit Attribute()

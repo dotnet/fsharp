@@ -226,6 +226,9 @@
     <Compile Include="runtimeAsync.fs">
       <Link>Control/runtimeAsync.fs</Link>
     </Compile>
+    <Compile Include="runtimeTasks.fs">
+      <Link>Control/runtimeTasks.fs</Link>
+    </Compile>
     <Compile Include="tasks.fsi">
       <Link>Control/tasks.fsi</Link>
     </Compile>
