@@ -3833,15 +3833,15 @@ let (|EntityAttrib|_|) (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs
 /// Active pattern: extract a single int32 argument from a well-known entity attribute.
 [<return: Struct>]
 let (|EntityAttribInt|_|) (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs: Attribs) =
-    match tryFindEntityAttribByFlag g flag attribs with
-    | Some(Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _)) -> ValueSome v
+    match attribs with
+    | EntityAttrib g flag (Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _)) -> ValueSome v
     | _ -> ValueNone
 
 /// Active pattern: extract a single string argument from a well-known entity attribute.
 [<return: Struct>]
 let (|EntityAttribString|_|) (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs: Attribs) =
-    match tryFindEntityAttribByFlag g flag attribs with
-    | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> ValueSome s
+    match attribs with
+    | EntityAttrib g flag (Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> ValueSome s
     | _ -> ValueNone
 
 #if !NO_TYPEPROVIDERS
@@ -3980,15 +3980,15 @@ let (|ValAttrib|_|) (g: TcGlobals) (flag: WellKnownValAttributes) (attribs: Attr
 /// Active pattern: extract a single int32 argument from a well-known val attribute.
 [<return: Struct>]
 let (|ValAttribInt|_|) (g: TcGlobals) (flag: WellKnownValAttributes) (attribs: Attribs) =
-    match tryFindValAttribByFlag g flag attribs with
-    | Some(Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _)) -> ValueSome v
+    match attribs with
+    | ValAttrib g flag (Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _)) -> ValueSome v
     | _ -> ValueNone
 
 /// Active pattern: extract a single string argument from a well-known val attribute.
 [<return: Struct>]
 let (|ValAttribString|_|) (g: TcGlobals) (flag: WellKnownValAttributes) (attribs: Attribs) =
-    match tryFindValAttribByFlag g flag attribs with
-    | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> ValueSome s
+    match attribs with
+    | ValAttrib g flag (Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> ValueSome s
     | _ -> ValueNone
 
 /// Check if a raw attribute list has a specific well-known val flag (ad-hoc, non-caching).
