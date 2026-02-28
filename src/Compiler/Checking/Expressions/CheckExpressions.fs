@@ -1361,6 +1361,31 @@ let private HasMethodImplNoInliningAttribute g attrs =
             | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
             | _ -> false
 
+/// Check if a method has MethodImplOptions.Async (0x2000) attribute
+let private HasMethodImplAsyncAttribute g attrs =
+    match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
+    // ASYNC = 0x2000
+    | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x2000) <> 0x0
+    | _ -> false
+
+/// Check if a method has MethodImplOptions.Synchronized (0x20) attribute
+let private HasMethodImplSynchronizedAttribute g attrs =
+    match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
+    // SYNCHRONIZED = 0x20
+    | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x20) <> 0x0
+    | _ -> false
+
+/// Check if type is Task, Task<T>, ValueTask, or ValueTask<T>
+/// Used for runtime-async feature validation
+let private IsTaskLikeType (g: TcGlobals) ty =
+    if isAppTy g ty then
+        let tcref = tcrefOfAppTy g ty
+        tyconRefEq g tcref g.system_Task_tcref ||
+        tyconRefEq g tcref g.system_GenericTask_tcref ||
+        tyconRefEq g tcref g.system_ValueTask_tcref ||
+        tyconRefEq g tcref g.system_GenericValueTask_tcref
+    else false
+
 let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =
 
     let g = cenv.g
@@ -11266,6 +11291,21 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 | _ -> true
 
             let envinner = { envinner with eLambdaArgInfos = argInfos; eIsControlFlow = rhsIsControlFlow }
+
+            // Validate runtime-async method constraints
+            // NOTE: This feature is gated by RuntimeAsync language feature in preview
+            if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync &&
+               HasMethodImplAsyncAttribute g valAttribs then
+                // Check that async methods don't also have Synchronized
+                if HasMethodImplSynchronizedAttribute g valAttribs then
+                    errorR(Error(FSComp.SR.tcRuntimeAsyncCannotBeSynchronized(), mBinding))
+                // Check that async methods return Task, Task<T>, ValueTask, or ValueTask<T>
+                let _, returnTy = stripFunTy g overallPatTy
+                if not (IsTaskLikeType g returnTy) then
+                    errorR(Error(FSComp.SR.tcRuntimeAsyncMethodMustReturnTask(NicePrint.minimalStringOfType env.DisplayEnv returnTy), mBinding))
+                // Check that async methods don't return byref types
+                if isByrefTy g returnTy then
+                    errorR(Error(FSComp.SR.tcRuntimeAsyncCannotReturnByref(), mBinding))
 
             if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
             else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr
