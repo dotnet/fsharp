@@ -80,7 +80,7 @@ type internal FSharpWorkspaceServiceFactory
             None
 
     let getSource (workspace: Workspace) filename =
-        async {
+        async2 {
             let! ct = Async.CancellationToken
 
             match workspace.CurrentSolution.TryGetDocumentFromPath filename with
@@ -168,7 +168,7 @@ type internal FSharpWorkspaceServiceFactory
                     (if enableLiveBuffers then
                          (DocumentSource.Custom(fun filename ->
                              async {
-                                 match! getSource filename with
+                                 match! getSource filename |> Async2.toAsync with
                                  | Some source -> return Some(source :> ISourceText)
                                  | None -> return None
                              }))

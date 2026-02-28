@@ -16,6 +16,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+open Internal.Utilities.Library
 
 type RoslynTaggedText = Microsoft.CodeAnalysis.TaggedText
 
@@ -149,7 +150,7 @@ module internal RoslynHelpers =
 
     let StartAsyncSafe cancellationToken context computation =
         let computation =
-            async {
+            async2 {
                 try
                     return! computation
                 with e ->
@@ -157,7 +158,7 @@ module internal RoslynHelpers =
                     return Unchecked.defaultof<_>
             }
 
-        Async.Start(computation, cancellationToken)
+        Async2.Start(computation, cancellationToken)
 
 module internal OpenDeclarationHelper =
     /// <summary>

@@ -310,7 +310,7 @@ module private CheckerExtensions =
                             |> Map
 
                         let getFileSnapshot (options: FSharpProjectOptions) path =
-                            async {
+                            async2 {
                                 let project = projects.TryFind options.ProjectFileName
 
                                 if project.IsNone then
@@ -351,6 +351,7 @@ module private CheckerExtensions =
 
                                 return FSharpFileSnapshot(FileName = path, Version = version, GetSource = getSource)
                             }
+                            |> Async2.toAsync
 
                         let! snapshot =
                             FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)

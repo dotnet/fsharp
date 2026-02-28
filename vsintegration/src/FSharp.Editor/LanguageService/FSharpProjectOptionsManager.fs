@@ -105,10 +105,10 @@ module private FSharpProjectOptionsHelpers =
 type private FSharpProjectOptionsMessage =
     | TryGetOptionsByDocument of
         Document *
-        AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) voption> *
+        AsyncReplyChannel2<(FSharpParsingOptions * FSharpProjectOptions) voption> *
         CancellationToken *
         userOpName: string
-    | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) voption> * CancellationToken
+    | TryGetOptionsByProject of Project * AsyncReplyChannel2<(FSharpParsingOptions * FSharpProjectOptions) voption> * CancellationToken
     | ClearOptions of ProjectId
     | ClearSingleFileOptionsCache of DocumentId
 
@@ -267,13 +267,11 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                 let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
                 let updateProjectOptions () =
-                    async {
+                    async2 {
                         let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
-
-                        checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
-                        |> Async.Start
+                        do! checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
                     }
-                    |> Async.Start
+                    |> Async2.Start
 
                 let onChangeCaretHandler (_, _newline: int, _oldline: int) = updateProjectOptions ()
                 let onKillFocus (_) = updateProjectOptions ()
@@ -439,8 +437,8 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     return ValueSome(parsingOptions, projectOptions)
         }
 
-    let loop (agent: MailboxProcessor<FSharpProjectOptionsMessage>) =
-        async {
+    let loop (agent: MailboxProcessor2<FSharpProjectOptionsMessage>) =
+        async2 {
             while true do
                 match! agent.Receive() with
                 | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct, userOpName) ->
@@ -452,11 +450,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
                                 reply.Reply ValueNone
                             elif document.Project.IsFSharpMiscellaneousOrMetadata then
-                                let! options =
-                                    tryComputeOptionsBySingleScriptOrFile document userOpName
-                                    |> Async2.startInThreadPool ct
-                                    |> Async.AwaitTask
-
+                                let! options = tryComputeOptionsBySingleScriptOrFile document userOpName
                                 if ct.IsCancellationRequested then
                                     reply.Reply ValueNone
                                 else
@@ -468,7 +462,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                     document.Project.Solution.Workspace.CurrentSolution.GetProject(document.Project.Id)
 
                                 if not (isNull project) then
-                                    let! options = tryComputeOptions project |> Async2.startInThreadPool ct |> Async.AwaitTask
+                                    let! options = tryComputeOptions project
 
                                     if ct.IsCancellationRequested then
                                         reply.Reply ValueNone
@@ -524,7 +518,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         }
 
     let agent =
-        MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
+        MailboxProcessor2.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
 
     member _.TryGetOptionsByProjectAsync(project, ct) =
         agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, ct))
