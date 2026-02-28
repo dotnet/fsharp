@@ -6,12 +6,12 @@ open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
 open System.Threading
+open Internal.Utilities.Library
 
 let GetTaskResult (task: Tasks.Task<'T>) = task.GetAwaiter().GetResult()
 
@@ -39,7 +39,7 @@ type TestContext(Solution: Solution) =
         new TestContext(solution)
 
 let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
-    cancellableTask {
+    async2 {
         let mutable action: CodeAction = null
         let existingDocument = RoslynTestHelpers.GetLastDocument context.Solution
 
@@ -66,11 +66,11 @@ let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactor
         return newDocument
 
     }
-    |> CancellableTask.startWithoutCancellation
+    |> Async2.startAsTaskWithoutCancellation
     |> GetTaskResult
 
 let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
-    cancellableTask {
+    async2 {
         let refactoringActions = new List<CodeAction>()
         let existingDocument = RoslynTestHelpers.GetLastDocument context.Solution
 
@@ -85,5 +85,5 @@ let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestConte
 
         return refactoringActions
     }
-    |> CancellableTask.startWithoutCancellation
+    |> Async2.startAsTaskWithoutCancellation
     |> fun task -> task.Result
