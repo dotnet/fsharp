@@ -294,20 +294,25 @@
     </ItemGroup>
   </Target>
 
+
   <!-- Override TargetProfile for net10.0 to use netstandard resolution in compiling-fslib mode.
        The Bootstrap targets set TargetProfile=netcore for .NETCoreApp TFMs, but FSharp.Core needs
-       TargetProfile=netstandard so the compiler resolves types from netstandard.dll (which IS present
-       in the net10.0 ref pack). This target also explicitly adds the net10.0 ref pack assemblies to
-       ReferencePathWithRefAssemblies, since the SDK does not populate this item group for net10.0
-       the same way NETStandard.Library NuGet package does for netstandard2.0. -->
+       TargetProfile=netstandard so the compiler resolves types from netstandard.dll with actual type
+       definitions (not just type forwards). We use the NETStandard.Library NuGet package refs (same
+       as the netstandard2.0 build) because the net10.0 ref pack netstandard.dll is a pure facade
+       with only type forwards, which simpleresolution does not follow. -->
   <Target Name="OverrideTargetProfileForNet10" BeforeTargets="CoreCompile"
           Condition="'$(TargetFramework)' == 'net10.0' and '$(Configuration)' != 'Proto'">
     <PropertyGroup>
       <TargetProfile>netstandard</TargetProfile>
-      <_Net10RefPackPath>$(NetCoreTargetingPackRoot)\Microsoft.NETCore.App.Ref\$(BundledNETCoreAppPackageVersion)\ref\net10.0</_Net10RefPackPath>
+      <_NETStandardLibRefPath>$(NuGetPackageRoot)netstandard.library\2.0.3\build\netstandard2.0\ref</_NETStandardLibRefPath>
     </PropertyGroup>
     <ItemGroup>
-      <ReferencePathWithRefAssemblies Include="$(_Net10RefPackPath)\*.dll" />
+      <!-- Remove the net10.0 ref pack netstandard.dll (pure type-forwarding facade) so the compiler
+           uses the NETStandard.Library 2.0.3 netstandard.dll which has actual type definitions. -->
+      <ReferencePathWithRefAssemblies Remove="@(ReferencePathWithRefAssemblies)" Condition="'%(Filename)%(Extension)' == 'netstandard.dll'" />
+      <!-- Add NETStandard.Library 2.0.3 refs which have actual type definitions needed by simpleresolution -->
+      <ReferencePathWithRefAssemblies Include="$(_NETStandardLibRefPath)\*.dll" />
     </ItemGroup>
   </Target>
 

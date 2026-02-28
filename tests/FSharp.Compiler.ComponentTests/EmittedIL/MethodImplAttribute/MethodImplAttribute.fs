@@ -80,3 +80,103 @@ module MethodImplAttribute =
         compilation
         |> getCompilation
         |> verifyCompilation
+
+    // =====================================================================================
+    // Task 14: IL baseline tests for RuntimeAsync feature
+    // Verify that [<MethodImpl(MethodImplOptions.Async)>] emits 'cil managed async' in IL
+    // =====================================================================================
+
+    // Verify that a simple async method with MethodImplOptions.Async emits the async IL flag.
+    // The body returns Task<int> directly (function bindings use the declared return type).
+    [<FactForNETCOREAPP>]
+    let ``RuntimeAsync - method with Async attribute emits cil managed async in IL``() =
+        FSharp """
+module TestModule
+
+open System.Runtime.CompilerServices
+open System.Threading.Tasks
+
+[<MethodImplAttribute(MethodImplOptions.Async)>]
+let asyncMethod () : Task<int> = Task.FromResult(42)
+"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            // The method must carry the 'async' flag in its IL method header
+            """cil managed async"""
+        ]
+
+    // Verify that the async flag is present on a method returning Task (non-generic).
+    [<FactForNETCOREAPP>]
+    let ``RuntimeAsync - Task-returning method emits cil managed async in IL``() =
+        FSharp """
+module TestModule
+
+open System.Runtime.CompilerServices
+open System.Threading.Tasks
+
+[<MethodImplAttribute(MethodImplOptions.Async)>]
+let asyncVoidMethod () : Task = Task.CompletedTask
+"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            """cil managed async"""
+        ]
+
+    // =====================================================================================
+    // Task 15: Validation error tests for RuntimeAsync feature
+    // =====================================================================================
+
+    // Error 3885: async method cannot also be synchronized (0x2020 = 0x2000 | 0x20)
+    [<Fact>]
+    let ``RuntimeAsync - error when async method is also synchronized``() =
+        FSharp """
+module TestModule
+
+open System.Runtime.CompilerServices
+open System.Threading.Tasks
+
+// Note: 0x2020 = Async (0x2000) + Synchronized (0x20)
+[<MethodImplAttribute(enum<MethodImplOptions>(0x2020))>]
+let invalidMethod () : Task<int> = Task.FromResult(42)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnosticMessageMatches "cannot also use"
+
+    // Error 3884: async method must return Task, Task<T>, ValueTask, or ValueTask<T>
+    [<Fact>]
+    let ``RuntimeAsync - error when async method does not return a Task type``() =
+        FSharp """
+module TestModule
+
+open System.Runtime.CompilerServices
+
+[<MethodImplAttribute(MethodImplOptions.Async)>]
+let invalidMethod () : int = 42
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnosticMessageMatches "must return Task"
+
+    // Feature gate: using MethodImplOptions.Async without --langversion:preview emits a preview feature error
+    [<Fact>]
+    let ``RuntimeAsync - error when Async attribute used without preview langversion``() =
+        FSharp """
+module TestModule
+
+open System.Runtime.CompilerServices
+open System.Threading.Tasks
+
+[<MethodImplAttribute(MethodImplOptions.Async)>]
+let asyncMethod () : Task<int> = Task.FromResult(42)
+"""
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnosticMessageMatches "runtime async"

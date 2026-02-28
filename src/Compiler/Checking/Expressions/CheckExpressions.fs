@@ -11308,6 +11308,10 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
             // Validate runtime-async method constraints
             // NOTE: This feature is gated by RuntimeAsync language feature in preview
+            // Emit a feature-gate error if the attribute is used without --langversion:preview
+            if HasMethodImplAsyncAttribute g valAttribs then
+                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync mBinding
+
             if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync &&
                HasMethodImplAsyncAttribute g valAttribs then
                 // Check that async methods don't also have Synchronized
@@ -11320,9 +11324,6 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 // Check that async methods don't return byref types
                 if isByrefTy g returnTy then
                     errorR(Error(FSComp.SR.tcRuntimeAsyncCannotReturnByref(), mBinding))
-                // Check that the runtime supports async methods (.NET 10+)
-                if not (cenv.infoReader.IsLanguageFeatureRuntimeSupported LanguageFeature.RuntimeAsync) then
-                    errorR(Error(FSComp.SR.tcRuntimeAsyncNotSupported(), mBinding))
 
             // For runtime-async methods, the body is type-checked against the unwrapped type T
             // (not Task<T>). The runtime handles wrapping T -> Task<T> for the caller.
