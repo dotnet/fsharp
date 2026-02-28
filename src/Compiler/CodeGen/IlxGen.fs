@@ -9353,10 +9353,25 @@ and GenMethodForBinding
              ))
         ]
 
-    // Discard the result on a 'void' return type. For a constructor just return 'void'
+    // Discard the result on a 'void' return type. For a constructor just return 'void'.
+    // For runtime-async methods returning Task or ValueTask (non-generic), the spec says the stack
+    // should be empty before 'ret'. The body returns unit (nothing on stack), so we use
+    // discardAndReturnVoid to discard the unit value and emit 'ret' with empty stack.
+    let hasAsyncImplFlagEarly =
+        match TryFindFSharpAttribute g g.attrib_MethodImplAttribute v.Attribs with
+        | Some(Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x2000) <> 0x0
+        | _ -> false
+    let isNonGenericTaskOrValueTask =
+        isAppTy g returnTy &&
+        (tyconRefEq g (tcrefOfAppTy g returnTy) g.system_Task_tcref ||
+         tyconRefEq g (tcrefOfAppTy g returnTy) g.system_ValueTask_tcref)
     let sequel =
         if isUnitTy g returnTy then discardAndReturnVoid
         elif isCtor then ReturnVoid
+        elif hasAsyncImplFlagEarly && isNonGenericTaskOrValueTask then
+            // Runtime-async methods returning Task or ValueTask (non-generic) must have an empty
+            // stack before 'ret'. The body returns unit, so we discard the unit value.
+            discardAndReturnVoid
         else Return
 
     // Now generate the code.

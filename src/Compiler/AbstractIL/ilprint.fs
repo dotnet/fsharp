@@ -610,14 +610,15 @@ let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
         output_string os "native "
     elif md.ImplAttributes &&& MethodImplAttributes.IL <> enum 0 then
         output_string os "cil "
-        if md.IsAsync then
-            output_string os "async "
     else
         output_string os "runtime "
 
     output_string os (if md.IsInternalCall then "internalcall " else " ")
 
     output_string os (if md.IsManaged then "managed " else " ")
+
+    if md.IsAsync then
+        output_string os "async "
 
     output_string os (if md.IsForwardRef then "forwardref " else " ")
 
