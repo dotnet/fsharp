@@ -11317,13 +11317,6 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 // Check that async methods don't also have Synchronized
                 if HasMethodImplSynchronizedAttribute g valAttribs then
                     errorR(Error(FSComp.SR.tcRuntimeAsyncCannotBeSynchronized(), mBinding))
-                // Check that async methods return Task, Task<T>, ValueTask, or ValueTask<T>
-                let _, returnTy = stripFunTy g overallPatTy
-                if not (IsTaskLikeType g returnTy) then
-                    errorR(Error(FSComp.SR.tcRuntimeAsyncMethodMustReturnTask(NicePrint.minimalStringOfType env.DisplayEnv returnTy), mBinding))
-                // Check that async methods don't return byref types
-                if isByrefTy g returnTy then
-                    errorR(Error(FSComp.SR.tcRuntimeAsyncCannotReturnByref(), mBinding))
 
             // For runtime-async methods, the body is type-checked against the unwrapped type T
             // (not Task<T>). The runtime handles wrapping T -> Task<T> for the caller.
@@ -11336,6 +11329,17 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
             if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
             else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, bodyExprTy)) envinner tpenv rhsExpr
+
+        // Return type validation AFTER type inference (overallPatTy is now resolved)
+        if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync &&
+           HasMethodImplAsyncAttribute g valAttribs then
+            let _, returnTy = stripFunTy g overallPatTy
+            // Check that async methods return Task, Task<T>, ValueTask, or ValueTask<T>
+            if not (IsTaskLikeType g returnTy) then
+                errorR(Error(FSComp.SR.tcRuntimeAsyncMethodMustReturnTask(NicePrint.minimalStringOfType env.DisplayEnv returnTy), mBinding))
+            // Check that async methods don't return byref types
+            if isByrefTy g returnTy then
+                errorR(Error(FSComp.SR.tcRuntimeAsyncCannotReturnByref(), mBinding))
 
         if kind = SynBindingKind.StandaloneExpression && not cenv.isScript then
             UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>
