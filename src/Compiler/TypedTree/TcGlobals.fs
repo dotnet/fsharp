@@ -387,6 +387,13 @@ type TcGlobals(
   let sysCollections = ["System";"Collections"]
   let sysGenerics = ["System";"Collections";"Generic"]
   let sysCompilerServices = ["System";"Runtime";"CompilerServices"]
+  let sysThreadingTasks = ["System";"Threading";"Tasks"]
+
+  // Task and ValueTask type refs for runtime-async support
+  let v_task_tcr = findSysTyconRef sysThreadingTasks "Task"
+  let v_genericTask_tcr = findSysTyconRef sysThreadingTasks "Task`1"
+  let v_valueTask_tcr = findSysTyconRef sysThreadingTasks "ValueTask"
+  let v_genericValueTask_tcr = findSysTyconRef sysThreadingTasks "ValueTask`1"
 
   let lazy_tcr = findSysTyconRef sys "Lazy`1"
   let v_fslib_IEvent2_tcr        = mk_MFControl_tcref fslibCcu "IEvent`2"
@@ -1414,6 +1421,12 @@ type TcGlobals(
   member val mk_IComparable_ty    = mkSysNonGenericTy sys "IComparable"
   member val mk_Attribute_ty = mkSysNonGenericTy sys "Attribute"
   member val system_LinqExpression_tcref = v_linqExpression_tcr
+
+  // Task and ValueTask type refs for runtime-async support
+  member val system_Task_tcref = v_task_tcr
+  member val system_GenericTask_tcref = v_genericTask_tcr
+  member val system_ValueTask_tcref = v_valueTask_tcr
+  member val system_GenericValueTask_tcref = v_genericValueTask_tcr
 
   member val mk_IStructuralComparable_ty = mkSysNonGenericTy sysCollections "IStructuralComparable"
 

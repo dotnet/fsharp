@@ -1203,6 +1203,14 @@ type internal TcGlobals =
 
     member system_LinqExpression_tcref: TypedTree.EntityRef
 
+    member system_Task_tcref: TypedTree.EntityRef
+
+    member system_GenericTask_tcref: TypedTree.EntityRef
+
+    member system_ValueTask_tcref: TypedTree.EntityRef
+
+    member system_GenericValueTask_tcref: TypedTree.EntityRef
+
     member system_MarshalByRefObject_tcref: TypedTree.EntityRef option
 
     member system_MarshalByRefObject_ty: TypedTree.TType option

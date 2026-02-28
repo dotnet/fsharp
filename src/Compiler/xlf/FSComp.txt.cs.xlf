@@ -627,6 +627,11 @@
         <target state="translated">Sdílení podkladových polí v rozlišeném sjednocení [&lt;Struct&gt;] za předpokladu, že mají stejný název a typ</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRuntimeAsync">
+        <source>runtime async</source>
+        <target state="new">runtime async</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
@@ -1760,6 +1765,26 @@
       <trans-unit id="tcResumableCodeNotSupported">
         <source>Using resumable code or resumable state machines requires /langversion:preview</source>
         <target state="translated">Použití obnovitelného kódu nebo obnovitelných stavových strojů vyžaduje /langversion:preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRuntimeAsyncCannotBeSynchronized">
+        <source>Methods marked with MethodImplOptions.Async cannot also use MethodImplOptions.Synchronized.</source>
+        <target state="new">Methods marked with MethodImplOptions.Async cannot also use MethodImplOptions.Synchronized.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRuntimeAsyncCannotReturnByref">
+        <source>Methods marked with MethodImplOptions.Async cannot return byref types.</source>
+        <target state="new">Methods marked with MethodImplOptions.Async cannot return byref types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRuntimeAsyncMethodMustReturnTask">
+        <source>Methods marked with MethodImplOptions.Async must return Task, Task&lt;'T&gt;, ValueTask, or ValueTask&lt;'T&gt;. The actual return type is '{0}'.</source>
+        <target state="new">Methods marked with MethodImplOptions.Async must return Task, Task&lt;'T&gt;, ValueTask, or ValueTask&lt;'T&gt;. The actual return type is '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRuntimeAsyncNotSupported">
+        <source>Methods marked with MethodImplOptions.Async are not supported in this context.</source>
+        <target state="new">Methods marked with MethodImplOptions.Async are not supported in this context.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
