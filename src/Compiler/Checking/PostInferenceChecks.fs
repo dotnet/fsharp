@@ -835,6 +835,20 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
+/// Get the RefSafetyRulesVersion from a TyconRef. Returns 0 for local refs
+/// or when the CCU cannot be resolved.
+// `:? System.Exception` narrows the IL catch clause to exclude non-CLS-compliant throws.
+#nowarn "67"
+let getRefSafetyVersionFromTyconRef (tcRef: TyconRef) : int =
+    if tcRef.IsLocalRef then
+        0
+    else
+        try
+            tcRef.nlr.Ccu.Deref.RefSafetyRulesVersion
+        with :? System.Exception ->
+            0
+#warnon "67"
+
 /// Try to resolve an ILMethodRef to its ILMethodDef, ILTypeDef, and RefSafetyRulesVersion
 /// from the assembly. Returns None if the type is not an IL type or resolution fails.
 /// When resolved, refSafetyVersion is 0 for local refs or assemblies without the attribute.
@@ -844,12 +858,7 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
 let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: ILMethodRef) : (ILMethodDef * ILTypeDef * int) option =
     try
         let tyconRef = Import.ImportILTypeRef amap m ilMethRef.DeclaringTypeRef
-
-        let refSafetyVersion =
-            if tyconRef.IsLocalRef then
-                0
-            else
-                tyconRef.nlr.Ccu.Deref.RefSafetyRulesVersion
+        let refSafetyVersion = getRefSafetyVersionFromTyconRef tyconRef
 
         match tyconRef.TypeReprInfo with
         | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
@@ -868,6 +877,28 @@ let private nonEmptyMask (arr: bool array) =
 let flattenArgInfosSkipReceiver (argInfos: ArgReprInfo list list) (isInstance: bool) =
     let flat = argInfos |> List.concat
     if isInstance && not flat.IsEmpty then flat.Tail else flat
+
+/// Enforce [<ScopedRef>] parameters in function bodies by marking them as non-returnable (scope=1).
+let enforceScopedRefParams (cenv: cenv) (mOrig: range) (restArgs: Val list)
+                           (valReprInfo: ValReprInfo) (memInfo: ValMemberInfo option) =
+    let g = cenv.g
+    let isInstance =
+        match memInfo with
+        | Some mi -> mi.MemberFlags.IsInstance
+        | None -> false
+
+    let paramArgInfos = flattenArgInfosSkipReceiver valReprInfo.ArgInfos isInstance
+
+    if paramArgInfos.Length = restArgs.Length then
+        (restArgs, paramArgInfos)
+        ||> List.iter2 (fun v ai ->
+            if HasFSharpAttributeOpt g g.attrib_ScopedRefAttribute_opt ai.Attribs then
+                let flags =
+                    if isByrefTy g v.Type then LimitFlags.ByRef
+                    elif isSpanLikeTy g mOrig v.Type then LimitFlags.StackReferringSpanLike
+                    else LimitFlags.None
+
+                LimitVal cenv v { scope = 1; flags = flags })
 
 /// Build a boolean mask of which IL parameters have the given attribute.
 /// Returns None if the attribute is unavailable or no parameters match.
@@ -1631,42 +1662,40 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
 
     let ctxts = mkArgsForAppliedExpr false argsl f
 
-    // Compute scoped mask for F#-to-F# calls with [<ScopedRef>] params
-    let getScopedMask () =
-        match f with
-        | Expr.Val(vref, _, _) ->
-            vref.ValReprInfo
-            |> Option.bind (fun valReprInfo ->
-                let paramArgInfos = flattenArgInfosSkipReceiver valReprInfo.ArgInfos hasReceiver
-
-                let expectedArgCount =
-                    if hasReceiver then argsl.Length - 1 else argsl.Length
-
-                if paramArgInfos.Length = expectedArgCount then
-                    tryGetScopedParamMaskFromFSharpAttribs cenv.g paramArgInfos
-                else
-                    None)
-        | _ -> None
-
-    let scopedMask =
-        if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then getScopedMask() else None
-
-    if hasReceiver then
-        // Check if the struct instance member has [<UnscopedRef>], allowing `this` to escape.
-        // This mirrors the IL path in CheckExprOp which reads UnscopedRefAttribute from ILMethodDef.
-        let getHasUnscopedRef () =
+    // Compute scoped mask and UnscopedRef flag for F#-to-F# calls with [<ScopedRef>] params
+    let scopedMask, hasUnscopedRef =
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
             match f with
             | Expr.Val(vref, _, _) ->
-                match vref.TryDeref with
-                | ValueSome v ->
-                    v.MemberApparentEntity.IsStructOrEnumTycon
-                    && HasFSharpAttributeOpt cenv.g cenv.g.attrib_UnscopedRefAttribute_opt v.Attribs
-                | ValueNone -> false
-            | _ -> false
+                let mask =
+                    vref.ValReprInfo
+                    |> Option.bind (fun valReprInfo ->
+                        let paramArgInfos = flattenArgInfosSkipReceiver valReprInfo.ArgInfos hasReceiver
 
-        let hasUnscopedRef =
-            if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then getHasUnscopedRef() else false
+                        let expectedArgCount =
+                            if hasReceiver then argsl.Length - 1 else argsl.Length
 
+                        if paramArgInfos.Length = expectedArgCount then
+                            tryGetScopedParamMaskFromFSharpAttribs cenv.g paramArgInfos
+                        else
+                            None)
+
+                let unscoped =
+                    if hasReceiver then
+                        match vref.TryDeref with
+                        | ValueSome v ->
+                            v.MemberApparentEntity.IsStructOrEnumTycon
+                            && HasFSharpAttributeOpt cenv.g cenv.g.attrib_UnscopedRefAttribute_opt v.Attribs
+                        | ValueNone -> false
+                    else
+                        false
+
+                mask, unscoped
+            | _ -> None, false
+        else
+            None, false
+
+    if hasReceiver then
         CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt scopedMask hasUnscopedRef
     else
         CheckCall cenv env m returnTy argsl ctxts ctxt scopedMask
@@ -2082,23 +2111,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
         // A scoped parameter promises callers it won't escape via the return value.
         // Mark it as scope=1 (non-returnable) so escape checks reject returning it.
         if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
-            let isInstance =
-                match memInfo with
-                | Some mi -> mi.MemberFlags.IsInstance
-                | None -> false
-
-            let paramArgInfos = flattenArgInfosSkipReceiver valReprInfo.ArgInfos isInstance
-
-            if paramArgInfos.Length = restArgs.Length then
-                (restArgs, paramArgInfos)
-                ||> List.iter2 (fun v ai ->
-                    if HasFSharpAttributeOpt cenv.g cenv.g.attrib_ScopedRefAttribute_opt ai.Attribs then
-                        let flags =
-                            if isByrefTy cenv.g v.Type then LimitFlags.ByRef
-                            elif isSpanLikeTy cenv.g mOrig v.Type then LimitFlags.StackReferringSpanLike
-                            else LimitFlags.None
-
-                        LimitVal cenv v { scope = 1; flags = flags })
+            enforceScopedRefParams cenv mOrig restArgs valReprInfo memInfo
 
         match memInfo with
         | None -> ()
@@ -2470,14 +2483,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                                     md.Parameters.Length = baseParams.Length
                                     && md.GenericParams.Length = methodGenericArity)
                                 |> Option.bind (fun methDef ->
-                                    let refSafetyVersion =
-                                        if tcRef.IsLocalRef then 0
-                                        else
-                                            // `:? System.Exception` narrows the IL catch clause to exclude non-CLS-compliant throws.
-                                            #nowarn "67"
-                                            try tcRef.nlr.Ccu.Deref.RefSafetyRulesVersion
-                                            with :? System.Exception -> 0
-                                            #warnon "67"
+                                    let refSafetyVersion = getRefSafetyVersionFromTyconRef tcRef
                                     computeScopedMask cenv v.Range methDef [] refSafetyVersion)
                             | _ -> None
                         else
