@@ -11306,6 +11306,9 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 // Check that async methods don't return byref types
                 if isByrefTy g returnTy then
                     errorR(Error(FSComp.SR.tcRuntimeAsyncCannotReturnByref(), mBinding))
+                // Check that the runtime supports async methods (.NET 10+)
+                if not (cenv.infoReader.IsLanguageFeatureRuntimeSupported LanguageFeature.RuntimeAsync) then
+                    errorR(Error(FSComp.SR.tcRuntimeAsyncNotSupported(), mBinding))
 
             if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
             else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr
