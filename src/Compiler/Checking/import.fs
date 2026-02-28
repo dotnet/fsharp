@@ -847,9 +847,13 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
         )
         |> fun root -> { Root = root }
 
+[<Literal>]
+let private RefSafetyRulesAttributeName =
+    "System.Runtime.CompilerServices.RefSafetyRulesAttribute"
+
 let GetRefSafetyRulesVersion (ilModule: ILModuleDef) : int =
     let tref =
-        ILTypeRef.Create(ILScopeRef.Local, [], "System.Runtime.CompilerServices.RefSafetyRulesAttribute")
+        ILTypeRef.Create(ILScopeRef.Local, [], RefSafetyRulesAttributeName)
 
     // RefSafetyRulesAttribute targets Module, not Assembly
     let attrs = ilModule.CustomAttrs

@@ -228,6 +228,8 @@ type cenv =
 
       isInternalTestSpanStackReferring: bool
 
+      improvedByRefLikeEscapeAnalysis: bool
+
       // outputs
       mutable usesQuotations: bool
 
@@ -1159,7 +1161,7 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
     let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
 
     let improvedEscapeAnalysis =
-        cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
+        cenv.improvedByRefLikeEscapeAnalysis
 
     // If return is a byref, and being used as a return, then a single argument cannot be a local-byref or a stack referring span-like.
     let isReturnLimitedByRef =
@@ -1257,7 +1259,7 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt (scopedMask: bool 
         let receiverLimit = CheckExpr cenv env receiverArg receiverContext
 
         let improvedEscapeAnalysis =
-            cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
+            cenv.improvedByRefLikeEscapeAnalysis
 
         let limitArgs =
             let limitArgs = CheckExprsWithScopedMask cenv env args ctxts scopedMask
@@ -1672,7 +1674,7 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
 
     // Compute scoped mask and UnscopedRef flag for F#-to-F# calls with [<ScopedRef>] params
     let scopedMask, hasUnscopedRef =
-        if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
+        if cenv.improvedByRefLikeEscapeAnalysis then
             match f with
             | Expr.Val(vref, _, _) ->
                 let mask =
@@ -1851,7 +1853,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
 
         let getILMethodContext () =
-            if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
+            if cenv.improvedByRefLikeEscapeAnalysis then
                 tryResolveILMethodContext cenv.amap m ilMethRef
             else
                 None
@@ -2121,7 +2123,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
         // When improved escape analysis is enabled, enforce [<ScopedRef>] in the function body.
         // A scoped parameter promises callers it won't escape via the return value.
         // Mark it as scope=1 (non-returnable) so escape checks reject returning it.
-        if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis then
+        if cenv.improvedByRefLikeEscapeAnalysis then
             enforceScopedRefParams cenv mOrig restArgs valReprInfo memInfo
 
         match memInfo with
@@ -2525,7 +2527,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                             ))
         | _ -> ()
 
-    if cenv.g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis && cenv.reportErrors then
+    if cenv.improvedByRefLikeEscapeAnalysis && cenv.reportErrors then
         checkOverrideVariance()
 
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
@@ -3145,6 +3147,7 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           viewCcu = viewCcu
           isLastCompiland = isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
+          improvedByRefLikeEscapeAnalysis = g.langVersion.SupportsFeature LanguageFeature.ImprovedByRefLikeEscapeAnalysis
           tcVal = tcValF
           entryPointGiven = false}
 
