@@ -2457,10 +2457,6 @@ val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib 
 
 val TryFindFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> Attrib option
 
-val TryFindFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
-
-val TryFindLocalizedFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
-
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///
 /// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)

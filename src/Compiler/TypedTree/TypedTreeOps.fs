@@ -3576,19 +3576,6 @@ let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _
 
 let (|AttribElemStringArg|_|) = function ILAttribElem.String(n) -> n | _ -> None
 
-let TryFindFSharpStringAttribute g nm attrs = 
-    match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> Some b
-    | _ -> None
-
-let TryFindLocalizedFSharpStringAttribute g nm attrs = 
-    match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) -> 
-        match namedArgs with 
-        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> FSComp.SR.GetTextOpt(b)
-        | _ -> Some b
-    | _ -> None
-    
 let TryFindILAttribute (AttribInfo (atref, _)) attrs = 
     HasILAttribute atref attrs
 

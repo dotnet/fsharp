@@ -335,10 +335,6 @@ type internal TcGlobals =
 
     member attrib_CompilerFeatureRequiredAttribute: BuiltinAttribInfo
 
-    member attrib_CompilerMessageAttribute: BuiltinAttribInfo
-
-    member attrib_ComponentModelEditorBrowsableAttribute: BuiltinAttribInfo
-
     member attrib_ConditionalAttribute: BuiltinAttribInfo
 
     member attrib_ContextStaticAttribute: BuiltinAttribInfo option
@@ -365,8 +361,6 @@ type internal TcGlobals =
 
     member attrib_EqualityConditionalOnAttribute: BuiltinAttribInfo
 
-    member attrib_ExperimentalAttribute: BuiltinAttribInfo
-
     member attrib_ExtensionAttribute: BuiltinAttribInfo
 
     member attrib_FieldOffsetAttribute: BuiltinAttribInfo
@@ -380,8 +374,6 @@ type internal TcGlobals =
 
 
     member attrib_InterfaceAttribute: BuiltinAttribInfo
-
-    member attrib_InternalsVisibleToAttribute: BuiltinAttribInfo
 
     member attrib_IsReadOnlyAttribute: BuiltinAttribInfo
 
@@ -459,11 +451,6 @@ type internal TcGlobals =
     member attrib_ThreadStaticAttribute: BuiltinAttribInfo option
 
     member attrib_TypeForwardedToAttribute: BuiltinAttribInfo
-
-    member attrib_UnverifiableAttribute: BuiltinAttribInfo
-
-
-    member attrib_WarnOnWithoutNullArgumentAttribute: BuiltinAttribInfo
 
     member attrib_IlExperimentalAttribute: BuiltinAttribInfo
 
