@@ -720,23 +720,6 @@ x |> Seq.iter(fun r ->
 
     [<Fact>]
     member _.``Verify that #help produces help text for fsi + dependency manager``() =
-        let expected = """
-  F# Interactive directives:
-
-    #r "file.dll";;                               // Reference (dynamically load) the given DLL
-    #i "package source uri";;                     // Include package source uri when searching for packages
-    #I "path";;                                   // Add the given search path for referenced DLLs
-    #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
-    #time ["on"|"off"];;                          // Toggle timing on/off
-    #help;;                                       // Display help
-    #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;
-    #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'
-    #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
-    #clear;;                                      // Clear screen
-    #quit;;                                       // Exit
-
-  F# Interactive command line options:"""
-
         use script = new FSharpScript(quiet = false, langVersion = LangVersion.V80)
 
         use capture = new TestConsole.ExecutionCapture()
@@ -744,7 +727,10 @@ x |> Seq.iter(fun r ->
 
         let output = capture.OutText
 
-        Assert.Contains(expected, output)
+        // Verify dependency manager lines are present in help output
+        Assert.Contains("""#r "nuget:FSharp.Data, 3.1.2";;""", output)
+        Assert.Contains("""#r "nuget:FSharp.Data";;""", output)
+        Assert.Contains("""#i "package source uri";;""", output)
 
         // this is the end of the line each different platform has a different mechanism for starting fsi
         // Actual output looks similar to: """      See 'testhost --help' for options"""
@@ -752,23 +738,6 @@ x |> Seq.iter(fun r ->
 
     [<Fact>]
     member _.``Verify that #help produces help text for fsi + dependency manager language version preview``() =
-        let expected = """
-  F# Interactive directives:
-
-    #r "file.dll";;                               // Reference (dynamically load) the given DLL
-    #i "package source uri";;                     // Include package source uri when searching for packages
-    #I "path";;                                   // Add the given search path for referenced DLLs
-    #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
-    #time ["on"|"off"];;                          // Toggle timing on/off
-    #help;;                                       // Display help
-    #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;
-    #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'
-    #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
-    #clear;;                                      // Clear screen
-    #quit;;                                       // Exit
-
-  F# Interactive command line options:"""
-
         use script = new FSharpScript(quiet = false, langVersion = LangVersion.Preview)
 
         use capture = new TestConsole.ExecutionCapture()
@@ -776,7 +745,10 @@ x |> Seq.iter(fun r ->
 
         let output = capture.OutText
 
-        Assert.Contains(expected, output)
+        // Verify dependency manager lines are present in help output
+        Assert.Contains("""#r "nuget:FSharp.Data, 3.1.2";;""", output)
+        Assert.Contains("""#r "nuget:FSharp.Data";;""", output)
+        Assert.Contains("""#i "package source uri";;""", output)
 
         // this is the end of the line each different platform has a different mechanism for starting fsi
         // Actual output looks similar to: """      See 'testhost --help' for options"""

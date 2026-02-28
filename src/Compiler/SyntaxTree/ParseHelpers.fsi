@@ -41,6 +41,7 @@ val rhs: parseState: IParseState -> i: int -> range
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
+    | IfDefElif
 
 type LexerIfdefStackEntries = (LexerIfdefStackEntry * range) list
 

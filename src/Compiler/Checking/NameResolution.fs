@@ -1998,6 +1998,15 @@ let ItemsAreEffectivelyEqual g orig other =
     | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
         traitInfo1.MemberLogicalName = traitInfo2.MemberLogicalName
 
+    // Cross-match constructor value refs with constructor groups (for FAR from additional constructor new())
+    | ValUse vref1, Item.CtorGroup(_, meths)
+    | Item.CtorGroup(_, meths), ValUse vref1 ->
+        meths
+        |> List.exists (fun meth ->
+            match meth.ArbitraryValRef with
+            | Some vref2 -> valRefDefnEq g vref1 vref2
+            | _ -> false)
+
     | _ -> false
 
 /// Given the Item 'orig' - returns function 'other: Item -> bool', that will yield true if other and orig represents the same item and false - otherwise
@@ -2006,6 +2015,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | EntityUse tcref -> tyconRefDefnHash g tcref
     | Item.TypeVar (nm, _)-> hash nm
     | Item.Trait traitInfo -> hash traitInfo.MemberLogicalName
+    | ValUse vref when vref.IsConstructor && vref.IsMember -> hash vref.MemberApparentEntity.LogicalName
     | ValUse vref -> valRefDefnHash g vref
     | ActivePatternCaseUse (_, _, idx)-> hash idx
     | MethodUse minfo -> minfo.ComputeHashCode()

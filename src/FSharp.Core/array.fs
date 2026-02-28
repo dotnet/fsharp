@@ -1110,6 +1110,54 @@ module Array =
 
         res1, res2
 
+    let inline scatterPartitioned (isChoice1: bool array) (results1: 'T1 array) (results2: 'T2 array) count1 =
+        let len = isChoice1.Length
+
+        let output1: 'T1 array =
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count1
+
+        let output2: 'T2 array =
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len - count1)
+
+        let mutable i1 = 0
+        let mutable i2 = 0
+
+        for i = 0 to len - 1 do
+            if isChoice1.[i] then
+                output1.[i1] <- results1.[i]
+                i1 <- i1 + 1
+            else
+                output2.[i2] <- results2.[i]
+                i2 <- i2 + 1
+
+        output1, output2
+
+    [<CompiledName("PartitionWith")>]
+    let inline partitionWith ([<InlineIfLambda>] partitioner: 'T -> Choice<'T1, 'T2>) (array: 'T array) =
+        checkNonNull "array" array
+        let len = array.Length
+
+        let isChoice1: bool array =
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+
+        let results1: 'T1 array =
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+
+        let results2: 'T2 array =
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+
+        let mutable count1 = 0
+
+        for i = 0 to len - 1 do
+            match partitioner array.[i] with
+            | Choice1Of2 x ->
+                isChoice1.[i] <- true
+                results1.[i] <- x
+                count1 <- count1 + 1
+            | Choice2Of2 x -> results2.[i] <- x
+
+        scatterPartitioned isChoice1 results1 results2 count1
+
     [<CompiledName("Find")>]
     let find predicate (array: _ array) =
         checkNonNull "array" array
@@ -2622,6 +2670,41 @@ module Array =
                     iFalse <- iFalse + 1
 
             res1, res2
+
+        [<CompiledName("PartitionWith")>]
+        let inline partitionWith ([<InlineIfLambda>] partitioner: 'T -> Choice<'T1, 'T2>) (array: 'T array) =
+            checkNonNull "array" array
+            let len = array.Length
+
+            let isChoice1: bool array =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+
+            let results1: 'T1 array =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+
+            let results2: 'T2 array =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+
+            let mutable count1 = 0
+
+            Parallel.For(
+                0,
+                len,
+                (fun () -> 0),
+                (fun i _ count ->
+                    match partitioner array.[i] with
+                    | Choice1Of2 x ->
+                        isChoice1.[i] <- true
+                        results1.[i] <- x
+                        count + 1
+                    | Choice2Of2 x ->
+                        results2.[i] <- x
+                        count),
+                Action<int>(fun x -> Interlocked.Add(&count1, x) |> ignore)
+            )
+            |> ignore
+
+            scatterPartitioned isChoice1 results1 results2 count1
 
         let private createPartitions (array: 'T array) =
             createPartitionsUpTo array.Length array

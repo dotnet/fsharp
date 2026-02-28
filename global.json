@@ -1,6 +1,6 @@
 {
   "sdk": {
-    "version": "10.0.101",
+    "version": "10.0.103",
     "allowPrerelease": true,
     "paths": [
       ".dotnet",
@@ -12,7 +12,7 @@
     "runner": "Microsoft.Testing.Platform"
   },
   "tools": {
-    "dotnet": "10.0.101",
+    "dotnet": "10.0.103",
     "vs": {
       "version": "18.0",
       "components": [

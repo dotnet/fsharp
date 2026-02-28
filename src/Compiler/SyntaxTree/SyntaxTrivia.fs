@@ -14,6 +14,7 @@ type IdentTrivia =
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ConditionalDirectiveTrivia =
     | If of expr: IfDirectiveExpression * range: range
+    | Elif of expr: IfDirectiveExpression * range: range
     | Else of range: range
     | EndIf of range: range
 

@@ -376,8 +376,6 @@ module CompilerAssertHelpers =
         inherit MarshalByRefObject()
 
         member x.ExecuteTestCase assemblyPath isFsx =
-            // Set console streams for the AppDomain.
-            TestConsole.install()
             let assembly = Assembly.LoadFrom assemblyPath
             executeAssemblyEntryPoint assembly isFsx
 

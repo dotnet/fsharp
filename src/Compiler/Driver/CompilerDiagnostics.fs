@@ -1284,7 +1284,8 @@ type Exception with
                 | Parser.TOKEN_HASH_LINE
                 | Parser.TOKEN_HASH_IF
                 | Parser.TOKEN_HASH_ELSE
-                | Parser.TOKEN_HASH_ENDIF -> SR.GetString("Parser.TOKEN.HASH.ENDIF")
+                | Parser.TOKEN_HASH_ENDIF
+                | Parser.TOKEN_HASH_ELIF -> SR.GetString("Parser.TOKEN.HASH.ENDIF")
                 | Parser.TOKEN_INACTIVECODE -> SR.GetString("Parser.TOKEN.INACTIVECODE")
                 | Parser.TOKEN_LEX_FAILURE -> SR.GetString("Parser.TOKEN.LEX.FAILURE")
                 | Parser.TOKEN_WHITESPACE -> SR.GetString("Parser.TOKEN.WHITESPACE")

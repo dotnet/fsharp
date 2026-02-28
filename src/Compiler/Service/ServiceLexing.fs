@@ -406,7 +406,8 @@ module internal TokenClassifications =
         | WARN_DIRECTIVE _
         | HASH_IF _
         | HASH_ELSE _
-        | HASH_ENDIF _ -> (FSharpTokenColorKind.PreprocessorKeyword, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
+        | HASH_ENDIF _
+        | HASH_ELIF _ -> (FSharpTokenColorKind.PreprocessorKeyword, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
 
         | INACTIVECODE _ -> (FSharpTokenColorKind.InactiveCode, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
 
@@ -483,6 +484,7 @@ module internal LexerStateEncoding =
         | HASH_IF(_, _, cont)
         | HASH_ELSE(_, _, cont)
         | HASH_ENDIF(_, _, cont)
+        | HASH_ELIF(_, _, cont)
         | INACTIVECODE cont
         | WHITESPACE cont
         | COMMENT cont
@@ -505,7 +507,7 @@ module internal LexerStateEncoding =
     let lexstateNumBits = 4
     let ncommentsNumBits = 4
     let ifdefstackCountNumBits = 8
-    let ifdefstackNumBits = 24 // 0 means if, 1 means else
+    let ifdefstackNumBits = 24 // 2 bits per entry: 00=if, 01=else, 10=elif
     let stringKindBits = 3
     let nestingBits = 12
     let delimLenBits = 3
@@ -587,8 +589,9 @@ module internal LexerStateEncoding =
 
         for ifOrElse in ifdefStack do
             match ifOrElse with
-            | IfDefIf, _ -> ()
-            | IfDefElse, _ -> ifdefStackBits <- (ifdefStackBits ||| (1 <<< ifdefStackCount))
+            | IfDefIf, _ -> () // 0b00, already zero
+            | IfDefElse, _ -> ifdefStackBits <- (ifdefStackBits ||| (0b01 <<< (ifdefStackCount * 2)))
+            | IfDefElif, _ -> ifdefStackBits <- (ifdefStackBits ||| (0b10 <<< (ifdefStackCount * 2)))
 
             ifdefStackCount <- ifdefStackCount + 1
 
@@ -646,9 +649,15 @@ module internal LexerStateEncoding =
             let ifdefStack = int32 ((bits &&& ifdefstackMask) >>> ifdefstackStart)
 
             for i in 1..ifdefStackCount do
-                let bit = ifdefStackCount - i
-                let mask = 1 <<< bit
-                let ifDef = (if ifdefStack &&& mask = 0 then IfDefIf else IfDefElse)
+                let bitPos = (ifdefStackCount - i) * 2
+                let value = (ifdefStack >>> bitPos) &&& 0b11
+
+                let ifDef =
+                    match value with
+                    | 0b01 -> IfDefElse
+                    | 0b10 -> IfDefElif
+                    | _ -> IfDefIf
+
                 ifDefs <- (ifDef, range0) :: ifDefs
 
         let stringKindValue = int32 ((bits &&& stringKindMask) >>> stringKindStart)
@@ -821,12 +830,12 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
 
     // Split the following line:
     //  anywhite* "#if" anywhite+ ident anywhite* ("//" [^'\n''\r']*)?
-    let processHashIfLine ofs (str: string) cont =
+    let processHashIfLine ofs (str: string) directiveLen cont =
         let With n m = if (n < 0) then m else n
 
         processDirectiveLine ofs (fun delay ->
             // Process: anywhite* "#if"
-            let offset = processDirective str 2 delay cont
+            let offset = processDirective str directiveLen delay cont
             // Process: anywhite+ ident
             let rest, spaces =
                 let w = str.Substring offset
@@ -944,7 +953,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                 // because sometimes token shouldn't be split. However it is just for colorization &
                 // for VS (which needs to recognize when user types ".").
                 match token with
-                | HASH_IF(m, lineStr, cont) when lineStr <> "" -> false, processHashIfLine m.StartColumn lineStr cont
+                | HASH_IF(m, lineStr, cont) when lineStr <> "" -> false, processHashIfLine m.StartColumn lineStr 2 cont
+                | HASH_ELIF(m, lineStr, cont) when lineStr <> "" -> false, processHashIfLine m.StartColumn lineStr 4 cont
                 | HASH_ELSE(m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 4 cont
                 | HASH_ENDIF(m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 5 cont
                 | WARN_DIRECTIVE(_, s, cont) -> false, processWarnDirective s leftc rightc cont
@@ -1180,6 +1190,7 @@ type FSharpTokenKind =
     | HashIf
     | HashElse
     | HashEndIf
+    | HashElif
     | WarnDirective
     | CommentTrivia
     | WhitespaceTrivia
@@ -1379,6 +1390,7 @@ type FSharpToken =
         | HASH_IF _ -> FSharpTokenKind.HashIf
         | HASH_ELSE _ -> FSharpTokenKind.HashElse
         | HASH_ENDIF _ -> FSharpTokenKind.HashEndIf
+        | HASH_ELIF _ -> FSharpTokenKind.HashElif
         | WARN_DIRECTIVE _ -> FSharpTokenKind.WarnDirective
         | COMMENT _ -> FSharpTokenKind.CommentTrivia
         | WHITESPACE _ -> FSharpTokenKind.WhitespaceTrivia

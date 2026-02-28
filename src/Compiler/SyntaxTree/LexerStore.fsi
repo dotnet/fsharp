@@ -42,6 +42,8 @@ module IfdefStore =
 
     val SaveElseHash: lexbuf: Lexbuf * lexed: string * range: range -> unit
 
+    val SaveElifHash: lexbuf: Lexbuf * lexed: string * expr: LexerIfdefExpression * range: range -> unit
+
     val SaveEndIfHash: lexbuf: Lexbuf * lexed: string * range: range -> unit
 
     val GetTrivia: lexbuf: Lexbuf -> ConditionalDirectiveTrivia list

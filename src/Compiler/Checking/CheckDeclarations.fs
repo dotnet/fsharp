@@ -2878,6 +2878,13 @@ module EstablishTypeDefinitionCores =
         let noCLIMutableAttributeCheck() =
             if hasCLIMutable then errorR (Error(FSComp.SR.tcThisTypeMayNotHaveACLIMutableAttribute(), m))
 
+        // Check attribute targets for error reporting only — results are discarded.
+        // Suspend the sink to avoid duplicate symbol entries from re-resolving attribute constructors.
+        let checkAttributeTargetsErrors attrTarget =
+            if reportAttributeTargetsErrors then
+                use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner attrTarget synAttrs |> ignore
+
         let isStructRecordOrUnionType = 
             match synTyconRepr with
             | SynTypeDefnSimpleRepr.Record _ 
@@ -2915,11 +2922,7 @@ module EstablishTypeDefinitionCores =
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Union, attrs, [], [], inSig, true, m) |> ignore
                 
-                if reportAttributeTargetsErrors then
-                    if hasStructAttr then
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
-                    else
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
+                checkAttributeTargetsErrors (if hasStructAttr then AttributeTargets.Struct else AttributeTargets.Class)
 
                 // Note: the table of union cases is initially empty
                 Construct.MakeUnionRepr []
@@ -2940,11 +2943,7 @@ module EstablishTypeDefinitionCores =
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Record, attrs, [], [], inSig, true, m) |> ignore
                 
-                if reportAttributeTargetsErrors then
-                    if hasStructAttr then
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
-                    else
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
+                checkAttributeTargetsErrors (if hasStructAttr then AttributeTargets.Struct else AttributeTargets.Class)
 
                 // Note: the table of record fields is initially empty
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpRecord)
@@ -2959,20 +2958,16 @@ module EstablishTypeDefinitionCores =
                     let kind = 
                         match kind with
                         | SynTypeDefnKind.Class ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Class
                             TFSharpClass
                         | SynTypeDefnKind.Interface ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Interface synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Interface
                             TFSharpInterface
                         | SynTypeDefnKind.Delegate _ ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Delegate synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Delegate
                             TFSharpDelegate (MakeSlotSig("Invoke", g.unit_ty, [], [], [], None))
                         | SynTypeDefnKind.Struct ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Struct
                             TFSharpStruct 
                         | _ -> error(InternalError("should have inferred tycon kind", m))
 
@@ -2980,8 +2975,7 @@ module EstablishTypeDefinitionCores =
 
             | SynTypeDefnSimpleRepr.Enum _ ->
                 noCLIMutableAttributeCheck()
-                if reportAttributeTargetsErrors then
-                    TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Enum synAttrs |> ignore
+                checkAttributeTargetsErrors AttributeTargets.Enum
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpEnum)
 
         // OK, now fill in the (partially computed) type representation

@@ -425,6 +425,66 @@ type SetModule() =
         Assert.True(resulta.Count = 5 && resultb.Count = 21)
 
     [<Fact>]
+    member _.PartitionWith() =
+        // basic test - split ints into even/odd with type change
+        let evens, odds =
+            Set.ofList [1; 2; 3; 4; 5]
+            |> Set.partitionWith (fun x ->
+                if x % 2 = 0 then Choice1Of2 (x * 10)
+                else Choice2Of2 (string x))
+        Assert.AreEqual(Set.ofList [20; 40], evens)
+        Assert.AreEqual(Set.ofList ["1"; "3"; "5"], odds)
+
+        // empty set
+        let e1, e2 =
+            Set.empty
+            |> Set.partitionWith (fun (x: int) -> Choice1Of2 x)
+        Assert.AreEqual(Set.empty<int>, e1)
+        Assert.AreEqual(Set.empty<int>, e2)
+
+        // all Choice1Of2
+        let all1, none2 =
+            Set.ofList [1; 2; 3]
+            |> Set.partitionWith (fun x -> Choice1Of2 (x * 2))
+        Assert.AreEqual(Set.ofList [2; 4; 6], all1)
+        Assert.AreEqual(Set.empty<int>, none2)
+
+        // all Choice2Of2
+        let none1, all2 =
+            Set.ofList [1; 2; 3]
+            |> Set.partitionWith (fun x -> Choice2Of2 (string x))
+        Assert.AreEqual(Set.empty<string>, none1)
+        Assert.AreEqual(Set.ofList ["1"; "2"; "3"], all2)
+
+        // single element
+        let s1, s2 =
+            Set.singleton 42
+            |> Set.partitionWith (fun x -> Choice1Of2 (float x))
+        Assert.AreEqual(Set.singleton 42.0, s1)
+        Assert.AreEqual(Set.empty<int>, s2)
+
+        // deduplication: multiple inputs map to same output
+        let dedup1, dedup2 =
+            Set.ofList [1; 2; 3; 4; 5; 6]
+            |> Set.partitionWith (fun x ->
+                if x % 2 = 0 then Choice1Of2 (x / 2)
+                else Choice2Of2 (x % 3))
+        // 2/2=1, 4/2=2, 6/2=3 → {1; 2; 3}
+        Assert.AreEqual(Set.ofList [1; 2; 3], dedup1)
+        // 1%3=1, 3%3=0, 5%3=2 → {0; 1; 2}
+        Assert.AreEqual(Set.ofList [0; 1; 2], dedup2)
+
+    [<Fact>]
+    member _.PartitionWithThrowingPartitioner() =
+        let ex = System.InvalidOperationException("test error")
+        CheckThrowsInvalidOperationExn (fun () ->
+            Set.ofList [1; 2; 3]
+            |> Set.partitionWith (fun x ->
+                if x = 2 then raise ex
+                else Choice1Of2 x)
+            |> ignore)
+
+    [<Fact>]
     member _.Remove() =
         
         let emptySet : Set<int> = Set.empty

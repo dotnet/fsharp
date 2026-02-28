@@ -713,59 +713,62 @@ module Structure =
                 | _ -> None)
 
         let collectConditionalDirectives directives sourceLines =
+            // Adds a fold region from prevRange.Start to the line above nextLine
+            let addSectionFold (prevRange: range) (nextLine: int) (sourceLines: string array) =
+                let startLineIndex = nextLine - 2
+
+                if startLineIndex >= 0 then
+                    let range =
+                        mkFileIndexRange prevRange.FileIndex prevRange.Start (mkPos (nextLine - 1) sourceLines[startLineIndex].Length)
+
+                    {
+                        Scope = Scope.HashDirective
+                        Collapse = Collapse.Same
+                        Range = range
+                        CollapseRange = range
+                    }
+                    |> acc.Add
+
+            // Adds a fold region spanning from startRange.Start to endRange.End
+            let addEndpointFold (startRange: range) (endRange: range) =
+                let range = Range.startToEnd startRange endRange
+
+                {
+                    Scope = Scope.HashDirective
+                    Collapse = Collapse.Same
+                    Range = range
+                    CollapseRange = range
+                }
+                |> acc.Add
+
+            let stackTopRange =
+                function
+                | ConditionalDirectiveTrivia.If(_, r)
+                | ConditionalDirectiveTrivia.Elif(_, r)
+                | ConditionalDirectiveTrivia.Else r -> ValueSome r
+                | _ -> ValueNone
+
             let rec group directives stack (sourceLines: string array) =
                 match directives with
                 | [] -> ()
                 | ConditionalDirectiveTrivia.If _ as ifDirective :: directives -> group directives (ifDirective :: stack) sourceLines
-                | ConditionalDirectiveTrivia.Else elseRange as elseDirective :: directives ->
+                | (ConditionalDirectiveTrivia.Else elseOrElifRange | ConditionalDirectiveTrivia.Elif(_, elseOrElifRange)) as directive :: directives ->
                     match stack with
-                    | ConditionalDirectiveTrivia.If(_, ifRange) :: stack ->
-                        let startLineIndex = elseRange.StartLine - 2
-
-                        if startLineIndex >= 0 then
-                            // start of #if until the end of the line directly above #else
-                            let range =
-                                mkFileIndexRange
-                                    ifRange.FileIndex
-                                    ifRange.Start
-                                    (mkPos (elseRange.StartLine - 1) sourceLines[startLineIndex].Length)
-
-                            {
-                                Scope = Scope.HashDirective
-                                Collapse = Collapse.Same
-                                Range = range
-                                CollapseRange = range
-                            }
-                            |> acc.Add
-
-                        group directives (elseDirective :: stack) sourceLines
+                    | top :: stack ->
+                        match stackTopRange top with
+                        | ValueSome range ->
+                            addSectionFold range elseOrElifRange.StartLine sourceLines
+                            group directives (directive :: stack) sourceLines
+                        | ValueNone -> group directives (directive :: stack) sourceLines
                     | _ -> group directives stack sourceLines
                 | ConditionalDirectiveTrivia.EndIf endIfRange :: directives ->
                     match stack with
-                    | ConditionalDirectiveTrivia.If(_, ifRange) :: stack ->
-                        let range = Range.startToEnd ifRange endIfRange
-
-                        {
-                            Scope = Scope.HashDirective
-                            Collapse = Collapse.Same
-                            Range = range
-                            CollapseRange = range
-                        }
-                        |> acc.Add
-
-                        group directives stack sourceLines
-                    | ConditionalDirectiveTrivia.Else elseRange :: stack ->
-                        let range = Range.startToEnd elseRange endIfRange
-
-                        {
-                            Scope = Scope.HashDirective
-                            Collapse = Collapse.Same
-                            Range = range
-                            CollapseRange = range
-                        }
-                        |> acc.Add
-
-                        group directives stack sourceLines
+                    | top :: stack ->
+                        match stackTopRange top with
+                        | ValueSome range ->
+                            addEndpointFold range endIfRange
+                            group directives stack sourceLines
+                        | ValueNone -> group directives stack sourceLines
                     | _ -> group directives stack sourceLines
 
             group directives [] sourceLines

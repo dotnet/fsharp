@@ -1772,6 +1772,92 @@ type ArrayModule() =
     member this.Partition () =
         this.PartitionTester Array.partition Array.partition    
 
+    member private this.PartitionWithTester
+        (partWithIntStr: (int -> Choice<int, string>) -> int array -> int array * string array)
+        (partWithIntInt: (int -> Choice<int, int>) -> int array -> int array * int array) =
+        // basic test - split ints into even/odd with type change
+        let evens, odds =
+            [|1; 2; 3; 4; 5|]
+            |> partWithIntStr (fun x ->
+                if x % 2 = 0 then Choice1Of2 (x * 10)
+                else Choice2Of2 (string x))
+        Assert.AreEqual([|20; 40|], evens)
+        Assert.AreEqual([|"1"; "3"; "5"|], odds)
+
+        // empty array
+        let e1, e2 =
+            [||]
+            |> partWithIntInt (fun x -> Choice1Of2 x)
+        Assert.AreEqual(Array.empty<int>, e1)
+        Assert.AreEqual(Array.empty<int>, e2)
+
+        // all Choice1Of2
+        let all1, none2 =
+            [|1; 2; 3|]
+            |> partWithIntInt (fun x -> Choice1Of2 (x * 2))
+        Assert.AreEqual([|2; 4; 6|], all1)
+        Assert.AreEqual(Array.empty<int>, none2)
+
+        // all Choice2Of2
+        let none1, all2 =
+            [|1; 2; 3|]
+            |> partWithIntStr (fun x -> Choice2Of2 (string x))
+        Assert.AreEqual(Array.empty<int>, none1)
+        Assert.AreEqual([|"1"; "2"; "3"|], all2)
+
+        // single element
+        let s1, s2 =
+            [|42|]
+            |> partWithIntInt (fun x -> Choice1Of2 (x + 1))
+        Assert.AreEqual([|43|], s1)
+        Assert.AreEqual(Array.empty<int>, s2)
+
+        // order preservation
+        let left, right =
+            [|1; 2; 3; 4; 5; 6; 7; 8; 9; 10|]
+            |> partWithIntInt (fun x ->
+                if x % 2 = 0 then Choice1Of2 x
+                else Choice2Of2 x)
+        Assert.AreEqual([|2; 4; 6; 8; 10|], left)
+        Assert.AreEqual([|1; 3; 5; 7; 9|], right)
+
+        // null array
+        CheckThrowsArgumentNullException (fun () ->
+            partWithIntInt (fun x -> Choice1Of2 x) null |> ignore)
+
+    [<Fact>]
+    member this.PartitionWith() =
+        this.PartitionWithTester Array.partitionWith Array.partitionWith
+
+    [<Fact>]
+    member _.PartitionWithThrowingPartitioner() =
+        let ex = System.InvalidOperationException("test error")
+        CheckThrowsInvalidOperationExn (fun () ->
+            [|1; 2; 3|]
+            |> Array.partitionWith (fun x ->
+                if x = 2 then raise ex
+                else Choice1Of2 x)
+            |> ignore)
+
+    [<Fact>]
+    member _.PartitionWithNullElements() =
+        // Verify null reference-type elements are handled correctly
+        // and zeroCreateUnchecked scratch slots don't leak into results
+        let left, right =
+            [| "a"; null; "b"; null; "c" |]
+            |> Array.partitionWith (fun x ->
+                if isNull x then Choice2Of2 x
+                else Choice1Of2 (x.ToUpper()))
+        Assert.AreEqual([|"A"; "B"; "C"|], left)
+        Assert.AreEqual([|null; null|], right)
+
+        // All nulls going one way
+        let allLeft, emptyRight =
+            [| null; null; null |]
+            |> Array.partitionWith (fun (x: string) -> Choice1Of2 x)
+        Assert.AreEqual([|null; null; null|], allLeft)
+        Assert.AreEqual(Array.empty<string>, emptyRight)
+
     [<Fact>]
     member _.Singleton() =
         Assert.AreEqual([|null|],Array.singleton null)
@@ -1782,6 +1868,44 @@ type ArrayModule() =
     [<Fact>]
     member this.``Parallel.Partition`` () =
         this.PartitionTester Array.Parallel.partition Array.Parallel.partition    
+
+    [<Fact>]
+    member this.``Parallel.PartitionWith``() =
+        this.PartitionWithTester Array.Parallel.partitionWith Array.Parallel.partitionWith
+
+    [<Fact>]
+    member _.``Parallel.PartitionWith consistency with sequential``() =
+        // Verify parallel version produces same results as sequential
+        let input = [|1..1000|]
+        let partitioner x = if x % 3 = 0 then Choice1Of2 (x * 2) else Choice2Of2 (string x)
+        let seq1, seq2 = Array.partitionWith partitioner input
+        let par1, par2 = Array.Parallel.partitionWith partitioner input
+        Assert.AreEqual(seq1, par1)
+        Assert.AreEqual(seq2, par2)
+
+    [<Fact>]
+    member _.``Parallel.PartitionWithThrowingPartitioner``() =
+        let ex = System.InvalidOperationException("test error")
+        let thrown =
+            Assert.Throws<System.AggregateException>(fun () ->
+                [|1..100|]
+                |> Array.Parallel.partitionWith (fun x ->
+                    if x = 50 then raise ex
+                    else Choice1Of2 x)
+                |> ignore)
+        Assert.True(
+            thrown.InnerExceptions |> Seq.exists (fun e -> e :? System.InvalidOperationException),
+            "AggregateException should contain the InvalidOperationException")
+
+    [<Fact>]
+    member _.``Parallel.PartitionWithNullElements``() =
+        let left, right =
+            [| "a"; null; "b"; null; "c" |]
+            |> Array.Parallel.partitionWith (fun x ->
+                if isNull x then Choice2Of2 x
+                else Choice1Of2 (x.ToUpper()))
+        Assert.AreEqual([|"A"; "B"; "C"|], left)
+        Assert.AreEqual([|null; null|], right)
 
     [<Fact>]
     member _.Contains() =
