@@ -1843,7 +1843,7 @@
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
-        <source>The type '{0}' does not have a field, property, or member named '{1}'.</source>
+        <source>The type '{0}' does not define a field, constructor, or member named '{1}'.</source>
         <target state="new">The type '{0}' does not have a field, property, or member named '{1}'.</target>
         <note />
       </trans-unit>
@@ -3348,7 +3348,7 @@
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">
-        <source>Expecting a type supporting the operator '{0}' but given a tuple type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
+        <source>Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
         <target state="needs-review">Ein unterstützender Typ für den Operator '{0}' wurde erwartet, aber ein Tupeltyp wurde empfangen</target>
         <note />
       </trans-unit>
@@ -4328,7 +4328,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNotSufficientlyGenericBecauseOfScope">
-        <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding 'inline' to the member or function definition.</source>
+        <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</source>
         <target state="new">Dieser Code ist nicht generisch genug. Die Typvariable "{0}" konnte nicht generalisiert werden, weil sie sonst aus dem Bereich fallen würde.</target>
         <note />
       </trans-unit>

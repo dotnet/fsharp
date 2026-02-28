@@ -5,4 +5,4 @@ EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments.fsx(6,39,6,14
 
 EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments.fsx(8,41,8,58): typecheck error FS0039: The type 'TheGeneratedTypeJ' is not defined.
 
-EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments.fsx(8,79,8,96): typecheck error FS0039: The type 'Object' does not have a field, property, or member named 'TheGeneratedTypeJ'.
+EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments.fsx(8,79,8,96): typecheck error FS0039: The type 'Object' does not define a field, constructor, or member named 'TheGeneratedTypeJ'.

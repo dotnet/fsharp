@@ -26,4 +26,4 @@ let result = add (1, 2) (3, 4)
         """
         |> typecheck
         |> shouldFail
-        |> withDiagnosticMessageMatches "Expecting a type supporting the operator '\+' but given a tuple type. You may be missing an argument to a function, or the operator may not be in scope."
+        |> withDiagnosticMessageMatches "Operator '\+' cannot be applied to a tuple type. You may be missing an argument to a function, or the operator may not be in scope."
