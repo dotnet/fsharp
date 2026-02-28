@@ -334,37 +334,27 @@ let private extractObsoleteAttributeInfo namedArgs =
 
 let private CheckObsoleteAttributes g attribs m =
     trackErrors {
-        match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
-        // [<Obsolete>]
-        // [<Obsolete("Message")>]
-        // [<Obsolete("Message", true)>]
-        // [<Obsolete("Message", DiagnosticId = "DiagnosticId")>]
-        // [<Obsolete("Message", DiagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")>]
-        // [<Obsolete(DiagnosticId = "DiagnosticId")>]
-        // [<Obsolete(DiagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")>]
-        // [<Obsolete("Message", true, DiagnosticId = "DiagnosticId")>]
-        // [<Obsolete("Message", true, DiagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")>]
-        // Constructors deciding on IsError and Message properties.
-        | Some(Attrib(unnamedArgs= [ AttribStringArg s ]; propVal= namedArgs)) ->
+        match attribs with
+        | EntityAttrib g WellKnownEntityAttributes.ObsoleteAttribute (Attrib(unnamedArgs= [ AttribStringArg s ]; propVal= namedArgs)) ->
             let diagnosticId, urlFormat = extractObsoleteAttributeInfo namedArgs
             do! WarnD(ObsoleteDiagnostic(false, diagnosticId, Some s, urlFormat, m))
-        | Some(Attrib(unnamedArgs= [ AttribStringArg s; AttribBoolArg(isError) ]; propVal= namedArgs)) -> 
+        | EntityAttrib g WellKnownEntityAttributes.ObsoleteAttribute (Attrib(unnamedArgs= [ AttribStringArg s; AttribBoolArg(isError) ]; propVal= namedArgs)) -> 
             let diagnosticId, urlFormat = extractObsoleteAttributeInfo namedArgs
             if isError then
                 do! ErrorD (ObsoleteDiagnostic(true, diagnosticId, Some s, urlFormat, m))
             else
                 do! WarnD (ObsoleteDiagnostic(false, diagnosticId, Some s, urlFormat, m))
         // Only DiagnosticId, UrlFormat
-        | Some(Attrib(propVal= namedArgs)) ->
+        | EntityAttrib g WellKnownEntityAttributes.ObsoleteAttribute (Attrib(propVal= namedArgs)) ->
             let diagnosticId, urlFormat = extractObsoleteAttributeInfo namedArgs
             do! WarnD(ObsoleteDiagnostic(false, diagnosticId, None, urlFormat, m))
-        | None ->  ()
+        | _ ->  ()
     }
     
 let private CheckCompilerMessageAttribute g attribs m =
     trackErrors {
-        match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-        | Some(Attrib(unnamedArgs= [ AttribStringArg s ; AttribInt32Arg n ]; propVal= namedArgs)) ->
+        match attribs with
+        | EntityAttrib g WellKnownEntityAttributes.CompilerMessageAttribute (Attrib(unnamedArgs= [ AttribStringArg s ; AttribInt32Arg n ]; propVal= namedArgs)) ->
             let msg = UserCompilerMessage(s, n, m)
             let isError = 
                 match namedArgs with 
@@ -384,9 +374,9 @@ let private CheckCompilerMessageAttribute g attribs m =
     
 let private CheckFSharpExperimentalAttribute g attribs m =
     trackErrors {
-        match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
+        match attribs with
         // [<Experimental("Message")>]
-        | Some(Attrib(unnamedArgs= [ AttribStringArg(s) ])) ->
+        | EntityAttrib g WellKnownEntityAttributes.ExperimentalAttribute (Attrib(unnamedArgs= [ AttribStringArg(s) ])) ->
             let isExperimentalAttributeDisabled (s:string) =
                 if g.compilingFSharpCore then
                     true
@@ -395,14 +385,13 @@ let private CheckFSharpExperimentalAttribute g attribs m =
             if not (isExperimentalAttributeDisabled s) then
                 do! WarnD(Experimental(Some s, None, None, m))
         // Empty constructor is not allowed.
-        | Some _
         | _ -> ()
     }
     
 let private CheckUnverifiableAttribute g attribs m  =
     trackErrors {
-        match TryFindFSharpAttribute g g.attrib_UnverifiableAttribute attribs with
-        | Some _ -> 
+        match attribs with
+        | EntityAttrib g WellKnownEntityAttributes.UnverifiableAttribute _ -> 
             do! WarnD(PossibleUnverifiableCode(m))
         | _ -> ()
     }
@@ -462,12 +451,12 @@ let CheckILAttributesForUnseen (g: TcGlobals) cattrs _m =
 /// items to be suppressed from intellisense.
 let CheckFSharpAttributesForHidden g attribs = 
     not (isNil attribs) &&         
-    (match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-        | Some(Attrib(_, _, _, ExtractAttribNamedArg "IsHidden" (AttribBoolArg v), _, _, _)) -> v
+    (match attribs with
+        | EntityAttrib g WellKnownEntityAttributes.CompilerMessageAttribute (Attrib(_, _, _, ExtractAttribNamedArg "IsHidden" (AttribBoolArg v), _, _, _)) -> v
         | _ -> false)
     || 
-    (match TryFindFSharpAttribute g g.attrib_ComponentModelEditorBrowsableAttribute attribs with
-     | Some(Attrib(_, _, [AttribInt32Arg state], _, _, _, _)) -> state = int System.ComponentModel.EditorBrowsableState.Never
+    (match attribs with
+     | EntityAttrib g WellKnownEntityAttributes.EditorBrowsableAttribute (Attrib(_, _, [AttribInt32Arg state], _, _, _, _)) -> state = int System.ComponentModel.EditorBrowsableState.Never
      | _ -> false)
 
 /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.

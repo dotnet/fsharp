@@ -1415,7 +1415,10 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
 
 
     // CompiledName not allowed on virtual/abstract/override members
-    let compiledNameAttrib = TryFindFSharpStringAttribute g g.attrib_CompiledNameAttribute attrs
+    let compiledNameAttrib =
+        match attrs with
+        | ValAttribString g WellKnownValAttributes.CompiledNameAttribute s -> Some s
+        | _ -> None
     if Option.isSome compiledNameAttrib then
         match memberInfoOpt with
         | Some (PrelimMemberInfo(memberInfo, _, _)) ->
@@ -4485,10 +4488,10 @@ and TcTyparDecl (cenv: cenv) env synTyparDecl =
     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
     let tp = Construct.NewTypar (kind, TyparRigidity.WarnIfNotRigid, synTypar, false, TyparDynamicReq.Yes, attrs, hasEqDepAttr, hasCompDepAttr)
 
-    match TryFindFSharpStringAttribute g g.attrib_CompiledNameAttribute attrs with
-    | Some compiledName ->
+    match attrs with
+    | ValAttribString g WellKnownValAttributes.CompiledNameAttribute compiledName ->
         tp.SetILName (Some compiledName)
-    | None ->
+    | _ ->
         ()
     let item = Item.TypeVar(id.idText, tp)
 
@@ -5231,9 +5234,20 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
     let (APElemRef (apinfo, vref, idx, isStructRetTy)) = apref
 
     let cenv =
-        match g.checkNullness,TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
-        | true, (Some _ as warnMsg) -> {cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = warnMsg}
-        | _ -> cenv
+        if g.checkNullness then
+            match vref.Attribs with
+            | ValAttrib g WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute (Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) ->
+                let warnMsg =
+                    match namedArgs with
+                    | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> FSComp.SR.GetTextOpt(b)
+                    | _ -> Some b
+
+                match warnMsg with
+                | Some _ -> { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = warnMsg }
+                | None -> cenv
+            | _ -> cenv
+        else
+            cenv
 
     // Report information about the 'active recognizer' occurrence to IDE
     CallNameResolutionSink cenv.tcSink (mLongId, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Pattern, env.eAccessRights)
@@ -9426,12 +9440,22 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
             | _ -> vExpr, tpenv
 
         let getCenvForVref cenv (vref:ValRef) = 
-            match TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
-            | Some _ as msg -> { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg}
-            | None when cenv.css.WarnWhenUsingWithoutNullOnAWithNullTarget <> None ->
+            match vref.Attribs with
+            | ValAttrib g WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute (Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) ->
+                let msg =
+                    match namedArgs with
+                    | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> FSComp.SR.GetTextOpt(b)
+                    | _ -> Some b
+
+                match msg with
+                | Some _ -> { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg }
+                | None when cenv.css.WarnWhenUsingWithoutNullOnAWithNullTarget <> None ->
+                    { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = None }
+                | None -> cenv
+            | _ when cenv.css.WarnWhenUsingWithoutNullOnAWithNullTarget <> None ->
                         // We need to reset the warning back to default once in a nested call, to prevent false warnings e.g. in `Option.ofObj (Path.GetDirectoryName "")`
                         { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = None}
-            | None -> cenv
+            | _ -> cenv
 
         let cenv =
             match vExpr with

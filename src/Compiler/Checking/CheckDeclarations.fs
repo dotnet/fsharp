@@ -2888,7 +2888,11 @@ module EstablishTypeDefinitionCores =
         tycon.SetIsStructRecordOrUnion isStructRecordOrUnionType
 
         // Set the compiled name, if any
-        tycon.SetCompiledName (TryFindFSharpStringAttribute g g.attrib_CompiledNameAttribute attrs)
+        tycon.SetCompiledName(
+            match attrs with
+            | EntityAttribString g WellKnownEntityAttributes.CompiledNameAttribute s -> Some s
+            | _ -> None
+        )
 
         if hasMeasureAttr then 
             tycon.SetTypeOrMeasureKind TyparKind.Measure

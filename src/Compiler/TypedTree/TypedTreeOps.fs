@@ -3744,6 +3744,11 @@ let classifyEntityAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownEntityAttrib
                 | "DebuggerTypeProxyAttribute" -> flag <- WellKnownEntityAttributes.DebuggerTypeProxyAttribute
                 | _ -> ()
 
+            | [| "System"; "ComponentModel"; name |] ->
+                match name with
+                | "EditorBrowsableAttribute" -> flag <- WellKnownEntityAttributes.EditorBrowsableAttribute
+                | _ -> ()
+
             | [| "System"; name |] ->
                 match name with
                 | "AttributeUsageAttribute" -> flag <- WellKnownEntityAttributes.AttributeUsageAttribute
@@ -3794,6 +3799,10 @@ let classifyEntityAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownEntityAttrib
             | "MeasureAttribute" -> flag <- WellKnownEntityAttributes.MeasureAttribute
             | "MeasureAnnotatedAbbreviationAttribute" -> flag <- WellKnownEntityAttributes.MeasureableAttribute
             | "CLIEventAttribute" -> flag <- WellKnownEntityAttributes.CLIEventAttribute
+            | "CompilerMessageAttribute" -> flag <- WellKnownEntityAttributes.CompilerMessageAttribute
+            | "ExperimentalAttribute" -> flag <- WellKnownEntityAttributes.ExperimentalAttribute
+            | "UnverifiableAttribute" -> flag <- WellKnownEntityAttributes.UnverifiableAttribute
+            | "CompiledNameAttribute" -> flag <- WellKnownEntityAttributes.CompiledNameAttribute
             | "CompilationRepresentationAttribute" ->
                 match attrib with
                 | Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _) ->
@@ -3955,6 +3964,8 @@ let classifyValAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownValAttributes =
             | "NoCompilerInliningAttribute" -> flag <- WellKnownValAttributes.NoCompilerInliningAttribute
             | "GeneralizableValueAttribute" -> flag <- WellKnownValAttributes.GeneralizableValueAttribute
             | "CLIEventAttribute" -> flag <- WellKnownValAttributes.CLIEventAttribute
+            | "CompiledNameAttribute" -> flag <- WellKnownValAttributes.CompiledNameAttribute
+            | "WarnOnWithoutNullArgumentAttribute" -> flag <- WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute
             | _ -> ()
         | _ -> ()
     | ValueNone -> ()

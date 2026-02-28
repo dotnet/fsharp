@@ -51,6 +51,11 @@ type internal WellKnownEntityAttributes =
     | CLIEventAttribute = (1uL <<< 40)
     | SealedAttribute_False = (1uL <<< 41)
     | AllowNullLiteralAttribute_False = (1uL <<< 42)
+    | CompilerMessageAttribute = (1uL <<< 43)
+    | ExperimentalAttribute = (1uL <<< 44)
+    | UnverifiableAttribute = (1uL <<< 45)
+    | EditorBrowsableAttribute = (1uL <<< 46)
+    | CompiledNameAttribute = (1uL <<< 47)
     | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known attributes on Val (values and members).
@@ -93,6 +98,8 @@ type internal WellKnownValAttributes =
     | MethodImplAttribute = (1uL <<< 32)
     | PreserveSigAttribute = (1uL <<< 33)
     | FieldOffsetAttribute = (1uL <<< 34)
+    | CompiledNameAttribute = (1uL <<< 35)
+    | WarnOnWithoutNullArgumentAttribute = (1uL <<< 36)
     | NotComputed = (1uL <<< 63)
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.
