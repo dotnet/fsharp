@@ -1251,6 +1251,11 @@ and IlxGenEnv =
         /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
         withinSEH: bool
 
+        /// Are we generating code inside a finally or fault handler?
+        /// If so, we must not emit filter blocks because ILVerify incorrectly computes
+        /// the entry stack for a filter nested inside a finally handler (dotnet/runtime issue).
+        insideFinallyOrFaultHandler: bool
+
         /// Are we inside of a recursive let binding, while loop, or a for loop?
         isInLoop: bool
 
@@ -2839,6 +2844,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
         cgbuf
         { eenv with
             withinSEH = false
+            insideFinallyOrFaultHandler = false
             liveLocals = IntMap.empty ()
             innerVals = innerVals
         }
@@ -4908,7 +4914,13 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
             GenTry cenv cgbuf eenv scopeMarks (e1, m, resTy, spTry)
 
         let seh =
-            if cenv.options.generateFilterBlocks || eligibleForFilter cenv filterExpr then
+            // Don't generate filter blocks inside finally/fault handlers.
+            // ILVerify incorrectly computes the entry stack for a filter nested inside a finally handler,
+            // treating the filter entry as a finally entry (empty stack) instead of a filter entry (exception on stack).
+            if
+                not eenv.insideFinallyOrFaultHandler
+                && (cenv.options.generateFilterBlocks || eligibleForFilter cenv filterExpr)
+            then
                 let startOfFilter = CG.GenerateMark cgbuf "startOfFilter"
                 let afterFilter = CG.GenerateDelayMark cgbuf "afterFilter"
 
@@ -5029,7 +5041,13 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resTy, spTry, spFin
         | DebugPointAtFinally.No -> ()
 
         let exitSequel = LeaveHandler(true, whereToSaveOpt, afterHandler, true)
-        GenExpr cenv cgbuf eenvinner handlerExpr exitSequel
+
+        let eenvHandler =
+            { eenvinner with
+                insideFinallyOrFaultHandler = true
+            }
+
+        GenExpr cenv cgbuf eenvHandler handlerExpr exitSequel
         let endOfHandler = CG.GenerateMark cgbuf "endOfHandler"
         let handlerMarks = (startOfHandler.CodeLabel, endOfHandler.CodeLabel)
 
@@ -12101,6 +12119,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         innerVals = []
         sigToImplRemapInfo = [] (* "module remap info" *)
         withinSEH = false
+        insideFinallyOrFaultHandler = false
         isInLoop = false
         initLocals = true
         imports = None
