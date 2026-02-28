@@ -2442,6 +2442,13 @@ let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable
                 if g.langVersion.SupportsFeature LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction
                 then warning
                 else ignore
+        elif HasMethodImplAsyncAttribute g attrs then
+            // Runtime-async methods must never be inlined by the optimizer.
+            // The optimizer would inline the body (which returns T) at the call site,
+            // bypassing the runtime's wrapping of T -> Task<T>. The 0x2000 flag
+            // tells the runtime to wrap the return value, but only when the method
+            // is called as a method (not inlined).
+            ValInline.Never, ignore
         elif isInline then
             ValInline.Always, ignore
         else
@@ -11241,6 +11248,12 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let (SynValData(valInfo = valSynInfo)) = valSynData
         let prelimValReprInfo = TranslateSynValInfo cenv mBinding (TcAttributes cenv env) valSynInfo
 
+        // For runtime-async methods, we do NOT pre-unify overallPatTy here.
+        // Pre-unification would cause overallExprTy (which is the same inference variable as overallPatTy)
+        // to be set to unit -> Task<int>, creating competing constraints when the body is type-checked
+        // against bodyExprTy = unit -> int. Instead, we post-unify overallPatTy after the body is
+        // type-checked and the inner cast is inserted.
+
         // Check the pattern of the l.h.s. of the binding
         let tcPatPhase2, TcPatLinearEnv (tpenv, nameToPrelimValSchemeMap, _) =
             cenv.TcPat AllIdsOK cenv envinner (Some prelimValReprInfo) (TcPatValFlags (inlineFlag, explicitTyparInfo, argAndRetAttribs, isMutable, vis, isCompGen)) (TcPatLinearEnv (tpenv, NameMap.empty, Set.empty)) overallPatTy pat
@@ -11320,15 +11333,61 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
             // For runtime-async methods, the body is type-checked against the unwrapped type T
             // (not Task<T>). The runtime handles wrapping T -> Task<T> for the caller.
-            let bodyExprTy =
+            // We pre-unify overallPatTy with unit -> Task<T> BEFORE body type-checking so the Val
+            // gets its correct declared type. Then we type-check the body against a FRESH
+            // bodyExprTy = unit -> T (completely separate from overallPatTy/overallExprTy).
+            // This avoids competing constraints: overallPatTy = unit -> Task<T> and
+            // bodyExprTy = unit -> T are independent inference variables.
+            //
+            // IMPORTANT: mkSynBindingRhs wraps the body in SynExpr.Typed(body, Task<T>, ...) when
+            // there is a return type annotation. This SynExpr.Typed wrapper would cause TcExprTypeAnnotated
+            // to try to unify the unwrapped type T with Task<T>, which fails. So we must strip the
+            // SynExpr.Typed wrapper from the innermost lambda body before type-checking against bodyExprTy.
+            let bodyExprTy, rhsExpr =
                 if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync &&
                    HasMethodImplAsyncAttribute g valAttribs then
-                    UnwrapTaskLikeType g overallExprTy
+                    match rtyOpt with
+                    | Some (SynBindingReturnInfo(typeName = synReturnTy)) ->
+                        let retTy, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv synReturnTy
+                        if IsTaskLikeType g retTy then
+                            let unwrappedReturnTy = UnwrapTaskLikeType g retTy
+                            // Pre-unify overallPatTy with unit -> Task<T> BEFORE body type-checking.
+                            // This gives the Val its correct declared type (unit -> Task<T>).
+                            // IMPORTANT: overallPatTy = overallExprTy (same object, line 11137).
+                            // Pre-unifying here sets both. bodyExprTy must be a FRESH variable.
+                            let fullFuncTy = List.foldBack (fun _ acc -> mkFunTy g (NewInferenceType g) acc) spatsL retTy
+                            UnifyTypes cenv envinner mBinding overallPatTy fullFuncTy
+                            // Fresh bodyExprTy = unit -> T (separate from overallPatTy/overallExprTy).
+                            // spatsL is the list of simple pattern groups (e.g., [[()]] for a single unit arg).
+                            let bodyTy = List.foldBack (fun _ acc -> mkFunTy g (NewInferenceType g) acc) spatsL unwrappedReturnTy
+                            // Strip the SynExpr.Typed(body, Task<T>, ...) wrapper from the innermost lambda body.
+                            // mkSynBindingRhs adds this wrapper when there is a return type annotation.
+                            // Without stripping, TcExprTypeAnnotated would try to unify T with Task<T> and fail.
+                            let rec stripTypedFromInnermostLambda (e: SynExpr) =
+                                match e with
+                                | SynExpr.Lambda(isMember, isSubsequent, spats, body, parsedData, m, trivia) ->
+                                    match body with
+                                    | SynExpr.Lambda _ ->
+                                        // Nested lambda — recurse into it
+                                        SynExpr.Lambda(isMember, isSubsequent, spats, stripTypedFromInnermostLambda body, parsedData, m, trivia)
+                                    | SynExpr.Typed(innerBody, _, _) ->
+                                        // Innermost lambda body has SynExpr.Typed wrapper — strip it
+                                        SynExpr.Lambda(isMember, isSubsequent, spats, innerBody, parsedData, m, trivia)
+                                    | _ ->
+                                        // No SynExpr.Typed wrapper — leave as-is
+                                        e
+                                | _ -> e
+                            bodyTy, stripTypedFromInnermostLambda rhsExpr
+                        else overallExprTy, rhsExpr
+                    | None -> overallExprTy, rhsExpr
                 else
-                    overallExprTy
+                    overallExprTy, rhsExpr
 
-            if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
-            else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, bodyExprTy)) envinner tpenv rhsExpr
+            let rhsExprChecked, tpenv =
+                if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
+                else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, bodyExprTy)) envinner tpenv rhsExpr
+
+            rhsExprChecked, tpenv
 
         // Return type validation AFTER type inference (overallPatTy is now resolved)
         if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync &&
@@ -11340,7 +11399,6 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             // Check that async methods don't return byref types
             if isByrefTy g returnTy then
                 errorR(Error(FSComp.SR.tcRuntimeAsyncCannotReturnByref(), mBinding))
-
         if kind = SynBindingKind.StandaloneExpression && not cenv.isScript then
             UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>
 
