@@ -618,6 +618,11 @@ type Async2 =
                 handle.Unregister null |> ignore
         }
 
+/// A reply channel for PostAndAsyncReply, analogous to AsyncReplyChannel from FSharp.Core.
+[<Sealed>]
+type AsyncReplyChannel2<'Reply>(tcs: TaskCompletionSource<'Reply>) =
+    member _.Reply(value: 'Reply) = tcs.TrySetResult(value) |> ignore
+
 /// An async2-native message processing agent, analogous to MailboxProcessor but using Async2.
 [<Sealed>]
 type MailboxProcessor2<'Msg> private (body: MailboxProcessor2<'Msg> -> Async2<unit>, cts: CancellationTokenSource) =
@@ -640,6 +645,26 @@ type MailboxProcessor2<'Msg> private (body: MailboxProcessor2<'Msg> -> Async2<un
             match queue.TryDequeue() with
             | true, msg -> return msg
             | _ -> return failwith "MailboxProcessor2: queue unexpectedly empty after semaphore signal"
+        }
+
+    /// Post a message to the agent and await a reply on the channel, asynchronously.
+    member this.PostAndAsyncReply(buildMessage: AsyncReplyChannel2<'Reply> -> 'Msg, ?timeout: int) : Async2<'Reply> =
+        async2 {
+            let tcs =
+                TaskCompletionSource<'Reply>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+            let msg = buildMessage (AsyncReplyChannel2(tcs))
+            this.Post msg
+
+            match timeout with
+            | None
+            | Some -1 -> return! tcs.Task
+            | Some t ->
+                let! ct = Async2.CancellationToken
+                use cts = CancellationTokenSource.CreateLinkedTokenSource(ct)
+                cts.CancelAfter(t)
+                use _ = cts.Token.Register(fun () -> tcs.TrySetCanceled() |> ignore)
+                return! tcs.Task
         }
 
     [<CLIEvent>]
