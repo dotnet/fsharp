@@ -192,6 +192,7 @@ module Limit =
     /// Apply a scoped parameter mask to limits, zeroing out limits for scoped parameters.
     let ApplyScopedMask (scopedMask: bool array) (limits: Limit list) =
         if limits.Length <> scopedMask.Length then
+            System.Diagnostics.Debug.Assert(false, $"ApplyScopedMask: length mismatch — limits={limits.Length}, mask={scopedMask.Length}")
             limits // Length mismatch: fall back to no masking (conservative)
         else
             limits
@@ -845,7 +846,8 @@ let getRefSafetyVersionFromTyconRef (tcRef: TyconRef) : int =
     else
         try
             tcRef.nlr.Ccu.Deref.RefSafetyRulesVersion
-        with :? System.Exception ->
+        with :? System.Exception as ex ->
+            System.Diagnostics.Debug.Fail($"getRefSafetyVersionFromTyconRef: unexpected exception: {ex.Message}")
             0
 #warnon "67"
 
@@ -865,7 +867,8 @@ let tryResolveILMethodContext (amap: Import.ImportMap) (m: range) (ilMethRef: IL
             let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
             Some(methDef, tdef, refSafetyVersion)
         | _ -> None
-    with :? System.Exception ->
+    with :? System.Exception as ex ->
+        System.Diagnostics.Debug.Fail($"tryResolveILMethodContext: unexpected exception: {ex.Message}")
         None
 #warnon "67"
 
@@ -899,6 +902,10 @@ let enforceScopedRefParams (cenv: cenv) (mOrig: range) (restArgs: Val list)
                     else LimitFlags.None
 
                 LimitVal cenv v { scope = 1; flags = flags })
+    else
+        // Length mismatch for instance methods is expected (restArgs includes receiver,
+        // paramArgInfos strips it). For non-instance functions, a mismatch is unexpected.
+        System.Diagnostics.Debug.Assert(paramArgInfos.IsEmpty || isInstance, $"enforceScopedRefParams: length mismatch — params={paramArgInfos.Length}, args={restArgs.Length}")
 
 /// Build a boolean mask of which IL parameters have the given attribute.
 /// Returns None if the attribute is unavailable or no parameters match.
@@ -978,7 +985,8 @@ let isImplicitlyScopedParam (g: TcGlobals) (amap: Import.ImportMap) (m: range) (
              try
                  let fsTy = Import.ImportILType amap m [] inner
                  isByrefLikeTy g m fsTy
-             with :? System.Exception ->
+             with :? System.Exception as ex ->
+                 System.Diagnostics.Debug.Fail($"isImplicitlyScopedParam: unexpected exception: {ex.Message}")
                  false
      | _ -> false)
 #warnon "67"
@@ -1678,6 +1686,9 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
                         if paramArgInfos.Length = expectedArgCount then
                             tryGetScopedParamMaskFromFSharpAttribs cenv.g paramArgInfos
                         else
+                            // Length mismatch is expected for curried/partial application, tuple representation,
+                            // and over-application; fall back to no scoped mask (conservative).
+                            System.Diagnostics.Debug.Assert(paramArgInfos.IsEmpty || valReprInfo.ArgInfos.Length > 1 || paramArgInfos.Length > expectedArgCount, $"getScopedMask: paramArgInfos length mismatch — params={paramArgInfos.Length}, args={expectedArgCount}")
                             None)
 
                 let unscoped =
