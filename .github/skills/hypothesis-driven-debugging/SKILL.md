@@ -33,7 +33,7 @@ Before forming hypotheses, create the smallest possible reproduction:
 1. **Extract the failure**:
    ```bash
    # For test failures - run just the failing test
-   dotnet test --filter "FullyQualifiedName~YourTest"
+   dotnet test -- --filter-method "*YourTest*"
    
    # For build failures - try to isolate the problematic file
    # Create a minimal .fs file that reproduces the issue
@@ -49,7 +49,7 @@ Before forming hypotheses, create the smallest possible reproduction:
    ## Minimal Reproduction
    
    File: test-case.fs
-   Command: dotnet test --filter "FullyQualifiedName~TestName"
+   Command: dotnet test -- --filter-method "*TestName*"
    Expected: <expected behavior>
    Actual: <actual behavior>
    ```
@@ -170,7 +170,7 @@ Brief description of the failure/bug being investigated.
 2. **Run affected tests**:
    ```bash
    # For targeted testing
-   dotnet test --filter "FullyQualifiedName~AffectedTestSuite"
+   dotnet test -- --filter-class "*AffectedTestSuite*"
    
    # Record: Passed, Failed, Skipped, Time
    ```
@@ -190,7 +190,7 @@ Brief description of the failure/bug being investigated.
    - Errors: 0
    
    Tests:
-   - Command: dotnet test --filter "FullyQualifiedName~XmlDocTests"
+   - Command: dotnet test -- --filter-class "*XmlDocTests*"
    - Total: 61
    - Passed: 56
    - Failed: 0
@@ -205,7 +205,7 @@ Brief description of the failure/bug being investigated.
 
 ```bash
 # 1. Observe failure
-dotnet test --filter "FullyQualifiedName~XmlDocTests"
+dotnet test -- --filter-class "*XmlDocTests*"
 # Result: 15 tests failing
 
 # 2. Create minimal repro
@@ -234,7 +234,7 @@ dotnet fsc test-case.fs
 ./build.sh -c Release
 # 4m 44.9s, 0 errors
 
-dotnet test --filter "FullyQualifiedName~XmlDocTests"
+dotnet test -- --filter-class "*XmlDocTests*"
 # 61 total, 56 passed, 0 failed, 5 skipped, 2s
 
 # 7. Verify minimal repro
