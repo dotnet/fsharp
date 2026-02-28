@@ -156,7 +156,7 @@ module TestModule
 
 open System.Runtime.CompilerServices
 
-[<MethodImplAttribute(MethodImplOptions.Async)>]
+[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
 let invalidMethod () : int = 42
 """
         |> withLangVersionPreview
@@ -173,7 +173,7 @@ module TestModule
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-[<MethodImplAttribute(MethodImplOptions.Async)>]
+[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
 let asyncMethod () : Task<int> = Task.FromResult(42)
 """
         |> withLangVersion90
