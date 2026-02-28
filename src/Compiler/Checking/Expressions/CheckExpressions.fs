@@ -1386,6 +1386,20 @@ let private IsTaskLikeType (g: TcGlobals) ty =
         tyconRefEq g tcref g.system_GenericValueTask_tcref
     else false
 
+/// Unwrap Task<T>/ValueTask<T> to T, or Task/ValueTask to unit
+/// Used for runtime-async feature: body is type-checked against T, not Task<T>
+let private UnwrapTaskLikeType (g: TcGlobals) ty =
+    if isAppTy g ty then
+        let tcref = tcrefOfAppTy g ty
+        let tinst = argsOfAppTy g ty
+        if (tyconRefEq g tcref g.system_GenericTask_tcref || tyconRefEq g tcref g.system_GenericValueTask_tcref) && tinst.Length = 1 then
+            tinst.[0]  // Extract T from Task<T> or ValueTask<T>
+        elif tyconRefEq g tcref g.system_Task_tcref || tyconRefEq g tcref g.system_ValueTask_tcref then
+            g.unit_ty  // Task/ValueTask -> unit
+        else
+            ty  // Not a task type, return as-is
+    else ty
+
 let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =
 
     let g = cenv.g
@@ -11310,8 +11324,17 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 if not (cenv.infoReader.IsLanguageFeatureRuntimeSupported LanguageFeature.RuntimeAsync) then
                     errorR(Error(FSComp.SR.tcRuntimeAsyncNotSupported(), mBinding))
 
+            // For runtime-async methods, the body is type-checked against the unwrapped type T
+            // (not Task<T>). The runtime handles wrapping T -> Task<T> for the caller.
+            let bodyExprTy =
+                if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync &&
+                   HasMethodImplAsyncAttribute g valAttribs then
+                    UnwrapTaskLikeType g overallExprTy
+                else
+                    overallExprTy
+
             if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
-            else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr
+            else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, bodyExprTy)) envinner tpenv rhsExpr
 
         if kind = SynBindingKind.StandaloneExpression && not cenv.isScript then
             UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>
