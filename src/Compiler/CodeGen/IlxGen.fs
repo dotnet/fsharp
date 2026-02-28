@@ -6412,8 +6412,17 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloca(uint16 locIdx))
         CG.EmitInstr cgbuf (pop 1) (Push []) (I_stloc(uint16 locIdx2))
 
-        // Initialize the closure variables
-        for fv, ilv in Seq.zip cloFreeVars cloinfo.ilCloAllFreeVars do
+        // Initialize witness closure variables (these come first in ilCloAllFreeVars)
+        let nWitnesses = cloinfo.cloWitnessInfos.Length
+
+        for i in 0 .. nWitnesses - 1 do
+            let ilv = cloinfo.ilCloAllFreeVars.[i]
+            CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
+            GenWitnessArgFromWitnessInfo cenv cgbuf eenvouter m cloinfo.cloWitnessInfos.[i]
+            CG.EmitInstr cgbuf (pop 2) (Push []) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
+
+        // Initialize the regular closure variables (skip witness entries in ilCloAllFreeVars)
+        for fv, ilv in Seq.zip cloFreeVars (cloinfo.ilCloAllFreeVars |> Seq.skip nWitnesses) do
             if stateVarsSet.Contains fv then
                 // zero-initialize the state var
                 if realloc then
