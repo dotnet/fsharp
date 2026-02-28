@@ -1325,12 +1325,15 @@ module Seq =
     val indexed: source: seq<'T> -> seq<int * 'T>
 
     /// <summary>Generates a new sequence which, when iterated, will return successive
-    /// elements by calling the given function, up to the given count.  Each element is saved after its
-    /// initialization.  The function is passed the index of the item being
-    /// generated.</summary>
+    /// elements by calling the given function, up to the given count. The results of calling the function
+    /// will not be saved, that is the function will be reapplied as necessary to
+    /// regenerate the elements. The function is passed the index of the item being
+    /// generated. To cache the results, see <see cref="M:Microsoft.FSharp.Collections.SeqModule.Cache``1"/>.</summary>
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
-    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently. This is an O(n) operation, where n is the count.</remarks>
+    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
+    /// Construction of the sequence object is an O(1) operation. Each enumeration is an O(n) operation, where n is the count,
+    /// invoking the initializer function once per element.</remarks>
     ///
     /// <param name="count">The maximum number of items to generate for the sequence.</param>
     /// <param name="initializer">A function that generates an item in the sequence from a given index.</param>

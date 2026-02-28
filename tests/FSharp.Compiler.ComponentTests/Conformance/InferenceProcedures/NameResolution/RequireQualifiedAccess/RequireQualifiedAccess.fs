@@ -95,13 +95,12 @@ module RequireQualifiedAccess =
         |> shouldSucceed
 
     // SOURCE=OnUnionWithCaseOfSameName2.fs
-    // This test expects warning 35 about deprecated construct
     [<Theory; FileInlineData("OnUnionWithCaseOfSameName2.fs")>]
     let ``OnUnionWithCaseOfSameName2_fs`` compilation =
         compilation
         |> getCompilation
         |> asExe
-        |> withLangVersion80
-        |> ignoreWarnings
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withErrorCode 0035
+        |> ignore

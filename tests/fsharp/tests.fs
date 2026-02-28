@@ -29,6 +29,9 @@ let FSI = FSI_NETFX
 
 let log = printfn
 
+// Disable parallel execution for CoreTests because the printing and FSI tests
+// spawn external FSI processes with stdin redirection that can interfere with each other
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 module CoreTests =
 
 
@@ -467,11 +470,9 @@ module CoreTests =
 
         let cfg = testConfig "core/fsi-reference"
 
-        begin           
-            fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
-            fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
-            fsiStdinCheckPassed cfg "test.fsx" "" []
-        end
+        fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
+        fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
+        fsiStdinCheckPassed cfg "test.fsx" "" []
 
     [<Fact>]
     let ``fsi-reload`` () =
@@ -493,7 +494,6 @@ module CoreTests =
         do if fileExists cfg "TestLibrary.dll" then rm cfg "TestLibrary.dll"
 
         fsiStdin cfg "prepare.fsx" "--maxerrors:1" []
-
         fsiStdinCheckPassed cfg "test.fsx" "--maxerrors:1"  []
 
     [<Fact>]

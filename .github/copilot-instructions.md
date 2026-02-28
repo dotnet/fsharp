@@ -20,11 +20,17 @@ Bootstrap contamination: early commits break compiler → later "fixes" still us
 ## Test
 
 Default: `-c Debug`
+
 Use `-c Release` for: EmittedIL tests, Optimizer tests, full component runs
-spot check: `dotnet test <proj> --filter "Name~X" -c Debug`
+
+spot check: `dotnet test <proj> [--filter-method|--filter-class] "<glob_pattern>" -c Debug`
+
 full component: `dotnet test tests/FSharp.Compiler.ComponentTests -c Release`
+
 IDE/service: `tests/FSharp.Compiler.Service.Tests`
+
 VS integration: `vsintegration/` (Windows only)
+
 update baselines: `TEST_UPDATE_BSL=1 <test command>`
 
 ## Spotcheck tests

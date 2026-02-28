@@ -780,7 +780,6 @@ type Class1() =
     |> shouldEqual
         [|("LiteralAttribute", (3, 10, 3, 17))
           ("member .ctor", (3, 10, 3, 17))
-          ("member .ctor", (3, 11, 3, 17)) // #14902
           ("val ModuleValue", (3, 20, 3, 31))
           ("val op_Addition", (6, 26, 6, 27))
           ("val ModuleValue", (6, 14, 6, 25))
@@ -792,11 +791,9 @@ type Class1() =
           ("member .ctor", (10, 5, 10, 11))
           ("LiteralAttribute", (11, 10, 11, 17))
           ("member .ctor", (11, 10, 11, 17))
-          ("member .ctor", (11, 11, 11, 17)) // #14902
           ("val ClassValue", (11, 20, 11, 30))
           ("LiteralAttribute", (12, 17, 12, 24))
           ("member .ctor", (12, 17, 12, 24))
-          ("member .ctor", (12, 18, 12, 24)) // #14902
           ("val StaticClassValue", (12, 27, 12, 43))
           ("val ClassValue", (14, 12, 14, 22))
           ("val StaticClassValue", (15, 12, 15, 28))

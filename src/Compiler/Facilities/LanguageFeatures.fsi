@@ -95,6 +95,9 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | MethodOverloadsCache
+    | ImplicitDIMCoverage
+    | PreprocessorElif
 
 /// LanguageVersion management
 type LanguageVersion =
