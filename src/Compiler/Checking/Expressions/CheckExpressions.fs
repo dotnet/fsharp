@@ -1356,7 +1356,7 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
 let private HasMethodImplNoInliningAttribute g attrs =
     match attrs with
     // NO_INLINING = 8
-    | ValAttrib g WellKnownValAttributes.MethodImplAttribute (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
+    | ValAttribInt g WellKnownValAttributes.MethodImplAttribute flags -> (flags &&& 0x8) <> 0x0
     | _ -> false
 
 let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =

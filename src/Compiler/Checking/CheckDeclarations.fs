@@ -3420,7 +3420,7 @@ module EstablishTypeDefinitionCores =
             
             let structLayoutAttr =
                 match attrs with
-                | EntityAttrib g WellKnownEntityAttributes.StructLayoutAttribute (Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _)) -> Some v
+                | EntityAttribInt g WellKnownEntityAttributes.StructLayoutAttribute v -> Some v
                 | _ -> None
             let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute_True <> WellKnownEntityAttributes.None
 

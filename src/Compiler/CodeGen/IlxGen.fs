@@ -9150,7 +9150,7 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
 
     let implflags =
         match attrs with
-        | ValAttrib g WellKnownValAttributes.MethodImplAttribute (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> flags
+        | ValAttribInt g WellKnownValAttributes.MethodImplAttribute flags -> flags
         | _ -> 0x0
 
     let hasPreserveSigAttr =
@@ -11137,13 +11137,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                         let ilFieldOffset =
                             match fspec.FieldAttribs with
-                            | ValAttrib g WellKnownValAttributes.FieldOffsetAttribute (Attrib(_,
-                                                                                              _,
-                                                                                              [ AttribInt32Arg fieldOffset ],
-                                                                                              _,
-                                                                                              _,
-                                                                                              _,
-                                                                                              _)) -> Some fieldOffset
+                            | ValAttribInt g WellKnownValAttributes.FieldOffsetAttribute fieldOffset -> Some fieldOffset
                             | ValAttrib g WellKnownValAttributes.FieldOffsetAttribute (Attrib(_, _, _, _, _, _, m)) ->
                                 errorR (Error(FSComp.SR.ilFieldOffsetAttributeCouldNotBeDecoded (), m))
                                 None
