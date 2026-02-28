@@ -5,7 +5,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.0;netstandard2.1;net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.0;netstandard2.1</TargetFrameworks>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -301,18 +301,19 @@
        definitions (not just type forwards). We use the NETStandard.Library NuGet package refs (same
        as the netstandard2.0 build) because the net10.0 ref pack netstandard.dll is a pure facade
        with only type forwards, which simpleresolution does not follow. -->
-  <Target Name="OverrideTargetProfileForNet10" BeforeTargets="CoreCompile"
+  <Target Name="OverrideTargetProfileForNet10" AfterTargets="ResolveReferences" BeforeTargets="CoreCompile"
           Condition="'$(TargetFramework)' == 'net10.0' and '$(Configuration)' != 'Proto'">
     <PropertyGroup>
       <TargetProfile>netstandard</TargetProfile>
       <_NETStandardLibRefPath>$(NuGetPackageRoot)netstandard.library\2.0.3\build\netstandard2.0\ref</_NETStandardLibRefPath>
     </PropertyGroup>
     <ItemGroup>
-      <!-- Remove the net10.0 ref pack netstandard.dll (pure type-forwarding facade) so the compiler
-           uses the NETStandard.Library 2.0.3 netstandard.dll which has actual type definitions. -->
-      <ReferencePathWithRefAssemblies Remove="@(ReferencePathWithRefAssemblies)" Condition="'%(Filename)%(Extension)' == 'netstandard.dll'" />
-      <!-- Add NETStandard.Library 2.0.3 refs which have actual type definitions needed by simpleresolution -->
-      <ReferencePathWithRefAssemblies Include="$(_NETStandardLibRefPath)\*.dll" />
+      <!-- For net10.0, the ref pack DLLs are in @(ReferencePath) not @(ReferencePathWithRefAssemblies).
+           Copy them into ReferencePathWithRefAssemblies (which the Fsc task reads), excluding
+           the net10.0 netstandard.dll (pure type-forwarding facade). Then add the
+           NETStandard.Library 2.0.3 netstandard.dll which has actual type definitions. -->
+      <ReferencePathWithRefAssemblies Include="@(ReferencePath)" Condition="'%(Filename)%(Extension)' != 'netstandard.dll'" />
+      <ReferencePathWithRefAssemblies Include="$(_NETStandardLibRefPath)\netstandard.dll" />
     </ItemGroup>
   </Target>
 
