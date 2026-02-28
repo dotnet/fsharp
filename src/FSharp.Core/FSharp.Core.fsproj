@@ -5,7 +5,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.0;netstandard2.1;net10.0</TargetFrameworks>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -291,6 +291,23 @@
     </PropertyGroup>
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\FSharp.Core.xml" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Override TargetProfile for net10.0 to use netstandard resolution in compiling-fslib mode.
+       The Bootstrap targets set TargetProfile=netcore for .NETCoreApp TFMs, but FSharp.Core needs
+       TargetProfile=netstandard so the compiler resolves types from netstandard.dll (which IS present
+       in the net10.0 ref pack). This target also explicitly adds the net10.0 ref pack assemblies to
+       ReferencePathWithRefAssemblies, since the SDK does not populate this item group for net10.0
+       the same way NETStandard.Library NuGet package does for netstandard2.0. -->
+  <Target Name="OverrideTargetProfileForNet10" BeforeTargets="CoreCompile"
+          Condition="'$(TargetFramework)' == 'net10.0' and '$(Configuration)' != 'Proto'">
+    <PropertyGroup>
+      <TargetProfile>netstandard</TargetProfile>
+      <_Net10RefPackPath>$(NetCoreTargetingPackRoot)\Microsoft.NETCore.App.Ref\$(BundledNETCoreAppPackageVersion)\ref\net10.0</_Net10RefPackPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <ReferencePathWithRefAssemblies Include="$(_Net10RefPackPath)\*.dll" />
     </ItemGroup>
   </Target>
 
