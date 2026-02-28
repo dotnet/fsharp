@@ -1331,6 +1331,9 @@ let f (x: inref<int>) =
             (Error 3235, Line 8, Col 5, Line 8, Col 26, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
         ]
 
+    // Finding 4: This is the counterpart to TestMemoryMarshal_fs — when the IL call result
+    // is returned directly (not bound to a local), the scoped mask IS computed and the call succeeds.
+    // See RFC "Known conservative behaviors": IL call path scoped mask only in return position.
     [<Fact>]
     let ``MemoryMarshalCreateSpan_ScopedParam_Succeeds`` () =
         FSharp memoryMarshalCreateSpanSource
@@ -2137,6 +2140,12 @@ let outer () =
         |> compile
         |> shouldSucceed
 
+    // Finding 4: IL-path scoped mask only in return position (known conservative behavior).
+    // When the IL call result is bound to a local (`let s = MemoryMarshal.CreateSpan(&x, 1)`),
+    // the scoped mask is not computed, so the call is treated as if all params are non-scoped.
+    // The span is then flagged at the binding site with FS3234.
+    // See RFC "Known conservative behaviors" and MemoryMarshalCreateSpan_ScopedParam_Succeeds
+    // for the counterpart where the result is returned directly (scoped mask IS computed).
     [<Theory; FileInlineData("TestMemoryMarshal.fs")>]
     let``TestMemoryMarshal_fs`` compilation =
         compilation
@@ -3655,4 +3664,3 @@ let test () : Span<int> =
         ]
 
 #endif
-

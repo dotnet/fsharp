@@ -199,6 +199,7 @@ These are deliberate design choices where the compiler rejects valid code rather
 | `ref T` where `T` is a type variable | Falls back to non-scoped (no implicit scoping applied). | Matches C# behavior: implicit scoping requires knowing `T` is byref-like, which is not available at the call site for open type parameters. |
 | Scope variance in overrides | Warning FS3882 if an override drops `[<ScopedRef>]` that the base method has (widening). | Matches C# behavior: overrides must not widen scoping. Warning (not error) to avoid breaking existing code. |
 | `[UnscopedRef]` on F# struct methods (same-assembly) | Honored. Struct `this` treated as non-scoped when `[<UnscopedRef>]` is present. | The manually applied `[<UnscopedRef>]` attribute is checked both cross-assembly (IL path) and same-assembly (F# attribute path). |
+| IL call path: scoped mask only in return position | When an IL call result is bound to a local (`let s = M(&x)`) instead of being returned directly, the scoped mask is not computed. The call is treated as if all params are non-scoped. The span may then be flagged by FS3234 at the binding site. The F#-to-F# path does not have this limitation. | Computing the mask unconditionally for all IL calls would require validating that no existing code path misuses the mask result when the return type is not span-like. Deferring to a future release. |
 
 ## Unresolved questions
 
