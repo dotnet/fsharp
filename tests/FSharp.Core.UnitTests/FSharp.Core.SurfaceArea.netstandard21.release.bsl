@@ -747,6 +747,7 @@ Microsoft.FSharp.Control.ObservableModule: System.IObservable`1[T] Merge[T](Syst
 Microsoft.FSharp.Control.ObservableModule: System.Tuple`2[System.IObservable`1[TResult1],System.IObservable`1[TResult2]] Split[T,TResult1,TResult2](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpChoice`2[TResult1,TResult2]], System.IObservable`1[T])
 Microsoft.FSharp.Control.ObservableModule: System.Tuple`2[System.IObservable`1[T],System.IObservable`1[T]] Partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.IObservable`1[T])
 Microsoft.FSharp.Control.ObservableModule: Void Add[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], System.IObservable`1[T])
+Microsoft.FSharp.Control.RuntimeAsyncAttribute: Void .ctor()
 Microsoft.FSharp.Control.TaskBuilder: System.Threading.Tasks.Task`1[T] RunDynamic[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T])
 Microsoft.FSharp.Control.TaskBuilder: System.Threading.Tasks.Task`1[T] Run[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit] For[T,TOverall](System.Collections.Generic.IEnumerable`1[T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit]])
