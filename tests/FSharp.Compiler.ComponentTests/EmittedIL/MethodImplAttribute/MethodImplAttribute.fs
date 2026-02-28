@@ -3,6 +3,7 @@ namespace EmittedIL
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
+open System
 
 module MethodImplAttribute =
 
@@ -87,17 +88,18 @@ module MethodImplAttribute =
     // =====================================================================================
 
     // Verify that a simple async method with MethodImplOptions.Async emits the async IL flag.
-    // The body returns Task<int> directly (function bindings use the declared return type).
+    // The body returns int directly (runtime-async: body is type-checked against T, not Task<T>).
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - method with Async attribute emits cil managed async in IL``() =
         FSharp """
 module TestModule
 
+#nowarn "57"
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
 [<MethodImplAttribute(MethodImplOptions.Async)>]
-let asyncMethod () : Task<int> = Task.FromResult(42)
+let asyncMethod () : Task<int> = 42
 """
         |> withLangVersionPreview
         |> compile
@@ -113,11 +115,12 @@ let asyncMethod () : Task<int> = Task.FromResult(42)
         FSharp """
 module TestModule
 
+#nowarn "57"
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
 [<MethodImplAttribute(MethodImplOptions.Async)>]
-let asyncVoidMethod () : Task = Task.CompletedTask
+let asyncVoidMethod () : Task = ()
 """
         |> withLangVersionPreview
         |> compile
@@ -189,124 +192,115 @@ let asyncMethod () : Task<int> = Task.FromResult(42)
     // Behavioral test: simple return — method body returns T directly, Task<T> is produced by runtime
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - behavioral test: simple return``() =
+        // DOTNET_RuntimeAsync=1 must be set in the test process before the compiled assembly is loaded.
+        // Setting it inside the compiled code is too late (the CLR loads the type before any code runs).
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
 module TestModule
 
-#nowarn \"SYSLIB5007\"
-open System
+#nowarn "57"
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-// Enable runtime-async mode so the runtime processes the 0x2000 flag
-do Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
-
-[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
+[<MethodImplAttribute(MethodImplOptions.Async)>]
 let asyncReturn42 () : Task<int> = 42
 
 let result = asyncReturn42().Result
-printfn \"%d\" result
+printfn "%d" result
 """
         |> withLangVersionPreview
-        |> compileExeAndRun
+        |> compileExeAndRunNewProcess
         |> shouldSucceed
         |> withOutputContainsAllInOrder ["42"]
 
     // Behavioral test: await Task<T> — method awaits a Task<int> and returns the result
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - behavioral test: await Task<T>``() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
 module TestModule
 
-#nowarn \"SYSLIB5007\"
-open System
+#nowarn "57"
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-do Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
-
-[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
+[<MethodImplAttribute(MethodImplOptions.Async)>]
 let asyncAwaitTask () : Task<int> = AsyncHelpers.Await(Task.FromResult(42))
 
 let result = asyncAwaitTask().Result
-printfn \"%d\" result
+printfn "%d" result
 """
         |> withLangVersionPreview
-        |> compileExeAndRun
+        |> compileExeAndRunNewProcess
         |> shouldSucceed
         |> withOutputContainsAllInOrder ["42"]
 
     // Behavioral test: await Task (unit) — method awaits a non-generic Task
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - behavioral test: await Task (unit)``() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
 module TestModule
 
-#nowarn \"SYSLIB5007\"
-open System
+#nowarn "57"
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-do Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
-
-[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
+[<MethodImplAttribute(MethodImplOptions.Async)>]
 let asyncAwaitUnitTask () : Task = AsyncHelpers.Await(Task.CompletedTask)
 
 asyncAwaitUnitTask().Wait()
-printfn \"done\"
+printfn "done"
 """
         |> withLangVersionPreview
-        |> compileExeAndRun
+        |> compileExeAndRunNewProcess
         |> shouldSucceed
         |> withOutputContainsAllInOrder ["done"]
 
     // Behavioral test: await ValueTask<T> — method awaits a ValueTask<int>
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - behavioral test: await ValueTask<T>``() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
 module TestModule
 
-#nowarn \"SYSLIB5007\"
-open System
+#nowarn "57"
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-do Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
-
-[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
+[<MethodImplAttribute(MethodImplOptions.Async)>]
 let asyncAwaitValueTask () : Task<int> = AsyncHelpers.Await(ValueTask.FromResult(42))
 
 let result = asyncAwaitValueTask().Result
-printfn \"%d\" result
+printfn "%d" result
 """
         |> withLangVersionPreview
-        |> compileExeAndRun
+        |> compileExeAndRunNewProcess
         |> shouldSucceed
         |> withOutputContainsAllInOrder ["42"]
 
     // Behavioral test: multiple awaits — method awaits two tasks and adds results
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - behavioral test: multiple awaits``() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
 module TestModule
 
-#nowarn \"SYSLIB5007\"
-open System
+#nowarn "57"
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-do Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
-
-[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
+[<MethodImplAttribute(MethodImplOptions.Async)>]
 let asyncMultipleAwaits () : Task<int> =
     let a = AsyncHelpers.Await(Task.FromResult(10))
     let b = AsyncHelpers.Await(Task.FromResult(32))
     a + b
 
 let result = asyncMultipleAwaits().Result
-printfn \"%d\" result
+printfn "%d" result
 """
         |> withLangVersionPreview
-        |> compileExeAndRun
+        |> compileExeAndRunNewProcess
         |> shouldSucceed
         |> withOutputContainsAllInOrder ["42"]
 
@@ -317,101 +311,92 @@ printfn \"%d\" result
     // Edge case: generic method — method is generic over the awaited type
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - edge case: generic method``() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
 module TestModule
 
-#nowarn \"SYSLIB5007\"
-open System
+#nowarn "57"
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-do Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
-
-[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
+[<MethodImplAttribute(MethodImplOptions.Async)>]
 let genericAsync<'T> (t: Task<'T>) : Task<'T> = AsyncHelpers.Await t
 
 let result = genericAsync(Task.FromResult(42)).Result
-printfn \"%d\" result
+printfn "%d" result
 """
         |> withLangVersionPreview
-        |> compileExeAndRun
+        |> compileExeAndRunNewProcess
         |> shouldSucceed
         |> withOutputContainsAllInOrder ["42"]
 
     // Edge case: try/with — method uses try/with and succeeds (no exception)
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - edge case: try/with success``() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
 module TestModule
 
-#nowarn \"SYSLIB5007\"
-open System
+#nowarn "57"
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-do Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
-
-[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
+[<MethodImplAttribute(MethodImplOptions.Async)>]
 let asyncTryWith () : Task<int> =
     try AsyncHelpers.Await(Task.FromResult(42))
     with _ -> -1
 
 let result = asyncTryWith().Result
-printfn \"%d\" result
+printfn "%d" result
 """
         |> withLangVersionPreview
-        |> compileExeAndRun
+        |> compileExeAndRunNewProcess
         |> shouldSucceed
         |> withOutputContainsAllInOrder ["42"]
 
     // Edge case: try/with exception — method catches an exception and returns fallback
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - edge case: try/with exception``() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
 module TestModule
 
-#nowarn \"SYSLIB5007\"
-open System
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-do Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
-
-[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
+[<MethodImplAttribute(MethodImplOptions.Async)>]
 let asyncTryWithException () : Task<int> =
-    try failwith \"oops\"
+    try failwith "oops"
     with _ -> -1
 
 let result = asyncTryWithException().Result
-printfn \"%d\" result
+printfn "%d" result
 """
         |> withLangVersionPreview
-        |> compileExeAndRun
+        |> compileExeAndRunNewProcess
         |> shouldSucceed
         |> withOutputContainsAllInOrder ["-1"]
 
     // Edge case: interop with task CE — method awaits a task CE result
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - edge case: interop with task CE``() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
 module TestModule
 
-#nowarn \"SYSLIB5007\"
-open System
+#nowarn "57"
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-do Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
-
-[<MethodImplAttribute(enum<MethodImplOptions>(0x2000))>]
+[<MethodImplAttribute(MethodImplOptions.Async)>]
 let asyncInteropWithTaskCE () : Task<int> =
     let t = task { return 42 }
     AsyncHelpers.Await t
 
 let result = asyncInteropWithTaskCE().Result
-printfn \"%d\" result
+printfn "%d" result
 """
         |> withLangVersionPreview
-        |> compileExeAndRun
+        |> compileExeAndRunNewProcess
         |> shouldSucceed
         |> withOutputContainsAllInOrder ["42"]

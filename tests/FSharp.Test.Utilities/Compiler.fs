@@ -1106,6 +1106,35 @@ module rec Compiler =
 
     let compileExeAndRun = asExe >> compileAndRun
 
+    /// Like run, but executes the compiled app in a new process (inheriting the current process's environment).
+    /// Dependencies and FSharp.Core are copied to the output directory so the child process can find them.
+    let runNewProcess (result: CompilationResult) : CompilationResult =
+        match result with
+        | CompilationResult.Failure f -> failwith (sprintf "Compilation should be successful in order to run.\n Errors: %A" (f.Diagnostics))
+        | CompilationResult.Success s ->
+            match s.OutputPath with
+            | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
+            | Some p ->
+                // Copy dependencies and FSharp.Core to the output directory so the child process can resolve them.
+                let outputDirectory = System.IO.Path.GetDirectoryName(p)
+                let copyIfMissing (src: string) =
+                    let destPath = System.IO.Path.Combine(outputDirectory, System.IO.Path.GetFileName(src: string))
+                    if not (System.IO.File.Exists(destPath)) then
+                        System.IO.File.Copy(src, destPath)
+                for dep in s.Dependencies do
+                    copyIfMissing dep
+                // FSharp.Core.dll is referenced via -r: options in defaultProjectOptions but not in s.Dependencies.
+                // Copy it explicitly so the child process can find it.
+                let fsharpCoreLocation = typeof<RequireQualifiedAccessAttribute>.Assembly.Location
+                copyIfMissing fsharpCoreLocation
+                let output = CompilerAssert.ExecuteAndReturnResult (p, false, s.Dependencies, true)
+                let executionResult = { s with Output = Some (ExecutionOutput output) }
+                match output.Outcome with
+                | Failure _ -> CompilationResult.Failure executionResult
+                | _  -> CompilationResult.Success executionResult
+
+    let compileExeAndRunNewProcess = asExe >> compile >> runNewProcess
+
     let private processScriptResults fs (evalResult: Result<FsiValue option, exn>, err: FSharpDiagnostic[]) outputWritten errorsWritten =
         let perFileDiagnostics = err |> fromFSharpDiagnostic
         let diagnostics = perFileDiagnostics |> List.map snd
