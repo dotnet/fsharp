@@ -3820,9 +3820,6 @@ let ``Test Project25 symbol uses of type-provided members`` () =
            ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((10, 8), (10, 78)),
             ["member"]); ("TypeProviderTests", "file1", ((2, 7), (2, 24)), ["module"])|]
 
-    printfn "actual =\n%A" allUses
-    printfn "expected =\n%A" expected
-
     allUses |> shouldBeEqualCollections expected
 
     let getSampleSymbolUseOpt =
