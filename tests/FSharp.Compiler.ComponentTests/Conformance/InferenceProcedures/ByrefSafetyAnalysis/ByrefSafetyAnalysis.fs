@@ -3238,23 +3238,19 @@ let f () =
 
     // ---- Generic method without RefSafetyRules: ScopedRef attribute ignored (methInst guard) ----
 
-    [<Fact>]
-    let ``Generic method ScopedRef ignored without RefSafetyRules`` () =
-        // Simulate a C# library WITHOUT [module: RefSafetyRules(11)] but WITH ScopedRefAttribute on a generic method.
-        // The F# compiler should NOT trust ScopedRefAttribute on generic methods from such assemblies,
-        // so &local should still trigger FS3235 (conservative behavior).
-        let csharpLib =
-            CSharp """
+    // Simulate a C# library WITHOUT [module: RefSafetyRules(11)] but WITH ScopedRefAttribute on a generic method.
+    // The F# compiler should NOT trust ScopedRefAttribute on generic methods from such assemblies,
+    // so &local should still trigger FS3235 (conservative behavior).
+    let private genericNoRefSafetyLib =
+        CSharp """
 using System;
 public class Lib {
-    // Without RefSafetyRulesAttribute, this is an older assembly.
-    // scoped ref is compiled to ScopedRefAttribute but cannot be trusted on generics.
     public static Span<T> Create<T>(ref T x) => default;
 }
 """         |> withName "GenericNoRefSafetyLib"
             |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
-        FSharp """
+    let private genericNoRefSafetyFSharpSource = """
 module Test
 open System
 
@@ -3262,57 +3258,39 @@ let f () =
     let mutable local = 42
     Lib.Create<int>(&local)
 """
+
+    [<Fact>]
+    let ``Generic method ScopedRef ignored without RefSafetyRules`` () =
+        FSharp genericNoRefSafetyFSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [csharpLib]
+        |> withReferences [genericNoRefSafetyLib]
         |> compile
         |> shouldFail
         |> withErrorCodes [3235]
 
     [<Fact>]
     let ``Generic method ScopedRef ignored without RefSafetyRules - backward compat`` () =
-        let csharpLib =
-            CSharp """
-using System;
-public class Lib {
-    public static Span<T> Create<T>(ref T x) => default;
-}
-"""         |> withName "GenericNoRefSafetyLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        FSharp """
-module Test
-open System
-
-let f () =
-    let mutable local = 42
-    Lib.Create<int>(&local)
-"""
+        FSharp genericNoRefSafetyFSharpSource
         |> asLibrary
-        |> withReferences [csharpLib]
+        |> withReferences [genericNoRefSafetyLib]
         |> compile
         |> shouldSucceed
 
     // ---- Override variance with overloaded methods differing in generic arity ----
 
-    [<Fact>]
-    let ``Override variance correctly distinguishes overloads by generic arity`` () =
-        let csharpLib =
-            CSharp """
+    let private overloadGenericArityLib =
+        CSharp """
 using System;
 using System.Runtime.CompilerServices;
 public abstract class Base {
-    // Non-generic overload: scoped ref
     public abstract Span<int> M(scoped ref int x, int[] arr);
-    // Generic overload with same param count: ref (not scoped)
     public abstract Span<T> M<T>(ref T x, T[] arr);
 }
 """         |> withName "OverloadGenericArityLib"
             |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
-        // Override the non-generic M without [<ScopedRef>] — should warn (widens scoped)
-        // Override the generic M<T> without [<ScopedRef>] — should NOT warn (was never scoped)
-        FSharp """
+    let private overloadGenericArityFSharpSource = """
 module Test
 open System
 
@@ -3321,9 +3299,15 @@ type Derived() =
     override _.M(x: byref<int>, arr: int[]) = Span<int>(arr)
     override _.M<'T>(x: byref<'T>, arr: 'T[]) = Span<'T>(arr)
 """
+
+    [<Fact>]
+    let ``Override variance correctly distinguishes overloads by generic arity`` () =
+        // Override the non-generic M without [<ScopedRef>] — should warn (widens scoped)
+        // Override the generic M<T> without [<ScopedRef>] — should NOT warn (was never scoped)
+        FSharp overloadGenericArityFSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [csharpLib]
+        |> withReferences [overloadGenericArityLib]
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -3332,58 +3316,9 @@ type Derived() =
 
     [<Fact>]
     let ``Override variance with generic overloads backward compat`` () =
-        let csharpLib =
-            CSharp """
-using System;
-using System.Runtime.CompilerServices;
-public abstract class Base {
-    public abstract Span<int> M(scoped ref int x, int[] arr);
-    public abstract Span<T> M<T>(ref T x, T[] arr);
-}
-"""         |> withName "OverloadGenericArityLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        FSharp """
-module Test
-open System
-
-type Derived() =
-    inherit Base()
-    override _.M(x: byref<int>, arr: int[]) = Span<int>(arr)
-    override _.M<'T>(x: byref<'T>, arr: 'T[]) = Span<'T>(arr)
-"""
+        FSharp overloadGenericArityFSharpSource
         |> asLibrary
-        |> withReferences [csharpLib]
-        |> compile
-        |> shouldSucceed
-
-    // ---- ScopedRef on value-type Span parameter in F# authoring ----
-
-    [<Fact>]
-    let ``ScopedRef on Span value param prevents escape in body`` () =
-        FSharp """
-module Test
-open System
-open System.Runtime.CompilerServices
-
-let leak ([<ScopedRef>] s: Span<int>) : Span<int> = s
-"""
-        |> asLibrary
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCodes [3234]
-
-    [<Fact>]
-    let ``ScopedRef on Span value param prevents escape in body - backward compat`` () =
-        FSharp """
-module Test
-open System
-open System.Runtime.CompilerServices
-
-let leak ([<ScopedRef>] s: Span<int>) : Span<int> = s
-"""
-        |> asLibrary
+        |> withReferences [overloadGenericArityLib]
         |> compile
         |> shouldSucceed
 
@@ -3409,11 +3344,8 @@ let f () =
 
     // ---- Finding 2: ref T (type variable) conservative fallback with RefSafetyRules(11) ----
 
-    [<Fact>]
-    let ``ref T type variable is not implicitly scoped even with RefSafetyRules`` () =
-        // C# 11 automatically emits [module: RefSafetyRules(11)].
-        let csharpLib =
-            CSharp """
+    let private refTTypeVarLib =
+        CSharp """
 using System;
 public class Lib {
     public static Span<T> M<T>(ref T x) => default;
@@ -3421,7 +3353,7 @@ public class Lib {
 """         |> withName "RefTTypeVarLib"
             |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
-        FSharp """
+    let private refTTypeVarFSharpSource = """
 module Test
 open System
 
@@ -3429,34 +3361,22 @@ let f () =
     let mutable local = 42
     Lib.M<int>(&local)
 """
+
+    [<Fact>]
+    let ``ref T type variable is not implicitly scoped even with RefSafetyRules`` () =
+        FSharp refTTypeVarFSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [csharpLib]
+        |> withReferences [refTTypeVarLib]
         |> compile
         |> shouldFail
         |> withErrorCodes [3235]
 
     [<Fact>]
     let ``ref T type variable is not implicitly scoped even with RefSafetyRules - backward compat`` () =
-        let csharpLib =
-            CSharp """
-using System;
-public class Lib {
-    public static Span<T> M<T>(ref T x) => default;
-}
-"""         |> withName "RefTTypeVarLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        FSharp """
-module Test
-open System
-
-let f () =
-    let mutable local = 42
-    Lib.M<int>(&local)
-"""
+        FSharp refTTypeVarFSharpSource
         |> asLibrary
-        |> withReferences [csharpLib]
+        |> withReferences [refTTypeVarLib]
         |> compile
         |> shouldSucceed
 
@@ -3482,10 +3402,8 @@ let f () = async {
     // ---- Finding 5: Property getter returning span-like ----
 
 #if NET7_0_OR_GREATER
-    [<Fact>]
-    let ``Property getter returning span-like from UnscopedRef struct`` () =
-        let csharpLib =
-            CSharp """
+    let private propertyGetterSpanLib =
+        CSharp """
 using System;
 using System.Diagnostics.CodeAnalysis;
 public struct Container {
@@ -3496,7 +3414,7 @@ public struct Container {
 """         |> withName "PropertyGetterSpanLib"
             |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
-        FSharp """
+    let private propertyGetterSpanFSharpSource = """
 module Test
 open System
 
@@ -3504,37 +3422,22 @@ let f () : Span<int> =
     let mutable c = Container(Field = 42)
     c.Data
 """
+
+    [<Fact>]
+    let ``Property getter returning span-like from UnscopedRef struct`` () =
+        FSharp propertyGetterSpanFSharpSource
         |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [csharpLib]
+        |> withReferences [propertyGetterSpanLib]
         |> compile
         |> shouldFail
         |> withErrorCodes [3235]
 
     [<Fact>]
     let ``Property getter returning span-like from UnscopedRef struct - backward compat`` () =
-        let csharpLib =
-            CSharp """
-using System;
-using System.Diagnostics.CodeAnalysis;
-public struct Container {
-    public int Field;
-    [UnscopedRef]
-    public Span<int> Data => new Span<int>(ref Field);
-}
-"""         |> withName "PropertyGetterSpanLib"
-            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
-
-        FSharp """
-module Test
-open System
-
-let f () : Span<int> =
-    let mutable c = Container(Field = 42)
-    c.Data
-"""
+        FSharp propertyGetterSpanFSharpSource
         |> asLibrary
-        |> withReferences [csharpLib]
+        |> withReferences [propertyGetterSpanLib]
         |> compile
         |> shouldSucceed
 #endif
