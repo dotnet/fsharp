@@ -2397,7 +2397,7 @@ type ILFieldDef with
 val computeEntityWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownEntityAttributes
 
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
-val inline attribsHaveEntityFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> bool
+val attribsHaveEntityFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> bool
 
 val tryFindEntityAttribByFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> Attrib option
 
@@ -2415,7 +2415,7 @@ val tryFindAssemblyAttribByFlag: g: TcGlobals -> flag: WellKnownAssemblyAttribut
 [<return: Struct>]
 val (|AssemblyAttribString|_|): g: TcGlobals -> flag: WellKnownAssemblyAttributes -> attribs: Attribs -> string voption
 
-val inline attribsHaveValFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> bool
+val attribsHaveValFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> bool
 
 [<return: Struct>]
 val (|ValAttrib|_|): g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> Attrib voption

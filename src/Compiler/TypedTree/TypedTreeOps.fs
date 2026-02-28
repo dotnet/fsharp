@@ -3839,6 +3839,14 @@ let classifyAssemblyAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownAssemblyAt
 
     flag
 
+/// Shared combinator: find first attrib matching a flag via a classify function.
+let inline internal tryFindAttribByClassifier ([<InlineIfLambda>] classify: TcGlobals -> Attrib -> 'Flag) (none: 'Flag) (g: TcGlobals) (flag: 'Flag) (attribs: Attribs) : Attrib option =
+    attribs |> List.tryFind (fun attrib -> classify g attrib &&& flag <> none)
+
+/// Shared combinator: check if any attrib in a list matches a flag via a classify function.
+let inline internal attribsHaveFlag ([<InlineIfLambda>] classify: TcGlobals -> Attrib -> 'Flag) (none: 'Flag) (g: TcGlobals) (flag: 'Flag) (attribs: Attribs) : bool =
+    attribs |> List.exists (fun attrib -> classify g attrib &&& flag <> none)
+
 /// Compute well-known attribute flags for an Entity's Attrib list.
 let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEntityAttributes =
     let mutable flags = WellKnownEntityAttributes.None
@@ -3846,11 +3854,9 @@ let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEnt
         flags <- flags ||| classifyEntityAttrib g attrib
     flags
 
-/// Find the first attribute in a list that matches a specific well-known entity flag.
-/// Uses flag guard for fast negative (O(1) when not present), then iterates on hit.
-let tryFindEntityAttribByFlag (g: TcGlobals) (flag: WellKnownEntityAttributes) (attribs: Attribs) : Attrib option =
-    attribs
-    |> List.tryFind (fun attrib -> classifyEntityAttrib g attrib &&& flag <> WellKnownEntityAttributes.None)
+/// Find the first attribute matching a specific well-known entity flag.
+let tryFindEntityAttribByFlag g flag attribs =
+    tryFindAttribByClassifier classifyEntityAttrib WellKnownEntityAttributes.None g flag attribs
 
 /// Active pattern: find a well-known entity attribute and return the full Attrib.
 [<return: Struct>]
@@ -3872,9 +3878,8 @@ let (|EntityAttribString|_|) (g: TcGlobals) (flag: WellKnownEntityAttributes) (a
     | _ -> ValueNone
 
 /// Find the first attribute in a list that matches a specific well-known assembly flag.
-let tryFindAssemblyAttribByFlag (g: TcGlobals) (flag: WellKnownAssemblyAttributes) (attribs: Attribs) : Attrib option =
-    attribs
-    |> List.tryFind (fun attrib -> classifyAssemblyAttrib g attrib &&& flag <> WellKnownAssemblyAttributes.None)
+let tryFindAssemblyAttribByFlag g flag attribs =
+    tryFindAttribByClassifier classifyAssemblyAttrib WellKnownAssemblyAttributes.None g flag attribs
 
 /// Active pattern: extract a single string argument from a well-known assembly attribute.
 [<return: Struct>]
@@ -3912,8 +3917,8 @@ let mapILFlagToEntityFlag (flag: WellKnownILAttributes) : WellKnownEntityAttribu
     | _ -> WellKnownEntityAttributes.None
 
 /// Check if a raw attribute list has a specific well-known entity flag (ad-hoc, non-caching).
-let inline attribsHaveEntityFlag g (flag: WellKnownEntityAttributes) (attribs: Attribs) =
-    computeEntityWellKnownFlags g attribs &&& flag <> WellKnownEntityAttributes.None
+let attribsHaveEntityFlag g (flag: WellKnownEntityAttributes) (attribs: Attribs) =
+    attribsHaveFlag classifyEntityAttrib WellKnownEntityAttributes.None g flag attribs
 
 /// Map a WellKnownILAttributes flag to its WellKnownValAttributes equivalent.
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
@@ -4009,9 +4014,8 @@ let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAtt
     flags
 
 /// Find the first attribute in a list that matches a specific well-known val flag.
-let tryFindValAttribByFlag (g: TcGlobals) (flag: WellKnownValAttributes) (attribs: Attribs) : Attrib option =
-    attribs
-    |> List.tryFind (fun attrib -> classifyValAttrib g attrib &&& flag <> WellKnownValAttributes.None)
+let tryFindValAttribByFlag g flag attribs =
+    tryFindAttribByClassifier classifyValAttrib WellKnownValAttributes.None g flag attribs
 
 /// Active pattern: find a well-known val attribute and return the full Attrib.
 [<return: Struct>]
@@ -4033,8 +4037,8 @@ let (|ValAttribString|_|) (g: TcGlobals) (flag: WellKnownValAttributes) (attribs
     | _ -> ValueNone
 
 /// Check if a raw attribute list has a specific well-known val flag (ad-hoc, non-caching).
-let inline attribsHaveValFlag g (flag: WellKnownValAttributes) (attribs: Attribs) =
-    computeValWellKnownFlags g attribs &&& flag <> WellKnownValAttributes.None
+let attribsHaveValFlag g (flag: WellKnownValAttributes) (attribs: Attribs) =
+    attribsHaveFlag classifyValAttrib WellKnownValAttributes.None g flag attribs
 
 /// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
 let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (argInfo: ArgReprInfo) : bool =
