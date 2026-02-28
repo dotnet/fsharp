@@ -1685,7 +1685,9 @@ let test () =
         |> withReferences [unscopedRefStructCSharpLib]
         |> compile
         |> shouldFail
-        |> withErrorCodes [3235]
+        |> withDiagnostics [
+            (Error 3235, Line 6, Col 5, Line 6, Col 30, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Fact>]
     let ``E_NonScopedIsByRefLikeConstructorEscapes - backward compat`` () =
@@ -1726,7 +1728,9 @@ let test () : Span<int> =
         |> withReferences [genericFactoryCSharpLib]
         |> compile
         |> shouldFail
-        |> withErrorCodes [3235]
+        |> withDiagnostics [
+            (Error 3235, Line 7, Col 5, Line 7, Col 34, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Fact>]
     let ``E_AllowsRefStructGenericEscapes - backward compat`` () =
@@ -1849,7 +1853,9 @@ let f () : ReadOnlySpan<int> =
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withErrorCodes [3235]
+        |> withDiagnostics [
+            (Error 3235, Line 8, Col 5, Line 8, Col 15, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Fact>]
     let ``E_SliceOnEscapedSpan - backward compat`` () =
@@ -1995,7 +2001,9 @@ let f () =
         |> withReferences [refReturnChainingCSharpLib]
         |> compile
         |> shouldFail
-        |> withErrorCodes [3235]
+        |> withDiagnostics [
+            (Error 3235, Line 7, Col 5, Line 7, Col 52, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Fact>]
     let ``E_RefReturnChainingIntoSpan - backward compat`` () =
@@ -2077,7 +2085,9 @@ let outer () =
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withErrorCodes [3234]
+        |> withDiagnostics [
+            (Error 3234, Line 9, Col 5, Line 9, Col 11, "The Span or IsByRefLike variable 'result' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Fact>]
     let ``E_SpanFromLocalByrefInNestedScope - backward compat`` () =
@@ -2130,7 +2140,10 @@ let outer () =
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withErrorCodes [3235]
+        |> withDiagnostics [
+            (Error 3235, Line 10, Col 15, Line 10, Col 28, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3235, Line 11, Col 16, Line 11, Col 29, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Theory; FileInlineData("E_MatchExpressionSpanCapturingByref.fs")>]
     let``E_MatchExpressionSpanCapturingByref_fs_without_preview`` compilation =
@@ -2640,7 +2653,9 @@ let f () =
         |> withReferences [genericCSharp8Lib]
         |> compile
         |> shouldFail
-        |> withErrorCodes [3235]
+        |> withDiagnostics [
+            (Error 3235, Line 6, Col 5, Line 6, Col 51, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Fact>]
     let ``Generic method CSharp8 without RefSafetyRules backward compat`` () =
@@ -3045,7 +3060,9 @@ let test () : Span<int> =
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withErrorCodes [3235]
+        |> withDiagnostics [
+            (Error 3235, Line 15, Col 5, Line 15, Col 15, "A Span or IsByRefLike value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]
 
     [<Fact>]
     let ``E_UnscopedRef local struct receiver escapes same-assembly - backward compat`` () =
