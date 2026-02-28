@@ -5952,7 +5952,12 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcExprArrayOrList cenv overallTy env tpenv (isArray, args, m)
 
     | SynExpr.New (superInit, synObjTy, arg, mNewExpr) ->
+        let g = cenv.g
         let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes env tpenv synObjTy
+
+        // Stamp constructor result as KnownFromConstructor so the constraint solver
+        // knows this is provably non-null (even for AllowNullLiteral types).
+        let objTy = if g.checkNullness then replaceNullnessOfTy Nullness.KnownFromConstructor objTy else objTy
 
         TcNonControlFlowExpr env <| fun env ->
         TcPropagatingExprLeafThenConvert cenv overallTy objTy env (* true *) mNewExpr (fun () ->
@@ -6009,7 +6014,13 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.eAccessRights)
         cenv.TcArrayOrListComputedExpression cenv env overallTy tpenv (isArray, comp)  m
 
-    | SynExpr.LetOrUse _ ->
+    | SynExpr.LetOrUse letOrUse ->
+        match letOrUse with
+        | { Bindings = SynBinding(trivia = { LeadingKeyword = leadingKeyword }) :: _ } 
+            when letOrUse.IsBang ->
+            errorR(Error(FSComp.SR.tcConstructRequiresComputationExpression(), leadingKeyword.Range))
+        | _ -> ()
+
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr id
 
     | SynExpr.TryWith (synBodyExpr, synWithClauses, mTryToLast, spTry, spWith, trivia) ->
@@ -6892,6 +6903,13 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
         // skip this check if this ctor call is either 'inherit(...)' or call is located within constructor shape
         if not (superInit || AreWithinCtorShape env)
             then CheckSuperInit cenv objTy mWholeCall
+
+        // Pre-unify expected type with KnownFromConstructor nullness so the constraint solver
+        // sees constructor results as provably non-null (issue #18021).
+        // Skip when args is empty: the constructor is used as a first-class function (e.g. |> ClassName)
+        // and overallTy is a function type, not the return type.
+        if g.checkNullness && not args.IsEmpty && TypeNullIsExtraValueNew g mWholeCall objTy then
+            UnifyTypes cenv env mWholeCall overallTy.Commit (replaceNullnessOfTy Nullness.KnownFromConstructor objTy)
 
         let afterResolution =
             match mObjTyOpt, afterTcOverloadResolutionOpt with
@@ -9356,6 +9374,15 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
                 vTy
         // Always allow subsumption on assignment to fields
         let expr2R, tpenv = TcExprFlex cenv true false vty2 env tpenv expr2
+        // After assignment, strip KnownFromConstructor from the val's type so subsequent
+        // reads no longer bypass AllowNullLiteral warnings for 'not null' constraints.
+        if g.checkNullness && not (isByrefTy g vTy) then
+            match stripTyparEqns vTy with
+            | TType_app(_, _, Nullness.KnownFromConstructor)
+            | TType_var(_, Nullness.KnownFromConstructor) ->
+                vref.Deref.SetType(replaceNullnessOfTy (Nullness.Known NullnessInfo.WithoutNull) vTy)
+            | _ -> ()
+
         let vExpr =
             if isInByrefTy g vTy then
                 errorR(Error(FSComp.SR.writeToReadOnlyByref(), mStmt))
@@ -10852,7 +10879,7 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
             | TPat_disjs(patterns,_) -> (ty,patterns) ||> List.fold eliminateNull
             | TPat_tuple (_,pats,_,_) ->
                 match stripTyparEqns ty with
-                // In a tuple of size N, if 1 elem is matched for null and N-1 are wild => subsequent clauses can strip nullness
+                // In a tuple, if 1 elem is matched for null and the rest are wild => subsequent clauses can strip nullness
                 | TType_tuple(ti,tys) when tys.Length = pats.Length && (pats |> List.count (isWild >> not)) = 1 ->
                     TType_tuple(ti, List.map2 eliminateNull tys pats)
                 | _ -> ty
@@ -12903,7 +12930,27 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
     | Some _ ->
        match PartitionValTyparsForApparentEnclosingType g vspec with
        | Some(parentTypars, memberParentTypars, _, _, _) ->
+          // Temporarily strip extra nullness constraints (e.g. NotSupportsNull) from member type params
+          // before checking signature conformance against parent type params.
+          // These constraints may be inferred by the solver but are not present on the parent,
+          // causing false signature mismatch errors. We restore the original constraints afterward.
+          let savedConstraints = memberParentTypars |> List.map (fun tp -> tp, tp.Constraints)
+
+          if g.checkNullness then
+              (memberParentTypars, parentTypars)
+              ||> List.iter2 (fun mtp ptp ->
+                  let parentHasConstraint c =
+                      List.exists (typarConstraintsAEquiv g TypeEquivEnv.EmptyIgnoreNulls c) ptp.Constraints
+
+                  mtp.SetConstraints(
+                      mtp.Constraints
+                      |> List.filter (fun c -> not (isConstraintAllowedAsExtra c) || parentHasConstraint c)
+                  ))
+
           ignore(SignatureConformance.Checker(g, cenv.amap, denv, SignatureRepackageInfo.Empty, false).CheckTypars vspec.Range TypeEquivEnv.EmptyIgnoreNulls memberParentTypars parentTypars)
+
+          for tp, cs in savedConstraints do
+              tp.SetConstraints cs
        | None ->
           errorR(Error(FSComp.SR.tcMemberIsNotSufficientlyGeneric(), vspec.Range))
     | _ -> ()

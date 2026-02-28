@@ -141,6 +141,7 @@
     <Compile Include="Conformance\LexicalAnalysis\IdentifiersAndKeywords.fs" />
     <Compile Include="Conformance\LexicalAnalysis\IdentifierReplacements.fs" />
     <Compile Include="Conformance\LexicalAnalysis\ConditionalCompilation.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\PreprocessorElif.fs" />
     <Compile Include="Conformance\LexicalFiltering\HashLight\HashLight.fs" />
     <Compile Include="Conformance\LexicalFiltering\HighPrecedenceApplication\HighPrecedenceApplication.fs" />
     <Compile Include="Conformance\LexicalFiltering\OffsideExceptions\OffsideExceptions.fs" />
