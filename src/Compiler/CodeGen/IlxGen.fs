@@ -9184,6 +9184,62 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let hasAsyncImplFlag = (implflags &&& 0x2000) <> 0x0
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, hasAsyncImplFlag, attrs
 
+/// Check if an expression contains calls to System.Runtime.CompilerServices.AsyncHelpers.Await.
+/// This is used to detect when async code has been inlined into a method, which means the 
+/// containing method should also have the async flag set.
+and ExprContainsAsyncHelpersAwaitCall expr =
+    let rec check expr =
+        match expr with
+        | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args, _) ->
+            // Check if this is a call to AsyncHelpers.Await
+            if ilMethRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices.AsyncHelpers" 
+               && ilMethRef.Name = "Await" then
+                true
+            else
+                args |> List.exists check
+        | Expr.Op (_, _, args, _) -> 
+            args |> List.exists check
+        | Expr.Let (bind, body, _, _) ->
+            check bind.Expr || check body
+        | Expr.LetRec (binds, body, _, _) ->
+            binds |> List.exists (fun b -> check b.Expr) || check body
+        | Expr.Sequential (e1, e2, _, _) ->
+            check e1 || check e2
+        | Expr.Lambda (_, _, _, _, body, _, _) ->
+            check body
+        | Expr.TyLambda (_, _, body, _, _) ->
+            check body
+        | Expr.App (f, _, _, args, _) ->
+            check f || args |> List.exists check
+        | Expr.Match (_, _, dtree, targets, _, _) ->
+            checkDecisionTree dtree || targets |> Array.exists (fun (TTarget(_, e, _)) -> check e)
+        | Expr.TyChoose (_, body, _) ->
+            check body
+        | Expr.Link eref ->
+            check eref.Value
+        | Expr.DebugPoint (_, innerExpr) ->
+            check innerExpr
+        | Expr.Obj (_, _, _, basecall, overrides, iimpls, _) ->
+            check basecall 
+            || overrides |> List.exists (fun (TObjExprMethod(_, _, _, _, e, _)) -> check e)
+            || iimpls |> List.exists (fun (_, overrides) -> overrides |> List.exists (fun (TObjExprMethod(_, _, _, _, e, _)) -> check e))
+        | Expr.StaticOptimization (_, e1, e2, _) ->
+            check e1 || check e2
+        | Expr.Quote _ 
+        | Expr.Const _
+        | Expr.Val _
+        | Expr.WitnessArg _ -> 
+            false
+    and checkDecisionTree dtree =
+        match dtree with
+        | TDSuccess (args, _) -> args |> List.exists check
+        | TDSwitch (e, cases, dflt, _) ->
+            check e || cases |> List.exists (fun (TCase(_, t)) -> checkDecisionTree t) || dflt |> Option.exists checkDecisionTree
+        | TDBind (bind, rest) ->
+            check bind.Expr || checkDecisionTree rest
+    check expr
+
+
 and GenMethodForBinding
     cenv
     mgbuf
@@ -9366,8 +9422,13 @@ and GenMethodForBinding
         | _ -> [], None
 
     // check if the hasPreserveSigNamedArg and hasSynchronizedImplFlag implementation flags have been specified
-    let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, hasAggressiveInliningImplFlag, hasAsyncImplFlag, attrs =
+    let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, hasAggressiveInliningImplFlag, hasAsyncImplFlagFromAttr, attrs =
         ComputeMethodImplAttribs cenv v attrs
+
+    // Check if the method body contains calls to AsyncHelpers.Await - if so, the method should also have the async flag.
+    // This handles the case where an inline async method is inlined into this method.
+    let hasAsyncImplFlag =
+        hasAsyncImplFlagFromAttr || ExprContainsAsyncHelpersAwaitCall body
 
     let securityAttributes, attrs =
         attrs
