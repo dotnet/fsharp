@@ -955,7 +955,13 @@ let main4
 
     // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
     let ilxGenerator =
-        CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), generatedCcu)
+        CreateIlxAssemblyGenerator(
+            tcConfig,
+            tcImports,
+            tcGlobals,
+            (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
+            generatedCcu
+        )
 
     let codegenBackend =
         (if Option.isSome dynamicAssemblyCreator then

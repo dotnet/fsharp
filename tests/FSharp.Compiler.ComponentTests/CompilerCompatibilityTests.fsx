@@ -222,7 +222,7 @@ let packProject projectPath compilerVersion outputDir =
     
     printfn "  Packing library with %s compiler..." compilerVersion
     let projectFile = Path.Combine(projectPath, "CompilerCompatLib.fsproj")
-    let output = runCommand "dotnet" $"pack \"{projectFile}\" -c {compilerConfiguration} -o \"{outputDir}\" /p:LangVersion=preview" projectPath envVars
+    let output = runCommand "dotnet" $"pack \"{projectFile}\" -c {compilerConfiguration} -o \"{outputDir}\"" projectPath envVars
     
     // Clean up global.json after pack
     manageGlobalJson compilerVersion false
@@ -246,7 +246,7 @@ let buildApp projectPath compilerVersion =
     runCommand "dotnet" $"restore \"{projectFile}\" --force --no-cache" projectPath envVars |> ignore
     
     // Then build
-    runCommand "dotnet" $"build \"{projectFile}\" -c {compilerConfiguration} --no-restore /p:LangVersion=preview" projectPath envVars
+    runCommand "dotnet" $"build \"{projectFile}\" -c {compilerConfiguration} --no-restore" projectPath envVars
     |> ignore
     
     // Clean up global.json after build

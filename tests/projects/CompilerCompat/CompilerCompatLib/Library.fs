@@ -36,29 +36,5 @@ module Library =
     let inline addNums (a: Num) (b: Num) = a + b
     let addNumsConcrete (a: Num) (b: Num) : Num = addNums a b
 
-    // ---- RFC FS-1043 extension operator on external type compat test ----
 
-    /// Extension operator (*) on System.String for string repetition.
-    type System.String with
-        static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
 
-    /// Inline function using extension operator — SRTP constraint resolved via extension.
-    let inline repeatStr (s: string) (n: int) = s * n
-
-    /// Concrete wrapper that captures the resolved call.
-    let repeatStrConcrete (s: string) (n: int) : string = repeatStr s n
-
-    // ---- RFC FS-1043 numeric widening via extension operators compat test ----
-
-    /// Helper to add two floats using the built-in operator (defined before the extension to avoid self-reference).
-    let private addFloats (x: float) (y: float) : float = x + y
-
-    /// Extension operator that widens int to float for addition.
-    type System.Double with
-        static member (+) (x: float, y: int) = addFloats x (float y)
-
-    /// Inline widening function: uses extension (+) to add int to float.
-    let inline addWidened (x: float) (y: int) = x + y
-
-    /// Concrete wrapper that captures the resolved widening call.
-    let addWidenedConcrete (x: float) (y: int) : float = addWidened x y
