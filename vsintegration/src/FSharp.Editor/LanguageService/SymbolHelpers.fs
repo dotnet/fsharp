@@ -15,7 +15,6 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
-open CancellableTasks
 open Internal.Utilities.Library
 
 module internal SymbolHelpers =
