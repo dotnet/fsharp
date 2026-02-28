@@ -9442,8 +9442,14 @@ and GenMethodForBinding
 
     // Check if the method body contains calls to AsyncHelpers.Await - if so, the method should also have the async flag.
     // This handles the case where an inline async method is inlined into this method.
+    // However, if the method has [<NoDynamicInvocation>], its body will be replaced with a 'throw' at runtime,
+    // so we must NOT propagate the async flag from the original body. Doing so would cause the CLR to reject
+    // the type because the method has the async flag (0x2000) but doesn't return a Task-like type.
     let hasAsyncImplFlag =
-        hasAsyncImplFlagFromAttr || ExprContainsAsyncHelpersAwaitCall body
+        let hasNoDynamicInvocation =
+            TryFindFSharpBoolAttributeAssumeFalse g g.attrib_NoDynamicInvocationAttribute v.Attribs
+            |> Option.isSome
+        hasAsyncImplFlagFromAttr || (not hasNoDynamicInvocation && ExprContainsAsyncHelpersAwaitCall body)
 
     let securityAttributes, attrs =
         attrs

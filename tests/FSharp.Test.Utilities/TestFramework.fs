@@ -81,6 +81,8 @@ module Commands =
         // When running tests, we want to roll forward to minor versions (including previews).
         psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
         psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
+        // Enable runtime-async feature for tests that use [<MethodImpl(0x2000)>] or runtimeTask { }.
+        psi.EnvironmentVariables["DOTNET_RuntimeAsync"] <- "1"
 
         // Host can sometimes add this, and it can break things
         psi.EnvironmentVariables.Remove("MSBuildSDKsPath")
