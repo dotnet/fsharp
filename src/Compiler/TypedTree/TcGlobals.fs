@@ -1478,37 +1478,26 @@ type TcGlobals(
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
   member val attrib_IsByRefLikeAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
-  member val attrib_StructLayoutAttribute = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
+
   member val attrib_TypeForwardedToAttribute = findSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
-  member val attrib_FieldOffsetAttribute = findSysAttrib "System.Runtime.InteropServices.FieldOffsetAttribute"
-  member val attrib_MarshalAsAttribute = tryFindSysAttrib "System.Runtime.InteropServices.MarshalAsAttribute"
+
   member val attrib_InAttribute = findSysAttrib "System.Runtime.InteropServices.InAttribute"
-  member val attrib_OutAttribute = findSysAttrib "System.Runtime.InteropServices.OutAttribute"
-  member val attrib_OptionalAttribute = tryFindSysAttrib "System.Runtime.InteropServices.OptionalAttribute"
-  member val attrib_DefaultParameterValueAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DefaultParameterValueAttribute"
-  member val attrib_ThreadStaticAttribute = tryFindSysAttrib "System.ThreadStaticAttribute"
+
   member val attrib_NoEagerConstraintApplicationAttribute = mk_MFCompilerServices_attrib "NoEagerConstraintApplicationAttribute"
-  member val attrib_ContextStaticAttribute = tryFindSysAttrib "System.ContextStaticAttribute"
+
   member val attrib_FlagsAttribute = findSysAttrib "System.FlagsAttribute"
   member val attrib_DefaultMemberAttribute = findSysAttrib "System.Reflection.DefaultMemberAttribute"
-  member val attrib_DebuggerDisplayAttribute = findSysAttrib "System.Diagnostics.DebuggerDisplayAttribute"
-  member val attrib_PreserveSigAttribute = tryFindSysAttrib "System.Runtime.InteropServices.PreserveSigAttribute"
-  member val attrib_MethodImplAttribute = findSysAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
+
   member val attrib_ExtensionAttribute = findSysAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
   member val attrib_DecimalConstantAttribute = findSysAttrib "System.Runtime.CompilerServices.DecimalConstantAttribute"
   member val attribs_Unsupported = v_attribs_Unsupported
 
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
-  member val attrib_NonSerializedAttribute                 = tryFindSysAttrib "System.NonSerializedAttribute"
 
-  member val attrib_AutoSerializableAttribute              = mk_MFCore_attrib "AutoSerializableAttribute"
-  member val attrib_EntryPointAttribute                    = mk_MFCore_attrib "EntryPointAttribute"
-  member val attrib_LiteralAttribute                       = mk_MFCore_attrib "LiteralAttribute"
   member val attrib_ConditionalAttribute                   = findSysAttrib "System.Diagnostics.ConditionalAttribute"
-  member val attrib_OptionalArgumentAttribute              = mk_MFCore_attrib "OptionalArgumentAttribute"
+
   member val attrib_DefaultValueAttribute                  = mk_MFCore_attrib "DefaultValueAttribute"
-  member val attrib_ClassAttribute                         = mk_MFCore_attrib "ClassAttribute"
-  member val attrib_InterfaceAttribute                     = mk_MFCore_attrib "InterfaceAttribute"
+
   member val attrib_StructAttribute                        = mk_MFCore_attrib "StructAttribute"
   member val attrib_ReflectedDefinitionAttribute           = mk_MFCore_attrib "ReflectedDefinitionAttribute"
   member val attrib_CompiledNameAttribute                  = mk_MFCore_attrib "CompiledNameAttribute"

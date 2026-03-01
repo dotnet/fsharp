@@ -2464,13 +2464,9 @@ val EntityTryGetBoolAttribute:
 
 val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 
-val IsMatchingFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attrib -> bool
-
 val HasFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool
 
 val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
-
-val TryFindFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> Attrib option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///

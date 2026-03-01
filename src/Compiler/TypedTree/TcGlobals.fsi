@@ -313,14 +313,12 @@ type internal TcGlobals =
 
     member attrib_AutoOpenAttribute: BuiltinAttribInfo
 
-    member attrib_AutoSerializableAttribute: BuiltinAttribInfo
 
 
 
 
 
 
-    member attrib_ClassAttribute: BuiltinAttribInfo
 
 
 
@@ -337,19 +335,16 @@ type internal TcGlobals =
 
     member attrib_ConditionalAttribute: BuiltinAttribInfo
 
-    member attrib_ContextStaticAttribute: BuiltinAttribInfo option
 
 
 
     member attrib_CustomOperationAttribute: BuiltinAttribInfo
 
-    member attrib_DebuggerDisplayAttribute: BuiltinAttribInfo
 
 
 
     member attrib_DefaultMemberAttribute: BuiltinAttribInfo
 
-    member attrib_DefaultParameterValueAttribute: BuiltinAttribInfo option
 
     member attrib_DefaultValueAttribute: BuiltinAttribInfo
 
@@ -357,13 +352,11 @@ type internal TcGlobals =
 
     member attrib_DynamicDependencyAttribute: BuiltinAttribInfo
 
-    member attrib_EntryPointAttribute: BuiltinAttribInfo
 
     member attrib_EqualityConditionalOnAttribute: BuiltinAttribInfo
 
     member attrib_ExtensionAttribute: BuiltinAttribInfo
 
-    member attrib_FieldOffsetAttribute: BuiltinAttribInfo
 
     member attrib_FlagsAttribute: BuiltinAttribInfo
 
@@ -373,22 +366,18 @@ type internal TcGlobals =
     member attrib_InAttribute: BuiltinAttribInfo
 
 
-    member attrib_InterfaceAttribute: BuiltinAttribInfo
 
     member attrib_IsReadOnlyAttribute: BuiltinAttribInfo
 
     member attrib_IsUnmanagedAttribute: BuiltinAttribInfo
 
-    member attrib_LiteralAttribute: BuiltinAttribInfo
 
-    member attrib_MarshalAsAttribute: BuiltinAttribInfo option
 
     member attrib_MeasureAttribute: BuiltinAttribInfo
 
 
     member attrib_MemberNotNullWhenAttribute: BuiltinAttribInfo
 
-    member attrib_MethodImplAttribute: BuiltinAttribInfo
 
 
 
@@ -396,7 +385,6 @@ type internal TcGlobals =
     member attrib_NoEagerConstraintApplicationAttribute: BuiltinAttribInfo
 
 
-    member attrib_NonSerializedAttribute: BuiltinAttribInfo option
 
     member attrib_NullableAttribute: BuiltinAttribInfo
 
@@ -406,15 +394,11 @@ type internal TcGlobals =
 
     member attrib_NullableContextAttribute_opt: BuiltinAttribInfo option
 
-    member attrib_OptionalArgumentAttribute: BuiltinAttribInfo
 
-    member attrib_OptionalAttribute: BuiltinAttribInfo option
 
-    member attrib_OutAttribute: BuiltinAttribInfo
 
     member attrib_ParamArrayAttribute: BuiltinAttribInfo
 
-    member attrib_PreserveSigAttribute: BuiltinAttribInfo option
 
 
 
@@ -440,7 +424,6 @@ type internal TcGlobals =
 
     member attrib_StructAttribute: BuiltinAttribInfo
 
-    member attrib_StructLayoutAttribute: BuiltinAttribInfo
 
 
 
@@ -448,7 +431,6 @@ type internal TcGlobals =
 
     member attrib_IsByRefLikeAttribute_opt: BuiltinAttribInfo option
 
-    member attrib_ThreadStaticAttribute: BuiltinAttribInfo option
 
     member attrib_TypeForwardedToAttribute: BuiltinAttribInfo
 
