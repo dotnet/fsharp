@@ -9205,8 +9205,8 @@ and ExprContainsAsyncHelpersAwaitCall expr =
             binds |> List.exists (fun b -> check b.Expr) || check body
         | Expr.Sequential (e1, e2, _, _) ->
             check e1 || check e2
-        | Expr.Lambda (_, _, _, _, body, _, _) ->
-            check body
+        | Expr.Lambda _ ->
+            false   // Lambda bodies become separate closure classes; don't propagate async flag across lambda boundaries
         | Expr.TyLambda (_, _, body, _, _) ->
             check body
         | Expr.App (f, _, _, args, _) ->

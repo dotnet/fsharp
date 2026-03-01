@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <FscToolPath>$(MSBuildThisFileDirectory)..\..\..\..\artifacts\bin\fsc\Release\net10.0\</FscToolPath>
+    <FscToolExe>fsc.exe</FscToolExe>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="RuntimeTaskBuilder.fs" />
+    <Compile Include="Api.fs" />
+  </ItemGroup>
+</Project>

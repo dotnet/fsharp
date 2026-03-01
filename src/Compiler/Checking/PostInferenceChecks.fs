@@ -1837,7 +1837,15 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
 
         // Check argument types
         for arg in syntacticArgs do
-            if arg.InlineIfLambda && (not inlined || not (isFunTy g arg.Type || isFSharpDelegateTy g arg.Type)) then
+            // Allow [<InlineIfLambda>] on parameters of runtime-async methods (MethodImplOptions.Async = 0x2000).
+            // These methods are declared 'inline' but compiled as real methods (ValInline.Never) due to the
+            // async attribute. Their lambda parameters are still inlined into the method body at the call site.
+            let isRuntimeAsyncMember =
+                memberVal |> Option.exists (fun v ->
+                    match TryFindFSharpAttribute g g.attrib_MethodImplAttribute v.Attribs with
+                    | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x2000) <> 0x0
+                    | _ -> false)
+            if arg.InlineIfLambda && ((not inlined && not isRuntimeAsyncMember) || not (isFunTy g arg.Type || isFSharpDelegateTy g arg.Type)) then
                 errorR(Error(FSComp.SR.tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod(), arg.Range))
 
             CheckValSpecAux permitByRefType cenv env arg (fun () ->

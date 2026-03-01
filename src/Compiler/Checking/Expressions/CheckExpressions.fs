@@ -11345,11 +11345,19 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             // SynExpr.Typed wrapper from the innermost lambda body before type-checking against bodyExprTy.
             let bodyExprTy, rhsExpr =
                 if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync &&
-                   HasMethodImplAsyncAttribute g valAttribs then
+                   HasMethodImplAsyncAttribute g valAttribs &&
+                   not isInline then
                     match rtyOpt with
                     | Some (SynBindingReturnInfo(typeName = synReturnTy)) ->
-                        let retTy, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv synReturnTy
-                        if IsTaskLikeType g retTy then
+                        // Use NoNewTypars to resolve the return type. If the return type contains free
+                        // type parameters (e.g., Task<'T> in a generic method like Run), TcTypeOrMeasure
+                        // will throw and we skip the special handling. The body type-checks correctly
+                        // against the declared return type without special handling in that case.
+                        let retTyOpt =
+                            try Some (fst (TcTypeOrMeasure (Some TyparKind.Type) cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv synReturnTy))
+                            with RecoverableException _ -> None
+                        match retTyOpt with
+                        | Some retTy when IsTaskLikeType g retTy ->
                             let unwrappedReturnTy = UnwrapTaskLikeType g retTy
                             // Pre-unify overallPatTy with unit -> Task<T> BEFORE body type-checking.
                             // This gives the Val its correct declared type (unit -> Task<T>).
@@ -11378,7 +11386,23 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                                         e
                                 | _ -> e
                             bodyTy, stripTypedFromInnermostLambda rhsExpr
-                        else overallExprTy, rhsExpr
+                        | _ ->
+                            // Return type contains free type parameters (e.g., Task<'T>).
+                            // The body type-checks correctly against the declared return type
+                            // (e.g., cast (f()) type-checks as Task<'T> via polymorphic cast).
+                            // Strip the SynExpr.Typed wrapper to avoid FS0039 errors from
+                            // TcExprTypeAnnotated trying to resolve 'T with NoNewTypars.
+                            let rec stripTypedFromInnermostLambda2 (e: SynExpr) =
+                                match e with
+                                | SynExpr.Lambda(isMember, isSubsequent, spats, body, parsedData, m, trivia) ->
+                                    match body with
+                                    | SynExpr.Lambda _ ->
+                                        SynExpr.Lambda(isMember, isSubsequent, spats, stripTypedFromInnermostLambda2 body, parsedData, m, trivia)
+                                    | SynExpr.Typed(innerBody, _, _) ->
+                                        SynExpr.Lambda(isMember, isSubsequent, spats, innerBody, parsedData, m, trivia)
+                                    | _ -> e
+                                | _ -> e
+                            overallExprTy, stripTypedFromInnermostLambda2 rhsExpr
                     | None -> overallExprTy, rhsExpr
                 else
                     overallExprTy, rhsExpr
@@ -11391,7 +11415,8 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         // Return type validation AFTER type inference (overallPatTy is now resolved)
         if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync &&
-           HasMethodImplAsyncAttribute g valAttribs then
+           HasMethodImplAsyncAttribute g valAttribs &&
+           not isInline then
             let _, returnTy = stripFunTy g overallPatTy
             // Check that async methods return Task, Task<T>, ValueTask, or ValueTask<T>
             if not (IsTaskLikeType g returnTy) then
