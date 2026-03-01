@@ -1510,7 +1510,6 @@ type TcGlobals(
   member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
-  member val attrib_IlExperimentalAttribute                   = findSysAttrib "System.Diagnostics.CodeAnalysis.ExperimentalAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 

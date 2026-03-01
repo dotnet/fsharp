@@ -420,7 +420,6 @@ type internal TcGlobals =
 
     member attrib_TypeForwardedToAttribute: BuiltinAttribInfo
 
-    member attrib_IlExperimentalAttribute: BuiltinAttribInfo
 
     member attribs_Unsupported: TypedTree.TyconRef list
 
