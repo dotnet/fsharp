@@ -1252,6 +1252,11 @@ type WellKnownILAttributes =
     | NoEagerConstraintApplicationAttribute = (1u <<< 17)
     | DefaultMemberAttribute = (1u <<< 18)
     | ObsoleteAttribute = (1u <<< 19)
+    | CompilerFeatureRequiredAttribute = (1u <<< 20)
+    | ExperimentalAttribute = (1u <<< 21)
+    | RequiredMemberAttribute = (1u <<< 22)
+    | NullableContextAttribute = (1u <<< 23)
+    | AttributeUsageAttribute = (1u <<< 24)
     | NotComputed = (1u <<< 31)
 
 type internal ILAttributesStoredRepr =

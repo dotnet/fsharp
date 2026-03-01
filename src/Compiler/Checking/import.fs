@@ -210,18 +210,12 @@ module Nullness =
         with
             member this.Read() =  match this with| AttributesFromIL(idx,attrs) -> attrs.GetCustomAttrs(idx)
             member this.GetNullable(g:TcGlobals) =
-                match g.attrib_NullableAttribute_opt with
-                | None -> ValueNone
-                | Some n ->
-                    TryDecodeILAttribute n.TypeRef (this.Read())
-                    |> tryParseAttributeDataToNullableByteFlags g
+                tryFindILAttribByFlag WellKnownILAttributes.NullableAttribute (this.Read())
+                |> tryParseAttributeDataToNullableByteFlags g
 
             member this.GetNullableContext(g:TcGlobals) =
-                match g.attrib_NullableContextAttribute_opt with
-                | None -> ValueNone
-                | Some n ->
-                    TryDecodeILAttribute n.TypeRef (this.Read())
-                    |> tryParseAttributeDataToNullableByteFlags g
+                tryFindILAttribByFlag WellKnownILAttributes.NullableContextAttribute (this.Read())
+                |> tryParseAttributeDataToNullableByteFlags g
 
     [<Struct;NoEquality;NoComparison>]
     type NullableContextSource =

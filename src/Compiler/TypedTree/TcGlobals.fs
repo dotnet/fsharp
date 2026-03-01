@@ -1468,8 +1468,6 @@ type TcGlobals(
   member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
   member val attrib_IsUnmanagedAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsUnmanagedAttribute"
   member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
-  member val attrib_NullableAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.NullableAttribute"
-  member val attrib_NullableContextAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.NullableContextAttribute"
   member val attrib_NullableAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.NullableAttribute"
   member val attrib_NullableContextAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.NullableContextAttribute"
   member val attrib_MemberNotNullWhenAttribute  = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute"
@@ -1512,9 +1510,6 @@ type TcGlobals(
   member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
-  member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
-  member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
-  member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
   member val attrib_IlExperimentalAttribute                   = findSysAttrib "System.Diagnostics.CodeAnalysis.ExperimentalAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst

@@ -3581,69 +3581,76 @@ let TryFindILAttribute (AttribInfo (atref, _)) attrs =
 let IsILAttrib  (AttribInfo (builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
 
 /// Compute well-known attribute flags for an ILAttributes collection.
-/// This is the 'compute' callback passed to ILAttributesStored.HasWellKnownAttribute.
+/// Classify a single IL attribute, returning its well-known flag (or None).
+let classifyILAttrib (attr: ILAttribute) : WellKnownILAttributes =
+    let atref = attr.Method.DeclaringType.TypeSpec.TypeRef
+
+    if not atref.Enclosing.IsEmpty then
+        WellKnownILAttributes.None
+    else
+        let name = atref.Name
+
+        if name.StartsWith("System.Runtime.CompilerServices.") then
+            match name with
+            | "System.Runtime.CompilerServices.IsReadOnlyAttribute" -> WellKnownILAttributes.IsReadOnlyAttribute
+            | "System.Runtime.CompilerServices.IsUnmanagedAttribute" -> WellKnownILAttributes.IsUnmanagedAttribute
+            | "System.Runtime.CompilerServices.ExtensionAttribute" -> WellKnownILAttributes.ExtensionAttribute
+            | "System.Runtime.CompilerServices.IsByRefLikeAttribute" -> WellKnownILAttributes.IsByRefLikeAttribute
+            | "System.Runtime.CompilerServices.InternalsVisibleToAttribute" -> WellKnownILAttributes.InternalsVisibleToAttribute
+            | "System.Runtime.CompilerServices.CallerMemberNameAttribute" -> WellKnownILAttributes.CallerMemberNameAttribute
+            | "System.Runtime.CompilerServices.CallerFilePathAttribute" -> WellKnownILAttributes.CallerFilePathAttribute
+            | "System.Runtime.CompilerServices.CallerLineNumberAttribute" -> WellKnownILAttributes.CallerLineNumberAttribute
+            | "System.Runtime.CompilerServices.RequiresLocationAttribute" -> WellKnownILAttributes.RequiresLocationAttribute
+            | "System.Runtime.CompilerServices.NullableAttribute" -> WellKnownILAttributes.NullableAttribute
+            | "System.Runtime.CompilerServices.NullableContextAttribute" -> WellKnownILAttributes.NullableContextAttribute
+            | "System.Runtime.CompilerServices.IDispatchConstantAttribute" -> WellKnownILAttributes.IDispatchConstantAttribute
+            | "System.Runtime.CompilerServices.IUnknownConstantAttribute" -> WellKnownILAttributes.IUnknownConstantAttribute
+            | "System.Runtime.CompilerServices.SetsRequiredMembersAttribute" -> WellKnownILAttributes.SetsRequiredMembersAttribute
+            | "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute" -> WellKnownILAttributes.CompilerFeatureRequiredAttribute
+            | "System.Runtime.CompilerServices.RequiredMemberAttribute" -> WellKnownILAttributes.RequiredMemberAttribute
+            | _ -> WellKnownILAttributes.None
+
+        elif name.StartsWith("Microsoft.FSharp.Core.") then
+            match name with
+            | "Microsoft.FSharp.Core.AllowNullLiteralAttribute" -> WellKnownILAttributes.AllowNullLiteralAttribute
+            | "Microsoft.FSharp.Core.ReflectedDefinitionAttribute" -> WellKnownILAttributes.ReflectedDefinitionAttribute
+            | "Microsoft.FSharp.Core.AutoOpenAttribute" -> WellKnownILAttributes.AutoOpenAttribute
+            | "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" ->
+                WellKnownILAttributes.NoEagerConstraintApplicationAttribute
+            | _ -> WellKnownILAttributes.None
+
+        else
+            match name with
+            | "System.ParamArrayAttribute" -> WellKnownILAttributes.ParamArrayAttribute
+            | "System.Reflection.DefaultMemberAttribute" -> WellKnownILAttributes.DefaultMemberAttribute
+            | "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute" ->
+                WellKnownILAttributes.SetsRequiredMembersAttribute
+            | "System.ObsoleteAttribute" -> WellKnownILAttributes.ObsoleteAttribute
+            | "System.Diagnostics.CodeAnalysis.ExperimentalAttribute" -> WellKnownILAttributes.ExperimentalAttribute
+            | "System.AttributeUsageAttribute" -> WellKnownILAttributes.AttributeUsageAttribute
+            | _ -> WellKnownILAttributes.None
+
+/// Compute well-known attribute flags for an ILAttributes collection.
 let computeILWellKnownFlags (_g: TcGlobals) (attrs: ILAttributes) : WellKnownILAttributes =
     let mutable flags = WellKnownILAttributes.None
-
     for attr in attrs.AsArray() do
-        let atref = attr.Method.DeclaringType.TypeSpec.TypeRef
-
-        if atref.Enclosing.IsEmpty then
-            let name = atref.Name
-
-            if name.StartsWith("System.Runtime.CompilerServices.") then
-                match name with
-                | "System.Runtime.CompilerServices.IsReadOnlyAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.IsReadOnlyAttribute
-                | "System.Runtime.CompilerServices.IsUnmanagedAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.IsUnmanagedAttribute
-                | "System.Runtime.CompilerServices.ExtensionAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.ExtensionAttribute
-                | "System.Runtime.CompilerServices.IsByRefLikeAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.IsByRefLikeAttribute
-                | "System.Runtime.CompilerServices.InternalsVisibleToAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.InternalsVisibleToAttribute
-                | "System.Runtime.CompilerServices.CallerMemberNameAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.CallerMemberNameAttribute
-                | "System.Runtime.CompilerServices.CallerFilePathAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.CallerFilePathAttribute
-                | "System.Runtime.CompilerServices.CallerLineNumberAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.CallerLineNumberAttribute
-                | "System.Runtime.CompilerServices.RequiresLocationAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.RequiresLocationAttribute
-                | "System.Runtime.CompilerServices.NullableAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.NullableAttribute
-                | "System.Runtime.CompilerServices.IDispatchConstantAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.IDispatchConstantAttribute
-                | "System.Runtime.CompilerServices.IUnknownConstantAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.IUnknownConstantAttribute
-                | "System.Runtime.CompilerServices.SetsRequiredMembersAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.SetsRequiredMembersAttribute
-                | _ -> ()
-
-            elif name.StartsWith("Microsoft.FSharp.Core.") then
-                match name with
-                | "Microsoft.FSharp.Core.AllowNullLiteralAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.AllowNullLiteralAttribute
-                | "Microsoft.FSharp.Core.ReflectedDefinitionAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.ReflectedDefinitionAttribute
-                | "Microsoft.FSharp.Core.AutoOpenAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.AutoOpenAttribute
-                | "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.NoEagerConstraintApplicationAttribute
-                | _ -> ()
-
-            else
-                match name with
-                | "System.ParamArrayAttribute" -> flags <- flags ||| WellKnownILAttributes.ParamArrayAttribute
-                | "System.Reflection.DefaultMemberAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.DefaultMemberAttribute
-                | "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute" ->
-                    flags <- flags ||| WellKnownILAttributes.SetsRequiredMembersAttribute
-                | "System.ObsoleteAttribute" -> flags <- flags ||| WellKnownILAttributes.ObsoleteAttribute
-                | _ -> ()
-
+        flags <- flags ||| classifyILAttrib attr
     flags
+
+/// Find the first IL attribute matching a specific well-known flag and decode it.
+let tryFindILAttribByFlag (flag: WellKnownILAttributes) (cattrs: ILAttributes) =
+    cattrs.AsArray()
+    |> Array.tryPick (fun attr ->
+        if classifyILAttrib attr &&& flag <> WellKnownILAttributes.None then
+            Some(decodeILAttribData attr)
+        else
+            None)
+
+/// Active pattern: find and decode a well-known IL attribute.
+/// Returns decoded (ILAttribElem list * ILAttributeNamedArg list).
+[<return: Struct>]
+let (|ILAttribDecoded|_|) (flag: WellKnownILAttributes) (cattrs: ILAttributes) =
+    tryFindILAttribByFlag flag cattrs |> ValueOption.ofOption
 
 type ILAttributesStored with
 

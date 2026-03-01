@@ -1329,7 +1329,9 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
             match minfo with
             | ILMeth(_, ilMethInfo, _) ->
                 ilMethInfo.RawMetadata.HasWellKnownAttribute(g, WellKnownILAttributes.SetsRequiredMembersAttribute)
-            | _ -> TryFindILAttribute g.attrib_SetsRequiredMembersAttribute (minfo.GetCustomAttrs())
+            | _ ->
+                tryFindILAttribByFlag WellKnownILAttributes.SetsRequiredMembersAttribute (minfo.GetCustomAttrs())
+                |> Option.isSome
         ) then
 
         let requiredProps =
@@ -11467,17 +11469,20 @@ and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt
         let inheritedDefault = true
         if tcref.IsILTycon then
             let tdef = tcref.ILTyconRawMetadata
-            let tref = g.attrib_AttributeUsageAttribute.TypeRef
 
-            match TryDecodeILAttribute tref tdef.CustomAttrs with
-            | Some ([ILAttribElem.Int32 validOn ], named) ->
-                let inherited =
-                    match List.tryPick (function "Inherited", _, _, ILAttribElem.Bool res -> Some res | _ -> None) named with
-                    | None -> inheritedDefault
-                    | Some x -> x
-                (validOn, inherited)
-            | Some ([ILAttribElem.Int32 validOn; ILAttribElem.Bool _allowMultiple; ILAttribElem.Bool inherited ], _) ->
-                (validOn, inherited)
+            match tdef.CustomAttrs with
+            | ILAttribDecoded WellKnownILAttributes.AttributeUsageAttribute decoded ->
+                match decoded with
+                | ([ILAttribElem.Int32 validOn ], named) ->
+                    let inherited =
+                        match List.tryPick (function "Inherited", _, _, ILAttribElem.Bool res -> Some res | _ -> None) named with
+                        | None -> inheritedDefault
+                        | Some x -> x
+                    (validOn, inherited)
+                | ([ILAttribElem.Int32 validOn; ILAttribElem.Bool _allowMultiple; ILAttribElem.Bool inherited ], _) ->
+                    (validOn, inherited)
+                | _ ->
+                    (validOnDefault, inheritedDefault)
             | _ ->
                 (validOnDefault, inheritedDefault)
         else

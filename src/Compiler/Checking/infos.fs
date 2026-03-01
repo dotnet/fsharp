@@ -1266,9 +1266,9 @@ type MethInfo =
                  let attrs = p.CustomAttrs
                  let isParamArrayArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.ParamArrayAttribute)
                  let reflArgInfo =
-                     match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef attrs with
-                     | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
-                     | Some _ -> ReflectedArgInfo.Quote false
+                     match attrs with
+                     | ILAttribDecoded WellKnownILAttributes.ReflectedDefinitionAttribute ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
+                     | ILAttribDecoded WellKnownILAttributes.ReflectedDefinitionAttribute _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None
                  let isOutArg = (p.IsOut && not p.IsIn)
                  let isInArg = (p.IsIn && not p.IsOut)
@@ -1754,7 +1754,9 @@ type ILPropInfo =
         (x.HasSetter && x.SetterMethod.IsNewSlot)
 
     /// Indicates if the property is required, i.e. has RequiredMemberAttribute applied.
-    member x.IsRequired = TryFindILAttribute x.TcGlobals.attrib_RequiredMemberAttribute x.RawMetadata.CustomAttrs
+    member x.IsRequired =
+        tryFindILAttribByFlag WellKnownILAttributes.RequiredMemberAttribute x.RawMetadata.CustomAttrs
+        |> Option.isSome
 
     /// Get the names and types of the indexer arguments associated with the IL property.
     ///

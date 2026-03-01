@@ -321,7 +321,6 @@ type internal TcGlobals =
 
 
 
-
     member attrib_ComparisonConditionalOnAttribute: BuiltinAttribInfo
 
     member attrib_CompilationArgumentCountsAttribute: BuiltinAttribInfo
@@ -330,8 +329,6 @@ type internal TcGlobals =
 
 
     member attrib_CompiledNameAttribute: BuiltinAttribInfo
-
-    member attrib_CompilerFeatureRequiredAttribute: BuiltinAttribInfo
 
     member attrib_ConditionalAttribute: BuiltinAttribInfo
 
@@ -388,11 +385,7 @@ type internal TcGlobals =
 
     member attrib_NullableAttribute: BuiltinAttribInfo
 
-    member attrib_NullableAttribute_opt: BuiltinAttribInfo option
-
     member attrib_NullableContextAttribute: BuiltinAttribInfo
-
-    member attrib_NullableContextAttribute_opt: BuiltinAttribInfo option
 
 
 
@@ -405,10 +398,6 @@ type internal TcGlobals =
     member attrib_ReflectedDefinitionAttribute: BuiltinAttribInfo
 
 
-    member attrib_RequiredMemberAttribute: BuiltinAttribInfo
-
-
-
     member attrib_SealedAttribute: BuiltinAttribInfo
 
     member attrib_SecurityAttribute: BuiltinAttribInfo option
@@ -416,9 +405,6 @@ type internal TcGlobals =
     member attrib_SecurityCriticalAttribute: BuiltinAttribInfo
 
     member attrib_SecuritySafeCriticalAttribute: BuiltinAttribInfo
-
-    member attrib_SetsRequiredMembersAttribute: BuiltinAttribInfo
-
 
     member attrib_DecimalConstantAttribute: BuiltinAttribInfo
 
@@ -437,6 +423,7 @@ type internal TcGlobals =
     member attrib_IlExperimentalAttribute: BuiltinAttribInfo
 
     member attribs_Unsupported: TypedTree.TyconRef list
+
 
     member bitwise_and_info: IntrinsicValRef
 

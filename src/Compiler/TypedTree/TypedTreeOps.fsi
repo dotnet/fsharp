@@ -2375,7 +2375,15 @@ val IsILAttrib: BuiltinAttribInfo -> ILAttribute -> bool
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
 /// Compute well-known attribute flags for an ILAttributes collection.
+val classifyILAttrib: attr: ILAttribute -> WellKnownILAttributes
+
 val computeILWellKnownFlags: _g: TcGlobals -> attrs: ILAttributes -> WellKnownILAttributes
+
+val tryFindILAttribByFlag: flag: WellKnownILAttributes -> cattrs: ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+
+[<return: Struct>]
+val (|ILAttribDecoded|_|):
+    flag: WellKnownILAttributes -> cattrs: ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) voption
 
 type ILAttributesStored with
 

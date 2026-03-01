@@ -231,13 +231,12 @@ let MethInfoHasAttribute g m attribSpec minfo  =
                     (fun _ -> Some ())
         |> Option.isSome
 
-let private CheckCompilerFeatureRequiredAttribute (g: TcGlobals) cattrs msg m =
+let private CheckCompilerFeatureRequiredAttribute (_g: TcGlobals) cattrs msg m =
     // In some cases C# will generate both ObsoleteAttribute and CompilerFeatureRequiredAttribute.
     // Specifically, when default constructor is generated for class with any required members in them.
     // ObsoleteAttribute should be ignored if CompilerFeatureRequiredAttribute is present, and its name is "RequiredMembers".
-    let (AttribInfo(tref,_)) = g.attrib_CompilerFeatureRequiredAttribute
-    match TryDecodeILAttribute tref cattrs with
-    | Some([ILAttribElem.String (Some featureName) ], _) when featureName = "RequiredMembers" ->
+    match cattrs with
+    | ILAttribDecoded WellKnownILAttributes.CompilerFeatureRequiredAttribute ([ILAttribElem.String (Some featureName) ], _) when featureName = "RequiredMembers" ->
         CompleteD
     | _ ->
         ErrorD (ObsoleteDiagnostic(true, None, msg, None, m))
@@ -252,15 +251,14 @@ let private extractILAttributeInfo namedArgs =
     let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
     (diagnosticId, urlFormat)
 
-let private CheckILExperimentalAttributes (g: TcGlobals) cattrs m =
-    let (AttribInfo(tref,_)) = g.attrib_IlExperimentalAttribute
-    match TryDecodeILAttribute tref cattrs with
+let private CheckILExperimentalAttributes (_g: TcGlobals) cattrs m =
+    match cattrs with
     // [Experimental("DiagnosticId")]
     // [Experimental(diagnosticId: "DiagnosticId")]
     // [Experimental("DiagnosticId", UrlFormat = "UrlFormat")]
     // [Experimental(diagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")]
     // Constructors deciding on DiagnosticId and UrlFormat properties.
-    | Some ([ attribElement ], namedArgs) ->
+    | ILAttribDecoded WellKnownILAttributes.ExperimentalAttribute ([ attribElement ], namedArgs) ->
         let diagnosticId = 
             match attribElement with 
             | ILAttribElem.String (Some msg) -> Some msg
@@ -272,15 +270,13 @@ let private CheckILExperimentalAttributes (g: TcGlobals) cattrs m =
 
         WarnD(Experimental(message, diagnosticId, urlFormat, m))
     // Empty constructor or only UrlFormat property are not allowed.
-    | Some _
-    | None -> CompleteD
+    | _ -> CompleteD
 
 let private CheckILObsoleteAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     if isByrefLikeTyconRef then
         CompleteD
     else
-        let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
-        match TryDecodeILAttribute tref cattrs with
+        match cattrs with
         // [Obsolete]
         // [Obsolete("Message")]
         // [Obsolete("Message", true)]
@@ -291,30 +287,32 @@ let private CheckILObsoleteAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs 
         // [Obsolete("Message", true, DiagnosticId = "DiagnosticId")]
         // [Obsolete("Message", true, DiagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")]
         // Constructors deciding on IsError and Message properties.
-        | Some ([ attribElement ], namedArgs) ->
-            let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
-            let msg = 
-                match attribElement with 
-                | ILAttribElem.String (Some msg) -> Some msg
-                | ILAttribElem.String None
-                | _ -> None
+        | ILAttribDecoded WellKnownILAttributes.ObsoleteAttribute decoded ->
+            match decoded with
+            | ([ attribElement ], namedArgs) ->
+                let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
+                let msg = 
+                    match attribElement with 
+                    | ILAttribElem.String (Some msg) -> Some msg
+                    | ILAttribElem.String None
+                    | _ -> None
 
-            WarnD (ObsoleteDiagnostic(false, diagnosticId, msg, urlFormat, m))
-        | Some ([ILAttribElem.String msg; ILAttribElem.Bool isError ], namedArgs) ->
-            let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
-            if isError then
-                if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) then
-                    CheckCompilerFeatureRequiredAttribute g cattrs msg m
-                else
-                    ErrorD (ObsoleteDiagnostic(true, diagnosticId, msg, urlFormat, m))
-            else
                 WarnD (ObsoleteDiagnostic(false, diagnosticId, msg, urlFormat, m))
-        // Only DiagnosticId, UrlFormat
-        | Some (_, namedArgs) ->
-            let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
-            WarnD(ObsoleteDiagnostic(false, diagnosticId, None, urlFormat, m))
+            | ([ILAttribElem.String msg; ILAttribElem.Bool isError ], namedArgs) ->
+                let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
+                if isError then
+                    if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) then
+                        CheckCompilerFeatureRequiredAttribute g cattrs msg m
+                    else
+                        ErrorD (ObsoleteDiagnostic(true, diagnosticId, msg, urlFormat, m))
+                else
+                    WarnD (ObsoleteDiagnostic(false, diagnosticId, msg, urlFormat, m))
+            // Only DiagnosticId, UrlFormat
+            | (_, namedArgs) ->
+                let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
+                WarnD(ObsoleteDiagnostic(false, diagnosticId, None, urlFormat, m))
         // No arguments
-        | None -> CompleteD
+        | _ -> CompleteD
 
 /// Check IL attributes for Experimental, warnings as data
 let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
@@ -437,13 +435,10 @@ let CheckILAttributesForUnseenStored (g: TcGlobals) (cattrsStored: ILAttributesS
 
 /// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckILAttributesForUnseen (g: TcGlobals) cattrs _m = 
-    let (AttribInfo(tref, _)) = g.attrib_SystemObsolete
-    let hasObsolete = Option.isSome (TryDecodeILAttribute tref cattrs)
+    ignore g
+    let hasObsolete = tryFindILAttribByFlag WellKnownILAttributes.ObsoleteAttribute cattrs |> Option.isSome
     if hasObsolete then
-        match g.attrib_IsByRefLikeAttribute_opt with
-        | Some (AttribInfo(isByRefLikeTref, _)) ->
-            not (Option.isSome (TryDecodeILAttribute isByRefLikeTref cattrs))
-        | None -> true
+        not (tryFindILAttribByFlag WellKnownILAttributes.IsByRefLikeAttribute cattrs |> Option.isSome)
     else
         false
 
