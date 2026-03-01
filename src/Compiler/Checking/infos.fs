@@ -291,7 +291,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         if isCalleeSideOptArg then
             CalleeSide
         elif isCallerSideOptArg then
-            let defaultParameterValueAttribute = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute attribs
+            let defaultParameterValueAttribute = tryFindValAttribByFlag g WellKnownValAttributes.DefaultParameterValueAttribute attribs
             match defaultParameterValueAttribute with
             | None ->
                 // Do a type-directed analysis of the type to determine the default value to pass.

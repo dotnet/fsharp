@@ -4484,7 +4484,7 @@ and TcTyparDecl (cenv: cenv) env synTyparDecl =
     let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
     let hasEqDepAttr = HasFSharpAttribute g g.attrib_EqualityConditionalOnAttribute attrs
     let hasCompDepAttr = HasFSharpAttribute g g.attrib_ComparisonConditionalOnAttribute attrs
-    let attrs = attrs |> List.filter (IsMatchingFSharpAttribute g g.attrib_MeasureAttribute >> not)
+    let attrs = attrs |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
     let tp = Construct.NewTypar (kind, TyparRigidity.WarnIfNotRigid, synTypar, false, TyparDynamicReq.Yes, attrs, hasEqDepAttr, hasCompDepAttr)
 

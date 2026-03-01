@@ -3728,6 +3728,7 @@ let classifyEntityAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownEntityAttrib
 
             | [| "System"; "Diagnostics"; name |] ->
                 match name with
+                | "DebuggerDisplayAttribute" -> flag <- WellKnownEntityAttributes.DebuggerDisplayAttribute
                 | "DebuggerTypeProxyAttribute" -> flag <- WellKnownEntityAttributes.DebuggerTypeProxyAttribute
                 | _ -> ()
 
@@ -3956,6 +3957,7 @@ let classifyValAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownValAttributes =
                 | "DllImportAttribute" -> flag <- WellKnownValAttributes.DllImportAttribute
                 | "InAttribute" -> flag <- WellKnownValAttributes.InAttribute
                 | "OutAttribute" -> flag <- WellKnownValAttributes.OutAttribute
+                | "MarshalAsAttribute" -> flag <- WellKnownValAttributes.MarshalAsAttribute
                 | "DefaultParameterValueAttribute" -> flag <- WellKnownValAttributes.DefaultParameterValueAttribute
                 | "OptionalAttribute" -> flag <- WellKnownValAttributes.OptionalAttribute
                 | "PreserveSigAttribute" -> flag <- WellKnownValAttributes.PreserveSigAttribute
@@ -4039,6 +4041,21 @@ let (|ValAttribString|_|) (g: TcGlobals) (flag: WellKnownValAttributes) (attribs
 /// Check if a raw attribute list has a specific well-known val flag (ad-hoc, non-caching).
 let attribsHaveValFlag g (flag: WellKnownValAttributes) (attribs: Attribs) =
     attribsHaveFlag classifyValAttrib WellKnownValAttributes.None g flag attribs
+
+/// Filter out well-known attributes from a list. Single-pass using classify functions.
+/// Attributes matching ANY set bit in entityMask or valMask are removed.
+let filterOutWellKnownAttribs
+    (g: TcGlobals)
+    (entityMask: WellKnownEntityAttributes)
+    (valMask: WellKnownValAttributes)
+    (attribs: Attribs)
+    =
+    attribs
+    |> List.filter (fun attrib ->
+        (entityMask = WellKnownEntityAttributes.None
+         || classifyEntityAttrib g attrib &&& entityMask = WellKnownEntityAttributes.None)
+        && (valMask = WellKnownValAttributes.None
+            || classifyValAttrib g attrib &&& valMask = WellKnownValAttributes.None))
 
 /// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
 let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (argInfo: ArgReprInfo) : bool =
@@ -12271,8 +12288,7 @@ let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceC
     | _ -> ValueNone
 
 let tryFindExtensionAttribute (g: TcGlobals) (attribs: Attrib list): Attrib option =
-    attribs
-    |> List.tryFind (IsMatchingFSharpAttribute g g.attrib_ExtensionAttribute)
+    tryFindEntityAttribByFlag g WellKnownEntityAttributes.ExtensionAttribute attribs
 
 let tryAddExtensionAttributeIfNotAlreadyPresentForModule
     (g: TcGlobals)

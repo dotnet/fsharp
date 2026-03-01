@@ -2396,8 +2396,21 @@ type ILFieldDef with
 /// Compute well-known attribute flags for an Entity's Attrib list.
 val computeEntityWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownEntityAttributes
 
+/// Classify a single entity-level attrib to its well-known flag (or None).
+val classifyEntityAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownEntityAttributes
+
+/// Classify a single val-level attrib to its well-known flag (or None).
+val classifyValAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownValAttributes
+
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
 val attribsHaveEntityFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> bool
+
+val filterOutWellKnownAttribs:
+    g: TcGlobals ->
+    entityMask: WellKnownEntityAttributes ->
+    valMask: WellKnownValAttributes ->
+    attribs: Attribs ->
+        Attribs
 
 val tryFindEntityAttribByFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> Attrib option
 
@@ -2416,6 +2429,8 @@ val tryFindAssemblyAttribByFlag: g: TcGlobals -> flag: WellKnownAssemblyAttribut
 val (|AssemblyAttribString|_|): g: TcGlobals -> flag: WellKnownAssemblyAttributes -> attribs: Attribs -> string voption
 
 val attribsHaveValFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> bool
+
+val tryFindValAttribByFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> Attrib option
 
 [<return: Struct>]
 val (|ValAttrib|_|): g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> Attrib voption

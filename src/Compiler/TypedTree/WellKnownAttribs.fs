@@ -56,6 +56,7 @@ type internal WellKnownEntityAttributes =
     | UnverifiableAttribute = (1uL <<< 45)
     | EditorBrowsableAttribute = (1uL <<< 46)
     | CompiledNameAttribute = (1uL <<< 47)
+    | DebuggerDisplayAttribute = (1uL <<< 48)
     | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known assembly-level attributes.
@@ -111,6 +112,7 @@ type internal WellKnownValAttributes =
     | FieldOffsetAttribute = (1uL <<< 34)
     | CompiledNameAttribute = (1uL <<< 35)
     | WarnOnWithoutNullArgumentAttribute = (1uL <<< 36)
+    | MarshalAsAttribute = (1uL <<< 37)
     | NotComputed = (1uL <<< 63)
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.

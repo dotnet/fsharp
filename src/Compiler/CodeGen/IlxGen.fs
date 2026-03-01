@@ -8811,9 +8811,9 @@ and GenMarshal cenv attribs =
         | IlReflectBackend -> attribs
         | IlWriteBackend ->
             attribs
-            |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_MarshalAsAttribute >> not)
+            |> filterOutWellKnownAttribs g WellKnownEntityAttributes.None WellKnownValAttributes.MarshalAsAttribute
 
-    match TryFindFSharpAttributeOpt g g.attrib_MarshalAsAttribute attribs with
+    match tryFindValAttribByFlag g WellKnownValAttributes.MarshalAsAttribute attribs with
     | Some(Attrib(_, _, [ AttribInt32Arg unmanagedType ], namedArgs, _, _, m)) ->
         let decoder = AttributeDecoder namedArgs
 
@@ -8959,16 +8959,19 @@ and GenParamAttribs cenv paramTy attribs =
         <> WellKnownValAttributes.None
 
     let defaultValue =
-        TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute attribs
+        tryFindValAttribByFlag g WellKnownValAttributes.DefaultParameterValueAttribute attribs
         |> Option.bind OptionalArgInfo.FieldInitForDefaultParameterValueAttrib
     // Return the filtered attributes. Do not generate In, Out, Optional or DefaultParameterValue attributes
     // as custom attributes in the code - they are implicit from the IL bits for these
     let attribs =
         attribs
-        |> List.filter (IsMatchingFSharpAttribute g g.attrib_InAttribute >> not)
-        |> List.filter (IsMatchingFSharpAttribute g g.attrib_OutAttribute >> not)
-        |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_OptionalAttribute >> not)
-        |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute >> not)
+        |> filterOutWellKnownAttribs
+            g
+            WellKnownEntityAttributes.None
+            (WellKnownValAttributes.InAttribute
+             ||| WellKnownValAttributes.OutAttribute
+             ||| WellKnownValAttributes.OptionalAttribute
+             ||| WellKnownValAttributes.DefaultParameterValueAttribute)
 
     let Marshal, attribs = GenMarshal cenv attribs
     inFlag, outFlag, optionalFlag, defaultValue, Marshal, attribs
@@ -9163,8 +9166,11 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     // (See ECMA 335, Partition II, section 23.1.11 - Flags for methods [MethodImplAttributes])
     let attrs =
         attrs
-        |> List.filter (IsMatchingFSharpAttribute g g.attrib_MethodImplAttribute >> not)
-        |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_PreserveSigAttribute >> not)
+        |> filterOutWellKnownAttribs
+            g
+            WellKnownEntityAttributes.None
+            (WellKnownValAttributes.MethodImplAttribute
+             ||| WellKnownValAttributes.PreserveSigAttribute)
 
     let hasPreserveSigImplFlag = ((implflags &&& 0x80) <> 0x0) || hasPreserveSigAttr
     let hasSynchronizedImplFlag = (implflags &&& 0x20) <> 0x0
@@ -9293,7 +9299,7 @@ and GenMethodForBinding
 
     // Now generate the code.
     let hasPreserveSigNamedArg, ilMethodBody, hasDllImport =
-        match TryFindFSharpAttributeOpt g g.attrib_DllImportAttribute v.Attribs with
+        match tryFindValAttribByFlag g WellKnownValAttributes.DllImportAttribute v.Attribs with
         | Some(Attrib(_, _, [ AttribStringArg dll ], namedArgs, _, _, m)) ->
             if not (isNil methLambdaTypars) then
                 error (Error(FSComp.SR.ilSignatureForExternalFunctionContainsTypeParameters (), m))
@@ -9342,17 +9348,17 @@ and GenMethodForBinding
     // Do not generate DllImport attributes into the code - they are implicit from the P/Invoke
     let attrs =
         v.Attribs
-        |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_DllImportAttribute >> not)
-        |> List.filter (IsMatchingFSharpAttribute g g.attrib_CompiledNameAttribute >> not)
+        |> filterOutWellKnownAttribs
+            g
+            WellKnownEntityAttributes.None
+            (WellKnownValAttributes.DllImportAttribute
+             ||| WellKnownValAttributes.CompiledNameAttribute)
 
     let attrsAppliedToGetterOrSetter, attrs =
         List.partition (fun (Attrib(_, _, _, _, isAppliedToGetterOrSetter, _, _)) -> isAppliedToGetterOrSetter) attrs
 
     let sourceNameAttribs, compiledName =
-        match
-            v.Attribs
-            |> List.tryFind (IsMatchingFSharpAttribute g g.attrib_CompiledNameAttribute)
-        with
+        match tryFindValAttribByFlag g WellKnownValAttributes.CompiledNameAttribute v.Attribs with
         | Some(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> [ mkCompilationSourceNameAttr g v.LogicalName ], Some b
         | _ -> [], None
 
@@ -11019,7 +11025,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             // DebugDisplayAttribute gets copied to the subtypes generated as part of DU compilation
             let debugDisplayAttrs, normalAttrs =
                 tycon.Attribs
-                |> List.partition (IsMatchingFSharpAttribute g g.attrib_DebuggerDisplayAttribute)
+                |> List.partition (fun a ->
+                    classifyEntityAttrib g a &&& WellKnownEntityAttributes.DebuggerDisplayAttribute
+                    <> WellKnownEntityAttributes.None)
 
             let securityAttrs, normalAttrs =
                 normalAttrs
@@ -11055,7 +11063,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     yield! defaultMemberAttrs
                     yield!
                         normalAttrs
-                        |> List.filter (IsMatchingFSharpAttribute g g.attrib_StructLayoutAttribute >> not)
+                        |> filterOutWellKnownAttribs g WellKnownEntityAttributes.StructLayoutAttribute WellKnownValAttributes.None
                         |> GenAttrs cenv eenv
                     yield! ilDebugDisplayAttributes
                 ]
@@ -11157,10 +11165,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                         let fattribs =
                             attribs
-                            // Do not generate FieldOffset as a true CLI custom attribute, since it is implied by other corresponding CLI metadata
-                            |> List.filter (IsMatchingFSharpAttribute g g.attrib_FieldOffsetAttribute >> not)
-                            // Do not generate NonSerialized as a true CLI custom attribute, since it is implied by other corresponding CLI metadata
-                            |> List.filter (IsMatchingFSharpAttributeOpt g g.attrib_NonSerializedAttribute >> not)
+                            |> filterOutWellKnownAttribs
+                                g
+                                WellKnownEntityAttributes.None
+                                (WellKnownValAttributes.FieldOffsetAttribute
+                                 ||| WellKnownValAttributes.NonSerializedAttribute)
 
                         let ilFieldMarshal, fattribs = GenMarshal cenv fattribs
 

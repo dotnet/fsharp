@@ -3810,7 +3810,7 @@ module EstablishTypeDefinitionCores =
                 errorR(Error(FSComp.SR.tcInvalidUseNullAsTrueValue(), m))
                 
             // validate ConditionalAttribute, should it be applied (it's only valid on a type if the type is an attribute type)
-            match attrs |> List.tryFind (IsMatchingFSharpAttribute g g.attrib_ConditionalAttribute) with
+            match tryFindValAttribByFlag g WellKnownValAttributes.ConditionalAttribute attrs with
             | Some _ ->
                 if not(ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkWoNullAppTy g.tcref_System_Attribute [])) g cenv.amap m AllowMultiIntfInstantiations.Yes thisTy) then
                     errorR(Error(FSComp.SR.tcConditionalAttributeUsage(), m))
