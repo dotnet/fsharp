@@ -1,0 +1,24 @@
+<Project>
+
+  <ItemGroup>
+    <!-- ILDasm tool for post-build IL disassembly. ExcludeAssets prevents it from becoming a runtime dependency. -->
+    <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="10.0.0" ExcludeAssets="all" />
+  </ItemGroup>
+
+  <Target Name="ILDasm" AfterTargets="Build">
+    <PropertyGroup>
+      <_ILDasmExe Condition="$([MSBuild]::IsOSPlatform('Windows'))">ildasm.exe</_ILDasmExe>
+      <_ILDasmExe Condition="!$([MSBuild]::IsOSPlatform('Windows'))">ildasm</_ILDasmExe>
+      <_ILDasmDir>$(NuGetPackageRoot)runtime.$(NETCoreSdkPortableRuntimeIdentifier).microsoft.netcore.ildasm/10.0.0/runtimes/$(NETCoreSdkPortableRuntimeIdentifier)/native/</_ILDasmDir>
+      <_ILDasmPath>$(_ILDasmDir)$(_ILDasmExe)</_ILDasmPath>
+      <_ILOutputPath>$(MSBuildProjectDirectory)/$(AssemblyName).il</_ILOutputPath>
+    </PropertyGroup>
+
+    <Error Condition="!Exists('$(_ILDasmPath)')"
+           Text="ILDasm not found at '$(_ILDasmPath)'. Run 'dotnet restore' and retry." />
+
+    <Exec Command="&quot;$(_ILDasmPath)&quot; /utf8 &quot;$(TargetPath)&quot; /out=&quot;$(_ILOutputPath)&quot;" />
+    <Message Importance="high" Text="IL disassembled to $(_ILOutputPath)" />
+  </Target>
+
+</Project>

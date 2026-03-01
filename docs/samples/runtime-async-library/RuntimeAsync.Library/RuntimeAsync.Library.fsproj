@@ -11,4 +11,6 @@
     <Compile Include="RuntimeTaskBuilder.fs" />
     <Compile Include="Api.fs" />
   </ItemGroup>
+
+  <Import Project="..\ILDasm.targets" />
 </Project>
