@@ -102,3 +102,61 @@ let t =
         return i
     }
         """ "MoveNext" [ (Line 14, Col 9, Line 14, Col 33); (Line 13, Col 9, Line 13, Col 18); (Line 14, Col 13, Line 14, Col 14); (Line 15, Col 9, Line 15, Col 17) ]
+
+    // ---- Instrumentation: #19248 edge cases ----
+
+    [<Fact>]
+    let ``Return multi-line expression in async CE - debug point covers full range`` () =
+        verifyMethodDebugPoints """
+module TestModule
+
+let a =
+    async {
+        return
+            (1 + 2)
+    }
+        """ "Invoke" [ (Line 6, Col 9, Line 7, Col 20) ]
+
+    [<Fact>]
+    let ``Implicit yield in list CE - no regression`` () =
+        // List literal [42] is NOT a CE yield — it's a constant list.
+        // Verify the mFull change doesn't break list literals.
+        verifyAllSequencePoints """
+module TestModule
+
+let a = [
+    42
+    ]
+        """ [
+            (Line 4, Col 1, Line 6, Col 6)
+            (Line 16707566, Col 0, Line 16707566, Col 0)
+        ]
+
+    // ---- Instrumentation: #19255 verify sequence point count ----
+
+    [<Fact>]
+    let ``Use in task CE - exactly expected number of sequence points`` () =
+        // The original issue had 4 non-hidden SPs when only 3 were expected.
+        // Verify the fix produces exactly the expected count.
+        let source = """
+module TestModule
+
+open System
+
+type Disposable() =
+    interface IDisposable with
+        member _.Dispose() = ()
+
+let t =
+    task {
+        let i = 1
+        use d = new Disposable()
+        return i
+    }
+        """
+        FSharp source
+        |> asLibrary
+        |> withPortablePdb
+        |> compile
+        |> shouldSucceed
+        |> verifyPdb [ VerifyMethodSequencePointsInRange("MoveNext", Line 12, Line 15) ]

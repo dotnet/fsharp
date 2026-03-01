@@ -982,15 +982,16 @@ let AdjustValSynInfoInSignature g ty (SynValInfo(argsData, retData) as sigMD) =
         sigMD
 
 
-let TranslateTopArgSynInfo (cenv: cenv) isArg m tcAttributes (SynArgInfo(Attributes attrs, isOpt, nm)) =
+let TranslateTopArgSynInfo (cenv: cenv) isArg (m: range) tcAttributes (SynArgInfo(Attributes attrs, isOpt, nm)) =
     // Synthesize an artificial "OptionalArgument" attribute for the parameter
-    let optAttrs =
+    let optAttrs: SynAttribute list =
         if isOpt then
-            [ ( { TypeName=SynLongIdent(pathToSynLid m ["Microsoft";"FSharp";"Core";"OptionalArgument"], [], [None;None;None;None])
-                  ArgExpr=mkSynUnit m
-                  Target=None
-                  AppliesToGetterAndSetter=false
-                  Range=m} : SynAttribute) ]
+            let m = m.MakeSynthetic()
+            [ { TypeName = SynLongIdent(pathToSynLid m ["Microsoft"; "FSharp"; "Core"; "OptionalArgument"], [], [None; None; None; None])
+                ArgExpr = mkSynUnit m
+                Target = None
+                AppliesToGetterAndSetter = false
+                Range = m } ]
         else
             []
 
@@ -1000,8 +1001,7 @@ let TranslateTopArgSynInfo (cenv: cenv) isArg m tcAttributes (SynArgInfo(Attribu
     if not isArg && Option.isSome nm then
         errorR(Error(FSComp.SR.tcReturnValuesCannotHaveNames(), m))
 
-    // Call the attribute checking function
-    let attribs = tcAttributes (optAttrs@attrs)
+    let attribs = tcAttributes (optAttrs @ attrs)
 
     let key = nm |> Option.map (fun id -> id.idText, id.idRange)
 

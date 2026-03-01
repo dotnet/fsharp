@@ -179,3 +179,28 @@ let dispatch (cmd: Cmd) (active: bool) (count: int) =
             "dispatch"
             (Line 6)
             (Line 29)
+
+    // ---- Instrumentation: verify FeeFee IS emitted at match join points ----
+
+    [<Fact>]
+    let ``Match in statement position emits hidden point at join`` () =
+        // #12052: The fix emits EmitStartOfHiddenCode unconditionally.
+        // Verify hidden (FeeFee) points are present — proving the fix emits them.
+        verifyAllSequencePoints
+            "
+module TestModuleHidden
+
+let funcE (x: int) =
+    match x with
+    | 1 -> System.Console.WriteLine(\"one\")
+    | _ -> System.Console.WriteLine(\"other\")
+    System.Console.WriteLine(\"done\")
+            " [
+                (Line 5, Col 5, Line 5, Col 17)
+                (Line 6, Col 12, Line 6, Col 43)
+                (Line 7, Col 12, Line 7, Col 45)
+                (Line 8, Col 5, Line 8, Col 37)
+                (Line 16707566, Col 0, Line 16707566, Col 0)
+                (Line 16707566, Col 0, Line 16707566, Col 0)
+                (Line 16707566, Col 0, Line 16707566, Col 0)
+            ]

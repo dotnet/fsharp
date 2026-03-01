@@ -59,3 +59,141 @@ let squares = [
             (Line 6, Col 15, Line 6, Col 20)
             (Line 16707566, Col 0, Line 16707566, Col 0)
         ]
+
+    // ---- H3 diagnostic: Are for-line and body-line sequence points in the SAME method? ----
+
+    [<Fact>]
+    let ``H3 - Simple arrow body is in same method as for-line`` () =
+        FSharp """
+module TestModule
+
+let squares = [
+    for x in [1; 2; 3] ->
+        x * x
+    ]
+        """
+        |> asLibrary
+        |> withPortablePdb
+        |> compile
+        |> shouldSucceed
+        |> verifyPdb [ VerifySequencePointsInSameMethod [ Line 5; Line 6 ] ]
+
+    [<Fact>]
+    let ``H3 - Multi-line arrow body is in same method as for-line`` () =
+        FSharp """
+module TestModule
+
+let test1 () =
+    [ 3; 2; 1 ]
+    |> List.map (fun x -> x + 10)
+    |> List.sort
+
+let test3 = [
+    for x in test1() ->
+        let xx = x * x
+        printf "test"
+        xx
+    ]
+        """
+        |> asLibrary
+        |> withPortablePdb
+        |> compile
+        |> shouldSucceed
+        |> verifyPdb [ VerifySequencePointsInSameMethod [ Line 10; Line 11; Line 12; Line 13 ] ]
+
+    [<Fact>]
+    let ``H3 - Multi-line do body is in same method as for-line`` () =
+        FSharp """
+module TestModule
+
+let test1 () =
+    [ 3; 2; 1 ]
+    |> List.map (fun x -> x + 10)
+    |> List.sort
+
+let test2 = [
+    for x in test1() do
+        let xx = x * x
+        printf "test"
+        xx
+    ]
+        """
+        |> asLibrary
+        |> withPortablePdb
+        |> compile
+        |> shouldSucceed
+        |> verifyPdb [ VerifySequencePointsInSameMethod [ Line 10; Line 11; Line 12; Line 13 ] ]
+
+    // ---- H4 diagnostic: Do body methods have JMC-suppressing attributes? ----
+
+    [<Fact>]
+    let ``H4 - Arrow body method has no JMC-suppressing attributes`` () =
+        FSharp """
+module TestModule
+
+let test1 () =
+    [ 3; 2; 1 ]
+    |> List.map (fun x -> x + 10)
+    |> List.sort
+
+let test3 = [
+    for x in test1() ->
+        let xx = x * x
+        printf "test"
+        xx
+    ]
+        """
+        |> asLibrary
+        |> withPortablePdb
+        |> compile
+        |> shouldSucceed
+        |> verifyPdb [ VerifyNoDebuggerHiddenOnMethodWithLine (Line 11) ]
+
+    [<Fact>]
+    let ``H4 - Do body method has no JMC-suppressing attributes`` () =
+        FSharp """
+module TestModule
+
+let test1 () =
+    [ 3; 2; 1 ]
+    |> List.map (fun x -> x + 10)
+    |> List.sort
+
+let test2 = [
+    for x in test1() do
+        let xx = x * x
+        printf "test"
+        xx
+    ]
+        """
+        |> asLibrary
+        |> withPortablePdb
+        |> compile
+        |> shouldSucceed
+        |> verifyPdb [ VerifyNoDebuggerHiddenOnMethodWithLine (Line 11) ]
+
+    // ---- H1 diagnostic: Does --realsig- change method placement? ----
+
+    [<Fact>]
+    let ``H1 - Arrow body same method with realsig off`` () =
+        FSharp """
+module TestModule
+
+let test1 () =
+    [ 3; 2; 1 ]
+    |> List.map (fun x -> x + 10)
+    |> List.sort
+
+let test3 = [
+    for x in test1() ->
+        let xx = x * x
+        printf "test"
+        xx
+    ]
+        """
+        |> asLibrary
+        |> withPortablePdb
+        |> withOptions ["--realsig-"]
+        |> compile
+        |> shouldSucceed
+        |> verifyPdb [ VerifySequencePointsInSameMethod [ Line 10; Line 11; Line 12; Line 13 ] ]
