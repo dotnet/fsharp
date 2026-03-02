@@ -92,7 +92,6 @@
     <!-- System.* packages from dotnet/runtime, aligned with MSBuild and Roslyn deps. -->
     <SystemPackagesVersion>10.0.2</SystemPackagesVersion>
     <SystemCollectionsImmutableVersion>$(SystemPackagesVersion)</SystemCollectionsImmutableVersion>
-    <SystemCompositionVersion>$(SystemPackagesVersion)</SystemCompositionVersion>
     <SystemDiagnosticsDiagnosticSourceVersion>$(SystemPackagesVersion)</SystemDiagnosticsDiagnosticSourceVersion>
     <SystemReflectionMetadataVersion>$(SystemPackagesVersion)</SystemReflectionMetadataVersion>
   </PropertyGroup>
