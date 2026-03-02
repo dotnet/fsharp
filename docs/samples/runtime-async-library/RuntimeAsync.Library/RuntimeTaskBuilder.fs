@@ -1,7 +1,9 @@
 namespace RuntimeAsync.Library
 
 open System
+open System.Collections.Generic
 open System.Runtime.CompilerServices
+open System.Threading
 open System.Threading.Tasks
 
 #nowarn "57"
@@ -32,6 +34,26 @@ type RuntimeTaskBuilder() =
         AsyncHelpers.Await t
         f()
 
+    // ConfiguredTaskAwaitable — allows task.ConfigureAwait(false) in runtimeTask
+    [<NoDynamicInvocation>]
+    member inline _.Bind(cta: ConfiguredTaskAwaitable, [<InlineIfLambda>] f: unit -> 'U) : 'U =
+        AsyncHelpers.Await cta
+        f()
+
+    [<NoDynamicInvocation>]
+    member inline _.Bind(cta: ConfiguredTaskAwaitable<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
+        f(AsyncHelpers.Await cta)
+
+    // ConfiguredValueTaskAwaitable — allows valueTask.ConfigureAwait(false) in runtimeTask
+    [<NoDynamicInvocation>]
+    member inline _.Bind(cvta: ConfiguredValueTaskAwaitable, [<InlineIfLambda>] f: unit -> 'U) : 'U =
+        AsyncHelpers.Await cvta
+        f()
+
+    [<NoDynamicInvocation>]
+    member inline _.Bind(cvta: ConfiguredValueTaskAwaitable<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
+        f(AsyncHelpers.Await cvta)
+
     member inline _.Delay(f: unit -> 'T) : unit -> 'T = f
     member inline _.Zero() : unit = ()
     member inline _.Combine((): unit, [<InlineIfLambda>] f: unit -> 'T) : 'T = f()
@@ -39,11 +61,6 @@ type RuntimeTaskBuilder() =
     member inline _.While([<InlineIfLambda>] guard: unit -> bool, [<InlineIfLambda>] body: unit -> unit) : unit =
         while guard() do
             body()
-
-    [<NoDynamicInvocation>]
-    member inline _.For(s: seq<'T>, [<InlineIfLambda>] body: 'T -> unit) : unit =
-        for x in s do
-            body(x)
 
     member inline _.TryWith([<InlineIfLambda>] body: unit -> 'T, [<InlineIfLambda>] handler: exn -> 'T) : 'T =
         try
@@ -57,16 +74,90 @@ type RuntimeTaskBuilder() =
         finally
             comp()
 
+    /// TryFinally with async compensation — awaits a ValueTask in the finally block.
+    /// Used by Using(IAsyncDisposable) to await DisposeAsync().
     [<NoDynamicInvocation>]
-    member inline _.Using(resource: 'T when 'T :> IDisposable, [<InlineIfLambda>] body: 'T -> 'U) : 'U =
+    member inline _.TryFinallyAsync
+        ([<InlineIfLambda>] body: unit -> 'T, [<InlineIfLambda>] compensation: unit -> ValueTask)
+        : 'T =
         try
-            body resource
+            body()
         finally
-            (resource :> IDisposable).Dispose()
+            AsyncHelpers.Await(compensation())
 
-    [<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
-    member inline _.Run(f: unit -> 'T) : Task<'T> =
+    /// IAsyncDisposable — intrinsic member so it is preferred over the IDisposable extension
+    /// when a type implements both interfaces.
+    [<NoDynamicInvocation>]
+    member inline this.Using
+        (resource: 'T when 'T :> IAsyncDisposable, [<InlineIfLambda>] body: 'T -> 'U)
+        : 'U =
+        this.TryFinallyAsync(
+            (fun () -> body resource),
+            (fun () ->
+                if not (isNull (box resource)) then
+                    resource.DisposeAsync()
+                else
+                    ValueTask.CompletedTask
+            )
+        )
+
+    /// IAsyncEnumerable — intrinsic member so it is preferred over the seq extension.
+    /// Awaits MoveNextAsync() and DisposeAsync() on the enumerator.
+    [<NoDynamicInvocation>]
+    member inline _.For(sequence: IAsyncEnumerable<'T>, [<InlineIfLambda>] body: 'T -> unit) : unit =
+        let enumerator = sequence.GetAsyncEnumerator(CancellationToken.None)
+
+        try
+            while AsyncHelpers.Await(enumerator.MoveNextAsync()) do
+                body(enumerator.Current)
+        finally
+            AsyncHelpers.Await(enumerator.DisposeAsync())
+
+    /// Run is fully inline — its body (including the Await sentinel and cast) gets inlined
+    /// into each consumer function. The consumer's body then contains AsyncHelpers.Await calls,
+    /// so the compiler marks the consumer as 'cil managed async'. No [<MethodImplAttribute(0x2000)>]
+    /// is needed on Run itself.
+    member inline _.Run([<InlineIfLambda>] f: unit -> 'T) : Task<'T> =
+        // Sentinel: ensures the consumer method always gets 'cil managed async' even when
+        // the CE body has no let!/do! bindings (e.g. runtimeTask { return 42 }).
+        // This is a no-op at runtime — CompletedTask is already complete.
+        AsyncHelpers.Await(ValueTask.CompletedTask)
         RuntimeTaskBuilderUnsafe.cast (f())
+
+/// IDisposable Using and seq For as type extensions.
+/// These have lower priority than the intrinsic IAsyncDisposable/IAsyncEnumerable members above,
+/// so when a type implements both IDisposable and IAsyncDisposable, the async variant wins.
+[<AutoOpen>]
+module RuntimeTaskBuilderExtensions =
+    type RuntimeTaskBuilder with
+
+        member inline _.Using
+            (resource: 'T when 'T :> IDisposable, [<InlineIfLambda>] body: 'T -> 'U)
+            : 'U =
+            try
+                body resource
+            finally
+                (resource :> IDisposable).Dispose()
+
+        [<NoDynamicInvocation>]
+        member inline _.For(s: seq<'T>, [<InlineIfLambda>] body: 'T -> unit) : unit =
+            for x in s do
+                body(x)
+
+        /// Generic Bind for any awaitable type that has a GetAwaiter() method returning
+        /// an awaiter implementing ICriticalNotifyCompletion.
+        /// This handles types like YieldAwaitable, custom awaitables, etc.
+        /// Lower priority than the intrinsic Bind overloads for Task/ValueTask/ConfiguredTask.
+        [<NoDynamicInvocation>]
+        member inline _.Bind(awaitable: ^Awaitable, [<InlineIfLambda>] f: ^TResult -> 'U) : 'U
+            when ^Awaitable : (member GetAwaiter: unit -> ^Awaiter)
+            and ^Awaiter :> ICriticalNotifyCompletion
+            and ^Awaiter : (member get_IsCompleted: unit -> bool)
+            and ^Awaiter : (member GetResult: unit -> ^TResult) =
+            let awaiter = (^Awaitable : (member GetAwaiter: unit -> ^Awaiter) awaitable)
+            if not ((^Awaiter : (member get_IsCompleted: unit -> bool) awaiter)) then
+                AsyncHelpers.UnsafeAwaitAwaiter(awaiter)
+            f ((^Awaiter : (member GetResult: unit -> ^TResult) awaiter))
 
 [<AutoOpen>]
 module RuntimeTaskBuilderModule =
