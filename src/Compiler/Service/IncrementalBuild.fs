@@ -637,19 +637,23 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
         GetResourceNameAndSignatureDataFuncs sigDataResources
 
-    let autoOpenAttrs =
-        topAttrs.assemblyAttrs
-        |> List.choose (fun attr ->
-            match [ attr ] with
-            | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.AutoOpenAttribute s -> Some s
-            | _ -> None)
+    let autoOpenAttrs, ivtAttrs =
+        let mutable autoOpen = []
+        let mutable ivt = []
 
-    let ivtAttrs =
-        topAttrs.assemblyAttrs
-        |> List.choose (fun attr ->
-            match [ attr ] with
-            | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.InternalsVisibleToAttribute s -> Some s
-            | _ -> None)
+        for attr in topAttrs.assemblyAttrs do
+            let flag = classifyAssemblyAttrib tcGlobals attr
+
+            if hasFlag flag WellKnownAssemblyAttributes.AutoOpenAttribute then
+                match attr with
+                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) -> autoOpen <- s :: autoOpen
+                | _ -> ()
+            elif hasFlag flag WellKnownAssemblyAttributes.InternalsVisibleToAttribute then
+                match attr with
+                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) -> ivt <- s :: ivt
+                | _ -> ()
+
+        List.rev autoOpen, List.rev ivt
 
     interface IRawFSharpAssemblyData with
         member _.GetAutoOpenAttributes() = autoOpenAttrs
@@ -823,16 +827,24 @@ module IncrementalBuilderHelpers =
                         with exn ->
                             errorRecoveryNoRange exn
                             None
-                    let locale =
-                        match topAttrs.assemblyAttrs with
-                        | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.AssemblyCultureAttribute s -> Some s
-                        | _ -> None
+                    let locale, assemVerFromAttrib =
+                        let mutable locale = None
+                        let mutable ver = None
 
-                    let assemVerFromAttrib =
-                        match topAttrs.assemblyAttrs with
-                        | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.AssemblyVersionAttribute s ->
-                            try Some(parseILVersion s) with _ -> None
-                        | _ -> None
+                        for attr in topAttrs.assemblyAttrs do
+                            let flag = classifyAssemblyAttrib tcGlobals attr
+
+                            if hasFlag flag WellKnownAssemblyAttributes.AssemblyCultureAttribute then
+                                match attr with
+                                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) -> locale <- Some s
+                                | _ -> ()
+                            elif hasFlag flag WellKnownAssemblyAttributes.AssemblyVersionAttribute then
+                                match attr with
+                                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) ->
+                                    ver <- (try Some(parseILVersion s) with _ -> None)
+                                | _ -> ()
+
+                        locale, ver
                     let ver =
                         match assemVerFromAttrib with
                         | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)

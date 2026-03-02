@@ -1844,19 +1844,28 @@ type internal TransparentCompiler
                             errorRecoveryNoRange exn
                             None
 
-                    let locale =
-                        match topAttrs.assemblyAttrs with
-                        | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.AssemblyCultureAttribute s -> Some s
-                        | _ -> None
+                    let locale, assemVerFromAttrib =
+                        let mutable locale = None
+                        let mutable ver = None
 
-                    let assemVerFromAttrib =
-                        match topAttrs.assemblyAttrs with
-                        | AssemblyAttribString tcGlobals WellKnownAssemblyAttributes.AssemblyVersionAttribute s ->
-                            try
-                                Some(parseILVersion s)
-                            with _ ->
-                                None
-                        | _ -> None
+                        for attr in topAttrs.assemblyAttrs do
+                            let flag = classifyAssemblyAttrib tcGlobals attr
+
+                            if hasFlag flag WellKnownAssemblyAttributes.AssemblyCultureAttribute then
+                                match attr with
+                                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) -> locale <- Some s
+                                | _ -> ()
+                            elif hasFlag flag WellKnownAssemblyAttributes.AssemblyVersionAttribute then
+                                match attr with
+                                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) ->
+                                    ver <-
+                                        (try
+                                            Some(parseILVersion s)
+                                         with _ ->
+                                             None)
+                                | _ -> ()
+
+                        locale, ver
 
                     let ver =
                         match assemVerFromAttrib with

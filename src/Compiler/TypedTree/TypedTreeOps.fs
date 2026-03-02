@@ -3876,17 +3876,6 @@ let (|EntityAttribString|_|) (g: TcGlobals) (flag: WellKnownEntityAttributes) (a
     | EntityAttrib g flag (Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> ValueSome s
     | _ -> ValueNone
 
-/// Find the first attribute in a list that matches a specific well-known assembly flag.
-let tryFindAssemblyAttribByFlag g flag attribs =
-    tryFindAttribByClassifier classifyAssemblyAttrib WellKnownAssemblyAttributes.None g flag attribs
-
-/// Active pattern: extract a single string argument from a well-known assembly attribute.
-[<return: Struct>]
-let (|AssemblyAttribString|_|) (g: TcGlobals) (flag: WellKnownAssemblyAttributes) (attribs: Attribs) =
-    match tryFindAssemblyAttribByFlag g flag attribs with
-    | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> ValueSome s
-    | _ -> ValueNone
-
 /// Map a WellKnownILAttributes flag to its entity flag + provided-type AttribInfo equivalents.
 let mapILFlag (g: TcGlobals) (flag: WellKnownILAttributes) : struct (WellKnownEntityAttributes * BuiltinAttribInfo option) =
     match flag with

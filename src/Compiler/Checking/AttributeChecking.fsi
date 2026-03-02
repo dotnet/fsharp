@@ -71,7 +71,7 @@ val MethInfoHasWellKnownAttribute:
 
 val CheckFSharpAttributes: g: TcGlobals -> attribs: Attrib list -> m: range -> OperationResult<unit>
 
-val CheckILAttributesForUnseen: g: TcGlobals -> cattrs: ILAttributes -> _m: 'a -> bool
+val CheckILAttributesForUnseen: cattrs: ILAttributes -> bool
 
 val CheckILAttributesForUnseenStored: g: TcGlobals -> cattrsStored: ILAttributesStored -> _m: 'a -> bool
 

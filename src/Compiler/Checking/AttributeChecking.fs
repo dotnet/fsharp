@@ -446,13 +446,9 @@ let CheckILAttributesForUnseenStored (g: TcGlobals) (cattrsStored: ILAttributesS
         false
 
 /// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
-let CheckILAttributesForUnseen (g: TcGlobals) cattrs _m = 
-    ignore g
-    let hasObsolete = tryFindILAttribByFlag WellKnownILAttributes.ObsoleteAttribute cattrs |> Option.isSome
-    if hasObsolete then
-        not (tryFindILAttribByFlag WellKnownILAttributes.IsByRefLikeAttribute cattrs |> Option.isSome)
-    else
-        false
+let CheckILAttributesForUnseen (cattrs: ILAttributes) =
+    cattrs.HasWellKnownAttribute(WellKnownILAttributes.ObsoleteAttribute)
+    && not (cattrs.HasWellKnownAttribute(WellKnownILAttributes.IsByRefLikeAttribute))
 
 /// Checks the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
 /// items to be suppressed from intellisense.
@@ -575,7 +571,7 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
 let MethInfoIsUnseen g (m: range) (ty: TType) minfo allowObsolete = 
     let isUnseenByObsoleteAttrib () =
         match BindMethInfoAttributes m minfo 
-                (fun ilAttribs -> Some(not allowObsolete && CheckILAttributesForUnseen g ilAttribs m)) 
+                (fun ilAttribs -> Some(not allowObsolete && CheckILAttributesForUnseen ilAttribs)) 
                 (fun fsAttribs -> Some(CheckFSharpAttributesForUnseen g fsAttribs m allowObsolete))
 #if !NO_TYPEPROVIDERS
                 (fun provAttribs -> Some(not allowObsolete && CheckProvidedAttributesForUnseen provAttribs m))
@@ -620,7 +616,7 @@ let PropInfoIsUnseen m allowObsolete pinfo =
     | ILProp (ILPropInfo(_, pdef) as ilpinfo) -> 
         // Properties on .NET tuple types are resolvable but unseen
         isAnyTupleTy pinfo.TcGlobals ilpinfo.ILTypeInfo.ToType || 
-        CheckILAttributesForUnseen pinfo.TcGlobals pdef.CustomAttrs m
+        CheckILAttributesForUnseen pdef.CustomAttrs
     | FSProp (g, _, Some vref, _) 
     | FSProp (g, _, _, Some vref) -> CheckFSharpAttributesForUnseen g vref.Attribs m allowObsolete
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"

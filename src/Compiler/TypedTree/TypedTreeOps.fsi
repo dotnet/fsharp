@@ -2417,6 +2417,9 @@ val classifyEntityAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownEntityAttri
 /// Classify a single val-level attrib to its well-known flag (or None).
 val classifyValAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownValAttributes
 
+/// Classify a single assembly-level attrib to its well-known flag (or None).
+val classifyAssemblyAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownAssemblyAttributes
+
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
 val attribsHaveEntityFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> bool
 
@@ -2437,11 +2440,6 @@ val (|EntityAttribInt|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> at
 
 [<return: Struct>]
 val (|EntityAttribString|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> string voption
-
-val tryFindAssemblyAttribByFlag: g: TcGlobals -> flag: WellKnownAssemblyAttributes -> attribs: Attribs -> Attrib option
-
-[<return: Struct>]
-val (|AssemblyAttribString|_|): g: TcGlobals -> flag: WellKnownAssemblyAttributes -> attribs: Attribs -> string voption
 
 val attribsHaveValFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> bool
 

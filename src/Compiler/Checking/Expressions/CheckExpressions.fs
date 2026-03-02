@@ -697,6 +697,15 @@ let UnifyFunctionType extraInfo (cenv: cenv) denv mFunExpr ty =
         | Some argm -> error (NotAFunction(denv, ty, mFunExpr, argm))
         | None -> error (FunctionExpected(denv, ty, mFunExpr))
 
+/// Extract the localized warning message from a WarnOnWithoutNullArgumentAttribute, if present.
+let tryGetWarnOnWithoutNullMessage (g: TcGlobals) (attribs: Attrib list) =
+    match attribs with
+    | ValAttrib g WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute (Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) ->
+        match namedArgs with
+        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> FSComp.SR.GetTextOpt(b)
+        | _ -> Some b
+    | _ -> Option.None
+
 let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
     let checkExpr m expr =
         match stripDebugPoints expr with
@@ -5231,17 +5240,9 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
 
     let cenv =
         if g.checkNullness then
-            match vref.Attribs with
-            | ValAttrib g WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute (Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) ->
-                let warnMsg =
-                    match namedArgs with
-                    | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> FSComp.SR.GetTextOpt(b)
-                    | _ -> Some b
-
-                match warnMsg with
-                | Some _ -> { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = warnMsg }
-                | None -> cenv
-            | _ -> cenv
+            match tryGetWarnOnWithoutNullMessage g vref.Attribs with
+            | Some _ as warnMsg -> { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = warnMsg }
+            | None -> cenv
         else
             cenv
 
@@ -9436,22 +9437,11 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
             | _ -> vExpr, tpenv
 
         let getCenvForVref cenv (vref:ValRef) = 
-            match vref.Attribs with
-            | ValAttrib g WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute (Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) ->
-                let msg =
-                    match namedArgs with
-                    | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> FSComp.SR.GetTextOpt(b)
-                    | _ -> Some b
-
-                match msg with
-                | Some _ -> { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg }
-                | None when cenv.css.WarnWhenUsingWithoutNullOnAWithNullTarget <> None ->
-                    { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = None }
-                | None -> cenv
-            | _ when cenv.css.WarnWhenUsingWithoutNullOnAWithNullTarget <> None ->
-                        // We need to reset the warning back to default once in a nested call, to prevent false warnings e.g. in `Option.ofObj (Path.GetDirectoryName "")`
-                        { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = None}
-            | _ -> cenv
+            match tryGetWarnOnWithoutNullMessage g vref.Attribs with
+            | Some _ as msg -> { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg }
+            | None when cenv.css.WarnWhenUsingWithoutNullOnAWithNullTarget <> None ->
+                { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = None }
+            | None -> cenv
 
         let cenv =
             match vExpr with
