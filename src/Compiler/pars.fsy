@@ -152,7 +152,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 /* These are artificial */
 %token <string> LEX_FAILURE
 %token <ParseHelpers.LexerContinuation> COMMENT WHITESPACE HASH_LINE INACTIVECODE LINE_COMMENT STRING_TEXT EOF
-%token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF WARN_DIRECTIVE
+%token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF HASH_ELIF WARN_DIRECTIVE
 
 %start signatureFile implementationFile interaction typedSequentialExprEOF typEOF
 %type <SynExpr> typedSequentialExprEOF
