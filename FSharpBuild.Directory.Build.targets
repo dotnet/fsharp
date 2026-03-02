@@ -5,6 +5,14 @@
   <Import Project="eng\targets\NuGet.targets" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
   <Import Project="FSharp.Profiles.props" />
 
+  <!-- Pin System.Collections.Immutable on net472 to prevent MSBuild's transitive dep (>= 10.0.2)
+       from pulling in a version whose net462 DLL has incompatible System.Memory references.
+       A direct PackageReference wins over transitive ("nearest wins" in NuGet).
+       NU1605 (package downgrade) is expected here — we intentionally downgrade from 10.0.2 to 9.0.x. -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" NoWarn="NU1605" />
+  </ItemGroup>
+
   <PropertyGroup>
     <DefineConstants Condition="'$(Configuration)'=='release'">$(DefineConstants);Release</DefineConstants>
     <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);Debug</DefineConstants>
