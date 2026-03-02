@@ -3629,6 +3629,7 @@ let classifyILAttrib (attr: ILAttribute) : WellKnownILAttributes =
             | "System.ParamArrayAttribute" -> WellKnownILAttributes.ParamArrayAttribute
             | "System.Reflection.DefaultMemberAttribute" -> WellKnownILAttributes.DefaultMemberAttribute
             | "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute" ->
+                // Also at System.Runtime.CompilerServices (line above); .NET defines it in both namespaces
                 WellKnownILAttributes.SetsRequiredMembersAttribute
             | "System.ObsoleteAttribute" -> WellKnownILAttributes.ObsoleteAttribute
             | "System.Diagnostics.CodeAnalysis.ExperimentalAttribute" -> WellKnownILAttributes.ExperimentalAttribute
@@ -3684,22 +3685,21 @@ type ILAttributes with
         x.AsArray() |> Array.exists (fun attr -> classifyILAttrib attr &&& flag <> WellKnownILAttributes.None)
 
 /// Resolve the FSharp.Core path for an attribute's type reference.
-/// Returns ValueSome path for FSharp.Core attributes, calls bclDispatch for BCL attributes, ValueNone otherwise.
-let inline resolveAttribPath (g: TcGlobals) (tcref: TyconRef) (bclDispatch: string[] -> unit) : string[] voption =
+/// Returns struct(bclPath, fsharpCorePath). Exactly one will be ValueSome, or both ValueNone.
+let inline resolveAttribPath (g: TcGlobals) (tcref: TyconRef) : struct (string[] voption * string[] voption) =
     if not tcref.IsLocalRef then
         let nlr = tcref.nlr
 
         if ccuEq nlr.Ccu g.fslibCcu then
-            ValueSome nlr.Path
+            struct (ValueNone, ValueSome nlr.Path)
         else
-            bclDispatch nlr.Path
-            ValueNone
+            struct (ValueSome nlr.Path, ValueNone)
     elif g.compilingFSharpCore then
         match tcref.Deref.PublicPath with
-        | Some(PubPath pp) -> ValueSome pp
-        | None -> ValueNone
+        | Some(PubPath pp) -> struct (ValueNone, ValueSome pp)
+        | None -> struct (ValueNone, ValueNone)
     else
-        ValueNone
+        struct (ValueNone, ValueNone)
 
 /// Decode a bool-arg attribute and set the appropriate true/false flag.
 let inline decodeBoolAttribFlag (attrib: Attrib) trueFlag falseFlag defaultFlag =
@@ -3710,57 +3710,49 @@ let inline decodeBoolAttribFlag (attrib: Attrib) trueFlag falseFlag defaultFlag 
 /// Classify a single Entity-level attribute, returning its well-known flag (or None).
 let classifyEntityAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownEntityAttributes =
     let (Attrib(tcref, _, _, _, _, _, _)) = attrib
-    let mutable flag = WellKnownEntityAttributes.None
+    let struct (bclPath, fsharpCorePath) = resolveAttribPath g tcref
 
-    let fsharpCorePath =
-        resolveAttribPath g tcref (fun path ->
-            match path with
-            | [| "System"; "Runtime"; "CompilerServices"; name |] ->
-                match name with
-                | "ExtensionAttribute" -> flag <- WellKnownEntityAttributes.ExtensionAttribute
-                | "IsReadOnlyAttribute" -> flag <- WellKnownEntityAttributes.IsReadOnlyAttribute
-                | "SkipLocalsInitAttribute" -> flag <- WellKnownEntityAttributes.SkipLocalsInitAttribute
-                | "IsByRefLikeAttribute" -> flag <- WellKnownEntityAttributes.IsByRefLikeAttribute
-                | _ -> ()
+    match bclPath with
+    | ValueSome path ->
+        match path with
+        | [| "System"; "Runtime"; "CompilerServices"; name |] ->
+            match name with
+            | "ExtensionAttribute" -> WellKnownEntityAttributes.ExtensionAttribute
+            | "IsReadOnlyAttribute" -> WellKnownEntityAttributes.IsReadOnlyAttribute
+            | "SkipLocalsInitAttribute" -> WellKnownEntityAttributes.SkipLocalsInitAttribute
+            | "IsByRefLikeAttribute" -> WellKnownEntityAttributes.IsByRefLikeAttribute
+            | _ -> WellKnownEntityAttributes.None
 
-            | [| "System"; "Runtime"; "InteropServices"; name |] ->
-                match name with
-                | "StructLayoutAttribute" -> flag <- WellKnownEntityAttributes.StructLayoutAttribute
-                | "DllImportAttribute" -> flag <- WellKnownEntityAttributes.DllImportAttribute
-                | "ComVisibleAttribute" ->
-                    flag <-
-                        decodeBoolAttribFlag
-                            attrib
-                            WellKnownEntityAttributes.ComVisibleAttribute_True
-                            WellKnownEntityAttributes.ComVisibleAttribute_False
-                            WellKnownEntityAttributes.ComVisibleAttribute_True
-                | "ComImportAttribute" ->
-                    flag <-
-                        decodeBoolAttribFlag
-                            attrib
-                            WellKnownEntityAttributes.ComImportAttribute_True
-                            WellKnownEntityAttributes.None
-                            WellKnownEntityAttributes.ComImportAttribute_True
-                | _ -> ()
+        | [| "System"; "Runtime"; "InteropServices"; name |] ->
+            match name with
+            | "StructLayoutAttribute" -> WellKnownEntityAttributes.StructLayoutAttribute
+            | "DllImportAttribute" -> WellKnownEntityAttributes.DllImportAttribute
+            | "ComVisibleAttribute" ->
+                decodeBoolAttribFlag attrib WellKnownEntityAttributes.ComVisibleAttribute_True WellKnownEntityAttributes.ComVisibleAttribute_False WellKnownEntityAttributes.ComVisibleAttribute_True
+            | "ComImportAttribute" ->
+                decodeBoolAttribFlag attrib WellKnownEntityAttributes.ComImportAttribute_True WellKnownEntityAttributes.None WellKnownEntityAttributes.ComImportAttribute_True
+            | _ -> WellKnownEntityAttributes.None
 
-            | [| "System"; "Diagnostics"; name |] ->
-                match name with
-                | "DebuggerDisplayAttribute" -> flag <- WellKnownEntityAttributes.DebuggerDisplayAttribute
-                | "DebuggerTypeProxyAttribute" -> flag <- WellKnownEntityAttributes.DebuggerTypeProxyAttribute
-                | _ -> ()
+        | [| "System"; "Diagnostics"; name |] ->
+            match name with
+            | "DebuggerDisplayAttribute" -> WellKnownEntityAttributes.DebuggerDisplayAttribute
+            | "DebuggerTypeProxyAttribute" -> WellKnownEntityAttributes.DebuggerTypeProxyAttribute
+            | _ -> WellKnownEntityAttributes.None
 
-            | [| "System"; "ComponentModel"; name |] ->
-                match name with
-                | "EditorBrowsableAttribute" -> flag <- WellKnownEntityAttributes.EditorBrowsableAttribute
-                | _ -> ()
+        | [| "System"; "ComponentModel"; name |] ->
+            match name with
+            | "EditorBrowsableAttribute" -> WellKnownEntityAttributes.EditorBrowsableAttribute
+            | _ -> WellKnownEntityAttributes.None
 
-            | [| "System"; name |] ->
-                match name with
-                | "AttributeUsageAttribute" -> flag <- WellKnownEntityAttributes.AttributeUsageAttribute
-                | "ObsoleteAttribute" -> flag <- WellKnownEntityAttributes.ObsoleteAttribute
-                | _ -> ()
+        | [| "System"; name |] ->
+            match name with
+            | "AttributeUsageAttribute" -> WellKnownEntityAttributes.AttributeUsageAttribute
+            | "ObsoleteAttribute" -> WellKnownEntityAttributes.ObsoleteAttribute
+            | _ -> WellKnownEntityAttributes.None
 
-            | _ -> ())
+        | _ -> WellKnownEntityAttributes.None
+
+    | ValueNone ->
 
     match fsharpCorePath with
     | ValueSome path ->
@@ -3768,94 +3760,83 @@ let classifyEntityAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownEntityAttrib
         | [| "Microsoft"; "FSharp"; "Core"; name |] ->
             match name with
             | "SealedAttribute" ->
-                flag <-
-                    decodeBoolAttribFlag
-                        attrib
-                        WellKnownEntityAttributes.SealedAttribute_True
-                        WellKnownEntityAttributes.SealedAttribute_False
-                        WellKnownEntityAttributes.SealedAttribute_True
-            | "AbstractClassAttribute" -> flag <- WellKnownEntityAttributes.AbstractClassAttribute
-            | "RequireQualifiedAccessAttribute" -> flag <- WellKnownEntityAttributes.RequireQualifiedAccessAttribute
-            | "AutoOpenAttribute" -> flag <- WellKnownEntityAttributes.AutoOpenAttribute
-            | "NoEqualityAttribute" -> flag <- WellKnownEntityAttributes.NoEqualityAttribute
-            | "NoComparisonAttribute" -> flag <- WellKnownEntityAttributes.NoComparisonAttribute
-            | "StructuralEqualityAttribute" -> flag <- WellKnownEntityAttributes.StructuralEqualityAttribute
-            | "StructuralComparisonAttribute" -> flag <- WellKnownEntityAttributes.StructuralComparisonAttribute
-            | "CustomEqualityAttribute" -> flag <- WellKnownEntityAttributes.CustomEqualityAttribute
-            | "CustomComparisonAttribute" -> flag <- WellKnownEntityAttributes.CustomComparisonAttribute
-            | "ReferenceEqualityAttribute" -> flag <- WellKnownEntityAttributes.ReferenceEqualityAttribute
+                decodeBoolAttribFlag attrib WellKnownEntityAttributes.SealedAttribute_True WellKnownEntityAttributes.SealedAttribute_False WellKnownEntityAttributes.SealedAttribute_True
+            | "AbstractClassAttribute" -> WellKnownEntityAttributes.AbstractClassAttribute
+            | "RequireQualifiedAccessAttribute" -> WellKnownEntityAttributes.RequireQualifiedAccessAttribute
+            | "AutoOpenAttribute" -> WellKnownEntityAttributes.AutoOpenAttribute
+            | "NoEqualityAttribute" -> WellKnownEntityAttributes.NoEqualityAttribute
+            | "NoComparisonAttribute" -> WellKnownEntityAttributes.NoComparisonAttribute
+            | "StructuralEqualityAttribute" -> WellKnownEntityAttributes.StructuralEqualityAttribute
+            | "StructuralComparisonAttribute" -> WellKnownEntityAttributes.StructuralComparisonAttribute
+            | "CustomEqualityAttribute" -> WellKnownEntityAttributes.CustomEqualityAttribute
+            | "CustomComparisonAttribute" -> WellKnownEntityAttributes.CustomComparisonAttribute
+            | "ReferenceEqualityAttribute" -> WellKnownEntityAttributes.ReferenceEqualityAttribute
             | "DefaultAugmentationAttribute" ->
-                flag <- decodeBoolAttribFlag attrib WellKnownEntityAttributes.DefaultAugmentationAttribute_True WellKnownEntityAttributes.DefaultAugmentationAttribute_False WellKnownEntityAttributes.DefaultAugmentationAttribute_True
-            | "CLIMutableAttribute" -> flag <- WellKnownEntityAttributes.CLIMutableAttribute
+                decodeBoolAttribFlag attrib WellKnownEntityAttributes.DefaultAugmentationAttribute_True WellKnownEntityAttributes.DefaultAugmentationAttribute_False WellKnownEntityAttributes.DefaultAugmentationAttribute_True
+            | "CLIMutableAttribute" -> WellKnownEntityAttributes.CLIMutableAttribute
             | "AutoSerializableAttribute" ->
-                flag <- decodeBoolAttribFlag attrib WellKnownEntityAttributes.AutoSerializableAttribute_True WellKnownEntityAttributes.AutoSerializableAttribute_False WellKnownEntityAttributes.AutoSerializableAttribute_True
-            | "ReflectedDefinitionAttribute" -> flag <- WellKnownEntityAttributes.ReflectedDefinitionAttribute
+                decodeBoolAttribFlag attrib WellKnownEntityAttributes.AutoSerializableAttribute_True WellKnownEntityAttributes.AutoSerializableAttribute_False WellKnownEntityAttributes.AutoSerializableAttribute_True
+            | "ReflectedDefinitionAttribute" -> WellKnownEntityAttributes.ReflectedDefinitionAttribute
             | "AllowNullLiteralAttribute" ->
-                flag <-
-                    decodeBoolAttribFlag
-                        attrib
-                        WellKnownEntityAttributes.AllowNullLiteralAttribute_True
-                        WellKnownEntityAttributes.AllowNullLiteralAttribute_False
-                        WellKnownEntityAttributes.AllowNullLiteralAttribute_True
-            | "WarnOnWithoutNullArgumentAttribute" -> flag <- WellKnownEntityAttributes.WarnOnWithoutNullArgumentAttribute
-            | "ClassAttribute" -> flag <- WellKnownEntityAttributes.ClassAttribute
-            | "InterfaceAttribute" -> flag <- WellKnownEntityAttributes.InterfaceAttribute
-            | "StructAttribute" -> flag <- WellKnownEntityAttributes.StructAttribute
-            | "MeasureAttribute" -> flag <- WellKnownEntityAttributes.MeasureAttribute
-            | "MeasureAnnotatedAbbreviationAttribute" -> flag <- WellKnownEntityAttributes.MeasureableAttribute
-            | "CLIEventAttribute" -> flag <- WellKnownEntityAttributes.CLIEventAttribute
-            | "CompilerMessageAttribute" -> flag <- WellKnownEntityAttributes.CompilerMessageAttribute
-            | "ExperimentalAttribute" -> flag <- WellKnownEntityAttributes.ExperimentalAttribute
-            | "UnverifiableAttribute" -> flag <- WellKnownEntityAttributes.UnverifiableAttribute
-            | "CompiledNameAttribute" -> flag <- WellKnownEntityAttributes.CompiledNameAttribute
+                decodeBoolAttribFlag attrib WellKnownEntityAttributes.AllowNullLiteralAttribute_True WellKnownEntityAttributes.AllowNullLiteralAttribute_False WellKnownEntityAttributes.AllowNullLiteralAttribute_True
+            | "WarnOnWithoutNullArgumentAttribute" -> WellKnownEntityAttributes.WarnOnWithoutNullArgumentAttribute
+            | "ClassAttribute" -> WellKnownEntityAttributes.ClassAttribute
+            | "InterfaceAttribute" -> WellKnownEntityAttributes.InterfaceAttribute
+            | "StructAttribute" -> WellKnownEntityAttributes.StructAttribute
+            | "MeasureAttribute" -> WellKnownEntityAttributes.MeasureAttribute
+            | "MeasureAnnotatedAbbreviationAttribute" -> WellKnownEntityAttributes.MeasureableAttribute
+            | "CLIEventAttribute" -> WellKnownEntityAttributes.CLIEventAttribute
+            | "CompilerMessageAttribute" -> WellKnownEntityAttributes.CompilerMessageAttribute
+            | "ExperimentalAttribute" -> WellKnownEntityAttributes.ExperimentalAttribute
+            | "UnverifiableAttribute" -> WellKnownEntityAttributes.UnverifiableAttribute
+            | "CompiledNameAttribute" -> WellKnownEntityAttributes.CompiledNameAttribute
             | "CompilationRepresentationAttribute" ->
                 match attrib with
                 | Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _) ->
+                    let mutable flags = WellKnownEntityAttributes.None
                     if v &&& 0x01 <> 0 then
-                        flag <- flag ||| WellKnownEntityAttributes.CompilationRepresentation_Static
+                        flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_Static
                     if v &&& 0x02 <> 0 then
-                        flag <- flag ||| WellKnownEntityAttributes.CompilationRepresentation_Instance
+                        flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_Instance
                     if v &&& 0x04 <> 0 then
-                        flag <- flag ||| WellKnownEntityAttributes.CompilationRepresentation_ModuleSuffix
+                        flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_ModuleSuffix
                     if v &&& 0x08 <> 0 then
-                        flag <- flag ||| WellKnownEntityAttributes.CompilationRepresentation_PermitNull
-                | _ -> ()
-            | _ -> ()
-        | _ -> ()
-    | ValueNone -> ()
-
-    flag
+                        flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_PermitNull
+                    flags
+                | _ -> WellKnownEntityAttributes.None
+            | _ -> WellKnownEntityAttributes.None
+        | _ -> WellKnownEntityAttributes.None
+    | ValueNone -> WellKnownEntityAttributes.None
 
 /// Classify a single assembly-level attribute, returning its well-known flag (or None).
 let classifyAssemblyAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownAssemblyAttributes =
     let (Attrib(tcref, _, _, _, _, _, _)) = attrib
-    let mutable flag = WellKnownAssemblyAttributes.None
+    let struct (bclPath, fsharpCorePath) = resolveAttribPath g tcref
 
-    let fsharpCorePath =
-        resolveAttribPath g tcref (fun path ->
-            match path with
-            | [| "System"; "Runtime"; "CompilerServices"; name |] ->
-                match name with
-                | "InternalsVisibleToAttribute" -> flag <- WellKnownAssemblyAttributes.InternalsVisibleToAttribute
-                | _ -> ()
-            | [| "System"; "Reflection"; name |] ->
-                match name with
-                | "AssemblyCultureAttribute" -> flag <- WellKnownAssemblyAttributes.AssemblyCultureAttribute
-                | "AssemblyVersionAttribute" -> flag <- WellKnownAssemblyAttributes.AssemblyVersionAttribute
-                | _ -> ()
-            | _ -> ())
+    match bclPath with
+    | ValueSome path ->
+        match path with
+        | [| "System"; "Runtime"; "CompilerServices"; name |] ->
+            match name with
+            | "InternalsVisibleToAttribute" -> WellKnownAssemblyAttributes.InternalsVisibleToAttribute
+            | _ -> WellKnownAssemblyAttributes.None
+        | [| "System"; "Reflection"; name |] ->
+            match name with
+            | "AssemblyCultureAttribute" -> WellKnownAssemblyAttributes.AssemblyCultureAttribute
+            | "AssemblyVersionAttribute" -> WellKnownAssemblyAttributes.AssemblyVersionAttribute
+            | _ -> WellKnownAssemblyAttributes.None
+        | _ -> WellKnownAssemblyAttributes.None
+    | ValueNone ->
 
     match fsharpCorePath with
     | ValueSome path ->
         match path with
         | [| "Microsoft"; "FSharp"; "Core"; name |] ->
             match name with
-            | "AutoOpenAttribute" -> flag <- WellKnownAssemblyAttributes.AutoOpenAttribute
-            | _ -> ()
-        | _ -> ()
-    | ValueNone -> ()
-
-    flag
+            | "AutoOpenAttribute" -> WellKnownAssemblyAttributes.AutoOpenAttribute
+            | _ -> WellKnownAssemblyAttributes.None
+        | _ -> WellKnownAssemblyAttributes.None
+    | ValueNone -> WellKnownAssemblyAttributes.None
 
 /// Shared combinator: find first attrib matching a flag via a classify function.
 let inline internal tryFindAttribByClassifier ([<InlineIfLambda>] classify: TcGlobals -> Attrib -> 'Flag) (none: 'Flag) (g: TcGlobals) (flag: 'Flag) (attribs: Attribs) : Attrib option =
@@ -3906,33 +3887,17 @@ let (|AssemblyAttribString|_|) (g: TcGlobals) (flag: WellKnownAssemblyAttributes
     | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> ValueSome s
     | _ -> ValueNone
 
-#if !NO_TYPEPROVIDERS
-/// Map a WellKnownILAttributes flag to its AttribInfo equivalent.
-let mapILFlagToAttribInfo (g: TcGlobals) (flag: WellKnownILAttributes) : BuiltinAttribInfo option =
+/// Map a WellKnownILAttributes flag to its entity flag + provided-type AttribInfo equivalents.
+let mapILFlag (g: TcGlobals) (flag: WellKnownILAttributes) : struct (WellKnownEntityAttributes * BuiltinAttribInfo option) =
     match flag with
-    | WellKnownILAttributes.IsReadOnlyAttribute -> Some g.attrib_IsReadOnlyAttribute
-    | WellKnownILAttributes.IsByRefLikeAttribute -> g.attrib_IsByRefLikeAttribute_opt
-    | WellKnownILAttributes.ExtensionAttribute -> Some g.attrib_ExtensionAttribute
-    | WellKnownILAttributes.AllowNullLiteralAttribute -> Some g.attrib_AllowNullLiteralAttribute
-    | WellKnownILAttributes.AutoOpenAttribute -> Some g.attrib_AutoOpenAttribute
-    | WellKnownILAttributes.ReflectedDefinitionAttribute -> Some g.attrib_ReflectedDefinitionAttribute
-    | _ -> None
-#endif
-
-/// Map a WellKnownILAttributes flag to its WellKnownEntityAttributes equivalent.
-/// Used for hybrid check sites that dispatch on IL vs F# metadata.
-let mapILFlagToEntityFlag (flag: WellKnownILAttributes) : WellKnownEntityAttributes =
-    match flag with
-    | WellKnownILAttributes.IsReadOnlyAttribute -> WellKnownEntityAttributes.IsReadOnlyAttribute
-    | WellKnownILAttributes.IsByRefLikeAttribute -> WellKnownEntityAttributes.IsByRefLikeAttribute
-    | WellKnownILAttributes.ExtensionAttribute -> WellKnownEntityAttributes.ExtensionAttribute
-    | WellKnownILAttributes.AllowNullLiteralAttribute -> WellKnownEntityAttributes.AllowNullLiteralAttribute_True
-    | WellKnownILAttributes.AutoOpenAttribute -> WellKnownEntityAttributes.AutoOpenAttribute
-    | WellKnownILAttributes.ReflectedDefinitionAttribute -> WellKnownEntityAttributes.ReflectedDefinitionAttribute
-    | WellKnownILAttributes.ObsoleteAttribute -> WellKnownEntityAttributes.ObsoleteAttribute
-    | WellKnownILAttributes.DefaultMemberAttribute -> WellKnownEntityAttributes.None
-    | WellKnownILAttributes.NoEagerConstraintApplicationAttribute -> WellKnownEntityAttributes.None
-    | _ -> WellKnownEntityAttributes.None
+    | WellKnownILAttributes.IsReadOnlyAttribute -> struct (WellKnownEntityAttributes.IsReadOnlyAttribute, Some g.attrib_IsReadOnlyAttribute)
+    | WellKnownILAttributes.IsByRefLikeAttribute -> struct (WellKnownEntityAttributes.IsByRefLikeAttribute, g.attrib_IsByRefLikeAttribute_opt)
+    | WellKnownILAttributes.ExtensionAttribute -> struct (WellKnownEntityAttributes.ExtensionAttribute, Some g.attrib_ExtensionAttribute)
+    | WellKnownILAttributes.AllowNullLiteralAttribute -> struct (WellKnownEntityAttributes.AllowNullLiteralAttribute_True, Some g.attrib_AllowNullLiteralAttribute)
+    | WellKnownILAttributes.AutoOpenAttribute -> struct (WellKnownEntityAttributes.AutoOpenAttribute, Some g.attrib_AutoOpenAttribute)
+    | WellKnownILAttributes.ReflectedDefinitionAttribute -> struct (WellKnownEntityAttributes.ReflectedDefinitionAttribute, Some g.attrib_ReflectedDefinitionAttribute)
+    | WellKnownILAttributes.ObsoleteAttribute -> struct (WellKnownEntityAttributes.ObsoleteAttribute, None)
+    | _ -> struct (WellKnownEntityAttributes.None, None)
 
 /// Check if a raw attribute list has a specific well-known entity flag (ad-hoc, non-caching).
 let attribsHaveEntityFlag g (flag: WellKnownEntityAttributes) (attribs: Attribs) =
@@ -3949,77 +3914,81 @@ let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes)
 /// Classify a single Val-level attribute, returning its well-known flag (or None).
 let classifyValAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownValAttributes =
     let (Attrib(tcref, _, _, _, _, _, _)) = attrib
-    let mutable flag = WellKnownValAttributes.None
+    let struct (bclPath, fsharpCorePath) = resolveAttribPath g tcref
 
-    let fsharpCorePath =
-        resolveAttribPath g tcref (fun path ->
-            match path with
-            | [| "System"; "Runtime"; "CompilerServices"; name |] ->
-                match name with
-                | "SkipLocalsInitAttribute" -> flag <- WellKnownValAttributes.SkipLocalsInitAttribute
-                | "ExtensionAttribute" -> flag <- WellKnownValAttributes.ExtensionAttribute
-                | "CallerMemberNameAttribute" -> flag <- WellKnownValAttributes.CallerMemberNameAttribute
-                | "CallerFilePathAttribute" -> flag <- WellKnownValAttributes.CallerFilePathAttribute
-                | "CallerLineNumberAttribute" -> flag <- WellKnownValAttributes.CallerLineNumberAttribute
-                | "MethodImplAttribute" -> flag <- WellKnownValAttributes.MethodImplAttribute
-                | _ -> ()
+    match bclPath with
+    | ValueSome path ->
+        match path with
+        | [| "System"; "Runtime"; "CompilerServices"; name |] ->
+            match name with
+            | "SkipLocalsInitAttribute" -> WellKnownValAttributes.SkipLocalsInitAttribute
+            | "ExtensionAttribute" -> WellKnownValAttributes.ExtensionAttribute
+            | "CallerMemberNameAttribute" -> WellKnownValAttributes.CallerMemberNameAttribute
+            | "CallerFilePathAttribute" -> WellKnownValAttributes.CallerFilePathAttribute
+            | "CallerLineNumberAttribute" -> WellKnownValAttributes.CallerLineNumberAttribute
+            | "MethodImplAttribute" -> WellKnownValAttributes.MethodImplAttribute
+            | _ -> WellKnownValAttributes.None
 
-            | [| "System"; "Runtime"; "InteropServices"; name |] ->
-                match name with
-                | "DllImportAttribute" -> flag <- WellKnownValAttributes.DllImportAttribute
-                | "InAttribute" -> flag <- WellKnownValAttributes.InAttribute
-                | "OutAttribute" -> flag <- WellKnownValAttributes.OutAttribute
-                | "MarshalAsAttribute" -> flag <- WellKnownValAttributes.MarshalAsAttribute
-                | "DefaultParameterValueAttribute" -> flag <- WellKnownValAttributes.DefaultParameterValueAttribute
-                | "OptionalAttribute" -> flag <- WellKnownValAttributes.OptionalAttribute
-                | "PreserveSigAttribute" -> flag <- WellKnownValAttributes.PreserveSigAttribute
-                | "FieldOffsetAttribute" -> flag <- WellKnownValAttributes.FieldOffsetAttribute
-                | _ -> ()
+        | [| "System"; "Runtime"; "InteropServices"; name |] ->
+            match name with
+            | "DllImportAttribute" -> WellKnownValAttributes.DllImportAttribute
+            | "InAttribute" -> WellKnownValAttributes.InAttribute
+            | "OutAttribute" -> WellKnownValAttributes.OutAttribute
+            | "MarshalAsAttribute" -> WellKnownValAttributes.MarshalAsAttribute
+            | "DefaultParameterValueAttribute" -> WellKnownValAttributes.DefaultParameterValueAttribute
+            | "OptionalAttribute" -> WellKnownValAttributes.OptionalAttribute
+            | "PreserveSigAttribute" -> WellKnownValAttributes.PreserveSigAttribute
+            | "FieldOffsetAttribute" -> WellKnownValAttributes.FieldOffsetAttribute
+            | _ -> WellKnownValAttributes.None
 
-            | [| "System"; "Diagnostics"; name |] ->
-                match name with
-                | "ConditionalAttribute" -> flag <- WellKnownValAttributes.ConditionalAttribute
-                | _ -> ()
+        | [| "System"; "Diagnostics"; name |] ->
+            match name with
+            | "ConditionalAttribute" -> WellKnownValAttributes.ConditionalAttribute
+            | _ -> WellKnownValAttributes.None
 
-            | [| "System"; name |] ->
-                match name with
-                | "ThreadStaticAttribute" -> flag <- WellKnownValAttributes.ThreadStaticAttribute
-                | "ContextStaticAttribute" -> flag <- WellKnownValAttributes.ContextStaticAttribute
-                | "ParamArrayAttribute" -> flag <- WellKnownValAttributes.ParamArrayAttribute
-                | "NonSerializedAttribute" -> flag <- WellKnownValAttributes.NonSerializedAttribute
-                | _ -> ()
+        | [| "System"; name |] ->
+            match name with
+            | "ThreadStaticAttribute" -> WellKnownValAttributes.ThreadStaticAttribute
+            | "ContextStaticAttribute" -> WellKnownValAttributes.ContextStaticAttribute
+            | "ParamArrayAttribute" -> WellKnownValAttributes.ParamArrayAttribute
+            | "NonSerializedAttribute" -> WellKnownValAttributes.NonSerializedAttribute
+            | _ -> WellKnownValAttributes.None
 
-            | _ -> ())
+        | _ -> WellKnownValAttributes.None
+
+    | ValueNone ->
 
     match fsharpCorePath with
     | ValueSome path ->
         match path with
         | [| "Microsoft"; "FSharp"; "Core"; name |] ->
             match name with
-            | "EntryPointAttribute" -> flag <- WellKnownValAttributes.EntryPointAttribute
-            | "LiteralAttribute" -> flag <- WellKnownValAttributes.LiteralAttribute
+            | "EntryPointAttribute" -> WellKnownValAttributes.EntryPointAttribute
+            | "LiteralAttribute" -> WellKnownValAttributes.LiteralAttribute
             | "ReflectedDefinitionAttribute" ->
-                flag <- decodeBoolAttribFlag attrib WellKnownValAttributes.ReflectedDefinitionAttribute_True WellKnownValAttributes.ReflectedDefinitionAttribute_False WellKnownValAttributes.ReflectedDefinitionAttribute_False
-            | "RequiresExplicitTypeArgumentsAttribute" -> flag <- WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
+                decodeBoolAttribFlag attrib WellKnownValAttributes.ReflectedDefinitionAttribute_True WellKnownValAttributes.ReflectedDefinitionAttribute_False WellKnownValAttributes.ReflectedDefinitionAttribute_False
+            | "RequiresExplicitTypeArgumentsAttribute" -> WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
             | "DefaultValueAttribute" ->
-                flag <- decodeBoolAttribFlag attrib WellKnownValAttributes.DefaultValueAttribute_True WellKnownValAttributes.DefaultValueAttribute_False WellKnownValAttributes.DefaultValueAttribute_True
-            | "VolatileFieldAttribute" -> flag <- WellKnownValAttributes.VolatileFieldAttribute
+                decodeBoolAttribFlag attrib WellKnownValAttributes.DefaultValueAttribute_True WellKnownValAttributes.DefaultValueAttribute_False WellKnownValAttributes.DefaultValueAttribute_True
+            | "VolatileFieldAttribute" -> WellKnownValAttributes.VolatileFieldAttribute
             | "NoDynamicInvocationAttribute" ->
-                flag <- decodeBoolAttribFlag attrib WellKnownValAttributes.NoDynamicInvocationAttribute_True WellKnownValAttributes.NoDynamicInvocationAttribute_False WellKnownValAttributes.NoDynamicInvocationAttribute_False
-            | "OptionalArgumentAttribute" -> flag <- WellKnownValAttributes.OptionalArgumentAttribute
-            | "ProjectionParameterAttribute" -> flag <- WellKnownValAttributes.ProjectionParameterAttribute
-            | "InlineIfLambdaAttribute" -> flag <- WellKnownValAttributes.InlineIfLambdaAttribute
-            | "StructAttribute" -> flag <- WellKnownValAttributes.StructAttribute
-            | "NoCompilerInliningAttribute" -> flag <- WellKnownValAttributes.NoCompilerInliningAttribute
-            | "GeneralizableValueAttribute" -> flag <- WellKnownValAttributes.GeneralizableValueAttribute
-            | "CLIEventAttribute" -> flag <- WellKnownValAttributes.CLIEventAttribute
-            | "CompiledNameAttribute" -> flag <- WellKnownValAttributes.CompiledNameAttribute
-            | "WarnOnWithoutNullArgumentAttribute" -> flag <- WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute
-            | _ -> ()
-        | _ -> ()
-    | ValueNone -> ()
-
-    flag
+                decodeBoolAttribFlag attrib WellKnownValAttributes.NoDynamicInvocationAttribute_True WellKnownValAttributes.NoDynamicInvocationAttribute_False WellKnownValAttributes.NoDynamicInvocationAttribute_False
+            | "OptionalArgumentAttribute" -> WellKnownValAttributes.OptionalArgumentAttribute
+            | "ProjectionParameterAttribute" -> WellKnownValAttributes.ProjectionParameterAttribute
+            | "InlineIfLambdaAttribute" -> WellKnownValAttributes.InlineIfLambdaAttribute
+            | "StructAttribute" -> WellKnownValAttributes.StructAttribute
+            | "NoCompilerInliningAttribute" -> WellKnownValAttributes.NoCompilerInliningAttribute
+            | "GeneralizableValueAttribute" -> WellKnownValAttributes.GeneralizableValueAttribute
+            | "CLIEventAttribute" -> WellKnownValAttributes.CLIEventAttribute
+            | "CompiledNameAttribute" -> WellKnownValAttributes.CompiledNameAttribute
+            | "WarnOnWithoutNullArgumentAttribute" -> WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute
+            | _ -> WellKnownValAttributes.None
+        | [| "Microsoft"; "FSharp"; "Core"; "CompilerServices"; name |] ->
+            match name with
+            | "NoEagerConstraintApplicationAttribute" -> WellKnownValAttributes.NoEagerConstraintApplicationAttribute
+            | _ -> WellKnownValAttributes.None
+        | _ -> WellKnownValAttributes.None
+    | ValueNone -> WellKnownValAttributes.None
 
 let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAttributes =
     let mutable flags = WellKnownValAttributes.None
@@ -4089,7 +4058,7 @@ let EntityTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownEntityAttribute
         Option.None
     else
         let ea = entity.EntityAttribs
-        if ea.HasWellKnownAttribute(trueFlag) then Some true
+        if hasFlag ea.Flags trueFlag then Some true
         else Some false
 
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
@@ -4164,13 +4133,15 @@ let TyconRefHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownILAttributes) (
     match metadataOfTycon tcref.Deref with
 #if !NO_TYPEPROVIDERS
     | ProvidedTypeMetadata _ ->
-        match mapILFlagToAttribInfo g flag with
+        let struct (_, attribInfoOpt) = mapILFlag g flag
+
+        match attribInfoOpt with
         | Some attribInfo -> TyconRefHasAttribute g tcref.Range attribInfo tcref
         | None -> false
 #endif
     | ILTypeMetadata(TILObjectReprData(_, _, tdef)) -> tdef.HasWellKnownAttribute(g, flag)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-        let entityFlag = mapILFlagToEntityFlag flag
+        let struct (entityFlag, _) = mapILFlag g flag
 
         if entityFlag <> WellKnownEntityAttributes.None then
             EntityHasWellKnownAttribute g entityFlag tcref.Deref

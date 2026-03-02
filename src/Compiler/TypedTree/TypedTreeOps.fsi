@@ -2458,8 +2458,8 @@ val (|ValAttribString|_|): g: TcGlobals -> flag: WellKnownValAttributes -> attri
 
 val EntityHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownEntityAttributes -> entity: Entity -> bool
 
-/// Map a WellKnownILAttributes flag to its WellKnownEntityAttributes equivalent.
-val mapILFlagToEntityFlag: flag: WellKnownILAttributes -> WellKnownEntityAttributes
+/// Map a WellKnownILAttributes flag to its entity flag + provided-type AttribInfo equivalents.
+val mapILFlag: g: TcGlobals -> flag: WellKnownILAttributes -> struct (WellKnownEntityAttributes * BuiltinAttribInfo option)
 
 val computeValWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownValAttributes
 

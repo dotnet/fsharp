@@ -110,6 +110,7 @@ type internal WellKnownValAttributes =
     | CompiledNameAttribute = (1uL <<< 35)
     | WarnOnWithoutNullArgumentAttribute = (1uL <<< 36)
     | MarshalAsAttribute = (1uL <<< 37)
+    | NoEagerConstraintApplicationAttribute = (1uL <<< 38)
     | NotComputed = (1uL <<< 63)
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.
@@ -119,7 +120,6 @@ type internal WellKnownAttribs<'TItem, 'TFlags when 'TFlags: enum<uint64>> =
     val private attribs: 'TItem list
     val private flags: 'TFlags
     new: attribs: 'TItem list * flags: 'TFlags -> WellKnownAttribs<'TItem, 'TFlags>
-    member HasWellKnownAttribute: flag: 'TFlags -> bool
     member AsList: unit -> 'TItem list
     member Flags: 'TFlags
     member Add: attrib: 'TItem * flag: 'TFlags -> WellKnownAttribs<'TItem, 'TFlags>
