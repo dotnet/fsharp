@@ -173,7 +173,8 @@ foreach ($project in $projects.Keys) {
             [string[]] $baseline = Get-Content $baseline_file # | ForEach-Object { Normalize-IlverifyOutputLine $_ }
 
             if ($baseline.Length -eq 0) {
-                if ($ilverify_output.Length -eq 0) {
+                $errorLines = @($ilverify_output | Where-Object { $_ -and $_.Trim() -and $_ -match "\[IL\]" })
+                if ($errorLines.Length -eq 0) {
                     Write-Host "Baseline file is empty and ILVerify produced no errors - OK."
                     continue
                 }
