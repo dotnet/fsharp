@@ -3580,6 +3580,11 @@ let TryFindILAttribute (AttribInfo (atref, _)) attrs =
 
 let IsILAttrib  (AttribInfo (builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
 
+let inline hasFlag (flags: ^F) (flag: ^F) : bool when ^F: enum<uint64> =
+    let f = LanguagePrimitives.EnumToValue flags
+    let v = LanguagePrimitives.EnumToValue flag
+    f &&& v <> 0uL
+
 /// Compute well-known attribute flags for an ILAttributes collection.
 /// Classify a single IL attribute, returning its well-known flag (or None).
 let classifyILAttrib (attr: ILAttribute) : WellKnownILAttributes =
@@ -3671,6 +3676,12 @@ type ILFieldDef with
 
     member x.HasWellKnownAttribute(g: TcGlobals, flag: WellKnownILAttributes) =
         x.CustomAttrsStored.HasWellKnownAttribute(g, flag)
+
+type ILAttributes with
+
+    /// Non-caching (unlike ILAttributesStored.HasWellKnownAttribute which caches).
+    member x.HasWellKnownAttribute(flag: WellKnownILAttributes) =
+        x.AsArray() |> Array.exists (fun attr -> classifyILAttrib attr &&& flag <> WellKnownILAttributes.None)
 
 /// Resolve the FSharp.Core path for an attribute's type reference.
 /// Returns ValueSome path for FSharp.Core attributes, calls bclDispatch for BCL attributes, ValueNone otherwise.
@@ -3931,14 +3942,9 @@ let attribsHaveEntityFlag g (flag: WellKnownEntityAttributes) (attribs: Attribs)
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
 let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes) (entity: Entity) : bool =
     let ea = entity.EntityAttribs
-
-    if ea.Flags &&& WellKnownEntityAttributes.NotComputed <> WellKnownEntityAttributes.None then
-        let attribs = ea.AsList()
-        let flags = computeEntityWellKnownFlags g attribs
-        entity.SetEntityAttribs(WellKnownEntityAttribs.CreateWithFlags(attribs, flags))
-        flags &&& flag <> WellKnownEntityAttributes.None
-    else
-        ea.HasWellKnownAttribute(flag)
+    let struct (result, wa) = ea.CheckFlag(flag, computeEntityWellKnownFlags g)
+    if wa.Flags <> ea.Flags then entity.SetEntityAttribs(wa)
+    result
 
 /// Classify a single Val-level attribute, returning its well-known flag (or None).
 let classifyValAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownValAttributes =
@@ -4066,26 +4072,16 @@ let filterOutWellKnownAttribs
 /// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
 let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (argInfo: ArgReprInfo) : bool =
     let wa = argInfo.Attribs
-
-    if wa.Flags &&& WellKnownValAttributes.NotComputed <> WellKnownValAttributes.None then
-        let attribs = wa.AsList()
-        let flags = computeValWellKnownFlags g attribs
-        argInfo.Attribs <- WellKnownValAttribs.CreateWithFlags(attribs, flags)
-        flags &&& flag <> WellKnownValAttributes.None
-    else
-        wa.HasWellKnownAttribute(flag)
+    let struct (result, waNew) = wa.CheckFlag(flag, computeValWellKnownFlags g)
+    if waNew.Flags <> wa.Flags then argInfo.Attribs <- waNew
+    result
 
 /// Check if a Val has a specific well-known attribute, computing and caching flags if needed.
 let ValHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (v: Val) : bool =
     let va = v.ValAttribs
-
-    if va.Flags &&& WellKnownValAttributes.NotComputed <> WellKnownValAttributes.None then
-        let attribs = va.AsList()
-        let flags = computeValWellKnownFlags g attribs
-        v.SetValAttribs(WellKnownValAttribs.CreateWithFlags(attribs, flags))
-        flags &&& flag <> WellKnownValAttributes.None
-    else
-        va.HasWellKnownAttribute(flag)
+    let struct (result, waNew) = va.CheckFlag(flag, computeValWellKnownFlags g)
+    if waNew.Flags <> va.Flags then v.SetValAttribs(waNew)
+    result
 
 /// Query a three-state bool attribute on an entity. Returns bool option.
 let EntityTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownEntityAttributes) (falseFlag: WellKnownEntityAttributes) (entity: Entity) : bool option =
@@ -10045,12 +10041,10 @@ let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberIn
         let entityFlags = computeEntityWellKnownFlags g attrs
 
         let explicitInstance =
-            entityFlags &&& WellKnownEntityAttributes.CompilationRepresentation_Instance
-            <> WellKnownEntityAttributes.None
+            hasFlag entityFlags WellKnownEntityAttributes.CompilationRepresentation_Instance
 
         let explicitStatic =
-            entityFlags &&& WellKnownEntityAttributes.CompilationRepresentation_Static
-            <> WellKnownEntityAttributes.None
+            hasFlag entityFlags WellKnownEntityAttributes.CompilationRepresentation_Static
         explicitInstance ||
         (membInfo.MemberFlags.IsInstance &&
          not explicitStatic &&

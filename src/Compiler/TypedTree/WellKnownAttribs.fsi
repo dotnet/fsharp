@@ -61,12 +61,12 @@ type internal WellKnownEntityAttributes =
 /// Flags enum for well-known assembly-level attributes.
 [<System.Flags>]
 type internal WellKnownAssemblyAttributes =
-    | None = 0u
-    | AutoOpenAttribute = (1u <<< 0)
-    | InternalsVisibleToAttribute = (1u <<< 1)
-    | AssemblyCultureAttribute = (1u <<< 2)
-    | AssemblyVersionAttribute = (1u <<< 3)
-    | NotComputed = (1u <<< 31)
+    | None = 0uL
+    | AutoOpenAttribute = (1uL <<< 0)
+    | InternalsVisibleToAttribute = (1uL <<< 1)
+    | AssemblyCultureAttribute = (1uL <<< 2)
+    | AssemblyVersionAttribute = (1uL <<< 3)
+    | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known attributes on Val (values and members).
 [<System.Flags>]
@@ -125,3 +125,4 @@ type internal WellKnownAttribs<'TItem, 'TFlags when 'TFlags: enum<uint64>> =
     member Add: attrib: 'TItem * flag: 'TFlags -> WellKnownAttribs<'TItem, 'TFlags>
     member Append: others: 'TItem list * flags: 'TFlags -> WellKnownAttribs<'TItem, 'TFlags>
     member WithRecomputedFlags: unit -> WellKnownAttribs<'TItem, 'TFlags>
+    member CheckFlag: flag: 'TFlags * compute: ('TItem list -> 'TFlags) -> struct (bool * WellKnownAttribs<'TItem, 'TFlags>)

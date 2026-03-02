@@ -96,7 +96,7 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
                 let hasStructAttribute() = 
                     vref.Attribs
                     |> List.exists (function 
-                        | Attrib(targetsOpt = Some(System.AttributeTargets.ReturnValue)) as a -> classifyValAttrib g a &&& WellKnownValAttributes.StructAttribute <> WellKnownValAttributes.None
+                        | Attrib(targetsOpt = Some(System.AttributeTargets.ReturnValue)) as a -> hasFlag (classifyValAttrib g a) WellKnownValAttributes.StructAttribute
                         | _ -> false)
                 if isValueOptionTy g apReturnTy || hasStructAttribute() then ActivePatternReturnKind.StructTypeWrapper
                 elif isBoolTy g apReturnTy then ActivePatternReturnKind.Boolean

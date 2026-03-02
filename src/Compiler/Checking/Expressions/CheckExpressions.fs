@@ -1325,14 +1325,8 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
     // 3. If some are missing, produce a diagnostic which missing ones.
     if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport)
         && minfo.IsConstructor
-        && not (
-            match minfo with
-            | ILMeth(_, ilMethInfo, _) ->
-                ilMethInfo.RawMetadata.HasWellKnownAttribute(g, WellKnownILAttributes.SetsRequiredMembersAttribute)
-            | _ ->
-                tryFindILAttribByFlag WellKnownILAttributes.SetsRequiredMembersAttribute (minfo.GetCustomAttrs())
-                |> Option.isSome
-        ) then
+        && not (minfo.GetCustomAttrs().HasWellKnownAttribute(WellKnownILAttributes.SetsRequiredMembersAttribute))
+        then
 
         let requiredProps =
             [
@@ -1406,7 +1400,7 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
     let valFlags = computeValWellKnownFlags g attrs
 
     let inlineFlag =
-        if valFlags &&& WellKnownValAttributes.DllImportAttribute <> WellKnownValAttributes.None then
+        if hasFlag valFlags WellKnownValAttributes.DllImportAttribute then
             if inlineFlag = ValInline.Always then
               errorR(Error(FSComp.SR.tcDllImportStubsCannotBeInlined(), m))
             ValInline.Never
@@ -2390,7 +2384,7 @@ let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable
     let valFlags = computeValWellKnownFlags g attrs
 
     let hasNoCompilerInliningAttribute () =
-        valFlags &&& WellKnownValAttributes.NoCompilerInliningAttribute <> WellKnownValAttributes.None
+        hasFlag valFlags WellKnownValAttributes.NoCompilerInliningAttribute
 
     let isCtorOrAbstractSlot () =
         match memFlagsOption with
@@ -2398,7 +2392,7 @@ let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable
         | Some x -> (x.MemberKind = SynMemberKind.Constructor) || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl
 
     let isExtern () =
-        valFlags &&& WellKnownValAttributes.DllImportAttribute <> WellKnownValAttributes.None
+        hasFlag valFlags WellKnownValAttributes.DllImportAttribute
 
     let inlineFlag, reportIncorrectInlineKeywordUsage =
         // Mutable values may never be inlined
@@ -11155,7 +11149,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let valAttribFlags = computeValWellKnownFlags g valAttribs
 
-        let isVolatile = valAttribFlags &&& WellKnownValAttributes.VolatileFieldAttribute <> WellKnownValAttributes.None
+        let isVolatile = hasFlag valAttribFlags WellKnownValAttributes.VolatileFieldAttribute
         let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable g valAttribs mBinding
 
         let argAttribs =
@@ -11179,11 +11173,11 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 | _ -> false
             | _ -> false
 
-        let hasDefaultValueAttr = valAttribFlags &&& (WellKnownValAttributes.DefaultValueAttribute_True ||| WellKnownValAttributes.DefaultValueAttribute_False) <> WellKnownValAttributes.None
+        let hasDefaultValueAttr = hasFlag valAttribFlags (WellKnownValAttributes.DefaultValueAttribute_True ||| WellKnownValAttributes.DefaultValueAttribute_False)
         if hasDefaultValueAttr && not isZeroMethod then
             errorR(Error(FSComp.SR.tcDefaultValueAttributeRequiresVal(), mBinding))
 
-        let isThreadStatic = valAttribFlags &&& (WellKnownValAttributes.ThreadStaticAttribute ||| WellKnownValAttributes.ContextStaticAttribute) <> WellKnownValAttributes.None
+        let isThreadStatic = hasFlag valAttribFlags (WellKnownValAttributes.ThreadStaticAttribute ||| WellKnownValAttributes.ContextStaticAttribute)
         if isThreadStatic then errorR(DeprecatedThreadStaticBindingWarning mBinding)
 
         if isVolatile then
@@ -11198,13 +11192,13 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             errorR(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
         if (not declKind.CanBeDllImport || (match memberFlagsOpt with Some memberFlags -> memberFlags.IsInstance | _ -> false)) &&
-            valAttribFlags &&& WellKnownValAttributes.DllImportAttribute <> WellKnownValAttributes.None then
+            hasFlag valAttribFlags WellKnownValAttributes.DllImportAttribute then
             errorR(Error(FSComp.SR.tcDllImportNotAllowed(), mBinding))
 
-        if Option.isNone memberFlagsOpt && valAttribFlags &&& WellKnownValAttributes.ConditionalAttribute <> WellKnownValAttributes.None then
+        if Option.isNone memberFlagsOpt && hasFlag valAttribFlags WellKnownValAttributes.ConditionalAttribute then
             errorR(Error(FSComp.SR.tcConditionalAttributeRequiresMembers(), mBinding))
 
-        if valAttribFlags &&& WellKnownValAttributes.EntryPointAttribute <> WellKnownValAttributes.None then
+        if hasFlag valAttribFlags WellKnownValAttributes.EntryPointAttribute then
             if Option.isSome memberFlagsOpt then
                 errorR(Error(FSComp.SR.tcEntryPointAttributeRequiresFunctionInModule(), mBinding))
             else
@@ -11390,7 +11384,7 @@ and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
     let valFlags = computeValWellKnownFlags g attrs
 
     let hasLiteralAttr =
-        valFlags &&& WellKnownValAttributes.LiteralAttribute <> WellKnownValAttributes.None
+        hasFlag valFlags WellKnownValAttributes.LiteralAttribute
 
     if hasLiteralAttr then
         let literalValExpr, _ = TcExpr cenv (MustEqual overallTy) env tpenv synLiteralValExpr

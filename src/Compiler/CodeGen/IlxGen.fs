@@ -8947,16 +8947,12 @@ and GenParamAttribs cenv paramTy attribs =
     let valFlags = computeValWellKnownFlags g attribs
 
     let inFlag =
-        valFlags &&& WellKnownValAttributes.InAttribute <> WellKnownValAttributes.None
-        || isInByrefTy g paramTy
+        hasFlag valFlags WellKnownValAttributes.InAttribute || isInByrefTy g paramTy
 
     let outFlag =
-        valFlags &&& WellKnownValAttributes.OutAttribute <> WellKnownValAttributes.None
-        || isOutByrefTy g paramTy
+        hasFlag valFlags WellKnownValAttributes.OutAttribute || isOutByrefTy g paramTy
 
-    let optionalFlag =
-        valFlags &&& WellKnownValAttributes.OptionalAttribute
-        <> WellKnownValAttributes.None
+    let optionalFlag = hasFlag valFlags WellKnownValAttributes.OptionalAttribute
 
     let defaultValue =
         tryFindValAttribByFlag g WellKnownValAttributes.DefaultParameterValueAttribute attribs
@@ -11025,9 +11021,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             // DebugDisplayAttribute gets copied to the subtypes generated as part of DU compilation
             let debugDisplayAttrs, normalAttrs =
                 tycon.Attribs
-                |> List.partition (fun a ->
-                    classifyEntityAttrib g a &&& WellKnownEntityAttributes.DebuggerDisplayAttribute
-                    <> WellKnownEntityAttributes.None)
+                |> List.partition (fun a -> hasFlag (classifyEntityAttrib g a) WellKnownEntityAttributes.DebuggerDisplayAttribute)
 
             let securityAttrs, normalAttrs =
                 normalAttrs

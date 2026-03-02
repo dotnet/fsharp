@@ -1820,11 +1820,14 @@ FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey NewPublicKeyToken(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: UInt32 value__
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AllowNullLiteralAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AttributeUsageAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AutoOpenAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerFilePathAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerLineNumberAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerMemberNameAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CompilerFeatureRequiredAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes DefaultMemberAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ExperimentalAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ExtensionAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IDispatchConstantAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IUnknownConstantAttribute
@@ -1836,9 +1839,11 @@ FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NoEag
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes None
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NotComputed
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NullableAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NullableContextAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ObsoleteAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ParamArrayAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ReflectedDefinitionAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes RequiredMemberAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes RequiresLocationAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes SetsRequiredMembersAttribute
 FSharp.Compiler.AbstractIL.IL: Boolean |HasFlag|_|(ILTypeDefAdditionalFlags, ILTypeDefAdditionalFlags)

@@ -2374,6 +2374,8 @@ val IsILAttrib: BuiltinAttribInfo -> ILAttribute -> bool
 
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
+val inline hasFlag: flags: ^F -> flag: ^F -> bool when ^F: enum<uint64>
+
 /// Compute well-known attribute flags for an ILAttributes collection.
 val classifyILAttrib: attr: ILAttribute -> WellKnownILAttributes
 
@@ -2400,6 +2402,11 @@ type ILMethodDef with
 type ILFieldDef with
 
     member HasWellKnownAttribute: g: TcGlobals * flag: WellKnownILAttributes -> bool
+
+type ILAttributes with
+
+    /// Non-caching (unlike ILAttributesStored.HasWellKnownAttribute which caches).
+    member HasWellKnownAttribute: flag: WellKnownILAttributes -> bool
 
 /// Compute well-known attribute flags for an Entity's Attrib list.
 val computeEntityWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownEntityAttributes

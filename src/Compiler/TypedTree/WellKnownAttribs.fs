@@ -60,15 +60,14 @@ type internal WellKnownEntityAttributes =
     | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known assembly-level attributes.
-/// Used to avoid O(N) linear scans of attribute lists.
 [<System.Flags>]
 type internal WellKnownAssemblyAttributes =
-    | None = 0u
-    | AutoOpenAttribute = (1u <<< 0)
-    | InternalsVisibleToAttribute = (1u <<< 1)
-    | AssemblyCultureAttribute = (1u <<< 2)
-    | AssemblyVersionAttribute = (1u <<< 3)
-    | NotComputed = (1u <<< 31)
+    | None = 0uL
+    | AutoOpenAttribute = (1uL <<< 0)
+    | InternalsVisibleToAttribute = (1uL <<< 1)
+    | AssemblyCultureAttribute = (1uL <<< 2)
+    | AssemblyVersionAttribute = (1uL <<< 3)
+    | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known attributes on Val (values and members).
 /// Used to avoid O(N) linear scans of attribute lists.
@@ -156,3 +155,17 @@ type internal WellKnownAttribs<'TItem, 'TFlags when 'TFlags: enum<uint64>> =
             WellKnownAttribs<'TItem, 'TFlags>([], LanguagePrimitives.EnumOfValue 0uL)
         else
             WellKnownAttribs<'TItem, 'TFlags>(x.attribs, LanguagePrimitives.EnumOfValue(1uL <<< 63))
+
+    /// Caller must write back the returned wrapper if flags were recomputed.
+    member x.CheckFlag(flag: 'TFlags, compute: 'TItem list -> 'TFlags) : struct (bool * WellKnownAttribs<'TItem, 'TFlags>) =
+        let f = LanguagePrimitives.EnumToValue x.flags
+
+        if f &&& (1uL <<< 63) <> 0uL then
+            let computed = compute x.attribs
+            let wa = WellKnownAttribs<'TItem, 'TFlags>(x.attribs, computed)
+
+            struct (LanguagePrimitives.EnumToValue computed &&& LanguagePrimitives.EnumToValue flag
+                    <> 0uL,
+                    wa)
+        else
+            struct (x.HasWellKnownAttribute(flag), x)

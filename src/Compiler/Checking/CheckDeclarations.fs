@@ -435,14 +435,11 @@ module TcRecdUnionAndEnumDeclarations =
         let attrsForField = (List.map snd attrsForField)
         let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
         let fieldFlags = computeValWellKnownFlags g attrsForField
-        let zeroInit = fieldFlags &&& WellKnownValAttributes.DefaultValueAttribute_True <> WellKnownValAttributes.None
-        let isVolatile = fieldFlags &&& WellKnownValAttributes.VolatileFieldAttribute <> WellKnownValAttributes.None
+        let zeroInit = hasFlag fieldFlags (WellKnownValAttributes.DefaultValueAttribute_True ||| WellKnownValAttributes.DefaultValueAttribute_False)
+        let isVolatile = hasFlag fieldFlags WellKnownValAttributes.VolatileFieldAttribute
         
         let isThreadStatic =
-            fieldFlags
-            &&& (WellKnownValAttributes.ThreadStaticAttribute
-                 ||| WellKnownValAttributes.ContextStaticAttribute)
-            <> WellKnownValAttributes.None
+            hasFlag fieldFlags (WellKnownValAttributes.ThreadStaticAttribute ||| WellKnownValAttributes.ContextStaticAttribute)
         if isThreadStatic && (not zeroInit || not isStatic) then 
             errorR(Error(FSComp.SR.tcThreadStaticAndContextStaticMustBeStatic(), m))
 
@@ -2555,11 +2552,11 @@ module EstablishTypeDefinitionCores =
  
     let private GetTyconAttribs g attrs =
         let flags = computeEntityWellKnownFlags g attrs
-        let hasClassAttr = flags &&& WellKnownEntityAttributes.ClassAttribute <> WellKnownEntityAttributes.None
-        let hasAbstractClassAttr = flags &&& WellKnownEntityAttributes.AbstractClassAttribute <> WellKnownEntityAttributes.None
-        let hasInterfaceAttr = flags &&& WellKnownEntityAttributes.InterfaceAttribute <> WellKnownEntityAttributes.None
-        let hasStructAttr = flags &&& WellKnownEntityAttributes.StructAttribute <> WellKnownEntityAttributes.None
-        let hasMeasureAttr = flags &&& WellKnownEntityAttributes.MeasureAttribute <> WellKnownEntityAttributes.None
+        let hasClassAttr = hasFlag flags WellKnownEntityAttributes.ClassAttribute
+        let hasAbstractClassAttr = hasFlag flags WellKnownEntityAttributes.AbstractClassAttribute
+        let hasInterfaceAttr = hasFlag flags WellKnownEntityAttributes.InterfaceAttribute
+        let hasStructAttr = hasFlag flags WellKnownEntityAttributes.StructAttribute
+        let hasMeasureAttr = hasFlag flags WellKnownEntityAttributes.MeasureAttribute
         (hasClassAttr, hasAbstractClassAttr, hasInterfaceAttr, hasStructAttr, hasMeasureAttr)
 
     //-------------------------------------------------------------------------
@@ -2858,12 +2855,12 @@ module EstablishTypeDefinitionCores =
         // Allow failure of constructor resolution because Vals for members in the same recursive group are not yet available
         let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let entityFlags = computeEntityWellKnownFlags g attrs
-        let hasMeasureAttr = entityFlags &&& WellKnownEntityAttributes.MeasureAttribute <> WellKnownEntityAttributes.None
-        let hasStructAttr = entityFlags &&& WellKnownEntityAttributes.StructAttribute <> WellKnownEntityAttributes.None
-        let hasCLIMutable = entityFlags &&& WellKnownEntityAttributes.CLIMutableAttribute <> WellKnownEntityAttributes.None
-        let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute_True <> WellKnownEntityAttributes.None
-        let hasSealedAttr = entityFlags &&& WellKnownEntityAttributes.SealedAttribute_True <> WellKnownEntityAttributes.None
-        let structLayoutAttr = entityFlags &&& WellKnownEntityAttributes.StructLayoutAttribute <> WellKnownEntityAttributes.None
+        let hasMeasureAttr = hasFlag entityFlags WellKnownEntityAttributes.MeasureAttribute
+        let hasStructAttr = hasFlag entityFlags WellKnownEntityAttributes.StructAttribute
+        let hasCLIMutable = hasFlag entityFlags WellKnownEntityAttributes.CLIMutableAttribute
+        let hasAllowNullLiteralAttr = hasFlag entityFlags WellKnownEntityAttributes.AllowNullLiteralAttribute_True
+        let hasSealedAttr = hasFlag entityFlags WellKnownEntityAttributes.SealedAttribute_True
+        let structLayoutAttr = hasFlag entityFlags WellKnownEntityAttributes.StructLayoutAttribute
 
         // We want to keep these special attributes treatment and avoid having two errors for the same attribute.
         let reportAttributeTargetsErrors =
@@ -3405,28 +3402,28 @@ module EstablishTypeDefinitionCores =
             let thisTyInst, thisTy = generalizeTyconRef g thisTyconRef
 
             let entityFlags = computeEntityWellKnownFlags g attrs
-            let hasAbstractAttr = entityFlags &&& WellKnownEntityAttributes.AbstractClassAttribute <> WellKnownEntityAttributes.None
+            let hasAbstractAttr = hasFlag entityFlags WellKnownEntityAttributes.AbstractClassAttribute
             let hasSealedAttr =
                 // The special case is needed for 'unit' because the 'Sealed' attribute is not yet available when this type is defined.
                 if g.compilingFSharpCore && id.idText = "Unit" then
                     Some true
-                elif entityFlags &&& WellKnownEntityAttributes.SealedAttribute_True <> WellKnownEntityAttributes.None then
+                elif hasFlag entityFlags WellKnownEntityAttributes.SealedAttribute_True then
                     Some true
-                elif entityFlags &&& WellKnownEntityAttributes.SealedAttribute_False <> WellKnownEntityAttributes.None then
+                elif hasFlag entityFlags WellKnownEntityAttributes.SealedAttribute_False then
                     Some false
                 else
                     None
-            let hasMeasureAttr = entityFlags &&& WellKnownEntityAttributes.MeasureAttribute <> WellKnownEntityAttributes.None
+            let hasMeasureAttr = hasFlag entityFlags WellKnownEntityAttributes.MeasureAttribute
             
             // REVIEW: for hasMeasureableAttr we need to be stricter about checking these
             // are only used on exactly the right kinds of type definitions and not in conjunction with other attributes.
-            let hasMeasureableAttr = entityFlags &&& WellKnownEntityAttributes.MeasureableAttribute <> WellKnownEntityAttributes.None
+            let hasMeasureableAttr = hasFlag entityFlags WellKnownEntityAttributes.MeasureableAttribute
             
             let structLayoutAttr =
                 match attrs with
                 | EntityAttribInt g WellKnownEntityAttributes.StructLayoutAttribute v -> Some v
                 | _ -> None
-            let hasAllowNullLiteralAttr = entityFlags &&& WellKnownEntityAttributes.AllowNullLiteralAttribute_True <> WellKnownEntityAttributes.None
+            let hasAllowNullLiteralAttr = hasFlag entityFlags WellKnownEntityAttributes.AllowNullLiteralAttribute_True
 
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true

@@ -1755,8 +1755,7 @@ type ILPropInfo =
 
     /// Indicates if the property is required, i.e. has RequiredMemberAttribute applied.
     member x.IsRequired =
-        tryFindILAttribByFlag WellKnownILAttributes.RequiredMemberAttribute x.RawMetadata.CustomAttrs
-        |> Option.isSome
+        x.RawMetadata.CustomAttrsStored.HasWellKnownAttribute(x.TcGlobals, WellKnownILAttributes.RequiredMemberAttribute)
 
     /// Get the names and types of the indexer arguments associated with the IL property.
     ///
