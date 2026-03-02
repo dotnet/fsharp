@@ -116,4 +116,4 @@ Candidates:
  - static member C.M1: x: int -> int
  - static member C.M1: x: string -> int
 
-neg06.fs(398,13,398,14): typecheck error FS0025: Incomplete pattern matches on this expression. Did you use a constant where a loop variable was expected? For example, the value '0' may indicate a case not covered by the pattern(s). Unmatched elements will be ignored.
+neg06.fs(398,13,398,14): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s). Did you use a constant where a loop variable was expected? Unmatched elements will be ignored.

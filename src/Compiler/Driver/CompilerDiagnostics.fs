@@ -1794,13 +1794,13 @@ type Exception with
         | PatternMatchCompilation.MatchIncomplete(isComp, cexOpt, _, isForLoop) ->
             os.AppendString(MatchIncomplete1E().Format)
 
-            if isForLoop then
-                os.AppendString(MatchIncompleteForLoopE().Format)
-
             match cexOpt with
             | None -> ()
             | Some(cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
             | Some(cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
+
+            if isForLoop then
+                os.AppendString(MatchIncompleteForLoopE().Format)
 
             if isComp then
                 os.AppendString(MatchIncomplete4E().Format)

@@ -150,7 +150,7 @@ for 0 in 1..10 do
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 25, Line 2, Col 5, Line 2, Col 6, "Incomplete pattern matches on this expression. Did you use a constant where a loop variable was expected? For example, the value '1' may indicate a case not covered by the pattern(s). Unmatched elements will be ignored.")
+        |> withSingleDiagnostic (Warning 25, Line 2, Col 5, Line 2, Col 6, "Incomplete pattern matches on this expression. For example, the value '1' may indicate a case not covered by the pattern(s). Did you use a constant where a loop variable was expected? Unmatched elements will be ignored.")
 
     [<Fact>]
     let ``MatchIncomplete for-loop with parenthesized constant pattern includes hint`` () =
@@ -160,7 +160,7 @@ for (0) in 1..10 do
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 25, Line 2, Col 6, Line 2, Col 7, "Incomplete pattern matches on this expression. Did you use a constant where a loop variable was expected? For example, the value '1' may indicate a case not covered by the pattern(s). Unmatched elements will be ignored.")
+        |> withSingleDiagnostic (Warning 25, Line 2, Col 6, Line 2, Col 7, "Incomplete pattern matches on this expression. For example, the value '1' may indicate a case not covered by the pattern(s). Did you use a constant where a loop variable was expected? Unmatched elements will be ignored.")
 
     [<Fact>]
     let ``MatchIncomplete regular match does not include for-loop hint`` () =

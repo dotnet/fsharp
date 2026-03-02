@@ -2337,7 +2337,7 @@ let foo() =
         |> shouldFail
         |> withDiagnostics [
             (Error 10, Line 6, Col 5, Line 6, Col 6, "Unexpected symbol '}' in expression")
-            (Error 3882, Line 5, Col 9, Line 5, Col 13, "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
+            (Error 3884, Line 5, Col 9, Line 5, Col 13, "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
         ]
 
     [<Fact>]
@@ -2353,7 +2353,7 @@ let foo() =
         |> shouldFail
         |> withDiagnostics [
             (Error 10, Line 6, Col 5, Line 6, Col 6, "Unexpected symbol '}' in expression")
-            (Error 3882, Line 5, Col 9, Line 5, Col 13, "'use!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
+            (Error 3884, Line 5, Col 9, Line 5, Col 13, "'use!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
         ]
 
     [<Fact>]
@@ -2380,7 +2380,7 @@ let foo() =
         |> shouldFail
         |> withDiagnostics [
             (Error 10, Line 17, Col 5, Line 17, Col 6, "Unexpected symbol '}' in expression")
-            (Error 3882, Line 15, Col 9, Line 15, Col 13, "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
+            (Error 3884, Line 15, Col 9, Line 15, Col 13, "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
         ]
 
     [<Fact>]
