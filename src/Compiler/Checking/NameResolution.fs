@@ -543,7 +543,7 @@ let IsMethInfoPlainCSharpStyleExtensionMember g m isEnclExtTy (minfo: MethInfo) 
     not minfo.IsInstance &&
     not minfo.IsExtensionMember &&
     (match minfo.NumArgs with [x] when x >= 1 -> true | _ -> false) &&
-    MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo
+    MethInfoHasWellKnownAttribute g m WellKnownILAttributes.ExtensionAttribute WellKnownValAttributes.ExtensionAttribute g.attrib_ExtensionAttribute minfo
     
 let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =                
     try

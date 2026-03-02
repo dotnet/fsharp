@@ -3238,14 +3238,14 @@ module EstablishTypeDefinitionCores =
                     // Give a warning if `AutoOpenAttribute` or `StructAttribute` is being aliased.
                     // If the user were to alias the `Microsoft.FSharp.Core.AutoOpenAttribute` type, it would not be detected by the project graph dependency resolution algorithm.
 
-                    let inline checkAttributeAliased ty (tycon: Tycon) (attrib: BuiltinAttribInfo) =
+                    let inline checkAttributeAliased ty (tycon: Tycon) (fullName: string) =
                         match stripTyEqns g ty with
                         | AppTy g (tcref, _) when not tcref.IsErased ->
                             match tcref.CompiledRepresentation with
                             | CompiledTypeRepr.ILAsmOpen _ -> ()
                             | CompiledTypeRepr.ILAsmNamed _ ->
-                                if tcref.CompiledRepresentationForNamedType.FullName = attrib.TypeRef.FullName then
-                                    warning(Error(FSComp.SR.chkAttributeAliased(attrib.TypeRef.FullName), tycon.Id.idRange))
+                                if tcref.CompiledRepresentationForNamedType.FullName = fullName then
+                                    warning(Error(FSComp.SR.chkAttributeAliased(fullName), tycon.Id.idRange))
                         | _ -> ()
 
                     // Check for attributes in unit-of-measure declarations
@@ -3255,8 +3255,8 @@ module EstablishTypeDefinitionCores =
                     | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
                     | _ -> ()
                         
-                    checkAttributeAliased ty tycon g.attrib_AutoOpenAttribute
-                    checkAttributeAliased ty tycon g.attrib_StructAttribute
+                    checkAttributeAliased ty tycon "Microsoft.FSharp.Core.AutoOpenAttribute"
+                    checkAttributeAliased ty tycon "Microsoft.FSharp.Core.StructAttribute"
 
                     if not firstPass then
                         let ftyvs = freeInTypeLeftToRight g false ty

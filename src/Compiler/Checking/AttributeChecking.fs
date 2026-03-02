@@ -231,6 +231,18 @@ let MethInfoHasAttribute g m attribSpec minfo  =
                     (fun _ -> Some ())
         |> Option.isSome
 
+/// Fast O(1) attribute check for ILMeth (cached IL flags) and FSMeth (cached Val flags).
+/// Falls back to MethInfoHasAttribute for provided methods.
+let rec MethInfoHasWellKnownAttribute g (m: range) (ilFlag: WellKnownILAttributes) (valFlag: WellKnownValAttributes) (attribSpec: BuiltinAttribInfo) (minfo: MethInfo) =
+    match minfo with
+    | ILMeth(_, ilMethInfo, _) -> ilMethInfo.RawMetadata.HasWellKnownAttribute(g, ilFlag)
+    | FSMeth(_, _, vref, _) -> ValHasWellKnownAttribute g valFlag vref.Deref
+    | DefaultStructCtor _ -> false
+    | MethInfoWithModifiedReturnType(mi, _) -> MethInfoHasWellKnownAttribute g m ilFlag valFlag attribSpec mi
+#if !NO_TYPEPROVIDERS
+    | ProvidedMeth _ -> MethInfoHasAttribute g m attribSpec minfo
+#endif
+
 let private CheckCompilerFeatureRequiredAttribute (_g: TcGlobals) cattrs msg m =
     // In some cases C# will generate both ObsoleteAttribute and CompilerFeatureRequiredAttribute.
     // Specifically, when default constructor is generated for class with any required members in them.

@@ -408,11 +408,6 @@ type internal TcGlobals =
 
     member attrib_DecimalConstantAttribute: BuiltinAttribInfo
 
-    member attrib_StructAttribute: BuiltinAttribInfo
-
-
-
-
     member attrib_SystemObsolete: BuiltinAttribInfo
 
     member attrib_IsByRefLikeAttribute_opt: BuiltinAttribInfo option

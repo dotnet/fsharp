@@ -60,6 +60,15 @@ val TryFindMethInfoStringAttribute:
 
 val MethInfoHasAttribute: g: TcGlobals -> m: range -> attribSpec: BuiltinAttribInfo -> minfo: MethInfo -> bool
 
+val MethInfoHasWellKnownAttribute:
+    g: TcGlobals ->
+    m: range ->
+    ilFlag: WellKnownILAttributes ->
+    valFlag: WellKnownValAttributes ->
+    attribSpec: BuiltinAttribInfo ->
+    minfo: MethInfo ->
+        bool
+
 val CheckFSharpAttributes: g: TcGlobals -> attribs: Attrib list -> m: range -> OperationResult<unit>
 
 val CheckILAttributesForUnseen: g: TcGlobals -> cattrs: ILAttributes -> _m: 'a -> bool

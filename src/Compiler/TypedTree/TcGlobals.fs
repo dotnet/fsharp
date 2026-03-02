@@ -1496,7 +1496,6 @@ type TcGlobals(
 
   member val attrib_DefaultValueAttribute                  = mk_MFCore_attrib "DefaultValueAttribute"
 
-  member val attrib_StructAttribute                        = mk_MFCore_attrib "StructAttribute"
   member val attrib_ReflectedDefinitionAttribute           = mk_MFCore_attrib "ReflectedDefinitionAttribute"
   member val attrib_CompiledNameAttribute                  = mk_MFCore_attrib "CompiledNameAttribute"
   member val attrib_AutoOpenAttribute                      = mk_MFCore_attrib "AutoOpenAttribute"
