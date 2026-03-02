@@ -4204,21 +4204,14 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then
                         // Discarding lambda for binding because uses private members
                         UnknownValue
-                    elif exprContainsAsyncHelpersAwait body then
-                        // Discarding lambda for binding because contains AsyncHelpers.Await calls
-                        // AND the enclosing entity has [<RuntimeAsync>].
-                        // Functions in RuntimeAsync-marked types must not be cross-module inlined because
-                        // they are 'cil managed async' methods and their bodies contain AsyncHelpers.Await
-                        // calls that only work correctly within a 'cil managed async' context.
-                        // Functions in plain modules (without [<RuntimeAsync>]) can be inlined normally.
-                        let enclosingHasRuntimeAsync =
-                            match vref.MemberInfo with
-                            | Some memberInfo ->
-                                TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute memberInfo.ApparentEnclosingEntity.Attribs
-                                |> Option.isSome
-                            | None -> false
-                        if enclosingHasRuntimeAsync then UnknownValue
-                        else ivalue
+                     elif exprContainsAsyncHelpersAwait body then
+                         // Discarding lambda for binding because contains AsyncHelpers.Await calls.
+                         // Any function whose body contains AsyncHelpers.Await/AwaitAwaiter/UnsafeAwaitAwaiter
+                         // calls must not be cross-module inlined by the optimizer. These calls only work
+                         // correctly within a 'cil managed async' context. If such a function were inlined
+                         // into a non-async caller (e.g., main), the runtime would produce garbage results.
+                         // This applies to ALL functions with Await calls, not just those in RuntimeAsync-marked types.
+                         UnknownValue
                     else
                         ivalue
 

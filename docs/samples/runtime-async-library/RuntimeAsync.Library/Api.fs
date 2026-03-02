@@ -165,13 +165,15 @@ module Api =
         }
 
     // === Inline-nested runtimeTask CEs ===
-    // Test nesting runtimeTask { ... } directly inside another runtimeTask { ... }.
-    // Each nesting level must be a separate function so each gets its own 'cil managed async' method.
-
+    // Inline-nested runtimeTask { ... } CEs (nesting directly inside another runtimeTask { ... })
+    // do NOT work with the current inline Run + cast design. The inner CE's cast(raw_value) produces
+    // a fake Task<T> that the outer CE's Bind tries to AsyncHelpers.Await — causing NullReferenceException.
+    // Workaround: each nesting level must be a separate function so each gets its own 'cil managed async'
+    // method that returns a real Task<T>.
     let inlineNestedRuntimeTask () : Task<int> =
         runtimeTask {
-            // Calling a separate function that returns Task<int> — this works because
-            // innerInnerTask() is a real 'cil managed async' method returning a real Task.
+            // Calling separate functions that return Task<int> — this works because each function
+            // is a real 'cil managed async' method returning a real Task (not a fake cast value).
             let! a = innerInnerTask ()
             let! b = innerTask ()
             return a + b

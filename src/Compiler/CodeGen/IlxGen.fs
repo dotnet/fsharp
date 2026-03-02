@@ -9468,43 +9468,46 @@ and GenMethodForBinding
     // causing the consumer's body to contain AsyncHelpers.Await calls directly.
     // Guards:
     //   1. [<NoDynamicInvocation>] methods have their body replaced with 'throw', so we must not
-    //      propagate the async flag from the original body.
+    //      propagate the async flag from the original body. This also covers members of RuntimeAsync-
+    //      marked builder types (they get implicit NoDynamicInvocation), so builder members like Bind
+    //      do not get 'cil managed async' from body analysis.
     //   2. Only methods returning Task-like types (Task, Task<T>, ValueTask, ValueTask<T>) can be
     //      'cil managed async'. If the optimizer inlines an async function into a non-Task-returning
     //      method (e.g. main : int), we must NOT set the flag or the runtime will reject it.
-    //   3. Both the explicit [<MethodImpl(0x2000)>] path and the body-analysis path require
-    //      [<RuntimeAsync>] on the enclosing entity. This ensures that only functions in
-    //      RuntimeAsync-marked types (or modules) get 'cil managed async'.
-    //      For the non-inline Run architecture, consumer functions in plain modules do NOT need
-    //      [<RuntimeAsync>] because Run itself is 'cil managed async' and the CE body is inlined
-    //      into Run (not into the consumer).
+    //   3. The explicit [<MethodImpl(0x2000)>] path requires [<RuntimeAsync>] on the enclosing entity.
+    //      The body-analysis path does NOT require it, so that consumer functions in modules
+    //      without [<RuntimeAsync>] (e.g. Api.consumeOlderTaskCE) are correctly marked when the
+    //      inline Run body is inlined into them.
     let hasAsyncImplFlag =
         let hasNoDynamicInvocation =
-            TryFindFSharpBoolAttributeAssumeFalse g g.attrib_NoDynamicInvocationAttribute v.Attribs
-            |> Option.isSome
+            (TryFindFSharpBoolAttributeAssumeFalse g g.attrib_NoDynamicInvocationAttribute v.Attribs
+             |> Option.isSome)
+            || (match v.MemberInfo with
+                | Some memberInfo ->
+                    TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute memberInfo.ApparentEnclosingEntity.Attribs
+                    |> Option.isSome
+                | None -> false)
         let returnsTaskLikeType =
             isAppTy g returnTy &&
             (tyconRefEq g (tcrefOfAppTy g returnTy) g.system_Task_tcref ||
              tyconRefEq g (tcrefOfAppTy g returnTy) g.system_GenericTask_tcref ||
              tyconRefEq g (tcrefOfAppTy g returnTy) g.system_ValueTask_tcref ||
              tyconRefEq g (tcrefOfAppTy g returnTy) g.system_GenericValueTask_tcref)
-        // Check if the enclosing entity has [<RuntimeAsync>].
-        // Both the explicit [<MethodImpl(0x2000)>] path and the body-analysis path require this.
-        // This ensures that only functions in RuntimeAsync-marked types (or modules) get 'cil managed async'.
-        // Consumer functions in plain modules (e.g. Api.consumeOlderTaskCE) get 'cil managed async'
-        // via the body-analysis path because the inline Run body is inlined into them — but only if
-        // the consumer's enclosing module has [<RuntimeAsync>]. For the non-inline Run architecture,
-        // consumer functions in plain modules do NOT need [<RuntimeAsync>] because Run itself is
-        // 'cil managed async' and the CE body is inlined into Run (not into the consumer).
+        // Check if the enclosing entity has [<RuntimeAsync>] for the explicit 0x2000 path.
+        // This ensures that only methods in RuntimeAsync-marked types get 'cil managed async'
+        // from an explicit [<MethodImpl(0x2000)>] attribute.
         let enclosingEntityHasRuntimeAsync =
             match v.TryDeclaringEntity with
             | Parent entityRef ->
                 TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute entityRef.Attribs
                 |> Option.isSome
             | ParentNone -> false
-        // Both paths require [<RuntimeAsync>] on the enclosing entity.
+        // Explicit [<MethodImpl(0x2000)>] on a method requires [<RuntimeAsync>] on the enclosing entity.
+        // Body analysis (detecting inlined AsyncHelpers.Await calls) does NOT require [<RuntimeAsync>]
+        // on the enclosing entity — consumer functions in plain modules get 'cil managed async' when
+        // the inline Run body is inlined into them.
         (hasAsyncImplFlagFromAttr && enclosingEntityHasRuntimeAsync)
-        || (not hasNoDynamicInvocation && returnsTaskLikeType && enclosingEntityHasRuntimeAsync && ExprContainsAsyncHelpersAwaitCall body)
+        || (not hasNoDynamicInvocation && returnsTaskLikeType && ExprContainsAsyncHelpersAwaitCall body)
 
     let securityAttributes, attrs =
         attrs
