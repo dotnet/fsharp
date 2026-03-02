@@ -2334,6 +2334,56 @@ let inline IsStateMachineExpr g overallExpr =
         isReturnsResumableCodeTy g valRef.TauType
     | _ -> false
 
+/// Check if an expression tree contains calls to System.Runtime.CompilerServices.AsyncHelpers.Await/AwaitAwaiter/UnsafeAwaitAwaiter.
+/// Functions containing these calls use 'cil managed async' and their bodies rely on the runtime
+/// wrapping the return value into Task<T>. Such functions must not be inlined into non-async callers
+/// because the unsafe cast (T -> Task<T>) only works with runtime-async wrapping.
+let rec private exprContainsAsyncHelpersAwait expr =
+    match expr with
+    | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args, _) ->
+        (ilMethRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices.AsyncHelpers"
+            && (ilMethRef.Name = "Await" || ilMethRef.Name = "AwaitAwaiter" || ilMethRef.Name = "UnsafeAwaitAwaiter"))
+        || args |> List.exists exprContainsAsyncHelpersAwait
+    | Expr.Op (_, _, args, _) ->
+        args |> List.exists exprContainsAsyncHelpersAwait
+    | Expr.Let (bind, body, _, _) ->
+        exprContainsAsyncHelpersAwait bind.Expr || exprContainsAsyncHelpersAwait body
+    | Expr.LetRec (binds, body, _, _) ->
+        binds |> List.exists (fun b -> exprContainsAsyncHelpersAwait b.Expr) || exprContainsAsyncHelpersAwait body
+    | Expr.Sequential (e1, e2, _, _) ->
+        exprContainsAsyncHelpersAwait e1 || exprContainsAsyncHelpersAwait e2
+    | Expr.Lambda (_, _, _, _, body, _, _) -> exprContainsAsyncHelpersAwait body  // Walk through lambda bodies (optimization data stores full lambda expression)
+    | Expr.TyLambda (_, _, body, _, _) -> exprContainsAsyncHelpersAwait body
+    | Expr.App (f, _, _, args, _) ->
+        exprContainsAsyncHelpersAwait f || args |> List.exists exprContainsAsyncHelpersAwait
+    | Expr.Match (_, _, dtree, targets, _, _) ->
+        exprContainsAsyncHelpersAwaitDTree dtree
+        || targets |> Array.exists (fun (TTarget(_, e, _)) -> exprContainsAsyncHelpersAwait e)
+    | Expr.TyChoose (_, body, _) -> exprContainsAsyncHelpersAwait body
+    | Expr.Link eref -> exprContainsAsyncHelpersAwait eref.Value
+    | Expr.DebugPoint (_, innerExpr) -> exprContainsAsyncHelpersAwait innerExpr
+    | Expr.Obj (_, _, _, basecall, overrides, iimpls, _) ->
+        exprContainsAsyncHelpersAwait basecall
+        || overrides |> List.exists (fun (TObjExprMethod(_, _, _, _, e, _)) -> exprContainsAsyncHelpersAwait e)
+        || iimpls |> List.exists (fun (_, overrides) -> overrides |> List.exists (fun (TObjExprMethod(_, _, _, _, e, _)) -> exprContainsAsyncHelpersAwait e))
+    | Expr.StaticOptimization (_, e1, e2, _) ->
+        exprContainsAsyncHelpersAwait e1 || exprContainsAsyncHelpersAwait e2
+    | Expr.Quote _
+    | Expr.Const _
+    | Expr.Val _
+    | Expr.WitnessArg _ ->
+        false
+
+and private exprContainsAsyncHelpersAwaitDTree dtree =
+    match dtree with
+    | TDSuccess (args, _) -> args |> List.exists exprContainsAsyncHelpersAwait
+    | TDSwitch (e, cases, dflt, _) ->
+        exprContainsAsyncHelpersAwait e
+        || cases |> List.exists (fun (TCase(_, t)) -> exprContainsAsyncHelpersAwaitDTree t)
+        || dflt |> Option.exists exprContainsAsyncHelpersAwaitDTree
+    | TDBind (bind, rest) ->
+        exprContainsAsyncHelpersAwait bind.Expr || exprContainsAsyncHelpersAwaitDTree rest
+
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     cenv.stackGuard.Guard <| fun () ->
@@ -4153,6 +4203,12 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                         UnknownValue
                     elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then
                         // Discarding lambda for binding because uses private members
+                        UnknownValue
+                    elif exprContainsAsyncHelpersAwait body then
+                        // Discarding lambda for binding because contains AsyncHelpers.Await calls.
+                        // These functions need 'cil managed async' at the IL level and their bodies
+                        // use unsafe casts that only work with runtime-async wrapping. Inlining them
+                        // into non-async callers would produce invalid IL.
                         UnknownValue
                     else
                         ivalue

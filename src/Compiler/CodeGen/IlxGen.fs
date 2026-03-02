@@ -9184,16 +9184,16 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let hasAsyncImplFlag = (implflags &&& 0x2000) <> 0x0
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, hasAsyncImplFlag, attrs
 
-/// Check if an expression contains calls to System.Runtime.CompilerServices.AsyncHelpers.Await.
+/// Check if an expression contains calls to System.Runtime.CompilerServices.AsyncHelpers.Await/AwaitAwaiter/UnsafeAwaitAwaiter.
 /// This is used to detect when async code has been inlined into a method, which means the 
 /// containing method should also have the async flag set.
 and ExprContainsAsyncHelpersAwaitCall expr =
     let rec check expr =
         match expr with
         | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args, _) ->
-            // Check if this is a call to AsyncHelpers.Await
-            if ilMethRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices.AsyncHelpers" 
-               && ilMethRef.Name = "Await" then
+            // Check if this is a call to AsyncHelpers.Await, AwaitAwaiter, or UnsafeAwaitAwaiter
+            if ilMethRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices.AsyncHelpers"
+               && (ilMethRef.Name = "Await" || ilMethRef.Name = "AwaitAwaiter" || ilMethRef.Name = "UnsafeAwaitAwaiter") then
                 true
             else
                 args |> List.exists check
@@ -9441,15 +9441,25 @@ and GenMethodForBinding
         ComputeMethodImplAttribs cenv v attrs
 
     // Check if the method body contains calls to AsyncHelpers.Await - if so, the method should also have the async flag.
-    // This handles the case where an inline async method is inlined into this method.
-    // However, if the method has [<NoDynamicInvocation>], its body will be replaced with a 'throw' at runtime,
-    // so we must NOT propagate the async flag from the original body. Doing so would cause the CLR to reject
-    // the type because the method has the async flag (0x2000) but doesn't return a Task-like type.
+    // This handles the case where an inline async method's Run is inlined into a consumer function,
+    // causing the consumer's body to contain AsyncHelpers.Await calls directly.
+    // Guards:
+    //   1. [<NoDynamicInvocation>] methods have their body replaced with 'throw', so we must not
+    //      propagate the async flag from the original body.
+    //   2. Only methods returning Task-like types (Task, Task<T>, ValueTask, ValueTask<T>) can be
+    //      'cil managed async'. If the optimizer inlines an async function into a non-Task-returning
+    //      method (e.g. main : int), we must NOT set the flag or the runtime will reject it.
     let hasAsyncImplFlag =
         let hasNoDynamicInvocation =
             TryFindFSharpBoolAttributeAssumeFalse g g.attrib_NoDynamicInvocationAttribute v.Attribs
             |> Option.isSome
-        hasAsyncImplFlagFromAttr || (not hasNoDynamicInvocation && ExprContainsAsyncHelpersAwaitCall body)
+        let returnsTaskLikeType =
+            isAppTy g returnTy &&
+            (tyconRefEq g (tcrefOfAppTy g returnTy) g.system_Task_tcref ||
+             tyconRefEq g (tcrefOfAppTy g returnTy) g.system_GenericTask_tcref ||
+             tyconRefEq g (tcrefOfAppTy g returnTy) g.system_ValueTask_tcref ||
+             tyconRefEq g (tcrefOfAppTy g returnTy) g.system_GenericValueTask_tcref)
+        hasAsyncImplFlagFromAttr || (not hasNoDynamicInvocation && returnsTaskLikeType && ExprContainsAsyncHelpersAwaitCall body)
 
     let securityAttributes, attrs =
         attrs
