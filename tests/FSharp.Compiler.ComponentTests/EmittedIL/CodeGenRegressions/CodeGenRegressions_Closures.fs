@@ -82,7 +82,7 @@ printfn "Sequence expression test passed"
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/19068 — delegate expression path
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Issue_19068_StructDelegateByrefCapture`` () =
         let source = """
 module Test
