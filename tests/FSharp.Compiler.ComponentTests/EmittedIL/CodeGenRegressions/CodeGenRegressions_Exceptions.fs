@@ -106,3 +106,57 @@ let main _ =
         |> run
         |> shouldSucceed
         |> ignore
+
+    // FSharp.Core has [assembly: SecurityTransparent] which prevents overriding
+    // SecurityCritical methods like Exception.GetObjectData on .NET Framework.
+    // Verify that FSharp.Core exceptions (MatchFailureException) still load and work,
+    // have the deserialization ctor, but do NOT have a GetObjectData override.
+    [<Fact>]
+    let ``Issue_878_FSharpCoreExceptions_NoGetObjectDataOverride`` () =
+        let source = """
+module Test
+
+// Force MatchFailureException to be loaded by triggering an incomplete match
+let triggerMatch x =
+    match x with
+    | 1 -> "one"
+
+// Verify FSharp.Core exceptions can be created and used without TypeLoadException
+let test () =
+    try
+        triggerMatch 999 |> ignore
+        failwith "Expected MatchFailureException"
+    with
+    | :? MatchFailureException as e ->
+        // Verify the exception loaded successfully (no TypeLoadException from GetObjectData)
+        printfn "MatchFailureException loaded OK: %s" e.Message
+
+        // Check that deserialization ctor exists (it should — base ctor is SecuritySafeCritical)
+        let ctorParams = [| typeof<System.Runtime.Serialization.SerializationInfo>; typeof<System.Runtime.Serialization.StreamingContext> |]
+        let ctor = typeof<MatchFailureException>.GetConstructor(
+            System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.NonPublic,
+            null, ctorParams, null)
+        if ctor = null then failwith "Deserialization ctor missing on MatchFailureException"
+        printfn "Deserialization ctor present"
+
+        // GetObjectData should NOT be overridden on MatchFailureException
+        // (FSharp.Core is SecurityTransparent, can't override SecurityCritical base)
+        let godMethod = typeof<MatchFailureException>.GetMethod("GetObjectData",
+            System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.Public,
+            null, ctorParams, null)
+        if godMethod <> null && godMethod.DeclaringType = typeof<MatchFailureException> then
+            failwith "GetObjectData should NOT be overridden on FSharp.Core exceptions"
+        printfn "GetObjectData correctly not overridden"
+        0
+
+[<EntryPoint>]
+let main _ = test ()
+"""
+        FSharp source
+        |> asExe
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore

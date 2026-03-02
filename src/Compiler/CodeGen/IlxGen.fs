@@ -12031,13 +12031,33 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
 
                     mdef.With(customAttrs = mkILCustomAttrs [ securityCriticalAttr ])
 
-                // FSharp.Core has [assembly: SecurityTransparent], so all methods are transparent.
-                // On .NET Framework, transparent methods cannot override SecurityCritical methods
-                // like Exception.GetObjectData, nor call SecurityCritical base constructors like
-                // Exception(SerializationInfo, StreamingContext). Skip serialization members entirely
-                // for FSharp.Core exceptions.
+                // FSharp.Core has [assembly: SecurityTransparent], making all code transparent.
+                // On .NET Framework, transparent code cannot override SecurityCritical virtual
+                // methods like Exception.GetObjectData. Without GetObjectData to write the fields,
+                // the field-restoring deserialization constructor would crash (fields not in
+                // SerializationInfo). So for FSharp.Core: emit only the base-call ctor (status quo).
+                // For user exceptions: emit both GetObjectData and the field-restoring ctor.
                 if g.compilingFSharpCore then
-                    []
+                    let ilBaseOnlyCtorInstrs =
+                        [
+                            mkLdarg0
+                            mkLdarg 1us
+                            mkLdarg 2us
+                            mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [ serializationInfoType; streamingContextType ]))
+                        ]
+                        |> nonBranchingInstrsToCode
+
+                    let ilBaseOnlyCtor =
+                        mkILCtor (
+                            ILMemberAccess.Family,
+                            [
+                                mkILParamNamed ("info", serializationInfoType)
+                                mkILParamNamed ("context", streamingContextType)
+                            ],
+                            mkMethodBody (false, [], 8, ilBaseOnlyCtorInstrs, None, eenv.imports)
+                        )
+
+                    [ ilBaseOnlyCtor ]
                 elif fieldNamesAndTypes.IsEmpty then
                     [ ilCtorDefForSerialization ]
                 else
