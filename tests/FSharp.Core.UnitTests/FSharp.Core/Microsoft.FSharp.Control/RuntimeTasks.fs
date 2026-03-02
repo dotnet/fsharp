@@ -5,14 +5,15 @@
 // FSharp.Core.UnitTests (Range.setTestSource is internal to FSharp.Compiler.Service).
 //
 // Design notes:
-// - The preamble defines RuntimeTaskBuilder where Delay returns unit -> 'T (a thunk)
-//   and Run returns 'T (not Task<'T>).
-// - Each test wraps the CE in a [<MethodImplAttribute(0x2000)>] function returning Task<'T>.
-//   The compiler's special handling for 0x2000 methods type-checks the body against 'T,
-//   so runtimeTask { return 1 } (body returning int) is valid inside a Task<int> function.
-// - [<NoDynamicInvocation>] on Bind members prevents the F# compiler from adding the
-//   cil managed async flag to the Bind IL methods. Without it, the CLR rejects RuntimeTaskBuilder
-//   because Bind has the async flag (0x2000) but returns 'U (not Task<'U>).
+// - The preamble defines RuntimeTaskBuilder with [<RuntimeAsync; Sealed>] on the type.
+//   Delay returns unit -> 'T (a thunk) and Run returns Task<'T> (not 'T).
+// - Consumer functions need NO [<MethodImplAttribute(0x2000)>] — the [<RuntimeAsync>] attribute
+//   on RuntimeTaskBuilder causes the compiler to automatically emit 'cil managed async' on
+//   consumer functions via the inlined Await sentinel in Run.
+// - [<RuntimeAsync>] on the builder class implicitly applies NoDynamicInvocation to all public
+//   inline members, preventing the F# compiler from adding the cil managed async flag to the
+//   Bind IL methods. Without it, the CLR would reject RuntimeTaskBuilder because Bind has the
+//   async flag (0x2000) but returns 'U (not Task<'U>).
 // - DOTNET_RuntimeAsync=1 is set in the test process; child processes inherit it via
 //   psi.EnvironmentVariables (populated from current process env).
 
@@ -27,35 +28,32 @@ open FSharp.Test
 module private RuntimeTaskTestHelpers =
 
     /// Preamble that defines RuntimeTaskBuilder inline.
-    /// Delay returns unit -> 'T (a thunk). Run returns 'T (not Task<'T>).
-    /// The [<MethodImplAttribute(0x2000)>] goes on the user's wrapper function.
-    /// [<NoDynamicInvocation>] on Bind members prevents the F# compiler from adding
-    /// cil managed async to the Bind IL methods (which would cause TypeLoadException).
+    /// Uses [<RuntimeAsync; Sealed>] on RuntimeTaskBuilder. Delay returns unit -> 'T (a thunk).
+    /// Run returns Task<'T> with an Await sentinel + cast trick.
+    /// Consumer functions need NO [<MethodImplAttribute(0x2000)>] — [<RuntimeAsync>] on the
+    /// builder class causes the compiler to automatically emit 'cil managed async'.
     let private preamble =
         "open System\n" +
         "open System.Runtime.CompilerServices\n" +
         "open System.Threading.Tasks\n" +
+        "open Microsoft.FSharp.Control\n" +
         "\n" +
         "#nowarn \"57\"\n" +
         "#nowarn \"42\"\n" +
         "\n" +
-        "module internal RuntimeTaskBuilderUnsafe =\n" +
+        "module internal RuntimeTaskBuilderHelpers =\n" +
         "    let inline cast<'a, 'b> (a: 'a) : 'b = (# \"\" a : 'b #)\n" +
         "\n" +
-        "[<Sealed>]\n" +
+        "[<RuntimeAsync; Sealed>]\n" +
         "type RuntimeTaskBuilder() =\n" +
         "    member inline _.Return(x: 'T) : 'T = x\n" +
-        "    [<NoDynamicInvocation>]\n" +
         "    member inline _.Bind(t: Task<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =\n" +
         "        f(AsyncHelpers.Await t)\n" +
-        "    [<NoDynamicInvocation>]\n" +
         "    member inline _.Bind(t: Task, [<InlineIfLambda>] f: unit -> 'U) : 'U =\n" +
         "        AsyncHelpers.Await t\n" +
         "        f()\n" +
-        "    [<NoDynamicInvocation>]\n" +
         "    member inline _.Bind(t: ValueTask<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =\n" +
         "        f(AsyncHelpers.Await t)\n" +
-        "    [<NoDynamicInvocation>]\n" +
         "    member inline _.Bind(t: ValueTask, [<InlineIfLambda>] f: unit -> 'U) : 'U =\n" +
         "        AsyncHelpers.Await t\n" +
         "        f()\n" +
@@ -64,19 +62,19 @@ module private RuntimeTaskTestHelpers =
         "    member inline _.Combine((): unit, [<InlineIfLambda>] f: unit -> 'T) : 'T = f()\n" +
         "    member inline _.While([<InlineIfLambda>] guard: unit -> bool, [<InlineIfLambda>] body: unit -> unit) : unit =\n" +
         "        while guard() do body()\n" +
-        "    [<NoDynamicInvocation>]\n" +
         "    member inline _.For(s: seq<'T>, [<InlineIfLambda>] body: 'T -> unit) : unit =\n" +
         "        for x in s do body(x)\n" +
         "    member inline _.TryWith([<InlineIfLambda>] body: unit -> 'T, [<InlineIfLambda>] handler: exn -> 'T) : 'T =\n" +
         "        try body() with e -> handler e\n" +
         "    member inline _.TryFinally([<InlineIfLambda>] body: unit -> 'T, [<InlineIfLambda>] comp: unit -> unit) : 'T =\n" +
         "        try body() finally comp()\n" +
-        "    [<NoDynamicInvocation>]\n" +
         "    member inline _.Using(resource: 'T when 'T :> IDisposable, [<InlineIfLambda>] body: 'T -> 'U) : 'U =\n" +
         "        try body resource finally (resource :> IDisposable).Dispose()\n" +
-        "    // Run returns 'T (not Task<'T>). The [<MethodImplAttribute(0x2000)>] goes on the\n" +
-        "    // user's function that wraps the CE call, not here.\n" +
-        "    member inline _.Run(f: unit -> 'T) : 'T = f()\n" +
+        "    // Run is fully inline — its body (including the Await sentinel and cast) gets inlined\n" +
+        "    // into each consumer function. No [<MethodImplAttribute(0x2000)>] needed on consumers.\n" +
+        "    member inline _.Run([<InlineIfLambda>] f: unit -> 'T) : Task<'T> =\n" +
+        "        AsyncHelpers.Await(ValueTask.CompletedTask)\n" +
+        "        RuntimeTaskBuilderHelpers.cast (f())\n" +
         "\n" +
         "[<AutoOpen>]\n" +
         "module RuntimeTaskBuilderModule =\n" +
@@ -116,7 +114,6 @@ type SmokeTestsForCompilation() =
     member _.tinyRuntimeTask() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["1"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> = runtimeTask { return 1 }
 let t = run()
 t.Wait()
@@ -127,7 +124,6 @@ printfn "%d" t.Result
     member _.tbind() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["2"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         let! x = Task.FromResult(1)
@@ -142,9 +138,7 @@ printfn "%d" t.Result
     member _.tnested() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["1"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let inner () : Task<int> = runtimeTask { return 1 }
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         let! x = inner()
@@ -159,7 +153,6 @@ printfn "%d" t.Result
     member _.tcatch0() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["1"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         try
@@ -176,7 +169,6 @@ printfn "%d" t.Result
     member _.tcatch1() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["1"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         try
@@ -194,7 +186,6 @@ printfn "%d" t.Result
     member _.tbindTask() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["2"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         let! x = Task.FromResult(1)
@@ -209,7 +200,6 @@ printfn "%d" t.Result
     member _.tbindUnitTask() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["1"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         do! Task.CompletedTask
@@ -224,7 +214,6 @@ printfn "%d" t.Result
     member _.tbindValueTask() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["2"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         let! x = ValueTask.FromResult(1)
@@ -239,7 +228,6 @@ printfn "%d" t.Result
     member _.tbindUnitValueTask() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["1"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         do! ValueTask.CompletedTask
@@ -255,7 +243,6 @@ printfn "%d" t.Result
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["5"] """
 let mutable i = 0
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         while i < 5 do
@@ -274,7 +261,6 @@ printfn "%d" t.Result
 let mutable total = 0
 // Note: Task<unit> return type with For causes InvalidProgramException (compiler generates generic method).
 // Use Task<int> with an explicit return to avoid this.
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         for x in [1; 2; 3] do
@@ -292,7 +278,6 @@ printfn "done"
 let mutable disposed = false
 // Note: Task<unit> return type with Using causes InvalidProgramException (compiler generates generic method).
 // Use Task<int> with an explicit return to avoid this.
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         use _ = { new System.IDisposable with member _.Dispose() = disposed <- true }
@@ -308,7 +293,6 @@ type Basics() =
     member _.testShortCircuitResult() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["3"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         let! x = Task.FromResult(1)
@@ -326,7 +310,6 @@ printfn "%d" t.Result
         RuntimeTaskTestHelpers.runTest ["x=0 y=1"] """
 let mutable x = 0
 let mutable y = 0
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         try
@@ -347,7 +330,6 @@ printfn "x=%d y=%d" x y
         RuntimeTaskTestHelpers.runTest ["x=0 y=1"] """
 let mutable x = 0
 let mutable y = 0
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         try
@@ -370,7 +352,6 @@ printfn "x=%d y=%d" x y
 let mutable counter = 1
 let mutable caughtInner = 0
 let mutable caughtOuter = 0
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let t1 () : Task<int> =
     runtimeTask {
         try
@@ -382,7 +363,6 @@ let t1 () : Task<int> =
             raise e
             return 0
     }
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let t2 () : Task<int> =
     runtimeTask {
         try
@@ -401,7 +381,6 @@ printfn "inner=%d outer=%d" caughtInner caughtOuter
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["10"] """
 let mutable i = 0
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         while i < 10 do
@@ -418,7 +397,6 @@ printfn "%d" t.Result
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["ran=true"] """
 let mutable ran = false
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         try
@@ -437,7 +415,6 @@ printfn "ran=%b" ran
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["ran=true"] """
 let mutable ran = false
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         try
@@ -455,7 +432,6 @@ printfn "ran=%b" ran
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["result=2 ran=true"] """
 let mutable ran = false
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         try
@@ -477,7 +453,6 @@ printfn "result=%d ran=%b" t.Result ran
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["disposed=true"] """
 let mutable disposed = false
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         use _ = { new System.IDisposable with member _.Dispose() = disposed <- true }
@@ -494,7 +469,6 @@ printfn "disposed=%b" disposed
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["sum=6"] """
 let mutable sum = 0
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         for i in [1; 2; 3] do
@@ -510,7 +484,6 @@ printfn "sum=%d" t.Result
     member _.testExceptionAttachedToTask() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["got exception: boom"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         failwith "boom"
@@ -529,7 +502,6 @@ with
     member _.testTypeInference() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["hello"] """
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<string> = runtimeTask { return "hello" }
 let t = run()
 t.Wait()
@@ -541,7 +513,6 @@ printfn "%s" t.Result
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["3"] """
 // Tests all 4 Bind overloads: Task<T>, Task, ValueTask<T>, ValueTask
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         let! a = Task.FromResult(1)
@@ -560,7 +531,6 @@ printfn "%d" t.Result
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["1"] """
 // Zero is called for the `if true then ()` branch (no else), Combine sequences it with `return 1`
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         if true then ()
@@ -577,7 +547,6 @@ printfn "%d" t.Result
         RuntimeTaskTestHelpers.runTest ["1"] """
 // Delay wraps the body in a function; since it's inline, the result is still correct
 let mutable x = 0
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         x <- x + 1
@@ -593,10 +562,49 @@ printfn "%d" t.Result
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         RuntimeTaskTestHelpers.runTest ["42"] """
 // runtimeTask can bind the result of a task { } computation expression
-[<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
 let run () : Task<int> =
     runtimeTask {
         let! x = task { return 42 }
+        return x
+    }
+let t = run()
+t.Wait()
+printfn "%d" t.Result
+"""
+
+    [<FactForNETCOREAPP>]
+    member _.testInlineNestedViaSeparateFunctions() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
+        RuntimeTaskTestHelpers.runTest ["30"] """
+// Inline-nested runtimeTask CEs work when each nesting level is a separate function.
+// True inline nesting (runtimeTask { let! x = runtimeTask { return 10 } }) does NOT work
+// because the cast trick only works for the final return of a cil managed async method.
+let inner () : Task<int> =
+    runtimeTask { return 10 }
+let middle () : Task<int> =
+    runtimeTask {
+        let! x = inner()
+        return x + 20
+    }
+let run () : Task<int> =
+    runtimeTask {
+        let! y = middle()
+        return y
+    }
+let t = run()
+t.Wait()
+printfn "%d" t.Result
+"""
+
+    [<FactForNETCOREAPP>]
+    member _.testNoMethodImplNeeded() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
+        RuntimeTaskTestHelpers.runTest ["42"] """
+// Consumer functions need NO [<MethodImplAttribute(0x2000)>] — the [<RuntimeAsync>] attribute
+// on RuntimeTaskBuilder causes the compiler to automatically emit 'cil managed async'.
+let run () : Task<int> =
+    runtimeTask {
+        let! x = Task.FromResult(42)
         return x
     }
 let t = run()

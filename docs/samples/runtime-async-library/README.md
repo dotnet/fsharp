@@ -15,8 +15,16 @@ It is wired to the repo-built compiler so runtime-async IL is emitted end-to-end
 
 The working solution uses a **fully-inlined Run + Await sentinel** pattern:
 
+#### RuntimeAsync Attribute
+
+`[<RuntimeAsync>]` on the builder class is the single entry point for all runtime-async compiler behavior:
+
+- It implicitly applies `NoDynamicInvocation` to all public inline members, so no explicit `[<NoDynamicInvocation>]` is needed on `Bind`, `Using`, or `For`.
+- It gates the optimizer anti-inlining behavior (Fix 2 below).
+- Consumers need no `[<MethodImplAttribute(0x2000)>]` — the compiler detects `AsyncHelpers.Await` calls in the inlined body and marks the consumer as `cil managed async` automatically.
+
 ```fsharp
-[<Sealed>]
+[<RuntimeAsync; Sealed>]
 type RuntimeTaskBuilder() =
     // Delay returns a thunk (unit -> 'T), NOT a Task
     member inline _.Delay(f: unit -> 'T) : unit -> 'T = f
@@ -24,13 +32,13 @@ type RuntimeTaskBuilder() =
     // Run is fully inline — its body gets inlined into each consumer function.
     // The Await sentinel ensures the consumer always gets 'cil managed async'
     // even when the CE body has no let!/do! bindings.
-    // NO [<MethodImplAttribute(0x2000)>] needed.
+    // NO [<MethodImplAttribute(0x2000)>] needed on consumers.
     member inline _.Run([<InlineIfLambda>] f: unit -> 'T) : Task<'T> =
         AsyncHelpers.Await(ValueTask.CompletedTask)  // sentinel
-        RuntimeTaskBuilderUnsafe.cast (f())
+        RuntimeTaskBuilderHelpers.cast (f())
 
-    // Bind members have [<NoDynamicInvocation>] to prevent cross-module inlining
-    [<NoDynamicInvocation>]
+    // Bind members — NoDynamicInvocation is implicit from [<RuntimeAsync>] on the type.
+    // No explicit [<NoDynamicInvocation>] needed.
     member inline _.Bind(t: Task<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
         f(AsyncHelpers.Await t)
     // ... overloads for Task, ValueTask<'T>, ValueTask,
@@ -39,9 +47,7 @@ type RuntimeTaskBuilder() =
 
     // IAsyncDisposable and IAsyncEnumerable as intrinsic members
     // (higher priority than IDisposable/seq extensions)
-    [<NoDynamicInvocation>]
     member inline this.Using(resource: 'T when 'T :> IAsyncDisposable, body: 'T -> 'U) : 'U = ...
-    [<NoDynamicInvocation>]
     member inline _.For(sequence: IAsyncEnumerable<'T>, body: 'T -> unit) : unit = ...
 
 // Extension (lower priority): generic Bind for any awaitable via SRTP + UnsafeAwaitAwaiter
@@ -72,13 +78,15 @@ After inlining, the consumer function's body directly contains `AsyncHelpers.Awa
 1. `Run` is `member inline` with `[<InlineIfLambda>]` on `f` — **no** `[<MethodImplAttribute(0x2000)>]`
 2. After inlining, the consumer function's body contains `AsyncHelpers.Await` calls
 3. `ExprContainsAsyncHelpersAwaitCall` in `IlxGen.fs` detects these (`Await`, `AwaitAwaiter`, `UnsafeAwaitAwaiter`) and applies `cil managed async`
-4. `RuntimeTaskBuilderUnsafe.cast(f())` is a no-op reinterpret cast — the runtime wraps the raw return value into `Task<T>` for `cil managed async` methods
+4. `RuntimeTaskBuilderHelpers.cast(f())` is a no-op reinterpret cast — the runtime wraps the raw return value into `Task<T>` for `cil managed async` methods
 
 #### The Await Sentinel
 
 `AsyncHelpers.Await(ValueTask.CompletedTask)` in `Run` ensures that **every** consumer gets `cil managed async`, even CEs with no `let!/do!` bindings (e.g., `runtimeTask { return 42 }`). Without it, the body analysis would find no `Await` calls and the method would be emitted as regular `cil managed`, causing the `cast` trick to fail.
 
 #### Two Required Compiler Fixes
+
+Both fixes are gated on `[<RuntimeAsync>]` being present on the builder class — the attribute is what enables these behaviors.
 
 **Fix 1 — IlxGen.fs return-type guard:** `ExprContainsAsyncHelpersAwaitCall` body analysis must only propagate `cil managed async` when the method returns a Task-like type (`Task`, `Task<T>`, `ValueTask`, `ValueTask<T>`). Without this guard, the optimizer might inline an async function into a non-Task-returning method (e.g., `main : int`), and the runtime would reject it with `TypeLoadException`.
 

@@ -400,3 +400,138 @@ printfn "%d" result
         |> compileExeAndRunNewProcess
         |> shouldSucceed
         |> withOutputContainsAllInOrder ["42"]
+
+    // RuntimeAsync attribute on builder class implicitly applies NoDynamicInvocation to all
+    // public inline members. Their IL bodies are replaced with 'throw NotSupportedException'.
+    [<FactForNETCOREAPP>]
+    let ``RuntimeAsync - implicit NoDynamicInvocation on builder inline members``() =
+        FSharp """
+module TestModule
+
+#nowarn "57"
+#nowarn "42"
+open System
+open System.Runtime.CompilerServices
+open System.Threading.Tasks
+open Microsoft.FSharp.Control
+
+module internal RuntimeTaskBuilderHelpers =
+    let inline cast<'a, 'b> (a: 'a) : 'b = (# "" a : 'b #)
+
+[<RuntimeAsync; Sealed>]
+type RuntimeTaskBuilder() =
+    member inline _.Return(x: 'T) : 'T = x
+    member inline _.Bind(t: Task<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
+        f(AsyncHelpers.Await t)
+    member inline _.Delay(f: unit -> 'T) : unit -> 'T = f
+    member inline _.Zero() : unit = ()
+    member inline _.Run([<InlineIfLambda>] f: unit -> 'T) : Task<'T> =
+        AsyncHelpers.Await(ValueTask.CompletedTask)
+        RuntimeTaskBuilderHelpers.cast (f())
+
+[<AutoOpen>]
+module RuntimeTaskBuilderModule =
+    let runtimeTask = RuntimeTaskBuilder()
+"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            // Bind's IL body must be replaced with throw NotSupportedException
+            // (implicit NoDynamicInvocation from [<RuntimeAsync>] on the declaring type)
+            "\"Dynamic invocation of Bind is not supported\""
+        ]
+
+    // Consumer functions using a [<RuntimeAsync>]-annotated builder get 'cil managed async'
+    // automatically — no [<MethodImplAttribute(0x2000)>] needed on the consumer.
+    [<FactForNETCOREAPP>]
+    let ``RuntimeAsync - consumer function gets cil managed async without MethodImpl attribute``() =
+        FSharp """
+module TestModule
+
+#nowarn "57"
+#nowarn "42"
+open System
+open System.Runtime.CompilerServices
+open System.Threading.Tasks
+open Microsoft.FSharp.Control
+
+module internal RuntimeTaskBuilderHelpers =
+    let inline cast<'a, 'b> (a: 'a) : 'b = (# "" a : 'b #)
+
+[<RuntimeAsync; Sealed>]
+type RuntimeTaskBuilder() =
+    member inline _.Return(x: 'T) : 'T = x
+    member inline _.Bind(t: Task<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
+        f(AsyncHelpers.Await t)
+    member inline _.Delay(f: unit -> 'T) : unit -> 'T = f
+    member inline _.Zero() : unit = ()
+    member inline _.Run([<InlineIfLambda>] f: unit -> 'T) : Task<'T> =
+        AsyncHelpers.Await(ValueTask.CompletedTask)
+        RuntimeTaskBuilderHelpers.cast (f())
+
+[<AutoOpen>]
+module RuntimeTaskBuilderModule =
+    let runtimeTask = RuntimeTaskBuilder()
+
+// No [<MethodImplAttribute(0x2000)>] here — [<RuntimeAsync>] on the builder handles it
+let myConsumer () : Task<int> =
+    runtimeTask {
+        let! x = Task.FromResult(42)
+        return x
+    }
+"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            // The consumer function must carry 'cil managed async' in its IL method header
+            """cil managed async"""
+        ]
+
+    // Behavioral test: consumer function using [<RuntimeAsync>] builder executes correctly
+    [<FactForNETCOREAPP>]
+    let ``RuntimeAsync - behavioral test: consumer with RuntimeAsync builder``() =
+        Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
+        FSharp """
+module TestModule
+
+#nowarn "57"
+#nowarn "42"
+open System
+open System.Runtime.CompilerServices
+open System.Threading.Tasks
+open Microsoft.FSharp.Control
+
+module internal RuntimeTaskBuilderHelpers =
+    let inline cast<'a, 'b> (a: 'a) : 'b = (# "" a : 'b #)
+
+[<RuntimeAsync; Sealed>]
+type RuntimeTaskBuilder() =
+    member inline _.Return(x: 'T) : 'T = x
+    member inline _.Bind(t: Task<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
+        f(AsyncHelpers.Await t)
+    member inline _.Delay(f: unit -> 'T) : unit -> 'T = f
+    member inline _.Zero() : unit = ()
+    member inline _.Run([<InlineIfLambda>] f: unit -> 'T) : Task<'T> =
+        AsyncHelpers.Await(ValueTask.CompletedTask)
+        RuntimeTaskBuilderHelpers.cast (f())
+
+[<AutoOpen>]
+module RuntimeTaskBuilderModule =
+    let runtimeTask = RuntimeTaskBuilder()
+
+let myConsumer () : Task<int> =
+    runtimeTask {
+        let! x = Task.FromResult(21)
+        let! y = Task.FromResult(21)
+        return x + y
+    }
+
+let result = myConsumer().Result
+printfn "%d" result
+"""
+        |> withLangVersionPreview
+        |> compileExeAndRunNewProcess
+        |> shouldSucceed
+        |> withOutputContainsAllInOrder ["42"]
