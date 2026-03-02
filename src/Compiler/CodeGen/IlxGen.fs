@@ -12031,7 +12031,14 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
 
                     mdef.With(customAttrs = mkILCustomAttrs [ securityCriticalAttr ])
 
-                if fieldNamesAndTypes.IsEmpty then
+                // FSharp.Core has [assembly: SecurityTransparent], so all methods are transparent.
+                // On .NET Framework, transparent methods cannot override SecurityCritical methods
+                // like Exception.GetObjectData, nor call SecurityCritical base constructors like
+                // Exception(SerializationInfo, StreamingContext). Skip serialization members entirely
+                // for FSharp.Core exceptions.
+                if g.compilingFSharpCore then
+                    []
+                elif fieldNamesAndTypes.IsEmpty then
                     [ ilCtorDefForSerialization ]
                 else
                     [ ilCtorDefForSerialization; ilGetObjectDataDef ]
