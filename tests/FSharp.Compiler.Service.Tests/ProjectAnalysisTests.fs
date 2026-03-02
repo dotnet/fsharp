@@ -3680,198 +3680,167 @@ module internal Project25 =
     let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
+
+    let fileSource1 =
+        //         line 1 (empty)
+        """
 module TypeProviderTests
-open FSharp.Data
-type Project = XmlProvider<"<root><value>1</value><value>3</value></root>">
-let _ = Project.GetSample()
+open ErasedWithConstructor.Provided
+type T = MyType
+let _ = T().DoNothing()
 
 type Record = { Field: int }
 let r = { Record.Field = 1 }
 
-let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
+let _ = MyType().DoNothing()
 """
+        //         line 11 (empty) + line 12 (empty)
+
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [|fileName1|]
+    let fileNames = [| fileName1 |]
 
-    // Resolve FSharp.Data via dotnet restore in system temp (outside repo NuGet.Config scope),
-    // then copy runtime + design-time DLLs side-by-side so the type provider works with --simpleresolution.
-    let options = lazy (
-        let testDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
-        let stagingDir = Path.Combine(testDir, "FSharp.Data.Staging")
-        Directory.CreateDirectory(stagingDir) |> ignore
+    // TestTP is built as part of the solution — no NuGet restore needed.
+    let tpDLL =
+        __SOURCE_DIRECTORY__
+        + $"/../../artifacts/bin/TestTP/{testBuildConfiguration}/netstandard2.0/TestTP.dll"
 
-        // Create a temp project OUTSIDE the repo tree to avoid the repo's restricted NuGet.Config
-        let restoreDir = Path.Combine(Path.GetTempPath(), "fsharp-test-resolve-fsharp-data")
-        Directory.CreateDirectory(restoreDir) |> ignore
-        let projContent = """<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>netstandard2.0</TargetFramework></PropertyGroup>
-  <ItemGroup><PackageReference Include="FSharp.Data" Version="*" /></ItemGroup>
-</Project>"""
-        let projPath = Path.Combine(restoreDir, "Resolve.fsproj")
-        File.WriteAllText(projPath, projContent)
-        let packagesDir = Path.Combine(restoreDir, "packages")
+    let csDLL =
+        __SOURCE_DIRECTORY__
+        + $"/../../artifacts/bin/TestTP/{testBuildConfiguration}/netstandard2.0/CSharp_Analysis.dll"
 
-        let psi = System.Diagnostics.ProcessStartInfo("dotnet", sprintf "restore \"%s\" --packages \"%s\"" projPath packagesDir)
-        psi.RedirectStandardOutput <- true
-        psi.RedirectStandardError <- true
-        psi.UseShellExecute <- false
-        let p = System.Diagnostics.Process.Start(psi)
-        let stderr = p.StandardError.ReadToEnd()
-        let _stdout = p.StandardOutput.ReadToEnd()
-        p.WaitForExit(60000) |> ignore
-        if p.ExitCode <> 0 then
-            failwith (sprintf "dotnet restore failed (exit %d): %s" p.ExitCode stderr)
+    let options =
+        lazy
+            (if not (File.Exists tpDLL) then
+                 failwith $"expect {tpDLL} to exist"
 
-        // Find FSharp.Data in the restored packages
-        let fsharpDataDirs = Directory.GetDirectories(packagesDir, "fsharp.data", System.IO.SearchOption.TopDirectoryOnly)
-        let packageDir =
-            if fsharpDataDirs.Length > 0 then
-                let versions = Directory.GetDirectories(fsharpDataDirs.[0])
-                if versions.Length > 0 then versions |> Array.sortDescending |> Array.head
-                else failwith "FSharp.Data package restored but no version directory found"
-            else failwith (sprintf "FSharp.Data not found in %s" packagesDir)
+             if not (File.Exists csDLL) then
+                 failwith $"expect {csDLL} to exist"
 
-        // Copy runtime + design-time DLLs into staging root
-        let libDir = Path.Combine(packageDir, "lib", "netstandard2.0")
-        if Directory.Exists(libDir) then
-            for src in Directory.GetFiles(libDir, "*.dll") do
-                File.Copy(src, Path.Combine(stagingDir, Path.GetFileName(src)), true)
-        let tpDir = Path.Combine(packageDir, "typeproviders", "fsharp41", "netstandard2.0")
-        if Directory.Exists(tpDir) then
-            for src in Directory.GetFiles(tpDir, "*.dll") do
-                File.Copy(src, Path.Combine(stagingDir, Path.GetFileName(src)), true)
+             let args =
+                 [| yield! mkProjectCommandLineArgs (dllName, [])
+                    yield "-r:" + tpDLL
+                    yield "-r:" + csDLL |]
 
-        // Also copy transitive deps (FSharp.Data.*.dll)
-        let transitivePkgs = ["fsharp.data.csv.core"; "fsharp.data.html.core"; "fsharp.data.http"; "fsharp.data.json.core"; "fsharp.data.runtime.utilities"; "fsharp.data.worldbank.core"; "fsharp.data.xml.core"]
-        for pkg in transitivePkgs do
-            let pkgDirs = Directory.GetDirectories(packagesDir, pkg, System.IO.SearchOption.TopDirectoryOnly)
-            if pkgDirs.Length > 0 then
-                let versions = Directory.GetDirectories(pkgDirs.[0])
-                if versions.Length > 0 then
-                    let latestVersion = versions |> Array.sortDescending |> Array.head
-                    let pkgLib = Path.Combine(latestVersion, "lib", "netstandard2.0")
-                    if Directory.Exists(pkgLib) then
-                        for src in Directory.GetFiles(pkgLib, "*.dll") do
-                            let dest = Path.Combine(stagingDir, Path.GetFileName(src))
-                            if not (File.Exists(dest)) then
-                                File.Copy(src, dest, true)
+             { checker.GetProjectOptionsFromCommandLineArgs(projFileName, args) with SourceFiles = fileNames })
 
-        // Build args: standard project args + staged FSharp.Data refs
-        let stagedRefs =
-            Directory.GetFiles(stagingDir, "*.dll")
-            |> Array.map (fun f -> "-r:" + f)
-        let args =
-            [| yield! mkProjectCommandLineArgs (dllName, [])
-               yield! stagedRefs |]
-        { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
-    )
-
-// Resolved via NuGet at test time - skipped on signed CI
-[<FSharp.Test.FactSkipOnSignedBuild; RunTestCasesInSequence>]
+// Uses TestTP (built locally) — no NuGet needed, deterministic.
+[<Fact; RunTestCasesInSequence>]
 let ``Test Project25 whole project errors`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
+
     for e in wholeProjectResults.Diagnostics do
         printfn "Project25 error: <<<%s>>>" e.Message
+
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
-[<FSharp.Test.FactSkipOnSignedBuild; RunTestCasesInSequence>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of type-provided members`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
-    let backgroundParseResults1, backgroundTypedParse1 =
+
+    let _, backgroundTypedParse1 =
         checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
         |> Async.RunImmediate
 
-    let allUses  =
+    let allUses =
         backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile()
         |> Array.ofSeq
-        |> Array.map (fun s -> (s.Symbol.FullName, Project25.cleanFileName s.FileName, tups s.Range, attribsOfSymbol s.Symbol))
+        |> Array.map (fun s ->
+            (s.Symbol.FullName, Project25.cleanFileName s.FileName, tups s.Range, attribsOfSymbol s.Symbol))
 
-    allUses |> shouldEqual
+    //  Source:                                         line 2: module TypeProviderTests
+    //                                                  line 3: open ErasedWithConstructor.Provided
+    //                                                  line 4: type T = MyType
+    //                                                  line 5: let _ = T().DoNothing()
+    //                                                  line 7: type Record = { Field: int }
+    //                                                  line 8: let r = { Record.Field = 1 }
+    //                                                  line 10: let _ = MyType().DoNothing()
+    let expected =
+        [| ("ErasedWithConstructor", "file1", ((3, 5), (3, 26)), [ "namespace" ]) // line 3: open >ErasedWithConstructor<.Provided
+           ("ErasedWithConstructor.Provided", "file1", ((3, 27), (3, 35)), [ "namespace"; "provided" ]) // line 3: open ErasedWithConstructor.>Provided<
+           ("ErasedWithConstructor.Provided.MyType", "file1", ((4, 9), (4, 15)), [ "class"; "provided"; "erased" ]) // line 4: type T = >MyType<
+           ("ErasedWithConstructor.Provided.MyType", "file1", ((4, 9), (4, 15)), [ "class"; "provided"; "erased" ]) // (repeated — TP internals)
+           ("ErasedWithConstructor.Provided.MyType", "file1", ((4, 9), (4, 15)), [ "class"; "provided"; "erased" ])
+           ("ErasedWithConstructor.Provided.MyType", "file1", ((4, 9), (4, 15)), [ "class"; "provided"; "erased" ])
+           ("TypeProviderTests.T", "file1", ((4, 5), (4, 6)), [ "abbrev" ]) // line 4: type >T< = MyType
+           ("ErasedWithConstructor.Provided.MyType", "file1", ((5, 8), (5, 9)), [ "member" ]) // line 5: let _ = >T<()  (ctor)
+           ("ErasedWithConstructor.Provided.MyType.DoNothing", "file1", ((5, 8), (5, 21)), [ "member" ]) // line 5: let _ = >T().DoNothing<()
+           ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), [ "abbrev" ]) // line 7: type Record = { Field: >int< }
+           ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), [ "abbrev" ]) // (repeated)
+           ("TypeProviderTests.Record.Field", "file1", ((7, 16), (7, 21)), [ "field" ]) // line 7: type Record = { >Field<: int }
+           ("TypeProviderTests.Record", "file1", ((7, 5), (7, 11)), [ "record" ]) // line 7: type >Record< = ...
+           ("TypeProviderTests.Record", "file1", ((8, 10), (8, 16)), [ "record" ]) // line 8: let r = { >Record<.Field = 1 }
+           ("TypeProviderTests.Record.Field", "file1", ((8, 17), (8, 22)), [ "field" ]) // line 8: let r = { Record.>Field< = 1 }
+           ("TypeProviderTests.r", "file1", ((8, 4), (8, 5)), [ "val" ]) // line 8: let >r< = ...
+           ("ErasedWithConstructor.Provided.MyType", "file1", ((10, 8), (10, 14)), [ "member" ]) // line 10: let _ = >MyType<()  (ctor)
+           ("ErasedWithConstructor.Provided.MyType.DoNothing", "file1", ((10, 8), (10, 26)), [ "member" ]) // line 10: let _ = >MyType().DoNothing<()
+           ("TypeProviderTests", "file1", ((2, 7), (2, 24)), [ "module" ]) |] // line 2: module >TypeProviderTests<
 
-         [|("FSharp", "file1", ((3, 5), (3, 11)), ["namespace"]);
-           ("FSharp.Data", "file1", ((3, 12), (3, 16)), ["namespace"]);
-           ("Microsoft.FSharp", "file1", ((3, 5), (3, 11)), ["namespace"]);
-           ("Microsoft.FSharp.Data", "file1", ((3, 12), (3, 16)), ["namespace"]);
-           ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
-            ["class"; "provided"; "erased"]);
-           ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
-            ["class"; "provided"; "erased"]);
-           ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
-            ["class"; "provided"; "erased"]);
-           ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
-            ["class"; "provided"; "erased"]);
-           ("TypeProviderTests.Project", "file1", ((4, 5), (4, 12)), ["abbrev"]);
-           ("TypeProviderTests.Project", "file1", ((5, 8), (5, 15)), ["abbrev"]);
-           ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((5, 8), (5, 25)),
-            ["member"]);
-           ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), ["abbrev"]);
-           ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), ["abbrev"]);
-           ("TypeProviderTests.Record.Field", "file1", ((7, 16), (7, 21)), ["field"]);
-           ("TypeProviderTests.Record", "file1", ((7, 5), (7, 11)), ["record"]);
-           ("TypeProviderTests.Record", "file1", ((8, 10), (8, 16)), ["record"]);
-           ("TypeProviderTests.Record.Field", "file1", ((8, 17), (8, 22)), ["field"]);
-           ("TypeProviderTests.r", "file1", ((8, 4), (8, 5)), ["val"]);
-           ("FSharp.Data.XmlProvider", "file1", ((10, 8), (10, 19)),
-            ["class"; "provided"; "erased"]);
-           ("FSharp.Data.XmlProvider<...>", "file1", ((10, 8), (10, 68)),
-            ["class"; "provided"; "staticinst"; "erased"]);
-           ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((10, 8), (10, 78)),
-            ["member"]); ("TypeProviderTests", "file1", ((2, 7), (2, 24)), ["module"])|]
-    let getSampleSymbolUseOpt =
-        backgroundTypedParse1.GetSymbolUseAtLocation(5,25,"",["GetSample"])
+    printfn "actual =\n%A" allUses
+    printfn "expected =\n%A" expected
 
+    allUses |> shouldBeEqualCollections expected
 
-    let getSampleSymbol = getSampleSymbolUseOpt.Value.Symbol
+    // Verify the DoNothing method can be found and its uses tracked
+    let doNothingSymbolUseOpt =
+        backgroundTypedParse1.GetSymbolUseAtLocation(5, 21, "", [ "DoNothing" ]) // line 5, end of "DoNothing"
 
-    let usesOfGetSampleSymbol =
-        backgroundTypedParse1.GetUsesOfSymbolInFile(getSampleSymbol)
+    let doNothingSymbol = doNothingSymbolUseOpt.Value.Symbol
 
+    let usesOfDoNothing =
+        backgroundTypedParse1.GetUsesOfSymbolInFile(doNothingSymbol)
         |> Array.map (fun s -> (Project25.cleanFileName s.FileName, tups s.Range))
 
-    usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 8), (5, 25))); ("file1", ((10, 8), (10, 78)))|]
+    usesOfDoNothing
+    |> shouldEqual
+        [| ("file1", ((5, 8), (5, 21))) // line 5: T().DoNothing
+           ("file1", ((10, 8), (10, 26))) |] // line 10: MyType().DoNothing
 
-[<FSharp.Test.FactSkipOnSignedBuild; RunTestCasesInSequence>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of type-provided types`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
-    let backgroundParseResults1, backgroundTypedParse1 =
+
+    let _, backgroundTypedParse1 =
         checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
         |> Async.RunImmediate
 
-    let getSampleSymbolUseOpt =
-        backgroundTypedParse1.GetSymbolUseAtLocation(4,26,"",["XmlProvider"])
+    let myTypeSymbolUseOpt =
+        backgroundTypedParse1.GetSymbolUseAtLocation(4, 15, "", [ "MyType" ]) // line 4, end of "MyType"
 
+    let myTypeSymbol = myTypeSymbolUseOpt.Value.Symbol
 
-    let getSampleSymbol = getSampleSymbolUseOpt.Value.Symbol
-
-    let usesOfGetSampleSymbol =
-        backgroundTypedParse1.GetUsesOfSymbolInFile(getSampleSymbol)
-
+    let usesOfMyType =
+        backgroundTypedParse1.GetUsesOfSymbolInFile(myTypeSymbol)
         |> Array.map (fun s -> (Project25.cleanFileName s.FileName, tups s.Range))
 
-    usesOfGetSampleSymbol |> shouldEqual [|("file1", ((4, 15), (4, 26))); ("file1", ((10, 8), (10, 19)))|]
+    usesOfMyType
+    |> shouldEqual
+        [| ("file1", ((4, 9), (4, 15))) // line 4: type T = >MyType<
+           ("file1", ((5, 8), (5, 9))) // line 5: let _ = >T<()  (T resolves to MyType)
+           ("file1", ((10, 8), (10, 14))) |] // line 10: let _ = >MyType<()
 
-[<FSharp.Test.FactSkipOnSignedBuild; RunTestCasesInSequence>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of fully-qualified records`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
-    let backgroundParseResults1, backgroundTypedParse1 =
+
+    let _, backgroundTypedParse1 =
         checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
         |> Async.RunImmediate
 
-    let getSampleSymbolUseOpt =
-        backgroundTypedParse1.GetSymbolUseAtLocation(7,11,"",["Record"])
+    let recordSymbolUseOpt =
+        backgroundTypedParse1.GetSymbolUseAtLocation(7, 11, "", [ "Record" ]) // line 7, end of "Record"
 
+    let recordSymbol = recordSymbolUseOpt.Value.Symbol
 
-    let getSampleSymbol = getSampleSymbolUseOpt.Value.Symbol
-
-    let usesOfGetSampleSymbol =
-        backgroundTypedParse1.GetUsesOfSymbolInFile(getSampleSymbol)
-
+    let usesOfRecord =
+        backgroundTypedParse1.GetUsesOfSymbolInFile(recordSymbol)
         |> Array.map (fun s -> (Project25.cleanFileName s.FileName, tups s.Range))
 
-    usesOfGetSampleSymbol |> shouldEqual [|("file1", ((7, 5), (7, 11))); ("file1", ((8, 10), (8, 16)))|]
+    usesOfRecord
+    |> shouldEqual
+        [| ("file1", ((7, 5), (7, 11))) // line 7: type >Record< = { Field: int }
+           ("file1", ((8, 10), (8, 16))) |] // line 8: let r = { >Record<.Field = 1 }
 
 
 module internal Project26 =
