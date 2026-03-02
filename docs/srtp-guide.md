@@ -19,7 +19,7 @@ Statically Resolved Type Parameters (SRTPs) allow you to write generic code that
 let inline add (x: ^T) (y: ^T) = x + y
 ```
 
-The `^T` syntax (hat-type) creates an SRTP constraint. The compiler resolves `(+)` at each call site based on the concrete type.
+The `^T` syntax (hat-type) declares a statically resolved type parameter. The use of `(+)` generates a member constraint that the compiler resolves at each call site based on the concrete type.
 
 ## Extension Constraint Solutions (Preview)
 
@@ -37,20 +37,20 @@ let inline multiply (x: ^T) (n: int) = x * n
 let result = multiply "ha" 3  // "hahaha"
 ```
 
-### Priority Rules
+### Resolution Priority
 
-When multiple methods could satisfy an SRTP constraint:
-1. **Intrinsic members** (defined on the type itself) always take priority over extension members
-2. **Extension members** are considered only if no intrinsic member matches
+When solving an SRTP constraint:
+1. **Built-in solutions** for primitive operators (e.g. `int + int`) are applied when the types match precisely, regardless of whether extension methods exist
+2. **Overload resolution** considers both intrinsic and extension members. Extension members are lower priority in the resolution order (same as in regular F# overload resolution)
 3. Among extensions, standard F# name resolution rules apply (later `open` shadows earlier)
 
 ### Scope Capture
 
-Extension methods are captured at the point where the SRTP constraint is **used** (the call site), not where it's **defined**:
+Extension methods are captured at the point where the SRTP constraint is **freshened** (i.e., when a generic inline construct is used at a call site), not where the generic function is defined:
 
 ```fsharp
 module Lib =
-    let inline add (x: ^T) (y: ^T) = x + y  // no extensions in scope here
+    let inline add (x: ^T) (y: ^T) = x + y  // Widget.(+) extension not in scope here
 
 module Consumer =
     type Widget = { V: int }
@@ -67,11 +67,13 @@ module Consumer =
 
 ## Weak Resolution Changes
 
-With `--langversion:preview`, inline code no longer eagerly resolves SRTP constraints through weak resolution:
+With `--langversion:preview`, inline code no longer eagerly resolves SRTP constraints via weak resolution when true overload resolution is involved:
 
 ```fsharp
-// Before: f1 inferred as DateTime -> TimeSpan -> DateTime (non-generic)
-// After:  f1 stays generic: DateTime -> ^a -> ^b
+// Before: f1 inferred as DateTime -> TimeSpan -> DateTime (non-generic, because op_Addition
+//         had only one overload and weak resolution eagerly picked it)
+// After:  f1 stays generic: DateTime -> ^a -> ^b (because weak resolution no longer forces
+//         overload resolution for inline code)
 let inline f1 (x: DateTime) y = x + y
 ```
 
@@ -114,9 +116,14 @@ Without the attribute, these overloads would produce an ambiguity error. Note th
 
 ## Advanced Examples
 
+> **Warning:** The examples below are taken from the RFC to illustrate the design intent.
+> They may not compile with the current implementation — cross-type operator extensions
+> (e.g. `float + int`) interact with built-in operator resolution in ways that are not
+> yet fully supported. These are aspirational patterns, not tested ones.
+
 ### Numeric Widening via Extension Operators
 
-Extension members can retrofit widening conversions onto primitive types, enabling expressions like `1 + 2.0`:
+The RFC describes retrofitting widening conversions onto primitive types:
 
 ```fsharp
 type System.Int32 with
@@ -128,14 +135,14 @@ type System.Double with
     static member inline (+)(a: double, b: 'T) : double = a + widen_to_double b
     static member inline (+)(a: 'T, b: double) : double = widen_to_double a + b
 
-let result = 1 + 2.0  // double
+let result = 1 + 2.0  // double — may not compile yet
 ```
 
-> **Note:** This pattern is powerful but can degrade error messages for existing code. Use judiciously.
+> **Note:** This pattern can degrade error messages for existing code. Use judiciously.
 
 ### Defining op_Implicit via Extension Members
 
-Extension members can populate a generic implicit conversion function for primitive types:
+The RFC describes populating a generic implicit conversion function for primitive types:
 
 ```fsharp
 let inline implicitConv (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit : ^T -> ^U) (x))
