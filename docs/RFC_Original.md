@@ -1,3 +1,8 @@
+> [!NOTE]
+> **Unmodified copy.** This is an exact copy of
+> [FS-1043 in fsharp/fslang-design](https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1043-extension-members-for-operators-and-srtp-constraints.md),
+> included here for reviewer convenience. See `RFC_Changes.md` for the amended version.
+
 # F# RFC FS-1043 - Extension members become available to solve operator trait constraints
 
 These design suggestions:

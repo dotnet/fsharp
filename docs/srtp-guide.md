@@ -1,3 +1,12 @@
+---
+status: draft
+target: Microsoft Learn (F# language guide)
+notes: >
+  This document is a draft intended for eventual inclusion in the official
+  F# documentation on Microsoft Learn. It lives here during development of
+  RFC FS-1043 so reviewers can evaluate the guidance alongside the implementation.
+---
+
 # Guide to Writing SRTP Code in F#
 
 This guide documents best practices for using Statically Resolved Type Parameters (SRTP) in F#, including the new extension constraint solutions feature (RFC FS-1043).
