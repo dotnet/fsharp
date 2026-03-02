@@ -79,7 +79,7 @@ printfn "Hash: %d, Equal: %b" h eq
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/18135
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Issue_18135_StaticAbstractByrefParams`` () =
         let source = """
 module Test
