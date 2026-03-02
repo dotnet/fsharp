@@ -6,51 +6,59 @@ open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
 
+open Microsoft.FSharp.Control
+
 #nowarn "57"
 #nowarn "42"
 
-module internal RuntimeTaskBuilderUnsafe =
+/// Internal helpers for RuntimeTaskBuilder.
+/// Not intended for direct use by consumers.
+module internal RuntimeTaskBuilderHelpers =
+    /// Reinterpret cast with no runtime overhead.
+    /// Used by Run to cast the raw return value of f() to Task<T> so the runtime
+    /// wraps it correctly for 'cil managed async' consumer methods.
     let inline cast<'a, 'b> (a: 'a) : 'b = (# "" a : 'b #)
 
-[<Sealed>]
+/// Computation expression builder for runtime-async methods.
+/// Annotated with [<RuntimeAsync>] so the compiler:
+///   (1) Implicitly applies NoDynamicInvocation to all public inline members
+///   (2) Gates optimizer anti-inlining behind this attribute
+///
+/// Design: Run is fully inline — its body (including the Await sentinel and cast) gets inlined
+/// into each consumer function. The consumer's body then contains AsyncHelpers.Await calls,
+/// so the compiler marks the consumer as 'cil managed async'. No [<MethodImplAttribute(0x2000)>]
+/// is needed on Run itself — the compiler detects AsyncHelpers.Await in the inlined body.
+[<RuntimeAsync; Sealed>]
 type RuntimeTaskBuilder() =
     member inline _.Return(x: 'T) : 'T = x
 
-    [<NoDynamicInvocation>]
     member inline _.Bind(t: Task<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
         f(AsyncHelpers.Await t)
 
-    [<NoDynamicInvocation>]
     member inline _.Bind(t: Task, [<InlineIfLambda>] f: unit -> 'U) : 'U =
         AsyncHelpers.Await t
         f()
 
-    [<NoDynamicInvocation>]
     member inline _.Bind(t: ValueTask<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
         f(AsyncHelpers.Await t)
 
-    [<NoDynamicInvocation>]
     member inline _.Bind(t: ValueTask, [<InlineIfLambda>] f: unit -> 'U) : 'U =
         AsyncHelpers.Await t
         f()
 
     // ConfiguredTaskAwaitable — allows task.ConfigureAwait(false) in runtimeTask
-    [<NoDynamicInvocation>]
     member inline _.Bind(cta: ConfiguredTaskAwaitable, [<InlineIfLambda>] f: unit -> 'U) : 'U =
         AsyncHelpers.Await cta
         f()
 
-    [<NoDynamicInvocation>]
     member inline _.Bind(cta: ConfiguredTaskAwaitable<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
         f(AsyncHelpers.Await cta)
 
     // ConfiguredValueTaskAwaitable — allows valueTask.ConfigureAwait(false) in runtimeTask
-    [<NoDynamicInvocation>]
     member inline _.Bind(cvta: ConfiguredValueTaskAwaitable, [<InlineIfLambda>] f: unit -> 'U) : 'U =
         AsyncHelpers.Await cvta
         f()
 
-    [<NoDynamicInvocation>]
     member inline _.Bind(cvta: ConfiguredValueTaskAwaitable<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
         f(AsyncHelpers.Await cvta)
 
@@ -76,7 +84,6 @@ type RuntimeTaskBuilder() =
 
     /// TryFinally with async compensation — awaits a ValueTask in the finally block.
     /// Used by Using(IAsyncDisposable) to await DisposeAsync().
-    [<NoDynamicInvocation>]
     member inline _.TryFinallyAsync
         ([<InlineIfLambda>] body: unit -> 'T, [<InlineIfLambda>] compensation: unit -> ValueTask)
         : 'T =
@@ -87,7 +94,6 @@ type RuntimeTaskBuilder() =
 
     /// IAsyncDisposable — intrinsic member so it is preferred over the IDisposable extension
     /// when a type implements both interfaces.
-    [<NoDynamicInvocation>]
     member inline this.Using
         (resource: 'T when 'T :> IAsyncDisposable, [<InlineIfLambda>] body: 'T -> 'U)
         : 'U =
@@ -103,7 +109,6 @@ type RuntimeTaskBuilder() =
 
     /// IAsyncEnumerable — intrinsic member so it is preferred over the seq extension.
     /// Awaits MoveNextAsync() and DisposeAsync() on the enumerator.
-    [<NoDynamicInvocation>]
     member inline _.For(sequence: IAsyncEnumerable<'T>, [<InlineIfLambda>] body: 'T -> unit) : unit =
         let enumerator = sequence.GetAsyncEnumerator(CancellationToken.None)
 
@@ -122,7 +127,7 @@ type RuntimeTaskBuilder() =
         // the CE body has no let!/do! bindings (e.g. runtimeTask { return 42 }).
         // This is a no-op at runtime — CompletedTask is already complete.
         AsyncHelpers.Await(ValueTask.CompletedTask)
-        RuntimeTaskBuilderUnsafe.cast (f())
+        RuntimeTaskBuilderHelpers.cast (f())
 
 /// IDisposable Using and seq For as type extensions.
 /// These have lower priority than the intrinsic IAsyncDisposable/IAsyncEnumerable members above,

@@ -9361,6 +9361,15 @@ and GenMethodForBinding
         match TryFindFSharpAttribute g g.attrib_MethodImplAttribute v.Attribs with
         | Some(Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x2000) <> 0x0
         | _ -> false
+    // For 'cil managed async' methods (those with [<MethodImpl(0x2000)>]), suppress tail calls
+    // in the method body. This is required because 'cil managed async' methods rely on their stack
+    // frame remaining alive so the runtime can suspend and resume them when AsyncHelpers.Await is
+    // called on a non-completed task. A 'tail.' prefix eliminates the frame before the callee runs,
+    // preventing suspension. Setting withinSEH=true reuses the existing tail-call suppression
+    // mechanism without affecting self-recursive branch calls (which use a separate code path).
+    let eenvForMeth =
+        if hasAsyncImplFlagEarly then { eenvForMeth with withinSEH = true }
+        else eenvForMeth
     let isNonGenericTaskOrValueTask =
         isAppTy g returnTy &&
         (tyconRefEq g (tcrefOfAppTy g returnTy) g.system_Task_tcref ||
@@ -9463,8 +9472,10 @@ and GenMethodForBinding
     //   2. Only methods returning Task-like types (Task, Task<T>, ValueTask, ValueTask<T>) can be
     //      'cil managed async'. If the optimizer inlines an async function into a non-Task-returning
     //      method (e.g. main : int), we must NOT set the flag or the runtime will reject it.
-    //   3. The enclosing type/module must have [<RuntimeAsync>]. This gates ALL runtime-async flag
-    //      emission, including both explicit [<MethodImpl(0x2000)>] and body-analysis paths.
+    //   3. The explicit [<MethodImpl(0x2000)>] path still requires [<RuntimeAsync>] on the enclosing
+    //      entity. The body-analysis path does NOT require it, so that consumer functions in modules
+    //      without [<RuntimeAsync>] (e.g. Api.consumeOlderTaskCE) are correctly marked when the
+    //      inline Run body is inlined into them.
     let hasAsyncImplFlag =
         let hasNoDynamicInvocation =
             (TryFindFSharpBoolAttributeAssumeFalse g g.attrib_NoDynamicInvocationAttribute v.Attribs
@@ -9474,21 +9485,19 @@ and GenMethodForBinding
                     TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute memberInfo.ApparentEnclosingEntity.Attribs
                     |> Option.isSome
                 | None -> false)
-        // Gate ALL runtime-async support behind RuntimeAsyncAttribute on the enclosing entity.
-        // This covers both class members (via MemberInfo) and module-level functions (via TryDeclaringEntity).
-        let enclosingEntityHasRuntimeAsync =
-            match v.TryDeclaringEntity with
-            | Parent entityRef ->
-                TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute entityRef.Attribs |> Option.isSome
-            | ParentNone -> false
         let returnsTaskLikeType =
             isAppTy g returnTy &&
             (tyconRefEq g (tcrefOfAppTy g returnTy) g.system_Task_tcref ||
              tyconRefEq g (tcrefOfAppTy g returnTy) g.system_GenericTask_tcref ||
              tyconRefEq g (tcrefOfAppTy g returnTy) g.system_ValueTask_tcref ||
              tyconRefEq g (tcrefOfAppTy g returnTy) g.system_GenericValueTask_tcref)
-        (hasAsyncImplFlagFromAttr && enclosingEntityHasRuntimeAsync)
-        || (not hasNoDynamicInvocation && returnsTaskLikeType && enclosingEntityHasRuntimeAsync && ExprContainsAsyncHelpersAwaitCall body)
+        // Explicit [<MethodImpl(0x2000)>] on a method is sufficient to emit 'cil managed async'.
+        // No [<RuntimeAsync>] on the enclosing entity is required — the attribute itself is the opt-in.
+        // Body analysis (detecting inlined AsyncHelpers.Await calls) does NOT require [<RuntimeAsync>]
+        // on the enclosing entity — consumer functions in plain modules get 'cil managed async' when
+        // the inline Run body is inlined into them.
+        hasAsyncImplFlagFromAttr
+        || (not hasNoDynamicInvocation && returnsTaskLikeType && ExprContainsAsyncHelpersAwaitCall body)
 
     let securityAttributes, attrs =
         attrs
