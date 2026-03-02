@@ -1924,9 +1924,6 @@ module Codebuf =
         | Unaligned2 -> emitInstrCode codebuf i_unaligned; codebuf.EmitByte 0x2
         | Unaligned4 -> emitInstrCode codebuf i_unaligned; codebuf.EmitByte 0x4
 
-    /// Map ILType to ILBasicType for primitive types that have specialized stelem/ldelem instructions.
-    /// This avoids emitting `stelem <TypeToken>` / `ldelem <TypeToken>` for these types,
-    /// which triggers ILVerify StackUnexpected errors due to asymmetric verification type handling.
     let tryPrimitiveAsBasicType (ilg: ILGlobals) (ty: ILType) =
         if isILBoolTy ilg ty then Some DT_U1
         elif isILSByteTy ilg ty then Some DT_I1

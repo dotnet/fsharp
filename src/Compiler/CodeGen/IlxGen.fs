@@ -1162,10 +1162,7 @@ and sequel =
     /// Branch to the given mark
     | Br of Mark
 
-    /// Cast to the given interface type, then branch to the given mark.
-    /// Used at match/if-else join points when the result type is an interface
-    /// so that each branch casts to the interface before merging, preventing
-    /// ILVerify StackUnexpected errors at the join point.
+    /// Emit castclass to interface type then branch, ensuring correct merge type at join points (ECMA-335 III.1.8.1.3).
     | CastThenBr of ILType * Mark
 
     /// Execute the given comparison-then-branch instructions on the result of the expression
@@ -1251,9 +1248,7 @@ and IlxGenEnv =
         /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
         withinSEH: bool
 
-        /// Are we generating code inside a finally or fault handler?
-        /// If so, we must not emit filter blocks because ILVerify incorrectly computes
-        /// the entry stack for a filter nested inside a finally handler (dotnet/runtime issue).
+        /// Suppresses filter block emission inside finally/fault handlers (workaround for dotnet/runtime#112406).
         insideFinallyOrFaultHandler: bool
 
         /// Are we inside of a recursive let binding, while loop, or a for loop?
@@ -3306,9 +3301,6 @@ and GenSequel cenv cloc cgbuf sequel =
          CG.EmitInstr cgbuf (pop 0) Push0 (I_br x.CodeLabel)
 
      | CastThenBr(ilTy, x) ->
-         // Cast to the interface type before branching to the join point.
-         // This ensures ILVerify sees the correct interface type at the merge point
-         // instead of computing LUB of different concrete types as System.Object.
          CG.EmitInstr cgbuf (pop 1) (Push [ ilTy ]) (I_castclass ilTy)
 
          if cgbuf.mgbuf.cenv.options.generateDebugSymbols then
@@ -3569,11 +3561,6 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
                 let sequelOnBranches, afterJoin, stackAfterJoin, sequelAfterJoin =
                     GenJoinPoint cenv cgbuf "match" eenv ty m sequel
 
-                // When the match result type is an interface and at least one branch
-                // pushes a different concrete class type, emit castclass in each branch
-                // before jumping to the join label. This ensures ILVerify sees the
-                // interface type at the merge point instead of computing LUB as Object.
-                // Only do this when branches produce reference types (not value types).
                 let sequelOnBranches =
                     match sequelOnBranches with
                     | Br mark when
@@ -4914,9 +4901,6 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
             GenTry cenv cgbuf eenv scopeMarks (e1, m, resTy, spTry)
 
         let seh =
-            // Don't generate filter blocks inside finally/fault handlers.
-            // ILVerify incorrectly computes the entry stack for a filter nested inside a finally handler,
-            // treating the filter entry as a finally entry (empty stack) instead of a filter entry (exception on stack).
             if
                 not eenv.insideFinallyOrFaultHandler
                 && (cenv.options.generateFilterBlocks || eligibleForFilter cenv filterExpr)
@@ -7510,14 +7494,7 @@ and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
         let stackAfterJoin = (pushed :: cgbuf.GetCurrentStack())
         let afterJoin = CG.GenerateDelayMark cgbuf (pos + "_join")
 
-        // When the match result type is an interface and branches produce reference
-        // types, emit castclass in each branch before jumping to the join label.
-        // This ensures ILVerify sees the correct interface type at the merge point
-        // instead of computing LUB of different concrete class types as System.Object.
-        let sequelOnBranches =
-            Br afterJoin
-
-        sequelOnBranches, afterJoin, stackAfterJoin, sequel
+        Br afterJoin, afterJoin, stackAfterJoin, sequel
 
 // Accumulate the decision graph as we go
 and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets sequel contf =
