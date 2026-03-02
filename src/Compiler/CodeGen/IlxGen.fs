@@ -9463,6 +9463,8 @@ and GenMethodForBinding
     //   2. Only methods returning Task-like types (Task, Task<T>, ValueTask, ValueTask<T>) can be
     //      'cil managed async'. If the optimizer inlines an async function into a non-Task-returning
     //      method (e.g. main : int), we must NOT set the flag or the runtime will reject it.
+    //   3. The enclosing type/module must have [<RuntimeAsync>]. This gates ALL runtime-async flag
+    //      emission, including both explicit [<MethodImpl(0x2000)>] and body-analysis paths.
     let hasAsyncImplFlag =
         let hasNoDynamicInvocation =
             (TryFindFSharpBoolAttributeAssumeFalse g g.attrib_NoDynamicInvocationAttribute v.Attribs
@@ -9472,13 +9474,21 @@ and GenMethodForBinding
                     TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute memberInfo.ApparentEnclosingEntity.Attribs
                     |> Option.isSome
                 | None -> false)
+        // Gate ALL runtime-async support behind RuntimeAsyncAttribute on the enclosing entity.
+        // This covers both class members (via MemberInfo) and module-level functions (via TryDeclaringEntity).
+        let enclosingEntityHasRuntimeAsync =
+            match v.TryDeclaringEntity with
+            | Parent entityRef ->
+                TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute entityRef.Attribs |> Option.isSome
+            | ParentNone -> false
         let returnsTaskLikeType =
             isAppTy g returnTy &&
             (tyconRefEq g (tcrefOfAppTy g returnTy) g.system_Task_tcref ||
              tyconRefEq g (tcrefOfAppTy g returnTy) g.system_GenericTask_tcref ||
              tyconRefEq g (tcrefOfAppTy g returnTy) g.system_ValueTask_tcref ||
              tyconRefEq g (tcrefOfAppTy g returnTy) g.system_GenericValueTask_tcref)
-        hasAsyncImplFlagFromAttr || (not hasNoDynamicInvocation && returnsTaskLikeType && ExprContainsAsyncHelpersAwaitCall body)
+        (hasAsyncImplFlagFromAttr && enclosingEntityHasRuntimeAsync)
+        || (not hasNoDynamicInvocation && returnsTaskLikeType && enclosingEntityHasRuntimeAsync && ExprContainsAsyncHelpersAwaitCall body)
 
     let securityAttributes, attrs =
         attrs

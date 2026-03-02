@@ -4205,11 +4205,21 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                         // Discarding lambda for binding because uses private members
                         UnknownValue
                     elif exprContainsAsyncHelpersAwait body then
-                        // Discarding lambda for binding because contains AsyncHelpers.Await calls.
+                        // Discarding lambda for binding because contains AsyncHelpers.Await calls
+                        // AND the enclosing type is marked with RuntimeAsyncAttribute.
                         // These functions need 'cil managed async' at the IL level and their bodies
                         // use unsafe casts that only work with runtime-async wrapping. Inlining them
                         // into non-async callers would produce invalid IL.
-                        UnknownValue
+                        // Functions with AsyncHelpers.Await calls but WITHOUT RuntimeAsync on the
+                        // enclosing type are allowed to inline cross-module.
+                        let enclosingHasRuntimeAsync =
+                            match vref.MemberInfo with
+                            | Some memberInfo ->
+                                TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute memberInfo.ApparentEnclosingEntity.Attribs
+                                |> Option.isSome
+                            | None -> false
+                        if enclosingHasRuntimeAsync then UnknownValue
+                        else ivalue
                     else
                         ivalue
 
