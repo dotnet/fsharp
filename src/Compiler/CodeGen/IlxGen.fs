@@ -3569,7 +3569,8 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
                         && targets
                            |> Array.forall (fun (TTarget(_, body, _)) ->
                                let bodyTy = tyOfExpr cenv.g body
-                               not (isStructTy cenv.g bodyTy) && not (isUnitTy cenv.g bodyTy)) ->
+                               not (isStructTy cenv.g bodyTy) && not (isUnitTy cenv.g bodyTy))
+                        ->
                         CastThenBr(GenType cenv m eenv.tyenv ty, mark)
                     | _ -> sequelOnBranches
 
@@ -4451,9 +4452,12 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                     let ilThisTy = GenType cenv m eenv.tyenv ty
                     I_callconstraint(useICallVirt, isTailCall, ilThisTy, mspec, None)
                 | _ ->
-                    if newobj then I_newobj(mspec, None)
-                    elif useICallVirt && boxity <> AsValue then I_callvirt(isTailCall, mspec, None)
-                    else I_call(isTailCall, mspec, None)
+                    if newobj then
+                        I_newobj(mspec, None)
+                    elif useICallVirt && boxity <> AsValue then
+                        I_callvirt(isTailCall, mspec, None)
+                    else
+                        I_call(isTailCall, mspec, None)
 
             // ok, now we're ready to generate
             if isSuperInit || isSelfInit then
