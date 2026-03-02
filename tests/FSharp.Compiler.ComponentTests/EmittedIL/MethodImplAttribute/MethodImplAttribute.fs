@@ -92,6 +92,7 @@ module MethodImplAttribute =
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - method with Async attribute emits cil managed async in IL``() =
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -113,6 +114,7 @@ let asyncMethod () : Task<int> = 42
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - Task-returning method emits cil managed async in IL``() =
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -196,6 +198,7 @@ let asyncMethod () : Task<int> = Task.FromResult(42)
         // Setting it inside the compiled code is too late (the CLR loads the type before any code runs).
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -218,6 +221,7 @@ printfn "%d" result
     let ``RuntimeAsync - behavioral test: await Task<T>``() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -240,6 +244,7 @@ printfn "%d" result
     let ``RuntimeAsync - behavioral test: await Task (unit)``() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -262,6 +267,7 @@ printfn "done"
     let ``RuntimeAsync - behavioral test: await ValueTask<T>``() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -284,6 +290,7 @@ printfn "%d" result
     let ``RuntimeAsync - behavioral test: multiple awaits``() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -313,6 +320,7 @@ printfn "%d" result
     let ``RuntimeAsync - edge case: generic method``() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -335,6 +343,7 @@ printfn "%d" result
     let ``RuntimeAsync - edge case: try/with success``() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -359,6 +368,7 @@ printfn "%d" result
     let ``RuntimeAsync - edge case: try/with exception``() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 open System.Runtime.CompilerServices
@@ -382,6 +392,7 @@ printfn "%d" result
     let ``RuntimeAsync - edge case: interop with task CE``() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -447,6 +458,7 @@ module RuntimeTaskBuilderModule =
     [<FactForNETCOREAPP>]
     let ``RuntimeAsync - consumer function gets cil managed async without MethodImpl attribute``() =
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"
@@ -474,7 +486,7 @@ type RuntimeTaskBuilder() =
 module RuntimeTaskBuilderModule =
     let runtimeTask = RuntimeTaskBuilder()
 
-// No [<MethodImplAttribute(0x2000)>] here — [<RuntimeAsync>] on the builder handles it
+// No [<MethodImplAttribute(0x2000)>] here — [<RuntimeAsync>] on the enclosing module handles it
 let myConsumer () : Task<int> =
     runtimeTask {
         let! x = Task.FromResult(42)
@@ -494,6 +506,7 @@ let myConsumer () : Task<int> =
     let ``RuntimeAsync - behavioral test: consumer with RuntimeAsync builder``() =
         Environment.SetEnvironmentVariable("DOTNET_RuntimeAsync", "1")
         FSharp """
+[<RuntimeAsync>]
 module TestModule
 
 #nowarn "57"

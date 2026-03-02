@@ -4205,16 +4205,20 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                         // Discarding lambda for binding because uses private members
                         UnknownValue
                     elif exprContainsAsyncHelpersAwait body then
-                        // Discarding lambda for binding because contains AsyncHelpers.Await calls.
-                        // These functions need 'cil managed async' at the IL level and their bodies
-                        // use unsafe casts that only work with runtime-async wrapping. Inlining them
-                        // into non-async callers would produce invalid IL (NullReferenceException from
-                        // the cast trick being used outside a 'cil managed async' context).
-                        // This applies to ALL functions with AsyncHelpers.Await calls, regardless of
-                        // whether the enclosing type has [<RuntimeAsync>], because consumer functions
-                        // in plain modules (e.g. Api.consumeOlderTaskCE) also use the cast trick
-                        // after the inline Run body is inlined into them.
-                        UnknownValue
+                        // Discarding lambda for binding because contains AsyncHelpers.Await calls
+                        // AND the enclosing entity has [<RuntimeAsync>].
+                        // Functions in RuntimeAsync-marked types must not be cross-module inlined because
+                        // they are 'cil managed async' methods and their bodies contain AsyncHelpers.Await
+                        // calls that only work correctly within a 'cil managed async' context.
+                        // Functions in plain modules (without [<RuntimeAsync>]) can be inlined normally.
+                        let enclosingHasRuntimeAsync =
+                            match vref.MemberInfo with
+                            | Some memberInfo ->
+                                TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute memberInfo.ApparentEnclosingEntity.Attribs
+                                |> Option.isSome
+                            | None -> false
+                        if enclosingHasRuntimeAsync then UnknownValue
+                        else ivalue
                     else
                         ivalue
 
