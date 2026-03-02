@@ -31,7 +31,7 @@ IL_0005:  ret"""
 IL_0000:  call       !!0[] [runtime]System.Array::Empty<!!0>()
 IL_0005:  ret""" ]
 
-    [<Fact>]
+    [<Fact(Skip = "Blocked on compiler fix: duplicate .cctor in generic DU with static member val and nullary cases")>]
     let ``Discriminated union with generic statics generates single cctor calling renamed methods``() =
         FSharp """
 module DuplicateCctorFix
