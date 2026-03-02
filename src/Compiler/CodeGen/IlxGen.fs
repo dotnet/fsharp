@@ -9389,15 +9389,29 @@ and GenMethodForBinding
         | Some(Attrib(_, _, _, _, _, _, m)) -> error (Error(FSComp.SR.ilDllImportAttributeCouldNotBeDecoded (), m))
 
         | _ ->
-            // Replace the body of ValInline.PseudoVal "must inline" methods with a 'throw'
+            // Replace the body of ValInline.Always "must inline" methods with a 'throw'
             // For witness-passing methods, don't do this if `isLegacy` flag specified
             // on the attribute. Older compilers
             let bodyExpr =
+                // Check if the declaring type has [<RuntimeAsync>] - if so, implicitly apply NoDynamicInvocation
+                // to all members of that type, so library authors don't need to annotate every CE member.
+                // Extension methods in separate modules are not affected (they have a different declaring type).
+                // Only apply to must-inline methods (ValInline.Always). Non-inline methods (ValInline.Never),
+                // such as Run with [<MethodImpl(0x2000)>], must not have their bodies replaced — they need
+                // to execute the CE body (f()).
+                let hasDeclTypeRuntimeAsync =
+                    v.InlineInfo = ValInline.Always &&
+                    match v.MemberInfo with
+                    | Some memberInfo ->
+                        TryFindFSharpAttribute cenv.g cenv.g.attrib_RuntimeAsyncAttribute memberInfo.ApparentEnclosingEntity.Attribs
+                        |> Option.isSome
+                    | None -> false
+
                 let attr =
                     TryFindFSharpBoolAttributeAssumeFalse cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs
 
                 if
-                    (not generateWitnessArgs && attr.IsSome)
+                    (not generateWitnessArgs && (attr.IsSome || hasDeclTypeRuntimeAsync))
                     || (generateWitnessArgs && attr = Some false)
                 then
                     let exnArg =
@@ -9451,8 +9465,13 @@ and GenMethodForBinding
     //      method (e.g. main : int), we must NOT set the flag or the runtime will reject it.
     let hasAsyncImplFlag =
         let hasNoDynamicInvocation =
-            TryFindFSharpBoolAttributeAssumeFalse g g.attrib_NoDynamicInvocationAttribute v.Attribs
-            |> Option.isSome
+            (TryFindFSharpBoolAttributeAssumeFalse g g.attrib_NoDynamicInvocationAttribute v.Attribs
+             |> Option.isSome)
+            || (match v.MemberInfo with
+                | Some memberInfo ->
+                    TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute memberInfo.ApparentEnclosingEntity.Attribs
+                    |> Option.isSome
+                | None -> false)
         let returnsTaskLikeType =
             isAppTy g returnTy &&
             (tyconRefEq g (tcrefOfAppTy g returnTy) g.system_Task_tcref ||

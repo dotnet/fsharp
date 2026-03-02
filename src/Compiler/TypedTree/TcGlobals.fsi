@@ -460,6 +460,9 @@ type internal TcGlobals =
 
     member attrib_RequiresLocationAttribute: BuiltinAttribInfo
 
+    member attrib_RuntimeAsyncAttribute: BuiltinAttribInfo
+
+
     member attrib_SealedAttribute: BuiltinAttribInfo
 
     member attrib_SecurityAttribute: BuiltinAttribInfo option
