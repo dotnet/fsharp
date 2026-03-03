@@ -3070,36 +3070,32 @@ let g = f
         |> signaturesShouldContain "val g: (int -> int)"
 
     [<Fact>]
-    let ``Breaking change S2: List.map of inline SRTP function emits warning 3882`` () =
+    let ``Breaking change S2: List.map of inline SRTP function compiles`` () =
         // When inline SRTP function is reified (passed to List.map), the constraint
-        // cannot be statically resolved. The compiler emits warning 3882.
+        // is resolved at the call site via inlining.
         FSharp """
 module Test
 let inline f x = x + 1
 let result = List.map f [1;2;3]
         """
         |> withLangVersionPreview
-        |> ignoreWarnings
         |> asExe
         |> compile
         |> shouldSucceed
-        |> withSingleDiagnostic (Warning 3882, Line 3, Col 18, Line 3, Col 23, "The member constraint for 'op_Addition' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.")
 
     [<Fact>]
-    let ``Breaking change S2: monomorphic annotation on inline SRTP function emits warning 3882`` () =
+    let ``Breaking change S2: monomorphic annotation on inline SRTP function compiles`` () =
         // When inline SRTP function is assigned to a non-inline binding,
-        // the constraint cannot be statically resolved. The compiler emits warning 3882.
+        // the constraint is resolved at the assignment site.
         FSharp """
 module Test
 let inline f x = x + 1
 let g : int -> int = f
         """
         |> withLangVersionPreview
-        |> ignoreWarnings
         |> asExe
         |> compile
         |> shouldSucceed
-        |> withSingleDiagnostic (Warning 3882, Line 3, Col 18, Line 3, Col 23, "The member constraint for 'op_Addition' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.")
 
     [<Fact>]
     let ``Breaking change S2: control case - x + x was already generic`` () =
@@ -3216,20 +3212,18 @@ let run x = f x
         |> signaturesShouldContain "val run: x: int -> int"
 
     [<Fact>]
-    let ``Breaking change S4: delegate from inline SRTP emits warning 3882`` () =
+    let ``Breaking change S4: delegate from inline SRTP compiles`` () =
         // When inline SRTP function is wrapped in a delegate, the constraint
-        // cannot be statically resolved. The compiler emits warning 3882.
+        // is resolved at the delegate construction site.
         FSharp """
 module Test
 let inline addOne x = x + 1
 let d = System.Func<int,int>(addOne)
         """
         |> withLangVersionPreview
-        |> ignoreWarnings
         |> asExe
         |> compile
         |> shouldSucceed
-        |> withSingleDiagnostic (Warning 3882, Line 3, Col 23, Line 3, Col 28, "The member constraint for 'op_Addition' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached.")
 
     [<Fact>]
     let ``Extension operator on string works in FSI with langversion preview`` () =
@@ -3393,7 +3387,6 @@ let r1 = multiply "a" 3
 let r2 = multiply 5 3
         """
         |> withLangVersionPreview
-        |> withOptions [ "--nowarn:3882" ]
         |> compile
         |> shouldSucceed
 
@@ -3405,7 +3398,6 @@ let inline multiply (x: ^T) (n: int) = x * n
 let result : int = multiply 5 3
         """
         |> withLangVersionPreview
-        |> withOptions [ "--nowarn:3882" ]
         |> compile
         |> shouldSucceed
 
@@ -3442,7 +3434,6 @@ let r = repeat "ha" 3
 if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" r)
         """
         |> withLangVersionPreview
-        |> withOptions [ "--nowarn:3882" ]
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -3463,7 +3454,6 @@ let r = repeat "ha" 3
 if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%%s'" r)
         """
         |> withLangVersionPreview
-        |> withOptions [ "--nowarn:3882" ]
         |> asExe
         |> compileAndRun
         |> shouldSucceed

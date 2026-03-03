@@ -1,11 +1,12 @@
 // RFC FS-1043: Regression tests for linked GitHub issues.
+// These test the weak resolution changes from the RFC, not extension members directly.
+// The issues were fixed by the constraint solver changes that accompany FS-1043.
 
 module IssueRegressions
 
 // ---- dotnet/fsharp#9382: Matrix SRTP stress test ----
 // Many statically resolved type parameters, inline record operators.
-// Previously produced FS0073 (internal error: Undefined or unsolved type variable).
-// Now compiles with FS3882 warnings (constraint not statically resolved) — no internal error.
+// Previously produced FS0073 (internal error). Now compiles and runs cleanly.
 
 type Matrix<'a> =
     { m11: 'a; m12: 'a; m13: 'a
@@ -39,7 +40,7 @@ let inv = inverse identity
 if inv.m11 <> 1.0 then failwith $"Expected identity inverse m11=1.0, got {inv.m11}"
 
 // ---- dotnet/fsharp#9416: Records with generic type variables and overloaded operators ----
-// Previously produced FS0073 (internal error).
+// Previously produced FS0073 (internal error). Now compiles and runs cleanly.
 
 type Vector<'T> =
     { X: 'T; Y: 'T }

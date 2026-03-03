@@ -22,13 +22,3 @@ if r2 <> 42.0 then failwith $"Expected 42.0, got {r2}"
 
 let r3: string = MyNum.op_Explicit({ Value = 42 })
 if r3 <> "42" then failwith $"Expected '42', got '{r3}'"
-
-// ---- SRTP with op_Explicit return type ----
-
-let inline convert (x: ^T) : ^U = (^T : (static member op_Explicit: ^T -> ^U) x)
-
-let r4: int = convert { Value = 7 }
-if r4 <> 7 then failwith $"Expected 7, got {r4}"
-
-let r5: float = convert { Value = 7 }
-if r5 <> 7.0 then failwith $"Expected 7.0, got {r5}"

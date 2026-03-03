@@ -276,7 +276,6 @@ type System.Single with
 ## Diagnostics
 
 * **FS1215** ("Extension members cannot provide operator overloads"): no longer emitted when the feature is enabled, because extension operators are now valid SRTP witnesses. Fires as before when the feature is disabled.
-* **FS3882** (new warning): *"The member constraint for '%s' could not be statically resolved. A NotSupportedException will be thrown at runtime if this code path is reached."* Emitted during code generation when an inline function's SRTP constraint remains unresolved. This warning is new to this RFC — because weak resolution is suppressed for inline code, more constraints remain open at codegen time.
 * Overload ambiguity introduced by extension methods uses existing error codes; no additional diagnostics for that case.
 
 ## Tooling

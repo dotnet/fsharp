@@ -10,72 +10,65 @@ module ExtensionConstraintsTests =
 
     let private testFileDir = Path.Combine(__SOURCE_DIRECTORY__, "testFiles")
 
-    let private loadAndRun fileName =
+    /// Compile and run a test file with --langversion:preview. No warnings allowed.
+    let private compileAndRunPreview fileName =
         FSharp(loadSourceFromFile (Path.Combine(testFileDir, fileName)))
         |> asExe
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
 
-    // ---- Basic Extension Operators ----
+    // ========================================================================
+    // Positive tests: compile AND run cleanly, zero warnings
+    // ========================================================================
 
     [<Fact>]
     let ``Extension operators solve SRTP constraints`` () =
-        loadAndRun "BasicExtensionOperators.fs"
-
-    // ---- Extension Precedence ----
+        compileAndRunPreview "BasicExtensionOperators.fs"
 
     [<Fact>]
     let ``Most recently opened extension wins`` () =
-        loadAndRun "ExtensionPrecedence.fs"
-
-    // ---- Extension Accessibility ----
+        compileAndRunPreview "ExtensionPrecedence.fs"
 
     [<Fact>]
     let ``Extension operators respect accessibility`` () =
-        loadAndRun "ExtensionAccessibility.fs"
-
-    // ---- Weak Resolution ----
-    // ignoreWarnings: f1 (DateTime + y) stays generic, producing FS3882
-    // ("constraint could not be statically resolved") — this is expected,
-    // the function works when called with concrete types at the call site.
+        compileAndRunPreview "ExtensionAccessibility.fs"
 
     [<Fact>]
-    let ``Weak resolution deferred for inline code with extensions`` () =
-        FSharp(loadSourceFromFile (Path.Combine(testFileDir, "WeakResolution.fs")))
+    let ``Extensions captured at call site not definition site`` () =
+        compileAndRunPreview "ScopeCapture.fs"
+
+    [<Fact>]
+    let ``Sequentialized InvokeMap pattern compiles and runs`` () =
+        compileAndRunPreview "WeakResolution.fs"
+
+    [<Fact>]
+    let ``op_Explicit return type disambiguation`` () =
+        compileAndRunPreview "OpExplicitReturnType.fs"
+
+    [<Fact>]
+    let ``Issue 9382 and 9416 regressions compile and run`` () =
+        compileAndRunPreview "IssueRegressions.fs"
+
+    [<Fact>]
+    let ``DateTime plus y compiles and runs with preview`` () =
+        // Prior to RFC-1043, weak resolution eagerly resolved this to
+        // DateTime -> TimeSpan -> DateTime. Now it stays generic because
+        // weak resolution is deferred for inline code.
+        FSharp """
+module WeakResDateTime
+open System
+let inline f1 (x: DateTime) y = x + y
+let r = f1 DateTime.MinValue (TimeSpan.FromHours(1.0))
+        """
         |> asExe
         |> withLangVersionPreview
-        |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
 
-    // ---- AllowOverloadOnReturnType ----
-    // ignoreWarnings: FS0077 about op_Explicit member constraints having
-    // special compiler treatment. The test still exercises the resolution correctly.
-
-    [<Fact>]
-    let ``AllowOverloadOnReturnType enables return type disambiguation`` () =
-        FSharp(loadSourceFromFile (Path.Combine(testFileDir, "AllowOverloadOnReturnType.fs")))
-        |> asExe
-        |> withLangVersionPreview
-        |> ignoreWarnings
-        |> compileAndRun
-        |> shouldSucceed
-
-    // ---- Issue Regressions ----
-    // These compile with warnings (FS3882: constraint not statically resolved) but
-    // no longer produce internal errors (FS0073), which was the original bug.
-
-    [<Fact>]
-    let ``Issue regressions compile and run`` () =
-        FSharp(loadSourceFromFile (Path.Combine(testFileDir, "IssueRegressions.fs")))
-        |> asExe
-        |> withLangVersionPreview
-        |> ignoreWarnings
-        |> compileAndRun
-        |> shouldSucceed
-
-    // ---- FS1215 warning suppression ----
+    // ========================================================================
+    // Negative tests: assert specific diagnostics
+    // ========================================================================
 
     [<Fact>]
     let ``FS1215 warning suppressed when ExtensionConstraintSolutions is active`` () =
@@ -98,8 +91,6 @@ type System.String with
         |> withDiagnostics [
             Warning 1215, Line 3, Col 19, Line 3, Col 22, "Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead."
         ]
-
-    // ---- Negative: FSharpPlus-style ambiguity should fail ----
 
     [<Fact>]
     let ``FSharpPlus Sequence pattern fails to compile`` () =
@@ -144,15 +135,11 @@ let res = CallSequence<Sequence, _, _> [Some 3; Some 2; Some 1]
         |> compile
         |> shouldFail
 
-    // ---- Issue #8794: Return type in member constraint with shadowing ----
-    // When Daughter shadows Mother.Hello() with a different return type,
-    // the member constraint `(member Hello : unit -> string)` finds both
-    // overloads and reports ambiguity. This is not directly an RFC FS-1043
-    // issue — it's about return-type-based disambiguation in member constraints
-    // generally. Test documents current behavior.
-
     [<Fact>]
     let ``Issue 8794 - Shadowing member return type produces ambiguity error`` () =
+        // When Daughter shadows Mother.Hello() with a different return type,
+        // the member constraint finds both overloads and reports ambiguity.
+        // Not directly RFC FS-1043 — documents current member constraint behavior.
         Fsx """
 type Mother() =
     member this.Hello() = Unchecked.defaultof<int>

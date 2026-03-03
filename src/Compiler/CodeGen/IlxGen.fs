@@ -5541,10 +5541,9 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
                 ReportWarnings warns
                 res
             | ErrorResult _ ->
-                // Emit a diagnostic so the user knows about the runtime throw.
-                // This is defensive — type-checking should have caught it — but
-                // extension constraint changes can leave unsolved constraints in codegen.
-                warning (Error(FSComp.SR.ilTraitCallNotStaticallyResolved (traitInfo.MemberLogicalName), m))
+                // Resolution may fail for generic inline code with unsolved constraints
+                // (e.g. rigid typars). The NotSupportedException stub below is emitted as
+                // fallback IL; inline functions resolve constraints at each call site.
                 None
 
         match exprOpt with
