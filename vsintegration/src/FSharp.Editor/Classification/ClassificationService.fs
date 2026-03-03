@@ -294,7 +294,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             let targetRange =
                                 RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
 
-                            let classificationData = checkResults.GetSemanticClassification(Some targetRange, RelatedSymbolUseKind.All)
+                            let classificationData =
+                                checkResults.GetSemanticClassification(Some targetRange, RelatedSymbolUseKind.All)
 
                             if classificationData.Length > 0 then
                                 let classificationDataLookup = itemToSemanticClassificationLookup classificationData

@@ -2785,7 +2785,13 @@ type internal TypeCheckInfo
         sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
     member _.GetSemanticClassification(range: range option, ?relatedSymbolKinds: RelatedSymbolUseKind) : SemanticClassificationItem[] =
-        sResolutions.GetSemanticClassification(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range, ?relatedSymbolKinds = relatedSymbolKinds)
+        sResolutions.GetSemanticClassification(
+            g,
+            amap,
+            sSymbolUses.GetFormatSpecifierLocationsAndArity(),
+            range,
+            ?relatedSymbolKinds = relatedSymbolKinds
+        )
 
     /// The resolutions in the file
     member _.ScopeResolutions = sResolutions

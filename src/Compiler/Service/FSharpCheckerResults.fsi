@@ -421,7 +421,8 @@ type public FSharpCheckFileResults =
         line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse list
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
-    member GetSemanticClassification: range option * ?relatedSymbolKinds: RelatedSymbolUseKind -> SemanticClassificationItem[]
+    member GetSemanticClassification:
+        range option * ?relatedSymbolKinds: RelatedSymbolUseKind -> SemanticClassificationItem[]
 
     /// <summary>Get the locations of format specifiers</summary>
     [<Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
