@@ -208,7 +208,7 @@ module Nullness =
     [<Struct;NoEquality;NoComparison>]
     type AttributesFromIL = AttributesFromIL of metadataIndex:int * attrs:ILAttributesStored
         with
-            member this.Read() =  match this with| AttributesFromIL(idx,attrs) -> attrs.GetCustomAttrs(idx)
+            member this.Read() = match this with | AttributesFromIL(_, attrs) -> attrs.CustomAttrs
             member this.GetNullable(g:TcGlobals) =
                 tryFindILAttribByFlag WellKnownILAttributes.NullableAttribute (this.Read())
                 |> tryParseAttributeDataToNullableByteFlags g

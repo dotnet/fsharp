@@ -3895,9 +3895,8 @@ let attribsHaveEntityFlag g (flag: WellKnownEntityAttributes) (attribs: Attribs)
 /// Map a WellKnownILAttributes flag to its WellKnownValAttributes equivalent.
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
 let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes) (entity: Entity) : bool =
-    let ea = entity.EntityAttribs
-    let struct (result, wa) = ea.CheckFlag(flag, computeEntityWellKnownFlags g)
-    if wa.Flags <> ea.Flags then entity.SetEntityAttribs(wa)
+    let struct (result, wa, changed) = entity.EntityAttribs.CheckFlag(flag, computeEntityWellKnownFlags g)
+    if changed then entity.SetEntityAttribs(wa)
     result
 
 /// Classify a single Val-level attribute, returning its well-known flag (or None).
@@ -4029,16 +4028,14 @@ let filterOutWellKnownAttribs
 
 /// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
 let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (argInfo: ArgReprInfo) : bool =
-    let wa = argInfo.Attribs
-    let struct (result, waNew) = wa.CheckFlag(flag, computeValWellKnownFlags g)
-    if waNew.Flags <> wa.Flags then argInfo.Attribs <- waNew
+    let struct (result, waNew, changed) = argInfo.Attribs.CheckFlag(flag, computeValWellKnownFlags g)
+    if changed then argInfo.Attribs <- waNew
     result
 
 /// Check if a Val has a specific well-known attribute, computing and caching flags if needed.
 let ValHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (v: Val) : bool =
-    let va = v.ValAttribs
-    let struct (result, waNew) = va.CheckFlag(flag, computeValWellKnownFlags g)
-    if waNew.Flags <> va.Flags then v.SetValAttribs(waNew)
+    let struct (result, waNew, changed) = v.ValAttribs.CheckFlag(flag, computeValWellKnownFlags g)
+    if changed then v.SetValAttribs(waNew)
     result
 
 /// Query a three-state bool attribute on an entity. Returns bool option.
@@ -4046,9 +4043,9 @@ let EntityTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownEntityAttribute
     if not (EntityHasWellKnownAttribute g (trueFlag ||| falseFlag) entity) then
         Option.None
     else
-        let ea = entity.EntityAttribs
-        if hasFlag ea.Flags trueFlag then Some true
-        else Some false
+        // After EntityHasWellKnownAttribute, flags are guaranteed computed
+        let struct (hasTrue, _, _) = entity.EntityAttribs.CheckFlag(trueFlag, computeEntityWellKnownFlags g)
+        if hasTrue then Some true else Some false
 
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
@@ -4141,6 +4138,20 @@ let HasDefaultAugmentationAttribute g (tcref: TyconRef) =
     match EntityTryGetBoolAttribute g WellKnownEntityAttributes.DefaultAugmentationAttribute_True WellKnownEntityAttributes.DefaultAugmentationAttribute_False tcref.Deref with
     | Some b -> b
     | None -> true
+
+/// Check if a TyconRef has AllowNullLiteralAttribute, returning Some true/Some false/None.
+let TyconRefAllowsNull (g: TcGlobals) (tcref: TyconRef) : bool option =
+    match metadataOfTycon tcref.Deref with
+#if !NO_TYPEPROVIDERS
+    | ProvidedTypeMetadata _ -> TryFindTyconRefBoolAttribute g tcref.Range g.attrib_AllowNullLiteralAttribute tcref
+#endif
+    | ILTypeMetadata(TILObjectReprData(_, _, tdef)) ->
+        if tdef.HasWellKnownAttribute(g, WellKnownILAttributes.AllowNullLiteralAttribute) then
+            Some true
+        else
+            None
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        EntityTryGetBoolAttribute g WellKnownEntityAttributes.AllowNullLiteralAttribute_True WellKnownEntityAttributes.AllowNullLiteralAttribute_False tcref.Deref
 
 /// Check if a type definition has an attribute with a specific full name
 let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) = 
@@ -9668,13 +9679,13 @@ let TypeNullNever g ty =
     IsNonNullableStructTyparTy g ty
 
 /// The pre-nullness logic about whether a type admits the use of 'null' as a value.
-let TypeNullIsExtraValue g m ty = 
+let TypeNullIsExtraValue g (_m: range) ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
         match tryTcrefOfAppTy g ty with 
         | ValueSome tcref -> 
             // Putting AllowNullLiteralAttribute(false) on an IL or provided 
             // type means 'null' can't be used with that type, otherwise it can
-            TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref <> Some false 
+            TyconRefAllowsNull g tcref <> Some false 
         | _ -> 
             // In pre-nullness, other IL reference types (e.g. arrays) always support null
             true
@@ -9683,7 +9694,7 @@ let TypeNullIsExtraValue g m ty =
     else 
         // In F# 4.x, putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
         match tryTcrefOfAppTy g ty with 
-        | ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true
+        | ValueSome tcref -> TyconRefAllowsNull g tcref = Some true
         | ValueNone -> 
 
         // Consider type parameters
@@ -9691,7 +9702,7 @@ let TypeNullIsExtraValue g m ty =
 
 // Any mention of a type with AllowNullLiteral(true) is considered to be with-null
 let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
-    match TryFindTyconRefBoolAttribute g tcref.Range g.attrib_AllowNullLiteralAttribute tcref with
+    match TyconRefAllowsNull g tcref with
     | Some true -> g.knownWithNull
     | _ -> g.knownWithoutNull
 
@@ -9783,7 +9794,7 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
 let TypeHasAllowNull (tcref:TyconRef) g m =
     not tcref.IsStructOrEnumTycon &&
     not (isByrefLikeTyconRef g m tcref) && 
-    (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true)
+    (TyconRefAllowsNull g tcref = Some true)
 
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 

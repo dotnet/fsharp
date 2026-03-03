@@ -2498,6 +2498,9 @@ val TyconRefHasAttributeByName: range -> string -> TyconRef -> bool
 /// Check if a TyconRef has a well-known attribute, handling both IL and F# metadata with O(1) flag tests.
 val TyconRefHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownILAttributes -> tcref: TyconRef -> bool
 
+/// Check if a TyconRef has AllowNullLiteralAttribute, returning Some true/Some false/None.
+val TyconRefAllowsNull: g: TcGlobals -> tcref: TyconRef -> bool option
+
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
 val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
 

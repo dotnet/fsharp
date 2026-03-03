@@ -1281,9 +1281,6 @@ type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStor
             repr <- Given r
             r
 
-    /// Backward compat — old callers that still pass metadataIndex.
-    member x.GetCustomAttrs(_metadataIndex: int32) : ILAttributes = x.CustomAttrs
-
     member x.HasWellKnownAttribute(flag: WellKnownILAttributes, compute: ILAttributes -> WellKnownILAttributes) : bool =
         x.GetOrComputeWellKnownFlags(compute) &&& flag <> WellKnownILAttributes.None
 
@@ -1301,8 +1298,6 @@ type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStor
     static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) = ILAttributesStored(idx, Reader f)
 
     static member CreateGiven(attrs: ILAttributes) = ILAttributesStored(-1, Given attrs)
-
-    static member CreateGiven(idx: int32, attrs: ILAttributes) = ILAttributesStored(idx, Given attrs)
 
 let emptyILCustomAttrs = ILAttributes [||]
 

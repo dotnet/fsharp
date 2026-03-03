@@ -912,15 +912,11 @@ type WellKnownILAttributes =
 [<Sealed; NoEquality; NoComparison>]
 type ILAttributesStored =
     member CustomAttrs: ILAttributes
-    member GetCustomAttrs: int32 -> ILAttributes
-    member MetadataIndex: int32
 
     member HasWellKnownAttribute: flag: WellKnownILAttributes * compute: (ILAttributes -> WellKnownILAttributes) -> bool
 
-    member GetOrComputeWellKnownFlags: compute: (ILAttributes -> WellKnownILAttributes) -> WellKnownILAttributes
     static member CreateReader: idx: int32 * f: (int32 -> ILAttribute[]) -> ILAttributesStored
     static member CreateGiven: attrs: ILAttributes -> ILAttributesStored
-    static member CreateGiven: idx: int32 * attrs: ILAttributes -> ILAttributesStored
 
 /// Method parameters and return values.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]

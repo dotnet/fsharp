@@ -1662,7 +1662,7 @@ and OpHasEffect g m op =
     | TOp.AnonRecdGet _ -> true // conservative
     | TOp.ValFieldGet rfref -> 
         rfref.RecdField.IsMutable 
-        || (TryFindTyconRefBoolAttribute g range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some true)
+        || (TyconRefAllowsNull g rfref.TyconRef = Some true)
     | TOp.ValFieldGetAddr (rfref, _readonly) -> rfref.RecdField.IsMutable
     | TOp.UnionCaseFieldGetAddr _ -> false // union case fields are immutable
     | TOp.LValueOp (LAddrOf _, _) -> false // addresses of values are always constants

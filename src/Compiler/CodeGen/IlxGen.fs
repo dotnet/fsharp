@@ -8800,146 +8800,150 @@ and GetStoreValCtxt cgbuf eenv (vspec: Val) =
 //-------------------------------------------------------------------------
 
 /// Generate encoding P/Invoke and COM marshalling information
-and GenMarshal cenv attribs =
-    let g = cenv.g
-
-    let otherAttribs =
-        // For IlReflect backend, we rely on Reflection.Emit API to emit the pseudo-custom attributes
-        // correctly, so we do not filter them out.
-        // For IlWriteBackend, we filter MarshalAs attributes
-        match cenv.options.ilxBackend with
-        | IlReflectBackend -> attribs
-        | IlWriteBackend ->
-            attribs
-            |> filterOutWellKnownAttribs g WellKnownEntityAttributes.None WellKnownValAttributes.MarshalAsAttribute
-
-    match tryFindValAttribByFlag g WellKnownValAttributes.MarshalAsAttribute attribs with
-    | Some(Attrib(_, _, [ AttribInt32Arg unmanagedType ], namedArgs, _, _, m)) ->
-        let decoder = AttributeDecoder namedArgs
-
-        let rec decodeUnmanagedType unmanagedType =
-            // enumeration values for System.Runtime.InteropServices.UnmanagedType taken from mscorlib.il
-            match unmanagedType with
-            | 0x0 -> ILNativeType.Empty
-            | 0x01 -> ILNativeType.Void
-            | 0x02 -> ILNativeType.Bool
-            | 0x03 -> ILNativeType.Int8
-            | 0x04 -> ILNativeType.Byte
-            | 0x05 -> ILNativeType.Int16
-            | 0x06 -> ILNativeType.UInt16
-            | 0x07 -> ILNativeType.Int32
-            | 0x08 -> ILNativeType.UInt32
-            | 0x09 -> ILNativeType.Int64
-            | 0x0A -> ILNativeType.UInt64
-            | 0x0B -> ILNativeType.Single
-            | 0x0C -> ILNativeType.Double
-            | 0x0F -> ILNativeType.Currency
-            | 0x13 -> ILNativeType.BSTR
-            | 0x14 -> ILNativeType.LPSTR
-            | 0x15 -> ILNativeType.LPWSTR
-            | 0x16 -> ILNativeType.LPTSTR
-            | 0x17 -> ILNativeType.FixedSysString(decoder.FindInt32 "SizeConst" 0x0)
-            | 0x19 -> ILNativeType.IUnknown
-            | 0x1A -> ILNativeType.IDispatch
-            | 0x1B -> ILNativeType.Struct
-            | 0x1C -> ILNativeType.Interface
-            | 0x1D ->
-                let safeArraySubType =
-                    match decoder.FindInt32 "SafeArraySubType" 0x0 with
-                    (* enumeration values for System.Runtime.InteropServices.VarType taken from mscorlib.il *)
-                    | 0x0 -> ILNativeVariant.Empty
-                    | 0x1 -> ILNativeVariant.Null
-                    | 0x02 -> ILNativeVariant.Int16
-                    | 0x03 -> ILNativeVariant.Int32
-                    | 0x0C -> ILNativeVariant.Variant
-                    | 0x04 -> ILNativeVariant.Single
-                    | 0x05 -> ILNativeVariant.Double
-                    | 0x06 -> ILNativeVariant.Currency
-                    | 0x07 -> ILNativeVariant.Date
-                    | 0x08 -> ILNativeVariant.BSTR
-                    | 0x09 -> ILNativeVariant.IDispatch
-                    | 0x0a -> ILNativeVariant.Error
-                    | 0x0b -> ILNativeVariant.Bool
-                    | 0x0d -> ILNativeVariant.IUnknown
-                    | 0x0e -> ILNativeVariant.Decimal
-                    | 0x10 -> ILNativeVariant.Int8
-                    | 0x11 -> ILNativeVariant.UInt8
-                    | 0x12 -> ILNativeVariant.UInt16
-                    | 0x13 -> ILNativeVariant.UInt32
-                    | 0x15 -> ILNativeVariant.UInt64
-                    | 0x16 -> ILNativeVariant.Int
-                    | 0x17 -> ILNativeVariant.UInt
-                    | 0x18 -> ILNativeVariant.Void
-                    | 0x19 -> ILNativeVariant.HRESULT
-                    | 0x1a -> ILNativeVariant.PTR
-                    | 0x1c -> ILNativeVariant.CArray
-                    | 0x1d -> ILNativeVariant.UserDefined
-                    | 0x1e -> ILNativeVariant.LPSTR
-                    | 0x1B -> ILNativeVariant.SafeArray
-                    | 0x1f -> ILNativeVariant.LPWSTR
-                    | 0x24 -> ILNativeVariant.Record
-                    | 0x40 -> ILNativeVariant.FileTime
-                    | 0x41 -> ILNativeVariant.Blob
-                    | 0x42 -> ILNativeVariant.Stream
-                    | 0x43 -> ILNativeVariant.Storage
-                    | 0x44 -> ILNativeVariant.StreamedObject
-                    | 0x45 -> ILNativeVariant.StoredObject
-                    | 0x46 -> ILNativeVariant.BlobObject
-                    | 0x47 -> ILNativeVariant.CF
-                    | 0x48 -> ILNativeVariant.CLSID
-                    | 0x14 -> ILNativeVariant.Int64
-                    | _ -> ILNativeVariant.Empty
-
-                let safeArrayUserDefinedSubType =
-                    // the argument is a System.Type obj, but it's written to MD as a UTF8 string
-                    match decoder.FindTypeName "SafeArrayUserDefinedSubType" "" with
-                    | x when String.IsNullOrEmpty(x) -> None
-                    | res ->
-                        if
-                            (safeArraySubType = ILNativeVariant.IDispatch)
-                            || (safeArraySubType = ILNativeVariant.IUnknown)
-                        then
-                            Some res
-                        else
-                            None
-
-                ILNativeType.SafeArray(safeArraySubType, safeArrayUserDefinedSubType)
-            | 0x1E -> ILNativeType.FixedArray(decoder.FindInt32 "SizeConst" 0x0)
-            | 0x1F -> ILNativeType.Int
-            | 0x20 -> ILNativeType.UInt
-            | 0x22 -> ILNativeType.ByValStr
-            | 0x23 -> ILNativeType.ANSIBSTR
-            | 0x24 -> ILNativeType.TBSTR
-            | 0x25 -> ILNativeType.VariantBool
-            | 0x26 -> ILNativeType.Method
-            | 0x28 -> ILNativeType.AsAny
-            | 0x2A ->
-                let sizeParamIndex =
-                    match decoder.FindInt16 "SizeParamIndex" -1s with
-                    | -1s -> None
-                    | res -> Some(int res, None)
-
-                let arraySubType =
-                    match decoder.FindInt32 "ArraySubType" -1 with
-                    | -1 -> None
-                    | res -> Some(decodeUnmanagedType res)
-
-                ILNativeType.Array(arraySubType, sizeParamIndex)
-            | 0x2B -> ILNativeType.LPSTRUCT
-            | 0x2C -> error (Error(FSComp.SR.ilCustomMarshallersCannotBeUsedInFSharp (), m))
-            (* ILNativeType.Custom of bytes * string * string * bytes (* GUID, nativeTypeName, custMarshallerName, cookieString *) *)
-            //ILNativeType.Error
-            | 0x2D -> ILNativeType.Error
-            | 0x30 -> ILNativeType.LPUTF8STR
-            | _ -> ILNativeType.Empty
-
-        Some(decodeUnmanagedType unmanagedType), otherAttribs
-    | Some(Attrib(_, _, _, _, _, _, m)) ->
-        errorR (Error(FSComp.SR.ilMarshalAsAttributeCannotBeDecoded (), m))
+and GenMarshal cenv valFlags attribs =
+    if not (hasFlag valFlags WellKnownValAttributes.MarshalAsAttribute) then
         None, attribs
-    | _ ->
-        // No MarshalAs detected
-        None, attribs
+    else
+
+        let g = cenv.g
+
+        let otherAttribs =
+            // For IlReflect backend, we rely on Reflection.Emit API to emit the pseudo-custom attributes
+            // correctly, so we do not filter them out.
+            // For IlWriteBackend, MarshalAs is already filtered by the caller (GenParamAttribs/ComputeMethodImplAttribs).
+            match cenv.options.ilxBackend with
+            | IlReflectBackend -> attribs
+            | IlWriteBackend ->
+                attribs
+                |> filterOutWellKnownAttribs g WellKnownEntityAttributes.None WellKnownValAttributes.MarshalAsAttribute
+
+        match tryFindValAttribByFlag g WellKnownValAttributes.MarshalAsAttribute attribs with
+        | Some(Attrib(_, _, [ AttribInt32Arg unmanagedType ], namedArgs, _, _, m)) ->
+            let decoder = AttributeDecoder namedArgs
+
+            let rec decodeUnmanagedType unmanagedType =
+                // enumeration values for System.Runtime.InteropServices.UnmanagedType taken from mscorlib.il
+                match unmanagedType with
+                | 0x0 -> ILNativeType.Empty
+                | 0x01 -> ILNativeType.Void
+                | 0x02 -> ILNativeType.Bool
+                | 0x03 -> ILNativeType.Int8
+                | 0x04 -> ILNativeType.Byte
+                | 0x05 -> ILNativeType.Int16
+                | 0x06 -> ILNativeType.UInt16
+                | 0x07 -> ILNativeType.Int32
+                | 0x08 -> ILNativeType.UInt32
+                | 0x09 -> ILNativeType.Int64
+                | 0x0A -> ILNativeType.UInt64
+                | 0x0B -> ILNativeType.Single
+                | 0x0C -> ILNativeType.Double
+                | 0x0F -> ILNativeType.Currency
+                | 0x13 -> ILNativeType.BSTR
+                | 0x14 -> ILNativeType.LPSTR
+                | 0x15 -> ILNativeType.LPWSTR
+                | 0x16 -> ILNativeType.LPTSTR
+                | 0x17 -> ILNativeType.FixedSysString(decoder.FindInt32 "SizeConst" 0x0)
+                | 0x19 -> ILNativeType.IUnknown
+                | 0x1A -> ILNativeType.IDispatch
+                | 0x1B -> ILNativeType.Struct
+                | 0x1C -> ILNativeType.Interface
+                | 0x1D ->
+                    let safeArraySubType =
+                        match decoder.FindInt32 "SafeArraySubType" 0x0 with
+                        (* enumeration values for System.Runtime.InteropServices.VarType taken from mscorlib.il *)
+                        | 0x0 -> ILNativeVariant.Empty
+                        | 0x1 -> ILNativeVariant.Null
+                        | 0x02 -> ILNativeVariant.Int16
+                        | 0x03 -> ILNativeVariant.Int32
+                        | 0x0C -> ILNativeVariant.Variant
+                        | 0x04 -> ILNativeVariant.Single
+                        | 0x05 -> ILNativeVariant.Double
+                        | 0x06 -> ILNativeVariant.Currency
+                        | 0x07 -> ILNativeVariant.Date
+                        | 0x08 -> ILNativeVariant.BSTR
+                        | 0x09 -> ILNativeVariant.IDispatch
+                        | 0x0a -> ILNativeVariant.Error
+                        | 0x0b -> ILNativeVariant.Bool
+                        | 0x0d -> ILNativeVariant.IUnknown
+                        | 0x0e -> ILNativeVariant.Decimal
+                        | 0x10 -> ILNativeVariant.Int8
+                        | 0x11 -> ILNativeVariant.UInt8
+                        | 0x12 -> ILNativeVariant.UInt16
+                        | 0x13 -> ILNativeVariant.UInt32
+                        | 0x15 -> ILNativeVariant.UInt64
+                        | 0x16 -> ILNativeVariant.Int
+                        | 0x17 -> ILNativeVariant.UInt
+                        | 0x18 -> ILNativeVariant.Void
+                        | 0x19 -> ILNativeVariant.HRESULT
+                        | 0x1a -> ILNativeVariant.PTR
+                        | 0x1c -> ILNativeVariant.CArray
+                        | 0x1d -> ILNativeVariant.UserDefined
+                        | 0x1e -> ILNativeVariant.LPSTR
+                        | 0x1B -> ILNativeVariant.SafeArray
+                        | 0x1f -> ILNativeVariant.LPWSTR
+                        | 0x24 -> ILNativeVariant.Record
+                        | 0x40 -> ILNativeVariant.FileTime
+                        | 0x41 -> ILNativeVariant.Blob
+                        | 0x42 -> ILNativeVariant.Stream
+                        | 0x43 -> ILNativeVariant.Storage
+                        | 0x44 -> ILNativeVariant.StreamedObject
+                        | 0x45 -> ILNativeVariant.StoredObject
+                        | 0x46 -> ILNativeVariant.BlobObject
+                        | 0x47 -> ILNativeVariant.CF
+                        | 0x48 -> ILNativeVariant.CLSID
+                        | 0x14 -> ILNativeVariant.Int64
+                        | _ -> ILNativeVariant.Empty
+
+                    let safeArrayUserDefinedSubType =
+                        // the argument is a System.Type obj, but it's written to MD as a UTF8 string
+                        match decoder.FindTypeName "SafeArrayUserDefinedSubType" "" with
+                        | x when String.IsNullOrEmpty(x) -> None
+                        | res ->
+                            if
+                                (safeArraySubType = ILNativeVariant.IDispatch)
+                                || (safeArraySubType = ILNativeVariant.IUnknown)
+                            then
+                                Some res
+                            else
+                                None
+
+                    ILNativeType.SafeArray(safeArraySubType, safeArrayUserDefinedSubType)
+                | 0x1E -> ILNativeType.FixedArray(decoder.FindInt32 "SizeConst" 0x0)
+                | 0x1F -> ILNativeType.Int
+                | 0x20 -> ILNativeType.UInt
+                | 0x22 -> ILNativeType.ByValStr
+                | 0x23 -> ILNativeType.ANSIBSTR
+                | 0x24 -> ILNativeType.TBSTR
+                | 0x25 -> ILNativeType.VariantBool
+                | 0x26 -> ILNativeType.Method
+                | 0x28 -> ILNativeType.AsAny
+                | 0x2A ->
+                    let sizeParamIndex =
+                        match decoder.FindInt16 "SizeParamIndex" -1s with
+                        | -1s -> None
+                        | res -> Some(int res, None)
+
+                    let arraySubType =
+                        match decoder.FindInt32 "ArraySubType" -1 with
+                        | -1 -> None
+                        | res -> Some(decodeUnmanagedType res)
+
+                    ILNativeType.Array(arraySubType, sizeParamIndex)
+                | 0x2B -> ILNativeType.LPSTRUCT
+                | 0x2C -> error (Error(FSComp.SR.ilCustomMarshallersCannotBeUsedInFSharp (), m))
+                (* ILNativeType.Custom of bytes * string * string * bytes (* GUID, nativeTypeName, custMarshallerName, cookieString *) *)
+                //ILNativeType.Error
+                | 0x2D -> ILNativeType.Error
+                | 0x30 -> ILNativeType.LPUTF8STR
+                | _ -> ILNativeType.Empty
+
+            Some(decodeUnmanagedType unmanagedType), otherAttribs
+        | Some(Attrib(_, _, _, _, _, _, m)) ->
+            errorR (Error(FSComp.SR.ilMarshalAsAttributeCannotBeDecoded (), m))
+            None, attribs
+        | _ ->
+            // No MarshalAs detected
+            None, attribs
 
 /// Generate special attributes on an IL parameter
 and GenParamAttribs cenv paramTy attribs =
@@ -8955,21 +8959,36 @@ and GenParamAttribs cenv paramTy attribs =
     let optionalFlag = hasFlag valFlags WellKnownValAttributes.OptionalAttribute
 
     let defaultValue =
-        tryFindValAttribByFlag g WellKnownValAttributes.DefaultParameterValueAttribute attribs
-        |> Option.bind OptionalArgInfo.FieldInitForDefaultParameterValueAttrib
-    // Return the filtered attributes. Do not generate In, Out, Optional or DefaultParameterValue attributes
-    // as custom attributes in the code - they are implicit from the IL bits for these
-    let attribs =
-        attribs
-        |> filterOutWellKnownAttribs
-            g
-            WellKnownEntityAttributes.None
-            (WellKnownValAttributes.InAttribute
+        if hasFlag valFlags WellKnownValAttributes.DefaultParameterValueAttribute then
+            tryFindValAttribByFlag g WellKnownValAttributes.DefaultParameterValueAttribute attribs
+            |> Option.bind OptionalArgInfo.FieldInitForDefaultParameterValueAttrib
+        else
+            None
+
+    let filterMask =
+        valFlags
+        &&& (WellKnownValAttributes.InAttribute
              ||| WellKnownValAttributes.OutAttribute
              ||| WellKnownValAttributes.OptionalAttribute
-             ||| WellKnownValAttributes.DefaultParameterValueAttribute)
+             ||| WellKnownValAttributes.DefaultParameterValueAttribute
+             ||| WellKnownValAttributes.MarshalAsAttribute)
 
-    let Marshal, attribs = GenMarshal cenv attribs
+    // Filter out IL-implicit attributes in a single pass (only if any are present)
+    let attribs =
+        if filterMask = WellKnownValAttributes.None then
+            attribs
+        else
+            attribs
+            |> filterOutWellKnownAttribs
+                g
+                WellKnownEntityAttributes.None
+                (WellKnownValAttributes.InAttribute
+                 ||| WellKnownValAttributes.OutAttribute
+                 ||| WellKnownValAttributes.OptionalAttribute
+                 ||| WellKnownValAttributes.DefaultParameterValueAttribute
+                 ||| WellKnownValAttributes.MarshalAsAttribute)
+
+    let Marshal, attribs = GenMarshal cenv valFlags attribs
     inFlag, outFlag, optionalFlag, defaultValue, Marshal, attribs
 
 /// Generate IL parameters
@@ -9049,7 +9068,9 @@ and GenParams
 
 /// Generate IL method return information
 and GenReturnInfo cenv eenv returnTy ilRetTy (retInfo: ArgReprInfo) : ILReturn =
-    let marshal, attribs = GenMarshal cenv (retInfo.Attribs.AsList())
+    let retAttribs = retInfo.Attribs.AsList()
+    let retValFlags = computeValWellKnownFlags cenv.g retAttribs
+    let marshal, attribs = GenMarshal cenv retValFlags retAttribs
     let ilAttribs = GenAttrs cenv eenv attribs
 
     let ilAttribs =
@@ -9146,27 +9167,34 @@ and ComputeFlagFixupsForMemberBinding cenv (v: Val) =
 
 and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let g = cenv.g
+    let valFlags = computeValWellKnownFlags g attrs
 
     let implflags =
-        match attrs with
-        | ValAttribInt g WellKnownValAttributes.MethodImplAttribute flags -> flags
-        | _ -> 0x0
+        if hasFlag valFlags WellKnownValAttributes.MethodImplAttribute then
+            match attrs with
+            | ValAttribInt g WellKnownValAttributes.MethodImplAttribute flags -> flags
+            | _ -> 0x0
+        else
+            0x0
 
     let hasPreserveSigAttr =
-        attribsHaveValFlag g WellKnownValAttributes.PreserveSigAttribute attrs
+        hasFlag valFlags WellKnownValAttributes.PreserveSigAttribute
 
-    // strip the MethodImpl pseudo-custom attribute
-    // The following method implementation flags are used here
-    // 0x80 - hasPreserveSigImplFlag
-    // 0x20 - synchronize
-    // (See ECMA 335, Partition II, section 23.1.11 - Flags for methods [MethodImplAttributes])
     let attrs =
-        attrs
-        |> filterOutWellKnownAttribs
-            g
-            WellKnownEntityAttributes.None
-            (WellKnownValAttributes.MethodImplAttribute
-             ||| WellKnownValAttributes.PreserveSigAttribute)
+        if
+            hasFlag
+                valFlags
+                (WellKnownValAttributes.MethodImplAttribute
+                 ||| WellKnownValAttributes.PreserveSigAttribute)
+        then
+            attrs
+            |> filterOutWellKnownAttribs
+                g
+                WellKnownEntityAttributes.None
+                (WellKnownValAttributes.MethodImplAttribute
+                 ||| WellKnownValAttributes.PreserveSigAttribute)
+        else
+            attrs
 
     let hasPreserveSigImplFlag = ((implflags &&& 0x80) <> 0x0) || hasPreserveSigAttr
     let hasSynchronizedImplFlag = (implflags &&& 0x20) <> 0x0
@@ -11165,7 +11193,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 (WellKnownValAttributes.FieldOffsetAttribute
                                  ||| WellKnownValAttributes.NonSerializedAttribute)
 
-                        let ilFieldMarshal, fattribs = GenMarshal cenv fattribs
+                        let fieldValFlags = computeValWellKnownFlags g fattribs
+                        let ilFieldMarshal, fattribs = GenMarshal cenv fieldValFlags fattribs
 
                         // The IL field is hidden if the property/field is hidden OR we're using a property
                         // AND the field is not mutable (because we can take the address of a mutable field).

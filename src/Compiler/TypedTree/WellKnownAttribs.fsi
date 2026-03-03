@@ -121,8 +121,6 @@ type internal WellKnownAttribs<'TItem, 'TFlags when 'TFlags: enum<uint64>> =
     val private flags: 'TFlags
     new: attribs: 'TItem list * flags: 'TFlags -> WellKnownAttribs<'TItem, 'TFlags>
     member AsList: unit -> 'TItem list
-    member Flags: 'TFlags
     member Add: attrib: 'TItem * flag: 'TFlags -> WellKnownAttribs<'TItem, 'TFlags>
-    member Append: others: 'TItem list * flags: 'TFlags -> WellKnownAttribs<'TItem, 'TFlags>
     member WithRecomputedFlags: unit -> WellKnownAttribs<'TItem, 'TFlags>
-    member CheckFlag: flag: 'TFlags * compute: ('TItem list -> 'TFlags) -> struct (bool * WellKnownAttribs<'TItem, 'TFlags>)
+    member CheckFlag: flag: 'TFlags * compute: ('TItem list -> 'TFlags) -> struct (bool * WellKnownAttribs<'TItem, 'TFlags> * bool)
