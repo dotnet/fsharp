@@ -96,6 +96,9 @@ type LanguageFeature =
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
     | WarnWhenFunctionValueUsedAsInterpolatedStringArg
+    | MethodOverloadsCache
+    | ImplicitDIMCoverage
+    | PreprocessorElif
 
 /// LanguageVersion management
 type LanguageVersion =

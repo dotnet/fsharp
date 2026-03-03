@@ -11,7 +11,9 @@ open System.Diagnostics
 open System.IO
 open System.Threading
 open FSharp.Compiler.IO
+open FSharp.Compiler.Import.Nullness
 open FSharp.Compiler.NicePrint
+open FSharp.Compiler.TypeHierarchy
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.TypeHashing
@@ -729,6 +731,9 @@ type internal TypeCheckInfo
         let quals =
             sResolutions.CapturedExpressionTypings
             |> Seq.filter (fun (ty, nenv, _, m) ->
+                not m.IsSynthetic
+                &&
+
                 // We only want expression types that end at the particular position in the file we are looking at.
                 posEq m.End endOfExprPos
                 &&
@@ -2098,15 +2103,25 @@ type internal TypeCheckInfo
     member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
 
-    member scope.TryGetCapturedType(range) =
+    member scope.TryGetCapturedType(range: range) =
         sResolutions.CapturedExpressionTypings
-        |> Seq.tryFindBack (fun (_, _, _, m) -> equals m range)
+        |> Seq.tryFindBack (fun (_, _, _, m) -> equals (m.MakeSynthetic()) (range.MakeSynthetic()))
         |> Option.map (fun (ty, _, _, _) -> FSharpType(cenv, ty))
 
     member scope.TryGetCapturedDisplayContext(range) =
         sResolutions.CapturedExpressionTypings
         |> Seq.tryFindBack (fun (_, _, _, m) -> equals m range)
         |> Option.map (fun (_, q, _, _) -> FSharpDisplayContext(fun _ -> q.DisplayEnv))
+
+    member scope.ImportILType(ty: ILType) : FSharpType =
+        let amap = tcImports.GetImportMap()
+        let assemblyRef = ILAssemblyRef.Create("", None, None, false, None, None)
+        let scopeRef = ILScopeRef.Assembly assemblyRef
+
+        let typ =
+            ImportILTypeFromMetadata amap range0 scopeRef [] [] NullableAttributesSource.Empty ty
+
+        FSharpType(cenv, typ)
 
     /// Get the auto-complete items at a location
     member _.GetDeclarations(parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities, options) =
@@ -3521,6 +3536,9 @@ type FSharpCheckFileResults
         match details with
         | None -> None
         | Some(scope, _) -> scope.TryGetCapturedDisplayContext(range)
+
+    member _.ImportILType(ty: ILType) =
+        scopeOptX |> Option.map _.ImportILType(ty)
 
     member _.GetAllUsesOfAllSymbolsInFile(?cancellationToken: CancellationToken) =
         match details with

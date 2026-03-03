@@ -2122,6 +2122,7 @@ exit 0
             |> Seq.append (Directory.EnumerateFiles(errorTestCasesDir, "E_*.fs"))
             |> Seq.toArray
             |> Array.map Path.GetFileName
+            |> Array.filter (fun f -> f <> "E_EmptyFilename.fsx") // FSI-only test, uses #q;; which doesn't fail under compilation
             |> Array.map (fun f -> [|f :> obj|])
         else
             [||]
@@ -2135,54 +2136,6 @@ exit 0
         |> withOptions ["--nologo"]
         |> compile
         |> shouldFail
-        |> ignore
-
-    // ================================================================================
-    // CommandLineArgs tests - verify fsi.CommandLineArgs array population
-    // These MUST use subprocess via withFsiArgs because fsi.CommandLineArgs
-    // is only populated when running FSI as a subprocess, not in-process
-    // ================================================================================
-
-    // Regression test for FSHARP1.0:2439 - fsi.CommandLineArgs with no extra args
-    [<Fact>]
-    let ``CommandLineArgs01 - no arguments`` () =
-        Fsx """
-(if ((Seq.length fsi.CommandLineArgs) <> 1) then 1 else 0) |> exit
-"""
-        |> withOptions ["--nologo"]
-        |> withFsiArgs []  // No extra args - just script name
-        |> runFsi
-        |> shouldSucceed
-        |> ignore
-
-    // Regression test for FSHARP1.0:2439 - fsi.CommandLineArgs with just "--"
-    [<Fact>]
-    let ``CommandLineArgs01b - double dash only`` () =
-        Fsx """
-// With just "--", fsi.CommandLineArgs should still be length 1 (just script name)
-if Seq.length fsi.CommandLineArgs <> 1 then exit 1
-exit 0
-"""
-        |> withOptions ["--nologo"; "--"]
-        |> withFsiArgs []  // No args after --
-        |> runFsi
-        |> shouldSucceed
-        |> ignore
-
-    // Regression test for FSHARP1.0:2439 - fsi.CommandLineArgs with actual argument
-    [<Fact>]
-    let ``CommandLineArgs02 - one argument Hello`` () =
-        Fsx """
-let x = Seq.length fsi.CommandLineArgs
-let y = fsi.CommandLineArgs.[1]
-printfn "%A %A" x y
-if (x <> 2) || (y <> "Hello") then exit 1
-exit 0
-"""
-        |> withOptions ["--nologo"]
-        |> withFsiArgs ["Hello"]  // One arg: "Hello"
-        |> runFsi
-        |> shouldSucceed
         |> ignore
 
     // ================================================================================

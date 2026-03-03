@@ -23,9 +23,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
-    <PackageReference Include="xunit" Version="$(XUnitVersion)" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="$(XUnitRunnerVersion)" />
-    <PackageReference Include="XunitXml.TestLogger" Version="$(XunitXmlTestLoggerVersion)" />
+    <PackageReference Include="xunit.v3.mtp-v2" Version="$(XunitVersion)" />
   </ItemGroup>
 
   <!-- We want to restore ALL the MIBCs when we build anything, since in the future it will contain different profiles, not only the FSC one we got from building Giraffe -->

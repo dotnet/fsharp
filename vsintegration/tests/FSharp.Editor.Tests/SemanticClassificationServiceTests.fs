@@ -306,3 +306,112 @@ type TestType() =
 
             Assert.NotEqual<string>(ClassificationTypeNames.ClassName, classificationType)
             Assert.NotEqual<string>(ClassificationTypeNames.NamespaceName, classificationType)
+
+    [<Fact>]
+    member _.``Copy-and-update field should not be classified as type name``() =
+        let sourceText =
+            """
+type MyRecord = { ValidationErrors: string list; Name: string }
+let x = { ValidationErrors = []; Name = "" }
+let updated = { x with (*1*)ValidationErrors = [] }
+
+[<Struct>]
+type StructRecord = { Count: int; Label: string }
+let sr = { Count = 0; Label = "" }
+let sr2 = { sr with (*2*)Count = 1 }
+"""
+
+        let text = SourceText.From(sourceText)
+        let ranges = getRanges sourceText
+
+        // DEBUG: Print all classifications around (*1*)
+        let line1 = text.Lines.GetLinePosition(sourceText.IndexOf("(*1*)") + 5)
+        let markerPos1 = Position.mkPos (Line.fromZ line1.Line) (line1.Character + 1)
+
+        let overlappingRanges1 =
+            ranges |> List.filter (fun item -> Range.rangeContainsPos item.Range markerPos1)
+
+        printfn "=== Classifications overlapping with (*1*) at position %A ===" markerPos1
+
+        for item in overlappingRanges1 do
+            let classificationType =
+                FSharpClassificationTypes.getClassificationTypeName item.Type
+
+            printfn "  Range: %A, Type: %s (%A)" item.Range classificationType item.Type
+
+        if List.isEmpty overlappingRanges1 then
+            printfn "  (No classifications found)"
+
+        // The field should be classified as PropertyName (RecordField), not as a type name.
+        // Before the fix, Item.Types was registered with mWholeExpr and ItemOccurrence.Use,
+        // causing the entire copy-and-update range to get a type classification that
+        // overshadowed the correct RecordField classification at the field position.
+        verifyClassificationAtEndOfMarker (sourceText, "(*1*)", ClassificationTypeNames.PropertyName)
+        verifyNoClassificationDataAtEndOfMarker (sourceText, "(*1*)", ClassificationTypeNames.ClassName)
+        // Also verify struct record copy-and-update
+        verifyClassificationAtEndOfMarker (sourceText, "(*2*)", ClassificationTypeNames.PropertyName)
+        verifyNoClassificationDataAtEndOfMarker (sourceText, "(*2*)", ClassificationTypeNames.StructName)
+
+    [<Fact>]
+    member _.``Union case tester property range should not include dot``() =
+        let sourceText =
+            """
+type Shape = Circle | Square | HyperbolicCaseWithLongName
+let s = Circle
+let result = s.(*1*)IsCircle
+let result2 = s.(*2*)IsHyperbolicCaseWithLongName
+"""
+
+        let ranges = getRanges sourceText
+        let text = SourceText.From(sourceText)
+
+        // Find the dot position in "s.IsCircle"
+        let dotIdx = sourceText.IndexOf("s.(*1*)IsCircle") + 1
+        let dotLine = text.Lines.GetLinePosition(dotIdx)
+        let dotPos = Position.mkPos (Line.fromZ dotLine.Line) dotLine.Character
+
+        // There should be a UnionCase (EnumName) classification covering IsCircle
+        let isCirclePos =
+            let idx = sourceText.IndexOf("(*1*)IsCircle") + "(*1*)".Length
+            let linePos = text.Lines.GetLinePosition(idx)
+            Position.mkPos (Line.fromZ linePos.Line) linePos.Character
+
+        let unionCaseAtIdentifier =
+            ranges
+            |> List.filter (fun item ->
+                FSharpClassificationTypes.getClassificationTypeName item.Type = ClassificationTypeNames.EnumName
+                && Range.rangeContainsPos item.Range isCirclePos)
+
+        Assert.True(unionCaseAtIdentifier.Length > 0, "Expected a UnionCase classification covering 'IsCircle'")
+
+        // No UnionCase classification should include the dot position.
+        // Before the fix, the identifier range was computed by shifting m.Start by +1,
+        // producing ".IsCircle" — the dot at index 0 survived fixupSpan and got UnionCase color.
+        let unionCaseAtDot =
+            ranges
+            |> List.filter (fun item ->
+                FSharpClassificationTypes.getClassificationTypeName item.Type = ClassificationTypeNames.EnumName
+                && Range.rangeContainsPos item.Range dotPos)
+
+        Assert.True(
+            unionCaseAtDot.IsEmpty,
+            sprintf
+                "UnionCase classification should not include the dot, but found items with ranges: %A"
+                (unionCaseAtDot |> List.map (fun i -> i.Range))
+        )
+
+        // Also verify the long case name has a UnionCase (EnumName) classification.
+        // Use explicit filter instead of verifyClassificationAtEndOfMarker, because both
+        // Property and UnionCase classifications overlap at the same position.
+        let longCasePos =
+            let idx = sourceText.IndexOf("(*2*)IsHyperbolicCaseWithLongName") + "(*2*)".Length
+            let linePos = text.Lines.GetLinePosition(idx)
+            Position.mkPos (Line.fromZ linePos.Line) linePos.Character
+
+        let longCaseUnionItems =
+            ranges
+            |> List.filter (fun item ->
+                FSharpClassificationTypes.getClassificationTypeName item.Type = ClassificationTypeNames.EnumName
+                && Range.rangeContainsPos item.Range longCasePos)
+
+        Assert.True(longCaseUnionItems.Length > 0, "Expected a UnionCase classification covering 'IsHyperbolicCaseWithLongName'")

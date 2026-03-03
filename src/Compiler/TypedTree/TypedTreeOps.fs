@@ -1162,6 +1162,24 @@ let typarConstraintsAEquiv g aenv c1 c2 = typarConstraintsAEquivAux EraseNone g 
 
 let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
 
+let isConstraintAllowedAsExtra cx =
+    match cx with
+    | TyparConstraint.NotSupportsNull _ -> true
+    | _ -> false
+
+let typarsAEquivWithFilter g (aenv: TypeEquivEnv) (reqTypars: Typars) (declaredTypars: Typars) allowExtraInDecl =
+    List.length reqTypars = List.length declaredTypars &&
+    let aenv = aenv.BindEquivTypars reqTypars declaredTypars
+    let cxEquiv = typarConstraintsAEquivAux EraseNone g aenv
+    (reqTypars, declaredTypars) ||> List.forall2 (fun reqTp declTp ->
+        reqTp.StaticReq = declTp.StaticReq &&
+        ListSet.isSubsetOf cxEquiv reqTp.Constraints declTp.Constraints &&
+        declTp.Constraints |> List.forall (fun declCx ->
+            allowExtraInDecl declCx || reqTp.Constraints |> List.exists (fun reqCx -> cxEquiv reqCx declCx)))
+
+let typarsAEquivWithAddedNotNullConstraintsAllowed g aenv reqTypars declaredTypars =
+    typarsAEquivWithFilter g aenv reqTypars declaredTypars isConstraintAllowedAsExtra
+
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
 let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.EmptyIgnoreNulls m1 m2
@@ -2032,6 +2050,13 @@ let isStructTy g ty =
         isStructTyconRef tcref
     | _ -> 
         isStructAnonRecdTy g ty || isStructTupleTy g ty
+
+let isMeasureableValueType g ty =
+    match stripTyEqns g ty with
+    | TType_app(tcref, _, _) when tcref.IsMeasureableReprTycon ->
+        let erasedTy = stripTyEqnsAndMeasureEqns g ty
+        isStructTy g erasedTy
+    | _ -> false
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
@@ -9315,19 +9340,16 @@ let TypeHasAllowNull (tcref:TyconRef) g m =
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
-    
-    // Check if the type has AllowNullLiteral
+
     (match tryTcrefOfAppTy g sty with 
      | ValueSome tcref -> TypeHasAllowNull tcref g m
      | _ -> false) 
     ||
-    // Check if the type has a nullness annotation
     (match (nullnessOfTy g sty).Evaluate() with 
      | NullnessInfo.AmbivalentToNull -> false
      | NullnessInfo.WithoutNull -> false
      | NullnessInfo.WithNull -> true)
     ||
-    // Check if the type has a ': null' constraint
     (GetTyparTyIfSupportsNull g ty).IsSome
 
 /// The pre-nullness logic about whether a type uses 'null' as a true representation value

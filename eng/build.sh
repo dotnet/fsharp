@@ -78,7 +78,6 @@ source_build=false
 product_build=false
 from_vmr=false
 buildnorealsig=true
-testbatch=""
 properties=""
 docker=false
 args=""
@@ -105,11 +104,6 @@ while [[ $# > 0 ]]; do
       ;;
     --configuration|-c)
       configuration=$2
-      args="$args $1"
-      shift
-      ;;
-    --testbatch)
-      testbatch=$2
       args="$args $1"
       shift
       ;;
@@ -236,18 +230,23 @@ function Test() {
 
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
-  testbatchsuffix=""
-    if [[ "$testbatch" != "" ]]; then
-    testbatchsuffix="_batch$testbatch"
-  fi
-  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework$testbatchsuffix.xml"
-  args="test \"$testproject\" --no-build -c $configuration -f $targetframework --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration"
+  testresultsdir="$artifacts_dir/TestResults/$configuration"
 
-  if [[ "$testbatch" != "" ]]; then
-    args="$args --filter batch=$testbatch"
+  # MTP requires --solution flag for .sln files
+  # For solutions, omit --report-xunit-trx-filename so each test assembly generates a unique .trx file.
+  # With a static filename, all assemblies overwrite the same file and only the last one's results survive.
+  if [[ "$testproject" == *.sln ]]; then
+    testtarget="--solution"
+    reportargs="--report-xunit-trx"
+  else
+    testtarget="--project"
+    testlogfilename="${projectname}_${targetframework}.trx"
+    reportargs="--report-xunit-trx --report-xunit-trx-filename $testlogfilename"
   fi
 
-  "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
+  args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" $reportargs --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+
+  "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
 }
 
 function BuildSolution {
@@ -363,7 +362,7 @@ BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=$tfm
-  Test --testproject "$repo_root/tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj" --targetframework $coreclrtestframework
+  # Note: FSharp.Test.Utilities is a utility library, not a test project. Its tests are disabled due to xUnit3 API incompatibilities.
   Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework

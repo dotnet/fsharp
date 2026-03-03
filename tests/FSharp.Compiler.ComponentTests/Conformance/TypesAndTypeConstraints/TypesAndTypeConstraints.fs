@@ -109,7 +109,7 @@ module CheckingSyntacticTypes =
         |> withOptions [ "--test:ErrorRanges" ]
         |> typecheck
         |> shouldFail
-        |> withErrorCode 1
+        |> withErrorCode 0071
         |> withDiagnosticMessageMatches "default.+constructor"
         |> ignore
 
@@ -263,7 +263,7 @@ module CheckingSyntacticTypes =
         |> withOptions [ "--test:ErrorRanges" ]
         |> typecheck
         |> shouldFail
-        |> withErrorCode 1
+        |> withErrorCode 0193
         |> withDiagnosticMessageMatches "not static"
         |> ignore
 
@@ -287,7 +287,7 @@ module CheckingSyntacticTypes =
         |> withOptions [ "--test:ErrorRanges"; "--flaterrors" ]
         |> typecheck
         |> shouldFail
-        |> withErrorCode 1
+        |> withErrorCode 0193
         |> ignore
 
     // SOURCE=MemberConstraint01.fs
@@ -319,7 +319,7 @@ module CheckingSyntacticTypes =
         |> withOptions [ "--test:ErrorRanges" ]
         |> typecheck
         |> shouldFail
-        |> withErrorCode 1
+        |> withErrorCode 0193
         |> withDiagnosticMessageMatches "equality"
         |> ignore
 
@@ -331,7 +331,7 @@ module CheckingSyntacticTypes =
         |> withOptions [ "--test:ErrorRanges" ]
         |> typecheck
         |> shouldFail
-        |> withErrorCode 1
+        |> withErrorCode 0193
         |> withDiagnosticMessageMatches "comparison"
         |> ignore
 

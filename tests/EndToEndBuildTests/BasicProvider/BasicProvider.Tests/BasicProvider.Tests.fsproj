@@ -1,20 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
+    <!-- xUnit3 requires test projects to be executable -->
+    <OutputType>Exe</OutputType>
     <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <TargetFramework Condition=" '$(TestTargetFramework)' != '' ">$(TestTargetFramework)</TargetFramework>
     <IsPackable>false</IsPackable>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
     <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
-    <UnitTestType>xunit</UnitTestType>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="BasicProvider.Tests.fs" />
-    <None Include="xunit.runner.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <Content Include="$(MSBuildProjectDirectory)\**\*.*"
              Exclude="$(MSBuildProjectDirectory)\bin\**\*.*;$(MSBuildProjectDirectory)\obj\**\*.*;$(MSBuildProjectDirectory)\FSharp.Core\SampleTuples\**\*.*;$(MSBuildProjectDirectory)\Directory.Build.props;$(MSBuildProjectDirectory)\Directory.Build.targets;">
         <Pack>true</Pack>
