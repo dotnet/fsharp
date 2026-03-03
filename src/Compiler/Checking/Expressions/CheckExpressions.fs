@@ -10740,19 +10740,10 @@ and CheckRecursiveBindingIds binds =
 
 /// Returns true if the expression is an elif chain that ends without a final 'else' branch.
 and elifChainMissingElse expr =
-    let mutable current = expr
-    let mutable cont = true
-    let mutable result = false
-
-    while cont do
-        match current with
-        | SynExpr.IfThenElse(elseExpr = None) ->
-            result <- true
-            cont <- false
-        | SynExpr.IfThenElse(elseExpr = Some elseExpr) -> current <- elseExpr
-        | _ -> cont <- false
-
-    result
+    match expr with
+    | SynExpr.IfThenElse(elseExpr = None) -> true
+    | SynExpr.IfThenElse(elseExpr = Some elseExpr) -> elifChainMissingElse elseExpr
+    | _ -> false
 
 /// Process a sequence of sequentials mixed with iterated lets "let ... in let ... in ..." in a tail recursive way
 /// This avoids stack overflow on really large "let" and "letrec" lists
