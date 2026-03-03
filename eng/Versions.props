@@ -104,7 +104,7 @@
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <!-- Versions for package groups -->
-    <VisualStudioEditorPackagesVersion>18.0.332-preview</VisualStudioEditorPackagesVersion>
+    <VisualStudioEditorPackagesVersion>18.0.404-preview</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioShellPackagesVersion>18.0.2188-preview.1</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>18.0.1237-pre</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>18.0.2077-preview.1</VisualStudioShellProjectsPackages>
