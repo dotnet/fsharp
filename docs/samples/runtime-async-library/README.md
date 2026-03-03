@@ -1,19 +1,17 @@
 ## Runtime Async CE Library Sample
 
-This sample demonstrates a `runtimeTask` computation expression (CE) defined in a library project and consumed by a separate app project. The key design insight is that **consumer API functions need no `[<MethodImplAttribute(0x2000)>]` at all** — the compiler automatically marks them as `cil managed async` based on body analysis (detecting `AsyncHelpers.Await` calls after inlining).
-
-The design is inspired by [IcedTasks](https://github.com/TheAngryByrd/IcedTasks)'s `TaskBuilderBase_Net10.fs`, using a fully-inlined `Run` method with `[<InlineIfLambda>]`.
+This sample demonstrates a `runtimeTask` computation expression (CE) defined in a library project and consumed by a separate app project. The key design insight is that **`Run` is non-inline with `[<MethodImplAttribute(0x2000)>]`** — the compiler emits it as `cil managed async` directly, and CE body closures are also `cil managed async` (because they contain `AsyncHelpers.Await` calls from inlined `Bind` members).
 
 It is wired to the repo-built compiler so runtime-async IL is emitted end-to-end.
 
 ### Projects
 
 - `RuntimeAsync.Library`: defines `RuntimeTaskBuilder` and task-returning library APIs using `runtimeTask`, plus `SimpleAsyncResource` (IAsyncDisposable) and `AsyncRange` (IAsyncEnumerable) helper types
-- `RuntimeAsync.Demo`: references the library and runs all 11 example scenarios
+- `RuntimeAsync.Demo`: references the library and runs all 12 example scenarios
 
 ### Key Design
 
-The working solution uses a **fully-inlined Run + Await sentinel** pattern:
+The working solution uses a **non-inline Run + async closures** pattern:
 
 #### RuntimeAsync Attribute
 
@@ -21,24 +19,23 @@ The working solution uses a **fully-inlined Run + Await sentinel** pattern:
 
 - It implicitly applies `NoDynamicInvocation` to all public inline members, so no explicit `[<NoDynamicInvocation>]` is needed on `Bind`, `Using`, or `For`.
 - It gates the optimizer anti-inlining behavior (Fix 2 below).
-- Consumers need no `[<MethodImplAttribute(0x2000)>]` — the compiler detects `AsyncHelpers.Await` calls in the inlined body and marks the consumer as `cil managed async` automatically.
 
 ```fsharp
 [<RuntimeAsync; Sealed>]
 type RuntimeTaskBuilder() =
-    // Delay returns a thunk (unit -> 'T), NOT a Task
+    // Delay returns the thunk as-is — the CE body closure is passed directly to Run.
     member inline _.Delay(f: unit -> 'T) : unit -> 'T = f
 
-    // Run is fully inline — its body gets inlined into each consumer function.
-    // The Await sentinel ensures the consumer always gets 'cil managed async'
-    // even when the CE body has no let!/do! bindings.
-    // NO [<MethodImplAttribute(0x2000)>] needed on consumers.
-    member inline _.Run([<InlineIfLambda>] f: unit -> 'T) : Task<'T> =
-        AsyncHelpers.Await(ValueTask.CompletedTask)  // sentinel
-        RuntimeTaskBuilderHelpers.cast (f())
+    // Run is non-inline with [<MethodImplAttribute(0x2000)>] — emitted as 'cil managed async'.
+    // The CE body closure f is also 'cil managed async' (contains inlined AsyncHelpers.Await calls).
+    // At runtime, f() returns Task<'T> even though the IL signature says 'T.
+    // cast<'T, Task<'T>>(f()) reinterprets 'T as Task<'T>, then Await unwraps it to 'T,
+    // then Run wraps 'T back to Task<'T>.
+    [<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
+    member _.Run(f: unit -> 'T) : Task<'T> =
+        AsyncHelpers.Await(RuntimeTaskBuilderHelpers.cast<'T, Task<'T>>(f()))
 
     // Bind members — NoDynamicInvocation is implicit from [<RuntimeAsync>] on the type.
-    // No explicit [<NoDynamicInvocation>] needed.
     member inline _.Bind(t: Task<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
         f(AsyncHelpers.Await t)
     // ... overloads for Task, ValueTask<'T>, ValueTask,
@@ -60,7 +57,7 @@ type RuntimeTaskBuilder with
 Consumer API functions use `runtimeTask { ... }` with **no attribute**:
 
 ```fsharp
-// No [<MethodImplAttribute>] needed here!
+// No [<MethodImplAttribute>] needed here — consumer just calls Run and returns the Task<T>.
 let addFromTaskAndValueTask (left: Task<int>) (right: ValueTask<int>) : Task<int> =
     runtimeTask {
         let! l = left
@@ -69,56 +66,51 @@ let addFromTaskAndValueTask (left: Task<int>) (right: ValueTask<int>) : Task<int
     }
 ```
 
-After inlining, the consumer function's body directly contains `AsyncHelpers.Await` calls. The compiler detects these and emits `cil managed async` on the consumer method.
+The consumer function calls `Run(closure)` and returns the `Task<int>` that `Run` returns. The consumer itself is NOT `cil managed async` — only `Run` and the CE body closures are.
 
 ### How It Works (Technical Details)
 
-#### The Inlining Pattern
+#### The Non-Inline Run Pattern
 
-1. `Run` is `member inline` with `[<InlineIfLambda>]` on `f` — **no** `[<MethodImplAttribute(0x2000)>]`
-2. After inlining, the consumer function's body contains `AsyncHelpers.Await` calls
-3. `ExprContainsAsyncHelpersAwaitCall` in `IlxGen.fs` detects these (`Await`, `AwaitAwaiter`, `UnsafeAwaitAwaiter`) and applies `cil managed async`
-4. `RuntimeTaskBuilderHelpers.cast(f())` is a no-op reinterpret cast — the runtime wraps the raw return value into `Task<T>` for `cil managed async` methods
+1. `Run` is `member _` (non-inline) with `[<MethodImplAttribute(0x2000)>]` — the compiler emits it as `cil managed async`
+2. CE body closures contain `AsyncHelpers.Await` calls (from inlined `Bind` members) — they are also `cil managed async`
+3. At runtime, the closure's `Invoke` returns `Task<'T>` (because it's `cil managed async`)
+4. `cast<'T, Task<'T>>(f())` reinterprets `'T` as `Task<'T>` (no-op at IL level)
+5. `AsyncHelpers.Await(Task<'T>)` unwraps `Task<'T>` to `'T`
+6. `Run` wraps `'T` back to `Task<'T>` (because it's `cil managed async`)
 
-#### The Await Sentinel
+#### True Inline-Nested CEs
 
-`AsyncHelpers.Await(ValueTask.CompletedTask)` in `Run` ensures that **every** consumer gets `cil managed async`, even CEs with no `let!/do!` bindings (e.g., `runtimeTask { return 42 }`). Without it, the body analysis would find no `Await` calls and the method would be emitted as regular `cil managed`, causing the `cast` trick to fail.
+Because `Run` is non-inline and returns a real `Task<T>`, `runtimeTask { ... }` CEs can be nested directly inside each other:
 
-#### Two Required Compiler Fixes
+```fsharp
+let trueInlineNestedRuntimeTask () : Task<int> =
+    runtimeTask {
+        let! a =
+            runtimeTask {
+                return 21
+            }
+        let! b =
+            runtimeTask {
+                return 21
+            }
+        return a + b  // 42
+    }
+```
 
-Both fixes are gated on `[<RuntimeAsync>]` being present on the builder class — the attribute is what enables these behaviors.
+The inner `runtimeTask { return 21 }` calls `Run` which returns a real `Task<int>`. The outer `Bind` calls `AsyncHelpers.Await<int>(Task<int>)` → gets 21. This works because `Run` is a real `cil managed async` method, not an inlined cast.
+
+#### Three Required Compiler Fixes
 
 **Fix 1 — IlxGen.fs return-type guard:** `ExprContainsAsyncHelpersAwaitCall` body analysis must only propagate `cil managed async` when the method returns a Task-like type (`Task`, `Task<T>`, `ValueTask`, `ValueTask<T>`). Without this guard, the optimizer might inline an async function into a non-Task-returning method (e.g., `main : int`), and the runtime would reject it with `TypeLoadException`.
 
 **Fix 2 — Optimizer.fs anti-inlining guard:** Functions whose optimized bodies contain `AsyncHelpers.Await`/`AwaitAwaiter`/`UnsafeAwaitAwaiter` calls must not be cross-module inlined by the optimizer. Their optimization data is replaced with `UnknownValue`. Without this, the optimizer inlines async functions into non-async callers, causing `NullReferenceException` from the `cast` trick being used outside a `cil managed async` context.
 
-#### Nested CE Limitation
-
-Inline-nested `runtimeTask { ... }` CEs within the same function do **not** work. The inner CE's `cast(raw_value)` produces a fake `Task<T>` that the outer CE's `Bind` tries to `AsyncHelpers.Await` — causing `NullReferenceException`. The `cast` trick only works for the final return value of a `cil managed async` method.
-
-**Workaround:** Each nesting level must be a separate function so that each gets its own `cil managed async` method:
-
-```fsharp
-// Each function is a separate 'cil managed async' method
-let private innerInnerTask () : Task<int> =
-    runtimeTask { return 10 }
-
-let private innerTask () : Task<int> =
-    runtimeTask {
-        let! b = innerInnerTask ()
-        return b + 20
-    }
-
-let deeplyNestedRuntimeTask () : Task<int> =
-    runtimeTask {
-        let! a = innerTask ()
-        return a + 70
-    }
-```
+**Fix 3 — EraseClosures.fs async closure emission:** CE body closures contain `AsyncHelpers.Await` calls (from inlined `Bind` members). The `cloIsAsync` field in `IlxClosureInfo` is set when the closure body contains these calls. `EraseClosures.fs` emits the closure's `Invoke` method as `cil managed async` when `cloIsAsync = true`. Without this, the runtime rejects the closure with `TypeLoadException` because `AsyncHelpers.Await` can only be called from `cil managed async` methods.
 
 ### Examples
 
-The sample includes 11 examples in `Api.fs`:
+The sample includes 12 examples in `Api.fs`:
 
 | Example | Demonstrates |
 |---|---|
@@ -133,6 +125,7 @@ The sample includes 11 examples in `Api.fs`:
 | `iterateAsyncEnumerable` | `for` over `IAsyncEnumerable<T>` |
 | `configureAwaitExample` | `.ConfigureAwait(false)` on Task and Task<T> |
 | `inlineNestedRuntimeTask` | Nesting runtimeTask CEs via separate functions |
+| `trueInlineNestedRuntimeTask` | True inline-nested runtimeTask CEs (enabled by non-inline Run) |
 
 ### Prerequisites
 
@@ -174,6 +167,7 @@ IAsyncDisposable -> async resource used
 IAsyncEnumerable sum -> 15
 ConfigureAwait(false) -> 99
 inline-nested runtimeTask -> 40
+true inline-nested runtimeTask -> 42
 ```
 
 ### IL Verification
@@ -189,10 +183,9 @@ dotnet build docs/samples/runtime-async-library/RuntimeAsync.Library/RuntimeAsyn
 
 In the output IL:
 
-- All `Api::*` functions → should show `cil managed async` (they contain inlined `AsyncHelpers.Await`/`UnsafeAwaitAwaiter` calls)
-- `RuntimeTaskBuilder::Run` → should show `cil managed async` (non-inlined fallback copy)
-- `Program::main` → should show `cil managed` (NOT `cil managed async` — return-type guard prevents this)
-
-The return-type guard in IlxGen.fs ensures that only methods returning Task-like types get `cil managed async`, even if their bodies contain `AsyncHelpers.Await` calls from inlining.
+- `RuntimeTaskBuilder::Run` → should show `cil managed async` (non-inline, has `[<MethodImplAttribute(0x2000)>]`)
+- CE body closures (e.g., `addFromTaskAndValueTask@57`) → `Invoke` method should show `cil managed async` (contains `AsyncHelpers.Await` calls)
+- `Api::*` consumer functions → should show `cil managed` (NOT `cil managed async` — they just call `Run` and return the `Task<T>`)
+- `Program::main` → should show `cil managed` (NOT `cil managed async`)
 
 > **Note:** Running without `DOTNET_RuntimeAsync=1` fails with `TypeLoadException` because runtime-async methods are not enabled for that process.

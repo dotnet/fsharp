@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 /// The ILX generator.
 module internal FSharp.Compiler.IlxGen
@@ -6693,6 +6693,17 @@ and GenClosureTypeDefs
     ) =
     let g = cenv.g
 
+    // Returns true if the IL method body contains a call to AsyncHelpers.Await, AwaitAwaiter, or UnsafeAwaitAwaiter.
+    // Used to determine whether a closure's Invoke method should be emitted as 'cil managed async'.
+    let ilBodyContainsAsyncHelpersAwait (body: ILMethodBody) =
+        body.Code.Instrs |> Array.exists (fun instr ->
+            match instr with
+            | I_call(_, mspec, _) | I_callvirt(_, mspec, _) ->
+                mspec.MethodRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices.AsyncHelpers"
+                && (mspec.MethodRef.Name = "Await" || mspec.MethodRef.Name = "AwaitAwaiter" || mspec.MethodRef.Name = "UnsafeAwaitAwaiter")
+            | _ -> false
+        )
+
     let cloInfo =
         {
             cloFreeVars = ilCloAllFreeVars
@@ -6702,6 +6713,10 @@ and GenClosureTypeDefs
                 (match cloSpec with
                  | None -> false
                  | Some cloSpec -> cloSpec.UseStaticField)
+            // Set cloIsAsync = true if the closure body contains AsyncHelpers.Await calls.
+            // This causes EraseClosures.fs to emit the Invoke method as 'cil managed async',
+            // which is required for AsyncHelpers.Await to work correctly at runtime.
+            cloIsAsync = ilBodyContainsAsyncHelpersAwait ilCtorBody
         }
 
     let mdefs, fdefs =

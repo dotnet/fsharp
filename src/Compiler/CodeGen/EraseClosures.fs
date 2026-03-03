@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.AbstractIL.ILX.EraseClosures
 
@@ -180,6 +180,7 @@ let rec mkTyOfLambdas cenv lam =
     | Lambdas_return rty -> rty
     | Lambdas_lambda(d, r) -> mkILFuncTy cenv d.Type (mkTyOfLambdas cenv r)
     | Lambdas_forall _ -> cenv.mkILTyFuncTy
+
 
 // --------------------------------------------------------------------
 // Method to call for a particular multi-application
@@ -682,13 +683,14 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     let convil = convILMethodBody (Some nowCloSpec, None) clo.cloCode.Value
 
                     let nowApplyMethDef =
-                        mkILNonGenericVirtualInstanceMethod (
+                        (mkILNonGenericVirtualInstanceMethod (
                             "Invoke",
                             ILMemberAccess.Public,
                             nowParams,
                             mkILReturn nowReturnTy,
                             MethodBody.IL(notlazy convil)
-                        )
+                        ))
+                            .WithAsync(clo.cloIsAsync)
 
                     let ctorMethodDef =
                         mkILStorageCtor (

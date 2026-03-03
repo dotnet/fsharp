@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Defines an extension of the IL algebra
 module internal FSharp.Compiler.AbstractIL.ILX.Types
@@ -168,6 +168,9 @@ type IlxClosureInfo =
         cloFreeVars: IlxClosureFreeVar[]
         cloCode: InterruptibleLazy<ILMethodBody>
         cloUseStaticField: bool
+        /// If true, the Invoke method for this closure should be emitted as 'cil managed async'.
+        /// Set when the closure body contains AsyncHelpers.Await calls (detected in IlxGen.fs).
+        cloIsAsync: bool
     }
 
 type IlxUnionInfo =

@@ -14,6 +14,7 @@ let main _ =
     let fromAsyncEnumerable = (Api.iterateAsyncEnumerable ()).Result
     let fromConfigureAwait = (Api.configureAwaitExample ()).Result
     let fromInlineNested = (Api.inlineNestedRuntimeTask ()).Result
+    let fromTrueInlineNested = (Api.trueInlineNestedRuntimeTask ()).Result
 
     printfn "Task<T> + ValueTask<T> -> %d" fromTaskLike
     printfn "Task + ValueTask -> %s" fromUnitTasks
@@ -26,5 +27,6 @@ let main _ =
     printfn "IAsyncEnumerable sum -> %d" fromAsyncEnumerable
     printfn "ConfigureAwait(false) -> %d" fromConfigureAwait
     printfn "inline-nested runtimeTask -> %d" fromInlineNested
+    printfn "true inline-nested runtimeTask -> %d" fromTrueInlineNested
 
     0

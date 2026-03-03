@@ -165,16 +165,33 @@ module Api =
         }
 
     // === Inline-nested runtimeTask CEs ===
-    // Inline-nested runtimeTask { ... } CEs (nesting directly inside another runtimeTask { ... })
-    // do NOT work with the current inline Run + cast design. The inner CE's cast(raw_value) produces
-    // a fake Task<T> that the outer CE's Bind tries to AsyncHelpers.Await — causing NullReferenceException.
-    // Workaround: each nesting level must be a separate function so each gets its own 'cil managed async'
-    // method that returns a real Task<T>.
+    // With non-inline Run ([<MethodImplAttribute(0x2000)>]), a runtimeTask CE can be nested
+    // directly inside another runtimeTask CE. The inner runtimeTask { ... } call invokes Run
+    // which returns a real Task<T> that the outer CE's Bind can AsyncHelpers.Await.
+    // Each nesting level can be a separate function OR inline — both work with non-inline Run.
+    // (With the old inline Run + cast design, inline-nested CEs did NOT work.)
     let inlineNestedRuntimeTask () : Task<int> =
         runtimeTask {
             // Calling separate functions that return Task<int> — this works because each function
             // is a real 'cil managed async' method returning a real Task (not a fake cast value).
             let! a = innerInnerTask ()
             let! b = innerTask ()
+            return a + b
+        }
+
+    // === True inline-nested runtimeTask CEs ===
+    // With non-inline Run, runtimeTask CEs can be nested directly inside each other in the same
+    // function. The inner runtimeTask { ... } calls Run which returns a real Task<int> that the
+    // outer CE's Bind can AsyncHelpers.Await — no separate helper functions needed.
+    let trueInlineNestedRuntimeTask () : Task<int> =
+        runtimeTask {
+            let! a =
+                runtimeTask {
+                    return 21
+                }
+            let! b =
+                runtimeTask {
+                    return 21
+                }
             return a + b
         }

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// ILX extensions to Abstract IL types and instructions F#
 module internal FSharp.Compiler.AbstractIL.ILX.Types
@@ -120,7 +120,10 @@ type IlxClosureInfo =
     { cloStructure: IlxClosureLambdas
       cloFreeVars: IlxClosureFreeVar[]
       cloCode: InterruptibleLazy<ILMethodBody>
-      cloUseStaticField: bool }
+      cloUseStaticField: bool
+      /// If true, the Invoke method for this closure should be emitted as 'cil managed async'.
+      /// Set when the closure body contains AsyncHelpers.Await calls (detected in IlxGen.fs).
+      cloIsAsync: bool }
 
 /// Represents a discriminated union type prior to erasure
 type IlxUnionInfo =
