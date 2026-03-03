@@ -4,6 +4,7 @@ namespace rec FSharp.Compiler.Symbols
 
 open System
 open System.Collections.Generic
+open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler
@@ -219,6 +220,19 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
     member x.WithTopLevelPrefixGenericParameters () =
         FSharpDisplayContext(fun g -> (denv g).UseTopLevelPrefixGenericParameterStyle())
 
+
+[<Struct>]
+type FSharpObsoleteDiagnosticInfo =
+    { IsError: bool
+      DiagnosticId: string option
+      Message: string option
+      UrlFormat: string option }
+
+    static member FromDiagnosticInfo(info) =
+        let (ObsoleteDiagnosticInfo(isError, id, msg, urlFormat)) = info
+        { IsError = isError; DiagnosticId = id; Message = msg; UrlFormat = urlFormat }
+
+
 // delay the realization of 'item' in case it is unresolved
 type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> CcuThunk -> AccessorDomain -> bool) =
 
@@ -358,6 +372,9 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
 
     member sym.TryGetAttribute<'T>() =
         sym.Attributes |> Seq.tryFind (fun attr -> attr.IsAttribute<'T>())
+
+    abstract ObsoleteDiagnosticInfo: FSharpObsoleteDiagnosticInfo option
+    default _.ObsoleteDiagnosticInfo = None
 
 type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) = 
     inherit FSharpSymbol(cenv, 
@@ -854,6 +871,9 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
     member x.TryGetMembersFunctionsAndValues() = 
         try x.MembersFunctionsAndValues with _ -> [||] :> _
 
+    override this.ObsoleteDiagnosticInfo =
+        TryGetEntityObsoleteInfo cenv.g entity |> Option.map FSharpObsoleteDiagnosticInfo.FromDiagnosticInfo
+
     member this.TryGetMetadataText() =
         match entity.TryDeref with
         | ValueSome _ ->
@@ -1288,7 +1308,16 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
             | Choice1Of3 r -> r.Accessibility
             | Choice2Of3 _ -> taccessPublic
             | Choice3Of3 _ -> taccessPublic
-        FSharpAccessibility access 
+        FSharpAccessibility access
+
+    override this.ObsoleteDiagnosticInfo =
+        let infoOption =
+            match d.TryRecdField with
+            | Choice1Of3 recdField -> TryGetFSharpObsoleteInfo cenv.g recdField.FieldAttribs
+            | Choice2Of3 ilFieldInfo -> TryGetILFieldObsoleteInfo cenv.g ilFieldInfo
+            | Choice3Of3 _ -> None
+
+        infoOption |> Option.map FSharpObsoleteDiagnosticInfo.FromDiagnosticInfo
 
     member private x.V = d
 
@@ -2529,6 +2558,17 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             |> Option.map (fun enclosingEntityFullName -> 
                     Array.append (enclosingEntityFullName.Split '.') [| x.CompiledName |])
         else None
+
+    override this.ObsoleteDiagnosticInfo =
+        let infoOption =
+            match d with
+            | E einfo -> TryGetEventObsoleteInfo einfo
+            | P pinfo -> TryGetPropObsoleteInfo pinfo
+            | M minfo
+            | C minfo -> TryGetMethodObsoleteInfo minfo
+            | V vref -> TryGetFSharpObsoleteInfo cenv.g vref.Attribs
+        
+        infoOption |> Option.map FSharpObsoleteDiagnosticInfo.FromDiagnosticInfo
 
 type FSharpType(cenv, ty:TType) =
 
