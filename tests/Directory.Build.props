@@ -7,6 +7,12 @@
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
+  <!-- SCI 10.x has mismatched assembly versions between net462 (10.0.0.2) and netstandard2.0 (10.0.0.0).
+       A direct ref ensures binding redirect generation bridges this on .NET Framework test runners. -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+  </ItemGroup>
+
   <!-- xUnit3 packages for all test projects (except Test.Utilities which is a library) -->
   <ItemGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(ExcludeFromTestPackageReferences)' != 'true'">
     <PackageReference Include="xunit.v3.mtp-v2" Version="$(XunitVersion)" />
