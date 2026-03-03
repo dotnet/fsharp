@@ -9796,7 +9796,7 @@ and GenMethodForBinding
                 .WithSynchronized(hasSynchronizedImplFlag)
                 .WithNoInlining(hasNoInliningFlag)
                 .WithAggressiveInlining(hasAggressiveInliningImplFlag)
-                 .WithAsync(hasAsyncImplFlag)
+                .WithAsync(hasAsyncImplFlag)
                 .With(isEntryPoint = isExplicitEntryPoint, securityDecls = secDecls)
 
         let mdef =
@@ -10918,7 +10918,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
                 .WithSynchronized(hasSynchronizedImplFlag)
                 .WithNoInlining(hasNoInliningFlag)
                 .WithAggressiveInlining(hasAggressiveInliningImplFlag)
-                 .WithAsync(hasAsyncImplFlag)
+                .WithAsync(hasAsyncImplFlag)
 
         match memberInfo.MemberFlags.MemberKind with
         | SynMemberKind.ClassConstructor

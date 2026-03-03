@@ -23,17 +23,19 @@ The working solution uses a **non-inline Run + async closures** pattern:
 ```fsharp
 [<RuntimeAsync; Sealed>]
 type RuntimeTaskBuilder() =
-    // Delay returns the thunk as-is — the CE body closure is passed directly to Run.
-    member inline _.Delay(f: unit -> 'T) : unit -> 'T = f
+    // Delay wraps the CE body in a closure that is 'cil managed async'.
+    // The sentinel ensures the closure is always async even with no let!/do! bindings.
+    // cast<'T, Task<'T>>(f()) is a no-op at IL level — the 'cil managed async' runtime wraps T→Task<T>.
+    member inline _.Delay([<InlineIfLambda>] f: unit -> 'T) : unit -> Task<'T> =
+        fun () ->
+            AsyncHelpers.Await(ValueTask.CompletedTask)  // sentinel: ensures cil managed async
+            RuntimeTaskBuilderHelpers.cast<'T, Task<'T>>(f())
 
     // Run is non-inline with [<MethodImplAttribute(0x2000)>] — emitted as 'cil managed async'.
-    // The CE body closure f is also 'cil managed async' (contains inlined AsyncHelpers.Await calls).
-    // At runtime, f() returns Task<'T> even though the IL signature says 'T.
-    // cast<'T, Task<'T>>(f()) reinterprets 'T as Task<'T>, then Await unwraps it to 'T,
-    // then Run wraps 'T back to Task<'T>.
+    // Delay closure returns Task<'T> at runtime. Run awaits it, then wraps T→Task<T>.
     [<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
-    member _.Run(f: unit -> 'T) : Task<'T> =
-        AsyncHelpers.Await(RuntimeTaskBuilderHelpers.cast<'T, Task<'T>>(f()))
+    member _.Run(f: unit -> Task<'T>) : Task<'T> =
+        AsyncHelpers.Await(f())
 
     // Bind members — NoDynamicInvocation is implicit from [<RuntimeAsync>] on the type.
     member inline _.Bind(t: Task<'T>, [<InlineIfLambda>] f: 'T -> 'U) : 'U =
