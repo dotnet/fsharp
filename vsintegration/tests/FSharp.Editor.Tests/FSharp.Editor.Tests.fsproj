@@ -6,7 +6,6 @@
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <NoWarn>$(NoWarn);FS3511</NoWarn> <!-- This state machine is not statically compilable. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
@@ -75,9 +74,9 @@
     <Compile Include="Refactors\AddReturnTypeTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
-    <Compile Include="Hints\InlineParameterNameHintTests.fs" />
-    <Compile Include="Hints\InlineTypeHintTests.fs" />
-    <Compile Include="hints\InlineReturnTypeHintTests.fs" />
+    <Compile Include="Hints\InlayParameterNameHintTests.fs" />
+    <Compile Include="Hints\InlayTypeHintTests.fs" />
+    <Compile Include="Hints\InlayReturnTypeHintTests.fs" />
     <Compile Include="Hints\OverallHintExperienceTests.fs" />
     <Compile Include="EditorFormattingServiceTests.fs" />
     <Compile Include="RoslynSourceTextTests.fs" />

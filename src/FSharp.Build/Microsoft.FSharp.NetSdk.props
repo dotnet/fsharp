@@ -104,7 +104,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </PropertyGroup>
 
   <PropertyGroup>
-    <ValueTupleImplicitPackageVersion>4.6.1</ValueTupleImplicitPackageVersion>
+    <ValueTupleImplicitPackageVersion>4.6.2</ValueTupleImplicitPackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

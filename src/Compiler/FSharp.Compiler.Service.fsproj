@@ -14,6 +14,7 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+	<DefineConstants Condition="$(DotNetBuildUseMonoRuntime) == 'true'">$(DefineConstants);BUILD_USING_MONO</DefineConstants>
 	<Nullable>enable</Nullable>
 	<!-- Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations.
 	     Therefore we want to use the latest BCL APIs from NetCurrent.

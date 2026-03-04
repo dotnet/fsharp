@@ -1013,6 +1013,49 @@ type SyntacticClassificationServiceTests() =
             classificationType = classificationType
         )
 
+    /// FEATURE: Preprocessor keywords #if\#elif\#else\#endif are colored with the PreprocessorKeyword color.
+    /// FEATURE: All code in the inactive side of #if\#elif\#else\#endif is colored with the InactiveCode color.
+    [<Theory>]
+    [<InlineData("elif BRANCH_B //(*Elif*)", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<InlineData("(*InactiveIf*)", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("t(*ActiveElif*)", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*InactiveElse*)", ClassificationTypeNames.ExcludedCode)>]
+    member public this.Preprocessor_ElifKeywords(marker: string, classificationType: string) =
+        this.VerifyColorizerAtStartOfMarker(
+            fileContents =
+                "
+                  #if BRANCH_A
+                    let x = 1(*InactiveIf*)
+                  #elif BRANCH_B //(*Elif*)
+                    let(*ActiveElif*) x = 2
+                  #else
+                    let x = 3(*InactiveElse*)
+                  #endif",
+            marker = marker,
+            defines = [ "BRANCH_B" ],
+            classificationType = classificationType
+        )
+
+    /// FEATURE: When no #elif branch is taken, its code is grayed out as InactiveCode.
+    [<Theory>]
+    [<InlineData("(*InactiveElif*)", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("t(*ActiveElse*)", ClassificationTypeNames.Keyword)>]
+    member public this.Preprocessor_ElifInactive(marker: string, classificationType: string) =
+        this.VerifyColorizerAtStartOfMarker(
+            fileContents =
+                "
+                  #if BRANCH_A
+                    let x = 1
+                  #elif BRANCH_B
+                    let x = 2(*InactiveElif*)
+                  #else
+                    let(*ActiveElse*) x = 3
+                  #endif",
+            marker = marker,
+            defines = [],
+            classificationType = classificationType
+        )
+
     /// FEATURE: Preprocessor extended grammar basic check.
     /// FEATURE:  More extensive grammar test is done in compiler unit tests
     [<Fact>]

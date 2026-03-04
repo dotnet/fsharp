@@ -819,13 +819,8 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
 let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
         
     // The type provider and its dependency are compiled as part of the solution build
-#if DEBUG
-    let csDLL = __SOURCE_DIRECTORY__ + @"/../../artifacts/bin/TestTP/Debug/netstandard2.0/CSharp_Analysis.dll"
-    let tpDLL = __SOURCE_DIRECTORY__ + @"/../../artifacts/bin/TestTP/Debug/netstandard2.0/TestTP.dll"
-#else
-    let csDLL = __SOURCE_DIRECTORY__ + @"/../../artifacts/bin/TestTP/Release/netstandard2.0/CSharp_Analysis.dll"
-    let tpDLL = __SOURCE_DIRECTORY__ + @"/../../artifacts/bin/TestTP/Release/netstandard2.0/TestTP.dll"
-#endif
+    let csDLL = __SOURCE_DIRECTORY__ + $"/../../artifacts/bin/TestTP/{testBuildConfiguration}/netstandard2.0/CSharp_Analysis.dll"
+    let tpDLL = __SOURCE_DIRECTORY__ + $"/../../artifacts/bin/TestTP/{testBuildConfiguration}/netstandard2.0/TestTP.dll"
 // These two projects should have been built before the test executes
     if not (File.Exists csDLL) then 
         failwith $"expect {csDLL} to exist"
