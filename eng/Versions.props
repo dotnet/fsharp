@@ -14,7 +14,7 @@
   <PropertyGroup>
     <!-- Don't use the built in support for pre-release iteration. The nuget repack task doesn't support
          the iteration format at the moment. https://github.com/dotnet/arcade/issues/15919 -->
-    <FSharpPreReleaseIteration>2</FSharpPreReleaseIteration>
+    <FSharpPreReleaseIteration>3</FSharpPreReleaseIteration>
     <PreReleaseVersionLabel>preview$(FSharpPreReleaseIteration)</PreReleaseVersionLabel>
     <!-- F# Version components -->
     <FSMajorVersion>11</FSMajorVersion>
@@ -84,17 +84,17 @@
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
 
-  <!-- Dependencies from maintenance-packages, source-build specific -->
-  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
+
+  <PropertyGroup>
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-  </PropertyGroup>
-  <!-- Dependencies from maintenance-packages, everything else -->
-  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
-    <SystemBuffersVersion>4.6.0</SystemBuffersVersion>
-    <SystemMemoryVersion>4.6.0</SystemMemoryVersion>
-    <SystemRuntimeCompilerServicesUnsafeVersion>6.1.0</SystemRuntimeCompilerServicesUnsafeVersion>
+    <!-- System.* packages from dotnet/runtime, aligned with MSBuild and Roslyn deps. -->
+    <SystemPackagesVersion>10.0.2</SystemPackagesVersion>
+    <SystemCollectionsImmutableVersion>$(SystemPackagesVersion)</SystemCollectionsImmutableVersion>
+    <SystemCompositionVersion>$(SystemPackagesVersion)</SystemCompositionVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemPackagesVersion)</SystemDiagnosticsDiagnosticSourceVersion>
+    <SystemReflectionMetadataVersion>$(SystemPackagesVersion)</SystemReflectionMetadataVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -104,8 +104,8 @@
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <!-- Versions for package groups -->
-    <VisualStudioEditorPackagesVersion>18.0.332-preview</VisualStudioEditorPackagesVersion>
-    <MicrosoftVisualStudioShellPackagesVersion>18.0.2101-preview.1</MicrosoftVisualStudioShellPackagesVersion>
+    <VisualStudioEditorPackagesVersion>18.0.404-preview</VisualStudioEditorPackagesVersion>
+    <MicrosoftVisualStudioShellPackagesVersion>18.0.2188-preview.1</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>18.0.1237-pre</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>18.0.2077-preview.1</VisualStudioShellProjectsPackages>
     <MicrosoftVisualStudioThreadingPackagesVersion>18.0.5</MicrosoftVisualStudioThreadingPackagesVersion>
@@ -160,7 +160,6 @@
     <!-- other packages -->
     <BenchmarkDotNetVersion>0.13.10</BenchmarkDotNetVersion>
     <FsCheckVersion>2.16.6</FsCheckVersion>
-    <MicrosoftCompositionVersion>1.0.31</MicrosoftCompositionVersion>
     <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
      <!-- Making diff way too large, update separately later. e.g. to 6.0.0-rtm.21518.12 and 9.0.0-rc.2.24462.10 or via darc -->
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>

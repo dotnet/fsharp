@@ -57,6 +57,15 @@ let expectLinesInclude expectedLines (ranges: range list) =
     for line in expectedLines do
         Assert.True(actualLines.Contains(line), $"Expected reference on line {line}. Ranges: {ranges}")
 
+/// Helper for tests that create a synthetic project and check all symbols in a file
+let checkAllSymbols (source: string) (check: FSharpCheckFileResults -> seq<FSharpSymbolUse> -> unit) =
+    SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
+        .Workflow {
+            checkFile "Source" (fun (result: FSharpCheckFileResults) ->
+                let allUses = result.GetAllUsesOfAllSymbolsInFile()
+                check result allUses)
+        }
+
 /// Asserts a minimum number of references.
 let expectMinRefs minCount (ranges: range list) =
     Assert.True(ranges.Length >= minCount, $"Expected at least {minCount} references, got {ranges.Length}")
@@ -1050,19 +1059,15 @@ type MyClass(x: int) =
 let a = MyClass()
 let b = MyClass(5)
 """
-        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
-            .Workflow {
-                checkFile "Source" (fun (result: FSharpCheckFileResults) ->
-                    let allUses = result.GetAllUsesOfAllSymbolsInFile()
-                    let additionalCtorDef = 
-                        allUses 
-                        |> Seq.tryFind (fun su -> su.IsFromDefinition && su.Range.StartLine = 4 && su.Range.StartColumn = 4)
-                    Assert.True(additionalCtorDef.IsSome, "Should find additional constructor at (4,4)")
-                    match additionalCtorDef.Value.Symbol with
-                    | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
-                        Assert.True(mfv.IsConstructor, "Symbol should be a constructor")
-                    | _ -> Assert.Fail("Expected FSharpMemberOrFunctionOrValue"))
-            }
+        checkAllSymbols source (fun _ allUses ->
+            let additionalCtorDef = 
+                allUses 
+                |> Seq.tryFind (fun su -> su.IsFromDefinition && su.Range.StartLine = 4 && su.Range.StartColumn = 4)
+            Assert.True(additionalCtorDef.IsSome, "Should find additional constructor at (4,4)")
+            match additionalCtorDef.Value.Symbol with
+            | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
+                Assert.True(mfv.IsConstructor, "Symbol should be a constructor")
+            | _ -> Assert.Fail("Expected FSharpMemberOrFunctionOrValue"))
 
 module ExternalDllOptimization =
     
@@ -1141,20 +1146,17 @@ open System.Linq
 let arr = [| "a"; "b"; "c" |]
 let first = arr.First()
 """
-        SyntheticProject.Create({ sourceFile "Source" [] with Source = source })
-            .Workflow {
-                checkFile "Source" (fun (result: FSharpCheckFileResults) ->
-                    let firstUses = 
-                        result.GetAllUsesOfAllSymbolsInFile()
-                        |> Seq.filter (fun su -> su.Symbol.DisplayName = "First")
-                        |> Seq.toArray
-                    Assert.True(firstUses.Length >= 1, $"Expected at least 1 use of First, found {firstUses.Length}")
-                    for su in firstUses do
-                        match su.Symbol with
-                        | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
-                            Assert.True(mfv.IsExtensionMember, "First should be an extension member")
-                        | _ -> ())
-            }
+        checkAllSymbols source (fun _ allUses ->
+            let firstUses = 
+                allUses
+                |> Seq.filter (fun su -> su.Symbol.DisplayName = "First")
+                |> Seq.toArray
+            Assert.True(firstUses.Length >= 1, $"Expected at least 1 use of First, found {firstUses.Length}")
+            for su in firstUses do
+                match su.Symbol with
+                | :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as mfv ->
+                    Assert.True(mfv.IsExtensionMember, "First should be an extension member")
+                | _ -> ())
 
 /// https://github.com/dotnet/fsharp/issues/5545
 module SAFEBookstoreSymbols =
@@ -1206,3 +1208,105 @@ let altDb : DatabaseType = PostgreSQL
                 placeCursor "Source" 7 5 "type DatabaseType = " ["DatabaseType"]
                 findAllReferences (fun ranges -> expectLinesInclude [7; 12; 19] ranges)
             }
+
+/// https://github.com/dotnet/fsharp/issues/19336
+module ConstructorDuplicateRegression =
+
+    [<Fact>]
+    let ``No duplicate ctor symbol for attribute`` () =
+        let source = """
+type MyAttr() = inherit System.Attribute()
+
+[<MyAttr>] type Foo = { X: int }
+"""
+        checkAllSymbols source (fun _ allUses ->
+            // Issue 19336: PR 19252 added a duplicate constructor at a shifted range.
+            // Expected: member .ctor at (5,2--5,8)
+            // Regression added: member .ctor at (5,3--5,8) (StartColumn + 1)
+            let ctorSymbols =
+                allUses
+                |> Seq.filter (fun su ->
+                    su.Range.StartLine = 5
+                    && (match su.Symbol with :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as m -> m.IsConstructor | _ -> false))
+                |> Seq.map (fun su -> su.Range.StartColumn, su.Range.EndColumn)
+                |> Seq.toArray
+            // Exactly 1 constructor at column 2 — no duplicates, no shifted ranges.
+            Assert.Equal<(int * int) array>([| (2, 8) |], ctorSymbols))
+
+    [<Fact>]
+    let ``No duplicate ctor symbol for optional param desugaring`` () =
+        let source = """
+type T() =
+    static member M1(?a) = ()
+"""
+        checkAllSymbols source (fun _ allUses ->
+            // Issue 19336: The desugared [<OptionalArgumentAttribute>] generates constructor calls.
+            // The regression added duplicate constructors at shifted ranges (StartColumn + 1).
+            // Check that no constructor on any line has a range shifted from its correct position.
+            let allCtors =
+                allUses
+                |> Seq.filter (fun su ->
+                    match su.Symbol with :? FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue as m -> m.IsConstructor | _ -> false)
+                |> Seq.toArray
+            // The primary constructor definition at type T() is at line 3.
+            let primaryCtorDefs =
+                allCtors
+                |> Array.filter (fun su -> su.Range.StartLine = 3 && su.IsFromDefinition)
+            Assert.True(primaryCtorDefs.Length >= 1, sprintf "Expected primary ctor definition, got %d" primaryCtorDefs.Length)
+            // No constructor should have a shifted range (StartColumn differs by 1 from another ctor at same line)
+            let ctorsByLine =
+                allCtors
+                |> Array.groupBy (fun su -> su.Range.StartLine, su.Range.EndColumn)
+            for ((line, endCol), group) in ctorsByLine do
+                let startCols = group |> Array.map (fun su -> su.Range.StartColumn) |> Array.distinct
+                if startCols.Length > 1 then
+                    Assert.Fail(sprintf "Line %d, endCol %d: multiple start columns for constructors: %A (shifted range regression)" line endCol startCols))
+
+    [<Fact>]
+    let ``No duplicate ctor symbol for generic object expression`` () =
+        let source = """
+type Base<'T>() =
+    abstract M1: 'T -> unit
+    default _.M1 _ = ()
+
+let x =
+    { new Base<int>() with
+        override this.M1 _ = () }
+"""
+        checkAllSymbols source (fun _ allUses ->
+            // Line 8: { new Base<int>() with ... }
+            // Exact expected symbols: Base(10,14), int(15,18), Base(10,19)
+            // The regression would add a 4th: .ctor(11,19) at a shifted range
+            let line8Uses =
+                allUses
+                |> Seq.filter (fun su -> su.Range.StartLine = 8)
+                |> Seq.map (fun su -> su.Symbol.DisplayName, su.Range.StartColumn, su.Range.EndColumn)
+                |> Seq.toArray
+            Assert.Equal<(string * int * int) array>(
+                [| ("Base", 10, 14); ("int", 15, 18); ("Base", 10, 19) |],
+                line8Uses))
+
+    [<Fact>]
+    let ``FAR from additional constructor new() finds call sites`` () =
+        let source = """
+type MyClass(x: int) =
+    new() = MyClass(0)
+
+let a = MyClass()
+"""
+        checkAllSymbols source (fun result allUses ->
+            // Find the additional constructor definition at "new"
+            let ctorDef =
+                allUses
+                |> Seq.tryFind (fun su -> su.IsFromDefinition && su.Range.StartLine = 4 && su.Range.StartColumn = 4)
+            Assert.True(ctorDef.IsSome, "Should find additional constructor definition at (4,4)")
+            let uses = result.GetUsesOfSymbolInFile(ctorDef.Value.Symbol)
+            // Exact: definition at (4,4)-(4,7) and call site at (6,8)-(6,15)
+            // No Array.distinct — duplicates must be caught, not hidden
+            let rawUses =
+                uses
+                |> Array.map (fun su -> su.Range.StartLine, su.Range.StartColumn, su.Range.EndColumn)
+                |> Array.sort
+            Assert.Equal<(int * int * int) array>(
+                [| (4, 4, 7); (6, 8, 15) |],
+                rawUses))
