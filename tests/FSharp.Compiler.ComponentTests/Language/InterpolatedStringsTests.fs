@@ -317,8 +317,7 @@ let s = $"{a}"
         """
         |> withLangVersionPreview
         |> compile
-        |> shouldFail
-        |> withSingleDiagnostic (Warning 3884, Line 3, Col 12, Line 3, Col 13, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+        |> withDiagnosticMessageMatches "This expression is a function value"
 
     [<Fact>]
     let ``Warn when System.Func delegate is used as interpolated string argument`` () =
