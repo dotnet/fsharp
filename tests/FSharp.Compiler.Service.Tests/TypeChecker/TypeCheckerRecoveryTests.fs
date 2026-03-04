@@ -81,3 +81,41 @@ type T =
 
 T.M{caret} ""
 """
+
+module Expressions =
+    [<Fact>]
+    let ``Method type 01`` () =
+        assertHasSymbolUsageAtCaret "ToString" """
+if true then
+    "".ToString{caret}
+"""
+        
+
+    [<Fact>]
+    let ``Method type 02`` () =
+        assertHasSymbolUsageAtCaret "M" """
+type T =
+    static member M() = ""
+
+if true then
+    T.M{caret}
+"""
+
+    [<Fact>]
+    let ``Method type 03`` () =
+        assertHasSymbolUsageAtCaret "M" """
+type T =
+    static member M(i: int) = ""
+    static member M(s: string) = ""
+
+if true then
+    T.M{caret}
+"""
+
+    [<Fact>]
+    let ``Method type 04`` () =
+        assertHasSymbolUsageAtCaret "GetHashCode" """
+let o: obj = null
+if true then
+    o.GetHashCode{caret}
+"""

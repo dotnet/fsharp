@@ -2,6 +2,7 @@
 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.DiagnosticsLogger
 
 type Continuations = ((FileContentEntry list -> FileContentEntry list) -> FileContentEntry list) list
 
@@ -362,7 +363,16 @@ let (|NameofExpr|_|) (e: SynExpr) : NameofResult voption =
     | _ -> ValueNone
 
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
+#if BUILD_USING_MONO
+    let rec visitGuarded
+        (sg: StackGuard)
+        (e: SynExpr)
+        (continuation: FileContentEntry list -> FileContentEntry list)
+        : FileContentEntry list =
+        let visit e c = sg.Guard(fun () -> visitGuarded sg e c)
+#else
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
+#endif
         match e with
         | NameofExpr nameofResult -> continuation [ visitNameofResult nameofResult ]
         | SynExpr.Const _ -> continuation []
@@ -559,8 +569,11 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.Dynamic(funcExpr, _, argExpr, _) ->
             let continuations = List.map visit [ funcExpr; argExpr ]
             Continuation.concatenate continuations continuation
-
+#if BUILD_USING_MONO
+    visitGuarded (StackGuard(nameof (FileContentMapping))) e id
+#else
     visit e id
+#endif
 
 /// Special case of `| nameof Module ->` type of pattern
 [<return: Struct>]
