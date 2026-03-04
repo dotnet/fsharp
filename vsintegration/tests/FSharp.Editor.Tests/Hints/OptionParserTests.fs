@@ -14,8 +14,8 @@ module OptionParserTests =
     let ``Type hints off, parameter name hints off`` () =
         let options =
             { AdvancedOptions.Default with
-                IsInlineTypeHintsEnabled = false
-                IsInlineParameterNameHintsEnabled = false
+                IsInlayTypeHintsEnabled = false
+                IsInlayParameterNameHintsEnabled = false
             }
 
         let expected = []
@@ -28,8 +28,8 @@ module OptionParserTests =
     let ``Type hints on, parameter name hints off`` () =
         let options =
             { AdvancedOptions.Default with
-                IsInlineTypeHintsEnabled = true
-                IsInlineParameterNameHintsEnabled = false
+                IsInlayTypeHintsEnabled = true
+                IsInlayParameterNameHintsEnabled = false
             }
 
         let expected = [ HintKind.TypeHint ]
@@ -42,8 +42,8 @@ module OptionParserTests =
     let ``Type hints off, parameter name hints on`` () =
         let options =
             { AdvancedOptions.Default with
-                IsInlineTypeHintsEnabled = false
-                IsInlineParameterNameHintsEnabled = true
+                IsInlayTypeHintsEnabled = false
+                IsInlayParameterNameHintsEnabled = true
             }
 
         let expected = [ HintKind.ParameterNameHint ]
@@ -56,8 +56,8 @@ module OptionParserTests =
     let ``Type hints on, parameter name hints on`` () =
         let options =
             { AdvancedOptions.Default with
-                IsInlineTypeHintsEnabled = true
-                IsInlineParameterNameHintsEnabled = true
+                IsInlayTypeHintsEnabled = true
+                IsInlayParameterNameHintsEnabled = true
             }
 
         let expected = [ HintKind.TypeHint; HintKind.ParameterNameHint ]

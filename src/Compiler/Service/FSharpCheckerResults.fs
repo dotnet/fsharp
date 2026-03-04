@@ -731,6 +731,9 @@ type internal TypeCheckInfo
         let quals =
             sResolutions.CapturedExpressionTypings
             |> Seq.filter (fun (ty, nenv, _, m) ->
+                not m.IsSynthetic
+                &&
+
                 // We only want expression types that end at the particular position in the file we are looking at.
                 posEq m.End endOfExprPos
                 &&
@@ -2100,9 +2103,9 @@ type internal TypeCheckInfo
     member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
 
-    member scope.TryGetCapturedType(range) =
+    member scope.TryGetCapturedType(range: range) =
         sResolutions.CapturedExpressionTypings
-        |> Seq.tryFindBack (fun (_, _, _, m) -> equals m range)
+        |> Seq.tryFindBack (fun (_, _, _, m) -> equals (m.MakeSynthetic()) (range.MakeSynthetic()))
         |> Option.map (fun (ty, _, _, _) -> FSharpType(cenv, ty))
 
     member scope.TryGetCapturedDisplayContext(range) =
