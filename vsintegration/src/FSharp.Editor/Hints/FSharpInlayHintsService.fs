@@ -12,11 +12,11 @@ open System.Threading.Tasks
 
 // So the Roslyn interface is called IFSharpInlineHintsService
 // but our implementation is called just HintsService.
-// That's because we'll likely use this API for things other than inline hints,
+// That's because we'll likely use this API for things other than inlay hints,
 // e.g. signature hints above the line, pipeline hints on the side and so on.
 
 [<Export(typeof<IFSharpInlineHintsService>)>]
-type internal FSharpInlineHintsService [<ImportingConstructor>] (settings: EditorOptions) =
+type internal FSharpInlayHintsService [<ImportingConstructor>] (settings: EditorOptions) =
 
     static let userOpName = "Hints"
 

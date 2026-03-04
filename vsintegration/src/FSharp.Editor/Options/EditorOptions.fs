@@ -115,9 +115,9 @@ type AdvancedOptions =
     {
         IsBlockStructureEnabled: bool
         IsOutliningEnabled: bool
-        IsInlineTypeHintsEnabled: bool
-        IsInlineParameterNameHintsEnabled: bool
-        IsInlineReturnTypeHintsEnabled: bool
+        IsInlayTypeHintsEnabled: bool
+        IsInlayParameterNameHintsEnabled: bool
+        IsInlayReturnTypeHintsEnabled: bool
         IsUseLiveBuffersEnabled: bool
         UseTransparentCompiler: bool
         TransparentCompilerSnapshotReuse: bool
@@ -129,9 +129,9 @@ type AdvancedOptions =
         {
             IsBlockStructureEnabled = true
             IsOutliningEnabled = true
-            IsInlineTypeHintsEnabled = false
-            IsInlineParameterNameHintsEnabled = false
-            IsInlineReturnTypeHintsEnabled = false
+            IsInlayTypeHintsEnabled = false
+            IsInlayParameterNameHintsEnabled = false
+            IsInlayReturnTypeHintsEnabled = false
             UseTransparentCompiler = false
             TransparentCompilerSnapshotReuse = false
             IsUseLiveBuffersEnabled = true

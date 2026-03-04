@@ -9,7 +9,7 @@ open FSharp.Compiler.Text
 open Hints
 open CancellableTasks
 
-type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
+type InlayReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
     let getHintParts (symbolUse: FSharpSymbolUse) =
         symbol.GetReturnTypeLayout symbolUse.DisplayContext
