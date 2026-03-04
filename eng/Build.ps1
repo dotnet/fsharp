@@ -611,7 +611,7 @@ try {
             $dotnetPath = InitializeDotNetCli
             $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
             $splitScript = Join-Path $RepoRoot "eng\tests\TestSplit.fsx"
-            $splitOutput = & $dotnetExe fsi $splitScript $testDesktopBatch
+            $splitOutput = & $dotnetExe fsi $splitScript $testDesktopBatch desktop
             if ($LASTEXITCODE -ne 0) { throw "TestSplit.fsx failed with exit code $LASTEXITCODE" }
             foreach ($line in $splitOutput) {
                 if ($line -match '^dotnet test (\S+) --no-build -c Release\s*(.*)$') {

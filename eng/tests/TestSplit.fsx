@@ -1,7 +1,8 @@
 /// Test split table for parallel CI.
 /// Edit the batch assignments below, then run:
-///   dotnet fsi eng/tests/TestSplit.fsx <batchNumber>
+///   dotnet fsi eng/tests/TestSplit.fsx <batchNumber> [desktop|coreclr]
 /// to get the dotnet test commands for that batch.
+/// The platform argument controls which projects are included (default: all).
 
 let totalBatches = 3
 let residualBatch = 2 // uses negation filter; catches unlisted atoms + future namespaces
@@ -36,24 +37,32 @@ let componentTestsAtoms =
         "TypeChecks",           3
     ]
 
+// Platform tags: "all" = both desktop and coreclr, "desktop" = net472 only
 let otherProjects =
-    [// project path                                                                         batch
-        "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          1
-        "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          1
-        "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 3
-        "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        3
-        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             3
+    [// project path                                                                         batch  platform
+        "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          1,     "all"
+        "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          1,     "all"
+        "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 3, "all"
+        "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        3,     "all"
+        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             3,     "desktop"
     ]
 
 // ── filter generation ──
 
-let batch =
+let batch, platform =
     match fsi.CommandLineArgs with
     | [| _; n |] ->
         let v = int n
         if v < 1 || v > totalBatches then failwith $"Batch number must be between 1 and {totalBatches}, got {v}"
-        v
-    | _ -> failwith "Usage: dotnet fsi eng/tests/TestSplit.fsx <batchNumber>"
+        v, "all"
+    | [| _; n; p |] ->
+        let v = int n
+        if v < 1 || v > totalBatches then failwith $"Batch number must be between 1 and {totalBatches}, got {v}"
+        v, p
+    | _ -> failwith "Usage: dotnet fsi eng/tests/TestSplit.fsx <batchNumber> [desktop|coreclr]"
+
+let matchesPlatform tag =
+    tag = "all" || tag = platform || platform = "all"
 
 let atomsForBatch b = componentTestsAtoms |> List.filter (fun (_, ba) -> ba = b) |> List.map fst |> List.sort
 let otherBatchesAtoms = componentTestsAtoms |> List.filter (fun (_, b) -> b <> batch) |> List.map fst |> List.sort
@@ -70,5 +79,5 @@ let componentTests = "tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.Compo
 
 printfn $"dotnet test {componentTests} --no-build -c Release {filterArgs}"
 
-for (proj, _) in otherProjects |> List.filter (fun (_, b) -> b = batch) do
+for (proj, _, tag) in otherProjects |> List.filter (fun (_, b, tag) -> b = batch && matchesPlatform tag) do
     printfn $"dotnet test {proj} --no-build -c Release"
