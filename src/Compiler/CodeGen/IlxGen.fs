@@ -1261,6 +1261,11 @@ and IlxGenEnv =
         intraAssemblyInfo: IlxGenIntraAssemblyInfo
 
         realsig: bool
+
+        /// Expression definitions of variables returning resumable code from outer scopes.
+        /// Used by state machine lowering to resolve otherwise-free expand variables
+        /// when the state machine is inside a lambda whose outer let-binding provides the definition.
+        resumableCodeDefinitions: ValMap<Expr>
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -3004,7 +3009,9 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 true
             | None ->
 
-                match LowerStateMachineExpr cenv.g expr with
+                let smResult = LowerStateMachineExpr cenv.g eenv.resumableCodeDefinitions expr
+
+                match smResult with
                 | LoweredStateMachineResult.Lowered res ->
                     let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
@@ -3498,6 +3505,16 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
             let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
             GenDebugPointForBind cenv cgbuf bind
             GenBindingAfterDebugPoint cenv cgbuf eenv bind false (Some startMark)
+
+            // Track expand-var (resumable code) definitions so state machine lowering
+            // inside nested lambdas can resolve otherwise-free expand variables.
+            let eenv =
+                if isReturnsResumableCodeTy cenv.g bind.Var.TauType then
+                    { eenv with
+                        resumableCodeDefinitions = eenv.resumableCodeDefinitions.Add bind.Var bind.Expr
+                    }
+                else
+                    eenv
 
             // Generate the body
             GenLinearExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark)) true contf
@@ -12048,6 +12065,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         intraAssemblyInfo = IlxGenIntraAssemblyInfo.Create()
         realsig = g.realsig
         initClassFieldSpec = None
+        resumableCodeDefinitions = ValMap<_>.Empty
     }
 
 type IlxGenResults =

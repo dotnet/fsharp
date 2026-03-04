@@ -77,6 +77,7 @@ let rhs parseState i = rhs2 parseState i i
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
+    | IfDefElif
 
 /// Represents the active #if/#else blocks
 type LexerIfdefStackEntries = (LexerIfdefStackEntry * range) list
