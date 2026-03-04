@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 /// The ILX generator.
 module internal FSharp.Compiler.IlxGen
@@ -7095,9 +7095,37 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
 and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars eenvouter expr =
     let g = cenv.g
 
+    // Save the declared return type before getCallStructure can override it.
+    // When the closure body type differs from the declared function return type and the
+    // declared return is Task-like, we must use the declared type for Lambdas_return.
+    // This is needed when a type-checking coercion strips the Task<'T> wrapper from the
+    // body expression (e.g. after MethodImpl(0x2000) async coercion), leaving bodyRetTy = 'T
+    // while the closure's overall F# type is still unit -> Task<'T>.
+    // Using bodyRetTy ('T) for Lambdas_return would cause an IL mismatch: the closure class
+    // inherits FSharpFunc<unit, Task<'T>> whose Invoke signature says Task<'T>, but the
+    // generated Invoke method would declare 'T, causing a TypeLoadException at runtime.
+    // NOTE: getCallStructure ignores the ety parameter for Expr.Lambda (uses bty instead),
+    // so any Task-like correction made to returnTy before getCallStructure is discarded.
+    // We save it here and restore it after getCallStructure.
+    let declaredRetTyOpt =
+        match expr with
+        | Expr.Lambda(_, _, _, _, _, _, bodyRetTy) ->
+            let exprTy = tyOfExpr g expr
+            let _, declaredRetTy = stripFunTy g exprTy
+            if isAppTy g declaredRetTy
+               && (tyconRefEq g (tcrefOfAppTy g declaredRetTy) g.system_Task_tcref
+                   || tyconRefEq g (tcrefOfAppTy g declaredRetTy) g.system_GenericTask_tcref
+                   || tyconRefEq g (tcrefOfAppTy g declaredRetTy) g.system_ValueTask_tcref
+                   || tyconRefEq g (tcrefOfAppTy g declaredRetTy) g.system_GenericValueTask_tcref)
+               && not (typeEquiv g bodyRetTy declaredRetTy) then
+                Some declaredRetTy
+            else
+                None
+        | _ -> None
+
     let returnTy =
         match expr with
-        | Expr.Lambda(_, _, _, _, _, _, returnTy)
+        | Expr.Lambda(_, _, _, _, _, _, bodyRetTy) -> bodyRetTy
         | Expr.TyLambda(_, _, _, _, returnTy) -> returnTy
         | _ -> tyOfExpr g expr
 
@@ -7115,6 +7143,39 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars e
             | _ -> (List.rev tvacc, List.rev vacc, e, ety)
 
         getCallStructure [] [] (expr, returnTy)
+
+    // After getCallStructure, restore the declared Task-like return type if we saved one.
+    // getCallStructure ignores the ety parameter for Expr.Lambda (it uses bty from the lambda
+    // node instead), so the Task-like correction from declaredRetTyOpt would be lost otherwise.
+    // Fall back to the ExprContainsAsyncHelpersAwaitCall check for cases not covered by
+    // declaredRetTyOpt (e.g. when the sentinel is present in the typed tree body).
+    let returnTy =
+        match declaredRetTyOpt with
+        | Some declaredRetTy when not (typeEquiv g returnTy declaredRetTy) ->
+            // Use the declared Task-like return type instead of the body type
+            declaredRetTy
+        | _ ->
+            // When a Delay closure for a [<RuntimeAsync>] builder is inlined, its F# return type becomes
+            // 'T rather than Task<'T>. This is because the [<InlineIfLambda>] Delay body 'fun () -> f()'
+            // inlines to 'fun () -> <CE body>' whose body type is 'T (not Task<'T>). After inlining,
+            // getCallStructure strips the lambda and returns returnTy = 'T from the innermost body.
+            // However, CE desugaring auto-injects AsyncHelpers.Await(ValueTask.CompletedTask) (the sentinel)
+            // into every Delay body for [<RuntimeAsync>] builders. This causes cloIsAsync = true (detected
+            // at IL level by ilBodyContainsAsyncHelpersAwait), which causes EraseClosures to emit the
+            // Invoke method as 'cil managed async'. A 'cil managed async' method with return type 'T
+            // (where 'T is not Task-like) is invalid at runtime and causes TypeLoadException ("format is invalid").
+            // Fix: if the body contains AsyncHelpers.Await calls and returnTy is not already Task-like,
+            // wrap returnTy in Task<returnTy> so the closure class inherits FSharpFunc<unit, Task<'T>>
+            // and Invoke declares 'Task<T> cil managed async', which is valid.
+            if ExprContainsAsyncHelpersAwaitCall body
+               && not (isAppTy g returnTy
+                       && (tyconRefEq g (tcrefOfAppTy g returnTy) g.system_Task_tcref
+                           || tyconRefEq g (tcrefOfAppTy g returnTy) g.system_GenericTask_tcref
+                           || tyconRefEq g (tcrefOfAppTy g returnTy) g.system_ValueTask_tcref
+                           || tyconRefEq g (tcrefOfAppTy g returnTy) g.system_GenericValueTask_tcref)) then
+                mkWoNullAppTy g.system_GenericTask_tcref [returnTy]
+            else
+                returnTy
 
     let takenNames = vs |> List.map (fun v -> v.CompiledName g.CompilerGlobalState)
 
@@ -9372,6 +9433,14 @@ and GenMethodForBinding
     // For runtime-async methods returning Task or ValueTask (non-generic), the spec says the stack
     // should be empty before 'ret'. The body returns unit (nothing on stack), so we use
     // discardAndReturnVoid to discard the unit value and emit 'ret' with empty stack.
+    //
+    // NOTE: This early computation of the 0x2000 MethodImpl flag duplicates what
+    // ComputeMethodImplAttribs (called at line ~9539 as hasAsyncImplFlagFromAttr) also computes.
+    // The duplication is structurally necessary: hasAsyncImplFlagEarly is needed here to configure
+    // eenvForMeth (withinSEH=true, to suppress tail calls) and sequel (discardAndReturnVoid for
+    // non-generic Task/ValueTask), both of which must be established before the method body is
+    // code-generated. ComputeMethodImplAttribs is only called after eenvForMeth and sequel are
+    // already in use, so the flag cannot be deferred to that call.
     let hasAsyncImplFlagEarly =
         match TryFindFSharpAttribute g g.attrib_MethodImplAttribute v.Attribs with
         | Some(Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x2000) <> 0x0

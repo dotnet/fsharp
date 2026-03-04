@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 /// The typechecker. Left-to-right constrained type checking
 /// with generalization at appropriate points.
@@ -84,6 +84,48 @@ let inline addBindDebugPoint spBind e =
     | _ -> e
 
 let inline mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
+
+/// Check if the builder type has [<RuntimeAsync>] attribute.
+/// Used to determine whether to inject the AsyncHelpers.Await sentinel into Delay closures.
+let builderHasRuntimeAsync ceenv =
+    match tryTcrefOfAppTy ceenv.cenv.g ceenv.builderTy with
+    | ValueSome tcref ->
+        TryFindFSharpAttribute ceenv.cenv.g ceenv.cenv.g.attrib_RuntimeAsyncAttribute tcref.Attribs
+        |> Option.isSome
+    | ValueNone -> false
+
+/// Create the sentinel expression: AsyncHelpers.Await(ValueTask.CompletedTask)
+/// This is a no-op at runtime but its IL presence forces cloIsAsync = true for the enclosing closure.
+let mkRuntimeAsyncSentinelExpr (m: range) =
+    let m = m.MakeSynthetic()
+
+    let awaitFunc =
+        mkSynLidGet
+            m
+            [ "System"; "Runtime"; "CompilerServices"; "AsyncHelpers" ]
+            "Await"
+
+    let completedTask =
+        mkSynLidGet
+            m
+            [ "System"; "Threading"; "Tasks"; "ValueTask" ]
+            "CompletedTask"
+
+    SynExpr.App(ExprAtomicFlag.NonAtomic, false, awaitFunc, completedTask, m)
+
+/// Wrap a Delay closure body with the RuntimeAsync sentinel as the first statement.
+/// Produces: sentinel; body
+let wrapWithRuntimeAsyncSentinel (bodyExpr: SynExpr) =
+    let m = bodyExpr.Range.MakeSynthetic()
+
+    SynExpr.Sequential(
+        DebugPointAtSequential.SuppressNeither,
+        true,
+        mkRuntimeAsyncSentinelExpr m,
+        bodyExpr,
+        m,
+        SynExprSequentialTrivia.Zero
+    )
 
 /// Make a builder.Method(...) call
 let mkSynCall nm (m: range) args builderValName =
@@ -1399,7 +1441,14 @@ let rec TryTranslateComputationExpression
                             mWhile
                             [
                                 mkSynDelay2 guardExpr
-                                mkSynCall "Delay" mWhile [ mkSynDelay innerComp.Range holeFill ] ceenv.builderValName
+                                // For [<RuntimeAsync>] builders, inject the sentinel so the Delay closure is cil managed async.
+                                let whileDelayBody =
+                                    if builderHasRuntimeAsync ceenv then
+                                        wrapWithRuntimeAsyncSentinel holeFill
+                                    else
+                                        holeFill
+
+                                mkSynCall "Delay" mWhile [ mkSynDelay innerComp.Range whileDelayBody ] ceenv.builderValName
                             ]
                             ceenv.builderValName
                     ))
@@ -1579,7 +1628,14 @@ let rec TryTranslateComputationExpression
                         "TryFinally"
                         mTry
                         [
-                            mkSynCall "Delay" mTry [ mkSynDelay innerComp.Range innerExpr ] ceenv.builderValName
+                            // For [<RuntimeAsync>] builders, inject the sentinel so the Delay closure is cil managed async.
+                            let tryFinallyDelayBody =
+                                if builderHasRuntimeAsync ceenv then
+                                    wrapWithRuntimeAsyncSentinel innerExpr
+                                else
+                                    innerExpr
+
+                            mkSynCall "Delay" mTry [ mkSynDelay innerComp.Range tryFinallyDelayBody ] ceenv.builderValName
                             mkSynDelay2 unwindExpr2
                         ]
                         ceenv.builderValName
@@ -1706,7 +1762,16 @@ let rec TryTranslateComputationExpression
                                     "Delay"
                                     m1
                                     [
-                                        mkSynDelay innerComp2.Range (TranslateComputationExpressionNoQueryOps ceenv innerComp2)
+                                        // For [<RuntimeAsync>] builders, inject the sentinel so the Delay closure is cil managed async.
+                                        let innerComp2Translated = TranslateComputationExpressionNoQueryOps ceenv innerComp2
+
+                                        let innerComp2Body =
+                                            if builderHasRuntimeAsync ceenv then
+                                                wrapWithRuntimeAsyncSentinel innerComp2Translated
+                                            else
+                                                innerComp2Translated
+
+                                        mkSynDelay innerComp2.Range innerComp2Body
                                     ]
                                     ceenv.builderValName
                             ]
@@ -1785,7 +1850,14 @@ let rec TryTranslateComputationExpression
                                                 m1
                                                 [
                                                     implicitYieldExpr
-                                                    mkSynCall "Delay" m1 [ mkSynDelay holeFill.Range holeFill ] ceenv.builderValName
+                                                    // For [<RuntimeAsync>] builders, inject the sentinel so the Delay closure is cil managed async.
+                                                    let implicitYieldDelayBody =
+                                                        if builderHasRuntimeAsync ceenv then
+                                                            wrapWithRuntimeAsyncSentinel holeFill
+                                                        else
+                                                            holeFill
+
+                                                    mkSynCall "Delay" m1 [ mkSynDelay holeFill.Range implicitYieldDelayBody ] ceenv.builderValName
                                                 ]
                                                 ceenv.builderValName
 
@@ -2314,7 +2386,14 @@ let rec TryTranslateComputationExpression
                     "TryWith"
                     mTry
                     [
-                        mkSynCall "Delay" mTry [ mkSynDelay2 innerExpr ] ceenv.builderValName
+                        // For [<RuntimeAsync>] builders, inject the sentinel so the Delay closure is cil managed async.
+                        let tryWithDelayBody =
+                            if builderHasRuntimeAsync ceenv then
+                                wrapWithRuntimeAsyncSentinel innerExpr
+                            else
+                                innerExpr
+
+                        mkSynCall "Delay" mTry [ mkSynDelay2 tryWithDelayBody ] ceenv.builderValName
                         consumeExpr
                     ]
                     ceenv.builderValName
@@ -3070,7 +3149,17 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
     let delayedExpr =
         match tryFindBuilderMethod ceenv mBuilderVal "Delay" with
         | [] -> basicSynExpr
-        | _ -> mkSynCall "Delay" mDelayOrQuoteOrRun [ (mkSynDelay2 basicSynExpr) ] builderValName
+        | _ ->
+            // For [<RuntimeAsync>] builders, inject AsyncHelpers.Await(ValueTask.CompletedTask) as the first
+            // statement inside the Delay closure body. This ensures cloIsAsync = true even when the CE body
+            // has no let!/do! operations (which would otherwise leave the closure without any Await calls).
+            let delayBody =
+                if builderHasRuntimeAsync ceenv then
+                    wrapWithRuntimeAsyncSentinel basicSynExpr
+                else
+                    basicSynExpr
+
+            mkSynCall "Delay" mDelayOrQuoteOrRun [ (mkSynDelay2 delayBody) ] builderValName
 
     // Add a call to 'Quote' if the method is present
     let quotedSynExpr =

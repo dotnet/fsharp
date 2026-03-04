@@ -11350,6 +11350,26 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             // there is a return type annotation. This SynExpr.Typed wrapper would cause TcExprTypeAnnotated
             // to try to unify the unwrapped type T with Task<T>, which fails. So we must strip the
             // SynExpr.Typed wrapper from the innermost lambda body before type-checking against bodyExprTy.
+
+            // Shared helper: strip SynExpr.Typed from the innermost lambda body.
+            // mkSynBindingRhs adds a SynExpr.Typed wrapper when there is a return type annotation.
+            // Without stripping, TcExprTypeAnnotated would try to unify the unwrapped type T with
+            // Task<T> (or the annotated type) and fail.
+            let rec stripTypedFromInnermostLambda (e: SynExpr) =
+                match e with
+                | SynExpr.Lambda(isMember, isSubsequent, spats, body, parsedData, m, trivia) ->
+                    match body with
+                    | SynExpr.Lambda _ ->
+                        // Nested lambda — recurse into it
+                        SynExpr.Lambda(isMember, isSubsequent, spats, stripTypedFromInnermostLambda body, parsedData, m, trivia)
+                    | SynExpr.Typed(innerBody, _, _) ->
+                        // Innermost lambda body has SynExpr.Typed wrapper — strip it
+                        SynExpr.Lambda(isMember, isSubsequent, spats, innerBody, parsedData, m, trivia)
+                    | _ ->
+                        // No SynExpr.Typed wrapper — leave as-is
+                        e
+                | _ -> e
+
             let bodyExprTy, rhsExpr =
                 if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync &&
                    HasMethodImplAsyncAttribute g valAttribs &&
@@ -11389,43 +11409,72 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                             // Strip the SynExpr.Typed(body, Task<T>, ...) wrapper from the innermost lambda body.
                             // mkSynBindingRhs adds this wrapper when there is a return type annotation.
                             // Without stripping, TcExprTypeAnnotated would try to unify T with Task<T> and fail.
-                            let rec stripTypedFromInnermostLambda (e: SynExpr) =
-                                match e with
-                                | SynExpr.Lambda(isMember, isSubsequent, spats, body, parsedData, m, trivia) ->
-                                    match body with
-                                    | SynExpr.Lambda _ ->
-                                        // Nested lambda — recurse into it
-                                        SynExpr.Lambda(isMember, isSubsequent, spats, stripTypedFromInnermostLambda body, parsedData, m, trivia)
-                                    | SynExpr.Typed(innerBody, _, _) ->
-                                        // Innermost lambda body has SynExpr.Typed wrapper — strip it
-                                        SynExpr.Lambda(isMember, isSubsequent, spats, innerBody, parsedData, m, trivia)
-                                    | _ ->
-                                        // No SynExpr.Typed wrapper — leave as-is
-                                        e
-                                | _ -> e
                             bodyTy, stripTypedFromInnermostLambda rhsExpr
                         | _ ->
-                            // Return type is not a task-like type (e.g., 'T directly, or TcTypeOrMeasure failed).
-                            // Fall back to using overallPatTy to extract the unwrapped return type.
-                            // overallPatTy is already unified with the method's full type (e.g., (unit -> 'T) -> Task<'T>).
-                            // We strip the function type to get the return type, then unwrap if task-like.
-                            // Strip the SynExpr.Typed wrapper to avoid type mismatch from the return type annotation.
-                            let rec stripTypedFromInnermostLambda2 (e: SynExpr) =
-                                match e with
-                                | SynExpr.Lambda(isMember, isSubsequent, spats, body, parsedData, m, trivia) ->
-                                    match body with
-                                    | SynExpr.Lambda _ ->
-                                        SynExpr.Lambda(isMember, isSubsequent, spats, stripTypedFromInnermostLambda2 body, parsedData, m, trivia)
-                                    | SynExpr.Typed(innerBody, _, _) ->
-                                        SynExpr.Lambda(isMember, isSubsequent, spats, innerBody, parsedData, m, trivia)
-                                    | _ -> e
-                                | _ -> e
-                            // Strip the function type from overallPatTy to get the return type.
-                            // Then unwrap if task-like (e.g., Task<'T> -> 'T). Build body type as unit -> 'T.
-                            let _, declaredRetTy = stripFunTy g overallPatTy
-                            let unwrappedRetTy = UnwrapTaskLikeType g declaredRetTy
-                            let bodyTy = List.foldBack (fun _ acc -> mkFunTy g (NewInferenceType g) acc) spatsL unwrappedRetTy
-                            bodyTy, stripTypedFromInnermostLambda2 rhsExpr
+                             // Return type is not a task-like type (e.g., 'T directly, or TcTypeOrMeasure failed).
+                             // Fall back to using overallPatTy to extract the unwrapped return type.
+                             // overallPatTy is already unified with the method's full type (e.g., (unit -> 'T) -> Task<'T>).
+                             // We strip the function type to get the return type, then unwrap if task-like.
+                             // Strip the SynExpr.Typed wrapper to avoid type mismatch from the return type annotation.
+                             // Strip the function type from overallPatTy to get the return type.
+                             // Then unwrap if task-like (e.g., Task<'T> -> 'T). Build body type as unit -> 'T.
+                             let _, declaredRetTy = stripFunTy g overallPatTy
+                             let unwrappedRetTy = UnwrapTaskLikeType g declaredRetTy
+                             let bodyTy = List.foldBack (fun _ acc -> mkFunTy g (NewInferenceType g) acc) spatsL unwrappedRetTy
+                             bodyTy, stripTypedFromInnermostLambda rhsExpr
+                    | None -> overallExprTy, rhsExpr
+                elif g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync &&
+                     isInline &&
+                     Option.isSome memberFlagsOpt &&
+                     (match env.eFamilyType with
+                      | Some tcref -> TryFindFSharpAttribute g g.attrib_RuntimeAsyncAttribute tcref.Attribs |> Option.isSome
+                      | None -> false) then
+                    // For inline members of [<RuntimeAsync>]-attributed types, allow the lambda body to
+                    // return 'T where Task<'T> is expected. This enables Delay to be written as:
+                    //   member inline _.Delay(f: unit -> 'T) : unit -> Task<'T> = fun () -> f()
+                    // without needing cast<'T, Task<'T>>(f()).
+                    //
+                    // The return type annotation may be a function type returning a task (e.g., unit -> Task<'T>).
+                    // We strip the function type to get the innermost return type, check if it is task-like,
+                    // unwrap it, and reconstruct the function type with the unwrapped return type.
+                    // This gives bodyExprTy = (domain) -> (unit -> 'T) instead of (domain) -> (unit -> Task<'T>).
+                    match rtyOpt with
+                    | Some (SynBindingReturnInfo(typeName = synReturnTy)) ->
+                        // Use NewTyparsOK to resolve the return type. This allows implicitly-scoped type
+                        // parameters (e.g., 'T in unit -> Task<'T>) to be resolved.
+                        // Use DiscardErrorsLogger to suppress any diagnostic errors from TcTypeOrMeasure.
+                        let retTyOpt =
+                            use _ = UseDiagnosticsLogger DiscardErrorsLogger
+                            try Some (fst (TcTypeOrMeasure (Some TyparKind.Type) cenv NewTyparsOK CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv synReturnTy))
+                            with RecoverableException _ -> None
+                        match retTyOpt with
+                        | Some retTy ->
+                            // Strip function types to get the innermost return type.
+                            // For unit -> Task<'T>, this gives innerDomainTys=[unit], innerRetTy=Task<'T>.
+                            // For Task<'T> directly, this gives innerDomainTys=[], innerRetTy=Task<'T>.
+                            let innerDomainTys, innerRetTy = stripFunTy g retTy
+                            if IsTaskLikeType g innerRetTy then
+                                let unwrappedInnerRetTy = UnwrapTaskLikeType g innerRetTy
+                                // Reconstruct the unwrapped return type (e.g., unit -> 'T from unit -> Task<'T>)
+                                let unwrappedRetTy = List.foldBack (fun domTy acc -> mkFunTy g domTy acc) innerDomainTys unwrappedInnerRetTy
+                                // Pre-unify overallPatTy with the full function type using the original return type.
+                                // This gives the Val its correct declared type (e.g., (unit -> 'T) -> (unit -> Task<'T>)).
+                                // We create shared domain inference types so that after UnifyTypes unifies
+                                // the domain types with overallPatTy's domain types, bodyTy also reflects
+                                // those unified types.
+                                let domainTys = List.map (fun _ -> NewInferenceType g) spatsL
+                                let fullFuncTy = List.foldBack (fun domTy acc -> mkFunTy g domTy acc) domainTys retTy
+                                UnifyTypes cenv envinner mBinding overallPatTy fullFuncTy
+                                // bodyTy uses the SAME domain types as fullFuncTy but with the unwrapped return type.
+                                // After UnifyTypes above, domainTys are unified with overallPatTy's domain types.
+                                let bodyTy = List.foldBack (fun domTy acc -> mkFunTy g domTy acc) domainTys unwrappedRetTy
+                                // Strip the SynExpr.Typed(body, unit -> Task<T>, ...) wrapper from the innermost
+                                // lambda body if present. This is a safety measure for cases where mkSynBindingRhs
+                                // adds a SynExpr.Typed wrapper around the body.
+                                bodyTy, stripTypedFromInnermostLambda rhsExpr
+                            else
+                                overallExprTy, rhsExpr
+                        | None -> overallExprTy, rhsExpr
                     | None -> overallExprTy, rhsExpr
                 else
                     overallExprTy, rhsExpr
