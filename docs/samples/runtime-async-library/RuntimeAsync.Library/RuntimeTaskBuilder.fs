@@ -9,17 +9,6 @@ open System.Threading.Tasks
 open Microsoft.FSharp.Control
 
 #nowarn "57"
-#nowarn "42"
-
-/// Internal helpers for RuntimeTaskBuilder.
-/// Not intended for direct use by consumers.
-module internal RuntimeTaskBuilderHelpers =
-    /// Reinterpret cast with no runtime overhead.
-    /// Used by Delay to reinterpret 'T as Task<'T> at the F# type level (no-op at IL level).
-    /// The Delay closure is 'cil managed async' and its IL signature says Task<'T>, so the runtime
-    /// wraps the actual 'T return value in Task<'T>. cast<'T, Task<'T>>(f()) makes the F# type
-    /// checker accept the expression while the IL body just returns 'T.
-    let inline cast<'a, 'b> (a: 'a) : 'b = (# "" a : 'b #)
 
 /// Computation expression builder for runtime-async methods.
 /// Annotated with [<RuntimeAsync>] so the compiler:
@@ -28,9 +17,9 @@ module internal RuntimeTaskBuilderHelpers =
 ///
 /// Design (Architecture B): Delay creates a closure that wraps the CE body.
 /// [<InlineIfLambda>] on f inlines the CE body into the Delay closure, so there is only ONE
-/// closure containing all AsyncHelpers.Await calls. The Delay closure's IL signature says it
-/// returns Task<'T>, so it can be marked 'cil managed async'. cast<'T, Task<'T>>(f()) is a
-/// no-op at IL level — the 'cil managed async' runtime wraps the 'T return in Task<'T>.
+/// closure containing all AsyncHelpers.Await calls. The compiler automatically injects a sentinel
+/// to ensure the Delay closure is always 'cil managed async', and automatically handles the
+/// 'T → Task<'T> bridging for [<RuntimeAsync>] builders — no cast is needed.
 /// Run is non-inline with [<MethodImplAttribute(0x2000)>] and takes unit -> Task<'T>.
 /// This enables true inline-nested runtimeTask { ... } CEs.
 [<RuntimeAsync; Sealed>]
@@ -69,28 +58,21 @@ type RuntimeTaskBuilder() =
 
     /// Delay creates a closure that wraps the CE body.
     /// [<InlineIfLambda>] on f inlines the CE body into the Delay closure, so there is only ONE
-    /// closure containing all AsyncHelpers.Await calls. This ensures the Delay closure is marked
-    /// 'cil managed async' by the compiler (it contains Await calls after inlining).
-    /// The sentinel AsyncHelpers.Await(ValueTask.CompletedTask) ensures the Delay closure is
-    /// always 'cil managed async' even when the CE body has no let!/do! bindings.
-    /// cast<'T, Task<'T>>(f()) is a no-op at IL level — the 'cil managed async' runtime wraps
-    /// the 'T return value in Task<'T>, making Invoke return Task<'T> at runtime.
+    /// closure containing all AsyncHelpers.Await calls. The compiler automatically injects a
+    /// sentinel to ensure the Delay closure is always 'cil managed async', even when the CE body
+    /// has no let!/do! bindings. The compiler also handles the 'T → Task<'T> bridging automatically
+    /// for [<RuntimeAsync>] builders, so no cast is needed.
     member inline _.Delay([<InlineIfLambda>] f: unit -> 'T) : unit -> Task<'T> =
-        fun () ->
-            // Sentinel: ensures this closure is always 'cil managed async'.
-            // This is a no-op at runtime — CompletedTask is already complete.
-            AsyncHelpers.Await(ValueTask.CompletedTask)
-            // cast reinterprets 'T as Task<'T> at the F# type level (no-op at IL level).
-            // The 'cil managed async' runtime wraps the 'T value in Task<'T>.
-            RuntimeTaskBuilderHelpers.cast<'T, Task<'T>>(f())
+        fun () -> f()
 
     member inline _.Zero() : unit = ()
     /// Combine sequences two CE expressions. The second expression is wrapped in Delay,
-    /// so f returns unit -> Task<'T> at F# type level (but 'T at IL level via cast).
-    /// Since f is [<InlineIfLambda>], f() is inlined and returns 'T at IL level.
-    /// cast<Task<'T>, 'T>(f()) reinterprets Task<'T> as 'T at F# type level (no-op at IL).
-    member inline _.Combine((): unit, [<InlineIfLambda>] f: unit -> Task<'T>) : 'T =
-        RuntimeTaskBuilderHelpers.cast<Task<'T>, 'T>(f())
+    /// so f returns unit -> Task<'T>. f must NOT be [<InlineIfLambda>]: if it were, the Delay
+    /// closure body would be inlined and f() would push 'T (not Task<'T>) at IL level, making
+    /// AsyncHelpers.Await(f()) fail (Await expects Task<'T> but gets 'T). By not inlining f,
+    /// f() calls the Delay closure Invoke → Task<'T> via cil managed async, so Await works.
+    member inline _.Combine((): unit, f: unit -> Task<'T>) : 'T =
+        AsyncHelpers.Await(f())
 
     /// While loops. The body is wrapped in Delay, so body returns unit -> Task<unit>.
     /// Each iteration awaits body() so the async body completes before the next iteration.

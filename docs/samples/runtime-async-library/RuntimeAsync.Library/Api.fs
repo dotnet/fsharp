@@ -187,10 +187,12 @@ module Api =
         runtimeTask {
             let! a =
                 runtimeTask {
+                    do! Task.Yield()
                     return 21
                 }
             let! b =
                 runtimeTask {
+                    do! Task.Yield()
                     return 21
                 }
             return a + b

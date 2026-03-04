@@ -24,15 +24,16 @@ The working solution uses a **non-inline Run + async closures** pattern:
 [<RuntimeAsync; Sealed>]
 type RuntimeTaskBuilder() =
     // Delay wraps the CE body in a closure that is 'cil managed async'.
-    // The sentinel ensures the closure is always async even with no let!/do! bindings.
-    // cast<'T, Task<'T>>(f()) is a no-op at IL level — the 'cil managed async' runtime wraps T→Task<T>.
+    // The compiler automatically injects the sentinel (AsyncHelpers.Await(ValueTask.CompletedTask))
+    // into every Delay closure body, ensuring cloIsAsync = true even with no let!/do! bindings.
+    // The compiler also handles 'T → Task<'T> bridging automatically for [<RuntimeAsync>] builders,
+    // so no cast helper is needed.
     member inline _.Delay([<InlineIfLambda>] f: unit -> 'T) : unit -> Task<'T> =
-        fun () ->
-            AsyncHelpers.Await(ValueTask.CompletedTask)  // sentinel: ensures cil managed async
-            RuntimeTaskBuilderHelpers.cast<'T, Task<'T>>(f())
+        fun () -> f()
 
     // Run is non-inline with [<MethodImplAttribute(0x2000)>] — emitted as 'cil managed async'.
-    // Delay closure returns Task<'T> at runtime. Run awaits it, then wraps T→Task<T>.
+    // Delay closure returns Task<'T> at runtime (the 'cil managed async' runtime wraps T→Task<T>).
+    // Run awaits the closure result, then wraps T→Task<T> (because Run itself is 'cil managed async').
     [<MethodImplAttribute(enum<MethodImplOptions> 0x2000)>]
     member _.Run(f: unit -> Task<'T>) : Task<'T> =
         AsyncHelpers.Await(f())
@@ -75,9 +76,9 @@ The consumer function calls `Run(closure)` and returns the `Task<int>` that `Run
 #### The Non-Inline Run Pattern
 
 1. `Run` is `member _` (non-inline) with `[<MethodImplAttribute(0x2000)>]` — the compiler emits it as `cil managed async`
-2. CE body closures contain `AsyncHelpers.Await` calls (from inlined `Bind` members) — they are also `cil managed async`
-3. At runtime, the closure's `Invoke` returns `Task<'T>` (because it's `cil managed async`)
-4. `cast<'T, Task<'T>>(f())` reinterprets `'T` as `Task<'T>` (no-op at IL level)
+2. CE body closures contain `AsyncHelpers.Await` calls (from inlined `Bind` members, or the auto-injected sentinel) — they are also `cil managed async`
+3. At runtime, the closure's `Invoke` returns `Task<'T>` (because it's `cil managed async` — the runtime wraps `'T → Task<'T>` automatically)
+4. The compiler handles `'T → Task<'T>` bridging automatically for `[<RuntimeAsync>]` builders — no `cast` helper is needed
 5. `AsyncHelpers.Await(Task<'T>)` unwraps `Task<'T>` to `'T`
 6. `Run` wraps `'T` back to `Task<'T>` (because it's `cil managed async`)
 
@@ -106,9 +107,15 @@ The inner `runtimeTask { return 21 }` calls `Run` which returns a real `Task<int
 
 **Fix 1 — IlxGen.fs return-type guard:** `ExprContainsAsyncHelpersAwaitCall` body analysis must only propagate `cil managed async` when the method returns a Task-like type (`Task`, `Task<T>`, `ValueTask`, `ValueTask<T>`). Without this guard, the optimizer might inline an async function into a non-Task-returning method (e.g., `main : int`), and the runtime would reject it with `TypeLoadException`.
 
-**Fix 2 — Optimizer.fs anti-inlining guard:** Functions whose optimized bodies contain `AsyncHelpers.Await`/`AwaitAwaiter`/`UnsafeAwaitAwaiter` calls must not be cross-module inlined by the optimizer. Their optimization data is replaced with `UnknownValue`. Without this, the optimizer inlines async functions into non-async callers, causing `NullReferenceException` from the `cast` trick being used outside a `cil managed async` context.
+**Fix 2 — Optimizer.fs anti-inlining guard:** Functions whose optimized bodies contain `AsyncHelpers.Await`/`AwaitAwaiter`/`UnsafeAwaitAwaiter` calls must not be cross-module inlined by the optimizer. Their optimization data is replaced with `UnknownValue`. Without this, the optimizer inlines async functions into non-async callers, causing `NullReferenceException` at runtime.
 
-**Fix 3 — EraseClosures.fs async closure emission:** CE body closures contain `AsyncHelpers.Await` calls (from inlined `Bind` members). The `cloIsAsync` field in `IlxClosureInfo` is set when the closure body contains these calls. `EraseClosures.fs` emits the closure's `Invoke` method as `cil managed async` when `cloIsAsync = true`. Without this, the runtime rejects the closure with `TypeLoadException` because `AsyncHelpers.Await` can only be called from `cil managed async` methods.
+**Fix 3 — EraseClosures.fs async closure emission:** CE body closures contain `AsyncHelpers.Await` calls (from inlined `Bind` members, or the auto-injected sentinel). The `cloIsAsync` field in `IlxClosureInfo` is set when the closure body contains these calls. `EraseClosures.fs` emits the closure's `Invoke` method as `cil managed async` when `cloIsAsync = true`. Without this, the runtime rejects the closure with `TypeLoadException` because `AsyncHelpers.Await` can only be called from `cil managed async` methods.
+
+**Fix 4 — CheckExpressions.fs type-checking coercion:** When inside an inline member of a `[<RuntimeAsync>]` type, the compiler allows `fun () -> f()` where `f()` returns `'T` but the closure's declared return type is `Task<'T>`. The compiler unwraps the Task-like return type for the lambda body, so the library author writes `fun () -> f()` without any cast helper.
+
+**Fix 5 — IlxGen.fs Lambdas_return fix:** When the closure's declared return type is `Task<'T>` but the body type is `'T` (due to the coercion in Fix 4), the IL generator uses the declared `Task<'T>` for `Lambdas_return` so the closure's `Invoke` method declares the correct return type in IL.
+
+**Fix 6 — CheckComputationExpressions.fs automatic sentinel injection:** When the builder type has `[<RuntimeAsync>]`, the CE desugaring automatically injects `AsyncHelpers.Await(ValueTask.CompletedTask)` as the first expression in ALL `Delay` closure bodies. This ensures `cloIsAsync = true` even when the CE body has no `let!`/`do!` bindings (e.g., `runtimeTask { return 42 }`), so the closure is always emitted as `cil managed async`.
 
 ### Examples
 
