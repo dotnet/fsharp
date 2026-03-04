@@ -364,12 +364,10 @@ let (|NameofExpr|_|) (e: SynExpr) : NameofResult voption =
 
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
 #if BUILD_USING_MONO
-    let rec visitGuarded
-        (sg: StackGuard)
-        (e: SynExpr)
-        (continuation: FileContentEntry list -> FileContentEntry list)
-        : FileContentEntry list =
-        let visit e c = sg.Guard(fun () -> visitGuarded sg e c)
+    let stackGuard = StackGuard("FileContentMapping")
+
+    let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
+        stackGuard.Guard(fun () ->
 #else
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
 #endif
@@ -570,10 +568,10 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             let continuations = List.map visit [ funcExpr; argExpr ]
             Continuation.concatenate continuations continuation
 #if BUILD_USING_MONO
-    visitGuarded (StackGuard(nameof (FileContentMapping))) e id
-#else
-    visit e id
+        )
 #endif
+
+    visit e id
 
 /// Special case of `| nameof Module ->` type of pattern
 [<return: Struct>]
