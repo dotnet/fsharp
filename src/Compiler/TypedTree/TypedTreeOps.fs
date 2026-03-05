@@ -8818,28 +8818,29 @@ let mkSignatureDataVersionAttr (g: TcGlobals) (version: ILVersionInfo)  =
           ILAttribElem.Int32 (int32 version.Minor) 
           ILAttribElem.Int32 (int32 version.Build)], [])
 
-let tname_AutoOpenAttr = Core + ".AutoOpenAttribute"
-
 let IsSignatureDataVersionAttr cattr = isILAttribByName ([], tname_SignatureDataVersionAttr) cattr
 
-let TryFindAutoOpenAttr cattr = 
-    if isILAttribByName ([], tname_AutoOpenAttr) cattr then 
-        match decodeILAttribData cattr with 
-        | [ILAttribElem.String s], _ -> s
+let TryFindAutoOpenAttr (cattr: ILAttribute) =
+    if classifyILAttrib cattr &&& WellKnownILAttributes.AutoOpenAttribute <> WellKnownILAttributes.None then
+        match decodeILAttribData cattr with
+        | [ ILAttribElem.String s ], _ -> s
         | [], _ -> None
-        | _ -> 
-            warning(Failure(FSComp.SR.tastUnexpectedDecodeOfAutoOpenAttribute()))
+        | _ ->
+            warning (Failure(FSComp.SR.tastUnexpectedDecodeOfAutoOpenAttribute()))
             None
     else
         None
-        
-let TryFindInternalsVisibleToAttr cattr = 
-    if isILAttribByName ([], tname_InternalsVisibleToAttribute) cattr then 
-        match decodeILAttribData cattr with 
-        | [ILAttribElem.String s], _ -> s
+
+let TryFindInternalsVisibleToAttr (cattr: ILAttribute) =
+    if
+        classifyILAttrib cattr
+        &&& WellKnownILAttributes.InternalsVisibleToAttribute <> WellKnownILAttributes.None
+    then
+        match decodeILAttribData cattr with
+        | [ ILAttribElem.String s ], _ -> s
         | [], _ -> None
-        | _ -> 
-            warning(Failure(FSComp.SR.tastUnexpectedDecodeOfInternalsVisibleToAttribute()))
+        | _ ->
+            warning (Failure(FSComp.SR.tastUnexpectedDecodeOfInternalsVisibleToAttribute()))
             None
     else
         None
