@@ -47,6 +47,10 @@ module ExtensionConstraintsTests =
         compileAndRunPreview "OpExplicitReturnType.fs"
 
     [<Fact>]
+    let ``AllowOverloadOnReturnType resolves through SRTP`` () =
+        compileAndRunPreview "AllowOverloadOnReturnType.fs"
+
+    [<Fact>]
     let ``Issue 9382 and 9416 regressions compile and run`` () =
         compileAndRunPreview "IssueRegressions.fs"
 
