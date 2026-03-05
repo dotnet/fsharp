@@ -1,30 +1,49 @@
-// RFC FS-1043: Extrinsic extension methods participate in SRTP resolution.
+// RFC FS-1043: Extensions captured at call site, not definition site.
+// The SRTP constraint for (+) is resolved using members in scope where the
+// generic inline construct is USED (the call site), not where it is DEFINED.
 //
-// This test verifies that an extension method defined in a separate module
-// (extrinsic to the type) is found by the SRTP constraint solver when it
-// is in scope. The extension is on System.Int32 (an externally-defined type),
-// making it a genuinely EXTRINSIC extension that REQUIRES --langversion:preview.
-//
-// The inline function is defined in Lib (where the extension IS in scope via
-// the top-level open). Consumer calls it without needing its own open — the
-// constraint was already solved using the extension at the definition site.
+// Widget and its (+) augmentation live in TypeDefs. The inline function in
+// Lib does NOT open TypeDefs, so Widget.(+) is not in scope there. Consumer
+// opens TypeDefs — bringing Widget.(+) into scope — and invokes the inline
+// function. The constraint is resolved at the call site.
 
 module ScopeCapture
 
+module TypeDefs =
+    type Widget = { V: int }
+
+    type Widget with
+        static member (+)(a: Widget, b: Widget) = { V = a.V + b.V }
+
 module Extensions =
+    // Extrinsic extension on an external type — requires --langversion:preview.
+    // This ensures the test exercises the ExtensionConstraintSolutions feature gate.
     type System.Int32 with
         static member Combine(a: int, b: int) = a * b
 
-open Extensions
-
 module Lib =
-    // Int32.Combine is in scope here via the top-level open of Extensions.
-    let inline combine (x: ^T) (y: ^T) = (^T: (static member Combine: ^T * ^T -> ^T) (x, y))
+    open Extensions
+
+    // Widget.(+) is NOT in scope here — TypeDefs is not opened.
+    // Int32.Combine IS in scope via `open Extensions` above.
+    let inline add (x: ^T) (y: ^T) = x + y
+
+    let inline combine (x: ^T) (y: ^T) =
+        (^T: (static member Combine: ^T * ^T -> ^T) (x, y))
 
 module Consumer =
+    open TypeDefs
+    open Extensions
     open Lib
 
-    let r = combine 3 4
+    // Widget.(+) IS in scope HERE at the call site, not at Lib.add's definition site.
+    let r1 = add { V = 1 } { V = 2 }
 
-    if r <> 12 then
-        failwith $"Expected 12, got {r}"
+    if r1 <> { V = 3 } then
+        failwith $"Expected {{V=3}}, got {r1}"
+
+    // Int32.Combine uses an extrinsic extension — verifies the preview feature gate.
+    let r2 = combine 3 4
+
+    if r2 <> 12 then
+        failwith $"Expected 12, got {r2}"

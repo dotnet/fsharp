@@ -46,23 +46,21 @@ When solving an SRTP constraint:
 
 ### Scope Capture
 
-Extrinsic extension methods (on externally-defined types) participate in SRTP resolution when they are in scope. This requires `--langversion:preview`:
+SRTP constraints are resolved using members in scope at the **call site**, not where the generic function is defined:
 
 ```fsharp
-module Extensions =
-    type System.Int32 with
-        static member Combine(a: int, b: int) = a * b
-
-open Extensions
+module TypeDefs =
+    type Widget = { V: int }
+    type Widget with
+        static member (+) (a: Widget, b: Widget) = { V = a.V + b.V }
 
 module Lib =
-    // Int32.Combine is in scope here via the top-level open
-    let inline combine (x: ^T) (y: ^T) =
-        (^T : (static member Combine: ^T * ^T -> ^T) (x, y))
+    let inline add (x: ^T) (y: ^T) = x + y  // Widget.(+) NOT in scope here
 
 module Consumer =
+    open TypeDefs  // Widget.(+) brought into scope at the call site
     open Lib
-    let r = combine 3 4  // Uses Int32.Combine extrinsic extension
+    let r = add { V = 1 } { V = 2 }  // resolved using Widget.(+) from TypeDefs
 ```
 
 ### Known Limitations
