@@ -4017,6 +4017,7 @@ let classifyValAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownValAttributes =
             | "CompiledNameAttribute" -> WellKnownValAttributes.CompiledNameAttribute
             | "WarnOnWithoutNullArgumentAttribute" -> WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute
             | "ValueAsStaticPropertyAttribute" -> WellKnownValAttributes.ValueAsStaticPropertyAttribute
+            | "TailCallAttribute" -> WellKnownValAttributes.TailCallAttribute
             | _ -> WellKnownValAttributes.None
         | [| "Microsoft"; "FSharp"; "Core"; "CompilerServices"; name |] ->
             match name with

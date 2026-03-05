@@ -112,6 +112,7 @@ type internal WellKnownValAttributes =
     | MarshalAsAttribute = (1uL <<< 37)
     | NoEagerConstraintApplicationAttribute = (1uL <<< 38)
     | ValueAsStaticPropertyAttribute = (1uL <<< 39)
+    | TailCallAttribute = (1uL <<< 40)
     | NotComputed = (1uL <<< 63)
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.

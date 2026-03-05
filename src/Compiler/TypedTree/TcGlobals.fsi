@@ -190,8 +190,6 @@ type internal TcGlobals =
 
     member FindSysTyconRef: path: string list -> nm: string -> TypedTree.EntityRef
 
-    member HasTailCallAttrib: attribs: TypedTree.Attribs -> bool
-
     /// Find an FSharp.Core LanguagePrimitives dynamic function that corresponds to a trait witness, e.g.
     /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
     member MakeBuiltInWitnessInfo: t: TypedTree.TraitConstraintInfo -> IntrinsicValRef * TypedTree.TType list
@@ -306,20 +304,11 @@ type internal TcGlobals =
 
     member array_tcr_nice: TypedTree.EntityRef
 
-
     member attrib_AllowNullLiteralAttribute: BuiltinAttribInfo
 
     member attrib_AttributeUsageAttribute: BuiltinAttribInfo
 
     member attrib_AutoOpenAttribute: BuiltinAttribInfo
-
-
-
-
-
-
-
-
 
     member attrib_ComparisonConditionalOnAttribute: BuiltinAttribInfo
 
@@ -327,21 +316,13 @@ type internal TcGlobals =
 
     member attrib_CompilationMappingAttribute: BuiltinAttribInfo
 
-
     member attrib_CompiledNameAttribute: BuiltinAttribInfo
 
     member attrib_ConditionalAttribute: BuiltinAttribInfo
 
-
-
-
     member attrib_CustomOperationAttribute: BuiltinAttribInfo
 
-
-
-
     member attrib_DefaultMemberAttribute: BuiltinAttribInfo
-
 
     member attrib_DefaultValueAttribute: BuiltinAttribInfo
 
@@ -349,54 +330,31 @@ type internal TcGlobals =
 
     member attrib_DynamicDependencyAttribute: BuiltinAttribInfo
 
-
     member attrib_EqualityConditionalOnAttribute: BuiltinAttribInfo
 
     member attrib_ExtensionAttribute: BuiltinAttribInfo
 
-
     member attrib_FlagsAttribute: BuiltinAttribInfo
 
-
-
-
     member attrib_InAttribute: BuiltinAttribInfo
-
-
 
     member attrib_IsReadOnlyAttribute: BuiltinAttribInfo
 
     member attrib_IsUnmanagedAttribute: BuiltinAttribInfo
 
-
-
     member attrib_MeasureAttribute: BuiltinAttribInfo
-
 
     member attrib_MemberNotNullWhenAttribute: BuiltinAttribInfo
 
-
-
-
-
     member attrib_NoEagerConstraintApplicationAttribute: BuiltinAttribInfo
-
-
 
     member attrib_NullableAttribute: BuiltinAttribInfo
 
     member attrib_NullableContextAttribute: BuiltinAttribInfo
 
-
-
-
     member attrib_ParamArrayAttribute: BuiltinAttribInfo
 
-
-
-
     member attrib_ReflectedDefinitionAttribute: BuiltinAttribInfo
-
 
     member attrib_SealedAttribute: BuiltinAttribInfo
 
@@ -412,12 +370,9 @@ type internal TcGlobals =
 
     member attrib_IsByRefLikeAttribute_opt: BuiltinAttribInfo option
 
-
     member attrib_TypeForwardedToAttribute: BuiltinAttribInfo
 
-
     member attribs_Unsupported: TypedTree.TyconRef list
-
 
     member bitwise_and_info: IntrinsicValRef
 
