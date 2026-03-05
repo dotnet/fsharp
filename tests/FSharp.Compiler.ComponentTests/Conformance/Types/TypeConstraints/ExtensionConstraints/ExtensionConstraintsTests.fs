@@ -48,7 +48,25 @@ module ExtensionConstraintsTests =
 
     [<Fact>]
     let ``AllowOverloadOnReturnType resolves through SRTP`` () =
-        compileAndRunPreview "AllowOverloadOnReturnType.fs"
+        // AllowOverloadOnReturnTypeAttribute is in the locally-built FSharp.Core but
+        // not yet shipped in the SDK's NuGet package. Handle both configurations.
+        let cu =
+            FSharp(loadSourceFromFile (Path.Combine(testFileDir, "AllowOverloadOnReturnType.fs")))
+            |> asExe
+            |> withLangVersionPreview
+
+        if
+            not (
+                isNull (
+                    typeof<RequireQualifiedAccessAttribute>.Assembly.GetType(
+                        "Microsoft.FSharp.Core.AllowOverloadOnReturnTypeAttribute"
+                    )
+                )
+            )
+        then
+            cu |> compileAndRun |> shouldSucceed |> ignore
+        else
+            cu |> compile |> shouldFail |> withErrorCode 39 |> ignore
 
     [<Fact>]
     let ``Issue 9382 and 9416 regressions compile and run`` () =
