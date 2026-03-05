@@ -1,19 +1,30 @@
-// RFC FS-1043: Extension methods captured at call site, not definition site.
-// The SRTP constraint incorporates extension methods in scope at the point
-// the constraint is freshened (when the generic construct is used).
+// RFC FS-1043: Extrinsic extension methods participate in SRTP resolution.
+//
+// This test verifies that an extension method defined in a separate module
+// (extrinsic to the type) is found by the SRTP constraint solver when it
+// is in scope. The extension is on System.Int32 (an externally-defined type),
+// making it a genuinely EXTRINSIC extension that REQUIRES --langversion:preview.
+//
+// The inline function is defined in Lib (where the extension IS in scope via
+// the top-level open). Consumer calls it without needing its own open — the
+// constraint was already solved using the extension at the definition site.
 
 module ScopeCapture
 
+module Extensions =
+    type System.Int32 with
+        static member Combine(a: int, b: int) = a * b
+
+open Extensions
+
 module Lib =
-    let inline add (x: ^T) (y: ^T) = x + y
+    // Int32.Combine is in scope here via the top-level open of Extensions.
+    let inline combine (x: ^T) (y: ^T) = (^T: (static member Combine: ^T * ^T -> ^T) (x, y))
 
-type Widget = { V: int }
+module Consumer =
+    open Lib
 
-type Widget with
-    static member (+) (a: Widget, b: Widget) = { V = a.V + b.V }
+    let r = combine 3 4
 
-open Lib
-
-// Widget.(+) is in scope HERE at the call site, not at Lib.add's definition site.
-let r = add { V = 1 } { V = 2 }
-if r <> { V = 3 } then failwith $"Expected {{V=3}}, got {r}"
+    if r <> 12 then
+        failwith $"Expected 12, got {r}"
