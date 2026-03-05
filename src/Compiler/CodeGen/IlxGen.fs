@@ -5540,7 +5540,8 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
             | OkResult(warns, res) ->
                 ReportWarnings warns
                 res
-            | ErrorResult _ ->
+            | ErrorResult(warns, _) ->
+                ReportWarnings warns
                 // Resolution may fail for generic inline code with unsolved constraints
                 // (e.g. rigid typars). The NotSupportedException stub below is emitted as
                 // fallback IL; inline functions resolve constraints at each call site.
@@ -7342,7 +7343,8 @@ and ExprRequiresWitness cenv m expr =
         | OkResult(warns, res) ->
             ReportWarnings warns
             res
-        | ErrorResult _ ->
+        | ErrorResult(warns, _) ->
+            ReportWarnings warns
             // Constraint resolution failed. This means either:
             // - All support types are concrete but resolution still failed (shouldn't happen —
             //   type-checking should have caught it), or
