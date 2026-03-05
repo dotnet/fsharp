@@ -2251,11 +2251,8 @@ if resultFloat <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" resultF
 
     [<Fact>]
     let ``AllowOverloadOnReturnType disambiguates at call site with type annotation`` () =
-        // AllowOverloadOnReturnTypeAttribute is in the locally-built FSharp.Core but
-        // not yet shipped in the SDK's NuGet package. Handle both configurations.
-        let cu =
-            FSharp
-                """
+        FSharp
+            """
 module TestAllowOverloadOnReturnType
 
 type Converter =
@@ -2269,21 +2266,9 @@ let resultFloat: float = Converter.Convert("42")
 if resultInt <> 42 then failwith (sprintf "Expected 42 but got %d" resultInt)
 if resultFloat <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" resultFloat)
         """
-            |> asExe
-            |> withLangVersionPreview
-
-        if
-            not (
-                isNull (
-                    typeof<RequireQualifiedAccessAttribute>.Assembly.GetType(
-                        "Microsoft.FSharp.Core.AllowOverloadOnReturnTypeAttribute"
-                    )
-                )
-            )
-        then
-            cu |> compileAndRun |> shouldSucceed |> ignore
-        else
-            cu |> compile |> shouldFail |> withErrorCode 39 |> ignore
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRunOrExpectMissingAttribute "Microsoft.FSharp.Core.AllowOverloadOnReturnTypeAttribute"
 
     [<Fact>]
     let ``Overloads with different parameter types resolve without ambiguity`` () =
