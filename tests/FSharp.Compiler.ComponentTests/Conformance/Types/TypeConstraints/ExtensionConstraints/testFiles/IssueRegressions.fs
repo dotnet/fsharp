@@ -39,6 +39,15 @@ let identity: Matrix<float> =
 let inv = inverse identity
 if inv.m11 <> 1.0 then failwith $"Expected identity inverse m11=1.0, got {inv.m11}"
 
+// M2: Prove inverse actually generalizes — call at decimal, not just float
+let identityDecimal: Matrix<decimal> =
+    { m11 = 1.0m; m12 = 0.0m; m13 = 0.0m
+      m21 = 0.0m; m22 = 1.0m; m23 = 0.0m
+      m31 = 0.0m; m32 = 0.0m; m33 = 1.0m }
+
+let invDecimal = inverse identityDecimal
+if invDecimal.m11 <> 1.0m then failwith $"Expected decimal identity inverse m11=1.0m, got {invDecimal.m11}"
+
 // ---- dotnet/fsharp#9416: Records with generic type variables and overloaded operators ----
 // Previously produced FS0073 (internal error). Now compiles and runs cleanly.
 

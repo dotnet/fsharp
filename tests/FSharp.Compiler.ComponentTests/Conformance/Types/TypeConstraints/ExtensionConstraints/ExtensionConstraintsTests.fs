@@ -95,6 +95,34 @@ if r2 <> expected2 then failwith (sprintf "r2: Expected %A, got %A" expected2 r2
         |> shouldSucceed
 
     [<Fact>]
+    let ``FSharpPlus Default1 Default2 priority pattern fails without explicit constraint`` () =
+        // M3: FSharpPlus inheritance-based overload priority (Default1 inherits Default2).
+        // Currently, the SRTP constraint on (^T or Default1) does not resolve
+        // the Default2 fallback overload for non-int types. This test documents
+        // the limitation: the pattern requires the constraint witness type to
+        // directly declare the member, inheritance alone is not sufficient.
+        FSharp """
+module Test
+
+type Default2 = class end
+type Default1 = inherit Default2
+
+type Resolver =
+    static member Resolve(_: 'T, _: Default2) = "default"
+    static member Resolve(x: int, _: Default1) = sprintf "int:%d" x
+
+let inline resolve (x: ^T) =
+    let d = Unchecked.defaultof<Default1>
+    ((^T or Default1) : (static member Resolve: ^T * Default1 -> string) (x, d))
+
+let r1 = resolve 42
+let r2 = resolve "hello"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+
+    [<Fact>]
     let ``Built-in operator wins over extension on same type`` () =
         FSharp """
 module Test
@@ -228,6 +256,26 @@ Candidates:
  - member Daughter.Hello: unit -> string
  - member Mother.Hello: unit -> int")
         ]
+
+    [<Fact>]
+    let ``Extension does not satisfy IWSAM constraint`` () =
+        // M1: Extension (+) should NOT make a type satisfy IAdditionOperators.
+        // SRTP extension solutions and interface implementations are orthogonal.
+        FSharp """
+module Test
+open System.Numerics
+
+type MyNum = { V: int }
+
+type MyNum with
+    static member (+) (a: MyNum, b: MyNum) = { V = a.V + b.V }
+
+let addViaIWSAM<'T when 'T :> IAdditionOperators<'T,'T,'T>> (a: 'T) (b: 'T) = a + b
+let r = addViaIWSAM { V = 1 } { V = 2 }
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
 
     [<Fact>]
     let ``Extension not in scope is not resolved`` () =
