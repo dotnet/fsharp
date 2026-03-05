@@ -97,7 +97,7 @@ If existing inline code breaks:
 
 2. **Use sequentialization** to force resolution order
 
-3. **Remove return types from SRTP support types** if using FSharpPlus patterns
+3. **Sequentialize nested calls** when using FSharpPlus-style patterns with return types in support types. If nesting `InvokeMap` calls directly produces errors, sequentialize with a let-binding (see the sequentialization example above). Do NOT remove return types from support types unless you understand the impact on overload resolution — return types are the fundamental mechanism for return-type-driven resolution in type-class encodings.
 
 ## Feature Flag
 
@@ -123,18 +123,20 @@ let resultFloat: float = Converter.Convert("42")   // resolves to float overload
 
 Without the attribute, these overloads would produce an ambiguity error. Note that the call site must provide enough type context (e.g., a type annotation) for the compiler to select the correct overload.
 
-## Advanced Examples
+## Design Intent: Aspirational Patterns
 
-> **Warning:** The examples below are taken from the RFC to illustrate the design intent.
-> They may not compile with the current implementation — cross-type operator extensions
-> (e.g. `float + int`) interact with built-in operator resolution in ways that are not
-> yet fully supported. These are aspirational patterns, not tested ones.
+> **⚠️ NOT IMPLEMENTED**: The patterns below are taken from the RFC to illustrate the
+> long-term design intent. They do **not** compile with the current implementation.
+> Cross-type operator extensions (e.g., `float + int`) interact with built-in operator
+> resolution in complex ways that are not yet supported. Do not use these patterns in
+> production code.
 
-### Numeric Widening via Extension Operators
+### Numeric Widening via Extension Operators (NOT IMPLEMENTED)
 
 The RFC describes retrofitting widening conversions onto primitive types:
 
 ```fsharp
+// ⚠️ ASPIRATIONAL — does not compile
 type System.Int32 with
     static member inline widen_to_double (a: int32) : double = double a
 
@@ -143,25 +145,24 @@ let inline widen_to_double (x: ^T) : double = (^T : (static member widen_to_doub
 type System.Double with
     static member inline (+)(a: double, b: 'T) : double = a + widen_to_double b
     static member inline (+)(a: 'T, b: double) : double = widen_to_double a + b
-
-let result = 1 + 2.0  // double — may not compile yet
 ```
 
-> **Note:** This pattern can degrade error messages for existing code. Use judiciously.
+> **Warning**: Defining `(+)` extensions on `System.Double` would shadow built-in
+> arithmetic for all `float` operations in scope. This pattern requires careful design
+> to avoid degrading error messages and performance for existing code.
 
-### Defining op_Implicit via Extension Members
+### Defining op_Implicit via Extension Members (NOT IMPLEMENTED)
 
-The RFC describes populating a generic implicit conversion function for primitive types:
+The RFC describes populating a generic implicit conversion function:
 
 ```fsharp
+// ⚠️ ASPIRATIONAL — does not compile
 let inline implicitConv (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit : ^T -> ^U) (x))
 
 type System.Int32 with
     static member inline op_Implicit (a: int32) : int64 = int64 a
     static member inline op_Implicit (a: int32) : double = double a
-
-let r1: int64 = implicitConv 42   // 42L
-let r2: double = implicitConv 42  // 42.0
 ```
 
-> **Note:** These conversions are explicit in F# code (you must call `implicitConv`), not implicit as in C#.
+> **Note**: Even if implemented, these conversions would be explicit in F# code
+> (you must call `implicitConv`), not implicit as in C#.
