@@ -52,14 +52,15 @@ With `--langversion:preview`, extrinsic extension members (defined in a separate
 module TypeDefs =
     type Widget = { V: int }
 
+[<AutoOpen>]
 module Extensions =
     open TypeDefs
     type Widget with
         static member (+) (a: Widget, b: Widget) = { V = a.V + b.V }
 
 module Lib =
-    open TypeDefs
-    open Extensions  // extrinsic Widget.(+) brought into scope
+    // Lib does not explicitly open Extensions — the [<AutoOpen>] attribute
+    // makes the extrinsic Widget.(+) available throughout the enclosing scope.
     let inline add (x: ^T) (y: ^T) = x + y
 
 module Consumer =

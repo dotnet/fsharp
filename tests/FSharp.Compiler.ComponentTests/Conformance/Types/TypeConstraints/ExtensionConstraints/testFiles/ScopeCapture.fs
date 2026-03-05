@@ -1,16 +1,19 @@
-// RFC FS-1043: Extrinsic extension members participate in SRTP constraint resolution.
+// RFC FS-1043: Extrinsic extension methods in SRTP constraint resolution.
 //
-// Widget is defined in TypeDefs; its (+) operator is an EXTRINSIC extension
-// defined in the separate Extensions module. Without --langversion:preview,
-// this extrinsic extension would NOT participate in SRTP resolution (FS1215).
-// With preview enabled, the extension is captured when the inline function
-// is defined with the extension in scope.
+// IMPORTANT: Widget and its (+) extension are in SEPARATE modules.
+// This is an EXTRINSIC extension — the feature RFC FS-1043 actually enables.
+// An intrinsic extension (same module) would work even without the feature flag.
+//
+// The Extensions module is [<AutoOpen>], so its extrinsic (+) operator is
+// available throughout the file without explicit opens. Lib.add does NOT
+// explicitly open Extensions — the extension is resolved via auto-open scope.
 
 module ScopeCapture
 
 module TypeDefs =
     type Widget = { V: int }
 
+[<AutoOpen>]
 module Extensions =
     open TypeDefs
 
@@ -18,9 +21,6 @@ module Extensions =
         static member (+)(a: Widget, b: Widget) = { V = a.V + b.V }
 
 module Lib =
-    open TypeDefs
-    open Extensions
-
     let inline add (x: ^T) (y: ^T) = x + y
 
 module Consumer =
