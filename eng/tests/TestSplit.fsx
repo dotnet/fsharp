@@ -21,12 +21,12 @@ let componentTestsAtoms =
         "Miscellaneous",        1
         "XmlComments",          1
 
+        "EmittedIL",            2
+        "Interop",              2
         "Libraries",            2
         "Globalization",        2
+        "InteractiveSession",   2
 
-        "EmittedIL",            3
-        "Interop",              3
-        "InteractiveSession",   3
         "CompilerOptions",      3
         "Conformance",          3
         "Diagnostics",          3
@@ -41,8 +41,8 @@ let componentTestsAtoms =
 let otherProjects =
     [// project path                                                                         batch  platform
         "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          1,     "all"
-        "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          1,     "all"
-        "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 3, "all"
+        "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          2,     "all"
+        "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 2, "all"
         "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        3,     "all"
         "tests/fsharp/FSharpSuite.Tests.fsproj",                                             3,     "desktop"
     ]
