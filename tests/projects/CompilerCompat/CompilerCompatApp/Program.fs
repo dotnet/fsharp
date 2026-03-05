@@ -43,10 +43,10 @@ let main _argv =
             printfn "Processed result: %s" processed
             
             // Test well-known attribute types
-            let sealed = CompilerCompatLib.Library.SealedType()
-            printfn "Sealed: %d" sealed.Value
+            let sealedObj = CompilerCompatLib.Library.SealedType()
+            printfn "Sealed: %d" sealedObj.Value
 
-            let sr = { CompilerCompatLib.Library.StructRecord.X = 1; Y = 2.0 }
+            let sr = { CompilerCompatLib.Library.StructRecord.X = 1; CompilerCompatLib.Library.StructRecord.Y = 2.0 }
             printfn "Struct: %d, %f" sr.X sr.Y
 
             let u = CompilerCompatLib.Library.NoHelpersUnion.Case1
