@@ -74,9 +74,9 @@
     <Compile Include="Refactors\AddReturnTypeTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
-    <Compile Include="Hints\InlineParameterNameHintTests.fs" />
-    <Compile Include="Hints\InlineTypeHintTests.fs" />
-    <Compile Include="hints\InlineReturnTypeHintTests.fs" />
+    <Compile Include="Hints\InlayParameterNameHintTests.fs" />
+    <Compile Include="Hints\InlayTypeHintTests.fs" />
+    <Compile Include="Hints\InlayReturnTypeHintTests.fs" />
     <Compile Include="Hints\OverallHintExperienceTests.fs" />
     <Compile Include="EditorFormattingServiceTests.fs" />
     <Compile Include="RoslynSourceTextTests.fs" />

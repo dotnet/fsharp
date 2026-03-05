@@ -10,7 +10,7 @@ open FSharp.Compiler.Text.Position
 open Hints
 open Internal.Utilities.Library
 
-type InlineTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
+type InlayTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
     let getHintParts (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
 

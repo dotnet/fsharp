@@ -22,15 +22,15 @@ module HintService =
         let getHintsPerKind hintKind =
             match hintKind, symbol with
             | HintKind.TypeHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
-                symbolUses |> Seq.collect (InlineTypeHints(parseResults, symbol)).GetHints
+                symbolUses |> Seq.collect (InlayTypeHints(parseResults, symbol)).GetHints
             | HintKind.ReturnTypeHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
-                symbolUses |> Seq.collect (InlineReturnTypeHints(parseResults, symbol).GetHints)
+                symbolUses |> Seq.collect (InlayReturnTypeHints(parseResults, symbol).GetHints)
             | HintKind.ParameterNameHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
                 symbolUses
-                |> Seq.collect (InlineParameterNameHints(parseResults).GetHintsForMemberOrFunctionOrValue sourceText symbol)
+                |> Seq.collect (InlayParameterNameHints(parseResults).GetHintsForMemberOrFunctionOrValue sourceText symbol)
             | HintKind.ParameterNameHint, (:? FSharpUnionCase as symbol) ->
                 symbolUses
-                |> Seq.collect (InlineParameterNameHints(parseResults).GetHintsForUnionCase sourceText symbol)
+                |> Seq.collect (InlayParameterNameHints(parseResults).GetHintsForUnionCase sourceText symbol)
             | _ -> []
 
         hintKinds |> Set.toList |> List.map getHintsPerKind

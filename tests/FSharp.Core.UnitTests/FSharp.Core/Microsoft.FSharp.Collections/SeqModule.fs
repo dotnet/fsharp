@@ -1524,3 +1524,16 @@ type SeqModule() =
         let choice = seq |> Seq.randomSampleBy (fun () -> 1.0) 0
 
         Assert.AreEqual(0, choice |> Seq.length)
+
+    [<Fact>]
+    member _.``Seq.empty is not a discriminated union type``() =
+        let empty = Seq.empty<int>
+        let ty = empty.GetType()
+        let isUnion = Microsoft.FSharp.Reflection.FSharpType.IsUnion(ty)
+        Assert.False(isUnion, "Seq.empty should not be a discriminated union type")
+
+    [<Fact>]
+    member _.``Seq.concat with empty elements works``() =
+        let result = Seq.concat [ Seq.empty; seq { 1; 2 }; Seq.empty; seq { 3 }; Seq.empty ]
+        let expected = [| 1; 2; 3 |]
+        Assert.AreEqual(expected, result |> Seq.toArray)

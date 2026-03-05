@@ -121,8 +121,6 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" LogicalName="netstandard2.0.System.Collections.Immutable.dll">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</EmbeddedResource>
+		<EmbeddedResource Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" LogicalName="netstandard2.0.System.Collections.Immutable.dll" />
 	</ItemGroup>
 </Project>

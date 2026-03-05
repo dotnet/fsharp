@@ -182,3 +182,25 @@ printfn "%%s" (System.Globalization.CultureInfo "en-US" |> x.ToString)
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "abcde"
+
+    // See https://github.com/dotnet/fsharp/issues/19367.
+    [<CulturedFact([|"th"|])>]
+    let ``Hole without specifier parsed correctly when culture set to Thai`` () =
+        Fsx
+            """
+            let s = $"{3}"
+            if s <> "3" then
+                failwith $"Expected \"3\" but got \"%s{s}\"."
+            """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // See https://github.com/dotnet/fsharp/issues/19367.
+    [<CulturedFact([|"th"|])>]
+    let ``Explicit %P does not cause exception when culture set to Thai`` () =
+        Fsx
+            """
+            let s = $"%P({3})"
+            """
+        |> compileExeAndRun
+        |> shouldSucceed
