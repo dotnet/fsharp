@@ -113,6 +113,7 @@ type internal WellKnownValAttributes =
     | WarnOnWithoutNullArgumentAttribute = (1uL <<< 36)
     | MarshalAsAttribute = (1uL <<< 37)
     | NoEagerConstraintApplicationAttribute = (1uL <<< 38)
+    | ValueAsStaticPropertyAttribute = (1uL <<< 39)
     | NotComputed = (1uL <<< 63)
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.

@@ -2207,7 +2207,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
        IsSimpleSyntacticConstantExpr g e &&
        // Check the thing is actually compiled as a property
        IsCompiledAsStaticProperty g v ||
-       (g.compilingFSharpCore && v.Attribs |> List.exists(fun (Attrib(tc, _, _, _, _, _, _)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute"))
+       (g.compilingFSharpCore && ValHasWellKnownAttribute g WellKnownValAttributes.ValueAsStaticPropertyAttribute v)
      then
         v.SetIsCompiledAsStaticPropertyWithoutField()
 

@@ -3970,6 +3970,7 @@ let classifyValAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownValAttributes =
             | "CLIEventAttribute" -> WellKnownValAttributes.CLIEventAttribute
             | "CompiledNameAttribute" -> WellKnownValAttributes.CompiledNameAttribute
             | "WarnOnWithoutNullArgumentAttribute" -> WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute
+            | "ValueAsStaticPropertyAttribute" -> WellKnownValAttributes.ValueAsStaticPropertyAttribute
             | _ -> WellKnownValAttributes.None
         | [| "Microsoft"; "FSharp"; "Core"; "CompilerServices"; name |] ->
             match name with
