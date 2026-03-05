@@ -66,6 +66,25 @@ let r = f1 DateTime.MinValue (TimeSpan.FromHours(1.0))
         |> compileAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Built-in operator wins over extension on same type`` () =
+        FSharp """
+module Test
+type System.Int32 with
+    static member (+) (a: int, b: int) = a * b  // deliberately wrong
+
+let r1 = 1 + 2  // built-in must win, not the extension
+if r1 <> 3 then failwith (sprintf "Expected 3, got %d" r1)
+
+let inline addGeneric (x: ^T) (y: ^T) = x + y
+let r2 = addGeneric 1 2  // built-in must win even through SRTP
+if r2 <> 3 then failwith (sprintf "Expected 3, got %d" r2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
     // ========================================================================
     // Negative tests: assert specific diagnostics
     // ========================================================================
@@ -152,6 +171,21 @@ type SomeoneHolder<'Someone when 'Someone: (member Hello : unit -> string)> =
     { Someone: 'Someone }
 
 let someoneHolder = { Someone = Daughter() }
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+
+    [<Fact>]
+    let ``Extension not in scope is not resolved`` () =
+        FSharp """
+module Exts =
+    type System.Int32 with
+        static member Zing(x: int) = x + 999
+
+module Consumer =
+    let inline zing (x: ^T) = (^T : (static member Zing: ^T -> ^T) x)
+    let r = zing 5  // Exts not opened — should fail
         """
         |> withLangVersionPreview
         |> compile
