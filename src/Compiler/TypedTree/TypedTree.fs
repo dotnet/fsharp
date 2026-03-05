@@ -1356,6 +1356,12 @@ type Entity =
 
     member x.SetEntityAttribs (attribs: WellKnownEntityAttribs) = x.entity_attribs <- attribs
 
+    /// Check if this entity has a specific well-known attribute, computing and caching flags if needed.
+    member x.HasWellKnownAttribute(flag: WellKnownEntityAttributes, computeFlags: Attribs -> WellKnownEntityAttributes) : bool =
+        let struct (result, wa, changed) = x.EntityAttribs.CheckFlag(flag, computeFlags)
+        if changed then x.SetEntityAttribs(wa)
+        result
+
     /// Sets the structness of a record or union type definition
     member x.SetIsStructRecordOrUnion b = let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
 
@@ -3327,6 +3333,12 @@ type Val =
         match x.val_opt_data with
         | Some optData -> optData.val_attribs <- attribs
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_attribs = attribs }
+
+    /// Check if this val has a specific well-known attribute, computing and caching flags if needed.
+    member x.HasWellKnownAttribute(flag: WellKnownValAttributes, computeFlags: Attribs -> WellKnownValAttributes) : bool =
+        let struct (result, waNew, changed) = x.ValAttribs.CheckFlag(flag, computeFlags)
+        if changed then x.SetValAttribs(waNew)
+        result
 
     member x.SetMemberInfo member_info = 
         match x.val_opt_data with

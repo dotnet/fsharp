@@ -474,6 +474,9 @@ type Entity =
     /// Set the custom attributes wrapper on an F# type definition.
     member SetEntityAttribs: WellKnownEntityAttribs -> unit
 
+    /// Check if this entity has a specific well-known attribute, computing and caching flags if needed.
+    member HasWellKnownAttribute: flag: WellKnownEntityAttributes * computeFlags: (Attribs -> WellKnownEntityAttributes) -> bool
+
     member SetCompiledName: name: string option -> unit
 
     member SetExceptionInfo: exn_info: ExceptionInfo -> unit
@@ -1988,6 +1991,9 @@ type Val =
     member SetAttribs: attribs: Attribs -> unit
 
     member SetValAttribs: attribs: WellKnownValAttribs -> unit
+
+    /// Check if this val has a specific well-known attribute, computing and caching flags if needed.
+    member HasWellKnownAttribute: flag: WellKnownValAttributes * computeFlags: (Attribs -> WellKnownValAttributes) -> bool
 
     /// Set all the data on a value
     member SetData: tg: ValData -> unit

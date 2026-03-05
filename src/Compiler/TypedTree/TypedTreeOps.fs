@@ -3895,9 +3895,7 @@ let attribsHaveEntityFlag g (flag: WellKnownEntityAttributes) (attribs: Attribs)
 /// Map a WellKnownILAttributes flag to its WellKnownValAttributes equivalent.
 /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
 let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes) (entity: Entity) : bool =
-    let struct (result, wa, changed) = entity.EntityAttribs.CheckFlag(flag, computeEntityWellKnownFlags g)
-    if changed then entity.SetEntityAttribs(wa)
-    result
+    entity.HasWellKnownAttribute(flag, computeEntityWellKnownFlags g)
 
 /// Classify a single Val-level attribute, returning its well-known flag (or None).
 let classifyValAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownValAttributes =
@@ -4035,16 +4033,13 @@ let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttribute
 
 /// Check if a Val has a specific well-known attribute, computing and caching flags if needed.
 let ValHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (v: Val) : bool =
-    let struct (result, waNew, changed) = v.ValAttribs.CheckFlag(flag, computeValWellKnownFlags g)
-    if changed then v.SetValAttribs(waNew)
-    result
+    v.HasWellKnownAttribute(flag, computeValWellKnownFlags g)
 
 /// Query a three-state bool attribute on an entity. Returns bool option.
 let EntityTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownEntityAttributes) (falseFlag: WellKnownEntityAttributes) (entity: Entity) : bool option =
-    if not (EntityHasWellKnownAttribute g (trueFlag ||| falseFlag) entity) then
+    if not (entity.HasWellKnownAttribute(trueFlag ||| falseFlag, computeEntityWellKnownFlags g)) then
         Option.None
     else
-        // After EntityHasWellKnownAttribute, flags are guaranteed computed
         let struct (hasTrue, _, _) = entity.EntityAttribs.CheckFlag(trueFlag, computeEntityWellKnownFlags g)
         if hasTrue then Some true else Some false
 
