@@ -2475,6 +2475,14 @@ val EntityTryGetBoolAttribute:
     entity: Entity ->
         bool option
 
+/// Query a three-state bool attribute on a Val. Returns bool option.
+val ValTryGetBoolAttribute:
+    g: TcGlobals ->
+    trueFlag: WellKnownValAttributes ->
+    falseFlag: WellKnownValAttributes ->
+    v: Val ->
+        bool option
+
 val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 
 val HasFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool

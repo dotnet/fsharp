@@ -4043,6 +4043,14 @@ let EntityTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownEntityAttribute
         let struct (hasTrue, _, _) = entity.EntityAttribs.CheckFlag(trueFlag, computeEntityWellKnownFlags g)
         if hasTrue then Some true else Some false
 
+/// Query a three-state bool attribute on a Val. Returns bool option.
+let ValTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownValAttributes) (falseFlag: WellKnownValAttributes) (v: Val) : bool option =
+    if not (v.HasWellKnownAttribute(trueFlag ||| falseFlag, computeValWellKnownFlags g)) then
+        Option.None
+    else
+        let struct (hasTrue, _, _) = v.ValAttribs.CheckFlag(trueFlag, computeValWellKnownFlags g)
+        if hasTrue then Some true else Some false
+
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
 //
