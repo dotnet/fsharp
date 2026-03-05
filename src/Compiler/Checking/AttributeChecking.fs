@@ -231,6 +231,14 @@ let MethInfoHasAttribute g m attribSpec minfo  =
                     (fun _ -> Some ())
         |> Option.isSome
 
+/// Bundles the IL flag, Val flag, and AttribInfo for a well-known attribute
+/// that can appear on method infos across metadata kinds.
+[<Struct; NoEquality; NoComparison>]
+type WellKnownMethAttribute =
+    { ILFlag: WellKnownILAttributes
+      ValFlag: WellKnownValAttributes
+      AttribInfo: BuiltinAttribInfo }
+
 /// Fast O(1) attribute check for ILMeth (cached IL flags) and FSMeth (cached Val flags).
 /// Falls back to MethInfoHasAttribute for provided methods.
 let rec MethInfoHasWellKnownAttribute g (m: range) (ilFlag: WellKnownILAttributes) (valFlag: WellKnownValAttributes) (attribSpec: BuiltinAttribInfo) (minfo: MethInfo) =
@@ -242,6 +250,10 @@ let rec MethInfoHasWellKnownAttribute g (m: range) (ilFlag: WellKnownILAttribute
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth _ -> MethInfoHasAttribute g m attribSpec minfo
 #endif
+
+/// Check if a MethInfo has a well-known attribute, using a bundled spec.
+let MethInfoHasWellKnownAttributeSpec (g: TcGlobals) (m: range) (spec: WellKnownMethAttribute) (minfo: MethInfo) =
+    MethInfoHasWellKnownAttribute g m spec.ILFlag spec.ValFlag spec.AttribInfo minfo
 
 let private CheckCompilerFeatureRequiredAttribute cattrs msg m =
     // In some cases C# will generate both ObsoleteAttribute and CompilerFeatureRequiredAttribute.

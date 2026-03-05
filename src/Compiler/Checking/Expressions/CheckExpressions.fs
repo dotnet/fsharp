@@ -10218,7 +10218,14 @@ and TcMethodApplication_CheckArguments
                     | Some (unnamedInfo, namedInfo) ->
                         let calledObjArgTys = meth.CalledObjArgTys mMethExpr
                         if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy ->
-                            let noEagerConstraintApplication = MethInfoHasWellKnownAttribute g mMethExpr WellKnownILAttributes.NoEagerConstraintApplicationAttribute WellKnownValAttributes.NoEagerConstraintApplicationAttribute g.attrib_NoEagerConstraintApplicationAttribute meth.Method
+                            let noEagerConstraintApplication =
+                                MethInfoHasWellKnownAttributeSpec
+                                    g
+                                    mMethExpr
+                                    { ILFlag = WellKnownILAttributes.NoEagerConstraintApplicationAttribute
+                                      ValFlag = WellKnownValAttributes.NoEagerConstraintApplicationAttribute
+                                      AttribInfo = g.attrib_NoEagerConstraintApplicationAttribute }
+                                    meth.Method
 
                             // The logic associated with NoEagerConstraintApplicationAttribute is part of the
                             // Tasks and Resumable Code RFC
