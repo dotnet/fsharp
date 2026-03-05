@@ -4321,21 +4321,21 @@ let IsTyconUnseenObsoleteSpec ad g amap m (x: TyconRef) allowObsolete =
     not (IsEntityAccessible amap m ad x) ||
     ((not allowObsolete) &&
       (if x.IsILTycon then
-          CheckILAttributesForUnseenStored g x.ILTyconRawMetadata.CustomAttrsStored m
+          CheckILAttributesForUnseenStored g x.ILTyconRawMetadata.CustomAttrsStored
        else
-          CheckFSharpAttributesForUnseen g x.Attribs m allowObsolete))
+          CheckFSharpAttributesForUnseen g x.Attribs allowObsolete))
 
 let IsTyconUnseen ad g amap m allowObsolete (x: TyconRef) = IsTyconUnseenObsoleteSpec ad g amap m x allowObsolete
 
-let IsValUnseen ad g m allowObsolete (v: ValRef) =
+let IsValUnseen ad g _m allowObsolete (v: ValRef) =
     v.IsCompilerGenerated ||
     v.Deref.IsClassConstructor ||
     not (IsValAccessible ad v) ||
-    not allowObsolete && CheckFSharpAttributesForUnseen g v.Attribs m allowObsolete
+    not allowObsolete && CheckFSharpAttributesForUnseen g v.Attribs allowObsolete
 
 let IsUnionCaseUnseen ad g amap m allowObsolete (ucref: UnionCaseRef) =
     not (IsUnionCaseAccessible amap m ad ucref) ||
-    not allowObsolete && (IsTyconUnseen ad g amap m allowObsolete ucref.TyconRef || CheckFSharpAttributesForUnseen g ucref.Attribs m allowObsolete)
+    not allowObsolete && (IsTyconUnseen ad g amap m allowObsolete ucref.TyconRef || CheckFSharpAttributesForUnseen g ucref.Attribs allowObsolete)
 
 let ItemIsUnseen ad g amap m allowObsolete item =
     match item with

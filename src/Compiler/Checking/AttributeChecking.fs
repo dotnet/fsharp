@@ -275,7 +275,7 @@ let private extractILAttributeInfo namedArgs =
     let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
     (diagnosticId, urlFormat)
 
-let private CheckILExperimentalAttributes (_g: TcGlobals) cattrs m =
+let private CheckILExperimentalAttributes cattrs m =
     match cattrs with
     // [Experimental("DiagnosticId")]
     // [Experimental(diagnosticId: "DiagnosticId")]
@@ -342,7 +342,7 @@ let private CheckILObsoleteAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs 
 let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     trackErrors {
         do! CheckILObsoleteAttributes g isByrefLikeTyconRef cattrs m
-        do! CheckILExperimentalAttributes g cattrs m
+        do! CheckILExperimentalAttributes cattrs m
     }
 
 let private extractObsoleteAttributeInfo namedArgs =
@@ -451,13 +451,15 @@ let private CheckProvidedAttributes (g: TcGlobals) m (provAttribs: Tainted<IProv
 
 /// Indicate if IL attributes contain 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 /// Uses cached well-known flags for O(1) check when ILAttributesStored is available.
-let CheckILAttributesForUnseenStored (g: TcGlobals) (cattrsStored: ILAttributesStored) _m =
+/// See also: CheckILAttributesForUnseen for the non-cached variant on ILAttributes.
+let CheckILAttributesForUnseenStored (g: TcGlobals) (cattrsStored: ILAttributesStored) =
     if cattrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.ObsoleteAttribute) then
         not (cattrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.IsByRefLikeAttribute))
     else
         false
 
 /// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
+/// Non-cached variant operating on ILAttributes directly. See CheckILAttributesForUnseenStored for cached version.
 let CheckILAttributesForUnseen (cattrs: ILAttributes) =
     cattrs.HasWellKnownAttribute(WellKnownILAttributes.ObsoleteAttribute)
     && not (cattrs.HasWellKnownAttribute(WellKnownILAttributes.IsByRefLikeAttribute))
@@ -485,7 +487,7 @@ let CheckFSharpAttributesForObsolete (g: TcGlobals) attribs =
 
 /// Indicates if a list of F# attributes contains 'ObsoleteAttribute' or CompilerMessageAttribute', which has an IsHidden argument
 /// May be used to suppress items from intellisense.
-let CheckFSharpAttributesForUnseen g attribs _m allowObsolete = 
+let CheckFSharpAttributesForUnseen g attribs allowObsolete = 
     not (isNil attribs) &&         
     (not allowObsolete && CheckFSharpAttributesForObsolete g attribs || CheckFSharpAttributesForHidden g attribs)
       
@@ -584,7 +586,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo allowObsolete =
     let isUnseenByObsoleteAttrib () =
         match BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(not allowObsolete && CheckILAttributesForUnseen ilAttribs)) 
-                (fun fsAttribs -> Some(CheckFSharpAttributesForUnseen g fsAttribs m allowObsolete))
+                (fun fsAttribs -> Some(CheckFSharpAttributesForUnseen g fsAttribs allowObsolete))
 #if !NO_TYPEPROVIDERS
                 (fun provAttribs -> Some(not allowObsolete && CheckProvidedAttributesForUnseen provAttribs m))
 #else
@@ -623,14 +625,14 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo allowObsolete =
 
 /// Indicate if a property has 'Obsolete' or 'CompilerMessageAttribute'.
 /// Used to suppress the item in intellisense.
-let PropInfoIsUnseen m allowObsolete pinfo = 
+let PropInfoIsUnseen _m allowObsolete pinfo = 
     match pinfo with
     | ILProp (ILPropInfo(_, pdef) as ilpinfo) -> 
         // Properties on .NET tuple types are resolvable but unseen
         isAnyTupleTy pinfo.TcGlobals ilpinfo.ILTypeInfo.ToType || 
         CheckILAttributesForUnseen pdef.CustomAttrs
     | FSProp (g, _, Some vref, _) 
-    | FSProp (g, _, _, Some vref) -> CheckFSharpAttributesForUnseen g vref.Attribs m allowObsolete
+    | FSProp (g, _, _, Some vref) -> CheckFSharpAttributesForUnseen g vref.Attribs allowObsolete
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
 #if !NO_TYPEPROVIDERS
     | ProvidedProp (_amap, pi, m) -> 

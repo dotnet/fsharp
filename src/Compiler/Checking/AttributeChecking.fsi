@@ -82,13 +82,13 @@ val CheckFSharpAttributes: g: TcGlobals -> attribs: Attrib list -> m: range -> O
 
 val CheckILAttributesForUnseen: cattrs: ILAttributes -> bool
 
-val CheckILAttributesForUnseenStored: g: TcGlobals -> cattrsStored: ILAttributesStored -> _m: 'a -> bool
+val CheckILAttributesForUnseenStored: g: TcGlobals -> cattrsStored: ILAttributesStored -> bool
 
 val CheckFSharpAttributesForHidden: g: TcGlobals -> attribs: Attrib list -> bool
 
 val CheckFSharpAttributesForObsolete: g: TcGlobals -> attribs: Attrib list -> bool
 
-val CheckFSharpAttributesForUnseen: g: TcGlobals -> attribs: Attrib list -> _m: 'a -> allowObsolete: bool -> bool
+val CheckFSharpAttributesForUnseen: g: TcGlobals -> attribs: Attrib list -> allowObsolete: bool -> bool
 
 val CheckPropInfoAttributes: pinfo: PropInfo -> m: range -> OperationResult<unit>
 
@@ -99,7 +99,7 @@ val CheckMethInfoAttributes:
 
 val MethInfoIsUnseen: g: TcGlobals -> m: range -> ty: TType -> minfo: MethInfo -> allowObsolete: bool -> bool
 
-val PropInfoIsUnseen: m: 'a -> allowObsolete: bool -> pinfo: PropInfo -> bool
+val PropInfoIsUnseen: _m: 'a -> allowObsolete: bool -> pinfo: PropInfo -> bool
 
 val CheckEntityAttributes: g: TcGlobals -> tcref: TyconRef -> m: range -> OperationResult<unit>
 
