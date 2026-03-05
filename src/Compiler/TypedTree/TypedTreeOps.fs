@@ -3838,6 +3838,54 @@ let classifyAssemblyAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownAssemblyAt
         | _ -> WellKnownAssemblyAttributes.None
     | ValueNone -> WellKnownAssemblyAttributes.None
 
+// ---------------------------------------------------------------
+// Well-Known Attribute APIs — Navigation Guide
+// ---------------------------------------------------------------
+//
+// This section provides O(1) cached lookups for well-known attributes.
+// Choose the right API based on what you have and what you need:
+//
+// EXISTENCE CHECKS (cached, O(1) after first call):
+//   EntityHasWellKnownAttribute  g flag entity  — Entity (type/module)
+//   ValHasWellKnownAttribute     g flag v       — Val (value/member)
+//   ArgReprInfoHasWellKnownAttribute g flag arg — ArgReprInfo (parameter)
+//
+// AD-HOC CHECKS (no cache, re-scans each call):
+//   attribsHaveEntityFlag  g flag attribs  — raw Attrib list, entity flags
+//   attribsHaveValFlag     g flag attribs  — raw Attrib list, val flags
+//
+// DATA EXTRACTION (active patterns):
+//   (|EntityAttrib|_|)       g flag attribs  — returns full Attrib
+//   (|ValAttrib|_|)          g flag attribs  — returns full Attrib
+//   (|EntityAttribInt|_|)    g flag attribs  — extracts int32 argument
+//   (|EntityAttribString|_|) g flag attribs  — extracts string argument
+//   (|ValAttribInt|_|)       g flag attribs  — extracts int32 argument
+//   (|ValAttribString|_|)    g flag attribs  — extracts string argument
+//
+// BOOL ATTRIBUTE QUERIES (three-state: Some true / Some false / None):
+//   EntityTryGetBoolAttribute  g trueFlag falseFlag entity
+//   ValTryGetBoolAttribute     g trueFlag falseFlag v
+//
+// IL-LEVEL (operates on ILAttribute / ILAttributes):
+//   classifyILAttrib           attr           — classify a single IL attr
+//   (|ILAttribDecoded|_|)      flag cattrs    — find & decode by flag
+//   ILAttributes.HasWellKnownAttribute(flag)  — existence check (no cache)
+//   ILAttributesStored.HasWellKnownAttribute(g, flag) — cached existence
+//
+// CROSS-METADATA (IL + F# + Provided type dispatch):
+//   TyconRefHasWellKnownAttribute  g flag tcref
+//   TyconRefAllowsNull             g tcref
+//
+// CROSS-METADATA (in AttributeChecking.fs):
+//   MethInfoHasWellKnownAttribute      g m ilFlag valFlag attribSpec minfo
+//   MethInfoHasWellKnownAttributeSpec  g m spec minfo  — convenience wrapper
+//
+// CLASSIFICATION (maps attribute → flag enum):
+//   classifyEntityAttrib  g attrib  — Attrib → WellKnownEntityAttributes
+//   classifyValAttrib     g attrib  — Attrib → WellKnownValAttributes
+//   classifyILAttrib      attr      — ILAttribute → WellKnownILAttributes
+// ---------------------------------------------------------------
+
 /// Shared combinator: find first attrib matching a flag via a classify function.
 let inline internal tryFindAttribByClassifier ([<InlineIfLambda>] classify: TcGlobals -> Attrib -> 'Flag) (none: 'Flag) (g: TcGlobals) (flag: 'Flag) (attribs: Attribs) : Attrib option =
     attribs |> List.tryFind (fun attrib -> classify g attrib &&& flag <> none)
