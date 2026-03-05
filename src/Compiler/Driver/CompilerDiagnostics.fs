@@ -125,7 +125,8 @@ type Exception with
         | InternalException(_, _, m)
         | InterfaceNotRevealed(_, _, m)
         | WrappedError(_, m)
-        | PatternMatchCompilation.MatchIncomplete(_, _, m, _)
+        | PatternMatchCompilation.MatchIncomplete(_, _, m)
+        | PatternMatchCompilation.MatchIncompleteForLoopHint(PatternMatchCompilation.MatchIncomplete(_, _, m))
         | PatternMatchCompilation.EnumMatchIncomplete(_, _, m)
         | PatternMatchCompilation.RuleNeverMatched m
         | ValNotMutable(_, _, m)
@@ -238,6 +239,7 @@ type Exception with
         | NameClash _ -> 23
         // 24 cannot be reused
         | PatternMatchCompilation.MatchIncomplete _ -> 25
+        | PatternMatchCompilation.MatchIncompleteForLoopHint _ -> 25
         | PatternMatchCompilation.RuleNeverMatched _ -> 26
 
         | ValNotMutable _ -> 27
@@ -1791,7 +1793,7 @@ type Exception with
 
         | WrappedError(e, _) -> e.Output(os, suggestNames)
 
-        | PatternMatchCompilation.MatchIncomplete(isComp, cexOpt, _, isForLoop) ->
+        | PatternMatchCompilation.MatchIncomplete(isComp, cexOpt, _) ->
             os.AppendString(MatchIncomplete1E().Format)
 
             match cexOpt with
@@ -1799,8 +1801,18 @@ type Exception with
             | Some(cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
             | Some(cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
 
-            if isForLoop then
-                os.AppendString(MatchIncompleteForLoopE().Format)
+            if isComp then
+                os.AppendString(MatchIncomplete4E().Format)
+
+        | PatternMatchCompilation.MatchIncompleteForLoopHint(PatternMatchCompilation.MatchIncomplete(isComp, cexOpt, _)) ->
+            os.AppendString(MatchIncomplete1E().Format)
+
+            match cexOpt with
+            | None -> ()
+            | Some(cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
+            | Some(cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
+
+            os.AppendString(MatchIncompleteForLoopE().Format)
 
             if isComp then
                 os.AppendString(MatchIncomplete4E().Format)

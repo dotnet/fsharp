@@ -62,8 +62,6 @@ val internal CompilePattern:
     // warn on unused?
     bool ->
     ActionOnFailure ->
-    // is this a for-loop binding pattern?
-    bool ->
     Val * Typars * Expr option ->
         // input type-checked syntax of pattern matching
         MatchClause list ->
@@ -74,10 +72,11 @@ val internal CompilePattern:
             DecisionTree * DecisionTreeTarget list
 
 /// Exception raised when a pattern match is incomplete.
-/// Fields: isComputationExpression * (counterExample * isShownAsFieldPattern) option * range * isForLoopBinding
-/// The isForLoopBinding flag indicates the match originated from a for-loop pattern (e.g., `for 1 in xs`),
-/// which changes the diagnostic hint to suggest using a wildcard pattern.
-exception internal MatchIncomplete of bool * (string * bool) option * range * bool
+/// Fields: isComputationExpression * (counterExample * isShownAsFieldPattern) option * range
+exception internal MatchIncomplete of bool * (string * bool) option * range
+
+/// Wrapper that adds a for-loop hint to an existing MatchIncomplete diagnostic.
+exception internal MatchIncompleteForLoopHint of exn
 
 exception internal RuleNeverMatched of range
 

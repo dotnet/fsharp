@@ -8267,11 +8267,31 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
             | SynPat.Paren(SynPat.Typed(SynPat.Const _, _, _), _) -> true
             | _ -> false
 
-        CompilePatternForMatch
-            cenv env synEnumExpr.Range pat.Range false IgnoreWithWarning isConstantPattern (elemVar, [], None)
-            [MatchClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, None), mIn)]
-            enumElemTy
-            overallTy.Commit
+        let compileMatch () =
+            CompilePatternForMatch
+                cenv env synEnumExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None)
+                [MatchClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, None), mIn)]
+                enumElemTy
+                overallTy.Commit
+
+        if isConstantPattern then
+            use _ =
+                UseTransformedDiagnosticsLogger(fun oldLogger ->
+                    { new DiagnosticsLogger("forLoopConstantHint") with
+                        member _.DiagnosticSink(diagnostic) =
+                            match diagnostic.Exception with
+                            | MatchIncomplete _ ->
+                                oldLogger.DiagnosticSink(
+                                    { diagnostic with
+                                        Exception = MatchIncompleteForLoopHint(diagnostic.Exception) })
+                            | _ -> oldLogger.DiagnosticSink(diagnostic)
+
+                        member _.ErrorCount = oldLogger.ErrorCount
+                    })
+
+            compileMatch ()
+        else
+            compileMatch ()
 
     // Apply the fixup to bind the elemVar if needed
     let bodyExpr = bodyExprFixup elemVar bodyExpr
@@ -11809,7 +11829,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
         let mkPatBind (bodyExpr, bodyExprTy) =
             let valsDefinedByMatching = ListSet.remove valEq patternInputTmp allValsDefinedByPattern
             let clauses = [MatchClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, None), m)]
-            let matchExpr = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException false (patternInputTmp, generalizedTypars, Some rhsExpr) clauses tauTy bodyExprTy
+            let matchExpr = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (patternInputTmp, generalizedTypars, Some rhsExpr) clauses tauTy bodyExprTy
 
             let matchExpr =
                 if declKind.IsConvertToLinearBindings then
