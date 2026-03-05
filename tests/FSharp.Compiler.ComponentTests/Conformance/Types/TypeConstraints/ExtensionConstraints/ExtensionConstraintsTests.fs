@@ -55,11 +55,32 @@ module ExtensionConstraintsTests =
         // Prior to RFC-1043, weak resolution eagerly resolved this to
         // DateTime -> TimeSpan -> DateTime. Now it stays generic because
         // weak resolution is deferred for inline code.
+        // H1: Prove y is truly generic by calling f1 with two different types.
+        // M4: Exercises a runtime-verified extension operator on DateTime.
         FSharp """
 module WeakResDateTime
 open System
+
+type MyOffset = { Hours: float }
+
+type System.DateTime with
+    static member (+) (dt: DateTime, off: MyOffset) = dt.AddHours(off.Hours)
+
 let inline f1 (x: DateTime) y = x + y
-let r = f1 DateTime.MinValue (TimeSpan.FromHours(1.0))
+
+// Call 1: y = TimeSpan (built-in DateTime + TimeSpan)
+let r1 = f1 DateTime.MinValue (TimeSpan.FromHours(1.0))
+
+// Call 2: y = MyOffset (extension DateTime + MyOffset)
+// This ONLY compiles if y is generic — proves weak resolution deferral works
+let r2 = f1 DateTime.MinValue { Hours = 2.0 }
+
+// Verify both calls produce correct results
+let expected1 = DateTime.MinValue.Add(TimeSpan.FromHours(1.0))
+if r1 <> expected1 then failwith (sprintf "r1: Expected %A, got %A" expected1 r1)
+
+let expected2 = DateTime.MinValue.AddHours(2.0)
+if r2 <> expected2 then failwith (sprintf "r2: Expected %A, got %A" expected2 r2)
         """
         |> asExe
         |> withLangVersionPreview
