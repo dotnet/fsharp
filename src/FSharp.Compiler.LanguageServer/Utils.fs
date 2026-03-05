@@ -47,9 +47,16 @@ type FSharpDiagnosticExtensions =
 
     [<Extension>]
     static member ToLspDiagnostic(this: FSharpDiagnostic) =
+        let severity =
+            match this.Severity with
+            | FSharpDiagnosticSeverity.Error -> DiagnosticSeverity.Error
+            | FSharpDiagnosticSeverity.Warning -> DiagnosticSeverity.Warning
+            | FSharpDiagnosticSeverity.Info -> DiagnosticSeverity.Information
+            // TODO consider not emitting this diagnostic if severity is Hidden
+            | FSharpDiagnosticSeverity.Hidden -> DiagnosticSeverity.Hint
         Diagnostic(
             Range = this.Range.ToLspRange(),
-            Severity = DiagnosticSeverity.Error,
+            Severity = severity,
             Message = $"LSP: {this.Message}",
             //Source = "Intellisense",
             Code = SumType<int, _> this.ErrorNumberText
