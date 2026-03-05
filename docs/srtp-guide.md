@@ -46,21 +46,27 @@ When solving an SRTP constraint:
 
 ### Scope Capture
 
-SRTP constraints are resolved using members in scope at the **call site**, not where the generic function is defined:
+With `--langversion:preview`, extrinsic extension members (defined in a separate module from the type) participate in SRTP constraint resolution when they are in scope:
 
 ```fsharp
 module TypeDefs =
     type Widget = { V: int }
+
+module Extensions =
+    open TypeDefs
     type Widget with
         static member (+) (a: Widget, b: Widget) = { V = a.V + b.V }
 
 module Lib =
-    let inline add (x: ^T) (y: ^T) = x + y  // Widget.(+) NOT in scope here
+    open TypeDefs
+    open Extensions  // extrinsic Widget.(+) brought into scope
+    let inline add (x: ^T) (y: ^T) = x + y
 
 module Consumer =
-    open TypeDefs  // Widget.(+) brought into scope at the call site
+    open TypeDefs
+    open Extensions
     open Lib
-    let r = add { V = 1 } { V = 2 }  // resolved using Widget.(+) from TypeDefs
+    let r = add { V = 1 } { V = 2 }  // resolved using Widget.(+) from Extensions
 ```
 
 ### Known Limitations
