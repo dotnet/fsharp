@@ -2251,9 +2251,8 @@ if resultFloat <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" resultF
 
     [<Fact>]
     let ``AllowOverloadOnReturnType disambiguates at call site with type annotation`` () =
-        // [<AllowOverloadOnReturnType>] is defined in the locally-built FSharp.Core
-        // but not yet shipped in the SDK's FSharp.Core, so the attribute is unresolved.
-        // This test asserts the expected compile error until the attribute ships.
+        // [<AllowOverloadOnReturnType>] enables return-type-based overload resolution
+        // for arbitrary methods. The attribute is defined in the locally-built FSharp.Core.
         FSharp """
 module TestAllowOverloadOnReturnType
 
@@ -2268,10 +2267,10 @@ let resultFloat: float = Converter.Convert("42")
 if resultInt <> 42 then failwith (sprintf "Expected 42 but got %d" resultInt)
 if resultFloat <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" resultFloat)
         """
+        |> asExe
         |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 39
+        |> compileAndRun
+        |> shouldSucceed
 
     [<Fact>]
     let ``Overloads with different parameter types resolve without ambiguity`` () =
