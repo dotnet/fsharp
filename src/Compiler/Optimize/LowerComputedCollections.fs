@@ -285,16 +285,17 @@ module List =
                 // the sequence point lands on the ldloca (stack-empty) rather than
                 // inside the body argument (stack-non-empty after the collector
                 // address has been pushed).  Only PDB metadata changes—no IL change.
-                let spBody, bodyForAdd =
+                let addExpr =
                     match body with
                     | Expr.Let(TBind(v, rhs, DebugPointAtBinding.Yes spBind), innerBody, m, flags) ->
-                        spBind, Expr.Let(TBind(v, rhs, DebugPointAtBinding.NoneAtInvisible), innerBody, m, flags)
+                        let bodyForAdd = Expr.Let(TBind(v, rhs, DebugPointAtBinding.NoneAtInvisible), innerBody, m, flags)
+                        Expr.DebugPoint(DebugPointAtLeafExpr.Yes spBind, mkCallCollectorAdd tcVal g reader mBody collector bodyForAdd)
                     | _ ->
-                        mBody, body
+                        mkCallCollectorAdd tcVal g reader mIn collector body
 
                 mkInvisibleLet mIn loopVal headOrDefaultExpr
                     (mkSequential mIn
-                        (Expr.DebugPoint(DebugPointAtLeafExpr.Yes spBody, mkCallCollectorAdd tcVal g reader mBody collector bodyForAdd))
+                        addExpr
                         (mkSequential mIn
                             (mkValSet mIn (mkLocalValRef currentVar) nextExpr)
                             (mkValSet mIn (mkLocalValRef nextVar) tailOrNullExpr)))
