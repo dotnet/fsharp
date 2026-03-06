@@ -6708,7 +6708,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
                 | None ->
                     match tryTcrefOfAppTy g ty with
                     | ValueSome tcref ->
-                        TryFindTyconRefStringAttribute g mWholeExpr g.attrib_DefaultMemberAttribute tcref
+                        TryFindTyconRefStringAttributeFast g mWholeExpr WellKnownILAttributes.DefaultMemberAttribute g.attrib_DefaultMemberAttribute tcref
                     | _ ->
                         let item = Some "Item"
                         match AllPropInfosOfTypeInScope ResultCollectionSettings.AtMostOneResult cenv.infoReader env.NameEnv item ad IgnoreOverrides mWholeExpr ty with

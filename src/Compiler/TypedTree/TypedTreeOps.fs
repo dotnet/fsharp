@@ -4104,28 +4104,56 @@ let ValTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownValAttributes) (fa
         let struct (hasTrue, _, _) = v.ValAttribs.CheckFlag(trueFlag, computeValWellKnownFlags g)
         if hasTrue then Some true else Some false
 
+/// Shared core for binding attributes on type definitions, supporting an optional
+/// WellKnownILAttributes flag for O(1) early exit on the IL metadata path.
+let private tryBindTyconRefAttributeCore
+    g
+    (m: range)
+    (ilFlag: WellKnownILAttributes voption)
+    (AttribInfo(atref, _) as args)
+    (tcref: TyconRef)
+    f1
+    f2
+    (f3: obj option list * (string * obj option) list -> 'a option)
+    : 'a option
+    =
+    ignore m
+    ignore f3
+
+    match metadataOfTycon tcref.Deref with
+#if !NO_TYPEPROVIDERS
+    | ProvidedTypeMetadata info ->
+        let provAttribs =
+            info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
+
+        match
+            provAttribs.PUntaint(
+                (fun a ->
+                    a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, atref.FullName)),
+                m
+            )
+        with
+        | Some args -> f3 args
+        | None -> None
+#endif
+    | ILTypeMetadata(TILObjectReprData(_, _, tdef)) ->
+        match ilFlag with
+        | ValueSome flag when not (tdef.HasWellKnownAttribute(g, flag)) -> None
+        | _ ->
+            match TryDecodeILAttribute atref tdef.CustomAttrs with
+            | Some attr -> f1 attr
+            | _ -> None
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        match TryFindFSharpAttribute g args tcref.Attribs with
+        | Some attr -> f2 attr
+        | _ -> None
+
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
 //
 // This is used for AttributeUsageAttribute, DefaultMemberAttribute and ConditionalAttribute (on attribute types)
-let TryBindTyconRefAttribute g (m: range) (AttribInfo (atref, _) as args) (tcref: TyconRef) f1 f2 (f3: obj option list * (string * obj option) list -> 'a option) : 'a option = 
-    ignore m; ignore f3
-    match metadataOfTycon tcref.Deref with 
-#if !NO_TYPEPROVIDERS
-    | ProvidedTypeMetadata info -> 
-        let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
-        match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, atref.FullName)), m) with
-        | Some args -> f3 args
-        | None -> None
-#endif
-    | ILTypeMetadata (TILObjectReprData(_, _, tdef)) -> 
-        match TryDecodeILAttribute atref tdef.CustomAttrs with 
-        | Some attr -> f1 attr
-        | _ -> None
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-        match TryFindFSharpAttribute g args tcref.Attribs with 
-        | Some attr -> f2 attr
-        | _ -> None
+let TryBindTyconRefAttribute g (m: range) args (tcref: TyconRef) f1 f2 f3 : 'a option =
+    tryBindTyconRefAttributeCore g m ValueNone args tcref f1 f2 f3
 
 let TryFindTyconRefBoolAttribute g m attribSpec tcref =
     TryBindTyconRefAttribute g m attribSpec tcref 
@@ -4161,6 +4189,30 @@ let TryFindTyconRefStringAttribute g m attribSpec tcref =
                 (function [ILAttribElem.String (Some msg) ], _ -> Some msg | _ -> None)
                 (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
                 (function [ Some (:? string as msg : obj) ], _ -> Some msg | _ -> None)
+
+/// Like TryBindTyconRefAttribute but with a fast-path flag check on the IL metadata path.
+/// Skips the full attribute scan if the cached flag indicates the attribute is absent.
+let TryBindTyconRefAttributeWithILFlag g (m: range) (ilFlag: WellKnownILAttributes) args (tcref: TyconRef) f1 f2 f3 : 'a option =
+    tryBindTyconRefAttributeCore g m (ValueSome ilFlag) args tcref f1 f2 f3
+
+/// Like TryFindTyconRefStringAttribute but with a fast-path flag check on the IL path.
+/// Use this when the attribute has a corresponding WellKnownILAttributes flag for O(1) early exit.
+let TryFindTyconRefStringAttributeFast g m ilFlag attribSpec tcref =
+    TryBindTyconRefAttributeWithILFlag
+        g
+        m
+        ilFlag
+        attribSpec
+        tcref
+        (function
+        | [ ILAttribElem.String(Some msg) ], _ -> Some msg
+        | _ -> None)
+        (function
+        | Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg
+        | _ -> None)
+        (function
+        | [ Some(:? string as msg: obj) ], _ -> Some msg
+        | _ -> None)
 
 /// Check if a type definition has a specific attribute
 let TyconRefHasAttribute g m attribSpec tcref =

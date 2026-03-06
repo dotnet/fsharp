@@ -2494,6 +2494,11 @@ val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib 
 /// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)
 val TryFindTyconRefStringAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> string option
 
+/// Like TryFindTyconRefStringAttribute but with a fast-path flag check on the IL path.
+/// Use this when the attribute has a corresponding WellKnownILAttributes flag for O(1) early exit.
+val TryFindTyconRefStringAttributeFast:
+    TcGlobals -> range -> WellKnownILAttributes -> BuiltinAttribInfo -> TyconRef -> string option
+
 /// Try to find a specific attribute on a type definition, where the attribute accepts a bool argument.
 val TryFindTyconRefBoolAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool option
 
