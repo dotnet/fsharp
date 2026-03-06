@@ -2787,8 +2787,14 @@ type internal TypeCheckInfo
     member _.GetFormatSpecifierLocationsAndArity() =
         sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
-    member _.GetSemanticClassification(range: range option) : SemanticClassificationItem[] =
-        sResolutions.GetSemanticClassification(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range)
+    member _.GetSemanticClassification(range: range option, ?relatedSymbolKinds: RelatedSymbolUseKind) : SemanticClassificationItem[] =
+        sResolutions.GetSemanticClassification(
+            g,
+            amap,
+            sSymbolUses.GetFormatSpecifierLocationsAndArity(),
+            range,
+            ?relatedSymbolKinds = relatedSymbolKinds
+        )
 
     /// The resolutions in the file
     member _.ScopeResolutions = sResolutions
@@ -3509,10 +3515,10 @@ type FSharpCheckFileResults
         | None -> [||]
         | Some(scope, _builderOpt) -> scope.GetFormatSpecifierLocationsAndArity()
 
-    member _.GetSemanticClassification(range: range option) =
+    member _.GetSemanticClassification(range: range option, ?relatedSymbolKinds: RelatedSymbolUseKind) =
         match details with
         | None -> [||]
-        | Some(scope, _builderOpt) -> scope.GetSemanticClassification(range)
+        | Some(scope, _builderOpt) -> scope.GetSemanticClassification(range, ?relatedSymbolKinds = relatedSymbolKinds)
 
     member _.PartialAssemblySignature =
         match details with
@@ -3557,13 +3563,13 @@ type FSharpCheckFileResults
                             FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurrence, symbolUse.Range)
             }
 
-    member _.GetUsesOfSymbolInFile(symbol: FSharpSymbol, ?cancellationToken: CancellationToken) =
+    member _.GetUsesOfSymbolInFile(symbol: FSharpSymbol, ?relatedSymbolKinds: RelatedSymbolUseKind, ?cancellationToken: CancellationToken) =
         match details with
         | None -> [||]
         | Some(scope, _builderOpt) ->
             [|
                 for symbolUse in
-                    scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item)
+                    scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item, ?relatedSymbolKinds = relatedSymbolKinds)
                     |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurrence, symbolUse.Range) do
                     cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
 
