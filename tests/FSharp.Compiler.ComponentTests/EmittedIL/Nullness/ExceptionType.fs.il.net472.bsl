@@ -62,7 +62,35 @@
       IL_0002:  ldarg.2
       IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
                                                                            valuetype [runtime]System.Runtime.Serialization.StreamingContext)
-      IL_0008:  ret
+      IL_0008:  ldarg.0
+      IL_0009:  ldarg.1
+      IL_000a:  ldstr      "Data0"
+      IL_000f:  ldtoken    [runtime]System.String
+      IL_0014:  call       class [runtime]System.Type [runtime]System.Type::GetTypeFromHandle(valuetype [runtime]System.RuntimeTypeHandle)
+      IL_0019:  callvirt   instance object [runtime]System.Runtime.Serialization.SerializationInfo::GetValue(string,
+                                                                                                                    class [runtime]System.Type)
+      IL_001e:  castclass  [runtime]System.String
+      IL_0023:  stfld      string MyLibrary/JustStringE::Data0@
+      IL_0028:  ret
+    } 
+
+    .method public strict virtual instance void GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed
+    {
+      .custom instance void [runtime]System.Security.SecurityCriticalAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  ldarg.2
+      IL_0003:  call       instance void [runtime]System.Exception::GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo,
+                                                                                         valuetype [runtime]System.Runtime.Serialization.StreamingContext)
+      IL_0008:  ldarg.1
+      IL_0009:  ldstr      "Data0"
+      IL_000e:  ldarg.0
+      IL_000f:  ldfld      string MyLibrary/JustStringE::Data0@
+      IL_0014:  callvirt   instance void [runtime]System.Runtime.Serialization.SerializationInfo::AddValue(string,
+                                                                                                                  object)
+      IL_0019:  ret
     } 
 
     .method public hidebysig specialname instance string  get_Data0() cil managed
@@ -137,7 +165,50 @@
       IL_0002:  ldarg.2
       IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
                                                                            valuetype [runtime]System.Runtime.Serialization.StreamingContext)
-      IL_0008:  ret
+      IL_0008:  ldarg.0
+      IL_0009:  ldarg.1
+      IL_000a:  ldstr      "M1"
+      IL_000f:  ldtoken    [runtime]System.String
+      IL_0014:  call       class [runtime]System.Type [runtime]System.Type::GetTypeFromHandle(valuetype [runtime]System.RuntimeTypeHandle)
+      IL_0019:  callvirt   instance object [runtime]System.Runtime.Serialization.SerializationInfo::GetValue(string,
+                                                                                                                    class [runtime]System.Type)
+      IL_001e:  castclass  [runtime]System.String
+      IL_0023:  stfld      string MyLibrary/TwoStrings::M1@
+      IL_0028:  ldarg.0
+      IL_0029:  ldarg.1
+      IL_002a:  ldstr      "M2"
+      IL_002f:  ldtoken    [runtime]System.String
+      IL_0034:  call       class [runtime]System.Type [runtime]System.Type::GetTypeFromHandle(valuetype [runtime]System.RuntimeTypeHandle)
+      IL_0039:  callvirt   instance object [runtime]System.Runtime.Serialization.SerializationInfo::GetValue(string,
+                                                                                                                    class [runtime]System.Type)
+      IL_003e:  castclass  [runtime]System.String
+      IL_0043:  stfld      string MyLibrary/TwoStrings::M2@
+      IL_0048:  ret
+    } 
+
+    .method public strict virtual instance void GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed
+    {
+      .custom instance void [runtime]System.Security.SecurityCriticalAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  ldarg.2
+      IL_0003:  call       instance void [runtime]System.Exception::GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo,
+                                                                                         valuetype [runtime]System.Runtime.Serialization.StreamingContext)
+      IL_0008:  ldarg.1
+      IL_0009:  ldstr      "M1"
+      IL_000e:  ldarg.0
+      IL_000f:  ldfld      string MyLibrary/TwoStrings::M1@
+      IL_0014:  callvirt   instance void [runtime]System.Runtime.Serialization.SerializationInfo::AddValue(string,
+                                                                                                                  object)
+      IL_0019:  ldarg.1
+      IL_001a:  ldstr      "M2"
+      IL_001f:  ldarg.0
+      IL_0020:  ldfld      string MyLibrary/TwoStrings::M2@
+      IL_0025:  callvirt   instance void [runtime]System.Runtime.Serialization.SerializationInfo::AddValue(string,
+                                                                                                                  object)
+      IL_002a:  ret
     } 
 
     .method public hidebysig specialname instance string  get_M1() cil managed
@@ -226,7 +297,35 @@
       IL_0002:  ldarg.2
       IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
                                                                            valuetype [runtime]System.Runtime.Serialization.StreamingContext)
-      IL_0008:  ret
+      IL_0008:  ldarg.0
+      IL_0009:  ldarg.1
+      IL_000a:  ldstr      "Data0"
+      IL_000f:  ldtoken    [runtime]System.String
+      IL_0014:  call       class [runtime]System.Type [runtime]System.Type::GetTypeFromHandle(valuetype [runtime]System.RuntimeTypeHandle)
+      IL_0019:  callvirt   instance object [runtime]System.Runtime.Serialization.SerializationInfo::GetValue(string,
+                                                                                                                    class [runtime]System.Type)
+      IL_001e:  castclass  [runtime]System.String
+      IL_0023:  stfld      string MyLibrary/NullableStringE::Data0@
+      IL_0028:  ret
+    } 
+
+    .method public strict virtual instance void GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed
+    {
+      .custom instance void [runtime]System.Security.SecurityCriticalAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  ldarg.2
+      IL_0003:  call       instance void [runtime]System.Exception::GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo,
+                                                                                         valuetype [runtime]System.Runtime.Serialization.StreamingContext)
+      IL_0008:  ldarg.1
+      IL_0009:  ldstr      "Data0"
+      IL_000e:  ldarg.0
+      IL_000f:  ldfld      string MyLibrary/NullableStringE::Data0@
+      IL_0014:  callvirt   instance void [runtime]System.Runtime.Serialization.SerializationInfo::AddValue(string,
+                                                                                                                  object)
+      IL_0019:  ret
     } 
 
     .method public hidebysig specialname instance string  get_Data0() cil managed
@@ -300,7 +399,35 @@
       IL_0002:  ldarg.2
       IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
                                                                            valuetype [runtime]System.Runtime.Serialization.StreamingContext)
-      IL_0008:  ret
+      IL_0008:  ldarg.0
+      IL_0009:  ldarg.1
+      IL_000a:  ldstr      "Message"
+      IL_000f:  ldtoken    [runtime]System.String
+      IL_0014:  call       class [runtime]System.Type [runtime]System.Type::GetTypeFromHandle(valuetype [runtime]System.RuntimeTypeHandle)
+      IL_0019:  callvirt   instance object [runtime]System.Runtime.Serialization.SerializationInfo::GetValue(string,
+                                                                                                                    class [runtime]System.Type)
+      IL_001e:  castclass  [runtime]System.String
+      IL_0023:  stfld      string MyLibrary/NullableMessage::Message@
+      IL_0028:  ret
+    } 
+
+    .method public strict virtual instance void GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed
+    {
+      .custom instance void [runtime]System.Security.SecurityCriticalAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  ldarg.2
+      IL_0003:  call       instance void [runtime]System.Exception::GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo,
+                                                                                         valuetype [runtime]System.Runtime.Serialization.StreamingContext)
+      IL_0008:  ldarg.1
+      IL_0009:  ldstr      "Message"
+      IL_000e:  ldarg.0
+      IL_000f:  ldfld      string MyLibrary/NullableMessage::Message@
+      IL_0014:  callvirt   instance void [runtime]System.Runtime.Serialization.SerializationInfo::AddValue(string,
+                                                                                                                  object)
+      IL_0019:  ret
     } 
 
     .method public hidebysig specialname virtual instance string  get_Message() cil managed
