@@ -8987,10 +8987,10 @@ and GenParamAttribs cenv paramTy attribs =
         &&& (WellKnownValAttributes.InAttribute
              ||| WellKnownValAttributes.OutAttribute
              ||| WellKnownValAttributes.OptionalAttribute
-             ||| WellKnownValAttributes.DefaultParameterValueAttribute
-             ||| WellKnownValAttributes.MarshalAsAttribute)
+             ||| WellKnownValAttributes.DefaultParameterValueAttribute)
 
     // Filter out IL-implicit attributes in a single pass (only if any are present)
+    // Note: MarshalAs is NOT filtered here — GenMarshal handles its own filtering.
     let attribs =
         if filterMask = WellKnownValAttributes.None then
             attribs
@@ -9002,8 +9002,7 @@ and GenParamAttribs cenv paramTy attribs =
                 (WellKnownValAttributes.InAttribute
                  ||| WellKnownValAttributes.OutAttribute
                  ||| WellKnownValAttributes.OptionalAttribute
-                 ||| WellKnownValAttributes.DefaultParameterValueAttribute
-                 ||| WellKnownValAttributes.MarshalAsAttribute)
+                 ||| WellKnownValAttributes.DefaultParameterValueAttribute)
 
     let Marshal, attribs = GenMarshal cenv valFlags attribs
     inFlag, outFlag, optionalFlag, defaultValue, Marshal, attribs
