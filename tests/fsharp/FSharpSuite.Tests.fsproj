@@ -97,13 +97,6 @@
     <EmbeddedResource Remove="**" />
   </ItemGroup>
 
-  <!-- xUnit3 configuration for this test project (MTP mode) -->
-  <ItemGroup>
-    <Content Include="testconfig.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
