@@ -16,6 +16,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.InfoReader
@@ -1795,6 +1796,8 @@ type ITypecheckResultsSink =
 
     abstract NotifyFormatSpecifierLocation: range * int -> unit
 
+    abstract NotifyRelatedSymbolUse: range * Item * RelatedSymbolUseKind -> unit
+
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
 
     abstract CurrentSourceText: ISourceText option
@@ -2058,9 +2061,10 @@ type TcResolutions
     (capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain>,
      capturedExprTypes: ResizeArray<TType * NameResolutionEnv * AccessorDomain * range>,
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
-     capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>) =
+     capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>,
+     capturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind>) =
 
-    static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0)
+    static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0)
 
     member _.CapturedEnvs = capturedEnvs
 
@@ -2069,6 +2073,8 @@ type TcResolutions
     member _.CapturedNameResolutions = capturedNameResolutions
 
     member _.CapturedMethodGroupResolutions = capturedMethodGroupResolutions
+
+    member _.CapturedRelatedSymbolUses = capturedRelatedSymbolUses
 
     static member Empty = empty
 
@@ -2084,30 +2090,45 @@ type TcSymbolUseData =
 /// This is a memory-critical data structure - allocations of this data structure and its immediate contents
 /// is one of the highest memory long-lived data structures in typical uses of IDEs. Not many of these objects
 /// are allocated (one per file), but they are large because the allUsesOfAllSymbols array is large.
-type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) =
+type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution>, capturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind>, formatSpecifierLocations: (range * int)[]) =
+
+    let toSymbolUseData (cnr: CapturedNameResolution) =
+        { ItemWithInst = cnr.ItemWithInst; ItemOccurrence = cnr.ItemOccurrence; DisplayEnv = cnr.DisplayEnv; Range = cnr.Range }
 
     // Make sure we only capture the information we really need to report symbol uses
     let allUsesOfSymbols =
         capturedNameResolutions
-        |> ResizeArray.mapToSmallArrayChunks (fun cnr -> { ItemWithInst=cnr.ItemWithInst; ItemOccurrence=cnr.ItemOccurrence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range })
+        |> ResizeArray.mapToSmallArrayChunks toSymbolUseData
 
     let capturedNameResolutions = ()
     do capturedNameResolutions // don't capture this!
 
-    member _.GetUsesOfSymbol item =
-        // This member returns what is potentially a very large array, which may approach the size constraints of the Large Object Heap.
-        // This is unlikely in practice, though, because we filter down the set of all symbol uses to those specifically for the given `item`.
-        // Consequently we have a much lesser chance of ending up with an array large enough to be promoted to the LOH.
+    let relatedSymbolUses =
+        capturedRelatedSymbolUses
+        |> ResizeArray.mapToSmallArrayChunks (fun (m, item, kind) ->
+            struct ({ ItemWithInst = { Item = item; TyparInstantiation = emptyTyparInst }; ItemOccurrence = ItemOccurrence.Use; DisplayEnv = DisplayEnv.Empty g; Range = m }, kind))
+
+    let capturedRelatedSymbolUses = ()
+    do capturedRelatedSymbolUses // don't capture this!
+
+    member _.GetUsesOfSymbol(item, ?relatedSymbolKinds: RelatedSymbolUseKind) =
+        let kinds = defaultArg relatedSymbolKinds RelatedSymbolUseKind.None
         [| for symbolUseChunk in allUsesOfSymbols do
             for symbolUse in symbolUseChunk do
                 if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.ItemWithInst.Item) then
-                    yield symbolUse |]
+                    yield symbolUse
+           if kinds <> RelatedSymbolUseKind.None then
+               for chunk in relatedSymbolUses do
+                   for struct (symbolUse, kind) in chunk do
+                       if kinds.HasFlag kind then
+                           if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.ItemWithInst.Item) then
+                               yield symbolUse |]
 
     member _.AllUsesOfSymbols = allUsesOfSymbols
 
     member _.GetFormatSpecifierLocationsAndArity() = formatSpecifierLocations
 
-    static member Empty = TcSymbolUses(Unchecked.defaultof<_>, ResizeArray(), Array.empty)
+    static member Empty = TcSymbolUses(Unchecked.defaultof<_>, ResizeArray(), ResizeArray(), Array.empty)
 
 /// An accumulator for the results being emitted into the tcSink.
 type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
@@ -2115,6 +2136,7 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedExprTypings = ResizeArray<_>()
     let capturedNameResolutions = ResizeArray<CapturedNameResolution>()
     let capturedMethodGroupResolutions = ResizeArray<CapturedNameResolution>()
+    let capturedRelatedSymbolUses = ResizeArray<range * Item * RelatedSymbolUseKind>()
     let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
@@ -2180,10 +2202,10 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                   LineStartPositions = positions })
 
     member _.GetResolutions() =
-        TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
+        TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions, capturedRelatedSymbolUses)
 
     member _.GetSymbolUses() =
-        TcSymbolUses(tcGlobals, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
+        TcSymbolUses(tcGlobals, capturedNameResolutions, capturedRelatedSymbolUses, capturedFormatSpecifierLocations.ToArray())
 
     member _.GetOpenDeclarations() =
         capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray
@@ -2224,6 +2246,10 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
         member sink.NotifyFormatSpecifierLocation(m, numArgs) =
             capturedFormatSpecifierLocations.Add((m, numArgs))
 
+        member sink.NotifyRelatedSymbolUse(m, item, kind) =
+            if allowedRange m then
+                capturedRelatedSymbolUses.Add((m, item, kind))
+
         member sink.NotifyOpenDeclaration openDeclaration =
             capturedOpenDeclarations.Add openDeclaration
 
@@ -2261,10 +2287,7 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
 let RegisterUnionCaseTesterForProperty
     (sink: TcResultsSink)
     (identRange: range)
-    (nenv: NameResolutionEnv)
     (pinfos: PropInfo list)
-    (occurrenceType: ItemOccurrence)
-    (ad: AccessorDomain)
     =
     match sink.CurrentSink, pinfos with
     | Some currentSink, (pinfo :: _) when pinfo.IsUnionCaseTester ->
@@ -2279,7 +2302,7 @@ let RegisterUnionCaseTesterForProperty
                 let ucref = tcref.MakeNestedUnionCaseRef ucase
                 let ucinfo = UnionCaseInfo([], ucref)
                 let ucItem = Item.UnionCase(ucinfo, false)
-                currentSink.NotifyNameResolution(identRange.End, ucItem, emptyTyparInst, occurrenceType, nenv, ad, identRange, true)
+                currentSink.NotifyRelatedSymbolUse(identRange, ucItem, RelatedSymbolUseKind.UnionCaseTester)
             | None -> ()
     | _ -> ()
 
@@ -2301,6 +2324,11 @@ let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item,
     | None -> ()
     | Some currentSink ->
         currentSink.NotifyNameResolution(m.End, item, tpinst, occurrenceType, nenv, ad, m, true)
+
+let CallRelatedSymbolSink (sink: TcResultsSink) (m: range, item: Item, kind: RelatedSymbolUseKind) =
+    match sink.CurrentSink with
+    | None -> ()
+    | Some currentSink -> currentSink.NotifyRelatedSymbolUse(m, item, kind)
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
@@ -4213,7 +4241,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
             match refinedItem with
             | Item.Property(_, pinfos, _) ->
                 let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
-                RegisterUnionCaseTesterForProperty sink propIdentRange nenv pinfos occurrence ad
+                RegisterUnionCaseTesterForProperty sink propIdentRange pinfos
             | _ -> ()
 
     let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
@@ -4289,7 +4317,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 match refinedItem with
                 | Item.Property(_, pinfos, _) ->
                     let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
-                    RegisterUnionCaseTesterForProperty sink propIdentRange nenv pinfos ItemOccurrence.Use ad
+                    RegisterUnionCaseTesterForProperty sink propIdentRange pinfos
                 | _ -> ()
 
             let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
