@@ -4,6 +4,7 @@ module internal FSharp.Compiler.NameResolution
 
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
@@ -437,6 +438,9 @@ type internal TcResolutions =
     /// See TypeCheckInfo.GetCapturedNameResolutions for example.
     member CapturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>
 
+    /// Related symbol uses reported via NotifyRelatedSymbolUse
+    member CapturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind>
+
     /// Represents the empty set of resolutions
     static member Empty: TcResolutions
 
@@ -452,7 +456,7 @@ type TcSymbolUseData =
 type internal TcSymbolUses =
 
     /// Get all the uses of a particular item within the file
-    member GetUsesOfSymbol: Item -> TcSymbolUseData[]
+    member GetUsesOfSymbol: item: Item * ?relatedSymbolKinds: RelatedSymbolUseKind -> TcSymbolUseData[]
 
     /// All the uses of all items within the file
     member AllUsesOfSymbols: TcSymbolUseData[][]
@@ -495,6 +499,10 @@ type ITypecheckResultsSink =
 
     /// Record that a printf format specifier occurred at a specific location in the source
     abstract NotifyFormatSpecifierLocation: range * int -> unit
+
+    /// Record that a symbol is implicitly referenced at a source range.
+    /// Unlike NotifyNameResolution, this does not affect colorization or symbol info.
+    abstract NotifyRelatedSymbolUse: range * Item * RelatedSymbolUseKind -> unit
 
     /// Record that an open declaration occurred in a given scope range
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
@@ -631,8 +639,10 @@ val internal CallNameResolutionSinkReplacing:
     TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurrence * AccessorDomain -> unit
 
 /// #16621
-val internal RegisterUnionCaseTesterForProperty:
-    TcResultsSink -> identRange: range -> NameResolutionEnv -> PropInfo list -> ItemOccurrence -> AccessorDomain -> unit
+val internal RegisterUnionCaseTesterForProperty: TcResultsSink -> identRange: range -> PropInfo list -> unit
+
+/// Report a related symbol use at a source range (does not affect colorization or symbol info)
+val internal CallRelatedSymbolSink: TcResultsSink -> range * Item * RelatedSymbolUseKind -> unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink: TcResultsSink -> range * NameResolutionEnv * TType * AccessorDomain -> unit
