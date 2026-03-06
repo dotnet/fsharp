@@ -3949,6 +3949,10 @@ let attribsHaveEntityFlag g (flag: WellKnownEntityAttributes) (attribs: Attribs)
 let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes) (entity: Entity) : bool =
     entity.HasWellKnownAttribute(flag, computeEntityWellKnownFlags g)
 
+/// Get the computed well-known attribute flags for an entity.
+let GetEntityWellKnownFlags (g: TcGlobals) (entity: Entity) : WellKnownEntityAttributes =
+    entity.GetWellKnownEntityFlags(computeEntityWellKnownFlags g)
+
 /// Classify a single Val-level attribute, returning its well-known flag (or None).
 let classifyValAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownValAttributes =
     let (Attrib(tcref, _, _, _, _, _, _)) = attrib

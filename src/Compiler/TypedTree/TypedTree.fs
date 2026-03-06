@@ -1362,6 +1362,17 @@ type Entity =
         if changed then x.SetEntityAttribs(wa)
         result
 
+    /// Get the computed well-known attribute flags, computing and caching if needed.
+    member x.GetWellKnownEntityFlags(computeFlags: Attribs -> WellKnownEntityAttributes) : WellKnownEntityAttributes =
+        let f = LanguagePrimitives.EnumToValue x.EntityAttribs.Flags
+
+        if f &&& (1uL <<< 63) <> 0uL then
+            let computed = computeFlags (x.EntityAttribs.AsList())
+            x.SetEntityAttribs(WellKnownAttribs(x.EntityAttribs.AsList(), computed))
+            computed
+        else
+            x.EntityAttribs.Flags
+
     /// Sets the structness of a record or union type definition
     member x.SetIsStructRecordOrUnion b = let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
 

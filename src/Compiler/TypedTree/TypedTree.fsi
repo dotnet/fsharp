@@ -477,6 +477,9 @@ type Entity =
     /// Check if this entity has a specific well-known attribute, computing and caching flags if needed.
     member HasWellKnownAttribute: flag: WellKnownEntityAttributes * computeFlags: (Attribs -> WellKnownEntityAttributes) -> bool
 
+    /// Get the computed well-known attribute flags, computing and caching if needed.
+    member GetWellKnownEntityFlags: computeFlags: (Attribs -> WellKnownEntityAttributes) -> WellKnownEntityAttributes
+
     member SetCompiledName: name: string option -> unit
 
     member SetExceptionInfo: exn_info: ExceptionInfo -> unit
