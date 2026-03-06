@@ -8,6 +8,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
@@ -24,7 +25,7 @@ type SemanticClassificationServiceTests() =
                 document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests")
                 |> CancellableTask.start ct
 
-            return checkFileResults.GetSemanticClassification(None)
+            return checkFileResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
         }
         |> Async.RunSynchronously
         |> Option.toList
