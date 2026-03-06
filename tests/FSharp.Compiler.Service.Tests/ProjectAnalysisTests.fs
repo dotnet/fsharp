@@ -3676,6 +3676,9 @@ let ``Test symbol uses of properties with both getters and setters`` () =
 // Misc - type provider symbols
 module internal Project25 =
 
+    // Dedicated checker to isolate type-provider tests from shared state races.
+    let checker = FSharpChecker.Create(useTransparentCompiler = FSharp.Test.CompilerAssertHelpers.UseTransparentCompiler)
+
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
@@ -3728,7 +3731,7 @@ let _ = MyType().DoNothing()
 // Uses TestTP (built locally) — no NuGet needed, deterministic.
 [<Fact; RunTestCasesInSequence>]
 let ``Test Project25 whole project errors`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
+    let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
         printfn "Project25 error: <<<%s>>>" e.Message
@@ -3737,10 +3740,10 @@ let ``Test Project25 whole project errors`` () =
 
 [<Fact; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of type-provided members`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
+    let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
 
     let _, backgroundTypedParse1 =
-        checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
+        Project25.checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
         |> Async.RunImmediate
 
     let allUses =
@@ -3799,10 +3802,10 @@ let ``Test Project25 symbol uses of type-provided members`` () =
 
 [<Fact; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of type-provided types`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
+    let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
 
     let _, backgroundTypedParse1 =
-        checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
+        Project25.checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
         |> Async.RunImmediate
 
     let myTypeSymbolUseOpt =
@@ -3822,10 +3825,10 @@ let ``Test Project25 symbol uses of type-provided types`` () =
 
 [<Fact; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of fully-qualified records`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
+    let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
 
     let _, backgroundTypedParse1 =
-        checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
+        Project25.checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options.Value)
         |> Async.RunImmediate
 
     let recordSymbolUseOpt =
