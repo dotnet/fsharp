@@ -1,19 +1,31 @@
 // RFC FS-1043: Extrinsic extension members participate in SRTP constraint resolution.
 //
-// System.String has no built-in (*) operator. The extension below is extrinsic
-// (String is a BCL type, not defined here). The inline function 'multiply' is
-// defined after the extension, so the extension is in scope when the SRTP
-// constraint is created and captured. Without --langversion:preview, extensions
-// do NOT participate in SRTP resolution and this code fails to compile.
+// This test uses three modules to demonstrate scope capture:
+//
+//   StringOps – defines an extrinsic (*) extension on System.String (a BCL type).
+//   GenericLib – opens StringOps, then defines 'multiply'. The extension is in scope
+//               at the DEFINITION site so it is captured in the SRTP constraint.
+//   Consumer  – opens GenericLib only (not StringOps directly). The captured extension
+//               travels with the constraint and resolves at the call site.
+//
+// Without --langversion:preview, extensions do NOT participate in SRTP resolution
+// and this code fails to compile (FS0001: string does not support operator '*').
 
 module ScopeCapture
 
-type System.String with
-    static member (*)(s: string, n: int) = System.String.Concat(Array.replicate n s)
+module StringOps =
+    type System.String with
+        static member (*)(s: string, n: int) = System.String.Concat(Array.replicate n s)
 
-let inline multiply (x: ^T) (n: int) = x * n
+module GenericLib =
+    open StringOps
 
-let r = multiply "ha" 3
+    let inline multiply (x: ^T) (n: int) = x * n
 
-if r <> "hahaha" then
-    failwith $"Expected 'hahaha', got '{r}'"
+module Consumer =
+    open GenericLib
+
+    let r = multiply "ha" 3
+
+    if r <> "hahaha" then
+        failwith $"Expected 'hahaha', got '{r}'"

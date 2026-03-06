@@ -10,10 +10,14 @@ module ExtensionConstraintsTests =
 
     let private testFileDir = Path.Combine(__SOURCE_DIRECTORY__, "testFiles")
 
-    /// Compile and run a test file with --langversion:preview. No warnings allowed.
-    let private compileAndRunPreview fileName =
+    /// Create a compilation from a test file in the test directory.
+    let private createTest fileName =
         FSharp(loadSourceFromFile (Path.Combine(testFileDir, fileName)))
         |> asExe
+
+    /// Compile and run a test file with --langversion:preview. No warnings allowed.
+    let private compileAndRunPreview fileName =
+        createTest fileName
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
@@ -35,8 +39,16 @@ module ExtensionConstraintsTests =
         compileAndRunPreview "ExtensionAccessibility.fs"
 
     [<Fact>]
-    let ``Extensions captured at call site not definition site`` () =
+    let ``Extrinsic extension captured at definition site resolves across modules`` () =
         compileAndRunPreview "ScopeCapture.fs"
+
+    [<Fact>]
+    let ``Extrinsic extension not captured without ExtensionConstraintSolutions`` () =
+        createTest "ScopeCapture.fs"
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
 
     [<Fact>]
     let ``Sequentialized InvokeMap pattern compiles and runs`` () =
@@ -48,8 +60,7 @@ module ExtensionConstraintsTests =
 
     [<Fact>]
     let ``AllowOverloadOnReturnType resolves through SRTP`` () =
-        FSharp(loadSourceFromFile (Path.Combine(testFileDir, "AllowOverloadOnReturnType.fs")))
-        |> asExe
+        createTest "AllowOverloadOnReturnType.fs"
         |> withLangVersionPreview
         |> compileAndRunOrExpectMissingAttribute "Microsoft.FSharp.Core.AllowOverloadOnReturnTypeAttribute"
 

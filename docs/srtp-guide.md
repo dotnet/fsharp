@@ -49,16 +49,23 @@ When solving an SRTP constraint:
 With `--langversion:preview`, extrinsic extension members (defined on a type from another assembly) participate in SRTP constraint resolution when they are in scope where the inline function is defined:
 
 ```fsharp
-// System.String has no built-in (*) — this extension is extrinsic.
-type System.String with
-    static member (*) (s: string, n: int) = System.String.Concat(Array.replicate n s)
+module StringOps =
+    // System.String has no built-in (*) — this extension is extrinsic.
+    type System.String with
+        static member (*) (s: string, n: int) = System.String.Concat(Array.replicate n s)
 
-// multiply captures the SRTP constraint with String.(*) in scope.
-let inline multiply (x: ^T) (n: int) = x * n
+module GenericLib =
+    open StringOps
 
-// Without --langversion:preview this line would fail because extensions
-// do not participate in SRTP resolution.
-let r = multiply "ha" 3  // "hahaha"
+    // multiply captures the SRTP constraint with String.(*) in scope.
+    // The extension is recorded in the constraint at this definition site.
+    let inline multiply (x: ^T) (n: int) = x * n
+
+module Consumer =
+    open GenericLib
+    // StringOps is NOT opened here, but the extension was captured when
+    // multiply was defined. It travels with the constraint and resolves here.
+    let r = multiply "ha" 3  // "hahaha"
 ```
 
 ### Known Limitations
