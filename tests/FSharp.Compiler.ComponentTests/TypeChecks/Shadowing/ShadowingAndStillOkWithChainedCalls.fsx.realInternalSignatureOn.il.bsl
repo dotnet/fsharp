@@ -13,16 +13,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.dll
 
 .imagebase {value}
@@ -93,9 +83,7 @@
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public static class assembly/Foo 
-            X(class assembly/Foo f,
-              int32 i) cil managed
+    .method public static class assembly/Foo X(class assembly/Foo f, int32 i) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -107,9 +95,7 @@
       IL_0008:  ret
     } 
 
-    .method public static class assembly/Foo 
-            X(class assembly/Foo f,
-              string i) cil managed
+    .method public static class assembly/Foo X(class assembly/Foo f, string i) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -174,7 +160,7 @@
     IL_000c:  ret
   } 
 
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  4
@@ -257,7 +243,6 @@
   } 
 
 } 
-
 
 
 
