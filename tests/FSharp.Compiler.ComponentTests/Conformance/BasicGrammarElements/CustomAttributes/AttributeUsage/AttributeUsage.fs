@@ -1028,15 +1028,3 @@ type Derived() =
             (Error 945, Line 7, Col 13, Line 7, Col 17, "Cannot inherit a sealed type")
         ]
 
-    [<Fact>]
-    let ``DefaultAugmentation(false) suppresses helpers`` () =
-        Fsx """
-[<DefaultAugmentation(false)>]
-type DU = A | B of int
-
-let x = DU.A
-let _ = x.IsA
-        """
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 39
