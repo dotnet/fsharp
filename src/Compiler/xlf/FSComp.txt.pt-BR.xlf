@@ -3374,7 +3374,7 @@
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">
         <source>Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
-        <target state="needs-review">Um tipo que suporte o operador '{0}' era esperado, mas um tipo de tupla foi recebido.</target>
+        <target state="new">Um tipo que suporte o operador '{0}' era esperado, mas um tipo de tupla foi recebido.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
