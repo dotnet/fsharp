@@ -815,7 +815,7 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
 //------------------------------------------------------------------------------------
 
 
-[<Fact>]
+[<Fact; RunTestCasesInSequence>]
 let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
         
     // The type provider and its dependency are compiled as part of the solution build
@@ -826,6 +826,8 @@ let ``In-memory cross-project references to projects using generative type provi
         failwith $"expect {csDLL} to exist"
     if not (File.Exists tpDLL) then 
         failwith $"expect {tpDLL} to exist"
+    // Dedicated checker to isolate type-provider tests from shared state races.
+    let checker = FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
     let optionsTestProject = 
         {       ProjectFileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fsproj"
                 ProjectId = None
