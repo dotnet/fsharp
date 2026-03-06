@@ -2044,23 +2044,9 @@ let r = "a" * 3
         |> shouldFail
         |> withErrorCode 1
 
-    [<Fact>]
-    let ``Inline SRTP function resolves using consumers scope for extensions`` () =
-        FSharp """
-module TestConsumerScope
-
-type System.String with
-    static member (*) (s: string, n: int) = System.String.Concat(Array.replicate n s)
-
-let inline multiply (x: ^T) (n: int) = x * n
-
-let r = multiply "ha" 3
-if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" r)
-        """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+    // Removed: "Inline SRTP function resolves using consumers scope for extensions"
+    // was a duplicate of ExtensionConstraintsTests/ScopeCapture.fs which covers
+    // the same System.String (*) extrinsic extension scenario.
 
     [<Fact>]
     let ``Internal record field resolves via SRTP within same compilation unit`` () =
