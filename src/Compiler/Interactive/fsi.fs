@@ -1295,6 +1295,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
 
         fsiConsoleOutput.uprintfn """    #clear;;                                      // %s""" (FSIstrings.SR.fsiIntroTextHashclearInfo ())
         fsiConsoleOutput.uprintfn """    #quit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo ())
+        fsiConsoleOutput.uprintfn """    #exit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo ())
         fsiConsoleOutput.uprintfn ""
         fsiConsoleOutput.uprintfnn "%s" (FSIstrings.SR.fsiIntroTextHeader2commandLine ())
         fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiIntroTextHeader3 helpLine)
@@ -3885,7 +3886,7 @@ type FsiInteractionProcessor
             fsiOptions.ClearScreen()
             istate, Completed None
 
-        | ParsedHashDirective(("q" | "quit"), [], _) -> fsiInterruptController.Exit()
+        | ParsedHashDirective(("q" | "quit" | "exit"), [], _) -> fsiInterruptController.Exit()
 
         | ParsedHashDirective("help", hashArguments, m) ->
             let args = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)

@@ -4065,6 +4065,7 @@ type 'a T4063 = | AT4063 of 'a
     #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
     #clear;;                                      // Clear screen
     #quit;;                                       // Exit
+    #exit;;                                       // Exit
 
   F# Interactive command line options:
 
