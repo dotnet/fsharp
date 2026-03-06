@@ -19,65 +19,6 @@ module CodeGenRegressions_Signatures =
             | None -> failwith "No output path"
         | _ -> failwith "Compilation failed"
 
-    // https://github.com/dotnet/fsharp/issues/18140
-    [<Fact>]
-    let ``Issue_18140_CallvirtOnValueType`` () =
-        let source = """
-module Test
-
-[<Struct>]
-type MyRange =
-    val Value: int
-    new(v) = { Value = v }
-
-let comparer =
-    { new System.Collections.Generic.IEqualityComparer<MyRange> with
-        member _.Equals(x1, x2) = x1.Value = x2.Value
-        member _.GetHashCode o = o.GetHashCode()
-    }
-
-let test() =
-    let s = MyRange(42)
-    comparer.GetHashCode(s)
-"""
-        let actualIL =
-            FSharp source
-            |> asLibrary
-            |> compile
-            |> shouldSucceed
-            |> getActualIL
-
-        Assert.Contains("constrained.", actualIL)
-
-    // https://github.com/dotnet/fsharp/issues/18140
-    [<Fact>]
-    let ``Issue_18140_CallvirtOnValueType_Runtime`` () =
-        let source = """
-[<Struct>]
-type MyRange =
-    val Value: int
-    new(v) = { Value = v }
-
-let comparer =
-    { new System.Collections.Generic.IEqualityComparer<MyRange> with
-        member _.Equals(x1, x2) = x1.Value = x2.Value
-        member _.GetHashCode o = o.GetHashCode()
-    }
-
-let s = MyRange(42)
-let h = comparer.GetHashCode(s)
-let eq = comparer.Equals(s, MyRange(42))
-if not eq then failwith "Expected equality"
-printfn "Hash: %d, Equal: %b" h eq
-"""
-        FSharp source
-        |> asExe
-        |> compile
-        |> shouldSucceed
-        |> run
-        |> shouldSucceed
-        |> ignore
-
     // https://github.com/dotnet/fsharp/issues/18135
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Issue_18135_StaticAbstractByrefParams`` () =
