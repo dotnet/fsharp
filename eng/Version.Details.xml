@@ -50,6 +50,30 @@
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>6bdca1d6466c2f9ef46f8e5d3422fbe3568d503c</Sha>
     </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
+    <Dependency Name="System.Collections.Immutable" Version="10.0.2">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
+    </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
+    <Dependency Name="System.Composition" Version="10.0.2">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
+    </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
+    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.2">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
+    </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
+    <Dependency Name="System.Reflection.Metadata" Version="10.0.2">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
+    </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
     <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="10.0.0-beta.26152.1">

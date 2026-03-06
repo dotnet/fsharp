@@ -19,6 +19,11 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>5.6.0-2.26151.2</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
     <MicrosoftCodeAnalysisFeaturesPackageVersion>5.6.0-2.26151.2</MicrosoftCodeAnalysisFeaturesPackageVersion>
     <MicrosoftVisualStudioLanguageServicesPackageVersion>5.6.0-2.26151.2</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <!-- dotnet/runtime dependencies -->
+    <SystemCollectionsImmutablePackageVersion>10.0.2</SystemCollectionsImmutablePackageVersion>
+    <SystemCompositionPackageVersion>10.0.2</SystemCompositionPackageVersion>
+    <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.2</SystemDiagnosticsDiagnosticSourcePackageVersion>
+    <SystemReflectionMetadataPackageVersion>10.0.2</SystemReflectionMetadataPackageVersion>
     <!-- dotnet/arcade dependencies -->
     <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26152.1</MicrosoftDotNetArcadeSdkPackageVersion>
     <!-- _git/dotnet-optimization dependencies -->
@@ -44,6 +49,11 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
     <MicrosoftCodeAnalysisFeaturesVersion>$(MicrosoftCodeAnalysisFeaturesPackageVersion)</MicrosoftCodeAnalysisFeaturesVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(MicrosoftVisualStudioLanguageServicesPackageVersion)</MicrosoftVisualStudioLanguageServicesVersion>
+    <!-- dotnet/runtime dependencies -->
+    <SystemCollectionsImmutableVersion>$(SystemCollectionsImmutablePackageVersion)</SystemCollectionsImmutableVersion>
+    <SystemCompositionVersion>$(SystemCompositionPackageVersion)</SystemCompositionVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemDiagnosticsDiagnosticSourcePackageVersion)</SystemDiagnosticsDiagnosticSourceVersion>
+    <SystemReflectionMetadataVersion>$(SystemReflectionMetadataPackageVersion)</SystemReflectionMetadataVersion>
     <!-- dotnet/arcade dependencies -->
     <MicrosoftDotNetArcadeSdkVersion>$(MicrosoftDotNetArcadeSdkPackageVersion)</MicrosoftDotNetArcadeSdkVersion>
     <!-- _git/dotnet-optimization dependencies -->
