@@ -3,6 +3,7 @@
 namespace CompilerOptions.Fsc
 
 open Xunit
+open FSharp.Compiler.CompilerOptions
 open FSharp.Test.Compiler
 
 module FscOptionTests =
@@ -59,12 +60,17 @@ module FscOptionTests =
     [<InlineData("--consolecolors-")>]
     [<Theory>]
     let ``fsc --consolecolors switch`` option =
-        Fs """printfn "Hello, World" """
-        |> asExe
-        |> withOptions [option]
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        let saved = enableConsoleColoring
+
+        try
+            Fs """printfn "Hello, World" """
+            |> asExe
+            |> withOptions [option]
+            |> compile
+            |> shouldSucceed
+            |> ignore
+        finally
+            enableConsoleColoring <- saved
 
     // --preferreduilang
 
