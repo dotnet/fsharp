@@ -475,7 +475,8 @@ type Entity =
     member SetEntityAttribs: WellKnownEntityAttribs -> unit
 
     /// Check if this entity has a specific well-known attribute, computing and caching flags if needed.
-    member HasWellKnownAttribute: flag: WellKnownEntityAttributes * computeFlags: (Attribs -> WellKnownEntityAttributes) -> bool
+    member HasWellKnownAttribute:
+        flag: WellKnownEntityAttributes * computeFlags: (Attribs -> WellKnownEntityAttributes) -> bool
 
     /// Get the computed well-known attribute flags, computing and caching if needed.
     member GetWellKnownEntityFlags: computeFlags: (Attribs -> WellKnownEntityAttributes) -> WellKnownEntityAttributes
@@ -1996,7 +1997,8 @@ type Val =
     member SetValAttribs: attribs: WellKnownValAttribs -> unit
 
     /// Check if this val has a specific well-known attribute, computing and caching flags if needed.
-    member HasWellKnownAttribute: flag: WellKnownValAttributes * computeFlags: (Attribs -> WellKnownValAttributes) -> bool
+    member HasWellKnownAttribute:
+        flag: WellKnownValAttributes * computeFlags: (Attribs -> WellKnownValAttributes) -> bool
 
     /// Set all the data on a value
     member SetData: tg: ValData -> unit

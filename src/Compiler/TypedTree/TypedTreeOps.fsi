@@ -2381,7 +2381,8 @@ val classifyILAttrib: attr: ILAttribute -> WellKnownILAttributes
 
 val computeILWellKnownFlags: _g: TcGlobals -> attrs: ILAttributes -> WellKnownILAttributes
 
-val tryFindILAttribByFlag: flag: WellKnownILAttributes -> cattrs: ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+val tryFindILAttribByFlag:
+    flag: WellKnownILAttributes -> cattrs: ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
 
 [<return: Struct>]
 val (|ILAttribDecoded|_|):
@@ -2460,7 +2461,8 @@ val EntityHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownEntityAttributes
 val GetEntityWellKnownFlags: g: TcGlobals -> entity: Entity -> WellKnownEntityAttributes
 
 /// Map a WellKnownILAttributes flag to its entity flag + provided-type AttribInfo equivalents.
-val mapILFlag: g: TcGlobals -> flag: WellKnownILAttributes -> struct (WellKnownEntityAttributes * BuiltinAttribInfo option)
+val mapILFlag:
+    g: TcGlobals -> flag: WellKnownILAttributes -> struct (WellKnownEntityAttributes * BuiltinAttribInfo option)
 
 val computeValWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownValAttributes
 
@@ -2480,11 +2482,7 @@ val EntityTryGetBoolAttribute:
 
 /// Query a three-state bool attribute on a Val. Returns bool option.
 val ValTryGetBoolAttribute:
-    g: TcGlobals ->
-    trueFlag: WellKnownValAttributes ->
-    falseFlag: WellKnownValAttributes ->
-    v: Val ->
-        bool option
+    g: TcGlobals -> trueFlag: WellKnownValAttributes -> falseFlag: WellKnownValAttributes -> v: Val -> bool option
 
 val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 
