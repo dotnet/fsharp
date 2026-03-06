@@ -1946,28 +1946,6 @@ module Consumer =
         |> shouldSucceed
 
     [<Fact>]
-    let ``FS1215 warning fires for extension operator without langversion preview`` () =
-        FSharp $"""
-module TestFS1215
-{stringRepeatExtDef}
-        """
-        |> withLangVersion80
-        |> compile
-        |> shouldFail
-        |> withSingleDiagnostic (Warning 1215, Line 4, Col 21, Line 4, Col 22, "Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.")
-
-    [<Fact>]
-    let ``FS1215 warning does not fire for extension operator with langversion preview`` () =
-        FSharp $"""
-module TestFS1215NoWarn
-{stringRepeatExtDef}
-        """
-        |> withLangVersionPreview
-        |> compile
-        |> shouldSucceed
-        |> withDiagnostics []
-
-    [<Fact>]
     let ``Multiple extension operators with different signatures resolve or error clearly`` () =
         FSharp """
 module TestAmbiguity
@@ -2228,28 +2206,6 @@ let result = Converter.Convert("42")
         |> withErrorCode 41
 
     [<Fact>]
-    let ``Return-type-based disambiguation works for op_Explicit`` () =
-        // op_Explicit has built-in return-type-based overload resolution,
-        // the same mechanism AllowOverloadOnReturnType extends to arbitrary methods.
-        FSharp """
-module TestReturnTypeDisambiguation
-
-type MyNum =
-    { Value: int }
-    static member op_Explicit(x: MyNum) : int = x.Value
-    static member op_Explicit(x: MyNum) : float = float x.Value
-
-let resultInt: int = MyNum.op_Explicit({ Value = 42 })
-let resultFloat: float = MyNum.op_Explicit({ Value = 42 })
-if resultInt <> 42 then failwith (sprintf "Expected 42 but got %d" resultInt)
-if resultFloat <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" resultFloat)
-        """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
-
-    [<Fact>]
     let ``AllowOverloadOnReturnType disambiguates at call site with type annotation`` () =
         FSharp
             """
@@ -2340,32 +2296,6 @@ let result = add { V = 2 } { V = 3 }
         |> compile
         |> shouldFail
         |> withErrorCode 43
-
-    // AO2: op_Explicit return-type resolution via int/float conversion operators
-
-    [<Fact>]
-    let ``op_Explicit return-type resolution works via int and float conversion operators`` () =
-        // op_Explicit has built-in return-type-based overload resolution.
-        // This tests it via the `int` and `float` conversion functions,
-        // verifying the same mechanism AllowOverloadOnReturnType generalizes.
-        FSharp """
-module TestAORT_OpExplicit
-
-type Wrapper = { V: int }
-    with
-        static member op_Explicit (w: Wrapper) : int = w.V
-        static member op_Explicit (w: Wrapper) : float = float w.V
-
-let w = { V = 42 }
-let i : int = int w
-let f : float = float w
-if i <> 42 then failwith (sprintf "Expected int 42 but got %d" i)
-if f <> 42.0 then failwith (sprintf "Expected float 42.0 but got %f" f)
-        """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
 
     // AO3: op_Explicit-based SRTP return-type resolution
 

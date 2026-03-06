@@ -400,6 +400,7 @@
     <Compile Include="CompilerOptions\fsc\highentropyva.fs" />
     <Compile Include="CompilerOptions\fsc\langversion.fs" />
     <Compile Include="CompilerOptions\fsc\misc\misc.fs" />
+    <Compile Include="CompilerOptions\fsc\misc\PublicSign.fs" />
     <Compile Include="CompilerOptions\fsc\misc\utf8output.fs" />
     <Compile Include="CompilerOptions\fsc\noframework\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform\platform.fs" />
@@ -412,6 +413,7 @@
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerOptions\Fsc\FscCliTests.fs" />
+    <Compile Include="CompilerOptions\Fsc\FscOptionTests.fs" />
     <Compile Include="CompilerOptions\Fsc\Removed.fs" />
     <Compile Include="CompilerOptions\Fsc\responsefile\responsefile.fs" />
     <Compile Include="CompilerOptions\fsc\standalone\standalone.fs" />
