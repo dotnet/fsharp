@@ -5,7 +5,7 @@
 /// The platform argument controls which projects are included (default: all).
 
 let totalBatches = 3
-let residualBatch = 2 // uses negation filter; catches unlisted atoms + future namespaces
+let residualBatch = 3 // uses negation filter; catches unlisted atoms + future namespaces
 
 // MTP --filter-namespace uses starts-with matching on the test namespace.
 // Unlisted atoms go to the residual batch automatically via --filter-not-namespace.
@@ -64,8 +64,24 @@ let batch, platform =
 let matchesPlatform tag =
     tag = "all" || tag = platform || platform = "all"
 
-let atomsForBatch b = componentTestsAtoms |> List.filter (fun (_, ba) -> ba = b) |> List.map fst |> List.sort
-let otherBatchesAtoms = componentTestsAtoms |> List.filter (fun (_, b) -> b <> batch) |> List.map fst |> List.sort
+let expandAtom atom =
+    [ atom
+      $"FSharp.Compiler.ComponentTests.{atom}"
+      $"ComponentTests.{atom}" ]
+
+let atomsForBatch b =
+    componentTestsAtoms
+    |> List.filter (fun (_, ba) -> ba = b)
+    |> List.collect (fst >> expandAtom)
+    |> List.distinct
+    |> List.sort
+
+let otherBatchesAtoms =
+    componentTestsAtoms
+    |> List.filter (fun (_, b) -> b <> batch)
+    |> List.collect (fst >> expandAtom)
+    |> List.distinct
+    |> List.sort
 
 let filterArgs =
     if batch = residualBatch then
