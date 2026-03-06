@@ -5448,7 +5448,6 @@ and GenILCall
     (virt, valu, newobj, valUseFlags, isDllImport, ilMethRef: ILMethodRef, enclArgTys, methArgTys, argExprs, returnTys, m)
     sequel
     =
-    let g = cenv.g
     let hasByrefArg = ilMethRef.ArgTypes |> List.exists IsILTypeByref
 
     let isSuperInit =
@@ -5471,24 +5470,6 @@ and GenILCall
     let makesNoCriticalTailcalls = (newobj || not virt) // Don't tailcall for 'newobj', or 'call' to IL code
     let hasStructObjArg = valu && ilMethRef.CallingConv.IsInstance
 
-    let ilEnclArgTys = GenTypeArgs cenv m eenv.tyenv enclArgTys
-    let ilMethArgTys = GenTypeArgs cenv m eenv.tyenv methArgTys
-    let ilReturnTys = GenTypes cenv m eenv.tyenv returnTys
-    let ilMethSpec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
-
-    let useICallVirt =
-        (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
-        && ilMethRef.CallingConv.IsInstance
-
-    let ccallInfo =
-        ccallInfo
-        |> Option.orElseWith (fun () ->
-            match argExprs with
-            | objArgExpr :: _ when useICallVirt ->
-                let objArgTy = tyOfExpr g objArgExpr
-                if isStructTy g objArgTy then Some objArgTy else None
-            | _ -> None)
-
     let tail =
         CanTailcall(
             hasStructObjArg,
@@ -5502,6 +5483,15 @@ and GenILCall
             cgbuf,
             sequel
         )
+
+    let ilEnclArgTys = GenTypeArgs cenv m eenv.tyenv enclArgTys
+    let ilMethArgTys = GenTypeArgs cenv m eenv.tyenv methArgTys
+    let ilReturnTys = GenTypes cenv m eenv.tyenv returnTys
+    let ilMethSpec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
+
+    let useICallVirt =
+        (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
+        && ilMethRef.CallingConv.IsInstance
 
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not
     // in the expression tree since it can't be treated like an ordinary value
