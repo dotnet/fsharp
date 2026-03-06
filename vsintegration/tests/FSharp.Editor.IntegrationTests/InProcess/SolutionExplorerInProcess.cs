@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.OperationProgress;
@@ -20,13 +21,61 @@ namespace Microsoft.VisualStudio.Extensibility.Testing;
 
 internal partial class SolutionExplorerInProcess
 {
+    public const string ExistingProjectTemplate = "__fsharp_existing_project__";
+
     public async Task CreateSingleProjectSolutionAsync(string name, string template, CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
+        if (string.Equals(template, ExistingProjectTemplate, StringComparison.Ordinal))
+        {
+            await CreateSolutionAsync(name, cancellationToken);
+
+            var solutionDirectory = await GetDirectoryNameAsync(cancellationToken);
+            var projectDirectory = Path.Combine(solutionDirectory, name);
+            Directory.CreateDirectory(projectDirectory);
+
+            var projectFilePath = Path.Combine(projectDirectory, $"{name}.fsproj");
+            var programFilePath = Path.Combine(projectDirectory, "Program.fs");
+            File.WriteAllText(projectFilePath, CreateStandaloneProjectFile());
+            File.WriteAllText(programFilePath, "printfn \"placeholder\"");
+
+            var dte = await GetRequiredGlobalServiceAsync<SDTE, EnvDTE.DTE>(cancellationToken);
+            var solution = (EnvDTE80.Solution2)dte.Solution;
+            _ = solution.AddFromFile(projectFilePath, false);
+            return;
+        }
+
         await CreateSolutionAsync(name, cancellationToken);
         await AddProjectAsync(name, template, cancellationToken);
     }
+
+    // Repo root from compile-time source path — no runtime resolution needed.
+    private static readonly string RepoRoot = Path.GetFullPath(Path.Combine(
+        Path.GetDirectoryName(GetSourceFilePath())!, "..", "..", "..", ".."));
+
+    private static string CreateStandaloneProjectFile()
+    {
+        var propsPath = Path.Combine(RepoRoot, "UseLocalCompiler.Directory.Build.props");
+
+        return $@"<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <LocalFSharpCompilerConfiguration>Debug</LocalFSharpCompilerConfiguration>
+    <LocalFSharpCompilerPath>{RepoRoot}</LocalFSharpCompilerPath>
+  </PropertyGroup>
+  <Import Project=""{propsPath}"" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include=""Program.fs"" />
+  </ItemGroup>
+</Project>";
+    }
+
+    private static string GetSourceFilePath([CallerFilePath] string path = "")
+        => path;
 
     public async Task CreateSolutionAsync(string solutionName, CancellationToken cancellationToken)
     {
@@ -137,6 +186,15 @@ internal partial class SolutionExplorerInProcess
 
         await TestServices.Shell.ExecuteCommandAsync(VSConstants.VSStd97CmdID.BuildSln, cancellationToken);
         return await WaitForBuildToFinishAsync(buildOutputWindowPane, cancellationToken);
+    }
+
+    public async Task SetStartupProjectAsync(string projectName, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+        var dte = await GetRequiredGlobalServiceAsync<SDTE, EnvDTE.DTE>(cancellationToken);
+        var solution = (EnvDTE80.Solution2)dte.Solution;
+        var project = await GetProjectAsync(projectName, cancellationToken);
+        solution.SolutionBuild.StartupProjects = project.UniqueName;
     }
 
     public async Task<IVsOutputWindowPane> GetBuildOutputWindowPaneAsync(CancellationToken cancellationToken)

@@ -281,9 +281,20 @@ module List =
             let tailOrNullExpr = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [srcElemTy], IndexTail, mIn)
 
             let body =
+                // Lift the outermost let binding's debug point out of the body so
+                // the sequence point lands on the ldloca (stack-empty) rather than
+                // inside the body argument (stack-non-empty after the collector
+                // address has been pushed).  Only PDB metadata changes—no IL change.
+                let spBody, bodyForAdd =
+                    match body with
+                    | Expr.Let(TBind(v, rhs, DebugPointAtBinding.Yes spBind), innerBody, m, flags) ->
+                        spBind, Expr.Let(TBind(v, rhs, DebugPointAtBinding.NoneAtInvisible), innerBody, m, flags)
+                    | _ ->
+                        mBody, body
+
                 mkInvisibleLet mIn loopVal headOrDefaultExpr
                     (mkSequential mIn
-                        (mkCallCollectorAdd tcVal g reader mIn collector body)
+                        (Expr.DebugPoint(DebugPointAtLeafExpr.Yes spBody, mkCallCollectorAdd tcVal g reader mBody collector bodyForAdd))
                         (mkSequential mIn
                             (mkValSet mIn (mkLocalValRef currentVar) nextExpr)
                             (mkValSet mIn (mkLocalValRef nextVar) tailOrNullExpr)))
