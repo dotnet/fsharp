@@ -3835,6 +3835,10 @@ let classifyAssemblyAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownAssemblyAt
             match name with
             | "AutoOpenAttribute" -> WellKnownAssemblyAttributes.AutoOpenAttribute
             | _ -> WellKnownAssemblyAttributes.None
+        | [| "Microsoft"; "FSharp"; "Core"; "CompilerServices"; name |] ->
+            match name with
+            | "TypeProviderAssemblyAttribute" -> WellKnownAssemblyAttributes.TypeProviderAssemblyAttribute
+            | _ -> WellKnownAssemblyAttributes.None
         | _ -> WellKnownAssemblyAttributes.None
     | ValueNone -> WellKnownAssemblyAttributes.None
 

@@ -1830,6 +1830,8 @@ type internal TransparentCompiler
 
                 let generatedCcu = tcState.Ccu.CloneWithFinalizedContents(ccuContents)
 
+                let mutable hasTypeProviderAssemblyAttrib = false
+
                 // Compute the identity of the generated assembly based on attributes, options etc.
                 // Some of this is duplicated from fsc.fs
                 let ilAssemRef =
@@ -1864,6 +1866,8 @@ type internal TransparentCompiler
                                          with _ ->
                                              None)
                                 | _ -> ()
+                            elif hasFlag flag WellKnownAssemblyAttributes.TypeProviderAssemblyAttribute then
+                                hasTypeProviderAssemblyAttrib <- true
 
                         locale, ver
 
@@ -1878,13 +1882,6 @@ type internal TransparentCompiler
                     try
                         // Assemblies containing type provider components cannot successfully be used via cross-assembly references.
                         // We return 'None' for the assembly portion of the cross-assembly reference
-                        let hasTypeProviderAssemblyAttrib =
-                            topAttrs.assemblyAttrs
-                            |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
-                                let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
-
-                                nm = !!typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
-
                         if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                             ProjectAssemblyDataResult.Unavailable true
                         else

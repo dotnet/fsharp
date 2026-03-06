@@ -66,6 +66,7 @@ type internal WellKnownAssemblyAttributes =
     | InternalsVisibleToAttribute = (1uL <<< 1)
     | AssemblyCultureAttribute = (1uL <<< 2)
     | AssemblyVersionAttribute = (1uL <<< 3)
+    | TypeProviderAssemblyAttribute = (1uL <<< 4)
     | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known attributes on Val (values and members).
