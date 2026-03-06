@@ -2049,17 +2049,13 @@ let r = "a" * 3
         FSharp """
 module TestConsumerScope
 
-module Lib =
-    let inline add (x: ^T) (y: ^T) = x + y
+type System.String with
+    static member (*) (s: string, n: int) = System.String.Concat(Array.replicate n s)
 
-module Consumer =
-    type Widget = { V: int }
-    type Widget with
-        static member (+) (a: Widget, b: Widget) = { V = a.V + b.V }
-    
-    open Lib
-    let r = add { V = 1 } { V = 2 }
-    if r.V <> 3 then failwith (sprintf "Expected 3 but got %d" r.V)
+let inline multiply (x: ^T) (n: int) = x * n
+
+let r = multiply "ha" 3
+if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" r)
         """
         |> asExe
         |> withLangVersionPreview

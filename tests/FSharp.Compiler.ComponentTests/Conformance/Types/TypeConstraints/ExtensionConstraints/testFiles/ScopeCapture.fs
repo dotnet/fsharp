@@ -1,23 +1,19 @@
-// RFC FS-1043: Extension methods captured at call site, not definition site.
+// RFC FS-1043: Extrinsic extension members participate in SRTP constraint resolution.
 //
-// Lib.add is defined first — at its definition site, Widget does not exist.
-// Widget and its (+) extension are defined after Lib. The call site opens Lib
-// and uses add with Widget values, proving that SRTP constraints incorporate
-// members available at the call site, not just the definition site.
+// System.String has no built-in (*) operator. The extension below is extrinsic
+// (String is a BCL type, not defined here). The inline function 'multiply' is
+// defined after the extension, so the extension is in scope when the SRTP
+// constraint is created and captured. Without --langversion:preview, extensions
+// do NOT participate in SRTP resolution and this code fails to compile.
 
 module ScopeCapture
 
-module Lib =
-    let inline add (x: ^T) (y: ^T) = x + y
+type System.String with
+    static member (*)(s: string, n: int) = System.String.Concat(Array.replicate n s)
 
-type Widget = { V: int }
+let inline multiply (x: ^T) (n: int) = x * n
 
-type Widget with
-    static member (+)(a: Widget, b: Widget) = { V = a.V + b.V }
+let r = multiply "ha" 3
 
-open Lib
-
-let r = add { V = 1 } { V = 2 }
-
-if r <> { V = 3 } then
-    failwith $"Expected {{V=3}}, got {r}"
+if r <> "hahaha" then
+    failwith $"Expected 'hahaha', got '{r}'"

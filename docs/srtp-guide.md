@@ -46,20 +46,19 @@ When solving an SRTP constraint:
 
 ### Scope Capture
 
-With `--langversion:preview`, extrinsic extension members (defined in a separate module from the type) participate in SRTP constraint resolution when they are in scope:
+With `--langversion:preview`, extrinsic extension members (defined on a type from another assembly) participate in SRTP constraint resolution when they are in scope where the inline function is defined:
 
 ```fsharp
-module Lib =
-    let inline add (x: ^T) (y: ^T) = x + y
+// System.String has no built-in (*) — this extension is extrinsic.
+type System.String with
+    static member (*) (s: string, n: int) = System.String.Concat(Array.replicate n s)
 
-type Widget = { V: int }
+// multiply captures the SRTP constraint with String.(*) in scope.
+let inline multiply (x: ^T) (n: int) = x * n
 
-type Widget with
-    static member (+) (a: Widget, b: Widget) = { V = a.V + b.V }
-
-open Lib
-// Widget.(+) is in scope HERE at the call site, not at Lib.add's definition site.
-let r = add { V = 1 } { V = 2 }  // resolved at call site using Widget.(+)
+// Without --langversion:preview this line would fail because extensions
+// do not participate in SRTP resolution.
+let r = multiply "ha" 3  // "hahaha"
 ```
 
 ### Known Limitations
