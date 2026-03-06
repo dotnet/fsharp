@@ -49,25 +49,17 @@ When solving an SRTP constraint:
 With `--langversion:preview`, extrinsic extension members (defined in a separate module from the type) participate in SRTP constraint resolution when they are in scope:
 
 ```fsharp
-module TypeDefs =
-    type Widget = { V: int }
-
-[<AutoOpen>]
-module Extensions =
-    open TypeDefs
-    type Widget with
-        static member (+) (a: Widget, b: Widget) = { V = a.V + b.V }
-
 module Lib =
-    // Lib does not explicitly open Extensions — the [<AutoOpen>] attribute
-    // makes the extrinsic Widget.(+) available throughout the enclosing scope.
     let inline add (x: ^T) (y: ^T) = x + y
 
-module Consumer =
-    open TypeDefs
-    open Extensions
-    open Lib
-    let r = add { V = 1 } { V = 2 }  // resolved using Widget.(+) from Extensions
+type Widget = { V: int }
+
+type Widget with
+    static member (+) (a: Widget, b: Widget) = { V = a.V + b.V }
+
+open Lib
+// Widget.(+) is in scope HERE at the call site, not at Lib.add's definition site.
+let r = add { V = 1 } { V = 2 }  // resolved at call site using Widget.(+)
 ```
 
 ### Known Limitations
