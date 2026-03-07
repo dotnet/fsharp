@@ -941,6 +941,13 @@ val typarConstraintsAEquiv: TcGlobals -> TypeEquivEnv -> TyparConstraint -> Typa
 
 val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 
+/// Constraints that may be present in an implementation/extension but not required by a signature/base type.
+val isConstraintAllowedAsExtra: TyparConstraint -> bool
+
+/// Check if declaredTypars are compatible with reqTypars for a type extension.
+/// Allows declaredTypars to have extra NotSupportsNull constraints.
+val typarsAEquivWithAddedNotNullConstraintsAllowed: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
+
 val typeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
 val typeAEquiv: TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
@@ -1769,6 +1776,9 @@ val isStructTyconRef: TyconRef -> bool
 /// Determine if a type is a struct type
 val isStructTy: TcGlobals -> TType -> bool
 
+/// Check if a type is a measureable type (like int<kg>) whose underlying type is a value type.
+val isMeasureableValueType: TcGlobals -> TType -> bool
+
 val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is a variable type with the ': struct' constraint.
@@ -2348,6 +2358,8 @@ val mkIncr: TcGlobals -> range -> Expr -> Expr
 
 val mkLdlen: TcGlobals -> range -> Expr -> Expr
 
+val mkGetStringLength: TcGlobals -> range -> Expr -> Expr
+
 val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 //-------------------------------------------------------------------------
@@ -2407,7 +2419,7 @@ val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool optio
 
 #if !NO_TYPEPROVIDERS
 /// returns Some(assemblyName) for success
-val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string MaybeNull option
+val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> (string | null) option
 #endif
 
 val IsSignatureDataVersionAttr: ILAttribute -> bool
@@ -2761,6 +2773,8 @@ val mkCoerceIfNeeded: TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 val (|InnerExprPat|): Expr -> Expr
 
 val allValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
+
+val allTopLevelValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 
 val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
 

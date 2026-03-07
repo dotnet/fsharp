@@ -28,13 +28,13 @@ let ``apporder-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/apporder" FSC_OP
 let ``apporder-FSI`` () = singleTestBuildAndRun "core/apporder" FSI
 
 [<Fact>]
-let ``array-FSC_DEBUG-5_0`` () = singleTestBuildAndRunVersion "core/array" FSC_DEBUG LangVersion.V50
+let ``array-FSC_DEBUG-8_0`` () = singleTestBuildAndRunVersion "core/array" FSC_DEBUG LangVersion.V80
 
 [<Fact>]
-let ``array-FSC_OPTIMIZED-5_0`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED LangVersion.V50
+let ``array-FSC_OPTIMIZED-8_0`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED LangVersion.V80
 
 [<Fact>]
-let ``array-FSI-5_0`` () = singleTestBuildAndRunVersion "core/array" FSI LangVersion.V50
+let ``array-FSI-8_0`` () = singleTestBuildAndRunVersion "core/array" FSI LangVersion.V80
 
 [<Fact>]
 let ``array-FSC_OPTIMIZED-preview`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED LangVersion.Preview
@@ -53,16 +53,15 @@ let ``array-no-dot-warnings-langversion-default`` () =
     singleVersionedNegTest "core/array-no-dot-warnings" LangVersion.Latest "test-langversion-default"
 
 [<Fact>]
-let ``array-no-dot-warnings-langversion-5_0`` () =       
-    singleVersionedNegTest "core/array-no-dot-warnings" LangVersion.V50 "test-langversion-5.0"
+let ``array-no-dot-warnings-langversion-8_0`` () =       
+    singleVersionedNegTest "core/array-no-dot-warnings" LangVersion.V80 "test-langversion-8.0"
 
 [<Fact>]
 let ``ref-ops-deprecation-langversion-preview`` () =
     singleVersionedNegTest "core/ref-ops-deprecation" LangVersion.Preview "test-langversion-preview"
 
-[<Fact>]
-let ``auto-widen-version-5_0``() = 
-    singleVersionedNegTest "core/auto-widen/5.0" LangVersion.V50 "test"
+// Note: auto-widen-version-5_0 test was removed as it tested behavior when auto-widen was disabled (langversion < 8.0)
+// Now that minimum is 8.0, auto-widen is always enabled and the test folder core/auto-widen/5.0 can be removed
 
 [<Fact>]
 let ``auto-widen-version-FSC_DEBUG-preview``() =
@@ -74,7 +73,7 @@ let ``auto-widen-version-FSC_OPTIMIZED-preview``() =
 
 [<Fact>]
 let ``auto-widen-minimal``() =
-    singleTestBuildAndRunVersion "core/auto-widen/minimal" FSC_OPTIMIZED LangVersion.V70
+    singleTestBuildAndRunVersion "core/auto-widen/minimal" FSC_OPTIMIZED LangVersion.V80
 
 [<Fact>]
 let ``auto-widen-version-preview-warns-on``() = 

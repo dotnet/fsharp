@@ -27,10 +27,12 @@ Write-Host "Checking whether running on Windows: $IsWindows"
 Write-Host "Repository path: $repo_path"
 
 [string] $script = if ($IsWindows) { Join-Path $repo_path "build.cmd" } else { Join-Path $repo_path "build.sh" }
-[string] $additional_arguments = if ($IsWindows) { "-noVisualStudio" } else { "" }
+[string] $additional_arguments = if ($IsWindows) { "-noVisualStudio -ci -bootstrap" } else { "" }
 
 # Set environment variable to disable UpdateXlf target (not needed for IL verification)
 $env:UpdateXlfOnBuild = "false"
+# Disable PDB conversion for SymStore (not needed for IL verification)
+$env:PublishWindowsPdb = "false"
 
 # Set configurations to build
 [string[]] $configurations = @("Debug", "Release")
@@ -39,13 +41,15 @@ $env:UpdateXlfOnBuild = "false"
 [string[]] $ignore_errors = @() # @("StackUnexpected", "UnmanagedPointer", "StackByRef", "ReturnPtrToStack", "ExpectedNumericType", "StackUnderflow")
 
 [string] $default_tfm = "netstandard2.0"
+# Read product TFM from centralized source of truth via MSBuild
+[string] $product_tfm = (& (Join-Path $repo_path "eng/common/dotnet.ps1") msbuild (Join-Path $repo_path "eng/TargetFrameworks.props") --getProperty:FSharpNetCoreProductTargetFramework).Trim()
 
 [string] $artifacts_bin_path = Join-Path (Join-Path $repo_path "artifacts") "bin"
 
 # List projects to verify, with TFMs
 $projects = @{
     "FSharp.Core" = @($default_tfm, "netstandard2.1")
-    "FSharp.Compiler.Service" = @($default_tfm, "net10.0")
+    "FSharp.Compiler.Service" = @($default_tfm, $product_tfm)
 }
 
 # Check ilverify can run

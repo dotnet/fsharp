@@ -95,6 +95,10 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | WarnWhenFunctionValueUsedAsInterpolatedStringArg
+    | MethodOverloadsCache
+    | ImplicitDIMCoverage
+    | PreprocessorElif
     | SupportCallerArgumentExpression
 
 /// LanguageVersion management

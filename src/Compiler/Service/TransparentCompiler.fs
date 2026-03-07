@@ -2068,7 +2068,8 @@ type internal TransparentCompiler
                                 bootstrapInfo.TcGlobals,
                                 bootstrapInfo.TcImports.GetImportMap(),
                                 sink.GetFormatSpecifierLocations(),
-                                None
+                                None,
+                                RelatedSymbolUseKind.All
                             )
 
                         let sckBuilder = SemanticClassificationKeyStoreBuilder()
@@ -2108,9 +2109,14 @@ type internal TransparentCompiler
                         sResolutions.CapturedNameResolutions
                         |> Seq.iter (fun cnr ->
                             let r = cnr.Range
-
-                            if preventDuplicates.Add struct (r.Start, r.End) then
+                            // Skip synthetic ranges (e.g., compiler-generated event handler values) (#4136)
+                            if not r.IsSynthetic && preventDuplicates.Add struct (r.Start, r.End) then
                                 builder.Write(cnr.Range, cnr.Item))
+
+                        sResolutions.CapturedRelatedSymbolUses
+                        |> Seq.iter (fun (m, item, _kind) ->
+                            if not m.IsSynthetic then
+                                builder.Write(m, item))
 
                         builder.TryBuildAndReset())
             }

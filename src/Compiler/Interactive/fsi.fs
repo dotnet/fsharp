@@ -376,7 +376,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         let typT = convTypeRef tref
         let tyargs = List.map convTypeAux tspec.GenericArgs
 
-        let res: Type MaybeNull =
+        let res: Type | null =
             match isNil tyargs, typT.IsGenericType with
             | _, true -> typT.MakeGenericType(List.toArray tyargs)
             | true, false -> typT
@@ -974,11 +974,15 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let executableFileNameWithoutExtension =
         lazy
             let getFsiCommandLine () =
-                let fileNameWithoutExtension (path: string MaybeNull) = Path.GetFileNameWithoutExtension(path)
+                let fileNameWithoutExtension (path: string | null) = Path.GetFileNameWithoutExtension(path)
 
                 let currentProcess = Process.GetCurrentProcess()
                 let mainModule = currentProcess.MainModule
-                let processFileName = fileNameWithoutExtension (mainModule ^ _.FileName)
+
+                let processFileName =
+                    match mainModule with
+                    | null -> null
+                    | m -> fileNameWithoutExtension m.FileName
 
                 let commandLineExecutableFileName =
                     try
@@ -1259,6 +1263,21 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfnn "%s" (FSComp.SR.optsCopyright ())
         fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBanner3 ())
 
+    member _.ShowVersion() =
+        fsiConsoleOutput.uprintnfn "%s" tcConfigB.productNameForBannerText
+        fsiConsoleOutput.uprintnfn "Language Version: %s" tcConfigB.langVersion.SpecifiedVersionString
+
+        let fsharpCoreVersion = typeof<unit>.Assembly.GetName().Version |> string
+
+        fsiConsoleOutput.uprintnfn "FSharp.Core: %s" fsharpCoreVersion
+
+        fsiConsoleOutput.uprintnfn ".NET: %s" System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+
+        fsiConsoleOutput.uprintnfn
+            "OS: %s (%O)"
+            System.Runtime.InteropServices.RuntimeInformation.OSDescription
+            System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture
+
     member _.ShowHelp(m) =
         let helpLine = sprintf "%s --help" executableFileNameWithoutExtension.Value
 
@@ -1290,7 +1309,13 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                 fsiConsoleOutput.uprintfn "%s" msg
 
         fsiConsoleOutput.uprintfn """    #clear;;                                      // %s""" (FSIstrings.SR.fsiIntroTextHashclearInfo ())
+
+        fsiConsoleOutput.uprintfn
+            """    #version;;                                    // %s"""
+            (FSIstrings.SR.fsiIntroTextHashversionInfo ())
+
         fsiConsoleOutput.uprintfn """    #quit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo ())
+        fsiConsoleOutput.uprintfn """    #exit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo ())
         fsiConsoleOutput.uprintfn ""
         fsiConsoleOutput.uprintfnn "%s" (FSIstrings.SR.fsiIntroTextHeader2commandLine ())
         fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiIntroTextHeader3 helpLine)
@@ -2468,7 +2493,7 @@ type internal FsiDynamicCompiler
     member _.DynamicAssemblies = dynamicAssemblies.ToArray()
 
     member _.FindDynamicAssembly(name, useFullName: bool) =
-        let getName (assemblyName: AssemblyName) : string MaybeNull =
+        let getName (assemblyName: AssemblyName) : string | null =
             if useFullName then
                 assemblyName.FullName
             else
@@ -3340,7 +3365,7 @@ type internal MagicAssemblyResolution() =
             fsiDynamicCompiler: FsiDynamicCompiler,
             fsiConsoleOutput: FsiConsoleOutput,
             fullAssemName: string
-        ) : Assembly MaybeNull =
+        ) : Assembly | null =
 
         try
             // Grab the name of the assembly
@@ -3496,7 +3521,7 @@ type internal MagicAssemblyResolution() =
             fsiDynamicCompiler: FsiDynamicCompiler,
             fsiConsoleOutput: FsiConsoleOutput,
             fullAssemName: string
-        ) : Assembly MaybeNull =
+        ) : Assembly | null =
 
         //Eliminate recursive calls to Resolve which can happen via our callout to msbuild resolution
         if MagicAssemblyResolution.resolving then
@@ -3558,7 +3583,7 @@ type FsiStdinLexerProvider
         lexResourceManager: LexResourceManager
     ) =
 
-    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string MaybeNull) =
+    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string | null) =
         UnicodeLexing.FunctionAsLexbuf(
             true,
             tcConfigB.langVersion,
@@ -3602,7 +3627,7 @@ type FsiStdinLexerProvider
     // Reading stdin as a lex stream
     //----------------------------------------------------------------------------
 
-    let removeZeroCharsFromString (str: string MaybeNull) : string MaybeNull =
+    let removeZeroCharsFromString (str: string | null) : string | null =
         match str with
         | Null -> str
         | NonNull str ->
@@ -3905,7 +3930,11 @@ type FsiInteractionProcessor
             fsiOptions.ClearScreen()
             istate, Completed None
 
-        | ParsedHashDirective(("q" | "quit"), [], _) -> fsiInterruptController.Exit()
+        | ParsedHashDirective("version", [], _) ->
+            fsiOptions.ShowVersion()
+            istate, Completed None
+
+        | ParsedHashDirective(("q" | "quit" | "exit"), [], _) -> fsiInterruptController.Exit()
 
         | ParsedHashDirective("help", hashArguments, m) ->
             let args = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)

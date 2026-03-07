@@ -3,30 +3,8 @@ module Conformance.BasicGrammarElements.StaticLet
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
-open System.IO
-
-let testCasesForFSharp7ErrorMessage = 
-    Directory.EnumerateFiles(__SOURCE_DIRECTORY__) 
-    |> Seq.toArray 
-    |> Array.map Path.GetFileName
-    |> Array.except [__SOURCE_FILE__;"PlainEnum.fs";"StaticLetExtensionToBuiltinType.fs"] // ALl files in the folder except this one with the tests
-    |> Array.map (fun f -> [|f :> obj|])
-
 
 [<Theory>]
-[<MemberData(nameof(testCasesForFSharp7ErrorMessage))>]
-let ``Should fail in F# 7 and lower`` (implFileName:string) =    
-    let fileContents = File.ReadAllText (Path.Combine(__SOURCE_DIRECTORY__,implFileName))
-
-    Fs fileContents     
-    |> withLangVersion70
-    |> typecheck
-    |> shouldFail
-    |> withErrorCode 902
-    |> withDiagnosticMessageMatches "For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor.*"
-
-[<Theory>]
-[<InlineData("7.0")>]
 [<InlineData("8.0")>]
 [<InlineData("preview")>]
 let ``Regression in Member val  - not allowed without primary constructor``  (langVersion:string) = 
@@ -40,7 +18,6 @@ type Bad3 =
 
 
 [<Theory>]
-[<InlineData("7.0")>]
 [<InlineData("8.0")>]
 [<InlineData("preview")>]
 let ``Regression - Type augmentation with abstract slot not allowed`` (langVersion:string) =
@@ -54,7 +31,6 @@ type System.Random with
     |> withDiagnostics [Error 912, Line 3, Col 8, Line 3, Col 31, "This declaration element is not permitted in an augmentation"]
 
 [<Theory>]
-[<InlineData("7.0")>]
 [<InlineData("8.0")>]
 [<InlineData("preview")>]
 let ``Regression - record with abstract slot not allowed`` (langVersion:string) =
@@ -136,14 +112,6 @@ let ``Static member val in empty type`` compilation =
     |> withLangVersion80
     |> typecheck
     |> shouldSucceed
-
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMemberValInEmptyType.fs"|])>]
-let ``Static member val in empty type Fsharp 7`` compilation =
-    compilation
-    |> withLangVersion70
-    |> typecheck
-    |> shouldFail
-    |> withDiagnostics [Error 902, Line 4, Col 5, Line 4, Col 41, "For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher."]
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleUnion.fs"|])>]
 let ``Static let in simple union`` compilation =

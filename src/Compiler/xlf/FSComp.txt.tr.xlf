@@ -437,6 +437,11 @@
         <target state="translated">uçtan dilimleme</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImplicitDIMCoverage">
+        <source>Implicit dispatch slot coverage for default interface member implementations</source>
+        <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
         <target state="translated">örtük yield</target>
@@ -567,6 +572,11 @@
         <target state="translated">sabit bağlamalarda String.GetPinnableReference tercih edin</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePreprocessorElif">
+        <source>#elif preprocessor directive</source>
+        <target state="new">#elif preprocessor directive</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
         <source>binary formatting for integers</source>
         <target state="translated">tamsayılar için ikili biçim</target>
@@ -605,6 +615,11 @@
       <trans-unit id="featureReturnFromFinal">
         <source>Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</source>
         <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMethodOverloadsCache">
+        <source>Support for caching method overload resolution results for improved compilation performance.</source>
+        <target state="new">Support for caching method overload resolution results for improved compilation performance.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
@@ -835,6 +850,26 @@
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
         <source>Extended string interpolation is not supported in this version of F#.</source>
         <target state="translated">Genişletilmiş dize ilişkilendirmesi bu F# sürümünde desteklenmiyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexHashElifAfterElse">
+        <source>#elif is not allowed after #else</source>
+        <target state="new">#elif is not allowed after #else</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexHashElifMustBeFirst">
+        <source>#elif directive must appear as the first non-whitespace character on a line</source>
+        <target state="new">#elif directive must appear as the first non-whitespace character on a line</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexHashElifMustHaveIdent">
+        <source>#elif directive should be immediately followed by an identifier</source>
+        <target state="new">#elif directive should be immediately followed by an identifier</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexHashElifNoMatchingIf">
+        <source>#elif has no matching #if</source>
+        <target state="new">#elif has no matching #if</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidAsciiByteLiteral">
@@ -1083,8 +1118,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'."featureSupportCallerArgumentExpression,"Support `CallerArgumentExpression`</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'."featureSupportCallerArgumentExpression,"Support `CallerArgumentExpression`</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -1443,8 +1478,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcCallerArgumentExpressionWillNotBeApplied">
-        <source>This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3885\"' or '--nowarn:3885'.</source>
-        <target state="new">This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3885\"' or '--nowarn:3885'.</target>
+        <source>This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3888\"' or '--nowarn:3888'.</source>
+        <target state="new">This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3888\"' or '--nowarn:3888'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
@@ -1465,6 +1500,11 @@
       <trans-unit id="tcDowncastFromNullableToWithoutNull">
         <source>Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</source>
         <target state="new">Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDuplicateExtensionMemberNames">
+        <source>Extension members extending types with the same simple name '{0}' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.</source>
+        <target state="new">Extension members extending types with the same simple name '{0}' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">
@@ -8937,6 +8977,16 @@
         <target state="translated">{0} bağımlılık yöneticisi uzantısı yüklenemedi. İleti: {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarnWhenFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+          <source>Warn when a function value is used as an interpolated string argument</source>
+          <target state="new">Warn when a function value is used as an interpolated string argument</target>
+          <note />
+        </trans-unit>
+      <trans-unit id="tcFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+          <source>This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</source>
+          <target state="new">This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</target>
+          <note />
+        </trans-unit>
     </body>
   </file>
 </xliff>

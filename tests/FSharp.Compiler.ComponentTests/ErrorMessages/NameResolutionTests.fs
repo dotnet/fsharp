@@ -72,22 +72,11 @@ module Lib =
     [<Fact>]
     let MultipleRecdTypeChoiceWarningWith1AlternativeLangPreview () =
         FSharp multipleRecdTypeChoiceWarningWith1AlternativeSource
-        |> withLangVersion80
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 3566, Line 22, Col 9, Line 22, Col 19, "Multiple type matches were found:\n    N.Module1.OtherThing\n    N.Module2.Person\nThe type 'N.Module1.OtherThing' was used. Due to the overlapping field names\n    Name\nconsider using type annotations or change the order of open statements.")
-            (Error 39, Line 22, Col 15, Line 22, Col 19, "The type 'OtherThing' does not define the field, constructor or member 'City'.")
-        ]
-
-    [<Fact>]
-    let MultipleRecdTypeChoiceWarningWith1AlternativeLang7 () =
-        FSharp multipleRecdTypeChoiceWarningWith1AlternativeSource
-        |> withLangVersion70
-        |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Information 3566, Line 22, Col 9, Line 22, Col 19, "Multiple type matches were found:\n    N.Module1.OtherThing\n    N.Module2.Person\nThe type 'N.Module1.OtherThing' was used. Due to the overlapping field names\n    Name\nconsider using type annotations or change the order of open statements.")
             (Error 39, Line 22, Col 15, Line 22, Col 19, "The type 'OtherThing' does not define the field, constructor or member 'City'.")
         ]
 
@@ -129,22 +118,11 @@ module Lib =
     [<Fact>]
     let MultipleRecdTypeChoiceWarningWith2AlternativeLangPreview () =
         FSharp multipleRecdTypeChoiceWarningWith2AlternativeSource
-        |> withLangVersion80
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 3566, Line 33, Col 9, Line 33, Col 19, "Multiple type matches were found:\n    N.Module1.OtherThing\n    N.Module2.Person\n    N.Module3.Cafe\nThe type 'N.Module1.OtherThing' was used. Due to the overlapping field names\n    Name\n    Planet\nconsider using type annotations or change the order of open statements.")
-            (Error 39, Line 33, Col 15, Line 33, Col 19, "The type 'OtherThing' does not define the field, constructor or member 'City'.")
-        ]
-
-    [<Fact>]
-    let MultipleRecdTypeChoiceWarningWith2AlternativeLang7 () =
-        FSharp multipleRecdTypeChoiceWarningWith2AlternativeSource
-        |> withLangVersion70
-        |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Information 3566, Line 33, Col 9, Line 33, Col 19, "Multiple type matches were found:\n    N.Module1.OtherThing\n    N.Module2.Person\n    N.Module3.Cafe\nThe type 'N.Module1.OtherThing' was used. Due to the overlapping field names\n    Name\n    Planet\nconsider using type annotations or change the order of open statements.")
             (Error 39, Line 33, Col 15, Line 33, Col 19, "The type 'OtherThing' does not define the field, constructor or member 'City'.")
         ]
 
@@ -186,14 +164,7 @@ module Lib =
     [<Fact>]
     let MultipleRecdTypeChoiceWarningNotRaisedWithCorrectOpenStmtsOrderingLangPreview () =
         FSharp multipleRecdTypeChoiceWarningNotRaisedWithCorrectOpenStmtsOrderingSource
-        |> withLangVersion80
-        |> typecheck
-        |> shouldSucceed
-
-    [<Fact>]
-    let MultipleRecdTypeChoiceWarningNotRaisedWithCorrectOpenStmtsOrderingLang7 () =
-        FSharp multipleRecdTypeChoiceWarningNotRaisedWithCorrectOpenStmtsOrderingSource
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
 
@@ -235,14 +206,7 @@ module Lib =
     [<Fact>]
     let MultipleRecdTypeChoiceWarningNotRaisedWithoutOverlapsLangPreview () =
         FSharp multipleRecdTypeChoiceWarningNotRaisedWithoutOverlapsSource
-        |> withLangVersion80
-        |> typecheck
-        |> shouldSucceed
-    
-    [<Fact>]
-    let MultipleRecdTypeChoiceWarningNotRaisedWithoutOverlapsLang7 () =
-        FSharp multipleRecdTypeChoiceWarningNotRaisedWithoutOverlapsSource
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
 
@@ -284,13 +248,6 @@ module Lib =
     [<Fact>]
     let MultipleRecdTypeChoiceWarningNotRaisedWithTypeAnnotationsLangPreview () =
         FSharp multipleRecdTypeChoiceWarningNotRaisedWithTypeAnnotationsSource
-        |> withLangVersion80
-        |> typecheck
-        |> shouldSucceed
-    
-    [<Fact>]
-    let MultipleRecdTypeChoiceWarningNotRaisedWithTypeAnnotationsLang7 () =
-        FSharp multipleRecdTypeChoiceWarningNotRaisedWithTypeAnnotationsSource
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed

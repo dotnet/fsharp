@@ -2,9 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net10.0;net472</TargetFrameworks>
+    <TargetFrameworks>$(FSharpNetCoreProductTargetFramework);net472</TargetFrameworks>
     <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
-    <TargetFrameworks>net10.0;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
