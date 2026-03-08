@@ -1322,7 +1322,7 @@ let rec TryTranslateComputationExpression
                     vspecs, envinner)
 
             Some(
-                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun innerCompR ->
+                TranslateComputationExpression (noTailCall ceenv) CompExprTranslationPass.Initial q varSpace innerComp (fun innerCompR ->
 
                     let forCall =
                         mkSynCall
@@ -1912,7 +1912,7 @@ let rec TryTranslateComputationExpression
                         SynMatchClause(
                             pat,
                             None,
-                            TranslateComputationExpressionNoQueryOps ceenv innerComp,
+                            TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp,
                             innerCompRange,
                             DebugPointAtTarget.Yes,
                             SynMatchClauseTrivia.Zero
@@ -1976,7 +1976,7 @@ let rec TryTranslateComputationExpression
                                 SynMatchClause(
                                     pat,
                                     None,
-                                    TranslateComputationExpressionNoQueryOps ceenv innerComp,
+                                    TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp,
                                     innerComp.Range,
                                     DebugPointAtTarget.Yes,
                                     SynMatchClauseTrivia.Zero
@@ -2293,7 +2293,7 @@ let rec TryTranslateComputationExpression
             let clauses =
                 clauses
                 |> List.map (fun (SynMatchClause(pat, cond, clauseComp, patm, sp, trivia)) ->
-                    SynMatchClause(pat, cond, TranslateComputationExpressionNoQueryOps ceenv clauseComp, patm, sp, trivia))
+                    SynMatchClause(pat, cond, TranslateComputationExpressionNoQueryOps (noTailCall ceenv) clauseComp, patm, sp, trivia))
 
             let consumeExpr =
                 SynExpr.MatchLambda(true, mTryToLast, clauses, spWith2, mTryToLast)
