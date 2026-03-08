@@ -114,6 +114,7 @@ type ListBuilder() =
     member _.Using(resource: #System.IDisposable, body: _ -> list<_>) : list<_> =
         try body resource finally (resource :> System.IDisposable).Dispose()
     member _.Bind(m: list<_>, f: _ -> list<_>) : list<_> = m |> List.collect f
+    member _.MergeSources(a: list<_>, b: list<_>) : list<_ * _> = [ for x in a do for y in b do yield (x, y) ]
 
 // Regression test for https://github.com/dotnet/fsharp/issues/19402
 // yield! inside a for-loop body should call YieldFrom, not YieldFromFinal.
@@ -275,3 +276,43 @@ do
     shouldEqual result [1; 2; 3]
     shouldEqual b.YieldFromCount 1
     shouldEqual b.YieldFromFinalCount 1
+
+// yield! in match! clause body (tail position) → YieldFromFinal, result correct
+do
+    let b = ListBuilder()
+    let result =
+        b {
+            match! [1; 2] with
+            | 1 -> yield! [10]
+            | x -> yield! [x * 100]
+        }
+    shouldEqual result [10; 200]
+    shouldEqual b.YieldFromCount 0
+    shouldEqual b.YieldFromFinalCount 2
+
+// yield! in and! continuation (MergeSources+Bind, tail position) → YieldFromFinal, result correct
+do
+    let b = ListBuilder()
+    let result =
+        b {
+            let! x = [1; 2]
+            and! y = [10; 20]
+            yield! [x + y]
+        }
+    shouldEqual result [11; 21; 12; 22]
+    shouldEqual b.YieldFromCount 0
+    shouldEqual b.YieldFromFinalCount 4
+
+// yield! in and! continuation (non-tail, more code follows) → YieldFrom, result correct
+do
+    let b = ListBuilder()
+    let result =
+        b {
+            let! x = [1]
+            and! y = [10]
+            yield! [x + y]
+            yield 99
+        }
+    shouldEqual result [11; 99]
+    shouldEqual b.YieldFromCount 1
+    shouldEqual b.YieldFromFinalCount 0
