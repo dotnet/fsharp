@@ -2293,7 +2293,7 @@ let rec TryTranslateComputationExpression
             let clauses =
                 clauses
                 |> List.map (fun (SynMatchClause(pat, cond, clauseComp, patm, sp, trivia)) ->
-                    SynMatchClause(pat, cond, TranslateComputationExpressionNoQueryOps (noTailCall ceenv) clauseComp, patm, sp, trivia))
+                    SynMatchClause(pat, cond, TranslateComputationExpressionNoQueryOps ceenv clauseComp, patm, sp, trivia))
 
             let consumeExpr =
                 SynExpr.MatchLambda(true, mTryToLast, clauses, spWith2, mTryToLast)

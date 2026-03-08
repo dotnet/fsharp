@@ -168,7 +168,7 @@ do
     shouldEqual b.YieldFromCount 1
     shouldEqual b.YieldFromFinalCount 0
 
-// yield! in try/with handler → YieldFrom (handler not in tail), result correct
+// yield! in try/with handler (tail position) → YieldFromFinal, result correct
 do
     let b = ListBuilder()
     let result =
@@ -179,8 +179,23 @@ do
             with _ -> yield! [1; 2; 3]
         }
     shouldEqual result [1; 2; 3]
+    shouldEqual b.YieldFromCount 0
+    shouldEqual b.YieldFromFinalCount 1
+
+// yield! in try/with handler (non-tail, more code follows) → YieldFrom, result correct
+do
+    let b = ListBuilder()
+    let result =
+        b {
+            try
+                failwith "err"
+                yield 0
+            with _ -> yield! [1; 2]
+            yield! [3]
+        }
+    shouldEqual result [1; 2; 3]
     shouldEqual b.YieldFromCount 1
-    shouldEqual b.YieldFromFinalCount 0
+    shouldEqual b.YieldFromFinalCount 1
 
 // yield! in use body → YieldFrom (not tail due to Using wrapper), result correct
 do
