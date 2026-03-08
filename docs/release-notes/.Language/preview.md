@@ -7,3 +7,7 @@
 ### Fixed
 
 ### Changed
+
+### Breaking Changes
+
+* `assert` keyword enhancement. When this feature enabled, if there are user-overridden `System.Diagnostics.Debug.Assert`s, make sure there is an override with signature `(condition: bool * message: string) -> ...` (no matter what the return type is). ([Issue #18489](https://github.com/dotnet/fsharp/issues/18489), [PR #17519](https://github.com/dotnet/fsharp/pull/17519))
