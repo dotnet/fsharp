@@ -2000,6 +2000,8 @@ let greeting = $"Hello, {name}! Count: {count}"
 printfn "%s" greeting
 if greeting <> "Hello, World! Count: 42" then exit 1
 
+System.Globalization.CultureInfo.CurrentCulture <- System.Globalization.CultureInfo.InvariantCulture
+
 let formatted = $"Pi is approximately {System.Math.PI:F2}"
 printfn "%s" formatted
 if not (formatted.Contains("3.14")) then exit 1
