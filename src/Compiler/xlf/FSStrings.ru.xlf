@@ -1732,6 +1732,11 @@
         <target state="translated">ключевое слово "and!"</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportILFieldsInSRTP">
+        <source>Support for .NET fields in SRTP member constraints</source>
+        <target state="new">Support for .NET fields in SRTP member constraints</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

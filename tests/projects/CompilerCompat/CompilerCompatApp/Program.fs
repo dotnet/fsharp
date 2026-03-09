@@ -2,6 +2,8 @@ open CompilerCompatLib
 open CompilerCompatApp
 open System
 
+type TestRecord = { Value: string }
+
 [<EntryPoint>]
 let main _argv =
     try
@@ -44,7 +46,28 @@ let main _argv =
             
             if processed = "Processed: X=123, Y=test" then
                 printfn "SUCCESS: All compiler compatibility tests passed"
-                0
+
+                // Test SRTP member constraint compatibility
+                let srtpResult = Library.getMemberValue { Value = "compat-test" }
+                printfn "SRTP getMemberValue result: %s" srtpResult
+
+                if srtpResult <> "compat-test" then
+                    printfn "ERROR: SRTP getMemberValue result doesn't match expected"
+                    1
+                else
+                    printfn "SUCCESS: SRTP member constraint compatibility test passed"
+
+                    // Test SRTP struct field constraint compatibility
+                    let holder = Library.FieldHolder(99)
+                    let fieldResult = Library.getFieldValue holder
+                    printfn "SRTP getFieldValue result: %d" fieldResult
+
+                    if fieldResult <> 99 then
+                        printfn "ERROR: SRTP getFieldValue result doesn't match expected"
+                        1
+                    else
+                        printfn "SUCCESS: SRTP struct field constraint compatibility test passed"
+                        0
             else
                 printfn "ERROR: Processed result doesn't match expected"
                 1
