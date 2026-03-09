@@ -117,7 +117,8 @@ module internal WarnScopes =
         let startPos = lexbuf.StartPos
 
         let mGroups = (regex.Match text).Groups
-        let totalLength = mGroups[0].Length
+        let indentation = mGroups[1].Length
+        let directiveLength = mGroups[0].Length - indentation
         let dIdent = mGroups[2].Value
         let argCaptures = [ for c in mGroups[3].Captures -> c ]
 
@@ -128,7 +129,7 @@ module internal WarnScopes =
             positions lexbuf.StartPos.Line offset length
             ||> mkFileIndexRange startPos.FileIndex
 
-        let directiveRange = mkRange 0 totalLength
+        let directiveRange = mkRange indentation directiveLength
 
         if argCaptures.IsEmpty then
             errorR (Error(FSComp.SR.lexWarnDirectiveMustHaveArgs (), directiveRange))
