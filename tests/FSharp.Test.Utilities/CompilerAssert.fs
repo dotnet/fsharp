@@ -1027,6 +1027,13 @@ Updated automatically, please check diffs in your pull request, changes must be 
             let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
             use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
 
+            fsiSession.EvalInteraction """
+                let exit (code:int) = 
+                    if code = 0 then 
+                        () 
+                    else failwith $"Script called function 'exit' with code={code}."
+            """
+
             let ch, errors = fsiSession.EvalInteractionNonThrowing source
 
             let errorMessages = ResizeArray()
