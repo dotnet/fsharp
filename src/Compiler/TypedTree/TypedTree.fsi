@@ -1833,6 +1833,16 @@ type TraitConstraintSln =
     /// Indicates a trait is solved by a 'fake' instance of an operator, like '+' on integers
     | BuiltInSln
 
+    /// ILFieldSln(ty, tinst, ilfref, isStatic, isSet)
+    ///
+    /// Indicates a trait is solved by a .NET IL field.
+    ///    ty -- the F# type of the field
+    ///    tinst -- the type instantiation of the declaring type
+    ///    ilfref -- IL field reference (declaring type, name, IL type)
+    ///    isStatic -- whether the field is static
+    ///    isSet -- whether this is a set operation
+    | ILFieldSln of ty: TType * tinst: TypeInst * ilfref: ILFieldRef * isStatic: bool * isSet: bool
+
     override ToString: unit -> string
 
 /// The partial information used to index the methods of all those in a ModuleOrNamespace.

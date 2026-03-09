@@ -667,6 +667,11 @@
         <target state="translated">アクティブなパターンの構造体表現</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportILFieldsInSRTP">
+        <source>Support for .NET fields in SRTP member constraints</source>
+        <target state="new">Support for .NET fields in SRTP member constraints</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
         <source>Support ValueOption as valid type for optional member parameters</source>
         <target state="new">Support ValueOption as valid type for optional member parameters</target>
@@ -8952,12 +8957,12 @@
         <target state="translated">依存関係マネージャーの拡張機能 {0} を読み込むことができませんでした。メッセージ: {1}</target>
         <note />
       </trans-unit>
-        <trans-unit id="featureWarnWhenFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+      <trans-unit id="featureWarnWhenFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
           <source>Warn when a function value is used as an interpolated string argument</source>
           <target state="new">Warn when a function value is used as an interpolated string argument</target>
           <note />
         </trans-unit>
-        <trans-unit id="tcFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+      <trans-unit id="tcFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
           <source>This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</source>
           <target state="new">This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</target>
           <note />
