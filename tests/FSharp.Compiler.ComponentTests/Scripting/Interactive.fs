@@ -141,3 +141,19 @@ module MultiEmit =
             """if A.v <> 7.2 then failwith $"8: Failed {A.v} <> 7.2" """
             """if B.v <> 9.3 then failwith $"9: Failed {A.v} <> 9.3" """
         |] |> Seq.iter(fun item -> item |> scriptIt)
+
+    [<Fact>]
+    let ``Version directive displays version and environment info``() =
+        Fsx """
+#version;;
+()
+"""
+        |> withOptions ["--nologo"]
+        |> runFsi
+        |> shouldSucceed
+        |> withStdOutContains "F#"
+        |> withStdOutContains "Language Version:"
+        |> withStdOutContains "FSharp.Core:"
+        |> withStdOutContains ".NET:"
+        |> withStdOutContains "OS:"
+        |> ignore

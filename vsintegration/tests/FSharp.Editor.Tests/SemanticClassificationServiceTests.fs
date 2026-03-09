@@ -8,6 +8,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
 open Internal.Utilities.Library
@@ -22,7 +23,7 @@ type SemanticClassificationServiceTests() =
                 document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests")
                 |> liftAsync
 
-            return checkFileResults.GetSemanticClassification(None)
+            return checkFileResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
         }
         |> Async2.RunSynchronously
         |> Option.toList

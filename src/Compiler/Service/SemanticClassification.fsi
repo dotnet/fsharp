@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.EditorServices
 
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Import
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TcGlobals
@@ -64,5 +65,9 @@ module internal TcResolutionsExtensions =
     type TcResolutions with
 
         member GetSemanticClassification:
-            g: TcGlobals * amap: ImportMap * formatSpecifierLocations: (range * int)[] * range: range option ->
+            g: TcGlobals *
+            amap: ImportMap *
+            formatSpecifierLocations: (range * int)[] *
+            range: range option *
+            ?relatedSymbolKinds: RelatedSymbolUseKind ->
                 SemanticClassificationItem[]

@@ -814,149 +814,155 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
 
 //------------------------------------------------------------------------------------
 
+// Wrap type-provider test in a non-parallel collection to prevent TP assembly loading
+// races on net472 (type providers run in-process there).
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module GenerativeTypeProviderFallbackTest =
 
-[<Fact>]
-let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
-        
-    // The type provider and its dependency are compiled as part of the solution build
-    let csDLL = __SOURCE_DIRECTORY__ + $"/../../artifacts/bin/TestTP/{testBuildConfiguration}/netstandard2.0/CSharp_Analysis.dll"
-    let tpDLL = __SOURCE_DIRECTORY__ + $"/../../artifacts/bin/TestTP/{testBuildConfiguration}/netstandard2.0/TestTP.dll"
-// These two projects should have been built before the test executes
-    if not (File.Exists csDLL) then 
-        failwith $"expect {csDLL} to exist"
-    if not (File.Exists tpDLL) then 
-        failwith $"expect {tpDLL} to exist"
-    let optionsTestProject = 
-        {       ProjectFileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fsproj"
-                ProjectId = None
-                SourceFiles = 
-                    [|  __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fs" |]
-                Stamp = None
-                OtherOptions =
-                 [|yield "--simpleresolution"
-                   yield "--noframework"
-                   yield "--out:" + __SOURCE_DIRECTORY__ + @"/../../artifacts/bin/TestProject/Debug/netstandard2.0/TestProject.dll"
-                   yield "--doc:" + __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/bin/Debug/TestProject.xml"
-                   yield "--subsystemversion:6.00"
-                   yield "--highentropyva+"
-                   yield "--fullpaths"
-                   yield "--flaterrors"
-                   yield "--target:library"
-                   yield "--define:DEBUG"
-                   yield "--define:TRACE"
-                   yield "--debug+"
-                   yield "--optimize-"
-                   yield "--tailcalls-"
-                   yield "--debug:full"
-                   yield "--platform:anycpu"
-                   for r in mkStandardProjectReferences () do
-                       yield "-r:" + r
-                   // Make use of the type provider and reference its dependency
-                   yield "-r:" + csDLL
-                   yield "-r:" + tpDLL
-                  |]
-                ReferencedProjects = [||]
-                IsIncompleteTypeCheckEnvironment = false
-                UseScriptResolutionRules = false
-                LoadTime = System.DateTime.Now
-                UnresolvedReferences = None
-                OriginalLoadReferences = [] }
+    [<Fact>]
+    let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
+            
+        // The type provider and its dependency are compiled as part of the solution build
+        let csDLL = __SOURCE_DIRECTORY__ + $"/../../artifacts/bin/TestTP/{testBuildConfiguration}/netstandard2.0/CSharp_Analysis.dll"
+        let tpDLL = __SOURCE_DIRECTORY__ + $"/../../artifacts/bin/TestTP/{testBuildConfiguration}/netstandard2.0/TestTP.dll"
+        // These two projects should have been built before the test executes
+        if not (File.Exists csDLL) then 
+            failwith $"expect {csDLL} to exist"
+        if not (File.Exists tpDLL) then 
+            failwith $"expect {tpDLL} to exist"
+        // Dedicated checker to isolate type-provider tests from shared state races.
+        let checker = FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
+        let optionsTestProject = 
+            {       ProjectFileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fsproj"
+                    ProjectId = None
+                    SourceFiles = 
+                        [|  __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fs" |]
+                    Stamp = None
+                    OtherOptions =
+                     [|yield "--simpleresolution"
+                       yield "--noframework"
+                       yield "--out:" + __SOURCE_DIRECTORY__ + @"/../../artifacts/bin/TestProject/Debug/netstandard2.0/TestProject.dll"
+                       yield "--doc:" + __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/bin/Debug/TestProject.xml"
+                       yield "--subsystemversion:6.00"
+                       yield "--highentropyva+"
+                       yield "--fullpaths"
+                       yield "--flaterrors"
+                       yield "--target:library"
+                       yield "--define:DEBUG"
+                       yield "--define:TRACE"
+                       yield "--debug+"
+                       yield "--optimize-"
+                       yield "--tailcalls-"
+                       yield "--debug:full"
+                       yield "--platform:anycpu"
+                       for r in mkStandardProjectReferences () do
+                           yield "-r:" + r
+                       // Make use of the type provider and reference its dependency
+                       yield "-r:" + csDLL
+                       yield "-r:" + tpDLL
+                      |]
+                    ReferencedProjects = [||]
+                    IsIncompleteTypeCheckEnvironment = false
+                    UseScriptResolutionRules = false
+                    LoadTime = System.DateTime.Now
+                    UnresolvedReferences = None
+                    OriginalLoadReferences = [] }
 
-    let optionsTestProject2 testProjectOutput =
-          {ProjectFileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fsproj"
-           ProjectId = None
-           SourceFiles = [|__SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fs"|]
-           Stamp = None
-           OtherOptions =
-            [|yield "--simpleresolution"
-              yield "--noframework"
-              yield "--out:" + __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/bin/Debug/TestProject2.dll"
-              yield "--doc:" + __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/bin/Debug/TestProject2.xml"
-              yield "--subsystemversion:6.00"
-              yield "--highentropyva+"
-              yield "--fullpaths"
-              yield "--flaterrors"
-              yield "--target:library"
-              yield "--define:DEBUG"
-              yield "--define:TRACE"
-              yield "--debug+"
-              yield "--optimize-"
-              yield "--tailcalls-"
-              yield "--debug:full"
-              yield "--platform:anycpu"
-              for r in mkStandardProjectReferences () do
-                  yield "-r:" + r
-              // Make use of the type provider and reference its dependency
-              yield "-r:" + csDLL
-              yield "-r:" + tpDLL
-             // Make an in-memory reference to TestProject, which itself makes use of a type provider
-             // NOTE TestProject may not actually have been compiled
-              yield "-r:" + testProjectOutput|]
-           ReferencedProjects =
-            [|FSharpReferencedProject.FSharpReference(testProjectOutput, optionsTestProject )|]
-           IsIncompleteTypeCheckEnvironment = false
-           UseScriptResolutionRules = false
-           LoadTime = System.DateTime.Now
-           UnresolvedReferences = None
-           OriginalLoadReferences = []}
+        let optionsTestProject2 testProjectOutput =
+              {ProjectFileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fsproj"
+               ProjectId = None
+               SourceFiles = [|__SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fs"|]
+               Stamp = None
+               OtherOptions =
+                [|yield "--simpleresolution"
+                  yield "--noframework"
+                  yield "--out:" + __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/bin/Debug/TestProject2.dll"
+                  yield "--doc:" + __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/bin/Debug/TestProject2.xml"
+                  yield "--subsystemversion:6.00"
+                  yield "--highentropyva+"
+                  yield "--fullpaths"
+                  yield "--flaterrors"
+                  yield "--target:library"
+                  yield "--define:DEBUG"
+                  yield "--define:TRACE"
+                  yield "--debug+"
+                  yield "--optimize-"
+                  yield "--tailcalls-"
+                  yield "--debug:full"
+                  yield "--platform:anycpu"
+                  for r in mkStandardProjectReferences () do
+                      yield "-r:" + r
+                  // Make use of the type provider and reference its dependency
+                  yield "-r:" + csDLL
+                  yield "-r:" + tpDLL
+                 // Make an in-memory reference to TestProject, which itself makes use of a type provider
+                 // NOTE TestProject may not actually have been compiled
+                  yield "-r:" + testProjectOutput|]
+               ReferencedProjects =
+                [|FSharpReferencedProject.FSharpReference(testProjectOutput, optionsTestProject )|]
+               IsIncompleteTypeCheckEnvironment = false
+               UseScriptResolutionRules = false
+               LoadTime = System.DateTime.Now
+               UnresolvedReferences = None
+               OriginalLoadReferences = []}
 
-    //printfn "options: %A" options
-    begin
-        let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fs"
-        let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-        let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, optionsTestProject) |> Async.RunImmediate
-        let fileCheckResults =
-            match fileCheckAnswer with
-            | FSharpCheckFileAnswer.Succeeded(res) -> res
-            | res -> failwithf "Parsing did not finish... (%A)" res
+        //printfn "options: %A" options
+        begin
+            let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fs"
+            let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
+            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, optionsTestProject) |> Async.RunImmediate
+            let fileCheckResults =
+                match fileCheckAnswer with
+                | FSharpCheckFileAnswer.Succeeded(res) -> res
+                | res -> failwithf "Parsing did not finish... (%A)" res
 
-        printfn "Parse Diagnostics (TestProject): %A" fileParseResults.Diagnostics
-        printfn "Check Diagnostics (TestProject): %A" fileCheckResults.Diagnostics
-        fileCheckResults.Diagnostics |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
-    end
+            printfn "Parse Diagnostics (TestProject): %A" fileParseResults.Diagnostics
+            printfn "Check Diagnostics (TestProject): %A" fileCheckResults.Diagnostics
+            fileCheckResults.Diagnostics |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
+        end
 
-    // Set up a TestProject2 using an in-memory reference to TestProject but where TestProject has not
-    // compiled to be on-disk.  In this case, we expect an error, because TestProject uses a generative
-    // type provider, and in-memory cross-references to projects using generative type providers are
-    // not yet supported.
-    begin
-        let testProjectNotCompiledSimulatedOutput = __SOURCE_DIRECTORY__ + @"/DUMMY/TestProject.dll"
-        let options = optionsTestProject2 testProjectNotCompiledSimulatedOutput
-        let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fs"
-        let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-        let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunImmediate
-        let fileCheckResults =
-            match fileCheckAnswer with
-            | FSharpCheckFileAnswer.Succeeded(res) -> res
-            | res -> failwithf "Parsing did not finish... (%A)" res
+        // Set up a TestProject2 using an in-memory reference to TestProject but where TestProject has not
+        // compiled to be on-disk.  In this case, we expect an error, because TestProject uses a generative
+        // type provider, and in-memory cross-references to projects using generative type providers are
+        // not yet supported.
+        begin
+            let testProjectNotCompiledSimulatedOutput = __SOURCE_DIRECTORY__ + @"/DUMMY/TestProject.dll"
+            let options = optionsTestProject2 testProjectNotCompiledSimulatedOutput
+            let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fs"
+            let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
+            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunImmediate
+            let fileCheckResults =
+                match fileCheckAnswer with
+                | FSharpCheckFileAnswer.Succeeded(res) -> res
+                | res -> failwithf "Parsing did not finish... (%A)" res
 
-        printfn "Parse Diagnostics (TestProject2 without compiled TestProject): %A" fileParseResults.Diagnostics
-        printfn "Check Diagnostics (TestProject2 without compiled TestProject): %A" fileCheckResults.Diagnostics
-        fileCheckResults.Diagnostics 
-            |> Array.exists (fun diag -> 
-                 diag.Severity = FSharpDiagnosticSeverity.Error &&
-                 diag.Message.Contains("TestProject.dll"))
-            |> shouldEqual true
-    end
+            printfn "Parse Diagnostics (TestProject2 without compiled TestProject): %A" fileParseResults.Diagnostics
+            printfn "Check Diagnostics (TestProject2 without compiled TestProject): %A" fileCheckResults.Diagnostics
+            fileCheckResults.Diagnostics 
+                |> Array.exists (fun diag -> 
+                     diag.Severity = FSharpDiagnosticSeverity.Error &&
+                     diag.Message.Contains("TestProject.dll"))
+                |> shouldEqual true
+        end
 
-    // Do the same check with an in-memory reference to TestProject where TestProject exists 
-    // compiled to disk.  In this case, we expect no error, because even though TestProject uses a generative
-    // type provider, the in-memory cross-reference is ignored and an on-disk reference is used instead.
-    begin
-        let testProjectCompiledOutput = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/netstandard2.0/TestProject.dll"
-        if not (File.Exists testProjectCompiledOutput) then 
-            failwith $"expect {testProjectCompiledOutput} to exist"
-        let options = optionsTestProject2 testProjectCompiledOutput
-        let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fs"
-        let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-        let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunImmediate
-        let fileCheckResults =
-            match fileCheckAnswer with
-            | FSharpCheckFileAnswer.Succeeded(res) -> res
-            | res -> failwithf "Parsing did not finish... (%A)" res
+        // Do the same check with an in-memory reference to TestProject where TestProject exists 
+        // compiled to disk.  In this case, we expect no error, because even though TestProject uses a generative
+        // type provider, the in-memory cross-reference is ignored and an on-disk reference is used instead.
+        begin
+            let testProjectCompiledOutput = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/netstandard2.0/TestProject.dll"
+            if not (File.Exists testProjectCompiledOutput) then 
+                failwith $"expect {testProjectCompiledOutput} to exist"
+            let options = optionsTestProject2 testProjectCompiledOutput
+            let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fs"
+            let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
+            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunImmediate
+            let fileCheckResults =
+                match fileCheckAnswer with
+                | FSharpCheckFileAnswer.Succeeded(res) -> res
+                | res -> failwithf "Parsing did not finish... (%A)" res
 
-        printfn "Parse Diagnostics (TestProject2 with compiled TestProject): %A" fileParseResults.Diagnostics
-        printfn "Check Diagnostics (TestProject2 with compiled TestProject): %A" fileCheckResults.Diagnostics
-        fileCheckResults.Diagnostics.Length |> shouldEqual 0
-    end
+            printfn "Parse Diagnostics (TestProject2 with compiled TestProject): %A" fileParseResults.Diagnostics
+            printfn "Check Diagnostics (TestProject2 with compiled TestProject): %A" fileCheckResults.Diagnostics
+            fileCheckResults.Diagnostics.Length |> shouldEqual 0
+        end
 

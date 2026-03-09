@@ -101,7 +101,7 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
                     task {
                         match! f fileName |> Async.StartAsTask with
                         | Some source -> return SourceTextNew.ofISourceText source
-                        | None -> return failwith $"Couldn't get source for file {f}"
+                        | None -> return failwith $"Couldn't get source for file {fileName}"
                     }
             )
 

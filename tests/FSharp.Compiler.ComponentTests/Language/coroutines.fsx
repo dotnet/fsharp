@@ -399,4 +399,36 @@ let mostlyNegativeTestReturnFrom () =
 
 mostlyNegativeTestReturnFrom () |> expect 1 12
 
+// Test that yield! in try/with handler in tail position calls YieldFromFinal
+let testHandlerTailCall () = 
+    coroutine {
+        printfn "in testHandlerTailCall"
+        try
+            failwith "crash"
+        with
+        | _ ->
+            printfn "in handler, this yield! should be YieldFromFinal"
+            yield! t1()
+    }
+
+testHandlerTailCall () |> expect 2 0
+
+// Test that yield! in try/with handler in non-tail position calls YieldFrom
+let testHandlerNonTailCall () = 
+    coroutine {
+        printfn "in testHandlerNonTailCall"
+        try
+            failwith "crash"
+        with
+        | _ ->
+            printfn "in handler, this yield! should be YieldFrom"
+            yield! t0()
+
+        printfn "more code after try/with"
+        yield! t0()
+        printfn "done"
+    }
+
+testHandlerNonTailCall () |> expect 0 2
+
 
