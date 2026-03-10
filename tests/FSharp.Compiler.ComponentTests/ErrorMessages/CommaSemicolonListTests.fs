@@ -14,7 +14,7 @@ let x = [1, 2, 3]
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Information 3885, Line 2, Col 9, Line 2, Col 18,
+        |> withSingleDiagnostic (Information 3886, Line 2, Col 9, Line 2, Col 18,
                                  "This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?")
 
     [<Fact>]
@@ -60,13 +60,13 @@ let x = [1, 2]
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Information 3885, Line 2, Col 9, Line 2, Col 15,
+        |> withSingleDiagnostic (Information 3886, Line 2, Col 9, Line 2, Col 15,
                                  "This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?")
 
     [<Fact>]
     let ``Warning is suppressible via nowarn``() =
         FSharp """
-#nowarn "3885"
+#nowarn "3886"
 let x = [1, 2, 3]
         """
         |> typecheck

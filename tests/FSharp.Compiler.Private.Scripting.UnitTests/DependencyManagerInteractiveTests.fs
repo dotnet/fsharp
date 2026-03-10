@@ -731,6 +731,7 @@ x |> Seq.iter(fun r ->
         Assert.Contains("""#r "nuget:FSharp.Data, 3.1.2";;""", output)
         Assert.Contains("""#r "nuget:FSharp.Data";;""", output)
         Assert.Contains("""#i "package source uri";;""", output)
+        Assert.Contains("#version;;", output)
 
         // this is the end of the line each different platform has a different mechanism for starting fsi
         // Actual output looks similar to: """      See 'testhost --help' for options"""
@@ -749,6 +750,7 @@ x |> Seq.iter(fun r ->
         Assert.Contains("""#r "nuget:FSharp.Data, 3.1.2";;""", output)
         Assert.Contains("""#r "nuget:FSharp.Data";;""", output)
         Assert.Contains("""#i "package source uri";;""", output)
+        Assert.Contains("#version;;", output)
 
         // this is the end of the line each different platform has a different mechanism for starting fsi
         // Actual output looks similar to: """      See 'testhost --help' for options"""

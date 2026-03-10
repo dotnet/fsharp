@@ -25,6 +25,7 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
@@ -1837,8 +1838,11 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
                             notifyNameResolution (pos, item, itemGroup, itemTyparInst, occurrence, nenv, ad, m, replacing)
 
                         member _.NotifyExprHasType(_, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
+                        member _.NotifyExprHasTypeSynthetic(_, _, _, _) =  assert false // no expr typings in MakeAndPublishSimpleVals
 
                         member _.NotifyFormatSpecifierLocation(_, _) = ()
+
+                        member _.NotifyRelatedSymbolUse(_, _, _) = ()
 
                         member _.NotifyOpenDeclaration _ = ()
 
@@ -5870,13 +5874,13 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcNonControlFlowExpr env <| fun env ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcConstExpr cenv overallTy env m tpenv synConst
+
     | SynExpr.DotLambda (synExpr, m, trivia) ->
         match env.NameEnv.eUnqualifiedItems |> Map.tryFind "_arg1" with
         // Compiler-generated _arg items can have more forms, the real underscore will be 1-character wide
         | Some (Item.Value(valRef)) when valRef.Range.StartColumn+1 = valRef.Range.EndColumn ->
             warning(Error(FSComp.SR.tcAmbiguousDiscardDotLambda(), trivia.UnderscoreRange))
-        | Some _ -> ()
-        | None -> ()
+        | _ -> ()
 
         let unaryArg = mkSynId trivia.UnderscoreRange (cenv.synArgNameGenerator.New())
         let svar = mkSynCompGenSimplePatVar unaryArg
@@ -6167,6 +6171,7 @@ and TcExprMatchLambda (cenv: cenv) overallTy env tpenv (isExnMatch, mFunction, c
     let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
     let idv1, idve1 = mkCompGenLocal mFunction (cenv.synArgNameGenerator.New()) domainTy
     CallExprHasTypeSink cenv.tcSink (mFunction.StartRange, env.NameEnv, domainTy, env.AccessRights)
+    CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
     let envinner = ExitFamilyRegion env
     let envinner = { envinner with eIsControlFlow = true }
     let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mFunction (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo (false, resultTy)) envinner tpenv clauses
@@ -6575,6 +6580,7 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
             | [] -> envinner
 
         let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner (MustConvertTo (false, resultTy)) takenNames tpenv bodyExpr
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
 
         // See bug 5758: Non-monotonicity in inference: need to ensure that parameters are never inferred to have byref type, instead it is always declared
         byrefs |> Map.iter (fun _ (orig, v) ->
@@ -7514,6 +7520,15 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
         )
 
 /// Check an interpolated string expression
+and [<TailCall>] warnForFunctionValuesInFillExprs (g: TcGlobals) argTys synFillExprs =
+    match argTys, synFillExprs with
+    | argTy :: restTys, (synFillExpr: SynExpr) :: restExprs ->
+        if isFunTy g argTy || isDelegateTy g argTy then
+            warning (Error(FSComp.SR.tcFunctionValueUsedAsInterpolatedStringArg (), synFillExpr.Range))
+
+        warnForFunctionValuesInFillExprs g restTys restExprs
+    | _ -> ()
+
 and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: SynInterpolatedStringPart list) =
     let g = cenv.g
 
@@ -7663,6 +7678,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             // Type check the expressions filling the holes
             let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
+            if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg then
+                warnForFunctionValuesInFillExprs g argTys synFillExprs
+
             // Take all interpolated string parts and typed fill expressions
             // and convert them to typed expressions that can be used as args to System.String.Concat
             // return an empty list if there are some format specifiers that make lowering to not applicable
@@ -7731,6 +7749,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
         // Type check the expressions filling the holes
         let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
+
+        if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg then
+            warnForFunctionValuesInFillExprs g argTys synFillExprs
 
         let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
@@ -7827,6 +7848,7 @@ and TcAssertExpr cenv overallTy env (m: range) tpenv x =
     TcExpr cenv overallTy env tpenv callDiagnosticsExpr
 
 and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr) =
+    CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy, env.eAccessRights)
     let g = cenv.g
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors
@@ -7888,14 +7910,12 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                 let gtyp = mkWoNullAppTy tcref tinst
                 UnifyTypes cenv env mWholeExpr overallTy gtyp
 
-                // (#15290) For copy-and-update expressions, register the record type as a reference
+                // (#15290) For copy-and-update expressions, register the record type as a related symbol
                 // so that "Find All References" on the record type includes copy-and-update usages.
-                // Use a zero-width range at the start of the expression to avoid affecting semantic
-                // classification (coloring) of field names and other tokens within the expression.
+                // Reported via CallRelatedSymbolSink to avoid affecting colorization or symbol info.
                 if hasOrigExpr then
                     let item = Item.Types(tcref.DisplayName, [gtyp])
-                    let pointRange = Range.mkRange mWholeExpr.FileName mWholeExpr.Start mWholeExpr.Start
-                    CallNameResolutionSink cenv.tcSink (pointRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
+                    CallRelatedSymbolSink cenv.tcSink (mWholeExpr, item, RelatedSymbolUseKind.CopyAndUpdateRecord)
 
                 [ for n, v in fldsList do
                     match v with
@@ -8486,6 +8506,8 @@ and TcDelayed cenv (overallTy: OverallTy) env tpenv mExpr expr exprTy (atomicFla
     // We can now record for posterity the type of this expression and the location of the expression.
     if (atomicFlag = ExprAtomicFlag.Atomic) then
         CallExprHasTypeSink cenv.tcSink (mExpr, env.NameEnv, exprTy, env.eAccessRights)
+    else
+        CallExprHasTypeSinkSynthetic cenv.tcSink (mExpr, env.NameEnv, exprTy, env.eAccessRights)
 
     match delayed with
     | []
