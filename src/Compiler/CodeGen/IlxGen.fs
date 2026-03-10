@@ -101,29 +101,14 @@ let CheckCodeDoesSomething (code: ILCode) =
 
 /// Choose the field names for variables captured by closures
 let ChooseFreeVarNames takenNames ts =
-    let tns = List.map (fun t -> (t, None)) ts
+    let initialSet = Set.ofList takenNames
 
-    let rec chooseName names (t, nOpt) =
-        let tn =
-            match nOpt with
-            | None -> t
-            | Some n -> t + string n
+    let ts, _ =
+        (initialSet, ts)
+        ||> List.mapFold (fun taken baseName ->
+            let chosen = ChooseUniqueName baseName taken
+            chosen, Set.add chosen taken)
 
-        if Zset.contains tn names then
-            chooseName
-                names
-                (t,
-                 Some(
-                     match nOpt with
-                     | None -> 0
-                     | Some n -> (n + 1)
-                 ))
-        else
-            let names = Zset.add tn names
-            tn, names
-
-    let names = Zset.empty String.order |> Zset.addList takenNames
-    let ts, _names = List.mapFold chooseName names tns
     ts
 
 /// We can't tailcall to methods taking byrefs. This helper helps search for them
