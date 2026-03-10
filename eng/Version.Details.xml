@@ -50,21 +50,29 @@
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>07e15c13e4e720126b3ac911e06e1359ed2e5e72</Sha>
     </Dependency>
-    <Dependency Name="System.Reflection.Metadata" Version="10.0.2">
-      <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha />
-    </Dependency>
-    <Dependency Name="System.Composition" Version="10.0.2">
-      <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha />
-    </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
     <Dependency Name="System.Collections.Immutable" Version="10.0.2">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha />
+      <Sha>
+      </Sha>
     </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
+    <Dependency Name="System.Composition" Version="10.0.2">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
+    </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
     <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.2">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha />
+      <Sha>
+      </Sha>
+    </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
+    <Dependency Name="System.Reflection.Metadata" Version="10.0.2">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
