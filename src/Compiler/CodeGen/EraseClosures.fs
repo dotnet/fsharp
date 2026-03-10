@@ -6,6 +6,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.AbstractIL.Morphs
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.IlxGenSupport
 open FSharp.Compiler.Syntax.PrettyNaming
 
 // --------------------------------------------------------------------
@@ -490,7 +491,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let laterGenericParams = td.GenericParams @ addedGenParams
 
                 let selfFreeVar =
-                    mkILFreeVar (CompilerGeneratedName("self" + string nowFields.Length), true, nowCloSpec.ILType)
+                    let baseName = CompilerGeneratedName("self" + string nowFields.Length)
+                    let existingNames = nowFields |> Array.map (fun fv -> fv.fvName) |> Set.ofArray
+                    mkILFreeVar (ChooseUniqueName baseName existingNames, true, nowCloSpec.ILType)
 
                 let laterFields = Array.append nowFields [| selfFreeVar |]
                 let laterCloRef = IlxClosureRef(laterTypeRef, laterStruct, laterFields)
@@ -612,7 +615,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let laterGenericParams = td.GenericParams
                 // Number each argument left-to-right, adding one to account for the "this" pointer
                 let selfFreeVar =
-                    mkILFreeVar (CompilerGeneratedName "self", true, nowCloSpec.ILType)
+                    let baseName = CompilerGeneratedName "self"
+                    let existingNames = nowFields |> Array.map (fun fv -> fv.fvName) |> Set.ofArray
+                    mkILFreeVar (ChooseUniqueName baseName existingNames, true, nowCloSpec.ILType)
 
                 let argToFreeVarMap =
                     (0, selfFreeVar)

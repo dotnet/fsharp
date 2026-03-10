@@ -446,16 +446,24 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, retTy: ILTy
     override _.Equals(obj: obj) =
         match obj with
         | :? MethodDefKey as y ->
-            let compareILTypes o1 o2 =
+            let rec compareILTypes o1 o2 =
                 match o1, o2 with
-                | ILType.Value v1, ILType.Value v2 -> v1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, v2 :> obj )
+                | ILType.Value v1, ILType.Value v2 -> v1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, v2 :> obj)
+                | ILType.Boxed v1, ILType.Boxed v2 -> v1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, v2 :> obj)
+                | ILType.Byref t1, ILType.Byref t2 -> compareILTypes t1 t2
+                | ILType.Ptr t1, ILType.Ptr t2 -> compareILTypes t1 t2
+                | ILType.Array(sh1, t1), ILType.Array(sh2, t2) -> sh1 = sh2 && compareILTypes t1 t2
+                | ILType.Modified(req1, tref1, t1), ILType.Modified(req2, tref2, t2) ->
+                    req1 = req2
+                    && tref1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, tref2 :> obj)
+                    && compareILTypes t1 t2
                 | _ -> o1 = o2
 
             tidx = y.TypeIdx &&
             garity = y.GenericArity &&
             nm = y.Name &&
-            // note: these next two use structural equality on AbstractIL ILType values
-            retTy = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argTys y.ArgTypes &&
+            // note: these next two use scope-aware equality on AbstractIL ILType values
+            compareILTypes retTy y.ReturnType && List.lengthsEqAndForall2 compareILTypes argTys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
 
