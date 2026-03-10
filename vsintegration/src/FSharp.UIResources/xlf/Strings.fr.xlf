@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="Inlay_Hints">
         <source>Inlay Hints</source>
-        <target state="translated">Indicateurs inline</target>
+        <target state="new">Inlay Hints</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -144,12 +144,12 @@
       </trans-unit>
       <trans-unit id="Show_Inlay_Parameter_Name_Hints">
         <source>Display inlay parameter name hints (preview)</source>
-        <target state="translated">Afficher les conseils de nom de paramètre en ligne (préversion)</target>
+        <target state="new">Display inlay parameter name hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inlay_Type_Hints">
         <source>Display inlay type hints (preview)</source>
-        <target state="translated">Afficher les conseils de type en ligne (aperçu)</target>
+        <target state="new">Display inlay type hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">
