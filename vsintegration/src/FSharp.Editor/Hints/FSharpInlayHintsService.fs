@@ -27,8 +27,6 @@ type internal FSharpInlayHintsService [<ImportingConstructor>] (settings: Editor
                 else
                     OptionParser.getHintKinds settings.Advanced
             
-            //DebugHelpers.FSharpOutputPane.logMsg $"hints: {hintKinds} \n"
-
             if hintKinds.IsEmpty then
                 Task.FromResult ImmutableArray.Empty
             else
@@ -42,8 +40,6 @@ type internal FSharpInlayHintsService [<ImportingConstructor>] (settings: Editor
                         nativeHints
                         |> Seq.map (NativeToRoslynHintConverter.convert sourceText)
                         |> ImmutableArray.CreateRange
-
-                    //DebugHelpers.FSharpOutputPane.logMsg $"hints count: {roslynHints.Length}\n"
 
                     return roslynHints
                 }
