@@ -29,9 +29,6 @@ let FSI = FSI_NETFX
 
 let log = printfn
 
-// Disable parallel execution for CoreTests because the printing and FSI tests
-// spawn external FSI processes with stdin redirection that can interfere with each other
-[<Collection(nameof NotThreadSafeResourceCollection)>]
 module CoreTests =
 
 
