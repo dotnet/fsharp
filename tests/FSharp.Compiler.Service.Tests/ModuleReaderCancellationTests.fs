@@ -16,6 +16,9 @@ open Internal.Utilities.Library
 open FSharp.Compiler.Service.Tests.Common
 open Xunit
 
+// Dedicated checker to isolate cancellation tests from the shared checker's state.
+let private checker = FSharpChecker.Create(useTransparentCompiler = FSharp.Test.CompilerAssertHelpers.UseTransparentCompiler)
+
 let mutable private cts = new CancellationTokenSource()
 let mutable private wasCancelled = false
 

@@ -1,6 +1,6 @@
 ---
 name: flaky-test-detector
-description: "Detect flaky tests by scanning recent CI builds across multiple PRs. Use when investigating intermittent test failures, CI instability, or deciding which tests to quarantine."
+description: "Detect flaky tests by scanning recent AzDo CI builds for test failures recurring across multiple unrelated PRs. Use when investigating intermittent failures, CI instability, deciding which tests to quarantine, or checking if RunTestCasesInSequence no-ops are causing parallel-safety issues."
 metadata:
   author: fsharp-team
   version: "1.0"
@@ -8,17 +8,22 @@ metadata:
 
 # Flaky Test Detector
 
-Identifies tests that fail intermittently across unrelated PRs — a strong signal of flakiness rather than a genuine regression.
+Identifies tests that fail intermittently across unrelated PRs — a strong signal of flakiness rather than a genuine regression. Also cross-references with existing fix PRs.
 
 ## When to Use
 
 - Investigating CI instability ("is this test failure my fault or flaky?")
 - Periodic hygiene: finding tests to quarantine or fix
 - Before marking a test as `Skip = "Flaky"` — confirm it actually is flaky
+- Checking if `RunTestCasesInSequence` (a no-op in xUnit 2) is masking parallelism bugs
 
 ## How It Works
 
-The detector scans recent PRs, collects test failures from their Azure DevOps CI builds, and cross-references failures by test name. A test failing in **3+ distinct PRs** within a time window is flagged as flaky.
+1. Queries Azure DevOps builds API directly for recent failed fsharp-ci PR builds
+2. Extracts test failures from each build via `Get-BuildErrors.ps1`
+3. Aggregates by test name across distinct PRs
+4. Cross-references with GitHub PRs that may address the flaky tests
+5. Tests failing in **3+ distinct PRs** are flagged as flaky
 
 ## Usage
 

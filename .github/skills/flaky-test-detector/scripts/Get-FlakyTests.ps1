@@ -43,6 +43,7 @@ param(
     [int]$DefinitionId = 90,
     [string]$Org = "dnceng-public",
     [string]$Project = "public",
+    [string]$Repo = "dotnet/fsharp",
     [string]$ScriptsDir = (Join-Path $PSScriptRoot ".." ".." "pr-build-status" "scripts")
 )
 
@@ -71,9 +72,13 @@ catch {
 }
 
 $builds = $buildsResponse.value
+if (-not $builds -or $builds.Count -eq 0) {
+    Write-Host "No failed builds found in the last $DaysBack days." -ForegroundColor Green
+    exit 0
+}
 Write-Host "Found $($builds.Count) failed build(s)" -ForegroundColor Green
 
-# Deduplicate: keep only the latest build per PR (multiple retries)
+# Group all failed builds by PR number
 $buildsByPR = @{}
 foreach ($build in $builds) {
     $prNum = $build.triggerInfo.'pr.number'
@@ -191,13 +196,14 @@ Write-Host "`n=== Step 4: Cross-referencing with recent PRs ===" -ForegroundColo
 $fixPRs = @{}  # TestName -> list of matching PRs
 
 if ($flakyTests.Count -gt 0) {
+    $savedPager = $env:GH_PAGER
     $env:GH_PAGER = ""
 
     # Batch 1: Get all recent PRs mentioning "flaky" in the repo
     $allCandidatePRs = @()
     foreach ($searchState in @("open", "closed")) {
         try {
-            $json = gh search prs --repo dotnet/fsharp --limit 30 --state $searchState --json number,title,state,createdAt "flaky" 2>$null
+            $json = gh search prs --repo $Repo --limit 30 --state $searchState --json number,title,state,createdAt "flaky" 2>$null
             if ($json) { $allCandidatePRs += ($json | ConvertFrom-Json) }
         }
         catch {}
@@ -218,12 +224,14 @@ if ($flakyTests.Count -gt 0) {
         foreach ($term in $searchTerms) {
             if ($term.Length -lt 5) { continue }
             try {
-                $json = gh search prs --repo dotnet/fsharp --limit 10 --json number,title,state,createdAt "$term" 2>$null
+                $json = gh search prs --repo $Repo --limit 10 --json number,title,state,createdAt "$term" 2>$null
                 if ($json) { $allCandidatePRs += ($json | ConvertFrom-Json) }
             }
             catch {}
         }
     }
+
+    $env:GH_PAGER = $savedPager
 
     # Deduplicate
     $allCandidatePRs = $allCandidatePRs | Sort-Object -Property number -Unique
