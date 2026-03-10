@@ -2,21 +2,21 @@
 <Dependencies>
   <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="5121846aac455d48f990a10e569c90e3ab1e359a" BarId="305296" />
   <ProductDependencies>
-    <Dependency Name="Microsoft.Build" Version="18.6.0-preview-26156-02">
+    <Dependency Name="Microsoft.Build" Version="18.6.0-preview-26159-05">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6500dd278aed2749db445942790934e3c0d8c729</Sha>
+      <Sha>ef957b7daa9e0ea5339305953e2c1fdefeb8a14c</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="18.6.0-preview-26156-02">
+    <Dependency Name="Microsoft.Build.Framework" Version="18.6.0-preview-26159-05">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6500dd278aed2749db445942790934e3c0d8c729</Sha>
+      <Sha>ef957b7daa9e0ea5339305953e2c1fdefeb8a14c</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.6.0-preview-26156-02">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.6.0-preview-26159-05">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6500dd278aed2749db445942790934e3c0d8c729</Sha>
+      <Sha>ef957b7daa9e0ea5339305953e2c1fdefeb8a14c</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.6.0-preview-26156-02">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.6.0-preview-26159-05">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6500dd278aed2749db445942790934e3c0d8c729</Sha>
+      <Sha>ef957b7daa9e0ea5339305953e2c1fdefeb8a14c</Sha>
     </Dependency>
     <Dependency Name="Microsoft.CodeAnalysis" Version="5.6.0-2.26157.2">
       <Uri>https://github.com/dotnet/roslyn</Uri>
@@ -50,21 +50,29 @@
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>43acf64dec4f26625357486891c73d97cf4ba695</Sha>
     </Dependency>
-    <Dependency Name="System.Reflection.Metadata" Version="10.0.2">
-      <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha />
-    </Dependency>
-    <Dependency Name="System.Composition" Version="10.0.2">
-      <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha />
-    </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
     <Dependency Name="System.Collections.Immutable" Version="10.0.2">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha />
+      <Sha>
+      </Sha>
     </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
+    <Dependency Name="System.Composition" Version="10.0.2">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
+    </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
     <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.2">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha />
+      <Sha>
+      </Sha>
+    </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
+    <Dependency Name="System.Reflection.Metadata" Version="10.0.2">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
