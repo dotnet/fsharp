@@ -243,6 +243,7 @@ let test = task {
         ()
 }
     """
+        |> withOptions [ "--nowarn:3886" ]
         |> compile
         |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
 
