@@ -158,7 +158,6 @@ You can find all test options as separate flags. For example `build -testAll`:
   -testDesktop              Run tests against full .NET Framework
   -testCoreClr              Run tests against CoreCLR
   -testFSharpCore           Run FSharpCore unit tests
-  -testFSharpQA             Run F# Cambridge tests
   -testScripting            Run Scripting tests
   -testVs                   Run F# editor unit tests
 ```
@@ -230,7 +229,7 @@ Or if you are on Linux:
 ## Updating baselines in tests
 
 Some tests use "baseline" (.bsl) files.  There is sometimes a way to update these baselines en-masse in your local build,
-useful when some change affects many baselines.  For example, in the `fsharpqa` and `FSharp.Compiler.ComponentTests` tests the baselines
+useful when some change affects many baselines.  For example, in the `FSharp.Compiler.ComponentTests` tests the baselines
 are updated using scripts or utilities that allow the following environment variable to be set:
 
 Windows:
@@ -315,10 +314,10 @@ it will start it many times at the same time, and execute in parallel.
 
 ```bash
 $env:TEST_UPDATE_BSL=1
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" /p:BUILDING_USING_DOTNET=true
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" /p:BUILDING_USING_DOTNET=true
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" -c Release /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" -c Release /p:BUILDING_USING_DOTNET=true
 ```
 
 ### Updating ILVerify baselines

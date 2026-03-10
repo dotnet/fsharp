@@ -484,17 +484,17 @@ let inline checkStateMachine nm =
 // These simply detect state machine compilation
 module ``Check simple task compiles to state machine`` =
 
-    let test1() = 
+    let test1 = 
 
         task {
             checkStateMachine "vevroerhn11" 
             return 1
          }
 
-    test1().Wait()
+    test1.Wait()
 
 module ``Check simple task with bind compiles to state machine`` =
-    let test2() = 
+    let test2 = 
 
         task {
             checkStateMachine "vevroerhn12" 
@@ -503,14 +503,14 @@ module ``Check simple task with bind compiles to state machine`` =
             return 1
          }
 
-    test2().Wait()
+    test2.Wait()
 
 
 module ``Check task with multiple bind doesn't cause code explosion from inlining and compiles to state machine`` =
 
     let syncTask() = Task.FromResult 100
 
-    let tenBindSync_Task() =
+    let tenBindSync_Task =
         task {
             let! res1 = syncTask()
             checkStateMachine "vevroerhn121" 
@@ -535,10 +535,10 @@ module ``Check task with multiple bind doesn't cause code explosion from inlinin
             return res1 + res2 + res3 + res4 + res5 + res6 + res7 + res8 + res9 + res10
          }
 
-    tenBindSync_Task().Wait()
+    tenBindSync_Task.Wait()
 
 module ``Check task with try with compiles to state machine`` =
-    let t67() =
+    let t67 =
         task {
             checkStateMachine "vevroerhn180" 
             try
@@ -552,10 +552,10 @@ module ``Check task with try with compiles to state machine`` =
                 ()
         }
 
-    t67().Wait()
+    t67.Wait()
 
 module ``Check task with try with and incomplete match compiles to state machine`` =
-    let t68() =
+    let t68 =
         task {
             try
                 checkStateMachine "vevroerhn190" 
@@ -566,10 +566,10 @@ module ``Check task with try with and incomplete match compiles to state machine
                 ()
         }
 
-    t68().Wait()
+    t68.Wait()
 
 module ``Check task with while loop with resumption points compiles to state machine`` =
-    let t68() : Task<int> =
+    let t68 : Task<int> =
         task {
             checkStateMachine "vevroerhn200" 
             let mutable i = 0
@@ -582,10 +582,10 @@ module ``Check task with while loop with resumption points compiles to state mac
             return i
         }
 
-    t68().Wait()
+    t68.Wait()
 
 module ``Check task with try finally compiles to state machine`` =
-    let t68() =
+    let t68 =
         task {
             let mutable ran = false
             try
@@ -598,10 +598,10 @@ module ``Check task with try finally compiles to state machine`` =
             return ran
         }
 
-    t68().Wait()
+    t68.Wait()
 
 module ``Check task with use compiles to state machine`` =
-    let t68() =
+    let t68 =
                 task {
                     let mutable disposed = false
                     use d = { new System.IDisposable with member __.Dispose() = disposed <- true }
@@ -610,10 +610,10 @@ module ``Check task with use compiles to state machine`` =
                     checkStateMachine "vevroerhn221" 
                 }
 
-    t68().Wait()
+    t68.Wait()
 
 module ``Check nested task compiles to state machine`` =
-    let t68() =
+    let t68 =
             task {
                 let mutable n = 0
                 checkStateMachine "vevroerhn230" 
@@ -628,7 +628,7 @@ module ``Check nested task compiles to state machine`` =
                     n <- n + 1
             }
 
-    t68().Wait()
+    t68.Wait()
 
 module ``Check after code may include closures`` =
     let makeStateMachine x = 

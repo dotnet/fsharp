@@ -2878,6 +2878,13 @@ module EstablishTypeDefinitionCores =
         let noCLIMutableAttributeCheck() =
             if hasCLIMutable then errorR (Error(FSComp.SR.tcThisTypeMayNotHaveACLIMutableAttribute(), m))
 
+        // Check attribute targets for error reporting only — results are discarded.
+        // Suspend the sink to avoid duplicate symbol entries from re-resolving attribute constructors.
+        let checkAttributeTargetsErrors attrTarget =
+            if reportAttributeTargetsErrors then
+                use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner attrTarget synAttrs |> ignore
+
         let isStructRecordOrUnionType = 
             match synTyconRepr with
             | SynTypeDefnSimpleRepr.Record _ 
@@ -2915,11 +2922,7 @@ module EstablishTypeDefinitionCores =
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Union, attrs, [], [], inSig, true, m) |> ignore
                 
-                if reportAttributeTargetsErrors then
-                    if hasStructAttr then
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
-                    else
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
+                checkAttributeTargetsErrors (if hasStructAttr then AttributeTargets.Struct else AttributeTargets.Class)
 
                 // Note: the table of union cases is initially empty
                 Construct.MakeUnionRepr []
@@ -2940,11 +2943,7 @@ module EstablishTypeDefinitionCores =
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Record, attrs, [], [], inSig, true, m) |> ignore
                 
-                if reportAttributeTargetsErrors then
-                    if hasStructAttr then
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
-                    else
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
+                checkAttributeTargetsErrors (if hasStructAttr then AttributeTargets.Struct else AttributeTargets.Class)
 
                 // Note: the table of record fields is initially empty
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpRecord)
@@ -2959,20 +2958,16 @@ module EstablishTypeDefinitionCores =
                     let kind = 
                         match kind with
                         | SynTypeDefnKind.Class ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Class
                             TFSharpClass
                         | SynTypeDefnKind.Interface ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Interface synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Interface
                             TFSharpInterface
                         | SynTypeDefnKind.Delegate _ ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Delegate synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Delegate
                             TFSharpDelegate (MakeSlotSig("Invoke", g.unit_ty, [], [], [], None))
                         | SynTypeDefnKind.Struct ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Struct
                             TFSharpStruct 
                         | _ -> error(InternalError("should have inferred tycon kind", m))
 
@@ -2980,8 +2975,7 @@ module EstablishTypeDefinitionCores =
 
             | SynTypeDefnSimpleRepr.Enum _ ->
                 noCLIMutableAttributeCheck()
-                if reportAttributeTargetsErrors then
-                    TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Enum synAttrs |> ignore
+                checkAttributeTargetsErrors AttributeTargets.Enum
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpEnum)
 
         // OK, now fill in the (partially computed) type representation
@@ -4269,13 +4263,19 @@ module TcDeclarations =
             let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)
 
+            let checkTyparsForExtension () =
+                if g.checkNullness then
+                    typarsAEquivWithAddedNotNullConstraintsAllowed g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars
+                else
+                    typarsAEquiv g TypeEquivEnv.EmptyIgnoreNulls reqTypars declaredTypars
+
             if tcref.TypeAbbrev.IsSome then
                 ExtrinsicExtensionBinding, tcref, declaredTypars
             elif isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
                 if nReqTypars <> synTypars.Length then 
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                if not (typarsAEquiv g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars) then 
+                if not (checkTyparsForExtension()) then
                     warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
                 IntrinsicExtensionBinding, tcref, reqTypars
@@ -4284,7 +4284,7 @@ module TcDeclarations =
                     errorR(Error(FSComp.SR.tcMembersThatExtendInterfaceMustBePlacedInSeparateModule(), tcref.Range))
                 if nReqTypars <> synTypars.Length then 
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                if not (typarsAEquiv g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars) then 
+                if not (checkTyparsForExtension()) then
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 ExtrinsicExtensionBinding, tcref, declaredTypars
 
@@ -5672,10 +5672,13 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m moduleContents extraAttribs =
                     // the defaults will be propagated to the new type variable. 
                     ApplyTyparDefaultAtPriority denvAtEnd cenv.css priority tp)
 
-        // OK, now apply defaults for any unsolved TyparStaticReq.HeadType 
+        // OK, now apply defaults for any unsolved TyparStaticReq.HeadType or typars with SRTP (MayResolveMember) constraints
+        // Note: We also check for MayResolveMember constraints because some SRTP typars may not have StaticReq set
+        // (this can happen when the typar is involved in an SRTP constraint but isn't the "head type" itself)
         unsolved |> List.iter (fun tp ->     
             if not tp.IsSolved then 
-                if (tp.StaticReq <> TyparStaticReq.None) then
+                let hasSRTPConstraint = tp.Constraints |> List.exists (function TyparConstraint.MayResolveMember _ -> true | _ -> false)
+                if (tp.StaticReq <> TyparStaticReq.None) || hasSRTPConstraint then
                     ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
     with RecoverableException exn ->
         errorRecovery exn m

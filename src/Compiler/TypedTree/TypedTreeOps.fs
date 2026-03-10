@@ -34,7 +34,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeProviders
 #endif
 
-let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
+let inline compareBy (x: 'T | null) (y: 'T | null) ([<InlineIfLambda>]func: 'T -> 'K)  = 
     match x,y with
     | null,null -> 0
     | null,_ -> -1
@@ -1162,6 +1162,24 @@ let typarConstraintsAEquiv g aenv c1 c2 = typarConstraintsAEquivAux EraseNone g 
 
 let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
 
+let isConstraintAllowedAsExtra cx =
+    match cx with
+    | TyparConstraint.NotSupportsNull _ -> true
+    | _ -> false
+
+let typarsAEquivWithFilter g (aenv: TypeEquivEnv) (reqTypars: Typars) (declaredTypars: Typars) allowExtraInDecl =
+    List.length reqTypars = List.length declaredTypars &&
+    let aenv = aenv.BindEquivTypars reqTypars declaredTypars
+    let cxEquiv = typarConstraintsAEquivAux EraseNone g aenv
+    (reqTypars, declaredTypars) ||> List.forall2 (fun reqTp declTp ->
+        reqTp.StaticReq = declTp.StaticReq &&
+        ListSet.isSubsetOf cxEquiv reqTp.Constraints declTp.Constraints &&
+        declTp.Constraints |> List.forall (fun declCx ->
+            allowExtraInDecl declCx || reqTp.Constraints |> List.exists (fun reqCx -> cxEquiv reqCx declCx)))
+
+let typarsAEquivWithAddedNotNullConstraintsAllowed g aenv reqTypars declaredTypars =
+    typarsAEquivWithFilter g aenv reqTypars declaredTypars isConstraintAllowedAsExtra
+
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
 let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.EmptyIgnoreNulls m1 m2
@@ -2032,6 +2050,13 @@ let isStructTy g ty =
         isStructTyconRef tcref
     | _ -> 
         isStructAnonRecdTy g ty || isStructTupleTy g ty
+
+let isMeasureableValueType g ty =
+    match stripTyEqns g ty with
+    | TType_app(tcref, _, _) when tcref.IsMeasureableReprTycon ->
+        let erasedTy = stripTyEqnsAndMeasureEqns g ty
+        isStructTy g erasedTy
+    | _ -> false
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
@@ -6446,22 +6471,30 @@ and allEntitiesOfModDef mdef =
                   yield! allEntitiesOfModDef def
     }
 
-and allValsOfModDef mdef = 
+and allValsOfModDefWithOption processNested mdef = 
     seq { match mdef with 
           | TMDefRec(_, _, tycons, mbinds, _) -> 
               yield! abstractSlotValsOfTycons tycons 
               for mbind in mbinds do 
                 match mbind with 
                 | ModuleOrNamespaceBinding.Binding bind -> yield bind.Var
-                | ModuleOrNamespaceBinding.Module(_, def) -> yield! allValsOfModDef def
+                | ModuleOrNamespaceBinding.Module(_, def) -> 
+                    if processNested then
+                        yield! allValsOfModDefWithOption processNested def
           | TMDefLet(bind, _) -> 
               yield bind.Var
           | TMDefDo _ -> ()
           | TMDefOpens _ -> ()
           | TMDefs defs -> 
               for def in defs do 
-                  yield! allValsOfModDef def
+                  yield! allValsOfModDefWithOption processNested def
     }
+
+and allValsOfModDef mdef = 
+    allValsOfModDefWithOption true mdef
+
+and allTopLevelValsOfModDef mdef = 
+    allValsOfModDefWithOption false mdef
 
 and copyAndRemapModDef ctxt compgen tmenv mdef =
     let tycons = allEntitiesOfModDef mdef |> List.ofSeq
@@ -8284,7 +8317,7 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = !! typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
-let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull option = 
+let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : (string | null) option = 
     if isTypeProviderAssemblyAttr cattr then 
         let params_, _args = decodeILAttribData cattr 
         match params_ with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
@@ -9307,19 +9340,16 @@ let TypeHasAllowNull (tcref:TyconRef) g m =
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
-    
-    // Check if the type has AllowNullLiteral
+
     (match tryTcrefOfAppTy g sty with 
      | ValueSome tcref -> TypeHasAllowNull tcref g m
      | _ -> false) 
     ||
-    // Check if the type has a nullness annotation
     (match (nullnessOfTy g sty).Evaluate() with 
      | NullnessInfo.AmbivalentToNull -> false
      | NullnessInfo.WithoutNull -> false
      | NullnessInfo.WithNull -> true)
     ||
-    // Check if the type has a ': null' constraint
     (GetTyparTyIfSupportsNull g ty).IsSome
 
 /// The pre-nullness logic about whether a type uses 'null' as a true representation value

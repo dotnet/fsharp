@@ -27,7 +27,7 @@ type WORD = uint16
 
 let inline WORD s = uint16 s
 
-type ResourceException(name: string, ?inner: Exception MaybeNull) =
+type ResourceException(name: string, ?inner: (Exception | null)) =
     inherit Exception(name, Option.toObj inner)
 
 type RESOURCE_STRING() =

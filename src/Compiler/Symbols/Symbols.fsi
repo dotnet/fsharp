@@ -224,10 +224,10 @@ type FSharpEntity =
     member Namespace: string option
 
     /// Get the fully qualified name of the type or module
-    member QualifiedName: string
+    member QualifiedName: string option
 
     /// The fully qualified name of the type or module without strong assembly name.
-    member BasicQualifiedName: string
+    member BasicQualifiedName: string option
 
     /// Get the full name of the type or module
     member FullName: string
@@ -1120,8 +1120,22 @@ type FSharpType =
     /// Indicates if the type is a tuple type (reference or struct). The GenericArguments property returns the elements of the tuple type.
     member IsTupleType: bool
 
+    /// Indicates if the type is a reference tuple type. The GenericArguments property returns the elements of the tuple type.
+    member IsReferenceTupleType: bool
+
     /// Indicates if the type is a struct tuple type. The GenericArguments property returns the elements of the tuple type.
     member IsStructTupleType: bool
+
+    member IsArrayType: bool
+    member IsNativePointerType: bool
+    member IsUnitType: bool
+    member IsFSharpList: bool
+    member IsFSharpChoice: bool
+    member IsFSharpOption: bool
+    member IsFSharpValueOption: bool
+    member IsStringType: bool
+    member IsObjectType: bool
+    member IsBooleanType: bool
 
     /// Indicates if the type is a function type. The GenericArguments property returns the domain and range of the function type.
     member IsFunctionType: bool
@@ -1165,7 +1179,7 @@ type FSharpType =
     member ErasedType: FSharpType
 
     /// The fully qualified name of the type or module without strong assembly name.
-    member BasicQualifiedName: string
+    member BasicQualifiedName: string option
 
     /// Adjust the type by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.

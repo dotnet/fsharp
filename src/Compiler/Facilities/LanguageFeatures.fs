@@ -104,6 +104,10 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | WarnWhenFunctionValueUsedAsInterpolatedStringArg
+    | MethodOverloadsCache
+    | ImplicitDIMCoverage
+    | PreprocessorElif
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -245,12 +249,16 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
                 // F# 11.0
                 // Put stabilized features here for F# 11.0 previews via .NET SDK preview channels
+                LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg, languageVersion110
+                LanguageFeature.PreprocessorElif, languageVersion110
 
                 // Difference between languageVersion110 and preview - 11.0 gets turned on automatically by picking a preview .NET 11 SDK
                 // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.MethodOverloadsCache, previewVersion // Performance optimization for overload resolution
+                LanguageFeature.ImplicitDIMCoverage, languageVersion110
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -440,6 +448,11 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions -> FSComp.SR.featureErrorOnInvalidDeclsInTypeDefinitions ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
+        | LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg ->
+            FSComp.SR.featureWarnWhenFunctionValueUsedAsInterpolatedStringArg ()
+        | LanguageFeature.MethodOverloadsCache -> FSComp.SR.featureMethodOverloadsCache ()
+        | LanguageFeature.ImplicitDIMCoverage -> FSComp.SR.featureImplicitDIMCoverage ()
+        | LanguageFeature.PreprocessorElif -> FSComp.SR.featurePreprocessorElif ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

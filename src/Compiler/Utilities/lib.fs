@@ -25,7 +25,7 @@ let isEnvVarSet s =
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
-let dispose (x: IDisposable MaybeNull) =
+let dispose (x: IDisposable | null) =
     match x with
     | Null -> ()
     | NonNull x -> x.Dispose()
@@ -403,7 +403,7 @@ type DisposablesTracker() =
     let items = Stack<IDisposable>()
 
     /// Register some items to dispose
-    member _.Register (i:#IDisposable MaybeNull) = 
+    member _.Register (i:#IDisposable | null) = 
         match box i with
         | null -> ()
         | _ -> items.Push (!!i)

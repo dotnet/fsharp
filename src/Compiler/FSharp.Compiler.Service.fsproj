@@ -14,6 +14,7 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+	<DefineConstants Condition="$(DotNetBuildUseMonoRuntime) == 'true'">$(DefineConstants);BUILD_USING_MONO</DefineConstants>
 	<Nullable>enable</Nullable>
 	<!-- Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations.
 	     Therefore we want to use the latest BCL APIs from NetCurrent.
@@ -101,7 +102,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Utilities\NullnessShims.fs" />
+    <Compile Include="Utilities\NullHelpers.fs" />
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
@@ -360,6 +361,7 @@
     <Compile Include="Checking\NicePrint.fs" />
     <Compile Include="Checking\AugmentWithHashCompare.fsi" />
     <Compile Include="Checking\AugmentWithHashCompare.fs" />
+    <Compile Include="Checking\RelatedSymbolUse.fs" />
     <Compile Include="Checking\NameResolution.fsi" />
     <Compile Include="Checking\NameResolution.fs" />
     <Compile Include="Checking\SignatureConformance.fsi" />
@@ -370,6 +372,8 @@
     <Compile Include="Checking\MethodCalls.fs" />
     <Compile Include="Checking\PatternMatchCompilation.fsi" />
     <Compile Include="Checking\PatternMatchCompilation.fs" />
+    <Compile Include="Checking\OverloadResolutionCache.fsi" />
+    <Compile Include="Checking\OverloadResolutionCache.fs" />
     <Compile Include="Checking\ConstraintSolver.fsi" />
     <Compile Include="Checking\ConstraintSolver.fs" />
     <Compile Include="Checking\CheckFormatStrings.fsi" />
@@ -574,17 +578,21 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
-    <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
+    <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild.
+         GlobalPropertiesToRemove prevents duplicate builds when FCS builds for multiple TFMs in parallel. -->
     <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
       <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
+      <GlobalPropertiesToRemove>TargetFramework</GlobalPropertiesToRemove>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
       <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
+      <GlobalPropertiesToRemove>TargetFramework</GlobalPropertiesToRemove>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="$(RepoRoot)\buildtools\AssemblyCheck\AssemblyCheck.fsproj" ReferenceOutputAssembly="False">
       <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
+      <GlobalPropertiesToRemove>TargetFramework</GlobalPropertiesToRemove>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
   </ItemGroup>

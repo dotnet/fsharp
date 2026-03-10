@@ -315,3 +315,36 @@ let TestTwoColumnsOfTypeTestsWithSealedTypes(x: obj, y: obj) =
   } 
 """
       ]
+
+    [<Fact>]
+    let ``Test codegen for empty string pattern with null safety``() =
+        FSharp """
+module Test
+let TestEmptyStringPattern(x: string) =
+    match x with
+    | "" -> "empty"
+    | _ -> "other"
+         """
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+                      """
+      .method public static string  TestEmptyStringPattern(string x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_0011
+
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_0009:  brtrue.s   IL_0011
+
+    IL_000b:  ldstr      "empty"
+    IL_0010:  ret
+
+    IL_0011:  ldstr      "other"
+    IL_0016:  ret
+  } 
+"""
+       ]

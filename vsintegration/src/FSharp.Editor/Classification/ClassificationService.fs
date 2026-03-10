@@ -14,6 +14,7 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Tokenization
 open CancellableTasks
@@ -84,6 +85,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with
             | ValueNone -> ()
             | ValueSome span ->
+                // Use fixupSpan (not tryFixupSpan) for syntax coloring
                 let span =
                     match item.Type with
                     | SemanticClassificationType.Printf -> span
@@ -292,7 +294,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             let targetRange =
                                 RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
 
-                            let classificationData = checkResults.GetSemanticClassification(Some targetRange)
+                            let classificationData =
+                                checkResults.GetSemanticClassification(Some targetRange, RelatedSymbolUseKind.All)
 
                             if classificationData.Length > 0 then
                                 let classificationDataLookup = itemToSemanticClassificationLookup classificationData
