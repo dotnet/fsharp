@@ -20,13 +20,13 @@ type internal FSharpInlayHintsService [<ImportingConstructor>] (settings: Editor
     static let userOpName = "Hints"
 
     interface IFSharpInlineHintsService2 with
-        member _.GetInlineHintsAsync(document, textSpan, displayAllOverride, cancellationToken) =         
+        member _.GetInlineHintsAsync(document, textSpan, displayAllOverride, cancellationToken) =
             let hintKinds =
                 if displayAllOverride then
                     Hints.allHintKinds
                 else
                     OptionParser.getHintKinds settings.Advanced
-            
+
             if hintKinds.IsEmpty then
                 Task.FromResult ImmutableArray.Empty
             else
