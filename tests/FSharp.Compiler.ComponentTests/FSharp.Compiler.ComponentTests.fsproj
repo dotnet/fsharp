@@ -280,6 +280,8 @@
     <Compile Include="EmittedIL\Nullness\NullnessMetadata.fs" />
     <Compile Include="EmittedIL\FixedBindings\FixedBindings.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Observations.fs" />
+    <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Signatures.fs" />
+    <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Closures.fs" />
     <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
