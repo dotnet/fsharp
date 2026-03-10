@@ -12,7 +12,6 @@ module FSharp.Compiler.AbstractIL.ILBinaryReader
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic
-open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 open System.Text
@@ -227,7 +226,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     let fileStamp = FileSystem.GetLastWriteTimeShim fileName
 
     /// The weak handle to the bytes for the file
-    let weakBytes = WeakReference<byte[] MaybeNull>(null)
+    let weakBytes = WeakReference<byte[] | null>(null)
 
     member _.FileName = fileName
 
@@ -443,7 +442,7 @@ let sigptrGetBytes n (bytes: byte[]) sigptr =
 
 let sigptrGetString n bytes sigptr =
     let bytearray, sigptr = sigptrGetBytes n bytes sigptr
-    (Encoding.UTF8.GetString(bytearray, 0, bytearray.Length)), sigptr
+    Encoding.UTF8.GetString(bytearray, 0, bytearray.Length), sigptr
 
 // --------------------------------------------------------------------
 // Now the tables of instructions
@@ -610,11 +609,11 @@ let instrs () =
         i_ldind_ref, I_none_instr(mkLdind DT_REF)
         i_cpblk, I_none_instr(volatileOrUnalignedPrefix I_cpblk)
         i_initblk, I_none_instr(volatileOrUnalignedPrefix I_initblk)
-        i_ldc_i8, I_i64_instr(noPrefixes (fun x -> (AI_ldc(DT_I8, ILConst.I8 x))))
+        i_ldc_i8, I_i64_instr(noPrefixes (fun x -> AI_ldc(DT_I8, ILConst.I8 x)))
         i_ldc_i4, I_i32_i32_instr(noPrefixes mkLdcInt32)
         i_ldc_i4_s, I_i32_i8_instr(noPrefixes mkLdcInt32)
-        i_ldc_r4, I_r4_instr(noPrefixes (fun x -> (AI_ldc(DT_R4, ILConst.R4 x))))
-        i_ldc_r8, I_r8_instr(noPrefixes (fun x -> (AI_ldc(DT_R8, ILConst.R8 x))))
+        i_ldc_r4, I_r4_instr(noPrefixes (fun x -> AI_ldc(DT_R4, ILConst.R4 x)))
+        i_ldc_r8, I_r8_instr(noPrefixes (fun x -> AI_ldc(DT_R8, ILConst.R8 x)))
         i_ldfld, I_field_instr(volatileOrUnalignedPrefix (fun (x, y) fspec -> I_ldfld(x, y, fspec)))
         i_stfld, I_field_instr(volatileOrUnalignedPrefix (fun (x, y) fspec -> I_stfld(x, y, fspec)))
         i_ldsfld, I_field_instr(volatilePrefix (fun x fspec -> I_ldsfld(x, fspec)))
@@ -2218,7 +2217,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
         ILTypeDef(
             name = nm,
             genericParams = typars,
-            attributes = enum<TypeAttributes> (flags),
+            attributes = enum<TypeAttributes> flags,
             layout = layout,
             nestedTypes = nested,
             implements = impls,
@@ -2495,7 +2494,7 @@ and seekReadField ctxt mdv (numTypars, hasLayout) (idx: int) =
     ILFieldDef(
         name = nm,
         fieldType = readBlobHeapAsFieldSig ctxt numTypars typeIdx,
-        attributes = enum<FieldAttributes> (flags),
+        attributes = enum<FieldAttributes> flags,
         literalValue =
             (if (flags &&& 0x8000) = 0 then
                  None
@@ -2859,7 +2858,7 @@ and seekReadMemberRefAsMethodDataUncached ctxtH (MemberRefAsMspecIdx(numTypars, 
         readBlobHeapAsMethodSig ctxt enclTy.GenericArgs.Length typeIdx
 
     let methInst = List.init genarity (fun n -> mkILTyvarTy (uint16 (numTypars + n)))
-    (VarArgMethodData(enclTy, cc, nm, argTys, varargs, retTy, methInst))
+    VarArgMethodData(enclTy, cc, nm, argTys, varargs, retTy, methInst)
 
 and seekReadMemberRefAsMethDataNoVarArgs ctxt numTypars idx : MethodData =
     let (VarArgMethodData(enclTy, cc, nm, argTys, varargs, retTy, methInst)) =
@@ -2868,7 +2867,7 @@ and seekReadMemberRefAsMethDataNoVarArgs ctxt numTypars idx : MethodData =
     if Option.isSome varargs then
         dprintf "ignoring sentinel and varargs in ILMethodDef token signature"
 
-    (MethodData(enclTy, cc, nm, argTys, retTy, methInst))
+    MethodData(enclTy, cc, nm, argTys, retTy, methInst)
 
 and seekReadMethodSpecAsMethodData (ctxt: ILMetadataReader) numTypars idx =
     ctxt.seekReadMethodSpecAsMethodData (MethodSpecAsMspecIdx(numTypars, idx))
@@ -3046,8 +3045,8 @@ and seekReadMethod (ctxt: ILMetadataReader) mdv numTypars (idx: int) =
 
     ILMethodDef(
         name = nm,
-        attributes = enum<MethodAttributes> (flags),
-        implAttributes = enum<MethodImplAttributes> (implflags),
+        attributes = enum<MethodAttributes> flags,
+        implAttributes = enum<MethodImplAttributes> implflags,
         securityDeclsStored = ctxt.securityDeclsReader_MethodDef,
         isEntryPoint = isEntryPoint,
         genericParams = seekReadGenericParams ctxt numTypars (tomd_MethodDef, idx),
@@ -3188,7 +3187,7 @@ and seekReadEvent ctxt mdv numTypars idx =
     ILEventDef(
         eventType = seekReadOptionalTypeDefOrRef ctxt numTypars AsObject typIdx,
         name = readStringHeap ctxt nameIdx,
-        attributes = enum<EventAttributes> (flags),
+        attributes = enum<EventAttributes> flags,
         addMethod = seekReadMethodSemantics ctxt (0x0008, TaggedIndex(hs_Event, idx)),
         removeMethod = seekReadMethodSemantics ctxt (0x0010, TaggedIndex(hs_Event, idx)),
         fireMethod = seekReadOptionalMethodSemantics ctxt (0x0020, TaggedIndex(hs_Event, idx)),
@@ -3254,7 +3253,7 @@ and seekReadProperty ctxt mdv numTypars idx =
     ILPropertyDef(
         name = readStringHeap ctxt nameIdx,
         callingConv = cc2,
-        attributes = enum<PropertyAttributes> (flags),
+        attributes = enum<PropertyAttributes> flags,
         setMethod = setter,
         getMethod = getter,
         propertyType = retTy,
@@ -3915,7 +3914,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (nm, noinline,
                             let sehClauses =
                                 let sehMap = Dictionary<_, _>(clauses.Length, HashIdentity.Structural)
 
-                                for (kind, st1, sz1, st2, sz2, extra) in clauses do
+                                for kind, st1, sz1, st2, sz2, extra in clauses do
                                     let tryStart = rawToLabel st1
                                     let tryFinish = rawToLabel (st1 + sz1)
                                     let handlerStart = rawToLabel st2
@@ -4170,7 +4169,7 @@ and seekReadTopExportedTypes (ctxt: ILMetadataReader) =
                             {
                                 ScopeRef = seekReadImplAsScopeRef ctxt mdv implIdx
                                 Name = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
-                                Attributes = enum<TypeAttributes> (flags)
+                                Attributes = enum<TypeAttributes> flags
                                 Nested = seekReadNestedExportedTypes ctxt exported nested i
                                 CustomAttrsStored = ctxt.customAttrsReader_ExportedType
                                 MetadataIndex = i

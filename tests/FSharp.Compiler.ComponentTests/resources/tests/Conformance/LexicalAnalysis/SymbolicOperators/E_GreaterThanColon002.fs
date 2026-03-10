@@ -3,7 +3,7 @@
 // Space should not be required between : and >
 //<Expects status="success"></Expects>
 
-#light 
+
 
 type Ix = interface
     abstract A<'t> : 't->'t     // space between > and :

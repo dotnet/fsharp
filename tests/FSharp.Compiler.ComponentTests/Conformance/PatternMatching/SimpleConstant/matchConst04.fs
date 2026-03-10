@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #Constants 
-#light
+
 
 // Match against an enum
 

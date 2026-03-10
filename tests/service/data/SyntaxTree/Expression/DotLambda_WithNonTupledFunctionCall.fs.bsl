@@ -27,8 +27,9 @@ ImplFile
                      (1,13--1,37)), (1,4--1,10), Yes (1,0--1,37),
                   { LeadingKeyword = Let (1,0--1,3)
                     InlineKeyword = None
-                    EqualsRange = Some (1,11--1,12) })], (1,0--1,37))],
-          PreXmlDocEmpty, [], None, (1,0--1,37), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                    EqualsRange = Some (1,11--1,12) })], (1,0--1,37),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (1,0--1,37),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

@@ -4,7 +4,6 @@ module internal FSharp.Compiler.TailCallChecks
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
@@ -15,8 +14,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
-
-let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_TailCallChecks" 50
 
 [<return: Struct>]
 let (|ValUseAtApp|_|) e =
@@ -887,7 +884,7 @@ let CheckImplFile (g: TcGlobals, amap, reportErrors, implFileContents) =
         let cenv =
             {
                 g = g
-                stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
+                stackGuard = StackGuard("CheckImplFile")
                 amap = amap
                 mustTailCall = Zset.empty valOrder
                 hasPinnedLocals = false

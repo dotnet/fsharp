@@ -1,5 +1,5 @@
 // #Regression #NoMT #CompilerOptions 
-#light
+
 
 // Regression test for FSharp1.0:2249 - defaultof<> unexpectedly requires parens
 

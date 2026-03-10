@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #Modules #ReqNOMT 
-#light
+
 
 module A
     module B =

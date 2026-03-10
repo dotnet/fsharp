@@ -42,7 +42,7 @@ let ``can generate options for different frameworks regardless of execution envi
 //[<InlineData("--targetprofile:mscorlib")>]
 [<InlineData("--targetprofile:netcore")>]
 [<InlineData("--targetprofile:netstandard")>]
-let ``can resolve nuget packages to right target framework for different frameworks regardless of execution environment``(flag) =
+let ``can resolve nuget packages to right target framework for different frameworks regardless of execution environment`` flag =
     let dir = DirectoryInfo(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location))
     let file = (getTemporaryFileNameInDirectory dir) + ".fsx"
     let scriptFullPath = Path.Combine(dir.FullName, file)

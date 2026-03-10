@@ -17,12 +17,16 @@
 
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullHelpers.fs"/>
     <EmbeddedText Include="$(FSharpSourcesRoot)\Compiler\Facilities\UtilsStrings.txt" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Facilities\CompilerLocation.fs">
       <Link>CompilerLocation.fs</Link>
     </Compile>
     <Compile Include="..\unittests\TestLib.Utils.fs">
       <Link>UnitTests.TestLib.Utils.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\FSharp.Test.Utilities\VSInstallDiscovery.fs">
+      <Link>VSInstallDiscovery.fs</Link>
     </Compile>
     <Compile Include="FSharpLanguageServiceTestable.fs" />
     <Compile Include="VsMocks.fs" />
@@ -57,6 +61,8 @@
     <PackageReference Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="$(MicrosoftInternalVisualStudioShellFrameworkVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" />
     <PackageReference Include="XUnit" Version="$(XUnitVersion)" />
+    <PackageReference Include="xunit.v3.extensibility.core" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.v3.assert" Version="$(XunitVersion)" />
   </ItemGroup>
 
 </Project>

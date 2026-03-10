@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
-#light
+
 
 // Verify if parameters to getter and setter are different
 

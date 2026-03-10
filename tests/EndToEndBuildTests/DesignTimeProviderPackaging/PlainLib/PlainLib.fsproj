@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
+    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+</Project>

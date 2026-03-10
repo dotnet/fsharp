@@ -234,8 +234,8 @@ let x = lb {1; 2; if true then 3;}
     [<Theory>]
     [<InlineData("10.0","BindReturn")>]
     [<InlineData("10.0","WithoutBindReturn")>]
-    [<InlineData("4.7","BindReturn")>]   
-    [<InlineData("4.7","WithoutBindReturn")>]  
+    [<InlineData("8.0","BindReturn")>]   
+    [<InlineData("8.0","WithoutBindReturn")>]  
     let ``A CE with BindReturn and Zero can omit else in an if-then return`` (langVersion, bindReturnName) = 
         let code = $"""
 type Builder () =
@@ -2031,6 +2031,219 @@ match test() with
         |> compileAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Preview: use! unresolved return type`` () =
+        FSharp """
+module Test
+
+open System.IO
+open System.Threading.Tasks
+
+task {
+    use! x: IDisposable = Task.FromResult(new StreamReader(""))
+    ()
+}
+|> ignore
+            """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            Error 39, Line 8, Col 13, Line 8, Col 24, "The type 'IDisposable' is not defined."
+        ]
+
+    [<Fact>]
+    let ``Preview: use! return type mismatch error 01`` () =
+        FSharp """
+module Test
+
+open System
+
+task {
+    use! (x: int): IDisposable = failwith ""
+    ()
+}
+|> ignore
+            """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            Error 1, Line 7, Col 11, Line 7, Col 17, "This expression was expected to have type
+'IDisposable'   
+but here has type
+'int'   "
+        ]
+
+    [<Fact>]
+    let ``Preview: let! return type mismatch error 01`` () =
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+task {
+    let! x: string = Task.FromResult(1)
+    ()
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // x: string
+            Error 1, Line 7, Col 10, Line 7, Col 19, "This expression was expected to have type
+    'int'   
+but here has type
+    'string'    "
+        ]
+
+    [<Fact>]
+    let ``Preview: let! return type mismatch error 02`` () =
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+task {
+    let! (x: string): int = Task.FromResult(1)
+    ()
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // x: string
+            Error 1, Line 7, Col 11, Line 7, Col 20, "This expression was expected to have type
+    'int'   
+but here has type
+    'string'    "
+        ]
+
+    [<Fact>]
+    let ``Preview: let! return type mismatch error 03`` () =
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+task {
+    let! (x: string): int = Task.FromResult("")
+    ()
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // (x: string): int
+            Error 1, Line 7, Col 10, Line 7, Col 26, "This expression was expected to have type
+    'string'   
+but here has type
+    'int'    "
+        ]
+
+    [<Fact>]
+    let ``Preview: let!-and! return type mismatch error 01`` () =
+        FSharp """
+module Test
+
+type MyBuilder() =
+    member _.Return(x: int): Result<int, exn> = failwith ""
+    member _.Bind(m: Result<int, exn>, f: int -> Result<int, exn>): Result<int, exn> = failwith ""
+    member _.Bind2(m1: Result<int, exn>, m2: Result<int, exn>, f: int * int -> Result<int, exn>): Result<int, exn> = failwith ""
+
+let builder = MyBuilder()
+
+builder {
+    let! x: int = Ok 1
+    and! y: string = Ok 2
+    return 0
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // y: string
+            Error 1, Line 13, Col 10, Line 13, Col 19, "This expression was expected to have type
+'int'   
+but here has type
+'string'    "
+            // x: int
+            Warning 25, Line 12, Col 10, Line 12, Col 16, "Incomplete pattern matches on this expression."
+        ]
+
+    [<Fact>]
+    let ``Preview: let!-and! return type mismatch error 02`` () =
+        FSharp """
+module Test
+
+type MyBuilder() =
+    member _.Return(x: int): Result<int, exn> = failwith ""
+    member _.Bind(m: Result<int, exn>, f: int -> Result<int, exn>): Result<int, exn> = failwith ""
+    member _.Bind2(m1: Result<int, exn>, m2: Result<int, exn>, f: int * int -> Result<int, exn>): Result<int, exn> = failwith ""
+
+let builder = MyBuilder()
+
+builder {
+    let! x: int = Ok 1
+    and! (y: string): int = Ok 2
+    return 0
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // y: string
+            Error 1, Line 13, Col 11, Line 13, Col 20, "This expression was expected to have type
+'int'   
+but here has type
+'string'    "
+        ]
+
+    [<Fact>]
+    let ``Preview: let!-and! return type mismatch error 03`` () =
+        FSharp """
+module Test
+
+type MyBuilder() =
+    member _.Return(x: int): Result<int, exn> = failwith ""
+    member _.Bind(m: Result<int, exn>, f: int -> Result<int, exn>): Result<int, exn> = failwith ""
+    member _.Bind2(m1: Result<int, exn>, m2: Result<int, exn>, f: int * int -> Result<int, exn>): Result<int, exn> = failwith ""
+
+let builder = MyBuilder()
+
+builder {
+    let! x: int = Ok 1
+    and! (y: int): string = Ok 1
+    return 0
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // (y: int): string
+            Error 1, Line 13, Col 10, Line 13, Col 26, "This expression was expected to have type
+'int'   
+but here has type
+'string'    "
+            // y: int
+            Error 1, Line 13, Col 11, Line 13, Col 17, "This expression was expected to have type
+'string'    
+but here has type
+'int'   "
+        ]
+
     [<Theory; FileInlineData("tailcalls.fsx")>]
     let ``tail call methods work`` compilation =
         compilation
@@ -2046,3 +2259,67 @@ match test() with
          |> asFsx
          |> runFsi
          |> shouldSucceed
+
+    let queryFS1182NoWarnCases =
+        [
+            "let result = query { for x in [1;2;3] do where (x > 0); select 1 }"
+            "let result = query { for x in [1;2;3] do where (x > 2); select x }"
+            "let result = query { for x in [1;2;3] do let y = x * 2 in select y }"
+            """let data1 = [1;2;3]
+let data2 = [(1, "one"); (2, "two"); (3, "three")]
+let result = query { for x in data1 do join (y, name) in data2 on (x = y); select name }"""
+            "let result = query { for a in [1;2;3] do for b in [4;5;6] do where (a < b); select (a + b) }"
+            "let result = query { for x in [3;1;2] do sortBy x; select x }"
+        ]
+        |> List.map (fun s -> [| box s |])
+
+    [<Theory>]
+    [<MemberData(nameof queryFS1182NoWarnCases)>]
+    let ``Query variable used in expression does not trigger FS1182`` (code: string) =
+        FSharp $"module Test\n{code}"
+        |> withWarnOn 1182
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    let queryFS1182WarnCases =
+        [
+            "let result = query { for x in [1;2;3] do select 1 }",
+                2, 26, 2, 27, "The value 'x' is unused"
+            """let result = 
+    query { for x in [1;2;3] do
+            select (
+                let unused = 42
+                x) }""",
+                5, 21, 5, 27, "The value 'unused' is unused"
+            """let f () =
+    let unused = 42
+    query { for x in [1;2;3] do select x }""",
+                3, 9, 3, 15, "The value 'unused' is unused"
+            """let result =
+    query { for x in [1;2;3] do
+            select (
+                let x = 42
+                x) }""",
+                3, 17, 3, 18, "The value 'x' is unused"
+            """let result =
+    query { for x in [1;2;3] do
+            select (
+                let x = x
+                1) }""",
+                5, 21, 5, 22, "The value 'x' is unused"
+        ]
+        |> List.map (fun (str, line1, col1, line2, col2, msg) ->
+            [| box str; box line1; box col1; box line2; box col2; box msg |])
+
+    [<Theory>]
+    [<MemberData(nameof queryFS1182WarnCases)>]
+    let ``Unused variable in query warns FS1182`` (code: string, line1: int, col1: int, line2: int, col2: int, msg: string) =
+        FSharp $"module Test\n{code}"
+        |> withWarnOn 1182
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 1182, Line line1, Col col1, Line line2, Col col2, msg)
+        |> ignore

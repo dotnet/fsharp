@@ -40,6 +40,20 @@ module MemberDefinitions_OverloadingMembers =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    // SOURCE=ArityFilteringTest.fs                         # ArityFilteringTest.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ArityFilteringTest.fs"|])>]
+    let ``ArityFilteringTest_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=TypeCompatibilityFilterTest.fs               # TypeCompatibilityFilterTest.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeCompatibilityFilterTest.fs"|])>]
+    let ``TypeCompatibilityFilterTest_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     // SOURCE=E_InferredTypeNotUnique01.fs SCFLAGS="--test:ErrorRanges"			# E_InferredTypeNotUnique01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InferredTypeNotUnique01.fs"|])>]
     let ``E_InferredTypeNotUnique01_fs`` compilation =
@@ -235,3 +249,49 @@ module MemberDefinitions_OverloadingMembers =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    // Native pointer overload tests for regression fix
+
+    // NativePtrOverloads01.fs - distinct native pointer element types should compile
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NativePtrOverloads01.fs"|])>]
+    let ``NativePtrOverloads01_fs`` compilation =
+        compilation
+        |> asLibrary
+        |> withOptions ["--nowarn:9"]
+        |> compile
+        |> shouldSucceed
+
+    // NativePtrOverloads02.fs - duplicate exact signatures should fail
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NativePtrOverloads02.fs"|])>]
+    let ``NativePtrOverloads02_fs`` compilation =
+        compilation
+        |> asLibrary
+        |> withOptions ["--nowarn:9"]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 438, Line 7, Col 19, Line 7, Col 20, "Duplicate method. The method 'M' has the same name and signature as another method in type 'Q'.")
+            (Error 438, Line 6, Col 19, Line 6, Col 20, "Duplicate method. The method 'M' has the same name and signature as another method in type 'Q'.")           
+        ]
+
+    // NativePtrOverloads03.fs - regression test, previously failing overloads should now compile
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NativePtrOverloads03.fs"|])>]
+    let ``NativePtrOverloads03_fs`` compilation =
+        compilation
+        |> asLibrary
+        |> withOptions ["--nowarn:9"]
+        |> compile
+        |> shouldSucceed
+
+    // NativePtrOverloads04.fs - erased differences via measures should still fail
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NativePtrOverloads04.fs"|])>]
+    let ``NativePtrOverloads04_fs`` compilation =
+        compilation
+        |> asLibrary
+        |> withOptions ["--nowarn:9"]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [            
+            (Error 438, Line 9, Col 19, Line 9, Col 20, "Duplicate method. The method 'H' has the same name and signature as another method in type 'S' once tuples, functions, units of measure and/or provided types are erased.")
+            (Error 438, Line 8, Col 19, Line 8, Col 20, "Duplicate method. The method 'H' has the same name and signature as another method in type 'S' once tuples, functions, units of measure and/or provided types are erased.")
+        ]

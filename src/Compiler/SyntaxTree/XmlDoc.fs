@@ -85,7 +85,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                         let nm = attr.Value
 
                         if not (paramNames |> List.contains nm) then
-                            warning (Error(FSComp.SR.xmlDocInvalidParameterName (nm), doc.Range))
+                            warning (Error(FSComp.SR.xmlDocInvalidParameterName nm, doc.Range))
 
                 let paramsWithDocs =
                     [
@@ -99,12 +99,12 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
                     for p in paramNames do
                         if not (paramsWithDocs |> List.contains p) then
-                            warning (Error(FSComp.SR.xmlDocMissingParameter (p), doc.Range))
+                            warning (Error(FSComp.SR.xmlDocMissingParameter p, doc.Range))
 
                 let duplicates = paramsWithDocs |> List.duplicates
 
                 for d in duplicates do
-                    warning (Error(FSComp.SR.xmlDocDuplicateParameter (d), doc.Range))
+                    warning (Error(FSComp.SR.xmlDocDuplicateParameter d, doc.Range))
 
                 for pref in xml.Descendants(XName.op_Implicit "paramref") do
                     match pref.Attribute(!!(XName.op_Implicit "name")) with
@@ -113,10 +113,10 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                         let nm = attr.Value
 
                         if not (paramNames |> List.contains nm) then
-                            warning (Error(FSComp.SR.xmlDocInvalidParameterName (nm), doc.Range))
+                            warning (Error(FSComp.SR.xmlDocInvalidParameterName nm, doc.Range))
 
         with e ->
-            warning (Error(FSComp.SR.xmlDocBadlyFormed (e.Message), doc.Range))
+            warning (Error(FSComp.SR.xmlDocBadlyFormed e.Message, doc.Range))
 
 // Discriminated unions can't contain statics, so we use a separate type
 and XmlDocStatics() =
@@ -131,6 +131,7 @@ type XmlDocCollector() =
     let mutable savedGrabPoints = Dictionary<pos, struct (int * int * bool)>()
     let mutable currentGrabPointCommentsCount = 0
     let mutable delayedGrabPoint = ValueNone
+    let mutable lastNonCommentTokenLine = 0
 
     member _.AddGrabPoint(pos: pos) =
         if currentGrabPointCommentsCount = 0 then
@@ -186,6 +187,10 @@ type XmlDocCollector() =
 
     member _.HasComments grabPointPos =
         savedGrabPoints.TryGetValue grabPointPos |> fst
+
+    member _.SetLastNonCommentTokenLine(line: int) = lastNonCommentTokenLine <- line
+
+    member _.LastNonCommentTokenLine = lastNonCommentTokenLine
 
     member _.CheckInvalidXmlDocPositions() =
         let comments = ResizeArray<range>(savedLines.Count)

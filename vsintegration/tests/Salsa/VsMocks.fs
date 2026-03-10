@@ -1642,6 +1642,7 @@ module internal VsActual =
     open System.ComponentModel.Composition.Primitives
     open Microsoft.VisualStudio.Text
     open Microsoft.VisualStudio.Threading
+    open FSharp.Test.VSInstallDiscovery
 
     type TestExportJoinableTaskContext () =
 
@@ -1650,16 +1651,7 @@ module internal VsActual =
         [<System.ComponentModel.Composition.Export(typeof<JoinableTaskContext>)>]
         member public _.JoinableTaskContext : JoinableTaskContext = jtc
 
-    let vsInstallDir =
-        // use the environment variable to find the VS installdir
-        let vsvar =
-            let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
-            if String.IsNullOrEmpty var then
-                Environment.GetEnvironmentVariable("VSAPPIDDIR")
-            else
-                var
-        if String.IsNullOrEmpty vsvar then failwith "VS170COMNTOOLS and VSAPPIDDIR environment variables not found."
-        Path.Combine(vsvar, "..")
+    let vsInstallDir = getVSInstallDirOrFail ()
 
     let CreateEditorCatalog() =
         let thisAssembly = Assembly.GetExecutingAssembly().Location

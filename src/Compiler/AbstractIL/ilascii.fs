@@ -216,8 +216,8 @@ let Int32Int32Instrs: Lazy<InstrTable<Int32Int32Instr>> =
 let DoubleInstrs: Lazy<InstrTable<DoubleInstr>> =
     lazy
         [
-            [ "ldc"; "r4" ], (fun x -> (AI_ldc(DT_R4, x)))
-            [ "ldc"; "r8" ], (fun x -> (AI_ldc(DT_R8, x)))
+            [ "ldc"; "r4" ], (fun x -> AI_ldc(DT_R4, x))
+            [ "ldc"; "r8" ], (fun x -> AI_ldc(DT_R8, x))
         ]
 
 /// Table of parsing and pretty printing data for instructions.
@@ -245,10 +245,10 @@ let TypeInstrs: Lazy<InstrTable<TypeInstr>> =
 let IntTypeInstrs: Lazy<InstrTable<IntTypeInstr>> =
     lazy
         [
-            [ "ldelem"; "multi" ], (fun (x, y) -> (I_ldelem_any(ILArrayShape.FromRank x, y)))
-            [ "stelem"; "multi" ], (fun (x, y) -> (I_stelem_any(ILArrayShape.FromRank x, y)))
-            [ "newarr"; "multi" ], (fun (x, y) -> (I_newarr(ILArrayShape.FromRank x, y)))
-            [ "ldelema"; "multi" ], (fun (x, y) -> (I_ldelema(NormalAddress, false, ILArrayShape.FromRank x, y)))
+            [ "ldelem"; "multi" ], (fun (x, y) -> I_ldelem_any(ILArrayShape.FromRank x, y))
+            [ "stelem"; "multi" ], (fun (x, y) -> I_stelem_any(ILArrayShape.FromRank x, y))
+            [ "newarr"; "multi" ], (fun (x, y) -> I_newarr(ILArrayShape.FromRank x, y))
+            [ "ldelema"; "multi" ], (fun (x, y) -> I_ldelema(NormalAddress, false, ILArrayShape.FromRank x, y))
         ]
 
 /// Table of parsing and pretty printing data for instructions.

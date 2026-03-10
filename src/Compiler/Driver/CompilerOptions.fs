@@ -5,7 +5,6 @@
 module internal FSharp.Compiler.CompilerOptions
 
 open System
-open System.Diagnostics
 open System.IO
 open FSharp.Compiler.Optimizer
 open Internal.Utilities.Library
@@ -19,7 +18,6 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.DiagnosticsLogger
 
@@ -172,7 +170,7 @@ let getPublicOptions heading opts width =
         + (opts |> List.map (fun t -> getCompilerOption t width) |> String.concat "")
 
 let GetCompilerOptionBlocks blocks width =
-    let sb = new StringBuilder()
+    let sb = StringBuilder()
 
     let publicBlocks =
         blocks
@@ -322,7 +320,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
             opt
 
     let getSwitch (s: string) =
-        let s = (s.Split([| ':' |]))[0]
+        let s = s.Split([| ':' |])[0]
 
         if s <> "--" && s.EndsWithOrdinal("-") then
             OptionSwitch.Off
@@ -625,10 +623,13 @@ let callVirtSwitch (tcConfigB: TcConfigBuilder) switch =
 let callParallelCompilationSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.parallelIlxGen <- switch = OptionSwitch.On
 
-    let (graphCheckingMode, optMode) =
+    let (graphCheckingMode, optMode, parallelReferenceResolution) =
+
         match switch with
-        | OptionSwitch.On -> TypeCheckingMode.Graph, OptimizationProcessingMode.Parallel
-        | OptionSwitch.Off -> TypeCheckingMode.Sequential, OptimizationProcessingMode.Sequential
+        | OptionSwitch.On -> TypeCheckingMode.Graph, OptimizationProcessingMode.Parallel, ParallelReferenceResolution.On
+        | OptionSwitch.Off -> TypeCheckingMode.Sequential, OptimizationProcessingMode.Sequential, ParallelReferenceResolution.Off
+
+    tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
 
     if tcConfigB.typeCheckingConfig.Mode <> graphCheckingMode then
         tcConfigB.typeCheckingConfig <-
@@ -1128,17 +1129,6 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 let defineSymbol tcConfigB s =
     tcConfigB.conditionalDefines <- s :: tcConfigB.conditionalDefines
 
-let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
-    CompilerOption(
-        "mlcompatibility",
-        tagNone,
-        OptionUnit(fun () ->
-            tcConfigB.mlCompatibility <- true
-            tcConfigB.TurnWarningOff(rangeCmdArgs, "62")),
-        None,
-        Some(FSComp.SR.optsMlcompatibility ())
-    )
-
 let GetLanguageVersions () =
     seq {
         FSComp.SR.optsSupportedLangVersions ()
@@ -1152,6 +1142,8 @@ let setLanguageVersion (specifiedVersion: string) =
         ()
     elif not (LanguageVersion.ContainsVersion specifiedVersion) then
         error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+    elif not (LanguageVersion.IsVersionSupported specifiedVersion) then
+        error (Error(FSComp.SR.optsLangVersionOutOfSupport (specifiedVersion, "10.0"), rangeCmdArgs))
 
     LanguageVersion(specifiedVersion)
 
@@ -1176,9 +1168,26 @@ let languageFlags tcConfigB =
         CompilerOption(
             "langversion",
             tagLangVersionValues,
-            OptionString(fun switch -> tcConfigB.langVersion <- setLanguageVersion (switch)),
+            OptionString(fun switch ->
+                let newVersion = setLanguageVersion switch
+                // Preserve disabled features when updating version
+                tcConfigB.langVersion <- newVersion.WithDisabledFeatures(Set.toArray tcConfigB.disabledLanguageFeatures)),
             None,
             Some(FSComp.SR.optsSetLangVersion ())
+        )
+
+        // -disableLanguageFeature:<string>  Disable a specific language feature by name (repeatable)
+        CompilerOption(
+            "disableLanguageFeature",
+            tagString,
+            OptionStringList(fun featureName ->
+                match LanguageVersion.TryParseFeature(featureName) with
+                | Some feature ->
+                    tcConfigB.disabledLanguageFeatures <- Set.add feature tcConfigB.disabledLanguageFeatures
+                    tcConfigB.langVersion <- tcConfigB.langVersion.WithDisabledFeatures(Set.toArray tcConfigB.disabledLanguageFeatures)
+                | None -> error (Error(FSComp.SR.optsUnrecognizedLanguageFeature featureName, rangeCmdArgs))),
+            None,
+            Some(FSComp.SR.optsDisableLanguageFeature ())
         )
 
         CompilerOption(
@@ -1190,8 +1199,6 @@ let languageFlags tcConfigB =
         )
 
         CompilerOption("define", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsDefine ()))
-
-        mlCompatibilityFlag tcConfigB
 
         CompilerOption(
             "strict-indentation",
@@ -1220,7 +1227,7 @@ let codePageFlag (tcConfigB: TcConfigBuilder) =
         tagInt,
         OptionInt(fun n ->
             try
-                System.Text.Encoding.GetEncoding n |> ignore
+                Encoding.GetEncoding n |> ignore
             with :? ArgumentException as err ->
                 error (Error(FSComp.SR.optsProblemWithCodepage (n, err.Message), rangeCmdArgs))
 
@@ -1547,7 +1554,7 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption(
             "bufferwidth",
             tagNone,
-            OptionInt((fun v -> tcConfigB.bufferWidth <- Some v)),
+            OptionInt(fun v -> tcConfigB.bufferWidth <- Some v),
             Some(InternalCommandLineOption("--bufferWidth", rangeCmdArgs)),
             None
         )
@@ -1886,15 +1893,6 @@ let compilingFsLibNoBigIntFlag =
         None
     )
 
-let mlKeywordsFlag =
-    CompilerOption(
-        "ml-keywords",
-        tagNone,
-        OptionUnit(fun () -> ()),
-        Some(DeprecatedCommandLineOptionNoDescription("--ml-keywords", rangeCmdArgs)),
-        None
-    )
-
 let gnuStyleErrorsFlag tcConfigB =
     CompilerOption(
         "gnu-style-errors",
@@ -1904,39 +1902,10 @@ let gnuStyleErrorsFlag tcConfigB =
         None
     )
 
-let deprecatedFlagsBoth tcConfigB =
-    [
-        CompilerOption(
-            "light",
-            tagNone,
-            OptionUnit(fun () -> tcConfigB.indentationAwareSyntax <- Some true),
-            Some(DeprecatedCommandLineOptionNoDescription("--light", rangeCmdArgs)),
-            None
-        )
-
-        CompilerOption(
-            "indentation-syntax",
-            tagNone,
-            OptionUnit(fun () -> tcConfigB.indentationAwareSyntax <- Some true),
-            Some(DeprecatedCommandLineOptionNoDescription("--indentation-syntax", rangeCmdArgs)),
-            None
-        )
-
-        CompilerOption(
-            "no-indentation-syntax",
-            tagNone,
-            OptionUnit(fun () -> tcConfigB.indentationAwareSyntax <- Some false),
-            Some(DeprecatedCommandLineOptionNoDescription("--no-indentation-syntax", rangeCmdArgs)),
-            None
-        )
-    ]
-
-let deprecatedFlagsFsi tcConfigB =
-    [ noFrameworkFlag false tcConfigB; yield! deprecatedFlagsBoth tcConfigB ]
+let deprecatedFlagsFsi tcConfigB = [ noFrameworkFlag false tcConfigB ]
 
 let deprecatedFlagsFsc tcConfigB =
-    deprecatedFlagsBoth tcConfigB
-    @ [
+    [
         cliRootFlag tcConfigB
         CompilerOption(
             "jit-optimize",
@@ -2123,7 +2092,6 @@ let deprecatedFlagsFsc tcConfigB =
             None
         )
 
-        mlKeywordsFlag
         gnuStyleErrorsFlag tcConfigB
     ]
 
@@ -2181,29 +2149,29 @@ let miscFlagsFsi tcConfigB = miscFlagsBoth tcConfigB
 
 let abbreviatedFlagsBoth tcConfigB =
     [
-        CompilerOption("d", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsShortFormOf ("--define")))
-        CompilerOption("O", tagNone, OptionSwitch(SetOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsShortFormOf ("--optimize[+|-]")))
-        CompilerOption("g", tagNone, OptionSwitch(SetDebugSwitch tcConfigB None), None, Some(FSComp.SR.optsShortFormOf ("--debug")))
+        CompilerOption("d", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsShortFormOf "--define"))
+        CompilerOption("O", tagNone, OptionSwitch(SetOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsShortFormOf "--optimize[+|-]"))
+        CompilerOption("g", tagNone, OptionSwitch(SetDebugSwitch tcConfigB None), None, Some(FSComp.SR.optsShortFormOf "--debug"))
         CompilerOption(
             "i",
             tagString,
             OptionUnit(fun () -> tcConfigB.printSignature <- true),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--sig"))
+            Some(FSComp.SR.optsShortFormOf "--sig")
         )
         CompilerOption(
             "r",
             tagFile,
             OptionString(fun s -> tcConfigB.AddReferencedAssemblyByPath(rangeStartup, s)),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--reference"))
+            Some(FSComp.SR.optsShortFormOf "--reference")
         )
         CompilerOption(
             "I",
             tagDirList,
             OptionStringList(fun s -> tcConfigB.AddIncludePath(rangeStartup, s, tcConfigB.implicitIncludeDir)),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--lib"))
+            Some(FSComp.SR.optsShortFormOf "--lib")
         )
     ]
 
@@ -2212,14 +2180,14 @@ let abbreviatedFlagsFsi tcConfigB = abbreviatedFlagsBoth tcConfigB
 let abbreviatedFlagsFsc tcConfigB =
     abbreviatedFlagsBoth tcConfigB
     @ [ // FSC only abbreviated options
-        CompilerOption("o", tagString, OptionString(setOutFileName tcConfigB), None, Some(FSComp.SR.optsShortFormOf ("--out")))
+        CompilerOption("o", tagString, OptionString(setOutFileName tcConfigB), None, Some(FSComp.SR.optsShortFormOf "--out"))
 
         CompilerOption(
             "a",
             tagString,
             OptionUnit(fun () -> tcConfigB.target <- CompilerTarget.Dll),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--target library"))
+            Some(FSComp.SR.optsShortFormOf "--target library")
         )
 
         // FSC help abbreviations. FSI has its own help options...
@@ -2230,7 +2198,7 @@ let abbreviatedFlagsFsc tcConfigB =
                 Console.Write(GetHelpFsc tcConfigB blocks)
                 tcConfigB.exiter.Exit 0),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--help"))
+            Some(FSComp.SR.optsShortFormOf "--help")
         )
 
         CompilerOption(
@@ -2240,7 +2208,7 @@ let abbreviatedFlagsFsc tcConfigB =
                 Console.Write(GetHelpFsc tcConfigB blocks)
                 tcConfigB.exiter.Exit 0),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--help"))
+            Some(FSComp.SR.optsShortFormOf "--help")
         )
 
         CompilerOption(
@@ -2250,7 +2218,7 @@ let abbreviatedFlagsFsc tcConfigB =
                 Console.Write(GetHelpFsc tcConfigB blocks)
                 tcConfigB.exiter.Exit 0),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--help"))
+            Some(FSComp.SR.optsShortFormOf "--help")
         )
     ]
 

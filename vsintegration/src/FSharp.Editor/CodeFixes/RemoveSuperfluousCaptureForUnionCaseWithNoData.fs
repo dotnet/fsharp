@@ -9,6 +9,7 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 
 open CancellableTasks
@@ -38,7 +39,8 @@ type internal RemoveSuperfluousCaptureForUnionCaseWithNoDataCodeFixProvider [<Im
                 let m =
                     RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
 
-                let classifications = checkResults.GetSemanticClassification(Some m)
+                let classifications =
+                    checkResults.GetSemanticClassification(Some m, RelatedSymbolUseKind.All)
 
                 return
                     classifications

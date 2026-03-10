@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Unions 
 // DU may include implement interfaces
 //<Expects status="success"></Expects>
-#light
+
 
 type I = interface
             abstract member S : unit -> bool

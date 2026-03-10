@@ -76,7 +76,7 @@ module TyconDefinitionHash =
 
             let repr = tycon.TypeReprInfo
 
-            let tyconHash = HashTypes.hashTyconRef tcref
+            let tyconHash = hashTyconRef tcref
             let attribHash = hashAttributeList tcref.Attribs
             let typarsHash = hashTyparDecls g tycon.TyparsNoRange
             let topLevelDeclarationHash = tyconHash @@ attribHash @@ typarsHash
@@ -165,7 +165,7 @@ let calculateHashOfImpliedSignature g observer (expr: ModuleOrNamespaceContents)
     and hashSingleModuleOrNamespaceContents x =
         match x with
         | TMDefRec(_, _opens, tycons, mbinds, _) ->
-            let mbindsHash = mbinds |> hashListOrderIndependent (hashModuleOrNameSpaceBinding)
+            let mbindsHash = mbinds |> hashListOrderIndependent hashModuleOrNameSpaceBinding
 
             let tyconsHash = TyconDefinitionHash.hashTyconDefns (g, observer) tycons
 
@@ -212,7 +212,7 @@ let calculateHashOfAssemblyTopAttributes (attrs: TopAttribs) (platform: ILPlatfo
         | Some ARM64 -> 4
         | Some X86 -> 5
 
-    HashTypes.hashAttributeList attrs.assemblyAttrs
-    @@ HashTypes.hashAttributeList attrs.mainMethodAttrs
-    @@ HashTypes.hashAttributeList attrs.netModuleAttrs
+    hashAttributeList attrs.assemblyAttrs
+    @@ hashAttributeList attrs.mainMethodAttrs
+    @@ hashAttributeList attrs.netModuleAttrs
     @@ platformHash

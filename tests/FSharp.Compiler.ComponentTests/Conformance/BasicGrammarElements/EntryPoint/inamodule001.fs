@@ -5,7 +5,7 @@
 //<CmdLine>Hello</CmdLine>
 //<Expects status="success"></Expects>
 
-#light
+
 module M =
     let func (args : string[]) = 
         if(args.Length=1 && args.[0]="Hello") then 0 else 1

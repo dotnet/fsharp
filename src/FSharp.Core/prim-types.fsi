@@ -692,7 +692,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="resourceName">The name of the resource needed to resolve the source construct.</param>
         ///
         /// <returns>CompilationMappingAttribute</returns>
-        new: resourceName:string * typeDefinitions:System.Type array -> CompilationMappingAttribute
+        new: resourceName:string * typeDefinitions:Type array -> CompilationMappingAttribute
 
         /// <summary>Indicates the relationship between the compiled entity and F# source code</summary>
         member SourceConstructFlags: SourceConstructFlags
@@ -707,7 +707,7 @@ namespace Microsoft.FSharp.Core
         member ResourceName: string
 
         /// <summary>Indicates the type definitions needed to resolve the source construct</summary>
-        member TypeDefinitions: System.Type array
+        member TypeDefinitions: Type array
 
     /// <summary>This attribute is inserted automatically by the F# compiler to tag 
     /// methods which are given the 'CompiledName' attribute.</summary>
@@ -991,7 +991,7 @@ namespace Microsoft.FSharp.Core
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
     type TailCallAttribute =
-        inherit System.Attribute
+        inherit Attribute
         new : unit -> TailCallAttribute
 
 namespace Microsoft.FSharp.Core.CompilerServices
@@ -1219,11 +1219,7 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Represents a managed pointer in F# code.</summary>
     /// <category index="7">ByRef and Pointer Types</category>
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
-#else
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
-#endif
     type byref<'T, 'Kind> = (# "!0&" #)
 
     /// <summary>Represents a managed pointer in F# code. For F# 4.5+ this is considered equivalent to <c>byref&lt;'T, ByRefKinds.InOut&gt;</c></summary>
@@ -1232,35 +1228,19 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Represents the types of byrefs in F# 4.5+</summary>
     /// <category>ByRef and Pointer Types</category>
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
-#else
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
-#endif
     module ByRefKinds = 
 
         /// Represents a byref that can be written
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
-#else
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
-#endif
         type Out
 
         /// Represents a byref that can be read
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
-#else
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
-#endif
         type In
 
         /// Represents a byref that can be both read and written
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-        [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
-#else
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
-#endif
         type InOut
 
     /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
@@ -1733,8 +1713,10 @@ namespace Microsoft.FSharp.Core
         module IntrinsicOperators = 
 
             /// <summary>Binary 'and'. When used as a binary operator the right hand value is evaluated only on demand.</summary>
-            [<CompilerMessage("In F# code, use 'e1 && e2' instead of 'e1 & e2'", 1203, IsHidden=true)>]
-            val (&): e1: bool -> e2: bool -> bool
+            [<CompiledName("op_Amp")>]
+            [<Obsolete("This construct is deprecated. Use 'e1 && e2' instead.", true)>]
+            [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
+            val __obsoleteAnd: e1: bool -> e2: bool -> bool
 
             /// <summary>Binary 'and'. When used as a binary operator the right hand value is evaluated only on demand</summary>
             ///
@@ -1746,8 +1728,9 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>Binary 'or'. When used as a binary operator the right hand value is evaluated only on demand.</summary>
             [<CompiledName("Or")>]
-            [<CompilerMessage("In F# code, use 'e1 || e2' instead of 'e1 or e2'", 1203, IsHidden=true)>]
-            val (or): e1: bool -> e2: bool -> bool
+            [<Obsolete("This construct is deprecated. Use 'e1 || e2' instead.", true)>]
+            [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
+            val __obsoleteOr: e1: bool -> e2: bool -> bool
 
             /// <summary>Binary 'or'. When used as a binary operator the right hand value is evaluated only on demand</summary>
             ///
@@ -2118,28 +2101,28 @@ namespace Microsoft.FSharp.Core
         /// <param name="func">The input function.</param>
         ///
         /// <returns>A System.Converter of the function type.</returns>
-        static member op_Implicit: func: ('T -> 'U) -> System.Converter<'T,'U>
+        static member op_Implicit: func: ('T -> 'U) -> Converter<'T,'U>
 
         /// <summary>Convert an value of type <see cref="T:System.Converter"/> to a F# first class function value </summary>
         ///
         /// <param name="converter">The input System.Converter.</param>
         ///
         /// <returns>An F# function of the same type.</returns>
-        static member op_Implicit: converter: System.Converter<'T,'U> -> ('T -> 'U)
+        static member op_Implicit: converter: Converter<'T,'U> -> ('T -> 'U)
 
         /// <summary>Convert an F# first class function value to a value of type <see cref="T:System.Converter"/></summary>
         ///
         /// <param name="func">The input function.</param>
         ///
         /// <returns>System.Converter&lt;'T,'U&gt;</returns>
-        static member ToConverter: func: ('T -> 'U) -> System.Converter<'T,'U>
+        static member ToConverter: func: ('T -> 'U) -> Converter<'T,'U>
 
         /// <summary>Convert an value of type <see cref="T:System.Converter"/> to a F# first class function value </summary>
         ///
         /// <param name="converter">The input System.Converter.</param>
         ///
         /// <returns>An F# function of the same type.</returns>
-        static member FromConverter: converter: System.Converter<'T,'U> -> ('T -> 'U)
+        static member FromConverter: converter: Converter<'T,'U> -> ('T -> 'U)
 
         /// <summary>Invoke an F# first class function value with five curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2152,7 +2135,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg5">The fifth arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)> * arg1: 'T * arg2: 'U * arg3: 'V * arg4: 'W * arg5: 'X -> 'Y
+        static member InvokeFast: func: FSharpFunc<'T, 'U -> 'V -> 'W -> 'X -> 'Y> * arg1: 'T * arg2: 'U * arg3: 'V * arg4: 'W * arg5: 'X -> 'Y
 
         /// <summary>Invoke an F# first class function value with four curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2164,7 +2147,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg4">The fourth arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X)> * arg1: 'T * arg2: 'U * arg3: 'V * arg4: 'W -> 'X
+        static member InvokeFast: func: FSharpFunc<'T, 'U -> 'V -> 'W -> 'X> * arg1: 'T * arg2: 'U * arg3: 'V * arg4: 'W -> 'X
 
         /// <summary>Invoke an F# first class function value with three curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2175,7 +2158,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg3">The third arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V -> 'W)> * arg1: 'T * arg2: 'U * arg3: 'V -> 'W
+        static member InvokeFast: func: FSharpFunc<'T, 'U -> 'V -> 'W> * arg1: 'T * arg2: 'U * arg3: 'V -> 'W
 
         /// <summary>Invoke an F# first class function value with two curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2185,7 +2168,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg2">The second arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V)> * arg1: 'T * arg2: 'U -> 'V
+        static member InvokeFast: func: FSharpFunc<'T, 'U -> 'V> * arg1: 'T * arg2: 'U -> 'V
 
     /// <summary>Helper functions for converting F# first class function values to and from CLI representations
     /// of functions using delegates.</summary>
@@ -2330,7 +2313,7 @@ namespace Microsoft.FSharp.Core
         /// typically used directly from either F# code or from other CLI languages.</summary>
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'U> = 
-            inherit  FSharpFunc<'T1,('T2 -> 'U)>
+            inherit  FSharpFunc<'T1, 'T2 -> 'U>
 
             /// <summary>Invoke the optimized function value with two curried arguments </summary>
             ///
@@ -2359,7 +2342,7 @@ namespace Microsoft.FSharp.Core
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'U> = 
 
-            inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'U)>
+            inherit  FSharpFunc<'T1, 'T2 -> 'T3 -> 'U>
 
             /// <summary>Invoke an F# first class function value that accepts three curried arguments 
             /// without intervening execution</summary>
@@ -2389,7 +2372,7 @@ namespace Microsoft.FSharp.Core
         /// either F# code or from other CLI languages.</summary>
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'T4,'U> = 
-            inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'T4 -> 'U)>
+            inherit  FSharpFunc<'T1, 'T2 -> 'T3 -> 'T4 -> 'U>
 
             /// <summary>Invoke an F# first class function value that accepts four curried arguments 
             /// without intervening execution</summary>
@@ -2420,7 +2403,7 @@ namespace Microsoft.FSharp.Core
         /// either F# code or from other CLI languages.</summary>
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U> = 
-            inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)>
+            inherit  FSharpFunc<'T1, 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U>
 
             /// <summary>Invoke an F# first class function value that accepts five curried arguments 
             /// without intervening execution</summary>
@@ -2721,6 +2704,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="tail">The existing list.</param>
         ///
         /// <returns>The list with head appended to the front of tail.</returns>
+        ///
+        /// <remarks>This is an O(1) operation.</remarks>
         static member Cons: head: 'T * tail: 'T list -> 'T list
 
         interface IEnumerable<'T>
@@ -2752,7 +2737,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>A list containing the specified items.</returns>
         [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden=true)>]
-        static member Create: [<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T> -> 'T list
+        static member Create: [<System.Runtime.CompilerServices.ScopedRef>] items: ReadOnlySpan<'T> -> 'T list
 #endif
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.List`1"/></summary>
@@ -3271,8 +3256,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultValueArg")>]
         val defaultValueArg: arg: 'T voption -> defaultValue: 'T -> 'T 
 
-        /// <summary>Concatenate two strings. The operator '+' may also be used.</summary>
-        [<CompilerMessage("This construct is for ML compatibility. Consider using the '+' operator instead. This may require a type annotation to indicate it acts on strings. This message can be disabled using '--nowarn:62' or '#nowarn \"62\"'.", 62, IsHidden=true)>]
+        /// <summary>Concatenate two strings. Use the '+' operator instead.</summary>
+        [<Obsolete("This construct is deprecated. Use the '+' operator instead.", true)>]
+        [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
         val (^): s1:string -> s2:string -> string
 
         /// <summary>Raises an exception</summary>
@@ -3297,12 +3283,12 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Raise")>]
-        val inline raise: exn: System.Exception -> 'T
+        val inline raise: exn: Exception -> 'T
         
         /// <summary>Rethrows an exception. This should only be used when handling an exception</summary>
         /// <returns>The result value.</returns>
         [<CompiledName("Rethrow")>]
-        [<System.Obsolete("This function has been renamed to 'reraise'. Please adjust your code to reflect this", true)>]
+        [<Obsolete("This function has been renamed to 'reraise'. Please adjust your code to reflect this", true)>]
         val inline rethrow: unit -> 'T
 
         /// <summary>Rethrows an exception. This should only be used when handling an exception</summary>
@@ -3807,6 +3793,8 @@ namespace Microsoft.FSharp.Core
         /// l1 @ l2   //  Evaluates to ['a'; 'b'; 'c'; 'd'; 'e'; 'f']
         /// </code>
         /// </example>
+        ///
+        /// <remarks>This is an O(n) operation, where n is the length of the first list.</remarks>
         /// 
         val (@): list1: 'T list -> list2: 'T list -> 'T list
 
@@ -4013,7 +4001,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Using")>]
-        val using: resource: ('T :> System.IDisposable) -> action: ('T -> 'U) -> 'U
+        val using: resource: ('T :> IDisposable) -> action: ('T -> 'U) -> 'U
 
         /// <summary>Generate a System.Type runtime representation of a static type.</summary>
         /// 
@@ -4026,7 +4014,7 @@ namespace Microsoft.FSharp.Core
         ///  
         [<RequiresExplicitTypeArguments>] 
         [<CompiledName("TypeOf")>]
-        val inline typeof<'T> : System.Type
+        val inline typeof<'T> : Type
 
         /// <summary>Returns the name of the given symbol.</summary>
         /// 
@@ -4044,7 +4032,7 @@ namespace Microsoft.FSharp.Core
         /// generation of a RuntimeMethodHandle.</summary>
         [<CompiledName("MethodHandleOf")>]
 #if DEBUG
-        val methodhandleof: ('T -> 'TResult) -> System.RuntimeMethodHandle
+        val methodhandleof: ('T -> 'TResult) -> RuntimeMethodHandle
 #else
         val internal methodhandleof: ('T -> 'TResult) -> System.RuntimeMethodHandle
 #endif
@@ -4062,7 +4050,7 @@ namespace Microsoft.FSharp.Core
         ///  
         [<RequiresExplicitTypeArguments>] 
         [<CompiledName("TypeDefOf")>]
-        val inline typedefof<'T> : System.Type
+        val inline typedefof<'T> : Type
 
         /// <summary>Returns the internal size of a type in bytes. For example, <c>sizeof&lt;int&gt;</c> returns 4.</summary>
         /// 
@@ -4904,7 +4892,7 @@ namespace Microsoft.FSharp.Core
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
-            type System.String with
+            type String with
                 /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
                 ///
                 /// <param name="rank">The rank of the index.</param>
@@ -6144,6 +6132,7 @@ namespace Microsoft.FSharp.Core
 
 namespace Microsoft.FSharp.Control
 
+    open System.Diagnostics.CodeAnalysis
     open Microsoft.FSharp.Core
 
     /// <summary>Extensions related to Lazy values.</summary>
@@ -6152,7 +6141,7 @@ namespace Microsoft.FSharp.Control
     [<AutoOpen>]
     module LazyExtensions =
 
-        type System.Lazy<'T> with
+        type System.Lazy<[<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)>]'T> with
 
             /// <summary>Creates a lazy computation that evaluates to the result of the given function when forced.</summary>
             ///
@@ -6200,7 +6189,7 @@ namespace Microsoft.FSharp.Control
     /// CLI metadata to make the member appear to other CLI languages as a CLI event.</remarks>
     ///
     /// <category index="3">Events and Observables</category>
-    type IDelegateEvent<'Delegate when 'Delegate :> System.Delegate > =
+    type IDelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate : not null > =
 
         /// <summary>Connect a handler delegate object to the event. A handler can
         /// be later removed using RemoveHandler. The listener will
@@ -6222,7 +6211,7 @@ namespace Microsoft.FSharp.Control
     ///
     /// <category index="3">Events and Observables</category>
     [<Interface>]
-    type IEvent<'Delegate,'Args when 'Delegate: delegate<'Args,unit> and 'Delegate :> System.Delegate > =
+    type IEvent<'Delegate,'Args when 'Delegate: delegate<'Args,unit> and 'Delegate :> Delegate and 'Delegate : not null > =
         inherit IDelegateEvent<'Delegate>
         inherit IObservable<'Args>
     

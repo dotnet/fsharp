@@ -2,9 +2,6 @@
 
 namespace FSharp.Compiler.CodeAnalysis.Workspace
 
-open System.IO
-open System.Threading
-
 open FSharp.Compiler.CodeAnalysis
 
 open Internal.Utilities.DependencyGraph

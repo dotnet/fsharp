@@ -76,43 +76,49 @@ type internal AddReturnType [<ImportingConstructor>] () =
 
     override _.ComputeRefactoringsAsync context =
         cancellableTask {
-            let document = context.Document
-            let position = context.Span.Start
-            let! sourceText = document.GetTextAsync()
-            let textLine = sourceText.Lines.GetLineFromPosition position
-            let textLinePos = sourceText.Lines.GetLinePosition position
-            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+            try
+                let document = context.Document
+                let position = context.Span.Start
+                let! sourceText = document.GetTextAsync()
+                let textLine = sourceText.Lines.GetLineFromPosition position
+                let textLinePos = sourceText.Lines.GetLinePosition position
+                let fcsTextLineNumber = Line.fromZ textLinePos.Line
 
-            let! lexerSymbol =
-                document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof (AddReturnType))
+                let! lexerSymbol =
+                    document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof (AddReturnType))
 
-            let! (parseFileResults, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync(nameof (AddReturnType))
+                let! (parseFileResults, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync(nameof (AddReturnType))
 
-            let symbolUseOpt =
-                lexerSymbol
-                |> Option.bind (fun lexer ->
-                    checkFileResults.GetSymbolUseAtLocation(
-                        fcsTextLineNumber,
-                        lexer.Ident.idRange.EndColumn,
-                        textLine.ToString(),
-                        lexer.FullIsland
-                    ))
+                let symbolUseOpt =
+                    lexerSymbol
+                    |> Option.bind (fun lexer ->
+                        checkFileResults.GetSymbolUseAtLocation(
+                            fcsTextLineNumber,
+                            lexer.Ident.idRange.EndColumn,
+                            textLine.ToString(),
+                            lexer.FullIsland
+                        ))
 
-            let memberFuncOpt =
-                symbolUseOpt
-                |> Option.bind (fun sym -> sym.Symbol |> AddReturnType.ofFSharpMemberOrFunctionOrValue)
+                let memberFuncOpt =
+                    symbolUseOpt
+                    |> Option.bind (fun sym -> sym.Symbol |> AddReturnType.ofFSharpMemberOrFunctionOrValue)
 
-            match (symbolUseOpt, memberFuncOpt) with
-            | (Some symbolUse, Some memberFunc) ->
-                let isValidMethod =
-                    memberFunc
-                    |> AddReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
+                match (symbolUseOpt, memberFuncOpt) with
+                | (Some symbolUse, Some memberFunc) ->
+                    let isValidMethod =
+                        memberFunc
+                        |> AddReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
 
-                match isValidMethod with
-                | Some(memberFunc, typeRange) -> do AddReturnType.refactor context (memberFunc, typeRange, symbolUse)
-                | None -> ()
-            | _ -> ()
+                    match isValidMethod with
+                    | Some(memberFunc, typeRange) -> do AddReturnType.refactor context (memberFunc, typeRange, symbolUse)
+                    | None -> ()
+                | _ -> ()
 
-            return ()
+                return ()
+            with _ ->
+                // File is not part of the project yet, or project options are not ready.
+                // This can happen when files are added/copied before the project system updates.
+                // Just return without offering any refactorings.
+                return ()
         }
         |> CancellableTask.startAsTask context.CancellationToken

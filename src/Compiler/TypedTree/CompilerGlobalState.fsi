@@ -17,6 +17,7 @@ type NiceNameGenerator =
 
     new: unit -> NiceNameGenerator
     member FreshCompilerGeneratedName: name: string * m: range -> string
+    member IncrementOnly: name: string * m: range -> int
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in

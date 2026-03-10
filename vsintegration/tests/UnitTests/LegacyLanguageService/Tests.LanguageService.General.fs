@@ -117,7 +117,7 @@ type UsingMSBuild() =
             let solution = this.CreateSolution()
             let project = CreateProject(solution,"testproject")
             let file1 = AddFileFromTextEx(project, @"..\LINK.FS", @"..\link.fs", BuildAction.Compile,
-                                        ["#light"
+                                        [
                                          "type Bob() = "
                                          "    let x = 1"])
             let file1 = OpenFile(project, @"..\link.fs")
@@ -196,19 +196,19 @@ type UsingMSBuild() =
     [<Fact>]
     member public this.``Salsa.ReplaceAllText``() =
         let code = 
-                ["#light"; 
+                ["//"; 
                  "let x = \"A String Literal\""]
         let (_solution, _project, file) = this.CreateSingleFileProject(code)
         
         // Sanity check
-        MoveCursorToStartOfMarker(file,"#light")
-        AssertEqual(TokenType.PreprocessorKeyword, GetTokenTypeAtCursor(file))
+        MoveCursorToStartOfMarker(file,"//")
+        AssertEqual(TokenType.Comment, GetTokenTypeAtCursor(file))
         MoveCursorToEndOfMarker(file,"let x = ")
         AssertEqual(TokenType.String, GetTokenTypeAtCursor(file))
         
         // Replace file contents
         ReplaceFileInMemory file
-                            ["#light";
+                            [
                               "let x = 42 // comment!";
                               "let y = \"A String Literal\""]
         
@@ -292,7 +292,7 @@ type UsingMSBuild() =
     member public this.``ExhaustivelyScrutinize.Bug2277``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
-              ["#light"
+              [
                "open Microsoft.FSharp.Plot.Excel"
                "open Microsoft.FSharp.Plot.Interactive"
                "let ps = [| (1.,\"c\"); (-2.,\"p\") |]"
@@ -306,7 +306,7 @@ type UsingMSBuild() =
     member public this.``ExhaustivelyScrutinize.Bug2283``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
-              ["#light"
+              [
                "#r \"NestedClasses.dll\"" // Scenario requires this assembly not exist.
                "//753 atomType -> atomType DOT path typeArgs"
                "let specificIdent (x : RootNamespace.ClassOfT<int>.NestedClassOfU<string>) = x"

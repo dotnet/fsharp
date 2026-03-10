@@ -1,7 +1,6 @@
 module FSharp.Compiler.Interactive.FsiHelp
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Text
 open System.Reflection
@@ -52,7 +51,7 @@ module Parser =
             if not this.Exceptions.IsEmpty then
                 sb.AppendLine "\nExceptions:" |> ignore
 
-                for (exType, exDesc) in this.Exceptions do
+                for exType, exDesc in this.Exceptions do
                     sb.AppendLine $"%s{exType}: %s{exDesc}" |> ignore
 
             if not this.Examples.IsEmpty then
@@ -96,7 +95,7 @@ module Parser =
         with _ ->
             None
 
-    let getTexts (node: Xml.XmlNode) =
+    let getTexts (node: XmlNode) =
         seq {
             for child in node.ChildNodes do
                 if child.Name = "#text" then

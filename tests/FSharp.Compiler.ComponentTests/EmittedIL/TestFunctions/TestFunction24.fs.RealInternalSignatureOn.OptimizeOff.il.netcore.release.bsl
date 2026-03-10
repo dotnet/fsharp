@@ -750,26 +750,26 @@
     .maxstack  6
     .locals init (string V_0,
              native int V_1,
-             string pinned V_2,
+             char& pinned V_2,
              native int V_3,
              int32 V_4,
              native int V_5,
              int32 V_6)
     IL_0000:  ldstr      "Hello World"
     IL_0005:  stloc.0
-    IL_0006:  ldloc.0
-    IL_0007:  stloc.2
-    IL_0008:  ldloc.2
-    IL_0009:  brfalse.s  IL_0016
+    IL_0006:  nop
+    IL_0007:  ldloc.0
+    IL_0008:  brfalse.s  IL_0016
 
-    IL_000b:  ldloc.2
-    IL_000c:  conv.i
-    IL_000d:  call       int32 [runtime]System.Runtime.CompilerServices.RuntimeHelpers::get_OffsetToStringData()
-    IL_0012:  add
+    IL_000a:  ldloc.0
+    IL_000b:  callvirt   instance char& modreq([runtime]System.Runtime.InteropServices.InAttribute) [runtime]System.String::GetPinnableReference()
+    IL_0010:  stloc.2
+    IL_0011:  ldloc.2
+    IL_0012:  conv.i
     IL_0013:  nop
     IL_0014:  br.s       IL_0018
 
-    IL_0016:  ldloc.2
+    IL_0016:  ldloc.0
     IL_0017:  nop
     IL_0018:  stloc.1
     IL_0019:  ldloc.1
@@ -813,7 +813,6 @@
   } 
 
 } 
-
 
 
 

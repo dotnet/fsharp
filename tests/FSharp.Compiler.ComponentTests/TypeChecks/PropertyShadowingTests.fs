@@ -54,28 +54,6 @@ module PropertyShadowingTests =
 
     [<Theory;
         Directory(
-            folder
-            , Includes = [|
-            "ShadowWithExtensionMethod.fsx"
-            "ShadowWithTypeExtension.fsx"
-            "ShadowingAndStillOkWithChainedCalls.fsx"
-            "LinqCount.fsx"
-            "ShadowStaticProperty.fsx"
-            "ShadowWithLastOpenedTypeExtensions.fsx"
-            |]
-            , BaselineSuffix = ".support.added.later"
-    )>]
-    let ``cannot hide property v7_0 support added later`` compilation =
-        compilation
-        |> asFsx
-        |> withNoDebug
-        |> withOptions ["--langversion:7.0"]
-        |> typecheck
-        |> verifyBaselines
-        |> shouldFail
-
-    [<Theory;
-        Directory(
         folder
         , Includes=[|
             "E_CannotShadowIndexedPropertyWithExtensionMethod.fsx"
@@ -89,27 +67,6 @@ module PropertyShadowingTests =
         compilation
         |> asFsx
         |> withNoDebug
-        |> typecheck
-        |> verifyBaselines
-        |> shouldFail
-    
-
-    [<Theory;
-        Directory(
-        folder
-        , Includes=[|
-            "E_CannotShadowIndexedPropertyWithExtensionMethod.fsx"
-            "E_CannotShadowIndexedPropertyWithTypeExtension.fsx"
-            "E_CannotShadowFunctionPropertyWithExtensionMethod.fsx"
-            "E_CannotShadowFunctionPropertyWithTypeExtension.fsx"
-            "E_NoChangeForEvent.fsx"
-        |]
-    )>]
-    let ``cannot hide property v7_0`` compilation =
-        compilation
-        |> asFsx
-        |> withNoDebug
-        |> withOptions ["--langversion:7.0"]
         |> typecheck
         |> verifyBaselines
         |> shouldFail

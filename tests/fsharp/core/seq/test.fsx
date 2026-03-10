@@ -17,8 +17,8 @@ let reportFailure (s : string) =
 (* TEST SUITE FOR STANDARD LIBRARY *)
 
 let check s e r = 
-  if r = e then  stdout.WriteLine (s^": YES") 
-  else (stdout.WriteLine ("\n***** "^s^": FAIL\n"); reportFailure s)
+  if r = e then  stdout.WriteLine (s+": YES") 
+  else (stdout.WriteLine ("\n***** "+s+": FAIL\n"); reportFailure s)
 
 let test s b = 
   if b then ( (* stdout.WriteLine ("passed: " + s) *) ) 

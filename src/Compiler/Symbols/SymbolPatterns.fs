@@ -2,8 +2,6 @@
 
 namespace FSharp.Compiler.Symbols
 
-open System.Text.RegularExpressions
-open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 
 /// Patterns over FSharpSymbol and derivatives.

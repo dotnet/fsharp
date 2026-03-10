@@ -3,7 +3,6 @@
 // Functions to map real paths to paths to be written to PDB/IL
 namespace Internal.Utilities
 
-open System
 open System.IO
 
 open Internal.Utilities.Library

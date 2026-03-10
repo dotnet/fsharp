@@ -3,7 +3,7 @@
 module Core_math_numbers
 #endif
 
-#light
+
 #nowarn "49";;
 #nowarn "44";;
 #nowarn "62";;

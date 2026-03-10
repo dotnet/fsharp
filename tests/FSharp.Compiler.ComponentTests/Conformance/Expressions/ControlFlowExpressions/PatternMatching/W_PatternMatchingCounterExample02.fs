@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:1986 (conter example in complex pattern matching)
 
 
-#light
+
 
 let g = function
   | [] -> 0

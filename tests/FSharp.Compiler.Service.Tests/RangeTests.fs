@@ -1,6 +1,5 @@
 ﻿module FSharp.Compiler.Service.Tests.RangeTests
 
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Test.Assert

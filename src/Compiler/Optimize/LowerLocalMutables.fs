@@ -15,8 +15,6 @@ open FSharp.Compiler.TypeRelations
 //----------------------------------------------------------------------------
 // Decide the set of mutable locals to promote to heap-allocated reference cells
 
-let AutoboxRewriteStackGuardDepth = StackGuard.GetDepthOption "AutoboxRewrite"
-
 type cenv = 
     { g: TcGlobals
       amap: Import.ImportMap }
@@ -196,6 +194,6 @@ let TransformImplFile g amap implFile =
                 PreInterceptBinding = Some(TransformBinding g heapValMap)
                 PostTransform = (fun _ -> None)
                 RewriteQuotations = true
-                StackGuard = StackGuard(AutoboxRewriteStackGuardDepth, "AutoboxRewriteStackGuardDepth") } 
+                StackGuard = StackGuard("AutoboxRewriteStackGuardDepth") } 
 
 

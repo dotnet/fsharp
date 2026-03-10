@@ -2623,7 +2623,7 @@ let GenMethodDefSigAsBlobIdx cenv env mdef =
     GetBytesAsBlobIdx cenv (GetMethodDefSigAsBytes cenv env mdef)
 
 let ilMethodBodyThrowNull =
-    let ilCode = IL.buildILCode "" (Dictionary()) [|ILInstr.AI_ldnull; ILInstr.I_throw|] [] []
+    let ilCode = buildILCode "" (Dictionary()) [|ILInstr.AI_ldnull; ILInstr.I_throw|] [] []
     mkILMethodBody(false, ILLocals.Empty, 0, ilCode, None, None)
 
 let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
@@ -3223,8 +3223,6 @@ let count f arr =
     Array.fold (fun x y -> x + f y) 0x0 arr
 
 module FileSystemUtilities =
-    open System.Reflection
-    open System.Globalization
     let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
 
 /// Arbitrary value
@@ -3742,7 +3740,7 @@ let writePdb (
             try
                 s.SignStream fs
             with exn ->
-                failwith ($"Warning: A call to SignFile failed ({exn.Message})")
+                failwith $"Warning: A call to SignFile failed ({exn.Message})"
         reportTime "Signing Image"
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
@@ -3998,7 +3996,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
                     generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap
 
                 if options.embeddedPDB then
-                    let (uncompressedLength, contentId, stream, algorithmName, checkSum) = pdbInfo
+                    let uncompressedLength, contentId, stream, algorithmName, checkSum = pdbInfo
                     let compressedStream = compressPortablePdbStream stream
                     Some (uncompressedLength, contentId, compressedStream, algorithmName, checkSum)
                 else
@@ -4166,7 +4164,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
             [| hCode
                hData
                match options.referenceAssemblyOnly, options.referenceAssemblySignatureHash with
-               | true, Some impliedSigHash -> System.BitConverter.GetBytes(impliedSigHash)
+               | true, Some impliedSigHash -> BitConverter.GetBytes(impliedSigHash)
                | _ -> sha.ComputeHash metadata |] 
             |> Array.collect id 
             |> sha.ComputeHash

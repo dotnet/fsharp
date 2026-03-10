@@ -76,7 +76,7 @@ let rec private evalFSharpAttribArg g attribExpr =
 
 type AttribInfo = 
     | FSAttribInfo of TcGlobals * Attrib
-    | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range
+    | ILAttribInfo of TcGlobals * ImportMap * ILScopeRef * ILAttribute * range
 
     member x.Range = 
          match x with 
@@ -458,11 +458,7 @@ let CheckILAttributesForUnseen (g: TcGlobals) cattrs _m =
 let CheckFSharpAttributesForHidden g attribs = 
     not (isNil attribs) &&         
     (match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-        | Some(Attrib(_, _, [AttribStringArg _; AttribInt32Arg messageNumber],
-                    ExtractAttribNamedArg "IsHidden" (AttribBoolArg v), _, _, _)) -> 
-            // Message number 62 is for "ML Compatibility". Items labelled with this are visible in intellisense
-            // when mlCompatibility is set.
-            v && not (messageNumber = 62 && g.mlCompatibility)
+        | Some(Attrib(_, _, _, ExtractAttribNamedArg "IsHidden" (AttribBoolArg v), _, _, _)) -> v
         | _ -> false)
     || 
     (match TryFindFSharpAttribute g g.attrib_ComponentModelEditorBrowsableAttribute attribs with
@@ -478,13 +474,11 @@ let CheckFSharpAttributesForObsolete (g:TcGlobals) attribs =
     // like Span and ReadOnlySpan in completion lists due to their dual attributes.
     not (HasFSharpAttributeOpt g g.attrib_IsByRefLikeAttribute_opt attribs)
 
-/// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
-/// Also check the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
-/// items to be suppressed from intellisense.
-let CheckFSharpAttributesForUnseen g attribs _m = 
+/// Indicates if a list of F# attributes contains 'ObsoleteAttribute' or CompilerMessageAttribute', which has an IsHidden argument
+/// May be used to suppress items from intellisense.
+let CheckFSharpAttributesForUnseen g attribs _m allowObsolete = 
     not (isNil attribs) &&         
-    (CheckFSharpAttributesForObsolete g attribs ||
-        CheckFSharpAttributesForHidden g attribs)
+    (not allowObsolete && CheckFSharpAttributesForObsolete g attribs || CheckFSharpAttributesForHidden g attribs)
       
 #if !NO_TYPEPROVIDERS
 /// Indicate if a list of provided attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
@@ -577,13 +571,13 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
-let MethInfoIsUnseen g (m: range) (ty: TType) minfo = 
-    let isUnseenByObsoleteAttrib () = 
+let MethInfoIsUnseen g (m: range) (ty: TType) minfo allowObsolete = 
+    let isUnseenByObsoleteAttrib () =
         match BindMethInfoAttributes m minfo 
-                (fun ilAttribs -> Some(CheckILAttributesForUnseen g ilAttribs m)) 
-                (fun fsAttribs -> Some(CheckFSharpAttributesForUnseen g fsAttribs m))
+                (fun ilAttribs -> Some(not allowObsolete && CheckILAttributesForUnseen g ilAttribs m)) 
+                (fun fsAttribs -> Some(CheckFSharpAttributesForUnseen g fsAttribs m allowObsolete))
 #if !NO_TYPEPROVIDERS
-                (fun provAttribs -> Some(CheckProvidedAttributesForUnseen provAttribs m))
+                (fun provAttribs -> Some(not allowObsolete && CheckProvidedAttributesForUnseen provAttribs m))
 #else
                 (fun _provAttribs -> None)
 #endif
@@ -620,14 +614,14 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
 
 /// Indicate if a property has 'Obsolete' or 'CompilerMessageAttribute'.
 /// Used to suppress the item in intellisense.
-let PropInfoIsUnseen m pinfo = 
+let PropInfoIsUnseen m allowObsolete pinfo = 
     match pinfo with
     | ILProp (ILPropInfo(_, pdef) as ilpinfo) -> 
         // Properties on .NET tuple types are resolvable but unseen
         isAnyTupleTy pinfo.TcGlobals ilpinfo.ILTypeInfo.ToType || 
         CheckILAttributesForUnseen pinfo.TcGlobals pdef.CustomAttrs m
     | FSProp (g, _, Some vref, _) 
-    | FSProp (g, _, _, Some vref) -> CheckFSharpAttributesForUnseen g vref.Attribs m
+    | FSProp (g, _, _, Some vref) -> CheckFSharpAttributesForUnseen g vref.Attribs m allowObsolete
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
 #if !NO_TYPEPROVIDERS
     | ProvidedProp (_amap, pi, m) -> 

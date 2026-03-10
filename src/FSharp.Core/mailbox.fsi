@@ -247,7 +247,7 @@ type MailboxProcessor<'Msg> =
     /// <exception cref="T:System.TimeoutException">Thrown when the timeout is exceeded.</exception>
     ///
     /// <example-tbd></example-tbd>
-    member Scan: scanner: ('Msg -> (Async<'T>) option) * ?timeout: int -> Async<'T>
+    member Scan: scanner: ('Msg -> Async<'T> option) * ?timeout: int -> Async<'T>
 
     /// <summary>Scans for a message by looking through messages in arrival order until <c>scanner</c>
     /// returns a Some value. Other messages remain in the queue.</summary>
@@ -264,7 +264,7 @@ type MailboxProcessor<'Msg> =
     /// <returns>An asynchronous computation that <c>scanner</c> built off the read message.</returns>
     ///
     /// <example-tbd></example-tbd>
-    member TryScan: scanner: ('Msg -> (Async<'T>) option) * ?timeout: int -> Async<'T option>
+    member TryScan: scanner: ('Msg -> Async<'T> option) * ?timeout: int -> Async<'T option>
 
     /// <summary>Starts the agent.</summary>
     ///

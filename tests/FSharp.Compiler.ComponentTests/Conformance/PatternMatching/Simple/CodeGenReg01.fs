@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching 
-#light
+
 
 // FSB 1750, Bad codegen in Pattern Matching
 

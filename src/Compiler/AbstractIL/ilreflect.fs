@@ -550,7 +550,7 @@ let emEnv0 =
         delayedFieldInits = []
     }
 
-let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type MaybeNull, typB, typeDef) =
+let envBindTypeRef emEnv (tref: ILTypeRef) (typT: Type | null, typB, typeDef) =
     match typT with
     | Null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
     | NonNull typT ->
@@ -697,7 +697,7 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
     let typT = convTypeRef cenv emEnv preferCreated tspec.TypeRef
     let tyargs = List.map (convTypeAux cenv emEnv preferCreated) tspec.GenericArgs
 
-    let res: Type MaybeNull =
+    let res: Type | null =
         match isNil tyargs, typT.IsGenericType with
         | _, true -> typT.MakeGenericType(List.toArray tyargs)
         | true, false -> typT
@@ -1013,7 +1013,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
     else
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
-let nonQueryableTypeGetMethod (parentTI: Type) (methInfo: MethodInfo) : MethodInfo MaybeNull =
+let nonQueryableTypeGetMethod (parentTI: Type) (methInfo: MethodInfo) : MethodInfo | null =
     if
         (parentTI.IsGenericType
          && not (equalTypes parentTI (getTypeConstructor parentTI)))
@@ -1102,7 +1102,7 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
         )
     | NonNull res -> res
 
-let nonQueryableTypeGetConstructor (parentTI: Type) (consInfo: ConstructorInfo) : ConstructorInfo MaybeNull =
+let nonQueryableTypeGetConstructor (parentTI: Type) (consInfo: ConstructorInfo) : ConstructorInfo | null =
     if parentTI.IsGenericType then
         TypeBuilder.GetConstructor(parentTI, consInfo)
     else
@@ -1990,7 +1990,7 @@ let buildFieldPass2 cenv tref (typB: TypeBuilder) emEnv (fdef: ILFieldDef) =
                     delayedFieldInits = (fun () -> fieldB.SetConstant(initial.AsObject())) :: emEnv.delayedFieldInits
                 }
 
-    fdef.Offset |> Option.iter (fieldB.SetOffset)
+    fdef.Offset |> Option.iter fieldB.SetOffset
     // custom attributes: done on pass 3 as they may reference attribute constructors generated on
     // pass 2.
     let fref = mkILFieldRef (tref, fdef.Name, fdef.FieldType)

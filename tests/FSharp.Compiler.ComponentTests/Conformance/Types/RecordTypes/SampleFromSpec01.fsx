@@ -2,7 +2,7 @@
 // Sample found on the spec.
 // Section 9.2
 //<Expects status="success"></Expects>
-#light
+
 
 type R1 = 
     { x : int; 

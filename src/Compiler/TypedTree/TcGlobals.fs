@@ -187,12 +187,11 @@ type TcGlobals(
     ilg: ILGlobals,
     fslibCcu: CcuThunk,
     directoryToResolveRelativePaths,
-    mlCompatibility: bool,
     isInteractive: bool,
     checkNullness: bool,
     useReflectionFreeCodeGen: bool,
     // The helper to find system types amongst referenced DLLs
-    tryFindSysTypeCcuHelper: string list -> string -> bool -> FSharp.Compiler.TypedTree.CcuThunk option,
+    tryFindSysTypeCcuHelper: string list -> string -> bool -> CcuThunk option,
     emitDebugInfoInQuotations: bool,
     noDebugAttributes: bool,
     pathMap: PathMap,
@@ -689,11 +688,9 @@ type TcGlobals(
   let v_memoize_file =
       MemoizationTable<int, ILSourceDocument>("v_memoize_file", compute, keyComparer = HashIdentity.Structural)
 
-  let v_and_info =                   makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "&"                      , None                 , None          , [],         mk_rel_sig v_bool_ty)
   let v_addrof_info =                makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&"                     , None                 , None          , [vara],     ([[varaTy]], mkByrefTy varaTy))
   let v_addrof2_info =               makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&&"                    , None                 , None          , [vara],     ([[varaTy]], mkNativePtrTy varaTy))
   let v_and2_info =                  makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "&&"                     , None                 , None          , [],         mk_rel_sig v_bool_ty)
-  let v_or_info =                    makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    "or"                                   , None                 , Some "Or"     , [],         mk_rel_sig v_bool_ty)
   let v_or2_info =                   makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "||"                     , None                 , None          , [],         mk_rel_sig v_bool_ty)
   let v_compare_operator_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                   "compare"                              , None                 , Some "Compare", [vara],     mk_compare_sig varaTy)
   let v_equals_operator_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                   CompileOpName "="                      , None                 , None          , [vara],     mk_rel_sig varaTy)
@@ -1112,11 +1109,11 @@ type TcGlobals(
 
   member _.noDebugAttributes = noDebugAttributes
 
-  member _.tryFindSysTypeCcuHelper: string list -> string -> bool -> FSharp.Compiler.TypedTree.CcuThunk option = tryFindSysTypeCcuHelper
+  member _.tryFindSysTypeCcuHelper: string list -> string -> bool -> CcuThunk option = tryFindSysTypeCcuHelper
 
   member _.tryRemoveEmbeddedILTypeDefs () = [
       for key in embeddedILTypeDefs.Keys.OrderBy id do
-        match (embeddedILTypeDefs.TryRemove(key)) with
+        match embeddedILTypeDefs.TryRemove(key) with
         | true, ilTypeDef -> yield ilTypeDef
         | false, _ -> ()
       ]
@@ -1139,8 +1136,6 @@ type TcGlobals(
   member _.compilingFSharpCore = compilingFSharpCore
 
   member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
-
-  member _.mlCompatibility = mlCompatibility
 
   member _.emitDebugInfoInQuotations = emitDebugInfoInQuotations
 
@@ -1577,11 +1572,9 @@ type TcGlobals(
   member _.new_decimal_info = v_new_decimal_info
   member _.seq_info    = v_seq_info
   member val seq_vref    = (ValRefForIntrinsic v_seq_info)
-  member val and_vref    = (ValRefForIntrinsic v_and_info)
   member val and2_vref   = (ValRefForIntrinsic v_and2_info)
   member val addrof_vref = (ValRefForIntrinsic v_addrof_info)
   member val addrof2_vref = (ValRefForIntrinsic v_addrof2_info)
-  member val or_vref     = (ValRefForIntrinsic v_or_info)
   member val splice_expr_vref     = (ValRefForIntrinsic v_splice_expr_info)
   member val splice_raw_expr_vref     = (ValRefForIntrinsic v_splice_raw_expr_info)
   member val or2_vref    = (ValRefForIntrinsic v_or2_info)

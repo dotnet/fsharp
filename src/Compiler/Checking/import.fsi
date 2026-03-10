@@ -5,7 +5,6 @@ module internal FSharp.Compiler.Import
 
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Caches
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -29,7 +28,7 @@ type AssemblyLoader =
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
     abstract GetProvidedAssemblyInfo:
-        CompilationThreadToken * range * Tainted<ProvidedAssembly MaybeNull> ->
+        CompilationThreadToken * range * Tainted<(ProvidedAssembly | null)> ->
             bool * ProvidedAssemblyStaticLinkingMap option
 
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation

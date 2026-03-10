@@ -660,91 +660,6 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    // Regression test for FSHARP1.0:4279
-    [<Fact>]
-    member this.Keyword_OCaml_asr() =
-        this.VerifyColorizerAtStartOfMarker(
-            fileContents =
-                """
-                let foo a =
-                  match a with
-                  | Some(asr, b)  -> ()
-                  |_ -> ()""",
-            marker = "asr",
-            defines = [],
-            classificationType = ClassificationTypeNames.Keyword
-        )
-
-    [<Fact>]
-    member this.Keyword_OCaml_land() =
-        this.VerifyColorizerAtStartOfMarker(
-            fileContents =
-                """
-                let foo a =
-                  match a with
-                  | Some(land, b)  -> ()
-                  |_ -> ()""",
-            marker = "land",
-            defines = [],
-            classificationType = ClassificationTypeNames.Keyword
-        )
-
-    [<Fact>]
-    member this.Keyword_OCaml_lor() =
-        this.VerifyColorizerAtStartOfMarker(
-            fileContents =
-                """
-                let foo a =
-                  match a with
-                  | Some(lor, b)  -> ()
-                  |_ -> ()""",
-            marker = "lor",
-            defines = [],
-            classificationType = ClassificationTypeNames.Keyword
-        )
-
-    [<Fact>]
-    member this.Keyword_OCaml_lsl() =
-        this.VerifyColorizerAtStartOfMarker(
-            fileContents =
-                """
-                let foo a =
-                  match a with
-                  | Some(lsl, b)  -> ()
-                  |_ -> ()""",
-            marker = "lsl",
-            defines = [],
-            classificationType = ClassificationTypeNames.Keyword
-        )
-
-    [<Fact>]
-    member this.Keyword_OCaml_lsr() =
-        this.VerifyColorizerAtStartOfMarker(
-            fileContents =
-                """
-                let foo a =
-                  match a with
-                  | Some(lsr, b)  -> ()
-                  |_ -> ()""",
-            marker = "lsr",
-            defines = [],
-            classificationType = ClassificationTypeNames.Keyword
-        )
-
-    [<Fact>]
-    member this.Keyword_OCaml_lxor() =
-        this.VerifyColorizerAtStartOfMarker(
-            fileContents =
-                """
-                let foo a =
-                  match a with
-                  | Some(lxor, b)  -> ()
-                  |_ -> ()""",
-            marker = "lxor",
-            defines = [],
-            classificationType = ClassificationTypeNames.Keyword
-        )
-
     [<Fact>]
     member this.Keyword_OCaml_mod() =
         this.VerifyColorizerAtStartOfMarker(
@@ -1072,10 +987,9 @@ type SyntacticClassificationServiceTests() =
             classificationType = classificationType
         )
 
-    /// FEATURE: Preprocessor keywords #light\#if\#else\#endif are colored with the PreprocessorKeyword color.
+    /// FEATURE: Preprocessor keywords #if\#else\#endif are colored with the PreprocessorKeyword color.
     /// FEATURE: All code in the inactive side of #if\#else\#endif is colored with the InactiveCode color.
     [<Theory>]
-    [<InlineData("light (*Light*)", ClassificationTypeNames.PreprocessorKeyword)>]
     [<InlineData("(*Inactive*)", ClassificationTypeNames.ExcludedCode)>]
     [<InlineData("if UNDEFINED //(*If*)", ClassificationTypeNames.PreprocessorKeyword)>]
     [<InlineData("FINED //(*If*)", ClassificationTypeNames.Identifier)>]
@@ -1088,12 +1002,55 @@ type SyntacticClassificationServiceTests() =
     member public this.Preprocessor_Keywords(marker: string, classificationType: string) =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
-                "#light (*Light*)
+                "
                   #if UNDEFINED //(*If*)
                     let x = 1(*Inactive*)
                   #else //(*Else*)
                     let(*Active*) x = 1
                   #endif //(*Endif*)",
+            marker = marker,
+            defines = [],
+            classificationType = classificationType
+        )
+
+    /// FEATURE: Preprocessor keywords #if\#elif\#else\#endif are colored with the PreprocessorKeyword color.
+    /// FEATURE: All code in the inactive side of #if\#elif\#else\#endif is colored with the InactiveCode color.
+    [<Theory>]
+    [<InlineData("elif BRANCH_B //(*Elif*)", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<InlineData("(*InactiveIf*)", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("t(*ActiveElif*)", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*InactiveElse*)", ClassificationTypeNames.ExcludedCode)>]
+    member public this.Preprocessor_ElifKeywords(marker: string, classificationType: string) =
+        this.VerifyColorizerAtStartOfMarker(
+            fileContents =
+                "
+                  #if BRANCH_A
+                    let x = 1(*InactiveIf*)
+                  #elif BRANCH_B //(*Elif*)
+                    let(*ActiveElif*) x = 2
+                  #else
+                    let x = 3(*InactiveElse*)
+                  #endif",
+            marker = marker,
+            defines = [ "BRANCH_B" ],
+            classificationType = classificationType
+        )
+
+    /// FEATURE: When no #elif branch is taken, its code is grayed out as InactiveCode.
+    [<Theory>]
+    [<InlineData("(*InactiveElif*)", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("t(*ActiveElse*)", ClassificationTypeNames.Keyword)>]
+    member public this.Preprocessor_ElifInactive(marker: string, classificationType: string) =
+        this.VerifyColorizerAtStartOfMarker(
+            fileContents =
+                "
+                  #if BRANCH_A
+                    let x = 1
+                  #elif BRANCH_B
+                    let x = 2(*InactiveElif*)
+                  #else
+                    let(*ActiveElse*) x = 3
+                  #endif",
             marker = marker,
             defines = [],
             classificationType = classificationType
@@ -1138,7 +1095,7 @@ type SyntacticClassificationServiceTests() =
     member public this.Preprocessor_DirectivesInString() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
-                "#light
+                "
                 
                 #if DEFINED
                 let s = \"
@@ -1159,7 +1116,7 @@ type SyntacticClassificationServiceTests() =
     member public this.Preprocessor_KeywordsWithStrings(marker: string, classificationType: string) =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
-                "#light (*Light*)
+                "
                 let x1 = \"string1\"
                 #if UNDEFINED //(*If*)
                 let x2 = \"string2\"
@@ -1176,7 +1133,7 @@ type SyntacticClassificationServiceTests() =
     member public this.Comment_VerbatimStringInComment_Bug1778() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
-                "#light
+                "
                 (* @\"\\\" *) let a = 0",
             marker = "le",
             defines = [],

@@ -113,11 +113,9 @@ let view model dispatch =
        div [] []
    ]
         """
-        |> withLangVersion46
+        |> withLangVersionPreview
         |> typecheck
-        |> shouldFail
-        |> withSingleDiagnostic (Warning 3221, Line 9, Col 8, Line 9, Col 17,
-                                 "This expression returns a value of type 'int' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.")
+        |> shouldSucceed
 
     [<Fact>]
     let ``Warn If Discarded In List 2``() =
@@ -125,6 +123,7 @@ let view model dispatch =
 // stupid things to make the sample compile
 let div _ _ = 1
 let subView _ _ = [1; 2]
+let subView2 _ _ = 1
 let y = 1
 
 // elmish view
@@ -133,15 +132,13 @@ let view model dispatch =
         div [] [
            match y with
            | 1 -> yield! subView model dispatch
-           | _ -> subView model dispatch
+           | _ -> subView2 model dispatch
         ]
    ]
         """
-        |> withLangVersion46
+        |> withLangVersionPreview
         |> typecheck
-        |> shouldFail
-        |> withSingleDiagnostic (Warning 3222, Line 13, Col 19, Line 13, Col 41,
-                                 "This expression returns a value of type 'int list' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.")
+        |> shouldSucceed
 
     [<Fact>]
     let ``Warn If Discarded In List 3``() =
@@ -161,11 +158,9 @@ let view model dispatch =
         ]
    ]
         """
-        |> withLangVersion46
+        |> withLangVersionPreview
         |> typecheck
-        |> shouldFail
-        |> withSingleDiagnostic (Warning 20, Line 13, Col 19, Line 13, Col 41,
-                                 "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+        |> shouldSucceed
 
     [<Fact>]
     let ``Warn Only On Last Expression``() =

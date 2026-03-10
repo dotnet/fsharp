@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching
-#light
+
 
 // Verify that [] works at the end of a list
 let rec lengthOf x =

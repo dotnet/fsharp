@@ -1,5 +1,5 @@
 // #Conformance #TypeInference #ByRef 
-#light
+
 
 // Test that byref values can be used in inner lambdas if they
 // do not escape.

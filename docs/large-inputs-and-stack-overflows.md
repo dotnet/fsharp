@@ -89,13 +89,12 @@ The previous example is considered incomplete, because arbitrary _combinations_ 
 
 ## Stack Guards
 
-The `StackGuard` type is used to count synchronous recursive processing and move to a new thread if a limit is reached. Compilation globals are re-installed. Sample:
+The `StackGuard` type is used to move to a new thread if there is no sufficient stack space for a synchronous recursive call. Compilation globals are re-installed. Sample:
 
 ```fsharp
-let TcStackGuardDepth = StackGuard.GetDepthOption "Tc"
 
 ...
-   stackGuard = StackGuard(TcMaxStackGuardDepth)
+   stackGuard = StackGuard("TcExpr")
 
 let rec ....
 
@@ -108,10 +107,17 @@ and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
 
 ```
 
-Note stack guarding doesn't result in a tailcall so will appear in recursive stack frames, because a counter must be decremented after the call. This is used systematically for recursive processing of:
+Note stack guarding doesn't result in a tailcall so will appear in recursive stack frames, because a counter must be decremented after the call.
 
-* SyntaxTree SynExpr
-* TypedTree Expr
+Compiling with `--times` option will show a summary if any thread switches were made due to stack guarding:
 
-We don't use it for other inputs.
+
+```
+    StackGuard jumps:
+    -----------------------------------------------------
+    | caller |        source        | jumps | min depth |
+    |--------|----------------------|-------|-----------|
+    | exprF  | TypedTreeOps.fs:7444 |    25 |      1601 |
+    -----------------------------------------------------
+```
 

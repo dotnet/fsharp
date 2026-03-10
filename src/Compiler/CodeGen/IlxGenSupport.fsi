@@ -3,7 +3,6 @@
 /// The ILX generator.
 module internal FSharp.Compiler.IlxGenSupport
 
-open System.Reflection
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TcGlobals
 

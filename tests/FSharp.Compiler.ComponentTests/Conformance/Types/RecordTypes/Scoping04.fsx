@@ -2,7 +2,7 @@
 // Field labels have module scope
 // Also, in this case we see that there is no collision when the field and type have the same name
 //<Expects status="success"></Expects>
-#light
+
 
     type ı = int
 

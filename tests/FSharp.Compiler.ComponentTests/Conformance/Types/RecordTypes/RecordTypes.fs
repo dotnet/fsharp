@@ -592,3 +592,27 @@ module RecordTypes =
             (Error 668, Line 5, Col 24, Line 5, Col 25, "The field 'A' appears multiple times in this record expression or pattern")
             (Error 668, Line 5, Col 31, Line 5, Col 32, "The field 'B' appears multiple times in this record expression or pattern")
         ]
+
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument`` () =
+        Fsx
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedRecord<'a> = { A : int; B : NestedRecord<'a list> }
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 30, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument: signature`` () =
+        Fsi
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedRecord<'a> = { A : int; B : NestedRecord<'a list> }
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 30, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")

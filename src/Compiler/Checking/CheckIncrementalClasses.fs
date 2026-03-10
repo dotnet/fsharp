@@ -4,7 +4,6 @@ module internal FSharp.Compiler.CheckIncrementalClasses
 
 open System
 
-open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -27,8 +26,6 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 
 type cenv = TcFileState
-
-let TcClassRewriteStackGuardDepth = StackGuard.GetDepthOption "TcClassRewrite"
 
 exception ParameterlessStructCtor of range: range
 
@@ -579,7 +576,7 @@ type IncrClassReprInfo =
                         PostTransform = (fun _ -> None)
                         PreInterceptBinding = None
                         RewriteQuotations = true
-                        StackGuard = StackGuard(TcClassRewriteStackGuardDepth, "FixupIncrClassExprPhase2C") } expr 
+                        StackGuard = StackGuard("FixupIncrClassExprPhase2C") } expr 
 
 type IncrClassConstructionBindingsPhase2C =
     | Phase2CBindings of IncrClassBindingGroup list

@@ -5,7 +5,7 @@
 // Note: the syntax is kind of awkward...
 //<Expects status="success"></Expects>
 
-#light
+
 
 type CA1 = 
     class

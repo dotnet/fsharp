@@ -19,7 +19,7 @@ val isEnvVarSet: s: string -> bool
 
 val GetEnvInteger: e: string -> dflt: int -> int
 
-val dispose: x: (System.IDisposable MaybeNull) -> unit
+val dispose: x: (System.IDisposable | null) -> unit
 
 module Bits =
     /// Get the least significant byte of a 32-bit integer
@@ -263,7 +263,7 @@ type DisposablesTracker =
     new: unit -> DisposablesTracker
 
     /// Register some items to dispose
-    member Register: i: 'a MaybeNull -> unit when 'a :> System.IDisposable and 'a: not struct and 'a: not null
+    member Register: i: ('a | null) -> unit when 'a :> System.IDisposable and 'a: not struct and 'a: not null
 
     interface System.IDisposable
 
@@ -306,4 +306,9 @@ module internal WeakMap =
     ///   let v = getValueFor someKey
     val internal getOrCreate:
         valueFactory: ('Key -> 'Value) -> ('Key -> 'Value)
+            when 'Key: not struct and 'Key: not null and 'Value: not struct
+
+    /// Like getOrCreate, but only cache the value if it satisfies the given predicate.
+    val cacheConditionally:
+        shouldCache: ('Value -> bool) -> valueFactory: ('Key -> 'Value) -> ('Key -> 'Value)
             when 'Key: not struct and 'Key: not null and 'Value: not struct

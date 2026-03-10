@@ -3,7 +3,7 @@
 // Regression test for FSHARP1.0:2817
 
 
-#light
+
 
 exception lowerCaseException of string
 

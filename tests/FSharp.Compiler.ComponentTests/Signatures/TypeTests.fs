@@ -309,3 +309,37 @@ let foo = Foo()
             Assert.False(mfv.IsUnionCaseTester, "IsUnionCaseTester returned true")
             Assert.True(mfv.IsConstructor)
         | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
+
+
+
+[<Fact>]
+let ``Type extension type parameters do not overwrite the type being extended`` () =
+    let one =
+        FSharpWithFileName "One.fs" """
+module One
+
+type GenericType<'ActualType> = {
+    Value: 'ActualType
+}
+"""
+
+    let two =
+        FsSourceWithFileName "Two.fs" """
+module Two
+type One.GenericType<'U> with
+    member x.Print () = printfn "%A" x.Value
+"""
+
+    let three =
+        FsSourceWithFileName "Three.fs" """
+module Three
+
+open One
+
+type GenericType<'X> with
+    member _.Nothing() = ignore ()
+"""
+
+    one |> withAdditionalSourceFiles [ two; three ]
+    |> compile
+    |> verifyILContains [ ".Print<ActualType>" ]

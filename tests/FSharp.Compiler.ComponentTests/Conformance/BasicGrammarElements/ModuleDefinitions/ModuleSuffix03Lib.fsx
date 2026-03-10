@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Modules #ReqNOMT 
-#light
+
 
 namespace N
 

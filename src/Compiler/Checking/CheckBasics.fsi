@@ -272,7 +272,7 @@ type TcFileState =
         /// A cache for ArgReprInfos which get created multiple times for the same values
         /// Since they need to be later mutated with updates from signature files this should make sure
         /// we're always dealing with the same instance and the updates don't get lost
-        argInfoCache: ConcurrentDictionary<(string * range), ArgReprInfo>
+        argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
 
         // forward call
         TcPat:
@@ -295,6 +295,9 @@ type TcFileState =
                 -> TcEnv
                 -> TcPatLinearEnv
                 -> SynSimplePats
+                // SynPat list: Represents parsed patterns,
+                // bool: Indicates if this is the first pattern in a sequence of patterns
+                -> SynPat list * bool
                 -> string list * TcPatLinearEnv
 
         // forward call
@@ -345,6 +348,7 @@ type TcFileState =
                 -> TcEnv
                 -> TcPatLinearEnv
                 -> SynSimplePats
+                -> SynPat list * bool
                 -> string list * TcPatLinearEnv) *
         tcSequenceExpressionEntry:
             (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
