@@ -1263,6 +1263,21 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfnn "%s" (FSComp.SR.optsCopyright ())
         fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBanner3 ())
 
+    member _.ShowVersion() =
+        fsiConsoleOutput.uprintnfn "%s" tcConfigB.productNameForBannerText
+        fsiConsoleOutput.uprintnfn "Language Version: %s" tcConfigB.langVersion.SpecifiedVersionString
+
+        let fsharpCoreVersion = typeof<unit>.Assembly.GetName().Version |> string
+
+        fsiConsoleOutput.uprintnfn "FSharp.Core: %s" fsharpCoreVersion
+
+        fsiConsoleOutput.uprintnfn ".NET: %s" System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+
+        fsiConsoleOutput.uprintnfn
+            "OS: %s (%O)"
+            System.Runtime.InteropServices.RuntimeInformation.OSDescription
+            System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture
+
     member _.ShowHelp(m) =
         let helpLine = sprintf "%s --help" executableFileNameWithoutExtension.Value
 
@@ -1294,7 +1309,13 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                 fsiConsoleOutput.uprintfn "%s" msg
 
         fsiConsoleOutput.uprintfn """    #clear;;                                      // %s""" (FSIstrings.SR.fsiIntroTextHashclearInfo ())
+
+        fsiConsoleOutput.uprintfn
+            """    #version;;                                    // %s"""
+            (FSIstrings.SR.fsiIntroTextHashversionInfo ())
+
         fsiConsoleOutput.uprintfn """    #quit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo ())
+        fsiConsoleOutput.uprintfn """    #exit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo ())
         fsiConsoleOutput.uprintfn ""
         fsiConsoleOutput.uprintfnn "%s" (FSIstrings.SR.fsiIntroTextHeader2commandLine ())
         fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiIntroTextHeader3 helpLine)
@@ -3885,7 +3906,11 @@ type FsiInteractionProcessor
             fsiOptions.ClearScreen()
             istate, Completed None
 
-        | ParsedHashDirective(("q" | "quit"), [], _) -> fsiInterruptController.Exit()
+        | ParsedHashDirective("version", [], _) ->
+            fsiOptions.ShowVersion()
+            istate, Completed None
+
+        | ParsedHashDirective(("q" | "quit" | "exit"), [], _) -> fsiInterruptController.Exit()
 
         | ParsedHashDirective("help", hashArguments, m) ->
             let args = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)

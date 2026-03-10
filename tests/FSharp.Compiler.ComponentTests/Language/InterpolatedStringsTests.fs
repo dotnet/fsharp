@@ -182,3 +182,182 @@ printfn "%%s" (System.Globalization.CultureInfo "en-US" |> x.ToString)
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "abcde"
+
+    [<Fact>]
+    let ``Warn when lambda is used as interpolated string argument`` () =
+        Fsx """
+let f = fun x -> x + 1
+let s = $"{f}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3884, Line 3, Col 12, Line 3, Col 13, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+
+    [<Fact>]
+    let ``Warn when underscore dot shorthand is used as interpolated string argument`` () =
+        Fsx """
+type R = { Name: string }
+let r = { Name = "hello" }
+let s = $"{_.Name}" : string
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3884, Line 4, Col 12, Line 4, Col 18, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+
+    [<Fact>]
+    let ``Warn when partially applied function is used as interpolated string argument`` () =
+        Fsx """
+let add x y = x + y
+let s = $"{add 1}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3884, Line 3, Col 12, Line 3, Col 17, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+
+    [<Fact>]
+    let ``Warn when named function is used as interpolated string argument`` () =
+        Fsx """
+let myFunc (x: int) = string x
+let s = $"result: {myFunc}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3884, Line 3, Col 20, Line 3, Col 26, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+
+    [<Fact>]
+    let ``No warn when non-function value is used as interpolated string argument`` () =
+        Fsx """
+let x = 42
+let s1 = $"{x}"
+let s2 = $"{System.DateTime.Now}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``No warn when function is applied in interpolated string argument`` () =
+        Fsx """
+let f x = x + 1
+let s = $"{f 42}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``No warn for function value in interpolated string with older language version`` () =
+        Fsx """
+let f = fun x -> x + 1
+let s = $"{f}"
+        """
+        |> withLangVersion10
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Warn when multiple function values are used in interpolated string`` () =
+        Fsx """
+let f x = x + 1
+let g x = x * 2
+let s = $"{f} and {g}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3884, Line 4, Col 12, Line 4, Col 13, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+            (Warning 3884, Line 4, Col 20, Line 4, Col 21, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+        ]
+
+    [<Fact>]
+    let ``Warn for function value in FormattableString interpolated string`` () =
+        Fsx """
+let f x = x + 1
+let s : System.FormattableString = $"{f}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3884, Line 3, Col 39, Line 3, Col 40, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+
+    [<Fact>]
+    let ``Warn for function value with format specifier in interpolated string`` () =
+        Fsx """
+let f x = x + 1
+let s = $"{f:N2}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3884, Line 3, Col 12, Line 3, Col 13, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+        ]
+
+    [<Fact>]
+    let ``Warn can be suppressed with nowarn`` () =
+        Fsx """
+#nowarn "3884"
+let f x = x + 1
+let s = $"{f}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Warn when System.Action delegate is used as interpolated string argument`` () =
+        Fsx """
+let a = System.Action(fun () -> ())
+let s = $"{a}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> withDiagnosticMessageMatches "This expression is a function value"
+
+    [<Fact>]
+    let ``Warn when System.Func delegate is used as interpolated string argument`` () =
+        Fsx """
+let f = System.Func<int, string>(fun x -> string x)
+let s = $"{f}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3884, Line 3, Col 12, Line 3, Col 13, "This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.")
+
+    [<Fact>]
+    let ``No warn when delegate is invoked in interpolated string argument`` () =
+        Fsx """
+let f = System.Func<int, string>(fun x -> string x)
+let s = $"{f.Invoke(42)}"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    // See https://github.com/dotnet/fsharp/issues/19367.
+    [<CulturedFact([|"th"|])>]
+    let ``Hole without specifier parsed correctly when culture set to Thai`` () =
+        Fsx
+            """
+            let s = $"{3}"
+            if s <> "3" then
+                failwith $"Expected \"3\" but got \"%s{s}\"."
+            """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // See https://github.com/dotnet/fsharp/issues/19367.
+    [<CulturedFact([|"th"|])>]
+    let ``Explicit %P does not cause exception when culture set to Thai`` () =
+        Fsx
+            """
+            let s = $"%P({3})"
+            """
+        |> compileExeAndRun
+        |> shouldSucceed

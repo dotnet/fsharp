@@ -101,29 +101,14 @@ let CheckCodeDoesSomething (code: ILCode) =
 
 /// Choose the field names for variables captured by closures
 let ChooseFreeVarNames takenNames ts =
-    let tns = List.map (fun t -> (t, None)) ts
+    let initialSet = Set.ofList takenNames
 
-    let rec chooseName names (t, nOpt) =
-        let tn =
-            match nOpt with
-            | None -> t
-            | Some n -> t + string n
+    let ts, _ =
+        (initialSet, ts)
+        ||> List.mapFold (fun taken baseName ->
+            let chosen = ChooseUniqueName baseName taken
+            chosen, Set.add chosen taken)
 
-        if Zset.contains tn names then
-            chooseName
-                names
-                (t,
-                 Some(
-                     match nOpt with
-                     | None -> 0
-                     | Some n -> (n + 1)
-                 ))
-        else
-            let names = Zset.add tn names
-            tn, names
-
-    let names = Zset.empty String.order |> Zset.addList takenNames
-    let ts, _names = List.mapFold chooseName names tns
     ts
 
 /// We can't tailcall to methods taking byrefs. This helper helps search for them
@@ -604,6 +589,10 @@ let voidCheck m g permits ty =
 
 [<Struct>]
 type DuFieldCoordinates = { CaseIdx: int; FieldIdx: int }
+
+/// Flags propagated from interface slot signatures to parameter metadata.
+[<Struct>]
+type SlotParamFlags = { IsIn: bool; IsOut: bool }
 
 /// Structure for maintaining field reuse across struct unions
 type UnionFieldReuseMap = MultiMap<string, DuFieldCoordinates>
@@ -1261,6 +1250,11 @@ and IlxGenEnv =
         intraAssemblyInfo: IlxGenIntraAssemblyInfo
 
         realsig: bool
+
+        /// Expression definitions of variables returning resumable code from outer scopes.
+        /// Used by state machine lowering to resolve otherwise-free expand variables
+        /// when the state machine is inside a lambda whose outer let-binding provides the definition.
+        resumableCodeDefinitions: ValMap<Expr>
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -1491,7 +1485,12 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
         mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
     else
         let methodArgTys, paramInfos = List.unzip flatArgInfos
-        let ilMethodArgTys = GenParamTypes cenv m tyenvUnderTypars false methodArgTys
+
+        let isSlotSig =
+            memberInfo.MemberFlags.IsDispatchSlot
+            || memberInfo.MemberFlags.IsOverrideOrExplicitImpl
+
+        let ilMethodArgTys = GenParamTypes cenv m tyenvUnderTypars isSlotSig methodArgTys
         let ilMethodInst = GenTypeArgs cenv m tyenvUnderTypars (List.map mkTyparTy mtps)
 
         let mspec =
@@ -3004,7 +3003,9 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 true
             | None ->
 
-                match LowerStateMachineExpr cenv.g expr with
+                let smResult = LowerStateMachineExpr cenv.g eenv.resumableCodeDefinitions expr
+
+                match smResult with
                 | LoweredStateMachineResult.Lowered res ->
                     let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
@@ -3491,13 +3492,22 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
         if preSteps && GenExprPreSteps cenv cgbuf eenv expr sequel then
             contf Fake
         else
-
             // This case implemented here to get a guaranteed tailcall
             // Make sure we generate the debug point outside the scope of the variable
             let startMark, endMark as scopeMarks = StartDelayedLocalScope "let" cgbuf
             let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
             GenDebugPointForBind cenv cgbuf bind
             GenBindingAfterDebugPoint cenv cgbuf eenv bind false (Some startMark)
+
+            // Track expand-var (resumable code) definitions so state machine lowering
+            // inside nested lambdas can resolve otherwise-free expand variables.
+            let eenv =
+                if isReturnsResumableCodeTy cenv.g bind.Var.TauType then
+                    { eenv with
+                        resumableCodeDefinitions = eenv.resumableCodeDefinitions.Add bind.Var bind.Expr
+                    }
+                else
+                    eenv
 
             // Generate the body
             GenLinearExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark)) true contf
@@ -6352,7 +6362,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             else
                 // initialize the captured var
                 CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
-                GenGetLocalVal cenv cgbuf eenvouter m fv None
+                GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
                 CG.EmitInstr cgbuf (pop 2) (Push []) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
 
         // Generate the start expression
@@ -6450,7 +6460,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloinfo.cloWitnessInfos
 
     for fv in cloinfo.cloFreeVars do
-        GenGetLocalVal cenv cgbuf eenvouter m fv None
+        GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
 
     CG.EmitInstr
         cgbuf
@@ -6541,7 +6551,7 @@ and GenSequenceExpr
                          if stateVarsSet.Contains fv then
                              GenDefaultValue cenv cgbuf eenv (fv.Type, m)
                          else
-                             GenGetLocalVal cenv cgbuf eenv m fv None
+                             GenGetFreeVarForClosure cenv cgbuf eenv m fv
 
                      CG.EmitInstr
                          cgbuf
@@ -6653,7 +6663,7 @@ and GenSequenceExpr
         if stateVarsSet.Contains fv then
             GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
         else
-            GenGetLocalVal cenv cgbuf eenvouter m fv None
+            GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
 
     CG.EmitInstr cgbuf (pop ilCloAllFreeVars.Length) (Push [ ilCloRetTyOuter ]) (I_newobj(ilxCloSpec.Constructor, None))
     GenSequel cenv eenvouter.cloc cgbuf sequel
@@ -6886,7 +6896,9 @@ and GenClosureAlloc cenv (cgbuf: CodeGenBuffer) eenv (cloinfo, m) =
         CG.EmitInstr cgbuf (pop 0) (Push [ EraseClosures.mkTyOfLambdas cenv.ilxPubCloEnv cloinfo.ilCloLambdas ]) (mkNormalLdsfld fspec)
     else
         GenWitnessArgsFromWitnessInfos cenv cgbuf eenv m cloinfo.cloWitnessInfos
-        GenGetLocalVals cenv cgbuf eenv m cloinfo.cloFreeVars
+
+        for fv in cloinfo.cloFreeVars do
+            GenGetFreeVarForClosure cenv cgbuf eenv m fv
 
         CG.EmitInstr
             cgbuf
@@ -6900,6 +6912,12 @@ and GenLambda cenv cgbuf eenv isLocalTypeFunc thisVars expr sequel =
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenTypeOfVal cenv eenv (v: Val) = GenType cenv v.Range eenv.tyenv v.Type
+
+and capturedTypeForFreeVar (g: TcGlobals) (fv: Val) =
+    if isByrefTy g fv.Type then
+        destByrefTy g fv.Type
+    else
+        fv.Type
 
 and GenFreevar cenv m eenvouter tyenvinner (fv: Val) =
     let g = cenv.g
@@ -6915,7 +6933,7 @@ and GenFreevar cenv m eenvouter tyenvinner (fv: Val) =
     | Method _
     | Null -> error (InternalError("GenFreevar: compiler error: unexpected unrealized value", fv.Range))
 #endif
-    | _ -> GenType cenv m tyenvinner fv.Type
+    | _ -> GenType cenv m tyenvinner (capturedTypeForFreeVar g fv)
 
 and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames expr =
     let g = cenv.g
@@ -7276,7 +7294,9 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
             IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloAllFreeVars), ctxtGenericArgsForDelegee, false)
 
         GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
-        GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
+
+        for fv in cloFreeVars do
+            GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
 
         CG.EmitInstr
             cgbuf
@@ -8206,6 +8226,17 @@ and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFi
     GenExpr cenv cgbuf eenv e2 Continue
     CG.EmitInstr cgbuf (pop 2) Push0 (mkNormalStfld (mkILFieldSpec (ilField.FieldRef, ilxCloSpec.ILType)))
 
+and isLambdaBinding (TBind(_, expr, _)) =
+    match stripDebugPoints expr with
+    | Expr.Lambda _
+    | Expr.TyLambda _
+    | Expr.Obj _ -> true
+    | _ -> false
+
+and reorderBindingsLambdasFirst binds =
+    let lambdas, nonLambdas = binds |> List.partition isLambdaBinding
+    lambdas @ nonLambdas
+
 /// Generate letrec bindings
 and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (dict: Dictionary<Stamp, ILTypeRef> option) =
 
@@ -8299,8 +8330,11 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
     let recursiveVars =
         Zset.addList (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
 
+    let reorderedBindsPossiblyRequiringFixup =
+        reorderBindingsLambdasFirst bindsPossiblyRequiringFixup
+
     let _ =
-        (recursiveVars, bindsPossiblyRequiringFixup)
+        (recursiveVars, reorderedBindsPossiblyRequiringFixup)
         ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
             // Compute fixups
             bind.Expr
@@ -8344,6 +8378,8 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
     let _ =
         (recursiveVars, groupBinds)
         ||> List.fold (fun forwardReferenceSet (binds: Binding list) ->
+            let binds = reorderBindingsLambdasFirst binds
+
             match dict, cenv.g.realsig, binds with
             | _, false, _
             | None, _, _
@@ -8380,8 +8416,11 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
 
 and GenLetRec cenv cgbuf eenv (binds, body, m) sequel =
     let _, endMark as scopeMarks = StartLocalScope "letrec" cgbuf
-    let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
-    GenLetRecBindings cenv cgbuf eenv (binds, m) None
+
+    let reorderedBinds = reorderBindingsLambdasFirst binds
+
+    let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv reorderedBinds
+    GenLetRecBindings cenv cgbuf eenv (reorderedBinds, m) None
     GenExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark))
 
 //-------------------------------------------------------------------------
@@ -8975,6 +9014,7 @@ and GenParams
     (argInfos: ArgReprInfo list)
     methArgTys
     (implValsOpt: Val list option)
+    (slotSigParamFlags: SlotParamFlags list option)
     =
     let g = cenv.g
     let ilWitnessParams = GenWitnessParams cenv eenv m witnessInfos
@@ -8993,10 +9033,17 @@ and GenParams
         | _ -> List.map (fun x -> x, None) ilArgTysAndInfos
 
     let ilParams, _ =
-        (Set.empty, List.zip methArgTys ilArgTysAndInfoAndVals)
-        ||> List.mapFold (fun takenNames (methodArgTy, ((ilArgTy, topArgInfo), implValOpt)) ->
+        ((Set.empty, 0), List.zip methArgTys ilArgTysAndInfoAndVals)
+        ||> List.mapFold (fun (takenNames, paramIdx) (methodArgTy, ((ilArgTy, topArgInfo), implValOpt)) ->
             let inFlag, outFlag, optionalFlag, defaultParamValue, Marshal, attribs =
                 GenParamAttribs cenv methodArgTy topArgInfo.Attribs
+
+            let inFlag, outFlag =
+                match slotSigParamFlags with
+                | Some flags when paramIdx < flags.Length ->
+                    let slotFlags = flags[paramIdx]
+                    (inFlag || slotFlags.IsIn, outFlag || slotFlags.IsOut)
+                | _ -> (inFlag, outFlag)
 
             let idOpt =
                 match topArgInfo.Name with
@@ -9036,7 +9083,7 @@ and GenParams
                     MetadataIndex = NoMetadataIdx
                 }
 
-            param, takenNames)
+            param, (takenNames, paramIdx + 1))
 
     ilWitnessParams @ ilParams
 
@@ -9389,8 +9436,18 @@ and GenMethodForBinding
 
     let ilTypars = GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
 
+    let slotSigParamFlags =
+        match v.ImplementedSlotSigs with
+        | slotsig :: _ ->
+            let slotParams = slotsig.FormalParams |> List.concat
+
+            slotParams
+            |> List.map (fun (TSlotParam(_, _, inFlag, outFlag, _, _)) -> { IsIn = inFlag; IsOut = outFlag })
+            |> Some
+        | [] -> None
+
     let ilParams =
-        GenParams cenv eenvUnderMethTypeTypars m mspec witnessInfos paramInfos argTys (Some nonUnitNonSelfMethodVars)
+        GenParams cenv eenvUnderMethTypeTypars m mspec witnessInfos paramInfos argTys (Some nonUnitNonSelfMethodVars) slotSigParamFlags
 
     let ilReturn =
         GenReturnInfo cenv eenvUnderMethTypeTypars (Some returnTy) mspec.FormalReturnType retInfo
@@ -9847,11 +9904,17 @@ and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage storeSeq
         CommitGetStorageSequel cenv cgbuf eenv m ty None storeSequel
 
     | Env(_, ilField, localCloInfo) ->
-        CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdarg0; mkNormalLdfld ilField ]
+        CG.EmitInstrs cgbuf (pop 0) (Push [ ilField.ActualType ]) [ mkLdarg0; mkNormalLdfld ilField ]
         CommitGetStorageSequel cenv cgbuf eenv m ty localCloInfo storeSequel
 
-and GenGetLocalVals cenv cgbuf eenvouter m fvs =
-    List.iter (fun v -> GenGetLocalVal cenv cgbuf eenvouter m v None) fvs
+/// Load free variables for closure capture, dereferencing byrefs.
+and GenGetFreeVarForClosure cenv cgbuf eenv m (fv: Val) =
+    let g = cenv.g
+    GenGetLocalVal cenv cgbuf eenv m fv None
+
+    if isByrefTy g fv.Type then
+        let ilUnderlyingTy = GenType cenv m eenv.tyenv (capturedTypeForFreeVar g fv)
+        CG.EmitInstr cgbuf (pop 1) (Push [ ilUnderlyingTy ]) (mkNormalLdobj ilUnderlyingTy)
 
 and GenGetLocalVal cenv cgbuf eenv m (vspec: Val) storeSequel =
     GenGetStorageAndSequel cenv cgbuf eenv m (vspec.Type, GenTypeOfVal cenv eenv vspec) (StorageForVal m vspec eenv) storeSequel
@@ -10720,7 +10783,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         let ilReturn =
             GenReturnInfo cenv eenvForMeth returnTy mspec.FormalReturnType retInfo
 
-        let ilParams = GenParams cenv eenvForMeth m mspec [] argInfos methArgTys None
+        let ilParams = GenParams cenv eenvForMeth m mspec [] argInfos methArgTys None None
 
         let compileAsInstance = ValRefIsCompiledAsInstanceMember g vref
 
@@ -12048,6 +12111,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         intraAssemblyInfo = IlxGenIntraAssemblyInfo.Create()
         realsig = g.realsig
         initClassFieldSpec = None
+        resumableCodeDefinitions = ValMap<_>.Empty
     }
 
 type IlxGenResults =
