@@ -97,6 +97,10 @@ type LanguageFeature =
     | ReturnFromFinal
     | MoreConcreteTiebreaker
     | OverloadResolutionPriority
+    | WarnWhenFunctionValueUsedAsInterpolatedStringArg
+    | MethodOverloadsCache
+    | ImplicitDIMCoverage
+    | PreprocessorElif
 
 /// LanguageVersion management
 type LanguageVersion =

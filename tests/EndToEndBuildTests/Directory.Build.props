@@ -3,6 +3,10 @@
   <PropertyGroup>
     <FSharpTestCompilerVersion Condition = " '$(FSharpTestCompilerVersion)' == '' ">net40</FSharpTestCompilerVersion>
     <RollForward>LatestMajor</RollForward>
+    <!-- xUnit3 package versions for EndToEndBuildTests - these must be defined before importing parent props -->
+    <XunitVersion Condition="'$(XunitVersion)' == ''">3.2.2</XunitVersion>
+    <XunitRunnerConsoleVersion Condition="'$(XunitRunnerConsoleVersion)' == ''">3.2.2</XunitRunnerConsoleVersion>
+    <MicrosoftTestingExtensionsHangDumpVersion Condition="'$(MicrosoftTestingExtensionsHangDumpVersion)' == ''">2.0.2</MicrosoftTestingExtensionsHangDumpVersion>
   </PropertyGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />

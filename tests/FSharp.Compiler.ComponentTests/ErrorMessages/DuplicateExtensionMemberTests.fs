@@ -9,9 +9,6 @@ module ``Duplicate Extension Members`` =
 
     [<Fact>]
     let ``Same type name from different namespaces should error for static members``() =
-        // Static extension members on types with same simple name but different namespaces
-        // produce duplicate IL method signatures because the extended type's namespace is not
-        // encoded in the IL method name/signature for static extensions.
         FSharp """
 namespace NS1
 
@@ -36,8 +33,6 @@ module Extensions =
 
     [<Fact>]
     let ``Same type name from different namespaces should be allowed for instance members``() =
-        // Instance extension members are safe because the extended type becomes the first
-        // parameter in IL, differentiating the signatures.
         FSharp """
 namespace NS1
 
@@ -82,7 +77,6 @@ module Extensions =
 
     [<Fact>]
     let ``Same generic type name from different namespaces should error for static members``() =
-        // Same IL collision issue as non-generic, but with generic types.
         FSharp """
 namespace NS1
 
