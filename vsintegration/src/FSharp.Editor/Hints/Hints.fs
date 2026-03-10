@@ -14,6 +14,8 @@ module Hints =
         | ParameterNameHint
         | ReturnTypeHint
 
+    let allHintKinds = Set [ HintKind.TypeHint; HintKind.ParameterNameHint; HintKind.ReturnTypeHint ]
+
     // Relatively convenient for testing
     type NativeHint =
         {
