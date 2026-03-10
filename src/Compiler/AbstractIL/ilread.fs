@@ -226,7 +226,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     let fileStamp = FileSystem.GetLastWriteTimeShim fileName
 
     /// The weak handle to the bytes for the file
-    let weakBytes = WeakReference<byte[] MaybeNull>(null)
+    let weakBytes = WeakReference<byte[] | null>(null)
 
     member _.FileName = fileName
 

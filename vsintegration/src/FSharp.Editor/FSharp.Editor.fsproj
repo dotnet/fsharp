@@ -63,6 +63,7 @@
     <Compile Include="LanguageService\WorkspaceExtensions.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
+    <Compile Include="LanguageService\ProjectFiltering.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ClassificationService.fs" />
@@ -147,13 +148,13 @@
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
     <Compile Include="Hints\Hints.fs" />
-    <Compile Include="Hints\InlineTypeHints.fs" />
-    <Compile Include="hints\InlineReturnTypeHints.fs" />
-    <Compile Include="Hints\InlineParameterNameHints.fs" />
+    <Compile Include="Hints\InlayTypeHints.fs" />
+    <Compile Include="Hints\InlayReturnTypeHints.fs" />
+    <Compile Include="Hints\InlayParameterNameHints.fs" />
     <Compile Include="Hints\HintService.fs" />
     <Compile Include="Hints\NativeToRoslynHintConverter.fs" />
     <Compile Include="Hints\OptionParser.fs" />
-    <Compile Include="Hints\FSharpInlineHintsService.fs" />
+    <Compile Include="Hints\FSharpInlayHintsService.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -177,7 +178,6 @@
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="$(MicrosoftCodeAnalysisExternalAccessFSharpVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.Composition" Version="$(MicrosoftCompositionVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />   
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem" Version="$(MicrosoftVisualStudioProjectSystemVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="$(MicrosoftVisualStudioProjectSystemManagedVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" Condition="'$(Configuration)' == 'Debug'" />    

@@ -10,12 +10,12 @@ module OptionParser =
     let inline getHintKinds options =
         Set
             [
-                if options.IsInlineTypeHintsEnabled then
+                if options.IsInlayTypeHintsEnabled then
                     HintKind.TypeHint
 
-                if options.IsInlineParameterNameHintsEnabled then
+                if options.IsInlayParameterNameHintsEnabled then
                     HintKind.ParameterNameHint
 
-                if options.IsInlineReturnTypeHintsEnabled then
+                if options.IsInlayReturnTypeHintsEnabled then
                     HintKind.ReturnTypeHint
             ]

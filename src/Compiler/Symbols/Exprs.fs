@@ -520,8 +520,13 @@ module FSharpExprConvert =
             let rec hasConditionalTypar ty =
                 match stripTyEqns g ty with
                 | TType_var (tp, _) -> tp.ComparisonConditionalOn || tp.EqualityConditionalOn
-                | TType_app (_, tinst, _) -> tinst |> List.exists hasConditionalTypar
-                | _ -> false
+                | TType_app (_, tinst, _)
+                | TType_ucase (_, tinst)
+                | TType_anon (_, tinst)
+                | TType_tuple (_, tinst) -> tinst |> List.exists hasConditionalTypar
+                | TType_fun (domainTy, rangeTy, _) -> hasConditionalTypar domainTy || hasConditionalTypar rangeTy
+                | TType_forall (_, bodyTy) -> hasConditionalTypar bodyTy
+                | TType_measure _ -> false
 
             let witnessExprs =
                 match ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcValF g cenv.amap m tps tyargs with
