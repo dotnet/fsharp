@@ -376,12 +376,17 @@ if [[ "$test_core_clr" == true ]]; then
 
   if [[ "$test_core_clr_batch" != "" ]]; then
     # Run batched: use TestSplit.fsx to get the commands for this batch
+    splitOutput=$("$DOTNET_INSTALL_DIR/dotnet" fsi "$scriptroot/tests/TestSplit.fsx" "$test_core_clr_batch" coreclr)
+    if [[ $? -ne 0 ]]; then
+      echo "TestSplit.fsx failed with exit code $?"
+      ExitWithExitCode 1
+    fi
     while IFS= read -r line; do
       # Extract project path and extra filter args from each line
       project=$(echo "$line" | sed 's/^dotnet test //' | sed 's/ --no-build.*//')
       filterargs=$(echo "$line" | sed 's/^dotnet test [^ ]* --no-build -c Release *//')
       Test --testproject "$repo_root/$project" --targetframework $coreclrtestframework --extraargs "$filterargs"
-    done < <("$DOTNET_INSTALL_DIR/dotnet" fsi "$scriptroot/tests/TestSplit.fsx" "$test_core_clr_batch" coreclr)
+    done <<< "$splitOutput"
   else
     # Run all tests without batching
     Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
