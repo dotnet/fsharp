@@ -1679,32 +1679,32 @@
     IL_000e:  stloc.1
     IL_000f:  ldc.i4.0
     IL_0010:  stloc.2
-    IL_0011:  br.s       IL_0027
+    IL_0011:  br.s       IL_0023
 
     IL_0013:  ldloc.1
     IL_0014:  ldloc.2
     IL_0015:  ldloc.0
     IL_0016:  ldloc.2
-    IL_0017:  ldelem     [runtime]System.Boolean
-    IL_001c:  stloc.3
-    IL_001d:  ldloc.3
-    IL_001e:  brfalse.s  IL_0020
+    IL_0017:  ldelem.u1
+    IL_0018:  stloc.3
+    IL_0019:  ldloc.3
+    IL_001a:  brfalse.s  IL_001c
 
-    IL_0020:  ldc.i4.0
-    IL_0021:  nop
-    IL_0022:  stelem.i4
+    IL_001c:  ldc.i4.0
+    IL_001d:  nop
+    IL_001e:  stelem.i4
+    IL_001f:  ldloc.2
+    IL_0020:  ldc.i4.1
+    IL_0021:  add
+    IL_0022:  stloc.2
     IL_0023:  ldloc.2
-    IL_0024:  ldc.i4.1
-    IL_0025:  add
-    IL_0026:  stloc.2
-    IL_0027:  ldloc.2
-    IL_0028:  ldloc.1
-    IL_0029:  ldlen
-    IL_002a:  conv.i4
-    IL_002b:  blt.s      IL_0013
+    IL_0024:  ldloc.1
+    IL_0025:  ldlen
+    IL_0026:  conv.i4
+    IL_0027:  blt.s      IL_0013
 
-    IL_002d:  ldloc.1
-    IL_002e:  ret
+    IL_0029:  ldloc.1
+    IL_002a:  ret
   } 
 
   .method public static int32[]  'for true | _ in ...'() cil managed
@@ -1724,32 +1724,32 @@
     IL_000e:  stloc.1
     IL_000f:  ldc.i4.0
     IL_0010:  stloc.2
-    IL_0011:  br.s       IL_0027
+    IL_0011:  br.s       IL_0023
 
     IL_0013:  ldloc.1
     IL_0014:  ldloc.2
     IL_0015:  ldloc.0
     IL_0016:  ldloc.2
-    IL_0017:  ldelem     [runtime]System.Boolean
-    IL_001c:  stloc.3
-    IL_001d:  ldloc.3
-    IL_001e:  brfalse.s  IL_0020
+    IL_0017:  ldelem.u1
+    IL_0018:  stloc.3
+    IL_0019:  ldloc.3
+    IL_001a:  brfalse.s  IL_001c
 
-    IL_0020:  ldc.i4.0
-    IL_0021:  nop
-    IL_0022:  stelem.i4
+    IL_001c:  ldc.i4.0
+    IL_001d:  nop
+    IL_001e:  stelem.i4
+    IL_001f:  ldloc.2
+    IL_0020:  ldc.i4.1
+    IL_0021:  add
+    IL_0022:  stloc.2
     IL_0023:  ldloc.2
-    IL_0024:  ldc.i4.1
-    IL_0025:  add
-    IL_0026:  stloc.2
-    IL_0027:  ldloc.2
-    IL_0028:  ldloc.1
-    IL_0029:  ldlen
-    IL_002a:  conv.i4
-    IL_002b:  blt.s      IL_0013
+    IL_0024:  ldloc.1
+    IL_0025:  ldlen
+    IL_0026:  conv.i4
+    IL_0027:  blt.s      IL_0013
 
-    IL_002d:  ldloc.1
-    IL_002e:  ret
+    IL_0029:  ldloc.1
+    IL_002a:  ret
   } 
 
   .method public static int32[]  'for _ | true in ...'() cil managed
@@ -2335,7 +2335,6 @@
   } 
 
 } 
-
 
 
 

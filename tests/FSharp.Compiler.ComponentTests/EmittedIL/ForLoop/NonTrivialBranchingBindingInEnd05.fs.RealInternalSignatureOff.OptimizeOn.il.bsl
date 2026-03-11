@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -128,7 +118,7 @@
     IL_0036:  stloc.0
     IL_0037:  ldloc.0
     IL_0038:  ldloc.1
-    IL_0039:  blt.s      IL_009a
+    IL_0039:  blt.s      IL_008e
 
     IL_003b:  ldc.i4.0
     IL_003c:  stloc.3
@@ -155,59 +145,58 @@
     IL_005f:  stloc.2
     IL_0060:  ldloc.2
     IL_0061:  ldloc.3
-    IL_0062:  blt.s      IL_0090
+    IL_0062:  blt.s      IL_0084
 
     IL_0064:  call       int32[] assembly::get_r()
     IL_0069:  ldloc.3
     IL_006a:  call       int32[] assembly::get_r()
     IL_006f:  ldloc.3
-    IL_0070:  ldelem     [runtime]System.Int32
-    IL_0075:  call       int32[] assembly::get_w()
+    IL_0070:  ldelem.i4
+    IL_0071:  call       int32[] assembly::get_w()
+    IL_0076:  ldloc.3
+    IL_0077:  ldelem.i4
+    IL_0078:  add
+    IL_0079:  stelem.i4
     IL_007a:  ldloc.3
-    IL_007b:  ldelem     [runtime]System.Int32
-    IL_0080:  add
-    IL_0081:  stelem     [runtime]System.Int32
-    IL_0086:  ldloc.3
-    IL_0087:  ldc.i4.1
-    IL_0088:  add
-    IL_0089:  stloc.3
-    IL_008a:  ldloc.3
-    IL_008b:  ldloc.2
-    IL_008c:  ldc.i4.1
-    IL_008d:  add
-    IL_008e:  bne.un.s   IL_0064
+    IL_007b:  ldc.i4.1
+    IL_007c:  add
+    IL_007d:  stloc.3
+    IL_007e:  ldloc.3
+    IL_007f:  ldloc.2
+    IL_0080:  ldc.i4.1
+    IL_0081:  add
+    IL_0082:  bne.un.s   IL_0064
 
-    IL_0090:  ldloc.1
-    IL_0091:  ldc.i4.1
-    IL_0092:  add
-    IL_0093:  stloc.1
-    IL_0094:  ldloc.1
-    IL_0095:  ldloc.0
-    IL_0096:  ldc.i4.1
-    IL_0097:  add
-    IL_0098:  bne.un.s   IL_003b
+    IL_0084:  ldloc.1
+    IL_0085:  ldc.i4.1
+    IL_0086:  add
+    IL_0087:  stloc.1
+    IL_0088:  ldloc.1
+    IL_0089:  ldloc.0
+    IL_008a:  ldc.i4.1
+    IL_008b:  add
+    IL_008c:  bne.un.s   IL_003b
 
-    IL_009a:  nop
-    IL_009b:  nop
-    IL_009c:  call       int32[] assembly::get_r()
-    IL_00a1:  ldc.i4.0
-    IL_00a2:  ldelem     [runtime]System.Int32
-    IL_00a7:  ldc.i4.s   11
-    IL_00a9:  bne.un.s   IL_00af
+    IL_008e:  nop
+    IL_008f:  nop
+    IL_0090:  call       int32[] assembly::get_r()
+    IL_0095:  ldc.i4.0
+    IL_0096:  ldelem.i4
+    IL_0097:  ldc.i4.s   11
+    IL_0099:  bne.un.s   IL_009f
 
-    IL_00ab:  ldc.i4.0
-    IL_00ac:  nop
-    IL_00ad:  br.s       IL_00b1
+    IL_009b:  ldc.i4.0
+    IL_009c:  nop
+    IL_009d:  br.s       IL_00a1
 
-    IL_00af:  ldc.i4.1
-    IL_00b0:  nop
-    IL_00b1:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
-    IL_00b6:  pop
-    IL_00b7:  ret
+    IL_009f:  ldc.i4.1
+    IL_00a0:  nop
+    IL_00a1:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
+    IL_00a6:  pop
+    IL_00a7:  ret
   } 
 
 } 
-
 
 
 

@@ -173,7 +173,7 @@
     IL_0080:  ldloc.2
     IL_0081:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_0086:  stloc.s    V_10
-    IL_0088:  br.s       IL_00c2
+    IL_0088:  br.s       IL_00b6
 
     IL_008a:  ldloc.2
     IL_008b:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
@@ -182,43 +182,42 @@
     IL_0097:  ldloc.s    V_11
     IL_0099:  call       int32[] assembly::get_r()
     IL_009e:  ldloc.s    V_11
-    IL_00a0:  ldelem     [runtime]System.Int32
-    IL_00a5:  call       int32[] assembly::get_w()
-    IL_00aa:  ldloc.s    V_11
-    IL_00ac:  ldelem     [runtime]System.Int32
-    IL_00b1:  add
-    IL_00b2:  stelem     [runtime]System.Int32
-    IL_00b7:  ldloc.s    V_10
-    IL_00b9:  stloc.2
-    IL_00ba:  ldloc.2
-    IL_00bb:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_00c0:  stloc.s    V_10
-    IL_00c2:  ldloc.s    V_10
-    IL_00c4:  brtrue.s   IL_008a
+    IL_00a0:  ldelem.i4
+    IL_00a1:  call       int32[] assembly::get_w()
+    IL_00a6:  ldloc.s    V_11
+    IL_00a8:  ldelem.i4
+    IL_00a9:  add
+    IL_00aa:  stelem.i4
+    IL_00ab:  ldloc.s    V_10
+    IL_00ad:  stloc.2
+    IL_00ae:  ldloc.2
+    IL_00af:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_00b4:  stloc.s    V_10
+    IL_00b6:  ldloc.s    V_10
+    IL_00b8:  brtrue.s   IL_008a
 
-    IL_00c6:  nop
+    IL_00ba:  nop
+    IL_00bb:  nop
+    IL_00bc:  call       int32[] assembly::get_r()
+    IL_00c1:  ldc.i4.0
+    IL_00c2:  ldelem.i4
+    IL_00c3:  ldc.i4.3
+    IL_00c4:  bne.un.s   IL_00ca
+
+    IL_00c6:  ldc.i4.0
     IL_00c7:  nop
-    IL_00c8:  call       int32[] assembly::get_r()
-    IL_00cd:  ldc.i4.0
-    IL_00ce:  ldelem     [runtime]System.Int32
-    IL_00d3:  ldc.i4.3
-    IL_00d4:  bne.un.s   IL_00da
+    IL_00c8:  br.s       IL_00cc
 
-    IL_00d6:  ldc.i4.0
-    IL_00d7:  nop
-    IL_00d8:  br.s       IL_00dc
-
-    IL_00da:  ldc.i4.1
-    IL_00db:  nop
-    IL_00dc:  stloc.s    V_12
-    IL_00de:  ldloc.s    V_12
-    IL_00e0:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
-    IL_00e5:  pop
-    IL_00e6:  ret
+    IL_00ca:  ldc.i4.1
+    IL_00cb:  nop
+    IL_00cc:  stloc.s    V_12
+    IL_00ce:  ldloc.s    V_12
+    IL_00d0:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
+    IL_00d5:  pop
+    IL_00d6:  ret
   } 
 
 } 
-
 
 
 

@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -124,49 +114,48 @@
     IL_0036:  stloc.0
     IL_0037:  ldloc.0
     IL_0038:  ldloc.1
-    IL_0039:  bgt.s      IL_0067
+    IL_0039:  bgt.s      IL_005b
 
     IL_003b:  call       int32[] assembly::get_r()
     IL_0040:  ldloc.1
     IL_0041:  call       int32[] assembly::get_r()
     IL_0046:  ldloc.1
-    IL_0047:  ldelem     [runtime]System.Int32
-    IL_004c:  call       int32[] assembly::get_w()
+    IL_0047:  ldelem.i4
+    IL_0048:  call       int32[] assembly::get_w()
+    IL_004d:  ldloc.1
+    IL_004e:  ldelem.i4
+    IL_004f:  add
+    IL_0050:  stelem.i4
     IL_0051:  ldloc.1
-    IL_0052:  ldelem     [runtime]System.Int32
-    IL_0057:  add
-    IL_0058:  stelem     [runtime]System.Int32
-    IL_005d:  ldloc.1
-    IL_005e:  ldc.i4.1
-    IL_005f:  sub
-    IL_0060:  stloc.1
-    IL_0061:  ldloc.1
-    IL_0062:  ldloc.0
-    IL_0063:  ldc.i4.1
-    IL_0064:  sub
-    IL_0065:  bne.un.s   IL_003b
+    IL_0052:  ldc.i4.1
+    IL_0053:  sub
+    IL_0054:  stloc.1
+    IL_0055:  ldloc.1
+    IL_0056:  ldloc.0
+    IL_0057:  ldc.i4.1
+    IL_0058:  sub
+    IL_0059:  bne.un.s   IL_003b
 
-    IL_0067:  nop
+    IL_005b:  nop
+    IL_005c:  nop
+    IL_005d:  call       int32[] assembly::get_r()
+    IL_0062:  ldc.i4.0
+    IL_0063:  ldelem.i4
+    IL_0064:  ldc.i4.3
+    IL_0065:  bne.un.s   IL_006b
+
+    IL_0067:  ldc.i4.0
     IL_0068:  nop
-    IL_0069:  call       int32[] assembly::get_r()
-    IL_006e:  ldc.i4.0
-    IL_006f:  ldelem     [runtime]System.Int32
-    IL_0074:  ldc.i4.3
-    IL_0075:  bne.un.s   IL_007b
+    IL_0069:  br.s       IL_006d
 
-    IL_0077:  ldc.i4.0
-    IL_0078:  nop
-    IL_0079:  br.s       IL_007d
-
-    IL_007b:  ldc.i4.1
-    IL_007c:  nop
-    IL_007d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
-    IL_0082:  pop
-    IL_0083:  ret
+    IL_006b:  ldc.i4.1
+    IL_006c:  nop
+    IL_006d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
+    IL_0072:  pop
+    IL_0073:  ret
   } 
 
 } 
-
 
 
 

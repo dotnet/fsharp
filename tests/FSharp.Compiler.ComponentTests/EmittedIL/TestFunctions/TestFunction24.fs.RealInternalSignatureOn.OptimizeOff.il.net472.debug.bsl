@@ -680,87 +680,87 @@
     IL_0006:  dup
     IL_0007:  ldc.i4.0
     IL_0008:  ldc.r8     0.0
-    IL_0011:  stelem     [runtime]System.Double
-    IL_0016:  dup
-    IL_0017:  ldc.i4.1
-    IL_0018:  ldc.r8     1.5
-    IL_0021:  stelem     [runtime]System.Double
-    IL_0026:  dup
-    IL_0027:  ldc.i4.2
-    IL_0028:  ldc.r8     2.2999999999999998
-    IL_0031:  stelem     [runtime]System.Double
+    IL_0011:  stelem.r8
+    IL_0012:  dup
+    IL_0013:  ldc.i4.1
+    IL_0014:  ldc.r8     1.5
+    IL_001d:  stelem.r8
+    IL_001e:  dup
+    IL_001f:  ldc.i4.2
+    IL_0020:  ldc.r8     2.2999999999999998
+    IL_0029:  stelem.r8
+    IL_002a:  dup
+    IL_002b:  ldc.i4.3
+    IL_002c:  ldc.r8     3.3999999999999999
+    IL_0035:  stelem.r8
     IL_0036:  dup
-    IL_0037:  ldc.i4.3
-    IL_0038:  ldc.r8     3.3999999999999999
-    IL_0041:  stelem     [runtime]System.Double
-    IL_0046:  dup
-    IL_0047:  ldc.i4.4
-    IL_0048:  ldc.r8     4.0999999999999996
-    IL_0051:  stelem     [runtime]System.Double
-    IL_0056:  dup
-    IL_0057:  ldc.i4.5
-    IL_0058:  ldc.r8     5.9000000000000004
-    IL_0061:  stelem     [runtime]System.Double
-    IL_0066:  stloc.0
-    IL_0067:  ldloc.0
-    IL_0068:  stloc.2
-    IL_0069:  ldloc.2
-    IL_006a:  brfalse.s  IL_0086
+    IL_0037:  ldc.i4.4
+    IL_0038:  ldc.r8     4.0999999999999996
+    IL_0041:  stelem.r8
+    IL_0042:  dup
+    IL_0043:  ldc.i4.5
+    IL_0044:  ldc.r8     5.9000000000000004
+    IL_004d:  stelem.r8
+    IL_004e:  stloc.0
+    IL_004f:  ldloc.0
+    IL_0050:  stloc.2
+    IL_0051:  ldloc.2
+    IL_0052:  brfalse.s  IL_006e
 
-    IL_006c:  ldloc.2
-    IL_006d:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Length<float64>(!!0[])
-    IL_0072:  brfalse.s  IL_0081
+    IL_0054:  ldloc.2
+    IL_0055:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Length<float64>(!!0[])
+    IL_005a:  brfalse.s  IL_0069
 
-    IL_0074:  ldloc.2
+    IL_005c:  ldloc.2
+    IL_005d:  ldc.i4.0
+    IL_005e:  ldelema    [runtime]System.Double
+    IL_0063:  stloc.3
+    IL_0064:  ldloc.3
+    IL_0065:  conv.i
+    IL_0066:  nop
+    IL_0067:  br.s       IL_0071
+
+    IL_0069:  ldc.i4.0
+    IL_006a:  conv.i
+    IL_006b:  nop
+    IL_006c:  br.s       IL_0071
+
+    IL_006e:  ldc.i4.0
+    IL_006f:  conv.i
+    IL_0070:  nop
+    IL_0071:  stloc.1
+    IL_0072:  ldloc.1
+    IL_0073:  stloc.s    V_4
     IL_0075:  ldc.i4.0
-    IL_0076:  ldelema    [runtime]System.Double
-    IL_007b:  stloc.3
-    IL_007c:  ldloc.3
-    IL_007d:  conv.i
-    IL_007e:  nop
-    IL_007f:  br.s       IL_0089
-
-    IL_0081:  ldc.i4.0
-    IL_0082:  conv.i
-    IL_0083:  nop
-    IL_0084:  br.s       IL_0089
-
-    IL_0086:  ldc.i4.0
-    IL_0087:  conv.i
-    IL_0088:  nop
-    IL_0089:  stloc.1
-    IL_008a:  ldloc.1
-    IL_008b:  stloc.s    V_4
-    IL_008d:  ldc.i4.0
-    IL_008e:  stloc.s    V_5
-    IL_0090:  ldloc.s    V_4
-    IL_0092:  stloc.s    V_6
-    IL_0094:  ldloc.s    V_5
-    IL_0096:  stloc.s    V_7
-    IL_0098:  ldloc.s    V_6
-    IL_009a:  ldloc.s    V_7
-    IL_009c:  conv.i
-    IL_009d:  sizeof     [runtime]System.Double
-    IL_00a3:  mul
-    IL_00a4:  add
-    IL_00a5:  ldobj      [runtime]System.Double
-    IL_00aa:  ldloc.1
-    IL_00ab:  stloc.s    V_8
-    IL_00ad:  ldc.i4.1
-    IL_00ae:  stloc.s    V_9
-    IL_00b0:  ldloc.s    V_8
-    IL_00b2:  stloc.s    V_10
-    IL_00b4:  ldloc.s    V_9
-    IL_00b6:  stloc.s    V_11
-    IL_00b8:  ldloc.s    V_10
-    IL_00ba:  ldloc.s    V_11
-    IL_00bc:  conv.i
-    IL_00bd:  sizeof     [runtime]System.Double
-    IL_00c3:  mul
-    IL_00c4:  add
-    IL_00c5:  ldobj      [runtime]System.Double
-    IL_00ca:  add
-    IL_00cb:  ret
+    IL_0076:  stloc.s    V_5
+    IL_0078:  ldloc.s    V_4
+    IL_007a:  stloc.s    V_6
+    IL_007c:  ldloc.s    V_5
+    IL_007e:  stloc.s    V_7
+    IL_0080:  ldloc.s    V_6
+    IL_0082:  ldloc.s    V_7
+    IL_0084:  conv.i
+    IL_0085:  sizeof     [runtime]System.Double
+    IL_008b:  mul
+    IL_008c:  add
+    IL_008d:  ldobj      [runtime]System.Double
+    IL_0092:  ldloc.1
+    IL_0093:  stloc.s    V_8
+    IL_0095:  ldc.i4.1
+    IL_0096:  stloc.s    V_9
+    IL_0098:  ldloc.s    V_8
+    IL_009a:  stloc.s    V_10
+    IL_009c:  ldloc.s    V_9
+    IL_009e:  stloc.s    V_11
+    IL_00a0:  ldloc.s    V_10
+    IL_00a2:  ldloc.s    V_11
+    IL_00a4:  conv.i
+    IL_00a5:  sizeof     [runtime]System.Double
+    IL_00ab:  mul
+    IL_00ac:  add
+    IL_00ad:  ldobj      [runtime]System.Double
+    IL_00b2:  add
+    IL_00b3:  ret
   } 
 
   .method public static float64  pinArray2() cil managed
@@ -783,67 +783,67 @@
     IL_0006:  dup
     IL_0007:  ldc.i4.0
     IL_0008:  ldc.r8     0.0
-    IL_0011:  stelem     [runtime]System.Double
-    IL_0016:  dup
-    IL_0017:  ldc.i4.1
-    IL_0018:  ldc.r8     1.5
-    IL_0021:  stelem     [runtime]System.Double
-    IL_0026:  dup
-    IL_0027:  ldc.i4.2
-    IL_0028:  ldc.r8     2.2999999999999998
-    IL_0031:  stelem     [runtime]System.Double
+    IL_0011:  stelem.r8
+    IL_0012:  dup
+    IL_0013:  ldc.i4.1
+    IL_0014:  ldc.r8     1.5
+    IL_001d:  stelem.r8
+    IL_001e:  dup
+    IL_001f:  ldc.i4.2
+    IL_0020:  ldc.r8     2.2999999999999998
+    IL_0029:  stelem.r8
+    IL_002a:  dup
+    IL_002b:  ldc.i4.3
+    IL_002c:  ldc.r8     3.3999999999999999
+    IL_0035:  stelem.r8
     IL_0036:  dup
-    IL_0037:  ldc.i4.3
-    IL_0038:  ldc.r8     3.3999999999999999
-    IL_0041:  stelem     [runtime]System.Double
-    IL_0046:  dup
-    IL_0047:  ldc.i4.4
-    IL_0048:  ldc.r8     4.0999999999999996
-    IL_0051:  stelem     [runtime]System.Double
-    IL_0056:  dup
-    IL_0057:  ldc.i4.5
-    IL_0058:  ldc.r8     5.9000000000000004
-    IL_0061:  stelem     [runtime]System.Double
-    IL_0066:  stloc.0
-    IL_0067:  ldloc.0
-    IL_0068:  ldc.i4.0
-    IL_0069:  ldelema    [runtime]System.Double
-    IL_006e:  stloc.2
-    IL_006f:  ldloc.2
-    IL_0070:  conv.i
-    IL_0071:  stloc.1
-    IL_0072:  ldloc.1
-    IL_0073:  stloc.3
-    IL_0074:  ldc.i4.0
-    IL_0075:  stloc.s    V_4
-    IL_0077:  ldloc.3
-    IL_0078:  stloc.s    V_5
-    IL_007a:  ldloc.s    V_4
-    IL_007c:  stloc.s    V_6
-    IL_007e:  ldloc.s    V_5
-    IL_0080:  ldloc.s    V_6
-    IL_0082:  conv.i
-    IL_0083:  sizeof     [runtime]System.Double
-    IL_0089:  mul
-    IL_008a:  add
-    IL_008b:  ldobj      [runtime]System.Double
-    IL_0090:  ldloc.1
-    IL_0091:  stloc.s    V_7
-    IL_0093:  ldc.i4.1
-    IL_0094:  stloc.s    V_8
-    IL_0096:  ldloc.s    V_7
-    IL_0098:  stloc.s    V_9
-    IL_009a:  ldloc.s    V_8
-    IL_009c:  stloc.s    V_10
-    IL_009e:  ldloc.s    V_9
-    IL_00a0:  ldloc.s    V_10
-    IL_00a2:  conv.i
-    IL_00a3:  sizeof     [runtime]System.Double
-    IL_00a9:  mul
-    IL_00aa:  add
-    IL_00ab:  ldobj      [runtime]System.Double
-    IL_00b0:  add
-    IL_00b1:  ret
+    IL_0037:  ldc.i4.4
+    IL_0038:  ldc.r8     4.0999999999999996
+    IL_0041:  stelem.r8
+    IL_0042:  dup
+    IL_0043:  ldc.i4.5
+    IL_0044:  ldc.r8     5.9000000000000004
+    IL_004d:  stelem.r8
+    IL_004e:  stloc.0
+    IL_004f:  ldloc.0
+    IL_0050:  ldc.i4.0
+    IL_0051:  ldelema    [runtime]System.Double
+    IL_0056:  stloc.2
+    IL_0057:  ldloc.2
+    IL_0058:  conv.i
+    IL_0059:  stloc.1
+    IL_005a:  ldloc.1
+    IL_005b:  stloc.3
+    IL_005c:  ldc.i4.0
+    IL_005d:  stloc.s    V_4
+    IL_005f:  ldloc.3
+    IL_0060:  stloc.s    V_5
+    IL_0062:  ldloc.s    V_4
+    IL_0064:  stloc.s    V_6
+    IL_0066:  ldloc.s    V_5
+    IL_0068:  ldloc.s    V_6
+    IL_006a:  conv.i
+    IL_006b:  sizeof     [runtime]System.Double
+    IL_0071:  mul
+    IL_0072:  add
+    IL_0073:  ldobj      [runtime]System.Double
+    IL_0078:  ldloc.1
+    IL_0079:  stloc.s    V_7
+    IL_007b:  ldc.i4.1
+    IL_007c:  stloc.s    V_8
+    IL_007e:  ldloc.s    V_7
+    IL_0080:  stloc.s    V_9
+    IL_0082:  ldloc.s    V_8
+    IL_0084:  stloc.s    V_10
+    IL_0086:  ldloc.s    V_9
+    IL_0088:  ldloc.s    V_10
+    IL_008a:  conv.i
+    IL_008b:  sizeof     [runtime]System.Double
+    IL_0091:  mul
+    IL_0092:  add
+    IL_0093:  ldobj      [runtime]System.Double
+    IL_0098:  add
+    IL_0099:  ret
   } 
 
   .method public static class [runtime]System.Tuple`2<char,char> pinString() cil managed
