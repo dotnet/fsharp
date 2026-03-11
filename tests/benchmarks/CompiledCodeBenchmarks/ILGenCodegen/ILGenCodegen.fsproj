@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'LocalCompiler'">
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/$(TargetFramework)/fsc.dll</DotnetFscCompilerPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="StelemLdelem.fs" />
+    <Compile Include="CallVirtOnValueType.fs" />
+    <Compile Include="CastThenBr.fs" />
+    <Compile Include="FilterInFinally.fs" />
+    <Compile Include="TaskMergeSources.fs" />
+    <Compile Include="Program.fs" />
+    <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
+  </ItemGroup>
+
+  <Choose>
+    <When Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+      <ItemGroup>
+        <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+</Project>
