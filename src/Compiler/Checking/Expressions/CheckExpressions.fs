@@ -11153,11 +11153,16 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let isCtor = (match memberFlagsOpt with Some memberFlags -> memberFlags.MemberKind = SynMemberKind.Constructor | _ -> false)
 
         // For bindings with a type annotation, the parser wraps the RHS in SynExpr.Typed.
-        // Unwrap it and unify the annotation with the binding type separately so that
-        // type errors on the RHS report the actual expression type, not the annotation type.
+        // When the pattern has already constrained the binding type (e.g. tuple patterns),
+        // unwrap the Typed wrapper and unify the annotation with the binding type separately
+        // so that type errors on the RHS report the actual expression type, not the annotation type.
+        // Only do this when the pattern type is already constrained (not a fresh inference variable),
+        // to avoid interfering with type-directed conversions on valid bindings.
+        // See: mkSynBindingRhs in SyntaxTreeOps.fs creates both SynBindingReturnInfo and this wrapper.
         let rhsExpr =
             match rtyOpt, rhsExpr with
-            | Some (SynBindingReturnInfo(typeName = retInfoTy; range = mRetTy)), SynExpr.Typed(innerExpr, _, _) when spatsL.IsEmpty ->
+            | Some (SynBindingReturnInfo(typeName = retInfoTy; range = mRetTy)), SynExpr.Typed(innerExpr, _, _)
+              when spatsL.IsEmpty && not (isTyparTy g overallExprTy) ->
                 let retTy, _ = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes envinner tpenv retInfoTy
                 try UnifyTypes cenv envinner pat.Range retTy overallExprTy
                 with RecoverableException exn -> errorRecovery exn mRetTy
