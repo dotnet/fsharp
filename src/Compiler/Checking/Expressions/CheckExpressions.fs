@@ -7502,6 +7502,15 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
         )
 
 /// Check an interpolated string expression
+and [<TailCall>] warnForFunctionValuesInFillExprs (g: TcGlobals) argTys synFillExprs =
+    match argTys, synFillExprs with
+    | argTy :: restTys, (synFillExpr: SynExpr) :: restExprs ->
+        if isFunTy g argTy || isDelegateTy g argTy then
+            warning (Error(FSComp.SR.tcFunctionValueUsedAsInterpolatedStringArg (), synFillExpr.Range))
+
+        warnForFunctionValuesInFillExprs g restTys restExprs
+    | _ -> ()
+
 and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: SynInterpolatedStringPart list) =
     let g = cenv.g
 
@@ -7651,6 +7660,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             // Type check the expressions filling the holes
             let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
+            if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg then
+                warnForFunctionValuesInFillExprs g argTys synFillExprs
+
             // Take all interpolated string parts and typed fill expressions
             // and convert them to typed expressions that can be used as args to System.String.Concat
             // return an empty list if there are some format specifiers that make lowering to not applicable
@@ -7719,6 +7731,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
         // Type check the expressions filling the holes
         let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
+
+        if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg then
+            warnForFunctionValuesInFillExprs g argTys synFillExprs
 
         let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
