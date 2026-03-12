@@ -625,6 +625,8 @@ stages:
                 COMPlus_DefaultStackSize: 1000000
               testRunTitlePrefix: 'MacOS'
               artifactNamePrefix: 'MacOS'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)/artifacts/log/Release/Build.binlog'
 
         # End to end build
         - job: EndToEndBuildTests
