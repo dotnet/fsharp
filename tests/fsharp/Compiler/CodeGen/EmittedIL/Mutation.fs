@@ -65,7 +65,7 @@ x.ToString()
   } 
             """
             """
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  3
@@ -119,7 +119,7 @@ x.Day
   } 
             """
             """
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  3
@@ -164,7 +164,7 @@ x.ToString()
   } 
             """
             """
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  3
@@ -325,7 +325,7 @@ type StaticC() =
       IL_000c:  ret
     } 
 
-    .method assembly specialname static void staticInitialization@() cil managed
+    .method assembly static void  staticInitialization@() cil managed
     {
       
       .maxstack  8
@@ -356,7 +356,7 @@ type StaticC() =
     IL_000c:  ret
   } 
 
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  8
