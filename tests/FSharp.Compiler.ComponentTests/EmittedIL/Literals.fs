@@ -211,7 +211,7 @@ let x = 5.5m
     IL_000c:  ret
   } 
 
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  8
@@ -270,7 +270,7 @@ let x = 1m + 2m
                                                                                                     int32) = ( 01 00 00 00 00 00 00 00 00 00 00 00 03 00 00 00 
                                                                                                                 00 00 )"""
             """
-.method assembly specialname static void staticInitialization@() cil managed
+.method assembly static void  staticInitialization@() cil managed
 {
 
 .maxstack  8
@@ -382,7 +382,7 @@ let y = 42m
                                                                                                                 00 00 )
 """
             """
-.method assembly specialname static void staticInitialization@() cil managed
+.method assembly static void  staticInitialization@() cil managed
 {
 
 .maxstack  8
