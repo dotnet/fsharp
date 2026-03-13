@@ -370,3 +370,61 @@ let main args =
             (Error 1, Line 8, Col 25, Line 8, Col 37, "The tuples have differing lengths of 3 and 2")
         ]
 
+    [<Fact>]
+    let ``Binding with type annotation and tuple pattern reports correct type``() =
+        FSharp """
+let a, b: int = ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 5, Line 2, Col 9,
+             "This expression was expected to have type\n    'int'    \nbut here has type\n    ''a * 'b'    ")
+            (Error 1, Line 2, Col 17, Line 2, Col 19,
+             "This expression was expected to have type\n    ''a * 'b'    \nbut here has type\n    'unit'    ")
+        ]
+
+    [<Fact>]
+    let ``Binding with correct type annotation and tuple pattern compiles``() =
+        FSharp """
+let a, b: int * string = (1, "hello")
+        """
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Non-tuple binding with wrong type annotation reports correct type``() =
+        FSharp """
+let x: int = "hello"
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 14, Line 2, Col 21,
+             "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
+        ]
+
+    [<Fact>]
+    let ``Wildcard binding with wrong type annotation reports correct type``() =
+        FSharp """
+let _: int = ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 14, Line 2, Col 16,
+             "This expression was expected to have type\n    'int'    \nbut here has type\n    'unit'    ")
+        ]
+
+    [<Fact>]
+    let ``Tuple pattern with correct annotation but wrong RHS reports RHS error``() =
+        FSharp """
+let a, b: int * int = ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 23, Line 2, Col 25,
+             "This expression was expected to have type\n    'int * int'    \nbut here has type\n    'unit'    ")
+        ]
+

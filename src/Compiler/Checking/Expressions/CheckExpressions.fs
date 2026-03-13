@@ -11259,6 +11259,20 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         // If binding a ctor then set the ugly counter that permits us to write ctor expressions on the r.h.s.
         let isCtor = (match memberFlagsOpt with Some memberFlags -> memberFlags.MemberKind = SynMemberKind.Constructor | _ -> false)
 
+        // For bindings with a type annotation, the parser wraps the RHS in SynExpr.Typed
+        // (see mkSynBindingRhs in SyntaxTreeOps.fs). Unwrap it and unify the annotation
+        // with the binding type separately so that type errors on the RHS report the actual
+        // expression type, not the annotation type.
+        let rhsExpr =
+            match rtyOpt, rhsExpr with
+            | Some (SynBindingReturnInfo(typeName = retInfoTy; range = mRetTy)), SynExpr.Typed(innerExpr, _, _) when spatsL.IsEmpty ->
+                let retTy, _ = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes envinner tpenv retInfoTy
+                try UnifyTypes cenv envinner pat.Range retTy overallExprTy
+                with RecoverableException exn -> errorRecovery exn mRetTy
+                innerExpr
+            | _ ->
+                rhsExpr
+
         // Now check the right of the binding.
         //
         // At each module binding, dive into the expression to check for syntax errors and suppress them if they show.
