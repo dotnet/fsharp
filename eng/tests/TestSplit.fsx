@@ -93,6 +93,8 @@ let filterArgs =
 
 let componentTests = "tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj"
 
+// Output format contract: each line must be "dotnet test <project> --no-build -c Release [filterargs]".
+// Consumers: Build.ps1 parses via regex, build.sh parses via sed. Keep in sync if changing format.
 printfn $"dotnet test {componentTests} --no-build -c Release {filterArgs}"
 
 for (proj, _, tag) in otherProjects |> List.filter (fun (_, b, tag) -> b = batch && matchesPlatform tag) do

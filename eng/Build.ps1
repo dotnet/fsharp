@@ -613,14 +613,17 @@ try {
             $splitScript = Join-Path $RepoRoot "eng\tests\TestSplit.fsx"
             $splitOutput = & $dotnetExe fsi $splitScript $testDesktopBatch desktop
             if ($LASTEXITCODE -ne 0) { throw "TestSplit.fsx failed with exit code $LASTEXITCODE" }
+            $matchCount = 0
             foreach ($line in $splitOutput) {
                 if ($line -match '^dotnet test (\S+) --no-build -c Release\s*(.*)$') {
                     $proj = $Matches[1] -replace '/', '\'
                     $projPath = Join-Path $RepoRoot $proj
                     $settings = $Matches[2].Trim()
                     TestUsingMSBuild -testProject $projPath -targetFramework $script:desktopTargetFramework -settings $settings
+                    $matchCount++
                 }
             }
+            if ($matchCount -eq 0) { throw "No test commands parsed from TestSplit.fsx output" }
         } else {
             TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
         }
