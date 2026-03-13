@@ -99,6 +99,7 @@ type LanguageFeature =
     | MethodOverloadsCache
     | ImplicitDIMCoverage
     | PreprocessorElif
+    | SupportCallerArgumentExpression
 
 /// LanguageVersion management
 type LanguageVersion =

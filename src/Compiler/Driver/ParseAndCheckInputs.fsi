@@ -73,7 +73,7 @@ val ParseInput:
     isLastCompiland: (bool * bool) *
     identCapture: bool *
     userOpName: string option ->
-        ParsedInput
+        ParsedInput * ISourceText option
 
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput:
@@ -113,7 +113,7 @@ val ParseOneInputFile:
     isLastCompiland: (bool * bool) *
     diagnosticsLogger: DiagnosticsLogger *
     retryLocked: bool ->
-        ParsedInput
+        ParsedInput * ISourceText option
 
 val ParseOneInputLexbuf:
     tcConfig: TcConfig *
@@ -122,7 +122,7 @@ val ParseOneInputLexbuf:
     fileName: string *
     isLastCompiland: (bool * bool) *
     diagnosticsLogger: DiagnosticsLogger ->
-        ParsedInput
+        ParsedInput * ISourceText option
 
 val EmptyParsedInput: fileName: string * isLastCompiland: (bool * bool) -> ParsedInput
 
@@ -133,7 +133,7 @@ val ParseInputFiles:
     sourceFiles: string list *
     diagnosticsLogger: DiagnosticsLogger *
     retryLocked: bool ->
-        (ParsedInput * string) list
+        ((ParsedInput * ISourceText option) * string) list
 
 /// Process collected directives
 val FinishPreprocessing: Lexbuf -> FSharpDiagnosticOptions -> bool -> range list -> unit
@@ -181,7 +181,8 @@ val CheckOneInput:
     prefixPathOpt: LongIdent option *
     tcSink: TcResultsSink *
     tcState: TcState *
-    input: ParsedInput ->
+    input: ParsedInput *
+    sourceTextOpt: ISourceText option ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
 val CheckOneInputWithCallback:
@@ -194,7 +195,8 @@ val CheckOneInputWithCallback:
     tcSink: TcResultsSink *
     tcState: TcState *
     input: ParsedInput *
-    _skipImplIfSigExists: bool ->
+    _skipImplIfSigExists: bool *
+    sourceTextOptOpt: ISourceText option ->
         Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>>
 
 val AddCheckResultsToTcState:
@@ -237,7 +239,7 @@ val CheckClosedInputSet:
     prefixPathOpt: LongIdent option *
     tcState: TcState *
     eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) *
-    inputs: ParsedInput list ->
+    inputs: (ParsedInput * ISourceText option) list ->
         TcState * TopAttribs * CheckedImplFile list * TcEnv
 
 /// Check a single input and finish the checking

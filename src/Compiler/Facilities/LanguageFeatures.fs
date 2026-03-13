@@ -108,6 +108,7 @@ type LanguageFeature =
     | MethodOverloadsCache
     | ImplicitDIMCoverage
     | PreprocessorElif
+    | SupportCallerArgumentExpression
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -259,6 +260,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.MethodOverloadsCache, previewVersion // Performance optimization for overload resolution
                 LanguageFeature.ImplicitDIMCoverage, languageVersion110
+                LanguageFeature.SupportCallerArgumentExpression, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -453,6 +455,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.MethodOverloadsCache -> FSComp.SR.featureMethodOverloadsCache ()
         | LanguageFeature.ImplicitDIMCoverage -> FSComp.SR.featureImplicitDIMCoverage ()
         | LanguageFeature.PreprocessorElif -> FSComp.SR.featurePreprocessorElif ()
+        | LanguageFeature.SupportCallerArgumentExpression -> FSComp.SR.featureSupportCallerArgumentExpression ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

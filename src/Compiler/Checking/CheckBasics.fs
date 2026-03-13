@@ -327,6 +327,8 @@ type TcFileState =
 
       // forward call
       TcComputationExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
+      
+      SourceText: ISourceText option
     }
 
     /// Create a new compilation environment
@@ -336,7 +338,8 @@ type TcFileState =
           tcSimplePats,
           tcSequenceExpressionEntry,
           tcArrayOrListSequenceExpression,
-          tcComputationExpression) =
+          tcComputationExpression,
+          sourceText: ISourceText option) =
 
         let niceNameGen = NiceNameGenerator()
         let infoReader = InfoReader(g, amap)
@@ -368,6 +371,7 @@ type TcFileState =
           TcSequenceExpressionEntry = tcSequenceExpressionEntry
           TcArrayOrListComputedExpression = tcArrayOrListSequenceExpression
           TcComputationExpression = tcComputationExpression
+          SourceText = sourceText
         }
 
     override _.ToString() = "<cenv>"

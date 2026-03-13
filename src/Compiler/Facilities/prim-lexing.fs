@@ -259,6 +259,7 @@ and [<Sealed>] internal LexBuffer<'Char>
     let mutable eof = false
     let mutable startPos = Position.Empty
     let mutable endPos = Position.Empty
+    let sourceStringBuilder = System.Text.StringBuilder(4096)
 
     // Throw away all the input besides the lexeme, which is placed at start of buffer
     let discardInput () =
@@ -319,6 +320,9 @@ and [<Sealed>] internal LexBuffer<'Char>
         with get () = bufferAcceptAction
         and set v = bufferAcceptAction <- v
 
+    member val private SourceTextBuilder = sourceStringBuilder
+    member lexbuf.SourceText = lexbuf.SourceTextBuilder.ToString() |> SourceText.ofString
+
     member lexbuf.RefillBuffer() = filler lexbuf
 
     static member LexemeString(lexbuf: LexBuffer<char>) =
@@ -353,12 +357,17 @@ and [<Sealed>] internal LexBuffer<'Char>
         (reportLibraryOnlyFeatures, langVersion, strictIndentation, f: 'Char[] * int * int -> int)
         : LexBuffer<'Char> =
         let extension = Array.zeroCreate 4096
+        let isCharTy = typeof<'Char> = typeof<char>
 
         let filler (lexBuffer: LexBuffer<'Char>) =
             let n = f (extension, 0, extension.Length)
             lexBuffer.EnsureBufferSize n
             Array.blit extension 0 lexBuffer.Buffer lexBuffer.BufferScanPos n
             lexBuffer.BufferMaxScanLength <- lexBuffer.BufferScanLength + n
+
+            if isCharTy then
+                lexBuffer.SourceTextBuilder.Append(Unchecked.unbox<char array> extension, 0, n)
+                |> ignore
 
         new LexBuffer<'Char>(filler, reportLibraryOnlyFeatures, langVersion, strictIndentation)
 
@@ -369,6 +378,11 @@ and [<Sealed>] internal LexBuffer<'Char>
 
         lexBuffer.Buffer <- buffer
         lexBuffer.BufferMaxScanLength <- buffer.Length
+
+        if typeof<'Char> = typeof<char> then
+            lexBuffer.SourceTextBuilder.Append(Unchecked.unbox<char array> buffer, 0, buffer.Length)
+            |> ignore
+
         lexBuffer
 
     // Important: this method does copy the array
