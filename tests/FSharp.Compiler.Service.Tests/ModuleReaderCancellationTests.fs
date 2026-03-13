@@ -150,6 +150,10 @@ let parseAndCheck path source options =
             | _, FSharpCheckFileAnswer.Aborted -> None
             | _, FSharpCheckFileAnswer.Succeeded results -> Some results
 
+        // AsyncLocal cleanup may not have propagated yet on slower CI platforms (Linux, MacOS).
+        if Cancellable.HasCancellationToken then
+            System.Threading.Thread.Sleep(200)
+
         Cancellable.HasCancellationToken |> shouldEqual false
         result
 
