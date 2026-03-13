@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -483,7 +473,7 @@
     IL_0018:  ldc.i4.0
     IL_0019:  conv.i8
     IL_001a:  nop
-    IL_001b:  br.s       IL_003f
+    IL_001b:  br.s       IL_0041
 
     IL_001d:  ldarg.2
     IL_001e:  ldarg.2
@@ -495,7 +485,7 @@
     IL_0024:  conv.i8
     IL_0025:  add
     IL_0026:  nop
-    IL_0027:  br.s       IL_003f
+    IL_0027:  br.s       IL_0041
 
     IL_0029:  ldarg.2
     IL_002a:  ldarg.2
@@ -504,7 +494,7 @@
     IL_002d:  ldc.i4.0
     IL_002e:  conv.i8
     IL_002f:  nop
-    IL_0030:  br.s       IL_003f
+    IL_0030:  br.s       IL_0041
 
     IL_0032:  ldarg.2
     IL_0033:  ldarg.2
@@ -519,30 +509,32 @@
     IL_003c:  conv.i8
     IL_003d:  add
     IL_003e:  nop
-    IL_003f:  stloc.0
-    IL_0040:  ldc.i4.0
-    IL_0041:  conv.i8
-    IL_0042:  stloc.1
-    IL_0043:  ldarg.2
-    IL_0044:  stloc.2
-    IL_0045:  br.s       IL_0056
+    IL_003f:  br.s       IL_0041
 
-    IL_0047:  ldloc.2
-    IL_0048:  call       void assembly::set_c(int32)
-    IL_004d:  ldloc.2
-    IL_004e:  ldarg.1
-    IL_004f:  add
-    IL_0050:  stloc.2
-    IL_0051:  ldloc.1
-    IL_0052:  ldc.i4.1
-    IL_0053:  conv.i8
-    IL_0054:  add
-    IL_0055:  stloc.1
-    IL_0056:  ldloc.1
-    IL_0057:  ldloc.0
-    IL_0058:  blt.un.s   IL_0047
+    IL_0041:  stloc.0
+    IL_0042:  ldc.i4.0
+    IL_0043:  conv.i8
+    IL_0044:  stloc.1
+    IL_0045:  ldarg.2
+    IL_0046:  stloc.2
+    IL_0047:  br.s       IL_0058
 
-    IL_005a:  ret
+    IL_0049:  ldloc.2
+    IL_004a:  call       void assembly::set_c(int32)
+    IL_004f:  ldloc.2
+    IL_0050:  ldarg.1
+    IL_0051:  add
+    IL_0052:  stloc.2
+    IL_0053:  ldloc.1
+    IL_0054:  ldc.i4.1
+    IL_0055:  conv.i8
+    IL_0056:  add
+    IL_0057:  stloc.1
+    IL_0058:  ldloc.1
+    IL_0059:  ldloc.0
+    IL_005a:  blt.un.s   IL_0049
+
+    IL_005c:  ret
   } 
 
   .method public static void  f11(int32 start,
@@ -717,7 +709,6 @@
   } 
 
 } 
-
 
 
 

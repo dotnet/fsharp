@@ -75,47 +75,49 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_003b
+      IL_001c:  br.s       IL_003d
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0051
+      IL_001f:  br.s       IL_0053
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_0058
+      IL_0022:  br.s       IL_005a
 
       IL_0024:  nop
-      IL_0025:  ldarg.0
-      IL_0026:  ldc.i4.1
-      IL_0027:  stfld      int32 assembly/seq1@9::pc
-      IL_002c:  ldarg.0
-      IL_002d:  ldc.i4.1
-      IL_002e:  ldc.i4.1
-      IL_002f:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                                  !1)
-      IL_0034:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
-      IL_0039:  ldc.i4.1
-      IL_003a:  ret
+      IL_0025:  br.s       IL_0027
 
-      IL_003b:  ldarg.0
-      IL_003c:  ldc.i4.2
-      IL_003d:  stfld      int32 assembly/seq1@9::pc
-      IL_0042:  ldarg.0
-      IL_0043:  ldc.i4.2
-      IL_0044:  ldc.i4.2
-      IL_0045:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
+      IL_0027:  ldarg.0
+      IL_0028:  ldc.i4.1
+      IL_0029:  stfld      int32 assembly/seq1@9::pc
+      IL_002e:  ldarg.0
+      IL_002f:  ldc.i4.1
+      IL_0030:  ldc.i4.1
+      IL_0031:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
                                                                                                   !1)
-      IL_004a:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
-      IL_004f:  ldc.i4.1
-      IL_0050:  ret
+      IL_0036:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
+      IL_003b:  ldc.i4.1
+      IL_003c:  ret
 
-      IL_0051:  ldarg.0
-      IL_0052:  ldc.i4.3
-      IL_0053:  stfld      int32 assembly/seq1@9::pc
-      IL_0058:  ldarg.0
-      IL_0059:  ldnull
-      IL_005a:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
-      IL_005f:  ldc.i4.0
-      IL_0060:  ret
+      IL_003d:  ldarg.0
+      IL_003e:  ldc.i4.2
+      IL_003f:  stfld      int32 assembly/seq1@9::pc
+      IL_0044:  ldarg.0
+      IL_0045:  ldc.i4.2
+      IL_0046:  ldc.i4.2
+      IL_0047:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                                  !1)
+      IL_004c:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
+      IL_0051:  ldc.i4.1
+      IL_0052:  ret
+
+      IL_0053:  ldarg.0
+      IL_0054:  ldc.i4.3
+      IL_0055:  stfld      int32 assembly/seq1@9::pc
+      IL_005a:  ldarg.0
+      IL_005b:  ldnull
+      IL_005c:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
+      IL_0061:  ldc.i4.0
+      IL_0062:  ret
     } 
 
     .method public strict virtual instance void Close() cil managed
@@ -142,26 +144,28 @@
       IL_001b:  br.s       IL_0029
 
       IL_001d:  nop
-      IL_001e:  br.s       IL_002e
+      IL_001e:  br.s       IL_0030
 
       IL_0020:  nop
-      IL_0021:  br.s       IL_002c
+      IL_0021:  br.s       IL_002e
 
       IL_0023:  nop
-      IL_0024:  br.s       IL_002a
+      IL_0024:  br.s       IL_002c
 
       IL_0026:  nop
-      IL_0027:  br.s       IL_002e
+      IL_0027:  br.s       IL_0030
 
       IL_0029:  nop
-      IL_002a:  ldc.i4.0
-      IL_002b:  ret
+      IL_002a:  br.s       IL_002c
 
       IL_002c:  ldc.i4.0
       IL_002d:  ret
 
       IL_002e:  ldc.i4.0
       IL_002f:  ret
+
+      IL_0030:  ldc.i4.0
+      IL_0031:  ret
     } 
 
     .method public strict virtual instance class [runtime]System.Tuple`2<int32,int32> get_LastGenerated() cil managed
@@ -673,6 +677,7 @@
   } 
 
 } 
+
 
 
 
