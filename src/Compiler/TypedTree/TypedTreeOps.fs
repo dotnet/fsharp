@@ -3489,13 +3489,6 @@ let superOfTycon (g: TcGlobals) (tycon: Tycon) =
     | None -> g.obj_ty_noNulls 
     | Some ty -> ty 
 
-/// Walk a TyconRef's inheritance tree using the provided super-type resolver, yielding parent types as an array.
-let supersOfTyconRefWith (getSuper: TyconRef -> TyconRef option) (tcref: TyconRef) =
-    tcref |> Array.unfold (fun tcref ->
-        match getSuper tcref with
-        | Some sup -> Some(sup, sup)
-        | None -> None)
-
 //----------------------------------------------------------------------------
 // Detect attributes
 //----------------------------------------------------------------------------
@@ -3629,17 +3622,12 @@ let TryFindTyconRefBoolAttribute g m attribSpec tcref =
                    | [ Some (:? bool as v : obj) ], _ -> Some v 
                    | _ -> None)
 
-/// Try to find the resolved AttributeUsage for a type by walking its inheritance tree and picking the correct attribute usage value.
-/// The getSuper function is used to resolve the super-type of each type in the chain, allowing correct handling of both F# and IL-imported types.
-let TryFindAttributeUsageAttribute g m (getSuper: TyconRef -> TyconRef option) tcref =
-    [| yield tcref
-       yield! supersOfTyconRefWith getSuper tcref |]
-    |> Array.tryPick (fun tcref ->
-        TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref
-                (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", _, _, ILAttribElem.Bool res -> Some res | _ -> None))
-                (fun (Attrib(_, _, _, named, _, _, _)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple", _, _, AttribBoolArg res ) -> Some res | _ -> None))
-                (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", Some (:? bool as res : obj) -> Some res | _ -> None))
-    )
+/// Try to find the AllowMultiple value of the AttributeUsage attribute on a type definition.
+let TryFindAttributeUsageAttribute g m tcref =
+    TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref
+        (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", _, _, ILAttribElem.Bool res -> Some res | _ -> None))
+        (fun (Attrib(_, _, _, named, _, _, _)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple", _, _, AttribBoolArg res ) -> Some res | _ -> None))
+        (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", Some (:? bool as res : obj) -> Some res | _ -> None))
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///

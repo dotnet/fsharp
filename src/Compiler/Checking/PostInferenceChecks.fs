@@ -2036,17 +2036,18 @@ and CheckAttribs cenv env (attribs: Attribs) =
         |> Seq.filter (fun (_, count) -> count > 1)
         |> Seq.map fst
         |> Seq.toList
-        // Filter for allowMultiple = false
+        // Filter for allowMultiple = false, walking the inheritance chain to find AttributeUsage
         |> List.filter (fun (tcref, _, m) ->
-            let getSuper (tcref: TyconRef) =
-                let ty = generalizedTyconRef cenv.g tcref
-                match GetSuperTypeOfType cenv.g cenv.amap m ty with
-                | Some superTy ->
-                    match tryTcrefOfAppTy cenv.g superTy with
-                    | ValueSome sup -> Some sup
-                    | ValueNone -> None
-                | None -> None
-            TryFindAttributeUsageAttribute cenv.g m getSuper tcref <> Some true)
+            let rec allowsMultiple (tcref: TyconRef) =
+                match TryFindAttributeUsageAttribute cenv.g m tcref with
+                | Some res -> res
+                | None ->
+                    generalizedTyconRef cenv.g tcref
+                    |> GetSuperTypeOfType cenv.g cenv.amap m
+                    |> Option.bind (tryTcrefOfAppTy cenv.g >> ValueOption.toOption)
+                    |> Option.map allowsMultiple
+                    |> Option.defaultValue false
+            not (allowsMultiple tcref))
 
     if cenv.reportErrors then
        for tcref, _, m in duplicates do
