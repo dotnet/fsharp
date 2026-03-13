@@ -5,11 +5,7 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern System.Linq
-{
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 10:0:0:0
-}
+.assembly extern System.Linq { }
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
