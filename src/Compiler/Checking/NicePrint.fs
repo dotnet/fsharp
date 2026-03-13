@@ -783,7 +783,8 @@ module PrintTypes =
                 | _ ->
                     LeftL.leftParen ^^ wordL (tagKeyword "requires") ^^ sepListL (wordL (tagKeyword "and")) cxsL ^^ RightL.rightParen
             else
-                wordL (tagKeyword "when") ^^ sepListL (wordL (tagKeyword "and")) cxsL
+                let prefixes = seq { "when"; while true do "and" } |> Seq.map (tagKeyword >> wordL)
+                Seq.map2 (^^) prefixes cxsL |> Seq.toList |> aboveListL
 
     /// Layout constraints, taking TypeSimplificationInfo into account 
     and layoutConstraintWithInfo denv env (tp, tpc) =
