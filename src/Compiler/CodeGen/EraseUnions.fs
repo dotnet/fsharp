@@ -893,7 +893,9 @@ let convAlternativeDef
                                 alt.FieldDefs
                                 // Fields that are nullable even from F# perspective has an [Nullable] attribute on them
                                 // Non-nullable fields are implicit in F#, therefore not annotated separately
-                                |> Array.filter (fun f -> TryFindILAttribute g.attrib_NullableAttribute f.ILField.CustomAttrs |> not)
+                                |> Array.filter (fun f ->
+                                    f.ILField.HasWellKnownAttribute(g, WellKnownILAttributes.NullableAttribute)
+                                    |> not)
 
                             let fieldNames =
                                 notnullfields

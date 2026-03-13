@@ -374,9 +374,11 @@ let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSou
     // - a `IsReadOnlyAttribute` - it's an inref
     // - a `RequiresLocationAttribute` (in which case it's a `ref readonly`) which we treat as inref,
     // latter is an ad-hoc fix for https://github.com/dotnet/runtime/issues/94317.
+    let (AttributesFromIL(_, storedAttrs)) = nullnessSource.DirectAttributes
+
     if isByrefTy amap.g ty
-       && (TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (nullnessSource.DirectAttributes.Read())
-           || TryFindILAttribute amap.g.attrib_RequiresLocationAttribute (nullnessSource.DirectAttributes.Read())) then
+       && (storedAttrs.HasWellKnownAttribute(amap.g, WellKnownILAttributes.IsReadOnlyAttribute)
+           || storedAttrs.HasWellKnownAttribute(amap.g, WellKnownILAttributes.RequiresLocationAttribute)) then
         mkInByrefTy amap.g (destByrefTy amap.g ty)
     else
         ty

@@ -918,7 +918,14 @@ let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad noEagerConst
         CalledArgMatchesType(adjustedCalledArgTy, noEagerConstraintApplication)  
         
 let ExamineMethodForLambdaPropagation (g: TcGlobals) m (meth: CalledMeth<SynExpr>) ad =
-    let noEagerConstraintApplication = MethInfoHasAttribute g m g.attrib_NoEagerConstraintApplicationAttribute meth.Method
+    let noEagerConstraintApplication =
+        MethInfoHasWellKnownAttributeSpec
+            g
+            m
+            { ILFlag = WellKnownILAttributes.NoEagerConstraintApplicationAttribute
+              ValFlag = WellKnownValAttributes.NoEagerConstraintApplicationAttribute
+              AttribInfo = g.attrib_NoEagerConstraintApplicationAttribute }
+            meth.Method
 
     // The logic associated with NoEagerConstraintApplicationAttribute is part of the
     // Tasks and Resumable Code RFC

@@ -228,7 +228,7 @@ let private MakeIncrClassField(g, cpath, formalTyparInst: TyparInstantiation, v:
     let id = ident (name, v.Range)
     let ty = v.Type |> instType formalTyparInst
     let taccess = TAccess [cpath]
-    let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute v.Attribs
+    let isVolatile = ValHasWellKnownAttribute g WellKnownValAttributes.VolatileFieldAttribute v
 
     Construct.NewRecdField isStatic None id false ty v.IsMutable isVolatile [] v.Attribs v.XmlDoc taccess true
 

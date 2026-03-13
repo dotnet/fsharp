@@ -672,20 +672,28 @@ module PrintTypes =
         
         let attrsL = 
             [ if denv.showAttributes then
-                // Don't display DllImport and other attributes in generated signatures
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttributeOpt denv.g denv.g.attrib_DllImportAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttributeOpt denv.g denv.g.attrib_ContextStaticAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttributeOpt denv.g denv.g.attrib_ThreadStaticAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_EntryPointAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttributeOpt denv.g denv.g.attrib_MarshalAsAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_ReflectedDefinitionAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_StructLayoutAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_AutoSerializableAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_LiteralAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_MeasureAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_StructAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_ClassAttribute >> not)
-                let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_InterfaceAttribute >> not)
+                // Don't display well-known attributes in generated signatures
+                let hiddenEntityMask =
+                    WellKnownEntityAttributes.StructLayoutAttribute
+                    ||| WellKnownEntityAttributes.AutoSerializableAttribute_True
+                    ||| WellKnownEntityAttributes.AutoSerializableAttribute_False
+                    ||| WellKnownEntityAttributes.MeasureAttribute
+                    ||| WellKnownEntityAttributes.StructAttribute
+                    ||| WellKnownEntityAttributes.ClassAttribute
+                    ||| WellKnownEntityAttributes.InterfaceAttribute
+                    ||| WellKnownEntityAttributes.ReflectedDefinitionAttribute
+
+                let hiddenValMask =
+                    WellKnownValAttributes.DllImportAttribute
+                    ||| WellKnownValAttributes.ContextStaticAttribute
+                    ||| WellKnownValAttributes.ThreadStaticAttribute
+                    ||| WellKnownValAttributes.EntryPointAttribute
+                    ||| WellKnownValAttributes.MarshalAsAttribute
+                    ||| WellKnownValAttributes.ReflectedDefinitionAttribute_True
+                    ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False
+                    ||| WellKnownValAttributes.LiteralAttribute
+
+                let attrs = filterOutWellKnownAttribs denv.g hiddenEntityMask hiddenValMask attrs
             
                 for attr in attrs do
                     layoutAttrib denv attr
@@ -1084,15 +1092,15 @@ module PrintTypes =
         let g = denv.g
        
         // Detect an optional argument 
-        let isOptionalArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
+        let isOptionalArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptionalArgumentAttribute argInfo
 
         match argInfo.Name, isOptionalArg, tryDestOptionTy g ty with 
         // Layout an optional argument 
         | Some id, true, ValueSome ty -> 
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> rightL) id.idText
             let attrsLayout =
-                argInfo.Attribs
-                |> List.filter (fun a -> not (IsMatchingFSharpAttribute g g.attrib_OptionalArgumentAttribute a))
+                argInfo.Attribs.AsList()
+                |> filterOutWellKnownAttribs g WellKnownEntityAttributes.None WellKnownValAttributes.OptionalArgumentAttribute
                 |> layoutAttribsOneline denv 
             
             attrsLayout ^^
@@ -1113,7 +1121,7 @@ module PrintTypes =
         // Layout a named argument 
         | Some id, _, _ -> 
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> wordL) id.idText
-            let prefix = layoutAttribsOneline denv argInfo.Attribs ^^ idL
+            let prefix = layoutAttribsOneline denv (argInfo.Attribs.AsList()) ^^ idL
             (prefix |> addColonL) ^^ layoutTypeWithInfoAndPrec denv env 2 ty
 
     let layoutCurriedArgInfos denv env argInfos =
@@ -1363,7 +1371,7 @@ module PrintTastMemberOrVals =
         if short then
             for argInfo in argInfos do
                 for _,info in argInfo do
-                    info.Attribs <- []
+                    info.Attribs <- WellKnownValAttribs.Empty
                     info.Name <- None
         let supportAccessModifiersBeforeGetSet =
             denv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters

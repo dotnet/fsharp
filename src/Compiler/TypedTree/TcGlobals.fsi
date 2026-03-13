@@ -190,8 +190,6 @@ type internal TcGlobals =
 
     member FindSysTyconRef: path: string list -> nm: string -> TypedTree.EntityRef
 
-    member HasTailCallAttrib: attribs: TypedTree.Attribs -> bool
-
     /// Find an FSharp.Core LanguagePrimitives dynamic function that corresponds to a trait witness, e.g.
     /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
     member MakeBuiltInWitnessInfo: t: TypedTree.TraitConstraintInfo -> IntrinsicValRef * TypedTree.TType list
@@ -306,31 +304,11 @@ type internal TcGlobals =
 
     member array_tcr_nice: TypedTree.EntityRef
 
-    member attrib_AbstractClassAttribute: BuiltinAttribInfo
-
     member attrib_AllowNullLiteralAttribute: BuiltinAttribInfo
 
     member attrib_AttributeUsageAttribute: BuiltinAttribInfo
 
     member attrib_AutoOpenAttribute: BuiltinAttribInfo
-
-    member attrib_AutoSerializableAttribute: BuiltinAttribInfo
-
-    member attrib_CLIEventAttribute: BuiltinAttribInfo
-
-    member attrib_CLIMutableAttribute: BuiltinAttribInfo
-
-    member attrib_CallerFilePathAttribute: BuiltinAttribInfo
-
-    member attrib_CallerLineNumberAttribute: BuiltinAttribInfo
-
-    member attrib_CallerMemberNameAttribute: BuiltinAttribInfo
-
-    member attrib_ClassAttribute: BuiltinAttribInfo
-
-    member attrib_ComImportAttribute: BuiltinAttribInfo option
-
-    member attrib_ComVisibleAttribute: BuiltinAttribInfo
 
     member attrib_ComparisonConditionalOnAttribute: BuiltinAttribInfo
 
@@ -338,35 +316,13 @@ type internal TcGlobals =
 
     member attrib_CompilationMappingAttribute: BuiltinAttribInfo
 
-    member attrib_CompilationRepresentationAttribute: BuiltinAttribInfo
-
     member attrib_CompiledNameAttribute: BuiltinAttribInfo
-
-    member attrib_CompilerFeatureRequiredAttribute: BuiltinAttribInfo
-
-    member attrib_CompilerMessageAttribute: BuiltinAttribInfo
-
-    member attrib_ComponentModelEditorBrowsableAttribute: BuiltinAttribInfo
 
     member attrib_ConditionalAttribute: BuiltinAttribInfo
 
-    member attrib_ContextStaticAttribute: BuiltinAttribInfo option
-
-    member attrib_CustomComparisonAttribute: BuiltinAttribInfo
-
-    member attrib_CustomEqualityAttribute: BuiltinAttribInfo
-
     member attrib_CustomOperationAttribute: BuiltinAttribInfo
 
-    member attrib_DebuggerDisplayAttribute: BuiltinAttribInfo
-
-    member attrib_DebuggerTypeProxyAttribute: BuiltinAttribInfo
-
-    member attrib_DefaultAugmentationAttribute: BuiltinAttribInfo
-
     member attrib_DefaultMemberAttribute: BuiltinAttribInfo
-
-    member attrib_DefaultParameterValueAttribute: BuiltinAttribInfo option
 
     member attrib_DefaultValueAttribute: BuiltinAttribInfo
 
@@ -374,91 +330,31 @@ type internal TcGlobals =
 
     member attrib_DynamicDependencyAttribute: BuiltinAttribInfo
 
-    member attrib_EntryPointAttribute: BuiltinAttribInfo
-
     member attrib_EqualityConditionalOnAttribute: BuiltinAttribInfo
-
-    member attrib_ExperimentalAttribute: BuiltinAttribInfo
 
     member attrib_ExtensionAttribute: BuiltinAttribInfo
 
-    member attrib_FieldOffsetAttribute: BuiltinAttribInfo
-
     member attrib_FlagsAttribute: BuiltinAttribInfo
 
-    member attrib_GeneralizableValueAttribute: BuiltinAttribInfo
-
-    member attrib_IDispatchConstantAttribute: BuiltinAttribInfo option
-
-    member attrib_IUnknownConstantAttribute: BuiltinAttribInfo option
-
     member attrib_InAttribute: BuiltinAttribInfo
-
-    member attrib_InlineIfLambdaAttribute: BuiltinAttribInfo
-
-    member attrib_InterfaceAttribute: BuiltinAttribInfo
-
-    member attrib_InternalsVisibleToAttribute: BuiltinAttribInfo
 
     member attrib_IsReadOnlyAttribute: BuiltinAttribInfo
 
     member attrib_IsUnmanagedAttribute: BuiltinAttribInfo
 
-    member attrib_LiteralAttribute: BuiltinAttribInfo
-
-    member attrib_MarshalAsAttribute: BuiltinAttribInfo option
-
     member attrib_MeasureAttribute: BuiltinAttribInfo
-
-    member attrib_MeasureableAttribute: BuiltinAttribInfo
 
     member attrib_MemberNotNullWhenAttribute: BuiltinAttribInfo
 
-    member attrib_MethodImplAttribute: BuiltinAttribInfo
-
-    member attrib_NoComparisonAttribute: BuiltinAttribInfo
-
-    member attrib_NoCompilerInliningAttribute: BuiltinAttribInfo
-
-    member attrib_NoDynamicInvocationAttribute: BuiltinAttribInfo
-
     member attrib_NoEagerConstraintApplicationAttribute: BuiltinAttribInfo
-
-    member attrib_NoEqualityAttribute: BuiltinAttribInfo
-
-    member attrib_NonSerializedAttribute: BuiltinAttribInfo option
 
     member attrib_NullableAttribute: BuiltinAttribInfo
 
-    member attrib_NullableAttribute_opt: BuiltinAttribInfo option
-
     member attrib_NullableContextAttribute: BuiltinAttribInfo
-
-    member attrib_NullableContextAttribute_opt: BuiltinAttribInfo option
-
-    member attrib_OptionalArgumentAttribute: BuiltinAttribInfo
-
-    member attrib_OptionalAttribute: BuiltinAttribInfo option
-
-    member attrib_OutAttribute: BuiltinAttribInfo
 
     member attrib_ParamArrayAttribute: BuiltinAttribInfo
 
-    member attrib_PreserveSigAttribute: BuiltinAttribInfo option
-
-    member attrib_ProjectionParameterAttribute: BuiltinAttribInfo
-
-    member attrib_ReferenceEqualityAttribute: BuiltinAttribInfo
-
     member attrib_ReflectedDefinitionAttribute: BuiltinAttribInfo
-
-    member attrib_RequireQualifiedAccessAttribute: BuiltinAttribInfo
-
-    member attrib_RequiredMemberAttribute: BuiltinAttribInfo
-
-    member attrib_RequiresExplicitTypeArgumentsAttribute: BuiltinAttribInfo
-
-    member attrib_RequiresLocationAttribute: BuiltinAttribInfo
 
     member attrib_SealedAttribute: BuiltinAttribInfo
 
@@ -468,35 +364,13 @@ type internal TcGlobals =
 
     member attrib_SecuritySafeCriticalAttribute: BuiltinAttribInfo
 
-    member attrib_SetsRequiredMembersAttribute: BuiltinAttribInfo
-
-    member attrib_SkipLocalsInitAttribute: BuiltinAttribInfo
-
     member attrib_DecimalConstantAttribute: BuiltinAttribInfo
-
-    member attrib_StructAttribute: BuiltinAttribInfo
-
-    member attrib_StructLayoutAttribute: BuiltinAttribInfo
-
-    member attrib_StructuralComparisonAttribute: BuiltinAttribInfo
-
-    member attrib_StructuralEqualityAttribute: BuiltinAttribInfo
 
     member attrib_SystemObsolete: BuiltinAttribInfo
 
     member attrib_IsByRefLikeAttribute_opt: BuiltinAttribInfo option
 
-    member attrib_ThreadStaticAttribute: BuiltinAttribInfo option
-
     member attrib_TypeForwardedToAttribute: BuiltinAttribInfo
-
-    member attrib_UnverifiableAttribute: BuiltinAttribInfo
-
-    member attrib_VolatileFieldAttribute: BuiltinAttribInfo
-
-    member attrib_WarnOnWithoutNullArgumentAttribute: BuiltinAttribInfo
-
-    member attrib_IlExperimentalAttribute: BuiltinAttribInfo
 
     member attribs_Unsupported: TypedTree.TyconRef list
 
