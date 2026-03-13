@@ -1004,19 +1004,29 @@ Updated automatically, please check diffs in your pull request, changes must be 
         compileLibraryAndVerifyILWithOptions [|"--realsig+"|] (SourceCodeFileKind.Create("test.fs", source)) f
 
     static member RunScriptWithOptionsAndReturnResult options (source: string) =
-        use outStream = new StringWriter()
-        use errStream = new StringWriter()
-        use script = new FSharpScript(additionalArgs = Array.append [| "--noninteractive" |] options, quiet = false, outWriter = outStream, errWriter = errStream)
-        script.ApplyExitShadowing()
-        let result, errors = script.Eval(source)
+        // Save CurrentUICulture and GraphNode.culture to restore after FSI session
+        // FSI may change these via --preferreduilang option, and the change persists
+        // in the static GraphNode.culture which affects async computations in other tests
+        let originalUICulture = CultureInfo.CurrentUICulture
+        let originalGraphNodeCulture = GraphNode.culture     
+        try
+            use outStream = new StringWriter()
+            use errStream = new StringWriter()
+            use script = new FSharpScript(additionalArgs = Array.append [| "--noninteractive" |] options, quiet = false, outWriter = outStream, errWriter = errStream)
+            script.ApplyExitShadowing()
+            let result, errors = script.Eval(source)
 
-        let errorMessages = ResizeArray(errors |> Seq.map _.Message)
+            let errorMessages = ResizeArray(errors |> Seq.map _.Message)
 
-        match result with
-        | Result.Error ex -> errorMessages.Add(ex.Message)
-        | _ -> ()
+            match result with
+            | Result.Error ex -> errorMessages.Add(ex.Message)
+            | _ -> ()
 
-        errorMessages, string outStream, string errStream
+            errorMessages, string outStream, string errStream
+        finally
+            // Restore CurrentUICulture and GraphNode.culture to prevent culture leaking between tests
+            CultureInfo.CurrentUICulture <- originalUICulture
+            GraphNode.culture <- originalGraphNodeCulture
 
     static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
         let errorMessages, _, _ = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
