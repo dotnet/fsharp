@@ -95,6 +95,8 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | MoreConcreteTiebreaker
+    | OverloadResolutionPriority
     | WarnWhenFunctionValueUsedAsInterpolatedStringArg
     | MethodOverloadsCache
     | ImplicitDIMCoverage

@@ -474,6 +474,8 @@ type internal TcGlobals =
 
     member attrib_DecimalConstantAttribute: BuiltinAttribInfo
 
+    member attrib_OverloadResolutionPriorityAttribute: BuiltinAttribInfo option
+
     member attrib_StructAttribute: BuiltinAttribInfo
 
     member attrib_StructLayoutAttribute: BuiltinAttribInfo

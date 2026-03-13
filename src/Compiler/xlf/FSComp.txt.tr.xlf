@@ -187,6 +187,11 @@
         <target state="translated">Genel yapı, genel bir tür parametresinin yapı veya başvuru türü olarak bilinmesini gerektirir. Tür ek açıklaması eklemeyi düşünün.</target>
         <note />
       </trans-unit>
+      <trans-unit id="csIncomparableConcreteness">
+        <source>Neither candidate is strictly more concrete than the other:\n{0}</source>
+        <target state="new">Neither candidate is strictly more concrete than the other:\n{0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
         <target state="translated">Bilinen bağımsız değişken türleri: {0}</target>
@@ -502,6 +507,11 @@
         <target state="translated">Veri almayan birleşim durumu için desen eşleştirme atma kullanılamaz.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMoreConcreteTiebreaker">
+        <source>Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</source>
+        <target state="new">Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
@@ -535,6 +545,11 @@
       <trans-unit id="featureOpenTypeDeclaration">
         <source>open type declaration</source>
         <target state="translated">açık tür bildirimi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOverloadResolutionPriority">
+        <source>Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</source>
+        <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
@@ -1492,6 +1507,11 @@
         <target state="new">Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcGenericOverloadBypassed">
+        <source>A more generic overload was bypassed: '{0}'. The selected overload '{1}' was chosen because it has more concrete type parameters.</source>
+        <target state="new">A more generic overload was bypassed: '{0}'. The selected overload '{1}' was chosen because it has more concrete type parameters.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">Söz dizimi “expr1[expr2]” dizin oluşturma için kullanılıyor. Dizin oluşturmayı etkinleştirmek için bir tür ek açıklama eklemeyi düşünün veya bir işlev çağırıyorsanız bir boşluk ekleyin, örn. “expr1 [expr2]”.</target>
@@ -1612,6 +1632,11 @@
         <target state="new">The following required properties have to be initialized:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMoreConcreteTiebreakerUsed">
+        <source>Overload resolution selected '{0}' based on type concreteness. The more concrete type '{1}' was preferred over '{2}'. This is an informational message and can be enabled with --warnon:3575.</source>
+        <target state="new">Overload resolution selected '{0}' based on type concreteness. The more concrete type '{1}' was preferred over '{2}'. This is an informational message and can be enabled with --warnon:3575.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
         <source>The field '{0}' appears multiple times in this record expression or pattern</source>
         <target state="translated">'{0}' alanı bu kayıt ifadesinde veya deseninde birden fazla görünüyor.</target>
@@ -1676,6 +1701,7 @@
         <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">Söz dizimi “expr1[expr2]” artık dizin oluşturma için ayrılmıştır ve bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction expr1 [expr2]”.</target>
         <note />
+
       </trans-unit>
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
         <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
@@ -1775,6 +1801,11 @@
       <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
         <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
         <target state="translated">Çok durumlu bir birleşim türü bir yapıysa, aynı ada sahip tüm alanların aynı türde olması gerekir. Bu kural adlandırılmamış alanlar olması durumunda oluşturulan ‘Öğe’ adı için de geçerlidir.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOverloadResolutionPriorityOnOverride">
+        <source>The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</source>
+        <target state="new">The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">

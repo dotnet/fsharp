@@ -104,6 +104,8 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | MoreConcreteTiebreaker
+    | OverloadResolutionPriority
     | WarnWhenFunctionValueUsedAsInterpolatedStringArg
     | MethodOverloadsCache
     | ImplicitDIMCoverage
@@ -246,6 +248,8 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
                 LanguageFeature.ReturnFromFinal, languageVersion100
                 LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions, languageVersion100
+                LanguageFeature.MoreConcreteTiebreaker, previewVersion
+                LanguageFeature.OverloadResolutionPriority, previewVersion
 
                 // F# 11.0
                 // Put stabilized features here for F# 11.0 previews via .NET SDK preview channels
@@ -448,6 +452,8 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions -> FSComp.SR.featureErrorOnInvalidDeclsInTypeDefinitions ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
+        | LanguageFeature.MoreConcreteTiebreaker -> FSComp.SR.featureMoreConcreteTiebreaker ()
+        | LanguageFeature.OverloadResolutionPriority -> FSComp.SR.featureOverloadResolutionPriority ()
         | LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg ->
             FSComp.SR.featureWarnWhenFunctionValueUsedAsInterpolatedStringArg ()
         | LanguageFeature.MethodOverloadsCache -> FSComp.SR.featureMethodOverloadsCache ()

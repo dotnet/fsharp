@@ -182,6 +182,9 @@
     <Compile Include="Conformance\UnitsOfMeasure\Parsing\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker\TypeChecker.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\WithOOP\WithOOP.fs" />
+    <Compile Include="Conformance\SharedTestHelpers.fs" />
+    <Compile Include="Conformance\Tiebreakers\TiebreakerTests.fs" />
+    <Compile Include="Conformance\OverloadResolutionPriority\OverloadResolutionPriorityTests.fs" />
     <Compile Include="Conformance\DeclarationElements\PInvokeDeclarations.fs" />
     <Compile Include="Conformance\DeclarationElements\ObjectConstructors.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\New\Attributes_New.fs" />

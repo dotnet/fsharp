@@ -70,6 +70,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
+open FSharp.Compiler.OverloadResolutionRules
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
@@ -203,7 +204,8 @@ type OverloadResolutionFailure =
   | PossibleCandidates of 
       methodName: string *
       candidates: OverloadInformation list *
-      cx: TraitConstraintInfo option
+      cx: TraitConstraintInfo option *
+      incomparableConcreteness: OverloadResolutionRules.IncomparableConcretenessInfo option
 
 type OverallTy = 
     /// Each branch of the expression must have the type indicated
@@ -3607,7 +3609,10 @@ and ResolveOverloading
         (methodName = "op_Implicit")
 
     // See what candidates we have based on name and arity 
-    let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
+    let candidates =
+        calledMethGroup 
+        |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
+        |> filterByOverloadResolutionPriority g (fun cm -> cm.Method)
 
     let calledMethOpt, errors, calledMethTrace = 
         match calledMethGroup, candidates with 
@@ -3747,178 +3752,66 @@ and FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs
         // Otherwise pass the overload resolution failure for error printing in CompileOps
         UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
 
+and private computeConcretenessWarnings
+    (cache: System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>)
+    (applicableMeths: (CalledMeth<Expr> * exn list * Trace * TypeDirectedConversionUsed) list)
+    (calledMeth: CalledMeth<Expr>)
+    (baseWarns: exn list)
+    (m: range)
+    : exn list =
+    let anyMoreConcreteUsed =
+        cache.Values
+        |> Seq.exists (fun v -> match v with ValueSome TiebreakRuleId.MoreConcrete -> true | _ -> false)
+
+    if not anyMoreConcreteUsed then
+        baseWarns
+    else
+        let concretenessWarns =
+            applicableMeths
+            |> List.choose (fun loser ->
+                let (loserMeth, _, _, _) = loser
+
+                if System.Object.ReferenceEquals(loserMeth, calledMeth) then
+                    None
+                else
+                    match cache.TryGetValue(struct(calledMeth :> obj, loserMeth :> obj)) with
+                    | true, ValueSome TiebreakRuleId.MoreConcrete ->
+                        Some(calledMeth.Method.DisplayName, loserMeth.Method.DisplayName)
+                    | _ -> None)
+
+        match concretenessWarns with
+        | [] -> baseWarns
+        | (winnerName, loserName) :: _ ->
+            let warn3575 =
+                Error(FSComp.SR.tcMoreConcreteTiebreakerUsed (winnerName, winnerName, loserName), m)
+            let warn3576List =
+                concretenessWarns
+                |> List.map (fun (winner, loser) -> Error(FSComp.SR.tcGenericOverloadBypassed (loser, winner), m))
+
+            warn3575 :: warn3576List @ baseWarns
+
 and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethGroup reqdRetTyOpt isOpConversion callerArgs methodName cx m =
-    let g = csenv.g
     let infoReader = csenv.InfoReader
-    /// Compare two things by the given predicate. 
-    /// If the predicate returns true for x1 and false for x2, then x1 > x2
-    /// If the predicate returns false for x1 and true for x2, then x1 < x2
-    /// Otherwise x1 = x2
-                
-    // Note: Relies on 'compare' respecting true > false
-    let compareCond (p: 'T -> 'T -> bool) x1 x2 = 
-        compare (p x1 x2) (p x2 x1)
+    let moreConcretEnabled = csenv.g.langVersion.SupportsFeature LanguageFeature.MoreConcreteTiebreaker
 
-    /// Compare types under the feasibly-subsumes ordering
-    let compareTypes ty1 ty2 = 
-        (ty1, ty2) ||> compareCond (fun x1 x2 -> TypeFeasiblySubsumesType ndeep csenv.g csenv.amap m x2 CanCoerce x1) 
+    let ctx: OverloadResolutionContext =
+        { g = csenv.g; amap = csenv.amap; m = m; ndeep = ndeep
+          paramDataCache = (if moreConcretEnabled then ValueSome(System.Collections.Generic.Dictionary()) else ValueNone)
+          srtpCache = (if moreConcretEnabled then ValueSome(System.Collections.Generic.Dictionary()) else ValueNone) }
 
-    /// Compare arguments under the feasibly-subsumes ordering and the adhoc Func-is-better-than-other-delegates rule
-    let compareArg (calledArg1: CalledArg) (calledArg2: CalledArg) =
-        let c = compareTypes calledArg1.CalledArgumentType calledArg2.CalledArgumentType
-        if c <> 0 then c else
-
-        let c = 
-            (calledArg1.CalledArgumentType, calledArg2.CalledArgumentType) ||> compareCond (fun ty1 ty2 -> 
-
-                // Func<_> is always considered better than any other delegate type
-                match tryTcrefOfAppTy csenv.g ty1 with 
-                | ValueSome tcref1 when 
-                    tcref1.DisplayName = "Func" &&  
-                    (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
-                    isDelegateTy g ty1 &&
-                    isDelegateTy g ty2 -> true
-
-                // T is always better than inref<T>
-                | _ when isInByrefTy csenv.g ty2 && typeEquiv csenv.g ty1 (destByrefTy csenv.g ty2) -> 
-                    true
-
-                // T is always better than Nullable<T> from F# 5.0 onwards
-                | _ when g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) &&
-                            isNullableTy csenv.g ty2 &&
-                            typeEquiv csenv.g ty1 (destNullableTy csenv.g ty2) -> 
-                    true
-
-                | _ -> false)
-
-        if c <> 0 then c else
-        0
+    let decidingRuleCache =
+        if moreConcretEnabled then ValueSome(System.Collections.Generic.Dictionary<struct(obj * obj), TiebreakRuleId voption>())
+        else ValueNone
 
     /// Check whether one overload is better than another
-    let better (candidate: CalledMeth<_>, candidateWarnings, _, usesTDC1) (other: CalledMeth<_>, otherWarnings, _, usesTDC2) =
-        let candidateWarnCount = List.length candidateWarnings
-        let otherWarnCount = List.length otherWarnings
-
-        // Prefer methods that don't use type-directed conversion
-        let c = compare (match usesTDC1 with TypeDirectedConversionUsed.No -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.No -> 1 | _ -> 0)
-        if c <> 0 then c else
-            
-        // Prefer methods that need less type-directed conversion
-        let c = compare (match usesTDC1 with TypeDirectedConversionUsed.Yes(_, false, _) -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.Yes(_, false, _) -> 1 | _ -> 0)
-        if c <> 0 then c else
-
-        // Prefer methods that only have nullable type-directed conversions
-        let c = compare (match usesTDC1 with TypeDirectedConversionUsed.Yes(_, _, true) -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.Yes(_, _, true) -> 1 | _ -> 0)
-        if c <> 0 then c else
-
-        // Prefer methods that don't give "this code is less generic" warnings
-        // Note: Relies on 'compare' respecting true > false
-        let c = compare (candidateWarnCount = 0) (otherWarnCount = 0)
-        if c <> 0 then c else
-
-        // Prefer methods that don't use param array arg
-        // Note: Relies on 'compare' respecting true > false
-        let c =  compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion) 
-        if c <> 0 then c else
-
-        // Prefer methods with more precise param array arg type
-        let c = 
-            if candidate.UsesParamArrayConversion && other.UsesParamArrayConversion then
-                compareTypes (candidate.GetParamArrayElementType()) (other.GetParamArrayElementType())
-            else
-                0
-        if c <> 0 then c else
-
-        // Prefer methods that don't use out args
-        // Note: Relies on 'compare' respecting true > false
-        let c = compare (not candidate.HasOutArgs) (not other.HasOutArgs)
-        if c <> 0 then c else
-
-        // Prefer methods that don't use optional args
-        // Note: Relies on 'compare' respecting true > false
-        let c = compare (not candidate.HasOptionalArgs) (not other.HasOptionalArgs)
-        if c <> 0 then c else
-
-        // check regular unnamed args. The argument counts will only be different if one is using param args
-        let c = 
-            if candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs then
-                // For extension members, we also include the object argument type, if any in the comparison set
-                // This matches C#, where all extension members are treated and resolved as "static" methods calls
-                let cs = 
-                    (if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then 
-                        let objArgTys1 = candidate.CalledObjArgTys(m) 
-                        let objArgTys2 = other.CalledObjArgTys(m) 
-                        if objArgTys1.Length = objArgTys2.Length then 
-                            List.map2 compareTypes objArgTys1 objArgTys2
-                        else
-                            []
-                     else 
-                        []) @
-                    ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs) ||> List.map2 compareArg) 
-                // "all args are at least as good, and one argument is actually better"
-                if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
-                    1
-                // "all args are at least as bad, and one argument is actually worse"
-                elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then 
-                    -1
-                // "argument lists are incomparable"
-                else
-                    0
-            else
-                0
-        if c <> 0 then c else
-
-        // prefer non-extension methods 
-        let c = compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
-        if c <> 0 then c else
-
-        // between extension methods, prefer most recently opened
-        let c = 
-            if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then 
-                compare candidate.Method.ExtensionMemberPriority other.Method.ExtensionMemberPriority 
-            else 
-                0
-        if c <> 0 then c else
-
-        // Prefer non-generic methods 
-        // Note: Relies on 'compare' respecting true > false
-        let c = compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
-        if c <> 0 then c else
-
-        // F# 5.0 rule - prior to F# 5.0 named arguments (on the caller side) were not being taken 
-        // into account when comparing overloads.  So adding a name to an argument might mean 
-        // overloads could no longer be distinguished.  We thus look at *all* arguments (whether
-        // optional or not) as an additional comparison technique.
-        let c = 
-            if g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) then
-                let cs = 
-                    let args1 = candidate.AllCalledArgs |> List.concat
-                    let args2 = other.AllCalledArgs |> List.concat
-                    if args1.Length = args2.Length then 
-                        (args1, args2) ||> List.map2 compareArg
-                    else
-                        []
-                // "all args are at least as good, and one argument is actually better"
-                if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
-                    1
-                // "all args are at least as bad, and one argument is actually worse"
-                elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then 
-                    -1
-                // "argument lists are incomparable"
-                else
-                    0
-            else
-                0
-        if c <> 0 then c else
-
-        // Properties are kept incl. almost-duplicates because of the partial-override possibility.
-        // E.g. base can have get,set and derived only get => we keep both props around until method resolution time.
-        // Now is the type to pick the better (more derived) one.
-        match candidate.AssociatedPropertyInfo,other.AssociatedPropertyInfo,candidate.Method.IsExtensionMember,other.Method.IsExtensionMember with
-        | Some p1, Some p2, false, false -> compareTypes p1.ApparentEnclosingType p2.ApparentEnclosingType
-        | _ -> 0
-        
-
+    let better (candidate: CalledMeth<_>, candidateWarnings: _ list, _, usesTDC1) (other: CalledMeth<_>, otherWarnings: _ list, _, usesTDC2) =
+        let struct (result, decidingRule) = findDecidingRule ctx (struct (candidate, usesTDC1, candidateWarnings.Length)) (struct (other, usesTDC2, otherWarnings.Length))
+        if moreConcretEnabled then
+            match decidingRuleCache with
+            | ValueSome cache -> cache[struct(candidate :> obj, other :> obj)] <- decidingRule
+            | ValueNone -> ()
+        result
+    
     let bestMethods =
         let indexedApplicableMeths = applicableMeths |> List.indexed
         indexedApplicableMeths |> List.choose (fun (i, candidate) -> 
@@ -3932,7 +3825,12 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
     match bestMethods with 
     | [(calledMeth, warns, t, _)] ->
-        Some calledMeth, OkResult (warns, ()), WithTrace t
+        let allWarns =
+            match decidingRuleCache with
+            | ValueNone -> warns
+            | ValueSome cache -> computeConcretenessWarnings cache applicableMeths calledMeth warns m
+
+        Some calledMeth, OkResult(allWarns, ()), WithTrace t
 
     | bestMethods ->
         let methods = 
@@ -3956,7 +3854,15 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
         let methods = List.concat methods
 
-        let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (PossibleCandidates(methodName, methods,cx)) m
+        let incomparableConcretenessInfo =
+            applicableMeths
+            |> List.tryPick (fun (meth1, _, _, _) ->
+                applicableMeths
+                |> List.tryPick (fun (meth2, _, _, _) ->
+                    if System.Object.ReferenceEquals(meth1, meth2) then None
+                    else explainIncomparableMethodConcreteness ctx meth1 meth2))
+
+        let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (PossibleCandidates(methodName, methods, cx, incomparableConcretenessInfo)) m
         None, ErrorD err, NoTrace
 
 let ResolveOverloadingForCall denv css m  methodName callerArgs ad calledMethGroup permitOptArgs reqdRetTy =

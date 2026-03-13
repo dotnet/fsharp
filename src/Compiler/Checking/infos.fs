@@ -1257,6 +1257,24 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetCustomAttrs()
         | _ -> ILAttributes.Empty
 
+    /// Returns 0 if the attribute is not present or if targeting a runtime without the attribute.
+    member x.GetOverloadResolutionPriority() : int =
+        match x with
+        | ILMeth(g, ilMethInfo, _) ->
+            match TryDecodeILAttributeOpt g.attrib_OverloadResolutionPriorityAttribute ilMethInfo.RawMetadata.CustomAttrs with
+            | Some ([ ILAttribElem.Int32 priority ], _) -> priority
+            | _ -> 0
+        | FSMeth(g, _, vref, _) ->
+            match TryFindFSharpInt32AttributeOpt g g.attrib_OverloadResolutionPriorityAttribute vref.Attribs with
+            | Some _ when vref.IsDefiniteFSharpOverrideMember -> 0
+            | Some priority -> priority
+            | None -> 0
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.GetOverloadResolutionPriority()
+        | DefaultStructCtor _ -> 0
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth _ -> 0
+#endif
+
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member x.GetParamAttribs(amap, m) =
         match x with
