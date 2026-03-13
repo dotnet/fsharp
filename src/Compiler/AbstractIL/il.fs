@@ -2113,6 +2113,11 @@ type ILMethodDef
         x.ImplAttributes &&& MethodImplAttributes.AggressiveInlining <> enum 0
 
     member x.IsMustRun = x.ImplAttributes &&& MethodImplAttributes.NoOptimization <> enum 0
+    
+    // Async is defined as 0x2000 or 8192 
+    // https://github.com/dotnet/runtime/blob/main/docs/design/specs/runtime-async.md
+    member x.IsAsync = 
+        x.ImplAttributes &&& enum (0x2000) <> enum 0
 
     member x.WithSpecialName =
         x.With(attributes = (x.Attributes ||| MethodAttributes.SpecialName))
@@ -2169,6 +2174,9 @@ type ILMethodDef
                 (x.ImplAttributes
                  |> conditionalAdd condition MethodImplAttributes.AggressiveInlining)
         )
+
+    member x.WithAsync(condition) =
+        x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition (enum 0x2000)))
 
     member x.WithRuntime(condition) =
         x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
