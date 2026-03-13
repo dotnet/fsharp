@@ -1155,4 +1155,7 @@
   <data name="NoConstructorsAvailableForType" xml:space="preserve">
     <value>No constructors are available for the type '{0}'</value>
   </data>
+  <data name="featureSupportILFieldsInSRTP" xml:space="preserve">
+    <value>Support for .NET fields in SRTP member constraints</value>
+  </data>
 </root>

@@ -442,6 +442,7 @@ type TraitConstraintSolution =
     | TTraitSolved of minfo: MethInfo * minst: TypeInst * staticTyOpt: TType option
     | TTraitSolvedRecdProp of fieldInfo: RecdFieldInfo * isSetProp: bool
     | TTraitSolvedAnonRecdProp of anonRecdTypeInfo: AnonRecdTypeInfo * typeInst: TypeInst * index: int
+    | TTraitSolvedField of ty: TType * fieldInfo: ILFieldInfo * isSetField: bool
 
 let BakedInTraitConstraintNames =
     [ "op_Division" ; "op_Multiply"; "op_Addition" 
@@ -2006,9 +2007,48 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                             else
                                 None
 
+                        let fieldSearch =
+                            if g.langVersion.SupportsFeature LanguageFeature.SupportILFieldsInSRTP then
+                                let isGet = nm.StartsWithOrdinal("get_")
+                                let isSet = nm.StartsWithOrdinal("set_")
+
+                                if not isRigid && ((argTys.IsEmpty && isGet) || isSet) then
+                                    let fieldNm = nm[4..]
+
+                                    let fields =
+                                        [| for ty in supportTys do
+                                               let item =
+                                                   TryFindIntrinsicNamedItemOfType
+                                                       csenv.InfoReader
+                                                       (fieldNm, AccessibleFromEverywhere, false)
+                                                       FindMemberFlag.IgnoreOverrides
+                                                       m
+                                                       ty
+
+                                               match item with
+                                               | Some(ILFieldItem [ ilfinfo ]) when
+                                                   ilfinfo.IsStatic = (not memFlags.IsInstance)
+                                                   && (isGet || not ilfinfo.IsInitOnly)
+                                                   && IsILFieldInfoAccessible g amap m AccessibleFromEverywhere ilfinfo
+                                                   && ilfinfo.LiteralValue.IsNone
+                                                   && not ilfinfo.IsSpecialName
+                                                   ->
+                                                   yield (ilfinfo, isSet)
+                                               | _ -> () |]
+
+                                    match fields with
+                                    | [| (ilfinfo, isSet) |] ->
+                                        let ty = ilfinfo.FieldType(amap, m)
+                                        Some(ty, ilfinfo, isSet)
+                                    | _ -> None
+                                else
+                                    None
+                            else
+                                None
+
                         // Now check if there are no feasible solutions at all
-                        match minfos, recdPropSearch, anonRecdPropSearch with 
-                        | [], None, None when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
+                        match minfos, recdPropSearch, anonRecdPropSearch, fieldSearch with 
+                        | [], None, None, None when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
                             if supportTys |> List.exists (isFunTy g) then
                                 return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(ConvertValLogicalNameToDisplayNameCore nm), m, m2))
                             elif supportTys |> List.exists (isAnyTupleTy g) then
@@ -2069,36 +2109,69 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                     (fun (a, _) -> Option.isSome a)
                                     (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some (MustEqual retTy)))
 
-                            match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
-                            | Some (anonInfo, tinst, i), None, None -> 
-                                // OK, the constraint is solved by a record property. Assert that the return types match.
-                                let rty2 = List.item i tinst
-                                do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy rty2
-                                return TTraitSolvedAnonRecdProp(anonInfo, tinst, i)
-
-                            | None, Some (rfinfo, isSetProp), None -> 
-                                // OK, the constraint is solved by a record property. Assert that the return types match.
-                                let rty2 = if isSetProp then g.unit_ty else rfinfo.FieldType
-                                do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy rty2
-                                return TTraitSolvedRecdProp(rfinfo, isSetProp)
-
-                            | None, None, Some (calledMeth: CalledMeth<_>) -> 
-                                // OK, the constraint is solved.
+                            match anonRecdPropSearch, recdPropSearch, fieldSearch, methOverloadResult with
+                            | _, _, _, Some(calledMeth: CalledMeth<_>) ->
+                                // Method/property has highest priority — wins even if a field also matched.
                                 let minfo = calledMeth.Method
 
                                 do! errors
                                 let isInstance = minfo.IsInstance
-                                if isInstance <> memFlags.IsInstance then 
+
+                                if isInstance <> memFlags.IsInstance then
                                     return!
                                         if isInstance then
-                                            ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (ConvertValLogicalNameToDisplayNameCore nm), nm), m, m2 ))
+                                            ErrorD(
+                                                ConstraintSolverError(
+                                                    FSComp.SR.csMethodFoundButIsNotStatic (
+                                                        (NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType),
+                                                        (ConvertValLogicalNameToDisplayNameCore nm),
+                                                        nm
+                                                    ),
+                                                    m,
+                                                    m2
+                                                )
+                                            )
                                         else
-                                            ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (ConvertValLogicalNameToDisplayNameCore nm), nm), m, m2 ))
-                                else 
+                                            ErrorD(
+                                                ConstraintSolverError(
+                                                    FSComp.SR.csMethodFoundButIsStatic (
+                                                        (NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType),
+                                                        (ConvertValLogicalNameToDisplayNameCore nm),
+                                                        nm
+                                                    ),
+                                                    m,
+                                                    m2
+                                                )
+                                            )
+                                else
                                     do! CheckMethInfoAttributes g m None minfo
-                                    return TTraitSolved (minfo, calledMeth.CalledTyArgs, calledMeth.OptionalStaticType)
+                                    return TTraitSolved(minfo, calledMeth.CalledTyArgs, calledMeth.OptionalStaticType)
 
-                            | _ -> 
+                            | Some(anonInfo, tinst, i), _, _, None ->
+                                // Anonymous record property — wins over record properties and fields.
+                                let rty2 = List.item i tinst
+                                do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy rty2
+                                return TTraitSolvedAnonRecdProp(anonInfo, tinst, i)
+
+                            | None, Some(rfinfo, isSetProp), _, None ->
+                                // Record property — wins over fields.
+                                let rty2 = if isSetProp then g.unit_ty else rfinfo.FieldType
+                                do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy rty2
+                                return TTraitSolvedRecdProp(rfinfo, isSetProp)
+
+                            | None, None, Some(ty, ilfinfo, isSet), None ->
+                                // IL field — lowest priority, only when nothing else matched.
+                                let rty2 = if isSet then g.unit_ty else ty
+                                do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy rty2
+
+                                if isSet then
+                                    match argTys with
+                                    | [ argTy ] -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy ty
+                                    | _ -> ()
+
+                                return TTraitSolvedField(ty, ilfinfo, isSet)
+
+                            | _ ->
                                 do! AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignoreUnresolvedOverload traitInfo errors
                                 return TTraitUnsolved
                     }
@@ -2164,6 +2237,11 @@ and RecordMemberConstraintSolution css m trace traitInfo traitConstraintSln =
 
     | TTraitSolvedAnonRecdProp (anonInfo, tinst, i) -> 
         let sln = FSAnonRecdFieldSln(anonInfo, tinst, i)
+        TransactMemberConstraintSolution traitInfo trace sln
+        ResultD true
+
+    | TTraitSolvedField (ty, ilfinfo, isSet) ->
+        let sln = ILFieldSln(ty, ilfinfo.TypeInst, ilfinfo.ILFieldRef, ilfinfo.IsStatic, isSet)
         TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 
