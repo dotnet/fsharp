@@ -646,7 +646,8 @@ let _ =
         and! y = Trace 2
     }
     """
-            [|(FSharpDiagnosticSeverity.Error, 10, (8, 5, 8, 6), "Unexpected symbol '}' in expression")|]
+            [|(FSharpDiagnosticSeverity.Error, 10, (8, 5, 8, 6), "Unexpected symbol '}' in expression")
+              (FSharpDiagnosticSeverity.Error, 3885, (6, 9, 6, 13), "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")|]
 
     [<Fact>]
     let ``AndBang TraceApplicative conditional return`` () =

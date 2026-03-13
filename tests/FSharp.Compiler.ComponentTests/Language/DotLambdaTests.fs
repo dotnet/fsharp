@@ -102,7 +102,7 @@ let myFunction (x:MyRecord) = x |> _.DoStuff 1 2 3"""
     |> shouldFail
     |> withDiagnostics [ 
             Error 3584, Line 4, Col 36, Line 4, Col 45, "Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'."
-            Error 72, Line 4, Col 36, Line 4, Col 45, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved."
+            Error 72, Line 4, Col 36, Line 4, Col 45, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point."
             ]
 
 [<Fact>]
@@ -155,7 +155,7 @@ let ``DotLambda does NOT generalize automatically to a member based SRTP`` () =
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [(Error 72, Line 1, Col 28, Line 1, Col 47, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")] 
+    |> withDiagnostics [(Error 72, Line 1, Col 28, Line 1, Col 47, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.")] 
 
 [<Fact>]
 let ``DotLambda does allow member based SRTP if labelled explicitly`` () =
@@ -249,7 +249,7 @@ let ``Regression 16318 typeof dotlambda should fail`` () =
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [Error 72, Line 1, Col 10, Line 1, Col 18, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved."]
+    |> withDiagnostics [Error 72, Line 1, Col 10, Line 1, Col 18, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point."]
 
 [<Fact>]
 let ``Nested anonymous unary function shorthands fails because of ambiguous discard`` () =

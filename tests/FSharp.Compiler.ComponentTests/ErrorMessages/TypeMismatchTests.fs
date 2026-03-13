@@ -370,3 +370,114 @@ let main args =
             (Error 1, Line 8, Col 25, Line 8, Col 37, "The tuples have differing lengths of 3 and 2")
         ]
 
+    module ``Not a function`` =
+
+        [<Theory>]
+        [<InlineData("let x = 5", "x", "int")>]
+        [<InlineData("let s = \"hello\"", "s", "string")>]
+        [<InlineData("let b = true", "b", "bool")>]
+        [<InlineData("let t = (1, 2)", "t", "(int * int)")>]
+        let ``Value applied as function shows concrete type`` (valueDef: string) (varName: string) (expectedType: string) =
+            FSharp
+                $"""
+{valueDef}
+let y = {varName} 10
+            """
+            |> typecheck
+            |> shouldFail
+            |> withSingleDiagnostic
+                (Error 3,
+                 Line 3,
+                 Col 9,
+                 Line 3,
+                 Col 10,
+                 $"This value is not a function and cannot be applied. It has type '{expectedType}', which does not accept arguments.")
+
+        [<Fact>]
+        let ``Record value applied as function shows type`` () =
+            FSharp
+                """
+type MyRecord = { Name: string }
+let r = { Name = "hello" }
+let y = r 10
+            """
+            |> typecheck
+            |> shouldFail
+            |> withSingleDiagnostic
+                (Error 3,
+                 Line 4,
+                 Col 9,
+                 Line 4,
+                 Col 10,
+                 "This value is not a function and cannot be applied. It has type 'MyRecord', which does not accept arguments.")
+
+        [<Fact>]
+        let ``Generic value applied as function shows plain error`` () =
+            FSharp
+                """
+let f<'a when 'a : struct> (x: 'a) = x 10
+                """
+            |> typecheck
+            |> shouldFail
+            |> withSingleDiagnostic
+                (Error 3,
+                 Line 2,
+                 Col 38,
+                 Line 2,
+                 Col 39,
+                 "This value is not a function and cannot be applied.")
+
+    [<Fact>]
+    let ``Tuple actual type says 'is a tuple of type'``() =
+        FSharp """
+let f (x: int) (y: int) : string = x, y
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 2, Col 36, Line 2, Col 40,
+                                 "This expression was expected to have type\n    'string'    \nbut is a tuple of type\n    'int * int'    ")
+
+    [<Fact>]
+    let ``Catch-all tuple type says 'but given a tuple of type'``() =
+        FSharp """
+let rec f () = f (), f ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 16, Line 2, Col 20,
+             "Type mismatch. Expecting a\n    ''a'    \nbut given a tuple of type\n    ''a * 'b'    \nThe types ''a' and ''a * 'b' cannot be unified.")
+            (Error 1, Line 2, Col 22, Line 2, Col 26,
+             "Type mismatch. Expecting a\n    ''a'    \nbut given a tuple of type\n    ''b * 'a'    \nThe types ''a' and ''b * 'a' cannot be unified.")
+        ]
+
+    [<Fact>]
+    let ``Non-tuple actual type says 'but here has type'``() =
+        FSharp """
+let f (x: int) : string = x
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 2, Col 27, Line 2, Col 28,
+                                 "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    ")
+
+    [<Fact>]
+    let ``Type alias for tuple still says 'is a tuple of type'``() =
+        FSharp """
+type Pair = int * int
+let f (x: Pair) : string = x
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 3, Col 28, Line 3, Col 29,
+                                 "This expression was expected to have type\n    'string'    \nbut is a tuple of type\n    'Pair'    ")
+
+    [<Fact>]
+    let ``Struct tuple actual type says 'is a tuple of type'``() =
+        FSharp """
+let f () : string = struct(1, 2)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnosticMessageMatches "but is a tuple of type"
+

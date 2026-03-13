@@ -64,3 +64,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (5,15)-(5,16) parse error Unexpected symbol ',' in expression. Expected '=' or other token.
+(4,4)-(4,8) parse error 'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.

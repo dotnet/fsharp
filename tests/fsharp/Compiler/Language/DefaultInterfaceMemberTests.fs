@@ -546,7 +546,7 @@ let f () =
             Compilation.Create(fsharpSource, Library, options = [|"--langversion:8.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 39, (16, 10, 16, 23), "The type 'ITest' does not define the field, constructor or member 'DefaultMethod'. Maybe you want one of the following:
+            (FSharpDiagnosticSeverity.Error, 39, (16, 10, 16, 23), "The type 'ITest' does not define a field, constructor, or member named 'DefaultMethod'. Maybe you want one of the following:
    NonDefaultMethod")
         |])
 
@@ -3720,7 +3720,7 @@ let f () =
             Compilation.Create(fsharpSource, Exe, options = [|"--langversion:8.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 39, (6, 17, 6, 29), "The type 'CSharpClass' does not define the field, constructor or member 'StaticMethod'.")
+            (FSharpDiagnosticSeverity.Error, 39, (6, 17, 6, 29), "The type 'CSharpClass' does not define a field, constructor, or member named 'StaticMethod'.")
         |])
 
     [<Fact>]
@@ -3770,7 +3770,7 @@ let f () =
             Compilation.Create(fsharpSource, Exe, options = [|"--langversion:8.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 39, (11, 17, 11, 29), "The type 'FSharpClass' does not define the field, constructor or member 'StaticMethod'.")
+            (FSharpDiagnosticSeverity.Error, 39, (11, 17, 11, 29), "The type 'FSharpClass' does not define a field, constructor, or member named 'StaticMethod'.")
         |])
 
     [<Fact>]

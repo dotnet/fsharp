@@ -172,6 +172,16 @@
         <target state="translated">這個運算式必須為類型\n    '{1}'    \n但此處卻是類型\n    '{0}'    {2}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquation1Tuple">
+        <source>This expression was expected to have type\n    '{1}'    \nbut is a tuple of type\n    '{0}'    {2}</source>
+        <target state="new">This expression was expected to have type\n    '{1}'    \nbut is a tuple of type\n    '{0}'    {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquation2Tuple">
+        <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a tuple of type\n    '{1}'    {2}\n</source>
+        <target state="new">Type mismatch. Expecting a\n    '{0}'    \nbut given a tuple of type\n    '{1}'    {2}\n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquation2">
         <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</source>
         <target state="translated">類型不符。必須是\n    '{0}'    \n但指定的是\n    '{1}'    {2}\n</target>
@@ -233,8 +243,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IndeterminateType">
-        <source>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</source>
-        <target state="translated">根據這個程式點之前的資訊，查詢是針對不定類型的物件。在這個程式點之前可能需要類型註釋，以限制物件的類型。這樣或許可以讓查詢能夠解析。</target>
+        <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
+        <target state="new">根據這個程式點之前的資訊，查詢是針對不定類型的物件。在這個程式點之前可能需要類型註釋，以限制物件的類型。這樣或許可以讓查詢能夠解析。</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">
@@ -1555,6 +1565,11 @@
       <trans-unit id="MatchIncomplete4">
         <source> Unmatched elements will be ignored.</source>
         <target state="translated"> 無對應的項目將會被忽略。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MatchIncompleteForLoop">
+        <source> Did you use a constant where a loop variable was expected?</source>
+        <target state="new"> Did you use a constant where a loop variable was expected?</target>
         <note />
       </trans-unit>
       <trans-unit id="EnumMatchIncomplete1">
