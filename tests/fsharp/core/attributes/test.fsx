@@ -501,8 +501,8 @@ module ThreadStaticTest = begin
     let safe_fail (s:string) = 
         lock lock_obj
             (fun () ->
-                stdout.WriteLine s);
-        exit 1
+                stderr.WriteLine (sprintf " NO: %s" s)
+                failures.Value <- failures.Value @ [s])
      
 
     type C() = 
@@ -1360,8 +1360,10 @@ let aa =
       stdout.WriteLine "Test Passed"
       printf "TEST PASSED OK" ;
       exit 0
-  | _ -> 
+  | fails -> 
       stdout.WriteLine "Test Failed"
+      for f in fails do
+          stderr.WriteLine (sprintf "  FAILED: %s" f)
       exit 1
 #endif
 
