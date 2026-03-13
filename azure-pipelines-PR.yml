@@ -162,6 +162,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Check code formatting (run 'dotnet fantomas .' to fix)
+          - script: ./eng/common/dotnet.sh fsi eng/tests/TestSplit.fsx --validate
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Validate test projects are registered in TestSplit.fsx
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
@@ -270,10 +274,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsNoRealsig_testCoreclr
               mergeTestResults: true
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
 
@@ -317,10 +321,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsNoRealsig_testDesktop
               mergeTestResults: true
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
             continueOnError: true
@@ -465,10 +469,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsCompressedMetadata $(_testKind) $(transparentCompiler)
               mergeTestResults: true
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
             condition: succeededOrFailed()
@@ -510,8 +514,16 @@ stages:
             continueOnError: true
             condition: failed()
 
-          # Windows With Compressed Metadata Desktop
+          # Windows With Compressed Metadata Desktop (split into 3 batches)
         - job: WindowsCompressedMetadata_Desktop
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
+              Batch3:
+                batchNumber: 3
           variables:
           - name: XUNIT_LOGS
             value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
@@ -523,65 +535,20 @@ stages:
           timeoutInMinutes: 120
 
           steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop
-            env:
-              FSharp_CacheEvictionImmediate: true
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build / Test
-
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'VSTest'
-              testRunTitle: WindowsCompressedMetadata testDesktop
-              mergeTestResults: true
-              testResultsFiles: '*.trx'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            continueOnError: true
-            condition: succeededOrFailed()
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish BinLog
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows testDesktop binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop process dumps'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: always()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktopBatch $(batchNumber)
+              buildEnv:
+                FSharp_CacheEvictionImmediate: true
+                DOTNET_DbgEnableMiniDump: 1
+                DOTNET_DbgMiniDumpType: 3
+                DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+                NativeToolsOnMachine: true
+              testRunTitlePrefix: 'WindowsCompressedMetadata testDesktop'
+              artifactNamePrefix: 'Windows testDesktop'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+              publishDumps: true
 
         # Mock official build
         - job: MockOfficial
@@ -611,9 +578,9 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: Linux
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
@@ -638,8 +605,16 @@ stages:
             continueOnError: true
             condition: failed()
 
-        # MacOS
+        # MacOS (split into 3 batches)
         - job: MacOS
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
+              Batch3:
+                batchNumber: 3
           pool:
             vmImage: macos-latest
           timeoutInMinutes: 120
@@ -647,41 +622,15 @@ stages:
           - name: _SignType
             value: Test
           steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            env:
-              COMPlus_DefaultStackSize: 1000000
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'VSTest'
-              testResultsFiles: '*.trx'
-              testRunTitle: MacOS
-              mergeTestResults: true
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: succeededOrFailed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'MacOS $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Mac'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber)
+              buildEnv:
+                COMPlus_DefaultStackSize: 1000000
+              testRunTitlePrefix: 'MacOS'
+              artifactNamePrefix: 'MacOS'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)/artifacts/log/Release/Build.binlog'
 
         # End to end build
         - job: EndToEndBuildTests

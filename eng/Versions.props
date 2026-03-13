@@ -161,6 +161,7 @@
     <NewtonsoftJsonVersion>13.0.3</NewtonsoftJsonVersion>
     <XunitVersion>3.2.2</XunitVersion>
     <XunitRunnerConsoleVersion>3.2.2</XunitRunnerConsoleVersion>
+    <XunitXmlTestLoggerVersion>8.0.0</XunitXmlTestLoggerVersion>
     <!-- -->
   </PropertyGroup>
 
