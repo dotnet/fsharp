@@ -776,6 +776,7 @@ let splitTypeLayout =
     | ILTypeDefLayout.Auto -> "auto", (fun _os () -> ())
     | ILTypeDefLayout.Sequential info -> "sequential", (fun os () -> output_type_layout_info os info)
     | ILTypeDefLayout.Explicit info -> "explicit", (fun os () -> output_type_layout_info os info)
+    | ILTypeDefLayout.Extended -> "extended", (fun _os () -> ())
 
 let goutput_fdefs tref env os (fdefs: ILFieldDefs) =
     for f in fdefs.AsList() do
