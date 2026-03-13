@@ -162,6 +162,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Check code formatting (run 'dotnet fantomas .' to fix)
+          - script: ./eng/common/dotnet.sh fsi eng/tests/TestSplit.fsx --validate
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Validate test projects are registered in TestSplit.fsx
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.

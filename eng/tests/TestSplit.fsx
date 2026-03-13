@@ -3,6 +3,9 @@
 ///   dotnet fsi eng/tests/TestSplit.fsx <batchNumber> [desktop|coreclr]
 /// to get the dotnet test commands for that batch.
 /// The platform argument controls which projects are included (default: all).
+///
+/// Validation mode (used in CI to catch unregistered test projects):
+///   dotnet fsi eng/tests/TestSplit.fsx --validate
 
 let totalBatches = 3
 let residualBatch = 3 // uses negation filter; catches unlisted atoms + future namespaces
@@ -47,6 +50,70 @@ let otherProjects =
         "tests/fsharp/FSharpSuite.Tests.fsproj",                                             3,     "desktop"
     ]
 
+// ── excluded projects ──
+// Projects under tests/ that are intentionally not run in batched CI.
+// If you add a new test project under tests/, either add it to otherProjects above
+// or to one of these exclusion lists. Run --validate to check.
+
+let componentTests = "tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj"
+
+// Directory prefixes: any .fsproj under these paths is excluded from validation.
+let excludedPrefixes =
+    [ "tests/benchmarks/"           // benchmark suites, run separately
+      "tests/AheadOfTime/"          // AOT/trimming test apps, run separately
+      "tests/EndToEndBuildTests/"   // E2E type-provider build tests, run separately
+      "tests/service/data/"         // test data projects consumed by other tests
+      "tests/projects/"             // test helper projects (e.g. CompilerCompat)
+      "tests/fsharp/core/"          // legacy test data
+    ]
+
+// Individual projects excluded by exact path.
+let excludedProjects =
+    [ "tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj"  // shared test utility library, not a test project
+      "tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj"  // LSP tests, run in a dedicated CI job
+    ]
+
+// ── validation mode ──
+
+let isValidateMode =
+    match fsi.CommandLineArgs with
+    | [| _; "--validate" |] -> true
+    | _ -> false
+
+if isValidateMode then
+    let repoRoot =
+        let scriptDir = System.IO.Path.GetDirectoryName(__SOURCE_DIRECTORY__)
+        System.IO.Path.GetFullPath(System.IO.Path.Combine(scriptDir, ".."))
+
+    let allProjects =
+        System.IO.Directory.GetFiles(System.IO.Path.Combine(repoRoot, "tests"), "*.fsproj", System.IO.SearchOption.AllDirectories)
+        |> Array.map (fun p -> p.Substring(repoRoot.Length + 1).Replace("\\", "/"))
+        |> Array.sort
+
+    let knownProjects =
+        set [
+            yield componentTests
+            for (proj, _, _) in otherProjects do yield proj
+            yield! excludedProjects
+        ]
+
+    let isExcludedByPrefix (proj: string) =
+        excludedPrefixes |> List.exists proj.StartsWith
+
+    let unaccounted =
+        allProjects
+        |> Array.filter (fun p -> not (knownProjects.Contains p) && not (isExcludedByPrefix p))
+
+    if unaccounted.Length > 0 then
+        eprintfn "ERROR: The following test projects are not registered in TestSplit.fsx."
+        eprintfn "Add them to otherProjects (to run in batched CI), excludedProjects, or excludedPrefixes."
+        for p in unaccounted do
+            eprintfn "  %s" p
+        exit 1
+    else
+        printfn "All %d test projects are accounted for." allProjects.Length
+        exit 0
+
 // ── filter generation ──
 
 let batch, platform =
@@ -59,7 +126,7 @@ let batch, platform =
         let v = int n
         if v < 1 || v > totalBatches then failwith $"Batch number must be between 1 and {totalBatches}, got {v}"
         v, p
-    | _ -> failwith "Usage: dotnet fsi eng/tests/TestSplit.fsx <batchNumber> [desktop|coreclr]"
+    | _ -> failwith "Usage: dotnet fsi eng/tests/TestSplit.fsx <batchNumber> [desktop|coreclr] | --validate"
 
 let matchesPlatform tag =
     tag = "all" || tag = platform || platform = "all"
@@ -90,8 +157,6 @@ let filterArgs =
     else
         let atoms = atomsForBatch batch |> String.concat " "
         $"--filter-namespace {atoms}"
-
-let componentTests = "tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj"
 
 // Output format contract: each line must be "dotnet test <project> --no-build -c Release [filterargs]".
 // Consumers: Build.ps1 parses via regex, build.sh parses via sed. Keep in sync if changing format.
