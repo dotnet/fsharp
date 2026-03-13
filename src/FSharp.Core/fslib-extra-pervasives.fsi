@@ -56,6 +56,33 @@ module ExtraTopLevelOperators =
     [<CompiledName("PrintFormatLineToError")>]
     val eprintfn: format: Printf.TextWriterFormat<'T> -> 'T
 
+    /// <summary>Converts the value to a string using the <c>string</c> operator and writes it to the standard output.</summary>
+    ///
+    /// <param name="value">The value to print.</param>
+    ///
+    /// <example id="print-example">
+    /// <code lang="fsharp">
+    /// print "Hello, "
+    /// print "World!"
+    /// // output: Hello, World!
+    /// </code>
+    /// </example>
+    [<CompiledName("PrintValue")>]
+    val inline print: value: 'T -> unit
+
+    /// <summary>Converts the value to a string using the <c>string</c> operator and writes it to the standard output, followed by a newline.</summary>
+    ///
+    /// <param name="value">The value to print.</param>
+    ///
+    /// <example id="println-example">
+    /// <code lang="fsharp">
+    /// println "Hello, World!"
+    /// // output: Hello, World!
+    /// </code>
+    /// </example>
+    [<CompiledName("PrintValueLine")>]
+    val inline println: value: 'T -> unit
+
     /// <summary>Print to a string using the given format.</summary>
     ///
     /// <param name="format">The formatter.</param>
