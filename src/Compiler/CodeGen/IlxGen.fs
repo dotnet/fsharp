@@ -1151,6 +1151,9 @@ and sequel =
     /// Branch to the given mark
     | Br of Mark
 
+    /// Emit castclass to interface type then branch, ensuring correct merge type at join points (ECMA-335 III.1.8.1.3).
+    | CastThenBr of ILType * Mark
+
     /// Execute the given comparison-then-branch instructions on the result of the expression
     /// If the branch isn't taken then drop through.
     | CmpThenBrOrContinue of Pops * ILInstr list
@@ -1233,6 +1236,9 @@ and IlxGenEnv =
 
         /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
         withinSEH: bool
+
+        /// Suppresses filter block emission inside finally/fault handlers (workaround for dotnet/runtime#112406).
+        insideFinallyOrFaultHandler: bool
 
         /// Are we inside of a recursive let binding, while loop, or a for loop?
         isInLoop: bool
@@ -2888,6 +2894,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
         cgbuf
         { eenv with
             withinSEH = false
+            insideFinallyOrFaultHandler = false
             liveLocals = IntMap.empty ()
             innerVals = innerVals
         }
@@ -3322,6 +3329,7 @@ and StringOfSequel sequel =
     | Return -> "Return"
     | EndLocalScope(sq, Mark k) -> "EndLocalScope(" + StringOfSequel sq + "," + formatCodeLabel k + ")"
     | Br(Mark x) -> sprintf "Br L%s" (formatCodeLabel x)
+    | CastThenBr(_, Mark x) -> sprintf "CastThenBr L%s" (formatCodeLabel x)
     | LeaveHandler _ -> "LeaveHandler"
     | EndFilter -> "EndFilter"
 
@@ -3341,6 +3349,15 @@ and GenSequel cenv cloc cgbuf sequel =
          // Emit a NOP in debug code in case the branch instruction gets eliminated
          // because it is a "branch to next instruction". This prevents two unrelated debug points
          // (the one before the branch and the one after) being coalesced together
+         if cgbuf.mgbuf.cenv.options.generateDebugSymbols then
+             cgbuf.EmitStartOfHiddenCode()
+             CG.EmitInstr cgbuf (pop 0) Push0 AI_nop
+
+         CG.EmitInstr cgbuf (pop 0) Push0 (I_br x.CodeLabel)
+
+     | CastThenBr(ilTy, x) ->
+         CG.EmitInstr cgbuf (pop 1) (Push [ ilTy ]) (I_castclass ilTy)
+
          if cgbuf.mgbuf.cenv.options.generateDebugSymbols then
              cgbuf.EmitStartOfHiddenCode()
              CG.EmitInstr cgbuf (pop 0) Push0 AI_nop
@@ -3615,6 +3632,19 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
 
                 let sequelOnBranches, afterJoin, stackAfterJoin, sequelAfterJoin =
                     GenJoinPoint cenv cgbuf "match" eenv ty m sequel
+
+                let sequelOnBranches =
+                    match sequelOnBranches with
+                    | Br mark when
+                        isInterfaceTy cenv.g ty
+                        && targets.Length > 1
+                        && targets
+                           |> Array.forall (fun (TTarget(_, body, _)) ->
+                               let bodyTy = tyOfExpr cenv.g body
+                               not (isStructTy cenv.g bodyTy) && not (isUnitTy cenv.g bodyTy))
+                        ->
+                        CastThenBr(GenType cenv m eenv.tyenv ty, mark)
+                    | _ -> sequelOnBranches
 
                 // Stack: "stackAtTargets" is "stack prior to any match-testing" and also "stack at the start of each branch-RHS".
                 //        match-testing (dtrees) should not contribute to the stack.
@@ -4494,9 +4524,12 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                     let ilThisTy = GenType cenv m eenv.tyenv ty
                     I_callconstraint(useICallVirt, isTailCall, ilThisTy, mspec, None)
                 | _ ->
-                    if newobj then I_newobj(mspec, None)
-                    elif useICallVirt then I_callvirt(isTailCall, mspec, None)
-                    else I_call(isTailCall, mspec, None)
+                    if newobj then
+                        I_newobj(mspec, None)
+                    elif useICallVirt && boxity <> AsValue then
+                        I_callvirt(isTailCall, mspec, None)
+                    else
+                        I_call(isTailCall, mspec, None)
 
             // ok, now we're ready to generate
             if isSuperInit || isSelfInit then
@@ -4946,7 +4979,10 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
             GenTry cenv cgbuf eenv scopeMarks (e1, m, resTy, spTry)
 
         let seh =
-            if cenv.options.generateFilterBlocks || eligibleForFilter cenv filterExpr then
+            if
+                not eenv.insideFinallyOrFaultHandler
+                && (cenv.options.generateFilterBlocks || eligibleForFilter cenv filterExpr)
+            then
                 let startOfFilter = CG.GenerateMark cgbuf "startOfFilter"
                 let afterFilter = CG.GenerateDelayMark cgbuf "afterFilter"
 
@@ -5067,7 +5103,13 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resTy, spTry, spFin
         | DebugPointAtFinally.No -> ()
 
         let exitSequel = LeaveHandler(true, whereToSaveOpt, afterHandler, true)
-        GenExpr cenv cgbuf eenvinner handlerExpr exitSequel
+
+        let eenvHandler =
+            { eenvinner with
+                insideFinallyOrFaultHandler = true
+            }
+
+        GenExpr cenv cgbuf eenvHandler handlerExpr exitSequel
         let endOfHandler = CG.GenerateMark cgbuf "endOfHandler"
         let handlerMarks = (startOfHandler.CodeLabel, endOfHandler.CodeLabel)
 
@@ -5575,7 +5617,7 @@ and GenILCall
                 let ilObjArgTy = GenType cenv m eenv.tyenv objArgTy
                 I_callconstraint(useICallVirt, tail, ilObjArgTy, ilMethSpec, None)
             | None ->
-                if useICallVirt then
+                if useICallVirt && not valu then
                     I_callvirt(tail, ilMethSpec, None)
                 else
                     I_call(tail, ilMethSpec, None)
@@ -6464,8 +6506,17 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloca(uint16 locIdx))
         CG.EmitInstr cgbuf (pop 1) (Push []) (I_stloc(uint16 locIdx2))
 
-        // Initialize the closure variables
-        for fv, ilv in Seq.zip cloFreeVars cloinfo.ilCloAllFreeVars do
+        // Initialize witness closure variables (these come first in ilCloAllFreeVars)
+        let nWitnesses = cloinfo.cloWitnessInfos.Length
+
+        for i in 0 .. nWitnesses - 1 do
+            let ilv = cloinfo.ilCloAllFreeVars.[i]
+            CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
+            GenWitnessArgFromWitnessInfo cenv cgbuf eenvouter m cloinfo.cloWitnessInfos.[i]
+            CG.EmitInstr cgbuf (pop 2) (Push []) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
+
+        // Initialize the regular closure variables (skip witness entries in ilCloAllFreeVars)
+        for fv, ilv in Seq.zip cloFreeVars (cloinfo.ilCloAllFreeVars |> Seq.skip nWitnesses) do
             if stateVarsSet.Contains fv then
                 // zero-initialize the state var
                 if realloc then
@@ -7526,6 +7577,7 @@ and IsSequelImmediate sequel =
     | Return
     | ReturnVoid
     | Br _
+    | CastThenBr _
     | LeaveHandler _ -> true
     | DiscardThen sequel -> IsSequelImmediate sequel
     | _ -> false
@@ -7561,7 +7613,7 @@ and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
         let pushed = GenType cenv m eenv.tyenv ty
         let stackAfterJoin = (pushed :: cgbuf.GetCurrentStack())
         let afterJoin = CG.GenerateDelayMark cgbuf (pos + "_join")
-        // go to the join point
+
         Br afterJoin, afterJoin, stackAfterJoin, sequel
 
 // Accumulate the decision graph as we go
@@ -12216,6 +12268,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         innerVals = []
         sigToImplRemapInfo = [] (* "module remap info" *)
         withinSEH = false
+        insideFinallyOrFaultHandler = false
         isInLoop = false
         initLocals = true
         imports = None
