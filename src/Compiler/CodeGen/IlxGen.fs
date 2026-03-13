@@ -1394,6 +1394,28 @@ let TryStorageForWitness (_g: TcGlobals) eenv (w: TraitWitnessInfo) =
 let IsValRefIsDllImport g (vref: ValRef) =
     vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute
 
+/// Check if a type contains nativeptr with a type parameter from the given set.
+/// Used to detect interface implementations that need 'native int' return type.
+let hasNativePtrWithTypar (g: TcGlobals) (typars: Typar list) ty =
+    let rec check ty =
+        let ty = stripTyEqns g ty
+
+        match ty with
+        | TType_app(tcref, tinst, _) when tyconRefEq g g.nativeptr_tcr tcref ->
+            tinst
+            |> List.exists (fun t ->
+                match stripTyEqns g t with
+                | TType_var(tp, _) -> typars |> List.exists (fun tp2 -> tp.Stamp = tp2.Stamp)
+                | _ -> false)
+        | TType_app(_, tinst, _) -> tinst |> List.exists check
+        | TType_fun(d, r, _) -> check d || check r
+        | TType_tuple(_, tys) -> tys |> List.exists check
+        | TType_anon(_, tys) -> tys |> List.exists check
+        | TType_forall(_, t) -> check t
+        | _ -> false
+
+    check ty
+
 /// Determine how a top level value is represented, when it is being represented
 /// as a method.
 let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
@@ -1421,7 +1443,34 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
 
     let ilActualRetTy =
         let ilRetTy = GenReturnType cenv m tyenvUnderTypars returnTy
-        if isCtor || cctor then ILType.Void else ilRetTy
+
+        if isCtor || cctor then
+            ILType.Void
+        // When implementing an interface slot with nativeptr<'T> where 'T is an interface
+        // type parameter and the interface type args are concrete, the interface method
+        // returns 'native int'. The method def must also return 'native int' to match.
+        elif memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
+            match
+                memberInfo.ImplementedSlotSigs
+                |> List.tryPick (fun (TSlotSig(_, ty, sctps, _, _, sRetTy)) ->
+                    let interfaceTypeArgs = argsOfAppTy g ty
+
+                    if
+                        not sctps.IsEmpty
+                        && (freeInTypes CollectTypars interfaceTypeArgs).FreeTypars.IsEmpty
+                        && sRetTy |> Option.exists (hasNativePtrWithTypar g sctps)
+                    then
+                        Some(sctps, sRetTy)
+                    else
+                        None)
+            with
+            | Some(sctps, sRetTy) ->
+                // Generate return type using the slot's type params so nativeptr<'T> → native int
+                let slotEnv = TypeReprEnv.Empty.ForTypars sctps
+                GenReturnType cenv m slotEnv sRetTy
+            | None -> ilRetTy
+        else
+            ilRetTy
 
     let ilTy =
         GenType cenv m tyenvUnderTypars (mkWoNullAppTy parentTcref (List.map mkTyparTy ctps))
@@ -2513,6 +2562,8 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     let mutable hasDebugPoints = false
     let mutable anyDocument = None // we collect an arbitrary document in order to emit the header FeeFee if needed
 
+    let mutable hasStackAllocatedLocals = false
+
     let codeLabelToPC: Dictionary<ILCodeLabel, int> = Dictionary<_, _>(10)
 
     let codeLabelToCodeLabel: Dictionary<ILCodeLabel, ILCodeLabel> =
@@ -2571,11 +2622,19 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     member cgbuf.EmitInstr(pops, pushes, i) =
         cgbuf.DoPops pops
         cgbuf.DoPushes pushes
+
+        if i = I_localloc then
+            hasStackAllocatedLocals <- true
+
         codebuf.Add i
 
     member cgbuf.EmitInstrs(pops, pushes, is) =
         cgbuf.DoPops pops
         cgbuf.DoPushes pushes
+
+        if is |> List.exists (fun i -> i = I_localloc) then
+            hasStackAllocatedLocals <- true
+
         is |> List.iter codebuf.Add
 
     member private _.EnsureNopBetweenDebugPoints() =
@@ -2707,6 +2766,8 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     /// Check if any locals have been allocated as pinned/fixed
     member _.HasPinnedLocals() =
         locals |> Seq.exists (fun (_, _, isFixed, _) -> isFixed)
+
+    member _.HasStackAllocatedLocals() = hasStackAllocatedLocals
 
     member _.Close() =
 
@@ -3338,32 +3399,50 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
         match TryEliminateDesugaredConstants g m c with
         | Some e -> GenExpr cenv cgbuf eenv e Continue
         | None ->
-            let emitInt64Constant i =
+            let needsBoxingToTargetTy =
+                (match ilTy with
+                 | ILType.Value _ -> false
+                 | _ -> true)
+
+            // Wraps an emitter: calls it, then boxes if target type is not a value type (e.g. literal upcast to obj).
+            let inline emitAndBoxIfNeeded emitter uty arg =
+                emitter uty arg
+
+                if needsBoxingToTargetTy then
+                    CG.EmitInstr cgbuf (pop 1) (Push [ ilTy ]) (I_box uty)
+
+            let emitInt64Constant uty i =
                 // see https://github.com/dotnet/fsharp/pull/3620
                 // and https://github.com/dotnet/fsharp/issue/8683
                 // and https://github.com/dotnet/roslyn/blob/98f12bb/src/Compilers/Core/Portable/CodeGen/ILBuilderEmit.cs#L679
                 if i >= int64 Int32.MinValue && i <= int64 Int32.MaxValue then
-                    CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdcInt32 (int32 i); AI_conv DT_I8 ]
+                    CG.EmitInstrs cgbuf (pop 0) (Push [ uty ]) [ mkLdcInt32 (int32 i); AI_conv DT_I8 ]
                 elif i >= int64 UInt32.MinValue && i <= int64 UInt32.MaxValue then
-                    CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdcInt32 (int32 i); AI_conv DT_U8 ]
+                    CG.EmitInstrs cgbuf (pop 0) (Push [ uty ]) [ mkLdcInt32 (int32 i); AI_conv DT_U8 ]
                 else
-                    CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (iLdcInt64 i)
+                    CG.EmitInstr cgbuf (pop 0) (Push [ uty ]) (iLdcInt64 i)
+
+            let emitConst uty instr =
+                CG.EmitInstr cgbuf (pop 0) (Push [ uty ]) instr
+
+            let emitConstI uty instrs =
+                CG.EmitInstrs cgbuf (pop 0) (Push [ uty ]) instrs
 
             match c with
-            | Const.Bool b -> CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Bool ]) (mkLdcInt32 (if b then 1 else 0))
-            | Const.SByte i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int32 i))
-            | Const.Int16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int32 i))
-            | Const.Int32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 i)
-            | Const.Int64 i -> emitInt64Constant i
-            | Const.IntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ iLdcInt64 i; AI_conv DT_I ]
-            | Const.Byte i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int32 i))
-            | Const.UInt16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int32 i))
-            | Const.UInt32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int32 i))
-            | Const.UInt64 i -> emitInt64Constant (int64 i)
-            | Const.UIntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ iLdcInt64 (int64 i); AI_conv DT_U ]
-            | Const.Double f -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (AI_ldc(DT_R8, ILConst.R8 f))
-            | Const.Single f -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (AI_ldc(DT_R4, ILConst.R4 f))
-            | Const.Char c -> CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (mkLdcInt32 (int c))
+            | Const.Bool b -> emitAndBoxIfNeeded emitConst g.ilg.typ_Bool (mkLdcInt32 (if b then 1 else 0))
+            | Const.SByte i -> emitAndBoxIfNeeded emitConst g.ilg.typ_SByte (mkLdcInt32 (int32 i))
+            | Const.Int16 i -> emitAndBoxIfNeeded emitConst g.ilg.typ_Int16 (mkLdcInt32 (int32 i))
+            | Const.Int32 i -> emitAndBoxIfNeeded emitConst g.ilg.typ_Int32 (mkLdcInt32 i)
+            | Const.Int64 i -> emitAndBoxIfNeeded emitInt64Constant g.ilg.typ_Int64 i
+            | Const.IntPtr i -> emitAndBoxIfNeeded emitConstI g.ilg.typ_IntPtr [ iLdcInt64 i; AI_conv DT_I ]
+            | Const.Byte i -> emitAndBoxIfNeeded emitConst g.ilg.typ_Byte (mkLdcInt32 (int32 i))
+            | Const.UInt16 i -> emitAndBoxIfNeeded emitConst g.ilg.typ_UInt16 (mkLdcInt32 (int32 i))
+            | Const.UInt32 i -> emitAndBoxIfNeeded emitConst g.ilg.typ_UInt32 (mkLdcInt32 (int32 i))
+            | Const.UInt64 i -> emitAndBoxIfNeeded emitInt64Constant g.ilg.typ_UInt64 (int64 i)
+            | Const.UIntPtr i -> emitAndBoxIfNeeded emitConstI g.ilg.typ_UIntPtr [ iLdcInt64 (int64 i); AI_conv DT_U ]
+            | Const.Double f -> emitAndBoxIfNeeded emitConst g.ilg.typ_Double (AI_ldc(DT_R8, ILConst.R8 f))
+            | Const.Single f -> emitAndBoxIfNeeded emitConst g.ilg.typ_Single (AI_ldc(DT_R4, ILConst.R4 f))
+            | Const.Char c -> emitAndBoxIfNeeded emitConst g.ilg.typ_Char (mkLdcInt32 (int c))
             | Const.String s -> GenString cenv cgbuf s
             | Const.Unit -> GenUnit cenv eenv m cgbuf
             | Const.Zero -> GenDefaultValue cenv cgbuf eenv (ty, m)
@@ -4552,6 +4631,7 @@ and CanTailcall
     // Can't tailcall with a .NET 2.0 generic constrained call since it involves a byref
     // Can't tailcall when there are pinned locals since the stack frame must remain alive
     let hasPinnedLocals = cgbuf.HasPinnedLocals()
+    let hasStackAllocatedLocals = cgbuf.HasStackAllocatedLocals()
 
     if
         not hasStructObjArg
@@ -4562,6 +4642,7 @@ and CanTailcall
         && not isSelfInit
         && not makesNoCriticalTailcalls
         && not hasPinnedLocals
+        && not hasStackAllocatedLocals
         &&
 
         // We can tailcall even if we need to generate "unit", as long as we're about to throw the value away anyway as par of the return.
@@ -5892,6 +5973,8 @@ and GenFormalReturnType m cenv eenvFormal returnTy : ILReturn =
 and instSlotParam inst (TSlotParam(nm, ty, inFlag, fl2, fl3, attrs)) =
     TSlotParam(nm, instType inst ty, inFlag, fl2, fl3, attrs)
 
+and containsNativePtrWithTypar (g: TcGlobals) (typars: Typar list) ty = hasNativePtrWithTypar g typars ty
+
 and GenActualSlotsig
     m
     cenv
@@ -5900,14 +5983,44 @@ and GenActualSlotsig
     methTyparsOfOverridingMethod
     (methodParams: Val list)
     =
+    let g = cenv.g
     let ilSlotParams = List.concat ilSlotParams
 
+    let interfaceTypeArgs = argsOfAppTy g ty
+
     let instForSlotSig =
-        mkTyparInst (ctps @ mtps) (argsOfAppTy cenv.g ty @ generalizeTypars methTyparsOfOverridingMethod)
+        mkTyparInst (ctps @ mtps) (interfaceTypeArgs @ generalizeTypars methTyparsOfOverridingMethod)
+
+    let interfaceTypeArgsAreConcrete =
+        not ctps.IsEmpty
+        && (freeInTypes CollectTypars interfaceTypeArgs).FreeTypars.IsEmpty
+
+    let slotHasNativePtrWithCtps =
+        interfaceTypeArgsAreConcrete
+        && (ilSlotParams
+            |> List.exists (fun (TSlotParam(_, ty, _, _, _, _)) -> containsNativePtrWithTypar g ctps ty)
+            || ilSlotRetTy |> Option.exists (containsNativePtrWithTypar g ctps))
+
+    let eenvForSlotGen =
+        if slotHasNativePtrWithCtps then
+            EnvForTypars ctps eenv
+        else
+            eenv
+
+    // When the slot has nativeptr with concrete interface type args, don't substitute
+    // the class type params (ctps) - only substitute method type params (mtps).
+    // This keeps nativeptr<'T> unsubstituted so it generates 'native int' in IL,
+    // matching the interface method's signature. Without this, nativeptr<'T> would be
+    // substituted to nativeptr<concrete> which generates 'T*', causing a TypeLoadException.
+    let instForSlotSigGen =
+        if slotHasNativePtrWithCtps then
+            mkTyparInst mtps (generalizeTypars methTyparsOfOverridingMethod)
+        else
+            instForSlotSig
 
     let ilParams =
         ilSlotParams
-        |> List.map (instSlotParam instForSlotSig >> GenSlotParam m cenv eenv)
+        |> List.map (instSlotParam instForSlotSigGen >> GenSlotParam m cenv eenvForSlotGen)
 
     // Use the better names if available
     let ilParams =
@@ -5918,7 +6031,7 @@ and GenActualSlotsig
             ilParams
 
     let ilRetTy =
-        GenReturnType cenv m eenv.tyenv (Option.map (instType instForSlotSig) ilSlotRetTy)
+        GenReturnType cenv m eenvForSlotGen.tyenv (Option.map (instType instForSlotSigGen) ilSlotRetTy)
 
     let iLRet = mkILReturn ilRetTy
 
@@ -5926,7 +6039,7 @@ and GenActualSlotsig
         match ilSlotRetTy with
         | None -> iLRet
         | Some t ->
-            match GenAdditionalAttributesForTy cenv.g t with
+            match GenAdditionalAttributesForTy g t with
             | [] -> iLRet
             | attrs -> iLRet.WithCustomAttrs(mkILCustomAttrs attrs)
 
