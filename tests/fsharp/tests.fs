@@ -592,6 +592,11 @@ module CoreTests =
     let ``printing`` () =
          runPrintingTest "--multiemit- --debug+" "output"
 
+    // F# 5.0 changed some things printing output
+    [<FSharp.Test.FactSkipOnSignedBuild>]
+    let ``printing-langversion47`` () =
+         runPrintingTest "--langversion:4.7" "output.47"
+
     // Output should not change with optimization off
     [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing-optimizeoff`` () =

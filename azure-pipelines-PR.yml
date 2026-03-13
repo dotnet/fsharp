@@ -688,6 +688,7 @@ stages:
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
+
           steps:
           - checkout: self
             clean: true
