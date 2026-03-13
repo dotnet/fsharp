@@ -446,16 +446,24 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, retTy: ILTy
     override _.Equals(obj: obj) =
         match obj with
         | :? MethodDefKey as y ->
-            let compareILTypes o1 o2 =
+            let rec compareILTypes o1 o2 =
                 match o1, o2 with
-                | ILType.Value v1, ILType.Value v2 -> v1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, v2 :> obj )
+                | ILType.Value v1, ILType.Value v2 -> v1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, v2 :> obj)
+                | ILType.Boxed v1, ILType.Boxed v2 -> v1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, v2 :> obj)
+                | ILType.Byref t1, ILType.Byref t2 -> compareILTypes t1 t2
+                | ILType.Ptr t1, ILType.Ptr t2 -> compareILTypes t1 t2
+                | ILType.Array(sh1, t1), ILType.Array(sh2, t2) -> sh1 = sh2 && compareILTypes t1 t2
+                | ILType.Modified(req1, tref1, t1), ILType.Modified(req2, tref2, t2) ->
+                    req1 = req2
+                    && tref1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, tref2 :> obj)
+                    && compareILTypes t1 t2
                 | _ -> o1 = o2
 
             tidx = y.TypeIdx &&
             garity = y.GenericArity &&
             nm = y.Name &&
-            // note: these next two use structural equality on AbstractIL ILType values
-            retTy = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argTys y.ArgTypes &&
+            // note: these next two use scope-aware equality on AbstractIL ILType values
+            compareILTypes retTy y.ReturnType && List.lengthsEqAndForall2 compareILTypes argTys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
 
@@ -1924,6 +1932,23 @@ module Codebuf =
         | Unaligned2 -> emitInstrCode codebuf i_unaligned; codebuf.EmitByte 0x2
         | Unaligned4 -> emitInstrCode codebuf i_unaligned; codebuf.EmitByte 0x4
 
+    let tryPrimitiveAsBasicType (ilg: ILGlobals) (ty: ILType) =
+        if isILBoolTy ilg ty then Some DT_U1
+        elif isILSByteTy ilg ty then Some DT_I1
+        elif isILByteTy ilg ty then Some DT_U1
+        elif isILCharTy ilg ty then Some DT_U2
+        elif isILInt16Ty ilg ty then Some DT_I2
+        elif isILUInt16Ty ilg ty then Some DT_U2
+        elif isILInt32Ty ilg ty then Some DT_I4
+        elif isILUInt32Ty ilg ty then Some DT_U4
+        elif isILInt64Ty ilg ty then Some DT_I8
+        elif isILUInt64Ty ilg ty then Some DT_U8
+        elif isILSingleTy ilg ty then Some DT_R4
+        elif isILDoubleTy ilg ty then Some DT_R8
+        elif isILIntPtrTy ilg ty then Some DT_I
+        elif isILUIntPtrTy ilg ty then Some DT_U
+        else None
+
     let rec emitInstr cenv codebuf env instr =
         match instr with
         | si when isNoArgInstr si ->
@@ -2108,14 +2133,18 @@ module Codebuf =
 
         | I_stelem_any (shape, ty) ->
             if (shape = ILArrayShape.SingleDimensional) then
-                emitTypeInstr cenv codebuf env i_stelem_any ty
+                match tryPrimitiveAsBasicType cenv.ilg ty with
+                | Some dt -> emitInstr cenv codebuf env (I_stelem dt)
+                | None -> emitTypeInstr cenv codebuf env i_stelem_any ty
             else
                 let args = List.init (shape.Rank+1) (fun i -> if i < shape.Rank then cenv.ilg.typ_Int32 else ty)
                 emitMethodSpecInfoInstr cenv codebuf env i_call ("Set", mkILArrTy(ty, shape), ILCallingConv.Instance, args, ILType.Void, None, [])
 
         | I_ldelem_any (shape, ty) ->
             if (shape = ILArrayShape.SingleDimensional) then
-                emitTypeInstr cenv codebuf env i_ldelem_any ty
+                match tryPrimitiveAsBasicType cenv.ilg ty with
+                | Some dt -> emitInstr cenv codebuf env (I_ldelem dt)
+                | None -> emitTypeInstr cenv codebuf env i_ldelem_any ty
             else
                 let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_Int32)
                 emitMethodSpecInfoInstr cenv codebuf env i_call ("Get", mkILArrTy(ty, shape), ILCallingConv.Instance, args, ty, None, [])
