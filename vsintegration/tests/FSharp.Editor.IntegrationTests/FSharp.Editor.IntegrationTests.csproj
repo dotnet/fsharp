@@ -4,11 +4,13 @@
     <TargetFramework>net472</TargetFramework>
 	<LangVersion>preview</LangVersion>
 	<Nullable>enable</Nullable>
-	<UnitTestType>xunit</UnitTestType>
+	<OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>VSTHRD200;CS1591</NoWarn>
+    <!-- Exclude from automatic xUnit3/MTP package references since this uses VS Extensibility Testing (xUnit2) -->
+    <ExcludeFromTestPackageReferences>true</ExcludeFromTestPackageReferences>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +19,9 @@
 
   <ItemGroup>
     <Content Include="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\Debugging\SequencePointIssues.fs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -29,5 +34,9 @@
     <PackageReference Include="NuGet.VisualStudio" Version="$(NuGetVisualStudioVersion)" />
     <PackageReference Include="Nullable" Version="1.3.0" />
   </ItemGroup>
+
+  <Target Name="SyncXunitDesktopDll" AfterTargets="Build" Condition="'$(OutputType)' == 'Exe'">
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)$(AssemblyName).dll" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>

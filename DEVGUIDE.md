@@ -314,10 +314,10 @@ it will start it many times at the same time, and execute in parallel.
 
 ```bash
 $env:TEST_UPDATE_BSL=1
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" /p:BUILDING_USING_DOTNET=true
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" /p:BUILDING_USING_DOTNET=true
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" -c Release /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" -c Release /p:BUILDING_USING_DOTNET=true
 ```
 
 ### Updating ILVerify baselines

@@ -1322,7 +1322,7 @@ let rec TryTranslateComputationExpression
                     vspecs, envinner)
 
             Some(
-                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun innerCompR ->
+                TranslateComputationExpression (noTailCall ceenv) CompExprTranslationPass.Initial q varSpace innerComp (fun innerCompR ->
 
                     let forCall =
                         mkSynCall
@@ -1893,6 +1893,7 @@ let rec TryTranslateComputationExpression
                                         headPat = pat
                                         expr = rhsExpr
                                         debugPoint = spBind
+                                        range = mBind
                                         trivia = { LeadingKeyword = leadingKeyword }) ]
                        Body = innerComp
                    },
@@ -1912,9 +1913,9 @@ let rec TryTranslateComputationExpression
                         SynMatchClause(
                             pat,
                             None,
-                            TranslateComputationExpressionNoQueryOps ceenv innerComp,
+                            TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp,
                             innerCompRange,
-                            DebugPointAtTarget.Yes,
+                            DebugPointAtTarget.No,
                             SynMatchClauseTrivia.Zero
                         )
                     ],
@@ -1925,7 +1926,7 @@ let rec TryTranslateComputationExpression
             requireBuilderMethod "Using" ceenv leadingKeyword.Range leadingKeyword.Range
 
             Some(
-                translatedCtxt (mkSynCall "Using" leadingKeyword.Range [ rhsExpr; consumeExpr ] ceenv.builderValName)
+                translatedCtxt (mkSynCall "Using" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName)
                 |> addBindDebugPoint spBind
             )
 
@@ -1976,7 +1977,7 @@ let rec TryTranslateComputationExpression
                                 SynMatchClause(
                                     pat,
                                     None,
-                                    TranslateComputationExpressionNoQueryOps ceenv innerComp,
+                                    TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp,
                                     innerComp.Range,
                                     DebugPointAtTarget.Yes,
                                     SynMatchClauseTrivia.Zero
@@ -2321,7 +2322,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt callExpr)
 
-        | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, _, { YieldOrReturnFromKeyword = m }) ->
+        | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, mFull, { YieldOrReturnFromKeyword = m }) ->
             let yieldFromExpr =
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2343,11 +2344,11 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synYieldExpr then
                     yieldFromCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, yieldFromCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, yieldFromCall)
 
             Some(translatedCtxt yieldFromCall)
 
-        | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, _, { YieldOrReturnFromKeyword = m }) ->
+        | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, mFull, { YieldOrReturnFromKeyword = m }) ->
             let returnFromExpr =
                 mkSourceExpr synReturnExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2372,11 +2373,11 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synReturnExpr then
                     returnFromCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, returnFromCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, returnFromCall)
 
             Some(translatedCtxt returnFromCall)
 
-        | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, _, { YieldOrReturnKeyword = m }) ->
+        | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, mFull, { YieldOrReturnKeyword = m }) ->
             let methName = (if isYield then "Yield" else "Return")
 
             if ceenv.isQuery && not isYield then
@@ -2391,7 +2392,7 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synYieldOrReturnExpr then
                     yieldOrReturnCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, yieldOrReturnCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, yieldOrReturnCall)
 
             Some(translatedCtxt yieldOrReturnCall)
 

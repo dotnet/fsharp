@@ -45,9 +45,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor(int32 pc,
-                                 class [runtime]System.Tuple`2<int32,int32> current) cil managed
+    .method public specialname rtspecialname instance void  .ctor(int32 pc, class [runtime]System.Tuple`2<int32,int32> current) cil managed
     {
       
       .maxstack  8
@@ -77,47 +75,49 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_003b
+      IL_001c:  br.s       IL_003d
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0051
+      IL_001f:  br.s       IL_0053
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_0058
+      IL_0022:  br.s       IL_005a
 
       IL_0024:  nop
-      IL_0025:  ldarg.0
-      IL_0026:  ldc.i4.1
-      IL_0027:  stfld      int32 assembly/seq1@9::pc
-      IL_002c:  ldarg.0
-      IL_002d:  ldc.i4.1
-      IL_002e:  ldc.i4.1
-      IL_002f:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                            !1)
-      IL_0034:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
-      IL_0039:  ldc.i4.1
-      IL_003a:  ret
+      IL_0025:  br.s       IL_0027
 
-      IL_003b:  ldarg.0
-      IL_003c:  ldc.i4.2
-      IL_003d:  stfld      int32 assembly/seq1@9::pc
-      IL_0042:  ldarg.0
-      IL_0043:  ldc.i4.2
-      IL_0044:  ldc.i4.2
-      IL_0045:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                            !1)
-      IL_004a:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
-      IL_004f:  ldc.i4.1
-      IL_0050:  ret
+      IL_0027:  ldarg.0
+      IL_0028:  ldc.i4.1
+      IL_0029:  stfld      int32 assembly/seq1@9::pc
+      IL_002e:  ldarg.0
+      IL_002f:  ldc.i4.1
+      IL_0030:  ldc.i4.1
+      IL_0031:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                                  !1)
+      IL_0036:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
+      IL_003b:  ldc.i4.1
+      IL_003c:  ret
 
-      IL_0051:  ldarg.0
-      IL_0052:  ldc.i4.3
-      IL_0053:  stfld      int32 assembly/seq1@9::pc
-      IL_0058:  ldarg.0
-      IL_0059:  ldnull
-      IL_005a:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
-      IL_005f:  ldc.i4.0
-      IL_0060:  ret
+      IL_003d:  ldarg.0
+      IL_003e:  ldc.i4.2
+      IL_003f:  stfld      int32 assembly/seq1@9::pc
+      IL_0044:  ldarg.0
+      IL_0045:  ldc.i4.2
+      IL_0046:  ldc.i4.2
+      IL_0047:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                                  !1)
+      IL_004c:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
+      IL_0051:  ldc.i4.1
+      IL_0052:  ret
+
+      IL_0053:  ldarg.0
+      IL_0054:  ldc.i4.3
+      IL_0055:  stfld      int32 assembly/seq1@9::pc
+      IL_005a:  ldarg.0
+      IL_005b:  ldnull
+      IL_005c:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
+      IL_0061:  ldc.i4.0
+      IL_0062:  ret
     } 
 
     .method public strict virtual instance void Close() cil managed
@@ -144,26 +144,28 @@
       IL_001b:  br.s       IL_0029
 
       IL_001d:  nop
-      IL_001e:  br.s       IL_002e
+      IL_001e:  br.s       IL_0030
 
       IL_0020:  nop
-      IL_0021:  br.s       IL_002c
+      IL_0021:  br.s       IL_002e
 
       IL_0023:  nop
-      IL_0024:  br.s       IL_002a
+      IL_0024:  br.s       IL_002c
 
       IL_0026:  nop
-      IL_0027:  br.s       IL_002e
+      IL_0027:  br.s       IL_0030
 
       IL_0029:  nop
-      IL_002a:  ldc.i4.0
-      IL_002b:  ret
+      IL_002a:  br.s       IL_002c
 
       IL_002c:  ldc.i4.0
       IL_002d:  ret
 
       IL_002e:  ldc.i4.0
       IL_002f:  ret
+
+      IL_0030:  ldc.i4.0
+      IL_0031:  ret
     } 
 
     .method public strict virtual instance class [runtime]System.Tuple`2<int32,int32> get_LastGenerated() cil managed
@@ -435,243 +437,243 @@
     IL_003b:  dup
     IL_003c:  ldc.i4.0
     IL_003d:  ldc.i4.1
-    IL_003e:  stelem     [runtime]System.Int32
+    IL_003e:  stelem.i4
+    IL_003f:  dup
+    IL_0040:  ldc.i4.1
+    IL_0041:  ldc.i4.2
+    IL_0042:  stelem.i4
     IL_0043:  dup
-    IL_0044:  ldc.i4.1
-    IL_0045:  ldc.i4.2
-    IL_0046:  stelem     [runtime]System.Int32
-    IL_004b:  dup
-    IL_004c:  ldc.i4.2
-    IL_004d:  ldc.i4.3
-    IL_004e:  stelem     [runtime]System.Int32
-    IL_0053:  dup
-    IL_0054:  stsfld     int32[] '<StartupCode$assembly>'.$assembly::array@6
-    IL_0059:  stloc.1
-    IL_005a:  ldc.i4.1
-    IL_005b:  ldc.i4.1
-    IL_005c:  ldc.i4.s   10
-    IL_005e:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                     int32,
-                                                                                                                                                                     int32)
-    IL_0063:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0068:  dup
-    IL_0069:  stsfld     class [runtime]System.Collections.Generic.IEnumerable`1<int32> '<StartupCode$assembly>'.$assembly::aseq@7
-    IL_006e:  stloc.2
-    IL_006f:  ldc.i4.1
-    IL_0070:  ldc.i4.1
-    IL_0071:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                          !1)
-    IL_0076:  ldc.i4.2
-    IL_0077:  ldc.i4.2
-    IL_0078:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                          !1)
-    IL_007d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>>::get_Empty()
-    IL_0082:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>>::Cons(!0,
-                                                                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_0087:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>>::Cons(!0,
-                                                                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_008c:  dup
-    IL_008d:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>> '<StartupCode$assembly>'.$assembly::list1@8
-    IL_0092:  stloc.3
-    IL_0093:  ldc.i4.0
-    IL_0094:  ldnull
-    IL_0095:  newobj     instance void assembly/seq1@9::.ctor(int32,
+    IL_0044:  ldc.i4.2
+    IL_0045:  ldc.i4.3
+    IL_0046:  stelem.i4
+    IL_0047:  dup
+    IL_0048:  stsfld     int32[] '<StartupCode$assembly>'.$assembly::array@6
+    IL_004d:  stloc.1
+    IL_004e:  ldc.i4.1
+    IL_004f:  ldc.i4.1
+    IL_0050:  ldc.i4.s   10
+    IL_0052:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
+                                                                                                                                                                           int32,
+                                                                                                                                                                           int32)
+    IL_0057:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_005c:  dup
+    IL_005d:  stsfld     class [runtime]System.Collections.Generic.IEnumerable`1<int32> '<StartupCode$assembly>'.$assembly::aseq@7
+    IL_0062:  stloc.2
+    IL_0063:  ldc.i4.1
+    IL_0064:  ldc.i4.1
+    IL_0065:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                                !1)
+    IL_006a:  ldc.i4.2
+    IL_006b:  ldc.i4.2
+    IL_006c:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                                !1)
+    IL_0071:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>>::get_Empty()
+    IL_0076:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>>::Cons(!0,
+                                                                                                                                                                                                                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+    IL_007b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>>::Cons(!0,
+                                                                                                                                                                                                                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+    IL_0080:  dup
+    IL_0081:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>> '<StartupCode$assembly>'.$assembly::list1@8
+    IL_0086:  stloc.3
+    IL_0087:  ldc.i4.0
+    IL_0088:  ldnull
+    IL_0089:  newobj     instance void assembly/seq1@9::.ctor(int32,
                                                                         class [runtime]System.Tuple`2<int32,int32>)
-    IL_009a:  dup
-    IL_009b:  stsfld     class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>> '<StartupCode$assembly>'.$assembly::seq1@9
-    IL_00a0:  stloc.s    V_4
-    IL_00a2:  ldc.i4.2
-    IL_00a3:  newarr     class [runtime]System.Tuple`2<int32,int32>
-    IL_00a8:  dup
-    IL_00a9:  ldc.i4.0
-    IL_00aa:  ldc.i4.1
+    IL_008e:  dup
+    IL_008f:  stsfld     class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>> '<StartupCode$assembly>'.$assembly::seq1@9
+    IL_0094:  stloc.s    V_4
+    IL_0096:  ldc.i4.2
+    IL_0097:  newarr     class [runtime]System.Tuple`2<int32,int32>
+    IL_009c:  dup
+    IL_009d:  ldc.i4.0
+    IL_009e:  ldc.i4.1
+    IL_009f:  ldc.i4.1
+    IL_00a0:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                                !1)
+    IL_00a5:  stelem     class [runtime]System.Tuple`2<int32,int32>
+    IL_00aa:  dup
     IL_00ab:  ldc.i4.1
-    IL_00ac:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                          !1)
-    IL_00b1:  stelem     class [runtime]System.Tuple`2<int32,int32>
-    IL_00b6:  dup
-    IL_00b7:  ldc.i4.1
-    IL_00b8:  ldc.i4.2
-    IL_00b9:  ldc.i4.2
-    IL_00ba:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                          !1)
-    IL_00bf:  stelem     class [runtime]System.Tuple`2<int32,int32>
-    IL_00c4:  dup
-    IL_00c5:  stsfld     class [runtime]System.Tuple`2<int32,int32>[] '<StartupCode$assembly>'.$assembly::array1@10
-    IL_00ca:  stloc.s    V_5
-    IL_00cc:  ldc.i4.2
-    IL_00cd:  ldc.i4.2
-    IL_00ce:  ldc.i4.0
-    IL_00cf:  call       !!0[0...,0...] [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Create<int32>(int32,
+    IL_00ac:  ldc.i4.2
+    IL_00ad:  ldc.i4.2
+    IL_00ae:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                                !1)
+    IL_00b3:  stelem     class [runtime]System.Tuple`2<int32,int32>
+    IL_00b8:  dup
+    IL_00b9:  stsfld     class [runtime]System.Tuple`2<int32,int32>[] '<StartupCode$assembly>'.$assembly::array1@10
+    IL_00be:  stloc.s    V_5
+    IL_00c0:  ldc.i4.2
+    IL_00c1:  ldc.i4.2
+    IL_00c2:  ldc.i4.0
+    IL_00c3:  call       !!0[0...,0...] [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Create<int32>(int32,
                                                                                                                int32,
                                                                                                                !!0)
-    IL_00d4:  dup
-    IL_00d5:  stsfld     int32[0...,0...] '<StartupCode$assembly>'.$assembly::a3@11
-    IL_00da:  stloc.s    V_6
-    IL_00dc:  ldc.i4.3
-    IL_00dd:  ldc.i4.3
-    IL_00de:  ldc.i4.3
-    IL_00df:  ldc.i4.0
-    IL_00e0:  call       !!0[0...,0...,0...] [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Create<int32>(int32,
+    IL_00c8:  dup
+    IL_00c9:  stsfld     int32[0...,0...] '<StartupCode$assembly>'.$assembly::a3@11
+    IL_00ce:  stloc.s    V_6
+    IL_00d0:  ldc.i4.3
+    IL_00d1:  ldc.i4.3
+    IL_00d2:  ldc.i4.3
+    IL_00d3:  ldc.i4.0
+    IL_00d4:  call       !!0[0...,0...,0...] [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Create<int32>(int32,
                                                                                                                     int32,
                                                                                                                     int32,
                                                                                                                     !!0)
-    IL_00e5:  dup
-    IL_00e6:  stsfld     int32[0...,0...,0...] '<StartupCode$assembly>'.$assembly::array3D@12
-    IL_00eb:  stloc.s    V_7
-    IL_00ed:  ldc.i4.4
-    IL_00ee:  ldc.i4.4
-    IL_00ef:  ldc.i4.4
-    IL_00f0:  ldc.i4.4
-    IL_00f1:  ldc.i4.0
-    IL_00f2:  call       !!0[0...,0...,0...,0...] [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Create<int32>(int32,
+    IL_00d9:  dup
+    IL_00da:  stsfld     int32[0...,0...,0...] '<StartupCode$assembly>'.$assembly::array3D@12
+    IL_00df:  stloc.s    V_7
+    IL_00e1:  ldc.i4.4
+    IL_00e2:  ldc.i4.4
+    IL_00e3:  ldc.i4.4
+    IL_00e4:  ldc.i4.4
+    IL_00e5:  ldc.i4.0
+    IL_00e6:  call       !!0[0...,0...,0...,0...] [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Create<int32>(int32,
                                                                                                                          int32,
                                                                                                                          int32,
                                                                                                                          int32,
                                                                                                                          !!0)
-    IL_00f7:  dup
-    IL_00f8:  stsfld     int32[0...,0...,0...,0...] '<StartupCode$assembly>'.$assembly::array4D@13
-    IL_00fd:  stloc.s    V_8
-    IL_00ff:  call       int32[] assembly::get_array()
-    IL_0104:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::OfArray<int32>(!!0[])
-    IL_0109:  pop
-    IL_010a:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> assembly::get_aseq()
-    IL_010f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::OfSeq<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0114:  pop
-    IL_0115:  call       class [runtime]System.Tuple`2<int32,int32>[] assembly::get_array1()
-    IL_011a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfArray<int32,int32>(class [runtime]System.Tuple`2<!!0,!!1>[])
-    IL_011f:  pop
-    IL_0120:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>> assembly::get_list1()
-    IL_0125:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfList<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!0,!!1>>)
-    IL_012a:  pop
-    IL_012b:  call       class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>> assembly::get_seq1()
-    IL_0130:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfSeq<int32,int32>(class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<!!0,!!1>>)
-    IL_0135:  pop
-    IL_0136:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_alist()
-    IL_013b:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::OfList<int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
-    IL_0140:  dup
-    IL_0141:  stsfld     int32[] '<StartupCode$assembly>'.$assembly::a1@25
-    IL_0146:  stloc.s    V_9
-    IL_0148:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> assembly::get_aseq()
-    IL_014d:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::OfSeq<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0152:  dup
-    IL_0153:  stsfld     int32[] '<StartupCode$assembly>'.$assembly::a2@26
-    IL_0158:  stloc.s    V_10
-    IL_015a:  call       int32[] assembly::get_a1()
-    IL_015f:  ldc.i4.0
-    IL_0160:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Get<int32>(!!0[],
+    IL_00eb:  dup
+    IL_00ec:  stsfld     int32[0...,0...,0...,0...] '<StartupCode$assembly>'.$assembly::array4D@13
+    IL_00f1:  stloc.s    V_8
+    IL_00f3:  call       int32[] assembly::get_array()
+    IL_00f8:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::OfArray<int32>(!!0[])
+    IL_00fd:  pop
+    IL_00fe:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> assembly::get_aseq()
+    IL_0103:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::OfSeq<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0108:  pop
+    IL_0109:  call       class [runtime]System.Tuple`2<int32,int32>[] assembly::get_array1()
+    IL_010e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfArray<int32,int32>(class [runtime]System.Tuple`2<!!0,!!1>[])
+    IL_0113:  pop
+    IL_0114:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>> assembly::get_list1()
+    IL_0119:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfList<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<!!0,!!1>>)
+    IL_011e:  pop
+    IL_011f:  call       class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>> assembly::get_seq1()
+    IL_0124:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfSeq<int32,int32>(class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<!!0,!!1>>)
+    IL_0129:  pop
+    IL_012a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_alist()
+    IL_012f:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::OfList<int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
+    IL_0134:  dup
+    IL_0135:  stsfld     int32[] '<StartupCode$assembly>'.$assembly::a1@25
+    IL_013a:  stloc.s    V_9
+    IL_013c:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> assembly::get_aseq()
+    IL_0141:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::OfSeq<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0146:  dup
+    IL_0147:  stsfld     int32[] '<StartupCode$assembly>'.$assembly::a2@26
+    IL_014c:  stloc.s    V_10
+    IL_014e:  call       int32[] assembly::get_a1()
+    IL_0153:  ldc.i4.0
+    IL_0154:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Get<int32>(!!0[],
                                                                                                int32)
-    IL_0165:  stloc.s    V_14
-    IL_0167:  call       int32[] assembly::get_a2()
-    IL_016c:  ldc.i4.0
-    IL_016d:  ldloc.s    V_14
-    IL_016f:  call       void [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Set<int32>(!!0[],
+    IL_0159:  stloc.s    V_14
+    IL_015b:  call       int32[] assembly::get_a2()
+    IL_0160:  ldc.i4.0
+    IL_0161:  ldloc.s    V_14
+    IL_0163:  call       void [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Set<int32>(!!0[],
                                                                                                 int32,
                                                                                                 !!0)
-    IL_0174:  nop
-    IL_0175:  call       int32[0...,0...] assembly::get_a3()
-    IL_017a:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Length1<int32>(!!0[0...,0...])
-    IL_017f:  call       int32[0...,0...] assembly::get_a3()
-    IL_0184:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Length2<int32>(!!0[0...,0...])
-    IL_0189:  call       int32[0...,0...] assembly::get_a3()
-    IL_018e:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Base1<int32>(!!0[0...,0...])
-    IL_0193:  call       int32[0...,0...] assembly::get_a3()
-    IL_0198:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Base2<int32>(!!0[0...,0...])
-    IL_019d:  newobj     instance void class [runtime]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
+    IL_0168:  nop
+    IL_0169:  call       int32[0...,0...] assembly::get_a3()
+    IL_016e:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Length1<int32>(!!0[0...,0...])
+    IL_0173:  call       int32[0...,0...] assembly::get_a3()
+    IL_0178:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Length2<int32>(!!0[0...,0...])
+    IL_017d:  call       int32[0...,0...] assembly::get_a3()
+    IL_0182:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Base1<int32>(!!0[0...,0...])
+    IL_0187:  call       int32[0...,0...] assembly::get_a3()
+    IL_018c:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Base2<int32>(!!0[0...,0...])
+    IL_0191:  newobj     instance void class [runtime]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
+                                                                                                            !1,
+                                                                                                            !2,
+                                                                                                            !3)
+    IL_0196:  stloc.s    V_15
+    IL_0198:  ldloc.s    V_15
+    IL_019a:  stloc.s    V_16
+    IL_019c:  call       int32[0...,0...] assembly::get_a3()
+    IL_01a1:  ldc.i4.0
+    IL_01a2:  ldc.i4.0
+    IL_01a3:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Get<int32>(!!0[0...,0...],
+                                                                                                 int32,
+                                                                                                 int32)
+    IL_01a8:  stloc.s    V_17
+    IL_01aa:  call       int32[0...,0...] assembly::get_a3()
+    IL_01af:  ldc.i4.0
+    IL_01b0:  ldc.i4.0
+    IL_01b1:  ldloc.s    V_17
+    IL_01b3:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Set<int32>(!!0[0...,0...],
+                                                                                                  int32,
+                                                                                                  int32,
+                                                                                                  !!0)
+    IL_01b8:  nop
+    IL_01b9:  call       int32[0...,0...,0...] assembly::get_array3D()
+    IL_01be:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length1<int32>(!!0[0...,0...,0...])
+    IL_01c3:  call       int32[0...,0...,0...] assembly::get_array3D()
+    IL_01c8:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length2<int32>(!!0[0...,0...,0...])
+    IL_01cd:  call       int32[0...,0...,0...] assembly::get_array3D()
+    IL_01d2:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length3<int32>(!!0[0...,0...,0...])
+    IL_01d7:  newobj     instance void class [runtime]System.Tuple`3<int32,int32,int32>::.ctor(!0,
                                                                                                       !1,
-                                                                                                      !2,
-                                                                                                      !3)
-    IL_01a2:  stloc.s    V_15
-    IL_01a4:  ldloc.s    V_15
-    IL_01a6:  stloc.s    V_16
-    IL_01a8:  call       int32[0...,0...] assembly::get_a3()
-    IL_01ad:  ldc.i4.0
-    IL_01ae:  ldc.i4.0
-    IL_01af:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Get<int32>(!!0[0...,0...],
-                                                                                                 int32,
-                                                                                                 int32)
-    IL_01b4:  stloc.s    V_17
-    IL_01b6:  call       int32[0...,0...] assembly::get_a3()
-    IL_01bb:  ldc.i4.0
-    IL_01bc:  ldc.i4.0
-    IL_01bd:  ldloc.s    V_17
-    IL_01bf:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Set<int32>(!!0[0...,0...],
-                                                                                                  int32,
-                                                                                                  int32,
-                                                                                                  !!0)
-    IL_01c4:  nop
-    IL_01c5:  call       int32[0...,0...,0...] assembly::get_array3D()
-    IL_01ca:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length1<int32>(!!0[0...,0...,0...])
-    IL_01cf:  call       int32[0...,0...,0...] assembly::get_array3D()
-    IL_01d4:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length2<int32>(!!0[0...,0...,0...])
-    IL_01d9:  call       int32[0...,0...,0...] assembly::get_array3D()
-    IL_01de:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length3<int32>(!!0[0...,0...,0...])
-    IL_01e3:  newobj     instance void class [runtime]System.Tuple`3<int32,int32,int32>::.ctor(!0,
-                                                                                                !1,
-                                                                                                !2)
-    IL_01e8:  stloc.s    V_18
-    IL_01ea:  ldloc.s    V_18
-    IL_01ec:  stloc.s    V_19
-    IL_01ee:  call       int32[0...,0...,0...] assembly::get_array3D()
-    IL_01f3:  ldc.i4.0
-    IL_01f4:  ldc.i4.0
-    IL_01f5:  ldc.i4.0
-    IL_01f6:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Get<int32>(!!0[0...,0...,0...],
+                                                                                                      !2)
+    IL_01dc:  stloc.s    V_18
+    IL_01de:  ldloc.s    V_18
+    IL_01e0:  stloc.s    V_19
+    IL_01e2:  call       int32[0...,0...,0...] assembly::get_array3D()
+    IL_01e7:  ldc.i4.0
+    IL_01e8:  ldc.i4.0
+    IL_01e9:  ldc.i4.0
+    IL_01ea:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Get<int32>(!!0[0...,0...,0...],
                                                                                                  int32,
                                                                                                  int32,
                                                                                                  int32)
-    IL_01fb:  stloc.s    V_20
-    IL_01fd:  call       int32[0...,0...,0...] assembly::get_array3D()
-    IL_0202:  ldc.i4.0
-    IL_0203:  ldc.i4.0
-    IL_0204:  ldc.i4.0
-    IL_0205:  ldloc.s    V_20
-    IL_0207:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Set<int32>(!!0[0...,0...,0...],
+    IL_01ef:  stloc.s    V_20
+    IL_01f1:  call       int32[0...,0...,0...] assembly::get_array3D()
+    IL_01f6:  ldc.i4.0
+    IL_01f7:  ldc.i4.0
+    IL_01f8:  ldc.i4.0
+    IL_01f9:  ldloc.s    V_20
+    IL_01fb:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Set<int32>(!!0[0...,0...,0...],
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   !!0)
-    IL_020c:  nop
-    IL_020d:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_0212:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length1<int32>(!!0[0...,0...,0...,0...])
-    IL_0217:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_021c:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length2<int32>(!!0[0...,0...,0...,0...])
-    IL_0221:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_0226:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length3<int32>(!!0[0...,0...,0...,0...])
-    IL_022b:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_0230:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length4<int32>(!!0[0...,0...,0...,0...])
-    IL_0235:  newobj     instance void class [runtime]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
-                                                                                                      !1,
-                                                                                                      !2,
-                                                                                                      !3)
-    IL_023a:  stloc.s    V_21
-    IL_023c:  ldloc.s    V_21
-    IL_023e:  stloc.s    V_22
-    IL_0240:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_0245:  ldc.i4.0
-    IL_0246:  ldc.i4.0
-    IL_0247:  ldc.i4.0
-    IL_0248:  ldc.i4.0
-    IL_0249:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Get<int32>(!!0[0...,0...,0...,0...],
+    IL_0200:  nop
+    IL_0201:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_0206:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length1<int32>(!!0[0...,0...,0...,0...])
+    IL_020b:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_0210:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length2<int32>(!!0[0...,0...,0...,0...])
+    IL_0215:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_021a:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length3<int32>(!!0[0...,0...,0...,0...])
+    IL_021f:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_0224:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length4<int32>(!!0[0...,0...,0...,0...])
+    IL_0229:  newobj     instance void class [runtime]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
+                                                                                                            !1,
+                                                                                                            !2,
+                                                                                                            !3)
+    IL_022e:  stloc.s    V_21
+    IL_0230:  ldloc.s    V_21
+    IL_0232:  stloc.s    V_22
+    IL_0234:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_0239:  ldc.i4.0
+    IL_023a:  ldc.i4.0
+    IL_023b:  ldc.i4.0
+    IL_023c:  ldc.i4.0
+    IL_023d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Get<int32>(!!0[0...,0...,0...,0...],
                                                                                                  int32,
                                                                                                  int32,
                                                                                                  int32,
                                                                                                  int32)
-    IL_024e:  stloc.s    V_23
-    IL_0250:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_0255:  ldc.i4.0
-    IL_0256:  ldc.i4.0
-    IL_0257:  ldc.i4.0
-    IL_0258:  ldc.i4.0
-    IL_0259:  ldloc.s    V_23
-    IL_025b:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Set<int32>(!!0[0...,0...,0...,0...],
+    IL_0242:  stloc.s    V_23
+    IL_0244:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_0249:  ldc.i4.0
+    IL_024a:  ldc.i4.0
+    IL_024b:  ldc.i4.0
+    IL_024c:  ldc.i4.0
+    IL_024d:  ldloc.s    V_23
+    IL_024f:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Set<int32>(!!0[0...,0...,0...,0...],
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   !!0)
-    IL_0260:  nop
-    IL_0261:  ret
+    IL_0254:  nop
+    IL_0255:  ret
   } 
 
 } 

@@ -744,6 +744,32 @@ module Set =
     [<CompiledName("Partition")>]
     val partition: predicate: ('T -> bool) -> set: Set<'T> -> (Set<'T> * Set<'T>)
 
+    /// <summary>Splits the set into two sets, by applying the given partitioning function
+    /// to each element. Returns <c>Choice1Of2</c> elements in the first set and
+    /// <c>Choice2Of2</c> elements in the second set.</summary>
+    ///
+    /// <param name="partitioner">The function to transform and classify each input element into one of two output types.</param>
+    /// <param name="set">The input set.</param>
+    ///
+    /// <returns>A tuple of two sets. The first containing values from <c>Choice1Of2</c> results and the second
+    /// containing values from <c>Choice2Of2</c> results.</returns>
+    ///
+    /// <example id="set-partitionWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = Set.ofList [1; 2; 3; 4; 5]
+    ///
+    /// let evens, odds =
+    ///     inputs |> Set.partitionWith (fun x ->
+    ///         if x % 2 = 0 then Choice1Of2 (x * 10)
+    ///         else Choice2Of2 (string x))
+    /// </code>
+    /// Evaluates <c>evens</c> to <c>set [20; 40]</c> and <c>odds</c> to <c>set ["1"; "3"; "5"]</c>.
+    /// </example>
+    ///
+    /// <remarks>This is an O(n log n) operation, where n is the number of elements in the set.</remarks>
+    [<CompiledName("PartitionWith")>]
+    val partitionWith: partitioner: ('T -> Choice<'T1, 'T2>) -> set: Set<'T> -> Set<'T1> * Set<'T2>
+
     /// <summary>Returns a new set with the given element removed. No exception is raised if
     /// the set doesn't contain the given element.</summary>
     ///

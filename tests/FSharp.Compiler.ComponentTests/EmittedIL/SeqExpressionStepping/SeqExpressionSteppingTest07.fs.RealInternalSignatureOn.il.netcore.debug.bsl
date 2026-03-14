@@ -205,28 +205,28 @@
     IL_0001:  stloc.0
     IL_0002:  ldc.i4.0
     IL_0003:  stloc.1
-    IL_0004:  br.s       IL_0022
+    IL_0004:  br.s       IL_001e
 
     IL_0006:  ldloc.0
     IL_0007:  ldloc.1
-    IL_0008:  ldelem     [runtime]System.Int32
-    IL_000d:  stloc.2
-    IL_000e:  ldstr      "{0}"
-    IL_0013:  ldloc.2
-    IL_0014:  box        [runtime]System.Int32
-    IL_0019:  call       void [runtime]System.Console::WriteLine(string,
+    IL_0008:  ldelem.i4
+    IL_0009:  stloc.2
+    IL_000a:  ldstr      "{0}"
+    IL_000f:  ldloc.2
+    IL_0010:  box        [runtime]System.Int32
+    IL_0015:  call       void [runtime]System.Console::WriteLine(string,
                                                                         object)
+    IL_001a:  ldloc.1
+    IL_001b:  ldc.i4.1
+    IL_001c:  add
+    IL_001d:  stloc.1
     IL_001e:  ldloc.1
-    IL_001f:  ldc.i4.1
-    IL_0020:  add
-    IL_0021:  stloc.1
-    IL_0022:  ldloc.1
-    IL_0023:  ldloc.0
-    IL_0024:  ldlen
-    IL_0025:  conv.i4
-    IL_0026:  blt.s      IL_0006
+    IL_001f:  ldloc.0
+    IL_0020:  ldlen
+    IL_0021:  conv.i4
+    IL_0022:  blt.s      IL_0006
 
-    IL_0028:  ret
+    IL_0024:  ret
   } 
 
   .method public static void  testSimpleForEachArrayLoopWithTwoStatements(int32[] inp) cil managed
@@ -240,33 +240,33 @@
     IL_0001:  stloc.0
     IL_0002:  ldc.i4.0
     IL_0003:  stloc.1
-    IL_0004:  br.s       IL_0032
+    IL_0004:  br.s       IL_002e
 
     IL_0006:  ldloc.0
     IL_0007:  ldloc.1
-    IL_0008:  ldelem     [runtime]System.Int32
-    IL_000d:  stloc.2
-    IL_000e:  ldstr      "{0}"
-    IL_0013:  ldloc.2
-    IL_0014:  box        [runtime]System.Int32
-    IL_0019:  call       void [runtime]System.Console::WriteLine(string,
+    IL_0008:  ldelem.i4
+    IL_0009:  stloc.2
+    IL_000a:  ldstr      "{0}"
+    IL_000f:  ldloc.2
+    IL_0010:  box        [runtime]System.Int32
+    IL_0015:  call       void [runtime]System.Console::WriteLine(string,
                                                                         object)
-    IL_001e:  ldstr      "{0}"
-    IL_0023:  ldloc.2
-    IL_0024:  box        [runtime]System.Int32
-    IL_0029:  call       void [runtime]System.Console::WriteLine(string,
+    IL_001a:  ldstr      "{0}"
+    IL_001f:  ldloc.2
+    IL_0020:  box        [runtime]System.Int32
+    IL_0025:  call       void [runtime]System.Console::WriteLine(string,
                                                                         object)
+    IL_002a:  ldloc.1
+    IL_002b:  ldc.i4.1
+    IL_002c:  add
+    IL_002d:  stloc.1
     IL_002e:  ldloc.1
-    IL_002f:  ldc.i4.1
-    IL_0030:  add
-    IL_0031:  stloc.1
-    IL_0032:  ldloc.1
-    IL_0033:  ldloc.0
-    IL_0034:  ldlen
-    IL_0035:  conv.i4
-    IL_0036:  blt.s      IL_0006
+    IL_002f:  ldloc.0
+    IL_0030:  ldlen
+    IL_0031:  conv.i4
+    IL_0032:  blt.s      IL_0006
 
-    IL_0038:  ret
+    IL_0034:  ret
   } 
 
   .method public static void  testSimpleForEachListLoopWithOneStatement(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> inp) cil managed
@@ -727,7 +727,7 @@
     IL_000c:  ret
   } 
 
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  4
@@ -804,7 +804,6 @@
   } 
 
 } 
-
 
 
 

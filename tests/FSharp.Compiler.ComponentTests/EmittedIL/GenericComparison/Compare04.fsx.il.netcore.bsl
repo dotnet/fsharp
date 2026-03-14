@@ -22,16 +22,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -65,7 +55,7 @@
       IL_0003:  nop
       IL_0004:  ldc.i4.0
       IL_0005:  stloc.1
-      IL_0006:  br         IL_0092
+      IL_0006:  br         IL_0097
 
       IL_000b:  ldstr      "5"
       IL_0010:  ldstr      "5"
@@ -73,57 +63,59 @@
                                                                             string)
       IL_001a:  stloc.2
       IL_001b:  ldloc.2
-      IL_001c:  brfalse.s  IL_0022
+      IL_001c:  brfalse.s  IL_0025
 
       IL_001e:  ldloc.2
       IL_001f:  nop
-      IL_0020:  br.s       IL_008d
+      IL_0020:  br         IL_0092
 
-      IL_0022:  ldc.r8     6.0999999999999996
-      IL_002b:  ldc.r8     7.0999999999999996
-      IL_0034:  clt
-      IL_0036:  brfalse.s  IL_003c
+      IL_0025:  ldc.r8     6.0999999999999996
+      IL_002e:  ldc.r8     7.0999999999999996
+      IL_0037:  clt
+      IL_0039:  brfalse.s  IL_003f
 
-      IL_0038:  ldc.i4.m1
-      IL_0039:  nop
-      IL_003a:  br.s       IL_008d
+      IL_003b:  ldc.i4.m1
+      IL_003c:  nop
+      IL_003d:  br.s       IL_0092
 
-      IL_003c:  ldc.r8     6.0999999999999996
-      IL_0045:  ldc.r8     7.0999999999999996
-      IL_004e:  cgt
-      IL_0050:  brfalse.s  IL_0056
+      IL_003f:  ldc.r8     6.0999999999999996
+      IL_0048:  ldc.r8     7.0999999999999996
+      IL_0051:  cgt
+      IL_0053:  brfalse.s  IL_0059
 
-      IL_0052:  ldc.i4.1
-      IL_0053:  nop
-      IL_0054:  br.s       IL_008d
+      IL_0055:  ldc.i4.1
+      IL_0056:  nop
+      IL_0057:  br.s       IL_0092
 
-      IL_0056:  ldc.r8     6.0999999999999996
-      IL_005f:  ldc.r8     7.0999999999999996
-      IL_0068:  ceq
-      IL_006a:  brfalse.s  IL_0070
+      IL_0059:  ldc.r8     6.0999999999999996
+      IL_0062:  ldc.r8     7.0999999999999996
+      IL_006b:  ceq
+      IL_006d:  brfalse.s  IL_0073
 
-      IL_006c:  ldc.i4.0
-      IL_006d:  nop
-      IL_006e:  br.s       IL_008d
+      IL_006f:  ldc.i4.0
+      IL_0070:  nop
+      IL_0071:  br.s       IL_0092
 
-      IL_0070:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0075:  ldc.r8     6.0999999999999996
-      IL_007e:  ldc.r8     7.0999999999999996
-      IL_0087:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [runtime]System.Collections.IComparer,
+      IL_0073:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0078:  ldc.r8     6.0999999999999996
+      IL_0081:  ldc.r8     7.0999999999999996
+      IL_008a:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [runtime]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
-      IL_008c:  nop
-      IL_008d:  stloc.0
-      IL_008e:  ldloc.1
-      IL_008f:  ldc.i4.1
-      IL_0090:  add
-      IL_0091:  stloc.1
-      IL_0092:  ldloc.1
-      IL_0093:  ldc.i4     0x989681
-      IL_0098:  blt        IL_000b
+      IL_008f:  nop
+      IL_0090:  br.s       IL_0092
 
-      IL_009d:  ldloc.0
-      IL_009e:  ret
+      IL_0092:  stloc.0
+      IL_0093:  ldloc.1
+      IL_0094:  ldc.i4.1
+      IL_0095:  add
+      IL_0096:  stloc.1
+      IL_0097:  ldloc.1
+      IL_0098:  ldc.i4     0x989681
+      IL_009d:  blt        IL_000b
+
+      IL_00a2:  ldloc.0
+      IL_00a3:  ret
     } 
 
   } 
@@ -142,7 +134,6 @@
   } 
 
 } 
-
 
 
 
