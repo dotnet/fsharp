@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #Records 
-#light
+
 
 // Test ability to match records even if a subset of tags are specified.
 

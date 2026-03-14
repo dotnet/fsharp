@@ -31,7 +31,7 @@ let private sourceFile fileName content (dependencies: Set<int>) =
             Content = content
         }
 
-let internal scenarios =
+let internal compilingScenarios =
     [
         scenario
             "Link via full open statement"
@@ -1085,4 +1085,263 @@ module Y = global.Z.N
                     """
                     (set [| 0 |])
             ]
+        scenario
+            "Script compilation with #load and downstream files"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module LibA
+
+type A = { Value: int }
+
+let inc x = x + 1
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module LibB
+
+let append s i = s + string i
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "Run.fsx"
+                    """
+namespace Script
+
+#load "A.fs"
+#load "B.fs"
+
+open LibA
+open LibB
+
+module ScriptModule =
+        let compute s =
+            let a = inc 41
+            append s a
+"""
+                    (set [| 1 |])
+                sourceFile
+                    "Independent.fs"
+                    """
+module Independent
+
+let z = 0
+"""
+                    Set.empty
+                sourceFile
+                    "DependsOnScript.fs"
+                    """
+module Consumer
+
+open Script.ScriptModule
+
+let result = compute "ok"
+"""
+                    (set [| 2 |])
+                sourceFile
+                    "AlsoDependsOnScript.fs"
+                    """
+module AnotherConsumer
+
+let value = Script.ScriptModule.compute "hi"
+"""
+                    (set [| 2 |])
+            ]
+        scenario
+            "Sub-namespace opens parent namespace with types and modules"
+            [
+                sourceFile
+                    "Types.fs"
+                    """
+namespace Nu
+
+type GameTime =
+    { Value: float }
+    static member ofSeconds (s: float) = { Value = s }
+"""
+                    Set.empty
+                sourceFile
+                    "Assets.fs"
+                    """
+namespace Nu
+
+module Assets =
+    module Default =
+        let Black = "black"
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "Constants.fs"
+                    """
+namespace Nu.Constants
+open Nu
+
+module Dissolve =
+    let x = Assets.Default.Black
+"""
+                    (set [| 0; 1 |])
+            ]
+        scenario
+            "Sub-namespace opens parent namespace and uses type constructor"
+            [
+                sourceFile
+                    "Types.fs"
+                    """
+namespace Nu
+
+type GameTime =
+    { Value: float }
+    static member ofSeconds (s: float) = { Value = s }
+"""
+                    Set.empty
+                sourceFile
+                    "Constants.fs"
+                    """
+namespace Nu.Constants
+open Nu
+
+module Defaults =
+    let IncomingTime = GameTime.ofSeconds 0.5
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Sub-namespace opens parent namespace with only modules"
+            [
+                sourceFile
+                    "Modules.fs"
+                    """
+namespace Nu
+
+module Assets =
+    module Default =
+        let Black = "black"
+"""
+                    Set.empty
+                sourceFile
+                    "Consumer.fs"
+                    """
+namespace Nu.Sub
+open Nu
+
+module M =
+    let x = Assets.Default.Black
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Multiple namespace declarations in one file with AutoOpen"
+            [
+                sourceFile
+                    "Entity.fs"
+                    """
+namespace Nu
+
+type Entity = { Name: string }
+"""
+                    Set.empty
+                sourceFile
+                    "BlockMap.fs"
+                    """
+namespace Nu.BlockMap
+
+module BlockMapCore =
+    let defaultSize = 32
+
+namespace Nu
+
+[<AutoOpen>]
+module BlockMapExtensions =
+    let getBlockMapSize () = 42
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "Consumer.fs"
+                    """
+namespace Nu.Game
+open Nu
+
+module GameLogic =
+    let size = getBlockMapSize ()
+    let e : Entity = { Name = "test" }
+"""
+                    (set [| 0; 1 |])
+            ]
+        // CompilationRepresentation(ModuleSuffix) on Assets2 avoids FS0248 at the CLR level.
+        scenario
+            "Same module name defined in multiple files of the same namespace"
+            [
+                sourceFile
+                    "Assets1.fs"
+                    """
+namespace Nu
+
+[<RequireQualifiedAccess>]
+module Assets =
+    module Default =
+        let PackageName = "Default"
+"""
+                    Set.empty
+                sourceFile
+                    "Assets2.fs"
+                    """
+namespace Nu
+
+[<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Assets =
+    module Default =
+        let Black = "black"
+"""
+                    Set.empty
+                sourceFile
+                    "Constants.fs"
+                    """
+namespace Nu.Constants
+open Nu
+
+module Dissolve =
+    let x = Assets.Default.Black
+"""
+                    (set [| 0; 1 |])
+            ]
     ]
+
+
+// Implementation given before signature file. This scenario will not compile, but is supported.
+// Produced graph should have a necessary dependecy to trigger expected errors. 
+let internal misorderedScenario =
+    scenario
+        "Signature file follows implementation"
+        [
+            sourceFile
+                "A.fs"
+                """
+    module A
+
+    let a x = x + 1
+    """
+                Set.empty
+            sourceFile
+                "B.fs"
+                """
+    module B
+
+    let b = A.a 42
+    """
+                (set [| 0 |])
+            sourceFile
+                "A.fsi"
+                """
+    module A
+
+    val a: int -> int
+    """
+                // We add a backward link from implementation to signature, to correctly trigger
+                // FS0238 (implementation already given).
+                (set [| 0 |])
+        ]
+
+let internal scenarios = misorderedScenario :: compilingScenarios

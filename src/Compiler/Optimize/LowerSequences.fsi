@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.LowerSequenceExpressions
 
 open FSharp.Compiler.Import
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Text

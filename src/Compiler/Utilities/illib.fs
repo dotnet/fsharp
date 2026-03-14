@@ -96,22 +96,22 @@ module internal PervasiveAutoOpens =
 
     type String with
 
-        member inline x.StartsWithOrdinal value =
+        member inline x.StartsWithOrdinal(value: string) =
             x.StartsWith(value, StringComparison.Ordinal)
 
-        member inline x.EndsWithOrdinal value =
+        member inline x.EndsWithOrdinal(value: string) =
             x.EndsWith(value, StringComparison.Ordinal)
 
-        member inline x.EndsWithOrdinalIgnoreCase value =
+        member inline x.EndsWithOrdinalIgnoreCase(value: string) =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
         member inline x.IndexOfOrdinal(value: string) =
             x.IndexOf(value, StringComparison.Ordinal)
 
-        member inline x.IndexOfOrdinal(value, startIndex) =
+        member inline x.IndexOfOrdinal(value: string, startIndex) =
             x.IndexOf(value, startIndex, StringComparison.Ordinal)
 
-        member inline x.IndexOfOrdinal(value, startIndex, count) =
+        member inline x.IndexOfOrdinal(value: string, startIndex, count) =
             x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
 
     /// Get an initialization hole
@@ -121,11 +121,11 @@ module internal PervasiveAutoOpens =
         | Some x -> x
 
     let reportTime =
-        let mutable tPrev: IDisposable MaybeNull = null
+        let mutable tPrev: (IDisposable | null) = null
 
         fun descr ->
             if isNotNull tPrev then
-                tPrev.Dispose()
+                (!!tPrev).Dispose()
                 tPrev <- null
 
             if descr <> "Finish" then
@@ -144,7 +144,7 @@ module internal PervasiveAutoOpens =
 
             let task = ts.Task
 
-            Async.StartWithContinuations(computation, (ts.SetResult), (ts.SetException), (fun _ -> ts.SetCanceled()), cancellationToken)
+            Async.StartWithContinuations(computation, ts.SetResult, ts.SetException, (fun _ -> ts.SetCanceled()), cancellationToken)
 
             try
                 task.Result
@@ -155,8 +155,8 @@ module internal PervasiveAutoOpens =
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
     let syncObj = obj ()
 
-    let mutable arrayStore: _ array MaybeNull = null
-    let mutable dictStore: _ MaybeNull = null
+    let mutable arrayStore: (_ array | null) = null
+    let mutable dictStore: (_ | null) = null
 
     let mutable func = f
 
@@ -944,7 +944,7 @@ type UniqueStampGenerator<'T when 'T: equality and 'T: not null>() =
     let encodeTable = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
     let mutable nItems = -1
 
-    let computeFunc = Func<'T, _>(fun _ -> lazy (Interlocked.Increment(&nItems)))
+    let computeFunc = Func<'T, _>(fun _ -> lazy Interlocked.Increment(&nItems))
 
     member _.Encode str =
         encodeTable.GetOrAdd(str, computeFunc).Value
@@ -970,7 +970,7 @@ type MemoizationTable<'T, 'U when 'T: not null>(name, compute: 'T -> 'U, keyComp
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
 type internal StampedDictionary<'T, 'U when 'T: not null>(keyComparer: IEqualityComparer<'T>) =
-    let table = new ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
+    let table = ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
     let mutable count = -1
 
     member _.Add(key, value) =
@@ -980,7 +980,7 @@ type internal StampedDictionary<'T, 'U when 'T: not null>(keyComparer: IEquality
     member _.UpdateIfExists(key, valueReplaceFunc) =
         match table.TryGetValue key with
         | true, v ->
-            let (stamp, oldVal) = v.Value
+            let stamp, oldVal = v.Value
 
             match valueReplaceFunc oldVal with
             | None -> ()
@@ -1044,7 +1044,12 @@ type LazyWithContext<'T, 'Ctxt> =
 
     member x.Force(ctxt: 'Ctxt) =
         match x.funcOrException with
-        | null -> x.value
+        | null ->
+            // Ensure we read the latest value after seeing funcOrException as null.
+            // On weakly-ordered architectures like ARM64, without this barrier the CPU
+            // can reorder the reads and we may observe a stale (default/null) x.value.
+            Thread.MemoryBarrier()
+            x.value
         | _ ->
             // Enter the lock in case another thread is in the process of evaluating the result
             Monitor.Enter x
@@ -1061,11 +1066,16 @@ type LazyWithContext<'T, 'Ctxt> =
             // Re-raise the original exception
             raise (x.findOriginalException res.Exception)
         | :? ('Ctxt -> 'T) as f ->
-            x.funcOrException <- box (LazyWithContextFailure.Undefined)
+            x.funcOrException <- box LazyWithContextFailure.Undefined
 
             try
                 let res = f ctxt
                 x.value <- res
+                // Ensure the write to x.value is globally visible before funcOrException
+                // is set to null, so that readers on the fast path of Force see the result.
+                // Without this barrier, ARM64 may reorder the stores causing readers to see
+                // funcOrException as null but x.value as stale (Unchecked.defaultof).
+                Thread.MemoryBarrier()
                 x.funcOrException <- null
                 res
             with RecoverableException exn ->

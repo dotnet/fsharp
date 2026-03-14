@@ -5,17 +5,13 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
-open System.IO
-open System.Threading
-open System.Threading.Tasks
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.Caches
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
-open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
@@ -509,6 +505,9 @@ type public FSharpChecker =
 
     [<Obsolete("Please create an instance of FSharpChecker using FSharpChecker.Create")>]
     static member Instance: FSharpChecker
+
+    /// Creates a listener for overload resolution cache metrics, aggregating across all compilations.
+    static member internal CreateOverloadCacheMetricsListener: unit -> CacheMetrics.CacheMetricsListener
 
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver

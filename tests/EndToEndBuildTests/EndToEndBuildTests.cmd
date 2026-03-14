@@ -31,6 +31,10 @@ echo %__scriptpath%ComboProvider\TestComboProvider.cmd -c %configuration%
 call %__scriptpath%ComboProvider\TestComboProvider.cmd -c %configuration%
 if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
+echo %__scriptpath%DesignTimeProviderPackaging\TestDesignTimeProviderPackaging.cmd -c %configuration%
+call %__scriptpath%DesignTimeProviderPackaging\TestDesignTimeProviderPackaging.cmd -c %configuration%
+if ERRORLEVEL 1 echo Error: TestDesignTimeProviderPackaging failed  && goto :failure
+
 :success
 endlocal
 echo Succeeded

@@ -1,8 +1,6 @@
 ﻿namespace FSharp.Compiler.Service.Tests
 
 open System
-open System.IO
-open System.Text
 open Xunit
 open FSharp.Test
 
@@ -58,7 +56,7 @@ module ProductVersionTest =
         ComputeProductVersion (fun _ -> Some "") (ILVersionInfo(3us,2us,1us,0us)) |> Assert.shouldBe "3.2.1.0"
 
     let internal validValues () =
-        let max = System.UInt16.MaxValue
+        let max = UInt16.MaxValue
         [ "1.2.3.4", ILVersionInfo(1us,2us,3us,4us)
           "1.0.3.4", ILVersionInfo(1us,0us,3us,4us)
           "7.0.0.4-SomeExtraInformation", ILVersionInfo(7us,0us,0us,4us)
@@ -68,7 +66,7 @@ module ProductVersionTest =
 
     [<Fact>]
     let ``should use values if valid major.minor.revision.build version format`` () =
-        for (v, expected) in validValues() do 
+        for v, expected in validValues() do 
             v |> ConvertProductVersionToILVersionInfo |> Assert.shouldBe expected
 
     let internal invalidValues () =
@@ -82,9 +80,9 @@ module ProductVersionTest =
           "9.3", ILVersionInfo(9us,3us,0us,0us)
           "", ILVersionInfo(0us,0us,0us,0us)
           "70000.80000.90000.100000", ILVersionInfo(0us,0us,0us,0us)
-          (sprintf "%d.70000.80000.90000" System.UInt16.MaxValue), ILVersionInfo(System.UInt16.MaxValue,0us,0us,0us) ]
+          (sprintf "%d.70000.80000.90000" UInt16.MaxValue), ILVersionInfo(UInt16.MaxValue,0us,0us,0us) ]
 
     [<Fact>]
     let ``should zero starting from first invalid version part`` () = 
-        for (v, expected) in invalidValues() do
+        for v, expected in invalidValues() do
             v |> ConvertProductVersionToILVersionInfo |> Assert.shouldBe expected

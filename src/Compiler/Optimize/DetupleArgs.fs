@@ -4,7 +4,6 @@ module internal FSharp.Compiler.Detuple
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
@@ -13,8 +12,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.Xml
-
-let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
 
 // This pass has one aim.
 // - to eliminate tuples allocated at call sites (due to uncurried style)
@@ -689,7 +686,7 @@ let eligibleVal g m (v: Val) =
     && not //  .IsCompiledAsTopLevel &&
         v.IsCompiledAsTopLevel
 
-let determineTransforms g (z: GlobalUsageAnalysis.Results) =
+let determineTransforms g (z: Results) =
     let selectTransform (f: Val) sites =
         if not (eligibleVal g f.Range f) then
             None
@@ -943,7 +940,7 @@ let passImplFile penv assembly =
           PreInterceptBinding = None
           PostTransform = postTransformExpr penv
           RewriteQuotations = false
-          StackGuard = StackGuard(DetupleRewriteStackGuardDepth, "RewriteImplFile") }
+          StackGuard = StackGuard("RewriteImplFile") }
 
     assembly |> RewriteImplFile rwenv
 

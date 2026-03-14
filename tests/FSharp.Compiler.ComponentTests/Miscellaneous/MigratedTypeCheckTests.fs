@@ -6,17 +6,11 @@ open FSharp.Test
 open FSharp.Test.ScriptHelpers 
 open Miscellaneous.FsharpSuiteMigrated.TestFrameworkAdapter  
 
-[<Fact>]
-let misc () = singleTestBuildAndRunVersion "typecheck/misc" FSC_OPTIMIZED LangVersion.SupportsMl
-
 [<FactForDESKTOP(Skip = "Failing in new test framework")>]
 let ``type check neg01`` () = singleNegTest ( "typecheck/sigs") "neg01"
 
 [<FactForDESKTOP>]
-let ``type check neg02`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V60 "neg02"
-
-[<FactForDESKTOP(Skip = "Failing in new test framework")>]
-let ``type check neg03`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.SupportsMl "neg03"
+let ``type check neg02`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V80 "neg02"
 
 [<FactForDESKTOP>]
 let ``type check neg04`` () = singleNegTest ( "typecheck/sigs") "neg04"
@@ -78,10 +72,7 @@ let ``type check neg19`` () = singleNegTest ( "typecheck/sigs") "neg19"
 [<FactForDESKTOP>]
 let ``type check neg20`` () = singleNegTest ( "typecheck/sigs") "neg20"
 
-[<FactForDESKTOP>]
-let ``type check neg20 version 5_0`` () =
-    let cfg =  "typecheck/sigs/version50"
-    singleVersionedNegTest cfg LangVersion.V50 "neg20"
+
 
 [<FactForDESKTOP>]
 let ``type check neg21`` () = singleNegTest ( "typecheck/sigs") "neg21"
@@ -191,7 +182,7 @@ let ``type check neg55`` () = singleNegTest ( "typecheck/sigs") "neg55"
 [<FactForDESKTOP>]
 let ``type check neg56`` () = singleNegTest ( "typecheck/sigs") "neg56"
 
-[<FactForDESKTOP(Skip = "Failing in new test framework")>]
+[<Fact>]
 let ``type check neg56_a`` () = singleNegTest ( "typecheck/sigs") "neg56_a"
 
 [<FactForDESKTOP>]
@@ -229,9 +220,6 @@ let ``type check neg66`` () = singleNegTest ( "typecheck/sigs") "neg66"
 
 [<FactForDESKTOP>]
 let ``type check neg67`` () = singleNegTest ( "typecheck/sigs") "neg67"
-
-[<FactForDESKTOP>]
-let ``type check neg68`` () = singleNegTest ( "typecheck/sigs") "neg68"
 
 [<FactForDESKTOP>]
 let ``type check neg69`` () = singleNegTest ( "typecheck/sigs") "neg69"
@@ -378,10 +366,10 @@ let ``type check neg117`` () = singleNegTest ( "typecheck/sigs") "neg117"
 let ``type check neg118`` () = singleNegTest ( "typecheck/sigs") "neg118"
 
 [<FactForDESKTOP>]
-let ``type check neg119a`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V60 "neg119a"
+let ``type check neg119a`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V80 "neg119a"
 
 [<FactForDESKTOP>]
-let ``type check neg119b`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V70 "neg119b"
+let ``type check neg119b`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V80 "neg119b"
 
 [<FactForDESKTOP>]
 let ``type check neg120`` () = singleNegTest ( "typecheck/sigs") "neg120"
@@ -417,10 +405,10 @@ let ``type check neg129`` () = singleNegTest ( "typecheck/sigs") "neg129"
 let ``type check neg130`` () = singleNegTest ( "typecheck/sigs") "neg130"
 
 [<FactForDESKTOP>]
-let ``type check neg131`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V60 "neg131"
+let ``type check neg131`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V80 "neg131"
 
 [<FactForDESKTOP>]
-let ``type check neg132`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V50 "neg132"
+let ``type check neg132`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V80 "neg132"
     
 [<FactForDESKTOP>]
 let ``type check neg133`` () = singleNegTest ( "typecheck/sigs") "neg133"

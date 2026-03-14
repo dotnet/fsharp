@@ -2,7 +2,7 @@
 // Implicitly implemented Equals should not throw
 // Regression test for FSHARP1.0:1633
 // Records
-#light
+
 
 type R = { A : string } 
 type S = { B : int } 

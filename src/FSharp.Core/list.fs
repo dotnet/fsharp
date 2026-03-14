@@ -4,7 +4,6 @@ namespace Microsoft.FSharp.Collections
 
 open System
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
@@ -574,6 +573,18 @@ module List =
     let partition predicate list =
         Microsoft.FSharp.Primitives.Basics.List.partition predicate list
 
+    [<CompiledName("PartitionWith")>]
+    let inline partitionWith ([<InlineIfLambda>] partitioner: 'T -> Choice<'T1, 'T2>) (list: 'T list) =
+        let mutable collector1 = ListCollector()
+        let mutable collector2 = ListCollector()
+
+        for x in list do
+            match partitioner x with
+            | Choice1Of2 v -> collector1.Add v
+            | Choice2Of2 v -> collector2.Add v
+
+        collector1.Close(), collector2.Close()
+
     [<CompiledName("Unzip")>]
     let unzip list =
         Microsoft.FSharp.Primitives.Basics.List.unzip list
@@ -714,9 +725,9 @@ module List =
     [<CompiledName("Sum")>]
     let inline sum (list: 'T list) =
         match list with
-        | [] -> LanguagePrimitives.GenericZero<'T>
+        | [] -> GenericZero<'T>
         | t ->
-            let mutable acc = LanguagePrimitives.GenericZero<'T>
+            let mutable acc = GenericZero<'T>
 
             for x in t do
                 acc <- Checked.(+) acc x
@@ -726,9 +737,9 @@ module List =
     [<CompiledName("SumBy")>]
     let inline sumBy ([<InlineIfLambda>] projection: 'T -> 'U) (list: 'T list) =
         match list with
-        | [] -> LanguagePrimitives.GenericZero<'U>
+        | [] -> GenericZero<'U>
         | t ->
-            let mutable acc = LanguagePrimitives.GenericZero<'U>
+            let mutable acc = GenericZero<'U>
 
             for x in t do
                 acc <- Checked.(+) acc (projection x)
@@ -800,28 +811,28 @@ module List =
         match list with
         | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
         | xs ->
-            let mutable sum = LanguagePrimitives.GenericZero<'T>
+            let mutable sum = GenericZero<'T>
             let mutable count = 0
 
             for x in xs do
                 sum <- Checked.(+) sum x
                 count <- count + 1
 
-            LanguagePrimitives.DivideByInt sum count
+            DivideByInt sum count
 
     [<CompiledName("AverageBy")>]
     let inline averageBy ([<InlineIfLambda>] projection: 'T -> 'U) (list: 'T list) =
         match list with
         | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
         | xs ->
-            let mutable sum = LanguagePrimitives.GenericZero<'U>
+            let mutable sum = GenericZero<'U>
             let mutable count = 0
 
             for x in xs do
                 sum <- Checked.(+) sum (projection x)
                 count <- count + 1
 
-            LanguagePrimitives.DivideByInt sum count
+            DivideByInt sum count
 
     [<CompiledName("Collect")>]
     let collect mapping list =

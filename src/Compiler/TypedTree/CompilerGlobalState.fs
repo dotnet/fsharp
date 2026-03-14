@@ -18,18 +18,23 @@ open FSharp.Compiler.Text
 /// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
 /// are used to host multiple concurrent instances of compilation.
 type NiceNameGenerator() =    
-    let basicNameCounts = ConcurrentDictionary<string, int ref>(max Environment.ProcessorCount 1, 127)
+    let basicNameCounts = ConcurrentDictionary<struct (string * int), int ref>(max Environment.ProcessorCount 1, 127)
     // Cache this as a delegate.
-    let basicNameCountsAddDelegate = Func<string, int ref>(fun _ -> ref 0)
+    let basicNameCountsAddDelegate = Func<struct (string * int), int ref>(fun _ -> ref 0)
+
+    let increment basicName (m: range) =
+        let key = struct (basicName, m.FileIndex)
+        let countCell = basicNameCounts.GetOrAdd(key, basicNameCountsAddDelegate)
+        Interlocked.Increment(countCell)
    
     member _.FreshCompilerGeneratedNameOfBasicName (basicName, m: range) =
-        let countCell = basicNameCounts.GetOrAdd(basicName, basicNameCountsAddDelegate)
-        let count = Interlocked.Increment(countCell)
-
-        CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count-1) with 0 -> "" | n -> "-" + string n))
+        let count = increment basicName m
+        CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count - 1) with 0 -> "" | n -> "-" + string n))
 
     member this.FreshCompilerGeneratedName (name, m: range) =
         this.FreshCompilerGeneratedNameOfBasicName (GetBasicNameOfPossibleCompilerGeneratedName name, m)
+
+    member _.IncrementOnly(name: string, m: range) = increment name m
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
@@ -40,7 +45,7 @@ type NiceNameGenerator() =
 type StableNiceNameGenerator() = 
 
     let niceNames = ConcurrentDictionary<string * int64, string>(max Environment.ProcessorCount 1, 127)
-    let innerGenerator = new NiceNameGenerator()
+    let innerGenerator = NiceNameGenerator()
 
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
@@ -68,11 +73,11 @@ type Unique = int64
 
 //++GLOBAL MUTABLE STATE (concurrency-safe)
 let mutable private uniqueCount = 0L
-let newUnique() = System.Threading.Interlocked.Increment &uniqueCount
+let newUnique() = Interlocked.Increment &uniqueCount
 
 /// Unique name generator for stamps attached to to val_specs, tycon_specs etc.
 //++GLOBAL MUTABLE STATE (concurrency-safe)
 let mutable private stampCount = 0L
 let newStamp() =
-    let stamp = System.Threading.Interlocked.Increment &stampCount
+    let stamp = Interlocked.Increment &stampCount
     stamp

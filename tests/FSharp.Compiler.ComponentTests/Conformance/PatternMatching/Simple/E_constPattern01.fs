@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching 
-#light
+
 
 //<Status expect=warning>FS0025: Incomplete pattern matches on this expression. The value '7' will not be matched</Status>
 

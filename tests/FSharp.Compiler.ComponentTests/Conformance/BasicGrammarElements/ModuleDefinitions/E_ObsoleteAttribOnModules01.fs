@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypesAndModules #Modules 
-#light
+
 // Regression test for: FSharp1.0:2030 - We should honor System.Obsolete on modules
 
 

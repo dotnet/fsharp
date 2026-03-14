@@ -1,5 +1,5 @@
 // #NoMono #NoMT #CodeGen #EmittedIL   
-#light
+
 let test1() =
    try 
       System.Console.WriteLine() 

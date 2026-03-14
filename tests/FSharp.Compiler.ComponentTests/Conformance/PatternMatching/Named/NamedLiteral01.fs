@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #ActivePatterns 
-#light
+
 
 // Match against an enum const defined in another assembly
 open System

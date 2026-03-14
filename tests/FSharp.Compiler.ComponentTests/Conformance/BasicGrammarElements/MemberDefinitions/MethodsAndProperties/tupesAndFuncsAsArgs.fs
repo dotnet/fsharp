@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
-#light
+
 
 type Foo() =
     static member ExecuteFunction (func : (int * string) -> bool) (args : (int * string)) =

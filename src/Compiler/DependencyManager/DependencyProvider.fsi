@@ -105,13 +105,16 @@ type DependencyProvider =
             DependencyProvider
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
-    member GetRegisteredDependencyManagerHelpText: string seq * string MaybeNull * ResolvingErrorReport -> string[]
+    member GetRegisteredDependencyManagerHelpText:
+        string seq * (string | null) * sdkDirOverride: string option * ResolvingErrorReport -> string[]
 
     /// Clear the DependencyManager results caches
-    member ClearResultsCache: string seq * string MaybeNull * ResolvingErrorReport -> unit
+    member ClearResultsCache:
+        string seq * (string | null) * sdkDirOverride: string option * ResolvingErrorReport -> unit
 
     /// Returns a formatted error message for the host to present
-    member CreatePackageManagerUnknownError: string seq * string * string * ResolvingErrorReport -> int * string
+    member CreatePackageManagerUnknownError:
+        string seq * string * sdkDirOverride: string option * string * ResolvingErrorReport -> int * string
 
     /// Resolve reference for a list of package manager lines
     member Resolve:
@@ -120,7 +123,7 @@ type DependencyProvider =
         packageManagerTextLines: (string * string) seq *
         reportError: ResolvingErrorReport *
         executionTfm: string *
-        [<Optional; DefaultParameterValue(null: string MaybeNull)>] executionRid: string MaybeNull *
+        [<Optional; DefaultParameterValue(null: (string | null))>] executionRid: (string | null) *
         [<Optional; DefaultParameterValue("")>] implicitIncludeDir: string *
         [<Optional; DefaultParameterValue("")>] mainScriptName: string *
         [<Optional; DefaultParameterValue("")>] fileName: string *
@@ -129,10 +132,18 @@ type DependencyProvider =
 
     /// Fetch a dependencymanager that supports a specific key
     member TryFindDependencyManagerByKey:
-        compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string ->
+        compilerTools: string seq *
+        outputDir: string *
+        sdkDirOverride: string option *
+        reportError: ResolvingErrorReport *
+        key: string ->
             IDependencyManagerProvider | null
 
     /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
     member TryFindDependencyManagerInPath:
-        compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * path: string ->
+        compilerTools: string seq *
+        outputDir: string *
+        sdkDirOverride: string option *
+        reportError: ResolvingErrorReport *
+        path: string ->
             string | null * IDependencyManagerProvider | null

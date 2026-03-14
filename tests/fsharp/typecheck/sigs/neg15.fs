@@ -89,13 +89,13 @@ module M =
        static member Method34() = noErrorPrivateValueLaterInferredToInvolvePrivateUnionType := [DefaultTagOfPrivateType(3)]
        static member Method35() = noErrorPrivateValueLaterInferredToInvolveInternalUnionType := [DefaultTagOfInternalType(3)]
 
-    type Type with 
+   type Type with 
 
-         // Check we can access private things from an in-file augmentation
-         member        x.NoError51 = x.PrivateProperty
-         member        x.NoError52 = Type.PrivateStaticProperty
-         static member NoError53 = Type.PrivateStaticProperty 
-         static member NoError54 = Type.PrivateStaticMethod() 
+        // Check we can access private things from an in-file augmentation
+        member        x.NoError51 = x.PrivateProperty
+        member        x.NoError52 = Type.PrivateStaticProperty
+        static member NoError53 = Type.PrivateStaticProperty 
+        static member NoError54 = Type.PrivateStaticMethod() 
 
            
 module N =

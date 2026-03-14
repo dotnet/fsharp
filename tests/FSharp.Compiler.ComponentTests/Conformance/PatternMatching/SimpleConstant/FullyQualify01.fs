@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #Constants 
-#light
+
 
 // Verify ability to pattern match against a fully qualified constant or literal
 

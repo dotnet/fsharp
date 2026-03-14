@@ -21,10 +21,8 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
 open type System.MemoryExtensions
-open Import
 
 exception MatchIncomplete of bool * (string * bool) option * range
 exception RuleNeverMatched of range
@@ -690,9 +688,9 @@ let canCompactConstantClass c =
 let discrimWithinSimultaneousClass g amap m discrim prev =
     match discrim, prev with
     | _, [] -> true
-    | DecisionTreeTest.Const _, (DecisionTreeTest.Const _ :: _)
-    | DecisionTreeTest.ArrayLength _, (DecisionTreeTest.ArrayLength _ :: _)
-    | DecisionTreeTest.UnionCase _, (DecisionTreeTest.UnionCase _ :: _) -> true
+    | DecisionTreeTest.Const _, DecisionTreeTest.Const _ :: _
+    | DecisionTreeTest.ArrayLength _, DecisionTreeTest.ArrayLength _ :: _
+    | DecisionTreeTest.UnionCase _, DecisionTreeTest.UnionCase _ :: _ -> true
 
     | DecisionTreeTest.IsNull, _ ->
         // Check that each previous test in the set, if successful, gives some information about this test
@@ -710,7 +708,8 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
             | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 <> Implication.Nothing
             | _ -> false)
 
-    | DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt1, _, _), (DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt2, _, _) :: _) ->
+    | DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt1, _, _),
+      DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt2, _, _) :: _ ->
         match apatVrefOpt1, apatVrefOpt2 with
         | Some (vref1, tinst1), Some (vref2, tinst2) -> valRefEq g vref1 vref2  && not (doesActivePatternHaveFreeTypars g vref1) && List.lengthsEqAndForall2 (typeEquiv g) tinst1 tinst2
         | _ -> false (* for equality purposes these are considered different classes of discriminators! This is because adhoc computed patterns have no identity! *)
@@ -768,8 +767,7 @@ let (|ConstNeedsDefaultCase|_|) c =
 ///   - Compact integer switches become a single switch.  Non-compact integer
 ///     switches, string switches and floating point switches are treated in the
 ///     same way as DecisionTreeTest.IsInst.
-let rec BuildSwitch inpExprOpt g expr edges dflt m =
-    if verbose then dprintf "--> BuildSwitch@%a, #edges = %A, dflt.IsSome = %A\n" outputRange m (List.length edges) (Option.isSome dflt)
+let rec BuildSwitch inpExprOpt g isNullFiltered expr edges dflt m =
     match edges, dflt with
     | [], None      -> failwith "internal error: no edges and no default"
     | [], Some dflt -> dflt
@@ -781,11 +779,13 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     // In this case the 'expr' already holds the result of the 'isinst' test.
 
     | TCase(DecisionTreeTest.IsInst _, success) :: edges, dflt  when Option.isSome inpExprOpt ->
-        TDSwitch(expr, [TCase(DecisionTreeTest.IsNull, BuildSwitch None g expr edges dflt m)], Some success, m)
+        TDSwitch(expr, [TCase(DecisionTreeTest.IsNull, BuildSwitch None g false expr edges dflt m)], Some success, m)
 
     // isnull and isinst tests
     | TCase((DecisionTreeTest.IsNull | DecisionTreeTest.IsInst _), _) as edge :: edges, dflt  ->
-        TDSwitch(expr, [edge], Some (BuildSwitch None g expr edges dflt m), m)
+        // After an IsNull test, in the fallthrough branch (Some), we know the value is not null
+        let nullFiltered = match edge with TCase(DecisionTreeTest.IsNull, _) -> true | _ -> isNullFiltered
+        TDSwitch(expr, [edge], Some (BuildSwitch None g nullFiltered expr edges dflt m), m)
 
     // All these should also always have default cases
     | TCase(DecisionTreeTest.Const ConstNeedsDefaultCase, _) :: _, None ->
@@ -800,7 +800,17 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
                     match discrim with
                     | DecisionTreeTest.ArrayLength(n, _)       ->
                         let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
-                        mkLetBind m bind (mkLazyAnd g m (mkNonNullTest g m vExpr) (mkILAsmCeq g m (mkLdlen g m vExpr) (mkInt g m n)))
+                        // Skip null check if we're in a null-filtered context
+                        let test = mkILAsmCeq g m (mkLdlen g m vExpr) (mkInt g m n)
+                        let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
+                        mkLetBind m bind finalTest
+                    | DecisionTreeTest.Const (Const.String "")  ->
+                        // Optimize empty string check to use null-safe length check
+                        let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
+                        let test = mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)
+                        // Skip null check if we're in a null-filtered context
+                        let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
+                        mkLetBind m bind finalTest
                     | DecisionTreeTest.Const (Const.String _ as c)  ->
                         mkCallEqualsOperator g m g.string_ty testexpr (Expr.Const (c, m, g.string_ty))
                     | DecisionTreeTest.Const (Const.Decimal _ as c)  ->
@@ -992,7 +1002,7 @@ let CompilePatternBasic
     // Add the incomplete or rethrow match clause on demand,
     // printing a warning if necessary (only if it is ever exercised).
     let mutable firstIncompleteMatchClauseWithThrowExpr = None
-    let warningsGenerated = new ResizeArray<CounterExampleType>(2)
+    let warningsGenerated = ResizeArray<CounterExampleType>(2)
     let getIncompleteMatchClause refuted =
         // Emit the incomplete match warning.
         if warnOnIncomplete then
@@ -1153,7 +1163,7 @@ let CompilePatternBasic
                     // OK, build the whole tree and whack on the binding if any
                     let finalDecisionTree =
                         let inpExprToSwitch = (match inpExprOpt with Some vExpr -> vExpr | None -> GetSubExprOfInput subexpr)
-                        let tree = BuildSwitch inpExprOpt g inpExprToSwitch simulSetOfCases defaultTreeOpt mMatch
+                        let tree = BuildSwitch inpExprOpt g false inpExprToSwitch simulSetOfCases defaultTreeOpt mMatch
                         match bindOpt with
                         | None -> tree
                         | Some bind -> TDBind (bind, tree)
@@ -1364,7 +1374,7 @@ let CompilePatternBasic
             let fallthroughPathFrontiers = List.filter (isRefuted >> not) fallthroughPathFrontiers
 
             (* Add to the refuted set *)
-            let refuted = (RefutedInvestigation(path, simulSetOfDiscrims)) :: refuted
+            let refuted = RefutedInvestigation(path, simulSetOfDiscrims) :: refuted
 
             match fallthroughPathFrontiers with
             | [] ->
@@ -1378,7 +1388,7 @@ let CompilePatternBasic
         let (Frontier (i, actives, valMap)) = frontier
 
         if isMemOfActives path actives then
-            let (subExprForActive, patAtActive) = lookupActive path actives
+            let subExprForActive, patAtActive = lookupActive path actives
             let (SubExpr(accessf, ve)) = subExprForActive
 
             let mkSubFrontiers path subAccess subActive argpats pathBuilder =
@@ -1564,7 +1574,7 @@ let CompilePatternBasic
         else
             [frontier]
 
-    and BindProjectionPattern inpActive ((accActive, accValMap) as activeState) =
+    and BindProjectionPattern inpActive (accActive, accValMap as activeState) =
 
         let (Active(inpPath, inpExpr, pat)) = inpActive
         let (SubExpr(inpAccess, inpExprAndVal)) = inpExpr

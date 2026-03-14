@@ -9,7 +9,7 @@
 //<Expects>\(17,33-17,41\).+warning FS0046: The keyword 'tailcall' is reserved for future use by F#</Expects>
 //<Expects>\(18,22-18,30\).+warning FS0046: The keyword 'tailcall' is reserved for future use by F#</Expects>
 
-#light
+
 
 namespace tailcall
     module tailcall = 

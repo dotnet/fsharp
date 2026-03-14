@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
-#light
+
 
 // Verify you can declare an indexer from an interface
 type IAmReadOnly =

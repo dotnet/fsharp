@@ -58,12 +58,12 @@ type internal FxResolver
             let mutable errorslock = obj
             let mutable outputlock = obj
 
-            let outputDataReceived (message: string MaybeNull) =
+            let outputDataReceived (message: string | null) =
                 match message with
                 | Null -> ()
                 | NonNull message -> lock outputlock (fun () -> outputList.Add(message))
 
-            let errorDataReceived (message: string MaybeNull) =
+            let errorDataReceived (message: string | null) =
                 match message with
                 | Null -> ()
                 | NonNull message -> lock errorslock (fun () -> errorsList.Add(message))
@@ -112,7 +112,7 @@ type internal FxResolver
         desiredDotNetSdkVersionForDirectoryCache.GetOrAdd(
             projectDir,
             (fun _ ->
-                match getDotnetHostPath () with
+                match getDotnetHostPath None with
                 | Some dotnetHostPath ->
                     try
                         let workingDir =
@@ -246,7 +246,7 @@ type internal FxResolver
                             getRunningImplementationAssemblyDir (), warnings
                     with e ->
                         let warn =
-                            Error(FSComp.SR.scriptSdkNotDeterminedUnexpected (e.Message), rangeForErrors)
+                            Error(FSComp.SR.scriptSdkNotDeterminedUnexpected e.Message, rangeForErrors)
 
                         let path = getRunningImplementationAssemblyDir ()
                         path, [ warn ]
@@ -256,17 +256,28 @@ type internal FxResolver
 
     let getImplementationAssemblyDir () = implementationAssemblyDir.Force()
 
-    let getFSharpCoreLibraryName = "FSharp.Core"
+    let getFSharpLibImplementationReferences useFsiAuxLib =
+        let getFSharpLibImplementationReference libName =
+            // Use the FSharp.Core/FSharp.Compiler.Interactive.Settings
+            // that is executing with the compiler as a backup reference
+            let getDefaultImplementationReference libName =
+                Path.Combine(getFSharpCompilerLocation (), libName + ".dll")
 
-    let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
+            match sdkDirOverride with
+            | None -> getDefaultImplementationReference libName
+            | Some sdkDirOverride ->
+                let libPath = Path.Combine(sdkDirOverride, "FSharp", libName + ".dll")
 
-    // Use the FSharp.Core that is executing with the compiler as a backup reference
-    let getFSharpCoreImplementationReference () =
-        Path.Combine(getFSharpCompilerLocation (), getFSharpCoreLibraryName + ".dll")
+                if File.Exists(libPath) then
+                    libPath
+                else
+                    getDefaultImplementationReference libName
 
-    // Use the FSharp.Compiler.Interactive.Settings executing with the compiler as a backup reference
-    let getFsiLibraryImplementationReference () =
-        Path.Combine(getFSharpCompilerLocation (), getFsiLibraryName + ".dll")
+        [
+            getFSharpLibImplementationReference getFSharpCoreLibraryName
+            if useFsiAuxLib then
+                getFSharpLibImplementationReference fsiLibraryName
+        ]
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
@@ -371,7 +382,7 @@ type internal FxResolver
                     | None -> (None, None), warnings
             with e ->
                 let warn =
-                    Error(FSComp.SR.scriptSdkNotDeterminedUnexpected (e.Message), rangeForErrors)
+                    Error(FSComp.SR.scriptSdkNotDeterminedUnexpected e.Message, rangeForErrors)
                 // This is defensive coding, we don't expect this exception to happen
                 // NOTE: consider reporting this exception as a warning
                 (None, None), [ warn ]
@@ -412,7 +423,11 @@ type internal FxResolver
 
         match runningTfmOpt with
         | Some tfm -> tfm
-        | _ -> if isRunningOnCoreClr then "net10.0" else "net472"
+        | _ ->
+            if isRunningOnCoreClr then
+                FSharp.BuildProperties.fsProductTfm
+            else
+                "net472"
 
     let trySdkRefsPackDirectory =
         lazy
@@ -458,7 +473,7 @@ type internal FxResolver
                     | None -> None, warnings
                 with e ->
                     let warn =
-                        Error(FSComp.SR.scriptSdkNotDeterminedUnexpected (e.Message), rangeForErrors)
+                        Error(FSComp.SR.scriptSdkNotDeterminedUnexpected e.Message, rangeForErrors)
                     // This is defensive coding, we don't expect this exception to happen
                     // NOTE: consider reporting this exception as a warning
                     None, warnings @ [ warn ]
@@ -615,9 +630,7 @@ type internal FxResolver
         let roots =
             [
                 yield! Directory.GetFiles(implDir, "*.dll")
-                getFSharpCoreImplementationReference ()
-                if useFsiAuxLib then
-                    getFsiLibraryImplementationReference ()
+                yield! getFSharpLibImplementationReferences useFsiAuxLib
             ]
 
         (getDependenciesOf roots).Values |> Seq.toList
@@ -928,15 +941,13 @@ type internal FxResolver
                             let sdkReferences =
                                 [
                                     yield! Directory.GetFiles(path, "*.dll")
-                                    getFSharpCoreImplementationReference ()
-                                    if useFsiAuxLib then
-                                        getFsiLibraryImplementationReference ()
+                                    yield! getFSharpLibImplementationReferences useFsiAuxLib
                                 ]
                                 |> List.filter (Path.GetFileNameWithoutExtension >> (!!) >> systemAssemblies.Contains)
 
                             sdkReferences, false
                         with e ->
-                            warning (Error(FSComp.SR.scriptSdkNotDeterminedUnexpected (e.Message), rangeForErrors))
+                            warning (Error(FSComp.SR.scriptSdkNotDeterminedUnexpected e.Message, rangeForErrors))
                             // This is defensive coding, we don't expect this exception to happen
                             if isRunningOnCoreClr then
                                 // If running on .NET Core and something goes wrong with getting the

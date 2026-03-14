@@ -604,9 +604,41 @@ val reduceTyconRefMeasureableOrProvided: TcGlobals -> TyconRef -> TypeInst -> TT
 
 val reduceTyconRefAbbrevMeasureable: TyconRef -> Measure
 
-/// set bool to 'true' to allow shortcutting of type parameter equation chains during stripping
-val stripTyEqnsA: TcGlobals -> bool -> TType -> TType
+/// <summary>
+/// Normalizes types.
+/// </summary>
+/// <remarks>
+/// Normalizes a type by:
+/// <list>
+///   <item>replacing type variables with their solutions found by unification</item>
+///   <item>expanding type abbreviations</item>
+/// </list>
+/// as well as a couple of special-case normalizations:
+/// <list>
+///   <item>identifying <c>int&lt;1&gt;</c> with <c>int</c> (for any measurable type)</item>
+///   <item>identifying <c>byref&lt;'T&gt;</c> with <c>byref&lt;'T, ByRefKinds.InOut&gt;</c></item>
+/// </list>
+/// </remarks>
+/// <param name="canShortcut">
+/// <c>true</c> to allow shortcutting of type parameter equation chains during stripping
+/// </param>
+val stripTyEqnsA: TcGlobals -> canShortcut: bool -> TType -> TType
 
+/// <summary>
+/// Normalizes types.
+/// </summary>
+/// <remarks>
+/// Normalizes a type by:
+/// <list>
+///   <item>replacing type variables with their solutions found by unification</item>
+///   <item>expanding type abbreviations</item>
+/// </list>
+/// as well as a couple of special-case normalizations:
+/// <list>
+///   <item>identifying <c>int&lt;1&gt;</c> with <c>int</c> (for any measurable type)</item>
+///   <item>identifying <c>byref&lt;'T&gt;</c> with <c>byref&lt;'T, ByRefKinds.InOut&gt;</c></item>
+/// </list>
+/// </remarks>
 val stripTyEqns: TcGlobals -> TType -> TType
 
 val stripTyEqnsAndMeasureEqns: TcGlobals -> TType -> TType
@@ -707,6 +739,8 @@ val tcrefOfAppTy: TcGlobals -> TType -> TyconRef
 
 val tryTcrefOfAppTy: TcGlobals -> TType -> TyconRef voption
 
+/// Returns ValueSome if this type is a type variable, even after abbreviations are expanded and
+/// variables have been solved through unification.
 val tryDestTyparTy: TcGlobals -> TType -> Typar voption
 
 val tryDestFunTy: TcGlobals -> TType -> (TType * TType) voption
@@ -906,6 +940,13 @@ val typarConstraintsAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TyparCons
 val typarConstraintsAEquiv: TcGlobals -> TypeEquivEnv -> TyparConstraint -> TyparConstraint -> bool
 
 val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
+
+/// Constraints that may be present in an implementation/extension but not required by a signature/base type.
+val isConstraintAllowedAsExtra: TyparConstraint -> bool
+
+/// Check if declaredTypars are compatible with reqTypars for a type extension.
+/// Allows declaredTypars to have extra NotSupportsNull constraints.
+val typarsAEquivWithAddedNotNullConstraintsAllowed: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 
 val typeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
@@ -1735,6 +1776,9 @@ val isStructTyconRef: TyconRef -> bool
 /// Determine if a type is a struct type
 val isStructTy: TcGlobals -> TType -> bool
 
+/// Check if a type is a measureable type (like int<kg>) whose underlying type is a value type.
+val isMeasureableValueType: TcGlobals -> TType -> bool
+
 val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is a variable type with the ': struct' constraint.
@@ -2314,6 +2358,8 @@ val mkIncr: TcGlobals -> range -> Expr -> Expr
 
 val mkLdlen: TcGlobals -> range -> Expr -> Expr
 
+val mkGetStringLength: TcGlobals -> range -> Expr -> Expr
+
 val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 //-------------------------------------------------------------------------
@@ -2369,7 +2415,7 @@ val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool optio
 
 #if !NO_TYPEPROVIDERS
 /// returns Some(assemblyName) for success
-val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string MaybeNull option
+val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> (string | null) option
 #endif
 
 val IsSignatureDataVersionAttr: ILAttribute -> bool
@@ -2724,6 +2770,8 @@ val (|InnerExprPat|): Expr -> Expr
 
 val allValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 
+val allTopLevelValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
+
 val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
 
 val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
@@ -2911,7 +2959,7 @@ type TraitConstraintInfo with
 /// This will match anything that does not have any types or bindings.
 [<return: Struct>]
 val (|EmptyModuleOrNamespaces|_|):
-    moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) voption
+    moduleOrNamespaceContents: ModuleOrNamespaceContents -> ModuleOrNamespace list voption
 
 val tryFindExtensionAttribute: g: TcGlobals -> attribs: Attrib list -> Attrib option
 

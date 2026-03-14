@@ -4,7 +4,7 @@
 // 'main' function invoked with no arguments
 //<Expects status="success"></Expects>
 
-#light
+
 
 [<EntryPoint>]
 let main args =

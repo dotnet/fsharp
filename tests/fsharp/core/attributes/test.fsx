@@ -5,7 +5,7 @@
 #if TESTS_AS_APP
 module Core_attributes
 #endif
-#light
+
 
 #if !TESTS_AS_APP && !NETCOREAPP
 #load "testlib.fsi" "testlib.fs" // a warning is expected here

@@ -12,9 +12,6 @@ open FSharp.Text.Parsing.ParseHelpers
 open FsLexYacc.FsYacc
 open FsLexYacc.FsYacc.AST
 
-#nowarn "62" // This construct is for ML compatibility
-
-
 # 18 "fsyaccpars.fs"
 // This type is the type of tokens accepted by the parser
 type token = 

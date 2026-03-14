@@ -3,6 +3,7 @@ namespace FSharp.DependencyManager.Nuget
 
 open System
 open System.IO
+open Internal.Utilities.FSharpEnvironment
 
 // Package reference information
 type PackageReference =
@@ -20,19 +21,19 @@ module internal ProjectFile =
 
     let csxExt = ".csx"
 
-    let makeScriptFromReferences (references: string seq) poundRprefix =
+    let makeScriptFromReferences (references: string seq) poundRprefix dotnetHostPath =
         let expandReferences =
             references
             |> Seq.fold (fun acc r -> acc + poundRprefix + r + "\"" + Environment.NewLine) ""
 
+        let dotnetHostPath = Option.defaultValue "???" dotnetHostPath
+
         let projectTemplate =
-            """
+            $"""
 // Generated from #r "nuget:Package References"
 // ============================================
 //
-// DOTNET_HOST_PATH:(C:\Program Files\dotnet\dotnet.exe)
-// MSBuildSDKsPath:(C:\Program Files\dotnet\sdk\3.1.200-preview-014883\Sdks)
-// MSBuildExtensionsPath:(C:\Program Files\dotnet\sdk\3.1.200-preview-014883\)
+// DOTNET_HOST_PATH:({dotnetHostPath})
 //
 // References
 //

@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #TypeTests 
-#light
+
 
 // FSB 1488, Implement redundancy checking for dynamic type test patterns
 

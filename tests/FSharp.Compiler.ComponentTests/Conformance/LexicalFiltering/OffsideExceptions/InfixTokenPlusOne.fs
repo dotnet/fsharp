@@ -1,5 +1,5 @@
 // #Regression #Conformance #LexFilter #Exceptions 
-#light
+
 
 // FSB 1624, LexFilter should consider infix tokens according to their length
 

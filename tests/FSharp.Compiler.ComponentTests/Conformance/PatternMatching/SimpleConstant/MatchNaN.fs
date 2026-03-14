@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #Constants 
-#light
+
 
 // Verify the ability to match against NaN. Note that 
 // this should 

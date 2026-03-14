@@ -4,7 +4,6 @@
 /// with generalization at appropriate points.
 module internal FSharp.Compiler.CheckComputationExpressions
 
-open FSharp.Compiler.TcGlobals
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
@@ -114,26 +113,69 @@ let mkSourceExprConditional isFromSource callExpr sourceMethInfo builderValName 
 let inline mkSynLambda p e m =
     SynExpr.Lambda(false, false, p, e, None, m, SynExprLambdaTrivia.Zero)
 
+// Use synthetic ranges so compiler-generated varSpace refs don't mark vals as referenced for FS1182
 let mkExprForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynExpr.Const(SynConst.Unit, m)
-    | [ v ] -> SynExpr.Ident v.Id
-    | vs -> SynExpr.Tuple(false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id))), [], m)
+    | [ v ] -> SynExpr.Ident(v.Id.MakeSynthetic())
+    | vs -> SynExpr.Tuple(false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id.MakeSynthetic()))), [], m)
 
 let mkSimplePatForVarSpace m (patvs: Val list) =
-    let spats =
-        match patvs with
-        | [] -> []
-        | [ v ] -> [ mkSynSimplePatVar false v.Id ]
-        | vs -> vs |> List.map (fun v -> mkSynSimplePatVar false v.Id)
-
-    SynSimplePats.SimplePats(spats, [], m)
+    SynSimplePats.SimplePats(List.map (fun (v: Val) -> mkSynSimplePatVar false v.Id) patvs, [], m)
 
 let mkPatForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynPat.Const(SynConst.Unit, m)
     | [ v ] -> mkSynPatVar None v.Id
     | vs -> SynPat.Tuple(false, (vs |> List.map (fun x -> mkSynPatVar None x.Id)), [], m)
+
+/// Transfer HasBeenReferenced across query lambda Vals with the same declaration range.
+/// In queries, multiple lambdas share Vals originating from the same source declaration (e.g., for x).
+/// If any is referenced by user code, mark all with the same origin as referenced to avoid FS1182 false positives.
+/// Grouping by declaration range (not name) correctly handles shadowing.
+let transferVarSpaceReferences (expr: Expr) =
+    let valsByRange = Dictionary<range, ResizeArray<Val>>()
+
+    let addVal (v: Val) =
+        let key = v.Range
+
+        let vals =
+            match valsByRange.TryGetValue(key) with
+            | true, existing -> existing
+            | false, _ ->
+                let newVals = ResizeArray(1)
+                valsByRange[key] <- newVals
+                newVals
+
+        vals.Add(v)
+
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF z e ->
+                    match e with
+                    | Expr.Lambda(_, _, _, argVals, _, _, _) -> argVals |> List.iter addVal
+                    | _ -> ()
+
+                    noInterceptF z e
+            valBindingSiteIntercept =
+                fun z (_, v) ->
+                    addVal v
+                    z
+        }
+
+    FoldExpr folder () expr |> ignore
+
+    for KeyValue(_, vals) in valsByRange do
+        let mutable anyReferenced = false
+
+        for v in vals do
+            if v.HasBeenReferenced then
+                anyReferenced <- true
+
+        if anyReferenced then
+            for v in vals do
+                v.SetHasBeenReferenced()
 
 let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
@@ -444,7 +486,7 @@ let customOpUsageText ceenv nm =
                 )
             )
         elif isLikeZip then
-            Some(FSComp.SR.customOperationTextLikeZip (nm.idText))
+            Some(FSComp.SR.customOperationTextLikeZip nm.idText)
         else
             None
     | _ -> None
@@ -854,35 +896,43 @@ let (|OptionalSequential|) e =
     | SynExpr.Sequential(debugPoint = _sp; isTrueSeq = true; expr1 = dataComp1; expr2 = dataComp2) -> (dataComp1, Some dataComp2)
     | _ -> (e, None)
 
+let private mkTypedHeadPat (SynBinding(headPat = headPattern; returnInfo = returnInfo)) =
+    match returnInfo with
+    | None -> headPattern
+    | Some(SynBindingReturnInfo(typeName = typeName; range = range)) ->
+        SynPat.Typed(headPattern, typeName, unionRanges headPattern.Range range)
+
 [<return: Struct>]
 let (|ExprAsUseBang|_|) expr =
     match expr with
-    | SynExpr.LetOrUse(
-        isUse = true
-        isFromSource = isFromSource
-        isBang = true
-        bindings = bindings
-        body = innerComp
-        trivia = { LetOrUseKeyword = mBind }) ->
+    | LetOrUse({
+                   IsFromSource = isFromSource
+                   Bindings = bindings
+                   Body = innerComp
+               },
+               true,
+               true) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; headPat = pat; expr = rhsExpr) :: andBangs ->
-            ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind)
+        | SynBinding(debugPoint = spBind; expr = rhsExpr; trivia = { LeadingKeyword = leadingKeyword }) as binding :: andBangs ->
+            let pat = mkTypedHeadPat binding
+            ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, leadingKeyword.Range)
         | _ -> ValueNone
     | _ -> ValueNone
 
 [<return: Struct>]
 let (|ExprAsLetBang|_|) expr =
     match expr with
-    | SynExpr.LetOrUse(
-        isUse = false
-        isFromSource = isFromSource
-        isBang = true
-        bindings = bindings
-        body = innerComp
-        trivia = { LetOrUseKeyword = mBind }) ->
+    | LetOrUse({
+                   IsFromSource = isFromSource
+                   Bindings = bindings
+                   Body = innerComp
+               },
+               true,
+               false) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; headPat = letPat; expr = letRhsExpr) :: andBangBindings ->
-            ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind)
+        | SynBinding(debugPoint = spBind; expr = letRhsExpr; trivia = { LeadingKeyword = leadingKeyword }) as binding :: andBangBindings ->
+            let letPat = mkTypedHeadPat binding
+            ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, leadingKeyword.Range)
         | _ -> ValueNone
     | _ -> ValueNone
 
@@ -974,7 +1024,7 @@ let rec TryTranslateComputationExpression
     (ceenv: ComputationExpressionContext<'a>)
     (firstTry: CompExprTranslationPass)
     (q: CustomOperationsMode)
-    (varSpace: LazyWithContext<(Val list * TcEnv), range>)
+    (varSpace: LazyWithContext<Val list * TcEnv, range>)
     (comp: SynExpr)
     (translatedCtxt: SynExpr -> SynExpr)
     : SynExpr option =
@@ -1062,14 +1112,14 @@ let rec TryTranslateComputationExpression
                     SimplePatsOfPat cenv.synArgNameGenerator secondSourcePat
 
                 if Option.isSome later1 then
-                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern (nm.idText), firstSourcePat.Range))
+                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, firstSourcePat.Range))
 
                 if Option.isSome later2 then
-                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern (nm.idText), secondSourcePat.Range))
+                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, secondSourcePat.Range))
 
                 // check 'join' or 'groupJoin' or 'zip' is permitted for this builder
                 match tryGetDataForCustomOperation nm ceenv with
-                | None -> error (Error(FSComp.SR.tcMissingCustomOperation (nm.idText), nm.idRange))
+                | None -> error (Error(FSComp.SR.tcMissingCustomOperation nm.idText, nm.idRange))
                 | Some opDatas ->
                     let opName, _, _, _, _, _, _, _, methInfo = opDatas[0]
 
@@ -1148,7 +1198,7 @@ let rec TryTranslateComputationExpression
                                 SimplePatsOfPat cenv.synArgNameGenerator secondResultPat
 
                             if Option.isSome later3 then
-                                errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern (nm.idText), secondResultPat.Range))
+                                errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, secondResultPat.Range))
 
                             match relExpr with
                             | JoinRelation ceenv (keySelector1, keySelector2) ->
@@ -1163,7 +1213,7 @@ let rec TryTranslateComputationExpression
                                         )
                                     )
                                 else
-                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin (nm.idText), relExpr.Range))
+                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
 
                                 let l = wrapInArbErrSequence l "_keySelector1"
                                 let r = wrapInArbErrSequence r "_keySelector2"
@@ -1171,7 +1221,7 @@ let rec TryTranslateComputationExpression
                                 // we've already reported error now we can use operands of binary operation as join components
                                 mkJoinExpr l r secondResultSimplePats, varSpaceWithGroupJoinVars
                             | _ ->
-                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin (nm.idText), relExpr.Range))
+                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
                                 // since the shape of relExpr doesn't match our expectations (JoinRelation)
                                 // then we assume that this is l.h.s. of the join relation
                                 // so typechecker will treat relExpr as body of outerKeySelector lambda parameter in GroupJoin method
@@ -1192,14 +1242,14 @@ let rec TryTranslateComputationExpression
                                         )
                                     )
                                 else
-                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin (nm.idText), relExpr.Range))
+                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
                                 // this is not correct JoinRelation but it is still binary operation
                                 // we've already reported error now we can use operands of binary operation as join components
                                 let l = wrapInArbErrSequence l "_keySelector1"
                                 let r = wrapInArbErrSequence r "_keySelector2"
                                 mkJoinExpr l r secondSourceSimplePats, varSpaceWithGroupJoinVars
                             | _ ->
-                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin (nm.idText), relExpr.Range))
+                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
                                 // since the shape of relExpr doesn't match our expectations (JoinRelation)
                                 // then we assume that this is l.h.s. of the join relation
                                 // so typechecker will treat relExpr as body of outerKeySelector lambda parameter in Join method
@@ -1272,7 +1322,7 @@ let rec TryTranslateComputationExpression
                     vspecs, envinner)
 
             Some(
-                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun innerCompR ->
+                TranslateComputationExpression (noTailCall ceenv) CompExprTranslationPass.Initial q varSpace innerComp (fun innerCompR ->
 
                     let forCall =
                         mkSynCall
@@ -1381,7 +1431,7 @@ let rec TryTranslateComputationExpression
 
                     let condBinding =
                         mkSynBinding
-                            (Xml.PreXmlDoc.Empty, patCond)
+                            (PreXmlDoc.Empty, patCond)
                             (None,
                              false,
                              true,
@@ -1411,20 +1461,24 @@ let rec TryTranslateComputationExpression
                             expr = guardExpr,
                             range = guardExpr.Range,
                             debugPoint = DebugPointAtBinding.NoneAtSticky,
-                            trivia = SynBindingTrivia.Zero
+                            trivia =
+                                { SynBindingTrivia.Zero with
+                                    LeadingKeyword = SynLeadingKeyword.LetBang mGuard
+                                }
                         )
 
                     let bindCondExpr =
-                        SynExpr.LetOrUse(
-                            isRecursive = false,
-                            isUse = false,
-                            isFromSource = true, // compiler generated during desugaring
-                            isBang = true,
-                            bindings = [ binding ],
-                            body = setCondExpr,
-                            range = mGuard,
-                            trivia = SynExprLetOrUseTrivia.Zero
-                        )
+                        SynExpr.LetOrUse
+                            {
+                                IsRecursive = false
+                                // isUse = false,
+                                IsFromSource = true // compiler generated during desugaring
+                                // isBang = true,
+                                Bindings = [ binding ]
+                                Body = setCondExpr
+                                Range = mGuard
+                                Trivia = SynLetOrUseTrivia.Zero
+                            }
 
                     let whileExpr =
                         SynExpr.While(
@@ -1441,16 +1495,17 @@ let rec TryTranslateComputationExpression
                             mOrig
                         )
 
-                    SynExpr.LetOrUse(
-                        isRecursive = false,
-                        isUse = false,
-                        isFromSource = false, // compiler generated during desugaring
-                        isBang = false,
-                        bindings = [ condBinding ],
-                        body = whileExpr,
-                        range = mGuard,
-                        trivia = SynExprLetOrUseTrivia.Zero
-                    )
+                    SynExpr.LetOrUse
+                        {
+                            IsRecursive = false
+                            // isUse = false,
+                            IsFromSource = false // compiler generated during desugaring
+                            // isBang = false,
+                            Bindings = [ condBinding ]
+                            Body = whileExpr
+                            Range = mGuard
+                            Trivia = SynLetOrUseTrivia.Zero
+                        }
 
                 let binding =
                     SynBinding(
@@ -1466,19 +1521,23 @@ let rec TryTranslateComputationExpression
                         expr = guardExpr,
                         range = guardExpr.Range,
                         debugPoint = DebugPointAtBinding.NoneAtSticky,
-                        trivia = SynBindingTrivia.Zero
+                        trivia =
+                            { SynBindingTrivia.Zero with
+                                LeadingKeyword = SynLeadingKeyword.LetBang mGuard
+                            }
                     )
 
-                SynExpr.LetOrUse(
-                    isRecursive = false,
-                    isUse = false,
-                    isFromSource = true, // compiler generated during desugaring
-                    isBang = true,
-                    bindings = [ binding ],
-                    body = body,
-                    range = mGuard,
-                    trivia = SynExprLetOrUseTrivia.Zero
-                )
+                SynExpr.LetOrUse
+                    {
+                        IsRecursive = false
+                        // isUse = false,
+                        IsFromSource = true // compiler generated during desugaring
+                        // isBang = true,
+                        Bindings = [ binding ]
+                        Body = body
+                        Range = mGuard
+                        Trivia = SynLetOrUseTrivia.Zero
+                    }
 
             TryTranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
 
@@ -1545,10 +1604,10 @@ let rec TryTranslateComputationExpression
                 // and so we use a more specific error message for clarity.
                 | SynExpr.Const(SynConst.Unit, mUnit) when
                     cenv.g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions
-                    && Range.equals mUnit range0
+                    && equals mUnit range0
                     ->
                     error (Error(FSComp.SR.tcEmptyBodyRequiresBuilderZeroMethod (), ceenv.mWhole))
-                | _ -> error (Error(FSComp.SR.tcRequireBuilderMethod ("Zero"), m))
+                | _ -> error (Error(FSComp.SR.tcRequireBuilderMethod "Zero", m))
 
             Some(translatedCtxt (mkSynCall "Zero" m [] ceenv.builderValName))
 
@@ -1609,7 +1668,7 @@ let rec TryTranslateComputationExpression
                 Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp2 translatedCtxt)
 
             else
-                if ceenv.isQuery && not (innerComp1.IsArbExprAndThusAlreadyReportedError) then
+                if ceenv.isQuery && not innerComp1.IsArbExprAndThusAlreadyReportedError then
                     match innerComp1 with
                     | SynExpr.JoinIn _ -> ()
                     | SynExpr.DoBang(trivia = { DoBangKeyword = m }) -> errorR (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
@@ -1658,13 +1717,13 @@ let rec TryTranslateComputationExpression
                 | None ->
                     // "do! expr; cexpr" is treated as { let! () = expr in cexpr }
                     match innerComp1 with
-                    | SynExpr.DoBang(expr = rhsExpr; range = m) ->
+                    | SynExpr.DoBang(expr = rhsExpr; trivia = { DoBangKeyword = mKeyword }; range = m) ->
                         let sp =
                             match sp with
                             | DebugPointAtSequential.SuppressExpr -> DebugPointAtBinding.NoneAtDo
                             | DebugPointAtSequential.SuppressBoth -> DebugPointAtBinding.NoneAtDo
-                            | DebugPointAtSequential.SuppressStmt -> DebugPointAtBinding.Yes m
-                            | DebugPointAtSequential.SuppressNeither -> DebugPointAtBinding.Yes m
+                            | DebugPointAtSequential.SuppressStmt -> DebugPointAtBinding.Yes mKeyword
+                            | DebugPointAtSequential.SuppressNeither -> DebugPointAtBinding.Yes mKeyword
 
                         let binding =
                             SynBinding(
@@ -1680,7 +1739,10 @@ let rec TryTranslateComputationExpression
                                 expr = rhsExpr,
                                 range = rhsExpr.Range,
                                 debugPoint = sp,
-                                trivia = SynBindingTrivia.Zero
+                                trivia =
+                                    { SynBindingTrivia.Zero with
+                                        LeadingKeyword = SynLeadingKeyword.LetBang mKeyword
+                                    }
                             )
 
                         Some(
@@ -1689,16 +1751,17 @@ let rec TryTranslateComputationExpression
                                 CompExprTranslationPass.Initial
                                 q
                                 varSpace
-                                (SynExpr.LetOrUse(
-                                    isRecursive = false,
-                                    isUse = false,
-                                    isFromSource = true, // compiler generated during desugaring
-                                    isBang = true,
-                                    bindings = [ binding ],
-                                    body = innerComp2,
-                                    range = m,
-                                    trivia = SynExprLetOrUseTrivia.Zero
-                                ))
+                                (SynExpr.LetOrUse
+                                    {
+                                        IsRecursive = false
+                                        // isUse = false,
+                                        IsFromSource = true // compiler generated during desugaring
+                                        // isBang = true,
+                                        Bindings = [ binding ]
+                                        Body = innerComp2
+                                        Range = m
+                                        Trivia = SynLetOrUseTrivia.Zero
+                                    })
                                 translatedCtxt
                         )
 
@@ -1766,15 +1829,16 @@ let rec TryTranslateComputationExpression
                 )
 
         // 'let binds in expr'
-        | SynExpr.LetOrUse(
-            isRecursive = isRec
-            isUse = false
-            isFromSource = isFromSource
-            isBang = false
-            bindings = binds
-            body = innerComp
-            range = m
-            trivia = trivia) ->
+        | LetOrUse({
+                       IsRecursive = isRec
+                       Bindings = binds
+                       Body = innerComp
+                       IsFromSource = isFromSource
+                       Range = m
+                       Trivia = trivia
+                   },
+                   false,
+                   false) ->
 
             // For 'query' check immediately
             if ceenv.isQuery then
@@ -1808,29 +1872,35 @@ let rec TryTranslateComputationExpression
             Some(
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
                     translatedCtxt (
-                        SynExpr.LetOrUse(
-                            isRecursive = isRec,
-                            isUse = false,
-                            isFromSource = isFromSource,
-                            isBang = false,
-                            bindings = binds,
-                            body = holeFill,
-                            range = m,
-                            trivia = trivia
-                        )
+                        SynExpr.LetOrUse
+                            {
+                                IsRecursive = isRec
+                                //isUse = false,
+                                IsFromSource = isFromSource
+                                //isBang = false,
+                                Bindings = binds
+                                Body = holeFill
+                                Range = m
+                                Trivia = trivia
+                            }
                     ))
             )
 
         // 'use x = expr in expr'
-        | SynExpr.LetOrUse(
-            isUse = true
-            isBang = false
-            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind) ]
-            body = innerComp
-            trivia = { LetOrUseKeyword = mBind }) ->
+        | LetOrUse({
+                       Bindings = [ SynBinding(
+                                        kind = SynBindingKind.Normal
+                                        headPat = pat
+                                        expr = rhsExpr
+                                        debugPoint = spBind
+                                        trivia = { LeadingKeyword = leadingKeyword }) ]
+                       Body = innerComp
+                   },
+                   false,
+                   true) ->
 
             if ceenv.isQuery then
-                error (Error(FSComp.SR.tcUseMayNotBeUsedInQueries (), mBind))
+                error (Error(FSComp.SR.tcUseMayNotBeUsedInQueries (), leadingKeyword.Range))
 
             let innerCompRange = innerComp.Range
 
@@ -1842,7 +1912,7 @@ let rec TryTranslateComputationExpression
                         SynMatchClause(
                             pat,
                             None,
-                            TranslateComputationExpressionNoQueryOps ceenv innerComp,
+                            TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp,
                             innerCompRange,
                             DebugPointAtTarget.Yes,
                             SynMatchClauseTrivia.Zero
@@ -1852,10 +1922,10 @@ let rec TryTranslateComputationExpression
                     innerCompRange
                 )
 
-            requireBuilderMethod "Using" ceenv mBind mBind
+            requireBuilderMethod "Using" ceenv leadingKeyword.Range leadingKeyword.Range
 
             Some(
-                translatedCtxt (mkSynCall "Using" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName)
+                translatedCtxt (mkSynCall "Using" leadingKeyword.Range [ rhsExpr; consumeExpr ] ceenv.builderValName)
                 |> addBindDebugPoint spBind
             )
 
@@ -1885,7 +1955,9 @@ let rec TryTranslateComputationExpression
                     match pat with
                     | SynPat.Named(ident = SynIdent(id, _); isThisVal = false) -> id, pat
                     | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) -> id, pat
-                    | SynPat.Typed(pat = pat) when supportsTypedLetOrUseBang -> extractIdentifierFromPattern pat
+                    | SynPat.Typed(innerPat, targetType, range) when supportsTypedLetOrUseBang ->
+                        let ident, pat = extractIdentifierFromPattern innerPat
+                        ident, SynPat.Typed(pat, targetType, unionRanges pat.Range range)
                     | SynPat.Wild(m) when supportsUseBangBindingValueDiscard ->
                         // To properly call the Using(disposable) CE member, we need to convert the wildcard to a SynPat.Named
                         let tmpIdent = mkSynId m "_"
@@ -1904,7 +1976,7 @@ let rec TryTranslateComputationExpression
                                 SynMatchClause(
                                     pat,
                                     None,
-                                    TranslateComputationExpressionNoQueryOps ceenv innerComp,
+                                    TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp,
                                     innerComp.Range,
                                     DebugPointAtTarget.Yes,
                                     SynMatchClauseTrivia.Zero
@@ -2003,8 +2075,7 @@ let rec TryTranslateComputationExpression
                     (letRhsExpr :: [ for SynBinding(expr = andExpr) in andBangBindings -> andExpr ])
                     |> List.map (fun expr -> mkSourceExprConditional isFromSource expr ceenv.sourceMethInfo ceenv.builderValName)
 
-                let pats =
-                    letPat :: [ for SynBinding(headPat = andPat) in andBangBindings -> andPat ]
+                let pats = letPat :: [ for binding in andBangBindings -> mkTypedHeadPat binding ]
 
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
@@ -2096,7 +2167,7 @@ let rec TryTranslateComputationExpression
                             loop 2
 
                         if maxMergeSources = 1 then
-                            error (Error(FSComp.SR.tcRequireMergeSourcesOrBindN (bindNName), mBind))
+                            error (Error(FSComp.SR.tcRequireMergeSourcesOrBindN bindNName, mBind))
 
                         let rec mergeSources (sourcesAndPats: (SynExpr * SynPat) list) =
                             let numSourcesAndPats = sourcesAndPats.Length
@@ -2442,7 +2513,7 @@ and ConsumeCustomOpClauses
                 match optionalIntoPat with
                 | Some intoPat ->
                     if not (customOperationAllowsInto ceenv nm) then
-                        error (Error(FSComp.SR.tcOperatorDoesntAcceptInto (nm.idText), intoPat.Range))
+                        error (Error(FSComp.SR.tcOperatorDoesntAcceptInto nm.idText, intoPat.Range))
 
                     // Rebind using either for ... or let!....
                     let rebind =
@@ -2461,19 +2532,23 @@ and ConsumeCustomOpClauses
                                     expr = dataCompAfterOp,
                                     range = dataCompAfterOp.Range,
                                     debugPoint = DebugPointAtBinding.NoneAtLet,
-                                    trivia = SynBindingTrivia.Zero
+                                    trivia =
+                                        { SynBindingTrivia.Zero with
+                                            LeadingKeyword = SynLeadingKeyword.LetBang intoPat.Range
+                                        }
                                 )
 
-                            SynExpr.LetOrUse(
-                                isRecursive = false,
-                                isUse = false,
-                                isFromSource = false, // compiler generated during desugaring
-                                isBang = true,
-                                bindings = [ binding ],
-                                body = contExpr,
-                                range = intoPat.Range,
-                                trivia = SynExprLetOrUseTrivia.Zero
-                            )
+                            SynExpr.LetOrUse
+                                {
+                                    IsRecursive = false
+                                    // isUse = false,
+                                    IsFromSource = false // compiler generated during desugaring
+                                    // isBang = true,
+                                    Bindings = [ binding ]
+                                    Body = contExpr
+                                    Range = intoPat.Range
+                                    Trivia = SynLetOrUseTrivia.Zero
+                                }
                         else
                             SynExpr.ForEach(
                                 DebugPointAtFor.No,
@@ -2518,19 +2593,23 @@ and ConsumeCustomOpClauses
                         expr = dataCompPrior,
                         range = dataCompPrior.Range,
                         debugPoint = DebugPointAtBinding.NoneAtLet,
-                        trivia = SynBindingTrivia.Zero
+                        trivia =
+                            { SynBindingTrivia.Zero with
+                                LeadingKeyword = SynLeadingKeyword.LetBang dataCompPrior.Range
+                            }
                     )
 
-                SynExpr.LetOrUse(
-                    isRecursive = false,
-                    isUse = false,
-                    isFromSource = false, // compiler generated during desugaring
-                    isBang = true,
-                    bindings = [ binding ],
-                    body = compClausesExpr,
-                    range = compClausesExpr.Range,
-                    trivia = SynExprLetOrUseTrivia.Zero
-                )
+                SynExpr.LetOrUse
+                    {
+                        IsRecursive = false
+                        // isUse = false,
+                        IsFromSource = false // compiler generated during desugaring
+                        // isBang = true,
+                        Bindings = [ binding ]
+                        Body = compClausesExpr
+                        Range = compClausesExpr.Range
+                        Trivia = SynLetOrUseTrivia.Zero
+                    }
             else
                 SynExpr.ForEach(
                     DebugPointAtFor.No,
@@ -2660,30 +2739,33 @@ and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp var
             | Some elseExprOpt ->
                 Some(SynExpr.IfThenElse(guardExpr, thenExpr, elseExprOpt, spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia), None)
 
-    | SynExpr.LetOrUse(
-        isRecursive = isRec
-        isUse = false
-        isFromSource = isFromSource
-        isBang = false
-        bindings = binds
-        body = innerComp
-        range = m
-        trivia = trivia) ->
+    | LetOrUse({
+                   IsRecursive = isRec
+                   Bindings = binds
+                   Body = innerComp
+                   IsFromSource = isFromSource
+                   Range = m
+                   Trivia = trivia
+               },
+               false,
+               false) ->
+
         match convertSimpleReturnToExpr ceenv comp varSpace innerComp with
         | None -> None
         | Some(_, Some _) -> None
         | Some(innerExpr, None) ->
             Some(
-                SynExpr.LetOrUse(
-                    isRecursive = isRec,
-                    isUse = false,
-                    isFromSource = isFromSource,
-                    isBang = false,
-                    bindings = binds,
-                    body = innerExpr,
-                    range = m,
-                    trivia = trivia
-                ),
+                SynExpr.LetOrUse
+                    {
+                        IsRecursive = isRec
+                        //IsUse = false,
+                        IsFromSource = isFromSource
+                        // IsBang = false,
+                        Bindings = binds
+                        Body = innerExpr
+                        Range = m
+                        Trivia = trivia
+                    },
                 None
             )
 
@@ -2726,8 +2808,8 @@ and isSimpleExpr ceenv comp =
         && (match elseCompOpt with
             | None -> true
             | Some c -> isSimpleExpr ceenv c)
-    | SynExpr.LetOrUse(isBang = false; body = innerComp) -> isSimpleExpr ceenv innerComp
-    | SynExpr.LetOrUse(isBang = true) -> false
+    | LetOrUse({ Body = innerComp }, false, _) -> isSimpleExpr ceenv innerComp
+    | LetOrUse(_, true, _) -> false
     | SynExpr.Match(clauses = clauses) ->
         clauses
         |> List.forall (fun (SynMatchClause(resultExpr = innerComp)) -> isSimpleExpr ceenv innerComp)
@@ -2751,7 +2833,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
             // This only occurs in final position in a sequence
             match comp with
             // "do! expr;" in tail call position is treated as { return! expr } when ReturnFromFinal is provided
-            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && ((hasBuilderMethod ceenv m "ReturnFromFinal")) ->
+            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && (hasBuilderMethod ceenv m "ReturnFromFinal") ->
                 let returnFrom =
                     // Flags indicate isTrueYield, isTrueReturn
                     SynExpr.YieldOrReturnFrom((false, true), rhsExpr, m, SynExprYieldOrReturnFromTrivia.Zero)
@@ -2759,7 +2841,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace returnFrom translatedCtxt
 
             // "do! expr;" in tail call position is treated as { yield! expr } when YieldFromFinal is provided
-            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && ((hasBuilderMethod ceenv m "YieldFromFinal")) ->
+            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && (hasBuilderMethod ceenv m "YieldFromFinal") ->
                 let returnFrom =
                     // Flags indicate isTrueYield, isTrueReturn
                     SynExpr.YieldOrReturnFrom((true, false), rhsExpr, m, SynExprYieldOrReturnFromTrivia.Zero)
@@ -2798,19 +2880,23 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                             expr = rhsExpr,
                             range = rhsExpr.Range,
                             debugPoint = DebugPointAtBinding.NoneAtDo,
-                            trivia = SynBindingTrivia.Zero
+                            trivia =
+                                { SynBindingTrivia.Zero with
+                                    LeadingKeyword = SynLeadingKeyword.LetBang m
+                                }
                         )
 
-                    SynExpr.LetOrUse(
-                        isRecursive = false,
-                        isUse = false,
-                        isFromSource = false, // compiler generated during desugaring
-                        isBang = true,
-                        bindings = [ binding ],
-                        body = bodyExpr,
-                        range = m,
-                        trivia = SynExprLetOrUseTrivia.Zero
-                    )
+                    SynExpr.LetOrUse
+                        {
+                            IsRecursive = false
+                            // isUse = false,
+                            IsFromSource = false // compiler generated during desugaring
+                            // isBang = true,
+                            Bindings = [ binding ]
+                            Body = bodyExpr
+                            Range = m
+                            Trivia = SynLetOrUseTrivia.Zero
+                        }
 
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt
 
@@ -3024,6 +3110,10 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let lambdaExpr, tpenv =
         TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
+
+    // For queries, transfer HasBeenReferenced from compiler-generated varSpace Vals to user Vals
+    if isQuery then
+        transferVarSpaceReferences lambdaExpr
 
     // beta-var-reduce to bind the builder using a 'let' binding
     let coreExpr =

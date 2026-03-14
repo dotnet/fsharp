@@ -299,19 +299,19 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
 // is not the case.
 //
 type internal FSharpIntellisenseInfo_DEPRECATED 
-                    (/// The recent result of parsing
+                    (// The recent result of parsing
                      untypedResults: FSharpParseFileResults,
-                     /// Line/column/snapshot of BackgroundRequest that initiated creation of this scope
+                     // Line/column/snapshot of BackgroundRequest that initiated creation of this scope
                      brLine:int, brCol:int, brSnapshot:ITextSnapshot,
-                     /// The possibly staler result of typechecking
+                     // The possibly staler result of typechecking
                      typedResults: FSharpCheckFileResults,
-                     /// The project
+                     // The project
                      projectSite: IProjectSite,
-                     /// The text view
+                     // The text view
                      view: IVsTextView,
-                     /// The colorizer for this view (though why do we need to be lazy about creating this?)
+                     // The colorizer for this view (though why do we need to be lazy about creating this?)
                      colorizer: Lazy<FSharpColorizer_DEPRECATED>,
-                     /// A service that will provide Xml Content
+                     // A service that will provide Xml Content
                      documentationBuilder : IDocumentationBuilder_DEPRECATED,
                      provideMethodList : bool
                      ) = 
@@ -591,6 +591,6 @@ type internal FSharpIntellisenseInfo_DEPRECATED
 
         // This is called on the UI thread after fresh full typecheck results are available
         member this.OnParseFileOrCheckFileComplete(source: IFSharpSource_DEPRECATED) =
-            for line in colorizer.Value.SetExtraColorizations(typedResults.GetSemanticClassification None) do
+            for line in colorizer.Value.SetExtraColorizations(typedResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)) do
                 source.RecolorizeLine line
 

@@ -29,8 +29,8 @@ type LoadClosureInput =
     {
         FileName: string
         SyntaxTree: ParsedInput option
-        ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
-        MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+        ParseDiagnostics: PhasedDiagnostic list
+        MetaCommandDiagnostics: PhasedDiagnostic list
     }
 
 [<RequireQualifiedAccess>]
@@ -64,13 +64,13 @@ type LoadClosure =
         OriginalLoadReferences: (range * string * string) list
 
         /// Diagnostics seen while processing resolutions
-        ResolutionDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+        ResolutionDiagnostics: PhasedDiagnostic list
 
         /// Diagnostics seen while parsing root of closure
-        AllRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+        AllRootFileDiagnostics: PhasedDiagnostic list
 
         /// Diagnostics seen while processing the compiler options implied root of closure
-        LoadClosureRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+        LoadClosureRootFileDiagnostics: PhasedDiagnostic list
     }
 
 [<RequireQualifiedAccess>]
@@ -91,8 +91,8 @@ module ScriptPreprocessClosure =
             fileName: string *
             range: range *
             parsedInput: ParsedInput option *
-            parseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list *
-            metaDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+            parseDiagnostics: PhasedDiagnostic list *
+            metaDiagnostics: PhasedDiagnostic list
 
     type Observed() =
         let seen = Dictionary<_, bool>()
@@ -347,6 +347,7 @@ module ScriptPreprocessClosure =
                         dependencyProvider.TryFindDependencyManagerByKey(
                             tcConfig.compilerToolPaths,
                             outputDir,
+                            tcConfig.sdkDirOverride,
                             reportError m,
                             packageManagerKey
                         )
@@ -357,6 +358,7 @@ module ScriptPreprocessClosure =
                             dependencyProvider.CreatePackageManagerUnknownError(
                                 tcConfig.compilerToolPaths,
                                 outputDir,
+                                tcConfig.sdkDirOverride,
                                 packageManagerKey,
                                 reportError m
                             )
@@ -433,7 +435,7 @@ module ScriptPreprocessClosure =
                     // Send outputs via diagnostics
                     if (result.StdOut.Length > 0 || result.StdError.Length > 0) then
                         for line in Array.append result.StdOut result.StdError do
-                            errorR (Error(FSComp.SR.packageManagerError (line), m))
+                            errorR (Error(FSComp.SR.packageManagerError line, m))
                     // Resolution produced errors update packagerManagerLines entries to note these failure
                     // failed resolutions will no longer be considered
                     let tcConfigB = tcConfig.CloneToBuilder()
@@ -592,7 +594,7 @@ module ScriptPreprocessClosure =
             | None -> true
 
         // Filter out non-root errors and warnings
-        let allRootDiagnostics = allRootDiagnostics |> List.filter (fst >> isRootRange)
+        let allRootDiagnostics = allRootDiagnostics |> List.filter isRootRange
 
         {
             SourceFiles = List.groupBy fst sourceFiles |> List.map (map2Of2 (List.map snd))

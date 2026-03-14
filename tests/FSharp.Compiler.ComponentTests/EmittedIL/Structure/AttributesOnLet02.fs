@@ -1,5 +1,5 @@
 // #NoMT #CodeGen #Interop 
-#light
+
 
 // Verify the ability to put attributes on let-bindings
 // - When declaring multiple values at once, attr is applied to all

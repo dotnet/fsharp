@@ -17,6 +17,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
+open FSharp.Compiler.BuildGraph
 #if NETCOREAPP
 open System.Runtime.Loader
 #endif
@@ -31,34 +32,49 @@ open System.Collections.Immutable
 #if !NETCOREAPP
 module AssemblyResolver =
 
+    open System.Collections.Generic
+
     let probingPaths = [|
         AppDomain.CurrentDomain.BaseDirectory
         Path.GetDirectoryName(typeof<FactForDESKTOPAttribute>.Assembly.Location)
     |]
 
+    // Add a static HashSet to track currently resolving assemblies
+    let private resolvingAssemblies = HashSet<string>()
+
     let addResolver () =
         AppDomain.CurrentDomain.add_AssemblyResolve(fun h args ->
-            let found () =
-                (probingPaths ) |> Seq.tryPick(fun p ->
-                    try
-                        let name = AssemblyName(args.Name)
-                        let codebase = Path.GetFullPath(Path.Combine(p, name.Name))
-                        if File.Exists(codebase + ".dll") then
-                            name.CodeBase <- codebase  + ".dll"
-                            name.CultureInfo <- Unchecked.defaultof<CultureInfo>
-                            name.Version <- Unchecked.defaultof<Version>
-                            Some (name)
-                        elif File.Exists(codebase + ".exe") then
-                                name.CodeBase <- codebase + ".exe"
-                                name.CultureInfo <- Unchecked.defaultof<CultureInfo>
-                                name.Version <- Unchecked.defaultof<Version>
-                                Some (name)
-                        else None
-                    with | _ -> None
-                    )
-            match found() with
-            | None -> Unchecked.defaultof<Assembly>
-            | Some name -> Assembly.Load(name) )
+            let assemblyName = args.Name
+            // Prevent recursion: skip if already resolving this assembly
+            if resolvingAssemblies.Contains(assemblyName) then
+                null
+            else
+                try
+                    resolvingAssemblies.Add(assemblyName) |> ignore
+                    let found () =
+                        (probingPaths ) |> Seq.tryPick(fun p ->
+                            try
+                                let name = AssemblyName(args.Name)
+                                let codebase = Path.GetFullPath(Path.Combine(p, name.Name))
+                                if File.Exists(codebase + ".dll") then
+                                    name.CodeBase <- codebase  + ".dll"
+                                    name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                                    name.Version <- Unchecked.defaultof<Version>
+                                    Some (name)
+                                elif File.Exists(codebase + ".exe") then
+                                    name.CodeBase <- codebase + ".exe"
+                                    name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                                    name.Version <- Unchecked.defaultof<Version>
+                                    Some (name)
+                                else None
+                            with | _ -> None
+                        )
+                    match found() with
+                    | None -> null
+                    | Some name -> Assembly.Load(name)
+                finally
+                    resolvingAssemblies.Remove(assemblyName) |> ignore
+        )
 #endif
 
 type ExecutionOutcome = 
@@ -179,6 +195,15 @@ type TestCompilation =
             | TestCompilation.IL (_, result) ->
                 let (_, data) = result.Value
                 File.WriteAllBytes (outputPath, data)
+
+    member this.EmitToDirectory (outputDir: DirectoryInfo) =
+        let fileName =
+            match this with
+            | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
+            | _ -> getTemporaryFileNameInDirectory outputDir
+        let outputPath = Path.Combine(outputDir.FullName, Path.ChangeExtension(fileName, ".dll"))
+        this.EmitAsFile outputPath
+        outputPath
 
 type CSharpLanguageVersion =
     | CSharp8 = 0
@@ -366,8 +391,6 @@ module CompilerAssertHelpers =
         inherit MarshalByRefObject()
 
         member x.ExecuteTestCase assemblyPath isFsx =
-            // Set console streams for the AppDomain.
-            TestConsole.install()
             let assembly = Assembly.LoadFrom assemblyPath
             executeAssemblyEntryPoint assembly isFsx
 
@@ -561,12 +584,7 @@ module CompilerAssertHelpers =
                         | CompilationReference (cmpl, staticLink) ->
                             compileCompilationAux outputDir ignoreWarnings cmpl, staticLink
                         | TestCompilationReference (cmpl) ->
-                            let fileName =
-                                match cmpl with
-                                | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
-                                | _ -> getTemporaryFileNameInDirectory outputDir
-                            let tmp = Path.Combine(outputDir.FullName, Path.ChangeExtension(fileName, ".dll"))
-                            cmpl.EmitAsFile tmp
+                            let tmp = cmpl.EmitToDirectory outputDir
                             (([||], None, tmp), []), false)
 
             let compilationRefs =
@@ -615,16 +633,18 @@ module CompilerAssertHelpers =
         let fileName = "dotnet"
         let arguments = outputFilePath
 
-        let runtimeconfig = """
-{
-    "runtimeOptions": {
-        "tfm": "net10.0",
-        "framework": {
+        // Derive the runtime version from productTfm (e.g., "net10.0" -> "10.0.0")
+        let runtimeVersion = productTfm.Replace("net", "") + ".0"
+        let runtimeconfig = $"""
+{{
+    "runtimeOptions": {{
+        "tfm": "{productTfm}",
+        "framework": {{
             "name": "Microsoft.NETCore.App",
-            "version": "7.0"
-        }
-    }
-}"""
+            "version": "{runtimeVersion}"
+        }}
+    }}
+}}"""
         let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
         File.WriteAllText(runtimeconfigPath, runtimeconfig)
 #endif
@@ -983,34 +1003,45 @@ Updated automatically, please check diffs in your pull request, changes must be 
         compileLibraryAndVerifyILWithOptions [|"--realsig+"|] (SourceCodeFileKind.Create("test.fs", source)) f
 
     static member RunScriptWithOptionsAndReturnResult options (source: string) =
-        // Initialize output and input streams
-        use inStream = new StringReader("")
-        use outStream = new StringWriter()
-        use errStream = new StringWriter()
+        // Save CurrentUICulture and GraphNode.culture to restore after FSI session
+        // FSI may change these via --preferreduilang option, and the change persists
+        // in the static GraphNode.culture which affects async computations in other tests
+        let originalUICulture = System.Threading.Thread.CurrentThread.CurrentUICulture
+        let originalGraphNodeCulture = GraphNode.culture
+        
+        try
+            // Initialize output and input streams
+            use inStream = new StringReader("")
+            use outStream = new StringWriter()
+            use errStream = new StringWriter()
 
-        // Build command line arguments & start FSI session
-        let argv = [| "C:\\fsi.exe" |]
+            // Build command line arguments & start FSI session
+            let argv = [| "C:\\fsi.exe" |]
 #if NETCOREAPP
-        let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
+            let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
 #else
-        let args = Array.append argv [|"--noninteractive"; "--targetprofile:mscorlib"|]
+            let args = Array.append argv [|"--noninteractive"; "--targetprofile:mscorlib"|]
 #endif
-        let allArgs = Array.append args options
+            let allArgs = Array.append args options
 
-        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-        use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
+            let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
+            use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
 
-        let ch, errors = fsiSession.EvalInteractionNonThrowing source
+            let ch, errors = fsiSession.EvalInteractionNonThrowing source
 
-        let errorMessages = ResizeArray()
-        errors
-        |> Seq.iter (fun error -> errorMessages.Add(error.Message))
+            let errorMessages = ResizeArray()
+            errors
+            |> Seq.iter (fun error -> errorMessages.Add(error.Message))
 
-        match ch with
-        | Choice2Of2 ex -> errorMessages.Add(ex.Message)
-        | _ -> ()
+            match ch with
+            | Choice2Of2 ex -> errorMessages.Add(ex.Message)
+            | _ -> ()
 
-        errorMessages, string outStream, string errStream
+            errorMessages, string outStream, string errStream
+        finally
+            // Restore CurrentUICulture and GraphNode.culture to prevent culture leaking between tests
+            System.Threading.Thread.CurrentThread.CurrentUICulture <- originalUICulture
+            GraphNode.culture <- originalGraphNodeCulture
 
     static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
         let errorMessages, _, _ = CompilerAssert.RunScriptWithOptionsAndReturnResult options source

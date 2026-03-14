@@ -10,7 +10,6 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 
 /// DiagnosticLoggers can be sensitive to the TcConfig flags. During the checking
@@ -40,7 +39,7 @@ type DiagnosticsLoggerUpToMaxErrors =
 
     override ErrorCount: int
 
-    override DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    override DiagnosticSink: diagnostic: PhasedDiagnostic -> unit
 
 /// The main (non-incremental) compilation entry point used by fsc.exe
 val CompileFromCommandLineArguments:

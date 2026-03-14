@@ -23,6 +23,8 @@ type internal FileInProject =
       FileName: FileName
       ParsedInput: ParsedInput }
 
+    member IsScript: bool
+
 /// There is a subtle difference between a module and namespace.
 /// A namespace does not necessarily expose a set of dependent files.
 /// Only when the namespace exposes types that could later be inferred.
@@ -115,6 +117,9 @@ type internal FilePairMap =
     member HasSignature: implementationIndex: FileIndex -> bool
     member TryGetSignatureIndex: implementationIndex: FileIndex -> FileIndex option
     member IsSignature: index: FileIndex -> bool
+    /// Covers the case where the implementation file appears before the signature file in the project.
+    /// This is needed only to correctly trigger FS0238 (implementation already given).
+    member TryGetOutOfOrderImplementationIndex: signatureIndex: FileIndex -> FileIndex option
 
 /// Callback that returns a previously calculated 'Result and updates 'State accordingly.
 type internal Finisher<'Node, 'State, 'Result> = Finisher of node: 'Node * finisher: ('State -> 'Result * 'State)

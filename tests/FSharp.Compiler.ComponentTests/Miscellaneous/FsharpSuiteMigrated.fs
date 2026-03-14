@@ -12,7 +12,7 @@ open FSharp.Test.ScriptHelpers
 
 
 module Configuration = 
-    let supportedNames = set ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
+    let supportedNames = set ["testlib.fsi";"testlib.fs";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
 
 [<RequireQualifiedAccess>]
 type ScriptSessionIsolation = Shared | Isolated
@@ -84,15 +84,10 @@ module TestFrameworkAdapter =
 
     let adjustVersion version bonusArgs = 
         match version with 
-        | LangVersion.V47 -> "4.7",bonusArgs
-        | LangVersion.V50 -> "5.0",bonusArgs
-        | LangVersion.V60 -> "6.0",bonusArgs
-        | LangVersion.V70 -> "7.0",bonusArgs
         | LangVersion.V80 -> "8.0",bonusArgs
         | LangVersion.V90 -> "9.0",bonusArgs
         | LangVersion.Preview -> "preview",bonusArgs
         | LangVersion.Latest  -> "latest", bonusArgs
-        | LangVersion.SupportsMl -> "5.0",  "--mlcompatibility" :: bonusArgs       
 
 
     let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion sessionIsolation = 
@@ -112,7 +107,6 @@ module TestFrameworkAdapter =
      
         let mainFile,otherFiles = 
             match files.Length with
-            | 0 -> Directory.GetFiles(absFolder,"*.ml") |> Array.exactlyOne, [||]
             | 1 -> files |> Array.exactlyOne, [||]
             | _ -> 
                 let mainFile,dependencies = 
@@ -172,7 +166,7 @@ module TestFrameworkAdapter =
     let singleTestBuildAndRunIsolated folder mode = singleTestBuildAndRunVersion folder mode LangVersion.Latest ScriptSessionIsolation.Isolated
 
     let singleVersionedNegTestAux folder bonusArgs version testName =
-        singleTestBuildAndRunAuxVersion folder bonusArgs  (NEG_TEST_BUILD testName) version
+        singleTestBuildAndRunAuxVersion folder bonusArgs  (NEG_TEST_BUILD testName) version ScriptSessionIsolation.Shared
     let singleVersionedNegTest (folder:string)  (version:LangVersion) (testName:string) = 
         singleVersionedNegTestAux folder [] version testName
     let singleNegTest folder testName = singleVersionedNegTest folder LangVersion.Latest testName

@@ -4,11 +4,9 @@ namespace FSharp.DependencyManager.Nuget
 open System
 open System.Diagnostics
 open System.IO
-open System.Reflection
 open System.Security.Cryptography
 open System.Text.RegularExpressions
 open FSDependencyManager
-open Internal.Utilities.FSharpEnvironment
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class, AllowMultiple = false)>]
 type DependencyManagerAttribute() =
@@ -219,7 +217,7 @@ module internal Utilities =
 
         | None -> false, Array.empty, Array.empty
 
-    let buildProject projectPath binLogPath timeout =
+    let buildProject dotnetHostPath projectPath binLogPath timeout =
         let binLoggingArguments =
             match binLogPath with
             | Some(path) ->
@@ -240,7 +238,6 @@ module internal Utilities =
             sprintf "%s -restore %s %c%s%c /nologo /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
         let workingDir = Path.GetDirectoryName projectPath
-        let dotnetHostPath = getDotnetHostPath ()
         let args = arguments "msbuild -v:quiet"
         let success, stdOut, stdErr = executeTool dotnetHostPath args workingDir [] timeout
 
@@ -286,8 +283,7 @@ module internal Utilities =
             includes = includes
         }
 
-    let generateSourcesFromNugetConfigs scriptDirectory workingDir timeout =
-        let dotnetHostPath = getDotnetHostPath ()
+    let generateSourcesFromNugetConfigs dotnetHostPath scriptDirectory workingDir timeout =
         let args = "nuget list source --format detailed"
 
         let success, stdOut, stdErr =

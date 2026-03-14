@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 module SomeModule =
     type DU =

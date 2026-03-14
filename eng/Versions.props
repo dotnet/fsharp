@@ -1,22 +1,23 @@
 <Project>
-  <Import Project="Version.Details.props" Condition="Exists('Version.Details.props')" />
+
+  <Import Project="Version.Details.props" />
+
+  <!-- Arcade features-->
   <PropertyGroup>
-    <!-- opt-out properties -->
     <UsingToolXUnit>false</UsingToolXUnit>
-    <!-- opt-in properties -->
     <UsingToolNuGetRepack>true</UsingToolNuGetRepack>
     <UsingToolSymbolUploader>true</UsingToolSymbolUploader>
     <UsingToolVSSDK>true</UsingToolVSSDK>
   </PropertyGroup>
+
   <!-- Version number computation -->
   <PropertyGroup>
     <!-- Don't use the built in support for pre-release iteration. The nuget repack task doesn't support
          the iteration format at the moment. https://github.com/dotnet/arcade/issues/15919 -->
-    <FSharpPreReleaseIteration></FSharpPreReleaseIteration>
-    <PreReleaseVersionLabel>servicing$(FSharpPreReleaseIteration)</PreReleaseVersionLabel>
-    <!-- These have to be in sync with latest release branch -->
+    <FSharpPreReleaseIteration>3</FSharpPreReleaseIteration>
+    <PreReleaseVersionLabel>preview$(FSharpPreReleaseIteration)</PreReleaseVersionLabel>
     <!-- F# Version components -->
-    <FSMajorVersion>10</FSMajorVersion>
+    <FSMajorVersion>11</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
     <FSBuildVersion>106</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
@@ -25,15 +26,19 @@
     <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
     <!-- -->
     <!-- FSharp.Core version -->
+    <!-- For FSMajorVersion 10, use MinorVersion 1 to indicate breaking changes in FSharp.Core -->
+    <FSMinorVersion Condition="'$(FSMajorVersion)' == '10'">1</FSMinorVersion>
     <FSCoreProductVersion>$(FSMajorVersion).$(FSMinorVersion)</FSCoreProductVersion>
     <FSCorePackageVersionValue>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCorePackageVersionValue>
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
-    <FSCoreShippedVersion>10.0.0.0</FSCoreShippedVersion>
+    <FSCoreShippedVersion>10.0.101.0</FSCoreShippedVersion>
+    <!-- Reset FSMinorVersion for non-FSharp.Core uses -->
+    <FSMinorVersion Condition="'$(FSMajorVersion)' == '10'">0</FSMinorVersion>
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>43</FCSMajorVersion>
-    <FCSMinorVersion>10</FCSMinorVersion>
+    <FCSMinorVersion>12</FCSMinorVersion>
     <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
@@ -41,32 +46,35 @@
     <FSharpLibrariesChangelogVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSharpLibrariesChangelogVersion>
     <!-- -->
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersionValue>9.0.300</FSharpCoreShippedPackageVersionValue>
+    <FSharpCoreShippedPackageVersionValue>10.0.101</FSharpCoreShippedPackageVersionValue>
     <!-- -->
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
-    <FSToolsMajorVersion>14</FSToolsMajorVersion>
-    <FSToolsMinorVersion>0</FSToolsMinorVersion>
+    <FSToolsMajorVersion>15</FSToolsMajorVersion>
+    <FSToolsMinorVersion>2</FSToolsMinorVersion>
     <FSToolsBuildVersion>$(FSBuildVersion)</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion).$(FSToolsRevisionVersion)</FSProductVersion>
   </PropertyGroup>
+
   <PropertyGroup>
     <!-- These have to be in sync with latest release branch -->
     <VSMajorVersion>18</VSMajorVersion>
-    <VSMinorVersion>0</VSMinorVersion>
+    <VSMinorVersion>4</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
   </PropertyGroup>
+
   <!-- version number assignment -->
   <PropertyGroup Condition="'$(UseFSharpPackageVersion)' == 'true'">
     <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
     <AssemblyVersion>$(FSCoreVersion)</AssemblyVersion>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(UseFSharpPackageVersion)' != 'true'">
     <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersionPrefix)</VersionPrefix>
@@ -75,18 +83,15 @@
     <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
-  <!-- Dependencies from maintenance-packages, source-build specific -->
-  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
+
+
+  <PropertyGroup>
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
+    <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
   </PropertyGroup>
-  <!-- Dependencies from maintenance-packages, everything else -->
-  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
-    <SystemBuffersVersion>4.6.0</SystemBuffersVersion>
-    <SystemMemoryVersion>4.6.0</SystemMemoryVersion>
-    <SystemRuntimeCompilerServicesUnsafeVersion>6.1.0</SystemRuntimeCompilerServicesUnsafeVersion>
-  </PropertyGroup>
+
   <PropertyGroup>
     <!-- System.* packages -->
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
@@ -94,17 +99,14 @@
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <!-- Versions for package groups -->
-    <VisualStudioEditorPackagesVersion>18.0.332-preview</VisualStudioEditorPackagesVersion>
-    <MicrosoftVisualStudioShellPackagesVersion>18.0.2101-preview.1</MicrosoftVisualStudioShellPackagesVersion>
+    <VisualStudioEditorPackagesVersion>18.0.404-preview</VisualStudioEditorPackagesVersion>
+    <MicrosoftVisualStudioShellPackagesVersion>18.0.2188-preview.1</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>18.0.1237-pre</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>18.0.2077-preview.1</VisualStudioShellProjectsPackages>
     <MicrosoftVisualStudioThreadingPackagesVersion>18.0.5</MicrosoftVisualStudioThreadingPackagesVersion>
   
-    <!-- Roslyn packages- manually maintained, rest is darc-managed in sibling file -->
+    <!-- Roslyn packages. Rest is managed by maestro bot and is in the imported .Details.props file -->
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
-	<!-- Roslyn for when we need to compile C# in tests. .dll hell caused by vstest makes newer version fail at runtime -->
-	<RoslynForTestingButNotForVSLayer>4.14.0</RoslynForTestingButNotForVSLayer>
-    <!-- -->
     <!-- Visual Studio Shell packages -->
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
     <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
@@ -127,7 +129,7 @@
     <MicrosoftVisualStudioLanguageIntellisenseVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageIntellisenseVersion>
     <MicrosoftVisualStudioPlatformVSEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioPlatformVSEditorVersion>
     <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
-    <NuGetSolutionRestoreManagerInteropVersion>5.6.0</NuGetSolutionRestoreManagerInteropVersion>
+    <NuGetVisualStudioVersion>17.14.0</NuGetVisualStudioVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
     <MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion>$(MicrosoftVisualStudioExtensibilityTestingVersion)</MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion>
 
@@ -149,17 +151,18 @@
     <!-- -->
     <!-- other packages -->
     <BenchmarkDotNetVersion>0.13.10</BenchmarkDotNetVersion>
-    <FsCheckVersion>2.16.5</FsCheckVersion>
+    <FsCheckVersion>2.16.6</FsCheckVersion>
     <MicrosoftCompositionVersion>1.0.31</MicrosoftCompositionVersion>
     <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
      <!-- Making diff way too large, update separately later. e.g. to 6.0.0-rtm.21518.12 and 9.0.0-rc.2.24462.10 or via darc -->
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
-    <MicrosoftNETTestSdkVersion>17.14.1</MicrosoftNETTestSdkVersion>
+    <MicrosoftTestPlatformVersion>17.14.1</MicrosoftTestPlatformVersion>
+    <MicrosoftTestingExtensionsHangDumpVersion>2.0.2</MicrosoftTestingExtensionsHangDumpVersion>
     <NewtonsoftJsonVersion>13.0.3</NewtonsoftJsonVersion>
-    <XUnitVersion>2.9.0</XUnitVersion>
-    <XUnitRunnerVersion>3.1.4</XUnitRunnerVersion>
-    <XunitXmlTestLoggerVersion>3.1.17</XunitXmlTestLoggerVersion>
+    <XunitVersion>3.2.2</XunitVersion>
+    <XunitRunnerConsoleVersion>3.2.2</XunitRunnerConsoleVersion>
     <!-- -->
   </PropertyGroup>
+
 </Project>

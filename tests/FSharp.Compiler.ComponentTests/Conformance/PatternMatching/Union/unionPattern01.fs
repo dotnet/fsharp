@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #Unions 
-#light
+
 
 type Foo = 
     | A of int * string

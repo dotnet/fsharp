@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #Records 
-#light
+
 
 // Verify ability to have nested patterns in record types
 

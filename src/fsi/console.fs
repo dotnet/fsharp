@@ -629,7 +629,7 @@ type internal ReadLineConsole() =
                     deleteWordLeadingToCursor ()
                     change ()
                 | _ ->
-                    // Note: If KeyChar=0, the not a proper char, e.g. it could be part of a multi key-press character,
+                    // Note: If KeyChar=0, it's not a proper char, e.g. it could be part of a multi key-press character,
                     //       e.g. e-acute is ' and e with the French (Belgium) IME and US Intl KB.
                     // Here: skip KeyChar=0 (except for F6 which maps to 0x1A (ctrl-Z?)).
                     if key.KeyChar <> '\000' || key.Key = ConsoleKey.F6 then

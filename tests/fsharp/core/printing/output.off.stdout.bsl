@@ -252,7 +252,9 @@ type 'a T4063 = | AT4063 of 'a
     #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'
     #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
     #clear;;                                      // Clear screen
+    #version;;                                    // Display F# Interactive version and environment information
     #quit;;                                       // Exit
+    #exit;;                                       // Exit
 
   F# Interactive command line options:
 
@@ -264,6 +266,9 @@ type 'a T4063 = | AT4063 of 'a
 Description:
 Builds a new collection whose elements are the results of applying the given function
 to each of the elements of the collection.
+
+Remarks:
+This is an O(n) operation, where n is the length of the list.
 
 Parameters:
 - mapping: The function to transform elements from the input list.
@@ -1700,15 +1705,14 @@ type System.Int32 with
 
 > val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int
 
-> val functionWhichTakesAParameterCalled_land:
-  ``land`` : (int -> int -> int) -> int
+> val functionWhichTakesAParameterCalled_land: land: (int -> int -> int) -> int
 
 > type RecordWithStrangeNames =
   {
     ``funky name`` : obj
     op_Addition: obj
     ``+`` : obj
-    ``land`` : obj
+    land: obj
     ``base`` : obj
   }
 
@@ -1724,7 +1728,7 @@ type System.Int32 with
   | A
   | B
 
-> type ``land`` =
+> type land =
   | A
   | B
 
@@ -1734,7 +1738,7 @@ type System.Int32 with
 > module op_Addition =
   val x: int
 
-> module ``land`` =
+> module land =
   val x: int
 
 > val ``+`` : x: 'a -> y: 'b -> int
@@ -1747,7 +1751,7 @@ type System.Int32 with
 
 > val ``or`` : int
 
-> val ``land`` : int
+> val land: int
 
 > val ``.ctor`` : int
 
