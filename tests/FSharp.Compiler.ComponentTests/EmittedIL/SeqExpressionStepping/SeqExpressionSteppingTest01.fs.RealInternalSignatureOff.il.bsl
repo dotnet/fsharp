@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -59,9 +49,7 @@
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method public specialname rtspecialname 
-              instance void  .ctor(int32 pc,
-                                   int32 current) cil managed
+      .method public specialname rtspecialname instance void  .ctor(int32 pc, int32 current) cil managed
       {
         
         .maxstack  8
@@ -79,7 +67,7 @@
       .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
       {
         
-        .maxstack  8
+        .maxstack  6
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0006:  ldc.i4.1
@@ -90,29 +78,31 @@
         IL_0015:  br.s       IL_001d
 
         IL_0017:  nop
-        IL_0018:  br.s       IL_002e
+        IL_0018:  br.s       IL_0030
 
         IL_001a:  nop
-        IL_001b:  br.s       IL_0035
+        IL_001b:  br.s       IL_0037
 
         IL_001d:  nop
-        IL_001e:  ldarg.0
-        IL_001f:  ldc.i4.1
-        IL_0020:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
-        IL_0025:  ldarg.0
-        IL_0026:  ldc.i4.1
-        IL_0027:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
-        IL_002c:  ldc.i4.1
-        IL_002d:  ret
+        IL_001e:  br.s       IL_0020
 
-        IL_002e:  ldarg.0
-        IL_002f:  ldc.i4.2
-        IL_0030:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
-        IL_0035:  ldarg.0
-        IL_0036:  ldc.i4.0
-        IL_0037:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
-        IL_003c:  ldc.i4.0
-        IL_003d:  ret
+        IL_0020:  ldarg.0
+        IL_0021:  ldc.i4.1
+        IL_0022:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
+        IL_0027:  ldarg.0
+        IL_0028:  ldc.i4.1
+        IL_0029:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
+        IL_002e:  ldc.i4.1
+        IL_002f:  ret
+
+        IL_0030:  ldarg.0
+        IL_0031:  ldc.i4.2
+        IL_0032:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
+        IL_0037:  ldarg.0
+        IL_0038:  ldc.i4.0
+        IL_0039:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
+        IL_003e:  ldc.i4.0
+        IL_003f:  ret
       } 
 
       .method public strict virtual instance void Close() cil managed
@@ -138,20 +128,22 @@
         IL_0017:  br.s       IL_0022
 
         IL_0019:  nop
-        IL_001a:  br.s       IL_0025
+        IL_001a:  br.s       IL_0027
 
         IL_001c:  nop
-        IL_001d:  br.s       IL_0023
+        IL_001d:  br.s       IL_0025
 
         IL_001f:  nop
-        IL_0020:  br.s       IL_0025
+        IL_0020:  br.s       IL_0027
 
         IL_0022:  nop
-        IL_0023:  ldc.i4.0
-        IL_0024:  ret
+        IL_0023:  br.s       IL_0025
 
         IL_0025:  ldc.i4.0
         IL_0026:  ret
+
+        IL_0027:  ldc.i4.0
+        IL_0028:  ret
       } 
 
       .method public strict virtual instance int32 get_LastGenerated() cil managed
@@ -217,7 +209,6 @@
   } 
 
 } 
-
 
 
 
