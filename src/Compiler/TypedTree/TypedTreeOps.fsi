@@ -2404,14 +2404,14 @@ val TryFindTyconRefStringAttribute: TcGlobals -> range -> BuiltinAttribInfo -> T
 /// Try to find a specific attribute on a type definition, where the attribute accepts a bool argument.
 val TryFindTyconRefBoolAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool option
 
+/// Try to find the AllowMultiple value of the AttributeUsage attribute on a type definition.
+val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
+
 /// Try to find a specific attribute on a type definition
 val TyconRefHasAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool
 
 /// Try to find an attribute with a specific full name on a type definition
 val TyconRefHasAttributeByName: range -> string -> TyconRef -> bool
-
-/// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
-val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
 
 #if !NO_TYPEPROVIDERS
 /// returns Some(assemblyName) for success

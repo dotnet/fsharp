@@ -3514,13 +3514,6 @@ let superOfTycon (g: TcGlobals) (tycon: Tycon) =
     | None -> g.obj_ty_noNulls 
     | Some ty -> ty 
 
-/// walk a TyconRef's inheritance tree, yielding any parent types as an array
-let supersOfTyconRef (tcref: TyconRef) =
-    tcref |> Array.unfold (fun tcref ->
-        match tcref.TypeContents.tcaug_super with
-        | Some (TType_app(sup, _, _)) -> Some(sup, sup)
-        | _ -> None)
-
 //----------------------------------------------------------------------------
 // Detect attributes
 //----------------------------------------------------------------------------
@@ -3654,16 +3647,12 @@ let TryFindTyconRefBoolAttribute g m attribSpec tcref =
                    | [ Some (:? bool as v : obj) ], _ -> Some v 
                    | _ -> None)
 
-/// Try to find the resolved attributeusage for an type by walking its inheritance tree and picking the correct attribute usage value
+/// Try to find the AllowMultiple value of the AttributeUsage attribute on a type definition.
 let TryFindAttributeUsageAttribute g m tcref =
-    [| yield tcref
-       yield! supersOfTyconRef tcref |]
-    |> Array.tryPick (fun tcref ->
-        TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref
-                (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", _, _, ILAttribElem.Bool res -> Some res | _ -> None))
-                (fun (Attrib(_, _, _, named, _, _, _)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple", _, _, AttribBoolArg res ) -> Some res | _ -> None))
-                (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", Some (:? bool as res : obj) -> Some res | _ -> None))
-    )
+    TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref
+        (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", _, _, ILAttribElem.Bool res -> Some res | _ -> None))
+        (fun (Attrib(_, _, _, named, _, _, _)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple", _, _, AttribBoolArg res ) -> Some res | _ -> None))
+        (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", Some (:? bool as res : obj) -> Some res | _ -> None))
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///
