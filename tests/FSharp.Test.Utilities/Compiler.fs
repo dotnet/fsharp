@@ -1133,13 +1133,11 @@ module rec Compiler =
         let outputWritten, errorsWritten = capture.OutText, capture.ErrorText
         processScriptResults fs result outputWritten errorsWritten
 
-    let scriptingShim = Path.Combine(__SOURCE_DIRECTORY__,"ScriptingShims.fsx")
     let private evalScriptFromDisk (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
 
         let fileNames =
             (fs.Source :: fs.AdditionalSources)
             |> List.map (fun x -> x.GetSourceFileName)
-            |> List.insertAt 0 scriptingShim
             |> List.map (sprintf " @\"%s\"")
             |> String.Concat
 
@@ -1158,13 +1156,21 @@ module rec Compiler =
 
     let internal sessionCache = 
         Collections.Concurrent.ConcurrentDictionary<Set<string> * LangVersion, FSharpScript>()
+
+    let internal createSessionWithShadowedExit args version =
+        let script = new FSharpScript(additionalArgs=args,quiet=true,langVersion=version)
+        script.ApplyExitShadowing()
+        script
+
+    let getIsolatedSessionForEval args version =
+        createSessionWithShadowedExit args version
     
     let getSessionForEval args version =
         let key = Set args, version
         match sessionCache.TryGetValue(key) with
         | true, script -> script
         | _ -> 
-            let script = new FSharpScript(additionalArgs=args,quiet=true,langVersion=version)
+            let script = createSessionWithShadowedExit args version
             sessionCache.TryAdd(key, script) |> ignore
             script
 

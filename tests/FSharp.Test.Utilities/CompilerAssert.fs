@@ -22,6 +22,7 @@ open FSharp.Compiler.BuildGraph
 open System.Runtime.Loader
 #endif
 open FSharp.Test.Utilities
+open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Xunit
@@ -1006,41 +1007,25 @@ Updated automatically, please check diffs in your pull request, changes must be 
         // Save CurrentUICulture and GraphNode.culture to restore after FSI session
         // FSI may change these via --preferreduilang option, and the change persists
         // in the static GraphNode.culture which affects async computations in other tests
-        let originalUICulture = System.Threading.Thread.CurrentThread.CurrentUICulture
-        let originalGraphNodeCulture = GraphNode.culture
-        
+        let originalUICulture = CultureInfo.CurrentUICulture
+        let originalGraphNodeCulture = GraphNode.culture     
         try
-            // Initialize output and input streams
-            use inStream = new StringReader("")
             use outStream = new StringWriter()
             use errStream = new StringWriter()
+            use script = new FSharpScript(additionalArgs = Array.append [| "--noninteractive" |] options, quiet = false, outWriter = outStream, errWriter = errStream)
+            script.ApplyExitShadowing()
+            let result, errors = script.Eval(source)
 
-            // Build command line arguments & start FSI session
-            let argv = [| "C:\\fsi.exe" |]
-#if NETCOREAPP
-            let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
-#else
-            let args = Array.append argv [|"--noninteractive"; "--targetprofile:mscorlib"|]
-#endif
-            let allArgs = Array.append args options
+            let errorMessages = ResizeArray(errors |> Seq.map _.Message)
 
-            let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-            use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
-
-            let ch, errors = fsiSession.EvalInteractionNonThrowing source
-
-            let errorMessages = ResizeArray()
-            errors
-            |> Seq.iter (fun error -> errorMessages.Add(error.Message))
-
-            match ch with
-            | Choice2Of2 ex -> errorMessages.Add(ex.Message)
+            match result with
+            | Result.Error ex -> errorMessages.Add(ex.Message)
             | _ -> ()
 
             errorMessages, string outStream, string errStream
         finally
             // Restore CurrentUICulture and GraphNode.culture to prevent culture leaking between tests
-            System.Threading.Thread.CurrentThread.CurrentUICulture <- originalUICulture
+            CultureInfo.CurrentUICulture <- originalUICulture
             GraphNode.culture <- originalGraphNodeCulture
 
     static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =

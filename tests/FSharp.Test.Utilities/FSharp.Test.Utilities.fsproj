@@ -25,16 +25,15 @@
     <Compile Include="..\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
     </Compile>
-    <None Include="ScriptingShims.fsx" />
     <Compile Include="TestConsole.fs" />
     <Compile Include="TestFramework.fs" />
     <Compile Include="ILChecker.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="VSInstallDiscovery.fs" />
+    <Compile Include="ScriptHelpers.fs" />
     <Compile Include="CompilerAssert.fs" />
     <Compile Include="ProjectGeneration.fs" />
     <Compile Include="Assert.fs" />
-    <Compile Include="ScriptHelpers.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="ILVerifierModule.fs" />
     <Compile Include="DataAttributeBase.fs" />

@@ -9,8 +9,6 @@ open FSharp.Compiler.IO
 
 let testConfig = testConfig __SOURCE_DIRECTORY__
 
-let log = printfn
-
 type Permutation =
 #if NETCOREAPP
     | FSC_NETCORE of optimized: bool * buildOnly: bool
