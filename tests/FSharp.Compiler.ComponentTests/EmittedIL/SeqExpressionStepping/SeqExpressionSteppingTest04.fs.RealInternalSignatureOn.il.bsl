@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -102,81 +92,83 @@
         IL_0019:  br.s       IL_002a
 
         IL_001b:  nop
-        IL_001c:  br.s       IL_008d
+        IL_001c:  br.s       IL_008f
 
         IL_001e:  nop
-        IL_001f:  br         IL_00b5
+        IL_001f:  br         IL_00b7
 
         IL_0024:  nop
-        IL_0025:  br         IL_00ca
+        IL_0025:  br         IL_00cc
 
         IL_002a:  nop
-        IL_002b:  ldarg.0
-        IL_002c:  ldc.i4.0
-        IL_002d:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::.ctor(!0)
-        IL_0032:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
-        IL_0037:  ldarg.0
-        IL_0038:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
-        IL_003d:  ldarg.0
-        IL_003e:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
-        IL_0043:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
-        IL_0048:  ldc.i4.1
-        IL_0049:  add
-        IL_004a:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::set_contents(!0)
-        IL_004f:  ldarg.0
-        IL_0050:  ldc.i4.0
-        IL_0051:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::.ctor(!0)
-        IL_0056:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::y
-        IL_005b:  ldarg.0
-        IL_005c:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::y
-        IL_0061:  ldarg.0
-        IL_0062:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::y
-        IL_0067:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
-        IL_006c:  ldc.i4.1
-        IL_006d:  add
-        IL_006e:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::set_contents(!0)
-        IL_0073:  ldarg.0
-        IL_0074:  ldc.i4.1
-        IL_0075:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::pc
-        IL_007a:  ldarg.0
-        IL_007b:  ldarg.0
-        IL_007c:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
-        IL_0081:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
-        IL_0086:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::current
-        IL_008b:  ldc.i4.1
-        IL_008c:  ret
+        IL_002b:  br.s       IL_002d
 
-        IL_008d:  ldarg.0
-        IL_008e:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
-        IL_0093:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
-        IL_0098:  ldarg.0
-        IL_0099:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::y
-        IL_009e:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
-        IL_00a3:  add
-        IL_00a4:  stloc.0
-        IL_00a5:  ldarg.0
-        IL_00a6:  ldc.i4.2
-        IL_00a7:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::pc
-        IL_00ac:  ldarg.0
-        IL_00ad:  ldloc.0
-        IL_00ae:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::current
-        IL_00b3:  ldc.i4.1
-        IL_00b4:  ret
+        IL_002d:  ldarg.0
+        IL_002e:  ldc.i4.0
+        IL_002f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::.ctor(!0)
+        IL_0034:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
+        IL_0039:  ldarg.0
+        IL_003a:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
+        IL_003f:  ldarg.0
+        IL_0040:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
+        IL_0045:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
+        IL_004a:  ldc.i4.1
+        IL_004b:  add
+        IL_004c:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::set_contents(!0)
+        IL_0051:  ldarg.0
+        IL_0052:  ldc.i4.0
+        IL_0053:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::.ctor(!0)
+        IL_0058:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::y
+        IL_005d:  ldarg.0
+        IL_005e:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::y
+        IL_0063:  ldarg.0
+        IL_0064:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::y
+        IL_0069:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
+        IL_006e:  ldc.i4.1
+        IL_006f:  add
+        IL_0070:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::set_contents(!0)
+        IL_0075:  ldarg.0
+        IL_0076:  ldc.i4.1
+        IL_0077:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::pc
+        IL_007c:  ldarg.0
+        IL_007d:  ldarg.0
+        IL_007e:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
+        IL_0083:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
+        IL_0088:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::current
+        IL_008d:  ldc.i4.1
+        IL_008e:  ret
 
-        IL_00b5:  ldarg.0
-        IL_00b6:  ldnull
-        IL_00b7:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::y
-        IL_00bc:  ldarg.0
-        IL_00bd:  ldnull
-        IL_00be:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
-        IL_00c3:  ldarg.0
-        IL_00c4:  ldc.i4.3
-        IL_00c5:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::pc
-        IL_00ca:  ldarg.0
-        IL_00cb:  ldc.i4.0
-        IL_00cc:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::current
-        IL_00d1:  ldc.i4.0
-        IL_00d2:  ret
+        IL_008f:  ldarg.0
+        IL_0090:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
+        IL_0095:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
+        IL_009a:  ldarg.0
+        IL_009b:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::y
+        IL_00a0:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
+        IL_00a5:  add
+        IL_00a6:  stloc.0
+        IL_00a7:  ldarg.0
+        IL_00a8:  ldc.i4.2
+        IL_00a9:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::pc
+        IL_00ae:  ldarg.0
+        IL_00af:  ldloc.0
+        IL_00b0:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::current
+        IL_00b5:  ldc.i4.1
+        IL_00b6:  ret
+
+        IL_00b7:  ldarg.0
+        IL_00b8:  ldnull
+        IL_00b9:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::y
+        IL_00be:  ldarg.0
+        IL_00bf:  ldnull
+        IL_00c0:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::x
+        IL_00c5:  ldarg.0
+        IL_00c6:  ldc.i4.3
+        IL_00c7:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::pc
+        IL_00cc:  ldarg.0
+        IL_00cd:  ldc.i4.0
+        IL_00ce:  stfld      int32 SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@6::current
+        IL_00d3:  ldc.i4.0
+        IL_00d4:  ret
       } 
 
       .method public strict virtual instance void Close() cil managed
@@ -203,26 +195,28 @@
         IL_001b:  br.s       IL_0029
 
         IL_001d:  nop
-        IL_001e:  br.s       IL_002e
+        IL_001e:  br.s       IL_0030
 
         IL_0020:  nop
-        IL_0021:  br.s       IL_002c
+        IL_0021:  br.s       IL_002e
 
         IL_0023:  nop
-        IL_0024:  br.s       IL_002a
+        IL_0024:  br.s       IL_002c
 
         IL_0026:  nop
-        IL_0027:  br.s       IL_002e
+        IL_0027:  br.s       IL_0030
 
         IL_0029:  nop
-        IL_002a:  ldc.i4.0
-        IL_002b:  ret
+        IL_002a:  br.s       IL_002c
 
         IL_002c:  ldc.i4.0
         IL_002d:  ret
 
         IL_002e:  ldc.i4.0
         IL_002f:  ret
+
+        IL_0030:  ldc.i4.0
+        IL_0031:  ret
       } 
 
       .method public strict virtual instance int32 get_LastGenerated() cil managed
@@ -281,7 +275,7 @@
       IL_000c:  ret
     } 
 
-    .method assembly specialname static void staticInitialization@() cil managed
+    .method assembly static void  staticInitialization@() cil managed
     {
       
       .maxstack  3
@@ -307,7 +301,7 @@
     IL_000c:  ret
   } 
 
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  8
@@ -334,7 +328,6 @@
   } 
 
 } 
-
 
 
 
