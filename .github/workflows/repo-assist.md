@@ -14,7 +14,7 @@ description: |
   Always polite, constructive, and mindful of the project's goals.
 
 on:
-  schedule: every 6h
+  schedule: every 1h
   workflow_dispatch:
   slash_command:
     name: repo-assist
@@ -45,10 +45,10 @@ safe-outputs:
   #   target: "*"
   #   title-prefix: "[Repo Assist] "
   #   max: 4
-  # create-issue:
-  #   title-prefix: "[Repo Assist] "
-  #   labels: [automation, repo-assist]
-  #   max: 4
+  create-issue:
+    title-prefix: "[Repo Assist] "
+    labels: [automation, repo-assist]
+    max: 4
   update-issue:
     target: "*"
     title-prefix: "[Repo Assist] "
