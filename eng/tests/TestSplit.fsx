@@ -15,38 +15,39 @@ let residualBatch = 3 // uses negation filter; catches unlisted atoms + future n
 
 let componentTestsAtoms =
     [// atom                    batch
-        "CompilerDirectives",   1
-        "CompilerService",      1
-        "ErrorMessages",        1
-        "FSharpChecker",        1
-        "Import",               1
-        "Language",             1
-        "Miscellaneous",        1
-        "Signatures",           1
-        "TypeChecks",           1
-        "XmlComments",          1
+        // Batch 1 is reserved for FSharpSuite.Tests (desktop-only); no component atoms.
 
+        "CompilerDirectives",   2
         "Diagnostics",          2
         "EmittedIL",            2
-        "Interop",              2
-        "Libraries",            2
+        "ErrorMessages",        2
         "Globalization",        2
+        "Interop",              2
         "InteractiveSession",   2
+        "Language",             2
+        "Libraries",            2
+        "XmlComments",          2
 
         "CompilerOptions",      3
+        "CompilerService",      3
         "Conformance",          3
         "ConstraintSolver",     3
         "Debugger",             3
+        "FSharpChecker",        3
+        "Import",               3
+        "Miscellaneous",        3
         "Scripting",            3
+        "Signatures",           3
+        "TypeChecks",           3
     ]
 
 // Platform tags: "all" = both desktop and coreclr, "desktop" = net472 only
 let otherProjects =
     [// project path                                                                         batch  platform
-        "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          1,     "all"
+        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             1,     "desktop"
+        "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          2,     "all"
         "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          2,     "all"
         "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 2, "all"
-        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             1,     "desktop"
         "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        3,     "all"
     ]
 
@@ -150,6 +151,9 @@ let otherBatchesAtoms =
     |> List.distinct
     |> List.sort
 
+let batchHasComponentAtoms =
+    componentTestsAtoms |> List.exists (fun (_, b) -> b = batch)
+
 let filterArgs =
     if batch = residualBatch then
         let atoms = otherBatchesAtoms |> String.concat " "
@@ -160,7 +164,8 @@ let filterArgs =
 
 // Output format contract: each line must be "dotnet test <project> --no-build -c Release [filterargs]".
 // Consumers: Build.ps1 parses via regex, build.sh parses via sed. Keep in sync if changing format.
-printfn $"dotnet test {componentTests} --no-build -c Release {filterArgs}"
+if batchHasComponentAtoms || batch = residualBatch then
+    printfn $"dotnet test {componentTests} --no-build -c Release {filterArgs}"
 
 for (proj, _, tag) in otherProjects |> List.filter (fun (_, b, tag) -> b = batch && matchesPlatform tag) do
     printfn $"dotnet test {proj} --no-build -c Release"

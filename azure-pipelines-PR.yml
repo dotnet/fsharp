@@ -605,12 +605,10 @@ stages:
             continueOnError: true
             condition: failed()
 
-        # MacOS (split into 3 batches)
+        # MacOS (split into 2 batches; batch 1 is desktop-only FSharpSuite)
         - job: MacOS
           strategy:
             matrix:
-              Batch1:
-                batchNumber: 1
               Batch2:
                 batchNumber: 2
               Batch3:
