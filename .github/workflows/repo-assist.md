@@ -121,6 +121,7 @@ Each run, do Task 1 and Task FINAL
 3. We want automatic analysis to focus on BUGS trying to identify issues that are fixed or issues that are Windows-only and labelling them.
 - For issues that are asssessed to be fixed, the label "AI-thinks-issue-fixed" should be applied and a response giving reasoning and repro if available
 - For issues assess to be Windows only, the label "AI-thinks-windows-only" should be applied and no reasoning given and no comment added.
+- Otherwise, do nothing to avoid noise. If you don't have high confidence in a fix or in the Windows-only nature of the issue, it's better to say nothing than to risk a false positive comment or label. If you have some other high-confidence judgement about the issue, you can leave a note to the maintainer in the "Additional observations" section of the Monthly Activity Summary issue, but do not comment directly on the issue itself.
 4. Expect to engage substantively on 1–10 issues per run; you may scan many more to find good candidates. 
 5. Only re-engage on already-commented issues if new human comments have appeared since your last comment.
 6. Begin every comment with: `🤖 *This is an automated response from Repo Assist.*`
@@ -157,6 +158,10 @@ Maintain a single open issue titled `[Repo Assist] Monthly Activity {YYYY}-{MM}`
    * [ ] **Define goal**: <suggestion>  -  [Related issue](<link>)
 
    *(If no actions needed, state "No suggested actions at this time.")*
+   
+   ## Additional observations for maintainer's attention
+   
+   Sometimes when analyzing isssues, you won't have been able to determine a clear action item, but you may have discovered with high confidence that the issue has an easy fix, or should be closed, or is a duplicate, or some other simple action. If so, leave a once sentence note for the maintainer here -  e.g. "Issue #384 looks like it has an easy fix because ..."
 
    ## Future Work for Repo Assist
 
