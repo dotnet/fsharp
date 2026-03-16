@@ -1,1 +1,18 @@
-{"last_run":"2026-03-16","cursor":"4601","labels":{"6750":"fixed","5016":"windows-only"},"comment":"6750","notes":"Scanned #37-#6941. #6750 fixed. #5016 windows-only. Many bugs still open: #3783,#5263,#5647,#527,#6338,#5795."}
+{
+  "last_run": "2026-03-16T13:35:40Z",
+  "last_run_id": "23146342052",
+  "comments_made": [],
+  "labels_added": [
+    {"issue": 1627, "label": "AI-thinks-windows-only", "run": "23146342052"},
+    {"issue": 5016, "label": "AI-thinks-windows-only", "run": "23146342052"}
+  ],
+  "backlog_cursor": "first_page",
+  "notes": [
+    "No Monthly Activity Summary issue exists yet. Need create_issue tool to create one. Will need to revisit.",
+    "Investigated ~50+ open Bug issues from 2015-2022, found no high-confidence fixed issues to label (no compiler available to test repros)",
+    "Two Windows-only issues labeled: #1627 (VS Editor shift+tab) and #5016 (VS Navigation Bar settings)",
+    "All issues found in first 2 pages of oldest-first Bug issues",
+    "Many issues have 'state_reason: reopened' - they were closed by KevinRansom and then reopened, meaning they are genuinely still open bugs",
+    "Issues updated on 2026-02-05 may relate to a batch review event but most comments don't confirm fixes"
+  ]
+}
