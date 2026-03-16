@@ -1231,9 +1231,19 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
             let vExpr, vExprTy = tcVal vref valUseFlags (minfo.DeclaringTypeInst @ minst) m
             BuildFSharpMethodApp g m vref vExpr vExprTy allArgs
 
-        | MethInfoWithModifiedReturnType(mi,retTy) ->
-            let expr, exprTy = BuildMethodCall tcVal g amap isMutable m isProp mi valUseFlags minst objArgs args staticTyOpt
-            let expr = mkCoerceExpr(expr, retTy, m, exprTy)
+        | MethInfoWithModifiedReturnType(mi, retTy) ->
+            // Build the inner call directly, without re-invoking TakeObjAddrForMethodCall.
+            // objArgs are already address-taken and allArgs/valUseFlags are already processed.
+            let expr, exprTy =
+                match mi with
+                | ILMeth(_, ilMethInfo, _) ->
+                    BuildILMethInfoCall g amap m isProp ilMethInfo valUseFlags minst direct allArgs
+                | FSMeth(_, _, vref, _) ->
+                    let vExpr, vExprTy = tcVal vref valUseFlags (mi.DeclaringTypeInst @ minst) m
+                    BuildFSharpMethodApp g m vref vExpr vExprTy allArgs
+                | _ -> failwith "MethInfoWithModifiedReturnType: unexpected inner method kind"
+
+            let expr = mkCoerceExpr (expr, retTy, m, exprTy)
             expr, retTy
 
         // Build a 'call' to a struct default constructor 

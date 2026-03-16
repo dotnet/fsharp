@@ -734,6 +734,56 @@ let processAlias (x:mykgalias) =
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
+// https://github.com/dotnet/fsharp/issues/19435
+[<Fact>]
+let ``ToString on value type with UoM does not produce garbage at runtime`` () =
+    FSharp """
+module MyProgram
+
+open FSharp.Data.UnitSystems.SI.UnitNames
+
+[<EntryPoint>]
+let main _ =
+    let x = 42<kilogram>
+    let result = x.ToString()
+    if result <> "42" then
+        eprintfn "BUG: Expected '42' but got '%s'" result
+        1
+    else
+        printf "42"
+        0
+    """
+    |> withCheckNulls
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "42"
+
+// https://github.com/dotnet/fsharp/issues/19435
+[<Fact>]
+let ``ToString on float with UoM does not produce garbage at runtime`` () =
+    FSharp """
+module MyProgram
+
+[<Measure>]
+type mykg
+
+[<EntryPoint>]
+let main _ =
+    let x : float<mykg> = LanguagePrimitives.FloatWithMeasure 3.14
+    let result = x.ToString()
+    // Float ToString may vary by culture, just check it's not garbage
+    if result.Contains("3") && result.Contains("14") then
+        printf "OK"
+        0
+    else
+        eprintfn "BUG: got '%s'" result
+        1
+    """
+    |> withCheckNulls
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "OK"
+
 [<Fact>]
 let ``Printing a nullable string should pass`` () = 
     FSharp """module MyLibrary
