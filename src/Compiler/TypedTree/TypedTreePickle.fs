@@ -2129,6 +2129,9 @@ let p_trait_sln sln st =
     | FSMethSln(a, b, c, Some d) ->
         p_byte 7 st
         p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
+    | ILFieldSln(a, b, c, d, e) ->
+        p_byte 8 st
+        p_tup5 p_ty p_tys p_ILFieldRef p_bool p_bool (a, b, c, d, e) st
 
 let p_trait (TTrait(a, b, c, d, e, _, f)) st =
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, f.Value) st
@@ -2165,6 +2168,9 @@ let u_trait_sln st =
     | 7 ->
         let a, b, c, d = u_tup4 u_ty u_vref u_tys u_ty st
         FSMethSln(a, b, c, Some d)
+    | 8 ->
+        let a, b, c, d, e = u_tup5 u_ty u_tys u_ILFieldRef u_bool u_bool st
+        ILFieldSln(a, b, c, d, e)
     | _ -> ufailwith st "u_trait_sln"
 
 let u_trait st =

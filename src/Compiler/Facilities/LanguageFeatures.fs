@@ -108,6 +108,7 @@ type LanguageFeature =
     | MethodOverloadsCache
     | ImplicitDIMCoverage
     | PreprocessorElif
+    | SupportILFieldsInSRTP
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -258,6 +259,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.MethodOverloadsCache, previewVersion // Performance optimization for overload resolution
+                LanguageFeature.SupportILFieldsInSRTP, previewVersion
                 LanguageFeature.ImplicitDIMCoverage, languageVersion110
             ]
 
@@ -453,6 +455,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.MethodOverloadsCache -> FSComp.SR.featureMethodOverloadsCache ()
         | LanguageFeature.ImplicitDIMCoverage -> FSComp.SR.featureImplicitDIMCoverage ()
         | LanguageFeature.PreprocessorElif -> FSComp.SR.featurePreprocessorElif ()
+        | LanguageFeature.SupportILFieldsInSRTP -> FSComp.SR.featureSupportILFieldsInSRTP ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

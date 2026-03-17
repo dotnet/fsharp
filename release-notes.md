@@ -18,6 +18,7 @@ These release notes track our current efforts to document changes to the F# proj
 
 ### FSharp Compiler Service (main)
 
+* Support for .NET IL fields in SRTP member constraints (preview feature)
 * In FSharpParsingOptions, rename ConditionalCompilationDefines --> ConditionalDefines
 * Some syntax tree nodes have changed, e.g. introduction of SyntaxTree trivia
 * Resolved expressions (FSharpExpr) now reveal debug points, you must match them explicitly using `DebugPoint(dp, expr)`

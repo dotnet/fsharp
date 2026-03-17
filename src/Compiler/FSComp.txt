@@ -1809,6 +1809,7 @@ featureWarnWhenFunctionValueUsedAsInterpolatedStringArg,"Warn when a function va
 featureMethodOverloadsCache,"Support for caching method overload resolution results for improved compilation performance."
 featureImplicitDIMCoverage,"Implicit dispatch slot coverage for default interface member implementations"
 featurePreprocessorElif,"#elif preprocessor directive"
+featureSupportILFieldsInSRTP,"Support for .NET fields in SRTP member constraints"
 3880,optsLangVersionOutOfSupport,"Language version '%s' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/%s"
 3881,optsUnrecognizedLanguageFeature,"Unrecognized language feature name: '%s'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'."
 3882,lexHashElifMustBeFirst,"#elif directive must appear as the first non-whitespace character on a line"
