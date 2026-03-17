@@ -8,10 +8,10 @@ This file should be imported by eng/Versions.props
     <!-- dotnet-arcade dependencies -->
     <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26164.1</MicrosoftDotNetArcadeSdkPackageVersion>
     <!-- dotnet-msbuild dependencies -->
-    <MicrosoftBuildPackageVersion>18.0.0-preview-25476-03</MicrosoftBuildPackageVersion>
-    <MicrosoftBuildFrameworkPackageVersion>18.0.0-preview-25476-03</MicrosoftBuildFrameworkPackageVersion>
-    <MicrosoftBuildTasksCorePackageVersion>18.0.0-preview-25476-03</MicrosoftBuildTasksCorePackageVersion>
-    <MicrosoftBuildUtilitiesCorePackageVersion>18.0.0-preview-25476-03</MicrosoftBuildUtilitiesCorePackageVersion>
+    <MicrosoftBuildPackageVersion>18.0.2</MicrosoftBuildPackageVersion>
+    <MicrosoftBuildFrameworkPackageVersion>18.0.2</MicrosoftBuildFrameworkPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>18.0.2</MicrosoftBuildTasksCorePackageVersion>
+    <MicrosoftBuildUtilitiesCorePackageVersion>18.0.2</MicrosoftBuildUtilitiesCorePackageVersion>
     <!-- dotnet-optimization dependencies -->
     <optimizationlinuxarm64MIBCRuntimePackageVersion>1.0.0-prerelease.25467.1</optimizationlinuxarm64MIBCRuntimePackageVersion>
     <optimizationlinuxx64MIBCRuntimePackageVersion>1.0.0-prerelease.25467.1</optimizationlinuxx64MIBCRuntimePackageVersion>
