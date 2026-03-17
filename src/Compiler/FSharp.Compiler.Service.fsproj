@@ -328,6 +328,8 @@
     <Compile Include="TypedTree\QuotationPickler.fs" />
     <Compile Include="TypedTree\CompilerGlobalState.fsi" />
     <Compile Include="TypedTree\CompilerGlobalState.fs" />
+    <Compile Include="TypedTree\WellKnownAttribs.fsi" />
+    <Compile Include="TypedTree\WellKnownAttribs.fs" />
     <Compile Include="TypedTree\TypedTree.fsi" />
     <Compile Include="TypedTree\TypedTree.fs" />
     <Compile Include="TypedTree\TypedTreeBasics.fsi" />
