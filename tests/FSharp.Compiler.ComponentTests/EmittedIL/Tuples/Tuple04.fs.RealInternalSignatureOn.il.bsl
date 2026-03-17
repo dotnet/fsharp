@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -54,7 +44,7 @@
     IL_000c:  ret
   } 
 
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  8
@@ -63,9 +53,9 @@
     IL_0002:  ldc.i4.3
     IL_0003:  ldc.i4.4
     IL_0004:  newobj     instance void class [runtime]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
-                                                                                                      !1,
-                                                                                                      !2,
-                                                                                                      !3)
+                                                                                                            !1,
+                                                                                                            !2,
+                                                                                                            !3)
     IL_0009:  pop
     IL_000a:  ret
   } 
@@ -89,7 +79,6 @@
   } 
 
 } 
-
 
 
 
