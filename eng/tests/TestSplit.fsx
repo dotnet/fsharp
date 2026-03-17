@@ -8,14 +8,24 @@
 ///   dotnet fsi eng/tests/TestSplit.fsx --validate
 
 let totalBatches = 3
-let residualBatch = 3 // uses negation filter; catches unlisted atoms + future namespaces
+let residualBatch = 1 // uses negation filter; catches unlisted atoms + future namespaces
 
 // MTP --filter-namespace uses starts-with matching on the test namespace.
 // Unlisted atoms go to the residual batch automatically via --filter-not-namespace.
 
 let componentTestsAtoms =
     [// atom                    batch
-        // Batch 1 is reserved for FSharpSuite.Tests (desktop-only); no component atoms.
+        "CompilerOptions",      1
+        "CompilerService",      1
+        "Conformance",          1
+        "ConstraintSolver",     1
+        "Debugger",             1
+        "FSharpChecker",        1
+        "Import",               1
+        "Miscellaneous",        1
+        "Scripting",            1
+        "Signatures",           1
+        "TypeChecks",           1
 
         "CompilerDirectives",   2
         "Diagnostics",          2
@@ -28,27 +38,17 @@ let componentTestsAtoms =
         "Libraries",            2
         "XmlComments",          2
 
-        "CompilerOptions",      3
-        "CompilerService",      3
-        "Conformance",          3
-        "ConstraintSolver",     3
-        "Debugger",             3
-        "FSharpChecker",        3
-        "Import",               3
-        "Miscellaneous",        3
-        "Scripting",            3
-        "Signatures",           3
-        "TypeChecks",           3
+        // Batch 3 is reserved for FSharpSuite.Tests (desktop-only); no component atoms.
     ]
 
 // Platform tags: "all" = both desktop and coreclr, "desktop" = net472 only
 let otherProjects =
     [// project path                                                                         batch  platform
-        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             1,     "desktop"
+        "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        1,     "all"
         "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          2,     "all"
         "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          2,     "all"
         "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 2, "all"
-        "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        3,     "all"
+        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             3,     "desktop"
     ]
 
 // ── excluded projects ──
