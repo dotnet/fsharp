@@ -15,6 +15,6 @@ printfn $"Version:  {asm.Version.ToString()} defaultBuild: {defaultBuild} defaul
 let success =
     asm.Version.Major = 1 &&
     asm.Version.Minor = 2 &&
-    asm.Version.Build = (int defaultBuild) &&   // default value is days since Jan 1 2000.  Should match exactly.
-    (abs (asm.Version.Revision - (int defaultRevision))) < 30  // default value is seconds in the current day / 2.  Check if within 30 sec of that.
+    (abs (asm.Version.Build - (int defaultBuild))) <= 1 &&   // default value is days since Jan 1 2000. Allow ±1 for midnight-crossing builds.
+    (abs (asm.Version.Revision - (int defaultRevision))) < 120  // default value is seconds in the current day / 2.  Allow 120s tolerance for slow CI.
 if success then () else failwith "Failed: 1"

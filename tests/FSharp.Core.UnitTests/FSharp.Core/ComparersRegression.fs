@@ -1747,7 +1747,6 @@ module ComparersRegression =
 open ComparersRegression
 open Xunit
 
-[<FSharp.Test.RunTestCasesInSequence>]
 type GeneratedTests () =
  let _ = ()
 // ------------------------------------------------------------------------------
