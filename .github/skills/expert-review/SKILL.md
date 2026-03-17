@@ -1,23 +1,23 @@
 ---
-name: expert-review
-description: "Performs multi-dimensional expert review of F# compiler PRs. Evaluates type checking correctness, IL emission, binary compatibility, AST accuracy, IDE performance, test coverage, and code quality. Invoke when reviewing code changes, checking PR quality, or requesting thorough feedback on compiler modifications."
+name: reviewing-compiler-prs
+description: "Performs multi-dimensional expert review of F# compiler PRs across 15 dimensions: type checking, IL emission, binary compatibility, AST correctness, parallel determinism, concurrency safety, IDE performance, diagnostics, feature gating, and code quality. Invoke when reviewing compiler changes, requesting pre-merge feedback, or checking PR quality against established review standards."
 ---
 
 # Expert Review
 
-Performs a thorough, multi-dimensional review of F# compiler changes. The full review logic lives in `.github/agents/expert-reviewer.md` — invoke that agent for the actual review.
+Full review logic lives in the `expert-reviewer` agent. This skill provides dimension selection and a self-review checklist.
+
+For generic multi-model review (not F#-specific), see the `review-council` skill instead.
 
 ## When to Invoke
 
-- PR touches `src/Compiler/` — invoke the full agent
-- PR touches `src/FSharp.Core/` — invoke with focus on API Surface & Concurrency
-- PR touches `vsintegration/` or LanguageServer — invoke with focus on IDE Performance & Editor UX
-- PR touches `tests/` only — quick check: are baselines explained? Cross-TFM coverage present?
-- Pre-merge self-review — use the quick checklist below
+- PR touches `src/Compiler/` — invoke the `expert-reviewer` agent
+- PR touches `src/FSharp.Core/` — focus on API Surface & Concurrency dimensions
+- PR touches `vsintegration/` or `LanguageServer/` — focus on IDE Performance & Editor UX
+- PR touches `tests/` only — quick check: baselines explained? Cross-TFM coverage?
+- Pre-merge self-review — use the checklist below
 
 ## Dimension Selection
-
-Not every PR needs all 15 dimensions. Select based on changed files:
 
 | Files Changed | Focus Dimensions |
 |---|---|
@@ -30,23 +30,13 @@ Not every PR needs all 15 dimensions. Select based on changed files:
 | `FSharp.Core/` | API Surface, Concurrency |
 | `vsintegration/` | Editor Integration |
 
-## Quick Self-Review Checklist
-
-Before requesting a full agent review, verify:
+## Self-Review Checklist
 
 1. [ ] Every behavioral change has a test
-2. [ ] Test baselines are updated with explanations for new errors
+2. [ ] Test baselines updated with explanations for new errors
 3. [ ] New language features have a `LanguageFeature` guard
 4. [ ] No unintended public API surface changes
-5. [ ] Cleanup changes are separate from feature enablement
-6. [ ] Compiler warnings are resolved
-7. [ ] Tests run in both Debug and Release where relevant
+5. [ ] Cleanup changes separate from feature enablement
+6. [ ] Compiler warnings resolved
+7. [ ] Tests pass in both Debug and Release
 8. [ ] Error messages follow: statement → analysis → advice
-
-## Invocation
-
-```
-Invoke the expert-reviewer agent to review this PR.
-```
-
-The agent executes a 5-wave review workflow (Orientation → Structural → Correctness → Integration → Quality) and reports findings by severity.

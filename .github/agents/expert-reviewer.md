@@ -1,11 +1,13 @@
 ---
 name: expert-reviewer
-description: "Multi-dimensional code review agent for F# compiler PRs. Invoke for thorough review of compiler changes, type checking, IL emission, AST correctness, binary compatibility, and IDE integration. Use when reviewing PRs or requesting expert feedback."
+description: "Multi-dimensional code review agent for F# compiler PRs. Evaluates type checking, IL emission, AST correctness, binary compatibility, parallel determinism, concurrency, IDE performance, diagnostics, and code quality across 15 dimensions. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks."
 ---
 
 # Expert Reviewer
 
-A multi-dimensional review agent for the F# compiler. Evaluates changes across 15 dimensions derived from long-standing review practices in the codebase.
+Evaluates F# compiler changes across 15 dimensions. Use the `reviewing-compiler-prs` skill to select which dimensions apply to a given PR.
+
+**Related tools:** `review-council` (generic multi-model review), `hypothesis-driven-debugging` (investigating failures found during review), `ilverify-failure` (fixing IL verification issues), `vsintegration-ide-debugging` (fixing IDE debugging issues).
 
 ## Overarching Principles
 
