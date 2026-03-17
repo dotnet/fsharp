@@ -135,7 +135,7 @@ module internal Activity =
 
             depth this 0
 
-    let private activitySource = new ActivitySource(ActivityNames.FscSourceName)
+    let private activitySource = new ActivitySource(ActivityNames.FscSourceName, "")
 
     let start (name: string) (tags: (string * string) seq) : System.IDisposable | null =
         let activity = activitySource.CreateActivity(name, ActivityKind.Internal)
@@ -173,7 +173,8 @@ module internal Activity =
 
             let profilingTags = [| workingSetMB; gc0; gc1; gc2; handles; threads |]
 
-        let private profiledSource = new ActivitySource(ActivityNames.ProfiledSourceName)
+        let private profiledSource =
+            new ActivitySource(ActivityNames.ProfiledSourceName, "")
 
         let startAndMeasureEnvironmentStats (name: string) : System.IDisposable | null = profiledSource.StartActivity(name)
 
@@ -253,7 +254,7 @@ module internal Activity =
 
     module CsvExport =
 
-        let private escapeStringForCsv (o: obj MaybeNull) =
+        let private escapeStringForCsv (o: (obj | null)) =
             match o with
             | null -> ""
             | o ->
@@ -276,7 +277,7 @@ module internal Activity =
         let private createCsvRow (a: Activity) =
             let sb = StringBuilder(128)
 
-            let appendWithLeadingComma (s: string MaybeNull) =
+            let appendWithLeadingComma (s: (string | null)) =
                 sb.Append(',') |> ignore
                 sb.Append(s) |> ignore
 

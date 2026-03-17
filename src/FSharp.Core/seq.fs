@@ -608,7 +608,7 @@ module Seq =
         mkUnfoldSeq generator state
 
     [<CompiledName("Empty")>]
-    let empty<'T> = (EmptyEnumerable :> seq<'T>)
+    let empty<'T> = System.Linq.Enumerable.Empty<'T>()
 
     [<CompiledName("InitializeInfinite")>]
     let initInfinite initializer =

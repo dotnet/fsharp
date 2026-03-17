@@ -40,6 +40,20 @@ module MemberDefinitions_OverloadingMembers =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    // SOURCE=ArityFilteringTest.fs                         # ArityFilteringTest.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ArityFilteringTest.fs"|])>]
+    let ``ArityFilteringTest_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=TypeCompatibilityFilterTest.fs               # TypeCompatibilityFilterTest.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeCompatibilityFilterTest.fs"|])>]
+    let ``TypeCompatibilityFilterTest_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     // SOURCE=E_InferredTypeNotUnique01.fs SCFLAGS="--test:ErrorRanges"			# E_InferredTypeNotUnique01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InferredTypeNotUnique01.fs"|])>]
     let ``E_InferredTypeNotUnique01_fs`` compilation =

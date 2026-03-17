@@ -113,26 +113,69 @@ let mkSourceExprConditional isFromSource callExpr sourceMethInfo builderValName 
 let inline mkSynLambda p e m =
     SynExpr.Lambda(false, false, p, e, None, m, SynExprLambdaTrivia.Zero)
 
+// Use synthetic ranges so compiler-generated varSpace refs don't mark vals as referenced for FS1182
 let mkExprForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynExpr.Const(SynConst.Unit, m)
-    | [ v ] -> SynExpr.Ident v.Id
-    | vs -> SynExpr.Tuple(false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id))), [], m)
+    | [ v ] -> SynExpr.Ident(v.Id.MakeSynthetic())
+    | vs -> SynExpr.Tuple(false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id.MakeSynthetic()))), [], m)
 
 let mkSimplePatForVarSpace m (patvs: Val list) =
-    let spats =
-        match patvs with
-        | [] -> []
-        | [ v ] -> [ mkSynSimplePatVar false v.Id ]
-        | vs -> vs |> List.map (fun v -> mkSynSimplePatVar false v.Id)
-
-    SynSimplePats.SimplePats(spats, [], m)
+    SynSimplePats.SimplePats(List.map (fun (v: Val) -> mkSynSimplePatVar false v.Id) patvs, [], m)
 
 let mkPatForVarSpace m (patvs: Val list) =
     match patvs with
     | [] -> SynPat.Const(SynConst.Unit, m)
     | [ v ] -> mkSynPatVar None v.Id
     | vs -> SynPat.Tuple(false, (vs |> List.map (fun x -> mkSynPatVar None x.Id)), [], m)
+
+/// Transfer HasBeenReferenced across query lambda Vals with the same declaration range.
+/// In queries, multiple lambdas share Vals originating from the same source declaration (e.g., for x).
+/// If any is referenced by user code, mark all with the same origin as referenced to avoid FS1182 false positives.
+/// Grouping by declaration range (not name) correctly handles shadowing.
+let transferVarSpaceReferences (expr: Expr) =
+    let valsByRange = Dictionary<range, ResizeArray<Val>>()
+
+    let addVal (v: Val) =
+        let key = v.Range
+
+        let vals =
+            match valsByRange.TryGetValue(key) with
+            | true, existing -> existing
+            | false, _ ->
+                let newVals = ResizeArray(1)
+                valsByRange[key] <- newVals
+                newVals
+
+        vals.Add(v)
+
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF z e ->
+                    match e with
+                    | Expr.Lambda(_, _, _, argVals, _, _, _) -> argVals |> List.iter addVal
+                    | _ -> ()
+
+                    noInterceptF z e
+            valBindingSiteIntercept =
+                fun z (_, v) ->
+                    addVal v
+                    z
+        }
+
+    FoldExpr folder () expr |> ignore
+
+    for KeyValue(_, vals) in valsByRange do
+        let mutable anyReferenced = false
+
+        for v in vals do
+            if v.HasBeenReferenced then
+                anyReferenced <- true
+
+        if anyReferenced then
+            for v in vals do
+                v.SetHasBeenReferenced()
 
 let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
@@ -537,7 +580,7 @@ let isCustomOperationProjectionParameter ceenv i (nm: Ident) =
                 | Some argInfos ->
                     i < argInfos.Length
                     && let _, argInfo = List.item i argInfos in
-                       HasFSharpAttribute ceenv.cenv.g ceenv.cenv.g.attrib_ProjectionParameterAttribute argInfo.Attribs)
+                       ArgReprInfoHasWellKnownAttribute ceenv.cenv.g WellKnownValAttributes.ProjectionParameterAttribute argInfo)
 
         if List.allEqual vs then
             vs[0]
@@ -1279,7 +1322,7 @@ let rec TryTranslateComputationExpression
                     vspecs, envinner)
 
             Some(
-                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun innerCompR ->
+                TranslateComputationExpression (noTailCall ceenv) CompExprTranslationPass.Initial q varSpace innerComp (fun innerCompR ->
 
                     let forCall =
                         mkSynCall
@@ -1850,6 +1893,7 @@ let rec TryTranslateComputationExpression
                                         headPat = pat
                                         expr = rhsExpr
                                         debugPoint = spBind
+                                        range = mBind
                                         trivia = { LeadingKeyword = leadingKeyword }) ]
                        Body = innerComp
                    },
@@ -1869,9 +1913,9 @@ let rec TryTranslateComputationExpression
                         SynMatchClause(
                             pat,
                             None,
-                            TranslateComputationExpressionNoQueryOps ceenv innerComp,
+                            TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp,
                             innerCompRange,
-                            DebugPointAtTarget.Yes,
+                            DebugPointAtTarget.No,
                             SynMatchClauseTrivia.Zero
                         )
                     ],
@@ -1882,7 +1926,7 @@ let rec TryTranslateComputationExpression
             requireBuilderMethod "Using" ceenv leadingKeyword.Range leadingKeyword.Range
 
             Some(
-                translatedCtxt (mkSynCall "Using" leadingKeyword.Range [ rhsExpr; consumeExpr ] ceenv.builderValName)
+                translatedCtxt (mkSynCall "Using" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName)
                 |> addBindDebugPoint spBind
             )
 
@@ -1933,7 +1977,7 @@ let rec TryTranslateComputationExpression
                                 SynMatchClause(
                                     pat,
                                     None,
-                                    TranslateComputationExpressionNoQueryOps ceenv innerComp,
+                                    TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp,
                                     innerComp.Range,
                                     DebugPointAtTarget.Yes,
                                     SynMatchClauseTrivia.Zero
@@ -2278,7 +2322,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt callExpr)
 
-        | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, _, { YieldOrReturnFromKeyword = m }) ->
+        | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, mFull, { YieldOrReturnFromKeyword = m }) ->
             let yieldFromExpr =
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2300,11 +2344,11 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synYieldExpr then
                     yieldFromCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, yieldFromCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, yieldFromCall)
 
             Some(translatedCtxt yieldFromCall)
 
-        | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, _, { YieldOrReturnFromKeyword = m }) ->
+        | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, mFull, { YieldOrReturnFromKeyword = m }) ->
             let returnFromExpr =
                 mkSourceExpr synReturnExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2329,11 +2373,11 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synReturnExpr then
                     returnFromCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, returnFromCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, returnFromCall)
 
             Some(translatedCtxt returnFromCall)
 
-        | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, _, { YieldOrReturnKeyword = m }) ->
+        | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, mFull, { YieldOrReturnKeyword = m }) ->
             let methName = (if isYield then "Yield" else "Return")
 
             if ceenv.isQuery && not isYield then
@@ -2348,7 +2392,7 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synYieldOrReturnExpr then
                     yieldOrReturnCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, yieldOrReturnCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, yieldOrReturnCall)
 
             Some(translatedCtxt yieldOrReturnCall)
 
@@ -3067,6 +3111,10 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let lambdaExpr, tpenv =
         TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
+
+    // For queries, transfer HasBeenReferenced from compiler-generated varSpace Vals to user Vals
+    if isQuery then
+        transferVarSpaceReferences lambdaExpr
 
     // beta-var-reduce to bind the builder using a 'let' binding
     let coreExpr =

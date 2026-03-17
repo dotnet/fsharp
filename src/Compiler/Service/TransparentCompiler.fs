@@ -1830,6 +1830,8 @@ type internal TransparentCompiler
 
                 let generatedCcu = tcState.Ccu.CloneWithFinalizedContents(ccuContents)
 
+                let mutable hasTypeProviderAssemblyAttrib = false
+
                 // Compute the identity of the generated assembly based on attributes, options etc.
                 // Some of this is duplicated from fsc.fs
                 let ilAssemRef =
@@ -1844,22 +1846,30 @@ type internal TransparentCompiler
                             errorRecoveryNoRange exn
                             None
 
-                    let locale =
-                        TryFindFSharpStringAttribute
-                            tcGlobals
-                            (tcGlobals.FindSysAttrib "System.Reflection.AssemblyCultureAttribute")
-                            topAttrs.assemblyAttrs
+                    let locale, assemVerFromAttrib =
+                        let mutable locale = None
+                        let mutable ver = None
 
-                    let assemVerFromAttrib =
-                        TryFindFSharpStringAttribute
-                            tcGlobals
-                            (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute")
-                            topAttrs.assemblyAttrs
-                        |> Option.bind (fun v ->
-                            try
-                                Some(parseILVersion v)
-                            with _ ->
-                                None)
+                        for attr in topAttrs.assemblyAttrs do
+                            let flag = classifyAssemblyAttrib tcGlobals attr
+
+                            if hasFlag flag WellKnownAssemblyAttributes.AssemblyCultureAttribute then
+                                match attr with
+                                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) -> locale <- Some s
+                                | _ -> ()
+                            elif hasFlag flag WellKnownAssemblyAttributes.AssemblyVersionAttribute then
+                                match attr with
+                                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) ->
+                                    ver <-
+                                        (try
+                                            Some(parseILVersion s)
+                                         with _ ->
+                                             None)
+                                | _ -> ()
+                            elif hasFlag flag WellKnownAssemblyAttributes.TypeProviderAssemblyAttribute then
+                                hasTypeProviderAssemblyAttrib <- true
+
+                        locale, ver
 
                     let ver =
                         match assemVerFromAttrib with
@@ -1872,13 +1882,6 @@ type internal TransparentCompiler
                     try
                         // Assemblies containing type provider components cannot successfully be used via cross-assembly references.
                         // We return 'None' for the assembly portion of the cross-assembly reference
-                        let hasTypeProviderAssemblyAttrib =
-                            topAttrs.assemblyAttrs
-                            |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
-                                let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
-
-                                nm = !!typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
-
                         if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                             ProjectAssemblyDataResult.Unavailable true
                         else
@@ -2067,7 +2070,8 @@ type internal TransparentCompiler
                                 bootstrapInfo.TcGlobals,
                                 bootstrapInfo.TcImports.GetImportMap(),
                                 sink.GetFormatSpecifierLocations(),
-                                None
+                                None,
+                                RelatedSymbolUseKind.All
                             )
 
                         let sckBuilder = SemanticClassificationKeyStoreBuilder()
@@ -2107,9 +2111,14 @@ type internal TransparentCompiler
                         sResolutions.CapturedNameResolutions
                         |> Seq.iter (fun cnr ->
                             let r = cnr.Range
-
-                            if preventDuplicates.Add struct (r.Start, r.End) then
+                            // Skip synthetic ranges (e.g., compiler-generated event handler values) (#4136)
+                            if not r.IsSynthetic && preventDuplicates.Add struct (r.Start, r.End) then
                                 builder.Write(cnr.Range, cnr.Item))
+
+                        sResolutions.CapturedRelatedSymbolUses
+                        |> Seq.iter (fun (m, item, _kind) ->
+                            if not m.IsSynthetic then
+                                builder.Write(m, item))
 
                         builder.TryBuildAndReset())
             }

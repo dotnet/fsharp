@@ -221,6 +221,17 @@ val internal FSharpModuleSuffix: string = "Module"
 [<Literal>]
 val internal MangledGlobalName: string = "`global`"
 
+/// Prefix for union case tester properties (e.g., "get_IsCase" for union case "Case")
+[<Literal>]
+val internal unionCaseTesterPropertyPrefix: string = "get_Is"
+
+/// The length of unionCaseTesterPropertyPrefix
+[<Literal>]
+val internal unionCaseTesterPropertyPrefixLength: int = 6
+
+/// Check if a property name is a union case tester property
+val internal IsUnionCaseTesterPropertyName: name: string -> bool
+
 val internal IllegalCharactersInTypeAndNamespaceNames: char[]
 
 type internal ActivePatternInfo =

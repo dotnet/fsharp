@@ -479,3 +479,20 @@ let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
         ILType.Modified(true, g.attrib_InAttribute.TypeRef, ilTy)
     else
         ilTy
+
+/// Given a base name and a set of existing names, produce a unique name.
+/// If baseName doesn't conflict, returns it as-is.
+/// Otherwise appends "0", "1", "2", etc. until a unique name is found.
+let ChooseUniqueName (baseName: string) (existingNames: Set<string>) =
+    if not (Set.contains baseName existingNames) then
+        baseName
+    else
+        let rec findUnique n =
+            let candidate = baseName + string n
+
+            if Set.contains candidate existingNames then
+                findUnique (n + 1)
+            else
+                candidate
+
+        findUnique 0

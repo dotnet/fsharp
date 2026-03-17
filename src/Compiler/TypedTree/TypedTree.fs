@@ -648,7 +648,7 @@ type Entity =
       /// The declared attributes for the type 
       // MUTABILITY; used during creation and remapping of tycons 
       // MUTABILITY; used when propagating signature attributes into the implementation.
-      mutable entity_attribs: Attribs     
+      mutable entity_attribs: WellKnownEntityAttribs     
                 
       /// The declared representation of the type, i.e. record, union, class etc. 
       //
@@ -813,7 +813,9 @@ type Entity =
 
     /// The F#-defined custom attributes of the entity, if any. If the entity is backed by Abstract IL or provided metadata
     /// then this does not include any attributes from those sources.
-    member x.Attribs = x.entity_attribs
+    member x.Attribs = x.entity_attribs.AsList()
+
+    member x.EntityAttribs = x.entity_attribs
 
     /// The XML documentation of the entity, if any. If the entity is backed by provided metadata
     /// then this _does_ include this documentation. If the entity is backed by Abstract IL metadata
@@ -1105,7 +1107,7 @@ type Entity =
 
 
     /// Indicates if the entity is linked to backing data. Only used during unpickling of F# metadata.
-    member x.IsLinked = match box x.entity_attribs with null -> false | _ -> true 
+    member x.IsLinked = not (obj.ReferenceEquals(x.entity_attribs.AsList(), null))
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
     member x.FSharpTyconRepresentationData = 
@@ -1350,7 +1352,26 @@ type Entity =
     member x.HasSignatureFile = x.SigRange <> x.DefinitionRange
 
     /// Set the custom attributes on an F# type definition.
-    member x.SetAttribs attribs = x.entity_attribs <- attribs
+    member x.SetAttribs attribs = x.entity_attribs <- WellKnownEntityAttribs.Create(attribs)
+
+    member x.SetEntityAttribs (attribs: WellKnownEntityAttribs) = x.entity_attribs <- attribs
+
+    /// Check if this entity has a specific well-known attribute, computing and caching flags if needed.
+    member x.HasWellKnownAttribute(flag: WellKnownEntityAttributes, computeFlags: Attribs -> WellKnownEntityAttributes) : bool =
+        let struct (result, wa, changed) = x.EntityAttribs.CheckFlag(flag, computeFlags)
+        if changed then x.SetEntityAttribs(wa)
+        result
+
+    /// Get the computed well-known attribute flags, computing and caching if needed.
+    member x.GetWellKnownEntityFlags(computeFlags: Attribs -> WellKnownEntityAttributes) : WellKnownEntityAttributes =
+        let f = LanguagePrimitives.EnumToValue x.EntityAttribs.Flags
+
+        if f &&& (1uL <<< 63) <> 0uL then
+            let computed = computeFlags (x.EntityAttribs.AsList())
+            x.SetEntityAttribs(WellKnownAttribs(x.EntityAttribs.AsList(), computed))
+            computed
+        else
+            x.EntityAttribs.Flags
 
     /// Sets the structness of a record or union type definition
     member x.SetIsStructRecordOrUnion b = let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
@@ -2770,7 +2791,7 @@ type ValOptionalData =
 
       /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
       /// these value references after copying a collection of values. 
-      mutable val_attribs: Attribs
+      mutable val_attribs: WellKnownValAttribs
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2813,7 +2834,7 @@ type Val =
           val_member_info = None
           val_declaring_entity = ParentNone
           val_xmldocsig = String.Empty
-          val_attribs = [] }
+          val_attribs = WellKnownValAttribs.Empty }
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
     member x.DefinitionRange = 
@@ -2982,9 +3003,10 @@ type Val =
     member x.HasBeenReferenced = x.val_flags.HasBeenReferenced
 
     /// Indicates if the backing field for a static value is suppressed.
-    member x.IsCompiledAsStaticPropertyWithoutField = 
-            let hasValueAsStaticProperty = x.Attribs |> List.exists(fun (Attrib(tc, _, _, _, _, _, _)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute")
-            x.val_flags.IsCompiledAsStaticPropertyWithoutField || hasValueAsStaticProperty
+    member x.IsCompiledAsStaticPropertyWithoutField =
+        x.val_flags.IsCompiledAsStaticPropertyWithoutField
+        || (x.ValAttribs: WellKnownValAttribs)
+            .HasWellKnownAttribute(WellKnownValAttributes.ValueAsStaticPropertyAttribute)
 
     /// Indicates if the value is pinned/fixed
     member x.IsFixed = x.val_flags.IsFixed
@@ -3047,8 +3069,14 @@ type Val =
     /// Get the declared attributes for the value
     member x.Attribs = 
         match x.val_opt_data with
-        | Some optData -> optData.val_attribs
+        | Some optData -> optData.val_attribs.AsList()
         | _ -> []
+
+    /// Get the declared attributes wrapper for the value
+    member x.ValAttribs =
+        match x.val_opt_data with
+        | Some optData -> optData.val_attribs
+        | _ -> WellKnownValAttribs.Empty
 
     /// Get the declared documentation for the value
     member x.XmlDoc =
@@ -3306,10 +3334,22 @@ type Val =
         | Some optData -> optData.val_declaring_entity <- parent
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_declaring_entity = parent }
 
-    member x.SetAttribs attribs = 
+    member x.SetAttribs (attribs: Attribs) = 
+        let wa = WellKnownValAttribs.Create(attribs)
+        match x.val_opt_data with
+        | Some optData -> optData.val_attribs <- wa
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_attribs = wa }
+
+    member x.SetValAttribs (attribs: WellKnownValAttribs) =
         match x.val_opt_data with
         | Some optData -> optData.val_attribs <- attribs
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_attribs = attribs }
+
+    /// Check if this val has a specific well-known attribute, computing and caching flags if needed.
+    member x.HasWellKnownAttribute(flag: WellKnownValAttributes, computeFlags: Attribs -> WellKnownValAttributes) : bool =
+        let struct (result, waNew, changed) = x.ValAttribs.CheckFlag(flag, computeFlags)
+        if changed then x.SetValAttribs(waNew)
+        result
 
     member x.SetMemberInfo member_info = 
         match x.val_opt_data with
@@ -4355,16 +4395,27 @@ type RecdFieldRef =
 type Nullness = 
    | Known of NullnessInfo
    | Variable of NullnessVar
+   /// The value is known to be non-null because it was produced by a constructor call.
+   /// Evaluates as WithoutNull but bypasses AllowNullLiteral warnings for 'not null' constraints.
+   | KnownFromConstructor
+
+   /// Returns Known WithoutNull if KnownFromConstructor, otherwise identity.
+   member n.Normalize() =
+       match n with
+       | KnownFromConstructor -> Known NullnessInfo.WithoutNull
+       | n -> n
 
    member n.Evaluate() = 
        match n with 
        | Known info -> info
        | Variable v -> v.Evaluate()
+       | KnownFromConstructor -> NullnessInfo.WithoutNull
 
    member n.TryEvaluate() = 
        match n with 
        | Known info -> ValueSome info
        | Variable v -> v.TryEvaluate()
+       | KnownFromConstructor -> NullnessInfo.WithoutNull |> ValueSome
 
    override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
 
@@ -4391,6 +4442,7 @@ type NullnessVar() =
         match solution with
         | None -> false
         | Some (Nullness.Known _) -> true
+        | Some (Nullness.KnownFromConstructor) -> true
         | Some (Nullness.Variable v) -> v.IsFullySolved
 
     member nv.Set(nullness) = 
@@ -4614,6 +4666,42 @@ type Measure =
         | Inv(m) -> m.Range
         | One(range= m) -> m
         | RationalPower(measure= ms) -> ms.Range
+
+/// Wraps an Attrib list together with cached WellKnownEntityAttributes flags for O(1) lookup.
+type WellKnownEntityAttribs = WellKnownAttribs<Attrib, WellKnownEntityAttributes>
+
+module WellKnownEntityAttribs =
+    /// Shared singleton for entities with no attributes.
+    let Empty = WellKnownAttribs<Attrib, WellKnownEntityAttributes>([], WellKnownEntityAttributes.None)
+
+    /// Create from an attribute list. If empty, flags = None. Otherwise NotComputed.
+    let Create(attribs: Attrib list) =
+        if attribs.IsEmpty then
+            Empty
+        else
+            WellKnownAttribs(attribs, WellKnownEntityAttributes.NotComputed)
+
+    /// Create with precomputed flags (used when flags are already known).
+    let CreateWithFlags(attribs: Attrib list, flags: WellKnownEntityAttributes) =
+        WellKnownAttribs(attribs, flags)
+
+/// Wraps an Attrib list together with cached WellKnownValAttributes flags for O(1) lookup.
+type WellKnownValAttribs = WellKnownAttribs<Attrib, WellKnownValAttributes>
+
+module WellKnownValAttribs =
+    /// Shared singleton for vals with no attributes.
+    let Empty = WellKnownAttribs<Attrib, WellKnownValAttributes>([], WellKnownValAttributes.None)
+
+    /// Create from an attribute list. If empty, flags = None. Otherwise NotComputed.
+    let Create(attribs: Attrib list) =
+        if attribs.IsEmpty then
+            Empty
+        else
+            WellKnownAttribs(attribs, WellKnownValAttributes.NotComputed)
+
+    /// Create with precomputed flags (used when flags are already known).
+    let CreateWithFlags(attribs: Attrib list, flags: WellKnownValAttributes) =
+        WellKnownAttribs(attribs, flags)
 
 type Attribs = Attrib list 
 
@@ -4969,7 +5057,7 @@ type ArgReprInfo =
     {
       /// The attributes for the argument
       // MUTABILITY: used when propagating signature attributes into the implementation.
-      mutable Attribs: Attribs 
+      mutable Attribs: WellKnownValAttribs 
 
       /// The name for the argument at this position, if any
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
@@ -6120,7 +6208,7 @@ type Construct() =
             entity_logical_name=name
             entity_range=m
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-            entity_attribs=[] // fetched on demand via est.fs API
+            entity_attribs=WellKnownEntityAttribs.Empty // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
@@ -6152,7 +6240,7 @@ type Construct() =
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
-            entity_attribs=attribs
+            entity_attribs=WellKnownEntityAttribs.Create(attribs)
             entity_il_repr_cache = newCache()
             entity_opt_data =
                 match xml, access with
@@ -6221,7 +6309,7 @@ type Construct() =
     static member NewExn cpath (id: Ident) access repr attribs (doc: XmlDoc) = 
         Tycon.New "exnc"
           { entity_stamp = newStamp()
-            entity_attribs = attribs
+            entity_attribs = WellKnownEntityAttribs.Create(attribs)
             entity_logical_name = id.idText
             entity_range = id.idRange
             entity_tycon_tcaug = TyconAugmentation.Create()
@@ -6263,7 +6351,7 @@ type Construct() =
             entity_logical_name=nm
             entity_range=m
             entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordOrUnionType=false)
-            entity_attribs=[] // fixed up after
+            entity_attribs=WellKnownEntityAttribs.Empty // fixed up after
             entity_typars=typars
             entity_tycon_repr = TNoRepr
             entity_tycon_tcaug=TyconAugmentation.Create()
@@ -6322,7 +6410,7 @@ type Construct() =
                     val_xmldoc = doc
                     val_member_info = specialRepr
                     val_declaring_entity = actualParent
-                    val_attribs = attribs }
+                    val_attribs = WellKnownValAttribs.Create(attribs) }
                 |> Some
 
         let flags = ValFlags(recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal)

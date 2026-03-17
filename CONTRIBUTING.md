@@ -95,7 +95,7 @@ The following comments in a PR can be used as commands to execute scripts which 
  - `/run fantomas` runs `dotnet fantomas .`
 -  `/run ilverify` updates IL verification baseline
 - `/run xlf` refreshes localisation files for translatable strings
-- `/run test-baseline ...` runs tests with the `TEST_UPDATE_BSL: 1` environment variable and an argument supplied filter (passed to `dotnet test --filter ..`). Its goal is to refresh baselines.
+- `/run test-baseline ...` runs tests with the `TEST_UPDATE_BSL: 1` environment variable and an argument supplied filter (passed to `dotnet test -- --filter-query ..`). Its goal is to refresh baselines.
 
 This code repository uses a lot of baselines - captures for important output - to spot regressions and willingfully accept changes via PR review.
 For example, the following errors can appear during CI runs:
@@ -104,9 +104,9 @@ For example, the following errors can appear during CI runs:
 - Diffrences in produced baseline diagnostics
 
 After identifying a failing test which relies on a baseline, the command can then for example be:
-- `/run test-baseline ParseFile` to update parsing tests related to syntactical tree
-- `/run test-baseline SurfaceAreaTest` to update the API surface area of FSharp.Compiler.Service
-- `/run test-baseline FullyQualifiedName~EmittedIL&FullyQualifiedName~Nullness` to update IL baseline (namespace `EmittedIL`) for tests that touch the `Nullness` feature
+- `/run test-baseline /*/*/ParseFile*/*` to update parsing tests related to syntactical tree
+- `/run test-baseline /*/*/SurfaceAreaTest*/*` to update the API surface area of FSharp.Compiler.Service
+- `/run test-baseline /*/*/*/*EmittedIL*Nullness*` to update IL baseline (namespace `EmittedIL`) for tests that touch the `Nullness` feature
 
 
 ### Reviewing pull requests

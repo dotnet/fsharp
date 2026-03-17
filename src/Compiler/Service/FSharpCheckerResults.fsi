@@ -274,6 +274,9 @@ type public FSharpCheckFileResults =
     member TryGetCapturedType: range -> FSharpType option
     member TryGetCapturedDisplayContext: range -> FSharpDisplayContext option
 
+    /// Imports a compiled type for subsequent Symbols API use
+    member ImportILType: ILType -> FSharpType option
+
     /// <summary>Get the items for a declaration list</summary>
     ///
     /// <param name="parsedFileResults">
@@ -418,7 +421,8 @@ type public FSharpCheckFileResults =
         line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse list
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
-    member GetSemanticClassification: range option -> SemanticClassificationItem[]
+    member GetSemanticClassification:
+        range option * ?relatedSymbolKinds: RelatedSymbolUseKind -> SemanticClassificationItem[]
 
     /// <summary>Get the locations of format specifiers</summary>
     [<Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
@@ -431,7 +435,9 @@ type public FSharpCheckFileResults =
     member GetAllUsesOfAllSymbolsInFile: ?cancellationToken: CancellationToken -> seq<FSharpSymbolUse>
 
     /// Get the textual usages that resolved to the given symbol throughout the file
-    member GetUsesOfSymbolInFile: symbol: FSharpSymbol * ?cancellationToken: CancellationToken -> FSharpSymbolUse[]
+    member GetUsesOfSymbolInFile:
+        symbol: FSharpSymbol * ?relatedSymbolKinds: RelatedSymbolUseKind * ?cancellationToken: CancellationToken ->
+            FSharpSymbolUse[]
 
     member internal GetVisibleNamespacesAndModulesAtPoint: pos -> ModuleOrNamespaceRef[]
 

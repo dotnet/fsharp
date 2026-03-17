@@ -238,7 +238,7 @@ module internal SymbolHelpers =
             // Drop the first 'seq<T>' argument representing the computation space
             let argInfos = if argInfos.IsEmpty then [] else argInfos.Tail
             [ for ty, argInfo in argInfos do
-                  let isPP = HasFSharpAttribute g g.attrib_ProjectionParameterAttribute argInfo.Attribs
+                  let isPP = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ProjectionParameterAttribute argInfo
                   // Strip the tuple space type of the type of projection parameters
                   let ty = if isPP && isFunTy g ty then rangeOfFunTy g ty else ty
                   yield ParamNameAndType(argInfo.Name, ty) ]

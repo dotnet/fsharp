@@ -321,7 +321,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
                                     let! _, checkFileResults = implDoc.GetFSharpParseAndCheckResultsAsync(userOpName)
 
-                                    let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol, ct)
+                                    let symbolUses =
+                                        checkFileResults.GetUsesOfSymbolInFile(symbol, cancellationToken = ct)
 
                                     let implSymbol = Array.tryHeadV symbolUses
 

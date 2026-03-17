@@ -3,7 +3,7 @@
   <Import Project="$(MSBuildProjectDirectory)\..\..\eng\Versions.props" />
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup>

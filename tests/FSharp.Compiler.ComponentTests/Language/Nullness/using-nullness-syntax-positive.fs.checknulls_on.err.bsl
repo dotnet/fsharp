@@ -2,8 +2,8 @@ using-nullness-syntax-positive.fs (11,18)-(11,22) typecheck error Nullness warni
 using-nullness-syntax-positive.fs (12,18)-(12,37) typecheck error Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected.
 using-nullness-syntax-positive.fs (13,18)-(13,24) typecheck error Nullness warning: The type ''a option' uses 'null' as a representation value but a non-null type is expected.
 using-nullness-syntax-positive.fs (17,15)-(17,19) typecheck error Nullness warning: The type 'obj' does not support 'null'.
-using-nullness-syntax-positive.fs (18,39)-(18,41) typecheck error Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected.
-using-nullness-syntax-positive.fs (19,26)-(19,28) typecheck error Nullness warning: The type 'int option' uses 'null' as a representation value but a non-null type is expected.
+using-nullness-syntax-positive.fs (18,15)-(18,19) typecheck error Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected.
+using-nullness-syntax-positive.fs (19,15)-(19,21) typecheck error Nullness warning: The type 'int option' uses 'null' as a representation value but a non-null type is expected.
 using-nullness-syntax-positive.fs (27,14)-(27,17) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
 using-nullness-syntax-positive.fs (27,14)-(27,17) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
 using-nullness-syntax-positive.fs (28,14)-(28,19) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.

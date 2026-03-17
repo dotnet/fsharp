@@ -261,3 +261,63 @@ module EmptyBodied =
             |> shouldFail
             |> withErrorCode 789
             |> withErrorMessage "'{ }' is not a valid expression. Records must include at least one field. Empty sequences are specified by using Seq.empty or an empty list '[]'."
+
+module LetUseBangTests =
+
+    [<Fact>]
+    let ``let! isn't allowed outside of Computation Expression`` () =
+        FSharp """
+        let test =
+            let! a = 1 + 1
+            ()
+        """
+        |> asExe
+        |> compile
+        |> withErrorCode 750
+        |> withErrorMessage "This construct may only be used within computation expressions"
+
+    [<Fact>]
+    let ``use! isn't allowed outside of Computation Expression`` () =
+        FSharp """
+        open System
+
+        let test =
+            use! a = 
+                { new IDisposable with 
+                    member this.Dispose() = () 
+                }
+            ()
+        """
+        |> asExe
+        |> compile
+        |> withErrorCode 750
+        |> withErrorMessage "This construct may only be used within computation expressions"
+
+    [<Fact>]
+    let ``let! with and! aren't allowed outside of Computation Expression`` () =
+        FSharp """
+        let test =
+            let! a = 1 + 1
+            and! b = 1 + 1
+            ()
+        """
+        |> asExe
+        |> compile
+        |> withErrorCode 750
+        |> withErrorMessage "This construct may only be used within computation expressions"
+
+    [<Fact>]
+    let ``When let! is outside of Computation Expression, the analysis lasts`` () =
+        FSharp """
+        let test =
+            let! a = 1 + 1
+            return! 0
+        """
+        |> asExe
+        |> compile
+        |> withDiagnostics [
+            (Error 750, Line 3, Col 13, Line 3, Col 17, 
+                "This construct may only be used within computation expressions");
+            (Error 748, Line 4, Col 13, Line 4, Col 20, 
+                "This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.")
+        ]

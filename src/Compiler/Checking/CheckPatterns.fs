@@ -103,6 +103,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (at
 
     | SynSimplePat.Typed (p, cty, m) ->
         let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv cty
+        CallExprHasTypeSinkSynthetic cenv.tcSink (p.Range, env.NameEnv, ctyR, env.AccessRights)
 
         match p with
         // Optional arguments on members
@@ -251,10 +252,10 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 valReprInfo (vFlags: TcPat
 
         // isLeftMost indicates we are processing the left-most path through a disjunctive or pattern.
         // For those binding locations, CallNameResolutionSink is called in MakeAndPublishValue, like all other bindings
-        // For non-left-most paths, we register the name resolutions here
+        // For non-left-most paths, we register the name resolutions here as Use, not Binding (#5546)
         if not isLeftMost && not vspec.IsCompilerGenerated && not (vspec.LogicalName.StartsWithOrdinal("_")) then
             let item = Item.Value(mkLocalValRef vspec)
-            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights)
+            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.AccessRights)
 
         PatternValBinding(vspec, typeScheme)
 
@@ -293,6 +294,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
         TcConstPat warnOnUpper cenv env vFlags patEnv ty synConst m
 
     | SynPat.Wild m ->
+        CallExprHasTypeSinkSynthetic cenv.tcSink (m, env.NameEnv, ty, env.AccessRights)
         (fun _ -> TPat_wild m), patEnv
 
     | SynPat.IsInst (synTargetTy, m)
@@ -675,6 +677,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
 
     // Report information about the case occurrence to IDE
     CallNameResolutionSink cenv.tcSink (mLongId, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Pattern, env.eAccessRights)
+    CallExprHasTypeSinkSynthetic cenv.tcSink (m, env.NameEnv, ty, env.AccessRights)
 
     let mkf, argTys, argNames = ApplyUnionCaseOrExn m cenv env ty item
     let numArgTys = argTys.Length

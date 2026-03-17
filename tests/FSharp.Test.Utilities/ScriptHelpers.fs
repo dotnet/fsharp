@@ -44,7 +44,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let argv = Array.append baseArgs additionalArgs
 
-    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
+    let fsi = FsiEvaluationSession.Create (config, argv, TextReader.Null, stdout, stderr)
 
     member _.ValueBound = fsi.ValueBound
 
@@ -52,6 +52,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     member this.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
         let originalCulture = Thread.CurrentThread.CurrentCulture
+        let originalUICulture = Thread.CurrentThread.CurrentUICulture
         Thread.CurrentThread.CurrentCulture <- Option.defaultValue Globalization.CultureInfo.InvariantCulture desiredCulture
 
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
@@ -61,6 +62,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
                 fsi.EvalInteractionNonThrowing(code, cancellationToken)
 
         Thread.CurrentThread.CurrentCulture <- originalCulture
+        Thread.CurrentThread.CurrentUICulture <- originalUICulture
 
         match ch with
         | Choice1Of2 v -> Ok(v), errors

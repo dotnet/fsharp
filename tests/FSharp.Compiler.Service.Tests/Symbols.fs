@@ -1329,6 +1329,19 @@ module Delegates =
         symbols["EventHandler"].IsDelegate |> shouldEqual true
         symbols["Action"].IsDelegate |> shouldEqual true
 
+module Parameters =
+    [<Fact>]
+    let ``Optional 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+type T =
+    static member M(?a) = ()
+"""
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.filter (fun su -> su.Range.StartLine = 3)
+        |> Seq.map _.Symbol.DisplayName
+        |> Seq.toList
+        |> shouldEqual [ "M"; "a" ]
+
 module MetadataAsText =
     [<Fact>]
     let ``TryGetMetadataAsText returns metadata for external enum field`` () =

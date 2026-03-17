@@ -1,4 +1,10 @@
 <Project>
+  <!-- Import target frameworks from single source of truth.
+       For regression tests: TargetFrameworks.props is co-located with this props file.
+       For local usage: use eng/TargetFrameworks.props relative to this file's directory. -->
+  <Import Project="$(MSBuildThisFileDirectory)TargetFrameworks.props" Condition="Exists('$(MSBuildThisFileDirectory)TargetFrameworks.props')" />
+  <Import Project="$(MSBuildThisFileDirectory)eng/TargetFrameworks.props" Condition="!Exists('$(MSBuildThisFileDirectory)TargetFrameworks.props')" />
+
   <PropertyGroup>
     <LoadLocalFSharpBuild Condition="'$(LoadLocalFSharpBuild)' == ''">False</LoadLocalFSharpBuild>
     
@@ -11,8 +17,8 @@
     <FscToolPath Condition="'$(FscToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FscToolPath>
     <FscToolExe Condition="'$(FscToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FscToolExe>
 
-    <DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net10.0/fsc.dll</DotnetFscCompilerPath>
-    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net10.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
 
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
@@ -25,7 +31,7 @@
     See: https://github.com/dotnet/sdk/blob/main/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
   -->
   <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True'">
-    <LocalFSharpBuildBinPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net10.0</LocalFSharpBuildBinPath>
+    <LocalFSharpBuildBinPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)</LocalFSharpBuildBinPath>
     <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile>
     <FSharpTargetsPath>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Targets</FSharpTargetsPath>
     <FSharpPropsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>

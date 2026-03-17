@@ -1029,16 +1029,55 @@ let canBeAugmentedWithEquals g (tycon: Tycon) =
 let canBeAugmentedWithCompare g (tycon: Tycon) =
     tycon.IsUnionTycon || tycon.IsRecordTycon || isTrueFSharpStructTycon g tycon
 
+/// Bitmask of the 7 equality/comparison augmentation attributes.
+let augmentationAttrMask =
+    WellKnownEntityAttributes.NoEqualityAttribute
+    ||| WellKnownEntityAttributes.CustomEqualityAttribute
+    ||| WellKnownEntityAttributes.ReferenceEqualityAttribute
+    ||| WellKnownEntityAttributes.StructuralEqualityAttribute
+    ||| WellKnownEntityAttributes.NoComparisonAttribute
+    ||| WellKnownEntityAttributes.CustomComparisonAttribute
+    ||| WellKnownEntityAttributes.StructuralComparisonAttribute
+
+/// Match when the augmentation flags are exactly the expected combination (ignoring unrelated attributes).
+let (|AugAttribs|_|) (expected: WellKnownEntityAttributes) (flags: WellKnownEntityAttributes) : bool =
+    flags &&& augmentationAttrMask = expected
+
+/// Match when a specific augmentation flag is set.
+let (|HasAugAttrib|_|) (flag: WellKnownEntityAttributes) (flags: WellKnownEntityAttributes) : bool =
+    flags &&& flag <> WellKnownEntityAttributes.None
+
+/// Match when a specific augmentation flag (or flags) is absent.
+let (|NoAugAttrib|_|) (flag: WellKnownEntityAttributes) (flags: WellKnownEntityAttributes) : bool =
+    flags &&& flag = WellKnownEntityAttributes.None
+
+// Short aliases for the augmentation attribute flags.
+let ``[<NoEquality>]`` = WellKnownEntityAttributes.NoEqualityAttribute
+let ``[<CustomEquality>]`` = WellKnownEntityAttributes.CustomEqualityAttribute
+let ``[<ReferenceEquality>]`` = WellKnownEntityAttributes.ReferenceEqualityAttribute
+let ``[<StructuralEquality>]`` = WellKnownEntityAttributes.StructuralEqualityAttribute
+let ``[<NoComparison>]`` = WellKnownEntityAttributes.NoComparisonAttribute
+let ``[<CustomComparison>]`` = WellKnownEntityAttributes.CustomComparisonAttribute
+let ``[<StructuralComparison>]`` = WellKnownEntityAttributes.StructuralComparisonAttribute
+
+// Precomputed combined flag values for exact-match active patterns.
+let ``[<CustomEquality; CustomComparison>]`` = ``[<CustomEquality>]`` ||| ``[<CustomComparison>]``
+let ``[<CustomEquality; NoComparison>]`` = ``[<CustomEquality>]`` ||| ``[<NoComparison>]``
+let ``[<ReferenceEquality; NoComparison>]`` = ``[<ReferenceEquality>]`` ||| ``[<NoComparison>]``
+let ``[<StructuralEquality; StructuralComparison>]`` = ``[<StructuralEquality>]`` ||| ``[<StructuralComparison>]``
+let ``[<StructuralEquality; NoComparison>]`` = ``[<StructuralEquality>]`` ||| ``[<NoComparison>]``
+let ``[<StructuralEquality; CustomComparison>]`` = ``[<StructuralEquality>]`` ||| ``[<CustomComparison>]``
+let ``[<NoEquality; NoComparison>]`` = ``[<NoEquality>]`` ||| ``[<NoComparison>]``
+
+// Combined masks for "none of these" checks in error cases.
+let ``NoComparison or StructuralComparison`` = ``[<NoComparison>]`` ||| ``[<StructuralComparison>]``
+let ``NoComparison or CustomComparison`` = ``[<NoComparison>]`` ||| ``[<CustomComparison>]``
+let ``NoEquality or CustomEquality or ReferenceEquality`` = ``[<NoEquality>]`` ||| ``[<CustomEquality>]`` ||| ``[<ReferenceEquality>]``
+
 let getAugmentationAttribs g (tycon: Tycon) =
     canBeAugmentedWithEquals g tycon,
     canBeAugmentedWithCompare g tycon,
-    TryFindFSharpBoolAttribute g g.attrib_NoEqualityAttribute tycon.Attribs,
-    TryFindFSharpBoolAttribute g g.attrib_CustomEqualityAttribute tycon.Attribs,
-    TryFindFSharpBoolAttribute g g.attrib_ReferenceEqualityAttribute tycon.Attribs,
-    TryFindFSharpBoolAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs,
-    TryFindFSharpBoolAttribute g g.attrib_NoComparisonAttribute tycon.Attribs,
-    TryFindFSharpBoolAttribute g g.attrib_CustomComparisonAttribute tycon.Attribs,
-    TryFindFSharpBoolAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs
+    GetEntityWellKnownFlags g tycon
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EqualityWithComparerAugmentation = 
@@ -1055,68 +1094,47 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
 
     match attribs with
 
-    // THESE ARE THE LEGITIMATE CASES
+    // LEGITIMATE CASES
 
-    // [< >] on anything
-    | _, _, None, None, None, None, None, None, None
+    | _, _, AugAttribs WellKnownEntityAttributes.None
+    | true, _, AugAttribs ``[<CustomEquality; CustomComparison>]``
+    | true, _, AugAttribs ``[<CustomEquality; NoComparison>]`` -> ()
 
-    // [<CustomEquality; CustomComparison>]  on union/record/struct
-    | true, _, None, Some true, None, None, None, Some true, None
-
-    // [<CustomEquality; NoComparison>]  on union/record/struct
-    | true, _, None, Some true, None, None, Some true, None, None -> ()
-
-    // [<ReferenceEquality; NoComparison>]  on union/record/struct
-    | true, _, None, None, Some true, None, Some true, None, None
-
-    // [<ReferenceEquality>] on union/record/struct
-    | true, _, None, None, Some true, None, None, None, None ->
+    | true, _, AugAttribs ``[<ReferenceEquality; NoComparison>]``
+    | true, _, AugAttribs ``[<ReferenceEquality>]`` ->
         if isTrueFSharpStructTycon g tycon then
             errorR (Error(FSComp.SR.augNoRefEqualsOnStruct (), m))
         else
             ()
 
-    // [<StructuralEquality; StructuralComparison>]  on union/record/struct
-    | true, true, None, None, None, Some true, None, None, Some true
+    | true, true, AugAttribs ``[<StructuralEquality; StructuralComparison>]``
+    | true, _, AugAttribs ``[<StructuralEquality; NoComparison>]``
+    | true, _, AugAttribs ``[<StructuralEquality; CustomComparison>]``
+    | _, _, AugAttribs ``[<NoComparison>]``
+    | _, _, AugAttribs ``[<NoEquality; NoComparison>]`` -> ()
 
-    // [<StructuralEquality; NoComparison>]
-    | true, _, None, None, None, Some true, Some true, None, None
+    // ERROR CASES
 
-    // [<StructuralEquality; CustomComparison>]
-    | true, _, None, None, None, Some true, None, Some true, None
+    | _, _, HasAugAttrib ``[<NoEquality>]`` & NoAugAttrib ``[<NoComparison>]`` ->
+        errorR (Error(FSComp.SR.augNoEqualityNeedsNoComparison (), m))
 
-    // [<NoComparison>] on anything
-    | _, _, None, None, None, None, Some true, None, None
+    | true, true, HasAugAttrib ``[<StructuralComparison>]`` & NoAugAttrib ``[<StructuralEquality>]`` ->
+        errorR (Error(FSComp.SR.augStructCompNeedsStructEquality (), m))
 
-    // [<NoEquality; NoComparison>] on anything
-    | _, _, Some true, None, None, None, Some true, None, None -> ()
+    | true, _, HasAugAttrib ``[<StructuralEquality>]`` & NoAugAttrib ``NoComparison or StructuralComparison`` ->
+        errorR (Error(FSComp.SR.augStructEqNeedsNoCompOrStructComp (), m))
 
-    // THESE ARE THE ERROR CASES
+    | true, _, HasAugAttrib ``[<CustomEquality>]`` & NoAugAttrib ``NoComparison or CustomComparison`` ->
+        errorR (Error(FSComp.SR.augCustomEqNeedsNoCompOrCustomComp (), m))
 
-    // [<NoEquality; ...>]
-    | _, _, Some true, _, _, _, None, _, _ -> errorR (Error(FSComp.SR.augNoEqualityNeedsNoComparison (), m))
+    | true, _, HasAugAttrib ``[<ReferenceEquality>]`` & HasAugAttrib ``[<StructuralEquality>]``
+    | true, _, HasAugAttrib ``[<ReferenceEquality>]`` & HasAugAttrib ``[<StructuralComparison>]`` ->
+        errorR (Error(FSComp.SR.augTypeCantHaveRefEqAndStructAttrs (), m))
 
-    // [<StructuralComparison(_)>]
-    | true, true, _, _, _, None, _, _, Some true -> errorR (Error(FSComp.SR.augStructCompNeedsStructEquality (), m))
-    // [<StructuralEquality(_)>]
-    | true, _, _, _, _, Some true, None, _, None -> errorR (Error(FSComp.SR.augStructEqNeedsNoCompOrStructComp (), m))
+    | false, _, HasAugAttrib ``[<ReferenceEquality>]``
+    | false, _, HasAugAttrib ``[<StructuralEquality>]``
+    | false, _, HasAugAttrib ``[<StructuralComparison>]`` -> errorR (Error(FSComp.SR.augOnlyCertainTypesCanHaveAttrs (), m))
 
-    // [<StructuralEquality(_)>]
-    | true, _, _, Some true, _, _, None, None, _ -> errorR (Error(FSComp.SR.augCustomEqNeedsNoCompOrCustomComp (), m))
-
-    // [<ReferenceEquality; StructuralEquality>]
-    | true, _, _, _, Some true, Some true, _, _, _
-
-    // [<ReferenceEquality; StructuralComparison(_) >]
-    | true, _, _, _, Some true, _, _, _, Some true -> errorR (Error(FSComp.SR.augTypeCantHaveRefEqAndStructAttrs (), m))
-
-    // non augmented type, [<ReferenceEquality; ... >]
-    // non augmented type, [<StructuralEquality; ... >]
-    // non augmented type, [<StructuralComparison(_); ... >]
-    | false, _, _, _, Some true, _, _, _, _
-    | false, _, _, _, _, Some true, _, _, _
-    | false, _, _, _, _, _, _, _, Some true -> errorR (Error(FSComp.SR.augOnlyCertainTypesCanHaveAttrs (), m))
-    // All other cases
     | _ -> errorR (Error(FSComp.SR.augInvalidAttrs (), m))
 
     let hasNominalInterface tcref =
@@ -1137,22 +1155,17 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
     let hasExplicitGenericEquals = hasNominalInterface g.system_GenericIEquatable_tcref
 
     match attribs with
-    // [<NoEquality>] + any equality semantics
-    | _, _, Some true, _, _, _, _, _, _ when (hasExplicitEquals || hasExplicitGenericEquals) ->
+    | _, _, HasAugAttrib ``[<NoEquality>]`` when (hasExplicitEquals || hasExplicitGenericEquals) ->
         warning (Error(FSComp.SR.augNoEqNeedsNoObjEquals (), m))
-    // [<NoComparison>] + any comparison semantics
-    | _, _, _, _, _, _, Some true, _, _ when (hasExplicitICompare || hasExplicitIGenericCompare) ->
+    | _, _, HasAugAttrib ``[<NoComparison>]`` when (hasExplicitICompare || hasExplicitIGenericCompare) ->
         warning (Error(FSComp.SR.augNoCompCantImpIComp (), m))
 
-    // [<CustomEquality>] + no explicit override Object.Equals  + no explicit IStructuralEquatable
-    | _, _, _, Some true, _, _, _, _, _ when isImplementation && not hasExplicitEquals && not hasExplicitGenericEquals ->
+    | _, _, HasAugAttrib ``[<CustomEquality>]`` when isImplementation && not hasExplicitEquals && not hasExplicitGenericEquals ->
         errorR (Error(FSComp.SR.augCustomEqNeedsObjEquals (), m))
-    // [<CustomComparison>] + no explicit IComparable + no explicit IStructuralComparable
-    | _, _, _, _, _, _, _, Some true, _ when isImplementation && not hasExplicitICompare && not hasExplicitIGenericCompare ->
+    | _, _, HasAugAttrib ``[<CustomComparison>]`` when isImplementation && not hasExplicitICompare && not hasExplicitIGenericCompare ->
         errorR (Error(FSComp.SR.augCustomCompareNeedsIComp (), m))
 
-    // [<ReferenceEquality>] + any equality semantics
-    | _, _, _, _, Some true, _, _, _, _ when (hasExplicitEquals || hasExplicitIGenericCompare) ->
+    | _, _, HasAugAttrib ``[<ReferenceEquality>]`` when (hasExplicitEquals || hasExplicitIGenericCompare) ->
         errorR (Error(FSComp.SR.augRefEqCantHaveObjEquals (), m))
 
     | _ -> ()
@@ -1164,13 +1177,9 @@ let TyconIsCandidateForAugmentationWithCompare (g: TcGlobals) (tycon: Tycon) =
     not isUnit
     && not (isByrefLikeTyconRef g tycon.Range (mkLocalTyconRef tycon))
     && match getAugmentationAttribs g tycon with
-       // [< >]
-       | true, true, None, None, None, None, None, None, None
-       // [<StructuralEquality; StructuralComparison>]
-       | true, true, None, None, None, Some true, None, None, Some true
-       // [<StructuralComparison>]
-       | true, true, None, None, None, None, None, None, Some true -> true
-       // other cases
+       | true, true, AugAttribs WellKnownEntityAttributes.None
+       | true, true, AugAttribs ``[<StructuralEquality; StructuralComparison>]``
+       | true, true, AugAttribs ``[<StructuralComparison>]`` -> true
        | _ -> false
 
 let TyconIsCandidateForAugmentationWithEquals (g: TcGlobals) (tycon: Tycon) =
@@ -1182,12 +1191,7 @@ let TyconIsCandidateForAugmentationWithEquals (g: TcGlobals) (tycon: Tycon) =
     &&
 
     match getAugmentationAttribs g tycon with
-    // [< >]
-    | true, _, None, None, None, None, _, _, _
-    // [<StructuralEquality; _ >]
-    // [<StructuralEquality; StructuralComparison>]
-    | true, _, None, None, None, Some true, _, _, _ -> true
-    // other cases
+    | true, _, NoAugAttrib ``NoEquality or CustomEquality or ReferenceEquality`` -> true
     | _ -> false
 
 let TyconIsCandidateForAugmentationWithHash g tycon =
@@ -1645,7 +1649,7 @@ let rec TypeDefinitelyHasEquality g ty =
     let appTy = tryAppTy g ty
 
     match appTy with
-    | ValueSome(tcref, _) when HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs -> false
+    | ValueSome(tcref, _) when EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoEqualityAttribute tcref.Deref -> false
     | _ ->
         if ty |> IsTyparTyWithConstraint g _.IsSupportsEquality then
             true
@@ -1678,7 +1682,7 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
     |> List.map (fun uc ->
         // Unlike other generated items, the 'IsABC' properties are visible, not considered compiler-generated
         let v =
-            mkImpliedValSpec g uc.Range tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
+            mkImpliedValSpec g uc.Range tcref tmty vis None (PrettyNaming.unionCaseTesterPropertyPrefix + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
 
         g.AddValGeneratedAttributes v m
         v)

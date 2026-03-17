@@ -1752,3 +1752,82 @@ printfn "Success: %d" result
         |> compileAndRun
         |> shouldSucceed
 
+    // Regression test for GitHub issue #18344 and FSharpPlus curryN pattern
+    // This tests that SRTP typars with MayResolveMember constraints are properly solved
+    // even when StaticReq is None
+    [<Fact>]
+    let ``SRTP curryN-style pattern should compile without value restriction error`` () =
+        FSharp """
+module CurryNTest
+
+open System
+
+// Minimal reproduction of the FSharpPlus curryN pattern
+type Curry =
+    static member inline Invoke f =
+        let inline call_2 (a: ^a, b: ^b) = ((^a or ^b) : (static member Curry: _*_ -> _) b, a)
+        call_2 (Unchecked.defaultof<Curry>, Unchecked.defaultof<'t>) (f: 't -> 'r) : 'args
+    
+    static member Curry (_: Tuple<'t1>        , _: Curry) = fun f t1                   -> f (Tuple<_> t1)
+    static member Curry ((_, _)               , _: Curry) = fun f t1 t2                -> f (t1, t2)
+    static member Curry ((_, _, _)            , _: Curry) = fun f t1 t2 t3             -> f (t1, t2, t3)
+
+let inline curryN f = Curry.Invoke f
+
+// Test functions
+let f1  (x: Tuple<_>) = [x.Item1]
+let f2  (x, y)    = [x + y]
+let f3  (x, y, z) = [x + y + z]
+
+// These should compile without value restriction error (regression test for #18344)
+let _x1 = curryN f1 100
+let _x2 = curryN f2 1 2
+let _x3 = curryN f3 1 2 3
+    """
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    // Tests for issue #19231: Invoking static abstract member on interface type should be rejected
+    let private iwsamWarnings = [ "--nowarn:3536" ; "--nowarn:3535" ]
+
+    [<TheoryForNETCOREAPP>]
+    [<InlineData("static abstract Name : string", "ITest.Name", "get_Name", 3, 9, 3, 19)>]
+    [<InlineData("static abstract Parse : string -> int", "ITest.Parse \"42\"", "Parse", 3, 9, 3, 25)>]
+    let ``Direct call to static abstract on interface produces error 3866`` (memberDef: string, call: string, memberName: string, l1, c1, l2, c2) =
+        Fsx $"type ITest =\n    {memberDef}\nlet x = {call}"
+        |> withOptions iwsamWarnings |> typecheck |> shouldFail
+        |> withSingleDiagnostic (Error 3866, Line l1, Col c1, Line l2, Col c2, $"A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{memberName}).")
+
+    [<FactForNETCOREAPP>]
+    let ``SRTP call to static abstract via type parameter succeeds`` () =
+        Fsx "type IP = static abstract Parse : string -> int\ntype P() = interface IP with static member Parse s = int s\nlet inline p<'T when 'T :> IP> s = 'T.Parse s\nif p<P> \"42\" <> 42 then failwith \"fail\""
+        |> withOptions iwsamWarnings |> compileAndRun |> shouldSucceed
+
+    [<TheoryForNETCOREAPP>]
+    [<InlineData("op_CheckedAddition", true)>]   // DIM - succeeds
+    [<InlineData("op_Addition", false)>]          // Pure abstract - fails
+    let ``BCL IAdditionOperators static member`` (op: string, shouldPass: bool) =
+        let code = Fsx $"open System.Numerics\nlet _ = IAdditionOperators.{op} (5, 7)"
+        if shouldPass then code |> withOptions iwsamWarnings |> compileAndRun |> shouldSucceed |> ignore
+        else code |> withOptions iwsamWarnings |> typecheck |> shouldFail |> withErrorCode 3866 |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``Inherited static abstract without impl produces error 3866`` () =
+        Fsx "type IBase = static abstract Value : int\ntype IDerived = inherit IBase\nlet _ = IDerived.Value"
+        |> withOptions iwsamWarnings |> typecheck |> shouldFail |> withErrorCode 3866 |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# static abstract consumed by F# produces error 3866`` () =
+        let csLib = CSharp "namespace CsLib { public interface IP { static abstract string Get(); } }"
+                    |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
+        FSharp "module T\nopen CsLib\nlet _ = IP.Get()" |> asExe |> withOptions iwsamWarnings |> withReferences [csLib]
+        |> compile |> shouldFail |> withErrorCode 3866 |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# static virtual DIM called on interface succeeds`` () =
+        let csLib = CSharp "namespace CsLib { public interface IP { static virtual string Get() => \"x\"; } }"
+                    |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
+        FSharp "module T\nopen CsLib\nlet _ = IP.Get()" |> asExe |> withOptions iwsamWarnings |> withReferences [csLib]
+        |> compileAndRun |> shouldSucceed
+

@@ -70,6 +70,12 @@ module Helpers =
     type DummyType = A | B
     let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharpChecker>.Assembly.Location).LocalPath), p)
 
+#if DEBUG
+let testBuildConfiguration = "Debug"
+#else
+let testBuildConfiguration = "Release"
+#endif
+
 let fsCoreDefaultReference() =
     PathRelativeToTestAssembly "FSharp.Core.dll"
 
