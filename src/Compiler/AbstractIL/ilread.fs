@@ -1150,18 +1150,18 @@ type ILMetadataReader =
         seekReadMethodDefAsMethodData: int -> MethodData
         seekReadGenericParams: GenericParamsIdx -> ILGenericParameterDef list
         seekReadFieldDefAsFieldSpec: int -> ILFieldSpec
-        customAttrsReader_Module: ILAttributesStored
-        customAttrsReader_Assembly: ILAttributesStored
-        customAttrsReader_TypeDef: ILAttributesStored
-        customAttrsReader_InterfaceImpl: ILAttributesStored
-        customAttrsReader_GenericParam: ILAttributesStored
-        customAttrsReader_FieldDef: ILAttributesStored
-        customAttrsReader_MethodDef: ILAttributesStored
-        customAttrsReader_ParamDef: ILAttributesStored
-        customAttrsReader_Event: ILAttributesStored
-        customAttrsReader_Property: ILAttributesStored
-        customAttrsReader_ManifestResource: ILAttributesStored
-        customAttrsReader_ExportedType: ILAttributesStored
+        customAttrsReaderFn_Module: int32 -> ILAttribute[]
+        customAttrsReaderFn_Assembly: int32 -> ILAttribute[]
+        customAttrsReaderFn_TypeDef: int32 -> ILAttribute[]
+        customAttrsReaderFn_InterfaceImpl: int32 -> ILAttribute[]
+        customAttrsReaderFn_GenericParam: int32 -> ILAttribute[]
+        customAttrsReaderFn_FieldDef: int32 -> ILAttribute[]
+        customAttrsReaderFn_MethodDef: int32 -> ILAttribute[]
+        customAttrsReaderFn_ParamDef: int32 -> ILAttribute[]
+        customAttrsReaderFn_Event: int32 -> ILAttribute[]
+        customAttrsReaderFn_Property: int32 -> ILAttribute[]
+        customAttrsReaderFn_ManifestResource: int32 -> ILAttribute[]
+        customAttrsReaderFn_ExportedType: int32 -> ILAttribute[]
         securityDeclsReader_TypeDef: ILSecurityDeclsStored
         securityDeclsReader_MethodDef: ILSecurityDeclsStored
         securityDeclsReader_Assembly: ILSecurityDeclsStored
@@ -1884,7 +1884,7 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
                 Some(seekReadAssemblyManifest ctxt pectxtEager 1)
             else
                 None
-        CustomAttrsStored = ctxt.customAttrsReader_Module
+        CustomAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_Module)
         MetadataIndex = idx
         Name = ilModuleName
         NativeResources = nativeResources
@@ -1927,7 +1927,7 @@ and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
             | _ -> None
         Version = Some(ILVersionInfo(v1, v2, v3, v4))
         Locale = readStringHeapOption ctxt localeIdx
-        CustomAttrsStored = ctxt.customAttrsReader_Assembly
+        CustomAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_Assembly)
         MetadataIndex = idx
         AssemblyLongevity =
             let masked = flags &&& 0x000e
@@ -2229,7 +2229,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
             events = events,
             properties = props,
             additionalFlags = additionalFlags,
-            customAttrsStored = ctxt.customAttrsReader_TypeDef,
+            customAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_TypeDef),
             metadataIndex = idx
         ))
 
@@ -2271,7 +2271,7 @@ and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
                 {
                     Idx = idx
                     Type = ilType
-                    CustomAttrsStored = ctxt.customAttrsReader_InterfaceImpl
+                    CustomAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_InterfaceImpl)
                 })
         ))
 
@@ -2308,7 +2308,7 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numTypars, a, b)) =
                     Name = readStringHeap ctxt nameIdx
                     Constraints = constraints
                     Variance = variance
-                    CustomAttrsStored = ctxt.customAttrsReader_GenericParam
+                    CustomAttrsStored = ILAttributesStored.CreateReader(gpidx, ctxt.customAttrsReaderFn_GenericParam)
                     MetadataIndex = gpidx
                     HasReferenceTypeConstraint = (flags &&& 0x0004) <> 0
                     HasNotNullableValueTypeConstraint = (flags &&& 0x0008) <> 0
@@ -2546,7 +2546,7 @@ and seekReadField ctxt mdv (numTypars, hasLayout) (idx: int) =
                  )
              else
                  None),
-        customAttrsStored = ctxt.customAttrsReader_FieldDef,
+        customAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_FieldDef),
         metadataIndex = idx
     )
 
@@ -3054,7 +3054,7 @@ and seekReadMethod (ctxt: ILMetadataReader) mdv numTypars (idx: int) =
         callingConv = cc,
         ret = ret,
         body = body,
-        customAttrsStored = ctxt.customAttrsReader_MethodDef,
+        customAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_MethodDef),
         metadataIndex = idx
     )
 
@@ -3091,7 +3091,7 @@ and seekReadParamExtras (ctxt: ILMetadataReader) mdv (retRes: byref<ILReturn>, p
                          Some(fmReader (TaggedIndex(hfm_ParamDef, idx)))
                      else
                          None)
-                CustomAttrsStored = ctxt.customAttrsReader_ParamDef
+                CustomAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_ParamDef)
                 MetadataIndex = idx
             }
     elif seq > Array.length paramsRes then
@@ -3113,7 +3113,7 @@ and seekReadParamExtras (ctxt: ILMetadataReader) mdv (retRes: byref<ILReturn>, p
                 IsIn = ((inOutMasked &&& 0x0001) <> 0x0)
                 IsOut = ((inOutMasked &&& 0x0002) <> 0x0)
                 IsOptional = ((inOutMasked &&& 0x0010) <> 0x0)
-                CustomAttrsStored = ctxt.customAttrsReader_ParamDef
+                CustomAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_ParamDef)
                 MetadataIndex = idx
             }
 
@@ -3192,7 +3192,7 @@ and seekReadEvent ctxt mdv numTypars idx =
         removeMethod = seekReadMethodSemantics ctxt (0x0010, TaggedIndex(hs_Event, idx)),
         fireMethod = seekReadOptionalMethodSemantics ctxt (0x0020, TaggedIndex(hs_Event, idx)),
         otherMethods = seekReadMultipleMethodSemantics ctxt (0x0004, TaggedIndex(hs_Event, idx)),
-        customAttrsStored = ctxt.customAttrsReader_Event,
+        customAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_Event),
         metadataIndex = idx
     )
 
@@ -3263,7 +3263,7 @@ and seekReadProperty ctxt mdv numTypars idx =
              else
                  Some(seekReadConstant ctxt (TaggedIndex(hc_Property, idx)))),
         args = argTys,
-        customAttrsStored = ctxt.customAttrsReader_Property,
+        customAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_Property),
         metadataIndex = idx
     )
 
@@ -3301,8 +3301,8 @@ and seekReadProperties (ctxt: ILMetadataReader) numTypars tidx =
                 ])
     )
 
-and customAttrsReader ctxtH tag : ILAttributesStored =
-    mkILCustomAttrsReader (fun idx ->
+and customAttrsReaderFn ctxtH tag : int32 -> ILAttribute[] =
+    fun idx ->
         let (ctxt: ILMetadataReader) = getHole ctxtH
         let mdv = ctxt.mdfile.GetView()
 
@@ -3325,7 +3325,7 @@ and customAttrsReader ctxtH tag : ILAttributesStored =
                     seekReadCustomAttr ctxt (attrRow.typeIndex, attrRow.valueIndex)
             }
 
-        seekReadIndexedRowsByInterface (ctxt.getNumRows TableNames.CustomAttribute) (isSorted ctxt TableNames.CustomAttribute) reader)
+        seekReadIndexedRowsByInterface (ctxt.getNumRows TableNames.CustomAttribute) (isSorted ctxt TableNames.CustomAttribute) reader
 
 and seekReadCustomAttr ctxt (TaggedIndex(cat, idx), b) =
     ctxt.seekReadCustomAttr (CustomAttrIdx(cat, idx, b))
@@ -4111,7 +4111,7 @@ and seekReadManifestResources (ctxt: ILMetadataReader) canReduceMemory (mdv: Bin
                                  ILResourceAccess.Public
                              else
                                  ILResourceAccess.Private)
-                        CustomAttrsStored = ctxt.customAttrsReader_ManifestResource
+                        CustomAttrsStored = ILAttributesStored.CreateReader(i, ctxt.customAttrsReaderFn_ManifestResource)
                         MetadataIndex = i
                     }
 
@@ -4132,7 +4132,7 @@ and seekReadNestedExportedTypes ctxt (exported: _[]) (nested: Lazy<_[]>) parentI
                          | ILTypeDefAccess.Nested n -> n
                          | _ -> failwith "non-nested access for a nested type described as being in an auxiliary module")
                     Nested = seekReadNestedExportedTypes ctxt exported nested i
-                    CustomAttrsStored = ctxt.customAttrsReader_ExportedType
+                    CustomAttrsStored = ILAttributesStored.CreateReader(i, ctxt.customAttrsReaderFn_ExportedType)
                     MetadataIndex = i
                 })
     )
@@ -4171,7 +4171,7 @@ and seekReadTopExportedTypes (ctxt: ILMetadataReader) =
                                 Name = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
                                 Attributes = enum<TypeAttributes> flags
                                 Nested = seekReadNestedExportedTypes ctxt exported nested i
-                                CustomAttrsStored = ctxt.customAttrsReader_ExportedType
+                                CustomAttrsStored = ILAttributesStored.CreateReader(i, ctxt.customAttrsReaderFn_ExportedType)
                                 MetadataIndex = i
                             }
             ]
@@ -4591,18 +4591,18 @@ let openMetadataReader
             seekReadMethodDefAsMethodData = cacheMethodDefAsMethodData (seekReadMethodDefAsMethodDataUncached ctxtH)
             seekReadGenericParams = cacheGenericParams (seekReadGenericParamsUncached ctxtH)
             seekReadFieldDefAsFieldSpec = cacheFieldDefAsFieldSpec (seekReadFieldDefAsFieldSpecUncached ctxtH)
-            customAttrsReader_Module = customAttrsReader ctxtH hca_Module
-            customAttrsReader_Assembly = customAttrsReader ctxtH hca_Assembly
-            customAttrsReader_TypeDef = customAttrsReader ctxtH hca_TypeDef
-            customAttrsReader_InterfaceImpl = customAttrsReader ctxtH hca_InterfaceImpl
-            customAttrsReader_GenericParam = customAttrsReader ctxtH hca_GenericParam
-            customAttrsReader_FieldDef = customAttrsReader ctxtH hca_FieldDef
-            customAttrsReader_MethodDef = customAttrsReader ctxtH hca_MethodDef
-            customAttrsReader_ParamDef = customAttrsReader ctxtH hca_ParamDef
-            customAttrsReader_Event = customAttrsReader ctxtH hca_Event
-            customAttrsReader_Property = customAttrsReader ctxtH hca_Property
-            customAttrsReader_ManifestResource = customAttrsReader ctxtH hca_ManifestResource
-            customAttrsReader_ExportedType = customAttrsReader ctxtH hca_ExportedType
+            customAttrsReaderFn_Module = customAttrsReaderFn ctxtH hca_Module
+            customAttrsReaderFn_Assembly = customAttrsReaderFn ctxtH hca_Assembly
+            customAttrsReaderFn_TypeDef = customAttrsReaderFn ctxtH hca_TypeDef
+            customAttrsReaderFn_InterfaceImpl = customAttrsReaderFn ctxtH hca_InterfaceImpl
+            customAttrsReaderFn_GenericParam = customAttrsReaderFn ctxtH hca_GenericParam
+            customAttrsReaderFn_FieldDef = customAttrsReaderFn ctxtH hca_FieldDef
+            customAttrsReaderFn_MethodDef = customAttrsReaderFn ctxtH hca_MethodDef
+            customAttrsReaderFn_ParamDef = customAttrsReaderFn ctxtH hca_ParamDef
+            customAttrsReaderFn_Event = customAttrsReaderFn ctxtH hca_Event
+            customAttrsReaderFn_Property = customAttrsReaderFn ctxtH hca_Property
+            customAttrsReaderFn_ManifestResource = customAttrsReaderFn ctxtH hca_ManifestResource
+            customAttrsReaderFn_ExportedType = customAttrsReaderFn ctxtH hca_ExportedType
             securityDeclsReader_TypeDef = securityDeclsReader ctxtH hds_TypeDef
             securityDeclsReader_MethodDef = securityDeclsReader ctxtH hds_MethodDef
             securityDeclsReader_Assembly = securityDeclsReader ctxtH hds_Assembly

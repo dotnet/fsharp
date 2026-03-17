@@ -42,6 +42,22 @@ let main _argv =
             let processed = Library.processAnonymousRecord({| X = 123; Y = "test" |})
             printfn "Processed result: %s" processed
             
+            // Test well-known attribute types
+            let sealedObj = CompilerCompatLib.Library.SealedType()
+            printfn "Sealed: %d" sealedObj.Value
+
+            let sr = { CompilerCompatLib.Library.StructRecord.X = 1; CompilerCompatLib.Library.StructRecord.Y = 2.0 }
+            printfn "Struct: %d, %f" sr.X sr.Y
+
+            let u = CompilerCompatLib.Library.NoHelpersUnion.Case1
+            printfn "Union: %A" u
+
+            let q = CompilerCompatLib.Library.QualifiedEnum.A
+            printfn "Enum: %A" q
+
+            printfn "Literal: %d" CompilerCompatLib.Library.LiteralValue
+            printfn "Reflected: %d" (CompilerCompatLib.Library.reflectedFunction 1)
+
             if processed = "Processed: X=123, Y=test" then
                 printfn "SUCCESS: All compiler compatibility tests passed"
                 0
