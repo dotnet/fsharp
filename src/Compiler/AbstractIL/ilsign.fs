@@ -331,6 +331,13 @@ let getPublicKeyForKeyPair keyBlob =
     let rsaParameters = rsa.ExportParameters false
     toCLRKeyBlob rsaParameters CALG_RSA_KEYX
 
+// Detect whether a byte array is a raw CAPI PRIVATEKEYBLOB (full key pair).
+// A raw key pair blob starts with bType=0x07 (PRIVATEKEYBLOB), bVersion=0x02.
+let isKeyPairBlob (blob: byte array) =
+    blob.Length > 8
+    && int blob.[0] = PRIVATEKEYBLOB
+    && int blob.[1] = BLOBHEADER_CURRENT_BVERSION
+
 // Key signing
 type keyContainerName = string
 type keyPair = byte array
@@ -375,7 +382,12 @@ type ILStrongNameSigner =
         | PublicKeySigner pk -> pk
         | PublicKeyOptionsSigner pko ->
             let pk, _ = pko
-            pk
+            // If the blob is a full key pair (PRIVATEKEYBLOB), extract the public key
+            // to avoid embedding private key material in the assembly.
+            if isKeyPairBlob pk then
+                signerGetPublicKeyForKeyPair pk
+            else
+                pk
         | KeyPair kp -> signerGetPublicKeyForKeyPair kp
         | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 

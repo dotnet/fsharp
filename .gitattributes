@@ -35,3 +35,5 @@ targets.make text eol=lf
 *.xlf linguist-generated=true
 
 *.png binary
+
+.github/workflows/*.lock.yml linguist-generated=true merge=ours
