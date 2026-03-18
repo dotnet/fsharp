@@ -13,8 +13,8 @@ This pipeline processes **thousands** of GitHub items (typically 3,000–10,000+
 
 **Use sub-agents for everything.** The orchestrator manages SQLite state and dispatches work. Sub-agents do the heavy lifting:
 - **Collection**: one sub-agent per repo × date range chunk. Parallelize aggressively (6+ concurrent agents).
-- **Comment fetching**: one sub-agent per ~200 items. This is the most API-call-intensive phase.
-- **Semantic analysis**: one sub-agent per ~200 comments. Each classifies and extracts rules.
+- **Comment fetching**: one sub-agent per ~15 items. Small batches ensure reliable completion — agents given 200+ items often give up partway or write placeholder files.
+- **Semantic analysis**: one sub-agent per ~15 PR packets. Each classifies and extracts rules.
 - **Synthesis**: one sub-agent to read all analysis summaries (not raw data) and produce dimensions/principles.
 - **Artifact generation**: one sub-agent per artifact type (instructions, skills, agent).
 - **Validation/improvement**: one sub-agent per file or per concern.
@@ -22,6 +22,8 @@ This pipeline processes **thousands** of GitHub items (typically 3,000–10,000+
 Store all intermediate results in **SQLite** (queryable) and **JSON backup files** (recoverable). Sub-agents write results to files; the orchestrator imports into SQLite and dispatches next phase. Never rely on passing large datasets through context — use the filesystem.
 
 Use `model: "claude-opus-4.6"` for all sub-agents. Use background mode (`mode: "background"`) so agents run in parallel and the orchestrator is notified on completion.
+
+**After each batch of sub-agents completes, validate output files.** Check that each file is >500 bytes and parseable JSON. Re-dispatch any that produced empty/placeholder files. Keep batch assignments to ≤5 batches per agent.
 
 ## Inputs
 
@@ -107,14 +109,15 @@ This maps comments to code areas.
 
 ### 1.4 Cross-validate against current codebase
 
-Collected data references files and folders as they existed at the time of the comment — migrations and refactorings happen. Before enrichment, reconcile all file paths:
+Collected data references files, folders, and terminology as they existed at the time of the comment — migrations and refactorings happen. Reconcile before enrichment:
 
+**File paths:**
 1. Extract all unique file paths from collected comments (review comments have `file_path`, PR files have `path`).
 2. For each path, check if it exists in the current repo (`Test-Path` or `glob`).
 3. If missing, search for the filename in its current location (files get moved between folders). Update the path if found.
 4. If the file was deleted entirely, keep the comment's essence (the rule it teaches) but drop the file pointer. The rule may still apply to successor code.
 
-This prevents generating instructions that point at nonexistent files.
+**Technical terms:** `grep` every technical term used in comments (function names, type names, concepts like "reactor thread") against the current codebase. Terms with zero matches are obsolete — do not use them in generated artifacts.
 
 ### 1.5 Backup
 
@@ -201,9 +204,11 @@ Generate three artifact types:
 - Reference docs, don't reproduce them
 
 #### Review Agent (`.github/agents/{agent_name}.md`)
-- Single source of truth for the review methodology
-- Contains: overarching principles, all dimensions inline (with rules + CHECK flags), folder hotspot mapping, review workflow
+- Single source of truth for the review methodology — all critical content must be inline in this file, not in separate reference files that might not be read
+- Contains: overarching principles, all dimensions inline (with rules + CHECK flags), review workflow
+- The folder→dimension routing table belongs in the skill (not duplicated here)
 - The review workflow is 5 waves (see below)
+- Every CHECK item must be a generalizable principle applicable to future PRs about features that don't exist yet — not a transcription of one historical PR's feedback
 
 **Commit** after raw creation.
 
@@ -230,10 +235,10 @@ Apply https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-pra
 
 Compare new artifacts against existing `.github/` content:
 - Check trigger overlap between new and existing skills
-- Check body overlap (same howto in two places)
-- Resolve: if complementary (how vs when), add cross-references. If duplicate, merge or delete.
-- Instructions must not repeat AGENTS.md or copilot-instructions.md
+- Check body overlap (same content in two places) — if the same concept appears in both agent and skill, keep it in the agent (source of truth) and have the skill point to it
+- Instructions must not repeat AGENTS.md, copilot-instructions.md, or the agent's CHECK items verbatim — instructions are for concise auto-loaded reminders only
 - All doc links verified to exist on disk
+- The YAML `description` field is how the model picks from 100+ skills — invest in keyword-rich, third-person, specific trigger descriptions
 
 **Commit** after deduplication.
 
@@ -278,11 +283,11 @@ Launch **one sub-agent per dimension** (parallel batches of 6). Each evaluates e
 
 Sub-agent instructions:
 
-> Report `$DimensionName — LGTM` when the dimension is genuinely clean.
+> Report `$DimensionName — LGTM` when the dimension is genuinely clean. Do not explain away real issues to produce a clean result.
 >
-> Report an ISSUE only when you can construct a **concrete failing scenario**: a specific input, a specific call sequence, a specific state that triggers the bug. No hypotheticals.
+> Report an ISSUE only when you can construct a **concrete failing scenario**: a specific input, a specific call sequence, a specific state that triggers the bug. No hypotheticals — "this might be a problem in theory" is not a finding.
 >
-> Read the **PR diff**, not main — new files only exist in the PR branch.
+> Read the **PR diff**, not main — new files only exist in the PR branch. Never verify findings against `main`; the code you're reviewing only exists in `refs/pull/{pr}/head`.
 >
 > Include exact file path and line range. Verify by tracing actual code flow.
 
@@ -396,36 +401,4 @@ Also check:
 - Every CHECK item is phrased as a generalizable principle, not a transcription of one PR's feedback
 - Dimension frequency is counted by PRs, not by comments — a PR with 50 comments counts the same as one with 1 comment
 
----
 
-## Lessons Learned (encoded in this process)
-
-Failure modes observed during development. The process above accounts for them, but they're listed for awareness:
-
-1. **Nodder bias**: Telling sub-agents "LGTM is the best outcome" caused them to explain away real issues. The correct framing: "LGTM when genuinely clean. Do not explain away real issues."
-
-2. **Nitpicker bias**: Without LGTM guidance, sub-agents generated 25+ findings including hypotheticals. The fix: require concrete failing scenarios — no "maybe in theory."
-
-3. **Wrong branch verification**: Verification agents checked `main` instead of the PR branch, disputing real findings because new files didn't exist on `main`. The fix: always verify against PR diff or `refs/pull/{pr}/head`.
-
-4. **Static-only analysis**: Reading code without tracing execution missed whether issues were real. The fix: Wave 2 requires active validation — build, test, write PoCs, simulate execution traces.
-
-5. **Duplicate skills**: Two skills covering the same topic emerged. The fix: single source of truth in one file; others are slim pointers.
-
-6. **Separate reference files get skipped**: Content in a separate file was not reliably read by the model. The fix: inline critical content in the agent file — it's loaded on invocation, guaranteed to be read.
-
-7. **Description is everything for discovery**: The YAML `description` field is how the model picks from 100+ skills. Invest in keyword-rich, third-person, specific trigger descriptions.
-
-8. **Sampling bias toward noisy PRs**: The first run sampled ~300 PRs from ~5000 and got 469 comments — biased toward high-comment PRs. The deep run collected ALL ~8000 comments from ALL PRs. The difference was 17x more data and qualitatively different dimensions emerged. Never sample.
-
-9. **Comment-count overfitting**: A PR with 50 review comments dominated the taxonomy, producing CHECK items specific to that one PR. The fix: normalize by PR count, not comment count. One PR = one vote regardless of how many comments it has.
-
-10. **Reproducing CI as review rules**: The classifier extracted "run tests on Linux and Windows" as a review rule — but CI already does this. Reviewers mention CI coverage in passing; it's not a rule for future reviewers. The fix: cross-reference with the repo's CI config and exclude rules that CI already enforces.
-
-11. **Overfitted CHECK items from single PRs**: Rules like "cross-reference GenFieldInit in IlxGen.fs when modifying infos.fs" are useless for a reviewer who isn't modifying that specific file. The fix: the confusion audit (Phase 5.6) catches these. Every CHECK item must be applicable to a future PR about a feature that doesn't exist yet.
-
-12. **Obsolete terminology**: The classifier picked up historical terms ("reactor thread") that no longer exist in the codebase. The fix: cross-validate all technical terms against the current codebase with grep. Zero matches = remove the term.
-
-13. **Missing own-PR data**: The first run only searched `commenter:username`, missing PRs where the user was the author. PR descriptions by the target user are often the richest source of design philosophy. The fix: always search both `commenter:` AND `author:`.
-
-14. **Multi-batch agent failures**: Sub-agents given 9+ batches of 15 PRs often gave up partway or wrote placeholder files. The fix: keep batch assignments to 4-5 batches per agent, validate output file sizes (>500 bytes), and re-dispatch failures.
