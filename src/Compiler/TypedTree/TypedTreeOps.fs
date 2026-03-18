@@ -3588,14 +3588,13 @@ let TryFindFSharpInt32AttributeOpt g nmOpt attrs =
         | _ -> None
     | None -> None
 
-let TryFindILAttribute (AttribInfo (atref, _)) attrs = 
+let TryFindILAttribute (AttribInfo (atref, _)) attrs =
     HasILAttribute atref attrs
 
 let TryDecodeILAttributeOpt attr attrs =
     match attr with
-    | Some (AttribInfo (atref, _)) -> TryDecodeILAttribute atref attrs
+    | Some(AttribInfo(atref, _)) -> TryDecodeILAttribute atref attrs
     | _ -> None
-
 
 let IsILAttrib  (AttribInfo (builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
 

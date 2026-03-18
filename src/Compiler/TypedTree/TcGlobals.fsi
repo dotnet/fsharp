@@ -368,7 +368,6 @@ type internal TcGlobals =
 
     member attrib_OverloadResolutionPriorityAttribute: BuiltinAttribInfo option
 
-
     member attrib_SystemObsolete: BuiltinAttribInfo
 
     member attrib_IsByRefLikeAttribute_opt: BuiltinAttribInfo option
