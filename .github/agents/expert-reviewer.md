@@ -27,11 +27,20 @@ Every behavioral change, bug fix, and new feature requires corresponding tests b
 
 **CHECK:**
 - Verify that every code path added or modified has a test exercising it.
+- Test the happy path, negative path (invalid input, error conditions), and feature interactions (how the change interacts with generics, constraints, computation expressions, etc.).
+- Tests must actually assert the claimed behavior — a test that calls a function without checking results is not a test.
 - Confirm new tests cover behavior not already exercised by existing test suites.
 - Explain all new errors in test baselines and confirm they are expected.
 - Run tests in Release mode to catch codegen differences between Debug and Release.
 - Run tests on both desktop (.NET Framework) and CoreCLR unless there is a documented behavioral difference.
-- Verify attribute availability in the target runtime version before writing tests against it.
+- Place tests in the appropriate layer based on what changed:
+  - Typecheck tests: type inference, constraint solving, overload resolution, expected warnings/errors
+  - SyntaxTreeTests: parser/syntax changes
+  - EmittedIL tests: codegen/IL shape changes
+  - compileAndRun tests: end-to-end behavioral correctness requiring .NET runtime execution
+  - Service.Tests: FCS API, editor features
+  - FSharp.Core.Tests: core library changes
+- A PR can and often should have tests in multiple layers.
 - Update test baselines after changes that affect compiler output formatting.
 - Add trimming regression tests that verify compiled binary size stays below a threshold when relevant.
 
@@ -247,12 +256,14 @@ Compiler code should follow F# idioms and use clear, consistent terminology for 
 - Use `let mutable` instead of `ref` cells for mutable state.
 - Use `ResizeArray` type alias instead of `System.Collections.Generic.List<_>`.
 - Use pipeline operators for clearer data flow in service code.
+- Prefer pipelines over nesting — use `|>`, `bind`, `map` chains instead of nested `match` or `if/then`.
+- Use active patterns to name complex match guards and domain conditions — flatter and more reusable than `if/elif/else` chains.
+- Question any nesting beyond 2 levels — a flat pattern match with 10 arms is easier to read than 4 levels of nesting with 10 combinations. Prefer wide over deep.
 - Shadow variables when rebinding to improve code clarity.
 - Choose clear and established terminology for internal compiler representations.
-- Review terminology holistically before renaming within optimization phases.
 - Systematically distinguish `LegacyProject` and `ModernProject` in VS integration naming.
 
-**Severity:** Deprecated construct → **medium**. Naming confusion → **medium**. Style deviation → **low**.
+**Severity:** Deprecated construct → **medium**. Naming confusion → **medium**. Deep nesting → **medium**. Style deviation → **low**.
 
 **Hotspots:** All `src/Compiler/` directories, `vsintegration/`
 
@@ -263,17 +274,21 @@ Compiler code should follow F# idioms and use clear, consistent terminology for 
 Keep the codebase clean. Extract helpers, remove dead code, and avoid ad-hoc patches.
 
 **CHECK:**
+- Flag ad-hoc `if condition then specialCase else normalPath` that looks like a band-aid rather than a systematic fix — the fix should be at the source, not patched at a consumer.
+- Search the codebase for existing helpers, combinators, or active patterns before writing new code that reimplements them.
+- When two pieces of code share structure but differ in a specific operation, extract that operation as a parameter or function argument (higher-order function).
+- Flag highly similar nested pattern matches — slight differences can almost always be extracted into a parameterized or generic function.
 - Remove default wildcard patterns in discriminated union matches to catch missing cases at compile time.
 - Extract duplicated logic into a shared function with input arguments.
 - Verify functions are actually used before keeping them in the codebase.
 - Use struct tuples for retained symbol data to reduce memory allocation.
 - Use `ConditionalWeakTable` for caches keyed by GC-collected objects.
-- Remove duplicate helpers and consolidate to a single shared implementation.
 - Fix compiler warnings like unused value bindings before merging.
 - Keep unrelated changes in separate PRs to maintain clean review history.
 - Follow existing abstraction patterns (e.g., `HasFSharpAttribute`) instead of ad-hoc checks.
+- Respect intentional deviations — some projects (standalone tests, isolated builds) deliberately diverge from repo-wide conventions. Check whether the project has a structural reason to be different before flagging.
 
-**Severity:** Unreachable code path → **high**. Duplication → **medium**. Missing helper extraction → **low**.
+**Severity:** Unreachable code path → **high**. Band-aid patch → **high**. Duplication → **medium**. Missing helper extraction → **low**.
 
 **Hotspots:** `src/Compiler/Checking/`, `src/Compiler/Optimize/`, `src/Compiler/Service/`
 
