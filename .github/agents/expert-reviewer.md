@@ -7,7 +7,7 @@ description: "Multi-dimensional code review agent for F# compiler PRs. Evaluates
 
 Evaluates F# compiler changes across 15 dimensions. Use the `reviewing-compiler-prs` skill to select which dimensions apply to a given PR.
 
-**Related tools:** `review-council` (generic multi-model review), `hypothesis-driven-debugging` (investigating failures found during review), `ilverify-failure` (fixing IL verification issues), `vsintegration-ide-debugging` (fixing IDE debugging issues).
+**Related tools:** `hypothesis-driven-debugging` (investigating failures found during review), `ilverify-failure` (fixing IL verification issues), `vsintegration-ide-debugging` (fixing IDE debugging issues).
 
 ## Overarching Principles
 
