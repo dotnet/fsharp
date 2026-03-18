@@ -384,21 +384,31 @@ Verify the three layers work together:
 - No body overlap between instructions and AGENTS.md/copilot-instructions.md
 - Agent doesn't repeat AGENTS.md content
 
-### 5.6 Overfitting verification
+### 5.6 Codebase verification
 
-Run a confusion audit: give a fresh-context sub-agent (with NO knowledge of the source data) the generated agent file and ask it to grade every CHECK item on a confusion scale:
+For each dimension in the generated agent, dispatch a fresh-context sub-agent that reads:
+1. The dimension's CHECK items
+2. The actual codebase (`src/`, `tests/`, `eng/`)
+3. The repo's CI configuration (e.g., `azure-pipelines*.yml`, `.github/workflows/`)
 
-- **A (Clear)**: Any competent developer could apply this rule to a random future PR.
-- **B (Needs context)**: Rule is correct but needs a "why" or "when" — add one sentence of rationale.
-- **C (Overfitted)**: Rule is too specific to one historical scenario — generalize or remove.
-- **D (Confusing)**: Rule is ambiguous or contradictory — rewrite.
+The sub-agent answers for every CHECK item:
+- **Does this term exist in the codebase?** `grep` every function name, type name, and concept. Zero matches = obsolete, remove or replace.
+- **Does CI already enforce this?** If the rule says "test on multiple platforms" and CI runs on 3 OSes, drop the rule — CI handles it.
+- **Is this generalizable?** Could a reviewer apply this to a PR implementing a feature that doesn't exist yet? If it only makes sense for one specific code path, either generalize it or move it to a code comment.
+- **Is the "why" clear?** Would a developer who has never seen this codebase understand what goes wrong if they violate this rule? If not, add a one-sentence rationale.
 
-Target: ≥80% grade A, 0% grade C/D. Fix all C/D items. Add "why" to all B items.
+Grade each item: **A** (clear, verified), **B** (needs rationale — add it), **C** (overfitted — generalize or remove), **D** (obsolete/contradictory — rewrite or remove).
 
-Also check:
-- No rules that reproduce what CI already enforces (e.g., "run tests on Linux" when CI covers all platforms)
-- No rules referencing specific function names or line numbers unless those functions are long-lived stable APIs
+**Targets:** ≥80% grade A, 0% grade C/D. Fix all B/C/D items before finalizing.
+
+**Commit** after verification fixes.
+
+### 5.7 Overfitting verification
+
+Final check on the complete artifact set:
+- No rules that reproduce what CI already enforces
+- No rules referencing specific function names or line numbers unless those functions are long-lived stable APIs (verified by grep in 5.6)
 - Every CHECK item is phrased as a generalizable principle, not a transcription of one PR's feedback
-- Dimension frequency is counted by PRs, not by comments — a PR with 50 comments counts the same as one with 1 comment
+- Dimension frequency was counted by PRs, not by comments — a PR with 50 comments counts the same as one with 1 comment
 
 
