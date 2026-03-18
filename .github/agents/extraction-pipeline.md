@@ -50,15 +50,23 @@ If `reference_repos` are specified and the pipeline needs to search their code (
 
 ## Phase 1: Data Collection
 
+**Completeness is critical.** Do not sample — collect ALL activity. A reviewer who leaves one precise comment on a well-written PR teaches as much as 50 comments on a messy one. Sampling biases toward noisy PRs and misses the signal in clean approvals.
+
 ### 1.1 Index all activity
 
-Search each repo for issues, PRs, and discussions where `username` participated. GitHub search returns max 1000 results per query — split by date ranges to capture everything.
+Search each repo for issues, PRs, and discussions where `username` participated. **Include ALL states** — open, closed, merged, and rejected PRs all carry learning potential. Rejected PRs often contain the strongest review opinions.
 
-For each repo:
+GitHub search returns max 1000 results per query — split by 1-year date ranges to capture everything. For high-volume users, split by 6 months.
+
+For each repo, run FOUR searches (not two — capture both commenter and author roles):
 ```
-search_issues:        commenter:{username} created:{year_start}..{year_end}
 search_pull_requests: commenter:{username} created:{year_start}..{year_end}
+search_pull_requests: author:{username} created:{year_start}..{year_end}
+search_issues:        commenter:{username} created:{year_start}..{year_end}
+search_issues:        author:{username} created:{year_start}..{year_end}
 ```
+
+**Own PRs are first-class data.** When the user is the PR author, their PR description reveals design intent, priorities, and rationale that never appears in review comments. Tag each item with the user's role: `reviewer`, `author`, or `both`.
 
 For discussions (if the repo uses them), use the GitHub GraphQL API:
 ```graphql
@@ -69,22 +77,25 @@ query {
 }
 ```
 
-Store in SQLite (`gh_activity` table): repo, type (issue/pr/discussion), number, title, state, created_at, updated_at, labels, url, author.
+Store in SQLite (`gh_activity` table): repo, type (issue/pr/discussion), number, title, state, created_at, updated_at, labels, url, author, user_role.
 
-Parallelize across repos and date ranges. Use sub-agents for large volumes.
+Parallelize across repos and date ranges. Use sub-agents for large volumes. Paginate ALL results — do not stop at page 1.
 
 ### 1.2 Collect actual comments
 
-For each indexed item, fetch the user's actual comments:
-- **Issues**: `issue_read` → `get_comments` → filter to username
-- **PRs — general comments**: `pull_request_read` → `get_comments` → filter to username
+For EVERY indexed item (not a sample), fetch the user's actual words. **All comment types matter:**
+
+- **PR descriptions** (when user is author): `pull_request_read` → `get` → save body. These reveal design intent and priorities — often the most valuable content.
+- **PRs — general comments**: `pull_request_read` → `get_comments` → filter to username. This is the primary comment channel for many reviewers.
 - **PRs — review comments** (code-level, with file path + diff hunk): `pull_request_read` → `get_review_comments` → filter to username
-- **PRs — reviews** (approval/request-changes with summary body): `pull_request_read` → `get_reviews` → filter to username. These carry the reviewer's top-level verdict and summary — often the most opinionated content.
-- **Discussions**: Use GraphQL to fetch comment nodes filtered to username. Discussion comments often contain design rationale and architectural decisions.
+- **PRs — reviews** (approval/request-changes with summary body): `pull_request_read` → `get_reviews` → filter to username. These carry the reviewer's top-level verdict and summary — often the most opinionated content. Skip reviews with empty bodies.
+- **Issues — body** (when user is author): save the issue body as a comment.
+- **Issues — comments**: `issue_read` → `get_comments` → filter to username
+- **Discussions**: Use GraphQL to fetch comment nodes filtered to username.
 
-Store in SQLite (`user_comments` table): comment_id, activity_id, repo, comment_type (issue_comment, review_comment, pr_comment, review_summary, discussion_comment), body, created_at, file_path, diff_hunk, url.
+Store in SQLite (`user_comments` table): comment_id, activity_id, repo, comment_type (pr_description, issue_description, issue_comment, review_comment, pr_comment, review, discussion_comment), body, created_at, file_path, diff_hunk, url.
 
-This is the most API-intensive phase. Batch into sub-agents by date range. Handle rate limits with retry.
+This is the most API-intensive phase. Batch into sub-agents of ~15 items each — small batches ensure each agent completes reliably. Parallelize aggressively. Handle rate limits with retry.
 
 ### 1.3 Collect PR context
 
@@ -127,22 +138,26 @@ Store as a feature area reference table in SQLite.
 
 For each collected comment, classify using a sub-agent (Opus). **Do not use a hardcoded category list** — derive categories from the data:
 
-1. **Bootstrap pass**: Take a random sample of ~200 comments. Ask a sub-agent to read them and propose a category taxonomy that fits this specific reviewer and codebase. The agent should identify recurring themes, name them, and define each in one sentence. Expect 15–40 categories to emerge.
+1. **Bootstrap pass**: Take a random sample of ~300 comments from diverse PRs (not just the PRs with the most comments). Ask a sub-agent to read them and propose a category taxonomy. The agent should identify recurring themes, name them, and define each in one sentence. Expect 15–40 categories to emerge.
 
-2. **Classification pass**: Using the derived taxonomy, classify all comments in batches (~200 per sub-agent). For each comment extract:
+2. **Classification pass**: Using the derived taxonomy, classify all comments in batches (~15 PR packets per sub-agent, where each packet includes all comments on that PR). For each comment extract:
    - **Categories** (one or more, from the derived taxonomy)
    - **Feature area**: map to the landing repo's code structure (from 2.1)
    - **File/folder**: which code path does this apply to
-   - **Sentiment**: approval, concern, suggestion, question, blocking
    - **Severity**: trivial, minor, moderate, major, critical
-   - **Focus point**: what specifically is being addressed
-   - **Derived rule**: actionable rule extracted from the comment
+   - **Derived rule**: actionable rule extracted from the comment, phrased as a generalizable principle — not tied to the specific PR
 
 3. **Taxonomy refinement**: After the first full pass, review category distribution. Merge categories with <5 occurrences into broader ones. Split categories with >500 occurrences if they contain distinct sub-themes. Re-classify affected comments.
 
+**Anti-overfitting rules for classification:**
+- **Normalize by PR, not by comment.** A PR with 50 comments gets weight=1, same as a PR with 1 comment. Count how many PRs a rule appears in, not how many comments mention it. The reviewer saying something once on a clean PR means the same as repeating it 10 times on a messy one.
+- **Generalize, don't transcribe.** The derived rule must be applicable to a future PR the classifier has never seen. "Always call stripTyEqns before matching types" is good. "Call stripTyEqns on line 47 of CheckPatterns.fs" is overfitted.
+- **Distinguish reviewer opinion from CI enforcement.** If the reviewer says "please add tests", that's a review rule. If the reviewer says "run tests on Linux and Windows", that might just mean "CI should cover this" — not a rule for human reviewers. Check: does the repo's CI already do this? If yes, don't encode it as a review rule.
+- **Distinguish design guidance from implementation instruction.** "Gate features behind LanguageFeature flags" is design guidance (always applicable). "Use BindUnitVars after stripping the lambda" is an implementation instruction for a specific code path (only applicable when touching that code).
+
 Store in SQLite (`comment_analysis` table).
 
-Process in batches. Use sub-agents — each handles ~200 comments. Run in parallel.
+Process in batches. Use sub-agents — each handles ~15 PR packets with full context. Run in parallel.
 
 ### 2.3 Clustering
 
@@ -364,6 +379,23 @@ Verify the three layers work together:
 - No body overlap between instructions and AGENTS.md/copilot-instructions.md
 - Agent doesn't repeat AGENTS.md content
 
+### 5.6 Overfitting verification
+
+Run a confusion audit: give a fresh-context sub-agent (with NO knowledge of the source data) the generated agent file and ask it to grade every CHECK item on a confusion scale:
+
+- **A (Clear)**: Any competent developer could apply this rule to a random future PR.
+- **B (Needs context)**: Rule is correct but needs a "why" or "when" — add one sentence of rationale.
+- **C (Overfitted)**: Rule is too specific to one historical scenario — generalize or remove.
+- **D (Confusing)**: Rule is ambiguous or contradictory — rewrite.
+
+Target: ≥80% grade A, 0% grade C/D. Fix all C/D items. Add "why" to all B items.
+
+Also check:
+- No rules that reproduce what CI already enforces (e.g., "run tests on Linux" when CI covers all platforms)
+- No rules referencing specific function names or line numbers unless those functions are long-lived stable APIs
+- Every CHECK item is phrased as a generalizable principle, not a transcription of one PR's feedback
+- Dimension frequency is counted by PRs, not by comments — a PR with 50 comments counts the same as one with 1 comment
+
 ---
 
 ## Lessons Learned (encoded in this process)
@@ -383,3 +415,17 @@ Failure modes observed during development. The process above accounts for them, 
 6. **Separate reference files get skipped**: Content in a separate file was not reliably read by the model. The fix: inline critical content in the agent file — it's loaded on invocation, guaranteed to be read.
 
 7. **Description is everything for discovery**: The YAML `description` field is how the model picks from 100+ skills. Invest in keyword-rich, third-person, specific trigger descriptions.
+
+8. **Sampling bias toward noisy PRs**: The first run sampled ~300 PRs from ~5000 and got 469 comments — biased toward high-comment PRs. The deep run collected ALL ~8000 comments from ALL PRs. The difference was 17x more data and qualitatively different dimensions emerged. Never sample.
+
+9. **Comment-count overfitting**: A PR with 50 review comments dominated the taxonomy, producing CHECK items specific to that one PR. The fix: normalize by PR count, not comment count. One PR = one vote regardless of how many comments it has.
+
+10. **Reproducing CI as review rules**: The classifier extracted "run tests on Linux and Windows" as a review rule — but CI already does this. Reviewers mention CI coverage in passing; it's not a rule for future reviewers. The fix: cross-reference with the repo's CI config and exclude rules that CI already enforces.
+
+11. **Overfitted CHECK items from single PRs**: Rules like "cross-reference GenFieldInit in IlxGen.fs when modifying infos.fs" are useless for a reviewer who isn't modifying that specific file. The fix: the confusion audit (Phase 5.6) catches these. Every CHECK item must be applicable to a future PR about a feature that doesn't exist yet.
+
+12. **Obsolete terminology**: The classifier picked up historical terms ("reactor thread") that no longer exist in the codebase. The fix: cross-validate all technical terms against the current codebase with grep. Zero matches = remove the term.
+
+13. **Missing own-PR data**: The first run only searched `commenter:username`, missing PRs where the user was the author. PR descriptions by the target user are often the richest source of design philosophy. The fix: always search both `commenter:` AND `author:`.
+
+14. **Multi-batch agent failures**: Sub-agents given 9+ batches of 15 PRs often gave up partway or wrote placeholder files. The fix: keep batch assignments to 4-5 batches per agent, validate output file sizes (>500 bytes), and re-dispatch failures.
