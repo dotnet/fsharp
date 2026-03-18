@@ -117,7 +117,7 @@ Collected data references files, folders, and terminology as they existed at the
 3. If missing, search for the filename in its current location (files get moved between folders). Update the path if found.
 4. If the file was deleted entirely, keep the comment's essence (the rule it teaches) but drop the file pointer. The rule may still apply to successor code.
 
-**Technical terms:** `grep` every technical term used in comments (function names, type names, concepts like "reactor thread") against the current codebase. Terms with zero matches are obsolete — do not use them in generated artifacts.
+**Technical terms:** `grep` every technical term used in comments (function names, type names, internal concepts) against the current codebase. Terms with zero matches are obsolete — do not use them in generated artifacts.
 
 ### 1.5 Backup
 

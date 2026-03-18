@@ -49,20 +49,10 @@ Every behavioral change, bug fix, and new feature requires corresponding tests b
 
 **CHECK:**
 - Verify that every code path added or modified has a test exercising it.
-- Test the happy path, negative path (invalid input, error conditions), and feature interactions (how the change interacts with generics, constraints, computation expressions, etc.).
+- Test happy path, negative path (invalid input, error conditions), and feature interactions (generics, constraints, computation expressions).
 - Tests must actually assert the claimed behavior — a test that calls a function without checking results is not a test.
-- Confirm new tests cover behavior not already exercised by existing test suites.
 - Explain all new errors in test baselines and confirm they are expected.
-- Ensure tests cover both Debug and Release codegen differences when relevant.
-- Consider cross-TFM behavior (desktop .NET Framework vs CoreCLR) for platform-sensitive changes.
-- Place tests in the appropriate layer based on what changed:
-  - Typecheck tests: type inference, constraint solving, overload resolution, expected warnings/errors
-  - SyntaxTreeTests: parser/syntax changes
-  - EmittedIL tests: codegen/IL shape changes
-  - compileAndRun tests: end-to-end behavioral correctness requiring .NET runtime execution
-  - Service.Tests: FCS API, editor features
-  - FSharp.Core.Tests: core library changes
-- A PR can and often should have tests in multiple layers.
+- Place tests in the appropriate layer: Typecheck (inference, overloads), SyntaxTreeTests (parser), EmittedIL (codegen), compileAndRun (runtime behavior), Service.Tests (FCS API), FSharp.Core.Tests (core library). A PR can span multiple layers.
 
 **Severity:** Missing tests for behavioral changes → **high**. Missing cross-TFM coverage → **medium**.
 
@@ -78,10 +68,9 @@ FSharp.Core is the one assembly every F# program references. Changes here have o
 - Maintain strict backward binary compatibility. No public API removals or signature changes.
 - Verify compilation order constraints — FSharp.Core has strict file ordering requirements.
 - Add unit tests to `FSharp.Core.Tests` for every new or changed function.
-- Minimize FCS's FSharp.Core dependency — the compiler should be hostable with different FSharp.Core versions; unnecessary coupling breaks this.
-- XML doc comments are mandatory for all public APIs in FSharp.Core.
-- New API additions require an RFC.
-- Apply `InlineIfLambda` to inlined functions taking a lambda applied only once — this enables the lambda to be inlined at the call site, eliminating closure allocation.
+- Minimize FCS's FSharp.Core dependency — the compiler should be hostable with different FSharp.Core versions.
+- XML doc comments are mandatory for all public APIs. New API additions require an RFC.
+- Apply `InlineIfLambda` to inlined functions taking a lambda applied only once — eliminates closure allocation at call sites.
 
 **Severity:** Binary compat break in FSharp.Core → **critical**. Missing tests → **high**. Missing XML docs → **medium**.
 
