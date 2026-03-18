@@ -7,7 +7,27 @@ description: "Extracts review expertise from a GitHub user's history and generat
 
 Generate folder-scoped instructions, topic-scoped skills, and a multi-dimensional review agent from a GitHub user's public review history. Produces anonymized, deduplicated, Copilot-compatible `.github/` artifacts.
 
-## Scale Warning
+## Pipeline Overview
+
+```
+Phase 1: Collect        Phase 2: Enrich        Phase 3: Generate      Phase 5: Verify
+─────────────────       ───────────────        ────────────────       ───────────────
+1.1 Index activity      2.1 Study repo         3.1 Raw creation       5.1-5.5 Quality checks
+    → gh_activity           → feature_areas        → agent.md (raw)   5.6 Codebase verify
+1.2 Collect comments        → ci_summary.txt       → SKILL.md (raw)       → agent.md (verified)
+    → user_comments     2.2 Classify               → instructions     5.7 Overfitting check
+1.3 Collect PR context      → comment_analysis         (raw)              → final artifacts
+    → pr_contexts       2.2b Deduplicate       3.2 Anonymize
+1.4 Reconcile paths         → pr_rule_votes        → *.md (anon)      Phase 4 is NOT a pipeline
+    → user_comments     2.3 Synthesize         3.3 Anthropic guide    step — it defines the
+       (paths updated)      → dimensions.json      → *.md (polished)  review workflow EMBEDDED
+1.5 Backup                  → principles.json  3.4 Deduplicate        in the generated agent.
+    → JSON files            → dim_evidence         → *.md (deduped)
+```
+
+Each phase checks its output tables exist before running — skip completed phases on resume.
+
+## Scale
 
 This pipeline processes **thousands** of GitHub items (typically 3,000–10,000+ issues, PRs, discussions, and review comments spanning a decade). It will not fit in a single context window.
 
@@ -56,6 +76,11 @@ If `reference_repos` are specified and the pipeline needs to search their code (
 
 ### 1.1 Index all activity
 
+> **Sub-agents:** 1 per repo × date-range chunk (parallelize 6+)
+> **Input:** GitHub API search results
+> **Output:** SQLite `gh_activity` table, JSON backup per chunk
+> **Resume:** Skip if `gh_activity` has rows for this repo+date range
+
 Search each repo for issues, PRs, and discussions where `username` participated. **Include ALL states** — open, closed, merged, and rejected PRs all carry learning potential. Rejected PRs often contain the strongest review opinions.
 
 GitHub search returns max 1000 results per query — split by 1-year date ranges to capture everything. For high-volume users, split by 6 months.
@@ -85,6 +110,12 @@ Parallelize across repos and date ranges. Use sub-agents for large volumes. Pagi
 
 ### 1.2 Collect actual comments
 
+> **Sub-agents:** 1 per ~15 PRs (parallelize aggressively)
+> **Input:** `gh_activity` table (PR/issue numbers to fetch)
+> **Output:** SQLite `user_comments` table, JSON backup per batch
+> **Resume:** Skip PRs already in `user_comments`
+> **Validation:** Each output file >500 bytes, contains entries for all 15 assigned PRs
+
 For EVERY indexed item (not a sample), fetch the user's actual words. **All comment types matter:**
 
 - **PR descriptions** (when user is author): `pull_request_read` → `get` → save body. These reveal design intent and priorities — often the most valuable content.
@@ -101,6 +132,10 @@ This is the most API-intensive phase. Batch into sub-agents of ~15 PRs each (not
 
 ### 1.3 Collect PR context
 
+> **Sub-agents:** 1 per ~15 PRs (can share with 1.2 agents)
+> **Input:** `gh_activity` table (PRs with review comments)
+> **Output:** SQLite `pr_contexts` table (files_changed, labels, description per PR)
+
 For PRs with review comments, also collect:
 - Files changed (`get_files`): path, additions, deletions, status
 - PR labels and description
@@ -108,6 +143,10 @@ For PRs with review comments, also collect:
 This maps comments to code areas.
 
 ### 1.4 Cross-validate against current codebase
+
+> **Sub-agents:** 1 (or orchestrator directly)
+> **Input:** `user_comments` table, local repo checkout
+> **Output:** `user_comments` table (paths updated in-place), `path_mapping` table, `obsolete_terms` list
 
 Collected data references files, folders, and terminology as they existed at the time of the comment — migrations and refactorings happen. Reconcile before enrichment:
 
@@ -129,6 +168,10 @@ Write all collected data as JSON to a backup directory (e.g., `{landing_repo}-an
 
 ### 2.1 Study the landing repo
 
+> **Sub-agents:** 1 (explore agent)
+> **Input:** Local repo checkout (`src/`, `tests/`, `eng/`, `.github/`, CI configs)
+> **Output:** SQLite `feature_areas` table, `ci_summary.txt`, `existing_artifacts.txt`
+
 Before analyzing comments, understand the codebase:
 - Directory structure → feature area mapping
 - Existing documentation (specs, wiki, guides)
@@ -139,6 +182,11 @@ Before analyzing comments, understand the codebase:
 Store feature areas in SQLite: `CREATE TABLE feature_areas (area_name TEXT, folder_glob TEXT, description TEXT)`. Store CI summary as a text file.
 
 ### 2.2 Semantic analysis
+
+> **Sub-agents:** 1 for bootstrap, then ~N/15 for classification (where N = number of PRs with comments)
+> **Input:** `user_comments` table, `feature_areas` table, `ci_summary.txt`
+> **Output:** SQLite `comment_analysis` table, `taxonomy.json`
+> **Context per sub-agent:** taxonomy + CI summary + 15 PR packets (all comments on each PR)
 
 For each collected comment, classify using a sub-agent (Opus). **Do not use a hardcoded category list** — derive categories from the data:
 
@@ -165,6 +213,10 @@ Process in batches. Use sub-agents — each handles ~15 PR packets with full con
 
 ### 2.2b Deduplication (enforce PR-normalization)
 
+> **Sub-agents:** None (orchestrator runs SQL directly)
+> **Input:** `comment_analysis` table
+> **Output:** `pr_rule_votes` table (1 vote per rule per PR)
+
 Before synthesis, collapse per-comment rows into per-PR votes:
 
 ```sql
@@ -176,6 +228,11 @@ FROM comment_analysis;
 This ensures a PR with 50 comments gets weight=1, same as a PR with 1 comment. The synthesis agent in §2.3 reads `pr_rule_votes`, never raw `comment_analysis`.
 
 ### 2.3 Clustering
+
+> **Sub-agents:** 1 (Opus, synthesis)
+> **Input:** `pr_rule_votes` table, `taxonomy.json`, `feature_areas` table, `ci_summary.txt`
+> **NOT available:** raw `user_comments`, JSON backups — synthesis works only with classified, deduplicated data
+> **Output:** `dimensions.json`, `principles.json`, `folder_hotspots.json`, SQLite `dimension_evidence` table
 
 Aggregate the deduplicated `pr_rule_votes` to identify:
 
@@ -207,6 +264,11 @@ It produces:
 
 ### 3.1 Raw creation
 
+> **Sub-agents:** 1 per artifact type (3 total)
+> **Input:** `dimensions.json`, `principles.json`, `folder_hotspots.json`, existing `.github/` artifacts
+> **Output:** `agent.md` (raw), `SKILL.md` (raw), `*.instructions.md` (raw)
+> **Anti-overfitting:** generation sub-agents must follow the same rules from §2.2
+
 Generate three artifact types:
 
 #### Instructions (`.github/instructions/*.instructions.md`)
@@ -235,11 +297,17 @@ Generate three artifact types:
 
 ### 3.2 Anonymize
 
+> **Input:** `*.md` (raw)
+> **Output:** `*.md` (anonymized)
+
 Remove all personal names, comment counts, PR number references, evidence statistics, "distilled from" language. The artifacts should read as authoritative engineering guidance, not data analysis output.
 
 **Commit** after anonymization.
 
 ### 3.3 Improve per Anthropic guide
+
+> **Input:** `*.md` (anonymized)
+> **Output:** `*.md` (polished)
 
 Apply https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices:
 - `name`: gerund form, lowercase+hyphens
@@ -253,6 +321,9 @@ Apply https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-pra
 **Commit** after improvements.
 
 ### 3.4 Deduplicate and cross-reference
+
+> **Input:** `*.md` (polished), existing `.github/` content
+> **Output:** `*.md` (deduplicated) — committed to repo
 
 Compare new artifacts against existing `.github/` content:
 - Check trigger overlap between new and existing skills
@@ -409,6 +480,11 @@ Verify the three layers work together:
 
 ### 5.6 Codebase verification
 
+> **Sub-agents:** 1 per dimension (parallelize)
+> **Input:** `agent.md` (deduplicated) CHECK items, local repo (`src/`, `tests/`, `eng/`), CI config
+> **Output:** `confusion_audit.json` (grade per item), `agent.md` (verified)
+> **Feedback loop:** If >20% grade C/D → re-run Phase 2.2 + 2.3 + 3 with stronger anti-overfitting
+
 For each dimension in the generated agent, dispatch a fresh-context sub-agent that reads:
 1. The dimension's CHECK items
 2. The actual codebase (`src/`, `tests/`, `eng/`)
@@ -429,6 +505,9 @@ Grade each item: **A** (clear, verified), **B** (needs rationale — add it), **
 **Commit** after verification fixes.
 
 ### 5.7 Overfitting verification
+
+> **Input:** All `*.md` (verified), `dimension_evidence` table from §2.3
+> **Output:** Final artifacts — committed to repo
 
 Final check on the complete artifact set:
 - No rules that reproduce what CI already enforces
