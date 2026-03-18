@@ -8,7 +8,6 @@ applyTo:
 ## Test discipline
 
 - Add tests for every behavioral change before merging — missing coverage is the most common review blocker.
-- Run tests in both Debug and Release mode to catch optimization-dependent codegen differences.
 - Explain all new errors in test baselines and confirm each is expected behavior, not a regression.
 
 ## Type safety
@@ -20,11 +19,6 @@ applyTo:
 
 - Gate every new language feature behind a `LanguageFeature` flag and ship off-by-default until stable.
 - Factor cleanup changes into separate commits from feature enablement.
-
-## Parallel compilation
-
-- Eagerly format diagnostics at production time to prevent type inference parameter leakage across files.
-- Verify deterministic output by diffing binaries between parallel and sequential type checking.
 
 ## Code generation
 
