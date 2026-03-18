@@ -489,20 +489,4 @@ Execute review in five waves, each building on the previous.
 
 ## Folder Hotspot Mapping
 
-| Directory | Primary Dimensions | Secondary Dimensions |
-|---|---|---|
-| `src/Compiler/Checking/` | Type System (8), Overload Resolution (11), Struct Awareness (9) | Feature Gating (19), Diagnostics (17) |
-| `src/Compiler/CodeGen/` | IL Emission (5), Debug Experience (18) | Struct Awareness (9), Test Coverage (1) |
-| `src/Compiler/SyntaxTree/` | Parser Integrity (15), Typed Tree (8) | Feature Gating (19), Debug Experience (18) |
-| `src/Compiler/TypedTree/` | Binary Compatibility (12), Type System (8), Typed Tree (8) | Backward Compat (3), Memory Footprint |
-| `src/Compiler/Optimize/` | IL Emission (5), Optimization Correctness (6) | Test Coverage (1) |
-| `src/Compiler/AbstractIL/` | IL Emission (5) | Backward Compat (3), Memory Footprint |
-| `src/Compiler/Driver/` | Build Infrastructure, Incremental Checking (14) | Compiler Performance, Cancellation (13) |
-| `src/Compiler/Service/` | FCS API Surface (7), IDE Performance (10), Concurrency (13) | Test Coverage (1), Incremental Checking (14) |
-| `src/Compiler/Facilities/` | Feature Gating (19), Concurrency (13) | Naming |
-| `src/Compiler/FSComp.txt` | Diagnostic Quality (17) | — |
-| `src/FSharp.Core/` | FSharp.Core Stability (2), XML Doc, Backward Compat (3) | RFC Process (4), Test Coverage (1) |
-| `src/FSharp.Compiler.LanguageServer/` | IDE Performance (10), Editor UX | Concurrency (13) |
-| `vsintegration/` | IDE Responsiveness (10), Memory Footprint | Build Infrastructure, Cross-Platform |
-| `tests/` | Test Coverage (1), Compiler Performance | Backward Compat (3), Cross-Platform |
-| `eng/`, `setup/` | Build Infrastructure | Cross-Platform |
+See the `reviewing-compiler-prs` skill for the dimension selection table mapping files → dimensions.

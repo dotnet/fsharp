@@ -55,20 +55,12 @@ Dispatch one agent per selected dimension. For high-confidence reviews, assess e
 
 ## Self-Review Checklist
 
-Ordered by blocking frequency:
-
-1. [ ] Every behavioral change has a test — **most common review blocker**
-2. [ ] FSharp.Core changes maintain strict binary compatibility
-3. [ ] No unintended public API surface changes (FCS or FSharp.Core)
+1. [ ] Every behavioral change has a test
+2. [ ] FSharp.Core changes maintain binary compatibility
+3. [ ] No unintended public API surface changes
 4. [ ] New language features have a `LanguageFeature` guard and RFC
-5. [ ] Overload resolution and type inference behavior preserved
-6. [ ] No raw `TType_*` pattern matching without `stripTyEqns`
-7. [ ] Cancellation tokens threaded through async operations
-8. [ ] IL emission verified in both Debug and Release
-9. [ ] Struct semantics respected (no unnecessary copies)
-10. [ ] Cleanup changes separate from feature enablement
-11. [ ] Test baselines updated with explanations
-12. [ ] Tests pass in both Debug and Release
-13. [ ] Error messages follow: statement → analysis → advice
-14. [ ] No catch-all exception handlers; `OperationCanceledException` handled specially
-15. [ ] Debug stepping manually verified for affected control flow
+5. [ ] No raw `TType_*` matching without `stripTyEqns`
+6. [ ] Cancellation tokens threaded through async operations
+7. [ ] Cleanup changes separate from feature enablement
+
+Full dimension CHECK rules are in the `expert-reviewer` agent.
