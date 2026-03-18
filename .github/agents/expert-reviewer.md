@@ -27,17 +27,17 @@ Evaluates F# compiler changes across 19 dimensions. Use the `reviewing-compiler-
 Push back against these recurring patterns:
 
 1. **Reformatting + logic in one PR** — Separate formatting into its own PR. Mixed diffs obscure logic changes and block review.
-2. **Catch-all exception handlers** — Do not add catch-all exception handlers. Handle `OperationCanceledException` specially; never swallow it.
-3. **Internal type leakage via InternalsVisibleTo** — Internal compiler data structures must not leak through the FCS API boundary.
+2. **Catch-all exception handlers** — Do not add catch-all exception handlers. Handle `OperationCanceledException` specially; never swallow it. (Exception: top-level language service entry points should catch all to prevent IDE crashes — but log, don't silence.)
+3. **Internal type leakage** — Internal compiler data structures must not leak through the FCS (F# Compiler Service) public API. Leakage creates permanent API commitments from implementation details.
 4. **Performance claims without data** — Require benchmarks, `--times` output, or profiler evidence for any performance claim.
-5. **Raw TType_* pattern matching** — Never match on `TType_*` without first calling `stripTyEqns`. Use `AppTy` active pattern, not `TType_app` directly.
-6. **Verbose inline logging** — Use declarative tracing; inline ETW calls degrade code readability.
+5. **Raw TType_* pattern matching** — Never match on `TType_*` without first calling `stripTyEqns` (which resolves type abbreviations and equations). Skipping it causes missed matches on aliased/abbreviated types. Use `AppTy` active pattern instead of `TType_app`.
+6. **Verbose inline logging** — Prefer structured/declarative tracing over inline logging calls that clutter the code.
 7. **Conditional serialization writes** — Writes gated on compiler flags (LangVersion, feature toggles, TFM) produce misaligned byte streams for cross-version metadata. The byte count must depend only on stream-encoded data.
-8. **Stale type-checking results** — Avoid returning stale results; they cause timing-dependent IntelliSense glitches. Prefer fresh results under a timeout or cancellation.
-9. **Global mutable state in FCS** — Pass dependencies explicitly as parameters to enable proper snapshot-based processing.
+8. **Stale type-checking results** — Avoid returning stale results; they cause timing-dependent IntelliSense glitches. Prefer fresh results with cancellation support.
+9. **Global mutable state** — Pass dependencies explicitly as parameters rather than using module-level mutable globals, to enable concurrent and snapshot-based processing.
 10. **Missing XML doc comments** — Every new top-level function, module, and type definition must have a `///` comment.
-11. **Shell script wrappers** — Adding batch files to encapsulate process invocations obscures things. Prefer MSBuild targets.
-12. **Large closures capturing unnecessary data** — Verify that no additional data is being captured by long-lived objects. Use `ConditionalWeakTable` for caches keyed by GC-collected objects.
+11. **Shell script wrappers** — Prefer MSBuild targets over batch/shell scripts — scripts obscure build logic and break cross-platform.
+12. **Large closures capturing unnecessary data** — Verify that long-lived closures don't capture more data than needed, causing memory leaks.
 13. **Returning `Unchecked.defaultof<_>` to swallow exceptions** — This hides the root cause. Investigate and fix exception propagation failures.
 14. **Band-aid ad-hoc patches** — Flag `if condition then specialCase else normalPath` that patches a consumer rather than fixing the source.
 
@@ -78,10 +78,10 @@ FSharp.Core is the one assembly every F# program references. Changes here have o
 - Maintain strict backward binary compatibility. No public API removals or signature changes.
 - Verify compilation order constraints — FSharp.Core has strict file ordering requirements.
 - Add unit tests to `FSharp.Core.Tests` for every new or changed function.
-- Minimize FCS's FSharp.Core dependency — do not add new references from the compiler to FSharp.Core unnecessarily.
+- Minimize FCS's FSharp.Core dependency — the compiler should be hostable with different FSharp.Core versions; unnecessary coupling breaks this.
 - XML doc comments are mandatory for all public APIs in FSharp.Core.
 - New API additions require an RFC.
-- Apply `InlineIfLambda` to inlined functions taking a lambda applied only once.
+- Apply `InlineIfLambda` to inlined functions taking a lambda applied only once — this enables the lambda to be inlined at the call site, eliminating closure allocation.
 
 **Severity:** Binary compat break in FSharp.Core → **critical**. Missing tests → **high**. Missing XML docs → **medium**.
 
@@ -132,7 +132,7 @@ Code generation must produce correct, verifiable IL. Wrong IL produces silent ru
 - Verify no changes in tail-calling behavior — check IL diffs before and after.
 - Test code changes with optimizations both enabled and disabled.
 - Solve debuggability or performance problems generally through techniques that also apply to user-written code, not special-cased optimizations.
-- Strip debug points when matching on `Expr.Lambda` during code generation to prevent IL stack corruption.
+- When matching on expression nodes during codegen, handle debug-point wrapper nodes to prevent IL stack corruption.
 
 **Severity:** Incorrect IL → **critical**. Debug stepping regression → **high**. Missing IL test → **medium**.
 
@@ -147,9 +147,8 @@ Optimizer changes must preserve program semantics. Inlining and tail-call change
 **CHECK:**
 - Verify optimizations preserve program semantics in all cases.
 - Tail call analysis must correctly handle all cases including mutual recursion, not just simple self-recursion.
-- Prefer general approaches like improved inlining that cover many cases at once over hand-implementing function-by-function optimizations.
-- Prefer a set of orthogonal decisions/optimizations that work for all code, including user-defined code, rather than just library functions.
-- Verify that tuple-and-match reformulations produce code at least as good as before.
+- Prefer general approaches (e.g., improved inlining) that cover many cases at once over hand-implementing function-by-function optimizations.
+- Verify that expression restructuring optimizations don't regress code quality — compare IL before and after.
 - Require performance evidence for optimization changes.
 
 **Severity:** Semantic-altering optimization → **critical**. Tail-call regression → **high**. Missing evidence → **medium**.
@@ -181,11 +180,9 @@ The FCS public API is a permanent commitment. Internal types must never leak.
 Type checking and inference must be sound. Subtle bugs in constraint solving, overload resolution, or scope handling produce incorrect programs.
 
 **CHECK:**
-- Always call `stripTyEqns`/`stripTyEqnsA` before pattern matching on types. Use `AppTy` active pattern, not `TType_app` directly.
-- Use `tryTcrefOfAppTy` or typed active patterns instead of direct `TType` pattern matches.
-- Raise internal compiler errors for unexpected type forms rather than returning defaults.
-- Use precise type predicates when matching on the typed tree.
-- Use property accessors on IL info types rather than explicit pattern matching.
+- Always call `stripTyEqns`/`stripTyEqnsA` before pattern matching on types — this resolves type abbreviations and inference equations. Without it, aliased types won't match and code silently takes the wrong branch. Use `AppTy` active pattern instead of matching `TType_app` directly.
+- Raise internal compiler errors for unexpected type forms rather than returning defaults — silent defaults hide bugs.
+- Use property accessors on IL metadata types (e.g., `ILMethodDef` properties) rather than deconstructing them directly — the internal representation may change.
 
 **Severity:** Type system unsoundness → **critical**. Incorrect inference in edge cases → **high**.
 
@@ -216,7 +213,7 @@ The compiler service must respond to editor keystrokes without unnecessary recom
 **CHECK:**
 - Use fully async code in the language service; avoid unnecessary `Async.RunSynchronously`.
 - Verify changes do not trigger endless project rechecks.
-- Evaluate the queue stress impact of every new FCS request type.
+- Evaluate the queue stress impact of every new FCS request type — each request blocks the service queue while running, so expensive requests delay all other IDE features.
 - Caching must prevent duplicate work per project.
 - Test IDE changes on large solutions before merging.
 
@@ -234,7 +231,7 @@ Overload resolution is one of the most complex and specification-sensitive areas
 - Ensure overload resolution follows the language specification precisely.
 - Verify that language features work correctly with truly overloaded method sets, not just single-overload defaults.
 - Changes that loosen overload resolution rules constitute language changes and need careful analysis.
-- Apply method hiding filters consistently in both normal resolution and SRTP constraint solving paths.
+- Apply method hiding filters (removing base-class methods overridden by derived-class methods) consistently in both normal resolution and SRTP constraint solving paths.
 - For complex SRTP corner cases, changes must pin existing behavior with tests.
 
 **Severity:** Overload resolution regression → **critical**. SRTP behavior change → **high**. Missing test → **medium**.
@@ -249,11 +246,11 @@ The pickled metadata format is a cross-version contract. DLLs compiled with any 
 
 **CHECK:**
 - Never remove, reorder, or reinterpret existing serialized data fields.
-- Ensure new data is invisible to old readers (stream B with tag-byte detection).
+- Ensure new data is invisible to old readers (added to stream B with tag-byte detection — old readers get default `0` past end-of-stream).
 - Exercise old-compiler-reads-new-output and new-compiler-reads-old-output for any metadata change.
 - Verify the byte count does not depend on compiler configuration (feature flags, LangVersion, TFM) — only on stream-encoded data.
-- Add cross-version compatibility tests when changing anonymous record or constraint emission.
-- Before modifying the TAST or pickle format for a new feature, confirm whether the attribute can be handled entirely via existing IL metadata without changing internal representations.
+- Add cross-version compatibility tests for any change to metadata emission.
+- Before modifying the typed tree or pickle format, check whether the feature can be expressed through existing IL metadata without changing internal representations.
 
 **Severity:** Any metadata format breakage → **critical**. Missing compat test → **high**.
 
@@ -322,8 +319,8 @@ Exception handling must be precise. Catch-all handlers and swallowed exceptions 
 - Never swallow exceptions silently; handle `OperationCanceledException` specially.
 - Do not suppress task completion by silently ignoring `TrySetException` failures.
 - Returning `Unchecked.defaultof<_>` to swallow exceptions is dangerous — investigate and fix the root cause.
-- Protect language service entry points against all exceptions to prevent IDE crashes.
-- Do not add catch-all exception handlers.
+- At language service API boundaries (top-level entry points called by the IDE), catch all exceptions to prevent IDE crashes — but log them, don't silence them.
+- Inside the compiler, do not add catch-all exception handlers — they hide bugs.
 
 **Severity:** Swallowed cancellation → **critical**. Catch-all handler → **high**. Missing error → **medium**.
 
@@ -382,7 +379,7 @@ New features must be gated behind language version checks. Breaking changes requ
 #### Compiler Performance Measurement
 
 - Require `--times` output, benchmarks, or profiler data for performance claims.
-- Acknowledge that F# compiler service operations are intrinsically more expensive than C# (larger work chunks, no parallelism, more expensive type inference).
+- Do not compare F# build times directly to C# (Roslyn) — F# type inference and checking are structurally more expensive. Compare to previous F# baselines instead.
 - Measure and report build time impact.
 
 #### Memory Footprint Reduction
@@ -404,13 +401,13 @@ New features must be gated behind language version checks. Breaking changes requ
 
 #### Computation Expression Semantics
 
-- Tail call behavior in seq and async builders depends on builder implementation, not IL tail calls.
-- Prefer orthogonal decisions that work for all code, including user-defined CEs.
+- Test deep recursion in CEs (seq, async, task) — tail call behavior depends on the builder implementation, not IL tail call instructions.
+- Prefer designs that work for all CEs including user-defined builders, not just built-in ones.
 
 #### Type Provider Robustness
 
-- Handle type provider failures gracefully without crashing the compiler.
-- Design-time hosting and framework compatibility must be considered.
+- Handle type provider failures gracefully without crashing the compiler — type providers run user code at compile time.
+- Test type provider scenarios across target frameworks (desktop vs CoreCLR).
 
 #### Signature File Discipline
 
