@@ -29,19 +29,23 @@ Full dimension definitions and CHECK rules live in the `expert-reviewer` agent.
 
 ## Multi-Model Dispatch
 
-Dispatch one agent per selected dimension. For high-confidence reviews, assess each dimension with multiple models (`claude-opus-4.6`, `gemini-3-pro-preview`, `gpt-5.2-codex`).
+Dispatch one agent per selected dimension. For high-confidence reviews, assess each dimension with multiple models (`claude-opus-4.6`, `gemini-3-pro-preview`, `gpt-5.2-codex`). Minimum viable council = 2 models.
+
+**Claims coverage** — before dimension assessment, cross-reference every claim in the PR description and linked issues against actual code changes. Flag orphan claims (stated but not implemented), orphan changes (code changed but not mentioned), and partial implementations.
 
 **Assessment gates** — apply before flagging:
 - Understand execution context before judging (test harness ≠ compiler runtime)
 - Classify as regression, improvement, or unclear — only regressions are findings
 - Require a concrete failing scenario — no hypotheticals
+- "Correct convention" for the context in use → discard, not a finding
+- "Unexplained" ≠ "wrong" — missing rationale in a commit message is a doc gap, not a defect
 
 **Consolidation:**
 1. Deduplicate findings at same location
 2. Filter: wrong context → discard; improvement → downgrade; speculation → LOW
-3. Classify: Behavioral → Quality → Nitpick
-4. Rank by cross-model agreement
-5. Present Behavioral first; Nitpicks only if nothing higher
+3. Classify: Behavioral (correctness) → Quality (structure) → Nitpick (style)
+4. Rank by cross-model agreement (≥2 models agree = higher confidence)
+5. Present Behavioral first; Nitpicks only if nothing higher — agents love producing nitpicks to have *something* to say, deprioritize them
 
 ## Self-Review Checklist
 
