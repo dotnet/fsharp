@@ -21,9 +21,9 @@ This pipeline processes **thousands** of GitHub items (typically 3,000–10,000+
 
 Store all intermediate results in **SQLite** (queryable) and **JSON backup files** (recoverable). Sub-agents write results to files; the orchestrator imports into SQLite and dispatches next phase. Never rely on passing large datasets through context — use the filesystem.
 
-Use `model: "claude-opus-4.6"` for all sub-agents. Use background mode (`mode: "background"`) so agents run in parallel and the orchestrator is notified on completion.
+Use `model: "claude-opus-4.6"` or the best available reasoning model for sub-agents. Do not use fast/cheap models for classification or synthesis — they produce shallow rules. Use background mode (`mode: "background"`) so agents run in parallel and the orchestrator is notified on completion.
 
-**After each batch of sub-agents completes, validate output files.** Check that each file is >500 bytes and parseable JSON. Re-dispatch any that produced empty/placeholder files. Keep batch assignments to ≤5 batches per agent.
+**After each batch of sub-agents completes, validate output files.** Check that each file is >500 bytes, parseable JSON, and contains entries for all assigned items (not partial). Re-dispatch any that produced empty, placeholder, or incomplete files — retry up to 3 times. On 3rd failure, log and continue. Keep batch assignments to ≤5 batches per agent.
 
 ## Inputs
 
@@ -97,7 +97,7 @@ For EVERY indexed item (not a sample), fetch the user's actual words. **All comm
 
 Store in SQLite (`user_comments` table): comment_id, activity_id, repo, comment_type (pr_description, issue_description, issue_comment, review_comment, pr_comment, review, discussion_comment), body, created_at, file_path, diff_hunk, url.
 
-This is the most API-intensive phase. Batch into sub-agents of ~15 items each — small batches ensure each agent completes reliably. Parallelize aggressively. Handle rate limits with retry.
+This is the most API-intensive phase. Batch into sub-agents of ~15 PRs each (not 15 comments — each agent handles 15 PRs and fetches all comment types for each). When fetching comments for a single PR, paginate through all pages (`get_review_comments` returns max 100 per page). Parallelize aggressively. Handle rate limits with retry and exponential backoff.
 
 ### 1.3 Collect PR context
 
@@ -134,14 +134,15 @@ Before analyzing comments, understand the codebase:
 - Existing documentation (specs, wiki, guides)
 - Existing `.github/` artifacts (instructions, skills, agents, copilot-instructions.md, AGENTS.md)
 - Technology stack, conventions, key files
+- **CI configuration** — analyze CI files (`azure-pipelines*.yml`, `.github/workflows/`) and produce a CI coverage summary: what CI already enforces (platform coverage, test suites, formatting, etc.). Provide this summary to every classification sub-agent in §2.2.
 
-Store as a feature area reference table in SQLite.
+Store feature areas in SQLite: `CREATE TABLE feature_areas (area_name TEXT, folder_glob TEXT, description TEXT)`. Store CI summary as a text file.
 
 ### 2.2 Semantic analysis
 
 For each collected comment, classify using a sub-agent (Opus). **Do not use a hardcoded category list** — derive categories from the data:
 
-1. **Bootstrap pass**: Take a random sample of ~300 comments from diverse PRs (not just the PRs with the most comments). Ask a sub-agent to read them and propose a category taxonomy. The agent should identify recurring themes, name them, and define each in one sentence. Expect 15–40 categories to emerge.
+1. **Bootstrap pass**: Take a stratified sample of ~300 comments: proportional by year, at least 5 per major feature area from §2.1, and at least 20 each of review_comments, pr_descriptions, and issue_comments. Ask a sub-agent to read them and propose a category taxonomy. The agent should identify recurring themes, name them, and define each in one sentence. Expect 15–40 categories to emerge. After deriving the taxonomy, cross-check it against the feature area table — if any area representing >10% of the codebase has zero categories, re-sample with enforced coverage.
 
 2. **Classification pass**: Using the derived taxonomy, classify all comments in batches (~15 PR packets per sub-agent, where each packet includes all comments on that PR). For each comment extract:
    - **Categories** (one or more, from the derived taxonomy)
@@ -162,11 +163,23 @@ Store in SQLite (`comment_analysis` table).
 
 Process in batches. Use sub-agents — each handles ~15 PR packets with full context. Run in parallel.
 
+### 2.2b Deduplication (enforce PR-normalization)
+
+Before synthesis, collapse per-comment rows into per-PR votes:
+
+```sql
+CREATE TABLE pr_rule_votes AS
+SELECT DISTINCT activity_id, derived_rule, category, feature_area
+FROM comment_analysis;
+```
+
+This ensures a PR with 50 comments gets weight=1, same as a PR with 1 comment. The synthesis agent in §2.3 reads `pr_rule_votes`, never raw `comment_analysis`.
+
 ### 2.3 Clustering
 
-Aggregate analysis results to identify:
+Aggregate the deduplicated `pr_rule_votes` to identify:
 
-1. **Review dimensions**: Recurring themes across hundreds of comments. Each dimension should be specific enough to act on, broad enough to apply across many PRs. Target 8–24 dimensions.
+1. **Review dimensions**: Recurring themes across many PRs. Each dimension should be specific enough to act on, broad enough to apply across many PRs. Target 8–24 dimensions. If any single dimension accounts for >40% of total PR-votes, flag it for splitting.
 
 2. **Folder hotspots**: Which directories receive the most review feedback, and which dimensions apply there.
 
@@ -174,11 +187,19 @@ Aggregate analysis results to identify:
 
 4. **Repo-specific knowledge**: Rules that are unique to this codebase, not generic programming advice.
 
-Use a synthesis sub-agent (Opus) that reads all analysis summaries and produces:
-- Dimension list with rules, severity, evidence
+The synthesis sub-agent receives:
+- The taxonomy from §2.2 step 1
+- The `pr_rule_votes` table (deduplicated: one vote per rule per PR)
+- The `feature_areas` table from §2.1
+- The CI coverage summary from §2.1
+
+The synthesis agent MUST NOT access raw comment data (`user_comments` table or JSON backups). It works only with classified, deduplicated data.
+
+It produces:
+- Dimension list with rules, severity, and PR-count evidence
 - Folder → dimension mapping
 - Principle list
-- Knowledge area reference table
+- A `dimension_evidence` table: `(dimension, pr_count, example_prs)` for verification in Phase 5
 
 ---
 
@@ -204,11 +225,11 @@ Generate three artifact types:
 - Reference docs, don't reproduce them
 
 #### Review Agent (`.github/agents/{agent_name}.md`)
-- Single source of truth for the review methodology — all critical content must be inline in this file, not in separate reference files that might not be read
+- Single source of truth for dimension definitions and review workflow — all CHECK rules must be inline
 - Contains: overarching principles, all dimensions inline (with rules + CHECK flags), review workflow
-- The folder→dimension routing table belongs in the skill (not duplicated here)
+- The folder→dimension routing table belongs in the skill (operational configuration, not methodology) — the agent references the skill during Wave 1 to select dimensions
 - The review workflow is 5 waves (see below)
-- Every CHECK item must be a generalizable principle applicable to future PRs about features that don't exist yet — not a transcription of one historical PR's feedback
+- The artifact-generation sub-agent must follow the same anti-overfitting rules from §2.2: every CHECK item must be a generalizable principle applicable to future PRs about features that don't exist yet
 
 **Commit** after raw creation.
 
@@ -244,7 +265,9 @@ Compare new artifacts against existing `.github/` content:
 
 ---
 
-## Phase 4: Review Workflow (embedded in the agent)
+## Phase 4: Review Workflow Specification (embedded in the generated agent)
+
+This section defines the workflow that the generated review agent will follow at runtime. The pipeline does not execute this workflow — it embeds it as instructions in the agent artifact.
 
 The review agent runs a 5-wave process when invoked:
 
@@ -400,6 +423,8 @@ The sub-agent answers for every CHECK item:
 Grade each item: **A** (clear, verified), **B** (needs rationale — add it), **C** (overfitted — generalize or remove), **D** (obsolete/contradictory — rewrite or remove).
 
 **Targets:** ≥80% grade A, 0% grade C/D. Fix all B/C/D items before finalizing.
+
+**Feedback loop:** If >20% of items are grade C/D, the problem is in classification (Phase 2), not just in the artifact. Re-run §2.2 classification for the affected categories with strengthened anti-overfitting prompts, then re-run §2.3 synthesis and §3 artifact generation. Fixing artifacts alone treats symptoms.
 
 **Commit** after verification fixes.
 
