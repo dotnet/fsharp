@@ -55,9 +55,6 @@ Every behavioral change, bug fix, and new feature requires corresponding tests b
 - Explain all new errors in test baselines and confirm they are expected.
 - Ensure tests cover both Debug and Release codegen differences when relevant.
 - Consider cross-TFM behavior (desktop .NET Framework vs CoreCLR) for platform-sensitive changes.
-- Test on IL-defined members, not just F#-defined ones.
-- Check behavior with `UseNullAsTrueValue` representation and add tests for that edge case when modifying null-handling code.
-- Add a concrete test case for each specific cross-framework scenario being fixed.
 - Place tests in the appropriate layer based on what changed:
   - Typecheck tests: type inference, constraint solving, overload resolution, expected warnings/errors
   - SyntaxTreeTests: parser/syntax changes
@@ -79,14 +76,12 @@ FSharp.Core is the one assembly every F# program references. Changes here have o
 
 **CHECK:**
 - Maintain strict backward binary compatibility. No public API removals or signature changes.
-- Use existing FSharp.Core reflection APIs (e.g., `FSharpType.GetTupleElements()`) rather than reimplementing tuple inspection logic.
-- Prefer consolidated FSharp.Core changes through a single well-reviewed PR over multiple competing implementations.
 - Verify compilation order constraints — FSharp.Core has strict file ordering requirements.
 - Add unit tests to `FSharp.Core.Tests` for every new or changed function.
 - Minimize FCS's FSharp.Core dependency — do not add new references from the compiler to FSharp.Core unnecessarily.
 - XML doc comments are mandatory for all public APIs in FSharp.Core.
-- Changes require an RFC for new API additions.
-- Systematically apply `InlineIfLambda` to every inlined function taking a lambda applied only once.
+- New API additions require an RFC.
+- Apply `InlineIfLambda` to inlined functions taking a lambda applied only once.
 
 **Severity:** Binary compat break in FSharp.Core → **critical**. Missing tests → **high**. Missing XML docs → **medium**.
 
@@ -100,13 +95,10 @@ Changes must not break existing compiled code or binary compatibility.
 
 **CHECK:**
 - Verify changes do not break existing compiled code or binary compatibility.
-- Breaking changes should be gated as a strongly worded warning first, not a hard error.
-- Do not assume the nullary union case comes first; search for it explicitly as the ordering may be relaxed in the future.
-- Defer language changes that might conflict with future constrained extension syntax to avoid locking in behavior that blocks later evolution.
-- Revert existing public API signatures and add new APIs alongside them rather than replacing.
+- Breaking changes should be gated as a warning first, not a hard error.
+- Add new APIs alongside existing ones rather than replacing signatures.
 - Codegen changes that depend on new FSharp.Core functions must guard against older FSharp.Core versions.
-- Do not reduce information shown to users compared to previous VS versions.
-- Question default value changes that alter existing IDE behavior.
+- Consider forward compatibility — avoid locking in behavior that blocks future language evolution.
 
 **Severity:** Binary compat break → **critical**. Behavioral change without flag → **high**. Missing compat test → **high**.
 
@@ -122,10 +114,8 @@ Major language changes require an RFC and design discussion before implementatio
 - Require an fslang suggestion and RFC for language and API additions.
 - Submit one consolidated PR per RFC rather than multiple partial PRs.
 - Update or create the RFC document when implementing a language or interop feature change.
+- Keep design discussion in the RFC, not in PR comments.
 - Do not rush language changes into a release without proper design review.
-- Approve design adjustments when they correct version-specific behavior that was not intended.
-- Please only discuss the implementation in PR comments, not the design — design belongs in the RFC.
-- Close PRs that haven't been touched for a very long time.
 
 **Severity:** Language change without RFC → **critical**. Missing RFC update → **high**. Design discussion in PR → **medium**.
 
@@ -139,15 +129,10 @@ Code generation must produce correct, verifiable IL. Wrong IL produces silent ru
 
 **CHECK:**
 - Ensure emitted IL is verifiable and matches expected instruction patterns.
-- Verify no changes in tail-calling behavior from your change — check IL diffs.
-- After stripping a lambda for a delegate, bind discarded unit parameters into expression bodies using `BindUnitVars`.
-- Verify generated IL when changing null-check patterns; prefer fixing codegen for idiomatic patterns rather than changing the source pattern.
-- Verify IL binary writing produces correct PDB and metadata table sizes.
-- Strip debug points when matching on `Expr.Lambda` during code generation to prevent IL stack corruption.
+- Verify no changes in tail-calling behavior — check IL diffs before and after.
 - Test code changes with optimizations both enabled and disabled.
-- Check that return-a-tuple-and-match-on-it formulations produce code at least as good as before.
-- Cross-reference `GenFieldInit` in `IlxGen.fs` when modifying field initialization in `infos.fs`.
-- If a problem like debuggability or performance exists, solve it generally through techniques that also apply to user-written code.
+- Solve debuggability or performance problems generally through techniques that also apply to user-written code, not special-cased optimizations.
+- Strip debug points when matching on `Expr.Lambda` during code generation to prevent IL stack corruption.
 
 **Severity:** Incorrect IL → **critical**. Debug stepping regression → **high**. Missing IL test → **medium**.
 
@@ -179,12 +164,9 @@ The FCS public API is a permanent commitment. Internal types must never leak.
 
 **CHECK:**
 - Keep internal implementation details out of the public FCS API.
-- Create dedicated `FSharpChecker` instances for VS integration to allow adjusting parameters like project cache size independently.
-- Place keyword metadata tables in the compiler layer (`lexhelp.fs`) rather than the editor layer so all FCS consumers benefit.
-- Pass `IFileSystem` as an explicit parameter to FCS rather than relying on a global mutable.
-- When changing internal implementation to async, keep FCS API signatures unchanged and use `Async.Return` internally.
-- Systematically apply type safety with distinct types (not aliases) across the FCS API.
 - The FCS Symbol API must be thread-safe for concurrent access.
+- When changing internal implementation to async, keep FCS API signatures unchanged.
+- Apply type safety with distinct types (not aliases) across the FCS API.
 - Document the purpose of new public API arguments in XML docs.
 - Update exception XML docs in `.fsi` files when behavior changes.
 
@@ -199,15 +181,11 @@ The FCS public API is a permanent commitment. Internal types must never leak.
 Type checking and inference must be sound. Subtle bugs in constraint solving, overload resolution, or scope handling produce incorrect programs.
 
 **CHECK:**
-- Use `tryTcrefOfAppTy` or the `AppTy` active pattern instead of direct `TType` pattern matches.
-- Always call `stripTyEqns`/`stripTyEqnsA` before pattern matching on types.
-- Do not match using `TType_app` directly; use the `AppTy` active pattern.
-- Raise internal compiler errors for `TType_ucase` and other unexpected type forms.
-- Avoid matching on empty contents as a proxy for signature file presence — use explicit markers.
-- Exclude current file signatures from `tcState` when processing implementation files.
-- Add error recovery for namespace fragment combination differences between parallel and sequential paths.
+- Always call `stripTyEqns`/`stripTyEqnsA` before pattern matching on types. Use `AppTy` active pattern, not `TType_app` directly.
+- Use `tryTcrefOfAppTy` or typed active patterns instead of direct `TType` pattern matches.
+- Raise internal compiler errors for unexpected type forms rather than returning defaults.
 - Use precise type predicates when matching on the typed tree.
-- Avoid explicit pattern matching on `ILEvent`, `ILEventInfo`, `ILFieldInfo`, `ILTypeInfo`, `ILProp`, `ILMeth`; use their property accessors instead.
+- Use property accessors on IL info types rather than explicit pattern matching.
 
 **Severity:** Type system unsoundness → **critical**. Incorrect inference in edge cases → **high**.
 
@@ -221,12 +199,9 @@ Structs have value semantics that differ fundamentally from reference types. Inc
 
 **CHECK:**
 - Respect struct semantics: no unnecessary copies, proper byref handling.
-- Recognize that C# treats `default(StructType)` and `new StructType()` as valid literal constants for optional parameters, emitting `.param = nullref` in IL.
-- Before converting a type to struct, measure the impact — large structs lose sharing and can reduce throughput through data copying.
-- Display struct types using the `[<Struct>]` attribute syntax rather than the `struct` keyword for consistency with modern F# style.
-- Investigate and fix incorrect behavior for struct discriminated unions rather than working around it.
-- Use struct tuples instead of ref tuples for retained symbol use data to reduce heap allocations.
-- Always add tests for struct variants when changing union type behavior.
+- Before converting a type to struct, measure the impact — large structs lose sharing and can reduce throughput.
+- Always add tests for struct variants when changing union or record type behavior.
+- Investigate and fix incorrect behavior for struct types rather than working around it.
 
 **Severity:** Incorrect struct copy semantics → **critical**. Missing struct tests → **high**. Style → **low**.
 
@@ -239,14 +214,10 @@ Structs have value semantics that differ fundamentally from reference types. Inc
 The compiler service must respond to editor keystrokes without unnecessary recomputation.
 
 **CHECK:**
-- Remove unnecessary `Async.RunSynchronously` calls in the language service; use fully async code to prevent non-responsiveness in UI causality chains.
-- Ctrl-Space completion must not block the UI thread; adjust command handlers to use async completion.
-- Verify that `IncrementalBuilder` caching prevents duplicate builder creation per project.
+- Use fully async code in the language service; avoid unnecessary `Async.RunSynchronously`.
 - Verify changes do not trigger endless project rechecks.
-- Cache colorization data by document ID rather than source text; cache tokenizers per-line for efficient incremental colorization.
-- Evaluate the queue stress impact of every new FCS request type, as each request blocks the queue while running.
-- Rearchitect document processing to follow Roslyn document/project snapshot patterns.
-- Signature help should show all parameters because F# users rely on this as their primary information source.
+- Evaluate the queue stress impact of every new FCS request type.
+- Caching must prevent duplicate work per project.
 - Test IDE changes on large solutions before merging.
 
 **Severity:** Endless recheck loop → **critical**. UI thread block → **high**. Missing trace verification → **medium**.
@@ -262,11 +233,9 @@ Overload resolution is one of the most complex and specification-sensitive areas
 **CHECK:**
 - Ensure overload resolution follows the language specification precisely.
 - Verify that language features work correctly with truly overloaded method sets, not just single-overload defaults.
-- Changes that loosen overload resolution rules constitute language changes and must be analyzed carefully.
-- Use `ExcludeHiddenOfMethInfos` consistently to filter methods during SRTP resolution, not just normal name resolution.
+- Changes that loosen overload resolution rules constitute language changes and need careful analysis.
 - Apply method hiding filters consistently in both normal resolution and SRTP constraint solving paths.
-- When adding nullable parameter interop, add rules preferring `X` over `Nullable<X>` and compare full argument lists as a last-resort tiebreaker.
-- For complex SRTP corner cases, the implementation effectively serves as the specification; changes must pin existing behavior with tests.
+- For complex SRTP corner cases, changes must pin existing behavior with tests.
 
 **Severity:** Overload resolution regression → **critical**. SRTP behavior change → **high**. Missing test → **medium**.
 
@@ -300,18 +269,11 @@ Async and concurrent code must handle cancellation, thread safety, and exception
 
 **CHECK:**
 - Thread cancellation tokens through all async operations. All FCS requests must support cancellation.
-- Thread `CancellationToken` through each step of the incremental build graph so FCS respects cancellation in a timely way.
-- Use `CommonRoslynHelpers.StartAsyncAsTask` with the `cancellationToken` parameter instead of manual task creation.
-- Time-sliced type checking must respect a `CancellationToken`; adjust `Eventually` combinators to support cancellation.
-- Pass `CancellationToken` into type provider calls to allow cooperative cancellation.
-- Ensure thread-safety for shared mutable state. Avoid global mutable state in FCS.
-- Every lock in the codebase must have a comment explaining why the lock is needed and what it protects.
-- Prefer `System.Collections.Immutable` collections over mutable collections used as read-only.
-- TAST, AbstractIL, TcImports, and NameResolver data structures are not inherently thread-safe — ensure proper synchronization.
+- Ensure thread-safety for shared mutable state. Avoid global mutable state.
+- Every lock must have a comment explaining what it protects.
 - Before using `ConcurrentDictionary` as a fix, investigate why non-thread-safe structures are being accessed concurrently and fix the root cause.
-- Use token passing to formalize concurrency assumptions: `CompilationThreadToken` for single-threaded compiler phases, lock tokens for lock-protected caches.
 - Do not swallow `OperationCanceledException` in catch-all handlers.
-- Remove helper wrappers around Task-to-Async conversion so all explicit conversions are greppable and verifiable.
+- Do not add catch-all exception handlers.
 
 **Severity:** Race condition or data corruption → **critical**. Swallowed cancellation → **high**. Missing async test → **medium**.
 
@@ -324,12 +286,10 @@ Async and concurrent code must handle cancellation, thread safety, and exception
 Incremental checking must invalidate stale results correctly. Stale data causes timing-dependent glitches.
 
 **CHECK:**
-- Replace old `IsResultObsolete` logic with proper cancellation token checking so stale requests are cancelled rather than run to completion and discarded.
-- Avoid returning stale type checking results; prefer fresh results under a timeout or cancellation.
-- Use existing `IncrementalBuilder` background project check events (`ProjectChecked`) to obtain full project results rather than triggering redundant checks.
-- Time-sliced foreground checking must use a consistent error logger across all time slices to avoid missing errors.
-- Verify that project setup handles the case of a clean solution or unrestored packages without silently dropping references.
-- Ensure parse/check caches are properly populated with correct thread annotations.
+- Avoid returning stale type checking results; prefer fresh results with cancellation support.
+- Verify that caching prevents redundant checks and that cache invalidation is correct.
+- Verify that project setup handles clean solutions or unrestored packages without silently dropping references.
+- Ensure error loggers are consistent across all checking phases to avoid missing errors.
 
 **Severity:** Stale results causing glitches → **critical**. Missed invalidation → **high**. Missing cache verification → **medium**.
 
@@ -342,14 +302,10 @@ Incremental checking must invalidate stale results correctly. Stale data causes 
 AST nodes must accurately represent source code. Parser changes are high-risk because they affect every downstream phase.
 
 **CHECK:**
-- Update all pattern matches on `SynBinding` in tree-walking code when modifying its shape.
-- Remove default wildcard patterns in type walkers to catch missing cases at compile time.
-- Handle all cases of discriminated unions including spreads in tree walkers.
+- Update all pattern matches in tree-walking code when modifying AST node shapes.
+- Remove default wildcard patterns in discriminated union walkers to catch missing cases at compile time.
 - Gate parser changes behind the appropriate language version.
-- Add new parser cases to existing rules that share the same prefix.
-- Visit spread types in `FileContentMapping` to build correct graph edges.
-- Assess compound expression compatibility when introducing new syntax to avoid breaking existing code.
-- Remove unused AST nodes created for experimental features that were not pursued.
+- Assess expression compatibility when introducing new syntax to avoid breaking existing code.
 
 **Severity:** Incorrect AST node → **critical**. Missing walker case → **high**. Ungated parser change → **high**.
 
@@ -381,11 +337,8 @@ Error and warning messages are the compiler's user interface. They must be preci
 
 **CHECK:**
 - Structure error messages as: error statement, then analysis, then actionable advice.
-- Format suggestion messages as single-line when `--vserrors` is enabled.
-- Emit a warning rather than silently ignoring unsupported default parameter values.
-- Eagerly format diagnostics at production time to prevent parameter leakage in parallel checking.
-- Only rename error identifiers to reflect actual error message content.
-- Enable unused variable warnings by default in projects to catch common bugs.
+- Emit a warning rather than silently ignoring unsupported values or options.
+- Eagerly format diagnostics at production time to prevent parameter leakage across threads.
 
 **Severity:** Misleading diagnostic → **high**. Inconsistent format → **medium**. Wording improvement → **low**.
 
@@ -399,9 +352,7 @@ Debug stepping, breakpoints, and locals display must work correctly. Debug exper
 
 **CHECK:**
 - Ensure debug points and sequence points enable correct stepping behavior.
-- Manually verify debug stepping for loops, while loops, task code, list/array expressions, and sequence expressions.
-- Ensure all required FSharp.Core target framework builds are produced to avoid `FileNotFoundException` in VS debugging.
-- Plan ahead and make sure basic writers can emit debug information before plumbing it through from the type checker.
+- Verify debug stepping for loops, task code, and sequence expressions when changing control flow codegen.
 - Solve debuggability problems generally through techniques that also apply to user-written code.
 
 **Severity:** Breakpoint regression → **critical**. Debug stepping regression → **high**. Missing manual verification → **medium**.
@@ -416,13 +367,9 @@ New features must be gated behind language version checks. Breaking changes requ
 
 **CHECK:**
 - Gate new language features behind a `LanguageFeature` flag even if shipped as bug fixes.
-- Ship experimental features off-by-default and discuss enablement strategy with stakeholders.
+- Ship experimental features off-by-default.
 - Factor out cleanup changes separately from feature enablement.
-- Assess compound expression compatibility when introducing new syntax.
 - Reject changes that alter the C#/.NET visible assembly surface as breaking changes.
-- Create an RFC retroactively for breaking changes that were merged without one.
-- Clarify whether IDE features are gated behind specific warning flags or are always active.
-- Breaking behavior changes to resource naming must be gated behind an opt-in property.
 
 **Severity:** Ungated breaking change → **critical**. Missing RFC → **high**. Bundled cleanup+feature → **medium**.
 
