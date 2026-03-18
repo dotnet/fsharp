@@ -31,19 +31,13 @@ Each phase checks its output tables exist before running — skip completed phas
 
 This pipeline processes **thousands** of GitHub items (typically 3,000–10,000+ issues, PRs, discussions, and review comments spanning a decade). It will not fit in a single context window.
 
-**Use sub-agents for everything.** The orchestrator manages SQLite state and dispatches work. Sub-agents do the heavy lifting:
-- **Collection**: one sub-agent per repo × date range chunk. Parallelize aggressively (6+ concurrent agents).
-- **Comment fetching**: one sub-agent per ~15 items. Small batches ensure reliable completion — agents given 200+ items often give up partway or write placeholder files.
-- **Semantic analysis**: one sub-agent per ~15 PR packets. Each classifies and extracts rules.
-- **Synthesis**: one sub-agent to read all analysis summaries (not raw data) and produce dimensions/principles.
-- **Artifact generation**: one sub-agent per artifact type (instructions, skills, agent).
-- **Validation/improvement**: one sub-agent per file or per concern.
+**Use sub-agents for everything.** The orchestrator manages SQLite state and dispatches work. Sub-agents do the heavy lifting — see each phase for batch sizes and parallelism guidance.
 
-Store all intermediate results in **SQLite** (queryable) and **JSON backup files** (recoverable). Sub-agents write results to files; the orchestrator imports into SQLite and dispatches next phase. Never rely on passing large datasets through context — use the filesystem.
+**Context management:** Store all intermediate results in **SQLite** (queryable) and **JSON backup files** (recoverable). Sub-agents write results to files; the orchestrator imports into SQLite and dispatches the next phase. Never pass large datasets through agent context — use the filesystem.
 
-Use `model: "claude-opus-4.6"` or the best available reasoning model for sub-agents. Do not use fast/cheap models for classification or synthesis — they produce shallow rules. Use background mode (`mode: "background"`) so agents run in parallel and the orchestrator is notified on completion.
+**Model selection:** Use the best available reasoning model (e.g., `claude-opus-4.6`) for classification and synthesis sub-agents. Fast/cheap models produce shallow rules. Collection sub-agents can use standard models. Use background mode so agents run in parallel.
 
-**After each batch of sub-agents completes, validate output files.** Check that each file is >500 bytes, parseable JSON, and contains entries for all assigned items (not partial). Re-dispatch any that produced empty, placeholder, or incomplete files — retry up to 3 times. On 3rd failure, log and continue. Keep batch assignments to ≤5 batches per agent.
+**Reliability:** After each batch of sub-agents completes, validate output files: >500 bytes, parseable JSON, contains entries for all assigned items. Re-dispatch incomplete outputs up to 3 times. Keep batch assignments to ≤5 batches per agent — agents given too much work produce placeholders or give up.
 
 ## Inputs
 
@@ -51,7 +45,7 @@ Collect these before starting. If any are missing, ask the user via the `ask_use
 
 | Parameter | Required | Example |
 |-----------|----------|---------|
-| `landing_repo` | yes | `dotnet/fsharp` — the repo receiving the artifacts |
+| `landing_repo` | yes | `owner/repo` — the repo receiving the artifacts |
 | `username` | yes | GitHub username whose review history to extract |
 | `earliest_year` | no (default: 10 years back) | `2015` |
 | `reference_repos` | no | Additional repos to search (e.g., `dotnet/sdk`, `dotnet/runtime`) |
@@ -177,7 +171,7 @@ Before analyzing comments, understand the codebase:
 - Existing documentation (specs, wiki, guides)
 - Existing `.github/` artifacts (instructions, skills, agents, copilot-instructions.md, AGENTS.md)
 - Technology stack, conventions, key files
-- **CI configuration** — analyze CI files (`azure-pipelines*.yml`, `.github/workflows/`) and produce a CI coverage summary: what CI already enforces (platform coverage, test suites, formatting, etc.). Provide this summary to every classification sub-agent in §2.2.
+- **CI configuration** — analyze CI config files (GitHub Actions, Azure Pipelines, Jenkins, etc.) and produce a CI coverage summary: what CI already enforces (platform coverage, test suites, formatting, linting, etc.). Provide this summary to every classification sub-agent in §2.2.
 
 Store feature areas in SQLite: `CREATE TABLE feature_areas (area_name TEXT, folder_glob TEXT, description TEXT)`. Store CI summary as a text file.
 
@@ -203,9 +197,9 @@ For each collected comment, classify using a sub-agent (Opus). **Do not use a ha
 
 **Anti-overfitting rules for classification:**
 - **Normalize by PR, not by comment.** A PR with 50 comments gets weight=1, same as a PR with 1 comment. Count how many PRs a rule appears in, not how many comments mention it. The reviewer saying something once on a clean PR means the same as repeating it 10 times on a messy one.
-- **Generalize, don't transcribe.** The derived rule must be applicable to a future PR the classifier has never seen. "Always call stripTyEqns before matching types" is good. "Call stripTyEqns on line 47 of CheckPatterns.fs" is overfitted.
-- **Distinguish reviewer opinion from CI enforcement.** If the reviewer says "please add tests", that's a review rule. If the reviewer says "run tests on Linux and Windows", that might just mean "CI should cover this" — not a rule for human reviewers. Check: does the repo's CI already do this? If yes, don't encode it as a review rule.
-- **Distinguish design guidance from implementation instruction.** "Gate features behind LanguageFeature flags" is design guidance (always applicable). "Use BindUnitVars after stripping the lambda" is an implementation instruction for a specific code path (only applicable when touching that code).
+- **Generalize, don't transcribe.** The derived rule must be applicable to a future PR the classifier has never seen. "Always normalize type representations before pattern matching" is good. "Call helper X on line 47 of file Y" is overfitted.
+- **Distinguish reviewer opinion from CI enforcement.** If the reviewer says "please add tests", that's a review rule. If the reviewer says "run tests on Linux and Windows", that might just mean "CI should cover this" — not a rule for human reviewers. Check the CI summary from §2.1: if CI already enforces it, don't encode it as a review rule.
+- **Distinguish design guidance from implementation instruction.** "Gate features behind feature flags" is design guidance (always applicable). "Use helper X after calling Y" is an implementation instruction for a specific code path (only applicable when touching that code).
 
 Store in SQLite (`comment_analysis` table).
 
@@ -488,7 +482,7 @@ Verify the three layers work together:
 For each dimension in the generated agent, dispatch a fresh-context sub-agent that reads:
 1. The dimension's CHECK items
 2. The actual codebase (`src/`, `tests/`, `eng/`)
-3. The repo's CI configuration (e.g., `azure-pipelines*.yml`, `.github/workflows/`)
+3. The repo's CI configuration
 
 The sub-agent answers for every CHECK item:
 - **Does this term exist in the codebase?** `grep` every function name, type name, and concept. Zero matches = obsolete, remove or replace.
