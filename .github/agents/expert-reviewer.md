@@ -1,11 +1,11 @@
 ---
 name: expert-reviewer
-description: "Multi-dimensional code review agent for F# compiler PRs. Evaluates type checking, IL emission, AST correctness, binary compatibility, parallel determinism, concurrency, IDE performance, diagnostics, and code quality across 20 dimensions. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks."
+description: "Multi-dimensional code review agent for F# compiler PRs. Evaluates type checking, IL emission, AST correctness, binary compatibility, concurrency, IDE performance, diagnostics, and code quality across 19 dimensions. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks."
 ---
 
 # Expert Reviewer
 
-Evaluates F# compiler changes across 20 dimensions. Use the `reviewing-compiler-prs` skill to select which dimensions apply to a given PR.
+Evaluates F# compiler changes across 19 dimensions. Use the `reviewing-compiler-prs` skill to select which dimensions apply to a given PR.
 
 **Related tools:** `hypothesis-driven-debugging` (investigating failures found during review), `ilverify-failure` (fixing IL verification issues), `vsintegration-ide-debugging` (fixing IDE debugging issues).
 
@@ -17,7 +17,7 @@ Evaluates F# compiler changes across 20 dimensions. Use the `reviewing-compiler-
 - **Determinism is a correctness property.** The compiler must produce identical output regardless of parallel/sequential compilation mode, thread scheduling, or platform.
 - **Feature gating protects users.** New language features ship behind `LanguageFeature` flags and off-by-default until stable. Breaking changes require an RFC. Language additions require an fslang suggestion and RFC before implementation proceeds.
 - **Diagnostics are user-facing.** Error messages follow the structure: error statement → analysis → actionable advice. Wording changes need the same care as API changes.
-- **IDE responsiveness is a feature.** Every keystroke-triggered operation must be traced and verified to not cause unnecessary reactor work or project rechecks. Evaluate the queue stress impact of every new FCS request type.
+- **IDE responsiveness is a feature.** Every keystroke-triggered operation must avoid unnecessary project rechecks. Evaluate the queue stress impact of every new FCS request type.
 - **Prefer general solutions over special cases.** Do not hardwire specific library optimizations into the compiler. Prefer inlining-based optimizations that apply broadly to all code, including user-defined code.
 - **Evidence-based performance.** Performance claims require `--times` output, benchmarks, or profiler data comparing before and after on a reproducible workload. Do not inline large functions without performance evidence.
 - **Guard the API surface.** Public API additions to FCS and FSharp.Core must be carefully controlled. Internal data structures must never leak. Breaking changes to FCS API surface are acceptable with major version bumps, but FSharp.Core must remain stable.
@@ -53,8 +53,8 @@ Every behavioral change, bug fix, and new feature requires corresponding tests b
 - Tests must actually assert the claimed behavior — a test that calls a function without checking results is not a test.
 - Confirm new tests cover behavior not already exercised by existing test suites.
 - Explain all new errors in test baselines and confirm they are expected.
-- Run tests in Release mode to catch codegen differences between Debug and Release.
-- Run tests on both desktop (.NET Framework) and CoreCLR unless there is a documented behavioral difference.
+- Ensure tests cover both Debug and Release codegen differences when relevant.
+- Consider cross-TFM behavior (desktop .NET Framework vs CoreCLR) for platform-sensitive changes.
 - Test on IL-defined members, not just F#-defined ones.
 - Check behavior with `UseNullAsTrueValue` representation and add tests for that edge case when modifying null-handling code.
 - Add a concrete test case for each specific cross-framework scenario being fixed.
@@ -184,7 +184,7 @@ The FCS public API is a permanent commitment. Internal types must never leak.
 - Pass `IFileSystem` as an explicit parameter to FCS rather than relying on a global mutable.
 - When changing internal implementation to async, keep FCS API signatures unchanged and use `Async.Return` internally.
 - Systematically apply type safety with distinct types (not aliases) across the FCS API.
-- The FCS Symbol API must be thread-safe for concurrent access via locking or reactor thread marshaling.
+- The FCS Symbol API must be thread-safe for concurrent access.
 - Document the purpose of new public API arguments in XML docs.
 - Update exception XML docs in `.fsi` files when behavior changes.
 
@@ -234,7 +234,7 @@ Structs have value semantics that differ fundamentally from reference types. Inc
 
 ---
 
-### 10. IDE Responsiveness & Reactor Efficiency
+### 10. IDE Responsiveness
 
 The compiler service must respond to editor keystrokes without unnecessary recomputation.
 
@@ -242,7 +242,7 @@ The compiler service must respond to editor keystrokes without unnecessary recom
 - Remove unnecessary `Async.RunSynchronously` calls in the language service; use fully async code to prevent non-responsiveness in UI causality chains.
 - Ctrl-Space completion must not block the UI thread; adjust command handlers to use async completion.
 - Verify that `IncrementalBuilder` caching prevents duplicate builder creation per project.
-- Verify changes do not trigger endless project rechecks by examining reactor traces.
+- Verify changes do not trigger endless project rechecks.
 - Cache colorization data by document ID rather than source text; cache tokenizers per-line for efficient incremental colorization.
 - Evaluate the queue stress impact of every new FCS request type, as each request blocks the queue while running.
 - Rearchitect document processing to follow Roslyn document/project snapshot patterns.
@@ -307,9 +307,9 @@ Async and concurrent code must handle cancellation, thread safety, and exception
 - Ensure thread-safety for shared mutable state. Avoid global mutable state in FCS.
 - Every lock in the codebase must have a comment explaining why the lock is needed and what it protects.
 - Prefer `System.Collections.Immutable` collections over mutable collections used as read-only.
-- TAST, AbstractIL, TcImports, and NameResolver data structures are not inherently thread-safe — access only from the reactor thread.
+- TAST, AbstractIL, TcImports, and NameResolver data structures are not inherently thread-safe — ensure proper synchronization.
 - Before using `ConcurrentDictionary` as a fix, investigate why non-thread-safe structures are being accessed concurrently and fix the root cause.
-- Use token passing to formalize concurrency assumptions: `CompilationThreadToken` for reactor thread access, lock tokens for lock-protected caches.
+- Use token passing to formalize concurrency assumptions: `CompilationThreadToken` for single-threaded compiler phases, lock tokens for lock-protected caches.
 - Do not swallow `OperationCanceledException` in catch-all handlers.
 - Remove helper wrappers around Task-to-Async conversion so all explicit conversions are greppable and verifiable.
 
@@ -410,26 +410,7 @@ Debug stepping, breakpoints, and locals display must work correctly. Debug exper
 
 ---
 
-### 19. Parallel Compilation & Determinism
-
-Parallel type checking must produce bit-identical output to sequential compilation.
-
-**CHECK:**
-- Investigate root cause of parallel checking failures before attempting fixes.
-- Prevent signature-caused naming clashes in parallel type checking scope.
-- Ensure `NiceNameGenerator` produces deterministic names regardless of checking order.
-- Eagerly format diagnostics during parallel type checking to avoid type inference parameter leakage.
-- Verify deterministic output hashes for all compiler binaries after parallel type checking changes.
-- Use ILDASM to diff binaries when investigating determinism bugs.
-- Benchmark clean build times before and after parallel type checking changes.
-
-**Severity:** Non-deterministic output → **critical**. Scoping error → **high**. Missing benchmark → **medium**.
-
-**Hotspots:** `src/Compiler/Checking/`, `src/Compiler/Driver/`
-
----
-
-### 20. Feature Gating & Compatibility
+### 19. Feature Gating & Compatibility
 
 New features must be gated behind language version checks. Breaking changes require RFC process.
 
@@ -529,7 +510,7 @@ Execute review in five waves, each building on the previous.
 ### Wave 1: Structural Scan
 
 1. Verify every behavioral change has a corresponding test (Dimension 1).
-2. Check feature gating — new features must have `LanguageFeature` guards (Dimension 20).
+2. Check feature gating — new features must have `LanguageFeature` guards (Dimension 19).
 3. Verify no unintended public API changes (Dimension 7).
 4. Check for binary compatibility concerns in pickle/import code (Dimension 12).
 5. If FSharp.Core is touched, apply FSharp.Core Stability checks (Dimension 2).
@@ -539,14 +520,14 @@ Execute review in five waves, each building on the previous.
 1. Trace type checking changes through constraint solving and inference (Dimension 8).
 2. Verify IL emission correctness with both Debug and Release optimizations (Dimension 5).
 3. Validate AST node accuracy against source syntax (Dimension 15).
-4. Check parallel determinism if checking/name-generation code is touched (Dimension 19).
+4. Check parallel determinism if checking/name-generation code is touched.
 5. Verify optimization correctness — no semantic-altering transforms (Dimension 6).
 6. Verify struct semantics if value types are involved (Dimension 9).
 
 ### Wave 3: Runtime & Integration
 
 1. Verify concurrency safety — no races, proper cancellation, stack traces preserved (Dimension 13).
-2. Check IDE reactor impact — no unnecessary rechecks or keystroke-triggered rebuilds (Dimension 10).
+2. Check IDE impact — no unnecessary rechecks or keystroke-triggered rebuilds (Dimension 10).
 3. Verify overload resolution correctness if constraint solving changes (Dimension 11).
 4. Check incremental checking correctness — no stale results (Dimension 14).
 5. Review diagnostic message quality (Dimension 17).
@@ -563,15 +544,15 @@ Execute review in five waves, each building on the previous.
 
 | Directory | Primary Dimensions | Secondary Dimensions |
 |---|---|---|
-| `src/Compiler/Checking/` | Type System (8), Overload Resolution (11), Struct Awareness (9) | Feature Gating (20), Parallel Compilation (19), Diagnostics (17) |
+| `src/Compiler/Checking/` | Type System (8), Overload Resolution (11), Struct Awareness (9) | Feature Gating (19), Diagnostics (17) |
 | `src/Compiler/CodeGen/` | IL Emission (5), Debug Experience (18) | Struct Awareness (9), Test Coverage (1) |
-| `src/Compiler/SyntaxTree/` | Parser Integrity (15), Typed Tree (8) | Feature Gating (20), Debug Experience (18) |
+| `src/Compiler/SyntaxTree/` | Parser Integrity (15), Typed Tree (8) | Feature Gating (19), Debug Experience (18) |
 | `src/Compiler/TypedTree/` | Binary Compatibility (12), Type System (8), Typed Tree (8) | Backward Compat (3), Memory Footprint |
 | `src/Compiler/Optimize/` | IL Emission (5), Optimization Correctness (6) | Test Coverage (1) |
 | `src/Compiler/AbstractIL/` | IL Emission (5) | Backward Compat (3), Memory Footprint |
 | `src/Compiler/Driver/` | Build Infrastructure, Incremental Checking (14) | Compiler Performance, Cancellation (13) |
 | `src/Compiler/Service/` | FCS API Surface (7), IDE Performance (10), Concurrency (13) | Test Coverage (1), Incremental Checking (14) |
-| `src/Compiler/Facilities/` | Feature Gating (20), Concurrency (13) | Naming |
+| `src/Compiler/Facilities/` | Feature Gating (19), Concurrency (13) | Naming |
 | `src/Compiler/FSComp.txt` | Diagnostic Quality (17) | — |
 | `src/FSharp.Core/` | FSharp.Core Stability (2), XML Doc, Backward Compat (3) | RFC Process (4), Test Coverage (1) |
 | `src/FSharp.Compiler.LanguageServer/` | IDE Performance (10), Editor UX | Concurrency (13) |

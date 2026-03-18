@@ -1,6 +1,6 @@
 ---
 name: reviewing-compiler-prs
-description: "Performs multi-agent, multi-model code review of F# compiler PRs across 20 dimensions including type checking, IL emission, binary compatibility, parallel determinism, and IDE performance. Dispatches parallel assessment agents per dimension, consolidates with cross-model agreement scoring, and filters false positives. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks."
+description: "Performs multi-agent, multi-model code review of F# compiler PRs across 19 dimensions including type checking, IL emission, binary compatibility, and IDE performance. Dispatches parallel assessment agents per dimension, consolidates with cross-model agreement scoring, and filters false positives. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks."
 ---
 
 # Reviewing Compiler PRs
@@ -19,7 +19,7 @@ Full dimension definitions and CHECK rules live in the `expert-reviewer` agent.
 
 | Files Changed | Focus Dimensions |
 |---|---|
-| `Checking/`, `TypedTree/` | Type System, Overload Resolution, Struct Awareness, Parallel Compilation, Feature Gating |
+| `Checking/`, `TypedTree/` | Type System, Overload Resolution, Struct Awareness, Feature Gating |
 | `CodeGen/`, `AbstractIL/` | IL Emission, Debug Experience, Test Coverage |
 | `Optimize/` | Optimization Correctness, IL Emission, Test Coverage |
 | `SyntaxTree/`, `pars.fsy` | Parser Integrity, Feature Gating, Typed Tree Discipline |

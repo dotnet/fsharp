@@ -37,7 +37,7 @@ applyTo:
 
 ## Concurrency
 
-- Thread cancellation tokens through all async operations; uncancellable operations on the reactor thread are blocking bugs.
+- Thread cancellation tokens through all async operations; uncancellable long-running operations are blocking bugs.
 - Do not add catch-all exception handlers. Never swallow `OperationCanceledException`.
 
 ## Performance
