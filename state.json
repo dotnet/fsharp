@@ -1,1 +1,1 @@
-{"m":19439,"lr":"2026-03-20","done":"pre2023-scan-complete","c":{"14879":"2026-03-20","11398":"2026-03-20"},"n":"#19439=monthly. #7877 label wrong (T-Gro confirmed). #12303 fix known. #3590 fix never merged. #11398 fixed (string concat in attr with --checked+). Run 23337141447 done."}
+{"m":19439,"lr":"2026-03-20","c":{"14879":"2026-03-20","11398":"2026-03-20"},"n":"pre2023-scan-complete. #7877 label wrong. Run 23339144561: scanned #37-7375, all bugs still present."}
