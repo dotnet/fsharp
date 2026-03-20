@@ -1,0 +1,19 @@
+From 8c8ff84cd041c6de6ced440713747e52c01d7f0f Mon Sep 17 00:00:00 2001
+From: "github-actions[bot]" <github-actions[bot]@users.noreply.github.com>
+Date: Fri, 20 Mar 2026 03:32:34 +0000
+Subject: [PATCH 2/2] Trim memory notes
+
+---
+ state.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/state.json b/state.json
+index 172cc65..723b74f 100644
+--- a/state.json
++++ b/state.json
+@@ -1 +1 @@
+-{"m":19439,"lr":"2026-03-20","done":"pre2023-scan-complete","comments_made":{"14879":"2026-03-20"},"notes":"Pre-2023 scan complete. All remaining issues post-2023, out of scope. Monthly summary: #19439. Fix for #12303 developed locally (branch repo-assist/fix-backtick-not-keyword-12303) but not pushed - no git auth. Fix: remove 'not' from keywordLookup, add fixed/params/parallel/reserved words."}
++{"m":19439,"lr":"2026-03-20","done":"pre2023-scan-complete","comments_made":{"14879":"2026-03-20"},"notes":"Pre-2023 scan complete. Monthly summary: #19439. Fix for #12303 developed but not pushed (no git auth)."}
+-- 
+2.53.0
+
