@@ -1,1 +1,1 @@
-{"m":19439,"c":{"14879":"","11398":"","13519":"","12839":"","11127":""},"n":"Cycle 5: found #12839 fixed by PR#19297, #11127 by PR#19243. All 284 pre-2023 bugs scanned. Next: search more open issues fixed by recent PRs."}
+{"m":19439,"c":{"14879":"","11398":"","13519":"","12839":"","11127":""},"n":"Cycle 6: re-scanned oldest pre-2023 bugs #37-#4601; confirmed still present: #527, #995, #1255, #3705, #3783, #4161, #4601; no new fixed/windows-only. All pre-2023 bugs fully scanned. Next: continue scanning for recently-fixed bugs via PR search."}
