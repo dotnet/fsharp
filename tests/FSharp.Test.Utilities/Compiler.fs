@@ -1497,7 +1497,11 @@ Actual:
     type PdbVerificationOption =
     | VerifyImportScopes of ImportScope list list
     | VerifySequencePoints of (Line * Col * Line * Col) list
+    | VerifyMethodSequencePoints of methodName: string * expectedPoints: (Line * Col * Line * Col) list
+    | VerifyMethodSequencePointsInRange of methodName: string * startLine: Line * endLine: Line
     | VerifyDocuments of string list
+    | VerifySequencePointsInSameMethod of lines: Line list
+    | VerifyNoDebuggerHiddenOnMethodWithLine of line: Line
     | Dummy of unit
 
     let private verifyPdbFormat (reader: MetadataReader) compilationType =
@@ -1551,6 +1555,49 @@ Actual:
             if expectedScope <> imports then
                 failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
+    let private getMethodSequencePoints (assemblyPath: string) (pdbReader: MetadataReader) (methodName: string) =
+        use peStream = File.OpenRead(assemblyPath)
+        use peReader = new PEReader(peStream)
+        let assemblyReader = peReader.GetMetadataReader()
+
+        let methodHandles =
+            [ for typeDef in assemblyReader.TypeDefinitions do
+                let td = assemblyReader.GetTypeDefinition(typeDef)
+                for methodHandle in td.GetMethods() do
+                    let md = assemblyReader.GetMethodDefinition(methodHandle)
+                    let name = assemblyReader.GetString(md.Name)
+                    if name = methodName then
+                        yield methodHandle ]
+
+        if methodHandles.IsEmpty then
+            failwith (sprintf "Method '%s' not found in assembly '%s'" methodName assemblyPath)
+
+        [ for methodHandle in methodHandles do
+            let rowNumber = System.Reflection.Metadata.Ecma335.MetadataTokens.GetRowNumber(methodHandle)
+            let debugInfoHandle = System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDebugInformationHandle(rowNumber)
+            let debugInfo = pdbReader.GetMethodDebugInformation(debugInfoHandle)
+            yield!
+                debugInfo.GetSequencePoints()
+                |> Seq.filter (fun sp -> not sp.IsHidden)
+                |> Seq.sortBy (fun sp -> sp.Offset)
+                |> Seq.map (fun sp -> (Line sp.StartLine, Col sp.StartColumn, Line sp.EndLine, Col sp.EndColumn))
+                |> Seq.toList ]
+
+    let private verifyMethodSequencePoints (assemblyPath: string) (reader: MetadataReader) (methodName: string) (expectedSequencePoints: (Line * Col * Line * Col) list) =
+        let actualPoints = getMethodSequencePoints assemblyPath reader methodName
+        if actualPoints <> expectedSequencePoints then
+            failwith (sprintf "Expected method '%s' sequence points are different from PDB.\nExpected: %A\nActual: %A" methodName expectedSequencePoints actualPoints)
+
+    let private verifyMethodSequencePointsInRange (assemblyPath: string) (reader: MetadataReader) (methodName: string) (Line startLine) (Line endLine) =
+        let actualPoints = getMethodSequencePoints assemblyPath reader methodName
+        let outOfRange =
+            actualPoints
+            |> List.filter (fun (Line sl, _, Line el, _) -> sl < startLine || el > endLine)
+        if not outOfRange.IsEmpty then
+            failwith (sprintf "Method '%s' has sequence points outside range [%d-%d]:\n%A\nAll points: %A" methodName startLine endLine outOfRange actualPoints)
+        if actualPoints.IsEmpty then
+            failwith (sprintf "Method '%s' has no non-hidden sequence points" methodName)
+
     let private verifySequencePoints (reader: MetadataReader) expectedSequencePoints =
         let sequencePoints =
             [ for sp in reader.MethodDebugInformation do
@@ -1578,13 +1625,149 @@ Actual:
         if documents <> expectedDocuments then
             failwith $"Expected documents are different from PDB.\nExpected: %A{expectedDocuments}\nActual: %A{documents}"
 
+    let private verifySequencePointsInSameMethod (assemblyPath: string) (pdbReader: MetadataReader) (lines: Line list) =
+        use peStream = File.OpenRead(assemblyPath)
+        use peReader = new PEReader(peStream)
+        let assemblyReader = peReader.GetMetadataReader()
+
+        // Build a map: line -> list of (typeName, methodName) that have a non-hidden SP covering that line
+        let lineToMethods =
+            [ for typeDef in assemblyReader.TypeDefinitions do
+                let td = assemblyReader.GetTypeDefinition(typeDef)
+                let typeName = assemblyReader.GetString(td.Name)
+                for methodHandle in td.GetMethods() do
+                    let md = assemblyReader.GetMethodDefinition(methodHandle)
+                    let methodName = assemblyReader.GetString(md.Name)
+                    let rowNumber = Ecma335.MetadataTokens.GetRowNumber(methodHandle)
+                    let debugInfoHandle = Ecma335.MetadataTokens.MethodDebugInformationHandle(rowNumber)
+                    let debugInfo = pdbReader.GetMethodDebugInformation(debugInfoHandle)
+                    for sp in debugInfo.GetSequencePoints() do
+                        if not sp.IsHidden then
+                            for (Line targetLine) in lines do
+                                if sp.StartLine <= targetLine && sp.EndLine >= targetLine then
+                                    yield (targetLine, sprintf "%s.%s" typeName methodName) ]
+            |> List.groupBy fst
+            |> List.map (fun (line, entries) -> (line, entries |> List.map snd |> List.distinct))
+
+        // Check all requested lines are found
+        let missingLines = lines |> List.filter (fun (Line l) -> lineToMethods |> List.exists (fun (ln, _) -> ln = l) |> not)
+        if not missingLines.IsEmpty then
+            let allMethodInfo =
+                [ for typeDef in assemblyReader.TypeDefinitions do
+                    let td = assemblyReader.GetTypeDefinition(typeDef)
+                    let typeName = assemblyReader.GetString(td.Name)
+                    for methodHandle in td.GetMethods() do
+                        let md = assemblyReader.GetMethodDefinition(methodHandle)
+                        let methodName = assemblyReader.GetString(md.Name)
+                        let rowNumber = Ecma335.MetadataTokens.GetRowNumber(methodHandle)
+                        let debugInfoHandle = Ecma335.MetadataTokens.MethodDebugInformationHandle(rowNumber)
+                        let debugInfo = pdbReader.GetMethodDebugInformation(debugInfoHandle)
+                        let pts = debugInfo.GetSequencePoints() |> Seq.filter (fun sp -> not sp.IsHidden) |> Seq.toList
+                        if pts.Length > 0 then
+                            let ptStrs = pts |> List.map (fun sp -> sprintf "L%d,C%d-L%d,C%d" sp.StartLine sp.StartColumn sp.EndLine sp.EndColumn)
+                            yield sprintf "  %s.%s: %s" typeName methodName (String.concat "; " ptStrs) ]
+            failwith (sprintf "Lines %A have NO non-hidden sequence points.\nAll methods with SPs:\n%s" missingLines (String.concat "\n" allMethodInfo))
+
+        // Check all lines map to the SAME method
+        let allMethods = lineToMethods |> List.collect snd |> List.distinct
+        if allMethods.Length > 1 then
+            let detail = lineToMethods |> List.map (fun (l, ms) -> sprintf "  Line %d -> %s" l (String.concat ", " ms)) |> String.concat "\n"
+            failwith (sprintf "Sequence points for lines are in DIFFERENT methods (expected all in same method):\n%s" detail)
+
+    let private verifyNoDebuggerHiddenOnMethodWithLine (assemblyPath: string) (pdbReader: MetadataReader) (Line targetLine) =
+        use peStream = File.OpenRead(assemblyPath)
+        use peReader = new PEReader(peStream)
+        let assemblyReader = peReader.GetMetadataReader()
+
+        let jmcSuppressingAttrs = [
+            "System.Runtime.CompilerServices.CompilerGeneratedAttribute"
+            "System.Diagnostics.DebuggerNonUserCodeAttribute"
+            "System.Diagnostics.DebuggerHiddenAttribute"
+        ]
+
+        let methodsWithLine =
+            [ for typeDef in assemblyReader.TypeDefinitions do
+                let td = assemblyReader.GetTypeDefinition(typeDef)
+                let typeName = assemblyReader.GetString(td.Name)
+                for methodHandle in td.GetMethods() do
+                    let md = assemblyReader.GetMethodDefinition(methodHandle)
+                    let methodName = assemblyReader.GetString(md.Name)
+                    let rowNumber = Ecma335.MetadataTokens.GetRowNumber(methodHandle)
+                    let debugInfoHandle = Ecma335.MetadataTokens.MethodDebugInformationHandle(rowNumber)
+                    let debugInfo = pdbReader.GetMethodDebugInformation(debugInfoHandle)
+                    let hasLine = debugInfo.GetSequencePoints() |> Seq.exists (fun sp -> not sp.IsHidden && sp.StartLine <= targetLine && sp.EndLine >= targetLine)
+                    if hasLine then
+                        // Check method attributes
+                        let methodAttrs =
+                            [ for cah in md.GetCustomAttributes() do
+                                let ca = assemblyReader.GetCustomAttribute(cah)
+                                match ca.Constructor.Kind with
+                                | HandleKind.MemberReference ->
+                                    let mr = assemblyReader.GetMemberReference(System.Reflection.Metadata.MemberReferenceHandle.op_Explicit ca.Constructor)
+                                    let declType = mr.Parent
+                                    match declType.Kind with
+                                    | HandleKind.TypeReference ->
+                                        let tr = assemblyReader.GetTypeReference(System.Reflection.Metadata.TypeReferenceHandle.op_Explicit declType)
+                                        let ns = assemblyReader.GetString(tr.Namespace)
+                                        let name = assemblyReader.GetString(tr.Name)
+                                        yield sprintf "%s.%s" ns name
+                                    | _ -> ()
+                                | _ -> () ]
+                        // Check containing type attributes
+                        let typeAttrs =
+                            [ for cah in td.GetCustomAttributes() do
+                                let ca = assemblyReader.GetCustomAttribute(cah)
+                                match ca.Constructor.Kind with
+                                | HandleKind.MemberReference ->
+                                    let mr = assemblyReader.GetMemberReference(System.Reflection.Metadata.MemberReferenceHandle.op_Explicit ca.Constructor)
+                                    let declType = mr.Parent
+                                    match declType.Kind with
+                                    | HandleKind.TypeReference ->
+                                        let tr = assemblyReader.GetTypeReference(System.Reflection.Metadata.TypeReferenceHandle.op_Explicit declType)
+                                        let ns = assemblyReader.GetString(tr.Namespace)
+                                        let name = assemblyReader.GetString(tr.Name)
+                                        yield sprintf "%s.%s" ns name
+                                    | _ -> ()
+                                | _ -> () ]
+                        let isSpecialName = md.Attributes.HasFlag(System.Reflection.MethodAttributes.SpecialName)
+                        yield (typeName, methodName, methodAttrs, typeAttrs, isSpecialName) ]
+
+        if methodsWithLine.IsEmpty then
+            failwith (sprintf "No method has a sequence point at line %d" targetLine)
+
+        let problems = ResizeArray<string>()
+        for (typeName, methodName, methodAttrs, typeAttrs, isSpecialName) in methodsWithLine do
+            let getShortName (s: string) = let idx = s.LastIndexOf('.') in if idx >= 0 then s.Substring(idx + 1) else s
+            let badMethodAttrs = methodAttrs |> List.filter (fun a -> jmcSuppressingAttrs |> List.exists (fun j -> a.Contains(getShortName j)))
+            let badTypeAttrs = typeAttrs |> List.filter (fun a -> jmcSuppressingAttrs |> List.exists (fun j -> a.Contains(getShortName j)))
+            if not badMethodAttrs.IsEmpty then
+                problems.Add(sprintf "Method %s.%s has JMC-suppressing attrs: %A" typeName methodName badMethodAttrs)
+            if not badTypeAttrs.IsEmpty then
+                problems.Add(sprintf "Type %s containing method %s has JMC-suppressing attrs: %A" typeName methodName badTypeAttrs)
+            if isSpecialName then
+                problems.Add(sprintf "Method %s.%s has .specialname flag (may affect JMC)" typeName methodName)
+            // Report for informational purposes
+            if typeName.Contains("StartupCode") || typeName.Contains("$") then
+                problems.Add(sprintf "Method %s.%s is in a $-prefixed/StartupCode type (may affect JMC heuristics)" typeName methodName)
+
+        if problems.Count > 0 then
+            failwith (sprintf "H4/JMC issues found for line %d:\n%s" targetLine (String.concat "\n" (problems |> Seq.toList)))
+
     let private verifyPdbOptions optOutputPath reader options =
         let outputPath = Path.GetDirectoryName(optOutputPath |> Option.defaultValue ".")
         for option in options do
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
             | VerifySequencePoints sp -> verifySequencePoints reader sp
+            | VerifyMethodSequencePoints(methodName, sp) ->
+                verifyMethodSequencePoints (optOutputPath |> Option.defaultValue "") reader methodName sp
+            | VerifyMethodSequencePointsInRange(methodName, startLine, endLine) ->
+                verifyMethodSequencePointsInRange (optOutputPath |> Option.defaultValue "") reader methodName startLine endLine
             | VerifyDocuments docs -> verifyDocuments reader (docs |> List.map(fun doc -> Path.Combine(outputPath, doc)))
+            | VerifySequencePointsInSameMethod lines ->
+                verifySequencePointsInSameMethod (optOutputPath |> Option.defaultValue "") reader lines
+            | VerifyNoDebuggerHiddenOnMethodWithLine line ->
+                verifyNoDebuggerHiddenOnMethodWithLine (optOutputPath |> Option.defaultValue "") reader line
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =

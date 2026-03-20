@@ -37,7 +37,8 @@ module HintTestFramework =
 
     let getHints (document: Document) hintKinds =
         let sourceText = document.GetTextAsync(CancellationToken.None).Result
-        let hints = HintService.getHintsForDocument sourceText document hintKinds "test" |> Async2.RunSynchronously
+        let span = Text.TextSpan(0, sourceText.Length)
+        let hints = HintService.getHintsForDocument sourceText document hintKinds span "test" |> Async2.RunSynchronously
 
         let getTooltip hint =
             hint.GetTooltip document

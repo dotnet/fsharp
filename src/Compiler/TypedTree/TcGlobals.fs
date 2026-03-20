@@ -1462,17 +1462,12 @@ type TcGlobals(
   member val iltyp_UnmanagedType   = findSysILTypeRef tname_UnmanagedType |> mkILNonGenericValueTy  
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
   member val attrib_ParamArrayAttribute = findSysAttrib "System.ParamArrayAttribute"
-  member val attrib_IDispatchConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
-  member val attrib_IUnknownConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IUnknownConstantAttribute"
-  member val attrib_RequiresLocationAttribute = findSysAttrib "System.Runtime.CompilerServices.RequiresLocationAttribute"
 
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
   member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
   member val attrib_IsUnmanagedAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsUnmanagedAttribute"
   member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
-  member val attrib_NullableAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.NullableAttribute"
-  member val attrib_NullableContextAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.NullableContextAttribute"
   member val attrib_NullableAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.NullableAttribute"
   member val attrib_NullableContextAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.NullableContextAttribute"
   member val attrib_MemberNotNullWhenAttribute  = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute"
@@ -1481,89 +1476,39 @@ type TcGlobals(
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
   member val attrib_IsByRefLikeAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
-  member val attrib_StructLayoutAttribute = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
+
   member val attrib_TypeForwardedToAttribute = findSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
-  member val attrib_ComVisibleAttribute = findSysAttrib "System.Runtime.InteropServices.ComVisibleAttribute"
-  member val attrib_ComImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.ComImportAttribute"
-  member val attrib_FieldOffsetAttribute = findSysAttrib "System.Runtime.InteropServices.FieldOffsetAttribute"
-  member val attrib_MarshalAsAttribute = tryFindSysAttrib "System.Runtime.InteropServices.MarshalAsAttribute"
+
   member val attrib_InAttribute = findSysAttrib "System.Runtime.InteropServices.InAttribute"
-  member val attrib_OutAttribute = findSysAttrib "System.Runtime.InteropServices.OutAttribute"
-  member val attrib_OptionalAttribute = tryFindSysAttrib "System.Runtime.InteropServices.OptionalAttribute"
-  member val attrib_DefaultParameterValueAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DefaultParameterValueAttribute"
-  member val attrib_ThreadStaticAttribute = tryFindSysAttrib "System.ThreadStaticAttribute"
-  member val attrib_VolatileFieldAttribute = mk_MFCore_attrib "VolatileFieldAttribute"
+
   member val attrib_NoEagerConstraintApplicationAttribute = mk_MFCompilerServices_attrib "NoEagerConstraintApplicationAttribute"
-  member val attrib_ContextStaticAttribute = tryFindSysAttrib "System.ContextStaticAttribute"
+
   member val attrib_FlagsAttribute = findSysAttrib "System.FlagsAttribute"
   member val attrib_DefaultMemberAttribute = findSysAttrib "System.Reflection.DefaultMemberAttribute"
-  member val attrib_DebuggerDisplayAttribute = findSysAttrib "System.Diagnostics.DebuggerDisplayAttribute"
-  member val attrib_DebuggerTypeProxyAttribute = findSysAttrib "System.Diagnostics.DebuggerTypeProxyAttribute"
-  member val attrib_PreserveSigAttribute = tryFindSysAttrib "System.Runtime.InteropServices.PreserveSigAttribute"
-  member val attrib_MethodImplAttribute = findSysAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
+
   member val attrib_ExtensionAttribute = findSysAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
-  member val attrib_CallerLineNumberAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
-  member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
-  member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
-  member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
   member val attrib_DecimalConstantAttribute = findSysAttrib "System.Runtime.CompilerServices.DecimalConstantAttribute"
   member val attribs_Unsupported = v_attribs_Unsupported
 
-  member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
-  member val attrib_NonSerializedAttribute                 = tryFindSysAttrib "System.NonSerializedAttribute"
 
-  member val attrib_AutoSerializableAttribute              = mk_MFCore_attrib "AutoSerializableAttribute"
-  member val attrib_RequireQualifiedAccessAttribute        = mk_MFCore_attrib "RequireQualifiedAccessAttribute"
-  member val attrib_EntryPointAttribute                    = mk_MFCore_attrib "EntryPointAttribute"
-  member val attrib_DefaultAugmentationAttribute           = mk_MFCore_attrib "DefaultAugmentationAttribute"
-  member val attrib_CompilerMessageAttribute               = mk_MFCore_attrib "CompilerMessageAttribute"
-  member val attrib_ExperimentalAttribute                  = mk_MFCore_attrib "ExperimentalAttribute"
-  member val attrib_UnverifiableAttribute                  = mk_MFCore_attrib "UnverifiableAttribute"
-  member val attrib_LiteralAttribute                       = mk_MFCore_attrib "LiteralAttribute"
   member val attrib_ConditionalAttribute                   = findSysAttrib "System.Diagnostics.ConditionalAttribute"
-  member val attrib_OptionalArgumentAttribute              = mk_MFCore_attrib "OptionalArgumentAttribute"
-  member val attrib_RequiresExplicitTypeArgumentsAttribute = mk_MFCore_attrib "RequiresExplicitTypeArgumentsAttribute"
+
   member val attrib_DefaultValueAttribute                  = mk_MFCore_attrib "DefaultValueAttribute"
-  member val attrib_ClassAttribute                         = mk_MFCore_attrib "ClassAttribute"
-  member val attrib_InterfaceAttribute                     = mk_MFCore_attrib "InterfaceAttribute"
-  member val attrib_StructAttribute                        = mk_MFCore_attrib "StructAttribute"
+
   member val attrib_ReflectedDefinitionAttribute           = mk_MFCore_attrib "ReflectedDefinitionAttribute"
   member val attrib_CompiledNameAttribute                  = mk_MFCore_attrib "CompiledNameAttribute"
   member val attrib_AutoOpenAttribute                      = mk_MFCore_attrib "AutoOpenAttribute"
-  member val attrib_InternalsVisibleToAttribute            = findSysAttrib tname_InternalsVisibleToAttribute
-  member val attrib_CompilationRepresentationAttribute     = mk_MFCore_attrib "CompilationRepresentationAttribute"
   member val attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
-  member val attrib_CLIEventAttribute                      = mk_MFCore_attrib "CLIEventAttribute"
-  member val attrib_InlineIfLambdaAttribute                = mk_MFCore_attrib "InlineIfLambdaAttribute"
-  member val attrib_CLIMutableAttribute                    = mk_MFCore_attrib "CLIMutableAttribute"
   member val attrib_AllowNullLiteralAttribute              = mk_MFCore_attrib "AllowNullLiteralAttribute"
-  member val attrib_NoEqualityAttribute                    = mk_MFCore_attrib "NoEqualityAttribute"
-  member val attrib_NoComparisonAttribute                  = mk_MFCore_attrib "NoComparisonAttribute"
-  member val attrib_CustomEqualityAttribute                = mk_MFCore_attrib "CustomEqualityAttribute"
-  member val attrib_CustomComparisonAttribute              = mk_MFCore_attrib "CustomComparisonAttribute"
   member val attrib_EqualityConditionalOnAttribute         = mk_MFCore_attrib "EqualityConditionalOnAttribute"
   member val attrib_ComparisonConditionalOnAttribute       = mk_MFCore_attrib "ComparisonConditionalOnAttribute"
-  member val attrib_ReferenceEqualityAttribute             = mk_MFCore_attrib "ReferenceEqualityAttribute"
-  member val attrib_StructuralEqualityAttribute            = mk_MFCore_attrib "StructuralEqualityAttribute"
-  member val attrib_StructuralComparisonAttribute          = mk_MFCore_attrib "StructuralComparisonAttribute"
   member val attrib_SealedAttribute                        = mk_MFCore_attrib "SealedAttribute"
-  member val attrib_AbstractClassAttribute                 = mk_MFCore_attrib "AbstractClassAttribute"
-  member val attrib_GeneralizableValueAttribute            = mk_MFCore_attrib "GeneralizableValueAttribute"
   member val attrib_MeasureAttribute                       = mk_MFCore_attrib "MeasureAttribute"
-  member val attrib_MeasureableAttribute                   = mk_MFCore_attrib "MeasureAnnotatedAbbreviationAttribute"
-  member val attrib_NoDynamicInvocationAttribute           = mk_MFCore_attrib "NoDynamicInvocationAttribute"
-  member val attrib_NoCompilerInliningAttribute            = mk_MFCore_attrib "NoCompilerInliningAttribute"
-  member val attrib_WarnOnWithoutNullArgumentAttribute      = mk_MFCore_attrib "WarnOnWithoutNullArgumentAttribute"
   member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
-  member val attrib_ComponentModelEditorBrowsableAttribute = findSysAttrib "System.ComponentModel.EditorBrowsableAttribute"
-  member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
-  member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
-  member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
-  member val attrib_IlExperimentalAttribute                   = findSysAttrib "System.Diagnostics.CodeAnalysis.ExperimentalAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
@@ -1904,9 +1849,6 @@ type TcGlobals(
 
   member _.DebuggerNonUserCodeAttribute = debuggerNonUserCodeAttribute
 
-  member _.HasTailCallAttrib (attribs: Attribs) =
-    attribs
-    |> List.exists (fun a -> a.TyconRef.CompiledRepresentationForNamedType.FullName = "Microsoft.FSharp.Core.TailCallAttribute")
   
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])

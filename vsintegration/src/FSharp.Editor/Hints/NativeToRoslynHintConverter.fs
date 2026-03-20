@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
@@ -31,11 +31,9 @@ module NativeToRoslynHintConverter =
                 let! taggedText = hint.GetTooltip doc
                 return taggedText |> List.map nativeToRoslynText |> ImmutableArray.CreateRange
             }
-            |> Async2.startInThreadPool ct
+            |> Async2.startAsTask ct
 
-        async2 {
-            let span = rangeToSpan hint.Range sourceText
-            let displayParts = hint.Parts |> Seq.map nativeToRoslynText
+        let span = rangeToSpan hint.Range sourceText
+        let displayParts = hint.Parts |> Seq.map nativeToRoslynText
 
-            return FSharpInlineHint(span, displayParts.ToImmutableArray(), getDescriptionAsync)
-        }
+        FSharpInlineHint(span, displayParts.ToImmutableArray(), getDescriptionAsync)

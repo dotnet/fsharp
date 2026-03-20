@@ -60,15 +60,35 @@ val TryFindMethInfoStringAttribute:
 
 val MethInfoHasAttribute: g: TcGlobals -> m: range -> attribSpec: BuiltinAttribInfo -> minfo: MethInfo -> bool
 
+[<Struct; NoEquality; NoComparison>]
+type WellKnownMethAttribute =
+    { ILFlag: WellKnownILAttributes
+      ValFlag: WellKnownValAttributes
+      AttribInfo: BuiltinAttribInfo }
+
+val MethInfoHasWellKnownAttribute:
+    g: TcGlobals ->
+    m: range ->
+    ilFlag: WellKnownILAttributes ->
+    valFlag: WellKnownValAttributes ->
+    attribSpec: BuiltinAttribInfo ->
+    minfo: MethInfo ->
+        bool
+
+val MethInfoHasWellKnownAttributeSpec:
+    g: TcGlobals -> m: range -> spec: WellKnownMethAttribute -> minfo: MethInfo -> bool
+
 val CheckFSharpAttributes: g: TcGlobals -> attribs: Attrib list -> m: range -> OperationResult<unit>
 
-val CheckILAttributesForUnseen: g: TcGlobals -> cattrs: ILAttributes -> _m: 'a -> bool
+val CheckILAttributesForUnseen: cattrs: ILAttributes -> bool
+
+val CheckILAttributesForUnseenStored: g: TcGlobals -> cattrsStored: ILAttributesStored -> bool
 
 val CheckFSharpAttributesForHidden: g: TcGlobals -> attribs: Attrib list -> bool
 
 val CheckFSharpAttributesForObsolete: g: TcGlobals -> attribs: Attrib list -> bool
 
-val CheckFSharpAttributesForUnseen: g: TcGlobals -> attribs: Attrib list -> _m: 'a -> allowObsolete: bool -> bool
+val CheckFSharpAttributesForUnseen: g: TcGlobals -> attribs: Attrib list -> allowObsolete: bool -> bool
 
 val CheckPropInfoAttributes: pinfo: PropInfo -> m: range -> OperationResult<unit>
 
@@ -79,7 +99,7 @@ val CheckMethInfoAttributes:
 
 val MethInfoIsUnseen: g: TcGlobals -> m: range -> ty: TType -> minfo: MethInfo -> allowObsolete: bool -> bool
 
-val PropInfoIsUnseen: m: 'a -> allowObsolete: bool -> pinfo: PropInfo -> bool
+val PropInfoIsUnseen: _m: 'a -> allowObsolete: bool -> pinfo: PropInfo -> bool
 
 val CheckEntityAttributes: g: TcGlobals -> tcref: TyconRef -> m: range -> OperationResult<unit>
 

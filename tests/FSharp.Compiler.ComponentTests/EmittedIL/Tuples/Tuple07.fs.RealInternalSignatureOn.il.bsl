@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -54,7 +44,7 @@
     IL_000c:  ret
   } 
 
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  9
@@ -66,12 +56,12 @@
     IL_0005:  ldc.i4.6
     IL_0006:  ldc.i4.7
     IL_0007:  newobj     instance void class [runtime]System.Tuple`7<int32,int32,int32,int32,int32,int32,int32>::.ctor(!0,
-                                                                                                                        !1,
-                                                                                                                        !2,
-                                                                                                                        !3,
-                                                                                                                        !4,
-                                                                                                                        !5,
-                                                                                                                        !6)
+                                                                                                                              !1,
+                                                                                                                              !2,
+                                                                                                                              !3,
+                                                                                                                              !4,
+                                                                                                                              !5,
+                                                                                                                              !6)
     IL_000c:  pop
     IL_000d:  ret
   } 
@@ -95,7 +85,6 @@
   } 
 
 } 
-
 
 
 

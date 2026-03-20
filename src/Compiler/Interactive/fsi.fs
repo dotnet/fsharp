@@ -1698,7 +1698,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
                     [],
                     [],
                     {
-                        Attribs = []
+                        Attribs = WellKnownValAttribs.Empty
                         Name = None
                         OtherRange = None
                     }
@@ -2224,8 +2224,9 @@ type internal FsiDynamicCompiler
     /// Check FSI entries for the presence of EntryPointAttribute and issue a warning if it's found
     let CheckEntryPoint (tcGlobals: TcGlobals) (declaredImpls: CheckedImplFile list) =
         let tryGetEntryPoint (TBind(var = value)) =
-            TryFindFSharpAttribute tcGlobals tcGlobals.attrib_EntryPointAttribute value.Attribs
-            |> Option.map (fun attrib -> value.DisplayName, attrib)
+            match value.Attribs with
+            | ValAttrib tcGlobals WellKnownValAttributes.EntryPointAttribute attrib -> Some(value.DisplayName, attrib)
+            | _ -> None
 
         let rec findEntryPointInContents =
             function

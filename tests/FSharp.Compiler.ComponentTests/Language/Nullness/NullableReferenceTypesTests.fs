@@ -734,6 +734,29 @@ let processAlias (x:mykgalias) =
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
+// https://github.com/dotnet/fsharp/issues/19435
+[<Theory>]
+[<InlineData("42<mykg>", "42")>]
+[<InlineData("42.0<mykg>", "42")>]
+[<InlineData("42M<mykg>", "42")>]
+let ``ToString on value type with UoM does not produce garbage at runtime`` (valueExpr: string, expected: string) =
+    FSharp $"""
+module MyProgram
+
+[<Measure>]
+type mykg
+
+[<EntryPoint>]
+let main _ =
+    let x = {valueExpr}
+    System.Console.Write(x.ToString())
+    0
+    """
+    |> withCheckNulls
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains expected
+
 [<Fact>]
 let ``Printing a nullable string should pass`` () = 
     FSharp """module MyLibrary

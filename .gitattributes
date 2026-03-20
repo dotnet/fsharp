@@ -9,6 +9,10 @@
 *.fsproj text merge=union
 *.dbproj text merge=union
 
+# Release notes are append-only unordered lists; union merge avoids conflicts
+# when multiple PRs each add an entry under the same heading.
+docs/release-notes/**/*.md text merge=union
+
 # Standard to msysgit
 *.doc	 diff=astextplain
 *.DOC	 diff=astextplain
@@ -31,3 +35,5 @@ targets.make text eol=lf
 *.xlf linguist-generated=true
 
 *.png binary
+
+.github/workflows/*.lock.yml linguist-generated=true merge=ours

@@ -1662,7 +1662,7 @@ and OpHasEffect g m op =
     | TOp.AnonRecdGet _ -> true // conservative
     | TOp.ValFieldGet rfref -> 
         rfref.RecdField.IsMutable 
-        || (TryFindTyconRefBoolAttribute g range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some true)
+        || (TyconRefAllowsNull g rfref.TyconRef = Some true)
     | TOp.ValFieldGetAddr (rfref, _readonly) -> rfref.RecdField.IsMutable
     | TOp.UnionCaseFieldGetAddr _ -> false // union case fields are immutable
     | TOp.LValueOp (LAddrOf _, _) -> false // addresses of values are always constants
@@ -2746,9 +2746,9 @@ and TryOptimizeRecordFieldGet cenv _env (e1info, (RecdFieldRef (rtcref, _) as r)
 
     match destRecdValue e1info.Info with
     | Some finfos when cenv.settings.EliminateRecdFieldGet && not e1info.HasEffect ->
-        match TryFindFSharpAttribute g g.attrib_CLIMutableAttribute rtcref.Attribs with
-        | Some _ -> None
-        | None ->
+        if EntityHasWellKnownAttribute g WellKnownEntityAttributes.CLIMutableAttribute rtcref.Deref then
+            None
+        else
             let n = r.Index
             if n >= finfos.Length then errorR(InternalError( "TryOptimizeRecordFieldGet: term argument out of range", m))
             Some finfos[n]

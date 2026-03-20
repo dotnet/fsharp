@@ -72,11 +72,54 @@ let x = 42
                         found <- true
                 found
 
-        // Verify that the compiled DLL contains RSA magic bytes, confirming the public key blob was embedded
-        let hasRSAMagic: bool = 
-            containsRSAMagic dllBytes rsa1Magic || containsRSAMagic dllBytes rsa2Magic
-        
+        // Verify that the compiled DLL contains RSA1 (public key) magic and NOT RSA2 (private key) magic
+        let hasRSA1: bool = containsRSAMagic dllBytes rsa1Magic
+        let hasRSA2: bool = containsRSAMagic dllBytes rsa2Magic
+
         Assert.True(
-            hasRSAMagic, 
-            "Compiled DLL should contain RSA magic bytes (RSA1 or RSA2) indicating public key blob was embedded by compiler with --publicsign"
+            hasRSA1,
+            "Compiled DLL should contain RSA1 magic bytes indicating a public key blob was embedded"
         )
+
+        Assert.False(
+            hasRSA2,
+            "Compiled DLL must NOT contain RSA2 magic bytes — private key material must not be embedded in the assembly"
+        )
+
+    /// <summary>
+    /// Tests that --publicsign with a full key pair (.snk) produces an assembly with a valid
+    /// public key blob that can be loaded by AssemblyName without throwing SecurityException.
+    /// This is the regression test for https://github.com/dotnet/fsharp/issues/19441.
+    /// </summary>
+    [<Fact>]
+    let ``--publicsign with full key pair produces valid public key blob`` () =
+        let source =
+            """
+module TestModule
+let x = 42
+"""
+
+        let snkPath: string =
+            Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "..", "..", "fsharp", "core", "signedtests", "sha1full.snk")
+
+        let result =
+            source
+            |> FSharp
+            |> asLibrary
+            |> withFileName "PublicSignValidKey.fs"
+            |> withOptions ["--publicsign+"; sprintf "--keyfile:%s" snkPath]
+            |> compile
+
+        result |> shouldSucceed |> ignore
+
+        let outputDll: string =
+            match result.OutputPath with
+            | Some path -> path
+            | None -> failwith "Compilation did not produce an output DLL"
+
+        // Loading the assembly name should not throw SecurityException for invalid public key
+        let assemblyName = System.Reflection.AssemblyName.GetAssemblyName(outputDll)
+        let publicKeyToken = assemblyName.GetPublicKeyToken()
+
+        Assert.NotNull(publicKeyToken)
+        Assert.True(publicKeyToken.Length > 0, "PublicKeyToken should be non-empty for a public-signed assembly")

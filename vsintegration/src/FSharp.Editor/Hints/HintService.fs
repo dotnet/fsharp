@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
@@ -9,8 +9,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Symbols
 open Hints
-open Internal.Utilities.Library
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open Internal.Utilities.Library
 
 module HintService =
 
@@ -39,7 +39,7 @@ module HintService =
         let hints = getHints sourceText parseResults hintKinds symbolUses symbol
         Seq.concat hints
 
-    let getHintsForDocument sourceText (document: Document) hintKinds userOpName =
+    let getHintsForDocument (sourceText: SourceText) (document: Document) hintKinds (textSpan: TextSpan) userOpName =
         async2 {
             if isSignatureFile document.FilePath then
                 return List.empty
@@ -75,3 +75,8 @@ module HintService =
 
                     return nativeHints
         }
+        |> Async2.map (
+            List.filter (fun hint ->
+                let hintSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, hint.Range)
+                textSpan.IntersectsWith hintSpan)
+        )

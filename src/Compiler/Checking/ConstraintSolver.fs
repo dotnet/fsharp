@@ -2818,7 +2818,7 @@ and SolveTypeSupportsComparison (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     | ValueNone ->
         // Check it isn't ruled out by the user
         match tryTcrefOfAppTy g ty with 
-        | ValueSome tcref when HasFSharpAttribute g g.attrib_NoComparisonAttribute tcref.Attribs ->
+        | ValueSome tcref when EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoComparisonAttribute tcref.Deref ->
             ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportComparison1(NicePrint.minimalStringOfType denv ty), m, m2))
         | _ ->
             match ty with 
@@ -2861,7 +2861,7 @@ and SolveTypeSupportsEquality (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SupportsEquality m)
     | _ ->
         match tryTcrefOfAppTy g ty with 
-        | ValueSome tcref when HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs ->
+        | ValueSome tcref when EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoEqualityAttribute tcref.Deref ->
             ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality1(NicePrint.minimalStringOfType denv ty), m, m2))
         | _ ->
             match ty with 
@@ -3019,7 +3019,7 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
                |> List.exists (fun x -> x.IsNullary && IsMethInfoAccessible amap m AccessibleFromEverywhere x)
             then 
                 match tryTcrefOfAppTy g ty with
-                | ValueSome tcref when HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs ->
+                | ValueSome tcref when EntityHasWellKnownAttribute g WellKnownEntityAttributes.AbstractClassAttribute tcref.Deref ->
                     ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresNonAbstract(NicePrint.minimalStringOfType denv origTy), m, m2))
                 | _ ->
                     CompleteD
@@ -3028,7 +3028,7 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
                 | ValueSome tcref when
                     tcref.PreEstablishedHasDefaultConstructor || 
                     // F# 3.1 feature: records with CLIMutable attribute should satisfy 'default constructor' constraint
-                    (tcref.IsRecordTycon && HasFSharpAttribute g g.attrib_CLIMutableAttribute tcref.Attribs) ->
+                    (tcref.IsRecordTycon && EntityHasWellKnownAttribute g WellKnownEntityAttributes.CLIMutableAttribute tcref.Deref) ->
                     CompleteD
                 | _ -> 
                     ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))

@@ -1,0 +1,88 @@
+# Steps template for batched test jobs.
+# Use inside a job that has strategy:matrix with a batchNumber variable.
+#
+# Example usage:
+#   - job: MyTestJob
+#     strategy:
+#       matrix:
+#         Batch1: { batchNumber: 1 }
+#         Batch2: { batchNumber: 2 }
+#         Batch3: { batchNumber: 3 }
+#     steps:
+#     - template: /eng/templates/batched-test-steps.yml
+#       parameters:
+#         buildCommand: eng\CIBuild.cmd -testDesktopBatch $(batchNumber)
+#         testRunTitlePrefix: 'MyJob testDesktop'
+#         artifactNamePrefix: 'Windows testDesktop'
+
+parameters:
+  buildCommand: ''
+  buildEnv: {}
+  configuration: 'Release'
+  testRunTitlePrefix: ''
+  artifactNamePrefix: ''
+  publishBinLog: false
+  binLogPath: ''
+  publishDumps: false
+
+steps:
+- checkout: self
+  clean: true
+
+- script: ${{ parameters.buildCommand }}
+  env: ${{ parameters.buildEnv }}
+  displayName: Build / Test
+
+- task: PublishTestResults@2
+  displayName: Publish Test Results
+  inputs:
+    testResultsFormat: 'XUnit'
+    testRunTitle: ${{ parameters.testRunTitlePrefix }} Batch$(batchNumber)
+    mergeTestResults: true
+    testResultsFiles: '*.xml'
+    searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/${{ parameters.configuration }}'
+  continueOnError: true
+  condition: succeededOrFailed()
+
+- ${{ if parameters.publishBinLog }}:
+  - task: PublishBuildArtifacts@1
+    displayName: Publish BinLog
+    continueOnError: true
+    inputs:
+      PathToPublish: ${{ parameters.binLogPath }}
+      ArtifactName: '${{ parameters.artifactNamePrefix }} Batch$(batchNumber) binlogs'
+      ArtifactType: Container
+      parallel: true
+
+- ${{ if parameters.publishDumps }}:
+  - task: PublishBuildArtifacts@1
+    displayName: Publish Dumps
+    condition: failed()
+    continueOnError: true
+    inputs:
+      PathToPublish: '$(Build.SourcesDirectory)/artifacts/log/${{ parameters.configuration }}'
+      ArtifactName: '${{ parameters.artifactNamePrefix }} Batch$(batchNumber) process dumps'
+      ArtifactType: Container
+      parallel: true
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish Test Logs
+  inputs:
+    PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/${{ parameters.configuration }}'
+    ArtifactName: '${{ parameters.artifactNamePrefix }} Batch$(batchNumber) test logs'
+    publishLocation: Container
+  continueOnError: true
+  condition: always()
+
+- script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+  displayName: Dump NuGet cache contents
+  condition: failed()
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish NuGet cache contents
+  inputs:
+    PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+    ArtifactName: 'NuGetPackageContents ${{ parameters.artifactNamePrefix }} Batch$(batchNumber)'
+    publishLocation: Container
+  continueOnError: true
+  condition: failed()

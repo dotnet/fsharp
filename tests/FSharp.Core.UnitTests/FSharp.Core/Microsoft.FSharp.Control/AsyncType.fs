@@ -161,26 +161,33 @@ type AsyncType() =
     [<Fact>]
     member _.StartAsTaskCancellation () =
         let cts = new CancellationTokenSource()
+        let asyncStarted = new ManualResetEventSlim(false)
         let doSpinloop () = while spinloop do ()
         let a = async {
+            asyncStarted.Set()
             cts.CancelAfter (100)
             doSpinloop()
         }
 
         let t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
+
+        // Wait for the async body to actually start executing before checking timing.
+        Assert.True(asyncStarted.Wait(5000), "Async body did not start within 5 seconds")
+
         // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
-            let result = t.Wait(300)
+            let result = t.Wait(1000)
             Assert.False (result)
         with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
         spinloop <- false
 
         try
-            waitASec t
+            let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=5))
+            Assert.True(result, "Task did not finish after waiting for 5 seconds.")
         with :? AggregateException as a ->
             match a.InnerException with
-            | :? TaskCanceledException as t -> ()
+            | :? TaskCanceledException -> ()
             | _ -> reraise()
 
         Assert.True (t.IsCompleted, "Task is not completed")
