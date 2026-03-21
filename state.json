@@ -1,1 +1,1 @@
-{"m":19439,"n":"C29:scanned #12078-#14508 pre-2023 bugs. No new candidates. Still-open: #6803,#6338,#12551,#9994,#13832,#13291,#13849,#14160,#14492."}
+{"m":10323,"n":"C30:scanned 2018-2021 era bugs (#4654-#10323), ~90 issues; no new fixed/windows-only candidates. Still-open: #711,#7114,#9178,#9405,#12303. Extension property CompiledName bug (#9405) confirmed in IlxGen.fs."}
