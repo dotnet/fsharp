@@ -102,15 +102,8 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
 let isExpandVar g (v: Val) = 
     isReturnsResumableCodeTy g v.TauType
 
-// We allow a prefix of bindings prior to the state machine, e.g. 
-//     task { .. }
-// becomes
-//     let builder@ = task
-//     ....
 let isStateMachineBindingVar g (v: Val) = 
-    isExpandVar g v  ||
-    (let nm = v.LogicalName
-     (nm.StartsWithOrdinal("builder@") || v.IsMemberThisVal))
+    isExpandVar g v || v.IsMemberThisVal
 
 type env = 
     { 
