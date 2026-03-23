@@ -1100,7 +1100,7 @@ type Generic1InGeneric1<'T>() =
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-.class public abstract auto ansi sealed Test
+    .class public abstract auto ansi sealed Test
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
@@ -1356,29 +1356,32 @@ type Generic1InGeneric1<'T>() =
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
-      .locals init (valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A> V_0,
-               valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>& V_1)
-      IL_0000:  ldloca.s   V_0
-      IL_0002:  initobj    valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>
-      IL_0008:  ldloca.s   V_0
-      IL_000a:  stloc.1
-      IL_000b:  ldloc.1
-      IL_000c:  ldarg.1
-      IL_000d:  stfld      class [runtime]System.Threading.Tasks.Task`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::computation
-      IL_0012:  ldloc.1
-      IL_0013:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::Data
-      IL_0018:  call       valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!!A>::Create()
-      IL_001d:  stfld      valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!A>::MethodBuilder
-      IL_0022:  ldloc.1
-      IL_0023:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::Data
-      IL_0028:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!A>::MethodBuilder
-      IL_002d:  ldloc.1
-      IL_002e:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!!0>::Start<valuetype Test/Generic1InGeneric1`1/clo@7<!0,!!0>>(!!0&)
-      IL_0033:  ldloc.1
-      IL_0034:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::Data
-      IL_0039:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!A>::MethodBuilder
-      IL_003e:  call       instance class [netstandard]System.Threading.Tasks.Task`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!!A>::get_Task()
-      IL_0043:  ret
+      .locals init (class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder V_0,
+               valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A> V_1,
+               valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>& V_2)
+      IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderModule::get_task()
+      IL_0005:  stloc.0
+      IL_0006:  ldloca.s   V_1
+      IL_0008:  initobj    valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>
+      IL_000e:  ldloca.s   V_1
+      IL_0010:  stloc.2
+      IL_0011:  ldloc.2
+      IL_0012:  ldarg.1
+      IL_0013:  stfld      class [runtime]System.Threading.Tasks.Task`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::computation
+      IL_0018:  ldloc.2
+      IL_0019:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::Data
+      IL_001e:  call       valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!!A>::Create()
+      IL_0023:  stfld      valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!A>::MethodBuilder
+      IL_0028:  ldloc.2
+      IL_0029:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::Data
+      IL_002e:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!A>::MethodBuilder
+      IL_0033:  ldloc.2
+      IL_0034:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!!0>::Start<valuetype Test/Generic1InGeneric1`1/clo@7<!0,!!0>>(!!0&)
+      IL_0039:  ldloc.2
+      IL_003a:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::Data
+      IL_003f:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!A>::MethodBuilder
+      IL_0044:  call       instance class [netstandard]System.Threading.Tasks.Task`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!!A>::get_Task()
+      IL_0049:  ret
     } 
 
   } 

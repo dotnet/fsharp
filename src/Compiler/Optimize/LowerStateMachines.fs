@@ -102,15 +102,8 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
 let isExpandVar g (v: Val) = 
     isReturnsResumableCodeTy g v.TauType
 
-// We allow a prefix of bindings prior to the state machine, e.g. 
-//     task { .. }
-// becomes
-//     let builder@ = task
-//     ....
 let isStateMachineBindingVar g (v: Val) = 
-    isExpandVar g v  ||
-    (let nm = v.LogicalName
-     (nm.StartsWithOrdinal("builder@") || v.IsMemberThisVal))
+    isExpandVar g v || v.IsMemberThisVal
 
 type env = 
     { 
@@ -361,7 +354,6 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
             TryReduceExpr env f (args2 @ args) (fun f2 -> remake (Expr.App (f2, _fty, _tyargs, args2, _m)))
 
         | _ -> 
-            //let (env, expr) = BindResumableCodeDefinitions env expr
             match TryReduceApp env expr args with 
             | Some expandedExpr -> 
                 if sm_verbose then printfn "reduction = %A, args = %A --> %A..." expr args expandedExpr
@@ -408,7 +400,6 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
     // Detect a state machine with a single method override
     [<return: Struct>]
     let (|ExpandedStateMachineInContext|_|) inputExpr = 
-        // All expanded resumable code state machines e.g. 'task { .. }' begin with a bind of @builder or 'defn'
         // Seed the env with any expand-var definitions from outer scopes (e.g. across lambda boundaries)
         let initialEnv = { env.Empty with ResumableCodeDefns = outerResumableCodeDefns }
         let env, expr = BindResumableCodeDefinitions initialEnv inputExpr 
