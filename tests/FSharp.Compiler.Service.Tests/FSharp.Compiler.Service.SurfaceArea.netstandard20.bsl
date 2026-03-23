@@ -12631,6 +12631,8 @@ Internal.Utilities.Library.Async2Module: t run[t](System.Threading.CancellationT
 Internal.Utilities.Library.Async2`1[t]: Internal.Utilities.Library.IAsync2Invocation`1[t] Await(System.Threading.CancellationToken)
 Internal.Utilities.Library.Async2`1[t]: Internal.Utilities.Library.IAsync2Invocation`1[t] Start(System.Threading.CancellationToken)
 Internal.Utilities.Library.Async2`1[t]: Void TailCall(System.Threading.CancellationToken, System.Threading.Tasks.TaskCompletionSource`1[t])
+Internal.Utilities.Library.AsyncReplyChannel2`1[Reply]: Void .ctor(System.Threading.Tasks.TaskCompletionSource`1[Reply])
+Internal.Utilities.Library.AsyncReplyChannel2`1[Reply]: Void Reply(Reply)
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] CreateDictionary(T[])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()
@@ -12656,6 +12658,7 @@ Internal.Utilities.Library.LowPriority: Microsoft.FSharp.Core.CompilerServices.R
 Internal.Utilities.Library.LowPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e] Async2Builder.Bind$W[a,b,c,d,e](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[b,c], Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean], Async2Builder, a, Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e]])
 Internal.Utilities.Library.LowPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e] Async2Builder.Bind[a,b,c,d,e](Async2Builder, a, Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Internal.Utilities.Library.Async2Implementation+Async2Data`1[d],e]])
 Internal.Utilities.Library.MailboxProcessor2`1[Msg]: Internal.Utilities.Library.Async2`1[Msg] Receive()
+Internal.Utilities.Library.MailboxProcessor2`1[Msg]: Internal.Utilities.Library.Async2`1[Reply] PostAndAsyncReply[Reply](Microsoft.FSharp.Core.FSharpFunc`2[Internal.Utilities.Library.AsyncReplyChannel2`1[Reply],Msg], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Internal.Utilities.Library.MailboxProcessor2`1[Msg]: Internal.Utilities.Library.MailboxProcessor2`1[Msg] Start(Microsoft.FSharp.Core.FSharpFunc`2[Internal.Utilities.Library.MailboxProcessor2`1[Msg],Internal.Utilities.Library.Async2`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Internal.Utilities.Library.MailboxProcessor2`1[Msg]: Microsoft.FSharp.Control.FSharpHandler`1[System.Exception] Error
 Internal.Utilities.Library.MailboxProcessor2`1[Msg]: Void Dispose()

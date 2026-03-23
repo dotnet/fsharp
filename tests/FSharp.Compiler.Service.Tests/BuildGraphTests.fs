@@ -218,7 +218,7 @@ module BuildGraphTests =
 
         cts.Cancel()
         resetEvent.Set() |> ignore
-        Async2.RunImmediate(work)
+        Async2.RunSynchronously(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested
@@ -365,12 +365,12 @@ module BuildGraphTests =
 
         let logger = DiagnosticsLoggerWithCallback errorCommitted
         use _ = UseDiagnosticsLogger logger
-        tasks |> Seq.take 50 |> MultipleDiagnosticsLoggers.Parallel |> Async2.Ignore |> Async2.RunImmediate
+        tasks |> Seq.take 50 |> MultipleDiagnosticsLoggers.Parallel |> Async2.Ignore |> Async2.RunSynchronously
 
         // all errors committed
         errorCountShouldBe 300
 
-        tasks |> Seq.skip 50 |> MultipleDiagnosticsLoggers.Sequential |> Async2.Ignore |> Async2.RunImmediate
+        tasks |> Seq.skip 50 |> MultipleDiagnosticsLoggers.Sequential |> Async2.Ignore |> Async2.RunSynchronously
 
         errorCountShouldBe 600
 
