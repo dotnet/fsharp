@@ -34,6 +34,7 @@ param (
 
     # Options
     [switch][Alias('proto')]$bootstrap,
+    [switch]$bootstrapUseRepoCompiler,
     [string]$bootstrapConfiguration = "Proto",
     [string]$bootstrapTfm = "",
     [string]$fsharpNetCoreProductTfm = "",
@@ -529,6 +530,8 @@ try {
 
 
     Process-Arguments
+    # expose the new flag to helper scripts
+    $script:bootstrapUseRepoCompiler = $bootstrapUseRepoCompiler
 
     . (Join-Path $PSScriptRoot "build-utils.ps1")
 

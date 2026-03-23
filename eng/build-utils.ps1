@@ -250,6 +250,33 @@ function Make-BootstrapBuild() {
         $logFilePath = Join-Path $LogDir "bootstrap.binlog"
         $args += " /bl:`"$logFilePath`""
     }
+    # Use explicit repo-built fsc.dll location. No guesses.
+    if ($script:bootstrapUseRepoCompiler) {
+        Write-Host "Configuring bootstrap to use compiler built in repo (explicit)"
+        try {
+            # PSScriptRoot is eng; go up one level to reach repo root
+            $repoRootPath = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+        }
+        catch {
+            if ($RepoRoot -is [System.Management.Automation.PathInfo]) { $repoRootPath = $RepoRoot.Path }
+            elseif ($RepoRoot -is [System.Array]) { $first = $RepoRoot[0]; if ($first -is [System.Management.Automation.PathInfo]) { $repoRootPath = $first.Path } else { $repoRootPath = $first.ToString() } }
+            else { $repoRootPath = $RepoRoot.ToString() }
+        }
+
+        $explicitFsc = [System.IO.Path]::Combine($repoRootPath, 'artifacts','bin','fsc',$configuration,$bootstrapTfm,'fsc.dll')
+
+        if (-not (Test-Path $explicitFsc)) {
+            Write-Host "Error: expected repo-built compiler not found: $explicitFsc"
+            Write-Host "Proceeding without DotnetFscCompilerPath"
+        }
+        else {
+            # Pass the DLL path directly as the MSBuild property, as requested by user
+            $args += " /p:DotnetFscCompilerPath=`"$explicitFsc`""
+            Write-Host "Set DotnetFscCompilerPath=$explicitFsc"
+            # Prevent MSBuild SDK redirection to its internal compiler
+            $args += " /p:DisableCompilerRedirection=true"
+        }
+    }
     Write-Host "$dotnetExe $args"
     Exec-Console $dotnetExe $args
     return $dir
