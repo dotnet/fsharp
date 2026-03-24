@@ -2126,7 +2126,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             [ [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in p.GetParamDatas(cenv.amap, range0) do 
                     // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                     // either .NET or F# parameters
-                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=[]; OtherRange=None }
+                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=WellKnownValAttribs.Empty; OtherRange=None }
                     let m =
                         match nmOpt with
                         | Some v -> v.idRange
@@ -2145,7 +2145,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                    [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in argTys do 
                 // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                 // either .NET or F# parameters
-                        let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=[]; OtherRange=None }
+                        let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=WellKnownValAttribs.Empty; OtherRange=None }
                         let m =
                             match nmOpt with
                             | Some v -> v.idRange
@@ -2181,10 +2181,10 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             [ for argTys in argTysl do 
                  yield 
                    [ for argTy, argInfo in argTys do 
-                        let isParamArrayArg = HasFSharpAttribute cenv.g cenv.g.attrib_ParamArrayAttribute argInfo.Attribs
-                        let isInArg = HasFSharpAttribute cenv.g cenv.g.attrib_InAttribute argInfo.Attribs && isByrefTy cenv.g argTy
-                        let isOutArg = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute argInfo.Attribs && isByrefTy cenv.g argTy
-                        let isOptionalArg = HasFSharpAttribute cenv.g cenv.g.attrib_OptionalArgumentAttribute argInfo.Attribs
+                        let isParamArrayArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.ParamArrayAttribute argInfo
+                        let isInArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.InAttribute argInfo && isByrefTy cenv.g argTy
+                        let isOutArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.OutAttribute argInfo && isByrefTy cenv.g argTy
+                        let isOptionalArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.OptionalArgumentAttribute argInfo
                         let m =
                             match argInfo.Name with
                             | Some v -> v.idRange
@@ -2500,7 +2500,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let nm = String.uncapitalize witnessInfo.MemberName
                 let nm = if used.Contains nm then nm + string i else nm
                 let m = x.DeclarationLocation
-                let argReprInfo : ArgReprInfo = { Attribs=[]; Name=Some (mkSynId m nm); OtherRange=None }
+                let argReprInfo : ArgReprInfo = { Attribs=WellKnownValAttribs.Empty; Name=Some (mkSynId m nm); OtherRange=None }
                 let p = FSharpParameter(cenv, paramTy, argReprInfo, None, m, false, false, false, false, true)
                 p, (used.Add nm, i + 1))
             |> fst
@@ -2913,7 +2913,7 @@ type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, m:
                          (fun _ _ _ -> true))
 
     new (cenv, idOpt, ty, ownerOpt, m) =
-        let argInfo: ArgReprInfo = { Name = idOpt; Attribs = []; OtherRange = None }
+        let argInfo: ArgReprInfo = { Name = idOpt; Attribs = WellKnownValAttribs.Empty; OtherRange = None }
         FSharpParameter(cenv, ty, argInfo, ownerOpt, m, false, false, false, false, false)
 
     new (cenv, ty, argInfo: ArgReprInfo, m: range) =
@@ -2937,7 +2937,7 @@ type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, m:
         | _ -> None
 
     override _.Attributes = 
-        topArgInfo.Attribs |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
+        topArgInfo.Attribs.AsList() |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
 
     member _.IsParamArrayArg = isParamArrayArg
 
