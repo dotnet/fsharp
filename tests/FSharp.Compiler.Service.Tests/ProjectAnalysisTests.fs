@@ -5864,3 +5864,103 @@ let ``Empty source list produces error FS0207`` () =
     let results = checker.ParseAndCheckProject(EmptyProject.options) |> Async.RunImmediate
     results.Diagnostics.Length |> shouldEqual 1
     results.Diagnostics[0].ErrorNumber |> shouldEqual 207
+
+// https://github.com/dotnet/fsharp/issues/14969
+module internal ProjectActivePatternInSig =
+
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let sigFileName1 = Path.ChangeExtension(fileName1, ".fsi")
+    let base2 = getTemporaryFileName ()
+    let fileName2 = Path.ChangeExtension(base2, ".fs")
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+
+    let fileSource1 =
+        """
+module PatternDefs
+
+let (|Even|Odd|) v = if v % 2 = 0 then Even else Odd
+    """
+
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
+
+    let sigFileSource1 =
+        """
+module PatternDefs
+
+val (|Even|Odd|) : int -> Choice<unit, unit>
+    """
+
+    FileSystem.OpenFileForWriteShim(sigFileName1).Write(sigFileSource1)
+
+    let fileSource2 =
+        """
+module PatternUser
+
+open PatternDefs
+
+let describe x =
+    match x with
+    | Even -> "even"
+    | Odd -> "odd"
+    """
+
+    FileSystem.OpenFileForWriteShim(fileName2).Write(fileSource2)
+
+    let cleanFileName a =
+        if a = fileName1 then "file1"
+        elif a = sigFileName1 then "sig1"
+        elif a = fileName2 then "file2"
+        else "??"
+
+    let fileNames = [| sigFileName1; fileName1; fileName2 |]
+    let args = mkProjectCommandLineArgs (dllName, [])
+
+    let options =
+        { checker.GetProjectOptionsFromCommandLineArgs(projFileName, args) with
+            SourceFiles = fileNames }
+
+[<Fact>]
+let ``FindReferences for active patterns in fsi - project has no errors`` () =
+    let wholeProjectResults =
+        checker.ParseAndCheckProject(ProjectActivePatternInSig.options)
+        |> Async.RunImmediate
+
+    for e in wholeProjectResults.Diagnostics do
+        printfn "ProjectActivePatternInSig error: <<<%s>>>" e.Message
+
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
+
+[<Fact>]
+let ``FindReferences for active patterns in fsi - finds Even in sig and impl`` () =
+    let wholeProjectResults =
+        checker.ParseAndCheckProject(ProjectActivePatternInSig.options)
+        |> Async.RunImmediate
+
+    let _, typedParse2 =
+        checker.GetBackgroundCheckResultsForFileInProject(
+            ProjectActivePatternInSig.fileName2,
+            ProjectActivePatternInSig.options
+        )
+        |> Async.RunImmediate
+
+    let evenSymbolOpt =
+        typedParse2.GetSymbolUseAtLocation(8, 11, "    | Even -> \"even\"", [ "Even" ])
+
+    Assert.True(evenSymbolOpt.IsSome, "Expected to find symbol 'Even' in consumer file")
+
+    let evenSymbol = evenSymbolOpt.Value.Symbol
+
+    let usesOfEven =
+        [ for su in wholeProjectResults.GetUsesOfSymbol(evenSymbol) do
+              yield
+                  ProjectActivePatternInSig.cleanFileName su.FileName,
+                  tups su.Range,
+                  attribsOfSymbol su.Symbol ]
+
+    // Should find Even in: sig file, impl file definition, and consumer file usage
+    let fileNames = usesOfEven |> List.map (fun (f, _, _) -> f)
+
+    Assert.Contains("sig1", fileNames)
+    Assert.Contains("file1", fileNames)
+    Assert.Contains("file2", fileNames)
