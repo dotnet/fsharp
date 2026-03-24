@@ -89,7 +89,12 @@
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-    <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
+    <!-- System.* packages from dotnet/runtime, aligned with MSBuild and Roslyn deps. -->
+    <SystemPackagesVersion>10.0.2</SystemPackagesVersion>
+    <SystemCollectionsImmutableVersion>$(SystemPackagesVersion)</SystemCollectionsImmutableVersion>
+    <SystemCompositionVersion>$(SystemPackagesVersion)</SystemCompositionVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemPackagesVersion)</SystemDiagnosticsDiagnosticSourceVersion>
+    <SystemReflectionMetadataVersion>$(SystemPackagesVersion)</SystemReflectionMetadataVersion>
   </PropertyGroup>
 
   <PropertyGroup>
