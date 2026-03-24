@@ -114,3 +114,49 @@ Holder.Label <- "nope"
         fsLib
         |> compile
         |> shouldFail
+
+    // https://github.com/dotnet/fsharp/issues/13519
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Issue 13519 - C# method with optional parameters can be called from F# without specifying defaults`` () =
+        let csLib =
+            CSharp
+                """
+using System;
+
+namespace CSharpLib
+{
+    public class MyClass
+    {
+        public string DoSomething(string required, string optional1 = "default1", string optional2 = "default2")
+        {
+            return required + "|" + optional1 + "|" + optional2;
+        }
+    }
+}
+            """
+            |> withName "CSharpOptionalParams"
+
+        let fsApp =
+            FSharp
+                """
+module TestApp
+
+open CSharpLib
+
+[<EntryPoint>]
+let main _ =
+    let c = MyClass()
+    let result = c.DoSomething("hello")
+    if result <> "hello|default1|default2" then
+        failwithf "Expected 'hello|default1|default2' but got '%s'" result
+    let result2 = c.DoSomething("hello", "custom1")
+    if result2 <> "hello|custom1|default2" then
+        failwithf "Expected 'hello|custom1|default2' but got '%s'" result2
+    0
+                """
+            |> withReferences [ csLib ]
+
+        fsApp
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
