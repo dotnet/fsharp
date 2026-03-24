@@ -3550,7 +3550,6 @@ let HasFSharpAttribute g tref attrs = List.exists (IsMatchingFSharpAttribute g t
 let TryFindFSharpAttribute g tref attrs = List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
 
-
 [<return: Struct>]
 let (|ExtractAttribNamedArg|_|) nm args = 
     args |> List.tryPick (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> Some v | _ -> None) |> ValueOption.ofOption
@@ -10116,7 +10115,6 @@ let CompileAsEvent g attrs =
 
 let ValCompileAsEvent g (v: Val) =
     ValHasWellKnownAttribute g WellKnownValAttributes.CLIEventAttribute v
-
 
 let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberInfo) attrs =
     // All extension members are compiled as static members
