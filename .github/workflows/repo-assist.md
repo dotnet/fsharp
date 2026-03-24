@@ -14,7 +14,7 @@ description: |
   Always polite, constructive, and mindful of the project's goals.
 
 on:
-  schedule: every 1h
+  schedule: every 6h
   workflow_dispatch:
   slash_command:
     name: repo-assist
