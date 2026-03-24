@@ -113,3 +113,19 @@ ignore ["1" .. "42"]
         |> shouldFail
         |> withSingleDiagnostic
             (Error 1, Line 2, Col 9, Line 2, Col 12, "The type 'string' does not support the operator 'op_Range'")
+
+    // https://github.com/dotnet/fsharp/issues/9878
+    [<Fact>]
+    let ``Issue 9878 - SRTP with phantom type parameter should compile`` () =
+        FSharp
+            """
+type DuCaseName<'T> =
+    static member ToCaseName<'t, 'u>(value: 't) = failwith "delayed resolution"
+    static member ToCaseName(value: 'T) =
+        match FSharp.Reflection.FSharpValue.GetUnionFields(value, typeof<'T>) with case, _ -> case.Name
+    static member inline Invoke(value: 'a) =
+        let inline call (other: ^M, value: ^I) = ((^M or ^I) : (static member ToCaseName: ^I -> string) value)
+        call (Unchecked.defaultof<DuCaseName<_>>, value)
+            """
+        |> typecheck
+        |> shouldSucceed
