@@ -153,6 +153,76 @@ module MultiEmit =
             """if B.v <> 9.3 then failwith $"9: Failed {A.v} <> 9.3" """
         |] |> Seq.iter(fun item -> item |> scriptIt)
 
+    // https://github.com/dotnet/fsharp/issues/12386
+    // The bug manifests when the SRTP-constrained inline function is defined in one FSI submission
+    // and called in a separate submission. Single-unit compilation works fine.
+    // When a type has 2+ specific overloads plus a generic catch-all for operator ($), the SRTP
+    // constraint stays unresolved across submissions, causing value restriction (FS0030) or wrong
+    // runtime dispatch (NullReferenceException). Works fine within a single submission and in
+    // multi-file compiled projects.
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Issue 12386 - SRTP trait call resolves correct overload across FSI submissions`` (useMultiEmit) =
+        let args: string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-" |]
+        use session = new FSharpScript(additionalArgs = args)
+
+        // Submission 1: Define type with overloaded ($) and an inline function using SRTP
+        session.Eval(
+            """
+type A = A with
+    static member ($) (A, a: float  ) = 0.0
+    static member ($) (A, a: decimal) = 0M
+    static member ($) (A, a: 't     ) = 0
+
+let inline call x = ($) A x
+"""
+        )
+        |> ignoreValue
+
+        // Submission 2: Call with float - should resolve to the float overload, not the generic one
+        let result = session.Eval("call 42.") |> getValue
+        let fsiVal = result.Value
+        Assert.Equal(typeof<float>, fsiVal.ReflectionType)
+        Assert.Equal(0.0, fsiVal.ReflectionValue :?> float)
+
+        // Submission 3: Call with decimal - should resolve to the decimal overload
+        let result2 = session.Eval("call 42M") |> getValue
+        let fsiVal2 = result2.Value
+        Assert.Equal(typeof<decimal>, fsiVal2.ReflectionType)
+        Assert.Equal(0M, fsiVal2.ReflectionValue :?> decimal)
+
+    // Same scenario as Issue 12386 but via compiled cross-project reference (not FSI).
+    // This verifies whether the bug is FSI-specific or also affects project references.
+    [<Fact>]
+    let ``Issue 12386 - SRTP trait call resolves correct overload across project references`` () =
+        let lib =
+            FSharp
+                """
+namespace Lib
+type A = A with
+    static member ($) (A, a: float  ) = 0.0
+    static member ($) (A, a: decimal) = 0M
+    static member ($) (A, a: 't     ) = 0
+
+module Calls =
+    let inline call x = ($) A x
+"""
+            |> asLibrary
+
+        FSharp
+            """
+module App
+open Lib.Calls
+
+let result = call 42.
+if result <> 0.0 then failwithf "Expected 0.0 but got %A" result
+"""
+        |> withReferences [ lib ]
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
     [<Fact>]
     let ``Version directive displays version and environment info``() =
         Fsx """
