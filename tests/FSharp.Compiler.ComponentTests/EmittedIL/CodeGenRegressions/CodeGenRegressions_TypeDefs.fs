@@ -5,19 +5,8 @@ namespace EmittedIL
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
-open FSharp.Test.Utilities
 
 module CodeGenRegressions_TypeDefs =
-
-    let private getActualIL (result: CompilationResult) =
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p [ "// dummy" ]
-                actualIL
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
 
     // https://github.com/dotnet/fsharp/issues/16565
     [<Fact>]
@@ -188,5 +177,113 @@ let main _ =
         |> shouldSucceed
         |> run
         |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/5834
+    // IL verification: abstract event accessors must have specialname flag
+    [<Fact>]
+    let ``Issue_5834_EventSpecialname_IL`` () =
+        let source = """
+module Test
+
+open System
+
+type IAbstract1 =
+    [<CLIEvent>]
+    abstract member Event : IEvent<EventHandler, EventArgs>
+
+[<AbstractClass>]
+type Abstract2() =
+    [<CLIEvent>]
+    abstract member Event : IDelegateEvent<EventHandler>
+"""
+        FSharp source
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            // Interface abstract event accessors have specialname
+            """.method public hidebysig specialname abstract virtual instance void  add_Event(class [runtime]System.EventHandler A_1) cil managed"""
+
+            """.method public hidebysig specialname abstract virtual instance void  remove_Event(class [runtime]System.EventHandler A_1) cil managed"""
+
+            // IAbstract1 event references its accessors
+            """.addon instance void Test/IAbstract1::add_Event(class [runtime]System.EventHandler)"""
+            """.removeon instance void Test/IAbstract1::remove_Event(class [runtime]System.EventHandler)"""
+
+            // Abstract2 event also references its specialname accessors
+            """.addon instance void Test/Abstract2::add_Event(class [runtime]System.EventHandler)"""
+            """.removeon instance void Test/Abstract2::remove_Event(class [runtime]System.EventHandler)"""
+        ]
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/14321
+    // IL verification: DU case properties and IWSAM implementations coexist without duplicates
+    [<Fact>]
+    let ``Issue_14321_DuAndIWSAMNames_IL`` () =
+        let source = """
+module Test
+
+#nowarn "3535"
+
+type EngineError<'e> =
+    static abstract Overheated : 'e
+    static abstract LowOil : 'e
+
+type CarError =
+    | Overheated
+    | LowOil
+    | DeviceNotPaired
+
+    interface EngineError<CarError> with
+        static member Overheated = Overheated
+        static member LowOil = LowOil
+"""
+        FSharp source
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            // DU case property getter exists on CarError
+            """.method public static class Test/CarError get_Overheated() cil managed"""
+
+            // Explicit IWSAM implementation uses mangled name
+            """.method public hidebysig specialname static class Test/CarError  'Test.EngineError<Test.CarError>.get_Overheated'() cil managed"""
+
+            // Explicit IWSAM for LowOil also present
+            """.method public hidebysig specialname static class Test/CarError  'Test.EngineError<Test.CarError>.get_LowOil'() cil managed"""
+        ]
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/16565
+    // IL verification: DefaultAugmentation(false) produces no duplicate method table entries
+    [<Fact>]
+    let ``Issue_16565_DefaultAugmentationFalseDuplicateEntry_IL`` () =
+        let source = """
+module Test
+
+[<DefaultAugmentation(false)>]
+type MyOption<'T> =
+    | Some of Value: 'T
+    | None
+
+    member x.Value =
+        match x with
+        | Some x -> x
+        | None -> failwith "no value"
+
+    static member None : MyOption<'T> = None
+"""
+        FSharp source
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            // The user-defined get_Value method exists on the main type with specialname
+            """.method public hidebysig specialname instance !T  get_Value() cil managed"""
+
+            // The static get_None method exists
+            """.method public static class Test/MyOption`1<!T> get_None() cil managed"""
+        ]
         |> ignore
 
