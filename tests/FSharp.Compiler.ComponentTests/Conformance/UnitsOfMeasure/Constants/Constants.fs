@@ -56,6 +56,4 @@ let a = pi
 let f (x: float<rad>) = x
 let _ = f a
             """
-        |> asLibrary
-        |> typecheck
         |> shouldSucceed
