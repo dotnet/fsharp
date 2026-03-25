@@ -1357,3 +1357,51 @@ let test = System.DateTimeKind.Utc
             | None ->
                 failwith "Expected metadata text, got None"
         | _ -> failwith "Expected FSharpEntity symbol"
+
+module OperatorsWithDots =
+    // https://github.com/dotnet/fsharp/issues/14057
+    [<Fact>]
+    let ``Operator containing dot is resolved as single symbol`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+let ( -.- ) x y = x - y
+let result = 1 -.- 2
+"""
+
+        let symbolUse = findSymbolUseByName "op_MinusDotMinus" checkResults
+
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.Equal("(-.-)", mfv.DisplayName)
+
+            // Verify the operator is found at definition and usage sites
+            let allUses = checkResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+            Assert.True(allUses.Length >= 2, $"Expected at least 2 uses (def + use), got %d{allUses.Length}")
+        | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue but got %A{symbol}"
+
+    [<Fact>]
+    let ``Operator with dot has correct symbol range at usage site`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+let ( -.- ) x y = x - y
+let result = 1 -.- 2
+"""
+
+        let usageSymbols =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.filter (fun su ->
+                match su.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as mfv ->
+                    mfv.LogicalName = "op_MinusDotMinus" && su.Range.StartLine = 3
+                | _ -> false)
+            |> Seq.toArray
+
+        Assert.True(usageSymbols.Length >= 1, $"Expected usage of -.- on line 3, got %d{usageSymbols.Length}")
+
+        // Verify the range spans the full operator (3 chars: -.-), not just part after '.'
+        let range = usageSymbols.[0].Range
+        let rangeLength = range.EndColumn - range.StartColumn
+
+        Assert.Equal(3, rangeLength)
