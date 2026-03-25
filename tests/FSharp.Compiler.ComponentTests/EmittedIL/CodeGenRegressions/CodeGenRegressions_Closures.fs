@@ -376,7 +376,7 @@ let runAll (fArr: (int -> int) array) x =
     let mutable n = 0
 
     for i = 0 to fArr.Length - 1 do
-        n <- n + fArr.[i] x
+        n <- n + fArr[i] x
 
     n
 
@@ -409,7 +409,7 @@ let runAll (fArr: (int -> int) array) x =
     let mutable n = 0
 
     for i = 0 to fArr.Length - 1 do
-        n <- n + fArr.[i] x
+        n <- n + fArr[i] x
 
     n
 """
