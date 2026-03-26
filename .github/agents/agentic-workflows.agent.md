@@ -110,13 +110,13 @@ When you interact with this agent, it will:
 - "Design a shared workflow for database queries"
 
 ### Fix Dependabot PRs
-**Load when**: User needs to close or fix open Dependabot PRs that update dependencies in generated manifest files (`.github/workflows/package.json`, `.github/workflows/requirements.txt`, `.github/workflows/go.mod`)
+**Load when**: User needs to close or fix an open Dependabot PRs that update dependencies in generated manifest files (`.github/workflows/package.json`, `.github/workflows/requirements.txt`, `.github/workflows/go.mod`)
 
 **Prompt file**: https://github.com/github/gh-aw/blob/v0.64.0/.github/aw/dependabot.md
 
 **Use cases**:
-- "Fix the open Dependabot PRs for npm dependencies"
-- "Bundle and close the Dependabot PRs for workflow dependencies"
+- "Fix open Dependabot PRs for npm dependencies"
+- "Bundle and close Dependabot PRs for workflow dependencies"
 - "Update @playwright/test to fix the Dependabot PR"
 
 ### Analyze Test Coverage
