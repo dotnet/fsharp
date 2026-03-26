@@ -40,6 +40,21 @@ type DiscriminationTechnique =
     // class (no subclasses), but an integer tag is stored to discriminate between the objects.
     | IntegerTag
 
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
+type UnionLayout =
+    /// F# list<'a> only. Discrimination via tail field == null.
+    | ListTailOrNull of baseTy: ILType
+    /// Single case, reference type. No discrimination needed.
+    | SingleCaseRef of baseTy: ILType
+    /// Single case, struct. No discrimination needed.
+    | SingleCaseStruct of baseTy: ILType
+    /// 2-3 cases, reference, not all-nullary. Discrimination via isinst type checks.
+    | SmallRefUnion of baseTy: ILType * nullCaseIdx: int option
+    /// ≥4 cases (or 2-3 all-nullary), reference. Discrimination via integer _tag field.
+    | TaggedRefUnion of baseTy: ILType * allNullary: bool
+    /// Any struct DU with >1 case. Discrimination via integer _tag field.
+    | TaggedStructUnion of baseTy: ILType * allNullary: bool
+
 // A potentially useful additional representation trades an extra integer tag in the root type
 // for faster discrimination, and in the important single-non-nullary constructor case
 //
@@ -204,6 +219,217 @@ let cudefRepr =
         (fun (_td, _cud) -> NoTypesGeneratedViaThisReprDecider),
         (fun ((_td, _cud), _nm) -> NoTypesGeneratedViaThisReprDecider)
     )
+
+/// Core classification logic. Computes the UnionLayout for any union.
+/// This must produce IDENTICAL decisions to UnionReprDecisions.DiscriminationTechnique.
+let private classifyUnion baseTy (alts: IlxUnionCase[]) nullPermitted isList isStruct =
+    if isList then
+        UnionLayout.ListTailOrNull baseTy
+    elif alts.Length = 1 then
+        if isStruct then
+            UnionLayout.SingleCaseStruct baseTy
+        else
+            UnionLayout.SingleCaseRef baseTy
+    elif
+        not isStruct
+        && alts.Length < 4
+        && not (alts |> Array.forall (fun alt -> alt.IsNullary))
+    then
+        let nullCaseIdx =
+            if
+                nullPermitted
+                && alts |> Array.existsOne (fun alt -> alt.IsNullary)
+                && alts |> Array.exists (fun alt -> not alt.IsNullary)
+            then
+                alts |> Array.tryFindIndex (fun alt -> alt.IsNullary)
+            else
+                None
+
+        UnionLayout.SmallRefUnion(baseTy, nullCaseIdx)
+    elif isStruct then
+        UnionLayout.TaggedStructUnion(baseTy, alts |> Array.forall (fun alt -> alt.IsNullary))
+    else
+        UnionLayout.TaggedRefUnion(baseTy, alts |> Array.forall (fun alt -> alt.IsNullary))
+
+/// Classify from an IlxUnionSpec (used in IL instruction generation).
+let classifyFromSpec (cuspec: IlxUnionSpec) =
+    let baseTy = baseTyOfUnionSpec cuspec
+    let alts = cuspec.AlternativesArray
+    let nullPermitted = cuspec.IsNullPermitted
+    let isList = (cuspec.HasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers)
+    let isStruct = (cuspec.Boxity = ILBoxity.AsValue)
+    classifyUnion baseTy alts nullPermitted isList isStruct
+
+/// Classify from an ILTypeDef + IlxUnionInfo (used in type definition generation).
+let classifyFromDef (td: ILTypeDef) (cud: IlxUnionInfo) (baseTy: ILType) =
+    let alts = cud.UnionCases
+    let nullPermitted = cud.IsNullPermitted
+    let isList = (cud.HasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers)
+    let isStruct = td.IsStruct
+    classifyUnion baseTy alts nullPermitted isList isStruct
+
+/// Maps a UnionLayout to the equivalent DiscriminationTechnique.
+/// Used in debug assertions to validate the new classification matches the old one.
+let private layoutToTechnique layout =
+    match layout with
+    | UnionLayout.ListTailOrNull _ -> TailOrNull
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SingleCaseStruct _ -> SingleCase
+    | UnionLayout.SmallRefUnion _ -> RuntimeTypes
+    | UnionLayout.TaggedRefUnion _
+    | UnionLayout.TaggedStructUnion _ -> IntegerTag
+
+#if DEBUG
+/// Assert that classifyFromSpec agrees with cuspecRepr.DiscriminationTechnique.
+let private assertSpecClassification (cuspec: IlxUnionSpec) =
+    let layout = classifyFromSpec cuspec
+    let oldTechnique = cuspecRepr.DiscriminationTechnique cuspec
+    assert (oldTechnique = layoutToTechnique layout)
+
+/// Assert that classifyFromDef agrees with cudefRepr.DiscriminationTechnique.
+let private assertDefClassification (td: ILTypeDef) (cud: IlxUnionInfo) (baseTy: ILType) =
+    let layout = classifyFromDef td cud baseTy
+    let oldTechnique = cudefRepr.DiscriminationTechnique(td, cud)
+    assert (oldTechnique = layoutToTechnique layout)
+#endif
+
+// ---- Exhaustive Active Patterns for UnionLayout ----
+
+/// How to discriminate between cases at runtime.
+let (|DiscriminateByTagField|DiscriminateByRuntimeType|DiscriminateByTailNull|NoDiscrimination|) layout =
+    match layout with
+    | UnionLayout.TaggedRefUnion _
+    | UnionLayout.TaggedStructUnion _ -> DiscriminateByTagField
+    | UnionLayout.SmallRefUnion _ -> DiscriminateByRuntimeType
+    | UnionLayout.ListTailOrNull _ -> DiscriminateByTailNull
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SingleCaseStruct _ -> NoDiscrimination
+
+/// Does the root type have a _tag integer field?
+let (|HasTagField|NoTagField|) layout =
+    match layout with
+    | UnionLayout.TaggedRefUnion _
+    | UnionLayout.TaggedStructUnion _ -> HasTagField
+    | UnionLayout.SmallRefUnion _
+    | UnionLayout.ListTailOrNull _
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SingleCaseStruct _ -> NoTagField
+
+/// Where are case fields stored?
+let (|FieldsOnRootType|FieldsOnNestedTypes|) layout =
+    match layout with
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SingleCaseStruct _
+    | UnionLayout.ListTailOrNull _
+    | UnionLayout.TaggedStructUnion _ -> FieldsOnRootType
+    | UnionLayout.SmallRefUnion _
+    | UnionLayout.TaggedRefUnion _ -> FieldsOnNestedTypes
+
+/// Is a specific case (by index) represented as null?
+let (|CaseIsNull|CaseIsAllocated|) (layout, cidx) =
+    match layout with
+    | UnionLayout.SmallRefUnion(_, Some nullIdx) when nullIdx = cidx -> CaseIsNull
+    | UnionLayout.SmallRefUnion _
+    | UnionLayout.ListTailOrNull _
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SingleCaseStruct _
+    | UnionLayout.TaggedRefUnion _
+    | UnionLayout.TaggedStructUnion _ -> CaseIsAllocated
+
+/// Is this a value type (struct) or reference type layout?
+let (|ValueTypeLayout|ReferenceTypeLayout|) layout =
+    match layout with
+    | UnionLayout.SingleCaseStruct _
+    | UnionLayout.TaggedStructUnion _ -> ValueTypeLayout
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SmallRefUnion _
+    | UnionLayout.TaggedRefUnion _
+    | UnionLayout.ListTailOrNull _ -> ReferenceTypeLayout
+
+/// Does a non-nullary case fold its fields into the root class (no nested type)?
+let (|NonNullaryFoldsToRoot|NonNullaryInNestedType|) (layout, alt: IlxUnionCase) =
+    match layout with
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SingleCaseStruct _
+    | UnionLayout.TaggedStructUnion _
+    | UnionLayout.ListTailOrNull _ -> NonNullaryFoldsToRoot
+    | UnionLayout.TaggedRefUnion(_, allNullary) when allNullary -> NonNullaryFoldsToRoot
+    | UnionLayout.TaggedRefUnion _ when not alt.IsNullary -> NonNullaryInNestedType
+    | UnionLayout.TaggedRefUnion _ -> NonNullaryFoldsToRoot
+    | UnionLayout.SmallRefUnion _ when not alt.IsNullary -> NonNullaryInNestedType
+    | UnionLayout.SmallRefUnion _ -> NonNullaryFoldsToRoot
+
+/// Compile-time validation that all active patterns cover all UnionLayout cases.
+/// Also validates that classifyFromSpec and classifyFromDef compile correctly.
+let private _validateActivePatterns
+    (layout: UnionLayout)
+    (alt: IlxUnionCase)
+    (cuspec: IlxUnionSpec)
+    (td: ILTypeDef)
+    (cud: IlxUnionInfo)
+    (baseTy: ILType)
+    =
+    let _fromSpec = classifyFromSpec cuspec
+    let _fromDef = classifyFromDef td cud baseTy
+    let _technique = layoutToTechnique layout
+
+    match layout with
+    | DiscriminateByTagField
+    | DiscriminateByRuntimeType
+    | DiscriminateByTailNull
+    | NoDiscrimination -> ()
+
+    match layout with
+    | HasTagField
+    | NoTagField -> ()
+
+    match layout with
+    | FieldsOnRootType
+    | FieldsOnNestedTypes -> ()
+
+    match layout, 0 with
+    | CaseIsNull
+    | CaseIsAllocated -> ()
+
+    match layout with
+    | ValueTypeLayout
+    | ReferenceTypeLayout -> ()
+
+    match layout, alt with
+    | NonNullaryFoldsToRoot
+    | NonNullaryInNestedType -> ()
+
+// ---- Context Records ----
+
+/// Bundles the parameters threaded through type definition generation.
+/// Replaces the 6-callback tuple + scattered parameter threading in convAlternativeDef/mkClassUnionDef.
+type TypeDefContext =
+    {
+        g: TcGlobals
+        layout: UnionLayout
+        cuspec: IlxUnionSpec
+        cud: IlxUnionInfo
+        td: ILTypeDef
+        baseTy: ILType
+        stampMethodAsGenerated: ILMethodDef -> ILMethodDef
+        stampPropertyAsGenerated: ILPropertyDef -> ILPropertyDef
+        stampPropertyAsNever: ILPropertyDef -> ILPropertyDef
+        stampFieldAsGenerated: ILFieldDef -> ILFieldDef
+        stampFieldAsNever: ILFieldDef -> ILFieldDef
+        mkDebuggerTypeProxyAttr: ILType -> ILAttribute
+    }
+
+/// Result of processing a single union alternative for type definition generation.
+/// Replaces the 6-element tuple return from convAlternativeDef.
+type AlternativeDefResult =
+    {
+        BaseMakerMethods: ILMethodDef list
+        BaseMakerProperties: ILPropertyDef list
+        ConstantAccessors: ILMethodDef list
+        NestedTypeDefs: ILTypeDef list
+        DebugProxyTypeDefs: ILTypeDef list
+        NullaryConstFields: ((ILTypeDef * IlxUnionInfo) * IlxUnionCase * ILType * int * ILFieldDef * bool) list
+    }
 
 let mkTesterName nm = "Is" + nm
 
@@ -393,6 +619,9 @@ let mkStData (cuspec, cidx, fidx) =
     mkNormalStfld (mkILFieldSpecInTy (altTy, fieldDef.LowerName, fieldDef.Type))
 
 let mkNewData ilg (cuspec, cidx) =
+#if DEBUG
+    assertSpecClassification cuspec
+#endif
     let alt = altOfUnionSpec cuspec cidx
     let altName = alt.Name
     let baseTy = baseTyOfUnionSpec cuspec
@@ -431,6 +660,9 @@ let mkNewData ilg (cuspec, cidx) =
     | NoHelpers -> convNewDataInstrInternal ilg cuspec cidx
 
 let mkIsData ilg (avoidHelpers, cuspec, cidx) =
+#if DEBUG
+    assertSpecClassification cuspec
+#endif
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let altName = alt.Name
@@ -487,6 +719,9 @@ let genWith g : ILCode =
     }
 
 let mkBrIsData ilg sense (avoidHelpers, cuspec, cidx, tg) =
+#if DEBUG
+    assertSpecClassification cuspec
+#endif
     let neg = (if sense then BI_brfalse else BI_brtrue)
     let pos = (if sense then BI_brtrue else BI_brfalse)
     let alt = altOfUnionSpec cuspec cidx
@@ -510,6 +745,9 @@ let mkBrIsData ilg sense (avoidHelpers, cuspec, cidx, tg) =
             | _ -> failwith "mkBrIsData - unexpected"
 
 let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: IlxUnionSpec) =
+#if DEBUG
+    assertSpecClassification cuspec
+#endif
     // If helpers exist, use them
     match cuspec.HasHelpers with
     | SpecialFSharpListHelpers
@@ -583,6 +821,9 @@ let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: IlxUnionSpec)
     emitLdDataTagPrim ilg None cg (avoidHelpers, cuspec)
 
 let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, avoidHelpers, cuspec, cidx) =
+#if DEBUG
+    assertSpecClassification cuspec
+#endif
     let alt = altOfUnionSpec cuspec cidx
 
     if cuspecRepr.RepresentAlternativeAsNull(cuspec, alt) then
@@ -616,6 +857,9 @@ let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, avoidHelpers, cuspec, cidx)
         cg.EmitInstr(I_castclass altTy)
 
 let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
+#if DEBUG
+    assertSpecClassification cuspec
+#endif
     let baseTy = baseTyOfUnionSpec cuspec
 
     match cuspecRepr.DiscriminationTechnique cuspec with
@@ -1272,6 +1516,10 @@ let mkClassUnionDef
     =
     let boxity = if td.IsStruct then ILBoxity.AsValue else ILBoxity.AsObject
     let baseTy = mkILFormalNamedTy boxity tref td.GenericParams
+
+#if DEBUG
+    assertDefClassification td cud baseTy
+#endif
 
     let cuspec =
         IlxUnionSpec(IlxUnionRef(boxity, baseTy.TypeRef, cud.UnionCases, cud.IsNullPermitted, cud.HasHelpers), baseTy.GenericArgs)
