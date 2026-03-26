@@ -984,6 +984,110 @@ let mkMethodsAndPropertiesForFields
 
     basicProps, basicMethods
 
+/// Generate a debug proxy type for a union alternative.
+/// Returns (debugProxyTypeDefs, debugProxyAttrs).
+let private emitDebugProxyType
+    (g: TcGlobals)
+    (td: ILTypeDef)
+    (altTy: ILType)
+    (fields: IlxUnionCaseField[])
+    (baseTy: ILType)
+    imports
+    addMethodGeneratedAttrs
+    addPropertyGeneratedAttrs
+    addFieldNeverAttrs
+    addFieldGeneratedAttrs
+    mkDebuggerTypeProxyAttribute
+    (cud: IlxUnionInfo)
+    =
+
+    let debugProxyTypeName = altTy.TypeSpec.Name + "@DebugTypeProxy"
+
+    let debugProxyTy =
+        mkILBoxedTy (mkILNestedTyRef (altTy.TypeSpec.Scope, altTy.TypeSpec.Enclosing, debugProxyTypeName)) altTy.GenericArgs
+
+    let debugProxyFieldName = "_obj"
+
+    let debugProxyFields =
+        [
+            mkILInstanceField (debugProxyFieldName, altTy, None, ILMemberAccess.Assembly)
+            |> addFieldNeverAttrs
+            |> addFieldGeneratedAttrs
+        ]
+
+    let debugProxyCode =
+        [
+            mkLdarg0
+            mkNormalCall (mkILCtorMethSpecForTy (g.ilg.typ_Object, []))
+            mkLdarg0
+            mkLdarg 1us
+            mkNormalStfld (mkILFieldSpecInTy (debugProxyTy, debugProxyFieldName, altTy))
+        ]
+        |> nonBranchingInstrsToCode
+
+    let debugProxyCtor =
+        (mkILCtor (
+            ILMemberAccess.Public (* must always be public - see jared parson blog entry on implementing debugger type proxy *) ,
+            [ mkILParamNamed ("obj", altTy) ],
+            mkMethodBody (false, [], 3, debugProxyCode, None, imports)
+        ))
+            .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
+        |> addMethodGeneratedAttrs
+
+    let debugProxyGetterMeths =
+        fields
+        |> Array.map (fun field ->
+            let fldName, fldTy = mkUnionCaseFieldId field
+
+            let instrs =
+                [
+                    mkLdarg0
+                    (if td.IsStruct then mkNormalLdflda else mkNormalLdfld) (mkILFieldSpecInTy (debugProxyTy, debugProxyFieldName, altTy))
+                    mkNormalLdfld (mkILFieldSpecInTy (altTy, fldName, fldTy))
+                ]
+                |> nonBranchingInstrsToCode
+
+            let mbody = mkMethodBody (true, [], 2, instrs, None, imports)
+
+            mkILNonGenericInstanceMethod ("get_" + field.Name, ILMemberAccess.Public, [], mkILReturn field.Type, mbody)
+            |> addMethodGeneratedAttrs)
+        |> Array.toList
+
+    let debugProxyGetterProps =
+        fields
+        |> Array.map (fun fdef ->
+            ILPropertyDef(
+                name = fdef.Name,
+                attributes = PropertyAttributes.None,
+                setMethod = None,
+                getMethod = Some(mkILMethRef (debugProxyTy.TypeRef, ILCallingConv.Instance, "get_" + fdef.Name, 0, [], fdef.Type)),
+                callingConv = ILThisConvention.Instance,
+                propertyType = fdef.Type,
+                init = None,
+                args = [],
+                customAttrs = fdef.ILField.CustomAttrs
+            )
+            |> addPropertyGeneratedAttrs)
+        |> Array.toList
+
+    let debugProxyTypeDef =
+        mkILGenericClass (
+            debugProxyTypeName,
+            ILTypeDefAccess.Nested ILMemberAccess.Assembly,
+            td.GenericParams,
+            g.ilg.typ_Object,
+            [],
+            mkILMethods ([ debugProxyCtor ] @ debugProxyGetterMeths),
+            mkILFields debugProxyFields,
+            emptyILTypeDefs,
+            mkILProperties debugProxyGetterProps,
+            emptyILEvents,
+            emptyILCustomAttrs,
+            ILTypeInit.BeforeField
+        )
+
+    [ debugProxyTypeDef.WithSpecialName(true) ], ([ mkDebuggerTypeProxyAttribute debugProxyTy ] @ cud.DebugDisplayAttributes)
+
 let convAlternativeDef
     (
         addMethodGeneratedAttrs,
@@ -1296,114 +1400,19 @@ let convAlternativeDef
                         if not cud.GenerateDebugProxies then
                             [], []
                         else
-
-                            let debugProxyTypeName = altTy.TypeSpec.Name + "@DebugTypeProxy"
-
-                            let debugProxyTy =
-                                mkILBoxedTy
-                                    (mkILNestedTyRef (altTy.TypeSpec.Scope, altTy.TypeSpec.Enclosing, debugProxyTypeName))
-                                    altTy.GenericArgs
-
-                            let debugProxyFieldName = "_obj"
-
-                            let debugProxyFields =
-                                [
-                                    mkILInstanceField (debugProxyFieldName, altTy, None, ILMemberAccess.Assembly)
-                                    |> addFieldNeverAttrs
-                                    |> addFieldGeneratedAttrs
-                                ]
-
-                            let debugProxyCode =
-                                [
-                                    mkLdarg0
-                                    mkNormalCall (mkILCtorMethSpecForTy (g.ilg.typ_Object, []))
-                                    mkLdarg0
-                                    mkLdarg 1us
-                                    mkNormalStfld (mkILFieldSpecInTy (debugProxyTy, debugProxyFieldName, altTy))
-                                ]
-                                |> nonBranchingInstrsToCode
-
-                            let debugProxyCtor =
-                                (mkILCtor (
-                                    ILMemberAccess.Public (* must always be public - see jared parson blog entry on implementing debugger type proxy *) ,
-                                    [ mkILParamNamed ("obj", altTy) ],
-                                    mkMethodBody (false, [], 3, debugProxyCode, None, imports)
-                                ))
-                                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
-                                |> addMethodGeneratedAttrs
-
-                            let debugProxyGetterMeths =
+                            emitDebugProxyType
+                                g
+                                td
+                                altTy
                                 fields
-                                |> Array.map (fun field ->
-                                    let fldName, fldTy = mkUnionCaseFieldId field
-
-                                    let instrs =
-                                        [
-                                            mkLdarg0
-                                            (if td.IsStruct then mkNormalLdflda else mkNormalLdfld) (
-                                                mkILFieldSpecInTy (debugProxyTy, debugProxyFieldName, altTy)
-                                            )
-                                            mkNormalLdfld (mkILFieldSpecInTy (altTy, fldName, fldTy))
-                                        ]
-                                        |> nonBranchingInstrsToCode
-
-                                    let mbody = mkMethodBody (true, [], 2, instrs, None, imports)
-
-                                    mkILNonGenericInstanceMethod (
-                                        "get_" + field.Name,
-                                        ILMemberAccess.Public,
-                                        [],
-                                        mkILReturn field.Type,
-                                        mbody
-                                    )
-                                    |> addMethodGeneratedAttrs)
-                                |> Array.toList
-
-                            let debugProxyGetterProps =
-                                fields
-                                |> Array.map (fun fdef ->
-                                    ILPropertyDef(
-                                        name = fdef.Name,
-                                        attributes = PropertyAttributes.None,
-                                        setMethod = None,
-                                        getMethod =
-                                            Some(
-                                                mkILMethRef (
-                                                    debugProxyTy.TypeRef,
-                                                    ILCallingConv.Instance,
-                                                    "get_" + fdef.Name,
-                                                    0,
-                                                    [],
-                                                    fdef.Type
-                                                )
-                                            ),
-                                        callingConv = ILThisConvention.Instance,
-                                        propertyType = fdef.Type,
-                                        init = None,
-                                        args = [],
-                                        customAttrs = fdef.ILField.CustomAttrs
-                                    )
-                                    |> addPropertyGeneratedAttrs)
-                                |> Array.toList
-
-                            let debugProxyTypeDef =
-                                mkILGenericClass (
-                                    debugProxyTypeName,
-                                    ILTypeDefAccess.Nested ILMemberAccess.Assembly,
-                                    td.GenericParams,
-                                    g.ilg.typ_Object,
-                                    [],
-                                    mkILMethods ([ debugProxyCtor ] @ debugProxyGetterMeths),
-                                    mkILFields debugProxyFields,
-                                    emptyILTypeDefs,
-                                    mkILProperties debugProxyGetterProps,
-                                    emptyILEvents,
-                                    emptyILCustomAttrs,
-                                    ILTypeInit.BeforeField
-                                )
-
-                            [ debugProxyTypeDef.WithSpecialName(true) ],
-                            ([ mkDebuggerTypeProxyAttribute debugProxyTy ] @ cud.DebugDisplayAttributes)
+                                baseTy
+                                imports
+                                addMethodGeneratedAttrs
+                                addPropertyGeneratedAttrs
+                                addFieldNeverAttrs
+                                addFieldGeneratedAttrs
+                                mkDebuggerTypeProxyAttribute
+                                cud
 
                     let altTypeDef =
                         let basicFields =
@@ -1499,6 +1508,67 @@ let convAlternativeDef
             typeDefs, altDebugTypeDefs, altNullaryFields
 
     baseMakerMeths, baseMakerProps, altUniqObjMeths, typeDefs, altDebugTypeDefs, altNullaryFields
+
+/// Rewrite field nullable attributes for struct flattening.
+/// When a struct DU has multiple cases, all boxed fields become potentially nullable
+/// because only one case's fields are valid at a time.
+let private rewriteFieldsForStructFlattening (g: TcGlobals) (cud: IlxUnionInfo) (alt: IlxUnionCase) isStruct =
+    if
+        isStruct
+        && cud.UnionCases.Length > 1
+        && g.checkNullness
+        && g.langFeatureNullness
+    then
+        alt.FieldDefs
+        |> Array.map (fun field ->
+            if field.Type.IsNominal && field.Type.Boxity = AsValue then
+                field
+            else
+                let attrs =
+                    let existingAttrs = field.ILField.CustomAttrs.AsArray()
+
+                    let nullableIdx =
+                        existingAttrs |> Array.tryFindIndex (IsILAttrib g.attrib_NullableAttribute)
+
+                    match nullableIdx with
+                    | None ->
+                        existingAttrs
+                        |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
+                    | Some idx ->
+                        let replacementAttr =
+                            match existingAttrs[idx] with
+                            (*
+                             The attribute carries either a single byte, or a list of bytes for the fields itself and all its generic type arguments
+                             The way we lay out DUs does not affect nullability of the typars of a field, therefore we just change the very first byte
+                             If the field was already declared as nullable (value = 2uy) or ambivalent(value = 0uy), we can keep it that way
+                             If it was marked as non-nullable within that UnionCase, we have to convert it to WithNull (2uy) due to other cases being possible
+                            *)
+                            | Encoded(method, _data, [ ILAttribElem.Byte 1uy ]) ->
+                                mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 2uy ], [])
+                            | Encoded(method, _data, [ ILAttribElem.Array(elemType, ILAttribElem.Byte 1uy :: otherElems) ]) ->
+                                mkILCustomAttribMethRef (
+                                    method,
+                                    [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 2uy) :: otherElems) ],
+                                    []
+                                )
+                            | attrAsBefore -> attrAsBefore
+
+                        existingAttrs |> Array.replace idx replacementAttr
+
+                field.ILField.With(customAttrs = mkILCustomAttrsFromArray attrs)
+                |> IlxUnionCaseField)
+    else
+        alt.FieldDefs
+
+/// Add [Nullable(2)] attribute to union root type when null is permitted.
+let private rootTypeNullableAttrs (g: TcGlobals) (td: ILTypeDef) (cud: IlxUnionInfo) =
+    if cud.IsNullPermitted && g.checkNullness && g.langFeatureNullness then
+        td.CustomAttrs.AsArray()
+        |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
+        |> mkILCustomAttrsFromArray
+        |> storeILCustomAttrs
+    else
+        td.CustomAttrsStored
 
 let mkClassUnionDef
     (
@@ -1617,56 +1687,7 @@ let mkClassUnionDef
                                 |> addMethodGeneratedAttrs
                             ]
 
-                    let fieldDefs =
-                        // Since structs are flattened out for all cases together, all boxed fields are potentially nullable
-                        if
-                            isStruct
-                            && cud.UnionCases.Length > 1
-                            && g.checkNullness
-                            && g.langFeatureNullness
-                        then
-                            alt.FieldDefs
-                            |> Array.map (fun field ->
-                                if field.Type.IsNominal && field.Type.Boxity = AsValue then
-                                    field
-                                else
-                                    let attrs =
-                                        let existingAttrs = field.ILField.CustomAttrs.AsArray()
-
-                                        let nullableIdx =
-                                            existingAttrs |> Array.tryFindIndex (IsILAttrib g.attrib_NullableAttribute)
-
-                                        match nullableIdx with
-                                        | None ->
-                                            existingAttrs
-                                            |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
-                                        | Some idx ->
-                                            let replacementAttr =
-                                                match existingAttrs[idx] with
-                                                (*
-                                                 The attribute carries either a single byte, or a list of bytes for the fields itself and all its generic type arguments
-                                                 The way we lay out DUs does not affect nullability of the typars of a field, therefore we just change the very first byte
-                                                 If the field was already declared as nullable (value = 2uy) or ambivalent(value = 0uy), we can keep it that way
-                                                 If it was marked as non-nullable within that UnionCase, we have to convert it to WithNull (2uy) due to other cases being possible
-                                                *)
-                                                | Encoded(method, _data, [ ILAttribElem.Byte 1uy ]) ->
-                                                    mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 2uy ], [])
-                                                | Encoded(method,
-                                                          _data,
-                                                          [ ILAttribElem.Array(elemType, ILAttribElem.Byte 1uy :: otherElems) ]) ->
-                                                    mkILCustomAttribMethRef (
-                                                        method,
-                                                        [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 2uy) :: otherElems) ],
-                                                        []
-                                                    )
-                                                | attrAsBefore -> attrAsBefore
-
-                                            existingAttrs |> Array.replace idx replacementAttr
-
-                                    field.ILField.With(customAttrs = mkILCustomAttrsFromArray attrs)
-                                    |> IlxUnionCaseField)
-                        else
-                            alt.FieldDefs
+                    let fieldDefs = rewriteFieldsForStructFlattening g cud alt isStruct
 
                     let fieldsToBeAddedIntoType =
                         fieldDefs
@@ -1895,14 +1916,7 @@ let mkClassUnionDef
                         @ td.Fields.AsList()
                     ),
                 properties = mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps),
-                customAttrs =
-                    if cud.IsNullPermitted && g.checkNullness && g.langFeatureNullness then
-                        td.CustomAttrs.AsArray()
-                        |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
-                        |> mkILCustomAttrsFromArray
-                        |> storeILCustomAttrs
-                    else
-                        td.CustomAttrsStored
+                customAttrs = rootTypeNullableAttrs g td cud
             )
         // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
         |> addConstFieldInit
