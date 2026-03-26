@@ -107,6 +107,62 @@ let main _ =
         |> shouldSucceed
         |> ignore
 
+    // Regression test: exception field named "Message" must not collide with Exception.GetObjectData's "Message" key
+    // See: https://github.com/dotnet/fsharp/pull/19342#issuecomment-4112137398
+    [<Fact>]
+    let ``Issue_878_ExceptionSerialization_MessageFieldCollision`` () =
+        let source = """
+module Test
+open System
+open System.Runtime.Serialization
+
+#nowarn "44"
+#nowarn "67"
+
+exception Foo of Message:string
+
+[<EntryPoint>]
+let main _ =
+    let original = Foo("hello")
+    let info = SerializationInfo(original.GetType(), FormatterConverter())
+    let ctx = StreamingContext(StreamingContextStates.All)
+    // This must not throw — previously crashed with duplicate key "Message"
+    original.GetObjectData(info, ctx)
+
+    // Verify the F# field is serialized under its backing field name
+    let msgVal = info.GetString("Message@")
+    if msgVal <> "hello" then failwithf "Expected Message@='hello', got '%s'" msgVal
+
+    // Verify base Exception's Message is also present (from base.GetObjectData)
+    let baseMsg = info.GetString("Message")
+    printfn "Base Message: %s" baseMsg
+    printfn "F# field Message@: %s" msgVal
+
+    // Full roundtrip
+    let ctor =
+        original.GetType().GetConstructor(
+            System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Public,
+            null,
+            [| typeof<SerializationInfo>; typeof<StreamingContext> |],
+            null)
+    if ctor = null then failwith "Deserialization constructor not found"
+    let cloned = ctor.Invoke([| info :> obj; ctx :> obj |]) :?> Exception
+    let field = cloned.GetType().GetField("Message@", System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.NonPublic)
+    if field = null then failwith "Field Message@ not found"
+    let clonedVal = field.GetValue(cloned) :?> string
+    if clonedVal <> "hello" then failwithf "Roundtrip: Expected 'hello', got '%s'" clonedVal
+    printfn "SUCCESS: exception Foo of Message:string roundtripped correctly"
+    0
+"""
+        FSharp source
+        |> asExe
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
     // FSharp.Core has [assembly: SecurityTransparent] which prevents overriding
     // SecurityCritical methods like Exception.GetObjectData on .NET Framework.
     // Verify that FSharp.Core exceptions (MatchFailureException) still load and work,
