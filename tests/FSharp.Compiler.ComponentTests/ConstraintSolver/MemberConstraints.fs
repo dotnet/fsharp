@@ -113,3 +113,48 @@ ignore ["1" .. "42"]
         |> shouldFail
         |> withSingleDiagnostic
             (Error 1, Line 2, Col 9, Line 2, Col 12, "The type 'string' does not support the operator 'op_Range'")
+
+    // https://github.com/dotnet/fsharp/issues/9382
+    [<Fact>]
+    let ``Issue 9382 - SRTP stress test with matrix inverse should compile`` () =
+        FSharp
+            """
+type Matrix<'a> =
+    { m11: 'a; m12: 'a; m13: 'a
+      m21: 'a; m22: 'a; m23: 'a
+      m31: 'a; m32: 'a; m33: 'a }
+
+    static member inline (/) (m, s) =
+        { m11 = m.m11 / s; m12 = m.m12 / s; m13 = m.m13 / s
+          m21 = m.m21 / s; m22 = m.m22 / s; m23 = m.m23 / s
+          m31 = m.m31 / s; m32 = m.m32 / s; m33 = m.m33 / s }
+
+    static member inline (*) (a, b) =
+        { m11 = a.m11 * b.m11 + a.m12 * b.m21 + a.m13 * b.m31
+          m12 = a.m11 * b.m12 + a.m12 * b.m22 + a.m13 * b.m32
+          m13 = a.m11 * b.m13 + a.m12 * b.m23 + a.m13 * b.m33
+          m21 = a.m21 * b.m11 + a.m22 * b.m21 + a.m23 * b.m31
+          m22 = a.m21 * b.m12 + a.m22 * b.m22 + a.m23 * b.m32
+          m23 = a.m21 * b.m13 + a.m22 * b.m23 + a.m23 * b.m33
+          m31 = a.m31 * b.m11 + a.m32 * b.m21 + a.m33 * b.m31
+          m32 = a.m31 * b.m12 + a.m32 * b.m22 + a.m33 * b.m32
+          m33 = a.m31 * b.m13 + a.m32 * b.m23 + a.m33 * b.m33 }
+
+let inline determinant m =
+    m.m11 * m.m22 * m.m33 + m.m12 * m.m23 * m.m31 + m.m13 * m.m21 * m.m32
+    - m.m13 * m.m22 * m.m31 - m.m12 * m.m21 * m.m33 - m.m11 * m.m23 * m.m32
+
+let inline inverse m =
+    { m11 = m.m22 * m.m33 - m.m32 * m.m23
+      m12 = m.m13 * m.m32 - m.m12 * m.m33
+      m13 = m.m12 * m.m23 - m.m13 * m.m22
+      m21 = m.m23 * m.m31 - m.m21 * m.m33
+      m22 = m.m11 * m.m33 - m.m13 * m.m31
+      m23 = m.m21 * m.m13 - m.m11 * m.m23
+      m31 = m.m21 * m.m32 - m.m31 * m.m22
+      m32 = m.m31 * m.m12 - m.m11 * m.m32
+      m33 = m.m11 * m.m22 - m.m21 * m.m12 }
+    / (determinant m)
+            """
+        |> typecheck
+        |> shouldSucceed
