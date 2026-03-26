@@ -482,7 +482,7 @@
                                                                                  valuetype [runtime]System.Runtime.Serialization.StreamingContext)
       IL_0008:  ldarg.0
       IL_0009:  ldarg.1
-      IL_000a:  ldstr      "Data0"
+      IL_000a:  ldstr      "Data0@"
       IL_000f:  ldtoken    [runtime]System.Int32
       IL_0014:  call       class [runtime]System.Type [runtime]System.Type::GetTypeFromHandle(valuetype [runtime]System.RuntimeTypeHandle)
       IL_0019:  callvirt   instance object [runtime]System.Runtime.Serialization.SerializationInfo::GetValue(string,
@@ -503,7 +503,7 @@
       IL_0003:  call       instance void [runtime]System.Exception::GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo,
                                                                                          valuetype [runtime]System.Runtime.Serialization.StreamingContext)
       IL_0008:  ldarg.1
-      IL_0009:  ldstr      "Data0"
+      IL_0009:  ldstr      "Data0@"
       IL_000e:  ldarg.0
       IL_000f:  ldfld      int32 ABC/MyExn::Data0@
       IL_0014:  box        [runtime]System.Int32
@@ -1211,7 +1211,7 @@
                                                                                    valuetype [runtime]System.Runtime.Serialization.StreamingContext)
         IL_0008:  ldarg.0
         IL_0009:  ldarg.1
-        IL_000a:  ldstr      "Data0"
+        IL_000a:  ldstr      "Data0@"
         IL_000f:  ldtoken    [runtime]System.Int32
         IL_0014:  call       class [runtime]System.Type [runtime]System.Type::GetTypeFromHandle(valuetype [runtime]System.RuntimeTypeHandle)
         IL_0019:  callvirt   instance object [runtime]System.Runtime.Serialization.SerializationInfo::GetValue(string,
@@ -1232,7 +1232,7 @@
         IL_0003:  call       instance void [runtime]System.Exception::GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo,
                                                                                            valuetype [runtime]System.Runtime.Serialization.StreamingContext)
         IL_0008:  ldarg.1
-        IL_0009:  ldstr      "Data0"
+        IL_0009:  ldstr      "Data0@"
         IL_000e:  ldarg.0
         IL_000f:  ldfld      int32 ABC/ABC/MyExn::Data0@
         IL_0014:  box        [runtime]System.Int32

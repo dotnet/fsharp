@@ -12213,11 +12213,11 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     ty.IsNominal && ty.Boxity = ILBoxity.AsValue
 
                 let ilInstrsToRestoreFields =
-                    emitSerializationFieldIL (fun ilPropName ilFieldName ilPropType ->
+                    emitSerializationFieldIL (fun _ilPropName ilFieldName ilPropType ->
                         [
                             mkLdarg0
                             mkLdarg 1us
-                            I_ldstr ilPropName
+                            I_ldstr ilFieldName
                             I_ldtoken(ILToken.ILType ilPropType)
 
                             mkNormalCall (
@@ -12270,10 +12270,10 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     )
 
                 let ilInstrsToSaveFields =
-                    emitSerializationFieldIL (fun ilPropName ilFieldName ilPropType ->
+                    emitSerializationFieldIL (fun _ilPropName ilFieldName ilPropType ->
                         [
                             mkLdarg 1us
-                            I_ldstr ilPropName
+                            I_ldstr ilFieldName
                             mkLdarg0
                             mkNormalLdfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
 

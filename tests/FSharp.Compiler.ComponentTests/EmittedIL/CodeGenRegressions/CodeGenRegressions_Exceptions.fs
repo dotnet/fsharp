@@ -79,8 +79,8 @@ let main _ =
     let info = SerializationInfo(original.GetType(), FormatterConverter())
     let ctx = StreamingContext(StreamingContextStates.All)
     original.GetObjectData(info, ctx)
-    let xVal = info.GetString("x")
-    let yVal = info.GetInt32("y")
+    let xVal = info.GetString("x@")
+    let yVal = info.GetInt32("y@")
     if xVal <> "value" then failwithf "GetObjectData: Expected x='value', got '%s'" xVal
     if yVal <> 42 then failwithf "GetObjectData: Expected y=42, got %d" yVal
     
