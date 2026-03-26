@@ -279,20 +279,6 @@ let private layoutToTechnique layout =
     | UnionLayout.TaggedRefUnion _
     | UnionLayout.TaggedStructUnion _ -> IntegerTag
 
-#if DEBUG
-/// Assert that classifyFromSpec agrees with cuspecRepr.DiscriminationTechnique.
-let private assertSpecClassification (cuspec: IlxUnionSpec) =
-    let layout = classifyFromSpec cuspec
-    let oldTechnique = cuspecRepr.DiscriminationTechnique cuspec
-    assert (oldTechnique = layoutToTechnique layout)
-
-/// Assert that classifyFromDef agrees with cudefRepr.DiscriminationTechnique.
-let private assertDefClassification (td: ILTypeDef) (cud: IlxUnionInfo) (baseTy: ILType) =
-    let layout = classifyFromDef td cud baseTy
-    let oldTechnique = cudefRepr.DiscriminationTechnique(td, cud)
-    assert (oldTechnique = layoutToTechnique layout)
-#endif
-
 // ---- Exhaustive Active Patterns for UnionLayout ----
 
 /// How to discriminate between cases at runtime.
@@ -577,39 +563,72 @@ let mkTagDiscriminate ilg cuspec _baseTy cidx =
 let mkTagDiscriminateThen ilg cuspec cidx after =
     [ mkGetTag ilg cuspec; mkLdcInt32 cidx ] @ mkCeqThen after
 
-let convNewDataInstrInternal ilg cuspec cidx =
+/// True when a non-nullary alt in SmallRefUnion with a null sibling is the single
+/// non-nullary case whose fields fold into the root class.
+/// Encodes RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull:
+/// requires nullCaseIdx.IsSome (all nullary alts are null-represented),
+/// not alt.IsNullary, and exactly one non-nullary case exists.
+let private isSingleNonNullaryFoldedToRoot (cuspec: IlxUnionSpec) (nullCaseIdx: int option) (alt: IlxUnionCase) =
+    nullCaseIdx.IsSome
+    && not alt.IsNullary
+    && cuspec.AlternativesArray |> Array.existsOne (fun a -> not a.IsNullary)
+
+/// Encodes RepresentAlternativeAsFreshInstancesOfRootClass for a given layout and alt.
+/// True when the case is constructed directly on the root type (not a nested type).
+/// This covers: ListTailOrNull cons case, or SmallRefUnion with single non-nullary + null sibling.
+let private caseFoldsToRootClass (layout: UnionLayout) (cuspec: IlxUnionSpec) (alt: IlxUnionCase) =
+    match layout with
+    | UnionLayout.ListTailOrNull _ -> alt.Name = ALT_NAME_CONS
+    | UnionLayout.SmallRefUnion(_, nullCaseIdx) -> isSingleNonNullaryFoldedToRoot cuspec nullCaseIdx alt
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SingleCaseStruct _
+    | UnionLayout.TaggedRefUnion _
+    | UnionLayout.TaggedStructUnion _ -> false
+
+let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let altName = alt.Name
 
-    if cuspecRepr.RepresentAlternativeAsNull(cuspec, alt) then
+    match layout, cidx with
+    | CaseIsNull ->
+        // Null-represented case: just load null
         [ AI_ldnull ]
-    elif cuspecRepr.MaintainPossiblyUniqueConstantFieldForAlternative(cuspec, alt) then
-        let baseTy = baseTyOfUnionSpec cuspec
-        [ I_ldsfld(Nonvolatile, mkConstFieldSpec altName baseTy) ]
-    elif cuspecRepr.RepresentAlternativeAsFreshInstancesOfRootClass(cuspec, alt) then
-        let baseTy = baseTyOfUnionSpec cuspec
+    | _ ->
+        match layout with
+        // MaintainPossiblyUniqueConstantFieldForAlternative: ref type, not null, nullary
+        // → load the singleton static field
+        | UnionLayout.SingleCaseRef _
+        | UnionLayout.SmallRefUnion _
+        | UnionLayout.TaggedRefUnion _
+        | UnionLayout.ListTailOrNull _ when alt.IsNullary ->
+            let baseTy = baseTyOfUnionSpec cuspec
+            [ I_ldsfld(Nonvolatile, mkConstFieldSpec altName baseTy) ]
+        // RepresentAlternativeAsFreshInstancesOfRootClass: list cons folds to root
+        | UnionLayout.ListTailOrNull _ ->
+            let baseTy = baseTyOfUnionSpec cuspec
+            let ctorFieldTys = alt.FieldTypes |> Array.toList
+            [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
+        // RepresentAlternativeAsFreshInstancesOfRootClass: single non-nullary with null sibling
+        | UnionLayout.SmallRefUnion(_, nullCaseIdx) when isSingleNonNullaryFoldedToRoot cuspec nullCaseIdx alt ->
+            let baseTy = baseTyOfUnionSpec cuspec
+            let ctorFieldTys = alt.FieldTypes |> Array.toList
+            [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
+        // Struct + IntegerTag + nullary: create via root ctor with tag
+        | UnionLayout.TaggedStructUnion _ when alt.IsNullary ->
+            let baseTy = baseTyOfUnionSpec cuspec
+            let tagField = [ mkTagFieldType ilg cuspec ]
+            [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
+        // Default: use nested type ctor
+        | UnionLayout.SingleCaseRef _
+        | UnionLayout.SingleCaseStruct _
+        | UnionLayout.ListTailOrNull _
+        | UnionLayout.SmallRefUnion _
+        | UnionLayout.TaggedRefUnion _
+        | UnionLayout.TaggedStructUnion _ -> [ mkNormalNewobj (mkILCtorMethSpecForTy (altTy, Array.toList alt.FieldTypes)) ]
 
-        let instrs, tagfields =
-            match cuspecRepr.DiscriminationTechnique cuspec with
-            | IntegerTag -> [ mkLdcInt32 cidx ], [ mkTagFieldType ilg cuspec ]
-            | _ -> [], []
-
-        let ctorFieldTys = alt.FieldTypes |> Array.toList
-
-        instrs
-        @ [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, (ctorFieldTys @ tagfields))) ]
-    elif
-        cuspecRepr.RepresentAlternativeAsStructValue cuspec
-        && cuspecRepr.DiscriminationTechnique cuspec = IntegerTag
-    then
-        // Structs with fields should be created using maker methods (mkMakerName), only field-less cases are created this way
-        assert alt.IsNullary
-        let baseTy = baseTyOfUnionSpec cuspec
-        let tagField = [ mkTagFieldType ilg cuspec ]
-        [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
-    else
-        [ mkNormalNewobj (mkILCtorMethSpecForTy (altTy, Array.toList alt.FieldTypes)) ]
+let convNewDataInstrInternal ilg cuspec cidx =
+    emitRawConstruction ilg cuspec (classifyFromSpec cuspec) cidx
 
 // The stdata 'instruction' is only ever used for the F# "List" type within FSharp.Core.dll
 let mkStData (cuspec, cidx, fidx) =
@@ -619,12 +638,10 @@ let mkStData (cuspec, cidx, fidx) =
     mkNormalStfld (mkILFieldSpecInTy (altTy, fieldDef.LowerName, fieldDef.Type))
 
 let mkNewData ilg (cuspec, cidx) =
-#if DEBUG
-    assertSpecClassification cuspec
-#endif
     let alt = altOfUnionSpec cuspec cidx
     let altName = alt.Name
     let baseTy = baseTyOfUnionSpec cuspec
+    let layout = classifyFromSpec cuspec
 
     let viaMakerCall () =
         [
@@ -648,40 +665,60 @@ let mkNewData ilg (cuspec, cidx) =
     | AllHelpers
     | SpecialFSharpListHelpers
     | SpecialFSharpOptionHelpers ->
-        if cuspecRepr.RepresentAlternativeAsNull(cuspec, alt) then
-            [ AI_ldnull ]
-        elif alt.IsNullary then
+        match layout, cidx with
+        | CaseIsNull -> [ AI_ldnull ]
+        | _ ->
+            if alt.IsNullary then
+                viaGetAltNameProperty ()
+            else
+                viaMakerCall ()
+
+    | NoHelpers ->
+        let isStruct =
+            match layout with
+            | ValueTypeLayout -> true
+            | ReferenceTypeLayout -> false
+
+        let isNull =
+            match layout, cidx with
+            | CaseIsNull -> true
+            | CaseIsAllocated -> false
+
+        if not alt.IsNullary && isStruct then
+            viaMakerCall ()
+        elif not isStruct && not isNull && alt.IsNullary then
             viaGetAltNameProperty ()
         else
-            viaMakerCall ()
+            emitRawConstruction ilg cuspec layout cidx
 
-    | NoHelpers when (not alt.IsNullary) && cuspecRepr.RepresentAlternativeAsStructValue cuspec -> viaMakerCall ()
-    | NoHelpers when cuspecRepr.MaintainPossiblyUniqueConstantFieldForAlternative(cuspec, alt) -> viaGetAltNameProperty ()
-    | NoHelpers -> convNewDataInstrInternal ilg cuspec cidx
-
-let mkIsData ilg (avoidHelpers, cuspec, cidx) =
-#if DEBUG
-    assertSpecClassification cuspec
-#endif
+let private emitIsCase ilg avoidHelpers cuspec (layout: UnionLayout) cidx =
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let altName = alt.Name
 
-    if cuspecRepr.RepresentAlternativeAsNull(cuspec, alt) then
+    match layout, cidx with
+    | CaseIsNull ->
+        // Null-represented case: compare with null
         [ AI_ldnull; AI_ceq ]
-    elif cuspecRepr.RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull(cuspec, alt) then
-        // in this case we can use a null test
-        [ AI_ldnull; AI_cgt_un ]
-    else
-        match cuspecRepr.DiscriminationTechnique cuspec with
-        | SingleCase -> [ mkLdcInt32 1 ]
-        | RuntimeTypes -> mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName altTy
-        | IntegerTag -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
-        | TailOrNull ->
+    | _ ->
+        match layout with
+        | UnionLayout.SmallRefUnion(_, nullCaseIdx) when isSingleNonNullaryFoldedToRoot cuspec nullCaseIdx alt ->
+            // Single non-nullary with all null siblings: test via non-null
+            [ AI_ldnull; AI_cgt_un ]
+        | UnionLayout.SingleCaseRef _
+        | UnionLayout.SingleCaseStruct _ -> [ mkLdcInt32 1 ]
+        | UnionLayout.SmallRefUnion _ -> mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName altTy
+        | UnionLayout.TaggedRefUnion _
+        | UnionLayout.TaggedStructUnion _ -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
+        | UnionLayout.ListTailOrNull _ ->
             match cidx with
             | TagNil -> [ mkGetTailOrNull avoidHelpers cuspec; AI_ldnull; AI_ceq ]
             | TagCons -> [ mkGetTailOrNull avoidHelpers cuspec; AI_ldnull; AI_cgt_un ]
-            | _ -> failwith "mkIsData - unexpected"
+            | _ -> failwith "emitIsCase - unexpected list case index"
+
+let mkIsData ilg (avoidHelpers, cuspec, cidx) =
+    let layout = classifyFromSpec cuspec
+    emitIsCase ilg avoidHelpers cuspec layout cidx
 
 type ICodeGen<'Mark> =
     abstract CodeLabel: 'Mark -> ILCodeLabel
@@ -718,36 +755,38 @@ let genWith g : ILCode =
         Locals = []
     }
 
-let mkBrIsData ilg sense (avoidHelpers, cuspec, cidx, tg) =
-#if DEBUG
-    assertSpecClassification cuspec
-#endif
+let private emitBranchOnCase ilg sense avoidHelpers cuspec (layout: UnionLayout) cidx tg =
     let neg = (if sense then BI_brfalse else BI_brtrue)
     let pos = (if sense then BI_brtrue else BI_brfalse)
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let altName = alt.Name
 
-    if cuspecRepr.RepresentAlternativeAsNull(cuspec, alt) then
+    match layout, cidx with
+    | CaseIsNull ->
+        // Null-represented case: branch on null
         [ I_brcmp(neg, tg) ]
-    elif cuspecRepr.RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull(cuspec, alt) then
-        // in this case we can use a null test
-        [ I_brcmp(pos, tg) ]
-    else
-        match cuspecRepr.DiscriminationTechnique cuspec with
-        | SingleCase -> []
-        | RuntimeTypes -> mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy (I_brcmp(pos, tg))
-        | IntegerTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp(pos, tg))
-        | TailOrNull ->
+    | _ ->
+        match layout with
+        | UnionLayout.SmallRefUnion(_, nullCaseIdx) when isSingleNonNullaryFoldedToRoot cuspec nullCaseIdx alt ->
+            // Single non-nullary with all null siblings: branch on non-null
+            [ I_brcmp(pos, tg) ]
+        | UnionLayout.SingleCaseRef _
+        | UnionLayout.SingleCaseStruct _ -> []
+        | UnionLayout.SmallRefUnion _ -> mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy (I_brcmp(pos, tg))
+        | UnionLayout.TaggedRefUnion _
+        | UnionLayout.TaggedStructUnion _ -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp(pos, tg))
+        | UnionLayout.ListTailOrNull _ ->
             match cidx with
             | TagNil -> [ mkGetTailOrNull avoidHelpers cuspec; I_brcmp(neg, tg) ]
             | TagCons -> [ mkGetTailOrNull avoidHelpers cuspec; I_brcmp(pos, tg) ]
-            | _ -> failwith "mkBrIsData - unexpected"
+            | _ -> failwith "emitBranchOnCase - unexpected list case index"
+
+let mkBrIsData ilg sense (avoidHelpers, cuspec, cidx, tg) =
+    let layout = classifyFromSpec cuspec
+    emitBranchOnCase ilg sense avoidHelpers cuspec layout cidx tg
 
 let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: IlxUnionSpec) =
-#if DEBUG
-    assertSpecClassification cuspec
-#endif
     // If helpers exist, use them
     match cuspec.HasHelpers with
     | SpecialFSharpListHelpers
@@ -756,28 +795,28 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: Ilx
         cg.EmitInstr(mkGetTagFromHelpers ilg cuspec)
     | _ ->
 
+        let layout = classifyFromSpec cuspec
         let alts = cuspec.Alternatives
 
-        match cuspecRepr.DiscriminationTechnique cuspec with
-        | TailOrNull ->
+        match layout with
+        | UnionLayout.ListTailOrNull _ ->
             // leaves 1 if cons, 0 if not
             ldOpt |> Option.iter cg.EmitInstr
             cg.EmitInstrs [ mkGetTailOrNull avoidHelpers cuspec; AI_ldnull; AI_cgt_un ]
-        | IntegerTag ->
-            let baseTy = baseTyOfUnionSpec cuspec
+        | UnionLayout.TaggedRefUnion(baseTy, _)
+        | UnionLayout.TaggedStructUnion(baseTy, _) ->
             ldOpt |> Option.iter cg.EmitInstr
             cg.EmitInstr(mkGetTagFromField ilg cuspec baseTy)
-        | SingleCase ->
+        | UnionLayout.SingleCaseRef _
+        | UnionLayout.SingleCaseStruct _ ->
             ldOpt |> Option.iter cg.EmitInstr
             cg.EmitInstrs [ AI_pop; mkLdcInt32 0 ]
-        | RuntimeTypes ->
-            let baseTy = baseTyOfUnionSpec cuspec
-
+        | UnionLayout.SmallRefUnion(baseTy, nullCaseIdx) ->
+            // RuntimeTypes: emit multi-way isinst chain
             let ld =
                 match ldOpt with
                 | None ->
                     let locn = cg.GenLocal baseTy
-                    // Add on a branch to the first input label.  This gets optimized away by the printer/emitter.
                     cg.EmitInstr(mkStloc locn)
                     mkLdloc locn
                 | Some i -> i
@@ -788,16 +827,13 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: Ilx
                 let alt = altOfUnionSpec cuspec cidx
                 let internalLab = cg.GenerateDelayMark()
                 let failLab = cg.GenerateDelayMark()
-                let cmpNull = cuspecRepr.RepresentAlternativeAsNull(cuspec, alt)
+                let cmpNull = (nullCaseIdx = Some cidx)
 
                 let test =
                     I_brcmp((if cmpNull then BI_brtrue else BI_brfalse), cg.CodeLabel failLab)
 
                 let testBlock =
-                    if
-                        cmpNull
-                        || cuspecRepr.RepresentAlternativeAsFreshInstancesOfRootClass(cuspec, alt)
-                    then
+                    if cmpNull || caseFoldsToRootClass layout cuspec alt then
                         [ test ]
                     else
                         let altName = alt.Name
@@ -820,13 +856,12 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: Ilx
 let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: IlxUnionSpec) =
     emitLdDataTagPrim ilg None cg (avoidHelpers, cuspec)
 
-let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, avoidHelpers, cuspec, cidx) =
-#if DEBUG
-    assertSpecClassification cuspec
-#endif
+let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail avoidHelpers cuspec (layout: UnionLayout) cidx =
     let alt = altOfUnionSpec cuspec cidx
 
-    if cuspecRepr.RepresentAlternativeAsNull(cuspec, alt) then
+    match layout, cidx with
+    | CaseIsNull ->
+        // Null-represented case
         if canfail then
             let outlab = cg.GenerateDelayMark()
             let internal1 = cg.GenerateDelayMark()
@@ -834,36 +869,55 @@ let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, avoidHelpers, cuspec, cidx)
             cg.SetMarkToHere internal1
             cg.EmitInstrs [ cg.MkInvalidCastExnNewobj(); I_throw ]
             cg.SetMarkToHere outlab
-        else
-            // If it can't fail, it's still verifiable just to leave the value on the stack unchecked
+    | _ ->
+        match layout with
+        | UnionLayout.SingleCaseStruct _
+        | UnionLayout.TaggedStructUnion _ ->
+            // Flatten (struct): tag check if canfail, else leave on stack
+            if canfail then
+                let outlab = cg.GenerateDelayMark()
+                let internal1 = cg.GenerateDelayMark()
+                cg.EmitInstr AI_dup
+                emitLdDataTagPrim ilg None cg (avoidHelpers, cuspec)
+                cg.EmitInstrs [ mkLdcInt32 cidx; I_brcmp(BI_beq, cg.CodeLabel outlab) ]
+                cg.SetMarkToHere internal1
+                cg.EmitInstrs [ cg.MkInvalidCastExnNewobj(); I_throw ]
+                cg.SetMarkToHere outlab
+        | UnionLayout.ListTailOrNull _ ->
+            // List type: all cases fold to root, no cast needed
             ()
-    elif cuspecRepr.Flatten cuspec then
-        if canfail then
-            let outlab = cg.GenerateDelayMark()
-            let internal1 = cg.GenerateDelayMark()
-            cg.EmitInstr AI_dup
-            emitLdDataTagPrim ilg None cg (avoidHelpers, cuspec)
-            cg.EmitInstrs [ mkLdcInt32 cidx; I_brcmp(BI_beq, cg.CodeLabel outlab) ]
-            cg.SetMarkToHere internal1
-            cg.EmitInstrs [ cg.MkInvalidCastExnNewobj(); I_throw ]
-            cg.SetMarkToHere outlab
-        else
-            // If it can't fail, it's still verifiable just to leave the value on the stack unchecked
+        | UnionLayout.SingleCaseRef _ ->
+            // Single case ref: always on root
             ()
-    elif cuspecRepr.OptimizeAlternativeToRootClass(cuspec, alt) then
-        ()
-    else
-        let altTy = tyForAlt cuspec alt
-        cg.EmitInstr(I_castclass altTy)
+        | UnionLayout.TaggedRefUnion(_, allNullary) ->
+            if allNullary then
+                // All-nullary (enum-like): all cases on root
+                ()
+            elif alt.IsNullary then
+                // Nullary in tagged ref: constant field in root class, no cast
+                ()
+            else
+                // Non-nullary in tagged ref: lives in nested type
+                let altTy = tyForAlt cuspec alt
+                cg.EmitInstr(I_castclass altTy)
+        | UnionLayout.SmallRefUnion _ ->
+            if caseFoldsToRootClass layout cuspec alt then
+                // Single non-nullary with all null siblings: folded to root
+                ()
+            else
+                // Case lives in a nested type
+                let altTy = tyForAlt cuspec alt
+                cg.EmitInstr(I_castclass altTy)
 
-let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
-#if DEBUG
-    assertSpecClassification cuspec
-#endif
+let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, avoidHelpers, cuspec, cidx) =
+    let layout = classifyFromSpec cuspec
+    emitCastToCase ilg cg canfail avoidHelpers cuspec layout cidx
+
+let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) avoidHelpers cuspec (layout: UnionLayout) cases =
     let baseTy = baseTyOfUnionSpec cuspec
 
-    match cuspecRepr.DiscriminationTechnique cuspec with
-    | RuntimeTypes ->
+    match layout with
+    | UnionLayout.SmallRefUnion(_, nullCaseIdx) ->
         let locn = cg.GenLocal baseTy
 
         cg.EmitInstr(mkStloc locn)
@@ -873,22 +927,20 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
             let altTy = tyForAlt cuspec alt
             let altName = alt.Name
             let failLab = cg.GenerateDelayMark()
-            let cmpNull = cuspecRepr.RepresentAlternativeAsNull(cuspec, alt)
+            let cmpNull = (nullCaseIdx = Some cidx)
 
             cg.EmitInstr(mkLdloc locn)
             let testInstr = I_brcmp((if cmpNull then BI_brfalse else BI_brtrue), tg)
 
-            if
-                cmpNull
-                || cuspecRepr.RepresentAlternativeAsFreshInstancesOfRootClass(cuspec, alt)
-            then
+            if cmpNull || caseFoldsToRootClass layout cuspec alt then
                 cg.EmitInstr testInstr
             else
                 cg.EmitInstrs(mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy testInstr)
 
             cg.SetMarkToHere failLab
 
-    | IntegerTag ->
+    | UnionLayout.TaggedRefUnion _
+    | UnionLayout.TaggedStructUnion _ ->
         match cases with
         | [] -> cg.EmitInstr AI_pop
         | _ ->
@@ -910,13 +962,18 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
             cg.EmitInstr(I_switch(Array.toList dests))
             cg.SetMarkToHere failLab
 
-    | SingleCase ->
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SingleCaseStruct _ ->
         match cases with
         | [ (0, tg) ] -> cg.EmitInstrs [ AI_pop; I_br tg ]
         | [] -> cg.EmitInstr AI_pop
         | _ -> failwith "unexpected: strange switch on single-case unions should not be present"
 
-    | TailOrNull -> failwith "unexpected: switches on lists should have been eliminated to brisdata tests"
+    | UnionLayout.ListTailOrNull _ -> failwith "unexpected: switches on lists should have been eliminated to brisdata tests"
+
+let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
+    let layout = classifyFromSpec cuspec
+    emitCaseSwitch ilg cg avoidHelpers cuspec layout cases
 
 //---------------------------------------------------
 // Generate the union classes
@@ -1586,10 +1643,6 @@ let mkClassUnionDef
     =
     let boxity = if td.IsStruct then ILBoxity.AsValue else ILBoxity.AsObject
     let baseTy = mkILFormalNamedTy boxity tref td.GenericParams
-
-#if DEBUG
-    assertDefClassification td cud baseTy
-#endif
 
     let cuspec =
         IlxUnionSpec(IlxUnionRef(boxity, baseTy.TypeRef, cud.UnionCases, cud.IsNullPermitted, cud.HasHelpers), baseTy.GenericArgs)
