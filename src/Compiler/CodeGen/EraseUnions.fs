@@ -258,7 +258,12 @@ let private altFoldsAsRootInstance (layout: UnionLayout) (alt: IlxUnionCase) (al
         | UnionLayout.FSharpList _ -> alt.Name = ALT_NAME_CONS
         | UnionLayout.SingleCaseRef _ -> true
         | UnionLayout.SmallRefWithNullAsTrueValue _ -> alts |> Array.filter (fun a -> not a.IsNullary) |> Array.length = 1
-        | _ -> false)
+        | UnionLayout.SmallRef _
+        | UnionLayout.SingleCaseStruct _
+        | UnionLayout.TaggedRef _
+        | UnionLayout.TaggedRefAllNullary _
+        | UnionLayout.TaggedStruct _
+        | UnionLayout.TaggedStructAllNullary _ -> false)
 
 /// Does this alternative optimize to root class (no nested type needed)?
 /// Equivalent to the old OptimizeAlternativeToRootClass.
@@ -289,12 +294,6 @@ let private maintainConstantField (layout: UnionLayout) (alt: IlxUnionCase) (cid
            match layout with
            | ReferenceTypeLayout -> true
            | ValueTypeLayout -> false
-
-/// Does any case use null representation?
-let private hasNullCase (layout: UnionLayout) =
-    match layout with
-    | UnionLayout.SmallRefWithNullAsTrueValue _ -> true
-    | _ -> false
 
 // ---- Context Records ----
 
@@ -466,10 +465,10 @@ let mkGetTailOrNull access cuspec =
 let mkGetTagFromHelpers ilg (cuspec: IlxUnionSpec) =
     let baseTy = baseTyOfUnionSpec cuspec
 
-    if hasNullCase (classifyFromSpec cuspec) then
+    match classifyFromSpec cuspec with
+    | UnionLayout.SmallRefWithNullAsTrueValue _ ->
         mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "Get" + tagPropertyName, [ baseTy ], mkTagFieldFormalType ilg cuspec))
-    else
-        mkNormalCall (mkILNonGenericInstanceMethSpecInTy (baseTy, "get_" + tagPropertyName, [], mkTagFieldFormalType ilg cuspec))
+    | _ -> mkNormalCall (mkILNonGenericInstanceMethSpecInTy (baseTy, "get_" + tagPropertyName, [], mkTagFieldFormalType ilg cuspec))
 
 let mkGetTag ilg (cuspec: IlxUnionSpec) =
     match cuspec.HasHelpers with
@@ -511,11 +510,6 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
             [ I_ldsfld(Nonvolatile, mkConstFieldSpec altName baseTy) ]
         // RepresentAlternativeAsFreshInstancesOfRootClass: list cons folds to root
         | UnionLayout.FSharpList _ ->
-            let baseTy = baseTyOfUnionSpec cuspec
-            let ctorFieldTys = alt.FieldTypes |> Array.toList
-            [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
-        // RepresentAlternativeAsFreshInstancesOfRootClass: single non-nullary with null sibling
-        | UnionLayout.SmallRef _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
             let baseTy = baseTyOfUnionSpec cuspec
             let ctorFieldTys = alt.FieldTypes |> Array.toList
             [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
@@ -609,9 +603,6 @@ let private emitIsCase ilg access cuspec (layout: UnionLayout) cidx =
         [ AI_ldnull; AI_ceq ]
     | _ ->
         match layout with
-        | UnionLayout.SmallRef _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
-            // Single non-nullary with all null siblings: test via non-null
-            [ AI_ldnull; AI_cgt_un ]
         | UnionLayout.SmallRefWithNullAsTrueValue _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
             // Single non-nullary with all null siblings: test via non-null
             [ AI_ldnull; AI_cgt_un ]
@@ -681,9 +672,6 @@ let private emitBranchOnCase ilg sense access cuspec (layout: UnionLayout) cidx 
         [ I_brcmp(neg, tg) ]
     | _ ->
         match layout with
-        | UnionLayout.SmallRef _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
-            // Single non-nullary with all null siblings: branch on non-null
-            [ I_brcmp(pos, tg) ]
         | UnionLayout.SmallRefWithNullAsTrueValue _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
             // Single non-nullary with all null siblings: branch on non-null
             [ I_brcmp(pos, tg) ]
@@ -1155,7 +1143,12 @@ let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: I
     let imports = cud.DebugImports
     let attr = cud.DebugPoint
 
-    if cud.UnionCases.Length <= 1 || hasNullCase ctx.layout then
+    if
+        cud.UnionCases.Length <= 1
+        || (match ctx.layout with
+            | UnionLayout.SmallRefWithNullAsTrueValue _ -> true
+            | _ -> false)
+    then
         [], []
     else
         let additionalAttributes =
@@ -1748,7 +1741,8 @@ let private emitTagInfrastructure (ctx: TypeDefContext) =
 
         // If we are using NULL as a representation for an element of this type then we cannot
         // use an instance method
-        if hasNullCase ctx.layout then
+        match ctx.layout with
+        | UnionLayout.SmallRefWithNullAsTrueValue _ ->
             [
                 mkILNonGenericStaticMethod (
                     "Get" + tagPropertyName,
@@ -1761,7 +1755,7 @@ let private emitTagInfrastructure (ctx: TypeDefContext) =
             ],
             []
 
-        else
+        | _ ->
             [
                 mkILNonGenericInstanceMethod ("get_" + tagPropertyName, cud.HelpersAccessibility, [], mkILReturn tagFieldType, body)
                 |> ctx.stampMethodAsGenerated
