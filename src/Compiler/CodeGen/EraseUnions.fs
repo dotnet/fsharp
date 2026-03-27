@@ -358,37 +358,6 @@ let classifyCaseStorage (layout: UnionLayout) (cuspec: IlxUnionSpec) (cidx: int)
         else
             CaseStorage.InNestedType(tyForAltIdxWith layout (baseTyOfUnionSpec cuspec) cuspec alt cidx)
 
-/// What C# interop mechanisms this union layout can support.
-/// See https://github.com/fsharp/fslang-suggestions/discussions/1463
-[<RequireQualifiedAccess>]
-type InteropCapability =
-    /// Can emit [Closed] hierarchy for C# exhaustive pattern matching via subtypes
-    | ClosedHierarchy
-    /// Can emit [Union]+IUnion for C# union protocol
-    | UnionProtocol
-    /// Can emit [Union]+IUnion but multi-field cases need ValueTuple boxing
-    | UnionProtocolWithTupleBoxing
-    /// Cannot emit C# interop (null represents a case — calling Value on null would throw NRE)
-    | NoInterop
-
-/// Classify what C# interop mechanisms this union layout supports.
-let _classifyInteropCapability (layout: UnionLayout) =
-    match layout with
-    // Abstract root + nested subclasses → natural [Closed] hierarchy
-    | UnionLayout.SmallRef _
-    | UnionLayout.TaggedRef _ -> InteropCapability.ClosedHierarchy
-    // Single value or enum-like → [Union]+IUnion, Value boxes on demand
-    | UnionLayout.SingleCaseRef _
-    | UnionLayout.SingleCaseStruct _
-    | UnionLayout.TaggedRefAllNullary _
-    | UnionLayout.TaggedStructAllNullary _ -> InteropCapability.UnionProtocol
-    // Struct with data cases → [Union]+IUnion, multi-field cases need ValueTuple
-    | UnionLayout.TaggedStruct _ -> InteropCapability.UnionProtocolWithTupleBoxing
-    // null = case (option-like) → cannot implement IUnion safely
-    | UnionLayout.SmallRefWithNullAsTrueValue _ -> InteropCapability.NoInterop
-    // Hardcoded special type
-    | UnionLayout.FSharpList _ -> InteropCapability.NoInterop
-
 // ---- Context Records ----
 
 /// Bundles the IL attribute-stamping callbacks used during type definition generation.
