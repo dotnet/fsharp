@@ -1217,7 +1217,7 @@ module internal Rewriting =
         member tcref.HasMember g nm argTys = tcref.Deref.HasMember g nm argTys
 
 [<AutoOpen>]
-module internal TupleCompilation =
+module internal LoopAndConstantOptimization =
 
     let mkFastForLoop g (spFor, spTo, m, idv: Val, start, dir, finish, body) =
         let dir = if dir then FSharpForLoopUp else FSharpForLoopDown

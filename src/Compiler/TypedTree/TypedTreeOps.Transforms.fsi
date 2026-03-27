@@ -197,7 +197,7 @@ module internal Rewriting =
     val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace
 
 [<AutoOpen>]
-module internal TupleCompilation =
+module internal LoopAndConstantOptimization =
 
     val mkFastForLoop:
         TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * Val * Expr * bool * Expr * Expr -> Expr
