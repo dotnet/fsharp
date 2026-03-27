@@ -230,13 +230,12 @@ let private altOptimizesToRoot (layout: UnionLayout) (alt: IlxUnionCase) (alts: 
 /// Only for nullary cases on reference types that are not null-represented.
 let private maintainConstantField (layout: UnionLayout) (alt: IlxUnionCase) (cidx: int) =
     alt.IsNullary
-    &&
-    match layout, cidx with
-    | CaseIsNull -> false
-    | _ ->
-        match layout with
-        | ReferenceTypeLayout -> true
-        | ValueTypeLayout -> false
+    && match layout, cidx with
+       | CaseIsNull -> false
+       | _ ->
+           match layout with
+           | ReferenceTypeLayout -> true
+           | ValueTypeLayout -> false
 
 /// Does any case use null representation?
 let private hasNullCase (layout: UnionLayout) =
@@ -324,7 +323,10 @@ let private tyForAltIdx cuspec (alt: IlxUnionCase) cidx =
         mkILNamedTy cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs
 
 let tyForAlt (cuspec: IlxUnionSpec) (alt: IlxUnionCase) =
-    let cidx = cuspec.AlternativesArray |> Array.findIndex (fun (a: IlxUnionCase) -> a.Name = alt.Name)
+    let cidx =
+        cuspec.AlternativesArray
+        |> Array.findIndex (fun (a: IlxUnionCase) -> a.Name = alt.Name)
+
     tyForAltIdx cuspec alt cidx
 
 let GetILTypeForAlternative cuspec alt =
@@ -1558,10 +1560,15 @@ let private emitRootConstructors (ctx: TypeDefContext) selfFields tagFieldsInObj
     // - It's not a struct (structs use static maker methods)
     // - There aren't already instance fields from folded cases covering the ctor need
     let allCasesFoldToRoot =
-        cud.UnionCases |> Array.forall (fun alt -> altFoldsAsRootInstance ctx.layout alt cud.UnionCases)
+        cud.UnionCases
+        |> Array.forall (fun alt -> altFoldsAsRootInstance ctx.layout alt cud.UnionCases)
 
     let hasFieldsOrTagButNoMethods =
-        not (List.isEmpty selfFields && List.isEmpty tagFieldsInObject && not (List.isEmpty selfMeths))
+        not (
+            List.isEmpty selfFields
+            && List.isEmpty tagFieldsInObject
+            && not (List.isEmpty selfMeths)
+        )
 
     if td.IsStruct || allCasesFoldToRoot || not hasFieldsOrTagButNoMethods then
         []
