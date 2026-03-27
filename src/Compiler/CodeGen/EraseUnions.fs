@@ -52,18 +52,14 @@ let mkCasesTypeRef (cuspec: IlxUnionSpec) = cuspec.TypeRef
 
 /// Core classification logic. Computes the UnionLayout for any union.
 let private classifyUnion baseTy (alts: IlxUnionCase[]) nullPermitted isList isStruct =
-    if isList then
-        UnionLayout.ListTailOrNull baseTy
-    elif alts.Length = 1 then
-        if isStruct then
-            UnionLayout.SingleCaseStruct baseTy
-        else
-            UnionLayout.SingleCaseRef baseTy
-    elif
-        not isStruct
-        && alts.Length < 4
-        && not (alts |> Array.forall (fun alt -> alt.IsNullary))
-    then
+    let allNullary = alts |> Array.forall (fun alt -> alt.IsNullary)
+
+    match isList, alts.Length, isStruct with
+    | true, _, _ -> UnionLayout.ListTailOrNull baseTy
+    | _, 1, true -> UnionLayout.SingleCaseStruct baseTy
+    | _, 1, false -> UnionLayout.SingleCaseRef baseTy
+    | _, n, false when n < 4 && not allNullary ->
+        // Small ref union (2-3 cases, not all nullary): discriminate by isinst
         let nullCaseIdx =
             if
                 nullPermitted
@@ -75,10 +71,8 @@ let private classifyUnion baseTy (alts: IlxUnionCase[]) nullPermitted isList isS
                 None
 
         UnionLayout.SmallRefUnion(baseTy, nullCaseIdx)
-    elif isStruct then
-        UnionLayout.TaggedStructUnion(baseTy, alts |> Array.forall (fun alt -> alt.IsNullary))
-    else
-        UnionLayout.TaggedRefUnion(baseTy, alts |> Array.forall (fun alt -> alt.IsNullary))
+    | _, _, true -> UnionLayout.TaggedStructUnion(baseTy, allNullary)
+    | _, _, false -> UnionLayout.TaggedRefUnion(baseTy, allNullary)
 
 /// Classify from an IlxUnionSpec (used in IL instruction generation).
 let classifyFromSpec (cuspec: IlxUnionSpec) =
