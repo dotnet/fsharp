@@ -1366,6 +1366,22 @@ module internal TypeConstruction =
 
     let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
 
+    let isQuotedExprTy g ty =
+        match tryAppTy g ty with
+        | ValueSome(tcref, _) -> tyconRefEq g tcref g.expr_tcr
+        | _ -> false
+
+    let destQuotedExprTy g ty =
+        match tryAppTy g ty with
+        | ValueSome(_, [ ty ]) -> ty
+        | _ -> failwith "destQuotedExprTy"
+
+    let mkQuotedExprTy (g: TcGlobals) ty =
+        TType_app(g.expr_tcr, [ ty ], g.knownWithoutNull)
+
+    let mkRawQuotedExprTy (g: TcGlobals) =
+        TType_app(g.raw_expr_tcr, [], g.knownWithoutNull)
+
     let mkIEventType (g: TcGlobals) ty1 ty2 =
         TType_app(g.fslib_IEvent2_tcr, [ ty1; ty2 ], g.knownWithoutNull)
 

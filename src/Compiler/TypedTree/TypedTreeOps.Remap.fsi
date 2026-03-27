@@ -458,6 +458,14 @@ module internal TypeConstruction =
 
     val mkByteArrayTy: TcGlobals -> TType
 
+    val isQuotedExprTy: TcGlobals -> TType -> bool
+
+    val destQuotedExprTy: TcGlobals -> TType -> TType
+
+    val mkQuotedExprTy: TcGlobals -> TType -> TType
+
+    val mkRawQuotedExprTy: TcGlobals -> TType
+
     val mkIEventType: TcGlobals -> TType -> TType -> TType
 
     val mkIObservableType: TcGlobals -> TType -> TType

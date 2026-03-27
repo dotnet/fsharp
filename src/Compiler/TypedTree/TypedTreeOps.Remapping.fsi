@@ -274,18 +274,6 @@ module internal ExprShapeQueries =
 
     val ComputeFieldName: Tycon -> RecdField -> string
 
-    //-------------------------------------------------------------------------
-    // Primitives associated with quotations
-    //-------------------------------------------------------------------------
-
-    val isQuotedExprTy: TcGlobals -> TType -> bool
-
-    val destQuotedExprTy: TcGlobals -> TType -> TType
-
-    val mkQuotedExprTy: TcGlobals -> TType -> TType
-
-    val mkRawQuotedExprTy: TcGlobals -> TType
-
     val GenWitnessArgTys: TcGlobals -> TraitWitnessInfo -> TType list list
 
     val GenWitnessTys: TcGlobals -> TraitWitnessInfos -> TType list

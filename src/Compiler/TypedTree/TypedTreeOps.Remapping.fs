@@ -2471,26 +2471,6 @@ module internal ExprShapeQueries =
         else
             CompilerGeneratedName f.rfield_id.idText
 
-    //-------------------------------------------------------------------------
-    // Helpers for building code contained in the initial environment
-    //-------------------------------------------------------------------------
-
-    let isQuotedExprTy g ty =
-        match tryAppTy g ty with
-        | ValueSome(tcref, _) -> tyconRefEq g tcref g.expr_tcr
-        | _ -> false
-
-    let destQuotedExprTy g ty =
-        match tryAppTy g ty with
-        | ValueSome(_, [ ty ]) -> ty
-        | _ -> failwith "destQuotedExprTy"
-
-    let mkQuotedExprTy (g: TcGlobals) ty =
-        TType_app(g.expr_tcr, [ ty ], g.knownWithoutNull)
-
-    let mkRawQuotedExprTy (g: TcGlobals) =
-        TType_app(g.raw_expr_tcr, [], g.knownWithoutNull)
-
     //---------------------------------------------------------------------------
     // Witnesses
     //---------------------------------------------------------------------------
