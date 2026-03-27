@@ -1518,12 +1518,12 @@ let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (strin
         let fieldsEmitted = HashSet<_>()
 
         for cidx, alt in Array.indexed cud.UnionCases do
-            if
-                altFoldsAsRootInstance ctx.layout alt cud.UnionCases
-                || (match ctx.layout with
-                    | ValueTypeLayout -> true
-                    | ReferenceTypeLayout -> false)
-            then
+            let fieldsOnRoot =
+                match ctx.layout with
+                | ValueTypeLayout -> true
+                | ReferenceTypeLayout -> altFoldsAsRootInstance ctx.layout alt cud.UnionCases
+
+            if fieldsOnRoot then
 
                 let baseInit =
                     if isStruct then
