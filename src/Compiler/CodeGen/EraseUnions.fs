@@ -803,7 +803,7 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionS
                 cg.EmitInstrs [ mkLdcInt32 cidx; I_br(cg.CodeLabel outlab) ]
                 cg.SetMarkToHere failLab
 
-            // Make the blocks for the remaining tests.
+            // Emit type tests in reverse order; case 0 is the fallback (loaded after the loop).
             for n in alts.Length - 1 .. -1 .. 1 do
                 emitCase n
 
@@ -1503,6 +1503,29 @@ let private processAlternative (ctx: TypeDefContext) (num: int) (alt: IlxUnionCa
 /// Rewrite field nullable attributes for struct flattening.
 /// When a struct DU has multiple cases, all boxed fields become potentially nullable
 /// because only one case's fields are valid at a time.
+/// When a struct DU has multiple cases, all boxed fields become potentially nullable
+/// because only one case's fields are valid at a time. This rewrites the [Nullable] attribute
+/// on a field to WithNull (2uy) if it was marked as non-nullable (1uy) within its case.
+let private rewriteNullableAttrForFlattenedField (g: TcGlobals) (existingAttrs: ILAttribute[]) =
+    let nullableIdx =
+        existingAttrs |> Array.tryFindIndex (IsILAttrib g.attrib_NullableAttribute)
+
+    match nullableIdx with
+    | None ->
+        existingAttrs
+        |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
+    | Some idx ->
+        let replacementAttr =
+            match existingAttrs[idx] with
+            // Single byte: change non-nullable (1) to WithNull (2); leave nullable (2) and ambivalent (0) as-is
+            | Encoded(method, _data, [ ILAttribElem.Byte 1uy ]) -> mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 2uy ], [])
+            // Array of bytes: change first element only (field itself); leave generic type arg nullability unchanged
+            | Encoded(method, _data, [ ILAttribElem.Array(elemType, ILAttribElem.Byte 1uy :: otherElems) ]) ->
+                mkILCustomAttribMethRef (method, [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 2uy) :: otherElems) ], [])
+            | attrAsBefore -> attrAsBefore
+
+        existingAttrs |> Array.replace idx replacementAttr
+
 let private rewriteFieldsForStructFlattening (g: TcGlobals) (alt: IlxUnionCase) (layout: UnionLayout) =
     match layout with
     | UnionLayout.TaggedStruct _
@@ -1513,35 +1536,7 @@ let private rewriteFieldsForStructFlattening (g: TcGlobals) (alt: IlxUnionCase) 
                 field
             else
                 let attrs =
-                    let existingAttrs = field.ILField.CustomAttrs.AsArray()
-
-                    let nullableIdx =
-                        existingAttrs |> Array.tryFindIndex (IsILAttrib g.attrib_NullableAttribute)
-
-                    match nullableIdx with
-                    | None ->
-                        existingAttrs
-                        |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
-                    | Some idx ->
-                        let replacementAttr =
-                            match existingAttrs[idx] with
-                            (*
-                             The attribute carries either a single byte, or a list of bytes for the fields itself and all its generic type arguments
-                             The way we lay out DUs does not affect nullability of the typars of a field, therefore we just change the very first byte
-                             If the field was already declared as nullable (value = 2uy) or ambivalent(value = 0uy), we can keep it that way
-                             If it was marked as non-nullable within that UnionCase, we have to convert it to WithNull (2uy) due to other cases being possible
-                            *)
-                            | Encoded(method, _data, [ ILAttribElem.Byte 1uy ]) ->
-                                mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 2uy ], [])
-                            | Encoded(method, _data, [ ILAttribElem.Array(elemType, ILAttribElem.Byte 1uy :: otherElems) ]) ->
-                                mkILCustomAttribMethRef (
-                                    method,
-                                    [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 2uy) :: otherElems) ],
-                                    []
-                                )
-                            | attrAsBefore -> attrAsBefore
-
-                        existingAttrs |> Array.replace idx replacementAttr
+                    rewriteNullableAttrForFlattenedField g (field.ILField.CustomAttrs.AsArray())
 
                 field.ILField.With(customAttrs = mkILCustomAttrsFromArray attrs)
                 |> IlxUnionCaseField)
@@ -1599,8 +1594,9 @@ let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (strin
                         | Some ilTy -> Some ilTy.TypeSpec
 
                 let ctor =
-                    // Structs with fields are created using static makers methods
-                    // Structs without fields can share constructor for the 'tag' value, we just create one
+                    // Structs use static maker methods for non-nullary cases.
+                    // For nullary struct cases, we emit a single shared ctor (for the min-index nullary)
+                    // that takes only the tag value — all other nullary cases reuse it via the maker.
                     if isStruct && not (cidx = minNullaryIdx) then
                         []
                     else
@@ -1866,6 +1862,7 @@ let private assembleUnionTypeDef
 
     let existingMeths = td.Methods.AsList()
     let existingProps = td.Properties.AsList()
+    // The root type is abstract when every case has its own nested subtype.
     let isAbstract = (altTypeDefs.Length = cud.UnionCases.Length)
 
     let baseTypeDef: ILTypeDef =
