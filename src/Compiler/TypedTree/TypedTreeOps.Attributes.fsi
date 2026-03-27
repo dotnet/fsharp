@@ -202,14 +202,6 @@ module internal AttributeHelpers =
     // More common type construction
     //-------------------------------------------------------------------------
 
-    val isInByrefTy: TcGlobals -> TType -> bool
-
-    val isOutByrefTy: TcGlobals -> TType -> bool
-
-    val isByrefTy: TcGlobals -> TType -> bool
-
-    val isNativePtrTy: TcGlobals -> TType -> bool
-
     val destByrefTy: TcGlobals -> TType -> TType
 
     val destNativePtrTy: TcGlobals -> TType -> TType
@@ -357,15 +349,6 @@ module internal AttributeHelpers =
     [<return: Struct>]
     val (|SeqExpr|_|): TcGlobals -> Expr -> unit voption
 
-    val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
-
-    val EvaledAttribExprEquality: TcGlobals -> Expr -> Expr -> bool
-
-    val IsSimpleSyntacticConstantExpr: TcGlobals -> Expr -> bool
-
-    [<return: Struct>]
-    val (|ConstToILFieldInit|_|): Const -> ILFieldInit voption
-
     [<return: Struct>]
     val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr voption
 
@@ -385,22 +368,6 @@ module internal AttributeHelpers =
     val (|AttribStringArg|_|): (AttribExpr -> string voption)
 
     val (|AttribElemStringArg|_|): (ILAttribElem -> string option)
-
-    [<return: Struct>]
-    val (|Int32Expr|_|): Expr -> int32 voption
-
-    /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
-    /// a set of residual types that must also satisfy the constraint
-    [<return: Struct>]
-    val (|SpecialComparableHeadType|_|): TcGlobals -> TType -> TType list voption
-
-    [<return: Struct>]
-    val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list voption
-
-    [<return: Struct>]
-    val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit voption
-
-    val (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|):
 
     val HasDefaultAugmentationAttribute: g: TcGlobals -> tcref: TyconRef -> bool
 
