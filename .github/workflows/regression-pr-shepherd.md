@@ -36,6 +36,7 @@ safe-outputs:
 tools:
   github:
     toolsets: [all]
+    min-integrity: none
   bash: true
   repo-memory: true
 ---
