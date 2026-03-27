@@ -14,6 +14,29 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
 
+/// How to access union data at a given call site.
+/// Combines the per-call-site 'avoidHelpers' flag with the per-union 'HasHelpers' setting
+/// into a single value computed once at the entry point.
+[<RequireQualifiedAccess>]
+type DataAccess =
+    /// Use raw field loads/stores (intra-assembly access, or union has no helpers)
+    | RawFields
+    /// Use helper methods (get_Tag, get_IsXxx, NewXxx) — inter-assembly with AllHelpers or SpecialFSharpOptionHelpers
+    | ViaHelpers
+    /// Use list-specific helper methods (HeadOrDefault, TailOrNull naming) — inter-assembly with SpecialFSharpListHelpers
+    | ViaListHelpers
+
+/// Compute the access strategy from the per-call-site flag and per-union helpers setting.
+let computeDataAccess (avoidHelpers: bool) (cuspec: IlxUnionSpec) =
+    if avoidHelpers then
+        DataAccess.RawFields
+    else
+        match cuspec.HasHelpers with
+        | IlxUnionHasHelpers.NoHelpers -> DataAccess.RawFields
+        | IlxUnionHasHelpers.AllHelpers
+        | IlxUnionHasHelpers.SpecialFSharpOptionHelpers -> DataAccess.ViaHelpers
+        | IlxUnionHasHelpers.SpecialFSharpListHelpers -> DataAccess.ViaListHelpers
+
 [<Literal>]
 let TagNil = 0
 
@@ -347,16 +370,12 @@ let altOfUnionSpec (cuspec: IlxUnionSpec) cidx =
 // Nullary cases on types with helpers do not reveal their underlying type even when
 // using runtime type discrimination, because the underlying type is never needed from
 // C# code and pollutes the visible API surface. In this case we must discriminate by
-// calling the IsFoo helper. This only applies to discriminations outside the
-// assembly where the type is defined (indicated by 'avoidHelpers' flag - if this is true
-// then the reference is intra-assembly).
-let doesRuntimeTypeDiscriminateUseHelper avoidHelpers (cuspec: IlxUnionSpec) (alt: IlxUnionCase) =
-    not avoidHelpers
-    && alt.IsNullary
-    && cuspec.HasHelpers = IlxUnionHasHelpers.AllHelpers
+// calling the IsFoo helper. This only applies when accessing via helpers (inter-assembly).
+let doesRuntimeTypeDiscriminateUseHelper (access: DataAccess) (alt: IlxUnionCase) =
+    alt.IsNullary && access = DataAccess.ViaHelpers
 
-let mkRuntimeTypeDiscriminate (ilg: ILGlobals) avoidHelpers cuspec alt altName altTy =
-    let useHelper = doesRuntimeTypeDiscriminateUseHelper avoidHelpers cuspec alt
+let mkRuntimeTypeDiscriminate (ilg: ILGlobals) access cuspec alt altName altTy =
+    let useHelper = doesRuntimeTypeDiscriminateUseHelper access alt
 
     if useHelper then
         let baseTy = baseTyOfUnionSpec cuspec
@@ -367,13 +386,13 @@ let mkRuntimeTypeDiscriminate (ilg: ILGlobals) avoidHelpers cuspec alt altName a
     else
         [ I_isinst altTy; AI_ldnull; AI_cgt_un ]
 
-let mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy after =
-    let useHelper = doesRuntimeTypeDiscriminateUseHelper avoidHelpers cuspec alt
+let mkRuntimeTypeDiscriminateThen ilg access cuspec alt altName altTy after =
+    let useHelper = doesRuntimeTypeDiscriminateUseHelper access alt
 
     match after with
     | I_brcmp(BI_brfalse, _)
     | I_brcmp(BI_brtrue, _) when not useHelper -> [ I_isinst altTy; after ]
-    | _ -> mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName altTy @ [ after ]
+    | _ -> mkRuntimeTypeDiscriminate ilg access cuspec alt altName altTy @ [ after ]
 
 let mkGetTagFromField ilg cuspec baseTy =
     mkNormalLdfld (refToFieldInTy baseTy (mkTagFieldId ilg cuspec))
@@ -381,36 +400,38 @@ let mkGetTagFromField ilg cuspec baseTy =
 let mkSetTagToField ilg cuspec baseTy =
     mkNormalStfld (refToFieldInTy baseTy (mkTagFieldId ilg cuspec))
 
-let adjustFieldName hasHelpers nm =
+let adjustFieldNameForTypeDef hasHelpers nm =
     match hasHelpers, nm with
     | SpecialFSharpListHelpers, "Head" -> "HeadOrDefault"
     | SpecialFSharpListHelpers, "Tail" -> "TailOrNull"
     | _ -> nm
 
-let mkLdData (avoidHelpers, cuspec, cidx, fidx) =
+let adjustFieldName access nm =
+    match access, nm with
+    | DataAccess.ViaListHelpers, "Head" -> "HeadOrDefault"
+    | DataAccess.ViaListHelpers, "Tail" -> "TailOrNull"
+    | _ -> nm
+
+let mkLdData (access, cuspec, cidx, fidx) =
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAltIdx cuspec alt cidx
     let fieldDef = alt.FieldDef fidx
 
-    if avoidHelpers then
-        mkNormalLdfld (mkILFieldSpecInTy (altTy, fieldDef.LowerName, fieldDef.Type))
-    else
-        mkNormalCall (
-            mkILNonGenericInstanceMethSpecInTy (altTy, "get_" + adjustFieldName cuspec.HasHelpers fieldDef.Name, [], fieldDef.Type)
-        )
+    match access with
+    | DataAccess.RawFields -> mkNormalLdfld (mkILFieldSpecInTy (altTy, fieldDef.LowerName, fieldDef.Type))
+    | _ -> mkNormalCall (mkILNonGenericInstanceMethSpecInTy (altTy, "get_" + adjustFieldName access fieldDef.Name, [], fieldDef.Type))
 
-let mkLdDataAddr (avoidHelpers, cuspec, cidx, fidx) =
+let mkLdDataAddr (access, cuspec, cidx, fidx) =
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAltIdx cuspec alt cidx
     let fieldDef = alt.FieldDef fidx
 
-    if avoidHelpers then
-        mkNormalLdflda (mkILFieldSpecInTy (altTy, fieldDef.LowerName, fieldDef.Type))
-    else
-        failwith (sprintf "can't load address using helpers, for fieldDef %s" fieldDef.LowerName)
+    match access with
+    | DataAccess.RawFields -> mkNormalLdflda (mkILFieldSpecInTy (altTy, fieldDef.LowerName, fieldDef.Type))
+    | _ -> failwith (sprintf "can't load address using helpers, for fieldDef %s" fieldDef.LowerName)
 
-let mkGetTailOrNull avoidHelpers cuspec =
-    mkLdData (avoidHelpers, cuspec, 1, 1) (* tail is in alternative 1, field number 1 *)
+let mkGetTailOrNull access cuspec =
+    mkLdData (access, cuspec, 1, 1) (* tail is in alternative 1, field number 1 *)
 
 let mkGetTagFromHelpers ilg (cuspec: IlxUnionSpec) =
     let baseTy = baseTyOfUnionSpec cuspec
@@ -537,7 +558,7 @@ let mkNewData ilg (cuspec, cidx) =
             // Everything else: raw construction
             | _ -> emitRawConstruction ilg cuspec layout cidx
 
-let private emitIsCase ilg avoidHelpers cuspec (layout: UnionLayout) cidx =
+let private emitIsCase ilg access cuspec (layout: UnionLayout) cidx =
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAltIdx cuspec alt cidx
     let altName = alt.Name
@@ -553,18 +574,18 @@ let private emitIsCase ilg avoidHelpers cuspec (layout: UnionLayout) cidx =
             [ AI_ldnull; AI_cgt_un ]
         | UnionLayout.SingleCaseRef _
         | UnionLayout.SingleCaseStruct _ -> [ mkLdcInt32 1 ]
-        | UnionLayout.SmallRefUnion _ -> mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName altTy
+        | UnionLayout.SmallRefUnion _ -> mkRuntimeTypeDiscriminate ilg access cuspec alt altName altTy
         | UnionLayout.TaggedRefUnion _
         | UnionLayout.TaggedStructUnion _ -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
         | UnionLayout.ListTailOrNull _ ->
             match cidx with
-            | TagNil -> [ mkGetTailOrNull avoidHelpers cuspec; AI_ldnull; AI_ceq ]
-            | TagCons -> [ mkGetTailOrNull avoidHelpers cuspec; AI_ldnull; AI_cgt_un ]
+            | TagNil -> [ mkGetTailOrNull access cuspec; AI_ldnull; AI_ceq ]
+            | TagCons -> [ mkGetTailOrNull access cuspec; AI_ldnull; AI_cgt_un ]
             | _ -> failwith "emitIsCase - unexpected list case index"
 
-let mkIsData ilg (avoidHelpers, cuspec, cidx) =
+let mkIsData ilg (access, cuspec, cidx) =
     let layout = classifyFromSpec cuspec
-    emitIsCase ilg avoidHelpers cuspec layout cidx
+    emitIsCase ilg access cuspec layout cidx
 
 type ICodeGen<'Mark> =
     abstract CodeLabel: 'Mark -> ILCodeLabel
@@ -601,7 +622,7 @@ let genWith g : ILCode =
         Locals = []
     }
 
-let private emitBranchOnCase ilg sense avoidHelpers cuspec (layout: UnionLayout) cidx tg =
+let private emitBranchOnCase ilg sense access cuspec (layout: UnionLayout) cidx tg =
     let neg = (if sense then BI_brfalse else BI_brtrue)
     let pos = (if sense then BI_brtrue else BI_brfalse)
     let alt = altOfUnionSpec cuspec cidx
@@ -619,27 +640,26 @@ let private emitBranchOnCase ilg sense avoidHelpers cuspec (layout: UnionLayout)
             [ I_brcmp(pos, tg) ]
         | UnionLayout.SingleCaseRef _
         | UnionLayout.SingleCaseStruct _ -> []
-        | UnionLayout.SmallRefUnion _ -> mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy (I_brcmp(pos, tg))
+        | UnionLayout.SmallRefUnion _ -> mkRuntimeTypeDiscriminateThen ilg access cuspec alt altName altTy (I_brcmp(pos, tg))
         | UnionLayout.TaggedRefUnion _
         | UnionLayout.TaggedStructUnion _ -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp(pos, tg))
         | UnionLayout.ListTailOrNull _ ->
             match cidx with
-            | TagNil -> [ mkGetTailOrNull avoidHelpers cuspec; I_brcmp(neg, tg) ]
-            | TagCons -> [ mkGetTailOrNull avoidHelpers cuspec; I_brcmp(pos, tg) ]
+            | TagNil -> [ mkGetTailOrNull access cuspec; I_brcmp(neg, tg) ]
+            | TagCons -> [ mkGetTailOrNull access cuspec; I_brcmp(pos, tg) ]
             | _ -> failwith "emitBranchOnCase - unexpected list case index"
 
-let mkBrIsData ilg sense (avoidHelpers, cuspec, cidx, tg) =
+let mkBrIsData ilg sense (access, cuspec, cidx, tg) =
     let layout = classifyFromSpec cuspec
-    emitBranchOnCase ilg sense avoidHelpers cuspec layout cidx tg
+    emitBranchOnCase ilg sense access cuspec layout cidx tg
 
-let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: IlxUnionSpec) =
-    // If helpers exist, use them
-    match cuspec.HasHelpers with
-    | SpecialFSharpListHelpers
-    | AllHelpers when not avoidHelpers ->
+let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionSpec) =
+    match access with
+    | DataAccess.ViaHelpers
+    | DataAccess.ViaListHelpers ->
         ldOpt |> Option.iter cg.EmitInstr
         cg.EmitInstr(mkGetTagFromHelpers ilg cuspec)
-    | _ ->
+    | DataAccess.RawFields ->
 
         let layout = classifyFromSpec cuspec
         let alts = cuspec.Alternatives
@@ -648,7 +668,7 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: Ilx
         | UnionLayout.ListTailOrNull _ ->
             // leaves 1 if cons, 0 if not
             ldOpt |> Option.iter cg.EmitInstr
-            cg.EmitInstrs [ mkGetTailOrNull avoidHelpers cuspec; AI_ldnull; AI_cgt_un ]
+            cg.EmitInstrs [ mkGetTailOrNull access cuspec; AI_ldnull; AI_cgt_un ]
         | UnionLayout.TaggedRefUnion(baseTy, _)
         | UnionLayout.TaggedStructUnion(baseTy, _) ->
             ldOpt |> Option.iter cg.EmitInstr
@@ -684,7 +704,7 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: Ilx
                     else
                         let altName = alt.Name
                         let altTy = tyForAltIdx cuspec alt cidx
-                        mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy test
+                        mkRuntimeTypeDiscriminateThen ilg access cuspec alt altName altTy test
 
                 cg.EmitInstrs(ld :: testBlock)
                 cg.SetMarkToHere internalLab
@@ -699,10 +719,10 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: Ilx
             cg.EmitInstr(mkLdcInt32 0)
             cg.SetMarkToHere outlab
 
-let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: IlxUnionSpec) =
-    emitLdDataTagPrim ilg None cg (avoidHelpers, cuspec)
+let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionSpec) =
+    emitLdDataTagPrim ilg None cg (access, cuspec)
 
-let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail avoidHelpers cuspec (layout: UnionLayout) cidx =
+let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail access cuspec (layout: UnionLayout) cidx =
     let alt = altOfUnionSpec cuspec cidx
 
     match layout, cidx with
@@ -724,7 +744,7 @@ let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail avoidHelpers cuspec
                 let outlab = cg.GenerateDelayMark()
                 let internal1 = cg.GenerateDelayMark()
                 cg.EmitInstr AI_dup
-                emitLdDataTagPrim ilg None cg (avoidHelpers, cuspec)
+                emitLdDataTagPrim ilg None cg (access, cuspec)
                 cg.EmitInstrs [ mkLdcInt32 cidx; I_brcmp(BI_beq, cg.CodeLabel outlab) ]
                 cg.SetMarkToHere internal1
                 cg.EmitInstrs [ cg.MkInvalidCastExnNewobj(); I_throw ]
@@ -755,11 +775,11 @@ let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail avoidHelpers cuspec
                 let altTy = tyForAltIdx cuspec alt cidx
                 cg.EmitInstr(I_castclass altTy)
 
-let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, avoidHelpers, cuspec, cidx) =
+let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, access, cuspec, cidx) =
     let layout = classifyFromSpec cuspec
-    emitCastToCase ilg cg canfail avoidHelpers cuspec layout cidx
+    emitCastToCase ilg cg canfail access cuspec layout cidx
 
-let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) avoidHelpers cuspec (layout: UnionLayout) cases =
+let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) access cuspec (layout: UnionLayout) cases =
     let baseTy = baseTyOfUnionSpec cuspec
 
     match layout with
@@ -781,7 +801,7 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) avoidHelpers cuspec (layout
             if cmpNull || altFoldsAsRootInstance layout alt cuspec.AlternativesArray then
                 cg.EmitInstr testInstr
             else
-                cg.EmitInstrs(mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy testInstr)
+                cg.EmitInstrs(mkRuntimeTypeDiscriminateThen ilg access cuspec alt altName altTy testInstr)
 
             cg.SetMarkToHere failLab
 
@@ -817,9 +837,9 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) avoidHelpers cuspec (layout
 
     | UnionLayout.ListTailOrNull _ -> failwith "unexpected: switches on lists should have been eliminated to brisdata tests"
 
-let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
+let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (access, cuspec, cases) =
     let layout = classifyFromSpec cuspec
-    emitCaseSwitch ilg cg avoidHelpers cuspec layout cases
+    emitCaseSwitch ilg cg access cuspec layout cases
 
 //---------------------------------------------------
 // Generate the union classes
@@ -838,7 +858,7 @@ let mkMethodsAndPropertiesForFields
         fields
         |> Array.map (fun field ->
             ILPropertyDef(
-                name = adjustFieldName hasHelpers field.Name,
+                name = adjustFieldNameForTypeDef hasHelpers field.Name,
                 attributes = PropertyAttributes.None,
                 setMethod = None,
                 getMethod =
@@ -846,7 +866,7 @@ let mkMethodsAndPropertiesForFields
                         mkILMethRef (
                             ilTy.TypeRef,
                             ILCallingConv.Instance,
-                            "get_" + adjustFieldName hasHelpers field.Name,
+                            "get_" + adjustFieldNameForTypeDef hasHelpers field.Name,
                             0,
                             [],
                             field.Type
@@ -875,7 +895,7 @@ let mkMethodsAndPropertiesForFields
 
                 yield
                     mkILNonGenericInstanceMethod (
-                        "get_" + adjustFieldName hasHelpers field.Name,
+                        "get_" + adjustFieldNameForTypeDef hasHelpers field.Name,
                         access,
                         [],
                         ilReturn,
@@ -1096,7 +1116,14 @@ let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: I
                 cud.HelpersAccessibility,
                 [],
                 mkILReturn g.ilg.typ_Bool,
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode ([ mkLdarg0 ] @ mkIsData g.ilg (true, cuspec, num)), attr, imports)
+                mkMethodBody (
+                    true,
+                    [],
+                    2,
+                    nonBranchingInstrsToCode ([ mkLdarg0 ] @ mkIsData g.ilg (DataAccess.RawFields, cuspec, num)),
+                    attr,
+                    imports
+                )
             ))
                 .With(customAttrs = additionalAttributes)
             |> ctx.stampMethodAsGenerated
@@ -1643,7 +1670,7 @@ let private emitTagInfrastructure (ctx: TypeDefContext) =
 
         let code =
             genWith (fun cg ->
-                emitLdDataTagPrim g.ilg (Some mkLdarg0) cg (true, cuspec)
+                emitLdDataTagPrim g.ilg (Some mkLdarg0) cg (DataAccess.RawFields, cuspec)
                 cg.EmitInstr I_ret)
 
         let body = mkMethodBody (true, [], 2, code, cud.DebugPoint, cud.DebugImports)

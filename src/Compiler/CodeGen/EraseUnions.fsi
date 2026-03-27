@@ -10,17 +10,27 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.TcGlobals
 
+/// How to access union data at a given call site.
+[<RequireQualifiedAccess>]
+type DataAccess =
+    | RawFields
+    | ViaHelpers
+    | ViaListHelpers
+
+/// Compute the access strategy from the per-call-site flag and per-union helpers setting.
+val computeDataAccess: avoidHelpers: bool -> cuspec: IlxUnionSpec -> DataAccess
+
 /// Make the instruction sequence for a "newdata" operation
 val mkNewData: ilg: ILGlobals -> cuspec: IlxUnionSpec * cidx: int -> ILInstr list
 
 /// Make the instruction sequence for a "isdata" operation
-val mkIsData: ilg: ILGlobals -> avoidHelpers: bool * cuspec: IlxUnionSpec * cidx: int -> ILInstr list
+val mkIsData: ilg: ILGlobals -> access: DataAccess * cuspec: IlxUnionSpec * cidx: int -> ILInstr list
 
 /// Make the instruction for a "lddata" operation
-val mkLdData: avoidHelpers: bool * cuspec: IlxUnionSpec * cidx: int * fidx: int -> ILInstr
+val mkLdData: access: DataAccess * cuspec: IlxUnionSpec * cidx: int * fidx: int -> ILInstr
 
 /// Make the instruction for a "lddataa" operation
-val mkLdDataAddr: avoidHelpers: bool * cuspec: IlxUnionSpec * cidx: int * fidx: int -> ILInstr
+val mkLdDataAddr: access: DataAccess * cuspec: IlxUnionSpec * cidx: int * fidx: int -> ILInstr
 
 /// Make the instruction for a "stdata" operation
 val mkStData: cuspec: IlxUnionSpec * cidx: int * fidx: int -> ILInstr
@@ -29,7 +39,7 @@ val mkStData: cuspec: IlxUnionSpec * cidx: int * fidx: int -> ILInstr
 val mkBrIsData:
     ilg: ILGlobals ->
     sense: bool ->
-    avoidHelpers: bool * cuspec: IlxUnionSpec * cidx: int * tg: ILCodeLabel ->
+    access: DataAccess * cuspec: IlxUnionSpec * cidx: int * tg: ILCodeLabel ->
         ILInstr list
 
 /// Make the type definition for a union type
@@ -61,14 +71,14 @@ type ICodeGen<'Mark> =
 
 /// Emit the instruction sequence for a "castdata" operation
 val emitCastData:
-    ilg: ILGlobals -> cg: ICodeGen<'Mark> -> canfail: bool * avoidHelpers: bool * cuspec: IlxUnionSpec * int -> unit
+    ilg: ILGlobals -> cg: ICodeGen<'Mark> -> canfail: bool * access: DataAccess * cuspec: IlxUnionSpec * int -> unit
 
 /// Emit the instruction sequence for a "lddatatag" operation
-val emitLdDataTag: ilg: ILGlobals -> cg: ICodeGen<'Mark> -> avoidHelpers: bool * cuspec: IlxUnionSpec -> unit
+val emitLdDataTag: ilg: ILGlobals -> cg: ICodeGen<'Mark> -> access: DataAccess * cuspec: IlxUnionSpec -> unit
 
 /// Emit the instruction sequence for a "switchdata" operation
 val emitDataSwitch:
     ilg: ILGlobals ->
     cg: ICodeGen<'Mark> ->
-    avoidHelpers: bool * cuspec: IlxUnionSpec * cases: (int * ILCodeLabel) list ->
+    access: DataAccess * cuspec: IlxUnionSpec * cases: (int * ILCodeLabel) list ->
         unit
