@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.TypedTreeOps
 
+open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
@@ -16,8 +17,18 @@ open FSharp.Compiler.TcGlobals
 module internal FreeTypeVars =
 
     /// Represents the options to activate when collecting free variables
-    [<Sealed>]
     type FreeVarOptions =
+        { canCache: bool
+          collectInTypes: bool
+          includeLocalTycons: bool
+          includeTypars: bool
+          includeLocalTyconReprs: bool
+          includeRecdFields: bool
+          includeUnionCases: bool
+          includeLocals: bool
+          templateReplacement: ((TyconRef -> bool) * Typars) option
+          stackGuard: StackGuard option }
+
         /// During backend code generation of state machines, register a template replacement for struct types.
         /// This may introduce new free variables related to the instantiation of the struct type.
         member WithTemplateReplacement: (TyconRef -> bool) * Typars -> FreeVarOptions
@@ -46,6 +57,18 @@ module internal FreeTypeVars =
 
     val accFreeInType: FreeVarOptions -> TType -> FreeTyvars -> FreeTyvars
 
+    val accFreeTycon: FreeVarOptions -> TyconRef -> FreeTyvars -> FreeTyvars
+
+    val boundTypars: FreeVarOptions -> Typars -> FreeTyvars -> FreeTyvars
+
+    val accFreeInTrait: FreeVarOptions -> TraitConstraintInfo -> FreeTyvars -> FreeTyvars
+
+    val accFreeInTraitSln: FreeVarOptions -> TraitConstraintSln -> FreeTyvars -> FreeTyvars
+
+    val accFreeInTupInfo: FreeVarOptions -> TupInfo -> FreeTyvars -> FreeTyvars
+
+    val accFreeInVal: FreeVarOptions -> Val -> FreeTyvars -> FreeTyvars
+
     val accFreeInTypars: FreeVarOptions -> Typars -> FreeTyvars -> FreeTyvars
 
     val freeInType: FreeVarOptions -> TType -> FreeTyvars
@@ -63,12 +86,18 @@ module internal FreeTypeVars =
 
     val freeInModuleTy: ModuleOrNamespaceType -> FreeTyvars
 
-
-[<AutoOpen>]
-module internal Display =
+    val valOfBind: Binding -> Val
 
     /// Get the values for a set of bindings
     val valsOfBinds: Bindings -> Vals
+
+    val GetMemberTypeInFSharpForm:
+        TcGlobals -> SynMemberFlags -> ValReprInfo -> TType -> range -> Typars * CurriedArgInfos * TType * ArgReprInfo
+
+    val checkMemberValRef: ValRef -> ValMemberInfo * ValReprInfo
+
+[<AutoOpen>]
+module internal Display =
 
     val generalTyconRefInst: TyconRef -> TypeInst
 
@@ -112,7 +141,8 @@ module internal Display =
     val PartitionValTypars: TcGlobals -> Val -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
 
     /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
-    val PartitionValRefTypars: TcGlobals -> ValRef -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
+    val PartitionValRefTypars:
+        TcGlobals -> ValRef -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
 
     /// Count the number of type parameters on the enclosing type
     val CountEnclosingTyparsOfActualParentOfVal: Val -> int
@@ -130,7 +160,6 @@ module internal Display =
     type TyparConstraintsWithTypars = (Typar * TyparConstraint) list
 
     module PrettyTypes =
-
 
         val NeedsPrettyTyparName: Typar -> bool
 
@@ -186,7 +215,6 @@ module internal Display =
             TyparInstantiation * TTypes * CurriedArgInfos * TType ->
                 (TyparInstantiation * TTypes * CurriedArgInfos * TType) * TyparConstraintsWithTypars
 
-
     /// Describes how generic type parameters in a type will be formatted during printing
     type GenericParameterStyle =
         /// Use the IsPrefixDisplay member of the TyCon to determine the style
@@ -198,7 +226,6 @@ module internal Display =
         /// Force the prefix style for a top-level type,
         /// for example, `seq<int list>` instead of `int list seq`
         | TopLevelPrefix of nested: GenericParameterStyle
-
 
     type DisplayEnv =
         {
@@ -275,7 +302,7 @@ module internal Display =
 
     val fullDisplayTextOfRecdFieldRef: RecdFieldRef -> string
 
-    val ticksAndArgCountTextOfTyconRef: TyconRef -> string
+    val fullMangledPathToTyconRef: TyconRef -> string array
 
     /// A unique qualified name for each type definition, used to qualify the names of interface implementation methods
     val qualifiedMangledNameOfTyconRef: TyconRef -> string -> string
@@ -291,7 +318,6 @@ module internal Display =
     /// Utilities used in simplifying types for visual presentation
     module SimplifyTypes =
 
-
         type TypeSimplificationInfo =
             { singletons: Typar Zset
               inplaceConstraints: Zmap<Typar, TType>
@@ -302,6 +328,9 @@ module internal Display =
         val CollectInfo: bool -> TType list -> TyparConstraintsWithTypars -> TypeSimplificationInfo
 
     val superOfTycon: TcGlobals -> Tycon -> TType
+
+    /// walk a TyconRef's inheritance tree, yielding any parent types as an array
+    val supersOfTyconRef: TyconRef -> TyconRef array
 
     val GetTraitConstraintInfosOfTypars: TcGlobals -> Typars -> TraitConstraintInfo list
 

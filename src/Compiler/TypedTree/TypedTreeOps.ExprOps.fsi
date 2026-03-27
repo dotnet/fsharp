@@ -4,6 +4,7 @@
 namespace FSharp.Compiler.TypedTreeOps
 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -52,7 +53,14 @@ module internal AddressOps =
 
     /// Helper to take the address of an expression
     val mkExprAddrOfExprAux:
-        TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool * bool
+        TcGlobals ->
+        bool ->
+        bool ->
+        Mutates ->
+        Expr ->
+        ValRef option ->
+        range ->
+            (Val * Expr) option * Expr * bool * bool
 
     /// Take the address of an expression, or force it into a mutable local. Any allocated
     /// mutable local may need to be kept alive over a larger expression, hence we return
@@ -174,7 +182,8 @@ module internal IntrinsicCalls =
 
     val mkRefTupledVars: TcGlobals -> range -> Val list -> Expr
 
-    val mkRecordExpr: TcGlobals -> RecordConstructionInfo * TyconRef * TypeInst * RecdFieldRef list * Exprs * range -> Expr
+    val mkRecordExpr:
+        TcGlobals -> RecordConstructionInfo * TyconRef * TypeInst * RecdFieldRef list * Exprs * range -> Expr
 
     val mkAnonRecd: TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr
 
@@ -204,7 +213,8 @@ module internal IntrinsicCalls =
 
     val mkInvalidCastExnNewobj: TcGlobals -> ILInstr
 
-    val mkCallNewFormat: TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> formatStringExpr: Expr -> Expr
+    val mkCallNewFormat:
+        TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> formatStringExpr: Expr -> Expr
 
     val mkCallGetGenericComparer: TcGlobals -> range -> Expr
 
@@ -436,7 +446,7 @@ module internal IntrinsicCalls =
 
     val mkGetString: TcGlobals -> range -> Expr -> Expr -> Expr
 
-    val mkGetStringChar: TcGlobals -> range -> Expr -> Expr -> Expr
+    val mkGetStringChar: (TcGlobals -> range -> Expr -> Expr -> Expr)
 
     val mkGetStringLength: TcGlobals -> range -> Expr -> Expr
 
@@ -471,6 +481,10 @@ module internal IntrinsicCalls =
     val mkReraiseLibCall: TcGlobals -> TType -> range -> Expr
 
     val mkReraise: range -> TType -> Expr
+
+    val isIDelegateEventType: TcGlobals -> TType -> bool
+
+    val destIDelegateEventType: TcGlobals -> TType -> TType
 
     val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
 
@@ -520,7 +534,7 @@ module internal ExprHelpers =
         delInvokeRef: Expr * delExpr: Expr * delInvokeTy: TType * tyargs: TypeInst * delInvokeArg: Expr * m: range ->
             Expr
 
-    val MakeArgsForTopArgs: TcGlobals -> range -> (TType * ArgReprInfo) list list -> TyparInst -> Val list list
+    val MakeArgsForTopArgs: TcGlobals -> range -> (TType * ArgReprInfo) list list -> TyparInstantiation -> Val list list
 
     val AdjustValForExpectedValReprInfo: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 
@@ -561,7 +575,7 @@ module internal ExprHelpers =
     val (|OpPipeRight3|_|): TcGlobals -> Expr -> (TType * Expr * Expr * Expr * Expr * range) voption
 
     /// XmlDoc signature helpers
-    val commaEncs: string list -> string
+    val commaEncs: string seq -> string
 
     val angleEnc: string -> string
 

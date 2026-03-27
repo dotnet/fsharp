@@ -3,8 +3,12 @@
 /// TypedTreeOps.Remapping: signature operations, expression free variables, expression remapping, and expression shape queries.
 namespace FSharp.Compiler.TypedTreeOps
 
+open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -62,13 +66,20 @@ module internal SignatureOps =
         TcGlobals -> ModuleOrNamespaceType -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
 
     /// Compute the hiding information that corresponds to the hiding applied at an assembly boundary
-    val ComputeSignatureHidingInfoAtAssemblyBoundary: ModuleOrNamespaceType -> SignatureHidingInfo -> SignatureHidingInfo
+    val ComputeSignatureHidingInfoAtAssemblyBoundary:
+        ModuleOrNamespaceType -> SignatureHidingInfo -> SignatureHidingInfo
 
     /// Compute the hiding information that corresponds to the hiding applied at an assembly boundary
     val ComputeImplementationHidingInfoAtAssemblyBoundary:
         ModuleOrNamespaceContents -> SignatureHidingInfo -> SignatureHidingInfo
 
     val mkRepackageRemapping: SignatureRepackageInfo -> Remap
+
+    val addValRemap: Val -> Val -> Remap -> Remap
+
+    val valLinkageAEquiv: TcGlobals -> TypeEquivEnv -> Val -> Val -> bool
+
+    val abstractSlotValsOfTycons: Tycon list -> Val list
 
     /// Get the value including fsi remapping
     val DoRemapTycon: (Remap * SignatureHidingInfo) list -> Tycon -> Tycon
@@ -89,13 +100,13 @@ module internal SignatureOps =
     val IsHiddenRecdField: (Remap * SignatureHidingInfo) list -> RecdFieldRef -> bool
 
     /// Fold over all the value and member definitions in a module or namespace type
-    val foldModuleOrNamespaceTy: (Val -> 'T -> 'T) -> (Val -> 'T -> 'T) -> ModuleOrNamespaceType -> 'T -> 'T
+    val foldModuleOrNamespaceTy: (Entity -> 'T -> 'T) -> (Val -> 'T -> 'T) -> ModuleOrNamespaceType -> 'T -> 'T
 
     /// Collect all the values and member definitions in a module or namespace type
-    val allValsOfModuleOrNamespaceTy: ModuleOrNamespaceType -> seq<Val>
+    val allValsOfModuleOrNamespaceTy: ModuleOrNamespaceType -> Val list
 
     /// Collect all the entities in a module or namespace type
-    val allEntitiesOfModuleOrNamespaceTy: ModuleOrNamespaceType -> seq<Entity>
+    val allEntitiesOfModuleOrNamespaceTy: ModuleOrNamespaceType -> Entity list
 
     /// Check if a set of free type variables are all public
     val freeTyvarsAllPublic: FreeTyvars -> bool
@@ -222,6 +233,26 @@ module internal ExprRemapping =
 
     val allTopLevelValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 
+    type RemapContext
+
+    val mkRemapContext: TcGlobals -> StackGuard -> RemapContext
+
+    val tryStripLambdaN: int -> Expr -> (Val list list * Expr) option
+
+    val tmenvCopyRemapAndBindTypars: (Attribs -> Attribs) -> Remap -> Typars -> Typars * Remap
+
+    val remapAttribs: RemapContext -> Remap -> Attribs -> Attribs
+
+    val remapValData: RemapContext -> Remap -> ValData -> ValData
+
+    val mapImmediateValsAndTycons: (Entity -> Entity) -> (Val -> Val) -> ModuleOrNamespaceType -> ModuleOrNamespaceType
+
+    val remapTyconRepr: RemapContext -> Remap -> TyconRepresentation -> TyconRepresentation
+
+    val remapTyconAug: Remap -> TyconAugmentation -> TyconAugmentation
+
+    val remapTyconExnInfo: RemapContext -> Remap -> ExceptionInfo -> ExceptionInfo
+
 [<AutoOpen>]
 module internal ExprShapeQueries =
 
@@ -230,6 +261,18 @@ module internal ExprShapeQueries =
     val remarkExpr: range -> Expr -> Expr
 
     val isRecdOrUnionOrStructTyconRefDefinitelyMutable: TyconRef -> bool
+
+    val isUnionCaseRefDefinitelyMutable: UnionCaseRef -> bool
+
+    val isExnDefinitelyMutable: TyconRef -> bool
+
+    val isUnionCaseFieldMutable: TcGlobals -> UnionCaseRef -> int -> bool
+
+    val isExnFieldMutable: TyconRef -> int -> bool
+
+    val useGenuineField: Tycon -> RecdField -> bool
+
+    val ComputeFieldName: Tycon -> RecdField -> string
 
     //-------------------------------------------------------------------------
     // Primitives associated with quotations
@@ -241,14 +284,22 @@ module internal ExprShapeQueries =
 
     val mkQuotedExprTy: TcGlobals -> TType -> TType
 
+    val mkRawQuotedExprTy: TcGlobals -> TType
+
     val mkAnyTupledTy: TcGlobals -> TupInfo -> TType list -> TType
 
+    val mkAnyAnonRecdTy: TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
+
     val mkRefTupledTy: TcGlobals -> TType list -> TType
+
+    val mkRefTupledVarsTy: TcGlobals -> Val list -> TType
 
     val mkMethodTy: TcGlobals -> TType list list -> TType -> TType
 
     /// Build a single-dimensional array type
     val mkArrayType: TcGlobals -> TType -> TType
+
+    val mkByteArrayTy: TcGlobals -> TType
 
     val GenWitnessArgTys: TcGlobals -> TraitWitnessInfo -> TType list list
 
@@ -266,6 +317,10 @@ module internal ExprShapeQueries =
     /// Reduce the application via let-bindings if the function value is a lambda expression.
     val mkApps: TcGlobals -> (Expr * TType) * TType list list * Exprs * range -> Expr
 
+    val mkExprAppAux: TcGlobals -> Expr -> TType -> Exprs -> range -> Expr
+
+    val mkAppsAux: TcGlobals -> Expr -> TType -> TType list list -> Exprs -> range -> Expr
+
     /// Build the application of a generic construct to a set of type arguments.
     /// Reduce the application via substitution if the function value is a typed lambda expression.
     val mkTyAppExpr: range -> Expr * TType -> TType list -> Expr
@@ -277,4 +332,3 @@ module internal ExprShapeQueries =
     /// pre-decide the branch taken at compile-time.
     val mkAndSimplifyMatch:
         DebugPointAtBinding -> range -> range -> TType -> DecisionTree -> DecisionTreeTarget list -> Expr
-

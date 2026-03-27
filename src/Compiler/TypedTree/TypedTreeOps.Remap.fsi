@@ -123,7 +123,7 @@ module internal TypeRemapping =
 
     val isRemapEmpty: Remap -> bool
 
-    val instTyparRef: TyparInstantiation -> TType -> Typar -> TType
+    val instTyparRef: tpinst: (Typar * 'a) list -> ty: 'a -> tp: Typar -> 'a
 
     /// Remap a reference to a type definition using the given remapping substitution
     val remapTyconRef: TyconRefMap<TyconRef> -> TyconRef -> TyconRef
@@ -153,7 +153,7 @@ module internal TypeRemapping =
 
     val remapTraitInfo: Remap -> TraitConstraintInfo -> TraitConstraintInfo
 
-    val bindTypars: Typars -> TTypes -> TyparInstantiation -> TyparInstantiation
+    val bindTypars: tps: 'a list -> tyargs: 'b list -> tpinst: ('a * 'b) list -> ('a * 'b) list
 
     val copyAndRemapAndBindTyparsFull: (Attrib list -> Attrib list) -> Remap -> Typars -> Typars * Remap
 

@@ -161,7 +161,6 @@ module internal TypeEncoding =
 
     val GetMemberCallInfo: TcGlobals -> ValRef * ValUseFlag -> int * bool * bool * bool * bool * bool * bool * bool
 
-
 [<AutoOpen>]
 module internal Rewriting =
 
@@ -194,17 +193,16 @@ module internal Rewriting =
 
         member HasInterface: TcGlobals -> TType -> bool
 
-
     val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
 
     /// Make a remapping table for viewing a module or namespace 'from the outside'
     val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace
 
-
 [<AutoOpen>]
 module internal TupleCompilation =
 
-    val mkFastForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * Val * Expr * bool * Expr * Expr -> Expr
+    val mkFastForLoop:
+        TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * Val * Expr * bool * Expr * Expr -> Expr
 
     val IsSimpleSyntacticConstantExpr: TcGlobals -> Expr -> bool
 
@@ -296,7 +294,6 @@ module internal TupleCompilation =
     /// Match 'if __useResumableCode then ... else ...' expressions
     [<return: Struct>]
     val (|IfUseResumableStateMachinesExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption
-
 
 [<AutoOpen>]
 module internal AttribChecking =

@@ -12,6 +12,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
+open FSharp.Compiler
 open FSharp.Compiler.IO
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
@@ -36,65 +37,97 @@ open FSharp.Compiler.TypeProviders
 [<AutoOpen>]
 module internal ILExtensions =
 
-
     //----------------------------------------------------------------------------
     // Detect attributes
     //----------------------------------------------------------------------------
 
-    // AbsIL view of attributes (we read these from .NET binaries) 
-    let isILAttribByName (tencl: string list, tname: string) (attr: ILAttribute) = 
-        (attr.Method.DeclaringType.TypeSpec.Name = tname) &&
-        (attr.Method.DeclaringType.TypeSpec.Enclosing = tencl)
+    // AbsIL view of attributes (we read these from .NET binaries)
+    let isILAttribByName (tencl: string list, tname: string) (attr: ILAttribute) =
+        (attr.Method.DeclaringType.TypeSpec.Name = tname)
+        && (attr.Method.DeclaringType.TypeSpec.Enclosing = tencl)
 
     // AbsIL view of attributes (we read these from .NET binaries). The comparison is done by name.
-    let isILAttrib (tref: ILTypeRef) (attr: ILAttribute) = 
+    let isILAttrib (tref: ILTypeRef) (attr: ILAttribute) =
         isILAttribByName (tref.Enclosing, tref.Name) attr
 
     // REVIEW: consider supporting querying on Abstract IL custom attributes.
     // These linear iterations cost us a fair bit when there are lots of attributes
     // on imported types. However this is fairly rare and can also be solved by caching the
     // results of attribute lookups in the TAST
-    let HasILAttribute tref (attrs: ILAttributes) = 
-        attrs.AsArray() |> Array.exists (isILAttrib tref) 
+    let HasILAttribute tref (attrs: ILAttributes) =
+        attrs.AsArray() |> Array.exists (isILAttrib tref)
 
-    let TryDecodeILAttribute tref (attrs: ILAttributes) = 
-        attrs.AsArray() |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData x) else None)
+    let TryDecodeILAttribute tref (attrs: ILAttributes) =
+        attrs.AsArray()
+        |> Array.tryPick (fun x ->
+            if isILAttrib tref x then
+                Some(decodeILAttribData x)
+            else
+                None)
 
-    // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
+    // F# view of attributes (these get converted to AbsIL attributes in ilxgen)
     let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref tcref2
-    let HasFSharpAttribute g tref attrs = List.exists (IsMatchingFSharpAttribute g tref) attrs
-    let TryFindFSharpAttribute g tref attrs = List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
+    let HasFSharpAttribute g tref attrs =
+        List.exists (IsMatchingFSharpAttribute g tref) attrs
 
-    [<return: Struct>]
-    let (|ExtractAttribNamedArg|_|) nm args = 
-        args |> List.tryPick (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> Some v | _ -> None) |> ValueOption.ofOption
-
-    [<return: Struct>]
-    let (|ExtractILAttributeNamedArg|_|) nm (args: ILAttributeNamedArg list) = 
-        args |> List.tryPick (function nm2, _, _, v when nm = nm2 -> Some v | _ -> None) |> ValueOption.ofOption
+    let TryFindFSharpAttribute g tref attrs =
+        List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
     [<return: Struct>]
-    let (|StringExpr|_|) = function Expr.Const (Const.String n, _, _) -> ValueSome n | _ -> ValueNone
+    let (|ExtractAttribNamedArg|_|) nm args =
+        args
+        |> List.tryPick (function
+            | AttribNamedArg(nm2, _, _, v) when nm = nm2 -> Some v
+            | _ -> None)
+        |> ValueOption.ofOption
 
     [<return: Struct>]
-    let (|AttribInt32Arg|_|) = function AttribExpr(_, Expr.Const (Const.Int32 n, _, _)) -> ValueSome n | _ -> ValueNone
+    let (|ExtractILAttributeNamedArg|_|) nm (args: ILAttributeNamedArg list) =
+        args
+        |> List.tryPick (function
+            | nm2, _, _, v when nm = nm2 -> Some v
+            | _ -> None)
+        |> ValueOption.ofOption
 
     [<return: Struct>]
-    let (|AttribInt16Arg|_|) = function AttribExpr(_, Expr.Const (Const.Int16 n, _, _)) -> ValueSome n | _ -> ValueNone
+    let (|StringExpr|_|) =
+        function
+        | Expr.Const(Const.String n, _, _) -> ValueSome n
+        | _ -> ValueNone
 
     [<return: Struct>]
-    let (|AttribBoolArg|_|) = function AttribExpr(_, Expr.Const (Const.Bool n, _, _)) -> ValueSome n | _ -> ValueNone
+    let (|AttribInt32Arg|_|) =
+        function
+        | AttribExpr(_, Expr.Const(Const.Int32 n, _, _)) -> ValueSome n
+        | _ -> ValueNone
 
     [<return: Struct>]
-    let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _, _)) -> ValueSome n | _ -> ValueNone
+    let (|AttribInt16Arg|_|) =
+        function
+        | AttribExpr(_, Expr.Const(Const.Int16 n, _, _)) -> ValueSome n
+        | _ -> ValueNone
 
-    let (|AttribElemStringArg|_|) = function ILAttribElem.String(n) -> n | _ -> None
+    [<return: Struct>]
+    let (|AttribBoolArg|_|) =
+        function
+        | AttribExpr(_, Expr.Const(Const.Bool n, _, _)) -> ValueSome n
+        | _ -> ValueNone
 
-    let TryFindILAttribute (AttribInfo (atref, _)) attrs = 
-        HasILAttribute atref attrs
+    [<return: Struct>]
+    let (|AttribStringArg|_|) =
+        function
+        | AttribExpr(_, Expr.Const(Const.String n, _, _)) -> ValueSome n
+        | _ -> ValueNone
 
-    let IsILAttrib  (AttribInfo (builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
+    let (|AttribElemStringArg|_|) =
+        function
+        | ILAttribElem.String(n) -> n
+        | _ -> None
+
+    let TryFindILAttribute (AttribInfo(atref, _)) attrs = HasILAttribute atref attrs
+
+    let IsILAttrib (AttribInfo(builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
 
     let inline hasFlag (flags: ^F) (flag: ^F) : bool when ^F: enum<uint64> =
         let f = LanguagePrimitives.EnumToValue flags
@@ -127,7 +160,8 @@ module internal ILExtensions =
                 | "System.Runtime.CompilerServices.IDispatchConstantAttribute" -> WellKnownILAttributes.IDispatchConstantAttribute
                 | "System.Runtime.CompilerServices.IUnknownConstantAttribute" -> WellKnownILAttributes.IUnknownConstantAttribute
                 | "System.Runtime.CompilerServices.SetsRequiredMembersAttribute" -> WellKnownILAttributes.SetsRequiredMembersAttribute
-                | "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute" -> WellKnownILAttributes.CompilerFeatureRequiredAttribute
+                | "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute" ->
+                    WellKnownILAttributes.CompilerFeatureRequiredAttribute
                 | "System.Runtime.CompilerServices.RequiredMemberAttribute" -> WellKnownILAttributes.RequiredMemberAttribute
                 | _ -> WellKnownILAttributes.None
 
@@ -155,8 +189,10 @@ module internal ILExtensions =
     /// Compute well-known attribute flags for an ILAttributes collection.
     let computeILWellKnownFlags (_g: TcGlobals) (attrs: ILAttributes) : WellKnownILAttributes =
         let mutable flags = WellKnownILAttributes.None
+
         for attr in attrs.AsArray() do
             flags <- flags ||| classifyILAttrib attr
+
         flags
 
     /// Find the first IL attribute matching a specific well-known flag and decode it.
@@ -198,7 +234,8 @@ module internal ILExtensions =
 
         /// Non-caching (unlike ILAttributesStored.HasWellKnownAttribute which caches).
         member x.HasWellKnownAttribute(flag: WellKnownILAttributes) =
-            x.AsArray() |> Array.exists (fun attr -> classifyILAttrib attr &&& flag <> WellKnownILAttributes.None)
+            x.AsArray()
+            |> Array.exists (fun attr -> classifyILAttrib attr &&& flag <> WellKnownILAttributes.None)
 
 [<AutoOpen>]
 module internal AttributeHelpers =
@@ -247,9 +284,17 @@ module internal AttributeHelpers =
                 | "StructLayoutAttribute" -> WellKnownEntityAttributes.StructLayoutAttribute
                 | "DllImportAttribute" -> WellKnownEntityAttributes.DllImportAttribute
                 | "ComVisibleAttribute" ->
-                    decodeBoolAttribFlag attrib WellKnownEntityAttributes.ComVisibleAttribute_True WellKnownEntityAttributes.ComVisibleAttribute_False WellKnownEntityAttributes.ComVisibleAttribute_True
+                    decodeBoolAttribFlag
+                        attrib
+                        WellKnownEntityAttributes.ComVisibleAttribute_True
+                        WellKnownEntityAttributes.ComVisibleAttribute_False
+                        WellKnownEntityAttributes.ComVisibleAttribute_True
                 | "ComImportAttribute" ->
-                    decodeBoolAttribFlag attrib WellKnownEntityAttributes.ComImportAttribute_True WellKnownEntityAttributes.None WellKnownEntityAttributes.ComImportAttribute_True
+                    decodeBoolAttribFlag
+                        attrib
+                        WellKnownEntityAttributes.ComImportAttribute_True
+                        WellKnownEntityAttributes.None
+                        WellKnownEntityAttributes.ComImportAttribute_True
                 | _ -> WellKnownEntityAttributes.None
 
             | [| "System"; "Diagnostics"; name |] ->
@@ -273,59 +318,80 @@ module internal AttributeHelpers =
 
         | ValueNone ->
 
-        match fsharpCorePath with
-        | ValueSome path ->
-            match path with
-            | [| "Microsoft"; "FSharp"; "Core"; name |] ->
-                match name with
-                | "SealedAttribute" ->
-                    decodeBoolAttribFlag attrib WellKnownEntityAttributes.SealedAttribute_True WellKnownEntityAttributes.SealedAttribute_False WellKnownEntityAttributes.SealedAttribute_True
-                | "AbstractClassAttribute" -> WellKnownEntityAttributes.AbstractClassAttribute
-                | "RequireQualifiedAccessAttribute" -> WellKnownEntityAttributes.RequireQualifiedAccessAttribute
-                | "AutoOpenAttribute" -> WellKnownEntityAttributes.AutoOpenAttribute
-                | "NoEqualityAttribute" -> WellKnownEntityAttributes.NoEqualityAttribute
-                | "NoComparisonAttribute" -> WellKnownEntityAttributes.NoComparisonAttribute
-                | "StructuralEqualityAttribute" -> WellKnownEntityAttributes.StructuralEqualityAttribute
-                | "StructuralComparisonAttribute" -> WellKnownEntityAttributes.StructuralComparisonAttribute
-                | "CustomEqualityAttribute" -> WellKnownEntityAttributes.CustomEqualityAttribute
-                | "CustomComparisonAttribute" -> WellKnownEntityAttributes.CustomComparisonAttribute
-                | "ReferenceEqualityAttribute" -> WellKnownEntityAttributes.ReferenceEqualityAttribute
-                | "DefaultAugmentationAttribute" ->
-                    decodeBoolAttribFlag attrib WellKnownEntityAttributes.DefaultAugmentationAttribute_True WellKnownEntityAttributes.DefaultAugmentationAttribute_False WellKnownEntityAttributes.DefaultAugmentationAttribute_True
-                | "CLIMutableAttribute" -> WellKnownEntityAttributes.CLIMutableAttribute
-                | "AutoSerializableAttribute" ->
-                    decodeBoolAttribFlag attrib WellKnownEntityAttributes.AutoSerializableAttribute_True WellKnownEntityAttributes.AutoSerializableAttribute_False WellKnownEntityAttributes.AutoSerializableAttribute_True
-                | "ReflectedDefinitionAttribute" -> WellKnownEntityAttributes.ReflectedDefinitionAttribute
-                | "AllowNullLiteralAttribute" ->
-                    decodeBoolAttribFlag attrib WellKnownEntityAttributes.AllowNullLiteralAttribute_True WellKnownEntityAttributes.AllowNullLiteralAttribute_False WellKnownEntityAttributes.AllowNullLiteralAttribute_True
-                | "WarnOnWithoutNullArgumentAttribute" -> WellKnownEntityAttributes.WarnOnWithoutNullArgumentAttribute
-                | "ClassAttribute" -> WellKnownEntityAttributes.ClassAttribute
-                | "InterfaceAttribute" -> WellKnownEntityAttributes.InterfaceAttribute
-                | "StructAttribute" -> WellKnownEntityAttributes.StructAttribute
-                | "MeasureAttribute" -> WellKnownEntityAttributes.MeasureAttribute
-                | "MeasureAnnotatedAbbreviationAttribute" -> WellKnownEntityAttributes.MeasureableAttribute
-                | "CLIEventAttribute" -> WellKnownEntityAttributes.CLIEventAttribute
-                | "CompilerMessageAttribute" -> WellKnownEntityAttributes.CompilerMessageAttribute
-                | "ExperimentalAttribute" -> WellKnownEntityAttributes.ExperimentalAttribute
-                | "UnverifiableAttribute" -> WellKnownEntityAttributes.UnverifiableAttribute
-                | "CompiledNameAttribute" -> WellKnownEntityAttributes.CompiledNameAttribute
-                | "CompilationRepresentationAttribute" ->
-                    match attrib with
-                    | Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _) ->
-                        let mutable flags = WellKnownEntityAttributes.None
-                        if v &&& 0x01 <> 0 then
-                            flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_Static
-                        if v &&& 0x02 <> 0 then
-                            flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_Instance
-                        if v &&& 0x04 <> 0 then
-                            flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_ModuleSuffix
-                        if v &&& 0x08 <> 0 then
-                            flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_PermitNull
-                        flags
+            match fsharpCorePath with
+            | ValueSome path ->
+                match path with
+                | [| "Microsoft"; "FSharp"; "Core"; name |] ->
+                    match name with
+                    | "SealedAttribute" ->
+                        decodeBoolAttribFlag
+                            attrib
+                            WellKnownEntityAttributes.SealedAttribute_True
+                            WellKnownEntityAttributes.SealedAttribute_False
+                            WellKnownEntityAttributes.SealedAttribute_True
+                    | "AbstractClassAttribute" -> WellKnownEntityAttributes.AbstractClassAttribute
+                    | "RequireQualifiedAccessAttribute" -> WellKnownEntityAttributes.RequireQualifiedAccessAttribute
+                    | "AutoOpenAttribute" -> WellKnownEntityAttributes.AutoOpenAttribute
+                    | "NoEqualityAttribute" -> WellKnownEntityAttributes.NoEqualityAttribute
+                    | "NoComparisonAttribute" -> WellKnownEntityAttributes.NoComparisonAttribute
+                    | "StructuralEqualityAttribute" -> WellKnownEntityAttributes.StructuralEqualityAttribute
+                    | "StructuralComparisonAttribute" -> WellKnownEntityAttributes.StructuralComparisonAttribute
+                    | "CustomEqualityAttribute" -> WellKnownEntityAttributes.CustomEqualityAttribute
+                    | "CustomComparisonAttribute" -> WellKnownEntityAttributes.CustomComparisonAttribute
+                    | "ReferenceEqualityAttribute" -> WellKnownEntityAttributes.ReferenceEqualityAttribute
+                    | "DefaultAugmentationAttribute" ->
+                        decodeBoolAttribFlag
+                            attrib
+                            WellKnownEntityAttributes.DefaultAugmentationAttribute_True
+                            WellKnownEntityAttributes.DefaultAugmentationAttribute_False
+                            WellKnownEntityAttributes.DefaultAugmentationAttribute_True
+                    | "CLIMutableAttribute" -> WellKnownEntityAttributes.CLIMutableAttribute
+                    | "AutoSerializableAttribute" ->
+                        decodeBoolAttribFlag
+                            attrib
+                            WellKnownEntityAttributes.AutoSerializableAttribute_True
+                            WellKnownEntityAttributes.AutoSerializableAttribute_False
+                            WellKnownEntityAttributes.AutoSerializableAttribute_True
+                    | "ReflectedDefinitionAttribute" -> WellKnownEntityAttributes.ReflectedDefinitionAttribute
+                    | "AllowNullLiteralAttribute" ->
+                        decodeBoolAttribFlag
+                            attrib
+                            WellKnownEntityAttributes.AllowNullLiteralAttribute_True
+                            WellKnownEntityAttributes.AllowNullLiteralAttribute_False
+                            WellKnownEntityAttributes.AllowNullLiteralAttribute_True
+                    | "WarnOnWithoutNullArgumentAttribute" -> WellKnownEntityAttributes.WarnOnWithoutNullArgumentAttribute
+                    | "ClassAttribute" -> WellKnownEntityAttributes.ClassAttribute
+                    | "InterfaceAttribute" -> WellKnownEntityAttributes.InterfaceAttribute
+                    | "StructAttribute" -> WellKnownEntityAttributes.StructAttribute
+                    | "MeasureAttribute" -> WellKnownEntityAttributes.MeasureAttribute
+                    | "MeasureAnnotatedAbbreviationAttribute" -> WellKnownEntityAttributes.MeasureableAttribute
+                    | "CLIEventAttribute" -> WellKnownEntityAttributes.CLIEventAttribute
+                    | "CompilerMessageAttribute" -> WellKnownEntityAttributes.CompilerMessageAttribute
+                    | "ExperimentalAttribute" -> WellKnownEntityAttributes.ExperimentalAttribute
+                    | "UnverifiableAttribute" -> WellKnownEntityAttributes.UnverifiableAttribute
+                    | "CompiledNameAttribute" -> WellKnownEntityAttributes.CompiledNameAttribute
+                    | "CompilationRepresentationAttribute" ->
+                        match attrib with
+                        | Attrib(_, _, [ AttribInt32Arg v ], _, _, _, _) ->
+                            let mutable flags = WellKnownEntityAttributes.None
+
+                            if v &&& 0x01 <> 0 then
+                                flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_Static
+
+                            if v &&& 0x02 <> 0 then
+                                flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_Instance
+
+                            if v &&& 0x04 <> 0 then
+                                flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_ModuleSuffix
+
+                            if v &&& 0x08 <> 0 then
+                                flags <- flags ||| WellKnownEntityAttributes.CompilationRepresentation_PermitNull
+
+                            flags
+                        | _ -> WellKnownEntityAttributes.None
                     | _ -> WellKnownEntityAttributes.None
                 | _ -> WellKnownEntityAttributes.None
-            | _ -> WellKnownEntityAttributes.None
-        | ValueNone -> WellKnownEntityAttributes.None
+            | ValueNone -> WellKnownEntityAttributes.None
 
     /// Classify a single assembly-level attribute, returning its well-known flag (or None).
     let classifyAssemblyAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownAssemblyAttributes =
@@ -347,19 +413,19 @@ module internal AttributeHelpers =
             | _ -> WellKnownAssemblyAttributes.None
         | ValueNone ->
 
-        match fsharpCorePath with
-        | ValueSome path ->
-            match path with
-            | [| "Microsoft"; "FSharp"; "Core"; name |] ->
-                match name with
-                | "AutoOpenAttribute" -> WellKnownAssemblyAttributes.AutoOpenAttribute
+            match fsharpCorePath with
+            | ValueSome path ->
+                match path with
+                | [| "Microsoft"; "FSharp"; "Core"; name |] ->
+                    match name with
+                    | "AutoOpenAttribute" -> WellKnownAssemblyAttributes.AutoOpenAttribute
+                    | _ -> WellKnownAssemblyAttributes.None
+                | [| "Microsoft"; "FSharp"; "Core"; "CompilerServices"; name |] ->
+                    match name with
+                    | "TypeProviderAssemblyAttribute" -> WellKnownAssemblyAttributes.TypeProviderAssemblyAttribute
+                    | _ -> WellKnownAssemblyAttributes.None
                 | _ -> WellKnownAssemblyAttributes.None
-            | [| "Microsoft"; "FSharp"; "Core"; "CompilerServices"; name |] ->
-                match name with
-                | "TypeProviderAssemblyAttribute" -> WellKnownAssemblyAttributes.TypeProviderAssemblyAttribute
-                | _ -> WellKnownAssemblyAttributes.None
-            | _ -> WellKnownAssemblyAttributes.None
-        | ValueNone -> WellKnownAssemblyAttributes.None
+            | ValueNone -> WellKnownAssemblyAttributes.None
 
     // ---------------------------------------------------------------
     // Well-Known Attribute APIs — Navigation Guide
@@ -410,18 +476,32 @@ module internal AttributeHelpers =
     // ---------------------------------------------------------------
 
     /// Shared combinator: find first attrib matching a flag via a classify function.
-    let inline internal tryFindAttribByClassifier ([<InlineIfLambda>] classify: TcGlobals -> Attrib -> 'Flag) (none: 'Flag) (g: TcGlobals) (flag: 'Flag) (attribs: Attribs) : Attrib option =
+    let inline internal tryFindAttribByClassifier
+        ([<InlineIfLambda>] classify: TcGlobals -> Attrib -> 'Flag)
+        (none: 'Flag)
+        (g: TcGlobals)
+        (flag: 'Flag)
+        (attribs: Attribs)
+        : Attrib option =
         attribs |> List.tryFind (fun attrib -> classify g attrib &&& flag <> none)
 
     /// Shared combinator: check if any attrib in a list matches a flag via a classify function.
-    let inline internal attribsHaveFlag ([<InlineIfLambda>] classify: TcGlobals -> Attrib -> 'Flag) (none: 'Flag) (g: TcGlobals) (flag: 'Flag) (attribs: Attribs) : bool =
+    let inline internal attribsHaveFlag
+        ([<InlineIfLambda>] classify: TcGlobals -> Attrib -> 'Flag)
+        (none: 'Flag)
+        (g: TcGlobals)
+        (flag: 'Flag)
+        (attribs: Attribs)
+        : bool =
         attribs |> List.exists (fun attrib -> classify g attrib &&& flag <> none)
 
     /// Compute well-known attribute flags for an Entity's Attrib list.
     let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEntityAttributes =
         let mutable flags = WellKnownEntityAttributes.None
+
         for attrib in attribs do
             flags <- flags ||| classifyEntityAttrib g attrib
+
         flags
 
     /// Find the first attribute matching a specific well-known entity flag.
@@ -450,12 +530,17 @@ module internal AttributeHelpers =
     /// Map a WellKnownILAttributes flag to its entity flag + provided-type AttribInfo equivalents.
     let mapILFlag (g: TcGlobals) (flag: WellKnownILAttributes) : struct (WellKnownEntityAttributes * BuiltinAttribInfo option) =
         match flag with
-        | WellKnownILAttributes.IsReadOnlyAttribute -> struct (WellKnownEntityAttributes.IsReadOnlyAttribute, Some g.attrib_IsReadOnlyAttribute)
-        | WellKnownILAttributes.IsByRefLikeAttribute -> struct (WellKnownEntityAttributes.IsByRefLikeAttribute, g.attrib_IsByRefLikeAttribute_opt)
-        | WellKnownILAttributes.ExtensionAttribute -> struct (WellKnownEntityAttributes.ExtensionAttribute, Some g.attrib_ExtensionAttribute)
-        | WellKnownILAttributes.AllowNullLiteralAttribute -> struct (WellKnownEntityAttributes.AllowNullLiteralAttribute_True, Some g.attrib_AllowNullLiteralAttribute)
+        | WellKnownILAttributes.IsReadOnlyAttribute ->
+            struct (WellKnownEntityAttributes.IsReadOnlyAttribute, Some g.attrib_IsReadOnlyAttribute)
+        | WellKnownILAttributes.IsByRefLikeAttribute ->
+            struct (WellKnownEntityAttributes.IsByRefLikeAttribute, g.attrib_IsByRefLikeAttribute_opt)
+        | WellKnownILAttributes.ExtensionAttribute ->
+            struct (WellKnownEntityAttributes.ExtensionAttribute, Some g.attrib_ExtensionAttribute)
+        | WellKnownILAttributes.AllowNullLiteralAttribute ->
+            struct (WellKnownEntityAttributes.AllowNullLiteralAttribute_True, Some g.attrib_AllowNullLiteralAttribute)
         | WellKnownILAttributes.AutoOpenAttribute -> struct (WellKnownEntityAttributes.AutoOpenAttribute, Some g.attrib_AutoOpenAttribute)
-        | WellKnownILAttributes.ReflectedDefinitionAttribute -> struct (WellKnownEntityAttributes.ReflectedDefinitionAttribute, Some g.attrib_ReflectedDefinitionAttribute)
+        | WellKnownILAttributes.ReflectedDefinitionAttribute ->
+            struct (WellKnownEntityAttributes.ReflectedDefinitionAttribute, Some g.attrib_ReflectedDefinitionAttribute)
         | WellKnownILAttributes.ObsoleteAttribute -> struct (WellKnownEntityAttributes.ObsoleteAttribute, None)
         | _ -> struct (WellKnownEntityAttributes.None, None)
 
@@ -519,44 +604,58 @@ module internal AttributeHelpers =
 
         | ValueNone ->
 
-        match fsharpCorePath with
-        | ValueSome path ->
-            match path with
-            | [| "Microsoft"; "FSharp"; "Core"; name |] ->
-                match name with
-                | "EntryPointAttribute" -> WellKnownValAttributes.EntryPointAttribute
-                | "LiteralAttribute" -> WellKnownValAttributes.LiteralAttribute
-                | "ReflectedDefinitionAttribute" ->
-                    decodeBoolAttribFlag attrib WellKnownValAttributes.ReflectedDefinitionAttribute_True WellKnownValAttributes.ReflectedDefinitionAttribute_False WellKnownValAttributes.ReflectedDefinitionAttribute_False
-                | "RequiresExplicitTypeArgumentsAttribute" -> WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
-                | "DefaultValueAttribute" ->
-                    decodeBoolAttribFlag attrib WellKnownValAttributes.DefaultValueAttribute_True WellKnownValAttributes.DefaultValueAttribute_False WellKnownValAttributes.DefaultValueAttribute_True
-                | "VolatileFieldAttribute" -> WellKnownValAttributes.VolatileFieldAttribute
-                | "NoDynamicInvocationAttribute" ->
-                    decodeBoolAttribFlag attrib WellKnownValAttributes.NoDynamicInvocationAttribute_True WellKnownValAttributes.NoDynamicInvocationAttribute_False WellKnownValAttributes.NoDynamicInvocationAttribute_False
-                | "OptionalArgumentAttribute" -> WellKnownValAttributes.OptionalArgumentAttribute
-                | "ProjectionParameterAttribute" -> WellKnownValAttributes.ProjectionParameterAttribute
-                | "InlineIfLambdaAttribute" -> WellKnownValAttributes.InlineIfLambdaAttribute
-                | "StructAttribute" -> WellKnownValAttributes.StructAttribute
-                | "NoCompilerInliningAttribute" -> WellKnownValAttributes.NoCompilerInliningAttribute
-                | "GeneralizableValueAttribute" -> WellKnownValAttributes.GeneralizableValueAttribute
-                | "CLIEventAttribute" -> WellKnownValAttributes.CLIEventAttribute
-                | "CompiledNameAttribute" -> WellKnownValAttributes.CompiledNameAttribute
-                | "WarnOnWithoutNullArgumentAttribute" -> WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute
-                | "ValueAsStaticPropertyAttribute" -> WellKnownValAttributes.ValueAsStaticPropertyAttribute
-                | "TailCallAttribute" -> WellKnownValAttributes.TailCallAttribute
+            match fsharpCorePath with
+            | ValueSome path ->
+                match path with
+                | [| "Microsoft"; "FSharp"; "Core"; name |] ->
+                    match name with
+                    | "EntryPointAttribute" -> WellKnownValAttributes.EntryPointAttribute
+                    | "LiteralAttribute" -> WellKnownValAttributes.LiteralAttribute
+                    | "ReflectedDefinitionAttribute" ->
+                        decodeBoolAttribFlag
+                            attrib
+                            WellKnownValAttributes.ReflectedDefinitionAttribute_True
+                            WellKnownValAttributes.ReflectedDefinitionAttribute_False
+                            WellKnownValAttributes.ReflectedDefinitionAttribute_False
+                    | "RequiresExplicitTypeArgumentsAttribute" -> WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute
+                    | "DefaultValueAttribute" ->
+                        decodeBoolAttribFlag
+                            attrib
+                            WellKnownValAttributes.DefaultValueAttribute_True
+                            WellKnownValAttributes.DefaultValueAttribute_False
+                            WellKnownValAttributes.DefaultValueAttribute_True
+                    | "VolatileFieldAttribute" -> WellKnownValAttributes.VolatileFieldAttribute
+                    | "NoDynamicInvocationAttribute" ->
+                        decodeBoolAttribFlag
+                            attrib
+                            WellKnownValAttributes.NoDynamicInvocationAttribute_True
+                            WellKnownValAttributes.NoDynamicInvocationAttribute_False
+                            WellKnownValAttributes.NoDynamicInvocationAttribute_False
+                    | "OptionalArgumentAttribute" -> WellKnownValAttributes.OptionalArgumentAttribute
+                    | "ProjectionParameterAttribute" -> WellKnownValAttributes.ProjectionParameterAttribute
+                    | "InlineIfLambdaAttribute" -> WellKnownValAttributes.InlineIfLambdaAttribute
+                    | "StructAttribute" -> WellKnownValAttributes.StructAttribute
+                    | "NoCompilerInliningAttribute" -> WellKnownValAttributes.NoCompilerInliningAttribute
+                    | "GeneralizableValueAttribute" -> WellKnownValAttributes.GeneralizableValueAttribute
+                    | "CLIEventAttribute" -> WellKnownValAttributes.CLIEventAttribute
+                    | "CompiledNameAttribute" -> WellKnownValAttributes.CompiledNameAttribute
+                    | "WarnOnWithoutNullArgumentAttribute" -> WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute
+                    | "ValueAsStaticPropertyAttribute" -> WellKnownValAttributes.ValueAsStaticPropertyAttribute
+                    | "TailCallAttribute" -> WellKnownValAttributes.TailCallAttribute
+                    | _ -> WellKnownValAttributes.None
+                | [| "Microsoft"; "FSharp"; "Core"; "CompilerServices"; name |] ->
+                    match name with
+                    | "NoEagerConstraintApplicationAttribute" -> WellKnownValAttributes.NoEagerConstraintApplicationAttribute
+                    | _ -> WellKnownValAttributes.None
                 | _ -> WellKnownValAttributes.None
-            | [| "Microsoft"; "FSharp"; "Core"; "CompilerServices"; name |] ->
-                match name with
-                | "NoEagerConstraintApplicationAttribute" -> WellKnownValAttributes.NoEagerConstraintApplicationAttribute
-                | _ -> WellKnownValAttributes.None
-            | _ -> WellKnownValAttributes.None
-        | ValueNone -> WellKnownValAttributes.None
+            | ValueNone -> WellKnownValAttributes.None
 
     let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAttributes =
         let mutable flags = WellKnownValAttributes.None
+
         for attrib in attribs do
             flags <- flags ||| classifyValAttrib g attrib
+
         flags
 
     /// Find the first attribute in a list that matches a specific well-known val flag.
@@ -603,8 +702,12 @@ module internal AttributeHelpers =
 
     /// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
     let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (argInfo: ArgReprInfo) : bool =
-        let struct (result, waNew, changed) = argInfo.Attribs.CheckFlag(flag, computeValWellKnownFlags g)
-        if changed then argInfo.Attribs <- waNew
+        let struct (result, waNew, changed) =
+            argInfo.Attribs.CheckFlag(flag, computeValWellKnownFlags g)
+
+        if changed then
+            argInfo.Attribs <- waNew
+
         result
 
     /// Check if a Val has a specific well-known attribute, computing and caching flags if needed.
@@ -612,19 +715,33 @@ module internal AttributeHelpers =
         v.HasWellKnownAttribute(flag, computeValWellKnownFlags g)
 
     /// Query a three-state bool attribute on an entity. Returns bool option.
-    let EntityTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownEntityAttributes) (falseFlag: WellKnownEntityAttributes) (entity: Entity) : bool option =
+    let EntityTryGetBoolAttribute
+        (g: TcGlobals)
+        (trueFlag: WellKnownEntityAttributes)
+        (falseFlag: WellKnownEntityAttributes)
+        (entity: Entity)
+        : bool option =
         if not (entity.HasWellKnownAttribute(trueFlag ||| falseFlag, computeEntityWellKnownFlags g)) then
             Option.None
         else
-            let struct (hasTrue, _, _) = entity.EntityAttribs.CheckFlag(trueFlag, computeEntityWellKnownFlags g)
+            let struct (hasTrue, _, _) =
+                entity.EntityAttribs.CheckFlag(trueFlag, computeEntityWellKnownFlags g)
+
             if hasTrue then Some true else Some false
 
     /// Query a three-state bool attribute on a Val. Returns bool option.
-    let ValTryGetBoolAttribute (g: TcGlobals) (trueFlag: WellKnownValAttributes) (falseFlag: WellKnownValAttributes) (v: Val) : bool option =
+    let ValTryGetBoolAttribute
+        (g: TcGlobals)
+        (trueFlag: WellKnownValAttributes)
+        (falseFlag: WellKnownValAttributes)
+        (v: Val)
+        : bool option =
         if not (v.HasWellKnownAttribute(trueFlag ||| falseFlag, computeValWellKnownFlags g)) then
             Option.None
         else
-            let struct (hasTrue, _, _) = v.ValAttribs.CheckFlag(trueFlag, computeValWellKnownFlags g)
+            let struct (hasTrue, _, _) =
+                v.ValAttribs.CheckFlag(trueFlag, computeValWellKnownFlags g)
+
             if hasTrue then Some true else Some false
 
     /// Shared core for binding attributes on type definitions, supporting an optional
@@ -638,27 +755,25 @@ module internal AttributeHelpers =
         f1
         f2
         (f3: obj option list * (string * obj option) list -> 'a option)
-        : 'a option
-        =
+        : 'a option =
         ignore m
         ignore f3
 
         match metadataOfTycon tcref.Deref with
-    #if !NO_TYPEPROVIDERS
+#if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info ->
             let provAttribs =
                 info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
 
             match
                 provAttribs.PUntaint(
-                    (fun a ->
-                        a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, atref.FullName)),
+                    (fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, atref.FullName)),
                     m
                 )
             with
             | Some args -> f3 args
             | None -> None
-    #endif
+#endif
         | ILTypeMetadata(TILObjectReprData(_, _, tdef)) ->
             match ilFlag with
             | ValueSome flag when not (tdef.HasWellKnownAttribute(g, flag)) -> None
@@ -679,39 +794,67 @@ module internal AttributeHelpers =
         tryBindTyconRefAttributeCore g m ValueNone args tcref f1 f2 f3
 
     let TryFindTyconRefBoolAttribute g m attribSpec tcref =
-        TryBindTyconRefAttribute g m attribSpec tcref 
-                    (function 
-                       | [ ], _ -> Some true
-                       | [ILAttribElem.Bool v ], _ -> Some v 
-                       | _ -> None)
-                    (function 
-                       | Attrib(_, _, [ ], _, _, _, _) -> Some true
-                       | Attrib(_, _, [ AttribBoolArg v ], _, _, _, _) -> Some v 
-                       | _ -> None)
-                    (function 
-                       | [ ], _ -> Some true
-                       | [ Some (:? bool as v : obj) ], _ -> Some v 
-                       | _ -> None)
+        TryBindTyconRefAttribute
+            g
+            m
+            attribSpec
+            tcref
+            (function
+            | [], _ -> Some true
+            | [ ILAttribElem.Bool v ], _ -> Some v
+            | _ -> None)
+            (function
+            | Attrib(_, _, [], _, _, _, _) -> Some true
+            | Attrib(_, _, [ AttribBoolArg v ], _, _, _, _) -> Some v
+            | _ -> None)
+            (function
+             | [], _ -> Some true
+             | [ Some(:? bool as v: obj) ], _ -> Some v
+             | _ -> None)
 
     /// Try to find the resolved attributeusage for an type by walking its inheritance tree and picking the correct attribute usage value
     let TryFindAttributeUsageAttribute g m tcref =
-        [| yield tcref
-           yield! supersOfTyconRef tcref |]
+        [| yield tcref; yield! supersOfTyconRef tcref |]
         |> Array.tryPick (fun tcref ->
-            TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref
-                    (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", _, _, ILAttribElem.Bool res -> Some res | _ -> None))
-                    (fun (Attrib(_, _, _, named, _, _, _)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple", _, _, AttribBoolArg res ) -> Some res | _ -> None))
-                    (fun (_, named) -> named |> List.tryPick (function "AllowMultiple", Some (:? bool as res : obj) -> Some res | _ -> None))
-        )
+            TryBindTyconRefAttribute
+                g
+                m
+                g.attrib_AttributeUsageAttribute
+                tcref
+                (fun (_, named) ->
+                    named
+                    |> List.tryPick (function
+                        | "AllowMultiple", _, _, ILAttribElem.Bool res -> Some res
+                        | _ -> None))
+                (fun (Attrib(_, _, _, named, _, _, _)) ->
+                    named
+                    |> List.tryPick (function
+                        | AttribNamedArg("AllowMultiple", _, _, AttribBoolArg res) -> Some res
+                        | _ -> None))
+                (fun (_, named) ->
+                    named
+                    |> List.tryPick (function
+                        | "AllowMultiple", Some(:? bool as res: obj) -> Some res
+                        | _ -> None)))
 
     /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
     ///
     /// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)
     let TryFindTyconRefStringAttribute g m attribSpec tcref =
-        TryBindTyconRefAttribute g m attribSpec tcref 
-                    (function [ILAttribElem.String (Some msg) ], _ -> Some msg | _ -> None)
-                    (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
-                    (function [ Some (:? string as msg : obj) ], _ -> Some msg | _ -> None)
+        TryBindTyconRefAttribute
+            g
+            m
+            attribSpec
+            tcref
+            (function
+            | [ ILAttribElem.String(Some msg) ], _ -> Some msg
+            | _ -> None)
+            (function
+            | Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg
+            | _ -> None)
+            (function
+             | [ Some(:? string as msg: obj) ], _ -> Some msg
+             | _ -> None)
 
     /// Like TryBindTyconRefAttribute but with a fast-path flag check on the IL metadata path.
     /// Skips the full attribute scan if the cached flag indicates the attribute is absent.
@@ -734,29 +877,26 @@ module internal AttributeHelpers =
             | Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg
             | _ -> None)
             (function
-            | [ Some(:? string as msg: obj) ], _ -> Some msg
-            | _ -> None)
+             | [ Some(:? string as msg: obj) ], _ -> Some msg
+             | _ -> None)
 
     /// Check if a type definition has a specific attribute
     let TyconRefHasAttribute g m attribSpec tcref =
-        TryBindTyconRefAttribute g m attribSpec tcref 
-                        (fun _ -> Some ()) 
-                        (fun _ -> Some ())
-                        (fun _ -> Some ())
-            |> Option.isSome
+        TryBindTyconRefAttribute g m attribSpec tcref (fun _ -> Some()) (fun _ -> Some()) (fun _ -> Some())
+        |> Option.isSome
 
     /// Check if a TyconRef has a well-known attribute, handling both IL and F# metadata.
     /// Uses O(1) flag tests on both paths.
     let TyconRefHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownILAttributes) (tcref: TyconRef) : bool =
         match metadataOfTycon tcref.Deref with
-    #if !NO_TYPEPROVIDERS
+#if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata _ ->
             let struct (_, attribInfoOpt) = mapILFlag g flag
 
             match attribInfoOpt with
             | Some attribInfo -> TyconRefHasAttribute g tcref.Range attribInfo tcref
             | None -> false
-    #endif
+#endif
         | ILTypeMetadata(TILObjectReprData(_, _, tdef)) -> tdef.HasWellKnownAttribute(g, flag)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             let struct (entityFlag, _) = mapILFlag g flag
@@ -767,54 +907,66 @@ module internal AttributeHelpers =
                 false
 
     let HasDefaultAugmentationAttribute g (tcref: TyconRef) =
-        match EntityTryGetBoolAttribute g WellKnownEntityAttributes.DefaultAugmentationAttribute_True WellKnownEntityAttributes.DefaultAugmentationAttribute_False tcref.Deref with
+        match
+            EntityTryGetBoolAttribute
+                g
+                WellKnownEntityAttributes.DefaultAugmentationAttribute_True
+                WellKnownEntityAttributes.DefaultAugmentationAttribute_False
+                tcref.Deref
+        with
         | Some b -> b
         | None -> true
 
     /// Check if a TyconRef has AllowNullLiteralAttribute, returning Some true/Some false/None.
     let TyconRefAllowsNull (g: TcGlobals) (tcref: TyconRef) : bool option =
         match metadataOfTycon tcref.Deref with
-    #if !NO_TYPEPROVIDERS
+#if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata _ -> TryFindTyconRefBoolAttribute g tcref.Range g.attrib_AllowNullLiteralAttribute tcref
-    #endif
+#endif
         | ILTypeMetadata(TILObjectReprData(_, _, tdef)) ->
             if tdef.HasWellKnownAttribute(g, WellKnownILAttributes.AllowNullLiteralAttribute) then
                 Some true
             else
                 None
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-            EntityTryGetBoolAttribute g WellKnownEntityAttributes.AllowNullLiteralAttribute_True WellKnownEntityAttributes.AllowNullLiteralAttribute_False tcref.Deref
+            EntityTryGetBoolAttribute
+                g
+                WellKnownEntityAttributes.AllowNullLiteralAttribute_True
+                WellKnownEntityAttributes.AllowNullLiteralAttribute_False
+                tcref.Deref
 
     /// Check if a type definition has an attribute with a specific full name
-    let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) = 
+    let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) =
         ignore m
-        match metadataOfTycon tcref.Deref with 
-    #if !NO_TYPEPROVIDERS
-        | ProvidedTypeMetadata info -> 
-            let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
-            provAttribs.PUntaint((fun a ->
-                a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, attrFullName)), m).IsSome
-    #endif
-        | ILTypeMetadata (TILObjectReprData(_, _, tdef)) ->
+
+        match metadataOfTycon tcref.Deref with
+#if !NO_TYPEPROVIDERS
+        | ProvidedTypeMetadata info ->
+            let provAttribs =
+                info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
+
+            provAttribs
+                .PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, attrFullName)), m)
+                .IsSome
+#endif
+        | ILTypeMetadata(TILObjectReprData(_, _, tdef)) ->
             tdef.CustomAttrs.AsArray()
             |> Array.exists (fun attr -> isILAttribByName ([], attrFullName) attr)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             tcref.Attribs
             |> List.exists (fun attr ->
                 match attr.TyconRef.CompiledRepresentation with
-                | CompiledTypeRepr.ILAsmNamed(typeRef, _, _) ->
-                    typeRef.Enclosing.IsEmpty
-                    && typeRef.Name = attrFullName
+                | CompiledTypeRepr.ILAsmNamed(typeRef, _, _) -> typeRef.Enclosing.IsEmpty && typeRef.Name = attrFullName
                 | CompiledTypeRepr.ILAsmOpen _ -> false)
 
-    let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) = 
-        (g.byref_tcr.CanDeref && tyconRefEq g g.byref_tcr tcref) ||
-        (g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref) ||
-        (g.inref_tcr.CanDeref && tyconRefEq g g.inref_tcr tcref) ||
-        (g.outref_tcr.CanDeref && tyconRefEq g g.outref_tcr tcref) ||
-        tyconRefEqOpt g g.system_TypedReference_tcref tcref ||
-        tyconRefEqOpt g g.system_ArgIterator_tcref tcref ||
-        tyconRefEqOpt g g.system_RuntimeArgumentHandle_tcref tcref
+    let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) =
+        (g.byref_tcr.CanDeref && tyconRefEq g g.byref_tcr tcref)
+        || (g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref)
+        || (g.inref_tcr.CanDeref && tyconRefEq g g.inref_tcr tcref)
+        || (g.outref_tcr.CanDeref && tyconRefEq g g.outref_tcr tcref)
+        || tyconRefEqOpt g g.system_TypedReference_tcref tcref
+        || tyconRefEqOpt g g.system_ArgIterator_tcref tcref
+        || tyconRefEqOpt g g.system_RuntimeArgumentHandle_tcref tcref
 
     // See RFC FS-1053.md
     // Must use name-based matching (not type-identity) because user code can define
@@ -833,26 +985,32 @@ module internal AttributeHelpers =
                res
 
     let isSpanLikeTyconRef g m tcref =
-        isByrefLikeTyconRef g m tcref &&
-        not (isByrefTyconRef g tcref)
+        isByrefLikeTyconRef g m tcref && not (isByrefTyconRef g tcref)
 
-    let isByrefLikeTy g m ty = 
-        ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isByrefLikeTyconRef g m tcref | _ -> false)
+    let isByrefLikeTy g m ty =
+        ty
+        |> stripTyEqns g
+        |> (function
+        | TType_app(tcref, _, _) -> isByrefLikeTyconRef g m tcref
+        | _ -> false)
 
     let isSpanLikeTy g m ty =
-        isByrefLikeTy g m ty && 
-        not (isByrefTy g ty)
+        isByrefLikeTy g m ty && not (isByrefTy g ty)
 
     let isSpanTyconRef g m tcref =
-        isByrefLikeTyconRef g m tcref &&
-        tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.Span`1"
+        isByrefLikeTyconRef g m tcref
+        && tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.Span`1"
 
     let isSpanTy g m ty =
-        ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isSpanTyconRef g m tcref | _ -> false)
+        ty
+        |> stripTyEqns g
+        |> (function
+        | TType_app(tcref, _, _) -> isSpanTyconRef g m tcref
+        | _ -> false)
 
     let tryDestSpanTy g m ty =
         match tryAppTy g ty with
-        | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> Some(tcref, ty)
+        | ValueSome(tcref, [ ty ]) when isSpanTyconRef g m tcref -> Some(tcref, ty)
         | _ -> None
 
     let destSpanTy g m ty =
@@ -861,1120 +1019,1327 @@ module internal AttributeHelpers =
         | _ -> failwith "destSpanTy"
 
     let isReadOnlySpanTyconRef g m tcref =
-        isByrefLikeTyconRef g m tcref &&
-        tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.ReadOnlySpan`1"
+        isByrefLikeTyconRef g m tcref
+        && tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.ReadOnlySpan`1"
 
     let isReadOnlySpanTy g m ty =
-        ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isReadOnlySpanTyconRef g m tcref | _ -> false)
+        ty
+        |> stripTyEqns g
+        |> (function
+        | TType_app(tcref, _, _) -> isReadOnlySpanTyconRef g m tcref
+        | _ -> false)
 
     let tryDestReadOnlySpanTy g m ty =
         match tryAppTy g ty with
-        | ValueSome(tcref, [ty]) when isReadOnlySpanTyconRef g m tcref -> Some(tcref, ty)
+        | ValueSome(tcref, [ ty ]) when isReadOnlySpanTyconRef g m tcref -> Some(tcref, ty)
         | _ -> None
 
     let destReadOnlySpanTy g m ty =
         match tryDestReadOnlySpanTy g m ty with
         | Some(tcref, ty) -> (tcref, ty)
-        | _ -> failwith "destReadOnlySpanTy"    
+        | _ -> failwith "destReadOnlySpanTy"
 
     //-------------------------------------------------------------------------
     // List and reference types...
-    //------------------------------------------------------------------------- 
+    //-------------------------------------------------------------------------
 
-    let destByrefTy g ty = 
+    let destByrefTy g ty =
         match ty |> stripTyEqns g with
-        | TType_app(tcref, [x; _], _) when g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref -> x // Check sufficient FSharp.Core
-        | TType_app(tcref, [x], _) when tyconRefEq g g.byref_tcr tcref -> x // all others
+        | TType_app(tcref, [ x; _ ], _) when g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref -> x // Check sufficient FSharp.Core
+        | TType_app(tcref, [ x ], _) when tyconRefEq g g.byref_tcr tcref -> x // all others
         | _ -> failwith "destByrefTy: not a byref type"
 
     [<return: Struct>]
-    let (|ByrefTy|_|) g ty = 
+    let (|ByrefTy|_|) g ty =
         // Because of byref = byref2<ty,tags> it is better to write this using is/dest
-        if isByrefTy g ty then ValueSome (destByrefTy g ty) else ValueNone
+        if isByrefTy g ty then
+            ValueSome(destByrefTy g ty)
+        else
+            ValueNone
 
     let destNativePtrTy g ty =
         match ty |> stripTyEqns g with
-        | TType_app(tcref, [x], _) when tyconRefEq g g.nativeptr_tcr tcref -> x
+        | TType_app(tcref, [ x ], _) when tyconRefEq g g.nativeptr_tcr tcref -> x
         | _ -> failwith "destNativePtrTy: not a native ptr type"
 
-    let isRefCellTy g ty = 
-        match tryTcrefOfAppTy g ty with 
+    let isRefCellTy g ty =
+        match tryTcrefOfAppTy g ty with
         | ValueNone -> false
         | ValueSome tcref -> tyconRefEq g g.refcell_tcr_canon tcref
 
-    let destRefCellTy g ty = 
+    let destRefCellTy g ty =
         match ty |> stripTyEqns g with
-        | TType_app(tcref, [x], _) when tyconRefEq g g.refcell_tcr_canon tcref -> x
+        | TType_app(tcref, [ x ], _) when tyconRefEq g g.refcell_tcr_canon tcref -> x
         | _ -> failwith "destRefCellTy: not a ref type"
 
-    let StripSelfRefCell(g: TcGlobals, baseOrThisInfo: ValBaseOrThisInfo, tau: TType) : TType =
-        if baseOrThisInfo = CtorThisVal && isRefCellTy g tau 
-            then destRefCellTy g tau 
-            else tau
+    let StripSelfRefCell (g: TcGlobals, baseOrThisInfo: ValBaseOrThisInfo, tau: TType) : TType =
+        if baseOrThisInfo = CtorThisVal && isRefCellTy g tau then
+            destRefCellTy g tau
+        else
+            tau
 
-    let mkRefCellTy (g: TcGlobals) ty = TType_app(g.refcell_tcr_nice, [ty], g.knownWithoutNull)
+    let mkRefCellTy (g: TcGlobals) ty =
+        TType_app(g.refcell_tcr_nice, [ ty ], g.knownWithoutNull)
 
-    let mkLazyTy (g: TcGlobals) ty = TType_app(g.lazy_tcr_nice, [ty], g.knownWithoutNull)
+    let mkLazyTy (g: TcGlobals) ty =
+        TType_app(g.lazy_tcr_nice, [ ty ], g.knownWithoutNull)
 
-    let mkPrintfFormatTy (g: TcGlobals) aty bty cty dty ety = TType_app(g.format_tcr, [aty;bty;cty;dty; ety], g.knownWithoutNull)
+    let mkPrintfFormatTy (g: TcGlobals) aty bty cty dty ety =
+        TType_app(g.format_tcr, [ aty; bty; cty; dty; ety ], g.knownWithoutNull)
 
-    let mkOptionTy (g: TcGlobals) ty = TType_app (g.option_tcr_nice, [ty], g.knownWithoutNull)
+    let mkOptionTy (g: TcGlobals) ty =
+        TType_app(g.option_tcr_nice, [ ty ], g.knownWithoutNull)
 
-    let mkValueOptionTy (g: TcGlobals) ty = TType_app (g.valueoption_tcr_nice, [ty], g.knownWithoutNull)
+    let mkValueOptionTy (g: TcGlobals) ty =
+        TType_app(g.valueoption_tcr_nice, [ ty ], g.knownWithoutNull)
 
-    let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty], g.knownWithoutNull)
+    let mkNullableTy (g: TcGlobals) ty =
+        TType_app(g.system_Nullable_tcref, [ ty ], g.knownWithoutNull)
 
-    let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty], g.knownWithoutNull)
+    let mkListTy (g: TcGlobals) ty =
+        TType_app(g.list_tcr_nice, [ ty ], g.knownWithoutNull)
 
-    let isBoolTy (g: TcGlobals) ty = 
-        match tryTcrefOfAppTy g ty with 
+    let isBoolTy (g: TcGlobals) ty =
+        match tryTcrefOfAppTy g ty with
         | ValueNone -> false
-        | ValueSome tcref -> 
-            tyconRefEq g g.system_Bool_tcref tcref ||
-            tyconRefEq g g.bool_tcr tcref
+        | ValueSome tcref -> tyconRefEq g g.system_Bool_tcref tcref || tyconRefEq g g.bool_tcr tcref
 
-    let isValueOptionTy (g: TcGlobals) ty = 
-        match tryTcrefOfAppTy g ty with 
+    let isValueOptionTy (g: TcGlobals) ty =
+        match tryTcrefOfAppTy g ty with
         | ValueNone -> false
         | ValueSome tcref -> tyconRefEq g g.valueoption_tcr_canon tcref
 
-    let isOptionTy (g: TcGlobals) ty = 
-        match tryTcrefOfAppTy g ty with 
+    let isOptionTy (g: TcGlobals) ty =
+        match tryTcrefOfAppTy g ty with
         | ValueNone -> false
         | ValueSome tcref -> tyconRefEq g g.option_tcr_canon tcref
 
-    let isChoiceTy (g: TcGlobals) ty = 
-        match tryTcrefOfAppTy g ty with 
+    let isChoiceTy (g: TcGlobals) ty =
+        match tryTcrefOfAppTy g ty with
         | ValueNone -> false
         | ValueSome tcref ->
-            tyconRefEq g g.choice2_tcr tcref ||
-            tyconRefEq g g.choice3_tcr tcref ||
-            tyconRefEq g g.choice4_tcr tcref ||
-            tyconRefEq g g.choice5_tcr tcref ||
-            tyconRefEq g g.choice6_tcr tcref ||
-            tyconRefEq g g.choice7_tcr tcref
+            tyconRefEq g g.choice2_tcr tcref
+            || tyconRefEq g g.choice3_tcr tcref
+            || tyconRefEq g g.choice4_tcr tcref
+            || tyconRefEq g g.choice5_tcr tcref
+            || tyconRefEq g g.choice6_tcr tcref
+            || tyconRefEq g g.choice7_tcr tcref
 
-    let tryDestOptionTy g ty = 
-        match argsOfAppTy g ty with 
-        | [ty1] when isOptionTy g ty -> ValueSome ty1
+    let tryDestOptionTy g ty =
+        match argsOfAppTy g ty with
+        | [ ty1 ] when isOptionTy g ty -> ValueSome ty1
         | _ -> ValueNone
 
-    let tryDestValueOptionTy g ty = 
-        match argsOfAppTy g ty with 
-        | [ty1] when isValueOptionTy g ty -> ValueSome ty1
+    let tryDestValueOptionTy g ty =
+        match argsOfAppTy g ty with
+        | [ ty1 ] when isValueOptionTy g ty -> ValueSome ty1
         | _ -> ValueNone
 
-    let tryDestChoiceTy g ty idx = 
-        match argsOfAppTy g ty with 
+    let tryDestChoiceTy g ty idx =
+        match argsOfAppTy g ty with
         | ls when isChoiceTy g ty && ls.Length > idx -> ValueSome ls[idx]
         | _ -> ValueNone
 
-    let destOptionTy g ty = 
-        match tryDestOptionTy g ty with 
+    let destOptionTy g ty =
+        match tryDestOptionTy g ty with
         | ValueSome ty -> ty
         | ValueNone -> failwith "destOptionTy: not an option type"
 
-    let destValueOptionTy g ty = 
-        match tryDestValueOptionTy g ty with 
+    let destValueOptionTy g ty =
+        match tryDestValueOptionTy g ty with
         | ValueSome ty -> ty
         | ValueNone -> failwith "destValueOptionTy: not a value option type"
 
-    let destChoiceTy g ty idx = 
-        match tryDestChoiceTy g ty idx with 
+    let destChoiceTy g ty idx =
+        match tryDestChoiceTy g ty idx with
         | ValueSome ty -> ty
         | ValueNone -> failwith "destChoiceTy: not a Choice type"
 
-    let isNullableTy (g: TcGlobals) ty = 
-        match tryTcrefOfAppTy g ty with 
+    let isNullableTy (g: TcGlobals) ty =
+        match tryTcrefOfAppTy g ty with
         | ValueNone -> false
         | ValueSome tcref -> tyconRefEq g g.system_Nullable_tcref tcref
 
-    let tryDestNullableTy g ty = 
-        match argsOfAppTy g ty with 
-        | [ty1] when isNullableTy g ty -> ValueSome ty1
+    let tryDestNullableTy g ty =
+        match argsOfAppTy g ty with
+        | [ ty1 ] when isNullableTy g ty -> ValueSome ty1
         | _ -> ValueNone
 
-    let destNullableTy g ty = 
-        match tryDestNullableTy g ty with 
+    let destNullableTy g ty =
+        match tryDestNullableTy g ty with
         | ValueSome ty -> ty
         | ValueNone -> failwith "destNullableTy: not a Nullable type"
 
     [<return: Struct>]
     let (|NullableTy|_|) g ty =
-        match tryAppTy g ty with 
-        | ValueSome (tcref, [tyarg]) when tyconRefEq g tcref g.system_Nullable_tcref -> ValueSome tyarg
+        match tryAppTy g ty with
+        | ValueSome(tcref, [ tyarg ]) when tyconRefEq g tcref g.system_Nullable_tcref -> ValueSome tyarg
         | _ -> ValueNone
 
-    let (|StripNullableTy|) g ty = 
-        match tryDestNullableTy g ty with 
+    let (|StripNullableTy|) g ty =
+        match tryDestNullableTy g ty with
         | ValueSome tyarg -> tyarg
         | _ -> ty
 
-    let isLinqExpressionTy g ty = 
-        match tryTcrefOfAppTy g ty with 
+    let isLinqExpressionTy g ty =
+        match tryTcrefOfAppTy g ty with
         | ValueNone -> false
         | ValueSome tcref -> tyconRefEq g g.system_LinqExpression_tcref tcref
 
-    let tryDestLinqExpressionTy g ty = 
-        match argsOfAppTy g ty with 
-        | [ty1] when isLinqExpressionTy g ty -> Some ty1
+    let tryDestLinqExpressionTy g ty =
+        match argsOfAppTy g ty with
+        | [ ty1 ] when isLinqExpressionTy g ty -> Some ty1
         | _ -> None
 
-    let destLinqExpressionTy g ty = 
-        match tryDestLinqExpressionTy g ty with 
+    let destLinqExpressionTy g ty =
+        match tryDestLinqExpressionTy g ty with
         | Some ty -> ty
         | None -> failwith "destLinqExpressionTy: not an expression type"
 
-    let mkNoneCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "None"
+    let mkNoneCase (g: TcGlobals) =
+        mkUnionCaseRef g.option_tcr_canon "None"
 
-    let mkSomeCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "Some"
+    let mkSomeCase (g: TcGlobals) =
+        mkUnionCaseRef g.option_tcr_canon "Some"
 
-    let mkSome g ty arg m = mkUnionCaseExpr(mkSomeCase g, [ty], [arg], m)
+    let mkSome g ty arg m =
+        mkUnionCaseExpr (mkSomeCase g, [ ty ], [ arg ], m)
 
-    let mkNone g ty m = mkUnionCaseExpr(mkNoneCase g, [ty], [], m)
+    let mkNone g ty m =
+        mkUnionCaseExpr (mkNoneCase g, [ ty ], [], m)
 
-    let mkValueNoneCase (g: TcGlobals) = mkUnionCaseRef g.valueoption_tcr_canon "ValueNone"
+    let mkValueNoneCase (g: TcGlobals) =
+        mkUnionCaseRef g.valueoption_tcr_canon "ValueNone"
 
-    let mkValueSomeCase (g: TcGlobals) = mkUnionCaseRef g.valueoption_tcr_canon "ValueSome"
+    let mkValueSomeCase (g: TcGlobals) =
+        mkUnionCaseRef g.valueoption_tcr_canon "ValueSome"
 
-    let mkAnySomeCase g isStruct = (if isStruct then mkValueSomeCase g else mkSomeCase g)
+    let mkAnySomeCase g isStruct =
+        (if isStruct then mkValueSomeCase g else mkSomeCase g)
 
-    let mkValueSome g ty arg m = mkUnionCaseExpr(mkValueSomeCase g, [ty], [arg], m)
+    let mkValueSome g ty arg m =
+        mkUnionCaseExpr (mkValueSomeCase g, [ ty ], [ arg ], m)
 
-    let mkValueNone g ty m = mkUnionCaseExpr(mkValueNoneCase g, [ty], [], m)
+    let mkValueNone g ty m =
+        mkUnionCaseExpr (mkValueNoneCase g, [ ty ], [], m)
 
-    type ValRef with 
-        member vref.IsDispatchSlot = 
-            match vref.MemberInfo with 
-            | Some membInfo -> membInfo.MemberFlags.IsDispatchSlot 
+    type ValRef with
+        member vref.IsDispatchSlot =
+            match vref.MemberInfo with
+            | Some membInfo -> membInfo.MemberFlags.IsDispatchSlot
             | None -> false
 
     [<return: Struct>]
-    let (|UnopExpr|_|) _g expr = 
-        match expr with 
-        | Expr.App (Expr.Val (vref, _, _), _, _, [arg1], _) -> ValueSome (vref, arg1)
+    let (|UnopExpr|_|) (_g: TcGlobals) expr =
+        match expr with
+        | Expr.App(Expr.Val(vref, _, _), _, _, [ arg1 ], _) -> ValueSome(vref, arg1)
         | _ -> ValueNone
 
     [<return: Struct>]
-    let (|BinopExpr|_|) _g expr = 
-        match expr with 
-        | Expr.App (Expr.Val (vref, _, _), _, _, [arg1;arg2], _) -> ValueSome (vref, arg1, arg2)
+    let (|BinopExpr|_|) (_g: TcGlobals) expr =
+        match expr with
+        | Expr.App(Expr.Val(vref, _, _), _, _, [ arg1; arg2 ], _) -> ValueSome(vref, arg1, arg2)
         | _ -> ValueNone
 
     [<return: Struct>]
-    let (|SpecificUnopExpr|_|) g vrefReqd expr = 
-        match expr with 
+    let (|SpecificUnopExpr|_|) g vrefReqd expr =
+        match expr with
         | UnopExpr g (vref, arg1) when valRefEq g vref vrefReqd -> ValueSome arg1
         | _ -> ValueNone
 
     [<return: Struct>]
     let (|SignedConstExpr|_|) expr =
         match expr with
-        | Expr.Const (Const.Int32 _, _, _)
-        | Expr.Const (Const.SByte _, _, _)
-        | Expr.Const (Const.Int16 _, _, _)
-        | Expr.Const (Const.Int64 _, _, _)
-        | Expr.Const (Const.Single _, _, _)
-        | Expr.Const (Const.Double _, _, _) -> ValueSome ()
+        | Expr.Const(Const.Int32 _, _, _)
+        | Expr.Const(Const.SByte _, _, _)
+        | Expr.Const(Const.Int16 _, _, _)
+        | Expr.Const(Const.Int64 _, _, _)
+        | Expr.Const(Const.Single _, _, _)
+        | Expr.Const(Const.Double _, _, _) -> ValueSome()
         | _ -> ValueNone
 
     [<return: Struct>]
     let (|IntegerConstExpr|_|) expr =
         match expr with
-        | Expr.Const (Const.Int32 _, _, _)
-        | Expr.Const (Const.SByte _, _, _)
-        | Expr.Const (Const.Int16 _, _, _)
-        | Expr.Const (Const.Int64 _, _, _)
-        | Expr.Const (Const.Byte _, _, _)
-        | Expr.Const (Const.UInt16 _, _, _)
-        | Expr.Const (Const.UInt32 _, _, _)
-        | Expr.Const (Const.UInt64 _, _, _) -> ValueSome ()
+        | Expr.Const(Const.Int32 _, _, _)
+        | Expr.Const(Const.SByte _, _, _)
+        | Expr.Const(Const.Int16 _, _, _)
+        | Expr.Const(Const.Int64 _, _, _)
+        | Expr.Const(Const.Byte _, _, _)
+        | Expr.Const(Const.UInt16 _, _, _)
+        | Expr.Const(Const.UInt32 _, _, _)
+        | Expr.Const(Const.UInt64 _, _, _) -> ValueSome()
         | _ -> ValueNone
 
     [<return: Struct>]
     let (|FloatConstExpr|_|) expr =
         match expr with
-        | Expr.Const (Const.Single _, _, _)
-        | Expr.Const (Const.Double _, _, _) -> ValueSome ()
+        | Expr.Const(Const.Single _, _, _)
+        | Expr.Const(Const.Double _, _, _) -> ValueSome()
         | _ -> ValueNone
 
     [<return: Struct>]
-    let (|SpecificBinopExpr|_|) g vrefReqd expr = 
-        match expr with 
-        | BinopExpr g (vref, arg1, arg2) when valRefEq g vref vrefReqd -> ValueSome (arg1, arg2)
+    let (|SpecificBinopExpr|_|) g vrefReqd expr =
+        match expr with
+        | BinopExpr g (vref, arg1, arg2) when valRefEq g vref vrefReqd -> ValueSome(arg1, arg2)
         | _ -> ValueNone
 
     [<return: Struct>]
-    let (|EnumExpr|_|) g expr = 
+    let (|EnumExpr|_|) g expr =
         match (|SpecificUnopExpr|_|) g g.enum_vref expr with
         | ValueNone -> (|SpecificUnopExpr|_|) g g.enumOfValue_vref expr
         | x -> x
 
     [<return: Struct>]
-    let (|BitwiseOrExpr|_|) g expr = (|SpecificBinopExpr|_|) g g.bitwise_or_vref expr
+    let (|BitwiseOrExpr|_|) g expr =
+        (|SpecificBinopExpr|_|) g g.bitwise_or_vref expr
 
     [<return: Struct>]
-    let (|AttribBitwiseOrExpr|_|) g expr = 
-        match expr with 
+    let (|AttribBitwiseOrExpr|_|) g expr =
+        match expr with
         | BitwiseOrExpr g (arg1, arg2) -> ValueSome(arg1, arg2)
         // Special workaround, only used when compiling FSharp.Core.dll. Uses of 'a ||| b' occur before the '|||' bitwise or operator
         // is defined. These get through type checking because enums implicitly support the '|||' operator through
-        // the automatic resolution of undefined operators (see tc.fs, Item.ImplicitOp). This then compiles as an 
+        // the automatic resolution of undefined operators (see tc.fs, Item.ImplicitOp). This then compiles as an
         // application of a lambda to two arguments. We recognize this pattern here
-        | Expr.App (Expr.Lambda _, _, _, [arg1;arg2], _) when g.compilingFSharpCore -> 
-            ValueSome(arg1, arg2)
+        | Expr.App(Expr.Lambda _, _, _, [ arg1; arg2 ], _) when g.compilingFSharpCore -> ValueSome(arg1, arg2)
         | _ -> ValueNone
 
-    let isUncheckedDefaultOfValRef g vref = 
-        valRefEq g vref g.unchecked_defaultof_vref 
+    let isUncheckedDefaultOfValRef g vref =
+        valRefEq g vref g.unchecked_defaultof_vref
         // There is an internal version of typeof defined in prim-types.fs that needs to be detected
-        || (g.compilingFSharpCore && vref.LogicalName = "defaultof") 
+        || (g.compilingFSharpCore && vref.LogicalName = "defaultof")
 
-    let isTypeOfValRef g vref = 
-        valRefEq g vref g.typeof_vref 
+    let isTypeOfValRef g vref =
+        valRefEq g vref g.typeof_vref
         // There is an internal version of typeof defined in prim-types.fs that needs to be detected
-        || (g.compilingFSharpCore && vref.LogicalName = "typeof") 
+        || (g.compilingFSharpCore && vref.LogicalName = "typeof")
 
-    let isSizeOfValRef g vref = 
-        valRefEq g vref g.sizeof_vref 
+    let isSizeOfValRef g vref =
+        valRefEq g vref g.sizeof_vref
         // There is an internal version of typeof defined in prim-types.fs that needs to be detected
-        || (g.compilingFSharpCore && vref.LogicalName = "sizeof") 
+        || (g.compilingFSharpCore && vref.LogicalName = "sizeof")
 
     let isNameOfValRef g vref =
         valRefEq g vref g.nameof_vref
         // There is an internal version of nameof defined in prim-types.fs that needs to be detected
         || (g.compilingFSharpCore && vref.LogicalName = "nameof")
 
-    let isTypeDefOfValRef g vref = 
-        valRefEq g vref g.typedefof_vref 
+    let isTypeDefOfValRef g vref =
+        valRefEq g vref g.typedefof_vref
         // There is an internal version of typedefof defined in prim-types.fs that needs to be detected
-        || (g.compilingFSharpCore && vref.LogicalName = "typedefof") 
+        || (g.compilingFSharpCore && vref.LogicalName = "typedefof")
 
     [<return: Struct>]
-    let (|UncheckedDefaultOfExpr|_|) g expr = 
-        match expr with 
-        | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isUncheckedDefaultOfValRef g vref -> ValueSome ty
+    let (|UncheckedDefaultOfExpr|_|) g expr =
+        match expr with
+        | Expr.App(Expr.Val(vref, _, _), _, [ ty ], [], _) when isUncheckedDefaultOfValRef g vref -> ValueSome ty
         | _ -> ValueNone
 
     [<return: Struct>]
-    let (|TypeOfExpr|_|) g expr = 
-        match expr with 
-        | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isTypeOfValRef g vref -> ValueSome ty
+    let (|TypeOfExpr|_|) g expr =
+        match expr with
+        | Expr.App(Expr.Val(vref, _, _), _, [ ty ], [], _) when isTypeOfValRef g vref -> ValueSome ty
         | _ -> ValueNone
 
     [<return: Struct>]
-    let (|SizeOfExpr|_|) g expr = 
-        match expr with 
-        | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isSizeOfValRef g vref -> ValueSome ty
+    let (|SizeOfExpr|_|) g expr =
+        match expr with
+        | Expr.App(Expr.Val(vref, _, _), _, [ ty ], [], _) when isSizeOfValRef g vref -> ValueSome ty
         | _ -> ValueNone
 
     [<return: Struct>]
-    let (|TypeDefOfExpr|_|) g expr = 
-        match expr with 
-        | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isTypeDefOfValRef g vref -> ValueSome ty
+    let (|TypeDefOfExpr|_|) g expr =
+        match expr with
+        | Expr.App(Expr.Val(vref, _, _), _, [ ty ], [], _) when isTypeDefOfValRef g vref -> ValueSome ty
         | _ -> ValueNone
 
     [<return: Struct>]
-    let (|NameOfExpr|_|) g expr = 
-        match expr with 
-        | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isNameOfValRef g vref  -> ValueSome ty
+    let (|NameOfExpr|_|) g expr =
+        match expr with
+        | Expr.App(Expr.Val(vref, _, _), _, [ ty ], [], _) when isNameOfValRef g vref -> ValueSome ty
         | _ -> ValueNone
 
     [<return: Struct>]
-    let (|SeqExpr|_|) g expr = 
-        match expr with 
-        | Expr.App(Expr.Val(vref,_,_),_,_,_,_) when valRefEq g vref g.seq_vref -> ValueSome()
+    let (|SeqExpr|_|) g expr =
+        match expr with
+        | Expr.App(Expr.Val(vref, _, _), _, _, _, _) when valRefEq g vref g.seq_vref -> ValueSome()
         | _ -> ValueNone
 
-[<AutoOpen>]
-module internal DebugPrinting =
+module internal DebugPrint =
 
     //--------------------------------------------------------------------------
     // DEBUG layout
     //---------------------------------------------------------------------------
-    module DebugPrint = 
-        let mutable layoutRanges = false
-        let mutable layoutTypes = false
-        let mutable layoutStamps = false
-        let mutable layoutValReprInfo = false
+    let mutable layoutRanges = false
+    let mutable layoutTypes = false
+    let mutable layoutStamps = false
+    let mutable layoutValReprInfo = false
 
-        let braceBarL l = leftL leftBraceBar ^^ l ^^ rightL rightBraceBar
+    let braceBarL l =
+        leftL leftBraceBar ^^ l ^^ rightL rightBraceBar
 
-        let intL (n: int) = wordL (tagNumericLiteral (string n))
+    let intL (n: int) = wordL (tagNumericLiteral (string n))
 
-        let qlistL f xmap = QueueList.foldBack (fun x z -> z @@ f x) xmap emptyL
+    let qlistL f xmap =
+        QueueList.foldBack (fun x z -> z @@ f x) xmap emptyL
 
-        let bracketIfL b lyt = if b then bracketL lyt else lyt
+    let bracketIfL b lyt = if b then bracketL lyt else lyt
 
-        let lvalopL x = 
-            match x with 
-            | LAddrOf false -> wordL (tagText "&")
-            | LAddrOf true -> wordL (tagText "&!")
-            | LByrefGet -> wordL (tagText "*")
-            | LSet -> wordL (tagText "LSet")
-            | LByrefSet -> wordL (tagText "LByrefSet")
+    let lvalopL x =
+        match x with
+        | LAddrOf false -> wordL (tagText "&")
+        | LAddrOf true -> wordL (tagText "&!")
+        | LByrefGet -> wordL (tagText "*")
+        | LSet -> wordL (tagText "LSet")
+        | LByrefSet -> wordL (tagText "LByrefSet")
 
-        let angleBracketL l = leftL (tagText "<") ^^ l ^^ rightL (tagText ">")
+    let angleBracketL l =
+        leftL (tagText "<") ^^ l ^^ rightL (tagText ">")
 
-        let angleBracketListL l = angleBracketL (sepListL (sepL (tagText ",")) l)
+    let angleBracketListL l =
+        angleBracketL (sepListL (sepL (tagText ",")) l)
 
-    #if DEBUG
-        let layoutMemberFlags (memFlags: SynMemberFlags) = 
-            let stat = 
-                if memFlags.IsInstance || (memFlags.MemberKind = SynMemberKind.Constructor) then emptyL 
-                else wordL (tagText "static")
-            let stat =
-                if memFlags.IsDispatchSlot then stat ++ wordL (tagText "abstract")
-                elif memFlags.IsOverrideOrExplicitImpl then stat ++ wordL (tagText "override")
-                else stat
-            stat
-    #endif
+#if DEBUG
+    let layoutMemberFlags (memFlags: SynMemberFlags) =
+        let stat =
+            if memFlags.IsInstance || (memFlags.MemberKind = SynMemberKind.Constructor) then
+                emptyL
+            else
+                wordL (tagText "static")
 
-        let stampL (n: Stamp) w = 
-            if layoutStamps then w ^^ wordL (tagText ("#" + string n)) else w
+        let stat =
+            if memFlags.IsDispatchSlot then
+                stat ++ wordL (tagText "abstract")
+            elif memFlags.IsOverrideOrExplicitImpl then
+                stat ++ wordL (tagText "override")
+            else
+                stat
 
-        let layoutTyconRef (tcref: TyconRef) = 
-            wordL (tagText tcref.DisplayNameWithStaticParameters) |> stampL tcref.Stamp
+        stat
+#endif
 
-        let rec auxTypeL env ty = auxTypeWrapL env false ty
+    let stampL (n: Stamp) w =
+        if layoutStamps then
+            w ^^ wordL (tagText ("#" + string n))
+        else
+            w
 
-        and auxTypeAtomL env ty = auxTypeWrapL env true ty
+    let layoutTyconRef (tcref: TyconRef) =
+        wordL (tagText tcref.DisplayNameWithStaticParameters) |> stampL tcref.Stamp
 
-        and auxTyparsL env tcL prefix tinst = 
-           match tinst with 
-           | [] -> tcL
-           | [t] -> 
-             let tL = auxTypeAtomL env t
-             if prefix then tcL ^^ angleBracketL tL 
-             else tL ^^ tcL 
-           | _ -> 
-             let tinstL = List.map (auxTypeL env) tinst
-             if prefix then
-                 tcL ^^ angleBracketListL tinstL
-             else
-                 tupleL tinstL ^^ tcL
+    let rec auxTypeL env ty = auxTypeWrapL env false ty
 
-        and auxAddNullness coreL (nullness: Nullness) = 
-            match nullness.Evaluate() with
-            | NullnessInfo.WithNull -> coreL ^^ wordL (tagText "?")
-            | NullnessInfo.WithoutNull -> coreL
-            | NullnessInfo.AmbivalentToNull -> coreL //^^ wordL (tagText "%")
+    and auxTypeAtomL env ty = auxTypeWrapL env true ty
 
-        and auxTypeWrapL env isAtomic ty = 
-            let wrap x = bracketIfL isAtomic x in // wrap iff require atomic expr 
-            match stripTyparEqns ty with
-            | TType_forall (typars, bodyTy) -> 
-               (leftL (tagText "!") ^^ layoutTyparDecls typars --- auxTypeL env bodyTy) |> wrap
+    and auxTyparsL env tcL prefix tinst =
+        match tinst with
+        | [] -> tcL
+        | [ t ] ->
+            let tL = auxTypeAtomL env t
+            if prefix then tcL ^^ angleBracketL tL else tL ^^ tcL
+        | _ ->
+            let tinstL = List.map (auxTypeL env) tinst
 
-            | TType_ucase (UnionCaseRef(tcref, _), tinst) ->
-               let prefix = tcref.IsPrefixDisplay
-               let tcL = layoutTyconRef tcref
-               auxTyparsL env tcL prefix tinst
+            if prefix then
+                tcL ^^ angleBracketListL tinstL
+            else
+                tupleL tinstL ^^ tcL
 
-            | TType_app (tcref, tinst, nullness) ->
-               let prefix = tcref.IsPrefixDisplay
-               let tcL = layoutTyconRef tcref
-               let coreL = auxTyparsL env tcL prefix tinst
-               auxAddNullness coreL nullness
+    and auxAddNullness coreL (nullness: Nullness) =
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> coreL ^^ wordL (tagText "?")
+        | NullnessInfo.WithoutNull -> coreL
+        | NullnessInfo.AmbivalentToNull -> coreL //^^ wordL (tagText "%")
 
-            | TType_tuple (_tupInfo, tys) ->
-                sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
+    and auxTypeWrapL env isAtomic ty =
+        let wrap x = bracketIfL isAtomic x in // wrap iff require atomic expr
 
-            | TType_fun (domainTy, rangeTy, nullness) ->
-               let coreL = ((auxTypeAtomL env domainTy ^^ wordL (tagText "->")) --- auxTypeL env rangeTy)  |> wrap
-               auxAddNullness coreL nullness
+        match stripTyparEqns ty with
+        | TType_forall(typars, bodyTy) -> (leftL (tagText "!") ^^ layoutTyparDecls typars --- auxTypeL env bodyTy) |> wrap
 
-            | TType_var (typar, nullness) ->
-               let coreL = auxTyparWrapL env isAtomic typar
-               auxAddNullness coreL nullness
+        | TType_ucase(UnionCaseRef(tcref, _), tinst) ->
+            let prefix = tcref.IsPrefixDisplay
+            let tcL = layoutTyconRef tcref
+            auxTyparsL env tcL prefix tinst
 
-            | TType_anon (anonInfo, tys) ->
-               braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
+        | TType_app(tcref, tinst, nullness) ->
+            let prefix = tcref.IsPrefixDisplay
+            let tcL = layoutTyconRef tcref
+            let coreL = auxTyparsL env tcL prefix tinst
+            auxAddNullness coreL nullness
 
-            | TType_measure unt ->
-    #if DEBUG
-              leftL (tagText "{") ^^
-              (match global_g with
-               | None -> wordL (tagText "<no global g>")
-               | Some g -> 
-                 let sortVars (vs:(Typar * Rational) list) = vs |> List.sortBy (fun (v, _) -> v.DisplayName) 
-                 let sortCons (cs:(TyconRef * Rational) list) = cs |> List.sortBy (fun (c, _) -> c.DisplayName) 
-                 let negvs, posvs = ListMeasureVarOccsWithNonZeroExponents unt |> sortVars |> List.partition (fun (_, e) -> SignRational e < 0)
-                 let negcs, poscs = ListMeasureConOccsWithNonZeroExponents g false unt |> sortCons |> List.partition (fun (_, e) -> SignRational e < 0)
-                 let unparL (uv: Typar) = wordL (tagText ("'" + uv.DisplayName))
-                 let unconL tcref = layoutTyconRef tcref
-                 let rationalL e = wordL (tagText(RationalToString e))
-                 let measureToPowerL x e = if e = OneRational then x else x -- wordL (tagText "^") -- rationalL e
-                 let prefix =
-                     spaceListL
-                         (List.map (fun (v, e) -> measureToPowerL (unparL v) e) posvs @
-                          List.map (fun (c, e) -> measureToPowerL (unconL c) e) poscs)
-                 let postfix =
-                     spaceListL 
-                         (List.map (fun (v, e) -> measureToPowerL (unparL v) (NegRational e)) negvs @
-                          List.map (fun (c, e) -> measureToPowerL (unconL c) (NegRational e)) negcs)
-                 match (negvs, negcs) with 
-                 | [], [] -> prefix 
-                 | _ -> prefix ^^ sepL (tagText "/") ^^ postfix) ^^
-              rightL (tagText "}")
-    #else
-              unt |> ignore
-              wordL(tagText "<measure>")
-    #endif
+        | TType_tuple(_tupInfo, tys) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
 
-        and auxTyparWrapL (env: SimplifyTypes.TypeSimplificationInfo) isAtomic (typar: Typar) =
+        | TType_fun(domainTy, rangeTy, nullness) ->
+            let coreL =
+                ((auxTypeAtomL env domainTy ^^ wordL (tagText "->")) --- auxTypeL env rangeTy)
+                |> wrap
 
-              let tpText =
-                  prefixOfStaticReq typar.StaticReq
-                  + prefixOfInferenceTypar typar
-                  + typar.DisplayName
+            auxAddNullness coreL nullness
 
-              let tpL = wordL (tagText tpText)
+        | TType_var(typar, nullness) ->
+            let coreL = auxTyparWrapL env isAtomic typar
+            auxAddNullness coreL nullness
 
-              let varL = tpL |> stampL typar.Stamp 
+        | TType_anon(anonInfo, tys) ->
+            braceBarL (
+                sepListL
+                    (wordL (tagText ";"))
+                    (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys)
+            )
 
-              // There are several cases for pprinting of typar.
-              // 
-              //   'a - is multiple occurrence.
-              //   #Type - inplace coercion constraint and singleton
-              //   ('a :> Type) - inplace coercion constraint not singleton
-              //   ('a.opM: S->T) - inplace operator constraint
-              match Zmap.tryFind typar env.inplaceConstraints with
-              | Some typarConstraintTy ->
-                  if Zset.contains typar env.singletons then
-                    leftL (tagText "#") ^^ auxTyparConstraintTypL env typarConstraintTy
-                  else
-                    (varL ^^ sepL (tagText ":>") ^^ auxTyparConstraintTypL env typarConstraintTy) |> bracketIfL isAtomic
-              | _ -> varL
+        | TType_measure unt ->
+#if DEBUG
+            leftL (tagText "{")
+            ^^ (match global_g with
+                | None -> wordL (tagText "<no global g>")
+                | Some g ->
+                    let sortVars (vs: (Typar * Rational) list) =
+                        vs |> List.sortBy (fun (v, _) -> v.DisplayName)
 
-        and auxTypar2L env typar = auxTyparWrapL env false typar
+                    let sortCons (cs: (TyconRef * Rational) list) =
+                        cs |> List.sortBy (fun (c, _) -> c.DisplayName)
 
-        and auxTyparConstraintTypL env ty = auxTypeL env ty
+                    let negvs, posvs =
+                        ListMeasureVarOccsWithNonZeroExponents unt
+                        |> sortVars
+                        |> List.partition (fun (_, e) -> SignRational e < 0)
 
-        and auxTraitL env (ttrait: TraitConstraintInfo) =
-    #if DEBUG
-            let (TTrait(tys, nm, memFlags, argTys, retTy, _, _)) = ttrait 
-            match global_g with
-            | None -> wordL (tagText "<no global g>")
-            | Some g -> 
-                let retTy = GetFSharpViewOfReturnType g retTy
-                let stat = layoutMemberFlags memFlags
-                let argsL = sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) argTys)
-                let resL = auxTypeL env retTy
-                let methodTypeL = (argsL ^^ wordL (tagText "->")) ++ resL
-                bracketL (stat ++ bracketL (sepListL (wordL (tagText "or")) (List.map (auxTypeAtomL env) tys)) ++ wordL (tagText "member") --- (wordL (tagText nm) ^^ wordL (tagText ":") -- methodTypeL))
-    #else
-            ignore (env, ttrait)
-            wordL(tagText "trait")
-    #endif
+                    let negcs, poscs =
+                        ListMeasureConOccsWithNonZeroExponents g false unt
+                        |> sortCons
+                        |> List.partition (fun (_, e) -> SignRational e < 0)
 
-        and auxTyparConstraintL env (tp, tpc) = 
-            let constraintPrefix l = auxTypar2L env tp ^^ wordL (tagText ":") ^^ l
-            match tpc with
-            | TyparConstraint.CoercesTo(typarConstraintTy, _) ->
-                auxTypar2L env tp ^^ wordL (tagText ":>") --- auxTyparConstraintTypL env typarConstraintTy
-            | TyparConstraint.MayResolveMember(traitInfo, _) ->
-                auxTypar2L env tp ^^ wordL (tagText ":") --- auxTraitL env traitInfo
-            | TyparConstraint.DefaultsTo(_, ty, _) ->
-                wordL (tagText "default") ^^ auxTypar2L env tp ^^ wordL (tagText ":") ^^ auxTypeL env ty
-            | TyparConstraint.IsEnum(ty, _) ->
-                auxTyparsL env (wordL (tagText "enum")) true [ty] |> constraintPrefix
-            | TyparConstraint.IsDelegate(aty, bty, _) ->
-                auxTyparsL env (wordL (tagText "delegate")) true [aty; bty] |> constraintPrefix
-            | TyparConstraint.SupportsNull _ ->
-                wordL (tagText "null") |> constraintPrefix
-            | TyparConstraint.SupportsComparison _ ->
-                wordL (tagText "comparison") |> constraintPrefix
-            | TyparConstraint.SupportsEquality _ ->
-                wordL (tagText "equality") |> constraintPrefix
-            | TyparConstraint.IsNonNullableStruct _ ->
-                wordL (tagText "struct") |> constraintPrefix
-            | TyparConstraint.IsReferenceType _ ->
-                wordL (tagText "not struct") |> constraintPrefix
-            | TyparConstraint.NotSupportsNull _ ->
-                wordL (tagText "not null") |> constraintPrefix
-            | TyparConstraint.IsUnmanaged _ ->
-                wordL (tagText "unmanaged") |> constraintPrefix
-            | TyparConstraint.AllowsRefStruct _ ->
-                wordL (tagText "allows ref struct") |> constraintPrefix
-            | TyparConstraint.SimpleChoice(tys, _) ->
-                bracketL (sepListL (sepL (tagText "|")) (List.map (auxTypeL env) tys)) |> constraintPrefix
-            | TyparConstraint.RequiresDefaultConstructor _ ->
-                bracketL (wordL (tagText "new : unit -> ") ^^ (auxTypar2L env tp)) |> constraintPrefix
+                    let unparL (uv: Typar) = wordL (tagText ("'" + uv.DisplayName))
+                    let unconL tcref = layoutTyconRef tcref
+                    let rationalL e = wordL (tagText (RationalToString e))
 
-        and auxTyparConstraintsL env x = 
-            match x with 
+                    let measureToPowerL x e =
+                        if e = OneRational then
+                            x
+                        else
+                            x -- wordL (tagText "^") -- rationalL e
+
+                    let prefix =
+                        spaceListL (
+                            List.map (fun (v, e) -> measureToPowerL (unparL v) e) posvs
+                            @ List.map (fun (c, e) -> measureToPowerL (unconL c) e) poscs
+                        )
+
+                    let postfix =
+                        spaceListL (
+                            List.map (fun (v, e) -> measureToPowerL (unparL v) (NegRational e)) negvs
+                            @ List.map (fun (c, e) -> measureToPowerL (unconL c) (NegRational e)) negcs
+                        )
+
+                    match (negvs, negcs) with
+                    | [], [] -> prefix
+                    | _ -> prefix ^^ sepL (tagText "/") ^^ postfix)
+            ^^ rightL (tagText "}")
+#else
+            unt |> ignore
+            wordL (tagText "<measure>")
+#endif
+
+    and auxTyparWrapL (env: SimplifyTypes.TypeSimplificationInfo) isAtomic (typar: Typar) =
+
+        let tpText =
+            prefixOfStaticReq typar.StaticReq
+            + prefixOfInferenceTypar typar
+            + typar.DisplayName
+
+        let tpL = wordL (tagText tpText)
+
+        let varL = tpL |> stampL typar.Stamp
+
+        // There are several cases for pprinting of typar.
+        //
+        //   'a - is multiple occurrence.
+        //   #Type - inplace coercion constraint and singleton
+        //   ('a :> Type) - inplace coercion constraint not singleton
+        //   ('a.opM: S->T) - inplace operator constraint
+        match Zmap.tryFind typar env.inplaceConstraints with
+        | Some typarConstraintTy ->
+            if Zset.contains typar env.singletons then
+                leftL (tagText "#") ^^ auxTyparConstraintTypL env typarConstraintTy
+            else
+                (varL ^^ sepL (tagText ":>") ^^ auxTyparConstraintTypL env typarConstraintTy)
+                |> bracketIfL isAtomic
+        | _ -> varL
+
+    and auxTypar2L env typar = auxTyparWrapL env false typar
+
+    and auxTyparConstraintTypL env ty = auxTypeL env ty
+
+    and auxTraitL env (ttrait: TraitConstraintInfo) =
+#if DEBUG
+        let (TTrait(tys, nm, memFlags, argTys, retTy, _, _)) = ttrait
+
+        match global_g with
+        | None -> wordL (tagText "<no global g>")
+        | Some g ->
+            let retTy = GetFSharpViewOfReturnType g retTy
+            let stat = layoutMemberFlags memFlags
+            let argsL = sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) argTys)
+            let resL = auxTypeL env retTy
+            let methodTypeL = (argsL ^^ wordL (tagText "->")) ++ resL
+
+            bracketL (
+                stat
+                ++ bracketL (sepListL (wordL (tagText "or")) (List.map (auxTypeAtomL env) tys))
+                ++ wordL (tagText "member")
+                --- (wordL (tagText nm) ^^ wordL (tagText ":") -- methodTypeL)
+            )
+#else
+        ignore (env, ttrait)
+        wordL (tagText "trait")
+#endif
+
+    and auxTyparConstraintL env (tp, tpc) =
+        let constraintPrefix l =
+            auxTypar2L env tp ^^ wordL (tagText ":") ^^ l
+
+        match tpc with
+        | TyparConstraint.CoercesTo(typarConstraintTy, _) ->
+            auxTypar2L env tp
+            ^^ wordL (tagText ":>") --- auxTyparConstraintTypL env typarConstraintTy
+        | TyparConstraint.MayResolveMember(traitInfo, _) -> auxTypar2L env tp ^^ wordL (tagText ":") --- auxTraitL env traitInfo
+        | TyparConstraint.DefaultsTo(_, ty, _) ->
+            wordL (tagText "default")
+            ^^ auxTypar2L env tp
+            ^^ wordL (tagText ":")
+            ^^ auxTypeL env ty
+        | TyparConstraint.IsEnum(ty, _) -> auxTyparsL env (wordL (tagText "enum")) true [ ty ] |> constraintPrefix
+        | TyparConstraint.IsDelegate(aty, bty, _) ->
+            auxTyparsL env (wordL (tagText "delegate")) true [ aty; bty ]
+            |> constraintPrefix
+        | TyparConstraint.SupportsNull _ -> wordL (tagText "null") |> constraintPrefix
+        | TyparConstraint.SupportsComparison _ -> wordL (tagText "comparison") |> constraintPrefix
+        | TyparConstraint.SupportsEquality _ -> wordL (tagText "equality") |> constraintPrefix
+        | TyparConstraint.IsNonNullableStruct _ -> wordL (tagText "struct") |> constraintPrefix
+        | TyparConstraint.IsReferenceType _ -> wordL (tagText "not struct") |> constraintPrefix
+        | TyparConstraint.NotSupportsNull _ -> wordL (tagText "not null") |> constraintPrefix
+        | TyparConstraint.IsUnmanaged _ -> wordL (tagText "unmanaged") |> constraintPrefix
+        | TyparConstraint.AllowsRefStruct _ -> wordL (tagText "allows ref struct") |> constraintPrefix
+        | TyparConstraint.SimpleChoice(tys, _) ->
+            bracketL (sepListL (sepL (tagText "|")) (List.map (auxTypeL env) tys))
+            |> constraintPrefix
+        | TyparConstraint.RequiresDefaultConstructor _ ->
+            bracketL (wordL (tagText "new : unit -> ") ^^ (auxTypar2L env tp))
+            |> constraintPrefix
+
+    and auxTyparConstraintsL env x =
+        match x with
+        | [] -> emptyL
+        | cxs -> wordL (tagText "when") --- aboveListL (List.map (auxTyparConstraintL env) cxs)
+
+    and typarL tp =
+        auxTypar2L SimplifyTypes.typeSimplificationInfo0 tp
+
+    and typeAtomL tau =
+        let tau, cxs = tau, []
+        let env = SimplifyTypes.CollectInfo false [ tau ] cxs
+
+        match env.postfixConstraints with
+        | [] -> auxTypeAtomL env tau
+        | _ -> bracketL (auxTypeL env tau --- auxTyparConstraintsL env env.postfixConstraints)
+
+    and typeL tau =
+        let tau, cxs = tau, []
+        let env = SimplifyTypes.CollectInfo false [ tau ] cxs
+
+        match env.postfixConstraints with
+        | [] -> auxTypeL env tau
+        | _ -> (auxTypeL env tau --- auxTyparConstraintsL env env.postfixConstraints)
+
+    and typarDeclL tp =
+        let tau, cxs = mkTyparTy tp, (List.map (fun x -> (tp, x)) tp.Constraints)
+        let env = SimplifyTypes.CollectInfo false [ tau ] cxs
+
+        match env.postfixConstraints with
+        | [] -> auxTypeL env tau
+        | _ -> (auxTypeL env tau --- auxTyparConstraintsL env env.postfixConstraints)
+
+    and layoutTyparDecls tps =
+        match tps with
+        | [] -> emptyL
+        | _ -> angleBracketListL (List.map typarDeclL tps)
+
+    let rangeL m = wordL (tagText (stringOfRange m))
+
+    let instL tyL tys =
+        if layoutTypes then
+            match tys with
             | [] -> emptyL
-            | cxs -> wordL (tagText "when") --- aboveListL (List.map (auxTyparConstraintL env) cxs)
+            | tys -> sepL (tagText "@[") ^^ commaListL (List.map tyL tys) ^^ rightL (tagText "]")
+        else
+            emptyL
 
-        and typarL tp = auxTypar2L SimplifyTypes.typeSimplificationInfo0 tp 
+    let valRefL (vr: ValRef) =
+        wordL (tagText vr.LogicalName) |> stampL vr.Stamp
 
-        and typeAtomL tau =
-            let tau, cxs = tau, []
-            let env = SimplifyTypes.CollectInfo false [tau] cxs
-            match env.postfixConstraints with
-            | [] -> auxTypeAtomL env tau
-            | _ -> bracketL (auxTypeL env tau --- auxTyparConstraintsL env env.postfixConstraints)
+    let layoutAttrib (Attrib(_, k, _, _, _, _, _)) =
+        leftL (tagText "[<")
+        ^^ (match k with
+            | ILAttrib ilmeth -> wordL (tagText ilmeth.Name)
+            | FSAttrib vref -> valRefL vref)
+        ^^ rightL (tagText ">]")
 
-        and typeL tau =
-            let tau, cxs = tau, []
-            let env = SimplifyTypes.CollectInfo false [tau] cxs
-            match env.postfixConstraints with
-            | [] -> auxTypeL env tau 
-            | _ -> (auxTypeL env tau --- auxTyparConstraintsL env env.postfixConstraints) 
+    let layoutAttribs attribs =
+        aboveListL (List.map layoutAttrib attribs)
 
-        and typarDeclL tp =
-            let tau, cxs = mkTyparTy tp, (List.map (fun x -> (tp, x)) tp.Constraints)
-            let env = SimplifyTypes.CollectInfo false [tau] cxs
-            match env.postfixConstraints with
-            | [] -> auxTypeL env tau 
-            | _ -> (auxTypeL env tau --- auxTyparConstraintsL env env.postfixConstraints) 
-        and layoutTyparDecls tps =
-            match tps with
-            | [] -> emptyL
-            | _ -> angleBracketListL (List.map typarDeclL tps) 
+    let valReprInfoL (ValReprInfo(tpNames, _, _) as tvd) =
+        let ns = tvd.AritiesOfArgs
 
-        let rangeL m = wordL (tagText (stringOfRange m))
+        leftL (tagText "<")
+        ^^ intL tpNames.Length
+        ^^ sepL (tagText ">[")
+        ^^ commaListL (List.map intL ns)
+        ^^ rightL (tagText "]")
 
-        let instL tyL tys =
+    let valL (v: Val) =
+        let vsL =
+            wordL (tagText (ConvertValLogicalNameToDisplayNameCore v.LogicalName))
+            |> stampL v.Stamp
+
+        let vsL = vsL -- layoutAttribs v.Attribs
+        vsL
+
+    let typeOfValL (v: Val) =
+        valL v
+        ^^ (if v.ShouldInline then wordL (tagText "inline ") else emptyL)
+        ^^ (if v.IsMutable then wordL (tagText "mutable ") else emptyL)
+        ^^ (if layoutTypes then
+                wordL (tagText ":") ^^ typeL v.Type
+            else
+                emptyL)
+
+#if DEBUG
+    let tslotparamL (TSlotParam(nmOpt, ty, inFlag, outFlag, _, _)) =
+        (optionL (tagText >> wordL) nmOpt)
+        ^^ wordL (tagText ":")
+        ^^ typeL ty
+        ^^ (if inFlag then wordL (tagText "[in]") else emptyL)
+        ^^ (if outFlag then wordL (tagText "[out]") else emptyL)
+        ^^ (if inFlag then wordL (tagText "[opt]") else emptyL)
+#endif
+
+    let slotSigL (slotsig: SlotSig) =
+#if DEBUG
+        let (TSlotSig(nm, ty, tps1, tps2, pms, retTy)) = slotsig
+
+        match global_g with
+        | None -> wordL (tagText "<no global g>")
+        | Some g ->
+            let retTy = GetFSharpViewOfReturnType g retTy
+
+            (wordL (tagText "slot") --- (wordL (tagText nm))
+             ^^ wordL (tagText "@")
+             ^^ typeL ty)
+            -- (wordL (tagText "LAM") --- spaceListL (List.map typarL tps1)
+                ^^ rightL (tagText "."))
+            --- (wordL (tagText "LAM") --- spaceListL (List.map typarL tps2)
+                 ^^ rightL (tagText "."))
+            --- (commaListL (List.map (List.map tslotparamL >> tupleL) pms))
+            ^^ wordL (tagText "-> ") --- (typeL retTy)
+#else
+        ignore slotsig
+        wordL (tagText "slotsig")
+#endif
+
+    let valAtBindL v =
+        let vL = valL v
+        let vL = (if v.IsMutable then wordL (tagText "mutable") ++ vL else vL)
+
+        let vL =
             if layoutTypes then
-                match tys with
-                | [] -> emptyL
-                | tys -> sepL (tagText "@[") ^^ commaListL (List.map tyL tys) ^^ rightL (tagText "]")
+                vL ^^ wordL (tagText ":") ^^ typeL v.Type
+            else
+                vL
+
+        let vL =
+            match v.ValReprInfo with
+            | Some info when layoutValReprInfo -> vL ^^ wordL (tagText "!") ^^ valReprInfoL info
+            | _ -> vL
+
+        vL
+
+    let unionCaseRefL (ucr: UnionCaseRef) = wordL (tagText ucr.CaseName)
+
+    let recdFieldRefL (rfref: RecdFieldRef) = wordL (tagText rfref.FieldName)
+
+    // Note: We need nice printing of constants in order to print literals and attributes
+    let constL c =
+        let str =
+            match c with
+            | Const.Bool x -> if x then "true" else "false"
+            | Const.SByte x -> (x |> string) + "y"
+            | Const.Byte x -> (x |> string) + "uy"
+            | Const.Int16 x -> (x |> string) + "s"
+            | Const.UInt16 x -> (x |> string) + "us"
+            | Const.Int32 x -> (x |> string)
+            | Const.UInt32 x -> (x |> string) + "u"
+            | Const.Int64 x -> (x |> string) + "L"
+            | Const.UInt64 x -> (x |> string) + "UL"
+            | Const.IntPtr x -> (x |> string) + "n"
+            | Const.UIntPtr x -> (x |> string) + "un"
+            | Const.Single d ->
+                (let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
+
+                 if String.forall (fun c -> Char.IsDigit c || c = '-') s then
+                     s + ".0"
+                 else
+                     s)
+                + "f"
+            | Const.Double d ->
+                let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
+
+                if String.forall (fun c -> Char.IsDigit c || c = '-') s then
+                    s + ".0"
+                else
+                    s
+            | Const.Char c -> "'" + c.ToString() + "'"
+            | Const.String bs -> "\"" + bs + "\""
+            | Const.Unit -> "()"
+            | Const.Decimal bs -> string bs + "M"
+            | Const.Zero -> "default"
+
+        wordL (tagText str)
+
+    let layoutUnionCaseArgTypes argTys =
+        sepListL (wordL (tagText "*")) (List.map typeL argTys)
+
+    let ucaseL prefixL (ucase: UnionCase) =
+        let nmL = wordL (tagText ucase.DisplayName)
+
+        match ucase.RecdFields |> List.map (fun rfld -> rfld.FormalType) with
+        | [] -> (prefixL ^^ nmL)
+        | argTys -> (prefixL ^^ nmL ^^ wordL (tagText "of")) --- layoutUnionCaseArgTypes argTys
+
+    let layoutUnionCases ucases =
+        let prefixL =
+            if not (isNilOrSingleton ucases) then
+                wordL (tagText "|")
             else
                 emptyL
 
-        let valRefL (vr: ValRef) = 
-            wordL (tagText vr.LogicalName) |> stampL vr.Stamp 
+        List.map (ucaseL prefixL) ucases
 
-        let layoutAttrib (Attrib(_, k, _, _, _, _, _)) = 
-            leftL (tagText "[<") ^^ 
-            (match k with 
-             | ILAttrib ilmeth -> wordL (tagText ilmeth.Name)
-             | FSAttrib vref -> valRefL vref) ^^
-            rightL (tagText ">]")
+    let layoutRecdField (fld: RecdField) =
+        let lhs = wordL (tagText fld.LogicalName)
 
-        let layoutAttribs attribs = aboveListL (List.map layoutAttrib attribs)
+        let lhs =
+            if fld.IsMutable then
+                wordL (tagText "mutable") --- lhs
+            else
+                lhs
 
-        let valReprInfoL (ValReprInfo (tpNames, _, _) as tvd) = 
-            let ns = tvd.AritiesOfArgs
-            leftL (tagText "<") ^^ intL tpNames.Length ^^ sepL (tagText ">[") ^^ commaListL (List.map intL ns) ^^ rightL (tagText "]")
+        let lhs =
+            if layoutTypes then
+                lhs ^^ rightL (tagText ":") ^^ typeL fld.FormalType
+            else
+                lhs
 
-        let valL (v: Val) =
-            let vsL = wordL (tagText (ConvertValLogicalNameToDisplayNameCore v.LogicalName)) |> stampL v.Stamp
-            let vsL = vsL -- layoutAttribs v.Attribs
-            vsL
+        lhs
 
-        let typeOfValL (v: Val) =
-            valL v
-              ^^ (if v.ShouldInline then wordL (tagText "inline ") else emptyL) 
-              ^^ (if v.IsMutable then wordL(tagText "mutable ") else emptyL)
-              ^^ (if layoutTypes then wordL (tagText ":") ^^ typeL v.Type else emptyL)
+    let tyconReprL (repr, tycon: Tycon) =
+        match repr with
+        | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL
+        | TFSharpTyconRepr r ->
+            match r.fsobjmodel_kind with
+            | TFSharpDelegate _ -> wordL (tagText "delegate ...")
+            | _ ->
+                let start =
+                    match r.fsobjmodel_kind with
+                    | TFSharpClass -> "class"
+                    | TFSharpInterface -> "interface"
+                    | TFSharpStruct -> "struct"
+                    | TFSharpEnum -> "enum"
+                    | _ -> failwith "???"
 
-    #if DEBUG
-        let tslotparamL (TSlotParam(nmOpt, ty, inFlag, outFlag, _, _)) =
-            (optionL (tagText >> wordL) nmOpt) ^^ 
-             wordL(tagText ":") ^^ 
-             typeL ty ^^ 
-             (if inFlag then wordL(tagText "[in]") else emptyL) ^^ 
-             (if outFlag then wordL(tagText "[out]") else emptyL) ^^ 
-             (if inFlag then wordL(tagText "[opt]") else emptyL)
-    #endif
+                let inherits =
+                    match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with
+                    | TFSharpClass, Some super -> [ wordL (tagText "inherit") ^^ (typeL super) ]
+                    | TFSharpInterface, _ ->
+                        tycon.ImmediateInterfacesOfFSharpTycon
+                        |> List.filter (fun (_, compgen, _) -> not compgen)
+                        |> List.map (fun (ity, _, _) -> wordL (tagText "inherit") ^^ (typeL ity))
+                    | _ -> []
 
-        let slotSigL (slotsig: SlotSig) =
-    #if DEBUG
-            let (TSlotSig(nm, ty, tps1, tps2, pms, retTy)) = slotsig 
-            match global_g with
-            | None -> wordL(tagText "<no global g>")
-            | Some g -> 
-                let retTy = GetFSharpViewOfReturnType g retTy
-                (wordL(tagText "slot") --- (wordL (tagText nm)) ^^ wordL(tagText "@") ^^ typeL ty) --
-                  (wordL(tagText "LAM") --- spaceListL (List.map typarL tps1) ^^ rightL(tagText ".")) ---
-                  (wordL(tagText "LAM") --- spaceListL (List.map typarL tps2) ^^ rightL(tagText ".")) ---
-                  (commaListL (List.map (List.map tslotparamL >> tupleL) pms)) ^^ wordL(tagText "-> ") --- (typeL retTy) 
-    #else
-            ignore slotsig
-            wordL(tagText "slotsig")
-    #endif
+                let vsprs =
+                    tycon.MembersOfFSharpTyconSorted
+                    |> List.filter (fun v -> v.IsDispatchSlot)
+                    |> List.map (fun vref -> valAtBindL vref.Deref)
 
-        let valAtBindL v =
-            let vL = valL v
-            let vL = (if v.IsMutable then wordL(tagText "mutable") ++ vL else vL)
-            let vL =
-                if layoutTypes then
-                    vL ^^ wordL(tagText ":") ^^ typeL v.Type
+                let vals =
+                    tycon.TrueFieldsAsList
+                    |> List.map (fun f ->
+                        (if f.IsStatic then wordL (tagText "static") else emptyL)
+                        ^^ wordL (tagText "val")
+                        ^^ layoutRecdField f)
+
+                let alldecls = inherits @ vsprs @ vals
+
+                let emptyMeasure =
+                    match tycon.TypeOrMeasureKind with
+                    | TyparKind.Measure -> isNil alldecls
+                    | _ -> false
+
+                if emptyMeasure then
+                    emptyL
                 else
-                    vL
-            let vL =
-                match v.ValReprInfo with
-                | Some info when layoutValReprInfo -> vL ^^ wordL(tagText "!") ^^ valReprInfoL info
-                | _ -> vL
-            vL
+                    (wordL (tagText start) @@-- aboveListL alldecls) @@ wordL (tagText "end")
 
-        let unionCaseRefL (ucr: UnionCaseRef) = wordL (tagText ucr.CaseName)
+        | TAsmRepr _ -> wordL (tagText "(# ... #)")
+        | TMeasureableRepr ty -> typeL ty
+        | TILObjectRepr(TILObjectReprData(_, _, td)) -> wordL (tagText td.Name)
+        | _ -> failwith "unreachable"
 
-        let recdFieldRefL (rfref: RecdFieldRef) = wordL (tagText rfref.FieldName)
+    let rec bindingL (TBind(v, repr, _)) =
+        (valAtBindL v ^^ wordL (tagText "=")) @@-- exprL repr
 
-        // Note: We need nice printing of constants in order to print literals and attributes 
-        let constL c =
-            let str = 
-                match c with
-                | Const.Bool x -> if x then "true" else "false"
-                | Const.SByte x -> (x |> string)+"y"
-                | Const.Byte x -> (x |> string)+"uy"
-                | Const.Int16 x -> (x |> string)+"s"
-                | Const.UInt16 x -> (x |> string)+"us"
-                | Const.Int32 x -> (x |> string)
-                | Const.UInt32 x -> (x |> string)+"u"
-                | Const.Int64 x -> (x |> string)+"L"
-                | Const.UInt64 x -> (x |> string)+"UL"
-                | Const.IntPtr x -> (x |> string)+"n"
-                | Const.UIntPtr x -> (x |> string)+"un"
-                | Const.Single d -> 
-                    (let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                     if String.forall (fun c -> Char.IsDigit c || c = '-') s 
-                     then s + ".0" 
-                     else s) + "f"
-                | Const.Double d -> 
-                    let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                    if String.forall (fun c -> Char.IsDigit c || c = '-') s 
-                    then s + ".0" 
-                    else s
-                | Const.Char c -> "'" + c.ToString() + "'" 
-                | Const.String bs -> "\"" + bs + "\"" 
-                | Const.Unit -> "()" 
-                | Const.Decimal bs -> string bs + "M" 
-                | Const.Zero -> "default"
-            wordL (tagText str)
+    and exprL expr = exprWrapL false expr
 
+    and atomL expr =
+        // true means bracket if needed to be atomic expr
+        exprWrapL true expr
 
-        let layoutUnionCaseArgTypes argTys = sepListL (wordL(tagText "*")) (List.map typeL argTys)
+    and letRecL binds bodyL =
+        let eqnsL =
+            binds
+            |> List.mapHeadTail (fun bind -> wordL (tagText "rec") ^^ bindingL bind ^^ wordL (tagText "in")) (fun bind ->
+                wordL (tagText "and") ^^ bindingL bind ^^ wordL (tagText "in"))
 
-        let ucaseL prefixL (ucase: UnionCase) =
-            let nmL = wordL (tagText ucase.DisplayName)
-            match ucase.RecdFields |> List.map (fun rfld -> rfld.FormalType) with
-            | [] -> (prefixL ^^ nmL)
-            | argTys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argTys
+        (aboveListL eqnsL @@ bodyL)
 
-        let layoutUnionCases ucases =
-            let prefixL = if not (isNilOrSingleton ucases) then wordL(tagText "|") else emptyL
-            List.map (ucaseL prefixL) ucases
+    and letL bind bodyL =
+        let eqnL = wordL (tagText "let") ^^ bindingL bind
+        (eqnL @@ bodyL)
 
-        let layoutRecdField (fld: RecdField) =
-            let lhs = wordL (tagText fld.LogicalName)
-            let lhs = if fld.IsMutable then wordL(tagText "mutable") --- lhs else lhs
-            let lhs = if layoutTypes then lhs ^^ rightL(tagText ":") ^^ typeL fld.FormalType else lhs
-            lhs
+    and exprWrapL isAtomic expr =
+        let wrap = bracketIfL isAtomic // wrap iff require atomic expr
 
-        let tyconReprL (repr, tycon: Tycon) = 
-            match repr with 
-            | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } -> 
-                tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
-            | TFSharpTyconRepr r -> 
-                match r.fsobjmodel_kind with 
-                | TFSharpDelegate _ ->
-                    wordL(tagText "delegate ...")
-                | _ ->
-                    let start = 
-                        match r.fsobjmodel_kind with
-                        | TFSharpClass -> "class" 
-                        | TFSharpInterface -> "interface" 
-                        | TFSharpStruct -> "struct" 
-                        | TFSharpEnum -> "enum" 
-                        | _ -> failwith "???"
+        let lay =
+            match expr with
+            | Expr.Const(c, _, _) -> constL c
 
-                    let inherits = 
-                        match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with
-                        | TFSharpClass, Some super -> [wordL(tagText "inherit") ^^ (typeL super)] 
-                        | TFSharpInterface, _ -> 
-                            tycon.ImmediateInterfacesOfFSharpTycon
-                            |> List.filter (fun (_, compgen, _) -> not compgen)
-                            |> List.map (fun (ity, _, _) -> wordL(tagText "inherit") ^^ (typeL ity))
-                        | _ -> []
+            | Expr.Val(v, flags, _) ->
+                let xL = valL v.Deref
 
-                    let vsprs = 
-                        tycon.MembersOfFSharpTyconSorted 
-                            |> List.filter (fun v -> v.IsDispatchSlot) 
-                            |> List.map (fun vref -> valAtBindL vref.Deref)
+                let xL =
+                    match flags with
+                    | PossibleConstrainedCall _ -> xL ^^ rightL (tagText "<constrained>")
+                    | CtorValUsedAsSelfInit -> xL ^^ rightL (tagText "<selfinit>")
+                    | CtorValUsedAsSuperInit -> xL ^^ rightL (tagText "<superinit>")
+                    | VSlotDirectCall -> xL ^^ rightL (tagText "<vdirect>")
+                    | NormalValUse -> xL
 
-                    let vals = tycon.TrueFieldsAsList |> List.map (fun f -> (if f.IsStatic then wordL(tagText "static") else emptyL) ^^ wordL(tagText "val") ^^ layoutRecdField f)
+                xL
 
-                    let alldecls = inherits @ vsprs @ vals
-
-                    let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
-
-                    if emptyMeasure then emptyL else (wordL (tagText start) @@-- aboveListL alldecls) @@ wordL(tagText "end")
-
-            | TAsmRepr _ -> wordL(tagText "(# ... #)")
-            | TMeasureableRepr ty -> typeL ty
-            | TILObjectRepr (TILObjectReprData(_, _, td)) -> wordL (tagText td.Name)
-            | _ -> failwith "unreachable"
-
-        let rec bindingL (TBind(v, repr, _)) =
-            (valAtBindL v ^^ wordL(tagText "=")) @@-- exprL repr
-
-        and exprL expr =
-            exprWrapL false expr
-
-        and atomL expr =
-            // true means bracket if needed to be atomic expr 
-            exprWrapL true expr
-
-        and letRecL binds bodyL = 
-            let eqnsL = 
-                binds
-                   |> List.mapHeadTail (fun bind -> wordL(tagText "rec") ^^ bindingL bind ^^ wordL(tagText "in"))
-                                  (fun bind -> wordL(tagText "and") ^^ bindingL bind ^^ wordL(tagText "in")) 
-            (aboveListL eqnsL @@ bodyL) 
-
-        and letL bind bodyL = 
-            let eqnL = wordL(tagText "let") ^^ bindingL bind
-            (eqnL @@ bodyL) 
-
-        and exprWrapL isAtomic expr =
-            let wrap = bracketIfL isAtomic // wrap iff require atomic expr 
-            let lay =
-                match expr with
-                | Expr.Const (c, _, _) -> constL c
-
-                | Expr.Val (v, flags, _) -> 
-                     let xL = valL v.Deref 
-                     let xL =
-                         match flags with
-                         | PossibleConstrainedCall _ -> xL ^^ rightL(tagText "<constrained>")
-                         | CtorValUsedAsSelfInit -> xL ^^ rightL(tagText "<selfinit>")
-                         | CtorValUsedAsSuperInit -> xL ^^ rightL(tagText "<superinit>")
-                         | VSlotDirectCall -> xL ^^ rightL(tagText "<vdirect>")
-                         | NormalValUse -> xL 
-                     xL
-
-                | Expr.Sequential (expr1, expr2, flag, _) -> 
-                    aboveListL [
+            | Expr.Sequential(expr1, expr2, flag, _) ->
+                aboveListL
+                    [
                         exprL expr1
                         match flag with
                         | NormalSeq -> ()
                         | ThenDoSeq -> wordL (tagText "ThenDo")
-                        exprL expr2 
+                        exprL expr2
                     ]
-                    |> wrap
+                |> wrap
 
-                | Expr.Lambda (_, _, baseValOpt, argvs, body, _, _) -> 
-                    let formalsL = spaceListL (List.map valAtBindL argvs)
-                    let bindingL = 
-                        match baseValOpt with
-                        | None -> wordL(tagText "fun") ^^ formalsL ^^ wordL(tagText "->")
-                        | Some basev -> wordL(tagText "fun") ^^ (leftL(tagText "base=") ^^ valAtBindL basev) --- formalsL ^^ wordL(tagText "->")
-                    (bindingL @@-- exprL body) |> wrap
+            | Expr.Lambda(_, _, baseValOpt, argvs, body, _, _) ->
+                let formalsL = spaceListL (List.map valAtBindL argvs)
 
-                | Expr.TyLambda (_, tps, body, _, _) -> 
-                    ((wordL(tagText "FUN") ^^ layoutTyparDecls tps ^^ wordL(tagText "->")) ++ exprL body) |> wrap
+                let bindingL =
+                    match baseValOpt with
+                    | None -> wordL (tagText "fun") ^^ formalsL ^^ wordL (tagText "->")
+                    | Some basev ->
+                        wordL (tagText "fun")
+                        ^^ (leftL (tagText "base=") ^^ valAtBindL basev) --- formalsL
+                        ^^ wordL (tagText "->")
 
-                | Expr.TyChoose (tps, body, _) -> 
-                    ((wordL(tagText "CHOOSE") ^^ layoutTyparDecls tps ^^ wordL(tagText "->")) ++ exprL body) |> wrap
+                (bindingL @@-- exprL body) |> wrap
 
-                | Expr.App (f, _, tys, argTys, _) -> 
-                    let flayout = atomL f
-                    appL flayout tys argTys |> wrap
+            | Expr.TyLambda(_, tps, body, _, _) ->
+                ((wordL (tagText "FUN") ^^ layoutTyparDecls tps ^^ wordL (tagText "->"))
+                 ++ exprL body)
+                |> wrap
 
-                | Expr.LetRec (binds, body, _, _) -> 
-                    letRecL binds (exprL body) |> wrap
+            | Expr.TyChoose(tps, body, _) ->
+                ((wordL (tagText "CHOOSE") ^^ layoutTyparDecls tps ^^ wordL (tagText "->"))
+                 ++ exprL body)
+                |> wrap
 
-                | Expr.Let (bind, body, _, _) -> 
-                    letL bind (exprL body) |> wrap
+            | Expr.App(f, _, tys, argTys, _) ->
+                let flayout = atomL f
+                appL flayout tys argTys |> wrap
 
-                | Expr.Link rX -> 
-                    exprL rX.Value |> wrap
+            | Expr.LetRec(binds, body, _, _) -> letRecL binds (exprL body) |> wrap
 
-                | Expr.DebugPoint (DebugPointAtLeafExpr.Yes m, rX) -> 
-                    aboveListL [ wordL(tagText "__debugPoint(") ^^ rangeL m ^^ wordL (tagText ")"); exprL rX ] |> wrap
+            | Expr.Let(bind, body, _, _) -> letL bind (exprL body) |> wrap
 
-                | Expr.Match (_, _, dtree, targets, _, _) -> 
-                    leftL(tagText "[") ^^ (decisionTreeL dtree @@ aboveListL (List.mapi targetL (targets |> Array.toList)) ^^ rightL(tagText "]"))
+            | Expr.Link rX -> exprL rX.Value |> wrap
 
-                | Expr.Op (TOp.UnionCase c, _, args, _) -> 
-                    (unionCaseRefL c ++ spaceListL (List.map atomL args)) |> wrap
+            | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, rX) ->
+                aboveListL [ wordL (tagText "__debugPoint(") ^^ rangeL m ^^ wordL (tagText ")"); exprL rX ]
+                |> wrap
 
-                | Expr.Op (TOp.ExnConstr ecref, _, args, _) -> 
-                    wordL (tagText ecref.LogicalName) ^^ bracketL (commaListL (List.map atomL args))
+            | Expr.Match(_, _, dtree, targets, _, _) ->
+                leftL (tagText "[")
+                ^^ (decisionTreeL dtree
+                    @@ aboveListL (List.mapi targetL (targets |> Array.toList)) ^^ rightL (tagText "]"))
 
-                | Expr.Op (TOp.Tuple _, _, xs, _) -> 
-                    tupleL (List.map exprL xs)
+            | Expr.Op(TOp.UnionCase c, _, args, _) -> (unionCaseRefL c ++ spaceListL (List.map atomL args)) |> wrap
 
-                | Expr.Op (TOp.Recd (ctor, tcref), _, xs, _) -> 
-                    let fields = tcref.TrueInstanceFieldsAsList
-                    let lay fs x = (wordL (tagText fs.rfield_id.idText) ^^ sepL(tagText "=")) --- (exprL x)
-                    let ctorL = 
-                        match ctor with
-                        | RecdExpr -> emptyL
-                        | RecdExprIsObjInit-> wordL(tagText "(new)")
-                    leftL(tagText "{") ^^ aboveListL (List.map2 lay fields xs) ^^ rightL(tagText "}") ^^ ctorL
+            | Expr.Op(TOp.ExnConstr ecref, _, args, _) -> wordL (tagText ecref.LogicalName) ^^ bracketL (commaListL (List.map atomL args))
 
-                | Expr.Op (TOp.ValFieldSet rf, _, [rx;x], _) -> 
-                    (atomL rx --- wordL(tagText ".")) ^^ (recdFieldRefL rf ^^ wordL(tagText "<-") --- exprL x)
+            | Expr.Op(TOp.Tuple _, _, xs, _) -> tupleL (List.map exprL xs)
 
-                | Expr.Op (TOp.ValFieldSet rf, _, [x], _) -> 
-                    recdFieldRefL rf ^^ wordL(tagText "<-") --- exprL x
+            | Expr.Op(TOp.Recd(ctor, tcref), _, xs, _) ->
+                let fields = tcref.TrueInstanceFieldsAsList
 
-                | Expr.Op (TOp.ValFieldGet rf, _, [rx], _) -> 
-                    atomL rx ^^ rightL(tagText ".#") ^^ recdFieldRefL rf
+                let lay fs x =
+                    (wordL (tagText fs.rfield_id.idText) ^^ sepL (tagText "=")) --- (exprL x)
 
-                | Expr.Op (TOp.ValFieldGet rf, _, [], _) -> 
-                    recdFieldRefL rf
+                let ctorL =
+                    match ctor with
+                    | RecdExpr -> emptyL
+                    | RecdExprIsObjInit -> wordL (tagText "(new)")
 
-                | Expr.Op (TOp.ValFieldGetAddr (rf, _), _, [rx], _) -> 
-                    leftL(tagText "&") ^^ bracketL (atomL rx ^^ rightL(tagText ".!") ^^ recdFieldRefL rf)
+                leftL (tagText "{")
+                ^^ aboveListL (List.map2 lay fields xs)
+                ^^ rightL (tagText "}")
+                ^^ ctorL
 
-                | Expr.Op (TOp.ValFieldGetAddr (rf, _), _, [], _) -> 
-                    leftL(tagText "&") ^^ (recdFieldRefL rf)
+            | Expr.Op(TOp.ValFieldSet rf, _, [ rx; x ], _) ->
+                (atomL rx --- wordL (tagText "."))
+                ^^ (recdFieldRefL rf ^^ wordL (tagText "<-") --- exprL x)
 
-                | Expr.Op (TOp.UnionCaseTagGet tycr, _, [x], _) -> 
-                    wordL (tagText (tycr.LogicalName + ".tag")) ^^ atomL x
+            | Expr.Op(TOp.ValFieldSet rf, _, [ x ], _) -> recdFieldRefL rf ^^ wordL (tagText "<-") --- exprL x
 
-                | Expr.Op (TOp.UnionCaseProof c, _, [x], _) -> 
-                    wordL (tagText (c.CaseName + ".proof")) ^^ atomL x
+            | Expr.Op(TOp.ValFieldGet rf, _, [ rx ], _) -> atomL rx ^^ rightL (tagText ".#") ^^ recdFieldRefL rf
 
-                | Expr.Op (TOp.UnionCaseFieldGet (c, i), _, [x], _) -> 
-                    wordL (tagText (c.CaseName + "." + string i)) --- atomL x
+            | Expr.Op(TOp.ValFieldGet rf, _, [], _) -> recdFieldRefL rf
 
-                | Expr.Op (TOp.UnionCaseFieldSet (c, i), _, [x;y], _) -> 
-                    ((atomL x --- (rightL (tagText ("#" + c.CaseName + "." + string i)))) ^^ wordL(tagText ":=")) --- exprL y
+            | Expr.Op(TOp.ValFieldGetAddr(rf, _), _, [ rx ], _) ->
+                leftL (tagText "&")
+                ^^ bracketL (atomL rx ^^ rightL (tagText ".!") ^^ recdFieldRefL rf)
 
-                | Expr.Op (TOp.TupleFieldGet (_, i), _, [x], _) -> 
-                    wordL (tagText ("#" + string i)) --- atomL x
+            | Expr.Op(TOp.ValFieldGetAddr(rf, _), _, [], _) -> leftL (tagText "&") ^^ (recdFieldRefL rf)
 
-                | Expr.Op (TOp.Coerce, [ty;_], [x], _) -> 
-                    atomL x --- (wordL(tagText ":>") ^^ typeL ty) 
+            | Expr.Op(TOp.UnionCaseTagGet tycr, _, [ x ], _) -> wordL (tagText (tycr.LogicalName + ".tag")) ^^ atomL x
 
-                | Expr.Op (TOp.Reraise, [_], [], _) -> 
-                    wordL(tagText "Reraise")
+            | Expr.Op(TOp.UnionCaseProof c, _, [ x ], _) -> wordL (tagText (c.CaseName + ".proof")) ^^ atomL x
 
-                | Expr.Op (TOp.ILAsm (instrs, retTypes), tyargs, args, _) -> 
-                    let instrs = instrs |> List.map (sprintf "%+A" >> tagText >> wordL) |> spaceListL // %+A has + since instrs are from an "internal" type  
-                    let instrs = leftL(tagText "(#") ^^ instrs ^^ rightL(tagText "#)")
-                    let instrL = appL instrs tyargs args
-                    let instrL = if layoutTypes then instrL ^^ wordL(tagText ":") ^^ spaceListL (List.map typeAtomL retTypes) else instrL
-                    instrL |> wrap
+            | Expr.Op(TOp.UnionCaseFieldGet(c, i), _, [ x ], _) -> wordL (tagText (c.CaseName + "." + string i)) --- atomL x
 
-                | Expr.Op (TOp.LValueOp (lvop, vr), _, args, _) -> 
-                    (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args))) |> wrap
+            | Expr.Op(TOp.UnionCaseFieldSet(c, i), _, [ x; y ], _) ->
+                ((atomL x --- (rightL (tagText ("#" + c.CaseName + "." + string i))))
+                 ^^ wordL (tagText ":="))
+                --- exprL y
 
-                | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _enclTypeInst, _methInst, _), _tyargs, args, _) ->
-                    let meth = ilMethRef.Name
-                    (wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)) ---- 
-                        (if args.IsEmpty then wordL (tagText "()") else listL exprL args) 
-                            //if not enclTypeInst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL enclTypeInst
-                            //if not methInst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL methInst
-                            //if not tyargs.IsEmpty then yield wordL (tagText "tyargs") --- listL typeL tyargs
+            | Expr.Op(TOp.TupleFieldGet(_, i), _, [ x ], _) -> wordL (tagText ("#" + string i)) --- atomL x
 
-                    |> wrap
+            | Expr.Op(TOp.Coerce, [ ty; _ ], [ x ], _) -> atomL x --- (wordL (tagText ":>") ^^ typeL ty)
 
-                | Expr.Op (TOp.Array, [_], xs, _) -> 
-                    leftL(tagText "[|") ^^ commaListL (List.map exprL xs) ^^ rightL(tagText "|]")
+            | Expr.Op(TOp.Reraise, [ _ ], [], _) -> wordL (tagText "Reraise")
 
-                | Expr.Op (TOp.While _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
-                    let headerL = wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do")
-                    headerL @@-- exprL x2
+            | Expr.Op(TOp.ILAsm(instrs, retTypes), tyargs, args, _) ->
+                let instrs = instrs |> List.map (sprintf "%+A" >> tagText >> wordL) |> spaceListL // %+A has + since instrs are from an "internal" type
+                let instrs = leftL (tagText "(#") ^^ instrs ^^ rightL (tagText "#)")
+                let instrL = appL instrs tyargs args
 
-                | Expr.Op (TOp.IntegerForLoop _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
-                    let headerL = wordL(tagText "for") ^^ exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")
-                    headerL @@-- exprL x3
+                let instrL =
+                    if layoutTypes then
+                        instrL ^^ wordL (tagText ":") ^^ spaceListL (List.map typeAtomL retTypes)
+                    else
+                        instrL
 
-                | Expr.Op (TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) ->
-                    (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh)
+                instrL |> wrap
 
-                | Expr.Op (TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
-                    (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "finally") @@-- exprL x2)
-                | Expr.Op (TOp.Bytes _, _, _, _) -> 
-                    wordL(tagText "bytes++")
+            | Expr.Op(TOp.LValueOp(lvop, vr), _, args, _) ->
+                (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args)))
+                |> wrap
 
-                | Expr.Op (TOp.UInt16s _, _, _, _) -> wordL(tagText "uint16++")
-                | Expr.Op (TOp.RefAddrGet _, _tyargs, _args, _) -> wordL(tagText "GetRefLVal...")
-                | Expr.Op (TOp.TraitCall _, _tyargs, _args, _) -> wordL(tagText "traitcall...")
-                | Expr.Op (TOp.ExnFieldGet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldGet...")
-                | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
-                | Expr.Op (TOp.TryFinally _, _tyargs, args, _) -> wordL(tagText "unexpected-try-finally") ---- aboveListL (List.map atomL args)
-                | Expr.Op (TOp.TryWith _, _tyargs, args, _) -> wordL(tagText "unexpected-try-with") ---- aboveListL (List.map atomL args)
-                | Expr.Op (TOp.Goto l, _tys, args, _) -> wordL(tagText ("Expr.Goto " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
-                | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
-                | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
-                | Expr.Quote (a, _, _, _, _) -> leftL(tagText "<@") ^^ atomL a ^^ rightL(tagText "@>")
+            | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _enclTypeInst, _methInst, _), _tyargs, args, _) ->
+                let meth = ilMethRef.Name
 
-                | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _) -> 
-                    (leftL (tagText "{") 
-                     @@--
-                      ((wordL(tagText "new ") ++ typeL ty) 
-                       @@-- 
-                       aboveListL [exprL ccall
-                                   match basev with 
-                                   | None -> ()
-                                   | Some b -> valAtBindL b
-                                   yield! List.map tmethodL overrides
-                                   yield! List.map iimplL iimpls]))
-                    @@
-                    rightL (tagText "}")
+                (wordL (tagText ilMethRef.DeclaringTypeRef.FullName)
+                 ^^ sepL (tagText ".")
+                 ^^ wordL (tagText meth))
+                ---- (if args.IsEmpty then
+                          wordL (tagText "()")
+                      else
+                          listL exprL args)
+                //if not enclTypeInst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL enclTypeInst
+                //if not methInst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL methInst
+                //if not tyargs.IsEmpty then yield wordL (tagText "tyargs") --- listL typeL tyargs
 
-                | Expr.WitnessArg _ -> wordL (tagText "<witnessarg>")
+                |> wrap
 
-                | Expr.StaticOptimization (_tcs, csx, x, _) -> 
-                    (wordL(tagText "opt") @@- (exprL x)) @@--
-                       (wordL(tagText "|") ^^ exprL csx --- wordL(tagText "when..."))
+            | Expr.Op(TOp.Array, [ _ ], xs, _) -> leftL (tagText "[|") ^^ commaListL (List.map exprL xs) ^^ rightL (tagText "|]")
 
-            // For tracking ranges through expr rewrites 
-            if layoutRanges then
-                aboveListL [
-                    leftL(tagText "//") ^^ rangeL expr.Range
-                    lay
-                ]
+            | Expr.Op(TOp.While _, [], [ Expr.Lambda(_, _, _, [ _ ], x1, _, _); Expr.Lambda(_, _, _, [ _ ], x2, _, _) ], _) ->
+                let headerL = wordL (tagText "while") ^^ exprL x1 ^^ wordL (tagText "do")
+                headerL @@-- exprL x2
+
+            | Expr.Op(TOp.IntegerForLoop _,
+                      [],
+                      [ Expr.Lambda(_, _, _, [ _ ], x1, _, _); Expr.Lambda(_, _, _, [ _ ], x2, _, _); Expr.Lambda(_, _, _, [ _ ], x3, _, _) ],
+                      _) ->
+                let headerL =
+                    wordL (tagText "for")
+                    ^^ exprL x1
+                    ^^ wordL (tagText "to")
+                    ^^ exprL x2
+                    ^^ wordL (tagText "do")
+
+                headerL @@-- exprL x3
+
+            | Expr.Op(TOp.TryWith _,
+                      [ _ ],
+                      [ Expr.Lambda(_, _, _, [ _ ], x1, _, _); Expr.Lambda(_, _, _, [ _ ], xf, _, _); Expr.Lambda(_, _, _, [ _ ], xh, _, _) ],
+                      _) ->
+                (wordL (tagText "try") @@-- exprL x1)
+                @@ (wordL (tagText "with-filter") @@-- exprL xf)
+                @@ (wordL (tagText "with") @@-- exprL xh)
+
+            | Expr.Op(TOp.TryFinally _, [ _ ], [ Expr.Lambda(_, _, _, [ _ ], x1, _, _); Expr.Lambda(_, _, _, [ _ ], x2, _, _) ], _) ->
+                (wordL (tagText "try") @@-- exprL x1)
+                @@ (wordL (tagText "finally") @@-- exprL x2)
+            | Expr.Op(TOp.Bytes _, _, _, _) -> wordL (tagText "bytes++")
+
+            | Expr.Op(TOp.UInt16s _, _, _, _) -> wordL (tagText "uint16++")
+            | Expr.Op(TOp.RefAddrGet _, _tyargs, _args, _) -> wordL (tagText "GetRefLVal...")
+            | Expr.Op(TOp.TraitCall _, _tyargs, _args, _) -> wordL (tagText "traitcall...")
+            | Expr.Op(TOp.ExnFieldGet _, _tyargs, _args, _) -> wordL (tagText "TOp.ExnFieldGet...")
+            | Expr.Op(TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL (tagText "TOp.ExnFieldSet...")
+            | Expr.Op(TOp.TryFinally _, _tyargs, args, _) -> wordL (tagText "unexpected-try-finally") ---- aboveListL (List.map atomL args)
+            | Expr.Op(TOp.TryWith _, _tyargs, args, _) -> wordL (tagText "unexpected-try-with") ---- aboveListL (List.map atomL args)
+            | Expr.Op(TOp.Goto l, _tys, args, _) ->
+                wordL (tagText ("Expr.Goto " + string l))
+                ^^ bracketL (commaListL (List.map atomL args))
+            | Expr.Op(TOp.Label l, _tys, args, _) ->
+                wordL (tagText ("Expr.Label " + string l))
+                ^^ bracketL (commaListL (List.map atomL args))
+            | Expr.Op(_, _tys, args, _) -> wordL (tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args))
+            | Expr.Quote(a, _, _, _, _) -> leftL (tagText "<@") ^^ atomL a ^^ rightL (tagText "@>")
+
+            | Expr.Obj(_lambdaId, ty, basev, ccall, overrides, iimpls, _) ->
+                (leftL (tagText "{")
+                 @@-- ((wordL (tagText "new ") ++ typeL ty)
+                       @@-- aboveListL
+                           [
+                               exprL ccall
+                               match basev with
+                               | None -> ()
+                               | Some b -> valAtBindL b
+                               yield! List.map tmethodL overrides
+                               yield! List.map iimplL iimpls
+                           ]))
+                @@ rightL (tagText "}")
+
+            | Expr.WitnessArg _ -> wordL (tagText "<witnessarg>")
+
+            | Expr.StaticOptimization(_tcs, csx, x, _) ->
+                (wordL (tagText "opt") @@- (exprL x))
+                @@-- (wordL (tagText "|") ^^ exprL csx --- wordL (tagText "when..."))
+
+        // For tracking ranges through expr rewrites
+        if layoutRanges then
+            aboveListL [ leftL (tagText "//") ^^ rangeL expr.Range; lay ]
+        else
+            lay
+
+    and appL flayout tys args =
+        let z = flayout
+        let z = if isNil tys then z else z ^^ instL typeL tys
+
+        let z =
+            if isNil args then
+                z
             else
-                lay
+                z --- spaceListL (List.map atomL args)
 
-        and appL flayout tys args =
-            let z = flayout
-            let z = if isNil tys then z else z ^^ instL typeL tys
-            let z = if isNil args then z else z --- spaceListL (List.map atomL args)
-            z
+        z
 
-        and decisionTreeL x =
-            match x with 
-            | TDBind (bind, body) -> 
-                let bind = wordL(tagText "let") ^^ bindingL bind
-                (bind @@ decisionTreeL body) 
-            | TDSuccess (args, n) -> 
-                wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map exprL)
-            | TDSwitch (test, dcases, dflt, _) ->
-                (wordL(tagText "Switch") --- exprL test) @@--
-                (aboveListL (List.map dcaseL dcases) @@
-                 match dflt with
-                 | None -> emptyL
-                 | Some dtree -> wordL(tagText "dflt:") --- decisionTreeL dtree)
+    and decisionTreeL x =
+        match x with
+        | TDBind(bind, body) ->
+            let bind = wordL (tagText "let") ^^ bindingL bind
+            (bind @@ decisionTreeL body)
+        | TDSuccess(args, n) ->
+            wordL (tagText "Success")
+            ^^ leftL (tagText "T")
+            ^^ intL n
+            ^^ tupleL (args |> List.map exprL)
+        | TDSwitch(test, dcases, dflt, _) ->
+            (wordL (tagText "Switch") --- exprL test)
+            @@-- (aboveListL (List.map dcaseL dcases)
+                  @@ match dflt with
+                     | None -> emptyL
+                     | Some dtree -> wordL (tagText "dflt:") --- decisionTreeL dtree)
 
-        and dcaseL (TCase (test, dtree)) = 
-            (dtestL test ^^ wordL(tagText "//")) --- decisionTreeL dtree
+    and dcaseL (TCase(test, dtree)) =
+        (dtestL test ^^ wordL (tagText "//")) --- decisionTreeL dtree
 
-        and dtestL x = 
-            match x with 
-            | DecisionTreeTest.UnionCase (c, tinst) -> wordL(tagText "is") ^^ unionCaseRefL c ^^ instL typeL tinst
-            | DecisionTreeTest.ArrayLength (n, ty) -> wordL(tagText "length") ^^ intL n ^^ typeL ty
-            | DecisionTreeTest.Const c -> wordL(tagText "is") ^^ constL c
-            | DecisionTreeTest.IsNull -> wordL(tagText "isnull")
-            | DecisionTreeTest.IsInst (_, ty) -> wordL(tagText "isinst") ^^ typeL ty
-            | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _) -> wordL(tagText "query") ^^ exprL exp
-            | DecisionTreeTest.Error _ -> wordL (tagText "error recovery")
+    and dtestL x =
+        match x with
+        | DecisionTreeTest.UnionCase(c, tinst) -> wordL (tagText "is") ^^ unionCaseRefL c ^^ instL typeL tinst
+        | DecisionTreeTest.ArrayLength(n, ty) -> wordL (tagText "length") ^^ intL n ^^ typeL ty
+        | DecisionTreeTest.Const c -> wordL (tagText "is") ^^ constL c
+        | DecisionTreeTest.IsNull -> wordL (tagText "isnull")
+        | DecisionTreeTest.IsInst(_, ty) -> wordL (tagText "isinst") ^^ typeL ty
+        | DecisionTreeTest.ActivePatternCase(exp, _, _, _, _, _) -> wordL (tagText "query") ^^ exprL exp
+        | DecisionTreeTest.Error _ -> wordL (tagText "error recovery")
 
-        and targetL i (TTarget (argvs, body, _)) =
-            leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL body
+    and targetL i (TTarget(argvs, body, _)) =
+        leftL (tagText "T")
+        ^^ intL i
+        ^^ tupleL (flatValsL argvs)
+        ^^ rightL (tagText ":") --- exprL body
 
-        and flatValsL vs = vs |> List.map valL
+    and flatValsL vs = vs |> List.map valL
 
-        and tmethodL (TObjExprMethod(TSlotSig(nm, _, _, _, _, _), _, tps, vs, e, _)) =
-            (wordL(tagText "member") ^^ (wordL (tagText nm)) ^^ layoutTyparDecls tps ^^ tupleL (List.map (List.map valAtBindL >> tupleL) vs) ^^ rightL(tagText "="))
-            @@--
-              exprL e
+    and tmethodL (TObjExprMethod(TSlotSig(nm, _, _, _, _, _), _, tps, vs, e, _)) =
+        (wordL (tagText "member")
+         ^^ (wordL (tagText nm))
+         ^^ layoutTyparDecls tps
+         ^^ tupleL (List.map (List.map valAtBindL >> tupleL) vs)
+         ^^ rightL (tagText "="))
+        @@-- exprL e
 
-        and iimplL (ty, tmeths) = wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map tmethodL tmeths) 
+    and iimplL (ty, tmeths) =
+        wordL (tagText "impl") ^^ aboveListL (typeL ty :: List.map tmethodL tmeths)
 
-        let rec tyconL (tycon: Tycon) =
+    let rec tyconL (tycon: Tycon) =
 
-            let lhsL = wordL (tagText (match tycon.TypeOrMeasureKind with TyparKind.Measure -> "[<Measure>] type" | TyparKind.Type -> "type")) ^^ wordL (tagText tycon.DisplayName) ^^ layoutTyparDecls tycon.TyparsNoRange
-            let lhsL = lhsL --- layoutAttribs tycon.Attribs
-            let memberLs = 
-                let adhoc = 
-                    tycon.MembersOfFSharpTyconSorted 
-                        |> List.filter (fun v -> not v.IsDispatchSlot)
-                        |> List.filter (fun v -> not v.Deref.IsClassConstructor) 
-                        // Don't print individual methods forming interface implementations - these are currently never exported 
-                        |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs)
-                let iimpls = 
-                    match tycon.TypeReprInfo with 
-                    | TFSharpTyconRepr r when (match r.fsobjmodel_kind with TFSharpInterface -> true | _ -> false) -> []
-                    | _ -> tycon.ImmediateInterfacesOfFSharpTycon
-                let iimpls = iimpls |> List.filter (fun (_, compgen, _) -> not compgen)
-                // if TFSharpInterface, the iimpls should be printed as inherited interfaces 
-                if isNil adhoc && isNil iimpls then 
-                    emptyL 
-                else 
-                    let iimplsLs = iimpls |> List.map (fun (ty, _, _) -> wordL(tagText "interface") --- typeL ty)
-                    let adhocLs = adhoc |> List.map (fun vref -> valAtBindL vref.Deref)
-                    (wordL(tagText "with") @@-- aboveListL (iimplsLs @ adhocLs)) @@ wordL(tagText "end")
-            let reprL = 
-                match tycon.TypeReprInfo with 
-    #if !NO_TYPEPROVIDERS
-                | TProvidedTypeRepr _
-                | TProvidedNamespaceRepr _
-    #endif
-                | TNoRepr -> 
-                    match tycon.TypeAbbrev with
-                    | None -> lhsL @@-- memberLs
-                    | Some a -> (lhsL ^^ wordL(tagText "=")) --- (typeL a @@ memberLs)
-                | a -> 
-                    let rhsL = tyconReprL (a, tycon) @@ memberLs
-                    (lhsL ^^ wordL(tagText "=")) @@-- rhsL
-            reprL
+        let lhsL =
+            wordL (
+                tagText (
+                    match tycon.TypeOrMeasureKind with
+                    | TyparKind.Measure -> "[<Measure>] type"
+                    | TyparKind.Type -> "type"
+                )
+            )
+            ^^ wordL (tagText tycon.DisplayName)
+            ^^ layoutTyparDecls tycon.TyparsNoRange
 
-        and entityL (entity: Entity) =
-            if entity.IsModuleOrNamespace then
-                moduleOrNamespaceL entity
+        let lhsL = lhsL --- layoutAttribs tycon.Attribs
+
+        let memberLs =
+            let adhoc =
+                tycon.MembersOfFSharpTyconSorted
+                |> List.filter (fun v -> not v.IsDispatchSlot)
+                |> List.filter (fun v -> not v.Deref.IsClassConstructor)
+                // Don't print individual methods forming interface implementations - these are currently never exported
+                |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs)
+
+            let iimpls =
+                match tycon.TypeReprInfo with
+                | TFSharpTyconRepr r when
+                    (match r.fsobjmodel_kind with
+                     | TFSharpInterface -> true
+                     | _ -> false)
+                    ->
+                    []
+                | _ -> tycon.ImmediateInterfacesOfFSharpTycon
+
+            let iimpls = iimpls |> List.filter (fun (_, compgen, _) -> not compgen)
+            // if TFSharpInterface, the iimpls should be printed as inherited interfaces
+            if isNil adhoc && isNil iimpls then
+                emptyL
             else
-                tyconL entity
+                let iimplsLs =
+                    iimpls |> List.map (fun (ty, _, _) -> wordL (tagText "interface") --- typeL ty)
 
-        and mexprL mtyp defs =
-            let resL = mdefL defs
-            let resL = if layoutTypes then resL @@- (wordL(tagText ":") @@- moduleOrNamespaceTypeL mtyp) else resL
-            resL
+                let adhocLs = adhoc |> List.map (fun vref -> valAtBindL vref.Deref)
 
-        and mdefsL defs =
-            wordL(tagText "Module Defs") @@-- aboveListL(List.map mdefL defs)
+                (wordL (tagText "with") @@-- aboveListL (iimplsLs @ adhocLs))
+                @@ wordL (tagText "end")
 
-        and mdefL x =
-            match x with
-            | TMDefRec(_, _, tycons, mbinds, _) -> aboveListL ((tycons |> List.map tyconL) @ (mbinds |> List.map mbindL))
-            | TMDefLet(bind, _) -> letL bind emptyL
-            | TMDefDo(e, _) -> exprL e
-            | TMDefOpens _ -> wordL (tagText "open ... ")
-            | TMDefs defs -> mdefsL defs
+        let reprL =
+            match tycon.TypeReprInfo with
+#if !NO_TYPEPROVIDERS
+            | TProvidedTypeRepr _
+            | TProvidedNamespaceRepr _
+#endif
+            | TNoRepr ->
+                match tycon.TypeAbbrev with
+                | None -> lhsL @@-- memberLs
+                | Some a -> (lhsL ^^ wordL (tagText "=")) --- (typeL a @@ memberLs)
+            | a ->
+                let rhsL = tyconReprL (a, tycon) @@ memberLs
+                (lhsL ^^ wordL (tagText "=")) @@-- rhsL
 
-        and mbindL x =
-           match x with
-           | ModuleOrNamespaceBinding.Binding bind -> letL bind emptyL
-           | ModuleOrNamespaceBinding.Module(mspec, rhs) ->
-            let titleL = wordL (tagText (if mspec.IsNamespace then "namespace" else "module")) ^^ (wordL (tagText mspec.DemangledModuleOrNamespaceName) |> stampL mspec.Stamp)
+        reprL
+
+    and entityL (entity: Entity) =
+        if entity.IsModuleOrNamespace then
+            moduleOrNamespaceL entity
+        else
+            tyconL entity
+
+    and mexprL mtyp defs =
+        let resL = mdefL defs
+
+        let resL =
+            if layoutTypes then
+                resL @@- (wordL (tagText ":") @@- moduleOrNamespaceTypeL mtyp)
+            else
+                resL
+
+        resL
+
+    and mdefsL defs =
+        wordL (tagText "Module Defs") @@-- aboveListL (List.map mdefL defs)
+
+    and mdefL x =
+        match x with
+        | TMDefRec(_, _, tycons, mbinds, _) -> aboveListL ((tycons |> List.map tyconL) @ (mbinds |> List.map mbindL))
+        | TMDefLet(bind, _) -> letL bind emptyL
+        | TMDefDo(e, _) -> exprL e
+        | TMDefOpens _ -> wordL (tagText "open ... ")
+        | TMDefs defs -> mdefsL defs
+
+    and mbindL x =
+        match x with
+        | ModuleOrNamespaceBinding.Binding bind -> letL bind emptyL
+        | ModuleOrNamespaceBinding.Module(mspec, rhs) ->
+            let titleL =
+                wordL (tagText (if mspec.IsNamespace then "namespace" else "module"))
+                ^^ (wordL (tagText mspec.DemangledModuleOrNamespaceName) |> stampL mspec.Stamp)
+
             titleL @@-- mdefL rhs
 
-        and moduleOrNamespaceTypeL (mtyp: ModuleOrNamespaceType) =
-            aboveListL [qlistL typeOfValL mtyp.AllValsAndMembers
-                        qlistL tyconL mtyp.AllEntities]
+    and moduleOrNamespaceTypeL (mtyp: ModuleOrNamespaceType) =
+        aboveListL [ qlistL typeOfValL mtyp.AllValsAndMembers; qlistL tyconL mtyp.AllEntities ]
 
-        and moduleOrNamespaceL (ms: ModuleOrNamespace) =
-            let header = wordL(tagText "module") ^^ (wordL (tagText ms.DemangledModuleOrNamespaceName) |> stampL ms.Stamp) ^^ wordL(tagText ":")
-            let footer = wordL(tagText "end")
-            let body = moduleOrNamespaceTypeL ms.ModuleOrNamespaceType
-            (header @@-- body) @@ footer
+    and moduleOrNamespaceL (ms: ModuleOrNamespace) =
+        let header =
+            wordL (tagText "module")
+            ^^ (wordL (tagText ms.DemangledModuleOrNamespaceName) |> stampL ms.Stamp)
+            ^^ wordL (tagText ":")
 
-        let implFileL (CheckedImplFile (signature=implFileTy; contents=implFileContents)) =
-            aboveListL [ wordL(tagText "top implementation ") @@-- mexprL implFileTy implFileContents]
+        let footer = wordL (tagText "end")
+        let body = moduleOrNamespaceTypeL ms.ModuleOrNamespaceType
+        (header @@-- body) @@ footer
 
-        let implFilesL implFiles =
-            aboveListL (List.map implFileL implFiles)
+    let implFileL (CheckedImplFile(signature = implFileTy; contents = implFileContents)) =
+        aboveListL
+            [
+                wordL (tagText "top implementation ") @@-- mexprL implFileTy implFileContents
+            ]
 
-        let showType x = showL (typeL x)
+    let implFilesL implFiles =
+        aboveListL (List.map implFileL implFiles)
 
-        let showExpr x = showL (exprL x)
+    let showType x = showL (typeL x)
 
-        let traitL x = auxTraitL SimplifyTypes.typeSimplificationInfo0 x
+    let showExpr x = showL (exprL x)
 
-        let typarsL x = layoutTyparDecls x
+    let traitL x =
+        auxTraitL SimplifyTypes.typeSimplificationInfo0 x
 
-    //--------------------------------------------------------------------------
-    // Helpers related to type checking modules & namespaces
-    //--------------------------------------------------------------------------
-
-    let wrapModuleOrNamespaceType id cpath mtyp = 
-        Construct.NewModuleOrNamespace (Some cpath) taccessPublic id XmlDoc.Empty [] (MaybeLazy.Strict mtyp)
-
-    let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp = 
-        let mspec = wrapModuleOrNamespaceType id cpath mtyp
-        Construct.NewModuleOrNamespaceType (Namespace false) [ mspec ] [], mspec
-
-    let wrapModuleOrNamespaceContentsInNamespace isModule (id: Ident) (cpath: CompilationPath) mexpr =
-        let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType (Namespace (not isModule)))
-        TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
+    let typarsL x = layoutTyparDecls x

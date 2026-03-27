@@ -106,7 +106,7 @@ module internal ExprConstruction =
     /// Note: try to use exprForValRef or the expression returned from mkLocal instead of this.
     val exprForVal: range -> Val -> Expr
 
-    val mkLocalAux: range -> string -> TType -> Mutability -> bool -> Val * Expr
+    val mkLocalAux: range -> string -> TType -> ValMutability -> bool -> Val * Expr
 
     /// Make a new local value and build an expression to reference it
     val mkLocal: range -> string -> TType -> Val * Expr
@@ -145,7 +145,8 @@ module internal ExprConstruction =
     val mkMultiLambdas: TcGlobals -> range -> Typars -> Val list list -> Expr * TType -> Expr
 
     /// Build a lambda expression that corresponds to the implementation of a member
-    val mkMemberLambdas: TcGlobals -> range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
+    val mkMemberLambdas:
+        TcGlobals -> range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
 
     /// Make a binding that binds a function value to a lambda taking multiple arguments
     val mkMultiLambdaBind:
@@ -430,7 +431,7 @@ module internal ArityAndMetadata =
 
     val applyTys: TcGlobals -> TType -> TType list * 'T list -> TType
 
-    val formalApplyTys: TcGlobals -> TType -> TType list * 'T list -> TType
+    val formalApplyTys: TcGlobals -> TType -> 'a list * 'b list -> TType
 
     val stripFunTyN: TcGlobals -> int -> TType -> TType list * TType
 

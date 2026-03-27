@@ -5,6 +5,7 @@ namespace FSharp.Compiler.TypedTreeOps
 
 open System.Collections.Generic
 open Internal.Utilities.Library
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
@@ -18,6 +19,8 @@ open FSharp.Compiler.TypedTreeBasics
 
 [<AutoOpen>]
 module internal ILExtensions =
+
+    val isILAttribByName: string list * string -> ILAttribute -> bool
 
     val TryDecodeILAttribute: ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
 
@@ -59,6 +62,35 @@ module internal ILExtensions =
 
         /// Non-caching (unlike ILAttributesStored.HasWellKnownAttribute which caches).
         member HasWellKnownAttribute: flag: WellKnownILAttributes -> bool
+
+    val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
+
+    val HasFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool
+
+    val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
+
+    [<return: Struct>]
+    val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr voption
+
+    [<return: Struct>]
+    val (|ExtractILAttributeNamedArg|_|): string -> ILAttributeNamedArg list -> ILAttribElem voption
+
+    [<return: Struct>]
+    val (|StringExpr|_|): (Expr -> string voption)
+
+    [<return: Struct>]
+    val (|AttribInt32Arg|_|): (AttribExpr -> int32 voption)
+
+    [<return: Struct>]
+    val (|AttribInt16Arg|_|): (AttribExpr -> int16 voption)
+
+    [<return: Struct>]
+    val (|AttribBoolArg|_|): (AttribExpr -> bool voption)
+
+    [<return: Struct>]
+    val (|AttribStringArg|_|): (AttribExpr -> string voption)
+
+    val (|AttribElemStringArg|_|): (ILAttribElem -> string option)
 
 [<AutoOpen>]
 module internal AttributeHelpers =
@@ -137,12 +169,6 @@ module internal AttributeHelpers =
     val ValTryGetBoolAttribute:
         g: TcGlobals -> trueFlag: WellKnownValAttributes -> falseFlag: WellKnownValAttributes -> v: Val -> bool option
 
-    val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
-
-    val HasFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool
-
-    val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
-
     /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
     ///
     /// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)
@@ -170,33 +196,6 @@ module internal AttributeHelpers =
 
     /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
     val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
-
-    #if !NO_TYPEPROVIDERS
-    /// returns Some(assemblyName) for success
-    val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> (string | null) option
-    #endif
-
-    val IsSignatureDataVersionAttr: ILAttribute -> bool
-
-    val TryFindAutoOpenAttr: ILAttribute -> string option
-
-    val TryFindInternalsVisibleToAttr: ILAttribute -> string option
-
-    val IsMatchingSignatureDataVersionAttr: ILVersionInfo -> ILAttribute -> bool
-
-    val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
-
-    val mkCompilationMappingAttrWithSeqNum: TcGlobals -> int -> int -> ILAttribute
-
-    val mkCompilationMappingAttrWithVariantNumAndSeqNum: TcGlobals -> int -> int -> int -> ILAttribute
-
-    val mkCompilationMappingAttrForQuotationResource: TcGlobals -> string * ILTypeRef list -> ILAttribute
-
-    val mkCompilationArgumentCountsAttr: TcGlobals -> int list -> ILAttribute
-
-    val mkCompilationSourceNameAttr: TcGlobals -> string -> ILAttribute
-
-    val mkSignatureDataVersionAttr: TcGlobals -> ILVersionInfo -> ILAttribute
 
     //-------------------------------------------------------------------------
     // More common type construction
@@ -324,6 +323,10 @@ module internal AttributeHelpers =
     /// Create the struct union case 'Some' or 'ValueSome(expr)' for a voption type
     val mkAnySomeCase: TcGlobals -> isStruct: bool -> UnionCaseRef
 
+    val mkSome: TcGlobals -> TType -> Expr -> range -> Expr
+
+    val mkNone: TcGlobals -> TType -> range -> Expr
+
     /// Create the expression 'ValueSome(expr)'
     val mkValueSome: TcGlobals -> TType -> Expr -> range -> Expr
 
@@ -349,118 +352,108 @@ module internal AttributeHelpers =
     [<return: Struct>]
     val (|SeqExpr|_|): TcGlobals -> Expr -> unit voption
 
-    [<return: Struct>]
-    val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr voption
-
-    [<return: Struct>]
-    val (|ExtractILAttributeNamedArg|_|): string -> ILAttributeNamedArg list -> ILAttribElem voption
-
-    [<return: Struct>]
-    val (|AttribInt32Arg|_|): (AttribExpr -> int32 voption)
-
-    [<return: Struct>]
-    val (|AttribInt16Arg|_|): (AttribExpr -> int16 voption)
-
-    [<return: Struct>]
-    val (|AttribBoolArg|_|): (AttribExpr -> bool voption)
-
-    [<return: Struct>]
-    val (|AttribStringArg|_|): (AttribExpr -> string voption)
-
-    val (|AttribElemStringArg|_|): (ILAttribElem -> string option)
-
     val HasDefaultAugmentationAttribute: g: TcGlobals -> tcref: TyconRef -> bool
 
-[<AutoOpen>]
-module internal DebugPrinting =
+    [<return: Struct>]
+    val (|UnopExpr|_|): TcGlobals -> Expr -> (ValRef * Expr) voption
 
-    module DebugPrint =
+    [<return: Struct>]
+    val (|BinopExpr|_|): TcGlobals -> Expr -> (ValRef * Expr * Expr) voption
 
-        /// A global flag indicating whether debug output should include ValReprInfo
-        val mutable layoutValReprInfo: bool
+    [<return: Struct>]
+    val (|SpecificUnopExpr|_|): TcGlobals -> ValRef -> Expr -> Expr voption
 
-        /// A global flag indicating whether debug output should include stamps of Val and Entity
-        val mutable layoutStamps: bool
+    [<return: Struct>]
+    val (|SpecificBinopExpr|_|): TcGlobals -> ValRef -> Expr -> (Expr * Expr) voption
 
-        /// A global flag indicating whether debug output should include ranges
-        val mutable layoutRanges: bool
+    [<return: Struct>]
+    val (|SignedConstExpr|_|): Expr -> unit voption
 
-        /// A global flag indicating whether debug output should include type information
-        val mutable layoutTypes: bool
+    [<return: Struct>]
+    val (|IntegerConstExpr|_|): Expr -> unit voption
 
-        /// Convert a type to a string for debugging purposes
-        val showType: TType -> string
+    [<return: Struct>]
+    val (|FloatConstExpr|_|): Expr -> unit voption
 
-        /// Convert an expression to a string for debugging purposes
-        val showExpr: Expr -> string
+    [<return: Struct>]
+    val (|UncheckedDefaultOfExpr|_|): TcGlobals -> Expr -> TType voption
 
-        /// Debug layout for a reference to a value
-        val valRefL: ValRef -> Layout
+    [<return: Struct>]
+    val (|SizeOfExpr|_|): TcGlobals -> Expr -> TType voption
 
-        /// Debug layout for a reference to a union case
-        val unionCaseRefL: UnionCaseRef -> Layout
+module internal DebugPrint =
 
-        /// Debug layout for an value definition at its binding site
-        val valAtBindL: Val -> Layout
+    /// A global flag indicating whether debug output should include ValReprInfo
+    val mutable layoutValReprInfo: bool
 
-        /// Debug layout for an integer
-        val intL: int -> Layout
+    /// A global flag indicating whether debug output should include stamps of Val and Entity
+    val mutable layoutStamps: bool
 
-        /// Debug layout for a value definition
-        val valL: Val -> Layout
+    /// A global flag indicating whether debug output should include ranges
+    val mutable layoutRanges: bool
 
-        /// Debug layout for a type parameter definition
-        val typarDeclL: Typar -> Layout
+    /// A global flag indicating whether debug output should include type information
+    val mutable layoutTypes: bool
 
-        /// Debug layout for a trait constraint
-        val traitL: TraitConstraintInfo -> Layout
+    /// Convert a type to a string for debugging purposes
+    val showType: TType -> string
 
-        /// Debug layout for a type parameter
-        val typarL: Typar -> Layout
+    /// Convert an expression to a string for debugging purposes
+    val showExpr: Expr -> string
 
-        /// Debug layout for a set of type parameters
-        val typarsL: Typars -> Layout
+    /// Debug layout for a reference to a value
+    val valRefL: ValRef -> Layout
 
-        /// Debug layout for a type
-        val typeL: TType -> Layout
+    /// Debug layout for a reference to a union case
+    val unionCaseRefL: UnionCaseRef -> Layout
 
-        /// Debug layout for a method slot signature
-        val slotSigL: SlotSig -> Layout
+    /// Debug layout for an value definition at its binding site
+    val valAtBindL: Val -> Layout
 
-        /// Debug layout for a module or namespace definition
-        val entityL: ModuleOrNamespace -> Layout
+    /// Debug layout for an integer
+    val intL: int -> Layout
 
-        /// Debug layout for a binding of an expression to a value
-        val bindingL: Binding -> Layout
+    /// Debug layout for a value definition
+    val valL: Val -> Layout
 
-        /// Debug layout for an expression
-        val exprL: Expr -> Layout
+    /// Debug layout for a type parameter definition
+    val typarDeclL: Typar -> Layout
 
-        /// Debug layout for a type definition
-        val tyconL: Tycon -> Layout
+    /// Debug layout for a trait constraint
+    val traitL: TraitConstraintInfo -> Layout
 
-        /// Debug layout for a decision tree
-        val decisionTreeL: DecisionTree -> Layout
+    /// Debug layout for a type parameter
+    val typarL: Typar -> Layout
 
-        /// Debug layout for an implementation file
-        val implFileL: CheckedImplFile -> Layout
+    /// Debug layout for a set of type parameters
+    val typarsL: Typars -> Layout
 
-        /// Debug layout for a list of implementation files
-        val implFilesL: CheckedImplFile list -> Layout
+    /// Debug layout for a type
+    val typeL: TType -> Layout
 
-        /// Debug layout for class and record fields
-        val recdFieldRefL: RecdFieldRef -> Layout
+    /// Debug layout for a method slot signature
+    val slotSigL: SlotSig -> Layout
 
-    val wrapModuleOrNamespaceContentsInNamespace:
-        isModule: bool ->
-        id: Ident ->
-        cpath: CompilationPath ->
-        mexpr: ModuleOrNamespaceContents ->
-            ModuleOrNamespaceContents
+    /// Debug layout for a module or namespace definition
+    val entityL: ModuleOrNamespace -> Layout
 
-    /// Wrap one module or namespace definition in a 'namespace N' outer wrapper
-    val wrapModuleOrNamespaceTypeInNamespace:
-        Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespaceType * ModuleOrNamespace
+    /// Debug layout for a binding of an expression to a value
+    val bindingL: Binding -> Layout
 
-    /// Wrap one module or namespace definition in a 'module M = ..' outer wrapper
-    val wrapModuleOrNamespaceType: Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespace
+    /// Debug layout for an expression
+    val exprL: Expr -> Layout
+
+    /// Debug layout for a type definition
+    val tyconL: Tycon -> Layout
+
+    /// Debug layout for a decision tree
+    val decisionTreeL: DecisionTree -> Layout
+
+    /// Debug layout for an implementation file
+    val implFileL: CheckedImplFile -> Layout
+
+    /// Debug layout for a list of implementation files
+    val implFilesL: CheckedImplFile list -> Layout
+
+    /// Debug layout for class and record fields
+    val recdFieldRefL: RecdFieldRef -> Layout
