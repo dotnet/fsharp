@@ -528,10 +528,9 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
             let baseTy = baseTyOfUnionSpec cuspec
             let tagField = [ mkTagFieldType ilg cuspec ]
             [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
-        // Default: use nested type ctor
+        // Default: use nested type ctor (or root ctor for single-case/small unions)
         | UnionLayout.SingleCaseRef _
         | UnionLayout.SingleCaseStruct _
-        | UnionLayout.FSharpList _
         | UnionLayout.SmallRef _
         | UnionLayout.SmallRefWithNullAsTrueValue _
         | UnionLayout.TaggedRef _
@@ -1781,7 +1780,6 @@ let private emitTagInfrastructure (ctx: TypeDefContext) =
 
     tagMeths, tagProps, tagEnumFields
 
-/// Compute instance fields from selfFields and tagFieldsInObject.
 /// Compute instance fields from selfFields and tagFieldsInObject.
 let private computeSelfAndTagFields (ctx: TypeDefContext) selfFields (tagFieldsInObject: (string * ILType * ILAttribute list) list) =
     let isStruct = ctx.td.IsStruct
