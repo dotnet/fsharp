@@ -439,23 +439,13 @@ let mkTagDiscriminate ilg cuspec _baseTy cidx =
 let mkTagDiscriminateThen ilg cuspec cidx after =
     [ mkGetTag ilg cuspec; mkLdcInt32 cidx ] @ mkCeqThen after
 
-/// True when a non-nullary alt in SmallRefUnion with a null sibling is the single
-/// non-nullary case whose fields fold into the root class.
-/// Encodes RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull:
-/// requires nullCaseIdx.IsSome (all nullary alts are null-represented),
-/// not alt.IsNullary, and exactly one non-nullary case exists.
-let private isSingleNonNullaryFoldedToRoot (cuspec: IlxUnionSpec) (nullCaseIdx: int option) (alt: IlxUnionCase) =
-    nullCaseIdx.IsSome
-    && not alt.IsNullary
-    && cuspec.AlternativesArray |> Array.existsOne (fun a -> not a.IsNullary)
-
 /// Encodes RepresentAlternativeAsFreshInstancesOfRootClass for a given layout and alt.
 /// True when the case is constructed directly on the root type (not a nested type).
 /// This covers: ListTailOrNull cons case, or SmallRefUnion with single non-nullary + null sibling.
 let private caseFoldsToRootClass (layout: UnionLayout) (cuspec: IlxUnionSpec) (alt: IlxUnionCase) =
     match layout with
     | UnionLayout.ListTailOrNull _ -> alt.Name = ALT_NAME_CONS
-    | UnionLayout.SmallRefUnion(_, nullCaseIdx) -> isSingleNonNullaryFoldedToRoot cuspec nullCaseIdx alt
+    | UnionLayout.SmallRefUnion _ -> altFoldsAsRootInstance layout alt cuspec.AlternativesArray
     | UnionLayout.SingleCaseRef _
     | UnionLayout.SingleCaseStruct _
     | UnionLayout.TaggedRefUnion _
@@ -486,7 +476,7 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
             let ctorFieldTys = alt.FieldTypes |> Array.toList
             [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
         // RepresentAlternativeAsFreshInstancesOfRootClass: single non-nullary with null sibling
-        | UnionLayout.SmallRefUnion(_, nullCaseIdx) when isSingleNonNullaryFoldedToRoot cuspec nullCaseIdx alt ->
+        | UnionLayout.SmallRefUnion _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
             let baseTy = baseTyOfUnionSpec cuspec
             let ctorFieldTys = alt.FieldTypes |> Array.toList
             [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
@@ -572,7 +562,7 @@ let private emitIsCase ilg avoidHelpers cuspec (layout: UnionLayout) cidx =
         [ AI_ldnull; AI_ceq ]
     | _ ->
         match layout with
-        | UnionLayout.SmallRefUnion(_, nullCaseIdx) when isSingleNonNullaryFoldedToRoot cuspec nullCaseIdx alt ->
+        | UnionLayout.SmallRefUnion _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
             // Single non-nullary with all null siblings: test via non-null
             [ AI_ldnull; AI_cgt_un ]
         | UnionLayout.SingleCaseRef _
@@ -638,7 +628,7 @@ let private emitBranchOnCase ilg sense avoidHelpers cuspec (layout: UnionLayout)
         [ I_brcmp(neg, tg) ]
     | _ ->
         match layout with
-        | UnionLayout.SmallRefUnion(_, nullCaseIdx) when isSingleNonNullaryFoldedToRoot cuspec nullCaseIdx alt ->
+        | UnionLayout.SmallRefUnion _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
             // Single non-nullary with all null siblings: branch on non-null
             [ I_brcmp(pos, tg) ]
         | UnionLayout.SingleCaseRef _
