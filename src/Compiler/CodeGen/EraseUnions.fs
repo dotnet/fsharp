@@ -563,22 +563,16 @@ let mkNewData ilg (cuspec, cidx) =
                 viaMakerCall ()
 
     | NoHelpers ->
-        let isStruct =
+        match layout, cidx with
+        | CaseIsNull -> [ AI_ldnull ]
+        | _ ->
             match layout with
-            | ValueTypeLayout -> true
-            | ReferenceTypeLayout -> false
-
-        let isNull =
-            match layout, cidx with
-            | CaseIsNull -> true
-            | CaseIsAllocated -> false
-
-        if not alt.IsNullary && isStruct then
-            viaMakerCall ()
-        elif not isStruct && not isNull && alt.IsNullary then
-            viaGetAltNameProperty ()
-        else
-            emitRawConstruction ilg cuspec layout cidx
+            // Struct non-nullary: use maker method (handles initobj + field stores)
+            | ValueTypeLayout when not alt.IsNullary -> viaMakerCall ()
+            // Ref nullary (not null-represented): use property accessor for singleton
+            | ReferenceTypeLayout when alt.IsNullary -> viaGetAltNameProperty ()
+            // Everything else: raw construction
+            | _ -> emitRawConstruction ilg cuspec layout cidx
 
 let private emitIsCase ilg avoidHelpers cuspec (layout: UnionLayout) cidx =
     let alt = altOfUnionSpec cuspec cidx
