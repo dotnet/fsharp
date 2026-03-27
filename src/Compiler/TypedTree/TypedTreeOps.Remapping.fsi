@@ -175,16 +175,6 @@ module internal ExprRemapping =
     /// Given a lambda binding, extract the ValReprInfo for its arguments and other details
     val InferValReprInfoOfBinding: TcGlobals -> AllowTypeDirectedDetupling -> Val -> Expr -> ValReprInfo
 
-    /// Mutate a value to indicate it should be considered a local rather than a module-bound definition
-    // REVIEW: this mutation should not be needed
-    val ClearValReprInfo: Val -> Val
-
-    /// Determine the underlying type of an enum type (normally int32)
-    val underlyingTypeOfEnumTy: TcGlobals -> TType -> TType
-
-    /// If the input type is an enum type, then convert to its underlying type, otherwise return the input type
-    val normalizeEnumTy: TcGlobals -> TType -> TType
-
     //---------------------------------------------------------------------------
     // Resolve static optimizations
     //-------------------------------------------------------------------------

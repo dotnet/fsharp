@@ -623,6 +623,12 @@ module internal TypeTesters =
     // Return all components of this type expression that cannot be tested at runtime
     val getErasedTypes: TcGlobals -> TType -> checkForNullness: bool -> TType list
 
+    /// Determine the underlying type of an enum type (normally int32)
+    val underlyingTypeOfEnumTy: TcGlobals -> TType -> TType
+
+    /// If the input type is an enum type, then convert to its underlying type, otherwise return the input type
+    val normalizeEnumTy: TcGlobals -> TType -> TType
+
 [<AutoOpen>]
 module internal CommonContainers =
 

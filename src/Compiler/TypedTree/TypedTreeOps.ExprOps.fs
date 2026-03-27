@@ -398,8 +398,6 @@ module internal AddressOps =
 
         wrap (mkUnionCaseFieldGetUnprovenViaExprAddr (eR, cref, tinst, j, m))
 
-    let mkArray (argTy, args, m) = Expr.Op(TOp.Array, [ argTy ], args, m)
-
 [<AutoOpen>]
 module internal ExprFolding =
 
@@ -1002,6 +1000,8 @@ module internal Makers =
 
     let mkCons (g: TcGlobals) ty h t =
         mkUnionCaseExpr (g.cons_ucref, [ ty ], [ h; t ], unionRanges h.Range t.Range)
+
+    let mkArray (argTy, args, m) = Expr.Op(TOp.Array, [ argTy ], args, m)
 
     let mkCompGenLocalAndInvisibleBind g nm m e =
         let locv, loce = mkCompGenLocal m nm (tyOfExpr g e)
@@ -2285,3 +2285,8 @@ module internal ExprHelpers =
         function
         | Expr.Match(spBind, m, tree, targets, m2, ty) -> LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty)
         | x -> x
+
+    // CLEANUP NOTE: Get rid of this mutation.
+    let ClearValReprInfo (f: Val) =
+        f.SetValReprInfo None
+        f

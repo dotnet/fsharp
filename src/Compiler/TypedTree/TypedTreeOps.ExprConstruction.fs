@@ -1255,6 +1255,42 @@ module internal TypeTesters =
                 | _ -> getErasedTypes g domainTy false @ getErasedTypes g rangeTy false
             | TType_measure _ -> [ ty ]
 
+    let underlyingTypeOfEnumTy (g: TcGlobals) ty =
+        assert (isEnumTy g ty)
+
+        match metadataOfTy g ty with
+#if !NO_TYPEPROVIDERS
+        | ProvidedTypeMetadata info -> info.UnderlyingTypeOfEnum()
+#endif
+        | ILTypeMetadata(TILObjectReprData(_, _, tdef)) ->
+
+            let info = computeILEnumInfo (tdef.Name, tdef.Fields)
+            let ilTy = getTyOfILEnumInfo info
+
+            match ilTy.TypeSpec.Name with
+            | "System.Byte" -> g.byte_ty
+            | "System.SByte" -> g.sbyte_ty
+            | "System.Int16" -> g.int16_ty
+            | "System.Int32" -> g.int32_ty
+            | "System.Int64" -> g.int64_ty
+            | "System.UInt16" -> g.uint16_ty
+            | "System.UInt32" -> g.uint32_ty
+            | "System.UInt64" -> g.uint64_ty
+            | "System.Single" -> g.float32_ty
+            | "System.Double" -> g.float_ty
+            | "System.Char" -> g.char_ty
+            | "System.Boolean" -> g.bool_ty
+            | _ -> g.int32_ty
+        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+            let tycon = (tcrefOfAppTy g ty).Deref
+
+            match tycon.GetFieldByName "value__" with
+            | Some rf -> rf.FormalType
+            | None -> error (InternalError("no 'value__' field found for enumeration type " + tycon.LogicalName, tycon.Range))
+
+    let normalizeEnumTy g ty =
+        (if isEnumTy g ty then underlyingTypeOfEnumTy g ty else ty)
+
 
 [<AutoOpen>]
 module internal CommonContainers =

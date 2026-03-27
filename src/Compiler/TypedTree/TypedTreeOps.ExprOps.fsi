@@ -82,8 +82,6 @@ module internal AddressOps =
     /// Like mkUnionCaseFieldGetUnprovenViaExprAddr, but for struct-unions, the input should be a copy of the expression.
     val mkUnionCaseFieldGetUnproven: TcGlobals -> Expr * UnionCaseRef * TypeInst * int * range -> Expr
 
-    val mkArray: TType * Exprs * range -> Expr
-
 [<AutoOpen>]
 module internal ExprFolding =
 
@@ -190,6 +188,8 @@ module internal Makers =
     val mkNil: TcGlobals -> range -> TType -> Expr
 
     val mkCons: TcGlobals -> TType -> Expr -> Expr -> Expr
+
+    val mkArray: TType * Exprs * range -> Expr
 
     val mkCompGenLocalAndInvisibleBind: TcGlobals -> string -> range -> Expr -> Val * Expr * Binding
 
@@ -547,3 +547,7 @@ module internal ExprHelpers =
 
     [<return: Struct>]
     val (|OpPipeRight3|_|): TcGlobals -> Expr -> (TType * Expr * Expr * Expr * Expr * range) voption
+
+    /// Mutate a value to indicate it should be considered a local rather than a module-bound definition
+    // REVIEW: this mutation should not be needed
+    val ClearValReprInfo: Val -> Val
