@@ -175,19 +175,6 @@ let (|HasTagField|NoTagField|) layout =
     | UnionLayout.SingleCaseRef _
     | UnionLayout.SingleCaseStruct _ -> NoTagField
 
-/// Where are case fields stored?
-let (|FieldsOnRootType|FieldsOnNestedTypes|) layout =
-    match layout with
-    | UnionLayout.SingleCaseRef _
-    | UnionLayout.SingleCaseStruct _
-    | UnionLayout.FSharpList _
-    | UnionLayout.TaggedStruct _
-    | UnionLayout.TaggedStructAllNullary _ -> FieldsOnRootType
-    | UnionLayout.SmallRef _
-    | UnionLayout.SmallRefWithNullAsTrueValue _
-    | UnionLayout.TaggedRef _
-    | UnionLayout.TaggedRefAllNullary _ -> FieldsOnNestedTypes
-
 /// Is a specific case (by index) represented as null?
 let inline (|CaseIsNull|CaseIsAllocated|) (layout, cidx) =
     match layout with
@@ -214,61 +201,6 @@ let (|ValueTypeLayout|ReferenceTypeLayout|) layout =
     | UnionLayout.TaggedRef _
     | UnionLayout.TaggedRefAllNullary _
     | UnionLayout.FSharpList _ -> ReferenceTypeLayout
-
-/// Does a non-nullary case fold its fields into the root class (no nested type)?
-let (|NonNullaryFoldsToRoot|NonNullaryInNestedType|) (layout, alt: IlxUnionCase) =
-    match layout with
-    | UnionLayout.SingleCaseRef _
-    | UnionLayout.SingleCaseStruct _
-    | UnionLayout.TaggedStruct _
-    | UnionLayout.TaggedStructAllNullary _
-    | UnionLayout.FSharpList _ -> NonNullaryFoldsToRoot
-    | UnionLayout.TaggedRefAllNullary _ -> NonNullaryFoldsToRoot
-    | UnionLayout.TaggedRef _ when not alt.IsNullary -> NonNullaryInNestedType
-    | UnionLayout.TaggedRef _ -> NonNullaryFoldsToRoot
-    | UnionLayout.SmallRef _ when not alt.IsNullary -> NonNullaryInNestedType
-    | UnionLayout.SmallRef _ -> NonNullaryFoldsToRoot
-    | UnionLayout.SmallRefWithNullAsTrueValue _ when not alt.IsNullary -> NonNullaryInNestedType
-    | UnionLayout.SmallRefWithNullAsTrueValue _ -> NonNullaryFoldsToRoot
-
-/// Compile-time validation that all active patterns cover all UnionLayout cases.
-/// Also validates that classifyFromSpec and classifyFromDef compile correctly.
-let private _validateActivePatterns
-    (layout: UnionLayout)
-    (alt: IlxUnionCase)
-    (cuspec: IlxUnionSpec)
-    (td: ILTypeDef)
-    (cud: IlxUnionInfo)
-    (baseTy: ILType)
-    =
-    let _fromSpec = classifyFromSpec cuspec
-    let _fromDef = classifyFromDef td cud baseTy
-
-    match layout with
-    | DiscriminateByTagField
-    | DiscriminateByRuntimeType
-    | DiscriminateByTailNull
-    | NoDiscrimination -> ()
-
-    match layout with
-    | HasTagField
-    | NoTagField -> ()
-
-    match layout with
-    | FieldsOnRootType
-    | FieldsOnNestedTypes -> ()
-
-    match layout, 0 with
-    | CaseIsNull
-    | CaseIsAllocated -> ()
-
-    match layout with
-    | ValueTypeLayout
-    | ReferenceTypeLayout -> ()
-
-    match layout, alt with
-    | NonNullaryFoldsToRoot
-    | NonNullaryInNestedType -> ()
 
 // ---- Layout-Based Helpers ----
 // These replace the old representation decision methods.
