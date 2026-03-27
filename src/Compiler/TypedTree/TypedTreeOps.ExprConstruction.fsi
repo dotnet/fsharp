@@ -32,13 +32,6 @@ module internal ExprConstruction =
     /// Build a function type
     val mkFunTy: TcGlobals -> TType -> TType -> TType
 
-    val mkForallTy: Typars -> TType -> TType
-
-    /// Build a type-forall anonymous generic type if necessary
-    val mkForallTyIfNeeded: Typars -> TType -> TType
-
-    val (+->): Typars -> TType -> TType
-
     /// Build a curried function type
     val mkIteratedFunTy: TcGlobals -> TTypes -> TType -> TType
 
@@ -655,3 +648,121 @@ module internal ArityAndMetadata =
     val isEmptyFreeTyvars: FreeTyvars -> bool
 
     val unionFreeTyvars: FreeTyvars -> FreeTyvars -> FreeTyvars
+
+[<AutoOpen>]
+module internal CommonContainers =
+
+    //-------------------------------------------------------------------------
+    // More common type construction
+    //-------------------------------------------------------------------------
+
+    val destByrefTy: TcGlobals -> TType -> TType
+
+    val destNativePtrTy: TcGlobals -> TType -> TType
+
+    val isByrefTyconRef: TcGlobals -> TyconRef -> bool
+
+    val isRefCellTy: TcGlobals -> TType -> bool
+
+    /// Get the element type of an FSharpRef type
+    val destRefCellTy: TcGlobals -> TType -> TType
+
+    /// Create the FSharpRef type for a given element type
+    val mkRefCellTy: TcGlobals -> TType -> TType
+
+    val StripSelfRefCell: TcGlobals * ValBaseOrThisInfo * TType -> TType
+
+    val isBoolTy: TcGlobals -> TType -> bool
+
+    /// Determine if a type is a value option type
+    val isValueOptionTy: TcGlobals -> TType -> bool
+
+    /// Determine if a type is an option type
+    val isOptionTy: TcGlobals -> TType -> bool
+
+    /// Determine if a type is an Choice type
+    val isChoiceTy: TcGlobals -> TType -> bool
+
+    /// Take apart an option type
+    val destOptionTy: TcGlobals -> TType -> TType
+
+    /// Try to take apart an option type
+    val tryDestOptionTy: TcGlobals -> TType -> TType voption
+
+    /// Try to take apart an option type
+    val destValueOptionTy: TcGlobals -> TType -> TType
+
+    /// Take apart an Choice type
+    val tryDestChoiceTy: TcGlobals -> TType -> int -> TType voption
+
+    /// Try to take apart an Choice type
+    val destChoiceTy: TcGlobals -> TType -> int -> TType
+
+    /// Determine is a type is a System.Nullable type
+    val isNullableTy: TcGlobals -> TType -> bool
+
+    /// Try to take apart a System.Nullable type
+    val tryDestNullableTy: TcGlobals -> TType -> TType voption
+
+    /// Take apart a System.Nullable type
+    val destNullableTy: TcGlobals -> TType -> TType
+
+    /// Determine if a type is a System.Linq.Expression type
+    val isLinqExpressionTy: TcGlobals -> TType -> bool
+
+    /// Take apart a System.Linq.Expression type
+    val destLinqExpressionTy: TcGlobals -> TType -> TType
+
+    /// Try to take apart a System.Linq.Expression type
+    val tryDestLinqExpressionTy: TcGlobals -> TType -> TType option
+
+    val mkLazyTy: TcGlobals -> TType -> TType
+
+    /// Build an PrintFormat type
+    val mkPrintfFormatTy: TcGlobals -> TType -> TType -> TType -> TType -> TType -> TType
+
+    val (|NullableTy|_|): TcGlobals -> TType -> TType voption
+
+    /// An active pattern to transform System.Nullable types to their input, otherwise leave the input unchanged
+    [<return: Struct>]
+    val (|StripNullableTy|): TcGlobals -> TType -> TType
+
+    /// Matches any byref type, yielding the target type
+    [<return: Struct>]
+    val (|ByrefTy|_|): TcGlobals -> TType -> TType voption
+
+    val mkListTy: TcGlobals -> TType -> TType
+
+    /// Create the option type for a given element type
+    val mkOptionTy: TcGlobals -> TType -> TType
+
+    /// Create the voption type for a given element type
+    val mkValueOptionTy: TcGlobals -> TType -> TType
+
+    /// Create the Nullable type for a given element type
+    val mkNullableTy: TcGlobals -> TType -> TType
+
+    /// Create the union case 'None' for an option type
+    val mkNoneCase: TcGlobals -> UnionCaseRef
+
+    /// Create the union case 'Some(expr)' for an option type
+    val mkSomeCase: TcGlobals -> UnionCaseRef
+
+    /// Create the struct union case 'ValueNone' for a voption type
+    val mkValueNoneCase: TcGlobals -> UnionCaseRef
+
+    /// Create the struct union case 'ValueSome(expr)' for a voption type
+    val mkValueSomeCase: TcGlobals -> UnionCaseRef
+
+    /// Create the struct union case 'Some' or 'ValueSome(expr)' for a voption type
+    val mkAnySomeCase: TcGlobals -> isStruct: bool -> UnionCaseRef
+
+    val mkSome: TcGlobals -> TType -> Expr -> range -> Expr
+
+    val mkNone: TcGlobals -> TType -> range -> Expr
+
+    /// Create the expression 'ValueSome(expr)'
+    val mkValueSome: TcGlobals -> TType -> Expr -> range -> Expr
+
+    /// Create the struct expression 'ValueNone' for an voption type
+    val mkValueNone: TcGlobals -> TType -> range -> Expr

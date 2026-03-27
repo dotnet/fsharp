@@ -70,12 +70,6 @@ module internal ExprConstruction =
     let mkFunTy (g: TcGlobals) domainTy rangeTy =
         TType_fun(domainTy, rangeTy, g.knownWithoutNull)
 
-    let mkForallTy d r = TType_forall(d, r)
-
-    let mkForallTyIfNeeded d r = if isNil d then r else mkForallTy d r
-
-    let (+->) d r = mkForallTyIfNeeded d r
-
     let mkIteratedFunTy g dl r = List.foldBack (mkFunTy g) dl r
 
     let mkLambdaTy g tps tys bodyTy =
@@ -1291,3 +1285,199 @@ module internal ArityAndMetadata =
                 FreeTraitSolutions = unionFreeLocals fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions
                 FreeTypars = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars
             }
+
+[<AutoOpen>]
+module internal CommonContainers =
+
+    let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) =
+        (g.byref_tcr.CanDeref && tyconRefEq g g.byref_tcr tcref)
+        || (g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref)
+        || (g.inref_tcr.CanDeref && tyconRefEq g g.inref_tcr tcref)
+        || (g.outref_tcr.CanDeref && tyconRefEq g g.outref_tcr tcref)
+        || tyconRefEqOpt g g.system_TypedReference_tcref tcref
+        || tyconRefEqOpt g g.system_ArgIterator_tcref tcref
+        || tyconRefEqOpt g g.system_RuntimeArgumentHandle_tcref tcref
+
+    //-------------------------------------------------------------------------
+    // List and reference types...
+    //-------------------------------------------------------------------------
+
+    let destByrefTy g ty =
+        match ty |> stripTyEqns g with
+        | TType_app(tcref, [ x; _ ], _) when g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref -> x // Check sufficient FSharp.Core
+        | TType_app(tcref, [ x ], _) when tyconRefEq g g.byref_tcr tcref -> x // all others
+        | _ -> failwith "destByrefTy: not a byref type"
+
+    [<return: Struct>]
+    let (|ByrefTy|_|) g ty =
+        // Because of byref = byref2<ty,tags> it is better to write this using is/dest
+        if isByrefTy g ty then
+            ValueSome(destByrefTy g ty)
+        else
+            ValueNone
+
+    let destNativePtrTy g ty =
+        match ty |> stripTyEqns g with
+        | TType_app(tcref, [ x ], _) when tyconRefEq g g.nativeptr_tcr tcref -> x
+        | _ -> failwith "destNativePtrTy: not a native ptr type"
+
+    let isRefCellTy g ty =
+        match tryTcrefOfAppTy g ty with
+        | ValueNone -> false
+        | ValueSome tcref -> tyconRefEq g g.refcell_tcr_canon tcref
+
+    let destRefCellTy g ty =
+        match ty |> stripTyEqns g with
+        | TType_app(tcref, [ x ], _) when tyconRefEq g g.refcell_tcr_canon tcref -> x
+        | _ -> failwith "destRefCellTy: not a ref type"
+
+    let StripSelfRefCell (g: TcGlobals, baseOrThisInfo: ValBaseOrThisInfo, tau: TType) : TType =
+        if baseOrThisInfo = CtorThisVal && isRefCellTy g tau then
+            destRefCellTy g tau
+        else
+            tau
+
+    let mkRefCellTy (g: TcGlobals) ty =
+        TType_app(g.refcell_tcr_nice, [ ty ], g.knownWithoutNull)
+
+    let mkLazyTy (g: TcGlobals) ty =
+        TType_app(g.lazy_tcr_nice, [ ty ], g.knownWithoutNull)
+
+    let mkPrintfFormatTy (g: TcGlobals) aty bty cty dty ety =
+        TType_app(g.format_tcr, [ aty; bty; cty; dty; ety ], g.knownWithoutNull)
+
+    let mkOptionTy (g: TcGlobals) ty =
+        TType_app(g.option_tcr_nice, [ ty ], g.knownWithoutNull)
+
+    let mkValueOptionTy (g: TcGlobals) ty =
+        TType_app(g.valueoption_tcr_nice, [ ty ], g.knownWithoutNull)
+
+    let mkNullableTy (g: TcGlobals) ty =
+        TType_app(g.system_Nullable_tcref, [ ty ], g.knownWithoutNull)
+
+    let mkListTy (g: TcGlobals) ty =
+        TType_app(g.list_tcr_nice, [ ty ], g.knownWithoutNull)
+
+    let isBoolTy (g: TcGlobals) ty =
+        match tryTcrefOfAppTy g ty with
+        | ValueNone -> false
+        | ValueSome tcref -> tyconRefEq g g.system_Bool_tcref tcref || tyconRefEq g g.bool_tcr tcref
+
+    let isValueOptionTy (g: TcGlobals) ty =
+        match tryTcrefOfAppTy g ty with
+        | ValueNone -> false
+        | ValueSome tcref -> tyconRefEq g g.valueoption_tcr_canon tcref
+
+    let isOptionTy (g: TcGlobals) ty =
+        match tryTcrefOfAppTy g ty with
+        | ValueNone -> false
+        | ValueSome tcref -> tyconRefEq g g.option_tcr_canon tcref
+
+    let isChoiceTy (g: TcGlobals) ty =
+        match tryTcrefOfAppTy g ty with
+        | ValueNone -> false
+        | ValueSome tcref ->
+            tyconRefEq g g.choice2_tcr tcref
+            || tyconRefEq g g.choice3_tcr tcref
+            || tyconRefEq g g.choice4_tcr tcref
+            || tyconRefEq g g.choice5_tcr tcref
+            || tyconRefEq g g.choice6_tcr tcref
+            || tyconRefEq g g.choice7_tcr tcref
+
+    let tryDestOptionTy g ty =
+        match argsOfAppTy g ty with
+        | [ ty1 ] when isOptionTy g ty -> ValueSome ty1
+        | _ -> ValueNone
+
+    let tryDestValueOptionTy g ty =
+        match argsOfAppTy g ty with
+        | [ ty1 ] when isValueOptionTy g ty -> ValueSome ty1
+        | _ -> ValueNone
+
+    let tryDestChoiceTy g ty idx =
+        match argsOfAppTy g ty with
+        | ls when isChoiceTy g ty && ls.Length > idx -> ValueSome ls[idx]
+        | _ -> ValueNone
+
+    let destOptionTy g ty =
+        match tryDestOptionTy g ty with
+        | ValueSome ty -> ty
+        | ValueNone -> failwith "destOptionTy: not an option type"
+
+    let destValueOptionTy g ty =
+        match tryDestValueOptionTy g ty with
+        | ValueSome ty -> ty
+        | ValueNone -> failwith "destValueOptionTy: not a value option type"
+
+    let destChoiceTy g ty idx =
+        match tryDestChoiceTy g ty idx with
+        | ValueSome ty -> ty
+        | ValueNone -> failwith "destChoiceTy: not a Choice type"
+
+    let isNullableTy (g: TcGlobals) ty =
+        match tryTcrefOfAppTy g ty with
+        | ValueNone -> false
+        | ValueSome tcref -> tyconRefEq g g.system_Nullable_tcref tcref
+
+    let tryDestNullableTy g ty =
+        match argsOfAppTy g ty with
+        | [ ty1 ] when isNullableTy g ty -> ValueSome ty1
+        | _ -> ValueNone
+
+    let destNullableTy g ty =
+        match tryDestNullableTy g ty with
+        | ValueSome ty -> ty
+        | ValueNone -> failwith "destNullableTy: not a Nullable type"
+
+    [<return: Struct>]
+    let (|NullableTy|_|) g ty =
+        match tryAppTy g ty with
+        | ValueSome(tcref, [ tyarg ]) when tyconRefEq g tcref g.system_Nullable_tcref -> ValueSome tyarg
+        | _ -> ValueNone
+
+    let (|StripNullableTy|) g ty =
+        match tryDestNullableTy g ty with
+        | ValueSome tyarg -> tyarg
+        | _ -> ty
+
+    let isLinqExpressionTy g ty =
+        match tryTcrefOfAppTy g ty with
+        | ValueNone -> false
+        | ValueSome tcref -> tyconRefEq g g.system_LinqExpression_tcref tcref
+
+    let tryDestLinqExpressionTy g ty =
+        match argsOfAppTy g ty with
+        | [ ty1 ] when isLinqExpressionTy g ty -> Some ty1
+        | _ -> None
+
+    let destLinqExpressionTy g ty =
+        match tryDestLinqExpressionTy g ty with
+        | Some ty -> ty
+        | None -> failwith "destLinqExpressionTy: not an expression type"
+
+    let mkNoneCase (g: TcGlobals) =
+        mkUnionCaseRef g.option_tcr_canon "None"
+
+    let mkSomeCase (g: TcGlobals) =
+        mkUnionCaseRef g.option_tcr_canon "Some"
+
+    let mkSome g ty arg m =
+        mkUnionCaseExpr (mkSomeCase g, [ ty ], [ arg ], m)
+
+    let mkNone g ty m =
+        mkUnionCaseExpr (mkNoneCase g, [ ty ], [], m)
+
+    let mkValueNoneCase (g: TcGlobals) =
+        mkUnionCaseRef g.valueoption_tcr_canon "ValueNone"
+
+    let mkValueSomeCase (g: TcGlobals) =
+        mkUnionCaseRef g.valueoption_tcr_canon "ValueSome"
+
+    let mkAnySomeCase g isStruct =
+        (if isStruct then mkValueSomeCase g else mkSomeCase g)
+
+    let mkValueSome g ty arg m =
+        mkUnionCaseExpr (mkValueSomeCase g, [ ty ], [ arg ], m)
+
+    let mkValueNone g ty m =
+        mkUnionCaseExpr (mkValueNoneCase g, [ ty ], [], m)
