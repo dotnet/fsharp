@@ -1640,68 +1640,18 @@ let private rootTypeNullableAttrs (g: TcGlobals) (td: ILTypeDef) (cud: IlxUnionI
     else
         td.CustomAttrsStored
 
-let mkClassUnionDef
-    (
-        addMethodGeneratedAttrs,
-        addPropertyGeneratedAttrs,
-        addPropertyNeverAttrs,
-        addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef,
-        addFieldNeverAttrs: ILFieldDef -> ILFieldDef,
-        mkDebuggerTypeProxyAttribute
-    )
-    (g: TcGlobals)
-    tref
-    (td: ILTypeDef)
-    cud
-    =
-    let boxity = if td.IsStruct then ILBoxity.AsValue else ILBoxity.AsObject
-    let baseTy = mkILFormalNamedTy boxity tref td.GenericParams
-
-    let cuspec =
-        IlxUnionSpec(IlxUnionRef(boxity, baseTy.TypeRef, cud.UnionCases, cud.IsNullPermitted, cud.HasHelpers), baseTy.GenericArgs)
-
-    let info = (td, cud)
-    let repr = cudefRepr
-    let isTotallyImmutable = (cud.HasHelpers <> SpecialFSharpListHelpers)
-
-    let layout = classifyFromDef td cud baseTy
-
-    let ctx =
-        {
-            g = g
-            layout = layout
-            cuspec = cuspec
-            cud = cud
-            td = td
-            baseTy = baseTy
-            stampMethodAsGenerated = addMethodGeneratedAttrs
-            stampPropertyAsGenerated = addPropertyGeneratedAttrs
-            stampPropertyAsNever = addPropertyNeverAttrs
-            stampFieldAsGenerated = addFieldGeneratedAttrs
-            stampFieldAsNever = addFieldNeverAttrs
-            mkDebuggerTypeProxyAttr = mkDebuggerTypeProxyAttribute
-        }
-
-    let results =
-        cud.UnionCases
-        |> List.ofArray
-        |> List.mapi (fun i alt -> processAlternative ctx i alt)
-
-    let baseMethsFromAlt = results |> List.collect (fun r -> r.BaseMakerMethods)
-    let basePropsFromAlt = results |> List.collect (fun r -> r.BaseMakerProperties)
-    let altUniqObjMeths = results |> List.collect (fun r -> r.ConstantAccessors)
-    let altTypeDefs = results |> List.collect (fun r -> r.NestedTypeDefs)
-    let altDebugTypeDefs = results |> List.collect (fun r -> r.DebugProxyTypeDefs)
-    let altNullaryFields = results |> List.collect (fun r -> r.NullaryConstFields)
-
-    let tagFieldsInObject =
-        match repr.DiscriminationTechnique info with
-        | SingleCase
-        | RuntimeTypes
-        | TailOrNull -> []
-        | IntegerTag -> [ let n, t = mkTagFieldId g.ilg cuspec in n, t, [] ]
-
+/// Compute fields, methods, and properties that live on the root class.
+/// For struct DUs, all fields are flattened onto root. For ref DUs, only
+/// cases that fold to root (list Cons, single-non-nullary-with-null-siblings).
+let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (string * ILType * 'a list) list) =
+    let g = ctx.g
+    let td = ctx.td
+    let cud = ctx.cud
+    let baseTy = ctx.baseTy
+    let cuspec = ctx.cuspec
     let isStruct = td.IsStruct
+    let repr = cudefRepr
+    let info = (td, cud)
 
     let ctorAccess =
         if cuspec.HasHelpers = AllHelpers then
@@ -1709,131 +1659,129 @@ let mkClassUnionDef
         else
             cud.UnionCasesAccessibility
 
-    let selfFields, selfMeths, selfProps =
+    [
+        let minNullaryIdx =
+            cud.UnionCases
+            |> Array.tryFindIndex (fun t -> t.IsNullary)
+            |> Option.defaultValue -1
 
-        [
-            let minNullaryIdx =
-                cud.UnionCases
-                |> Array.tryFindIndex (fun t -> t.IsNullary)
-                |> Option.defaultValue -1
+        let fieldsEmitted = HashSet<_>()
 
-            let fieldsEmitted = HashSet<_>()
+        for cidx, alt in Array.indexed cud.UnionCases do
+            if
+                repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt)
+                || repr.RepresentAlternativeAsStructValue info
+            then
 
-            for cidx, alt in Array.indexed cud.UnionCases do
-                if
-                    repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt)
-                    || repr.RepresentAlternativeAsStructValue info
-                then
+                let baseInit =
+                    if isStruct then
+                        None
+                    else
+                        match td.Extends.Value with
+                        | None -> Some g.ilg.typ_Object.TypeSpec
+                        | Some ilTy -> Some ilTy.TypeSpec
 
-                    let baseInit =
-                        if isStruct then
-                            None
-                        else
-                            match td.Extends.Value with
-                            | None -> Some g.ilg.typ_Object.TypeSpec
-                            | Some ilTy -> Some ilTy.TypeSpec
+                let ctor =
+                    // Structs with fields are created using static makers methods
+                    // Structs without fields can share constructor for the 'tag' value, we just create one
+                    if isStruct && not (cidx = minNullaryIdx) then
+                        []
+                    else
+                        let fields =
+                            alt.FieldDefs |> Array.map (mkUnionCaseFieldIdAndAttrs g) |> Array.toList
 
-                    let ctor =
-                        // Structs with fields are created using static makers methods
-                        // Structs without fields can share constructor for the 'tag' value, we just create one
-                        if isStruct && not (cidx = minNullaryIdx) then
-                            []
-                        else
-                            let fields =
-                                alt.FieldDefs |> Array.map (mkUnionCaseFieldIdAndAttrs g) |> Array.toList
+                        [
+                            (mkILSimpleStorageCtor (
+                                baseInit,
+                                baseTy,
+                                [],
+                                (fields @ tagFieldsInObject),
+                                ctorAccess,
+                                cud.DebugPoint,
+                                cud.DebugImports
+                            ))
+                                .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
+                            |> ctx.stampMethodAsGenerated
+                        ]
 
-                            [
-                                (mkILSimpleStorageCtor (
-                                    baseInit,
-                                    baseTy,
-                                    [],
-                                    (fields @ tagFieldsInObject),
-                                    ctorAccess,
-                                    cud.DebugPoint,
-                                    cud.DebugImports
-                                ))
-                                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
-                                |> addMethodGeneratedAttrs
-                            ]
+                let fieldDefs = rewriteFieldsForStructFlattening g cud alt isStruct
 
-                    let fieldDefs = rewriteFieldsForStructFlattening g cud alt isStruct
+                let fieldsToBeAddedIntoType =
+                    fieldDefs
+                    |> Array.filter (fun f -> fieldsEmitted.Add(struct (f.LowerName, f.Type)))
 
-                    let fieldsToBeAddedIntoType =
-                        fieldDefs
-                        |> Array.filter (fun f -> fieldsEmitted.Add(struct (f.LowerName, f.Type)))
+                let fields =
+                    fieldsToBeAddedIntoType
+                    |> Array.map (mkUnionCaseFieldIdAndAttrs g)
+                    |> Array.toList
 
-                    let fields =
+                let props, meths =
+                    mkMethodsAndPropertiesForFields
+                        (ctx.stampMethodAsGenerated, ctx.stampPropertyAsGenerated)
+                        g
+                        cud.UnionCasesAccessibility
+                        cud.DebugPoint
+                        cud.DebugImports
+                        cud.HasHelpers
+                        baseTy
                         fieldsToBeAddedIntoType
-                        |> Array.map (mkUnionCaseFieldIdAndAttrs g)
-                        |> Array.toList
 
-                    let props, meths =
-                        mkMethodsAndPropertiesForFields
-                            (addMethodGeneratedAttrs, addPropertyGeneratedAttrs)
-                            g
-                            cud.UnionCasesAccessibility
-                            cud.DebugPoint
-                            cud.DebugImports
-                            cud.HasHelpers
-                            baseTy
-                            fieldsToBeAddedIntoType
+                yield (fields, (ctor @ meths), props)
+    ]
+    |> List.unzip3
+    |> (fun (a, b, c) -> List.concat a, List.concat b, List.concat c)
 
-                    yield (fields, (ctor @ meths), props)
-        ]
-        |> List.unzip3
-        |> (fun (a, b, c) -> List.concat a, List.concat b, List.concat c)
+/// Compute the root class default constructor (when needed).
+let private emitRootConstructors (ctx: TypeDefContext) selfFields tagFieldsInObject selfMeths =
+    let g = ctx.g
+    let td = ctx.td
+    let cud = ctx.cud
+    let baseTy = ctx.baseTy
+    let repr = cudefRepr
+    let info = (td, cud)
 
-    let selfAndTagFields =
+    if
+        (List.isEmpty selfFields
+         && List.isEmpty tagFieldsInObject
+         && not (List.isEmpty selfMeths))
+        || td.IsStruct
+        || cud.UnionCases
+           |> Array.forall (fun alt -> repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt))
+    then
+        []
+    else
+        let baseTySpec =
+            (match td.Extends.Value with
+             | None -> g.ilg.typ_Object
+             | Some ilTy -> ilTy)
+                .TypeSpec
+
         [
-            for fldName, fldTy, attrs in (selfFields @ tagFieldsInObject) do
-                let fdef =
-                    let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Assembly)
-
-                    match attrs with
-                    | [] -> fdef
-                    | attrs -> fdef.With(customAttrs = mkILCustomAttrs attrs)
-
-                    |> addFieldNeverAttrs
-                    |> addFieldGeneratedAttrs
-
-                yield fdef.WithInitOnly(not isStruct && isTotallyImmutable)
+            (mkILSimpleStorageCtor (
+                Some baseTySpec,
+                baseTy,
+                [],
+                tagFieldsInObject,
+                ILMemberAccess.Assembly,
+                cud.DebugPoint,
+                cud.DebugImports
+            ))
+                .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x7E0 baseTy ])
+            |> ctx.stampMethodAsGenerated
         ]
 
-    let ctorMeths =
-        if
-            (List.isEmpty selfFields
-             && List.isEmpty tagFieldsInObject
-             && not (List.isEmpty selfMeths))
-            || isStruct
-            || cud.UnionCases
-               |> Array.forall (fun alt -> repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt))
-        then
+/// Generate static constructor code to initialize nullary case singleton fields.
+let private emitConstFieldInitializers
+    (ctx: TypeDefContext)
+    (altNullaryFields: ((ILTypeDef * IlxUnionInfo) * IlxUnionCase * ILType * int * ILFieldDef * bool) list)
+    =
+    let g = ctx.g
+    let cud = ctx.cud
+    let baseTy = ctx.baseTy
+    let cuspec = ctx.cuspec
+    let repr = cudefRepr
 
-            [] (* no need for a second ctor in these cases *)
-
-        else
-            let baseTySpec =
-                (match td.Extends.Value with
-                 | None -> g.ilg.typ_Object
-                 | Some ilTy -> ilTy)
-                    .TypeSpec
-
-            [
-                (mkILSimpleStorageCtor (
-                    Some baseTySpec,
-                    baseTy,
-                    [],
-                    tagFieldsInObject,
-                    ILMemberAccess.Assembly,
-                    cud.DebugPoint,
-                    cud.DebugImports
-                ))
-                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x7E0 baseTy ])
-                |> addMethodGeneratedAttrs
-            ]
-
-    // Now initialize the constant fields wherever they are stored...
-    let addConstFieldInit cd =
+    fun (cd: ILTypeDef) ->
         if List.isEmpty altNullaryFields then
             cd
         else
@@ -1860,101 +1808,152 @@ let mkClassUnionDef
                 cud.DebugImports
                 cd
 
-    let tagMeths, tagProps, tagEnumFields =
-        let tagFieldType = mkTagFieldType g.ilg cuspec
+/// Create the Tag property, get_Tag method, and Tags enum-like constants.
+let private emitTagInfrastructure (ctx: TypeDefContext) =
+    let g = ctx.g
+    let cud = ctx.cud
+    let baseTy = ctx.baseTy
+    let cuspec = ctx.cuspec
+    let repr = cudefRepr
+    let info = (ctx.td, cud)
 
-        let tagEnumFields =
-            cud.UnionCases
-            |> Array.mapi (fun num alt -> mkILLiteralField (alt.Name, tagFieldType, ILFieldInit.Int32 num, None, ILMemberAccess.Public))
-            |> Array.toList
+    let tagFieldType = mkTagFieldType g.ilg cuspec
 
-        let tagMeths, tagProps =
+    let tagEnumFields =
+        cud.UnionCases
+        |> Array.mapi (fun num alt -> mkILLiteralField (alt.Name, tagFieldType, ILFieldInit.Int32 num, None, ILMemberAccess.Public))
+        |> Array.toList
 
-            let code =
-                genWith (fun cg ->
-                    emitLdDataTagPrim g.ilg (Some mkLdarg0) cg (true, cuspec)
-                    cg.EmitInstr I_ret)
+    let tagMeths, tagProps =
 
-            let body = mkMethodBody (true, [], 2, code, cud.DebugPoint, cud.DebugImports)
-            // // If we are using NULL as a representation for an element of this type then we cannot
-            // // use an instance method
-            if (repr.RepresentOneAlternativeAsNull info) then
-                [
-                    mkILNonGenericStaticMethod (
-                        "Get" + tagPropertyName,
-                        cud.HelpersAccessibility,
-                        [ mkILParamAnon baseTy ],
-                        mkILReturn tagFieldType,
-                        body
-                    )
-                    |> addMethodGeneratedAttrs
-                ],
-                []
+        let code =
+            genWith (fun cg ->
+                emitLdDataTagPrim g.ilg (Some mkLdarg0) cg (true, cuspec)
+                cg.EmitInstr I_ret)
 
-            else
-                [
-                    mkILNonGenericInstanceMethod ("get_" + tagPropertyName, cud.HelpersAccessibility, [], mkILReturn tagFieldType, body)
-                    |> addMethodGeneratedAttrs
-                ],
+        let body = mkMethodBody (true, [], 2, code, cud.DebugPoint, cud.DebugImports)
 
-                [
-                    ILPropertyDef(
-                        name = tagPropertyName,
-                        attributes = PropertyAttributes.None,
-                        setMethod = None,
-                        getMethod =
-                            Some(mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + tagPropertyName, 0, [], tagFieldType)),
-                        callingConv = ILThisConvention.Instance,
-                        propertyType = tagFieldType,
-                        init = None,
-                        args = [],
-                        customAttrs = emptyILCustomAttrs
-                    )
-                    |> addPropertyGeneratedAttrs
-                    |> addPropertyNeverAttrs
-                ]
+        // If we are using NULL as a representation for an element of this type then we cannot
+        // use an instance method
+        if repr.RepresentOneAlternativeAsNull info then
+            [
+                mkILNonGenericStaticMethod (
+                    "Get" + tagPropertyName,
+                    cud.HelpersAccessibility,
+                    [ mkILParamAnon baseTy ],
+                    mkILReturn tagFieldType,
+                    body
+                )
+                |> ctx.stampMethodAsGenerated
+            ],
+            []
 
-        tagMeths, tagProps, tagEnumFields
+        else
+            [
+                mkILNonGenericInstanceMethod ("get_" + tagPropertyName, cud.HelpersAccessibility, [], mkILReturn tagFieldType, body)
+                |> ctx.stampMethodAsGenerated
+            ],
 
-    // The class can be abstract if each alternative is represented by a derived type
-    let isAbstract = (altTypeDefs.Length = cud.UnionCases.Length)
+            [
+                ILPropertyDef(
+                    name = tagPropertyName,
+                    attributes = PropertyAttributes.None,
+                    setMethod = None,
+                    getMethod = Some(mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + tagPropertyName, 0, [], tagFieldType)),
+                    callingConv = ILThisConvention.Instance,
+                    propertyType = tagFieldType,
+                    init = None,
+                    args = [],
+                    customAttrs = emptyILCustomAttrs
+                )
+                |> ctx.stampPropertyAsGenerated
+                |> ctx.stampPropertyAsNever
+            ]
+
+    tagMeths, tagProps, tagEnumFields
+
+/// Compute instance fields from selfFields and tagFieldsInObject.
+/// Compute instance fields from selfFields and tagFieldsInObject.
+let private computeSelfAndTagFields (ctx: TypeDefContext) selfFields (tagFieldsInObject: (string * ILType * ILAttribute list) list) =
+    let isStruct = ctx.td.IsStruct
+    let isTotallyImmutable = (ctx.cud.HasHelpers <> SpecialFSharpListHelpers)
+
+    [
+        for fldName, fldTy, attrs in (selfFields @ tagFieldsInObject) do
+            let fdef =
+                let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Assembly)
+
+                match attrs with
+                | [] -> fdef
+                | attrs -> fdef.With(customAttrs = mkILCustomAttrs attrs)
+
+                |> ctx.stampFieldAsNever
+                |> ctx.stampFieldAsGenerated
+
+            yield fdef.WithInitOnly(not isStruct && isTotallyImmutable)
+    ]
+
+/// Compute the nested Tags type definition (elided when ≤1 case).
+let private computeEnumTypeDef (g: TcGlobals) (td: ILTypeDef) (cud: IlxUnionInfo) tagEnumFields =
+    if List.length tagEnumFields <= 1 then
+        None
+    else
+        let tdef =
+            ILTypeDef(
+                name = "Tags",
+                nestedTypes = emptyILTypeDefs,
+                genericParams = td.GenericParams,
+                attributes = enum 0,
+                layout = ILTypeDefLayout.Auto,
+                implements = [],
+                extends = Some g.ilg.typ_Object,
+                methods = emptyILMethods,
+                securityDecls = emptyILSecurityDecls,
+                fields = mkILFields tagEnumFields,
+                methodImpls = emptyILMethodImpls,
+                events = emptyILEvents,
+                properties = emptyILProperties,
+                customAttrs = emptyILCustomAttrsStored
+            )
+                .WithNestedAccess(cud.UnionCasesAccessibility)
+                .WithAbstract(true)
+                .WithSealed(true)
+                .WithImport(false)
+                .WithEncoding(ILDefaultPInvokeEncoding.Ansi)
+                .WithHasSecurity(false)
+
+        Some tdef
+
+/// Assemble all pieces into the final union ILTypeDef.
+let private assembleUnionTypeDef
+    (ctx: TypeDefContext)
+    (results: AlternativeDefResult list)
+    ctorMeths
+    selfMeths
+    selfAndTagFields
+    tagMeths
+    tagProps
+    tagEnumFields
+    selfProps
+    =
+    let g = ctx.g
+    let td = ctx.td
+    let cud = ctx.cud
+
+    let altNullaryFields = results |> List.collect (fun r -> r.NullaryConstFields)
+    let baseMethsFromAlt = results |> List.collect (fun r -> r.BaseMakerMethods)
+    let basePropsFromAlt = results |> List.collect (fun r -> r.BaseMakerProperties)
+    let altUniqObjMeths = results |> List.collect (fun r -> r.ConstantAccessors)
+    let altTypeDefs = results |> List.collect (fun r -> r.NestedTypeDefs)
+    let altDebugTypeDefs = results |> List.collect (fun r -> r.DebugProxyTypeDefs)
+    let enumTypeDef = computeEnumTypeDef g td cud tagEnumFields
+    let addConstFieldInit = emitConstFieldInitializers ctx altNullaryFields
 
     let existingMeths = td.Methods.AsList()
     let existingProps = td.Properties.AsList()
+    let isAbstract = (altTypeDefs.Length = cud.UnionCases.Length)
 
-    let enumTypeDef =
-        // The nested Tags type is elided if there is only one tag
-        // The Tag property is NOT elided if there is only one tag
-        if tagEnumFields.Length <= 1 then
-            None
-        else
-            let tdef =
-                ILTypeDef(
-                    name = "Tags",
-                    nestedTypes = emptyILTypeDefs,
-                    genericParams = td.GenericParams,
-                    attributes = enum 0,
-                    layout = ILTypeDefLayout.Auto,
-                    implements = [],
-                    extends = Some g.ilg.typ_Object,
-                    methods = emptyILMethods,
-                    securityDecls = emptyILSecurityDecls,
-                    fields = mkILFields tagEnumFields,
-                    methodImpls = emptyILMethodImpls,
-                    events = emptyILEvents,
-                    properties = emptyILProperties,
-                    customAttrs = emptyILCustomAttrsStored
-                )
-                    .WithNestedAccess(cud.UnionCasesAccessibility)
-                    .WithAbstract(true)
-                    .WithSealed(true)
-                    .WithImport(false)
-                    .WithEncoding(ILDefaultPInvokeEncoding.Ansi)
-                    .WithHasSecurity(false)
-
-            Some tdef
-
-    let baseTypeDef =
+    let baseTypeDef: ILTypeDef =
         td
             .WithInitSemantics(ILTypeInit.BeforeField)
             .With(
@@ -1987,7 +1986,61 @@ let mkClassUnionDef
                 properties = mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps),
                 customAttrs = rootTypeNullableAttrs g td cud
             )
-        // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
         |> addConstFieldInit
 
     baseTypeDef.WithAbstract(isAbstract).WithSealed(altTypeDefs.IsEmpty)
+
+let mkClassUnionDef
+    (
+        addMethodGeneratedAttrs,
+        addPropertyGeneratedAttrs,
+        addPropertyNeverAttrs,
+        addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef,
+        addFieldNeverAttrs: ILFieldDef -> ILFieldDef,
+        mkDebuggerTypeProxyAttribute
+    )
+    (g: TcGlobals)
+    tref
+    (td: ILTypeDef)
+    cud
+    =
+    let boxity = if td.IsStruct then ILBoxity.AsValue else ILBoxity.AsObject
+    let baseTy = mkILFormalNamedTy boxity tref td.GenericParams
+
+    let cuspec =
+        IlxUnionSpec(IlxUnionRef(boxity, baseTy.TypeRef, cud.UnionCases, cud.IsNullPermitted, cud.HasHelpers), baseTy.GenericArgs)
+
+    let ctx =
+        {
+            g = g
+            layout = classifyFromDef td cud baseTy
+            cuspec = cuspec
+            cud = cud
+            td = td
+            baseTy = baseTy
+            stampMethodAsGenerated = addMethodGeneratedAttrs
+            stampPropertyAsGenerated = addPropertyGeneratedAttrs
+            stampPropertyAsNever = addPropertyNeverAttrs
+            stampFieldAsGenerated = addFieldGeneratedAttrs
+            stampFieldAsNever = addFieldNeverAttrs
+            mkDebuggerTypeProxyAttr = mkDebuggerTypeProxyAttribute
+        }
+
+    let results =
+        cud.UnionCases
+        |> List.ofArray
+        |> List.mapi (fun i alt -> processAlternative ctx i alt)
+
+    let tagFieldsInObject =
+        match cudefRepr.DiscriminationTechnique(td, cud) with
+        | SingleCase
+        | RuntimeTypes
+        | TailOrNull -> []
+        | IntegerTag -> [ let n, t = mkTagFieldId g.ilg cuspec in n, t, [] ]
+
+    let selfFields, selfMeths, selfProps = emitRootClassFields ctx tagFieldsInObject
+    let selfAndTagFields = computeSelfAndTagFields ctx selfFields tagFieldsInObject
+    let ctorMeths = emitRootConstructors ctx selfFields tagFieldsInObject selfMeths
+    let tagMeths, tagProps, tagEnumFields = emitTagInfrastructure ctx
+
+    assembleUnionTypeDef ctx results ctorMeths selfMeths selfAndTagFields tagMeths tagProps tagEnumFields selfProps
