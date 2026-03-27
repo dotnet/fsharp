@@ -102,10 +102,12 @@ let private classifyUnion baseTy (alts: IlxUnionCase[]) nullPermitted isList isS
         match nullAsTrueValueIdx with
         | Some idx -> UnionLayout.SmallRefWithNullAsTrueValue(baseTy, idx)
         | None -> UnionLayout.SmallRef baseTy
-    | _, _, true when allNullary -> UnionLayout.TaggedStructAllNullary baseTy
-    | _, _, true -> UnionLayout.TaggedStruct baseTy
-    | _, _, false when allNullary -> UnionLayout.TaggedRefAllNullary baseTy
-    | _, _, false -> UnionLayout.TaggedRef baseTy
+    | _ ->
+        match isStruct, allNullary with
+        | true, true -> UnionLayout.TaggedStructAllNullary baseTy
+        | true, false -> UnionLayout.TaggedStruct baseTy
+        | false, true -> UnionLayout.TaggedRefAllNullary baseTy
+        | false, false -> UnionLayout.TaggedRef baseTy
 
 /// Classify from an IlxUnionSpec (used in IL instruction generation).
 let classifyFromSpec (cuspec: IlxUnionSpec) =
@@ -334,6 +336,10 @@ let tagPropertyName = "Tag"
 let mkUnionCaseFieldId (fdef: IlxUnionCaseField) =
     // Use the lower case name of a field or constructor as the field/parameter name if it differs from the uppercase name
     fdef.LowerName, fdef.Type
+
+/// Is nullness checking enabled in the compiler settings?
+let inline nullnessCheckingEnabled (g: TcGlobals) =
+    g.checkNullness && g.langFeatureNullness
 
 let inline getFieldsNullability (g: TcGlobals) (ilf: ILFieldDef) =
     if g.checkNullness then
@@ -1153,7 +1159,7 @@ let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: I
     else
         let additionalAttributes =
             match ctx.layout with
-            | ValueTypeLayout when g.checkNullness && g.langFeatureNullness && not alt.IsNullary ->
+            | ValueTypeLayout when nullnessCheckingEnabled g && not alt.IsNullary ->
                 let notnullfields =
                     alt.FieldDefs
                     // Fields that are nullable even from F# perspective has an [Nullable] attribute on them
@@ -1220,7 +1226,7 @@ let private emitNullaryCaseAccessor (ctx: TypeDefContext) (num: int) (alt: IlxUn
 
     let attributes =
         match ctx.layout, num with
-        | CaseIsNull when g.checkNullness && g.langFeatureNullness ->
+        | CaseIsNull when nullnessCheckingEnabled g ->
             let noTypars = td.GenericParams.Length
 
             GetNullableAttribute
@@ -1412,7 +1418,7 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
                 |> ctx.stampMethodAsGenerated
 
             let attrs =
-                if g.checkNullness && g.langFeatureNullness then
+                if nullnessCheckingEnabled g then
                     GetNullableContextAttribute g 1uy :: debugAttrs
                 else
                     debugAttrs
@@ -1497,7 +1503,7 @@ let private processAlternative (ctx: TypeDefContext) (num: int) (alt: IlxUnionCa
 let private rewriteFieldsForStructFlattening (g: TcGlobals) (alt: IlxUnionCase) (layout: UnionLayout) =
     match layout with
     | UnionLayout.TaggedStruct _
-    | UnionLayout.TaggedStructAllNullary _ when g.checkNullness && g.langFeatureNullness ->
+    | UnionLayout.TaggedStructAllNullary _ when nullnessCheckingEnabled g ->
         alt.FieldDefs
         |> Array.map (fun field ->
             if field.Type.IsNominal && field.Type.Boxity = AsValue then
@@ -1540,7 +1546,7 @@ let private rewriteFieldsForStructFlattening (g: TcGlobals) (alt: IlxUnionCase) 
 
 /// Add [Nullable(2)] attribute to union root type when null is permitted.
 let private rootTypeNullableAttrs (g: TcGlobals) (td: ILTypeDef) (cud: IlxUnionInfo) =
-    if cud.IsNullPermitted && g.checkNullness && g.langFeatureNullness then
+    if cud.IsNullPermitted && nullnessCheckingEnabled g then
         td.CustomAttrs.AsArray()
         |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
         |> mkILCustomAttrsFromArray
