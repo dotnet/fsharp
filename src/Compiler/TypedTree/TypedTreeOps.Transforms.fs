@@ -3057,9 +3057,6 @@ module internal AttribChecking =
 
         | _ -> ValueNone
 
-    let mkLabelled m l e =
-        mkCompGenSequential m (Expr.Op(TOp.Label l, [], [], m)) e
-
     let isResumableCodeTy g ty =
         ty
         |> stripTyEqns g

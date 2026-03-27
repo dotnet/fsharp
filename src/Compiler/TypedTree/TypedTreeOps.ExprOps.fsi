@@ -476,6 +476,9 @@ module internal Makers =
 
     val destIDelegateEventType: TcGlobals -> TType -> TType
 
+    /// Add a label to use as the target for a goto
+    val mkLabelled: range -> ILCodeLabel -> Expr -> Expr
+
     val mkNullTest: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr
 
     val mkNonNullTest: TcGlobals -> range -> Expr -> Expr

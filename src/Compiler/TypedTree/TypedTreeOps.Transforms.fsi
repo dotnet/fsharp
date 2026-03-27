@@ -343,9 +343,6 @@ module internal AttribChecking =
     [<return: Struct>]
     val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) voption
 
-    /// Add a label to use as the target for a goto
-    val mkLabelled: range -> ILCodeLabel -> Expr -> Expr
-
     /// Any delegate type with ResumableCode attribute, or any function returning such a delegate type
     val isResumableCodeTy: TcGlobals -> TType -> bool
 

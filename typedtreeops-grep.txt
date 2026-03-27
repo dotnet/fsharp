@@ -1,0 +1,1097 @@
+===== src/Compiler/TypedTree/TypedTreeOps.Remap.fsi =====
+20:module internal TypeRemapping =
+22:    val inline compareBy: x: ('T | null) -> y: ('T | null) -> func: ('T -> 'K) -> int when 'K: comparison
+106:    val emptyTyconRefRemap: TyconRefRemap
+108:    val emptyTyparInst: TyparInstantiation
+120:    val emptyRemap: Remap
+122:    val addTyconRefRemap: TyconRef -> TyconRef -> Remap -> Remap
+124:    val isRemapEmpty: Remap -> bool
+126:    val instTyparRef: tpinst: (Typar * 'a) list -> ty: 'a -> tp: Typar -> 'a
+129:    val remapTyconRef: TyconRefMap<TyconRef> -> TyconRef -> TyconRef
+132:    val remapUnionCaseRef: TyconRefMap<TyconRef> -> UnionCaseRef -> UnionCaseRef
+135:    val remapRecdFieldRef: TyconRefMap<TyconRef> -> RecdFieldRef -> RecdFieldRef
+137:    val mkTyparInst: Typars -> TTypes -> TyparInstantiation
+139:    val generalizeTypar: Typar -> TType
+142:    val generalizeTypars: Typars -> TypeInst
+144:    val remapTypeAux: Remap -> TType -> TType
+146:    val remapMeasureAux: Remap -> Measure -> Measure
+148:    val remapTupInfoAux: Remap -> TupInfo -> TupInfo
+150:    val remapTypesAux: Remap -> TType list -> TType list
+152:    val remapTyparConstraintsAux: Remap -> TyparConstraint list -> TyparConstraint list
+154:    val remapTraitInfo: Remap -> TraitConstraintInfo -> TraitConstraintInfo
+156:    val bindTypars: tps: 'a list -> tyargs: 'b list -> tpinst: ('a * 'b) list -> ('a * 'b) list
+158:    val copyAndRemapAndBindTyparsFull: (Attrib list -> Attrib list) -> Remap -> Typars -> Typars * Remap
+160:    val copyAndRemapAndBindTypars: Remap -> Typars -> Typars * Remap
+162:    val remapValLinkage: Remap -> ValLinkageFullKey -> ValLinkageFullKey
+164:    val remapNonLocalValRef: Remap -> NonLocalValOrMemberRef -> NonLocalValOrMemberRef
+167:    val remapValRef: Remap -> ValRef -> ValRef
+169:    val remapType: Remap -> TType -> TType
+171:    val remapTypes: Remap -> TType list -> TType list
+174:    val remapTypeFull: (Attrib list -> Attrib list) -> Remap -> TType -> TType
+176:    val remapParam: Remap -> SlotParam -> SlotParam
+178:    val remapSlotSig: (Attrib list -> Attrib list) -> Remap -> SlotSig -> SlotSig
+180:    val mkInstRemap: TyparInstantiation -> Remap
+182:    val instType: TyparInstantiation -> TType -> TType
+184:    val instTypes: TyparInstantiation -> TypeInst -> TypeInst
+186:    val instTrait: TyparInstantiation -> TraitConstraintInfo -> TraitConstraintInfo
+188:    val instTyparConstraints: TyparInstantiation -> TyparConstraint list -> TyparConstraint list
+191:    val instSlotSig: TyparInstantiation -> SlotSig -> SlotSig
+194:    val copySlotSig: SlotSig -> SlotSig
+196:    val mkTyparToTyparRenaming: Typars -> Typars -> TyparInstantiation * TTypes
+198:    val mkTyconInst: Tycon -> TypeInst -> TyparInstantiation
+200:    val mkTyconRefInst: TyconRef -> TypeInst -> TyparInstantiation
+203:module internal TypeConstruction =
+206:    val tyconRefEq: TcGlobals -> TyconRef -> TyconRef -> bool
+209:    val valRefEq: TcGlobals -> ValRef -> ValRef -> bool
+211:    val reduceTyconRefAbbrevMeasureable: TyconRef -> Measure
+213:    val stripUnitEqnsFromMeasureAux: bool -> Measure -> Measure
+215:    val stripUnitEqnsFromMeasure: Measure -> Measure
+217:    val MeasureExprConExponent: TcGlobals -> bool -> TyconRef -> Measure -> Rational
+219:    val MeasureConExponentAfterRemapping: TcGlobals -> (TyconRef -> TyconRef) -> TyconRef -> Measure -> Rational
+221:    val MeasureVarExponent: Typar -> Measure -> Rational
+223:    val ListMeasureVarOccs: Measure -> Typar list
+225:    val ListMeasureVarOccsWithNonZeroExponents: Measure -> (Typar * Rational) list
+227:    val ListMeasureConOccsWithNonZeroExponents: TcGlobals -> bool -> Measure -> (TyconRef * Rational) list
+229:    val ListMeasureConOccsAfterRemapping: TcGlobals -> (TyconRef -> TyconRef) -> Measure -> TyconRef list
+231:    val MeasurePower: Measure -> int -> Measure
+233:    val MeasureProdOpt: Measure -> Measure -> Measure
+235:    val ProdMeasures: Measure list -> Measure
+237:    val isDimensionless: TcGlobals -> TType -> bool
+239:    val destUnitParMeasure: TcGlobals -> Measure -> Typar
+241:    val isUnitParMeasure: TcGlobals -> Measure -> bool
+243:    val normalizeMeasure: TcGlobals -> Measure -> Measure
+245:    val tryNormalizeMeasureInType: TcGlobals -> TType -> TType
+247:    val mkForallTy: Typars -> TType -> TType
+250:    val mkForallTyIfNeeded: Typars -> TType -> TType
+252:    val (+->): Typars -> TType -> TType
+255:    val mkFunTy: TcGlobals -> TType -> TType -> TType
+258:    val mkIteratedFunTy: TcGlobals -> TTypes -> TType -> TType
+261:    val mkNativePtrTy: TcGlobals -> TType -> TType
+263:    val mkByrefTy: TcGlobals -> TType -> TType
+266:    val mkInByrefTy: TcGlobals -> TType -> TType
+269:    val mkOutByrefTy: TcGlobals -> TType -> TType
+271:    val mkByrefTyWithFlag: TcGlobals -> bool -> TType -> TType
+273:    val mkByref2Ty: TcGlobals -> TType -> TType -> TType
+276:    val mkVoidPtrTy: TcGlobals -> TType
+279:    val mkByrefTyWithInference: TcGlobals -> TType -> TType -> TType
+282:    val mkArrayTy: TcGlobals -> int -> Nullness -> TType -> range -> TType
+285:    val maxTuple: int
+288:    val goodTupleFields: int
+291:    val isCompiledTupleTyconRef: TcGlobals -> TyconRef -> bool
+294:    val mkCompiledTupleTyconRef: TcGlobals -> bool -> int -> TyconRef
+297:    val mkCompiledTupleTy: TcGlobals -> bool -> TTypes -> TType
+300:    val mkOuterCompiledTupleTy: TcGlobals -> bool -> TTypes -> TType
+302:    val applyTyconAbbrev: TType -> Tycon -> TypeInst -> TType
+304:    val reduceTyconAbbrev: Tycon -> TypeInst -> TType
+306:    val reduceTyconRefAbbrev: TyconRef -> TypeInst -> TType
+308:    val reduceTyconMeasureableOrProvided: TcGlobals -> Tycon -> TypeInst -> TType
+310:    val reduceTyconRefMeasureableOrProvided: TcGlobals -> TyconRef -> TypeInst -> TType
+312:    val stripTyEqnsA: TcGlobals -> canShortcut: bool -> TType -> TType
+314:    val stripTyEqns: TcGlobals -> TType -> TType
+317:    val evalTupInfoIsStruct: TupInfo -> bool
+320:    val evalAnonInfoIsStruct: AnonRecdTypeInfo -> bool
+322:    val stripTyEqnsAndErase: bool -> TcGlobals -> TType -> TType
+324:    val stripTyEqnsAndMeasureEqns: TcGlobals -> TType -> TType
+332:    val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
+335:    val stripExnEqns: TyconRef -> Tycon
+337:    val primDestForallTy: TcGlobals -> TType -> Typars * TType
+339:    val destFunTy: TcGlobals -> TType -> TType * TType
+341:    val destAnyTupleTy: TcGlobals -> TType -> TupInfo * TTypes
+343:    val destRefTupleTy: TcGlobals -> TType -> TTypes
+345:    val destStructTupleTy: TcGlobals -> TType -> TTypes
+347:    val destTyparTy: TcGlobals -> TType -> Typar
+349:    val destAnyParTy: TcGlobals -> TType -> Typar
+351:    val destMeasureTy: TcGlobals -> TType -> Measure
+353:    val destAnonRecdTy: TcGlobals -> TType -> AnonRecdTypeInfo * TTypes
+355:    val destStructAnonRecdTy: TcGlobals -> TType -> TTypes
+357:    val isFunTy: TcGlobals -> TType -> bool
+359:    val isForallTy: TcGlobals -> TType -> bool
+361:    val isAnyTupleTy: TcGlobals -> TType -> bool
+363:    val isRefTupleTy: TcGlobals -> TType -> bool
+365:    val isStructTupleTy: TcGlobals -> TType -> bool
+367:    val isAnonRecdTy: TcGlobals -> TType -> bool
+369:    val isStructAnonRecdTy: TcGlobals -> TType -> bool
+371:    val isUnionTy: TcGlobals -> TType -> bool
+373:    val isStructUnionTy: TcGlobals -> TType -> bool
+375:    val isReprHiddenTy: TcGlobals -> TType -> bool
+377:    val isFSharpObjModelTy: TcGlobals -> TType -> bool
+379:    val isRecdTy: TcGlobals -> TType -> bool
+381:    val isFSharpStructOrEnumTy: TcGlobals -> TType -> bool
+383:    val isFSharpEnumTy: TcGlobals -> TType -> bool
+385:    val isTyparTy: TcGlobals -> TType -> bool
+387:    val isAnyParTy: TcGlobals -> TType -> bool
+389:    val isMeasureTy: TcGlobals -> TType -> bool
+391:    val isProvenUnionCaseTy: TType -> bool
+393:    val mkWoNullAppTy: TyconRef -> TypeInst -> TType
+395:    val mkProvenUnionCaseTy: UnionCaseRef -> TypeInst -> TType
+397:    val isAppTy: TcGlobals -> TType -> bool
+399:    val tryAppTy: TcGlobals -> TType -> (TyconRef * TypeInst) voption
+401:    val destAppTy: TcGlobals -> TType -> TyconRef * TypeInst
+403:    val tcrefOfAppTy: TcGlobals -> TType -> TyconRef
+405:    val argsOfAppTy: TcGlobals -> TType -> TypeInst
+407:    val tryTcrefOfAppTy: TcGlobals -> TType -> TyconRef voption
+411:    val tryDestTyparTy: TcGlobals -> TType -> Typar voption
+413:    val tryDestFunTy: TcGlobals -> TType -> (TType * TType) voption
+415:    val tryDestAnonRecdTy: TcGlobals -> TType -> (AnonRecdTypeInfo * TType list) voption
+417:    val tryAnyParTy: TcGlobals -> TType -> Typar voption
+419:    val tryAnyParTyOption: TcGlobals -> TType -> Typar option
+422:    val (|AppTy|_|): TcGlobals -> TType -> (TyconRef * TypeInst) voption
+425:    val (|RefTupleTy|_|): TcGlobals -> TType -> TTypes voption
+428:    val (|FunTy|_|): TcGlobals -> TType -> (TType * TType) voption
+431:    val tryNiceEntityRefOfTy: TType -> TyconRef voption
+433:    val tryNiceEntityRefOfTyOption: TType -> TyconRef option
+435:    val mkInstForAppTy: TcGlobals -> TType -> TyparInstantiation
+437:    val domainOfFunTy: TcGlobals -> TType -> TType
+439:    val rangeOfFunTy: TcGlobals -> TType -> TType
+442:    val convertToTypeWithMetadataIfPossible: TcGlobals -> TType -> TType
+444:    val stripMeasuresFromTy: TcGlobals -> TType -> TType
+446:    val mkAnyTupledTy: TcGlobals -> TupInfo -> TType list -> TType
+448:    val mkAnyAnonRecdTy: TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
+450:    val mkRefTupledTy: TcGlobals -> TType list -> TType
+452:    val mkRefTupledVarsTy: TcGlobals -> Val list -> TType
+454:    val mkMethodTy: TcGlobals -> TType list list -> TType -> TType
+457:    val mkArrayType: TcGlobals -> TType -> TType
+459:    val mkByteArrayTy: TcGlobals -> TType
+461:    val isQuotedExprTy: TcGlobals -> TType -> bool
+463:    val destQuotedExprTy: TcGlobals -> TType -> TType
+465:    val mkQuotedExprTy: TcGlobals -> TType -> TType
+467:    val mkRawQuotedExprTy: TcGlobals -> TType
+469:    val mkIEventType: TcGlobals -> TType -> TType -> TType
+471:    val mkIObservableType: TcGlobals -> TType -> TType
+473:    val mkIObserverType: TcGlobals -> TType -> TType
+475:    val mkSeqTy: TcGlobals -> TType -> TType
+477:    val mkIEnumeratorTy: TcGlobals -> TType -> TType
+480:module internal TypeEquivalence =
+501:    val traitsAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TraitConstraintInfo -> TraitConstraintInfo -> bool
+503:    val traitKeysAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TraitWitnessInfo -> TraitWitnessInfo -> bool
+505:    val returnTypesAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType option -> TType option -> bool
+507:    val typarConstraintsAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TyparConstraint -> TyparConstraint -> bool
+509:    val typarConstraintSetsAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> Typar -> Typar -> bool
+511:    val typarsAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
+513:    val tcrefAEquiv: TcGlobals -> TypeEquivEnv -> TyconRef -> TyconRef -> bool
+515:    val typeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
+517:    val anonInfoEquiv: AnonRecdTypeInfo -> AnonRecdTypeInfo -> bool
+519:    val structnessAEquiv: TupInfo -> TupInfo -> bool
+521:    val measureAEquiv: TcGlobals -> TypeEquivEnv -> Measure -> Measure -> bool
+523:    val typesAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType list -> TType list -> bool
+526:    val typeEquivAux: Erasure -> TcGlobals -> TType -> TType -> bool
+528:    val typeAEquiv: TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
+531:    val typeEquiv: TcGlobals -> TType -> TType -> bool
+533:    val traitsAEquiv: TcGlobals -> TypeEquivEnv -> TraitConstraintInfo -> TraitConstraintInfo -> bool
+535:    val traitKeysAEquiv: TcGlobals -> TypeEquivEnv -> TraitWitnessInfo -> TraitWitnessInfo -> bool
+537:    val typarConstraintsAEquiv: TcGlobals -> TypeEquivEnv -> TyparConstraint -> TyparConstraint -> bool
+539:    val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
+542:    val isConstraintAllowedAsExtra: TyparConstraint -> bool
+546:    val typarsAEquivWithAddedNotNullConstraintsAllowed: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
+548:    val returnTypesAEquiv: TcGlobals -> TypeEquivEnv -> TType option -> TType option -> bool
+551:    val measureEquiv: TcGlobals -> Measure -> Measure -> bool
+
+===== src/Compiler/TypedTree/TypedTreeOps.ExprConstruction.fsi =====
+20:module internal ExprConstruction =
+23:    val valOrder: IComparer<Val>
+26:    val tyconOrder: IComparer<Tycon>
+28:    val recdFieldRefOrder: IComparer<RecdFieldRef>
+30:    val unionCaseRefOrder: IComparer<UnionCaseRef>
+32:    val mkLambdaTy: TcGlobals -> Typars -> TTypes -> TType -> TType
+34:    val mkLambdaArgTy: range -> TTypes -> TType
+37:    val typeOfLambdaArg: range -> Val list -> TType
+40:    val mkMultiLambdaTy: TcGlobals -> range -> Val list -> TType -> TType
+43:    val ensureCcuHasModuleOrNamespaceAtPath: CcuThunk -> Ident list -> CompilationPath -> XmlDoc -> unit
+46:    val stripExpr: Expr -> Expr
+49:    val stripDebugPoints: Expr -> Expr
+52:    val (|DebugPoints|): Expr -> Expr * (Expr -> Expr)
+54:    val mkCase: DecisionTreeTest * DecisionTree -> DecisionTreeCase
+56:    val isRefTupleExpr: Expr -> bool
+58:    val tryDestRefTupleExpr: Expr -> Exprs
+60:    val primMkMatch: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget array * range * TType -> Expr
+81:    val mkBoolSwitch: range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
+84:    val primMkCond: DebugPointAtBinding -> range -> TType -> Expr -> Expr -> Expr -> Expr
+87:    val mkCond: DebugPointAtBinding -> range -> TType -> Expr -> Expr -> Expr -> Expr
+90:    val exprForValRef: range -> ValRef -> Expr
+94:    val exprForVal: range -> Val -> Expr
+96:    val mkLocalAux: range -> string -> TType -> ValMutability -> bool -> Val * Expr
+99:    val mkLocal: range -> string -> TType -> Val * Expr
+102:    val mkCompGenLocal: range -> string -> TType -> Val * Expr
+105:    val mkMutableCompGenLocal: range -> string -> TType -> Val * Expr
+108:    val mkMultiLambda: range -> Val list -> Expr * TType -> Expr
+111:    val rebuildLambda: range -> Val option -> Val option -> Val list -> Expr * TType -> Expr
+114:    val mkLambda: range -> Val -> Expr * TType -> Expr
+117:    val mkTypeLambda: range -> Typars -> Expr * TType -> Expr
+120:    val mkTypeChoose: range -> Typars -> Expr -> Expr
+123:    val mkObjExpr: TType * Val option * Expr * ObjExprMethod list * (TType * ObjExprMethod list) list * range -> Expr
+126:    val mkLambdas: TcGlobals -> range -> Typars -> Val list -> Expr * TType -> Expr
+129:    val mkMultiLambdasCore: TcGlobals -> range -> Val list list -> Expr * TType -> Expr * TType
+132:    val mkMultiLambdas: TcGlobals -> range -> Typars -> Val list list -> Expr * TType -> Expr
+135:    val mkMemberLambdas:
+139:    val mkMultiLambdaBind:
+143:    val mkBind: DebugPointAtBinding -> Val -> Expr -> Binding
+146:    val mkLetBind: range -> Binding -> Expr -> Expr
+149:    val mkLetsBind: range -> Binding list -> Expr -> Expr
+152:    val mkLetsFromBindings: range -> Bindings -> Expr -> Expr
+155:    val mkLet: DebugPointAtBinding -> range -> Val -> Expr -> Expr -> Expr
+160:    val mkCompGenBind: Val -> Expr -> Binding
+164:    val mkCompGenBinds: Val list -> Exprs -> Bindings
+168:    val mkCompGenLet: range -> Val -> Expr -> Expr -> Expr
+172:    val mkInvisibleBind: Val -> Expr -> Binding
+176:    val mkInvisibleBinds: Vals -> Exprs -> Bindings
+180:    val mkInvisibleLet: range -> Val -> Expr -> Expr -> Expr
+182:    val mkInvisibleLets: range -> Vals -> Exprs -> Expr -> Expr
+184:    val mkInvisibleLetsFromBindings: range -> Vals -> Exprs -> Expr -> Expr
+187:    val mkLetRecBinds: range -> Bindings -> Expr -> Expr
+189:    val NormalizeDeclaredTyparsForEquiRecursiveInference: TcGlobals -> Typars -> Typars
+199:    val mkGenericBindRhs: TcGlobals -> range -> Typars -> GeneralizedType -> Expr -> Expr
+202:    val isBeingGeneralized: Typar -> GeneralizedType -> bool
+204:    val mkBool: TcGlobals -> range -> bool -> Expr
+206:    val mkTrue: TcGlobals -> range -> Expr
+208:    val mkFalse: TcGlobals -> range -> Expr
+211:    val mkLazyOr: TcGlobals -> range -> Expr -> Expr -> Expr
+214:    val mkLazyAnd: TcGlobals -> range -> Expr -> Expr -> Expr
+216:    val mkCoerceExpr: Expr * TType * range * TType -> Expr
+219:    val mkAsmExpr: ILInstr list * TypeInst * Exprs * TTypes * range -> Expr
+222:    val mkUnionCaseExpr: UnionCaseRef * TypeInst * Exprs * range -> Expr
+225:    val mkExnExpr: TyconRef * Exprs * range -> Expr
+227:    val mkTupleFieldGetViaExprAddr: TupInfo * Expr * TypeInst * int * range -> Expr
+230:    val mkAnonRecdFieldGetViaExprAddr: AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
+233:    val mkRecdFieldGetViaExprAddr: Expr * RecdFieldRef * TypeInst * range -> Expr
+236:    val mkRecdFieldGetAddrViaExprAddr: readonly: bool * Expr * RecdFieldRef * TypeInst * range -> Expr
+239:    val mkStaticRecdFieldGetAddr: readonly: bool * RecdFieldRef * TypeInst * range -> Expr
+242:    val mkStaticRecdFieldGet: RecdFieldRef * TypeInst * range -> Expr
+245:    val mkStaticRecdFieldSet: RecdFieldRef * TypeInst * Expr * range -> Expr
+248:    val mkArrayElemAddress:
+252:    val mkRecdFieldSetViaExprAddr: Expr * RecdFieldRef * TypeInst * Expr * range -> Expr
+255:    val mkUnionCaseTagGetViaExprAddr: Expr * TyconRef * TypeInst * range -> Expr
+258:    val mkUnionCaseProof: Expr * UnionCaseRef * TypeInst * range -> Expr
+263:    val mkUnionCaseFieldGetProvenViaExprAddr: Expr * UnionCaseRef * TypeInst * int * range -> Expr
+268:    val mkUnionCaseFieldGetAddrProvenViaExprAddr: readonly: bool * Expr * UnionCaseRef * TypeInst * int * range -> Expr
+273:    val mkUnionCaseFieldGetUnprovenViaExprAddr: Expr * UnionCaseRef * TypeInst * int * range -> Expr
+275:    val mkUnionCaseFieldSet: Expr * UnionCaseRef * TypeInst * int * Expr * range -> Expr
+278:    val mkExnCaseFieldGet: Expr * TyconRef * int * range -> Expr
+281:    val mkExnCaseFieldSet: Expr * TyconRef * int * Expr * range -> Expr
+283:    val mkDummyLambda: TcGlobals -> Expr * TType -> Expr
+286:    val mkWhile: TcGlobals -> DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range -> Expr
+289:    val mkIntegerForLoop:
+293:    val mkTryWith:
+295:        Expr (* filter val *) *
+297:        Expr (* handler val *) *
+307:    val mkTryFinally: TcGlobals -> Expr * Expr * range * TType * DebugPointAtTry * DebugPointAtFinally -> Expr
+309:    val mkDefault: range * TType -> Expr
+313:    val mkValSet: range -> ValRef -> Expr -> Expr
+317:    val mkAddrSet: range -> ValRef -> Expr -> Expr
+321:    val mkAddrGet: range -> ValRef -> Expr
+325:    val mkValAddr: range -> readonly: bool -> ValRef -> Expr
+328:module internal CollectionTypes =
+375:module internal TypeTesters =
+378:    val tryRescopeEntity: CcuThunk -> Entity -> EntityRef voption
+381:    val tryRescopeVal: CcuThunk -> Remap -> Val -> ValRef voption
+383:    val actualTyOfRecdField: TyparInstantiation -> RecdField -> TType
+385:    val actualTysOfRecdFields: TyparInstantiation -> RecdField list -> TType list
+387:    val actualTysOfInstanceRecdFields: TyparInstantiation -> TyconRef -> TType list
+389:    val actualTysOfUnionCaseFields: TyparInstantiation -> UnionCaseRef -> TType list
+391:    val actualResultTyOfUnionCase: TypeInst -> UnionCaseRef -> TType
+393:    val recdFieldsOfExnDefRef: TyconRef -> RecdField list
+395:    val recdFieldOfExnDefRefByIdx: TyconRef -> int -> RecdField
+397:    val recdFieldTysOfExnDefRef: TyconRef -> TType list
+399:    val recdFieldTyOfExnDefRefByIdx: TyconRef -> int -> TType
+401:    val actualTyOfRecdFieldForTycon: Tycon -> TypeInst -> RecdField -> TType
+403:    val actualTyOfRecdFieldRef: RecdFieldRef -> TypeInst -> TType
+405:    val actualTyOfUnionFieldRef: UnionCaseRef -> int -> TypeInst -> TType
+407:    val destForallTy: TcGlobals -> TType -> Typars * TType
+409:    val tryDestForallTy: TcGlobals -> TType -> Typars * TType
+411:    val stripFunTy: TcGlobals -> TType -> TType list * TType
+413:    val applyForallTy: TcGlobals -> TType -> TypeInst -> TType
+415:    val reduceIteratedFunTy: TcGlobals -> TType -> 'T list -> TType
+417:    val applyTyArgs: TcGlobals -> TType -> TType list -> TType
+419:    val applyTys: TcGlobals -> TType -> TType list * 'T list -> TType
+421:    val formalApplyTys: TcGlobals -> TType -> 'a list * 'b list -> TType
+423:    val stripFunTyN: TcGlobals -> int -> TType -> TType list * TType
+425:    val tryDestAnyTupleTy: TcGlobals -> TType -> TupInfo * TType list
+427:    val tryDestRefTupleTy: TcGlobals -> TType -> TType list
+435:    val GetTopTauTypeInFSharpForm: TcGlobals -> ArgReprInfo list list -> TType -> range -> CurriedArgInfos * TType
+437:    val destTopForallTy: TcGlobals -> ValReprInfo -> TType -> Typars * TType
+439:    val GetValReprTypeInFSharpForm:
+442:    val IsCompiledAsStaticProperty: TcGlobals -> Val -> bool
+444:    val IsCompiledAsStaticPropertyWithField: TcGlobals -> Val -> bool
+447:    val isArrayTyconRef: TcGlobals -> TyconRef -> bool
+450:    val rankOfArrayTyconRef: TcGlobals -> TyconRef -> int
+453:    val destArrayTy: TcGlobals -> TType -> TType
+456:    val destListTy: TcGlobals -> TType -> TType
+458:    val tyconRefEqOpt: TcGlobals -> TyconRef option -> TyconRef -> bool
+461:    val isStringTy: TcGlobals -> TType -> bool
+464:    val isListTy: TcGlobals -> TType -> bool
+467:    val isArrayTy: TcGlobals -> TType -> bool
+470:    val isArray1DTy: TcGlobals -> TType -> bool
+473:    val isUnitTy: TcGlobals -> TType -> bool
+476:    val isObjTyAnyNullness: TcGlobals -> TType -> bool
+479:    val isObjNullTy: TcGlobals -> TType -> bool
+482:    val isObjTyWithoutNull: TcGlobals -> TType -> bool
+485:    val isValueTypeTy: TcGlobals -> TType -> bool
+488:    val isVoidTy: TcGlobals -> TType -> bool
+491:    val isILAppTy: TcGlobals -> TType -> bool
+493:    val isNativePtrTy: TcGlobals -> TType -> bool
+495:    val isByrefTy: TcGlobals -> TType -> bool
+497:    val isInByrefTag: TcGlobals -> TType -> bool
+499:    val isInByrefTy: TcGlobals -> TType -> bool
+501:    val isOutByrefTag: TcGlobals -> TType -> bool
+503:    val isOutByrefTy: TcGlobals -> TType -> bool
+506:    val extensionInfoOfTy: TcGlobals -> TType -> TyconRepresentation
+518:    val metadataOfTycon: Tycon -> TypeDefMetadata
+521:    val metadataOfTy: TcGlobals -> TType -> TypeDefMetadata
+523:    val isILReferenceTy: TcGlobals -> TType -> bool
+525:    val isILInterfaceTycon: Tycon -> bool
+528:    val rankOfArrayTy: TcGlobals -> TType -> int
+530:    val isFSharpObjModelRefTy: TcGlobals -> TType -> bool
+532:    val isFSharpClassTy: TcGlobals -> TType -> bool
+534:    val isFSharpStructTy: TcGlobals -> TType -> bool
+536:    val isFSharpInterfaceTy: TcGlobals -> TType -> bool
+539:    val isDelegateTy: TcGlobals -> TType -> bool
+542:    val isInterfaceTy: TcGlobals -> TType -> bool
+545:    val isFSharpDelegateTy: TcGlobals -> TType -> bool
+548:    val isClassTy: TcGlobals -> TType -> bool
+550:    val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
+553:    val isStructRecordOrUnionTyconTy: TcGlobals -> TType -> bool
+556:    val isStructTyconRef: TyconRef -> bool
+559:    val isStructTy: TcGlobals -> TType -> bool
+562:    val isMeasureableValueType: TcGlobals -> TType -> bool
+565:    val isRefTy: TcGlobals -> TType -> bool
+568:    val isForallFunctionTy: TcGlobals -> TType -> bool
+571:    val isUnmanagedTy: TcGlobals -> TType -> bool
+573:    val isInterfaceTycon: Tycon -> bool
+576:    val isInterfaceTyconRef: TyconRef -> bool
+579:    val isEnumTy: TcGlobals -> TType -> bool
+582:    val isSignedIntegerTy: TcGlobals -> TType -> bool
+585:    val isUnsignedIntegerTy: TcGlobals -> TType -> bool
+588:    val isIntegerTy: TcGlobals -> TType -> bool
+591:    val isFpTy: TcGlobals -> TType -> bool
+594:    val isDecimalTy: TcGlobals -> TType -> bool
+597:    val isNonDecimalNumericType: TcGlobals -> TType -> bool
+600:    val isNumericType: TcGlobals -> TType -> bool
+602:    val actualReturnTyOfSlotSig: TypeInst -> TypeInst -> SlotSig -> TType option
+604:    val slotSigHasVoidReturnTy: SlotSig -> bool
+606:    val returnTyOfMethod: TcGlobals -> ObjExprMethod -> TType option
+609:    val isAbstractTycon: Tycon -> bool
+611:    val MemberIsExplicitImpl: TcGlobals -> ValMemberInfo -> bool
+613:    val ValIsExplicitImpl: TcGlobals -> Val -> bool
+615:    val ValRefIsExplicitImpl: TcGlobals -> ValRef -> bool
+618:    val getMeasureOfType: TcGlobals -> TType -> (TyconRef * Measure) option
+621:    val isErasedType: TcGlobals -> TType -> bool
+624:    val getErasedTypes: TcGlobals -> TType -> checkForNullness: bool -> TType list
+627:    val underlyingTypeOfEnumTy: TcGlobals -> TType -> TType
+630:    val normalizeEnumTy: TcGlobals -> TType -> TType
+633:module internal CommonContainers =
+639:    val destByrefTy: TcGlobals -> TType -> TType
+641:    val destNativePtrTy: TcGlobals -> TType -> TType
+643:    val isByrefTyconRef: TcGlobals -> TyconRef -> bool
+645:    val isRefCellTy: TcGlobals -> TType -> bool
+648:    val destRefCellTy: TcGlobals -> TType -> TType
+651:    val mkRefCellTy: TcGlobals -> TType -> TType
+653:    val StripSelfRefCell: TcGlobals * ValBaseOrThisInfo * TType -> TType
+655:    val isBoolTy: TcGlobals -> TType -> bool
+658:    val isValueOptionTy: TcGlobals -> TType -> bool
+661:    val isOptionTy: TcGlobals -> TType -> bool
+664:    val isChoiceTy: TcGlobals -> TType -> bool
+667:    val destOptionTy: TcGlobals -> TType -> TType
+670:    val tryDestOptionTy: TcGlobals -> TType -> TType voption
+673:    val destValueOptionTy: TcGlobals -> TType -> TType
+676:    val tryDestChoiceTy: TcGlobals -> TType -> int -> TType voption
+679:    val destChoiceTy: TcGlobals -> TType -> int -> TType
+682:    val isNullableTy: TcGlobals -> TType -> bool
+685:    val tryDestNullableTy: TcGlobals -> TType -> TType voption
+688:    val destNullableTy: TcGlobals -> TType -> TType
+691:    val isLinqExpressionTy: TcGlobals -> TType -> bool
+694:    val destLinqExpressionTy: TcGlobals -> TType -> TType
+697:    val tryDestLinqExpressionTy: TcGlobals -> TType -> TType option
+699:    val mkLazyTy: TcGlobals -> TType -> TType
+702:    val mkPrintfFormatTy: TcGlobals -> TType -> TType -> TType -> TType -> TType -> TType
+704:    val (|NullableTy|_|): TcGlobals -> TType -> TType voption
+708:    val (|StripNullableTy|): TcGlobals -> TType -> TType
+712:    val (|ByrefTy|_|): TcGlobals -> TType -> TType voption
+714:    val mkListTy: TcGlobals -> TType -> TType
+717:    val mkOptionTy: TcGlobals -> TType -> TType
+720:    val mkValueOptionTy: TcGlobals -> TType -> TType
+723:    val mkNullableTy: TcGlobals -> TType -> TType
+726:    val mkNoneCase: TcGlobals -> UnionCaseRef
+729:    val mkSomeCase: TcGlobals -> UnionCaseRef
+732:    val mkValueNoneCase: TcGlobals -> UnionCaseRef
+735:    val mkValueSomeCase: TcGlobals -> UnionCaseRef
+738:    val mkAnySomeCase: TcGlobals -> isStruct: bool -> UnionCaseRef
+740:    val mkSome: TcGlobals -> TType -> Expr -> range -> Expr
+742:    val mkNone: TcGlobals -> TType -> range -> Expr
+745:    val mkValueSome: TcGlobals -> TType -> Expr -> range -> Expr
+748:    val mkValueNone: TcGlobals -> TType -> range -> Expr
+
+===== src/Compiler/TypedTree/TypedTreeOps.FreeVars.fsi =====
+18:module internal FreeTypeVars =
+20:    val emptyFreeLocals: FreeLocals
+22:    val unionFreeLocals: FreeLocals -> FreeLocals -> FreeLocals
+24:    val emptyFreeRecdFields: Zset<RecdFieldRef>
+26:    val unionFreeRecdFields: Zset<RecdFieldRef> -> Zset<RecdFieldRef> -> Zset<RecdFieldRef>
+28:    val emptyFreeUnionCases: Zset<UnionCaseRef>
+30:    val unionFreeUnionCases: Zset<UnionCaseRef> -> Zset<UnionCaseRef> -> Zset<UnionCaseRef>
+32:    val emptyFreeTycons: FreeTycons
+34:    val unionFreeTycons: FreeTycons -> FreeTycons -> FreeTycons
+37:    val typarOrder: IComparer<Typar>
+39:    val emptyFreeTypars: FreeTypars
+41:    val unionFreeTypars: FreeTypars -> FreeTypars -> FreeTypars
+43:    val emptyFreeTyvars: FreeTyvars
+45:    val isEmptyFreeTyvars: FreeTyvars -> bool
+47:    val unionFreeTyvars: FreeTyvars -> FreeTyvars -> FreeTyvars
+66:    val CollectLocalsNoCaching: FreeVarOptions
+68:    val CollectTyparsNoCaching: FreeVarOptions
+70:    val CollectTyparsAndLocalsNoCaching: FreeVarOptions
+72:    val CollectTyparsAndLocals: FreeVarOptions
+74:    val CollectLocals: FreeVarOptions
+76:    val CollectLocalsWithStackGuard: unit -> FreeVarOptions
+78:    val CollectTyparsAndLocalsWithStackGuard: unit -> FreeVarOptions
+80:    val CollectTypars: FreeVarOptions
+82:    val CollectAllNoCaching: FreeVarOptions
+84:    val CollectAll: FreeVarOptions
+86:    val accFreeInTypes: FreeVarOptions -> TType list -> FreeTyvars -> FreeTyvars
+88:    val accFreeInType: FreeVarOptions -> TType -> FreeTyvars -> FreeTyvars
+90:    val accFreeTycon: FreeVarOptions -> TyconRef -> FreeTyvars -> FreeTyvars
+92:    val boundTypars: FreeVarOptions -> Typars -> FreeTyvars -> FreeTyvars
+94:    val accFreeInTrait: FreeVarOptions -> TraitConstraintInfo -> FreeTyvars -> FreeTyvars
+96:    val accFreeInTraitSln: FreeVarOptions -> TraitConstraintSln -> FreeTyvars -> FreeTyvars
+98:    val accFreeInTupInfo: FreeVarOptions -> TupInfo -> FreeTyvars -> FreeTyvars
+100:    val accFreeInVal: FreeVarOptions -> Val -> FreeTyvars -> FreeTyvars
+102:    val accFreeInTypars: FreeVarOptions -> Typars -> FreeTyvars -> FreeTyvars
+104:    val freeInType: FreeVarOptions -> TType -> FreeTyvars
+106:    val freeInTypes: FreeVarOptions -> TType list -> FreeTyvars
+108:    val freeInVal: FreeVarOptions -> Val -> FreeTyvars
+111:    val freeInTypeLeftToRight: TcGlobals -> bool -> TType -> Typars
+113:    val freeInTypesLeftToRight: TcGlobals -> bool -> TType list -> Typars
+115:    val freeInTypesLeftToRightSkippingConstraints: TcGlobals -> TType list -> Typars
+117:    val freeInModuleTy: ModuleOrNamespaceType -> FreeTyvars
+119:    val valOfBind: Binding -> Val
+122:    val valsOfBinds: Bindings -> Vals
+125:module internal Display =
+127:    val GetMemberTypeInFSharpForm:
+130:    val checkMemberValRef: ValRef -> ValMemberInfo * ValReprInfo
+132:    val generalTyconRefInst: TyconRef -> TypeInst
+134:    val generalizeTyconRef: TcGlobals -> TyconRef -> TTypes * TType
+136:    val generalizedTyconRef: TcGlobals -> TyconRef -> TType
+138:    val GetValReprTypeInCompiledForm:
+146:    val GetFSharpViewOfReturnType: TcGlobals -> TType option -> TType
+152:    val GetTypeOfMemberInFSharpForm: TcGlobals -> ValRef -> Typars * CurriedArgInfos * TType * ArgReprInfo
+154:    val GetTypeOfMemberInMemberForm:
+157:    val GetMemberTypeInMemberForm:
+167:    val PartitionValTyparsForApparentEnclosingType:
+171:    val PartitionValTypars: TcGlobals -> Val -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
+174:    val PartitionValRefTypars:
+178:    val CountEnclosingTyparsOfActualParentOfVal: Val -> int
+180:    val ReturnTypeOfPropertyVal: TcGlobals -> Val -> TType
+182:    val ArgInfosOfPropertyVal: TcGlobals -> Val -> UncurriedArgInfos
+184:    val ArgInfosOfMember: TcGlobals -> ValRef -> CurriedArgInfos
+192:    module PrettyTypes =
+194:        val NeedsPrettyTyparName: Typar -> bool
+196:        val NewPrettyTypars: TyparInstantiation -> Typars -> string list -> Typars * TyparInstantiation
+198:        val PrettyTyparNames: (Typar -> bool) -> string list -> Typars -> string list
+201:        val AssignPrettyTyparNames: Typars -> string list -> unit
+203:        val PrettifyType: TcGlobals -> TType -> TType * TyparConstraintsWithTypars
+205:        val PrettifyInstAndTyparsAndType:
+210:        val PrettifyTypePair: TcGlobals -> TType * TType -> (TType * TType) * TyparConstraintsWithTypars
+212:        val PrettifyTypes: TcGlobals -> TTypes -> TTypes * TyparConstraintsWithTypars
+217:        val PrettifyDiscriminantAndTypePairs:
+220:        val PrettifyInst: TcGlobals -> TyparInstantiation -> TyparInstantiation * TyparConstraintsWithTypars
+222:        val PrettifyInstAndType:
+225:        val PrettifyInstAndTypes:
+228:        val PrettifyInstAndSig:
+233:        val PrettifyCurriedTypes: TcGlobals -> TType list list -> TType list list * TyparConstraintsWithTypars
+235:        val PrettifyCurriedSigTypes:
+238:        val PrettifyInstAndUncurriedSig:
+243:        val PrettifyInstAndCurriedSig:
+312:    val tagEntityRefName: xref: EntityRef -> name: string -> TaggedText
+315:    val fullDisplayTextOfModRef: ModuleOrNamespaceRef -> string
+317:    val fullDisplayTextOfParentOfModRef: ModuleOrNamespaceRef -> string voption
+319:    val fullDisplayTextOfValRef: ValRef -> string
+321:    val fullDisplayTextOfValRefAsLayout: ValRef -> Layout
+323:    val fullDisplayTextOfTyconRef: TyconRef -> string
+325:    val fullDisplayTextOfTyconRefAsLayout: TyconRef -> Layout
+327:    val fullDisplayTextOfExnRef: TyconRef -> string
+329:    val fullDisplayTextOfExnRefAsLayout: TyconRef -> Layout
+331:    val fullDisplayTextOfUnionCaseRef: UnionCaseRef -> string
+333:    val fullDisplayTextOfRecdFieldRef: RecdFieldRef -> string
+335:    val fullMangledPathToTyconRef: TyconRef -> string array
+338:    val qualifiedMangledNameOfTyconRef: TyconRef -> string -> string
+340:    val qualifiedInterfaceImplementationName: TcGlobals -> TType -> string -> string
+342:    val trimPathByDisplayEnv: DisplayEnv -> string list -> string
+344:    val prefixOfStaticReq: TyparStaticReq -> string
+346:    val prefixOfInferenceTypar: Typar -> string
+349:    module SimplifyTypes =
+356:        val typeSimplificationInfo0: TypeSimplificationInfo
+358:        val CollectInfo: bool -> TType list -> TyparConstraintsWithTypars -> TypeSimplificationInfo
+360:    val superOfTycon: TcGlobals -> Tycon -> TType
+363:    val supersOfTyconRef: TyconRef -> TyconRef array
+365:    val GetTraitConstraintInfosOfTypars: TcGlobals -> Typars -> TraitConstraintInfo list
+367:    val GetTraitWitnessInfosOfTypars: TcGlobals -> numParentTypars: int -> typars: Typars -> TraitWitnessInfos
+
+===== src/Compiler/TypedTree/TypedTreeOps.Attributes.fsi =====
+21:module internal ILExtensions =
+23:    val isILAttribByName: string list * string -> ILAttribute -> bool
+25:    val TryDecodeILAttribute: ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+27:    val IsILAttrib: BuiltinAttribInfo -> ILAttribute -> bool
+29:    val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
+31:    val inline hasFlag: flags: ^F -> flag: ^F -> bool when ^F: enum<uint64>
+34:    val classifyILAttrib: attr: ILAttribute -> WellKnownILAttributes
+36:    val computeILWellKnownFlags: _g: TcGlobals -> attrs: ILAttributes -> WellKnownILAttributes
+38:    val tryFindILAttribByFlag:
+42:    val (|ILAttribDecoded|_|):
+66:    val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
+68:    val HasFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool
+70:    val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
+73:    val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr voption
+76:    val (|ExtractILAttributeNamedArg|_|): string -> ILAttributeNamedArg list -> ILAttribElem voption
+79:    val (|StringExpr|_|): (Expr -> string voption)
+82:    val (|AttribInt32Arg|_|): (AttribExpr -> int32 voption)
+85:    val (|AttribInt16Arg|_|): (AttribExpr -> int16 voption)
+88:    val (|AttribBoolArg|_|): (AttribExpr -> bool voption)
+91:    val (|AttribStringArg|_|): (AttribExpr -> string voption)
+93:    val (|AttribElemStringArg|_|): (ILAttribElem -> string option)
+96:module internal AttributeHelpers =
+98:    val computeEntityWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownEntityAttributes
+101:    val classifyEntityAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownEntityAttributes
+104:    val classifyValAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownValAttributes
+107:    val classifyAssemblyAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownAssemblyAttributes
+110:    val attribsHaveEntityFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> bool
+112:    val filterOutWellKnownAttribs:
+119:    val tryFindEntityAttribByFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> Attrib option
+122:    val (|EntityAttrib|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> Attrib voption
+125:    val (|EntityAttribInt|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> int voption
+128:    val (|EntityAttribString|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> string voption
+130:    val attribsHaveValFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> bool
+132:    val tryFindValAttribByFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> Attrib option
+135:    val (|ValAttrib|_|): g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> Attrib voption
+138:    val (|ValAttribInt|_|): g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> int voption
+141:    val (|ValAttribString|_|): g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> string voption
+143:    val EntityHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownEntityAttributes -> entity: Entity -> bool
+146:    val GetEntityWellKnownFlags: g: TcGlobals -> entity: Entity -> WellKnownEntityAttributes
+149:    val mapILFlag:
+152:    val computeValWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownValAttributes
+155:    val ArgReprInfoHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownValAttributes -> argInfo: ArgReprInfo -> bool
+158:    val ValHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownValAttributes -> v: Val -> bool
+161:    val EntityTryGetBoolAttribute:
+169:    val ValTryGetBoolAttribute:
+175:    val TryFindTyconRefStringAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> string option
+179:    val TryFindTyconRefStringAttributeFast:
+183:    val TryFindTyconRefBoolAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool option
+186:    val TyconRefHasAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool
+189:    val TyconRefHasAttributeByName: range -> string -> TyconRef -> bool
+192:    val TyconRefHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownILAttributes -> tcref: TyconRef -> bool
+195:    val TyconRefAllowsNull: g: TcGlobals -> tcref: TyconRef -> bool option
+198:    val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
+201:    val (|AttribBitwiseOrExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption
+204:    val (|EnumExpr|_|): TcGlobals -> Expr -> Expr voption
+207:    val (|TypeOfExpr|_|): TcGlobals -> Expr -> TType voption
+210:    val (|TypeDefOfExpr|_|): TcGlobals -> Expr -> TType voption
+212:    val isNameOfValRef: TcGlobals -> ValRef -> bool
+215:    val (|NameOfExpr|_|): TcGlobals -> Expr -> TType voption
+218:    val (|SeqExpr|_|): TcGlobals -> Expr -> unit voption
+220:    val HasDefaultAugmentationAttribute: g: TcGlobals -> tcref: TyconRef -> bool
+223:    val (|UnopExpr|_|): TcGlobals -> Expr -> (ValRef * Expr) voption
+226:    val (|BinopExpr|_|): TcGlobals -> Expr -> (ValRef * Expr * Expr) voption
+229:    val (|SpecificUnopExpr|_|): TcGlobals -> ValRef -> Expr -> Expr voption
+232:    val (|SpecificBinopExpr|_|): TcGlobals -> ValRef -> Expr -> (Expr * Expr) voption
+235:    val (|SignedConstExpr|_|): Expr -> unit voption
+238:    val (|IntegerConstExpr|_|): Expr -> unit voption
+241:    val (|FloatConstExpr|_|): Expr -> unit voption
+244:    val (|UncheckedDefaultOfExpr|_|): TcGlobals -> Expr -> TType voption
+247:    val (|SizeOfExpr|_|): TcGlobals -> Expr -> TType voption
+249:    val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
+251:    val mkCompilationMappingAttrWithSeqNum: TcGlobals -> int -> int -> ILAttribute
+253:    val mkCompilationMappingAttrWithVariantNumAndSeqNum: TcGlobals -> int -> int -> int -> ILAttribute
+255:    val mkCompilationArgumentCountsAttr: TcGlobals -> int list -> ILAttribute
+257:    val mkCompilationSourceNameAttr: TcGlobals -> string -> ILAttribute
+259:    val mkCompilationMappingAttrForQuotationResource: TcGlobals -> string * ILTypeRef list -> ILAttribute
+263:    val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> (string | null) option
+266:    val IsSignatureDataVersionAttr: ILAttribute -> bool
+268:    val TryFindAutoOpenAttr: ILAttribute -> string option
+270:    val TryFindInternalsVisibleToAttr: ILAttribute -> string option
+272:    val IsMatchingSignatureDataVersionAttr: ILVersionInfo -> ILAttribute -> bool
+274:    val mkSignatureDataVersionAttr: TcGlobals -> ILVersionInfo -> ILAttribute
+278:module internal ByrefAndSpanHelpers =
+280:    val isByrefLikeTyconRef: TcGlobals -> range -> TyconRef -> bool
+282:    val isSpanLikeTyconRef: TcGlobals -> range -> TyconRef -> bool
+284:    val isByrefLikeTy: TcGlobals -> range -> TType -> bool
+287:    val isSpanLikeTy: TcGlobals -> range -> TType -> bool
+289:    val isSpanTy: TcGlobals -> range -> TType -> bool
+291:    val tryDestSpanTy: TcGlobals -> range -> TType -> (TyconRef * TType) option
+293:    val destSpanTy: TcGlobals -> range -> TType -> (TyconRef * TType)
+295:    val isReadOnlySpanTy: TcGlobals -> range -> TType -> bool
+297:    val tryDestReadOnlySpanTy: TcGlobals -> range -> TType -> (TyconRef * TType) option
+299:    val destReadOnlySpanTy: TcGlobals -> range -> TType -> (TyconRef * TType)
+301:module internal DebugPrint =
+304:    val mutable layoutValReprInfo: bool
+307:    val mutable layoutStamps: bool
+310:    val mutable layoutRanges: bool
+313:    val mutable layoutTypes: bool
+316:    val showType: TType -> string
+319:    val showExpr: Expr -> string
+322:    val valRefL: ValRef -> Layout
+325:    val unionCaseRefL: UnionCaseRef -> Layout
+328:    val valAtBindL: Val -> Layout
+331:    val intL: int -> Layout
+334:    val valL: Val -> Layout
+337:    val typarDeclL: Typar -> Layout
+340:    val traitL: TraitConstraintInfo -> Layout
+343:    val typarL: Typar -> Layout
+346:    val typarsL: Typars -> Layout
+349:    val typeL: TType -> Layout
+352:    val slotSigL: SlotSig -> Layout
+354:    /// Debug layout for a module or namespace definition
+355:    val entityL: ModuleOrNamespace -> Layout
+358:    val bindingL: Binding -> Layout
+361:    val exprL: Expr -> Layout
+364:    val tyconL: Tycon -> Layout
+367:    val decisionTreeL: DecisionTree -> Layout
+370:    val implFileL: CheckedImplFile -> Layout
+373:    val implFilesL: CheckedImplFile list -> Layout
+376:    val recdFieldRefL: RecdFieldRef -> Layout
+
+===== src/Compiler/TypedTree/TypedTreeOps.Remapping.fsi =====
+18:module internal SignatureOps =
+20:    /// Wrap one module or namespace definition in a 'module M = ..' outer wrapper
+21:    val wrapModuleOrNamespaceType: Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespace
+23:    /// Wrap one module or namespace definition in a 'namespace N' outer wrapper
+24:    val wrapModuleOrNamespaceTypeInNamespace:
+27:    /// Wrap one module or namespace implementation in a 'namespace N' outer wrapper
+28:    val wrapModuleOrNamespaceContentsInNamespace:
+35:    /// The remapping that corresponds to a module meeting its signature
+42:            /// The list of corresponding modules, namespaces and type definitions
+61:    val ComputeRemappingFromImplementationToSignature:
+65:    val ComputeRemappingFromInferredSignatureToExplicitSignature:
+69:    val ComputeSignatureHidingInfoAtAssemblyBoundary:
+73:    val ComputeImplementationHidingInfoAtAssemblyBoundary:
+76:    val mkRepackageRemapping: SignatureRepackageInfo -> Remap
+78:    val addValRemap: Val -> Val -> Remap -> Remap
+80:    val valLinkageAEquiv: TcGlobals -> TypeEquivEnv -> Val -> Val -> bool
+82:    val abstractSlotValsOfTycons: Tycon list -> Val list
+85:    val DoRemapTycon: (Remap * SignatureHidingInfo) list -> Tycon -> Tycon
+88:    val DoRemapVal: (Remap * SignatureHidingInfo) list -> Val -> Val
+91:    val IsHiddenTycon: (Remap * SignatureHidingInfo) list -> Tycon -> bool
+94:    val IsHiddenTyconRepr: (Remap * SignatureHidingInfo) list -> Tycon -> bool
+97:    val IsHiddenVal: (Remap * SignatureHidingInfo) list -> Val -> bool
+100:    val IsHiddenRecdField: (Remap * SignatureHidingInfo) list -> RecdFieldRef -> bool
+102:    /// Fold over all the value and member definitions in a module or namespace type
+103:    val foldModuleOrNamespaceTy: (Entity -> 'T -> 'T) -> (Val -> 'T -> 'T) -> ModuleOrNamespaceType -> 'T -> 'T
+105:    /// Collect all the values and member definitions in a module or namespace type
+106:    val allValsOfModuleOrNamespaceTy: ModuleOrNamespaceType -> Val list
+108:    /// Collect all the entities in a module or namespace type
+109:    val allEntitiesOfModuleOrNamespaceTy: ModuleOrNamespaceType -> Entity list
+112:    val freeTyvarsAllPublic: FreeTyvars -> bool
+115:    val freeVarsAllPublic: FreeVars -> bool
+118:    val (|LinearMatchExpr|_|):
+121:    val rebuildLinearMatchExpr:
+125:    val (|LinearOpExpr|_|): Expr -> (TOp * TypeInst * Expr list * Expr * range) voption
+127:    val rebuildLinearOpExpr: TOp * TypeInst * Expr list * Expr * range -> Expr
+129:    val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
+132:module internal ExprFreeVars =
+134:    val emptyFreeVars: FreeVars
+136:    val unionFreeVars: FreeVars -> FreeVars -> FreeVars
+138:    val accFreeInTargets: FreeVarOptions -> DecisionTreeTarget array -> FreeVars -> FreeVars
+140:    val accFreeInExprs: FreeVarOptions -> Exprs -> FreeVars -> FreeVars
+142:    val accFreeInSwitchCases: FreeVarOptions -> DecisionTreeCase list -> DecisionTree option -> FreeVars -> FreeVars
+144:    val accFreeInDecisionTree: FreeVarOptions -> DecisionTree -> FreeVars -> FreeVars
+146:    /// Get the free variables in a module definition.
+147:    val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceContents -> FreeVars
+150:    val accFreeInExpr: FreeVarOptions -> Expr -> FreeVars -> FreeVars
+153:    val freeInExpr: FreeVarOptions -> Expr -> FreeVars
+156:    val freeInBindingRhs: FreeVarOptions -> Binding -> FreeVars
+159:module internal ExprRemapping =
+162:    val stripTopLambda: Expr * TType -> Typars * Val list list * Expr * TType
+172:    val InferValReprInfoOfExpr:
+176:    val InferValReprInfoOfBinding: TcGlobals -> AllowTypeDirectedDetupling -> Val -> Expr -> ValReprInfo
+187:    val DecideStaticOptimizations:
+196:        /// Tycon and "module/member" Val objects keep their identity, but the Val objects for all Expr bindings
+204:    val remapExpr: TcGlobals -> ValCopyFlag -> Remap -> Expr -> Expr
+207:    val remapAttrib: TcGlobals -> Remap -> Attrib -> Attrib
+210:    val remapPossibleForallTy: TcGlobals -> Remap -> TType -> TType
+212:    /// Copy an entire module or namespace type using the given copying flags
+213:    val copyModuleOrNamespaceType: TcGlobals -> ValCopyFlag -> ModuleOrNamespaceType -> ModuleOrNamespaceType
+216:    val copyExpr: TcGlobals -> ValCopyFlag -> Expr -> Expr
+219:    val copyImplFile: TcGlobals -> ValCopyFlag -> CheckedImplFile -> CheckedImplFile
+222:    val instExpr: TcGlobals -> TyparInstantiation -> Expr -> Expr
+224:    val allValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
+226:    val allTopLevelValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
+230:    val mkRemapContext: TcGlobals -> StackGuard -> RemapContext
+232:    val tryStripLambdaN: int -> Expr -> (Val list list * Expr) option
+234:    val tmenvCopyRemapAndBindTypars: (Attribs -> Attribs) -> Remap -> Typars -> Typars * Remap
+236:    val remapAttribs: RemapContext -> Remap -> Attribs -> Attribs
+238:    val remapValData: RemapContext -> Remap -> ValData -> ValData
+240:    val mapImmediateValsAndTycons: (Entity -> Entity) -> (Val -> Val) -> ModuleOrNamespaceType -> ModuleOrNamespaceType
+242:    val remapTyconRepr: RemapContext -> Remap -> TyconRepresentation -> TyconRepresentation
+244:    val remapTyconAug: Remap -> TyconAugmentation -> TyconAugmentation
+246:    val remapTyconExnInfo: RemapContext -> Remap -> ExceptionInfo -> ExceptionInfo
+249:module internal ExprShapeQueries =
+253:    val remarkExpr: range -> Expr -> Expr
+255:    val isRecdOrUnionOrStructTyconRefDefinitelyMutable: TyconRef -> bool
+257:    val isUnionCaseRefDefinitelyMutable: UnionCaseRef -> bool
+259:    val isExnDefinitelyMutable: TyconRef -> bool
+261:    val isUnionCaseFieldMutable: TcGlobals -> UnionCaseRef -> int -> bool
+263:    val isExnFieldMutable: TyconRef -> int -> bool
+265:    val useGenuineField: Tycon -> RecdField -> bool
+267:    val ComputeFieldName: Tycon -> RecdField -> string
+269:    val GenWitnessArgTys: TcGlobals -> TraitWitnessInfo -> TType list list
+271:    val GenWitnessTys: TcGlobals -> TraitWitnessInfos -> TType list
+273:    val GenWitnessTy: TcGlobals -> TraitWitnessInfo -> TType
+276:    val tyOfExpr: TcGlobals -> Expr -> TType
+279:    val primMkApp: Expr * TType -> TypeInst -> Exprs -> range -> Expr
+283:    val mkApps: TcGlobals -> (Expr * TType) * TType list list * Exprs * range -> Expr
+285:    val mkExprAppAux: TcGlobals -> Expr -> TType -> Exprs -> range -> Expr
+287:    val mkAppsAux: TcGlobals -> Expr -> TType -> TType list list -> Exprs -> range -> Expr
+291:    val mkTyAppExpr: range -> Expr * TType -> TType list -> Expr
+294:    val accTargetsOfDecisionTree: DecisionTree -> int list -> int list
+298:    val mkAndSimplifyMatch:
+
+===== src/Compiler/TypedTree/TypedTreeOps.ExprOps.fsi =====
+16:module internal AddressOps =
+27:    val isRecdOrStructTyconRefAssumedImmutable: TcGlobals -> TyconRef -> bool
+29:    val isTyconRefReadOnly: TcGlobals -> range -> TyconRef -> bool
+31:    val isRecdOrStructTyconRefReadOnly: TcGlobals -> range -> TyconRef -> bool
+33:    val isRecdOrStructTyReadOnly: TcGlobals -> range -> TType -> bool
+35:    val CanTakeAddressOf: TcGlobals -> range -> bool -> TType -> Mutates -> bool
+37:    val CanTakeAddressOfImmutableVal: TcGlobals -> range -> ValRef -> Mutates -> bool
+39:    val MustTakeAddressOfVal: TcGlobals -> ValRef -> bool
+41:    val MustTakeAddressOfByrefGet: TcGlobals -> ValRef -> bool
+43:    val CanTakeAddressOfByrefGet: TcGlobals -> ValRef -> Mutates -> bool
+45:    val MustTakeAddressOfRecdFieldRef: RecdFieldRef -> bool
+47:    val CanTakeAddressOfRecdFieldRef: TcGlobals -> range -> RecdFieldRef -> TypeInst -> Mutates -> bool
+49:    val CanTakeAddressOfUnionFieldRef: TcGlobals -> range -> UnionCaseRef -> int -> TypeInst -> Mutates -> bool
+52:    val mkDerefAddrExpr: mAddrGet: range -> expr: Expr -> mExpr: range -> exprTy: TType -> Expr
+55:    val mkExprAddrOfExprAux:
+69:    val mkExprAddrOfExpr:
+73:    val mkTupleFieldGet: TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
+76:    val mkAnonRecdFieldGet: TcGlobals -> AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
+80:    val mkRecdFieldGet: TcGlobals -> Expr * RecdFieldRef * TypeInst * range -> Expr
+83:    val mkUnionCaseFieldGetUnproven: TcGlobals -> Expr * UnionCaseRef * TypeInst * int * range -> Expr
+86:module internal ExprFolding =
+89:    val IterateRecursiveFixups:
+98:    val JoinTyparStaticReq: TyparStaticReq -> TyparStaticReq -> TyparStaticReq
+111:    val ExprFolder0: ExprFolder<'State>
+114:    val FoldImplFile: ExprFolder<'State> -> 'State -> CheckedImplFile -> 'State
+117:    val FoldExpr: ExprFolder<'State> -> 'State -> Expr -> 'State
+121:    val ExprStats: Expr -> string
+125:module internal Makers =
+127:    val mkString: TcGlobals -> range -> string -> Expr
+129:    val mkByte: TcGlobals -> range -> byte -> Expr
+131:    val mkUInt16: TcGlobals -> range -> uint16 -> Expr
+133:    val mkUnit: TcGlobals -> range -> Expr
+135:    val mkInt32: TcGlobals -> range -> int32 -> Expr
+137:    val mkInt: TcGlobals -> range -> int -> Expr
+139:    val mkZero: TcGlobals -> range -> Expr
+141:    val mkOne: TcGlobals -> range -> Expr
+143:    val mkTwo: TcGlobals -> range -> Expr
+145:    val mkMinusOne: TcGlobals -> range -> Expr
+148:    val mkTypedZero: g: TcGlobals -> m: range -> ty: TType -> Expr
+151:    val mkTypedOne: g: TcGlobals -> m: range -> ty: TType -> Expr
+153:    val destInt32: Expr -> int32 option
+155:    val mkRefCellContentsRef: TcGlobals -> RecdFieldRef
+157:    val mkSequential: range -> Expr -> Expr -> Expr
+159:    val mkThenDoSequential: range -> expr: Expr -> stmt: Expr -> Expr
+161:    val mkCompGenSequential: range -> stmt: Expr -> expr: Expr -> Expr
+163:    val mkCompGenThenDoSequential: range -> expr: Expr -> stmt: Expr -> Expr
+165:    val mkSequentials: TcGlobals -> range -> Exprs -> Expr
+167:    val mkGetArg0: range -> TType -> Expr
+169:    val mkAnyTupled: TcGlobals -> range -> TupInfo -> Exprs -> TType list -> Expr
+171:    val mkRefTupled: TcGlobals -> range -> Exprs -> TType list -> Expr
+173:    val mkRefTupledNoTypes: TcGlobals -> range -> Exprs -> Expr
+175:    val mkRefTupledVars: TcGlobals -> range -> Val list -> Expr
+177:    val mkRecordExpr:
+180:    val mkAnonRecd: TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr
+182:    val mkRefCell: TcGlobals -> range -> TType -> Expr -> Expr
+184:    val mkRefCellGet: TcGlobals -> range -> TType -> Expr -> Expr
+186:    val mkRefCellSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+188:    val mkNil: TcGlobals -> range -> TType -> Expr
+190:    val mkCons: TcGlobals -> TType -> Expr -> Expr -> Expr
+192:    val mkArray: TType * Exprs * range -> Expr
+194:    val mkCompGenLocalAndInvisibleBind: TcGlobals -> string -> range -> Expr -> Val * Expr * Binding
+196:    val mkUnbox: TType -> Expr -> range -> Expr
+198:    val mkBox: TType -> Expr -> range -> Expr
+200:    val mkIsInst: TType -> Expr -> range -> Expr
+202:    val mspec_Type_GetTypeFromHandle: TcGlobals -> ILMethodSpec
+204:    val fspec_Missing_Value: TcGlobals -> ILFieldSpec
+206:    val mkInitializeArrayMethSpec: TcGlobals -> ILMethodSpec
+208:    val mkInvalidCastExnNewobj: TcGlobals -> ILInstr
+210:    val mkCallNewFormat:
+213:    val mkCallGetGenericComparer: TcGlobals -> range -> Expr
+215:    val mkCallGetGenericEREqualityComparer: TcGlobals -> range -> Expr
+217:    val mkCallGetGenericPEREqualityComparer: TcGlobals -> range -> Expr
+219:    val mkCallUnbox: TcGlobals -> range -> TType -> Expr -> Expr
+221:    val mkCallUnboxFast: TcGlobals -> range -> TType -> Expr -> Expr
+223:    val mkCallTypeTest: TcGlobals -> range -> TType -> Expr -> Expr
+225:    val mkCallTypeOf: TcGlobals -> range -> TType -> Expr
+227:    val mkCallTypeDefOf: TcGlobals -> range -> TType -> Expr
+229:    val mkCallDispose: TcGlobals -> range -> TType -> Expr -> Expr
+231:    val mkCallSeq: TcGlobals -> range -> TType -> Expr -> Expr
+233:    val mkCallCreateInstance: TcGlobals -> range -> TType -> Expr
+235:    val mkCallGetQuerySourceAsEnumerable: TcGlobals -> range -> TType -> TType -> Expr -> Expr
+237:    val mkCallNewQuerySource: TcGlobals -> range -> TType -> TType -> Expr -> Expr
+239:    val mkCallCreateEvent: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr -> Expr
+241:    val mkCallGenericComparisonWithComparerOuter: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+243:    val mkCallGenericEqualityEROuter: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+245:    val mkCallGenericEqualityWithComparerOuter: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+247:    val mkCallGenericHashWithComparerOuter: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+249:    val mkCallEqualsOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+251:    val mkCallNotEqualsOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+253:    val mkCallLessThanOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+255:    val mkCallLessThanOrEqualsOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+257:    val mkCallGreaterThanOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+259:    val mkCallGreaterThanOrEqualsOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+261:    val mkCallAdditionOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+263:    val mkCallSubtractionOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+265:    val mkCallMultiplyOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
+267:    val mkCallDivisionOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
+269:    val mkCallModulusOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+271:    val mkCallDefaultOf: TcGlobals -> range -> TType -> Expr
+273:    val mkCallBitwiseAndOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+275:    val mkCallBitwiseOrOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+277:    val mkCallBitwiseXorOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+279:    val mkCallShiftLeftOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+281:    val mkCallShiftRightOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+283:    val mkCallUnaryNegOperator: TcGlobals -> range -> TType -> Expr -> Expr
+285:    val mkCallUnaryNotOperator: TcGlobals -> range -> TType -> Expr -> Expr
+287:    val mkCallAdditionChecked: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+289:    val mkCallSubtractionChecked: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+291:    val mkCallMultiplyChecked: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
+293:    val mkCallUnaryNegChecked: TcGlobals -> range -> TType -> Expr -> Expr
+295:    val mkCallToByteChecked: TcGlobals -> range -> TType -> Expr -> Expr
+297:    val mkCallToSByteChecked: TcGlobals -> range -> TType -> Expr -> Expr
+299:    val mkCallToInt16Checked: TcGlobals -> range -> TType -> Expr -> Expr
+301:    val mkCallToUInt16Checked: TcGlobals -> range -> TType -> Expr -> Expr
+303:    val mkCallToIntChecked: TcGlobals -> range -> TType -> Expr -> Expr
+305:    val mkCallToInt32Checked: TcGlobals -> range -> TType -> Expr -> Expr
+307:    val mkCallToUInt32Checked: TcGlobals -> range -> TType -> Expr -> Expr
+309:    val mkCallToInt64Checked: TcGlobals -> range -> TType -> Expr -> Expr
+311:    val mkCallToUInt64Checked: TcGlobals -> range -> TType -> Expr -> Expr
+313:    val mkCallToIntPtrChecked: TcGlobals -> range -> TType -> Expr -> Expr
+315:    val mkCallToUIntPtrChecked: TcGlobals -> range -> TType -> Expr -> Expr
+317:    val mkCallToByteOperator: TcGlobals -> range -> TType -> Expr -> Expr
+319:    val mkCallToSByteOperator: TcGlobals -> range -> TType -> Expr -> Expr
+321:    val mkCallToInt16Operator: TcGlobals -> range -> TType -> Expr -> Expr
+323:    val mkCallToUInt16Operator: TcGlobals -> range -> TType -> Expr -> Expr
+325:    val mkCallToInt32Operator: TcGlobals -> range -> TType -> Expr -> Expr
+327:    val mkCallToUInt32Operator: TcGlobals -> range -> TType -> Expr -> Expr
+329:    val mkCallToInt64Operator: TcGlobals -> range -> TType -> Expr -> Expr
+331:    val mkCallToUInt64Operator: TcGlobals -> range -> TType -> Expr -> Expr
+333:    val mkCallToSingleOperator: TcGlobals -> range -> TType -> Expr -> Expr
+335:    val mkCallToDoubleOperator: TcGlobals -> range -> TType -> Expr -> Expr
+337:    val mkCallToIntPtrOperator: TcGlobals -> range -> TType -> Expr -> Expr
+339:    val mkCallToUIntPtrOperator: TcGlobals -> range -> TType -> Expr -> Expr
+341:    val mkCallToCharOperator: TcGlobals -> range -> TType -> Expr -> Expr
+343:    val mkCallToEnumOperator: TcGlobals -> range -> TType -> Expr -> Expr
+345:    val mkCallArrayLength: TcGlobals -> range -> TType -> Expr -> Expr
+347:    val mkCallArrayGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+349:    val mkCallArray2DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+351:    val mkCallArray3DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
+353:    val mkCallArray4DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+355:    val mkCallArraySet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+357:    val mkCallArray2DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
+359:    val mkCallArray3DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+361:    val mkCallArray4DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+363:    val mkCallHash: TcGlobals -> range -> TType -> Expr -> Expr
+365:    val mkCallBox: TcGlobals -> range -> TType -> Expr -> Expr
+367:    val mkCallIsNull: TcGlobals -> range -> TType -> Expr -> Expr
+369:    val mkCallRaise: TcGlobals -> range -> TType -> Expr -> Expr
+371:    val mkCallNewDecimal: TcGlobals -> range -> Expr * Expr * Expr * Expr * Expr -> Expr
+373:    val tryMkCallBuiltInWitness: TcGlobals -> TraitConstraintInfo -> Expr list -> range -> Expr option
+375:    val tryMkCallCoreFunctionAsBuiltInWitness:
+378:    val TryEliminateDesugaredConstants: TcGlobals -> range -> Const -> Expr option
+380:    val mkCallSeqCollect: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr
+382:    val mkCallSeqUsing: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr
+384:    val mkCallSeqDelay: TcGlobals -> range -> TType -> Expr -> Expr
+386:    val mkCallSeqAppend: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+388:    val mkCallSeqGenerated: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+390:    val mkCallSeqFinally: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+392:    val mkCallSeqTryWith: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+394:    val mkCallSeqOfFunctions: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr -> Expr
+396:    val mkCallSeqToArray: TcGlobals -> range -> TType -> Expr -> Expr
+398:    val mkCallSeqToList: TcGlobals -> range -> TType -> Expr -> Expr
+400:    val mkCallSeqMap: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr
+402:    val mkCallSeqSingleton: TcGlobals -> range -> TType -> Expr -> Expr
+404:    val mkCallSeqEmpty: TcGlobals -> range -> TType -> Expr
+407:    val mkCall_sprintf: g: TcGlobals -> m: range -> funcTy: TType -> fmtExpr: Expr -> fillExprs: Expr list -> Expr
+409:    val mkCallDeserializeQuotationFSharp20Plus: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
+411:    val mkCallDeserializeQuotationFSharp40Plus: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+413:    val mkCallCastQuotation: TcGlobals -> range -> TType -> Expr -> Expr
+415:    val mkCallLiftValue: TcGlobals -> range -> TType -> Expr -> Expr
+417:    val mkCallLiftValueWithName: TcGlobals -> range -> TType -> string -> Expr -> Expr
+419:    val mkCallLiftValueWithDefn: TcGlobals -> range -> TType -> Expr -> Expr
+421:    val mkCallCheckThis: TcGlobals -> range -> TType -> Expr -> Expr
+423:    val mkCallFailInit: TcGlobals -> range -> Expr
+425:    val mkCallFailStaticInit: TcGlobals -> range -> Expr
+427:    val mkCallQuoteToLinqLambdaExpression: TcGlobals -> range -> TType -> Expr -> Expr
+429:    val mkOptionToNullable: TcGlobals -> range -> TType -> Expr -> Expr
+431:    val mkOptionDefaultValue: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+433:    val mkLazyDelayed: TcGlobals -> range -> TType -> Expr -> Expr
+435:    val mkLazyForce: TcGlobals -> range -> TType -> Expr -> Expr
+437:    val mkGetString: TcGlobals -> range -> Expr -> Expr -> Expr
+439:    val mkGetStringChar: (TcGlobals -> range -> Expr -> Expr -> Expr)
+441:    val mkGetStringLength: TcGlobals -> range -> Expr -> Expr
+443:    val mkStaticCall_String_Concat2: TcGlobals -> range -> Expr -> Expr -> Expr
+445:    val mkStaticCall_String_Concat3: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr
+447:    val mkStaticCall_String_Concat4: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
+449:    val mkStaticCall_String_Concat_Array: TcGlobals -> range -> Expr -> Expr
+451:    val mkDecr: TcGlobals -> range -> Expr -> Expr
+453:    val mkIncr: TcGlobals -> range -> Expr -> Expr
+455:    val mkLdlen: TcGlobals -> range -> Expr -> Expr
+457:    val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+459:    val mkILAsmCeq: TcGlobals -> range -> Expr -> Expr -> Expr
+461:    val mkILAsmClt: TcGlobals -> range -> Expr -> Expr -> Expr
+463:    val mkNull: range -> TType -> Expr
+465:    val mkThrow: range -> TType -> Expr -> Expr
+467:    val destThrow: Expr -> (range * TType * Expr) option
+469:    val isThrow: Expr -> bool
+471:    val mkReraiseLibCall: TcGlobals -> TType -> range -> Expr
+473:    val mkReraise: range -> TType -> Expr
+475:    val isIDelegateEventType: TcGlobals -> TType -> bool
+477:    val destIDelegateEventType: TcGlobals -> TType -> TType
+479:    val mkNullTest: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr
+481:    val mkNonNullTest: TcGlobals -> range -> Expr -> Expr
+483:    val mkNonNullCond: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+486:    val mkIfThen: TcGlobals -> range -> Expr -> Expr -> Expr
+488:    val mkUnionCaseTest: TcGlobals -> Expr * UnionCaseRef * TypeInst * range -> Expr
+491:module internal ExprHelpers =
+494:    val MultiLambdaToTupledLambda: TcGlobals -> Val list -> Expr -> Val * Expr
+498:    val AdjustArityOfLambdaBody: TcGlobals -> int -> Val list -> Expr -> Val list * Expr
+502:    val MakeApplicationAndBetaReduce: TcGlobals -> Expr * TType * TypeInst list * Exprs * range -> Expr
+506:    val MakeFSharpDelegateInvokeAndTryBetaReduce:
+511:    val MakeArgsForTopArgs: TcGlobals -> range -> (TType * ArgReprInfo) list list -> TyparInstantiation -> Val list list
+513:    val AdjustValForExpectedValReprInfo: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
+515:    val AdjustValToHaveValReprInfo: Val -> ParentRef -> ValReprInfo -> unit
+517:    val stripTupledFunTy: TcGlobals -> TType -> TType list list * TType
+520:    val (|ExprValWithPossibleTypeInst|_|): Expr -> (ValRef * ValUseFlag * TypeInst * range) voption
+522:    val mkCoerceIfNeeded: TcGlobals -> TType -> TType -> Expr -> Expr
+524:    val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
+526:    val mkCompGenLetMutableIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
+528:    val AdjustPossibleSubsumptionExpr: TcGlobals -> Expr -> Exprs -> (Expr * Exprs) option
+530:    val NormalizeAndAdjustPossibleSubsumptionExprs: TcGlobals -> Expr -> Expr
+532:    val LinearizeTopMatch: TcGlobals -> ParentRef -> Expr -> Expr
+534:    val etaExpandTypeLambda: TcGlobals -> range -> Typars -> Expr * TType -> Expr
+537:    val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list * Expr * range * (Expr -> Expr)) voption
+540:    val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * TypeInst * Expr * Expr * range) voption
+543:    val (|OpPipeRight|_|): TcGlobals -> Expr -> (TType * Expr * Expr * range) voption
+546:    val (|OpPipeRight2|_|): TcGlobals -> Expr -> (TType * Expr * Expr * Expr * range) voption
+549:    val (|OpPipeRight3|_|): TcGlobals -> Expr -> (TType * Expr * Expr * Expr * Expr * range) voption
+551:    /// Mutate a value to indicate it should be considered a local rather than a module-bound definition
+553:    val ClearValReprInfo: Val -> Val
+
+===== src/Compiler/TypedTree/TypedTreeOps.Transforms.fsi =====
+19:module internal TypeEncoding =
+22:    val commaEncs: string seq -> string
+24:    val angleEnc: string -> string
+26:    val ticksAndArgCountTextOfTyconRef: TyconRef -> string
+28:    val typarEnc: TcGlobals -> Typars * Typars -> Typar -> string
+30:    val buildAccessPath: CompilationPath option -> string
+32:    val XmlDocArgsEnc: TcGlobals -> Typars * Typars -> TType list -> string
+34:    val XmlDocSigOfVal: TcGlobals -> full: bool -> string -> Val -> string
+36:    val XmlDocSigOfUnionCase: path: string list -> string
+38:    val XmlDocSigOfField: path: string list -> string
+40:    val XmlDocSigOfProperty: path: string list -> string
+42:    val XmlDocSigOfTycon: path: string list -> string
+44:    val XmlDocSigOfSubModul: path: string list -> string
+46:    val XmlDocSigOfEntity: eref: EntityRef -> string
+56:    val TryGetActivePatternInfo: ValRef -> PrettyNaming.ActivePatternInfo option
+58:    val mkChoiceCaseRef: g: TcGlobals -> m: range -> n: int -> i: int -> UnionCaseRef
+75:    val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
+77:    val nullnessOfTy: TcGlobals -> TType -> Nullness
+79:    val changeWithNullReqTyToVariable: TcGlobals -> reqTy: TType -> TType
+81:    val reqTyForArgumentNullnessInference: TcGlobals -> actualTy: TType -> reqTy: TType -> TType
+83:    val isSealedTy: TcGlobals -> TType -> bool
+86:    val isComInteropTy: TcGlobals -> TType -> bool
+88:    val IsNonNullableStructTyparTy: TcGlobals -> TType -> bool
+90:    val inline HasConstraint: [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> Typar -> bool
+92:    val inline IsTyparTyWithConstraint:
+99:    val IsReferenceTyparTy: TcGlobals -> TType -> bool
+101:    val IsUnionTypeWithNullAsTrueValue: TcGlobals -> Tycon -> bool
+103:    val TyconHasUseNullAsTrueValueAttribute: TcGlobals -> Tycon -> bool
+105:    val CanHaveUseNullAsTrueValueAttribute: TcGlobals -> Tycon -> bool
+107:    val MemberIsCompiledAsInstance: TcGlobals -> TyconRef -> bool -> ValMemberInfo -> Attribs -> bool
+109:    val ValSpecIsCompiledAsInstance: TcGlobals -> Val -> bool
+111:    val ValRefIsCompiledAsInstanceMember: TcGlobals -> ValRef -> bool
+113:    val ModuleNameIsMangled: TcGlobals -> Attribs -> bool
+115:    val CompileAsEvent: TcGlobals -> Attribs -> bool
+117:    val ValCompileAsEvent: TcGlobals -> Val -> bool
+119:    val TypeNullIsTrueValue: TcGlobals -> TType -> bool
+121:    val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
+126:    val GetDisallowedNullness: TcGlobals -> TType -> TType list
+128:    val TypeHasAllowNull: TyconRef -> TcGlobals -> range -> bool
+130:    val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
+132:    val GetTyparTyIfSupportsNull: TcGlobals -> TType -> Typar voption
+134:    val TypeNullNever: TcGlobals -> TType -> bool
+136:    val TypeHasDefaultValue: TcGlobals -> range -> TType -> bool
+138:    val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
+140:    val mkIsInstConditional: TcGlobals -> range -> TType -> Expr -> Val -> Expr -> Expr -> Expr
+142:    val canUseUnboxFast: TcGlobals -> range -> TType -> bool
+144:    val canUseTypeTestFast: TcGlobals -> TType -> bool
+149:    val (|SpecialComparableHeadType|_|): TcGlobals -> TType -> TType list voption
+152:    val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list voption
+155:    val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit voption
+157:    val (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|):
+160:    val GetMemberCallInfo: TcGlobals -> ValRef * ValUseFlag -> int * bool * bool * bool * bool * bool * bool * bool
+163:module internal Rewriting =
+172:    val RewriteDecisionTree: ExprRewritingEnv -> DecisionTree -> DecisionTree
+174:    val RewriteExpr: ExprRewritingEnv -> Expr -> Expr
+176:    val RewriteImplFile: ExprRewritingEnv -> CheckedImplFile -> CheckedImplFile
+178:    val IsGenericValWithGenericConstraints: TcGlobals -> Val -> bool
+194:    val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
+196:    /// Make a remapping table for viewing a module or namespace 'from the outside'
+197:    val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace
+200:module internal LoopAndConstantOptimization =
+202:    val mkFastForLoop:
+205:    val IsSimpleSyntacticConstantExpr: TcGlobals -> Expr -> bool
+208:    val (|ConstToILFieldInit|_|): Const -> ILFieldInit voption
+210:    val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
+212:    val EvaledAttribExprEquality: TcGlobals -> Expr -> Expr -> bool
+214:    val mkCompiledTuple: TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
+217:    val mkGetTupleItemN: TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
+220:    val (|Int32Expr|_|): Expr -> int32 voption
+230:    val (|IntegralRange|_|): g: TcGlobals -> expr: Expr -> (TType * (Expr * Expr * Expr)) voption
+233:    module IntegralConst =
+236:        val (|Zero|_|): c: Const -> unit voption
+258:    val mkOptimizedRangeLoop:
+270:    val DetectAndOptimizeForEachExpression: TcGlobals -> OptimizeForExpressionOptions -> Expr -> Expr
+273:    val (|InnerExprPat|): Expr -> Expr
+275:    val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
+277:    val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
+281:    val (|ValApp|_|): TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) voption
+283:    val GetTypeOfIntrinsicMemberInCompiledForm:
+286:    val mkDebugPoint: m: range -> expr: Expr -> Expr
+290:    val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) voption
+294:    val (|IfUseResumableStateMachinesExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption
+297:module internal AttribChecking =
+305:    val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
+309:    val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * (Expr * Expr -> Expr)) voption
+313:    val (|StructStateMachineExpr|_|):
+318:    val (|SequentialResumableCode|_|): g: TcGlobals -> Expr -> (Expr * Expr * range * (Expr -> Expr -> Expr)) voption
+322:    val (|DebugPointExpr|_|): g: TcGlobals -> Expr -> string voption
+326:    val (|ResumeAtExpr|_|): g: TcGlobals -> Expr -> Expr voption
+330:    val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) voption
+334:    val (|IntegerForLoopExpr|_|):
+339:    val (|TryWithExpr|_|):
+344:    val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) voption
+347:    val mkLabelled: range -> ILCodeLabel -> Expr -> Expr
+350:    val isResumableCodeTy: TcGlobals -> TType -> bool
+353:    val isReturnsResumableCodeTy: TcGlobals -> TType -> bool
+356:    val (|ResumableCodeInvoke|_|):
+360:    val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
+364:    val (|SeqYield|_|): TcGlobals -> Expr -> (Expr * range) voption
+368:    val (|SeqAppend|_|): TcGlobals -> Expr -> (Expr * Expr * range) voption
+372:    val (|SeqWhile|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtWhile * range) voption
+376:    val (|SeqTryFinally|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtTry * DebugPointAtFinally * range) voption
+380:    val (|SeqUsing|_|): TcGlobals -> Expr -> (Expr * Val * Expr * TType * DebugPointAtBinding * range) voption
+384:    val (|SeqForEach|_|): TcGlobals -> Expr -> (Expr * Val * Expr * TType * range * range * DebugPointAtInOrTo) voption
+388:    val (|SeqDelay|_|): TcGlobals -> Expr -> (Expr * TType) voption
+392:    val (|SeqEmpty|_|): TcGlobals -> Expr -> range voption
+396:    val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) voption
+399:    val isFSharpExceptionTy: g: TcGlobals -> ty: TType -> bool
+405:    val (|EmptyModuleOrNamespaces|_|):
+406:        moduleOrNamespaceContents: ModuleOrNamespaceContents -> ModuleOrNamespace list voption
+408:    val tryFindExtensionAttribute: g: TcGlobals -> attribs: Attrib list -> Attrib option
+410:    /// Add an System.Runtime.CompilerServices.ExtensionAttribute to the module Entity if found via predicate and not already present.
+411:    val tryAddExtensionAttributeIfNotAlreadyPresentForModule:
+414:        moduleEntity: Entity ->
+418:    val tryAddExtensionAttributeIfNotAlreadyPresentForType:
+421:        moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref ->
+426:    val serializeEntity: path: string -> entity: Entity -> unit
+429:    /// Meant to be called with the FSharp.Core module spec right after it was unpickled.
+430:    val updateSeqTypeIsPrefix: fsharpCoreMSpec: ModuleOrNamespace -> unit
+435:    val isTyparOrderMismatch: Typars -> CurriedArgInfos -> bool
+
