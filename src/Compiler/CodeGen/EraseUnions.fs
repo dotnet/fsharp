@@ -1145,289 +1145,420 @@ let private emitDebugProxyType
 
     [ debugProxyTypeDef.WithSpecialName(true) ], ([ mkDebuggerTypeProxyAttribute debugProxyTy ] @ cud.DebugDisplayAttributes)
 
-let convAlternativeDef
-    (
-        addMethodGeneratedAttrs,
-        addPropertyGeneratedAttrs,
-        addPropertyNeverAttrs,
-        addFieldGeneratedAttrs,
-        addFieldNeverAttrs,
-        mkDebuggerTypeProxyAttribute
-    )
-    (g: TcGlobals)
-    num
-    (td: ILTypeDef)
-    (cud: IlxUnionInfo)
-    info
-    cuspec
-    (baseTy: ILType)
-    (alt: IlxUnionCase)
-    =
-
+let private emitMakerMethod (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase) =
+    let g = ctx.g
+    let baseTy = ctx.baseTy
+    let cuspec = ctx.cuspec
+    let cud = ctx.cud
+    let fields = alt.FieldDefs
+    let altName = alt.Name
+    let info = (ctx.td, cud)
+    let repr = cudefRepr
     let imports = cud.DebugImports
     let attr = cud.DebugPoint
+
+    let locals, ilInstrs =
+        if repr.RepresentAlternativeAsStructValue info then
+            let local = mkILLocal baseTy None
+            let ldloca = I_ldloca(0us)
+
+            let ilInstrs =
+                [
+                    ldloca
+                    ILInstr.I_initobj baseTy
+                    if (repr.DiscriminationTechnique info) = IntegerTag && num <> 0 then
+                        ldloca
+                        mkLdcInt32 num
+                        mkSetTagToField g.ilg cuspec baseTy
+                    for i in 0 .. fields.Length - 1 do
+                        ldloca
+                        mkLdarg (uint16 i)
+                        mkNormalStfld (mkILFieldSpecInTy (baseTy, fields[i].LowerName, fields[i].Type))
+                    mkLdloc 0us
+                ]
+
+            [ local ], ilInstrs
+        else
+            let ilInstrs =
+                [
+                    for i in 0 .. fields.Length - 1 do
+                        mkLdarg (uint16 i)
+                    yield! convNewDataInstrInternal g.ilg cuspec num
+                ]
+
+            [], ilInstrs
+
+    mkILNonGenericStaticMethod (
+        mkMakerName cuspec altName,
+        cud.HelpersAccessibility,
+        fields
+        |> Array.map (fun fd ->
+            let plainParam = mkILParamNamed (fd.LowerName, fd.Type)
+
+            match getFieldsNullability g fd.ILField with
+            | None -> plainParam
+            | Some a ->
+                { plainParam with
+                    CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrsFromArray [| a |])
+                })
+
+        |> Array.toList,
+        mkILReturn baseTy,
+        mkMethodBody (true, locals, fields.Length + locals.Length, nonBranchingInstrsToCode ilInstrs, attr, imports)
+    )
+    |> (fun mdef -> mdef.With(customAttrs = alt.altCustomAttrs))
+    |> ctx.stampMethodAsGenerated
+
+let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase) =
+    let g = ctx.g
+    let cud = ctx.cud
+    let cuspec = ctx.cuspec
+    let baseTy = ctx.baseTy
+    let info = (ctx.td, cud)
+    let repr = cudefRepr
+    let altName = alt.Name
+    let imports = cud.DebugImports
+    let attr = cud.DebugPoint
+
+    if cud.UnionCases.Length <= 1 then
+        [], []
+    elif repr.RepresentOneAlternativeAsNull info then
+        [], []
+    else
+        let additionalAttributes =
+            if
+                g.checkNullness
+                && g.langFeatureNullness
+                && repr.RepresentAlternativeAsStructValue info
+                && not alt.IsNullary
+            then
+                let notnullfields =
+                    alt.FieldDefs
+                    // Fields that are nullable even from F# perspective has an [Nullable] attribute on them
+                    // Non-nullable fields are implicit in F#, therefore not annotated separately
+                    |> Array.filter (fun f ->
+                        f.ILField.HasWellKnownAttribute(g, WellKnownILAttributes.NullableAttribute)
+                        |> not)
+
+                let fieldNames =
+                    notnullfields
+                    |> Array.map (fun f -> f.LowerName)
+                    |> Array.append (notnullfields |> Array.map (fun f -> f.Name))
+
+                if fieldNames |> Array.isEmpty then
+                    emptyILCustomAttrs
+                else
+                    mkILCustomAttrsFromArray [| GetNotNullWhenTrueAttribute g fieldNames |]
+
+            else
+                emptyILCustomAttrs
+
+        [
+            (mkILNonGenericInstanceMethod (
+                "get_" + mkTesterName altName,
+                cud.HelpersAccessibility,
+                [],
+                mkILReturn g.ilg.typ_Bool,
+                mkMethodBody (true, [], 2, nonBranchingInstrsToCode ([ mkLdarg0 ] @ mkIsData g.ilg (true, cuspec, num)), attr, imports)
+            ))
+                .With(customAttrs = additionalAttributes)
+            |> ctx.stampMethodAsGenerated
+        ],
+        [
+            ILPropertyDef(
+                name = mkTesterName altName,
+                attributes = PropertyAttributes.None,
+                setMethod = None,
+                getMethod = Some(mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + mkTesterName altName, 0, [], g.ilg.typ_Bool)),
+                callingConv = ILThisConvention.Instance,
+                propertyType = g.ilg.typ_Bool,
+                init = None,
+                args = [],
+                customAttrs = additionalAttributes
+            )
+            |> ctx.stampPropertyAsGenerated
+            |> ctx.stampPropertyAsNever
+        ]
+
+let private emitNullaryCaseAccessor (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase) =
+    let g = ctx.g
+    let td = ctx.td
+    let cud = ctx.cud
+    let cuspec = ctx.cuspec
+    let baseTy = ctx.baseTy
+    let info = (td, cud)
+    let repr = cudefRepr
     let altName = alt.Name
     let fields = alt.FieldDefs
-    let altTy = tyForAlt cuspec alt
+    let imports = cud.DebugImports
+    let attr = cud.DebugPoint
+
+    let attributes =
+        if
+            g.checkNullness
+            && g.langFeatureNullness
+            && repr.RepresentAlternativeAsNull(info, alt)
+        then
+            let noTypars = td.GenericParams.Length
+
+            GetNullableAttribute
+                g
+                [
+                    yield NullnessInfo.WithNull // The top-level value itself, e.g. option, is nullable
+                    yield! List.replicate noTypars NullnessInfo.AmbivalentToNull
+                ] // The typars are not (i.e. do not change option<string> into option<string?>
+            |> Array.singleton
+            |> mkILCustomAttrsFromArray
+        else
+            emptyILCustomAttrs
+
+    let nullaryMeth =
+        mkILNonGenericStaticMethod (
+            "get_" + altName,
+            cud.HelpersAccessibility,
+            [],
+            (mkILReturn baseTy).WithCustomAttrs attributes,
+            mkMethodBody (true, [], fields.Length, nonBranchingInstrsToCode (convNewDataInstrInternal g.ilg cuspec num), attr, imports)
+        )
+        |> (fun mdef -> mdef.With(customAttrs = alt.altCustomAttrs))
+        |> ctx.stampMethodAsGenerated
+
+    let nullaryProp =
+        ILPropertyDef(
+            name = altName,
+            attributes = PropertyAttributes.None,
+            setMethod = None,
+            getMethod = Some(mkILMethRef (baseTy.TypeRef, ILCallingConv.Static, "get_" + altName, 0, [], baseTy)),
+            callingConv = ILThisConvention.Static,
+            propertyType = baseTy,
+            init = None,
+            args = [],
+            customAttrs = attributes
+        )
+        |> ctx.stampPropertyAsGenerated
+        |> ctx.stampPropertyAsNever
+
+    [ nullaryMeth ], [ nullaryProp ]
+
+let private emitConstantAccessor (ctx: TypeDefContext) (_num: int) (alt: IlxUnionCase) =
+    let cud = ctx.cud
+    let baseTy = ctx.baseTy
+    let info = (ctx.td, cud)
     let repr = cudefRepr
+    let altName = alt.Name
+    let fields = alt.FieldDefs
+    let imports = cud.DebugImports
+    let attr = cud.DebugPoint
 
-    // Attributes on unions get attached to the construction methods in the helpers
-    let addAltAttribs (mdef: ILMethodDef) =
-        mdef.With(customAttrs = alt.altCustomAttrs)
+    // This method is only generated if helpers are not available. It fetches the unique object for the alternative
+    // without exposing direct access to the underlying field
+    match cud.HasHelpers with
+    | AllHelpers
+    | SpecialFSharpOptionHelpers
+    | SpecialFSharpListHelpers -> []
+    | _ ->
+        if
+            alt.IsNullary
+            && repr.MaintainPossiblyUniqueConstantFieldForAlternative(info, alt)
+        then
+            let methName = "get_" + altName
 
-    // The stdata instruction is only ever used for the F# "List" type
-    //
-    // Microsoft.FSharp.Collections.List`1 is indeed logically immutable, but we use mutation on this type internally
-    // within FSharp.Core.dll on fresh unpublished cons cells.
+            let meth =
+                mkILNonGenericStaticMethod (
+                    methName,
+                    cud.UnionCasesAccessibility,
+                    [],
+                    mkILReturn baseTy,
+                    mkMethodBody (
+                        true,
+                        [],
+                        fields.Length,
+                        nonBranchingInstrsToCode [ I_ldsfld(Nonvolatile, mkConstFieldSpec altName baseTy) ],
+                        attr,
+                        imports
+                    )
+                )
+                |> ctx.stampMethodAsGenerated
+
+            [ meth ]
+
+        else
+            []
+
+let private emitNullaryConstField (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase) =
+    let cud = ctx.cud
+    let baseTy = ctx.baseTy
+    let cuspec = ctx.cuspec
+    let info = (ctx.td, cud)
+    let repr = cudefRepr
+    let altName = alt.Name
+    let altTy = tyForAlt cuspec alt
+
+    if repr.MaintainPossiblyUniqueConstantFieldForAlternative(info, alt) then
+        let basic: ILFieldDef =
+            mkILStaticField (constFieldName altName, baseTy, None, None, ILMemberAccess.Assembly)
+            |> ctx.stampFieldAsNever
+            |> ctx.stampFieldAsGenerated
+
+        let uniqObjField = basic.WithInitOnly(true)
+        let inRootClass = cuspecRepr.OptimizeAlternativeToRootClass(cuspec, alt)
+        [ (info, alt, altTy, num, uniqObjField, inRootClass) ]
+    else
+        []
+
+let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase) =
+    let g = ctx.g
+    let td = ctx.td
+    let cud = ctx.cud
+    let cuspec = ctx.cuspec
+    let baseTy = ctx.baseTy
+    let info = (td, cud)
+    let repr = cudefRepr
+    let altTy = tyForAlt cuspec alt
+    let fields = alt.FieldDefs
+    let imports = cud.DebugImports
+    let attr = cud.DebugPoint
     let isTotallyImmutable = (cud.HasHelpers <> SpecialFSharpListHelpers)
 
-    let makeNonNullaryMakerMethod () =
-        let locals, ilInstrs =
-            if repr.RepresentAlternativeAsStructValue info then
-                let local = mkILLocal baseTy None
-                let ldloca = I_ldloca(0us)
-
-                let ilInstrs =
-                    [
-                        ldloca
-                        ILInstr.I_initobj baseTy
-                        if (repr.DiscriminationTechnique info) = IntegerTag && num <> 0 then
-                            ldloca
-                            mkLdcInt32 num
-                            mkSetTagToField g.ilg cuspec baseTy
-                        for i in 0 .. fields.Length - 1 do
-                            ldloca
-                            mkLdarg (uint16 i)
-                            mkNormalStfld (mkILFieldSpecInTy (baseTy, fields[i].LowerName, fields[i].Type))
-                        mkLdloc 0us
-                    ]
-
-                [ local ], ilInstrs
+    if repr.OptimizeAlternativeToRootClass(info, alt) then
+        [], []
+    else
+        let altDebugTypeDefs, debugAttrs =
+            if not cud.GenerateDebugProxies then
+                [], []
             else
-                let ilInstrs =
-                    [
-                        for i in 0 .. fields.Length - 1 do
-                            mkLdarg (uint16 i)
-                        yield! convNewDataInstrInternal g.ilg cuspec num
-                    ]
+                emitDebugProxyType
+                    g
+                    td
+                    altTy
+                    fields
+                    baseTy
+                    imports
+                    ctx.stampMethodAsGenerated
+                    ctx.stampPropertyAsGenerated
+                    ctx.stampFieldAsNever
+                    ctx.stampFieldAsGenerated
+                    ctx.mkDebuggerTypeProxyAttr
+                    cud
 
-                [], ilInstrs
-
-        let mdef =
-            mkILNonGenericStaticMethod (
-                mkMakerName cuspec altName,
-                cud.HelpersAccessibility,
+        let altTypeDef =
+            let basicFields =
                 fields
-                |> Array.map (fun fd ->
-                    let plainParam = mkILParamNamed (fd.LowerName, fd.Type)
+                |> Array.map (fun field ->
+                    let fldName, fldTy, attrs = mkUnionCaseFieldIdAndAttrs g field
+                    let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Assembly)
 
-                    match getFieldsNullability g fd.ILField with
-                    | None -> plainParam
-                    | Some a ->
-                        { plainParam with
-                            CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrsFromArray [| a |])
-                        })
+                    let fdef =
+                        match attrs with
+                        | [] -> fdef
+                        | attrs -> fdef.With(customAttrs = mkILCustomAttrs attrs)
 
-                |> Array.toList,
-                mkILReturn baseTy,
-                mkMethodBody (true, locals, fields.Length + locals.Length, nonBranchingInstrsToCode ilInstrs, attr, imports)
-            )
-            |> addAltAttribs
-            |> addMethodGeneratedAttrs
+                        |> ctx.stampFieldAsNever
+                        |> ctx.stampFieldAsGenerated
 
-        mdef
+                    fdef.WithInitOnly(isTotallyImmutable))
 
-    let altUniqObjMeths =
+                |> Array.toList
 
-        // This method is only generated if helpers are not available. It fetches the unique object for the alternative
-        // without exposing direct access to the underlying field
-        match cud.HasHelpers with
-        | AllHelpers
-        | SpecialFSharpOptionHelpers
-        | SpecialFSharpListHelpers -> []
-        | _ ->
-            if
-                alt.IsNullary
-                && repr.MaintainPossiblyUniqueConstantFieldForAlternative(info, alt)
-            then
-                let methName = "get_" + altName
+            let basicProps, basicMethods =
+                mkMethodsAndPropertiesForFields
+                    (ctx.stampMethodAsGenerated, ctx.stampPropertyAsGenerated)
+                    g
+                    cud.UnionCasesAccessibility
+                    attr
+                    imports
+                    cud.HasHelpers
+                    altTy
+                    fields
 
-                let meth =
-                    mkILNonGenericStaticMethod (
-                        methName,
-                        cud.UnionCasesAccessibility,
-                        [],
-                        mkILReturn baseTy,
-                        mkMethodBody (
-                            true,
-                            [],
-                            fields.Length,
-                            nonBranchingInstrsToCode [ I_ldsfld(Nonvolatile, mkConstFieldSpec altName baseTy) ],
-                            attr,
-                            imports
-                        )
-                    )
-                    |> addMethodGeneratedAttrs
+            let basicCtorInstrs =
+                [
+                    yield mkLdarg0
+                    match repr.DiscriminationTechnique info with
+                    | IntegerTag ->
+                        yield mkLdcInt32 num
+                        yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, [ mkTagFieldType g.ilg cuspec ]))
+                    | SingleCase
+                    | RuntimeTypes -> yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, []))
+                    | TailOrNull -> failwith "unreachable"
+                ]
 
-                [ meth ]
+            let basicCtorAccess =
+                (if cuspec.HasHelpers = AllHelpers then
+                     ILMemberAccess.Assembly
+                 else
+                     cud.UnionCasesAccessibility)
 
-            else
-                []
+            let basicCtorFields =
+                basicFields
+                |> List.map (fun fdef ->
+                    let nullableAttr = getFieldsNullability g fdef |> Option.toList
+                    fdef.Name, fdef.FieldType, nullableAttr)
+
+            let basicCtorMeth =
+                (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports))
+                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
+                |> ctx.stampMethodAsGenerated
+
+            let attrs =
+                if g.checkNullness && g.langFeatureNullness then
+                    GetNullableContextAttribute g 1uy :: debugAttrs
+                else
+                    debugAttrs
+
+            let altTypeDef =
+                mkILGenericClass (
+                    altTy.TypeSpec.Name,
+                    // Types for nullary's become private, they also have names like _Empty
+                    ILTypeDefAccess.Nested(
+                        if alt.IsNullary && cud.HasHelpers = IlxUnionHasHelpers.AllHelpers then
+                            ILMemberAccess.Assembly
+                        else
+                            cud.UnionCasesAccessibility
+                    ),
+                    td.GenericParams,
+                    baseTy,
+                    [],
+                    mkILMethods ([ basicCtorMeth ] @ basicMethods),
+                    mkILFields basicFields,
+                    emptyILTypeDefs,
+                    mkILProperties basicProps,
+                    emptyILEvents,
+                    mkILCustomAttrs attrs,
+                    ILTypeInit.BeforeField
+                )
+
+            altTypeDef.WithSpecialName(true).WithSerializable(td.IsSerializable)
+
+        [ altTypeDef ], altDebugTypeDefs
+
+let private processAlternative (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase) =
+    let cud = ctx.cud
+    let cuspec = ctx.cuspec
+    let info = (ctx.td, cud)
+    let repr = cudefRepr
+
+    let constantAccessors = emitConstantAccessor ctx num alt
 
     let baseMakerMeths, baseMakerProps =
-
         match cud.HasHelpers with
         | AllHelpers
         | SpecialFSharpOptionHelpers
         | SpecialFSharpListHelpers ->
+            let testerMeths, testerProps = emitTesterMethodAndProperty ctx num alt
 
-            let baseTesterMeths, baseTesterProps =
-                if cud.UnionCases.Length <= 1 then
-                    [], []
-                elif repr.RepresentOneAlternativeAsNull info then
-                    [], []
-                else
-                    let additionalAttributes =
-                        if
-                            g.checkNullness
-                            && g.langFeatureNullness
-                            && repr.RepresentAlternativeAsStructValue info
-                            && not alt.IsNullary
-                        then
-                            let notnullfields =
-                                alt.FieldDefs
-                                // Fields that are nullable even from F# perspective has an [Nullable] attribute on them
-                                // Non-nullable fields are implicit in F#, therefore not annotated separately
-                                |> Array.filter (fun f ->
-                                    f.ILField.HasWellKnownAttribute(g, WellKnownILAttributes.NullableAttribute)
-                                    |> not)
-
-                            let fieldNames =
-                                notnullfields
-                                |> Array.map (fun f -> f.LowerName)
-                                |> Array.append (notnullfields |> Array.map (fun f -> f.Name))
-
-                            if fieldNames |> Array.isEmpty then
-                                emptyILCustomAttrs
-                            else
-                                mkILCustomAttrsFromArray [| GetNotNullWhenTrueAttribute g fieldNames |]
-
-                        else
-                            emptyILCustomAttrs
-
-                    [
-                        (mkILNonGenericInstanceMethod (
-                            "get_" + mkTesterName altName,
-                            cud.HelpersAccessibility,
-                            [],
-                            mkILReturn g.ilg.typ_Bool,
-                            mkMethodBody (
-                                true,
-                                [],
-                                2,
-                                nonBranchingInstrsToCode ([ mkLdarg0 ] @ mkIsData g.ilg (true, cuspec, num)),
-                                attr,
-                                imports
-                            )
-                        ))
-                            .With(customAttrs = additionalAttributes)
-                        |> addMethodGeneratedAttrs
-                    ],
-                    [
-                        ILPropertyDef(
-                            name = mkTesterName altName,
-                            attributes = PropertyAttributes.None,
-                            setMethod = None,
-                            getMethod =
-                                Some(
-                                    mkILMethRef (
-                                        baseTy.TypeRef,
-                                        ILCallingConv.Instance,
-                                        "get_" + mkTesterName altName,
-                                        0,
-                                        [],
-                                        g.ilg.typ_Bool
-                                    )
-                                ),
-                            callingConv = ILThisConvention.Instance,
-                            propertyType = g.ilg.typ_Bool,
-                            init = None,
-                            args = [],
-                            customAttrs = additionalAttributes
-                        )
-                        |> addPropertyGeneratedAttrs
-                        |> addPropertyNeverAttrs
-                    ]
-
-            let baseMakerMeths, baseMakerProps =
-
+            let makerMeths, makerProps =
                 if alt.IsNullary then
-                    let attributes =
-                        if
-                            g.checkNullness
-                            && g.langFeatureNullness
-                            && repr.RepresentAlternativeAsNull(info, alt)
-                        then
-                            let noTypars = td.GenericParams.Length
-
-                            GetNullableAttribute
-                                g
-                                [
-                                    yield NullnessInfo.WithNull // The top-level value itself, e.g. option, is nullable
-                                    yield! List.replicate noTypars NullnessInfo.AmbivalentToNull
-                                ] // The typars are not (i.e. do not change option<string> into option<string?>
-                            |> Array.singleton
-                            |> mkILCustomAttrsFromArray
-                        else
-                            emptyILCustomAttrs
-
-                    let nullaryMeth =
-                        mkILNonGenericStaticMethod (
-                            "get_" + altName,
-                            cud.HelpersAccessibility,
-                            [],
-                            (mkILReturn baseTy).WithCustomAttrs attributes,
-                            mkMethodBody (
-                                true,
-                                [],
-                                fields.Length,
-                                nonBranchingInstrsToCode (convNewDataInstrInternal g.ilg cuspec num),
-                                attr,
-                                imports
-                            )
-                        )
-                        |> addAltAttribs
-                        |> addMethodGeneratedAttrs
-
-                    let nullaryProp =
-
-                        ILPropertyDef(
-                            name = altName,
-                            attributes = PropertyAttributes.None,
-                            setMethod = None,
-                            getMethod = Some(mkILMethRef (baseTy.TypeRef, ILCallingConv.Static, "get_" + altName, 0, [], baseTy)),
-                            callingConv = ILThisConvention.Static,
-                            propertyType = baseTy,
-                            init = None,
-                            args = [],
-                            customAttrs = attributes
-                        )
-                        |> addPropertyGeneratedAttrs
-                        |> addPropertyNeverAttrs
-
-                    [ nullaryMeth ], [ nullaryProp ]
-
+                    emitNullaryCaseAccessor ctx num alt
                 else
-                    [ makeNonNullaryMakerMethod () ], []
+                    [ emitMakerMethod ctx num alt ], []
 
-            (baseMakerMeths @ baseTesterMeths), (baseMakerProps @ baseTesterProps)
+            (makerMeths @ testerMeths), (makerProps @ testerProps)
 
-        | NoHelpers when not alt.IsNullary && cuspecRepr.RepresentAlternativeAsStructValue(cuspec) ->
-            // For non-nullary struct DUs, maker method is used to create their values.
-            [ makeNonNullaryMakerMethod () ], []
+        | NoHelpers when not alt.IsNullary && cuspecRepr.RepresentAlternativeAsStructValue(cuspec) -> [ emitMakerMethod ctx num alt ], []
         | NoHelpers -> [], []
 
-    let typeDefs, altDebugTypeDefs, altNullaryFields =
+    let typeDefs, debugTypeDefs, nullaryFields =
         if repr.RepresentAlternativeAsNull(info, alt) then
             [], [], []
         elif repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt) then
@@ -1435,136 +1566,18 @@ let convAlternativeDef
         elif repr.RepresentAlternativeAsStructValue info then
             [], [], []
         else
-            let altNullaryFields =
-                if repr.MaintainPossiblyUniqueConstantFieldForAlternative(info, alt) then
-                    let basic: ILFieldDef =
-                        mkILStaticField (constFieldName altName, baseTy, None, None, ILMemberAccess.Assembly)
-                        |> addFieldNeverAttrs
-                        |> addFieldGeneratedAttrs
+            let nullaryFields = emitNullaryConstField ctx num alt
+            let typeDefs, debugTypeDefs = emitNestedAlternativeType ctx num alt
+            typeDefs, debugTypeDefs, nullaryFields
 
-                    let uniqObjField = basic.WithInitOnly(true)
-                    let inRootClass = cuspecRepr.OptimizeAlternativeToRootClass(cuspec, alt)
-                    [ (info, alt, altTy, num, uniqObjField, inRootClass) ]
-                else
-                    []
-
-            let typeDefs, altDebugTypeDefs =
-                if repr.OptimizeAlternativeToRootClass(info, alt) then
-                    [], []
-                else
-
-                    let altDebugTypeDefs, debugAttrs =
-                        if not cud.GenerateDebugProxies then
-                            [], []
-                        else
-                            emitDebugProxyType
-                                g
-                                td
-                                altTy
-                                fields
-                                baseTy
-                                imports
-                                addMethodGeneratedAttrs
-                                addPropertyGeneratedAttrs
-                                addFieldNeverAttrs
-                                addFieldGeneratedAttrs
-                                mkDebuggerTypeProxyAttribute
-                                cud
-
-                    let altTypeDef =
-                        let basicFields =
-                            fields
-                            |> Array.map (fun field ->
-                                let fldName, fldTy, attrs = mkUnionCaseFieldIdAndAttrs g field
-                                let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Assembly)
-
-                                let fdef =
-                                    match attrs with
-                                    | [] -> fdef
-                                    | attrs -> fdef.With(customAttrs = mkILCustomAttrs attrs)
-
-                                    |> addFieldNeverAttrs
-                                    |> addFieldGeneratedAttrs
-
-                                fdef.WithInitOnly(isTotallyImmutable))
-
-                            |> Array.toList
-
-                        let basicProps, basicMethods =
-                            mkMethodsAndPropertiesForFields
-                                (addMethodGeneratedAttrs, addPropertyGeneratedAttrs)
-                                g
-                                cud.UnionCasesAccessibility
-                                attr
-                                imports
-                                cud.HasHelpers
-                                altTy
-                                fields
-
-                        let basicCtorInstrs =
-                            [
-                                yield mkLdarg0
-                                match repr.DiscriminationTechnique info with
-                                | IntegerTag ->
-                                    yield mkLdcInt32 num
-                                    yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, [ mkTagFieldType g.ilg cuspec ]))
-                                | SingleCase
-                                | RuntimeTypes -> yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, []))
-                                | TailOrNull -> failwith "unreachable"
-                            ]
-
-                        let basicCtorAccess =
-                            (if cuspec.HasHelpers = AllHelpers then
-                                 ILMemberAccess.Assembly
-                             else
-                                 cud.UnionCasesAccessibility)
-
-                        let basicCtorFields =
-                            basicFields
-                            |> List.map (fun fdef ->
-                                let nullableAttr = getFieldsNullability g fdef |> Option.toList
-                                fdef.Name, fdef.FieldType, nullableAttr)
-
-                        let basicCtorMeth =
-                            (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports))
-                                .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
-                            |> addMethodGeneratedAttrs
-
-                        let attrs =
-                            if g.checkNullness && g.langFeatureNullness then
-                                GetNullableContextAttribute g 1uy :: debugAttrs
-                            else
-                                debugAttrs
-
-                        let altTypeDef =
-                            mkILGenericClass (
-                                altTy.TypeSpec.Name,
-                                // Types for nullary's become private, they also have names like _Empty
-                                ILTypeDefAccess.Nested(
-                                    if alt.IsNullary && cud.HasHelpers = IlxUnionHasHelpers.AllHelpers then
-                                        ILMemberAccess.Assembly
-                                    else
-                                        cud.UnionCasesAccessibility
-                                ),
-                                td.GenericParams,
-                                baseTy,
-                                [],
-                                mkILMethods ([ basicCtorMeth ] @ basicMethods),
-                                mkILFields basicFields,
-                                emptyILTypeDefs,
-                                mkILProperties basicProps,
-                                emptyILEvents,
-                                mkILCustomAttrs attrs,
-                                ILTypeInit.BeforeField
-                            )
-
-                        altTypeDef.WithSpecialName(true).WithSerializable(td.IsSerializable)
-
-                    [ altTypeDef ], altDebugTypeDefs
-
-            typeDefs, altDebugTypeDefs, altNullaryFields
-
-    baseMakerMeths, baseMakerProps, altUniqObjMeths, typeDefs, altDebugTypeDefs, altNullaryFields
+    {
+        BaseMakerMethods = baseMakerMeths
+        BaseMakerProperties = baseMakerProps
+        ConstantAccessors = constantAccessors
+        NestedTypeDefs = typeDefs
+        DebugProxyTypeDefs = debugTypeDefs
+        NullaryConstFields = nullaryFields
+    }
 
 /// Rewrite field nullable attributes for struct flattening.
 /// When a struct DU has multiple cases, all boxed fields become potentially nullable
@@ -1651,32 +1664,35 @@ let mkClassUnionDef
     let repr = cudefRepr
     let isTotallyImmutable = (cud.HasHelpers <> SpecialFSharpListHelpers)
 
+    let layout = classifyFromDef td cud baseTy
+
+    let ctx =
+        {
+            g = g
+            layout = layout
+            cuspec = cuspec
+            cud = cud
+            td = td
+            baseTy = baseTy
+            stampMethodAsGenerated = addMethodGeneratedAttrs
+            stampPropertyAsGenerated = addPropertyGeneratedAttrs
+            stampPropertyAsNever = addPropertyNeverAttrs
+            stampFieldAsGenerated = addFieldGeneratedAttrs
+            stampFieldAsNever = addFieldNeverAttrs
+            mkDebuggerTypeProxyAttr = mkDebuggerTypeProxyAttribute
+        }
+
     let results =
         cud.UnionCases
         |> List.ofArray
-        |> List.mapi (fun i alt ->
-            convAlternativeDef
-                (addMethodGeneratedAttrs,
-                 addPropertyGeneratedAttrs,
-                 addPropertyNeverAttrs,
-                 addFieldGeneratedAttrs,
-                 addFieldNeverAttrs,
-                 mkDebuggerTypeProxyAttribute)
-                g
-                i
-                td
-                cud
-                info
-                cuspec
-                baseTy
-                alt)
+        |> List.mapi (fun i alt -> processAlternative ctx i alt)
 
-    let baseMethsFromAlt = results |> List.collect (fun (a, _, _, _, _, _) -> a)
-    let basePropsFromAlt = results |> List.collect (fun (_, a, _, _, _, _) -> a)
-    let altUniqObjMeths = results |> List.collect (fun (_, _, a, _, _, _) -> a)
-    let altTypeDefs = results |> List.collect (fun (_, _, _, a, _, _) -> a)
-    let altDebugTypeDefs = results |> List.collect (fun (_, _, _, _, a, _) -> a)
-    let altNullaryFields = results |> List.collect (fun (_, _, _, _, _, a) -> a)
+    let baseMethsFromAlt = results |> List.collect (fun r -> r.BaseMakerMethods)
+    let basePropsFromAlt = results |> List.collect (fun r -> r.BaseMakerProperties)
+    let altUniqObjMeths = results |> List.collect (fun r -> r.ConstantAccessors)
+    let altTypeDefs = results |> List.collect (fun r -> r.NestedTypeDefs)
+    let altDebugTypeDefs = results |> List.collect (fun r -> r.DebugProxyTypeDefs)
+    let altNullaryFields = results |> List.collect (fun r -> r.NullaryConstFields)
 
     let tagFieldsInObject =
         match repr.DiscriminationTechnique info with
