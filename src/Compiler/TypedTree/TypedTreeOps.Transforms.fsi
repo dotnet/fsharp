@@ -89,12 +89,6 @@ module internal TypeEncoding =
     /// This predicate is used to detect those type parameters.
     val IsReferenceTyparTy: TcGlobals -> TType -> bool
 
-
-    val inline HasConstraint: [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> Typar -> bool
-
-    val inline IsTyparTyWithConstraint:
-        TcGlobals -> [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> TType -> bool
-
     val IsUnionTypeWithNullAsTrueValue: TcGlobals -> Tycon -> bool
 
     val TyconHasUseNullAsTrueValueAttribute: TcGlobals -> Tycon -> bool
@@ -149,12 +143,6 @@ module internal TypeEncoding =
 
     val canUseUnboxFast: TcGlobals -> range -> TType -> bool
 
-    val mkCallDispose: TcGlobals -> range -> TType -> Expr -> Expr
-
-    val mkCallSeq: TcGlobals -> range -> TType -> Expr -> Expr
-
-    val mkCallTypeTest: TcGlobals -> range -> TType -> Expr -> Expr
-
     val canUseTypeTestFast: TcGlobals -> TType -> bool
 
     /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
@@ -171,40 +159,7 @@ module internal TypeEncoding =
     val (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|):
         TType * TcGlobals -> Choice<unit, unit, unit, unit, unit, unit, unit>
 
-    val GetTypeOfIntrinsicMemberInCompiledForm:
-        TcGlobals -> ValRef -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
-
-    val GetMemberTypeInMemberForm:
-        TcGlobals ->
-        SynMemberFlags ->
-        ValReprInfo ->
-        int ->
-        TType ->
-        range ->
-            Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
-
-    /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
-    val PartitionValTyparsForApparentEnclosingType:
-        TcGlobals -> Val -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
-
-    /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
-    val PartitionValTypars: TcGlobals -> Val -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
-
-    /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
-    val PartitionValRefTypars: TcGlobals -> ValRef -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
-
-    /// Count the number of type parameters on the enclosing type
-    val CountEnclosingTyparsOfActualParentOfVal: Val -> int
-
-    val ReturnTypeOfPropertyVal: TcGlobals -> Val -> TType
-
-    val ArgInfosOfPropertyVal: TcGlobals -> Val -> UncurriedArgInfos
-
-    val ArgInfosOfMember: TcGlobals -> ValRef -> CurriedArgInfos
-
     val GetMemberCallInfo: TcGlobals -> ValRef * ValUseFlag -> int * bool * bool * bool * bool * bool * bool * bool
-
-    val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
 
 
 [<AutoOpen>]
@@ -329,13 +284,14 @@ module internal TupleCompilation =
     [<return: Struct>]
     val (|ValApp|_|): TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) voption
 
-    /// An immutable mapping from witnesses to some data.
-    ///
-    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
-    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
+    val GetTypeOfIntrinsicMemberInCompiledForm:
+        TcGlobals -> ValRef -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
 
-    /// Create an empty immutable mapping from witnesses to some data
-    val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
+    val mkDebugPoint: m: range -> expr: Expr -> Expr
+
+    /// Match an if...then...else expression or the result of "a && b" or "a || b"
+    [<return: Struct>]
+    val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) voption
 
     /// Match 'if __useResumableCode then ... else ...' expressions
     [<return: Struct>]
@@ -346,6 +302,14 @@ module internal TupleCompilation =
 module internal AttribChecking =
 
     val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
+
+    /// An immutable mapping from witnesses to some data.
+    ///
+    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
+    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
+
+    /// Create an empty immutable mapping from witnesses to some data
+    val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
 
     /// Recognise a 'match __resumableEntry() with ...' expression
     [<return: Struct>]
@@ -398,12 +362,6 @@ module internal AttribChecking =
     [<return: Struct>]
     val (|ResumableCodeInvoke|_|):
         g: TcGlobals -> expr: Expr -> (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) voption
-
-    val mkDebugPoint: m: range -> expr: Expr -> Expr
-
-    /// Match an if...then...else expression or the result of "a && b" or "a || b"
-    [<return: Struct>]
-    val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) voption
 
     /// Determine if a value is a method implementing an interface dispatch slot using a private method impl
     val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
@@ -482,22 +440,3 @@ module internal AttribChecking =
     /// If this is the case, a generated signature would require explicit typars.
     /// See https://github.com/dotnet/fsharp/issues/15175
     val isTyparOrderMismatch: Typars -> CurriedArgInfos -> bool
-
-    type TraitConstraintInfo with
-
-        /// Get the argument types recorded in the member constraint suitable for building a TypedTree call.
-        member GetCompiledArgumentTypes: unit -> TType list
-
-        /// Get the argument types when the trait is used as a first-class value "^T.TraitName" which can then be applied
-        member GetLogicalArgumentTypes: g: TcGlobals -> TType list
-
-        member GetObjectType: unit -> TType option
-
-        member GetReturnType: g: TcGlobals -> TType
-
-        /// Get the name of the trait for textual call.
-        member MemberDisplayNameCore: string
-
-        /// Get the key associated with the member constraint.
-        member GetWitnessInfo: unit -> TraitWitnessInfo
-
