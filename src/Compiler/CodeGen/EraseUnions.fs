@@ -254,7 +254,7 @@ let private _validateActivePatterns
 
 /// Does this non-nullary alternative fold to root class via fresh instances?
 /// Equivalent to the old RepresentAlternativeAsFreshInstancesOfRootClass.
-let private altFoldsAsRootInstance (layout: UnionLayout) (alt: IlxUnionCase) (alts: IlxUnionCase[]) =
+let private caseFieldsOnRoot (layout: UnionLayout) (alt: IlxUnionCase) (alts: IlxUnionCase[]) =
     not alt.IsNullary
     && (match layout with
         | UnionLayout.FSharpList _ -> alt.Name = ALT_NAME_CONS
@@ -269,7 +269,7 @@ let private altFoldsAsRootInstance (layout: UnionLayout) (alt: IlxUnionCase) (al
 
 /// Does this alternative optimize to root class (no nested type needed)?
 /// Equivalent to the old OptimizeAlternativeToRootClass.
-let private altOptimizesToRoot (layout: UnionLayout) (alt: IlxUnionCase) (alts: IlxUnionCase[]) (cidx: int) =
+let private caseRepresentedOnRoot (layout: UnionLayout) (alt: IlxUnionCase) (alts: IlxUnionCase[]) (cidx: int) =
     match layout with
     | UnionLayout.FSharpList _
     | UnionLayout.SingleCaseRef _
@@ -283,12 +283,12 @@ let private altOptimizesToRoot (layout: UnionLayout) (alt: IlxUnionCase) (alts: 
         (match layout, cidx with
          | CaseIsNull -> true
          | CaseIsAllocated -> false)
-        || altFoldsAsRootInstance layout alt alts
+        || caseFieldsOnRoot layout alt alts
 
 /// Should a static constant field be maintained for this nullary alternative?
 /// Equivalent to the old MaintainPossiblyUniqueConstantFieldForAlternative.
 /// Only for nullary cases on reference types that are not null-represented.
-let private maintainConstantField (layout: UnionLayout) (alt: IlxUnionCase) (cidx: int) =
+let private needsSingletonField (layout: UnionLayout) (alt: IlxUnionCase) (cidx: int) =
     alt.IsNullary
     && match layout, cidx with
        | CaseIsNull -> false
@@ -297,7 +297,56 @@ let private maintainConstantField (layout: UnionLayout) (alt: IlxUnionCase) (cid
            | ReferenceTypeLayout -> true
            | ValueTypeLayout -> false
 
+let private tyForAltIdx cuspec (alt: IlxUnionCase) cidx =
+    let layout = classifyFromSpec cuspec
+    let baseTy = baseTyOfUnionSpec cuspec
+
+    if caseRepresentedOnRoot layout alt cuspec.AlternativesArray cidx then
+        baseTy
+    else
+        let isList = (cuspec.HasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers)
+        let altName = alt.Name
+        let nm = if alt.IsNullary || isList then "_" + altName else altName
+        mkILNamedTy cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs
+
+/// How a specific union case is physically stored.
+[<RequireQualifiedAccess>]
+type CaseStorage =
+    /// Represented as null reference (UseNullAsTrueValue)
+    | Null
+    /// Singleton static field on root class (nullary, reference type)
+    | Singleton
+    /// Fields stored directly on root class (single-case, list cons, struct, folded SmallRef)
+    | OnRoot
+    /// Fields stored in a nested subtype
+    | InNestedType of nestedType: ILType
+
+let classifyCaseStorage (layout: UnionLayout) (cuspec: IlxUnionSpec) (cidx: int) (alt: IlxUnionCase) =
+    match layout, cidx with
+    | CaseIsNull -> CaseStorage.Null
+    | _ ->
+        if caseRepresentedOnRoot layout alt cuspec.AlternativesArray cidx then
+            if alt.IsNullary then
+                match layout with
+                | ValueTypeLayout -> CaseStorage.OnRoot
+                | ReferenceTypeLayout -> CaseStorage.Singleton
+            else
+                CaseStorage.OnRoot
+        else
+            CaseStorage.InNestedType(tyForAltIdx cuspec alt cidx)
+
 // ---- Context Records ----
+
+/// Bundles the IL attribute-stamping callbacks used during type definition generation.
+type ILStamping =
+    {
+        stampMethodAsGenerated: ILMethodDef -> ILMethodDef
+        stampPropertyAsGenerated: ILPropertyDef -> ILPropertyDef
+        stampPropertyAsNever: ILPropertyDef -> ILPropertyDef
+        stampFieldAsGenerated: ILFieldDef -> ILFieldDef
+        stampFieldAsNever: ILFieldDef -> ILFieldDef
+        mkDebuggerTypeProxyAttr: ILType -> ILAttribute
+    }
 
 /// Bundles the parameters threaded through type definition generation.
 /// Replaces the 6-callback tuple + scattered parameter threading in convAlternativeDef/mkClassUnionDef.
@@ -309,12 +358,17 @@ type TypeDefContext =
         cud: IlxUnionInfo
         td: ILTypeDef
         baseTy: ILType
-        stampMethodAsGenerated: ILMethodDef -> ILMethodDef
-        stampPropertyAsGenerated: ILPropertyDef -> ILPropertyDef
-        stampPropertyAsNever: ILPropertyDef -> ILPropertyDef
-        stampFieldAsGenerated: ILFieldDef -> ILFieldDef
-        stampFieldAsNever: ILFieldDef -> ILFieldDef
-        mkDebuggerTypeProxyAttr: ILType -> ILAttribute
+        stamping: ILStamping
+    }
+
+/// Information about a nullary case's singleton static field.
+type NullaryConstFieldInfo =
+    {
+        Case: IlxUnionCase
+        CaseType: ILType
+        CaseIndex: int
+        Field: ILFieldDef
+        InRootClass: bool
     }
 
 /// Result of processing a single union alternative for type definition generation.
@@ -326,7 +380,7 @@ type AlternativeDefResult =
         ConstantAccessors: ILMethodDef list
         NestedTypeDefs: ILTypeDef list
         DebugProxyTypeDefs: ILTypeDef list
-        NullaryConstFields: (IlxUnionCase * ILType * int * ILFieldDef * bool) list
+        NullaryConstFields: NullaryConstFieldInfo list
     }
 
 let mkTesterName nm = "Is" + nm
@@ -367,18 +421,6 @@ let mkConstFieldSpecFromId (baseTy: ILType) constFieldId = refToFieldInTy baseTy
 
 let mkConstFieldSpec nm (baseTy: ILType) =
     mkConstFieldSpecFromId baseTy (constFieldName nm, constFormalFieldTy baseTy)
-
-let private tyForAltIdx cuspec (alt: IlxUnionCase) cidx =
-    let layout = classifyFromSpec cuspec
-    let baseTy = baseTyOfUnionSpec cuspec
-
-    if altOptimizesToRoot layout alt cuspec.AlternativesArray cidx then
-        baseTy
-    else
-        let isList = (cuspec.HasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers)
-        let altName = alt.Name
-        let nm = if alt.IsNullary || isList then "_" + altName else altName
-        mkILNamedTy cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs
 
 let tyForAlt (cuspec: IlxUnionSpec) (alt: IlxUnionCase) =
     let cidx =
@@ -514,7 +556,7 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
             let baseTy = baseTyOfUnionSpec cuspec
             let ctorFieldTys = alt.FieldTypes |> Array.toList
             [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
-        | UnionLayout.SmallRefWithNullAsTrueValue _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
+        | UnionLayout.SmallRefWithNullAsTrueValue _ when caseFieldsOnRoot layout alt cuspec.AlternativesArray ->
             let baseTy = baseTyOfUnionSpec cuspec
             let ctorFieldTys = alt.FieldTypes |> Array.toList
             [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
@@ -537,7 +579,7 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
         | UnionLayout.TaggedRefAllNullary _
         | UnionLayout.TaggedStruct _ -> [ mkNormalNewobj (mkILCtorMethSpecForTy (altTy, Array.toList alt.FieldTypes)) ]
 
-let convNewDataInstrInternal ilg cuspec cidx =
+let emitRawNewData ilg cuspec cidx =
     emitRawConstruction ilg cuspec (classifyFromSpec cuspec) cidx
 
 // The stdata 'instruction' is only ever used for the F# "List" type within FSharp.Core.dll
@@ -606,7 +648,7 @@ let private emitIsCase ilg access cuspec (layout: UnionLayout) cidx =
         [ AI_ldnull; AI_ceq ]
     | _ ->
         match layout with
-        | UnionLayout.SmallRefWithNullAsTrueValue _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
+        | UnionLayout.SmallRefWithNullAsTrueValue _ when caseFieldsOnRoot layout alt cuspec.AlternativesArray ->
             // Single non-nullary with all null siblings: test via non-null
             [ AI_ldnull; AI_cgt_un ]
         | UnionLayout.SingleCaseRef _
@@ -675,7 +717,7 @@ let private emitBranchOnCase ilg sense access cuspec (layout: UnionLayout) cidx 
         [ I_brcmp(neg, tg) ]
     | _ ->
         match layout with
-        | UnionLayout.SmallRefWithNullAsTrueValue _ when altFoldsAsRootInstance layout alt cuspec.AlternativesArray ->
+        | UnionLayout.SmallRefWithNullAsTrueValue _ when caseFieldsOnRoot layout alt cuspec.AlternativesArray ->
             // Single non-nullary with all null siblings: branch on non-null
             [ I_brcmp(pos, tg) ]
         | UnionLayout.SingleCaseRef _
@@ -750,7 +792,7 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionS
                     I_brcmp((if cmpNull then BI_brtrue else BI_brfalse), cg.CodeLabel failLab)
 
                 let testBlock =
-                    if cmpNull || altFoldsAsRootInstance layout alt cuspec.AlternativesArray then
+                    if cmpNull || caseFieldsOnRoot layout alt cuspec.AlternativesArray then
                         [ test ]
                     else
                         let altName = alt.Name
@@ -775,9 +817,10 @@ let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionSpec) =
 
 let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail access cuspec (layout: UnionLayout) cidx =
     let alt = altOfUnionSpec cuspec cidx
+    let storage = classifyCaseStorage layout cuspec cidx alt
 
-    match layout, cidx with
-    | CaseIsNull ->
+    match storage with
+    | CaseStorage.Null ->
         // Null-represented case
         if canfail then
             let outlab = cg.GenerateDelayMark()
@@ -786,47 +829,25 @@ let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail access cuspec (layo
             cg.SetMarkToHere internal1
             cg.EmitInstrs [ cg.MkInvalidCastExnNewobj(); I_throw ]
             cg.SetMarkToHere outlab
-    | _ ->
+    | CaseStorage.OnRoot ->
+        // Fields on root: tag check if canfail for structs, else leave on stack
         match layout with
-        | UnionLayout.SingleCaseStruct _
-        | UnionLayout.TaggedStruct _
-        | UnionLayout.TaggedStructAllNullary _ ->
-            // Flatten (struct): tag check if canfail, else leave on stack
-            if canfail then
-                let outlab = cg.GenerateDelayMark()
-                let internal1 = cg.GenerateDelayMark()
-                cg.EmitInstr AI_dup
-                emitLdDataTagPrim ilg None cg (access, cuspec)
-                cg.EmitInstrs [ mkLdcInt32 cidx; I_brcmp(BI_beq, cg.CodeLabel outlab) ]
-                cg.SetMarkToHere internal1
-                cg.EmitInstrs [ cg.MkInvalidCastExnNewobj(); I_throw ]
-                cg.SetMarkToHere outlab
-        | UnionLayout.FSharpList _ ->
-            // List type: all cases fold to root, no cast needed
-            ()
-        | UnionLayout.SingleCaseRef _ ->
-            // Single case ref: always on root
-            ()
-        | UnionLayout.TaggedRefAllNullary _ ->
-            // All-nullary (enum-like): all cases on root
-            ()
-        | UnionLayout.TaggedRef _ ->
-            if alt.IsNullary then
-                // Nullary in tagged ref: constant field in root class, no cast
-                ()
-            else
-                // Non-nullary in tagged ref: lives in nested type
-                let altTy = tyForAltIdx cuspec alt cidx
-                cg.EmitInstr(I_castclass altTy)
-        | UnionLayout.SmallRef _
-        | UnionLayout.SmallRefWithNullAsTrueValue _ ->
-            if altFoldsAsRootInstance layout alt cuspec.AlternativesArray then
-                // Single non-nullary with all null siblings: folded to root
-                ()
-            else
-                // Case lives in a nested type
-                let altTy = tyForAltIdx cuspec alt cidx
-                cg.EmitInstr(I_castclass altTy)
+        | ValueTypeLayout when canfail ->
+            let outlab = cg.GenerateDelayMark()
+            let internal1 = cg.GenerateDelayMark()
+            cg.EmitInstr AI_dup
+            emitLdDataTagPrim ilg None cg (access, cuspec)
+            cg.EmitInstrs [ mkLdcInt32 cidx; I_brcmp(BI_beq, cg.CodeLabel outlab) ]
+            cg.SetMarkToHere internal1
+            cg.EmitInstrs [ cg.MkInvalidCastExnNewobj(); I_throw ]
+            cg.SetMarkToHere outlab
+        | _ -> ()
+    | CaseStorage.Singleton ->
+        // Nullary case with singleton field on root class, no cast needed
+        ()
+    | CaseStorage.InNestedType altTy ->
+        // Case lives in a nested subtype: emit castclass
+        cg.EmitInstr(I_castclass altTy)
 
 let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, access, cuspec, cidx) =
     let layout = classifyFromSpec cuspec
@@ -857,7 +878,7 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) access cuspec (layout: Unio
             cg.EmitInstr(mkLdloc locn)
             let testInstr = I_brcmp((if cmpNull then BI_brfalse else BI_brtrue), tg)
 
-            if cmpNull || altFoldsAsRootInstance layout alt cuspec.AlternativesArray then
+            if cmpNull || caseFieldsOnRoot layout alt cuspec.AlternativesArray then
                 cg.EmitInstr testInstr
             else
                 cg.EmitInstrs(mkRuntimeTypeDiscriminateThen ilg access cuspec alt altName altTy testInstr)
@@ -970,20 +991,12 @@ let mkMethodsAndPropertiesForFields
 
 /// Generate a debug proxy type for a union alternative.
 /// Returns (debugProxyTypeDefs, debugProxyAttrs).
-let private emitDebugProxyType
-    (g: TcGlobals)
-    (td: ILTypeDef)
-    (altTy: ILType)
-    (fields: IlxUnionCaseField[])
-    (baseTy: ILType)
-    imports
-    addMethodGeneratedAttrs
-    addPropertyGeneratedAttrs
-    addFieldNeverAttrs
-    addFieldGeneratedAttrs
-    mkDebuggerTypeProxyAttribute
-    (cud: IlxUnionInfo)
-    =
+let private emitDebugProxyType (ctx: TypeDefContext) (altTy: ILType) (fields: IlxUnionCaseField[]) =
+    let g = ctx.g
+    let td = ctx.td
+    let baseTy = ctx.baseTy
+    let cud = ctx.cud
+    let imports = cud.DebugImports
 
     let debugProxyTypeName = altTy.TypeSpec.Name + "@DebugTypeProxy"
 
@@ -995,8 +1008,8 @@ let private emitDebugProxyType
     let debugProxyFields =
         [
             mkILInstanceField (debugProxyFieldName, altTy, None, ILMemberAccess.Assembly)
-            |> addFieldNeverAttrs
-            |> addFieldGeneratedAttrs
+            |> ctx.stamping.stampFieldAsNever
+            |> ctx.stamping.stampFieldAsGenerated
         ]
 
     let debugProxyCode =
@@ -1016,7 +1029,7 @@ let private emitDebugProxyType
             mkMethodBody (false, [], 3, debugProxyCode, None, imports)
         ))
             .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
-        |> addMethodGeneratedAttrs
+        |> ctx.stamping.stampMethodAsGenerated
 
     let debugProxyGetterMeths =
         fields
@@ -1034,7 +1047,7 @@ let private emitDebugProxyType
             let mbody = mkMethodBody (true, [], 2, instrs, None, imports)
 
             mkILNonGenericInstanceMethod ("get_" + field.Name, ILMemberAccess.Public, [], mkILReturn field.Type, mbody)
-            |> addMethodGeneratedAttrs)
+            |> ctx.stamping.stampMethodAsGenerated)
         |> Array.toList
 
     let debugProxyGetterProps =
@@ -1051,7 +1064,7 @@ let private emitDebugProxyType
                 args = [],
                 customAttrs = fdef.ILField.CustomAttrs
             )
-            |> addPropertyGeneratedAttrs)
+            |> ctx.stamping.stampPropertyAsGenerated)
         |> Array.toList
 
     let debugProxyTypeDef =
@@ -1070,7 +1083,9 @@ let private emitDebugProxyType
             ILTypeInit.BeforeField
         )
 
-    [ debugProxyTypeDef.WithSpecialName(true) ], ([ mkDebuggerTypeProxyAttribute debugProxyTy ] @ cud.DebugDisplayAttributes)
+    [ debugProxyTypeDef.WithSpecialName(true) ],
+    ([ ctx.stamping.mkDebuggerTypeProxyAttr debugProxyTy ]
+     @ cud.DebugDisplayAttributes)
 
 let private emitMakerMethod (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase) =
     let g = ctx.g
@@ -1111,7 +1126,7 @@ let private emitMakerMethod (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase)
                 [
                     for i in 0 .. fields.Length - 1 do
                         mkLdarg (uint16 i)
-                    yield! convNewDataInstrInternal g.ilg cuspec num
+                    yield! emitRawNewData g.ilg cuspec num
                 ]
 
             [], ilInstrs
@@ -1135,7 +1150,7 @@ let private emitMakerMethod (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase)
         mkMethodBody (true, locals, fields.Length + locals.Length, nonBranchingInstrsToCode ilInstrs, attr, imports)
     )
     |> (fun mdef -> mdef.With(customAttrs = alt.altCustomAttrs))
-    |> ctx.stampMethodAsGenerated
+    |> ctx.stamping.stampMethodAsGenerated
 
 let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase) =
     let g = ctx.g
@@ -1190,7 +1205,7 @@ let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: I
                 )
             ))
                 .With(customAttrs = additionalAttributes)
-            |> ctx.stampMethodAsGenerated
+            |> ctx.stamping.stampMethodAsGenerated
         ],
         [
             ILPropertyDef(
@@ -1204,8 +1219,8 @@ let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: I
                 args = [],
                 customAttrs = additionalAttributes
             )
-            |> ctx.stampPropertyAsGenerated
-            |> ctx.stampPropertyAsNever
+            |> ctx.stamping.stampPropertyAsGenerated
+            |> ctx.stamping.stampPropertyAsNever
         ]
 
 let private emitNullaryCaseAccessor (ctx: TypeDefContext) (num: int) (alt: IlxUnionCase) =
@@ -1240,10 +1255,10 @@ let private emitNullaryCaseAccessor (ctx: TypeDefContext) (num: int) (alt: IlxUn
             cud.HelpersAccessibility,
             [],
             (mkILReturn baseTy).WithCustomAttrs attributes,
-            mkMethodBody (true, [], fields.Length, nonBranchingInstrsToCode (convNewDataInstrInternal g.ilg cuspec num), attr, imports)
+            mkMethodBody (true, [], fields.Length, nonBranchingInstrsToCode (emitRawNewData g.ilg cuspec num), attr, imports)
         )
         |> (fun mdef -> mdef.With(customAttrs = alt.altCustomAttrs))
-        |> ctx.stampMethodAsGenerated
+        |> ctx.stamping.stampMethodAsGenerated
 
     let nullaryProp =
         ILPropertyDef(
@@ -1257,8 +1272,8 @@ let private emitNullaryCaseAccessor (ctx: TypeDefContext) (num: int) (alt: IlxUn
             args = [],
             customAttrs = attributes
         )
-        |> ctx.stampPropertyAsGenerated
-        |> ctx.stampPropertyAsNever
+        |> ctx.stamping.stampPropertyAsGenerated
+        |> ctx.stamping.stampPropertyAsNever
 
     [ nullaryMeth ], [ nullaryProp ]
 
@@ -1277,7 +1292,7 @@ let private emitConstantAccessor (ctx: TypeDefContext) (num: int) (alt: IlxUnion
     | SpecialFSharpOptionHelpers
     | SpecialFSharpListHelpers -> []
     | _ ->
-        if alt.IsNullary && maintainConstantField ctx.layout alt num then
+        if alt.IsNullary && needsSingletonField ctx.layout alt num then
             let methName = "get_" + altName
 
             let meth =
@@ -1295,7 +1310,7 @@ let private emitConstantAccessor (ctx: TypeDefContext) (num: int) (alt: IlxUnion
                         imports
                     )
                 )
-                |> ctx.stampMethodAsGenerated
+                |> ctx.stamping.stampMethodAsGenerated
 
             [ meth ]
 
@@ -1309,15 +1324,24 @@ let private emitNullaryConstField (ctx: TypeDefContext) (num: int) (alt: IlxUnio
     let altName = alt.Name
     let altTy = tyForAltIdx cuspec alt num
 
-    if maintainConstantField ctx.layout alt num then
+    if needsSingletonField ctx.layout alt num then
         let basic: ILFieldDef =
             mkILStaticField (constFieldName altName, baseTy, None, None, ILMemberAccess.Assembly)
-            |> ctx.stampFieldAsNever
-            |> ctx.stampFieldAsGenerated
+            |> ctx.stamping.stampFieldAsNever
+            |> ctx.stamping.stampFieldAsGenerated
 
         let uniqObjField = basic.WithInitOnly(true)
-        let inRootClass = altOptimizesToRoot ctx.layout alt cud.UnionCases num
-        [ (alt, altTy, num, uniqObjField, inRootClass) ]
+        let inRootClass = caseRepresentedOnRoot ctx.layout alt cud.UnionCases num
+
+        [
+            {
+                Case = alt
+                CaseType = altTy
+                CaseIndex = num
+                Field = uniqObjField
+                InRootClass = inRootClass
+            }
+        ]
     else
         []
 
@@ -1333,26 +1357,14 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
     let attr = cud.DebugPoint
     let isTotallyImmutable = (cud.HasHelpers <> SpecialFSharpListHelpers)
 
-    if altOptimizesToRoot ctx.layout alt cud.UnionCases num then
+    if caseRepresentedOnRoot ctx.layout alt cud.UnionCases num then
         [], []
     else
         let altDebugTypeDefs, debugAttrs =
             if not cud.GenerateDebugProxies then
                 [], []
             else
-                emitDebugProxyType
-                    g
-                    td
-                    altTy
-                    fields
-                    baseTy
-                    imports
-                    ctx.stampMethodAsGenerated
-                    ctx.stampPropertyAsGenerated
-                    ctx.stampFieldAsNever
-                    ctx.stampFieldAsGenerated
-                    ctx.mkDebuggerTypeProxyAttr
-                    cud
+                emitDebugProxyType ctx altTy fields
 
         let altTypeDef =
             let basicFields =
@@ -1366,8 +1378,8 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
                         | [] -> fdef
                         | attrs -> fdef.With(customAttrs = mkILCustomAttrs attrs)
 
-                        |> ctx.stampFieldAsNever
-                        |> ctx.stampFieldAsGenerated
+                        |> ctx.stamping.stampFieldAsNever
+                        |> ctx.stamping.stampFieldAsGenerated
 
                     fdef.WithInitOnly(isTotallyImmutable))
 
@@ -1375,7 +1387,7 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
 
             let basicProps, basicMethods =
                 mkMethodsAndPropertiesForFields
-                    (ctx.stampMethodAsGenerated, ctx.stampPropertyAsGenerated)
+                    (ctx.stamping.stampMethodAsGenerated, ctx.stamping.stampPropertyAsGenerated)
                     g
                     cud.UnionCasesAccessibility
                     attr
@@ -1410,7 +1422,7 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
             let basicCtorMeth =
                 (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports))
                     .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
-                |> ctx.stampMethodAsGenerated
+                |> ctx.stamping.stampMethodAsGenerated
 
             let attrs =
                 if nullnessCheckingEnabled g then
@@ -1470,18 +1482,17 @@ let private processAlternative (ctx: TypeDefContext) (num: int) (alt: IlxUnionCa
             | _ -> [], []
 
     let typeDefs, debugTypeDefs, nullaryFields =
-        match ctx.layout, num with
-        | CaseIsNull -> [], [], []
-        | CaseIsAllocated ->
-            match ctx.layout with
-            | ValueTypeLayout -> [], [], []
-            | ReferenceTypeLayout ->
-                if altFoldsAsRootInstance ctx.layout alt cud.UnionCases then
-                    [], [], []
-                else
-                    let nullaryFields = emitNullaryConstField ctx num alt
-                    let typeDefs, debugTypeDefs = emitNestedAlternativeType ctx num alt
-                    typeDefs, debugTypeDefs, nullaryFields
+        match classifyCaseStorage ctx.layout ctx.cuspec num alt with
+        | CaseStorage.Null -> [], [], []
+        | CaseStorage.OnRoot -> [], [], []
+        | CaseStorage.Singleton ->
+            let nullaryFields = emitNullaryConstField ctx num alt
+            let typeDefs, debugTypeDefs = emitNestedAlternativeType ctx num alt
+            typeDefs, debugTypeDefs, nullaryFields
+        | CaseStorage.InNestedType _ ->
+            let nullaryFields = emitNullaryConstField ctx num alt
+            let typeDefs, debugTypeDefs = emitNestedAlternativeType ctx num alt
+            typeDefs, debugTypeDefs, nullaryFields
 
     {
         BaseMakerMethods = baseMakerMeths
@@ -1578,7 +1589,7 @@ let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (strin
             let fieldsOnRoot =
                 match ctx.layout with
                 | ValueTypeLayout -> true
-                | ReferenceTypeLayout -> altFoldsAsRootInstance ctx.layout alt cud.UnionCases
+                | ReferenceTypeLayout -> caseFieldsOnRoot ctx.layout alt cud.UnionCases
 
             if fieldsOnRoot then
 
@@ -1610,7 +1621,7 @@ let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (strin
                                 cud.DebugImports
                             ))
                                 .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
-                            |> ctx.stampMethodAsGenerated
+                            |> ctx.stamping.stampMethodAsGenerated
                         ]
 
                 let fieldDefs = rewriteFieldsForStructFlattening g alt ctx.layout
@@ -1626,7 +1637,7 @@ let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (strin
 
                 let props, meths =
                     mkMethodsAndPropertiesForFields
-                        (ctx.stampMethodAsGenerated, ctx.stampPropertyAsGenerated)
+                        (ctx.stamping.stampMethodAsGenerated, ctx.stamping.stampPropertyAsGenerated)
                         g
                         cud.UnionCasesAccessibility
                         cud.DebugPoint
@@ -1653,7 +1664,7 @@ let private emitRootConstructors (ctx: TypeDefContext) selfFields tagFieldsInObj
     // - There aren't already instance fields from folded cases covering the ctor need
     let allCasesFoldToRoot =
         cud.UnionCases
-        |> Array.forall (fun alt -> altFoldsAsRootInstance ctx.layout alt cud.UnionCases)
+        |> Array.forall (fun alt -> caseFieldsOnRoot ctx.layout alt cud.UnionCases)
 
     let hasFieldsOrTagButNoMethods =
         not (
@@ -1682,11 +1693,11 @@ let private emitRootConstructors (ctx: TypeDefContext) selfFields tagFieldsInObj
                 cud.DebugImports
             ))
                 .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x7E0 baseTy ])
-            |> ctx.stampMethodAsGenerated
+            |> ctx.stamping.stampMethodAsGenerated
         ]
 
 /// Generate static constructor code to initialize nullary case singleton fields.
-let private emitConstFieldInitializers (ctx: TypeDefContext) (altNullaryFields: (IlxUnionCase * ILType * int * ILFieldDef * bool) list) =
+let private emitConstFieldInitializers (ctx: TypeDefContext) (altNullaryFields: NullaryConstFieldInfo list) =
     let g = ctx.g
     let cud = ctx.cud
     let baseTy = ctx.baseTy
@@ -1698,18 +1709,18 @@ let private emitConstFieldInitializers (ctx: TypeDefContext) (altNullaryFields: 
         else
             prependInstrsToClassCtor
                 [
-                    for _alt, altTy, fidx, fd, inRootClass in altNullaryFields do
-                        let constFieldId = (fd.Name, baseTy)
+                    for r in altNullaryFields do
+                        let constFieldId = (r.Field.Name, baseTy)
                         let constFieldSpec = mkConstFieldSpecFromId baseTy constFieldId
 
                         match ctx.layout with
-                        | NoTagField -> yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy, []))
+                        | NoTagField -> yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, []))
                         | HasTagField ->
-                            if inRootClass then
-                                yield mkLdcInt32 fidx
-                                yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy, [ mkTagFieldType g.ilg cuspec ]))
+                            if r.InRootClass then
+                                yield mkLdcInt32 r.CaseIndex
+                                yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, [ mkTagFieldType g.ilg cuspec ]))
                             else
-                                yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy, []))
+                                yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, []))
 
                         yield mkNormalStsfld constFieldSpec
                 ]
@@ -1752,14 +1763,14 @@ let private emitTagInfrastructure (ctx: TypeDefContext) =
                     mkILReturn tagFieldType,
                     body
                 )
-                |> ctx.stampMethodAsGenerated
+                |> ctx.stamping.stampMethodAsGenerated
             ],
             []
 
         | _ ->
             [
                 mkILNonGenericInstanceMethod ("get_" + tagPropertyName, cud.HelpersAccessibility, [], mkILReturn tagFieldType, body)
-                |> ctx.stampMethodAsGenerated
+                |> ctx.stamping.stampMethodAsGenerated
             ],
 
             [
@@ -1774,8 +1785,8 @@ let private emitTagInfrastructure (ctx: TypeDefContext) =
                     args = [],
                     customAttrs = emptyILCustomAttrs
                 )
-                |> ctx.stampPropertyAsGenerated
-                |> ctx.stampPropertyAsNever
+                |> ctx.stamping.stampPropertyAsGenerated
+                |> ctx.stamping.stampPropertyAsNever
             ]
 
     tagMeths, tagProps, tagEnumFields
@@ -1794,8 +1805,8 @@ let private computeSelfAndTagFields (ctx: TypeDefContext) selfFields (tagFieldsI
                 | [] -> fdef
                 | attrs -> fdef.With(customAttrs = mkILCustomAttrs attrs)
 
-                |> ctx.stampFieldAsNever
-                |> ctx.stampFieldAsGenerated
+                |> ctx.stamping.stampFieldAsNever
+                |> ctx.stamping.stampFieldAsGenerated
 
             yield fdef.WithInitOnly(not isStruct && isTotallyImmutable)
     ]
@@ -1887,7 +1898,7 @@ let private assembleUnionTypeDef
                 fields =
                     mkILFields (
                         selfAndTagFields
-                        @ List.map (fun (_, _, _, fdef, _) -> fdef) altNullaryFields
+                        @ List.map (fun r -> r.Field) altNullaryFields
                         @ td.Fields.AsList()
                     ),
                 properties = mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps),
@@ -1925,12 +1936,15 @@ let mkClassUnionDef
             cud = cud
             td = td
             baseTy = baseTy
-            stampMethodAsGenerated = addMethodGeneratedAttrs
-            stampPropertyAsGenerated = addPropertyGeneratedAttrs
-            stampPropertyAsNever = addPropertyNeverAttrs
-            stampFieldAsGenerated = addFieldGeneratedAttrs
-            stampFieldAsNever = addFieldNeverAttrs
-            mkDebuggerTypeProxyAttr = mkDebuggerTypeProxyAttribute
+            stamping =
+                {
+                    stampMethodAsGenerated = addMethodGeneratedAttrs
+                    stampPropertyAsGenerated = addPropertyGeneratedAttrs
+                    stampPropertyAsNever = addPropertyNeverAttrs
+                    stampFieldAsGenerated = addFieldGeneratedAttrs
+                    stampFieldAsNever = addFieldNeverAttrs
+                    mkDebuggerTypeProxyAttr = mkDebuggerTypeProxyAttribute
+                }
         }
 
     let results =
