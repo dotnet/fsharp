@@ -56,10 +56,14 @@ type UnionLayout =
     | SingleCaseStruct of baseTy: ILType
     /// 2-3 cases, reference, not all-nullary. Discrimination via isinst type checks.
     | SmallRefUnion of baseTy: ILType * nullAsTrueValueIdx: int option
-    /// ≥4 cases (or 2-3 all-nullary), reference. Discrimination via integer _tag field.
-    | TaggedRefUnion of baseTy: ILType * allNullary: bool
-    /// Any struct DU with >1 case. Discrimination via integer _tag field.
-    | TaggedStructUnion of baseTy: ILType * allNullary: bool
+    /// ≥4 cases (or 2-3 all-nullary), reference, not all nullary. Discrimination via integer _tag field.
+    | TaggedRef of baseTy: ILType
+    /// ≥4 cases (or 2-3 all-nullary), reference, all nullary. Discrimination via integer _tag field.
+    | TaggedRefAllNullary of baseTy: ILType
+    /// Struct DU with >1 case, not all nullary. Discrimination via integer _tag field.
+    | TaggedStruct of baseTy: ILType
+    /// Struct DU with >1 case, all nullary. Discrimination via integer _tag field.
+    | TaggedStructAllNullary of baseTy: ILType
 
 let baseTyOfUnionSpec (cuspec: IlxUnionSpec) =
     mkILNamedTy cuspec.Boxity cuspec.TypeRef cuspec.GenericArgs
@@ -94,8 +98,10 @@ let private classifyUnion baseTy (alts: IlxUnionCase[]) nullPermitted isList isS
                 None
 
         UnionLayout.SmallRefUnion(baseTy, nullAsTrueValueIdx)
-    | _, _, true -> UnionLayout.TaggedStructUnion(baseTy, allNullary)
-    | _, _, false -> UnionLayout.TaggedRefUnion(baseTy, allNullary)
+    | _, _, true when allNullary -> UnionLayout.TaggedStructAllNullary baseTy
+    | _, _, true -> UnionLayout.TaggedStruct baseTy
+    | _, _, false when allNullary -> UnionLayout.TaggedRefAllNullary baseTy
+    | _, _, false -> UnionLayout.TaggedRef baseTy
 
 /// Classify from an IlxUnionSpec (used in IL instruction generation).
 let classifyFromSpec (cuspec: IlxUnionSpec) =
@@ -119,8 +125,10 @@ let classifyFromDef (td: ILTypeDef) (cud: IlxUnionInfo) (baseTy: ILType) =
 /// How to discriminate between cases at runtime.
 let (|DiscriminateByTagField|DiscriminateByRuntimeType|DiscriminateByTailNull|NoDiscrimination|) layout =
     match layout with
-    | UnionLayout.TaggedRefUnion _
-    | UnionLayout.TaggedStructUnion _ -> DiscriminateByTagField
+    | UnionLayout.TaggedRef _
+    | UnionLayout.TaggedRefAllNullary _
+    | UnionLayout.TaggedStruct _
+    | UnionLayout.TaggedStructAllNullary _ -> DiscriminateByTagField
     | UnionLayout.SmallRefUnion _ -> DiscriminateByRuntimeType
     | UnionLayout.FSharpList _ -> DiscriminateByTailNull
     | UnionLayout.SingleCaseRef _
@@ -129,8 +137,10 @@ let (|DiscriminateByTagField|DiscriminateByRuntimeType|DiscriminateByTailNull|No
 /// Does the root type have a _tag integer field?
 let (|HasTagField|NoTagField|) layout =
     match layout with
-    | UnionLayout.TaggedRefUnion _
-    | UnionLayout.TaggedStructUnion _ -> HasTagField
+    | UnionLayout.TaggedRef _
+    | UnionLayout.TaggedRefAllNullary _
+    | UnionLayout.TaggedStruct _
+    | UnionLayout.TaggedStructAllNullary _ -> HasTagField
     | UnionLayout.SmallRefUnion _
     | UnionLayout.FSharpList _
     | UnionLayout.SingleCaseRef _
@@ -142,9 +152,11 @@ let (|FieldsOnRootType|FieldsOnNestedTypes|) layout =
     | UnionLayout.SingleCaseRef _
     | UnionLayout.SingleCaseStruct _
     | UnionLayout.FSharpList _
-    | UnionLayout.TaggedStructUnion _ -> FieldsOnRootType
+    | UnionLayout.TaggedStruct _
+    | UnionLayout.TaggedStructAllNullary _ -> FieldsOnRootType
     | UnionLayout.SmallRefUnion _
-    | UnionLayout.TaggedRefUnion _ -> FieldsOnNestedTypes
+    | UnionLayout.TaggedRef _
+    | UnionLayout.TaggedRefAllNullary _ -> FieldsOnNestedTypes
 
 /// Is a specific case (by index) represented as null?
 let (|CaseIsNull|CaseIsAllocated|) (layout, cidx) =
@@ -154,17 +166,21 @@ let (|CaseIsNull|CaseIsAllocated|) (layout, cidx) =
     | UnionLayout.FSharpList _
     | UnionLayout.SingleCaseRef _
     | UnionLayout.SingleCaseStruct _
-    | UnionLayout.TaggedRefUnion _
-    | UnionLayout.TaggedStructUnion _ -> CaseIsAllocated
+    | UnionLayout.TaggedRef _
+    | UnionLayout.TaggedRefAllNullary _
+    | UnionLayout.TaggedStruct _
+    | UnionLayout.TaggedStructAllNullary _ -> CaseIsAllocated
 
 /// Is this a value type (struct) or reference type layout?
 let (|ValueTypeLayout|ReferenceTypeLayout|) layout =
     match layout with
     | UnionLayout.SingleCaseStruct _
-    | UnionLayout.TaggedStructUnion _ -> ValueTypeLayout
+    | UnionLayout.TaggedStruct _
+    | UnionLayout.TaggedStructAllNullary _ -> ValueTypeLayout
     | UnionLayout.SingleCaseRef _
     | UnionLayout.SmallRefUnion _
-    | UnionLayout.TaggedRefUnion _
+    | UnionLayout.TaggedRef _
+    | UnionLayout.TaggedRefAllNullary _
     | UnionLayout.FSharpList _ -> ReferenceTypeLayout
 
 /// Does a non-nullary case fold its fields into the root class (no nested type)?
@@ -172,11 +188,12 @@ let (|NonNullaryFoldsToRoot|NonNullaryInNestedType|) (layout, alt: IlxUnionCase)
     match layout with
     | UnionLayout.SingleCaseRef _
     | UnionLayout.SingleCaseStruct _
-    | UnionLayout.TaggedStructUnion _
+    | UnionLayout.TaggedStruct _
+    | UnionLayout.TaggedStructAllNullary _
     | UnionLayout.FSharpList _ -> NonNullaryFoldsToRoot
-    | UnionLayout.TaggedRefUnion(_, allNullary) when allNullary -> NonNullaryFoldsToRoot
-    | UnionLayout.TaggedRefUnion _ when not alt.IsNullary -> NonNullaryInNestedType
-    | UnionLayout.TaggedRefUnion _ -> NonNullaryFoldsToRoot
+    | UnionLayout.TaggedRefAllNullary _ -> NonNullaryFoldsToRoot
+    | UnionLayout.TaggedRef _ when not alt.IsNullary -> NonNullaryInNestedType
+    | UnionLayout.TaggedRef _ -> NonNullaryFoldsToRoot
     | UnionLayout.SmallRefUnion _ when not alt.IsNullary -> NonNullaryInNestedType
     | UnionLayout.SmallRefUnion _ -> NonNullaryFoldsToRoot
 
@@ -239,9 +256,10 @@ let private altOptimizesToRoot (layout: UnionLayout) (alt: IlxUnionCase) (alts: 
     | UnionLayout.FSharpList _
     | UnionLayout.SingleCaseRef _
     | UnionLayout.SingleCaseStruct _
-    | UnionLayout.TaggedStructUnion _ -> true
-    | UnionLayout.TaggedRefUnion(_, true) -> true
-    | UnionLayout.TaggedRefUnion _ -> alt.IsNullary
+    | UnionLayout.TaggedStruct _
+    | UnionLayout.TaggedStructAllNullary _ -> true
+    | UnionLayout.TaggedRefAllNullary _ -> true
+    | UnionLayout.TaggedRef _ -> alt.IsNullary
     | UnionLayout.SmallRefUnion _ ->
         (match layout, cidx with
          | CaseIsNull -> true
@@ -473,7 +491,8 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
         // → load the singleton static field
         | UnionLayout.SingleCaseRef _
         | UnionLayout.SmallRefUnion _
-        | UnionLayout.TaggedRefUnion _
+        | UnionLayout.TaggedRef _
+        | UnionLayout.TaggedRefAllNullary _
         | UnionLayout.FSharpList _ when alt.IsNullary ->
             let baseTy = baseTyOfUnionSpec cuspec
             [ I_ldsfld(Nonvolatile, mkConstFieldSpec altName baseTy) ]
@@ -488,7 +507,8 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
             let ctorFieldTys = alt.FieldTypes |> Array.toList
             [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
         // Struct + IntegerTag + nullary: create via root ctor with tag
-        | UnionLayout.TaggedStructUnion _ when alt.IsNullary ->
+        | UnionLayout.TaggedStruct _
+        | UnionLayout.TaggedStructAllNullary _ when alt.IsNullary ->
             let baseTy = baseTyOfUnionSpec cuspec
             let tagField = [ mkTagFieldType ilg cuspec ]
             [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
@@ -497,8 +517,10 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
         | UnionLayout.SingleCaseStruct _
         | UnionLayout.FSharpList _
         | UnionLayout.SmallRefUnion _
-        | UnionLayout.TaggedRefUnion _
-        | UnionLayout.TaggedStructUnion _ -> [ mkNormalNewobj (mkILCtorMethSpecForTy (altTy, Array.toList alt.FieldTypes)) ]
+        | UnionLayout.TaggedRef _
+        | UnionLayout.TaggedRefAllNullary _
+        | UnionLayout.TaggedStruct _
+        | UnionLayout.TaggedStructAllNullary _ -> [ mkNormalNewobj (mkILCtorMethSpecForTy (altTy, Array.toList alt.FieldTypes)) ]
 
 let convNewDataInstrInternal ilg cuspec cidx =
     emitRawConstruction ilg cuspec (classifyFromSpec cuspec) cidx
@@ -575,8 +597,10 @@ let private emitIsCase ilg access cuspec (layout: UnionLayout) cidx =
         | UnionLayout.SingleCaseRef _
         | UnionLayout.SingleCaseStruct _ -> [ mkLdcInt32 1 ]
         | UnionLayout.SmallRefUnion _ -> mkRuntimeTypeDiscriminate ilg access cuspec alt altName altTy
-        | UnionLayout.TaggedRefUnion _
-        | UnionLayout.TaggedStructUnion _ -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
+        | UnionLayout.TaggedRef _
+        | UnionLayout.TaggedRefAllNullary _
+        | UnionLayout.TaggedStruct _
+        | UnionLayout.TaggedStructAllNullary _ -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
         | UnionLayout.FSharpList _ ->
             match cidx with
             | TagNil -> [ mkGetTailOrNull access cuspec; AI_ldnull; AI_ceq ]
@@ -641,8 +665,10 @@ let private emitBranchOnCase ilg sense access cuspec (layout: UnionLayout) cidx 
         | UnionLayout.SingleCaseRef _
         | UnionLayout.SingleCaseStruct _ -> []
         | UnionLayout.SmallRefUnion _ -> mkRuntimeTypeDiscriminateThen ilg access cuspec alt altName altTy (I_brcmp(pos, tg))
-        | UnionLayout.TaggedRefUnion _
-        | UnionLayout.TaggedStructUnion _ -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp(pos, tg))
+        | UnionLayout.TaggedRef _
+        | UnionLayout.TaggedRefAllNullary _
+        | UnionLayout.TaggedStruct _
+        | UnionLayout.TaggedStructAllNullary _ -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp(pos, tg))
         | UnionLayout.FSharpList _ ->
             match cidx with
             | TagNil -> [ mkGetTailOrNull access cuspec; I_brcmp(neg, tg) ]
@@ -669,8 +695,10 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionS
             // leaves 1 if cons, 0 if not
             ldOpt |> Option.iter cg.EmitInstr
             cg.EmitInstrs [ mkGetTailOrNull access cuspec; AI_ldnull; AI_cgt_un ]
-        | UnionLayout.TaggedRefUnion(baseTy, _)
-        | UnionLayout.TaggedStructUnion(baseTy, _) ->
+        | UnionLayout.TaggedRef baseTy
+        | UnionLayout.TaggedRefAllNullary baseTy
+        | UnionLayout.TaggedStruct baseTy
+        | UnionLayout.TaggedStructAllNullary baseTy ->
             ldOpt |> Option.iter cg.EmitInstr
             cg.EmitInstr(mkGetTagFromField ilg cuspec baseTy)
         | UnionLayout.SingleCaseRef _
@@ -738,7 +766,8 @@ let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail access cuspec (layo
     | _ ->
         match layout with
         | UnionLayout.SingleCaseStruct _
-        | UnionLayout.TaggedStructUnion _ ->
+        | UnionLayout.TaggedStruct _
+        | UnionLayout.TaggedStructAllNullary _ ->
             // Flatten (struct): tag check if canfail, else leave on stack
             if canfail then
                 let outlab = cg.GenerateDelayMark()
@@ -755,11 +784,11 @@ let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail access cuspec (layo
         | UnionLayout.SingleCaseRef _ ->
             // Single case ref: always on root
             ()
-        | UnionLayout.TaggedRefUnion(_, allNullary) ->
-            if allNullary then
-                // All-nullary (enum-like): all cases on root
-                ()
-            elif alt.IsNullary then
+        | UnionLayout.TaggedRefAllNullary _ ->
+            // All-nullary (enum-like): all cases on root
+            ()
+        | UnionLayout.TaggedRef _ ->
+            if alt.IsNullary then
                 // Nullary in tagged ref: constant field in root class, no cast
                 ()
             else
@@ -805,8 +834,10 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) access cuspec (layout: Unio
 
             cg.SetMarkToHere failLab
 
-    | UnionLayout.TaggedRefUnion _
-    | UnionLayout.TaggedStructUnion _ ->
+    | UnionLayout.TaggedRef _
+    | UnionLayout.TaggedRefAllNullary _
+    | UnionLayout.TaggedStruct _
+    | UnionLayout.TaggedStructAllNullary _ ->
         match cases with
         | [] -> cg.EmitInstr AI_pop
         | _ ->
@@ -1433,7 +1464,8 @@ let private processAlternative (ctx: TypeDefContext) (num: int) (alt: IlxUnionCa
 /// because only one case's fields are valid at a time.
 let private rewriteFieldsForStructFlattening (g: TcGlobals) (alt: IlxUnionCase) (layout: UnionLayout) =
     match layout with
-    | UnionLayout.TaggedStructUnion _ when g.checkNullness && g.langFeatureNullness ->
+    | UnionLayout.TaggedStruct _
+    | UnionLayout.TaggedStructAllNullary _ when g.checkNullness && g.langFeatureNullness ->
         alt.FieldDefs
         |> Array.map (fun field ->
             if field.Type.IsNominal && field.Type.Boxity = AsValue then
