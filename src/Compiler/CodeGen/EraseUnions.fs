@@ -439,18 +439,6 @@ let mkTagDiscriminate ilg cuspec _baseTy cidx =
 let mkTagDiscriminateThen ilg cuspec cidx after =
     [ mkGetTag ilg cuspec; mkLdcInt32 cidx ] @ mkCeqThen after
 
-/// Encodes RepresentAlternativeAsFreshInstancesOfRootClass for a given layout and alt.
-/// True when the case is constructed directly on the root type (not a nested type).
-/// This covers: ListTailOrNull cons case, or SmallRefUnion with single non-nullary + null sibling.
-let private caseFoldsToRootClass (layout: UnionLayout) (cuspec: IlxUnionSpec) (alt: IlxUnionCase) =
-    match layout with
-    | UnionLayout.ListTailOrNull _ -> alt.Name = ALT_NAME_CONS
-    | UnionLayout.SmallRefUnion _ -> altFoldsAsRootInstance layout alt cuspec.AlternativesArray
-    | UnionLayout.SingleCaseRef _
-    | UnionLayout.SingleCaseStruct _
-    | UnionLayout.TaggedRefUnion _
-    | UnionLayout.TaggedStructUnion _ -> false
-
 let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAltIdx cuspec alt cidx
@@ -693,7 +681,7 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: Ilx
                     I_brcmp((if cmpNull then BI_brtrue else BI_brfalse), cg.CodeLabel failLab)
 
                 let testBlock =
-                    if cmpNull || caseFoldsToRootClass layout cuspec alt then
+                    if cmpNull || altFoldsAsRootInstance layout alt cuspec.AlternativesArray then
                         [ test ]
                     else
                         let altName = alt.Name
@@ -761,7 +749,7 @@ let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail avoidHelpers cuspec
                 let altTy = tyForAltIdx cuspec alt cidx
                 cg.EmitInstr(I_castclass altTy)
         | UnionLayout.SmallRefUnion _ ->
-            if caseFoldsToRootClass layout cuspec alt then
+            if altFoldsAsRootInstance layout alt cuspec.AlternativesArray then
                 // Single non-nullary with all null siblings: folded to root
                 ()
             else
@@ -792,7 +780,7 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) avoidHelpers cuspec (layout
             cg.EmitInstr(mkLdloc locn)
             let testInstr = I_brcmp((if cmpNull then BI_brfalse else BI_brtrue), tg)
 
-            if cmpNull || caseFoldsToRootClass layout cuspec alt then
+            if cmpNull || altFoldsAsRootInstance layout alt cuspec.AlternativesArray then
                 cg.EmitInstr testInstr
             else
                 cg.EmitInstrs(mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy testInstr)
