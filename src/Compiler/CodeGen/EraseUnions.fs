@@ -518,9 +518,13 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
             let baseTy = baseTyOfUnionSpec cuspec
             let ctorFieldTys = alt.FieldTypes |> Array.toList
             [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
-        // Struct + IntegerTag + nullary: create via root ctor with tag
-        | UnionLayout.TaggedStruct _
-        | UnionLayout.TaggedStructAllNullary _ when alt.IsNullary ->
+        // Struct + all nullary: create via root ctor with tag
+        | UnionLayout.TaggedStructAllNullary _ ->
+            let baseTy = baseTyOfUnionSpec cuspec
+            let tagField = [ mkTagFieldType ilg cuspec ]
+            [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
+        // Struct + nullary case in mixed struct: create via root ctor with tag
+        | UnionLayout.TaggedStruct _ when alt.IsNullary ->
             let baseTy = baseTyOfUnionSpec cuspec
             let tagField = [ mkTagFieldType ilg cuspec ]
             [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
@@ -532,8 +536,7 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
         | UnionLayout.SmallRefWithNullAsTrueValue _
         | UnionLayout.TaggedRef _
         | UnionLayout.TaggedRefAllNullary _
-        | UnionLayout.TaggedStruct _
-        | UnionLayout.TaggedStructAllNullary _ -> [ mkNormalNewobj (mkILCtorMethSpecForTy (altTy, Array.toList alt.FieldTypes)) ]
+        | UnionLayout.TaggedStruct _ -> [ mkNormalNewobj (mkILCtorMethSpecForTy (altTy, Array.toList alt.FieldTypes)) ]
 
 let convNewDataInstrInternal ilg cuspec cidx =
     emitRawConstruction ilg cuspec (classifyFromSpec cuspec) cidx
@@ -1149,7 +1152,6 @@ let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: I
     | UnionLayout.SingleCaseRef _
     | UnionLayout.SingleCaseStruct _
     | UnionLayout.SmallRefWithNullAsTrueValue _ -> [], []
-    | _ when cud.UnionCases.Length <= 1 -> [], []
     | _ ->
         let additionalAttributes =
             match ctx.layout with
