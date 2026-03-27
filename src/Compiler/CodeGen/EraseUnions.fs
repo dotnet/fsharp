@@ -1089,20 +1089,12 @@ let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: I
     let imports = cud.DebugImports
     let attr = cud.DebugPoint
 
-    if cud.UnionCases.Length <= 1 then
-        [], []
-    elif hasNullCase ctx.layout then
+    if cud.UnionCases.Length <= 1 || hasNullCase ctx.layout then
         [], []
     else
         let additionalAttributes =
-            if
-                g.checkNullness
-                && g.langFeatureNullness
-                && (match ctx.layout with
-                    | ValueTypeLayout -> true
-                    | ReferenceTypeLayout -> false)
-                && not alt.IsNullary
-            then
+            match ctx.layout with
+            | ValueTypeLayout when g.checkNullness && g.langFeatureNullness && not alt.IsNullary ->
                 let notnullfields =
                     alt.FieldDefs
                     // Fields that are nullable even from F# perspective has an [Nullable] attribute on them
@@ -1120,9 +1112,7 @@ let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: I
                     emptyILCustomAttrs
                 else
                     mkILCustomAttrsFromArray [| GetNotNullWhenTrueAttribute g fieldNames |]
-
-            else
-                emptyILCustomAttrs
+            | _ -> emptyILCustomAttrs
 
         [
             (mkILNonGenericInstanceMethod (
