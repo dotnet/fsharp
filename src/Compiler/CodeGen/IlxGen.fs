@@ -12258,10 +12258,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         mkLdarg 2us
                         mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [ serializationInfoType; streamingContextType ]))
                     ]
-                    @ (if shouldRestoreFields then
-                           ilInstrsToRestoreFields
-                       else
-                           [])
+                    @ (if shouldRestoreFields then ilInstrsToRestoreFields else [])
                     |> nonBranchingInstrsToCode
 
                 let ilCtorDefForSerialization =
