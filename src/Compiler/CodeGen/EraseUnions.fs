@@ -227,14 +227,16 @@ let private altOptimizesToRoot (layout: UnionLayout) (alt: IlxUnionCase) (alts: 
 
 /// Should a static constant field be maintained for this nullary alternative?
 /// Equivalent to the old MaintainPossiblyUniqueConstantFieldForAlternative.
+/// Only for nullary cases on reference types that are not null-represented.
 let private maintainConstantField (layout: UnionLayout) (alt: IlxUnionCase) (cidx: int) =
     alt.IsNullary
-    && (match layout with
+    &&
+    match layout, cidx with
+    | CaseIsNull -> false
+    | _ ->
+        match layout with
+        | ReferenceTypeLayout -> true
         | ValueTypeLayout -> false
-        | ReferenceTypeLayout -> true)
-    && (match layout, cidx with
-        | CaseIsNull -> false
-        | CaseIsAllocated -> true)
 
 /// Does any case use null representation?
 let private hasNullCase (layout: UnionLayout) =
