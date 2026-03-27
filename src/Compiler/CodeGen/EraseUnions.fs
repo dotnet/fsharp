@@ -168,7 +168,7 @@ let (|FieldsOnRootType|FieldsOnNestedTypes|) layout =
     | UnionLayout.TaggedRefAllNullary _ -> FieldsOnNestedTypes
 
 /// Is a specific case (by index) represented as null?
-let (|CaseIsNull|CaseIsAllocated|) (layout, cidx) =
+let inline (|CaseIsNull|CaseIsAllocated|) (layout, cidx) =
     match layout with
     | UnionLayout.SmallRefWithNullAsTrueValue(_, nullIdx) when nullIdx = cidx -> CaseIsNull
     | UnionLayout.SmallRef _
@@ -259,7 +259,7 @@ let private caseFieldsOnRoot (layout: UnionLayout) (alt: IlxUnionCase) (alts: Il
     && (match layout with
         | UnionLayout.FSharpList _ -> alt.Name = ALT_NAME_CONS
         | UnionLayout.SingleCaseRef _ -> true
-        | UnionLayout.SmallRefWithNullAsTrueValue _ -> alts |> Array.filter (fun a -> not a.IsNullary) |> Array.length = 1
+        | UnionLayout.SmallRefWithNullAsTrueValue _ -> alts |> Array.existsOne (fun a -> not a.IsNullary)
         | UnionLayout.SmallRef _
         | UnionLayout.SingleCaseStruct _
         | UnionLayout.TaggedRef _
@@ -445,6 +445,7 @@ let altOfUnionSpec (cuspec: IlxUnionSpec) cidx =
         failwith ("alternative " + string cidx + " not found")
 
 /// Resolved identity of a union case within a union spec.
+[<Struct>]
 type CaseIdentity =
     {
         Index: int
@@ -744,7 +745,7 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionS
     | DataAccess.RawFields ->
 
         let layout = classifyFromSpec cuspec
-        let alts = cuspec.Alternatives
+        let alts = cuspec.AlternativesArray
 
         match layout with
         | UnionLayout.FSharpList _ ->
