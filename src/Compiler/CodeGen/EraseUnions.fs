@@ -14,6 +14,27 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
 
+// ============================================================================
+// Architecture: Two-axis classification model
+//
+// Every decision in this module is driven by two independent classifications:
+//
+// 1. UnionLayout (8 cases) — how the union TYPE is structured in IL
+//    Computed once per union via classifyFromSpec / classifyFromDef.
+//
+// 2. CaseStorage (5 cases) — how each individual CASE is stored
+//    Computed per case via classifyCaseStorage. Answers: is this case null?
+//    A singleton field? Fields on root? In a nested subtype? Struct tag-only?
+//
+// Orthogonal concerns read from these:
+//   - DataAccess (3 cases) — how callers access data (raw fields vs helpers)
+//   - DiscriminationMethod (AP) — how to distinguish cases (tag/isinst/tail-null)
+//
+// The emit functions match on CaseStorage first (WHERE is it?), then on
+// DiscriminationMethod (HOW to tell it apart?). This two-axis pattern
+// ensures each function reads as a simple decision table, not a re-derivation.
+// ============================================================================
+
 /// How to access union data at a given call site.
 /// Combines the per-call-site 'avoidHelpers' flag with the per-union 'HasHelpers' setting
 /// into a single value computed once at the entry point.
@@ -336,6 +357,37 @@ let classifyCaseStorage (layout: UnionLayout) (cuspec: IlxUnionSpec) (cidx: int)
             CaseStorage.Singleton
         else
             CaseStorage.InNestedType(tyForAltIdxWith layout (baseTyOfUnionSpec cuspec) cuspec alt cidx)
+
+/// What C# interop mechanisms this union layout can support.
+/// See https://github.com/fsharp/fslang-suggestions/discussions/1463
+[<RequireQualifiedAccess>]
+type InteropCapability =
+    /// Can emit [Closed] hierarchy for C# exhaustive pattern matching via subtypes
+    | ClosedHierarchy
+    /// Can emit [Union]+IUnion for C# union protocol
+    | UnionProtocol
+    /// Can emit [Union]+IUnion but multi-field cases need ValueTuple boxing
+    | UnionProtocolWithTupleBoxing
+    /// Cannot emit C# interop (null represents a case — calling Value on null would throw NRE)
+    | NoInterop
+
+/// Classify what C# interop mechanisms this union layout supports.
+let _classifyInteropCapability (layout: UnionLayout) =
+    match layout with
+    // Abstract root + nested subclasses → natural [Closed] hierarchy
+    | UnionLayout.SmallRef _
+    | UnionLayout.TaggedRef _ -> InteropCapability.ClosedHierarchy
+    // Single value or enum-like → [Union]+IUnion, Value boxes on demand
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SingleCaseStruct _
+    | UnionLayout.TaggedRefAllNullary _
+    | UnionLayout.TaggedStructAllNullary _ -> InteropCapability.UnionProtocol
+    // Struct with data cases → [Union]+IUnion, multi-field cases need ValueTuple
+    | UnionLayout.TaggedStruct _ -> InteropCapability.UnionProtocolWithTupleBoxing
+    // null = case (option-like) → cannot implement IUnion safely
+    | UnionLayout.SmallRefWithNullAsTrueValue _ -> InteropCapability.NoInterop
+    // Hardcoded special type
+    | UnionLayout.FSharpList _ -> InteropCapability.NoInterop
 
 // ---- Context Records ----
 
@@ -915,16 +967,16 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (access, cuspec, cases) =
 //---------------------------------------------------
 // Generate the union classes
 
-let mkMethodsAndPropertiesForFields
-    (addMethodGeneratedAttrs, addPropertyGeneratedAttrs)
-    (g: TcGlobals)
-    access
-    attr
-    imports
-    hasHelpers
-    (ilTy: ILType)
-    (fields: IlxUnionCaseField[])
-    =
+let mkMethodsAndPropertiesForFields (ctx: TypeDefContext) (ilTy: ILType) (fields: IlxUnionCaseField[]) =
+    let g = ctx.g
+    let cud = ctx.cud
+    let access = cud.UnionCasesAccessibility
+    let attr = cud.DebugPoint
+    let imports = cud.DebugImports
+    let hasHelpers = cud.HasHelpers
+    let addMethodGeneratedAttrs = ctx.stamping.stampMethodAsGenerated
+    let addPropertyGeneratedAttrs = ctx.stamping.stampPropertyAsGenerated
+
     let basicProps =
         fields
         |> Array.map (fun field ->
@@ -1374,16 +1426,7 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
 
                 |> Array.toList
 
-            let basicProps, basicMethods =
-                mkMethodsAndPropertiesForFields
-                    (ctx.stamping.stampMethodAsGenerated, ctx.stamping.stampPropertyAsGenerated)
-                    g
-                    cud.UnionCasesAccessibility
-                    attr
-                    imports
-                    cud.HasHelpers
-                    altTy
-                    fields
+            let basicProps, basicMethods = mkMethodsAndPropertiesForFields ctx altTy fields
 
             let basicCtorInstrs =
                 [
@@ -1618,15 +1661,7 @@ let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (strin
                     |> Array.toList
 
                 let props, meths =
-                    mkMethodsAndPropertiesForFields
-                        (ctx.stamping.stampMethodAsGenerated, ctx.stamping.stampPropertyAsGenerated)
-                        g
-                        cud.UnionCasesAccessibility
-                        cud.DebugPoint
-                        cud.DebugImports
-                        cud.HasHelpers
-                        baseTy
-                        fieldsToBeAddedIntoType
+                    mkMethodsAndPropertiesForFields ctx baseTy fieldsToBeAddedIntoType
 
                 yield (fields, (ctor @ meths), props)
     ]
