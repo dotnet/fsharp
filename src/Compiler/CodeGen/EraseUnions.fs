@@ -1127,13 +1127,8 @@ let private emitNullaryCaseAccessor (ctx: TypeDefContext) (num: int) (alt: IlxUn
     let attr = cud.DebugPoint
 
     let attributes =
-        if
-            g.checkNullness
-            && g.langFeatureNullness
-            && (match ctx.layout, num with
-                | CaseIsNull -> true
-                | CaseIsAllocated -> false)
-        then
+        match ctx.layout, num with
+        | CaseIsNull when g.checkNullness && g.langFeatureNullness ->
             let noTypars = td.GenericParams.Length
 
             GetNullableAttribute
@@ -1144,8 +1139,7 @@ let private emitNullaryCaseAccessor (ctx: TypeDefContext) (num: int) (alt: IlxUn
                 ] // The typars are not (i.e. do not change option<string> into option<string?>
             |> Array.singleton
             |> mkILCustomAttrsFromArray
-        else
-            emptyILCustomAttrs
+        | _ -> emptyILCustomAttrs
 
     let nullaryMeth =
         mkILNonGenericStaticMethod (
