@@ -343,11 +343,6 @@ module internal AttribChecking =
     [<return: Struct>]
     val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) voption
 
-    /// Any delegate type with ResumableCode attribute, or any function returning such a delegate type
-    val isResumableCodeTy: TcGlobals -> TType -> bool
-
-    /// The delegate type ResumableCode, or any function returning this a delegate type
-    val isReturnsResumableCodeTy: TcGlobals -> TType -> bool
 
     [<return: Struct>]
     val (|ResumableCodeInvoke|_|):
@@ -392,8 +387,6 @@ module internal AttribChecking =
     [<return: Struct>]
     val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) voption
 
-    /// Indicates if an F# type is the type associated with an F# exception declaration
-    val isFSharpExceptionTy: g: TcGlobals -> ty: TType -> bool
 
     /// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
     /// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
@@ -419,8 +412,6 @@ module internal AttribChecking =
         typeEntity: Entity ->
             Entity
 
-    /// Serialize an entity to a very basic json structure.
-    val serializeEntity: path: string -> entity: Entity -> unit
 
     /// Updates the IsPrefixDisplay to false for the Microsoft.FSharp.Collections.seq`1 entity
     /// Meant to be called with the FSharp.Core module spec right after it was unpickled.

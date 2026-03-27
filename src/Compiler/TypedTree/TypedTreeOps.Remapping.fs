@@ -588,32 +588,6 @@ module internal SignatureOps =
     let freeTyvarsAllPublic tyvars =
         Zset.forall isPublicTycon tyvars.FreeTycons
 
-    /// Detect the subset of match expressions we process in a linear way (i.e. using tailcalls, rather than
-    /// unbounded stack)
-    ///   -- if then else
-    ///   -- match e with pat[vs] -> e1[vs] | _ -> e2
-
-    [<return: Struct>]
-    let (|LinearMatchExpr|_|) expr =
-        match expr with
-        | Expr.Match(sp, m, dtree, [| tg1; (TTarget([], e2, _)) |], m2, ty) -> ValueSome(sp, m, dtree, tg1, e2, m2, ty)
-        | _ -> ValueNone
-
-    let rebuildLinearMatchExpr (sp, m, dtree, tg1, e2, m2, ty) =
-        primMkMatch (sp, m, dtree, [| tg1; TTarget([], e2, None) |], m2, ty)
-
-    /// Detect a subset of 'Expr.Op' expressions we process in a linear way (i.e. using tailcalls, rather than
-    /// unbounded stack). Only covers Cons(args,Cons(args,Cons(args,Cons(args,...._)))).
-    [<return: Struct>]
-    let (|LinearOpExpr|_|) expr =
-        match expr with
-        | Expr.Op(TOp.UnionCase _ as op, tinst, args, m) when not args.IsEmpty ->
-            let argsFront, argLast = List.frontAndBack args
-            ValueSome(op, tinst, argsFront, argLast, m)
-        | _ -> ValueNone
-
-    let rebuildLinearOpExpr (op, tinst, argsFront, argLast, m) =
-        Expr.Op(op, tinst, argsFront @ [ argLast ], m)
 
     /// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
     /// duplicate modules etc.
@@ -695,6 +669,33 @@ module internal SignatureOps =
 
 [<AutoOpen>]
 module internal ExprFreeVars =
+
+    /// Detect the subset of match expressions we process in a linear way (i.e. using tailcalls, rather than
+    /// unbounded stack)
+    ///   -- if then else
+    ///   -- match e with pat[vs] -> e1[vs] | _ -> e2
+
+    [<return: Struct>]
+    let (|LinearMatchExpr|_|) expr =
+        match expr with
+        | Expr.Match(sp, m, dtree, [| tg1; (TTarget([], e2, _)) |], m2, ty) -> ValueSome(sp, m, dtree, tg1, e2, m2, ty)
+        | _ -> ValueNone
+
+    let rebuildLinearMatchExpr (sp, m, dtree, tg1, e2, m2, ty) =
+        primMkMatch (sp, m, dtree, [| tg1; TTarget([], e2, None) |], m2, ty)
+
+    /// Detect a subset of 'Expr.Op' expressions we process in a linear way (i.e. using tailcalls, rather than
+    /// unbounded stack). Only covers Cons(args,Cons(args,Cons(args,Cons(args,...._)))).
+    [<return: Struct>]
+    let (|LinearOpExpr|_|) expr =
+        match expr with
+        | Expr.Op(TOp.UnionCase _ as op, tinst, args, m) when not args.IsEmpty ->
+            let argsFront, argLast = List.frontAndBack args
+            ValueSome(op, tinst, argsFront, argLast, m)
+        | _ -> ValueNone
+
+    let rebuildLinearOpExpr (op, tinst, argsFront, argLast, m) =
+        Expr.Op(op, tinst, argsFront @ [ argLast ], m)
 
     //---------------------------------------------------------------------------
     // Free variables in terms. All binders are distinct.
@@ -2624,72 +2625,6 @@ module internal ExprShapeQueries =
             let witnessInfo = traitInfo.GetWitnessInfo()
             GenWitnessTy g witnessInfo
 
-    //--------------------------------------------------------------------------
-    // Make applications
-    //---------------------------------------------------------------------------
-
-    let primMkApp (f, fty) tyargs argsl m = Expr.App(f, fty, tyargs, argsl, m)
-
-    // Check for the funky where a generic type instantiation at function type causes a generic function
-    // to appear to accept more arguments than it really does, e.g. "id id 1", where the first "id" is
-    // instantiated with "int -> int".
-    //
-    // In this case, apply the arguments one at a time.
-    let isExpansiveUnderInstantiation g fty0 tyargs pargs argsl =
-        isForallTy g fty0
-        && let fty1 = formalApplyTys g fty0 (tyargs, pargs) in
-
-           (not (isFunTy g fty1)
-            || let rec loop fty xs =
-                match xs with
-                | [] -> false
-                | _ :: t -> not (isFunTy g fty) || loop (rangeOfFunTy g fty) t in
-
-               loop fty1 argsl)
-
-    let mkExprAppAux g f fty argsl m =
-        match argsl with
-        | [] -> f
-        | _ ->
-            // Always combine the term application with a type application
-            //
-            // Combine the term application with a term application, but only when f' is an under-applied value of known arity
-            match f with
-            | Expr.App(f0, fty0, tyargs, pargs, m2) when
-                (isNil pargs
-                 || (match stripExpr f0 with
-                     | Expr.Val(v, _, _) ->
-                         match v.ValReprInfo with
-                         | Some info -> info.NumCurriedArgs > pargs.Length
-                         | None -> false
-                     | _ -> false))
-                && not (isExpansiveUnderInstantiation g fty0 tyargs pargs argsl)
-                ->
-                primMkApp (f0, fty0) tyargs (pargs @ argsl) (unionRanges m2 m)
-
-            | _ ->
-                // Don't combine. 'f' is not an application
-                if not (isFunTy g fty) then
-                    error (InternalError("expected a function type", m))
-
-                primMkApp (f, fty) [] argsl m
-
-    let rec mkAppsAux g f fty tyargsl argsl m =
-        match tyargsl with
-        | tyargs :: rest ->
-            match tyargs with
-            | [] -> mkAppsAux g f fty rest argsl m
-            | _ ->
-                let arfty = applyForallTy g fty tyargs
-                mkAppsAux g (primMkApp (f, fty) tyargs [] m) arfty rest argsl m
-        | [] -> mkExprAppAux g f fty argsl m
-
-    let mkApps g ((f, fty), tyargsl, argl, m) = mkAppsAux g f fty tyargsl argl m
-
-    let mkTyAppExpr m (f, fty) tyargs =
-        match tyargs with
-        | [] -> f
-        | _ -> primMkApp (f, fty) tyargs [] m
 
     //--------------------------------------------------------------------------
     // Decision tree reduction

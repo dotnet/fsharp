@@ -114,6 +114,11 @@ module internal SignatureOps =
     /// Check if a set of free variables are all public
     val freeVarsAllPublic: FreeVars -> bool
 
+    val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
+
+[<AutoOpen>]
+module internal ExprFreeVars =
+
     [<return: Struct>]
     val (|LinearMatchExpr|_|):
         Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * range * TType) voption
@@ -125,11 +130,6 @@ module internal SignatureOps =
     val (|LinearOpExpr|_|): Expr -> (TOp * TypeInst * Expr list * Expr * range) voption
 
     val rebuildLinearOpExpr: TOp * TypeInst * Expr list * Expr * range -> Expr
-
-    val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
-
-[<AutoOpen>]
-module internal ExprFreeVars =
 
     val emptyFreeVars: FreeVars
 
@@ -275,20 +275,6 @@ module internal ExprShapeQueries =
     /// Compute the type of an expression from the expression itself
     val tyOfExpr: TcGlobals -> Expr -> TType
 
-    /// Build the application of a (possibly generic, possibly curried) function value to a set of type and expression arguments
-    val primMkApp: Expr * TType -> TypeInst -> Exprs -> range -> Expr
-
-    /// Build the application of a (possibly generic, possibly curried) function value to a set of type and expression arguments.
-    /// Reduce the application via let-bindings if the function value is a lambda expression.
-    val mkApps: TcGlobals -> (Expr * TType) * TType list list * Exprs * range -> Expr
-
-    val mkExprAppAux: TcGlobals -> Expr -> TType -> Exprs -> range -> Expr
-
-    val mkAppsAux: TcGlobals -> Expr -> TType -> TType list list -> Exprs -> range -> Expr
-
-    /// Build the application of a generic construct to a set of type arguments.
-    /// Reduce the application via substitution if the function value is a typed lambda expression.
-    val mkTyAppExpr: range -> Expr * TType -> TType list -> Expr
 
     ///  Accumulate the targets actually used in a decision graph (for reporting warnings)
     val accTargetsOfDecisionTree: DecisionTree -> int list -> int list

@@ -3057,18 +3057,6 @@ module internal AttribChecking =
 
         | _ -> ValueNone
 
-    let isResumableCodeTy g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, _, _) -> tyconRefEq g tcref g.ResumableCode_tcr
-        | _ -> false)
-
-    let rec isReturnsResumableCodeTy g ty =
-        if isFunTy g ty then
-            isReturnsResumableCodeTy g (rangeOfFunTy g ty)
-        else
-            isResumableCodeTy g ty
 
     [<return: Struct>]
     let (|ResumableCodeInvoke|_|) g expr =
@@ -3234,10 +3222,6 @@ module internal AttribChecking =
         | ValApp g g.seq_empty_vref (_, [], m) -> ValueSome m
         | _ -> ValueNone
 
-    let isFSharpExceptionTy g ty =
-        match tryTcrefOfAppTy g ty with
-        | ValueSome tcref -> tcref.IsFSharpException
-        | _ -> false
 
     [<return: Struct>]
     let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
@@ -3309,110 +3293,6 @@ module internal AttribChecking =
 
                 typeEntity
 
-    type TypedTreeNode =
-        {
-            Kind: string
-            Name: string
-            Children: TypedTreeNode list
-        }
-
-    let rec visitEntity (entity: Entity) : TypedTreeNode =
-        let kind =
-            if entity.IsModule then "module"
-            elif entity.IsNamespace then "namespace"
-            else "other"
-
-        let children =
-            if not entity.IsModuleOrNamespace then
-                Seq.empty
-            else
-                seq {
-                    yield! Seq.map visitEntity entity.ModuleOrNamespaceType.AllEntities
-                    yield! Seq.map visitVal entity.ModuleOrNamespaceType.AllValsAndMembers
-                }
-
-        {
-            Kind = kind
-            Name = entity.CompiledName
-            Children = Seq.toList children
-        }
-
-    and visitVal (v: Val) : TypedTreeNode =
-        let children =
-            seq {
-                match v.ValReprInfo with
-                | None -> ()
-                | Some reprInfo ->
-                    yield!
-                        reprInfo.ArgInfos
-                        |> Seq.collect (fun argInfos ->
-                            argInfos
-                            |> Seq.map (fun argInfo ->
-                                {
-                                    Name = argInfo.Name |> Option.map (fun i -> i.idText) |> Option.defaultValue ""
-                                    Kind = "ArgInfo"
-                                    Children = []
-                                }))
-
-                yield!
-                    v.Typars
-                    |> Seq.map (fun typar ->
-                        {
-                            Name = typar.Name
-                            Kind = "Typar"
-                            Children = []
-                        })
-            }
-
-        {
-            Name = v.CompiledName None
-            Kind = "val"
-            Children = Seq.toList children
-        }
-
-    let rec serializeNode (writer: IndentedTextWriter) (addTrailingComma: bool) (node: TypedTreeNode) =
-        writer.WriteLine("{")
-        // Add indent after opening {
-        writer.Indent <- writer.Indent + 1
-
-        writer.WriteLine($"\"name\": \"{node.Name}\",")
-        writer.WriteLine($"\"kind\": \"{node.Kind}\",")
-
-        if node.Children.IsEmpty then
-            writer.WriteLine("\"children\": []")
-        else
-            writer.WriteLine("\"children\": [")
-
-            // Add indent after opening [
-            writer.Indent <- writer.Indent + 1
-
-            node.Children
-            |> List.iteri (fun idx -> serializeNode writer (idx + 1 < node.Children.Length))
-
-            // Remove indent before closing ]
-            writer.Indent <- writer.Indent - 1
-            writer.WriteLine("]")
-
-        // Remove indent before closing }
-        writer.Indent <- writer.Indent - 1
-
-        if addTrailingComma then
-            writer.WriteLine("},")
-        else
-            writer.WriteLine("}")
-
-    let serializeEntity path (entity: Entity) =
-        let root = visitEntity entity
-        use sw = new System.IO.StringWriter()
-        use writer = new IndentedTextWriter(sw)
-        serializeNode writer false root
-        writer.Flush()
-        let json = sw.ToString()
-
-        use out =
-            FileSystem.OpenFileForWriteShim(path, fileMode = System.IO.FileMode.Create)
-
-        out.WriteAllText(json)
 
     let updateSeqTypeIsPrefix (fsharpCoreMSpec: ModuleOrNamespace) =
         let findModuleOrNamespace (name: string) (entity: Entity) =

@@ -746,3 +746,12 @@ module internal CommonContainers =
 
     /// Create the struct expression 'ValueNone' for an voption type
     val mkValueNone: TcGlobals -> TType -> range -> Expr
+
+    /// Any delegate type with ResumableCode attribute, or any function returning such a delegate type
+    val isResumableCodeTy: TcGlobals -> TType -> bool
+
+    /// The delegate type ResumableCode, or any function returning this a delegate type
+    val isReturnsResumableCodeTy: TcGlobals -> TType -> bool
+
+    /// Indicates if an F# type is the type associated with an F# exception declaration
+    val isFSharpExceptionTy: g: TcGlobals -> ty: TType -> bool

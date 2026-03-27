@@ -374,3 +374,6 @@ module internal DebugPrint =
 
     /// Debug layout for class and record fields
     val recdFieldRefL: RecdFieldRef -> Layout
+
+    /// Serialize an entity to a very basic json structure.
+    val serializeEntity: path: string -> entity: Entity -> unit

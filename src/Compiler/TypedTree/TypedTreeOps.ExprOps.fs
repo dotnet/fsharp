@@ -1074,6 +1074,73 @@ module internal Makers =
         let vref = ValRefForIntrinsic i
         exprForValRef m vref, ty
 
+    //--------------------------------------------------------------------------
+    // Make applications
+    //---------------------------------------------------------------------------
+
+    let primMkApp (f, fty) tyargs argsl m = Expr.App(f, fty, tyargs, argsl, m)
+
+    // Check for the funky where a generic type instantiation at function type causes a generic function
+    // to appear to accept more arguments than it really does, e.g. "id id 1", where the first "id" is
+    // instantiated with "int -> int".
+    //
+    // In this case, apply the arguments one at a time.
+    let isExpansiveUnderInstantiation g fty0 tyargs pargs argsl =
+        isForallTy g fty0
+        && let fty1 = formalApplyTys g fty0 (tyargs, pargs) in
+
+           (not (isFunTy g fty1)
+            || let rec loop fty xs =
+                match xs with
+                | [] -> false
+                | _ :: t -> not (isFunTy g fty) || loop (rangeOfFunTy g fty) t in
+
+               loop fty1 argsl)
+
+    let mkExprAppAux g f fty argsl m =
+        match argsl with
+        | [] -> f
+        | _ ->
+            // Always combine the term application with a type application
+            //
+            // Combine the term application with a term application, but only when f' is an under-applied value of known arity
+            match f with
+            | Expr.App(f0, fty0, tyargs, pargs, m2) when
+                (isNil pargs
+                 || (match stripExpr f0 with
+                     | Expr.Val(v, _, _) ->
+                         match v.ValReprInfo with
+                         | Some info -> info.NumCurriedArgs > pargs.Length
+                         | None -> false
+                     | _ -> false))
+                && not (isExpansiveUnderInstantiation g fty0 tyargs pargs argsl)
+                ->
+                primMkApp (f0, fty0) tyargs (pargs @ argsl) (unionRanges m2 m)
+
+            | _ ->
+                // Don't combine. 'f' is not an application
+                if not (isFunTy g fty) then
+                    error (InternalError("expected a function type", m))
+
+                primMkApp (f, fty) [] argsl m
+
+    let rec mkAppsAux g f fty tyargsl argsl m =
+        match tyargsl with
+        | tyargs :: rest ->
+            match tyargs with
+            | [] -> mkAppsAux g f fty rest argsl m
+            | _ ->
+                let arfty = applyForallTy g fty tyargs
+                mkAppsAux g (primMkApp (f, fty) tyargs [] m) arfty rest argsl m
+        | [] -> mkExprAppAux g f fty argsl m
+
+    let mkApps g ((f, fty), tyargsl, argl, m) = mkAppsAux g f fty tyargsl argl m
+
+    let mkTyAppExpr m (f, fty) tyargs =
+        match tyargs with
+        | [] -> f
+        | _ -> primMkApp (f, fty) tyargs [] m
+
     let mkCallGetGenericComparer (g: TcGlobals) m =
         typedExprForIntrinsic g m g.get_generic_comparer_info |> fst
 
