@@ -406,13 +406,8 @@ let altOfUnionSpec (cuspec: IlxUnionSpec) cidx =
 // using runtime type discrimination, because the underlying type is never needed from
 // C# code and pollutes the visible API surface. In this case we must discriminate by
 // calling the IsFoo helper. This only applies when accessing via helpers (inter-assembly).
-let doesRuntimeTypeDiscriminateUseHelper (access: DataAccess) (alt: IlxUnionCase) =
-    alt.IsNullary && access = DataAccess.ViaHelpers
-
-let mkRuntimeTypeDiscriminate (ilg: ILGlobals) access cuspec alt altName altTy =
-    let useHelper = doesRuntimeTypeDiscriminateUseHelper access alt
-
-    if useHelper then
+let mkRuntimeTypeDiscriminate (ilg: ILGlobals) (access: DataAccess) cuspec (alt: IlxUnionCase) altName altTy =
+    if alt.IsNullary && access = DataAccess.ViaHelpers then
         let baseTy = baseTyOfUnionSpec cuspec
 
         [
@@ -421,8 +416,8 @@ let mkRuntimeTypeDiscriminate (ilg: ILGlobals) access cuspec alt altName altTy =
     else
         [ I_isinst altTy; AI_ldnull; AI_cgt_un ]
 
-let mkRuntimeTypeDiscriminateThen ilg access cuspec alt altName altTy after =
-    let useHelper = doesRuntimeTypeDiscriminateUseHelper access alt
+let mkRuntimeTypeDiscriminateThen ilg (access: DataAccess) cuspec (alt: IlxUnionCase) altName altTy after =
+    let useHelper = alt.IsNullary && access = DataAccess.ViaHelpers
 
     match after with
     | I_brcmp(BI_brfalse, _)
@@ -1149,14 +1144,13 @@ let private emitTesterMethodAndProperty (ctx: TypeDefContext) (num: int) (alt: I
     let imports = cud.DebugImports
     let attr = cud.DebugPoint
 
-    if
-        cud.UnionCases.Length <= 1
-        || (match ctx.layout with
-            | UnionLayout.SmallRefWithNullAsTrueValue _ -> true
-            | _ -> false)
-    then
-        [], []
-    else
+    // No tester needed for single-case unions or null-discriminated (SmallRefWithNullAsTrueValue)
+    match ctx.layout with
+    | UnionLayout.SingleCaseRef _
+    | UnionLayout.SingleCaseStruct _
+    | UnionLayout.SmallRefWithNullAsTrueValue _ -> [], []
+    | _ when cud.UnionCases.Length <= 1 -> [], []
+    | _ ->
         let additionalAttributes =
             match ctx.layout with
             | ValueTypeLayout when nullnessCheckingEnabled g && not alt.IsNullary ->
