@@ -1209,6 +1209,52 @@ module internal TypeTesters =
 
     let ValRefIsExplicitImpl g (vref: ValRef) = ValIsExplicitImpl g vref.Deref
 
+    // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1>
+    let getMeasureOfType g ty =
+        match ty with
+        | AppTy g (tcref, [ tyarg ]) ->
+            match stripTyEqns g tyarg with
+            | TType_measure ms when not (measureEquiv g ms (Measure.One(tcref.Range))) -> Some(tcref, ms)
+            | _ -> None
+        | _ -> None
+
+    let isErasedType g ty =
+        match stripTyEqns g ty with
+#if !NO_TYPEPROVIDERS
+        | TType_app(tcref, _, _) -> tcref.IsProvidedErasedTycon
+#endif
+        | _ -> false
+
+    // Return all components of this type expression that cannot be tested at runtime
+    let rec getErasedTypes g ty checkForNullness =
+        let ty = stripTyEqns g ty
+
+        if isErasedType g ty then
+            [ ty ]
+        else
+            match ty with
+            | TType_forall(_, bodyTy) -> getErasedTypes g bodyTy checkForNullness
+
+            | TType_var(tp, nullness) ->
+                match checkForNullness, nullness.Evaluate() with
+                | true, NullnessInfo.WithNull -> [ ty ] // with-null annotations can't be tested at runtime, Nullable<> is not part of Nullness feature as of now.
+                | _ -> if tp.IsErased then [ ty ] else []
+
+            | TType_app(_, b, nullness) ->
+                match checkForNullness, nullness.Evaluate() with
+                | true, NullnessInfo.WithNull -> [ ty ]
+                | _ -> List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
+
+            | TType_ucase(_, b)
+            | TType_anon(_, b)
+            | TType_tuple(_, b) -> List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
+
+            | TType_fun(domainTy, rangeTy, nullness) ->
+                match checkForNullness, nullness.Evaluate() with
+                | true, NullnessInfo.WithNull -> [ ty ]
+                | _ -> getErasedTypes g domainTy false @ getErasedTypes g rangeTy false
+            | TType_measure _ -> [ ty ]
+
 
 [<AutoOpen>]
 module internal CommonContainers =

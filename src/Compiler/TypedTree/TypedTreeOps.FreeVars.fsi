@@ -121,13 +121,13 @@ module internal FreeTypeVars =
     /// Get the values for a set of bindings
     val valsOfBinds: Bindings -> Vals
 
+[<AutoOpen>]
+module internal Display =
+
     val GetMemberTypeInFSharpForm:
         TcGlobals -> SynMemberFlags -> ValReprInfo -> TType -> range -> Typars * CurriedArgInfos * TType * ArgReprInfo
 
     val checkMemberValRef: ValRef -> ValMemberInfo * ValReprInfo
-
-[<AutoOpen>]
-module internal Display =
 
     val generalTyconRefInst: TyconRef -> TypeInst
 

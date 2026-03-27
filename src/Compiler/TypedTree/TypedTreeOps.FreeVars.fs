@@ -496,6 +496,9 @@ module internal FreeTypeVars =
 
     let valsOfBinds (binds: Bindings) = binds |> List.map (fun b -> b.Var)
 
+[<AutoOpen>]
+module internal Display =
+
     //--------------------------------------------------------------------------
     // Values representing member functions on F# types
     //--------------------------------------------------------------------------
@@ -527,9 +530,6 @@ module internal FreeTypeVars =
 
     let checkMemberValRef (vref: ValRef) =
         checkMemberVal vref.MemberInfo vref.ValReprInfo vref.Range
-
-[<AutoOpen>]
-module internal Display =
 
     let GetFSharpViewOfReturnType (g: TcGlobals) retTy =
         match retTy with

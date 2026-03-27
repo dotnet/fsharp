@@ -614,6 +614,14 @@ module internal TypeTesters =
 
     val ValRefIsExplicitImpl: TcGlobals -> ValRef -> bool
 
+    /// Get the unit of measure for an annotated type
+    val getMeasureOfType: TcGlobals -> TType -> (TyconRef * Measure) option
+
+    // Return true if this type is a nominal type that is an erased provided type
+    val isErasedType: TcGlobals -> TType -> bool
+
+    // Return all components of this type expression that cannot be tested at runtime
+    val getErasedTypes: TcGlobals -> TType -> checkForNullness: bool -> TType list
 
 [<AutoOpen>]
 module internal CommonContainers =
