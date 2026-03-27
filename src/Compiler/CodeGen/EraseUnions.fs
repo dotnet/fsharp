@@ -297,10 +297,7 @@ let private needsSingletonField (layout: UnionLayout) (alt: IlxUnionCase) (cidx:
            | ReferenceTypeLayout -> true
            | ValueTypeLayout -> false
 
-let private tyForAltIdx cuspec (alt: IlxUnionCase) cidx =
-    let layout = classifyFromSpec cuspec
-    let baseTy = baseTyOfUnionSpec cuspec
-
+let private tyForAltIdxWith (layout: UnionLayout) (baseTy: ILType) (cuspec: IlxUnionSpec) (alt: IlxUnionCase) cidx =
     if caseRepresentedOnRoot layout alt cuspec.AlternativesArray cidx then
         baseTy
     else
@@ -308,6 +305,9 @@ let private tyForAltIdx cuspec (alt: IlxUnionCase) cidx =
         let altName = alt.Name
         let nm = if alt.IsNullary || isList then "_" + altName else altName
         mkILNamedTy cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs
+
+let private tyForAltIdx cuspec (alt: IlxUnionCase) cidx =
+    tyForAltIdxWith (classifyFromSpec cuspec) (baseTyOfUnionSpec cuspec) cuspec alt cidx
 
 /// How a specific union case is physically stored.
 [<RequireQualifiedAccess>]
@@ -335,7 +335,7 @@ let classifyCaseStorage (layout: UnionLayout) (cuspec: IlxUnionSpec) (cidx: int)
         elif needsSingletonField layout alt cidx then
             CaseStorage.Singleton
         else
-            CaseStorage.InNestedType(tyForAltIdx cuspec alt cidx)
+            CaseStorage.InNestedType(tyForAltIdxWith layout (baseTyOfUnionSpec cuspec) cuspec alt cidx)
 
 // ---- Context Records ----
 
@@ -454,14 +454,14 @@ type CaseIdentity =
         CaseName: string
     }
 
-/// Resolve a case by index, computing its type and name.
-let resolveCase (cuspec: IlxUnionSpec) (cidx: int) =
+/// Resolve a case by index using precomputed layout and base type.
+let private resolveCaseWith (layout: UnionLayout) (baseTy: ILType) (cuspec: IlxUnionSpec) (cidx: int) =
     let alt = altOfUnionSpec cuspec cidx
 
     {
         Index = cidx
         Case = alt
-        CaseType = tyForAltIdx cuspec alt cidx
+        CaseType = tyForAltIdxWith layout baseTy cuspec alt cidx
         CaseName = alt.Name
     }
 
@@ -552,7 +552,8 @@ let mkTagDiscriminateThen ilg cuspec cidx after =
     [ mkGetTag ilg cuspec; mkLdcInt32 cidx ] @ mkCeqThen after
 
 let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
-    let ci = resolveCase cuspec cidx
+    let baseTy = baseTyOfUnionSpec cuspec
+    let ci = resolveCaseWith layout baseTy cuspec cidx
     let storage = classifyCaseStorage layout cuspec cidx ci.Case
 
     match storage with
@@ -561,10 +562,8 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
         [ AI_ldnull ]
     | CaseStorage.Singleton ->
         // Nullary ref type: load the singleton static field
-        let baseTy = baseTyOfUnionSpec cuspec
         [ I_ldsfld(Nonvolatile, mkConstFieldSpec ci.CaseName baseTy) ]
     | CaseStorage.OnRoot ->
-        let baseTy = baseTyOfUnionSpec cuspec
 
         if ci.Case.IsNullary then
             // Struct + nullary: create via root ctor with tag
@@ -639,7 +638,8 @@ let mkNewData ilg (cuspec, cidx) =
             | _ -> emitRawConstruction ilg cuspec layout cidx
 
 let private emitIsCase ilg access cuspec (layout: UnionLayout) cidx =
-    let ci = resolveCase cuspec cidx
+    let baseTy = baseTyOfUnionSpec cuspec
+    let ci = resolveCaseWith layout baseTy cuspec cidx
 
     match layout, cidx with
     | CaseIsNull ->
@@ -657,7 +657,7 @@ let private emitIsCase ilg access cuspec (layout: UnionLayout) cidx =
         | UnionLayout.TaggedRef _
         | UnionLayout.TaggedRefAllNullary _
         | UnionLayout.TaggedStruct _
-        | UnionLayout.TaggedStructAllNullary _ -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
+        | UnionLayout.TaggedStructAllNullary _ -> mkTagDiscriminate ilg cuspec baseTy cidx
         | UnionLayout.FSharpList _ ->
             match cidx with
             | TagNil -> [ mkGetTailOrNull access cuspec; AI_ldnull; AI_ceq ]
@@ -706,7 +706,8 @@ let genWith g : ILCode =
 let private emitBranchOnCase ilg sense access cuspec (layout: UnionLayout) cidx tg =
     let neg = (if sense then BI_brfalse else BI_brtrue)
     let pos = (if sense then BI_brtrue else BI_brfalse)
-    let ci = resolveCase cuspec cidx
+    let baseTy = baseTyOfUnionSpec cuspec
+    let ci = resolveCaseWith layout baseTy cuspec cidx
 
     match layout, cidx with
     | CaseIsNull ->
@@ -794,7 +795,7 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionS
                         [ test ]
                     else
                         let altName = alt.Name
-                        let altTy = tyForAltIdx cuspec alt cidx
+                        let altTy = tyForAltIdxWith layout baseTy cuspec alt cidx
                         mkRuntimeTypeDiscriminateThen ilg access cuspec alt altName altTy test
 
                 cg.EmitInstrs(ld :: testBlock)
@@ -814,7 +815,8 @@ let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionSpec) =
     emitLdDataTagPrim ilg None cg (access, cuspec)
 
 let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail access cuspec (layout: UnionLayout) cidx =
-    let ci = resolveCase cuspec cidx
+    let baseTy = baseTyOfUnionSpec cuspec
+    let ci = resolveCaseWith layout baseTy cuspec cidx
     let storage = classifyCaseStorage layout cuspec cidx ci.Case
 
     match storage with
@@ -868,7 +870,7 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) access cuspec (layout: Unio
 
         for cidx, tg in cases do
             let alt = altOfUnionSpec cuspec cidx
-            let altTy = tyForAltIdx cuspec alt cidx
+            let altTy = tyForAltIdxWith layout baseTy cuspec alt cidx
             let altName = alt.Name
             let failLab = cg.GenerateDelayMark()
             let cmpNull = (nullAsTrueValueIdx = Some cidx)
@@ -1320,7 +1322,7 @@ let private emitNullaryConstField (ctx: TypeDefContext) (num: int) (alt: IlxUnio
     let baseTy = ctx.baseTy
     let cuspec = ctx.cuspec
     let altName = alt.Name
-    let altTy = tyForAltIdx cuspec alt num
+    let altTy = tyForAltIdxWith ctx.layout ctx.baseTy cuspec alt num
 
     if needsSingletonField ctx.layout alt num then
         let basic: ILFieldDef =
@@ -1349,7 +1351,7 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
     let cud = ctx.cud
     let cuspec = ctx.cuspec
     let baseTy = ctx.baseTy
-    let altTy = tyForAltIdx cuspec alt num
+    let altTy = tyForAltIdxWith ctx.layout ctx.baseTy cuspec alt num
     let fields = alt.FieldDefs
     let imports = cud.DebugImports
     let attr = cud.DebugPoint
