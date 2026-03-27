@@ -118,6 +118,9 @@ module internal SignatureOps =
 
     val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
 
+    /// Updates the IsPrefixDisplay to false for the Microsoft.FSharp.Collections.seq`1 entity
+    val updateSeqTypeIsPrefix: fsharpCoreMSpec: ModuleOrNamespace -> unit
+
 [<AutoOpen>]
 module internal ExprFreeVars =
 

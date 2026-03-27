@@ -847,6 +847,33 @@ module internal Display =
     let prefixOfInferenceTypar (typar: Typar) =
         if typar.Rigidity <> TyparRigidity.Rigid then "_" else ""
 
+    let isTyparOrderMismatch (tps: Typars) (argInfos: CurriedArgInfos) =
+        let rec getTyparName (ty: TType) : string list =
+            match ty with
+            | TType_var(typar = tp) ->
+                if tp.Id.idText <> unassignedTyparName then
+                    [ tp.Id.idText ]
+                else
+                    match tp.Solution with
+                    | None -> []
+                    | Some solutionType -> getTyparName solutionType
+            | TType_fun(domainType, rangeType, _) -> [ yield! getTyparName domainType; yield! getTyparName rangeType ]
+            | TType_anon(tys = ti)
+            | TType_app(typeInstantiation = ti)
+            | TType_tuple(elementTypes = ti) -> List.collect getTyparName ti
+            | _ -> []
+
+        let typarNamesInArguments =
+            argInfos
+            |> List.collect (fun argInfos -> argInfos |> List.collect (fun (ty, _) -> getTyparName ty))
+            |> List.distinct
+
+        let typarNamesInDefinition =
+            tps |> List.map (fun (tp: Typar) -> tp.Id.idText) |> List.distinct
+
+        typarNamesInArguments.Length = typarNamesInDefinition.Length
+        && typarNamesInArguments <> typarNamesInDefinition
+
     //---------------------------------------------------------------------------
     // Prettify: PrettyTyparNames/PrettifyTypes - make typar names human friendly
     //---------------------------------------------------------------------------

@@ -183,6 +183,9 @@ module internal Display =
 
     val ArgInfosOfMember: TcGlobals -> ValRef -> CurriedArgInfos
 
+    /// Check if the order of defined typars is different from the order of used typars in the curried arguments.
+    val isTyparOrderMismatch: Typars -> CurriedArgInfos -> bool
+
     //-------------------------------------------------------------------------
     // Printing
     //-------------------------------------------------------------------------

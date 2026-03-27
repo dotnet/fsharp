@@ -700,6 +700,30 @@ module internal SignatureOps =
         let allRemap = List.foldBack accValRemap vs acc
         allRemap
 
+    let updateSeqTypeIsPrefix (fsharpCoreMSpec: ModuleOrNamespace) =
+        let findModuleOrNamespace (name: string) (entity: Entity) =
+            if not entity.IsModuleOrNamespace then
+                None
+            else
+                entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName
+                |> Map.tryFind name
+
+        findModuleOrNamespace "Microsoft" fsharpCoreMSpec
+        |> Option.bind (findModuleOrNamespace "FSharp")
+        |> Option.bind (findModuleOrNamespace "Collections")
+        |> Option.iter (fun collectionsEntity ->
+            collectionsEntity.ModuleOrNamespaceType.AllEntitiesByLogicalMangledName
+            |> Map.tryFind "seq`1"
+            |> Option.iter (fun seqEntity ->
+                seqEntity.entity_flags <-
+                    EntityFlags(
+                        false,
+                        seqEntity.entity_flags.IsModuleOrNamespace,
+                        seqEntity.entity_flags.PreEstablishedHasDefaultConstructor,
+                        seqEntity.entity_flags.HasSelfReferentialConstructor,
+                        seqEntity.entity_flags.IsStructRecordOrUnionType
+                    )))
+
 [<AutoOpen>]
 module internal ExprFreeVars =
 
