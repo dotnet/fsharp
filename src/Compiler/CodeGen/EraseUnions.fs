@@ -315,34 +315,21 @@ let mkConstFieldSpecFromId (baseTy: ILType) constFieldId = refToFieldInTy baseTy
 let mkConstFieldSpec nm (baseTy: ILType) =
     mkConstFieldSpecFromId baseTy (constFieldName nm, constFormalFieldTy baseTy)
 
-let tyForAlt cuspec (alt: IlxUnionCase) =
+let private tyForAltIdx cuspec (alt: IlxUnionCase) cidx =
     let layout = classifyFromSpec cuspec
     let baseTy = baseTyOfUnionSpec cuspec
-    let isList = (cuspec.HasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers)
 
-    let optimizedToRootOrNull =
-        match layout with
-        | UnionLayout.ListTailOrNull _
-        | UnionLayout.SingleCaseRef _
-        | UnionLayout.SingleCaseStruct _
-        | UnionLayout.TaggedStructUnion _ -> true
-        | UnionLayout.TaggedRefUnion(_, true) -> true
-        | UnionLayout.TaggedRefUnion _ -> alt.IsNullary
-        | UnionLayout.SmallRefUnion(_, Some _) when alt.IsNullary -> true
-        | UnionLayout.SmallRefUnion(_, Some _) ->
-            cuspec.AlternativesArray
-            |> Array.filter (fun a -> not a.IsNullary)
-            |> Array.length = 1
-        | UnionLayout.SmallRefUnion(_, None) -> false
-
-    if optimizedToRootOrNull then
+    if altOptimizesToRoot layout alt cuspec.AlternativesArray cidx then
         baseTy
     else
+        let isList = (cuspec.HasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers)
         let altName = alt.Name
-
         let nm = if alt.IsNullary || isList then "_" + altName else altName
-
         mkILNamedTy cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs
+
+let tyForAlt (cuspec: IlxUnionSpec) (alt: IlxUnionCase) =
+    let cidx = cuspec.AlternativesArray |> Array.findIndex (fun (a: IlxUnionCase) -> a.Name = alt.Name)
+    tyForAltIdx cuspec alt cidx
 
 let GetILTypeForAlternative cuspec alt =
     tyForAlt cuspec (cuspec.Alternative alt)
@@ -404,7 +391,7 @@ let adjustFieldName hasHelpers nm =
 
 let mkLdData (avoidHelpers, cuspec, cidx, fidx) =
     let alt = altOfUnionSpec cuspec cidx
-    let altTy = tyForAlt cuspec alt
+    let altTy = tyForAltIdx cuspec alt cidx
     let fieldDef = alt.FieldDef fidx
 
     if avoidHelpers then
@@ -416,7 +403,7 @@ let mkLdData (avoidHelpers, cuspec, cidx, fidx) =
 
 let mkLdDataAddr (avoidHelpers, cuspec, cidx, fidx) =
     let alt = altOfUnionSpec cuspec cidx
-    let altTy = tyForAlt cuspec alt
+    let altTy = tyForAltIdx cuspec alt cidx
     let fieldDef = alt.FieldDef fidx
 
     if avoidHelpers then
@@ -476,7 +463,7 @@ let private caseFoldsToRootClass (layout: UnionLayout) (cuspec: IlxUnionSpec) (a
 
 let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
     let alt = altOfUnionSpec cuspec cidx
-    let altTy = tyForAlt cuspec alt
+    let altTy = tyForAltIdx cuspec alt cidx
     let altName = alt.Name
 
     match layout, cidx with
@@ -522,7 +509,7 @@ let convNewDataInstrInternal ilg cuspec cidx =
 // The stdata 'instruction' is only ever used for the F# "List" type within FSharp.Core.dll
 let mkStData (cuspec, cidx, fidx) =
     let alt = altOfUnionSpec cuspec cidx
-    let altTy = tyForAlt cuspec alt
+    let altTy = tyForAltIdx cuspec alt cidx
     let fieldDef = alt.FieldDef fidx
     mkNormalStfld (mkILFieldSpecInTy (altTy, fieldDef.LowerName, fieldDef.Type))
 
@@ -576,7 +563,7 @@ let mkNewData ilg (cuspec, cidx) =
 
 let private emitIsCase ilg avoidHelpers cuspec (layout: UnionLayout) cidx =
     let alt = altOfUnionSpec cuspec cidx
-    let altTy = tyForAlt cuspec alt
+    let altTy = tyForAltIdx cuspec alt cidx
     let altName = alt.Name
 
     match layout, cidx with
@@ -642,7 +629,7 @@ let private emitBranchOnCase ilg sense avoidHelpers cuspec (layout: UnionLayout)
     let neg = (if sense then BI_brfalse else BI_brtrue)
     let pos = (if sense then BI_brtrue else BI_brfalse)
     let alt = altOfUnionSpec cuspec cidx
-    let altTy = tyForAlt cuspec alt
+    let altTy = tyForAltIdx cuspec alt cidx
     let altName = alt.Name
 
     match layout, cidx with
@@ -720,7 +707,7 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec: Ilx
                         [ test ]
                     else
                         let altName = alt.Name
-                        let altTy = tyForAlt cuspec alt
+                        let altTy = tyForAltIdx cuspec alt cidx
                         mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy test
 
                 cg.EmitInstrs(ld :: testBlock)
@@ -781,7 +768,7 @@ let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail avoidHelpers cuspec
                 ()
             else
                 // Non-nullary in tagged ref: lives in nested type
-                let altTy = tyForAlt cuspec alt
+                let altTy = tyForAltIdx cuspec alt cidx
                 cg.EmitInstr(I_castclass altTy)
         | UnionLayout.SmallRefUnion _ ->
             if caseFoldsToRootClass layout cuspec alt then
@@ -789,7 +776,7 @@ let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail avoidHelpers cuspec
                 ()
             else
                 // Case lives in a nested type
-                let altTy = tyForAlt cuspec alt
+                let altTy = tyForAltIdx cuspec alt cidx
                 cg.EmitInstr(I_castclass altTy)
 
 let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, avoidHelpers, cuspec, cidx) =
@@ -807,7 +794,7 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) avoidHelpers cuspec (layout
 
         for cidx, tg in cases do
             let alt = altOfUnionSpec cuspec cidx
-            let altTy = tyForAlt cuspec alt
+            let altTy = tyForAltIdx cuspec alt cidx
             let altName = alt.Name
             let failLab = cg.GenerateDelayMark()
             let cmpNull = (nullCaseIdx = Some cidx)
@@ -1269,7 +1256,7 @@ let private emitNullaryConstField (ctx: TypeDefContext) (num: int) (alt: IlxUnio
     let baseTy = ctx.baseTy
     let cuspec = ctx.cuspec
     let altName = alt.Name
-    let altTy = tyForAlt cuspec alt
+    let altTy = tyForAltIdx cuspec alt num
 
     if maintainConstantField ctx.layout alt num then
         let basic: ILFieldDef =
@@ -1289,7 +1276,7 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
     let cud = ctx.cud
     let cuspec = ctx.cuspec
     let baseTy = ctx.baseTy
-    let altTy = tyForAlt cuspec alt
+    let altTy = tyForAltIdx cuspec alt num
     let fields = alt.FieldDefs
     let imports = cud.DebugImports
     let attr = cud.DebugPoint
