@@ -12205,15 +12205,15 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
 
                 let emitSerializationFieldIL emitPerField =
                     [
-                        for (ilPropName, ilFieldName, ilPropType, _) in fieldNamesAndTypes do
-                            yield! emitPerField ilPropName ilFieldName ilPropType
+                        for (_, ilFieldName, ilPropType, _) in fieldNamesAndTypes do
+                            yield! emitPerField ilFieldName ilPropType
                     ]
 
                 let isILValueType (ty: ILType) =
                     ty.IsNominal && ty.Boxity = ILBoxity.AsValue
 
                 let ilInstrsToRestoreFields =
-                    emitSerializationFieldIL (fun _ilPropName ilFieldName ilPropType ->
+                    emitSerializationFieldIL (fun ilFieldName ilPropType ->
                         [
                             mkLdarg0
                             mkLdarg 1us
@@ -12246,6 +12246,11 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                             mkNormalStfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
                         ])
 
+                // FSharp.Core is SecurityTransparent and cannot override SecurityCritical
+                // Exception.GetObjectData, so field restoration would be unbalanced — skip it.
+                let shouldRestoreFields =
+                    not g.compilingFSharpCore && not fieldNamesAndTypes.IsEmpty
+
                 let ilInstrsForSerialization =
                     [
                         mkLdarg0
@@ -12253,10 +12258,10 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         mkLdarg 2us
                         mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [ serializationInfoType; streamingContextType ]))
                     ]
-                    @ (if fieldNamesAndTypes.IsEmpty then
-                           []
+                    @ (if shouldRestoreFields then
+                           ilInstrsToRestoreFields
                        else
-                           ilInstrsToRestoreFields)
+                           [])
                     |> nonBranchingInstrsToCode
 
                 let ilCtorDefForSerialization =
@@ -12270,7 +12275,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     )
 
                 let ilInstrsToSaveFields =
-                    emitSerializationFieldIL (fun _ilPropName ilFieldName ilPropType ->
+                    emitSerializationFieldIL (fun ilFieldName ilPropType ->
                         [
                             mkLdarg 1us
                             I_ldstr ilFieldName
@@ -12332,28 +12337,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                 // the field-restoring deserialization constructor would crash (fields not in
                 // SerializationInfo). So for FSharp.Core: emit only the base-call ctor (status quo).
                 // For user exceptions: emit both GetObjectData and the field-restoring ctor.
-                if g.compilingFSharpCore then
-                    let ilBaseOnlyCtorInstrs =
-                        [
-                            mkLdarg0
-                            mkLdarg 1us
-                            mkLdarg 2us
-                            mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [ serializationInfoType; streamingContextType ]))
-                        ]
-                        |> nonBranchingInstrsToCode
-
-                    let ilBaseOnlyCtor =
-                        mkILCtor (
-                            ILMemberAccess.Family,
-                            [
-                                mkILParamNamed ("info", serializationInfoType)
-                                mkILParamNamed ("context", streamingContextType)
-                            ],
-                            mkMethodBody (false, [], 8, ilBaseOnlyCtorInstrs, None, eenv.imports)
-                        )
-
-                    [ ilBaseOnlyCtor ]
-                elif fieldNamesAndTypes.IsEmpty then
+                if g.compilingFSharpCore || fieldNamesAndTypes.IsEmpty then
                     [ ilCtorDefForSerialization ]
                 else
                     [ ilCtorDefForSerialization; ilGetObjectDataDef ]
