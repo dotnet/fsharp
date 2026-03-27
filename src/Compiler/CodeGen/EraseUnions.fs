@@ -640,25 +640,20 @@ let mkNewData ilg (cuspec, cidx) =
 let private emitIsCase ilg access cuspec (layout: UnionLayout) cidx =
     let baseTy = baseTyOfUnionSpec cuspec
     let ci = resolveCaseWith layout baseTy cuspec cidx
+    let storage = classifyCaseStorage layout cuspec cidx ci.Case
 
-    match layout, cidx with
-    | CaseIsNull ->
+    match storage with
+    | CaseStorage.Null ->
         // Null-represented case: compare with null
         [ AI_ldnull; AI_ceq ]
     | _ ->
-        match layout with
-        | UnionLayout.SmallRefWithNullAsTrueValue _ when caseFieldsOnRoot layout ci.Case cuspec.AlternativesArray ->
-            // Single non-nullary with all null siblings: test via non-null
-            [ AI_ldnull; AI_cgt_un ]
-        | UnionLayout.SingleCaseRef _
-        | UnionLayout.SingleCaseStruct _ -> [ mkLdcInt32 1 ]
-        | UnionLayout.SmallRef _
-        | UnionLayout.SmallRefWithNullAsTrueValue _ -> mkRuntimeTypeDiscriminate ilg access cuspec ci.Case ci.CaseName ci.CaseType
-        | UnionLayout.TaggedRef _
-        | UnionLayout.TaggedRefAllNullary _
-        | UnionLayout.TaggedStruct _
-        | UnionLayout.TaggedStructAllNullary _ -> mkTagDiscriminate ilg cuspec baseTy cidx
-        | UnionLayout.FSharpList _ ->
+        match storage, layout with
+        // Single non-nullary folded to root with null siblings: test non-null
+        | CaseStorage.OnRoot, DiscriminateByRuntimeType -> [ AI_ldnull; AI_cgt_un ]
+        | _, NoDiscrimination -> [ mkLdcInt32 1 ]
+        | _, DiscriminateByRuntimeType -> mkRuntimeTypeDiscriminate ilg access cuspec ci.Case ci.CaseName ci.CaseType
+        | _, DiscriminateByTagField -> mkTagDiscriminate ilg cuspec baseTy cidx
+        | _, DiscriminateByTailNull ->
             match cidx with
             | TagNil -> [ mkGetTailOrNull access cuspec; AI_ldnull; AI_ceq ]
             | TagCons -> [ mkGetTailOrNull access cuspec; AI_ldnull; AI_cgt_un ]
@@ -708,26 +703,20 @@ let private emitBranchOnCase ilg sense access cuspec (layout: UnionLayout) cidx 
     let pos = (if sense then BI_brtrue else BI_brfalse)
     let baseTy = baseTyOfUnionSpec cuspec
     let ci = resolveCaseWith layout baseTy cuspec cidx
+    let storage = classifyCaseStorage layout cuspec cidx ci.Case
 
-    match layout, cidx with
-    | CaseIsNull ->
+    match storage with
+    | CaseStorage.Null ->
         // Null-represented case: branch on null
         [ I_brcmp(neg, tg) ]
     | _ ->
-        match layout with
-        | UnionLayout.SmallRefWithNullAsTrueValue _ when caseFieldsOnRoot layout ci.Case cuspec.AlternativesArray ->
-            // Single non-nullary with all null siblings: branch on non-null
-            [ I_brcmp(pos, tg) ]
-        | UnionLayout.SingleCaseRef _
-        | UnionLayout.SingleCaseStruct _ -> []
-        | UnionLayout.SmallRef _
-        | UnionLayout.SmallRefWithNullAsTrueValue _ ->
-            mkRuntimeTypeDiscriminateThen ilg access cuspec ci.Case ci.CaseName ci.CaseType (I_brcmp(pos, tg))
-        | UnionLayout.TaggedRef _
-        | UnionLayout.TaggedRefAllNullary _
-        | UnionLayout.TaggedStruct _
-        | UnionLayout.TaggedStructAllNullary _ -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp(pos, tg))
-        | UnionLayout.FSharpList _ ->
+        match storage, layout with
+        // Single non-nullary folded to root with null siblings: branch on non-null
+        | CaseStorage.OnRoot, DiscriminateByRuntimeType -> [ I_brcmp(pos, tg) ]
+        | _, NoDiscrimination -> []
+        | _, DiscriminateByRuntimeType -> mkRuntimeTypeDiscriminateThen ilg access cuspec ci.Case ci.CaseName ci.CaseType (I_brcmp(pos, tg))
+        | _, DiscriminateByTagField -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp(pos, tg))
+        | _, DiscriminateByTailNull ->
             match cidx with
             | TagNil -> [ mkGetTailOrNull access cuspec; I_brcmp(neg, tg) ]
             | TagCons -> [ mkGetTailOrNull access cuspec; I_brcmp(pos, tg) ]
