@@ -18,6 +18,15 @@ open FSharp.Compiler.TypedTreeBasics
 [<AutoOpen>]
 module internal TypeEncoding =
 
+    /// XmlDoc signature helpers
+    val commaEncs: string seq -> string
+
+    val angleEnc: string -> string
+
+    val ticksAndArgCountTextOfTyconRef: TyconRef -> string
+
+    val typarEnc: TcGlobals -> Typars * Typars -> Typar -> string
+
     val buildAccessPath: CompilationPath option -> string
 
     val XmlDocArgsEnc: TcGlobals -> Typars * Typars -> TType list -> string

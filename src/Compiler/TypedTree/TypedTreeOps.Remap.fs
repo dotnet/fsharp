@@ -731,6 +731,12 @@ module internal TypeConstruction =
     // Some basic type builders
     //---------------------------------------------------------------------------
 
+    let mkForallTy d r = TType_forall(d, r)
+
+    let mkForallTyIfNeeded d r = if isNil d then r else mkForallTy d r
+
+    let (+->) d r = mkForallTyIfNeeded d r
+
     let mkNativePtrTy (g: TcGlobals) ty =
         assert g.nativeptr_tcr.CanDeref // this should always be available, but check anyway
         TType_app(g.nativeptr_tcr, [ ty ], g.knownWithoutNull)

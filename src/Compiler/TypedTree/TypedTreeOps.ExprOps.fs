@@ -709,7 +709,7 @@ module internal ExprFolding =
 #endif
 
 [<AutoOpen>]
-module internal IntrinsicCalls =
+module internal Makers =
 
     //-------------------------------------------------------------------------
     // Make expressions
@@ -2405,25 +2405,3 @@ module internal ExprHelpers =
         function
         | Expr.Match(spBind, m, tree, targets, m2, ty) -> LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty)
         | x -> x
-
-    //---------------------------------------------------------------------------
-    // XmlDoc signatures
-    //---------------------------------------------------------------------------
-
-    let commaEncs strs = String.concat "," strs
-    let angleEnc str = "{" + str + "}"
-
-    let ticksAndArgCountTextOfTyconRef (tcref: TyconRef) =
-        // Generic type names are (name + "`" + digits) where name does not contain "`".
-        let path = Array.toList (fullMangledPathToTyconRef tcref) @ [ tcref.CompiledName ]
-        textOfPath path
-
-    let typarEnc (_g: TcGlobals) (gtpsType, gtpsMethod) typar =
-        match List.tryFindIndex (typarEq typar) gtpsType with
-        | Some idx -> "`" + string idx // single-tick-index for typar from type
-        | None ->
-            match List.tryFindIndex (typarEq typar) gtpsMethod with
-            | Some idx -> "``" + string idx // double-tick-index for typar from method
-            | None ->
-                warning (InternalError("Typar not found during XmlDoc generation", typar.Range))
-                "``0"

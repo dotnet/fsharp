@@ -38,6 +38,23 @@ open FSharp.Compiler.TypeProviders
 [<AutoOpen>]
 module internal TypeEncoding =
 
+    let commaEncs strs = String.concat "," strs
+    let angleEnc str = "{" + str + "}"
+
+    let ticksAndArgCountTextOfTyconRef (tcref: TyconRef) =
+        let path = Array.toList (fullMangledPathToTyconRef tcref) @ [ tcref.CompiledName ]
+        textOfPath path
+
+    let typarEnc (_g: TcGlobals) (gtpsType, gtpsMethod) typar =
+        match List.tryFindIndex (typarEq typar) gtpsType with
+        | Some idx -> "`" + string idx
+        | None ->
+            match List.tryFindIndex (typarEq typar) gtpsMethod with
+            | Some idx -> "``" + string idx
+            | None ->
+                warning (InternalError("Typar not found during XmlDoc generation", typar.Range))
+                "``0"
+
     let rec typeEnc g (gtpsType, gtpsMethod) ty =
         let stripped = stripTyEqnsAndMeasureEqns g ty
 

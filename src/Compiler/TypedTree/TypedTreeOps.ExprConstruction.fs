@@ -582,7 +582,7 @@ module internal CollectionTypes =
             ||> List.foldBack (fun (x, y) acc -> acc.Add(x, y))
 
 [<AutoOpen>]
-module internal ArityAndMetadata =
+module internal TypeTesters =
 
     //--------------------------------------------------------------------------
     // From Ref_private to Ref_nonlocal when exporting data.

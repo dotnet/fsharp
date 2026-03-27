@@ -244,6 +244,13 @@ module internal TypeConstruction =
 
     val tryNormalizeMeasureInType: TcGlobals -> TType -> TType
 
+    val mkForallTy: Typars -> TType -> TType
+
+    /// Build a type-forall anonymous generic type if necessary
+    val mkForallTyIfNeeded: Typars -> TType -> TType
+
+    val (+->): Typars -> TType -> TType
+
     /// Build a nativeptr type
     val mkNativePtrTy: TcGlobals -> TType -> TType
 

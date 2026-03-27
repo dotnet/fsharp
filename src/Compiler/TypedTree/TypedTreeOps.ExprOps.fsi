@@ -124,7 +124,7 @@ module internal ExprFolding =
 #endif
 
 [<AutoOpen>]
-module internal IntrinsicCalls =
+module internal Makers =
 
     val mkString: TcGlobals -> range -> string -> Expr
 
@@ -573,12 +573,3 @@ module internal ExprHelpers =
 
     [<return: Struct>]
     val (|OpPipeRight3|_|): TcGlobals -> Expr -> (TType * Expr * Expr * Expr * Expr * range) voption
-
-    /// XmlDoc signature helpers
-    val commaEncs: string seq -> string
-
-    val angleEnc: string -> string
-
-    val ticksAndArgCountTextOfTyconRef: TyconRef -> string
-
-    val typarEnc: TcGlobals -> Typars * Typars -> Typar -> string
