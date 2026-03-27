@@ -5,19 +5,8 @@ namespace EmittedIL
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
-open FSharp.Test.Utilities
 
 module CodeGenRegressions_Exceptions =
-
-    let private getActualIL (result: CompilationResult) =
-        match result with
-        | CompilationResult.Success s ->
-            match s.OutputPath with
-            | Some p ->
-                let (_, _, actualIL) = ILChecker.verifyILAndReturnActual [] p [ "// dummy" ]
-                actualIL
-            | None -> failwith "No output path"
-        | _ -> failwith "Compilation failed"
 
     // https://github.com/dotnet/fsharp/issues/878
     [<Fact>]
@@ -39,11 +28,10 @@ exception Foo of x:string * y:int
             ".custom instance void [runtime]System.Security.SecurityCriticalAttribute::.ctor() = ( 01 00 00 00 )"
             "call       instance void [runtime]System.Exception::GetObjectData(class [runtime]System.Runtime.Serialization.SerializationInfo,"
             ".method family specialname rtspecialname instance void  .ctor(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed"
+            """callvirt   instance void [runtime]System.Runtime.Serialization.SerializationInfo::AddValue(string,
+                                                                                                   object)"""
         ]
         |> ignore
-
-        let actualIL = getActualIL result
-        Assert.Contains("AddValue", actualIL)
 
     // https://github.com/dotnet/fsharp/issues/878
 
