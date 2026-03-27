@@ -1434,13 +1434,9 @@ let private processAlternative (ctx: TypeDefContext) (num: int) (alt: IlxUnionCa
 /// Rewrite field nullable attributes for struct flattening.
 /// When a struct DU has multiple cases, all boxed fields become potentially nullable
 /// because only one case's fields are valid at a time.
-let private rewriteFieldsForStructFlattening (g: TcGlobals) (cud: IlxUnionInfo) (alt: IlxUnionCase) isStruct =
-    if
-        isStruct
-        && cud.UnionCases.Length > 1
-        && g.checkNullness
-        && g.langFeatureNullness
-    then
+let private rewriteFieldsForStructFlattening (g: TcGlobals) (alt: IlxUnionCase) (layout: UnionLayout) =
+    match layout with
+    | UnionLayout.TaggedStructUnion _ when g.checkNullness && g.langFeatureNullness ->
         alt.FieldDefs
         |> Array.map (fun field ->
             if field.Type.IsNominal && field.Type.Boxity = AsValue then
@@ -1479,8 +1475,7 @@ let private rewriteFieldsForStructFlattening (g: TcGlobals) (cud: IlxUnionInfo) 
 
                 field.ILField.With(customAttrs = mkILCustomAttrsFromArray attrs)
                 |> IlxUnionCaseField)
-    else
-        alt.FieldDefs
+    | _ -> alt.FieldDefs
 
 /// Add [Nullable(2)] attribute to union root type when null is permitted.
 let private rootTypeNullableAttrs (g: TcGlobals) (td: ILTypeDef) (cud: IlxUnionInfo) =
@@ -1556,7 +1551,7 @@ let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (strin
                             |> ctx.stampMethodAsGenerated
                         ]
 
-                let fieldDefs = rewriteFieldsForStructFlattening g cud alt isStruct
+                let fieldDefs = rewriteFieldsForStructFlattening g alt ctx.layout
 
                 let fieldsToBeAddedIntoType =
                     fieldDefs
