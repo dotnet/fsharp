@@ -126,6 +126,8 @@ module internal SignatureOps =
 
     val rebuildLinearOpExpr: TOp * TypeInst * Expr list * Expr * range -> Expr
 
+    val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
+
 [<AutoOpen>]
 module internal ExprFreeVars =
 

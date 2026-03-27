@@ -615,6 +615,84 @@ module internal SignatureOps =
     let rebuildLinearOpExpr (op, tinst, argsFront, argLast, m) =
         Expr.Op(op, tinst, argsFront @ [ argLast ], m)
 
+    /// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
+    /// duplicate modules etc.
+    let CombineCcuContentFragments l =
+
+        /// Combine module types when multiple namespace fragments contribute to the
+        /// same namespace, making new module specs as we go.
+        let rec CombineModuleOrNamespaceTypes path (mty1: ModuleOrNamespaceType) (mty2: ModuleOrNamespaceType) =
+            let kind = mty1.ModuleOrNamespaceKind
+            let tab1 = mty1.AllEntitiesByLogicalMangledName
+            let tab2 = mty2.AllEntitiesByLogicalMangledName
+
+            let entities =
+                [
+                    for e1 in mty1.AllEntities do
+                        match tab2.TryGetValue e1.LogicalName with
+                        | true, e2 -> yield CombineEntities path e1 e2
+                        | _ -> yield e1
+
+                    for e2 in mty2.AllEntities do
+                        match tab1.TryGetValue e2.LogicalName with
+                        | true, _ -> ()
+                        | _ -> yield e2
+                ]
+
+            let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
+
+            ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
+
+        and CombineEntities path (entity1: Entity) (entity2: Entity) =
+
+            let path2 = path @ [ entity2.DemangledModuleOrNamespaceName ]
+
+            match entity1.IsNamespace, entity2.IsNamespace, entity1.IsModule, entity2.IsModule with
+            | true, true, _, _ -> ()
+            | true, _, _, _
+            | _, true, _, _ -> errorR (Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly (textOfPath path2), entity2.Range))
+            | false, false, false, false ->
+                errorR (Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly (entity2.LogicalName, textOfPath path), entity2.Range))
+            | false, false, true, true -> errorR (Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly (textOfPath path2), entity2.Range))
+            | _ ->
+                errorR (
+                    Error(FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly (entity2.LogicalName, textOfPath path), entity2.Range)
+                )
+
+            entity1
+            |> Construct.NewModifiedTycon(fun data1 ->
+                let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
+
+                { data1 with
+                    entity_attribs =
+                        if entity2.Attribs.IsEmpty then
+                            entity1.EntityAttribs
+                        elif entity1.Attribs.IsEmpty then
+                            entity2.EntityAttribs
+                        else
+                            WellKnownEntityAttribs.Create(entity1.Attribs @ entity2.Attribs)
+                    entity_modul_type =
+                        MaybeLazy.Lazy(
+                            InterruptibleLazy(fun _ ->
+                                CombineModuleOrNamespaceTypes path2 entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType)
+                        )
+                    entity_opt_data =
+                        match data1.entity_opt_data with
+                        | Some optData -> Some { optData with entity_xmldoc = xml }
+                        | _ ->
+                            Some
+                                { Entity.NewEmptyEntityOptData() with
+                                    entity_xmldoc = xml
+                                }
+                })
+
+        and CombineModuleOrNamespaceTypeList path l =
+            match l with
+            | h :: t -> List.fold (CombineModuleOrNamespaceTypes path) h t
+            | _ -> failwith "CombineModuleOrNamespaceTypeList"
+
+        CombineModuleOrNamespaceTypeList [] l
+
 [<AutoOpen>]
 module internal ExprFreeVars =
 

@@ -296,8 +296,6 @@ module internal TupleCompilation =
 [<AutoOpen>]
 module internal AttribChecking =
 
-    val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
-
     /// An immutable mapping from witnesses to some data.
     ///
     /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
