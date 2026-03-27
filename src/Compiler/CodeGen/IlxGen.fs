@@ -698,7 +698,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
 
     | TType_ucase(ucref, args) ->
         let cuspec, idx = GenUnionCaseSpec cenv m tyenv ucref args
-        EraseUnions.GetILTypeForAlternative cuspec idx
+        GetILTypeForAlternative cuspec idx
 
     | TType_forall(tps, tau) ->
         let tps = DropErasedTypars tps
@@ -3464,7 +3464,7 @@ and GenAllocExn cenv cgbuf eenv (c, args, m) sequel =
 
 and GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, n, m) =
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv c tyargs
-    CG.EmitInstrs cgbuf (pop n) (Push [ cuspec.DeclaringType ]) (EraseUnions.mkNewData cenv.g.ilg (cuspec, idx))
+    CG.EmitInstrs cgbuf (pop n) (Push [ cuspec.DeclaringType ]) (mkNewData cenv.g.ilg (cuspec, idx))
 
 and GenAllocUnionCase cenv cgbuf eenv (c, tyargs, args, m) sequel =
     GenExprs cenv cgbuf eenv args
@@ -3918,7 +3918,7 @@ and GenSetExnField cenv cgbuf eenv (e, ecref, fieldNum, e2, m) sequel =
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
 and UnionCodeGen (cgbuf: CodeGenBuffer) =
-    { new EraseUnions.ICodeGen<Mark> with
+    { new ICodeGen<Mark> with
         member _.CodeLabel m = m.CodeLabel
 
         member _.GenerateDelayMark() =
@@ -3942,10 +3942,10 @@ and GenUnionCaseProof cenv cgbuf eenv (e, ucref, tyargs, m) sequel =
     let g = cenv.g
     GenExpr cenv cgbuf eenv e Continue
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
-    let fty = EraseUnions.GetILTypeForAlternative cuspec idx
+    let fty = GetILTypeForAlternative cuspec idx
     let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
-    let access = EraseUnions.computeDataAccess avoidHelpers cuspec
-    EraseUnions.emitCastData g.ilg (UnionCodeGen cgbuf) (false, access, cuspec, idx)
+    let access = computeDataAccess avoidHelpers cuspec
+    emitCastData g.ilg (UnionCodeGen cgbuf) (false, access, cuspec, idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [ fty ]) [] // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -3957,8 +3957,8 @@ and GenGetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
     let fty = actualTypOfIlxUnionField cuspec idx n
     let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
-    let access = EraseUnions.computeDataAccess avoidHelpers cuspec
-    CG.EmitInstr cgbuf (pop 1) (Push [ fty ]) (EraseUnions.mkLdData (access, cuspec, idx, n))
+    let access = computeDataAccess avoidHelpers cuspec
+    CG.EmitInstr cgbuf (pop 1) (Push [ fty ]) (mkLdData (access, cuspec, idx, n))
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseFieldAddr cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
@@ -3969,8 +3969,8 @@ and GenGetUnionCaseFieldAddr cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
     let fty = actualTypOfIlxUnionField cuspec idx n
     let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
-    let access = EraseUnions.computeDataAccess avoidHelpers cuspec
-    CG.EmitInstr cgbuf (pop 1) (Push [ ILType.Byref fty ]) (EraseUnions.mkLdDataAddr (access, cuspec, idx, n))
+    let access = computeDataAccess avoidHelpers cuspec
+    CG.EmitInstr cgbuf (pop 1) (Push [ ILType.Byref fty ]) (mkLdDataAddr (access, cuspec, idx, n))
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseTag cenv cgbuf eenv (e, tcref, tyargs, m) sequel =
@@ -3978,8 +3978,8 @@ and GenGetUnionCaseTag cenv cgbuf eenv (e, tcref, tyargs, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
     let cuspec = GenUnionSpec cenv m eenv.tyenv tcref tyargs
     let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore tcref
-    let access = EraseUnions.computeDataAccess avoidHelpers cuspec
-    EraseUnions.emitLdDataTag g.ilg (UnionCodeGen cgbuf) (access, cuspec)
+    let access = computeDataAccess avoidHelpers cuspec
+    emitLdDataTag g.ilg (UnionCodeGen cgbuf) (access, cuspec)
     CG.EmitInstrs cgbuf (pop 1) (Push [ g.ilg.typ_Int32 ]) [] // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -3988,11 +3988,11 @@ and GenSetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, e2, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
     let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
-    let access = EraseUnions.computeDataAccess avoidHelpers cuspec
-    EraseUnions.emitCastData g.ilg (UnionCodeGen cgbuf) (false, access, cuspec, idx)
+    let access = computeDataAccess avoidHelpers cuspec
+    emitCastData g.ilg (UnionCodeGen cgbuf) (false, access, cuspec, idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [ cuspec.DeclaringType ]) [] // push/pop to match the line above
     GenExpr cenv cgbuf eenv e2 Continue
-    CG.EmitInstr cgbuf (pop 2) Push0 (EraseUnions.mkStData (cuspec, idx, n))
+    CG.EmitInstr cgbuf (pop 2) Push0 (mkStData (cuspec, idx, n))
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
 and GenGetRecdFieldAddr cenv cgbuf eenv (e, f, tyargs, m) sequel =
@@ -7801,7 +7801,7 @@ and GenDecisionTreeSwitch
         let cuspec = GenUnionSpec cenv m eenv.tyenv c.TyconRef tyargs
         let idx = c.Index
         let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore c.TyconRef
-        let access = EraseUnions.computeDataAccess avoidHelpers cuspec
+        let access = computeDataAccess avoidHelpers cuspec
 
         let tester =
             Some(pop 1, Push [ g.ilg.typ_Bool ], Choice1Of2(access, cuspec, idx))
@@ -7921,8 +7921,8 @@ and GenDecisionTreeSwitch
                     | _ -> failwith "error: mixed constructor/const test?")
 
             let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore hdc.TyconRef
-            let access = EraseUnions.computeDataAccess avoidHelpers cuspec
-            EraseUnions.emitDataSwitch g.ilg (UnionCodeGen cgbuf) (access, cuspec, dests)
+            let access = computeDataAccess avoidHelpers cuspec
+            emitDataSwitch g.ilg (UnionCodeGen cgbuf) (access, cuspec, dests)
             CG.EmitInstrs cgbuf (pop 1) Push0 [] // push/pop to match the line above
 
             GenDecisionTreeCases
@@ -8118,7 +8118,7 @@ and GenDecisionTreeTest
             | Some(pops, pushes, i) ->
                 match i with
                 | Choice1Of2(access, cuspec, idx) ->
-                    CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData g.ilg (access, cuspec, idx))
+                    CG.EmitInstrs cgbuf pops pushes (mkIsData g.ilg (access, cuspec, idx))
                 | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
             | _ -> ()
 
@@ -8217,7 +8217,7 @@ and GenDecisionTreeTest
                 cgbuf
                 eenv
                 e
-                (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsData g.ilg false (access, cuspec, idx, failure.CodeLabel)))
+                (CmpThenBrOrContinue(pop 1, mkBrIsData g.ilg false (access, cuspec, idx, failure.CodeLabel)))
 
             GenDecisionTreeAndTargetsInner
                 cenv
@@ -8250,7 +8250,7 @@ and GenDecisionTreeTest
 
             match i with
             | Choice1Of2(access, cuspec, idx) ->
-                CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData g.ilg (access, cuspec, idx))
+                CG.EmitInstrs cgbuf pops pushes (mkIsData g.ilg (access, cuspec, idx))
             | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
 
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp(BI_brfalse, failure.CodeLabel))
