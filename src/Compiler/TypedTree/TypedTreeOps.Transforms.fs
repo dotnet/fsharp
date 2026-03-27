@@ -628,27 +628,6 @@ module internal TypeEncoding =
                 && not explicitStatic
                 && not (TcrefCompilesInstanceMembersAsStatic g parent))
 
-    let isSealedTy g ty =
-        let ty = stripTyEqnsAndMeasureEqns g ty
-
-        not (isRefTy g ty)
-        || isUnitTy g ty
-        || isArrayTy g ty
-        ||
-
-        match metadataOfTy g ty with
-#if !NO_TYPEPROVIDERS
-        | ProvidedTypeMetadata st -> st.IsSealed
-#endif
-        | ILTypeMetadata(TILObjectReprData(_, _, td)) -> td.IsSealed
-        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-            if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then
-                let tcref = tcrefOfAppTy g ty
-                EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute_True tcref.Deref
-            else
-                // All other F# types, array, byref, tuple types are sealed
-                true
-
     let isComInteropTy g ty =
         let tcref = tcrefOfAppTy g ty
         EntityHasWellKnownAttribute g WellKnownEntityAttributes.ComImportAttribute_True tcref.Deref
@@ -1059,39 +1038,6 @@ module internal Rewriting =
             CheckedImplFile(fragName, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
         implFileR
-
-    //--------------------------------------------------------------------------
-    // Build a Remap that converts all "local" references to "public" things
-    // accessed via non local references.
-    //--------------------------------------------------------------------------
-
-    let MakeExportRemapping viewedCcu (mspec: ModuleOrNamespace) =
-
-        let accEntityRemap (entity: Entity) acc =
-            match tryRescopeEntity viewedCcu entity with
-            | ValueSome eref -> addTyconRefRemap (mkLocalTyconRef entity) eref acc
-            | _ ->
-                if entity.IsNamespace then
-                    acc
-                else
-                    error (InternalError("Unexpected entity without a pubpath when remapping assembly data", entity.Range))
-
-        let accValRemap (vspec: Val) acc =
-            // The acc contains the entity remappings
-            match tryRescopeVal viewedCcu acc vspec with
-            | ValueSome vref ->
-                { acc with
-                    valRemap = acc.valRemap.Add vspec vref
-                }
-            | _ -> error (InternalError("Unexpected value without a pubpath when remapping assembly data", vspec.Range))
-
-        let mty = mspec.ModuleOrNamespaceType
-        let entities = allEntitiesOfModuleOrNamespaceTy mty
-        let vs = allValsOfModuleOrNamespaceTy mty
-        // Remap the entities first so we can correctly remap the types in the signatures of the ValLinkageFullKey's in the value references
-        let acc = List.foldBack accEntityRemap entities Remap.Empty
-        let allRemap = List.foldBack accValRemap vs acc
-        allRemap
 
     //--------------------------------------------------------------------------
     // Apply a "local to nonlocal" renaming to a module type. This can't use

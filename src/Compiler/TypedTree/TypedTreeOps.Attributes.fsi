@@ -273,6 +273,8 @@ module internal AttributeHelpers =
 
     val mkSignatureDataVersionAttr: TcGlobals -> ILVersionInfo -> ILAttribute
 
+    val isSealedTy: TcGlobals -> TType -> bool
+
 
 [<AutoOpen>]
 module internal ByrefAndSpanHelpers =

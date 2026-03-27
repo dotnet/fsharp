@@ -1254,6 +1254,27 @@ module internal AttributeHelpers =
                false
 
 
+    let isSealedTy g ty =
+        let ty = stripTyEqnsAndMeasureEqns g ty
+
+        not (isRefTy g ty)
+        || isUnitTy g ty
+        || isArrayTy g ty
+        ||
+
+        match metadataOfTy g ty with
+#if !NO_TYPEPROVIDERS
+        | ProvidedTypeMetadata st -> st.IsSealed
+#endif
+        | ILTypeMetadata(TILObjectReprData(_, _, td)) -> td.IsSealed
+        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+            if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then
+                let tcref = tcrefOfAppTy g ty
+                EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute_True tcref.Deref
+            else
+                // All other F# types, array, byref, tuple types are sealed
+                true
+
 [<AutoOpen>]
 module internal ByrefAndSpanHelpers =
 

@@ -116,6 +116,8 @@ module internal SignatureOps =
 
     val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
 
+    val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
+
 [<AutoOpen>]
 module internal ExprFreeVars =
 

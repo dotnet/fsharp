@@ -80,8 +80,6 @@ module internal TypeEncoding =
 
     val reqTyForArgumentNullnessInference: TcGlobals -> actualTy: TType -> reqTy: TType -> TType
 
-    val isSealedTy: TcGlobals -> TType -> bool
-
     /// Determine if a type is a ComInterop type
     val isComInteropTy: TcGlobals -> TType -> bool
 
@@ -190,8 +188,6 @@ module internal Rewriting =
     type EntityRef with
 
         member HasInterface: TcGlobals -> TType -> bool
-
-    val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
 
     /// Make a remapping table for viewing a module or namespace 'from the outside'
     val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace

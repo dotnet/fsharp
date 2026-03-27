@@ -1291,6 +1291,19 @@ module internal TypeTesters =
     let normalizeEnumTy g ty =
         (if isEnumTy g ty then underlyingTypeOfEnumTy g ty else ty)
 
+    let isResumableCodeTy g ty =
+        ty
+        |> stripTyEqns g
+        |> (function
+        | TType_app(tcref, _, _) -> tyconRefEq g tcref g.ResumableCode_tcr
+        | _ -> false)
+
+    let rec isReturnsResumableCodeTy g ty =
+        if isFunTy g ty then
+            isReturnsResumableCodeTy g (rangeOfFunTy g ty)
+        else
+            isResumableCodeTy g ty
+
 
 [<AutoOpen>]
 module internal CommonContainers =
@@ -1487,19 +1500,6 @@ module internal CommonContainers =
 
     let mkValueNone g ty m =
         mkUnionCaseExpr (mkValueNoneCase g, [ ty ], [], m)
-
-    let isResumableCodeTy g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, _, _) -> tyconRefEq g tcref g.ResumableCode_tcr
-        | _ -> false)
-
-    let rec isReturnsResumableCodeTy g ty =
-        if isFunTy g ty then
-            isReturnsResumableCodeTy g (rangeOfFunTy g ty)
-        else
-            isResumableCodeTy g ty
 
     let isFSharpExceptionTy g ty =
         match tryTcrefOfAppTy g ty with
