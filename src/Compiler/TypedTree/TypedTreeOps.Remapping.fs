@@ -2866,3 +2866,39 @@ module internal ExprShapeQueries =
             let tree, targets = eliminateDeadTargetsFromMatch tree targets
             let tree, targets = foldLinearBindingTargetsOfMatch tree targets
             simplifyTrivialMatch spBind mExpr mMatch ty tree targets
+
+    [<return: Struct>]
+    let (|WhileExpr|_|) expr =
+        match expr with
+        | Expr.Op(TOp.While(sp1, sp2),
+                  _,
+                  [ Expr.Lambda(_, _, _, [ _gv ], guardExpr, _, _); Expr.Lambda(_, _, _, [ _bv ], bodyExpr, _, _) ],
+                  m) -> ValueSome(sp1, sp2, guardExpr, bodyExpr, m)
+        | _ -> ValueNone
+
+    [<return: Struct>]
+    let (|TryFinallyExpr|_|) expr =
+        match expr with
+        | Expr.Op(TOp.TryFinally(sp1, sp2), [ ty ], [ Expr.Lambda(_, _, _, [ _ ], e1, _, _); Expr.Lambda(_, _, _, [ _ ], e2, _, _) ], m) ->
+            ValueSome(sp1, sp2, ty, e1, e2, m)
+        | _ -> ValueNone
+
+    [<return: Struct>]
+    let (|IntegerForLoopExpr|_|) expr =
+        match expr with
+        | Expr.Op(TOp.IntegerForLoop(sp1, sp2, style),
+                  _,
+                  [ Expr.Lambda(_, _, _, [ _ ], e1, _, _); Expr.Lambda(_, _, _, [ _ ], e2, _, _); Expr.Lambda(_, _, _, [ v ], e3, _, _) ],
+                  m) -> ValueSome(sp1, sp2, style, e1, e2, v, e3, m)
+        | _ -> ValueNone
+
+    [<return: Struct>]
+    let (|TryWithExpr|_|) expr =
+        match expr with
+        | Expr.Op(TOp.TryWith(spTry, spWith),
+                  [ resTy ],
+                  [ Expr.Lambda(_, _, _, [ _ ], bodyExpr, _, _)
+                    Expr.Lambda(_, _, _, [ filterVar ], filterExpr, _, _)
+                    Expr.Lambda(_, _, _, [ handlerVar ], handlerExpr, _, _) ],
+                  m) -> ValueSome(spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
+        | _ -> ValueNone

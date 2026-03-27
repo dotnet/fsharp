@@ -288,3 +288,21 @@ module internal ExprShapeQueries =
     /// pre-decide the branch taken at compile-time.
     val mkAndSimplifyMatch:
         DebugPointAtBinding -> range -> range -> TType -> DecisionTree -> DecisionTreeTarget list -> Expr
+
+    /// Recognise a while expression
+    [<return: Struct>]
+    val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) voption
+
+    /// Recognise an integer for-loop expression
+    [<return: Struct>]
+    val (|IntegerForLoopExpr|_|):
+        Expr -> (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * range) voption
+
+    /// Recognise a try-with expression
+    [<return: Struct>]
+    val (|TryWithExpr|_|):
+        Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * range) voption
+
+    /// Recognise a try-finally expression
+    [<return: Struct>]
+    val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) voption

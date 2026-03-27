@@ -275,6 +275,24 @@ module internal AttributeHelpers =
 
     val isSealedTy: TcGlobals -> TType -> bool
 
+    val IsUnionTypeWithNullAsTrueValue: TcGlobals -> Tycon -> bool
+
+    val TyconHasUseNullAsTrueValueAttribute: TcGlobals -> Tycon -> bool
+
+    val CanHaveUseNullAsTrueValueAttribute: TcGlobals -> Tycon -> bool
+
+    val ModuleNameIsMangled: TcGlobals -> Attribs -> bool
+
+    val CompileAsEvent: TcGlobals -> Attribs -> bool
+
+    val ValCompileAsEvent: TcGlobals -> Val -> bool
+
+    val MemberIsCompiledAsInstance: TcGlobals -> TyconRef -> bool -> ValMemberInfo -> Attribs -> bool
+
+    val ValSpecIsCompiledAsInstance: TcGlobals -> Val -> bool
+
+    val ValRefIsCompiledAsInstanceMember: TcGlobals -> ValRef -> bool
+
 
 [<AutoOpen>]
 module internal ByrefAndSpanHelpers =

@@ -324,6 +324,16 @@ module internal ExprConstruction =
     /// &localv
     val mkValAddr: range -> readonly: bool -> ValRef -> Expr
 
+    val valOfBind: Binding -> Val
+
+    /// Get the values for a set of bindings
+    val valsOfBinds: Bindings -> Vals
+
+    val mkDebugPoint: m: range -> expr: Expr -> Expr
+
+    [<return: Struct>]
+    val (|InnerExprPat|): Expr -> Expr
+
 [<AutoOpen>]
 module internal CollectionTypes =
 

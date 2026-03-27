@@ -507,6 +507,16 @@ module internal ExprConstruction =
     let mkValAddr m readonly vref =
         Expr.Op(TOp.LValueOp(LAddrOf readonly, vref), [], [], m)
 
+    let valOfBind (b: Binding) = b.Var
+
+    let valsOfBinds (binds: Bindings) = binds |> List.map (fun b -> b.Var)
+
+    let mkDebugPoint m expr =
+        Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, expr)
+
+    // Used to remove Expr.Link for inner expressions in pattern matches
+    let (|InnerExprPat|) expr = stripExpr expr
+
 [<AutoOpen>]
 module internal CollectionTypes =
 

@@ -116,11 +116,6 @@ module internal FreeTypeVars =
 
     val freeInModuleTy: ModuleOrNamespaceType -> FreeTyvars
 
-    val valOfBind: Binding -> Val
-
-    /// Get the values for a set of bindings
-    val valsOfBinds: Bindings -> Vals
-
 [<AutoOpen>]
 module internal Display =
 

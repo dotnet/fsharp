@@ -228,37 +228,6 @@ module internal TypeEncoding =
     let XmlDocSigOfEntity (eref: EntityRef) =
         XmlDocSigOfTycon [ (buildAccessPath eref.CompilationPathOpt); eref.Deref.CompiledName ]
 
-    //--------------------------------------------------------------------------
-    // Some unions have null as representations
-    //--------------------------------------------------------------------------
-
-    let TyconHasUseNullAsTrueValueAttribute g (tycon: Tycon) =
-        EntityHasWellKnownAttribute g WellKnownEntityAttributes.CompilationRepresentation_PermitNull tycon
-
-    // WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
-    let CanHaveUseNullAsTrueValueAttribute (_g: TcGlobals) (tycon: Tycon) =
-        (tycon.IsUnionTycon
-         && let ucs = tycon.UnionCasesArray in
-
-            (ucs.Length = 0
-             || (ucs |> Array.existsOne (fun uc -> uc.IsNullary)
-                 && ucs |> Array.exists (fun uc -> not uc.IsNullary))))
-
-    // WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
-    let IsUnionTypeWithNullAsTrueValue (g: TcGlobals) (tycon: Tycon) =
-        (tycon.IsUnionTycon
-         && let ucs = tycon.UnionCasesArray in
-
-            (ucs.Length = 0
-             || (TyconHasUseNullAsTrueValueAttribute g tycon
-                 && ucs |> Array.existsOne (fun uc -> uc.IsNullary)
-                 && ucs |> Array.exists (fun uc -> not uc.IsNullary))))
-
-    let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
-
-    let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) =
-        TyconCompilesInstanceMembersAsStatic g tcref.Deref
-
     let inline HasConstraint ([<InlineIfLambda>] predicate) (tp: Typar) = tp.Constraints |> List.exists predicate
 
     let inline tryGetTyparTyWithConstraint g ([<InlineIfLambda>] predicate) ty =
@@ -593,56 +562,9 @@ module internal TypeEncoding =
             let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
             expr
 
-    let ModuleNameIsMangled g attrs =
-        attribsHaveEntityFlag g WellKnownEntityAttributes.CompilationRepresentation_ModuleSuffix attrs
-
-    let CompileAsEvent g attrs =
-        attribsHaveValFlag g WellKnownValAttributes.CLIEventAttribute attrs
-
-    let ValCompileAsEvent g (v: Val) =
-        ValHasWellKnownAttribute g WellKnownValAttributes.CLIEventAttribute v
-
-    let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberInfo) attrs =
-        // All extension members are compiled as static members
-        if isExtensionMember then
-            false
-        // Abstract slots, overrides and interface impls are all true to IsInstance
-        elif
-            membInfo.MemberFlags.IsDispatchSlot
-            || membInfo.MemberFlags.IsOverrideOrExplicitImpl
-            || not (isNil membInfo.ImplementedSlotSigs)
-        then
-            membInfo.MemberFlags.IsInstance
-        else
-            // Otherwise check attributes to see if there is an explicit instance or explicit static flag
-            let entityFlags = computeEntityWellKnownFlags g attrs
-
-            let explicitInstance =
-                hasFlag entityFlags WellKnownEntityAttributes.CompilationRepresentation_Instance
-
-            let explicitStatic =
-                hasFlag entityFlags WellKnownEntityAttributes.CompilationRepresentation_Static
-
-            explicitInstance
-            || (membInfo.MemberFlags.IsInstance
-                && not explicitStatic
-                && not (TcrefCompilesInstanceMembersAsStatic g parent))
-
     let isComInteropTy g ty =
         let tcref = tcrefOfAppTy g ty
         EntityHasWellKnownAttribute g WellKnownEntityAttributes.ComImportAttribute_True tcref.Deref
-
-    let ValSpecIsCompiledAsInstance g (v: Val) =
-        match v.MemberInfo with
-        | Some membInfo ->
-            // Note it doesn't matter if we pass 'v.DeclaringEntity' or 'v.MemberApparentEntity' here.
-            // These only differ if the value is an extension member, and in that case MemberIsCompiledAsInstance always returns
-            // false anyway
-            MemberIsCompiledAsInstance g v.MemberApparentEntity v.IsExtensionMember membInfo v.Attribs
-        | _ -> false
-
-    let ValRefIsCompiledAsInstanceMember g (vref: ValRef) =
-        ValSpecIsCompiledAsInstance g vref.Deref
 
     //---------------------------------------------------------------------------
     // Crack information about an F# object model call
@@ -2638,9 +2560,6 @@ module internal LoopAndConstantOptimization =
                             (mkCompGenLetIn mIn (nameof count) (tyOfExpr g count) count (fun (_, count) ->
                                 mkCountUpExclusive mkBodyCopied count)))))
 
-    let mkDebugPoint m expr =
-        Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, expr)
-
     type OptimizeForExpressionOptions =
         | OptimizeIntRangesOnly
         | OptimizeAllForExpressions
@@ -2757,9 +2676,6 @@ module internal LoopAndConstantOptimization =
 
         | _ -> expr
 
-    // Used to remove Expr.Link for inner expressions in pattern matches
-    let (|InnerExprPat|) expr = stripExpr expr
-
     /// One of the transformations performed by the compiler
     /// is to eliminate variables of static type "unit". These is a
     /// utility function related to this.
@@ -2818,42 +2734,6 @@ module internal AttribChecking =
                 member _.GetHashCode(a) = hash a.MemberName
             }
         )
-
-    [<return: Struct>]
-    let (|WhileExpr|_|) expr =
-        match expr with
-        | Expr.Op(TOp.While(sp1, sp2),
-                  _,
-                  [ Expr.Lambda(_, _, _, [ _gv ], guardExpr, _, _); Expr.Lambda(_, _, _, [ _bv ], bodyExpr, _, _) ],
-                  m) -> ValueSome(sp1, sp2, guardExpr, bodyExpr, m)
-        | _ -> ValueNone
-
-    [<return: Struct>]
-    let (|TryFinallyExpr|_|) expr =
-        match expr with
-        | Expr.Op(TOp.TryFinally(sp1, sp2), [ ty ], [ Expr.Lambda(_, _, _, [ _ ], e1, _, _); Expr.Lambda(_, _, _, [ _ ], e2, _, _) ], m) ->
-            ValueSome(sp1, sp2, ty, e1, e2, m)
-        | _ -> ValueNone
-
-    [<return: Struct>]
-    let (|IntegerForLoopExpr|_|) expr =
-        match expr with
-        | Expr.Op(TOp.IntegerForLoop(sp1, sp2, style),
-                  _,
-                  [ Expr.Lambda(_, _, _, [ _ ], e1, _, _); Expr.Lambda(_, _, _, [ _ ], e2, _, _); Expr.Lambda(_, _, _, [ v ], e3, _, _) ],
-                  m) -> ValueSome(sp1, sp2, style, e1, e2, v, e3, m)
-        | _ -> ValueNone
-
-    [<return: Struct>]
-    let (|TryWithExpr|_|) expr =
-        match expr with
-        | Expr.Op(TOp.TryWith(spTry, spWith),
-                  [ resTy ],
-                  [ Expr.Lambda(_, _, _, [ _ ], bodyExpr, _, _)
-                    Expr.Lambda(_, _, _, [ filterVar ], filterExpr, _, _)
-                    Expr.Lambda(_, _, _, [ handlerVar ], handlerExpr, _, _) ],
-                  m) -> ValueSome(spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
-        | _ -> ValueNone
 
     [<return: Struct>]
     let (|MatchTwoCasesExpr|_|) expr =

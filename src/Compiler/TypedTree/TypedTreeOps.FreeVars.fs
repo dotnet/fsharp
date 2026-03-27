@@ -492,10 +492,6 @@ module internal FreeTypeVars =
     let freeInTypesLeftToRightSkippingConstraints g ty =
         accFreeInTypesLeftToRight g false true emptyFreeTyparsLeftToRight ty |> List.rev
 
-    let valOfBind (b: Binding) = b.Var
-
-    let valsOfBinds (binds: Bindings) = binds |> List.map (fun b -> b.Var)
-
 [<AutoOpen>]
 module internal Display =
 

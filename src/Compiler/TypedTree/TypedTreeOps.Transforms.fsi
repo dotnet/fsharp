@@ -96,24 +96,6 @@ module internal TypeEncoding =
     /// This predicate is used to detect those type parameters.
     val IsReferenceTyparTy: TcGlobals -> TType -> bool
 
-    val IsUnionTypeWithNullAsTrueValue: TcGlobals -> Tycon -> bool
-
-    val TyconHasUseNullAsTrueValueAttribute: TcGlobals -> Tycon -> bool
-
-    val CanHaveUseNullAsTrueValueAttribute: TcGlobals -> Tycon -> bool
-
-    val MemberIsCompiledAsInstance: TcGlobals -> TyconRef -> bool -> ValMemberInfo -> Attribs -> bool
-
-    val ValSpecIsCompiledAsInstance: TcGlobals -> Val -> bool
-
-    val ValRefIsCompiledAsInstanceMember: TcGlobals -> ValRef -> bool
-
-    val ModuleNameIsMangled: TcGlobals -> Attribs -> bool
-
-    val CompileAsEvent: TcGlobals -> Attribs -> bool
-
-    val ValCompileAsEvent: TcGlobals -> Val -> bool
-
     val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
     val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
@@ -265,9 +247,6 @@ module internal LoopAndConstantOptimization =
 
     val DetectAndOptimizeForEachExpression: TcGlobals -> OptimizeForExpressionOptions -> Expr -> Expr
 
-    [<return: Struct>]
-    val (|InnerExprPat|): Expr -> Expr
-
     val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
 
     val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
@@ -278,8 +257,6 @@ module internal LoopAndConstantOptimization =
 
     val GetTypeOfIntrinsicMemberInCompiledForm:
         TcGlobals -> ValRef -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
-
-    val mkDebugPoint: m: range -> expr: Expr -> Expr
 
     /// Match an if...then...else expression or the result of "a && b" or "a || b"
     [<return: Struct>]
@@ -320,25 +297,6 @@ module internal AttribChecking =
     /// Recognise a '__resumeAt' expression
     [<return: Struct>]
     val (|ResumeAtExpr|_|): g: TcGlobals -> Expr -> Expr voption
-
-    /// Recognise a while expression
-    [<return: Struct>]
-    val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) voption
-
-    /// Recognise an integer for-loop expression
-    [<return: Struct>]
-    val (|IntegerForLoopExpr|_|):
-        Expr -> (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * range) voption
-
-    /// Recognise a try-with expression
-    [<return: Struct>]
-    val (|TryWithExpr|_|):
-        Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * range) voption
-
-    /// Recognise a try-finally expression
-    [<return: Struct>]
-    val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) voption
-
 
     [<return: Struct>]
     val (|ResumableCodeInvoke|_|):
