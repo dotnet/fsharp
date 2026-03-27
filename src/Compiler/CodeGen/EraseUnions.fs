@@ -152,15 +152,15 @@ let classifyFromDef (td: ILTypeDef) (cud: IlxUnionInfo) (baseTy: ILType) =
 /// How to discriminate between cases at runtime.
 let (|DiscriminateByTagField|DiscriminateByRuntimeType|DiscriminateByTailNull|NoDiscrimination|) layout =
     match layout with
-    | UnionLayout.TaggedRef _
-    | UnionLayout.TaggedRefAllNullary _
-    | UnionLayout.TaggedStruct _
-    | UnionLayout.TaggedStructAllNullary _ -> DiscriminateByTagField
-    | UnionLayout.SmallRef _
-    | UnionLayout.SmallRefWithNullAsTrueValue _ -> DiscriminateByRuntimeType
-    | UnionLayout.FSharpList _ -> DiscriminateByTailNull
-    | UnionLayout.SingleCaseRef _
-    | UnionLayout.SingleCaseStruct _ -> NoDiscrimination
+    | UnionLayout.TaggedRef baseTy
+    | UnionLayout.TaggedRefAllNullary baseTy
+    | UnionLayout.TaggedStruct baseTy
+    | UnionLayout.TaggedStructAllNullary baseTy -> DiscriminateByTagField baseTy
+    | UnionLayout.SmallRef baseTy -> DiscriminateByRuntimeType(baseTy, None)
+    | UnionLayout.SmallRefWithNullAsTrueValue(baseTy, nullIdx) -> DiscriminateByRuntimeType(baseTy, Some nullIdx)
+    | UnionLayout.FSharpList baseTy -> DiscriminateByTailNull baseTy
+    | UnionLayout.SingleCaseRef baseTy -> NoDiscrimination baseTy
+    | UnionLayout.SingleCaseStruct baseTy -> NoDiscrimination baseTy
 
 /// Does the root type have a _tag integer field?
 let (|HasTagField|NoTagField|) layout =
@@ -602,11 +602,11 @@ let private emitIsCase ilg access cuspec (layout: UnionLayout) cidx =
     | _ ->
         match storage, layout with
         // Single non-nullary folded to root with null siblings: test non-null
-        | CaseStorage.OnRoot, DiscriminateByRuntimeType -> [ AI_ldnull; AI_cgt_un ]
-        | _, NoDiscrimination -> [ mkLdcInt32 1 ]
-        | _, DiscriminateByRuntimeType -> mkRuntimeTypeDiscriminate ilg access cuspec ci.Case ci.CaseName ci.CaseType
-        | _, DiscriminateByTagField -> mkTagDiscriminate ilg cuspec baseTy cidx
-        | _, DiscriminateByTailNull ->
+        | CaseStorage.OnRoot, DiscriminateByRuntimeType _ -> [ AI_ldnull; AI_cgt_un ]
+        | _, NoDiscrimination _ -> [ mkLdcInt32 1 ]
+        | _, DiscriminateByRuntimeType _ -> mkRuntimeTypeDiscriminate ilg access cuspec ci.Case ci.CaseName ci.CaseType
+        | _, DiscriminateByTagField baseTy -> mkTagDiscriminate ilg cuspec baseTy cidx
+        | _, DiscriminateByTailNull _ ->
             match cidx with
             | TagNil -> [ mkGetTailOrNull access cuspec; AI_ldnull; AI_ceq ]
             | TagCons -> [ mkGetTailOrNull access cuspec; AI_ldnull; AI_cgt_un ]
@@ -665,11 +665,12 @@ let private emitBranchOnCase ilg sense access cuspec (layout: UnionLayout) cidx 
     | _ ->
         match storage, layout with
         // Single non-nullary folded to root with null siblings: branch on non-null
-        | CaseStorage.OnRoot, DiscriminateByRuntimeType -> [ I_brcmp(pos, tg) ]
-        | _, NoDiscrimination -> []
-        | _, DiscriminateByRuntimeType -> mkRuntimeTypeDiscriminateThen ilg access cuspec ci.Case ci.CaseName ci.CaseType (I_brcmp(pos, tg))
-        | _, DiscriminateByTagField -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp(pos, tg))
-        | _, DiscriminateByTailNull ->
+        | CaseStorage.OnRoot, DiscriminateByRuntimeType _ -> [ I_brcmp(pos, tg) ]
+        | _, NoDiscrimination _ -> []
+        | _, DiscriminateByRuntimeType _ ->
+            mkRuntimeTypeDiscriminateThen ilg access cuspec ci.Case ci.CaseName ci.CaseType (I_brcmp(pos, tg))
+        | _, DiscriminateByTagField _ -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp(pos, tg))
+        | _, DiscriminateByTailNull _ ->
             match cidx with
             | TagNil -> [ mkGetTailOrNull access cuspec; I_brcmp(neg, tg) ]
             | TagCons -> [ mkGetTailOrNull access cuspec; I_brcmp(pos, tg) ]
@@ -691,28 +692,18 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionS
         let alts = cuspec.AlternativesArray
 
         match layout with
-        | UnionLayout.FSharpList _ ->
+        | DiscriminateByTailNull _ ->
             // leaves 1 if cons, 0 if not
             ldOpt |> Option.iter cg.EmitInstr
             cg.EmitInstrs [ mkGetTailOrNull access cuspec; AI_ldnull; AI_cgt_un ]
-        | UnionLayout.TaggedRef baseTy
-        | UnionLayout.TaggedRefAllNullary baseTy
-        | UnionLayout.TaggedStruct baseTy
-        | UnionLayout.TaggedStructAllNullary baseTy ->
+        | DiscriminateByTagField baseTy ->
             ldOpt |> Option.iter cg.EmitInstr
             cg.EmitInstr(mkGetTagFromField ilg cuspec baseTy)
-        | UnionLayout.SingleCaseRef _
-        | UnionLayout.SingleCaseStruct _ ->
+        | NoDiscrimination _ ->
             ldOpt |> Option.iter cg.EmitInstr
             cg.EmitInstrs [ AI_pop; mkLdcInt32 0 ]
-        | UnionLayout.SmallRef baseTy
-        | UnionLayout.SmallRefWithNullAsTrueValue(baseTy, _) ->
+        | DiscriminateByRuntimeType(baseTy, nullAsTrueValueIdx) ->
             // RuntimeTypes: emit multi-way isinst chain
-            let nullAsTrueValueIdx =
-                match layout with
-                | UnionLayout.SmallRefWithNullAsTrueValue(_, idx) -> Some idx
-                | _ -> None
-
             let ld =
                 match ldOpt with
                 | None ->
@@ -796,16 +787,8 @@ let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, access, cuspec, cidx) =
     emitCastToCase ilg cg canfail access cuspec layout cidx
 
 let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) access cuspec (layout: UnionLayout) cases =
-    let baseTy = baseTyOfUnionSpec cuspec
-
     match layout with
-    | UnionLayout.SmallRef _
-    | UnionLayout.SmallRefWithNullAsTrueValue _ ->
-        let nullAsTrueValueIdx =
-            match layout with
-            | UnionLayout.SmallRefWithNullAsTrueValue(_, idx) -> Some idx
-            | _ -> None
-
+    | DiscriminateByRuntimeType(baseTy, nullAsTrueValueIdx) ->
         let locn = cg.GenLocal baseTy
 
         cg.EmitInstr(mkStloc locn)
@@ -827,14 +810,10 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) access cuspec (layout: Unio
 
             cg.SetMarkToHere failLab
 
-    | UnionLayout.TaggedRef _
-    | UnionLayout.TaggedRefAllNullary _
-    | UnionLayout.TaggedStruct _
-    | UnionLayout.TaggedStructAllNullary _ ->
+    | DiscriminateByTagField _ ->
         match cases with
         | [] -> cg.EmitInstr AI_pop
         | _ ->
-            // Use a dictionary to avoid quadratic lookup in case list
             let dict = Dictionary<int, _>()
 
             for i, case in cases do
@@ -852,14 +831,13 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) access cuspec (layout: Unio
             cg.EmitInstr(I_switch(Array.toList dests))
             cg.SetMarkToHere failLab
 
-    | UnionLayout.SingleCaseRef _
-    | UnionLayout.SingleCaseStruct _ ->
+    | NoDiscrimination _ ->
         match cases with
         | [ (0, tg) ] -> cg.EmitInstrs [ AI_pop; I_br tg ]
         | [] -> cg.EmitInstr AI_pop
         | _ -> failwith "unexpected: strange switch on single-case unions should not be present"
 
-    | UnionLayout.FSharpList _ -> failwith "unexpected: switches on lists should have been eliminated to brisdata tests"
+    | DiscriminateByTailNull _ -> failwith "unexpected: switches on lists should have been eliminated to brisdata tests"
 
 let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (access, cuspec, cases) =
     let layout = classifyFromSpec cuspec
