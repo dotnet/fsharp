@@ -1,1 +1,1 @@
-{"c": 0, "lr": "2026-03-27", "ms": 19439, "woc": 0, "rtc": 0}
+{"c": 11785, "lr": "2026-03-27", "ms": 19439, "woc": 0, "rtc": 0, "comments_made": {"6131": "2026-03-27", "11785": "2026-03-27"}, "notes": "Pre-2023 scan ongoing. Monthly summary: #19439. Cursor at ~#11785 (2021-07 range). Already commented: 3590,6131,11785 (this run), plus many prior runs. Key confirmed-present bugs: #6131 (CompiledName tuple IL error), #11785 (char enum ||| runtime crash), #7741 (let..in scope), #7776 (abstract override missing impl), #5418, #6941, #7931, #10273, #10540, #13981, #14160."}
