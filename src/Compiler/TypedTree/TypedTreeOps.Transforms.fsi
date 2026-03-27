@@ -1,0 +1,503 @@
+// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
+
+/// Defines derived expression manipulation and construction functions.
+namespace FSharp.Compiler.TypedTreeOps
+
+open System.Collections.Immutable
+open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+
+[<AutoOpen>]
+module internal TypeEncoding =
+
+    val buildAccessPath: CompilationPath option -> string
+
+    val XmlDocArgsEnc: TcGlobals -> Typars * Typars -> TType list -> string
+
+    val XmlDocSigOfVal: TcGlobals -> full: bool -> string -> Val -> string
+
+    val XmlDocSigOfUnionCase: path: string list -> string
+
+    val XmlDocSigOfField: path: string list -> string
+
+    val XmlDocSigOfProperty: path: string list -> string
+
+    val XmlDocSigOfTycon: path: string list -> string
+
+    val XmlDocSigOfSubModul: path: string list -> string
+
+    val XmlDocSigOfEntity: eref: EntityRef -> string
+
+    type ActivePatternElemRef with
+
+        member LogicalName: string
+
+        member DisplayNameCore: string
+
+        member DisplayName: string
+
+    val TryGetActivePatternInfo: ValRef -> PrettyNaming.ActivePatternInfo option
+
+    val mkChoiceCaseRef: g: TcGlobals -> m: range -> n: int -> i: int -> UnionCaseRef
+
+    type PrettyNaming.ActivePatternInfo with
+
+        /// Get the core of the display name for one of the cases of the active pattern, by index
+        member DisplayNameCoreByIdx: idx: int -> string
+
+        /// Get the display name for one of the cases of the active pattern, by index
+        member DisplayNameByIdx: idx: int -> string
+
+        /// Get the result type for the active pattern
+        member ResultType: g: TcGlobals -> range -> TType list -> ActivePatternReturnKind -> TType
+
+        /// Get the overall type for a function that implements the active pattern
+        member OverallType:
+            g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> retKind: ActivePatternReturnKind -> TType
+
+    val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
+
+    val nullnessOfTy: TcGlobals -> TType -> Nullness
+
+    val changeWithNullReqTyToVariable: TcGlobals -> reqTy: TType -> TType
+
+    val reqTyForArgumentNullnessInference: TcGlobals -> actualTy: TType -> reqTy: TType -> TType
+
+    val isSealedTy: TcGlobals -> TType -> bool
+
+    /// Determine if a type is a ComInterop type
+    val isComInteropTy: TcGlobals -> TType -> bool
+
+    val IsNonNullableStructTyparTy: TcGlobals -> TType -> bool
+
+    val inline HasConstraint: [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> Typar -> bool
+
+    val inline IsTyparTyWithConstraint:
+        TcGlobals -> [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> TType -> bool
+
+    /// Determine if a type is a variable type with the ': not struct' constraint.
+    ///
+    /// Note, isRefTy does not include type parameters with the ': not struct' constraint
+    /// This predicate is used to detect those type parameters.
+    val IsReferenceTyparTy: TcGlobals -> TType -> bool
+
+
+    val inline HasConstraint: [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> Typar -> bool
+
+    val inline IsTyparTyWithConstraint:
+        TcGlobals -> [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> TType -> bool
+
+    val IsUnionTypeWithNullAsTrueValue: TcGlobals -> Tycon -> bool
+
+    val TyconHasUseNullAsTrueValueAttribute: TcGlobals -> Tycon -> bool
+
+    val CanHaveUseNullAsTrueValueAttribute: TcGlobals -> Tycon -> bool
+
+    val MemberIsCompiledAsInstance: TcGlobals -> TyconRef -> bool -> ValMemberInfo -> Attribs -> bool
+
+    val ValSpecIsCompiledAsInstance: TcGlobals -> Val -> bool
+
+    val ValRefIsCompiledAsInstanceMember: TcGlobals -> ValRef -> bool
+
+    val ModuleNameIsMangled: TcGlobals -> Attribs -> bool
+
+    val CompileAsEvent: TcGlobals -> Attribs -> bool
+
+    val ValCompileAsEvent: TcGlobals -> Val -> bool
+
+    val TypeNullIsTrueValue: TcGlobals -> TType -> bool
+
+    val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
+
+    /// A type coming via interop from C# can be holding a nullness combination not supported in F#.
+    /// Prime example are APIs marked as T|null applied to structs, tuples and anons.
+    /// Unsupported values can also be nested within generic type arguments, e.g. a List<Tuple<string,T|null>> applied to an anon.
+    val GetDisallowedNullness: TcGlobals -> TType -> TType list
+
+    val TypeHasAllowNull: TyconRef -> TcGlobals -> range -> bool
+
+    val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
+
+    val GetTyparTyIfSupportsNull: TcGlobals -> TType -> Typar voption
+
+    val TypeNullNever: TcGlobals -> TType -> bool
+
+    val TypeHasDefaultValue: TcGlobals -> range -> TType -> bool
+
+    val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
+
+    val mkNullTest: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr
+
+    val mkNonNullTest: TcGlobals -> range -> Expr -> Expr
+
+    val mkIsInstConditional: TcGlobals -> range -> TType -> Expr -> Val -> Expr -> Expr -> Expr
+
+    val mkNonNullCond: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+
+    /// Build an if-then statement
+    val mkIfThen: TcGlobals -> range -> Expr -> Expr -> Expr
+
+    val mkUnionCaseTest: TcGlobals -> Expr * UnionCaseRef * TypeInst * range -> Expr
+
+    val canUseUnboxFast: TcGlobals -> range -> TType -> bool
+
+    val mkCallDispose: TcGlobals -> range -> TType -> Expr -> Expr
+
+    val mkCallSeq: TcGlobals -> range -> TType -> Expr -> Expr
+
+    val mkCallTypeTest: TcGlobals -> range -> TType -> Expr -> Expr
+
+    val canUseTypeTestFast: TcGlobals -> TType -> bool
+
+    /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
+    /// a set of residual types that must also satisfy the constraint
+    [<return: Struct>]
+    val (|SpecialComparableHeadType|_|): TcGlobals -> TType -> TType list voption
+
+    [<return: Struct>]
+    val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list voption
+
+    [<return: Struct>]
+    val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit voption
+
+    val (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|):
+        TType * TcGlobals -> Choice<unit, unit, unit, unit, unit, unit, unit>
+
+    val GetTypeOfIntrinsicMemberInCompiledForm:
+        TcGlobals -> ValRef -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
+
+    val GetMemberTypeInMemberForm:
+        TcGlobals ->
+        SynMemberFlags ->
+        ValReprInfo ->
+        int ->
+        TType ->
+        range ->
+            Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
+
+    /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
+    val PartitionValTyparsForApparentEnclosingType:
+        TcGlobals -> Val -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
+
+    /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
+    val PartitionValTypars: TcGlobals -> Val -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
+
+    /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
+    val PartitionValRefTypars: TcGlobals -> ValRef -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
+
+    /// Count the number of type parameters on the enclosing type
+    val CountEnclosingTyparsOfActualParentOfVal: Val -> int
+
+    val ReturnTypeOfPropertyVal: TcGlobals -> Val -> TType
+
+    val ArgInfosOfPropertyVal: TcGlobals -> Val -> UncurriedArgInfos
+
+    val ArgInfosOfMember: TcGlobals -> ValRef -> CurriedArgInfos
+
+    val GetMemberCallInfo: TcGlobals -> ValRef * ValUseFlag -> int * bool * bool * bool * bool * bool * bool * bool
+
+    val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
+
+
+[<AutoOpen>]
+module internal Rewriting =
+
+    type ExprRewritingEnv =
+        { PreIntercept: ((Expr -> Expr) -> Expr -> Expr option) option
+          PostTransform: Expr -> Expr option
+          PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option
+          RewriteQuotations: bool
+          StackGuard: StackGuard }
+
+    val RewriteDecisionTree: ExprRewritingEnv -> DecisionTree -> DecisionTree
+
+    val RewriteExpr: ExprRewritingEnv -> Expr -> Expr
+
+    val RewriteImplFile: ExprRewritingEnv -> CheckedImplFile -> CheckedImplFile
+
+    val IsGenericValWithGenericConstraints: TcGlobals -> Val -> bool
+
+    type Entity with
+
+        member HasInterface: TcGlobals -> TType -> bool
+
+        member HasOverride: TcGlobals -> string -> TType list -> bool
+
+        member HasMember: TcGlobals -> string -> TType list -> bool
+
+        member internal TryGetMember: TcGlobals -> string -> TType list -> ValRef option
+
+    type EntityRef with
+
+        member HasInterface: TcGlobals -> TType -> bool
+
+
+    val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
+
+    /// Make a remapping table for viewing a module or namespace 'from the outside'
+    val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace
+
+
+[<AutoOpen>]
+module internal TupleCompilation =
+
+    val mkFastForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * Val * Expr * bool * Expr * Expr -> Expr
+
+    val IsSimpleSyntacticConstantExpr: TcGlobals -> Expr -> bool
+
+    [<return: Struct>]
+    val (|ConstToILFieldInit|_|): Const -> ILFieldInit voption
+
+    val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
+
+    val EvaledAttribExprEquality: TcGlobals -> Expr -> Expr -> bool
+
+    val mkCompiledTuple: TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
+
+    /// Make a TAST expression representing getting an item from a tuple
+    val mkGetTupleItemN: TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
+
+    [<return: Struct>]
+    val (|Int32Expr|_|): Expr -> int32 voption
+
+    /// Matches if the given expression is an application
+    /// of the range or range-step operator on an integral type
+    /// and returns the type, start, step, and finish if so.
+    ///
+    /// start..finish
+    ///
+    /// start..step..finish
+    [<return: Struct>]
+    val (|IntegralRange|_|): g: TcGlobals -> expr: Expr -> (TType * (Expr * Expr * Expr)) voption
+
+    [<RequireQualifiedAccess>]
+    module IntegralConst =
+        /// Constant 0.
+        [<return: Struct>]
+        val (|Zero|_|): c: Const -> unit voption
+
+    /// An expression holding the loop's iteration count.
+    type Count = Expr
+
+    /// An expression representing the loop's current iteration index.
+    type Idx = Expr
+
+    /// An expression representing the current loop element.
+    type Elem = Expr
+
+    /// An expression representing the loop body.
+    type Body = Expr
+
+    /// An expression representing the overall loop.
+    type Loop = Expr
+
+    /// Makes an optimized while-loop for a range expression with the given integral start, step, and finish:
+    ///
+    /// start..step..finish
+    ///
+    /// The buildLoop function enables using the precomputed iteration count in an optional initialization step before the loop is executed.
+    val mkOptimizedRangeLoop:
+        g: TcGlobals ->
+        mBody: range * mFor: range * mIn: range * spInWhile: DebugPointAtWhile ->
+            rangeTy: TType * rangeExpr: Expr ->
+                start: Expr * step: Expr * finish: Expr ->
+                    buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr) ->
+                        Expr
+
+    type OptimizeForExpressionOptions =
+        | OptimizeIntRangesOnly
+        | OptimizeAllForExpressions
+
+    val DetectAndOptimizeForEachExpression: TcGlobals -> OptimizeForExpressionOptions -> Expr -> Expr
+
+    [<return: Struct>]
+    val (|InnerExprPat|): Expr -> Expr
+
+    val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
+
+    val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
+
+    /// Match expressions that are an application of a particular F# function value
+    [<return: Struct>]
+    val (|ValApp|_|): TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) voption
+
+    /// An immutable mapping from witnesses to some data.
+    ///
+    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
+    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
+
+    /// Create an empty immutable mapping from witnesses to some data
+    val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
+
+    /// Match 'if __useResumableCode then ... else ...' expressions
+    [<return: Struct>]
+    val (|IfUseResumableStateMachinesExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption
+
+
+[<AutoOpen>]
+module internal AttribChecking =
+
+    val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
+
+    /// Recognise a 'match __resumableEntry() with ...' expression
+    [<return: Struct>]
+    val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * (Expr * Expr -> Expr)) voption
+
+    /// Recognise a '__stateMachine' expression
+    [<return: Struct>]
+    val (|StructStateMachineExpr|_|):
+        g: TcGlobals -> expr: Expr -> (TType * (Val * Expr) * (Val * Val * Expr) * (Val * Expr)) voption
+
+    /// Recognise a sequential or binding construct in a resumable code
+    [<return: Struct>]
+    val (|SequentialResumableCode|_|): g: TcGlobals -> Expr -> (Expr * Expr * range * (Expr -> Expr -> Expr)) voption
+
+    /// Recognise a '__debugPoint' expression
+    [<return: Struct>]
+    val (|DebugPointExpr|_|): g: TcGlobals -> Expr -> string voption
+
+    /// Recognise a '__resumeAt' expression
+    [<return: Struct>]
+    val (|ResumeAtExpr|_|): g: TcGlobals -> Expr -> Expr voption
+
+    /// Recognise a while expression
+    [<return: Struct>]
+    val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) voption
+
+    /// Recognise an integer for-loop expression
+    [<return: Struct>]
+    val (|IntegerForLoopExpr|_|):
+        Expr -> (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * range) voption
+
+    /// Recognise a try-with expression
+    [<return: Struct>]
+    val (|TryWithExpr|_|):
+        Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * range) voption
+
+    /// Recognise a try-finally expression
+    [<return: Struct>]
+    val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) voption
+
+    /// Add a label to use as the target for a goto
+    val mkLabelled: range -> ILCodeLabel -> Expr -> Expr
+
+    /// Any delegate type with ResumableCode attribute, or any function returning such a delegate type
+    val isResumableCodeTy: TcGlobals -> TType -> bool
+
+    /// The delegate type ResumableCode, or any function returning this a delegate type
+    val isReturnsResumableCodeTy: TcGlobals -> TType -> bool
+
+    [<return: Struct>]
+    val (|ResumableCodeInvoke|_|):
+        g: TcGlobals -> expr: Expr -> (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) voption
+
+    val mkDebugPoint: m: range -> expr: Expr -> Expr
+
+    /// Match an if...then...else expression or the result of "a && b" or "a || b"
+    [<return: Struct>]
+    val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) voption
+
+    /// Determine if a value is a method implementing an interface dispatch slot using a private method impl
+    val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
+
+    /// Detect the de-sugared form of a 'yield x' within a 'seq { ... }'
+    [<return: Struct>]
+    val (|SeqYield|_|): TcGlobals -> Expr -> (Expr * range) voption
+
+    /// Detect the de-sugared form of a 'expr; expr' within a 'seq { ... }'
+    [<return: Struct>]
+    val (|SeqAppend|_|): TcGlobals -> Expr -> (Expr * Expr * range) voption
+
+    /// Detect the de-sugared form of a 'while gd do expr' within a 'seq { ... }'
+    [<return: Struct>]
+    val (|SeqWhile|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtWhile * range) voption
+
+    /// Detect the de-sugared form of a 'try .. finally .. ' within a 'seq { ... }'
+    [<return: Struct>]
+    val (|SeqTryFinally|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtTry * DebugPointAtFinally * range) voption
+
+    /// Detect the de-sugared form of a 'use x = ..' within a 'seq { ... }'
+    [<return: Struct>]
+    val (|SeqUsing|_|): TcGlobals -> Expr -> (Expr * Val * Expr * TType * DebugPointAtBinding * range) voption
+
+    /// Detect the de-sugared form of a 'for x in collection do ..' within a 'seq { ... }'
+    [<return: Struct>]
+    val (|SeqForEach|_|): TcGlobals -> Expr -> (Expr * Val * Expr * TType * range * range * DebugPointAtInOrTo) voption
+
+    /// Detect the outer 'Seq.delay' added for a construct 'seq { ... }'
+    [<return: Struct>]
+    val (|SeqDelay|_|): TcGlobals -> Expr -> (Expr * TType) voption
+
+    /// Detect a 'Seq.empty' implicit in the implied 'else' branch of an 'if .. then' in a seq { ... }
+    [<return: Struct>]
+    val (|SeqEmpty|_|): TcGlobals -> Expr -> range voption
+
+    /// Detect a 'seq { ... }' expression
+    [<return: Struct>]
+    val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) voption
+
+    /// Indicates if an F# type is the type associated with an F# exception declaration
+    val isFSharpExceptionTy: g: TcGlobals -> ty: TType -> bool
+
+    /// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
+    /// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
+    /// This will match anything that does not have any types or bindings.
+    [<return: Struct>]
+    val (|EmptyModuleOrNamespaces|_|):
+        moduleOrNamespaceContents: ModuleOrNamespaceContents -> ModuleOrNamespace list voption
+
+    val tryFindExtensionAttribute: g: TcGlobals -> attribs: Attrib list -> Attrib option
+
+    /// Add an System.Runtime.CompilerServices.ExtensionAttribute to the module Entity if found via predicate and not already present.
+    val tryAddExtensionAttributeIfNotAlreadyPresentForModule:
+        g: TcGlobals ->
+        tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
+        moduleEntity: Entity ->
+            Entity
+
+    /// Add an System.Runtime.CompilerServices.ExtensionAttribute to the type Entity if found via predicate and not already present.
+    val tryAddExtensionAttributeIfNotAlreadyPresentForType:
+        g: TcGlobals ->
+        tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
+        moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref ->
+        typeEntity: Entity ->
+            Entity
+
+    /// Serialize an entity to a very basic json structure.
+    val serializeEntity: path: string -> entity: Entity -> unit
+
+    /// Updates the IsPrefixDisplay to false for the Microsoft.FSharp.Collections.seq`1 entity
+    /// Meant to be called with the FSharp.Core module spec right after it was unpickled.
+    val updateSeqTypeIsPrefix: fsharpCoreMSpec: ModuleOrNamespace -> unit
+
+    /// Check if the order of defined typars is different from the order of used typars in the curried arguments.
+    /// If this is the case, a generated signature would require explicit typars.
+    /// See https://github.com/dotnet/fsharp/issues/15175
+    val isTyparOrderMismatch: Typars -> CurriedArgInfos -> bool
+
+    type TraitConstraintInfo with
+
+        /// Get the argument types recorded in the member constraint suitable for building a TypedTree call.
+        member GetCompiledArgumentTypes: unit -> TType list
+
+        /// Get the argument types when the trait is used as a first-class value "^T.TraitName" which can then be applied
+        member GetLogicalArgumentTypes: g: TcGlobals -> TType list
+
+        member GetObjectType: unit -> TType option
+
+        member GetReturnType: g: TcGlobals -> TType
+
+        /// Get the name of the trait for textual call.
+        member MemberDisplayNameCore: string
+
+        /// Get the key associated with the member constraint.
+        member GetWitnessInfo: unit -> TraitWitnessInfo
+
