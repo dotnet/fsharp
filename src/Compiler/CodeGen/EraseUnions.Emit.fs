@@ -37,11 +37,11 @@ let mkRuntimeTypeDiscriminateThen ilg (access: DataAccess) cuspec (alt: IlxUnion
     | I_brcmp(BI_brtrue, _) when not useHelper -> [ I_isinst altTy; after ]
     | _ -> mkRuntimeTypeDiscriminate ilg access cuspec alt altName altTy @ [ after ]
 
-let mkGetTagFromField ilg cuspec baseTy =
-    mkNormalLdfld (refToFieldInTy baseTy (mkTagFieldId ilg cuspec))
+let mkGetTagFromField ilg _cuspec baseTy =
+    mkNormalLdfld (refToFieldInTy baseTy (mkTagFieldId ilg))
 
-let mkSetTagToField ilg cuspec baseTy =
-    mkNormalStfld (refToFieldInTy baseTy (mkTagFieldId ilg cuspec))
+let mkSetTagToField ilg _cuspec baseTy =
+    mkNormalStfld (refToFieldInTy baseTy (mkTagFieldId ilg))
 
 let adjustFieldNameForTypeDef hasHelpers nm =
     match hasHelpers, nm with
@@ -81,8 +81,8 @@ let mkGetTagFromHelpers ilg (cuspec: IlxUnionSpec) =
 
     match classifyFromSpec cuspec with
     | UnionLayout.SmallRefWithNullAsTrueValue _ ->
-        mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "Get" + tagPropertyName, [ baseTy ], mkTagFieldType ilg cuspec))
-    | _ -> mkNormalCall (mkILNonGenericInstanceMethSpecInTy (baseTy, "get_" + tagPropertyName, [], mkTagFieldType ilg cuspec))
+        mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "Get" + tagPropertyName, [ baseTy ], mkTagFieldType ilg))
+    | _ -> mkNormalCall (mkILNonGenericInstanceMethSpecInTy (baseTy, "get_" + tagPropertyName, [], mkTagFieldType ilg))
 
 let mkGetTag ilg (cuspec: IlxUnionSpec) =
     match cuspec.HasHelpers with
@@ -116,9 +116,14 @@ let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
     | CaseStorage.OnRoot ->
 
         if ci.Case.IsNullary then
-            // Struct + nullary: create via root ctor with tag
-            let tagField = [ mkTagFieldType ilg cuspec ]
-            [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
+            match layout with
+            | HasTagField ->
+                // Multi-case struct nullary: create via root ctor with tag
+                let tagField = [ mkTagFieldType ilg ]
+                [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
+            | NoTagField ->
+                // Single-case nullary: create via parameterless root ctor
+                [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, [])) ]
         else
             // Non-nullary fields on root: create via root ctor with fields
             let ctorFieldTys = ci.Case.FieldTypes |> Array.toList
@@ -439,4 +444,3 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) access cuspec (layout: Unio
 let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (access, cuspec, cases) =
     let layout = classifyFromSpec cuspec
     emitCaseSwitch ilg cg access cuspec layout cases
-

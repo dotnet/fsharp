@@ -20,10 +20,10 @@ open FSharp.Compiler.AbstractIL.ILX.Types
 //
 // Every decision in this module is driven by two independent classifications:
 //
-// 1. UnionLayout (8 cases) — how the union TYPE is structured in IL
+// 1. UnionLayout (9 cases) — how the union TYPE is structured in IL
 //    Computed once per union via classifyFromSpec / classifyFromDef.
 //
-// 2. CaseStorage (5 cases) — how each individual CASE is stored
+// 2. CaseStorage (4 cases) — how each individual CASE is stored
 //    Computed per case via classifyCaseStorage. Answers: is this case null?
 //    A singleton field? Fields on root? In a nested subtype? Struct tag-only?
 //
@@ -381,22 +381,25 @@ let mkConstFieldSpec nm (baseTy: ILType) =
 let tyForAlt (cuspec: IlxUnionSpec) (alt: IlxUnionCase) =
     let cidx =
         cuspec.AlternativesArray
-        |> Array.findIndex (fun (a: IlxUnionCase) -> a.Name = alt.Name)
+        |> Array.tryFindIndex (fun (a: IlxUnionCase) -> a.Name = alt.Name)
+        |> Option.defaultWith (fun () -> failwith $"tyForAlt: case '{alt.Name}' not in union spec")
 
     tyForAltIdx cuspec alt cidx
 
 let GetILTypeForAlternative cuspec alt =
     tyForAlt cuspec (cuspec.Alternative alt)
 
-let mkTagFieldType (ilg: ILGlobals) _cuspec = ilg.typ_Int32
+let mkTagFieldType (ilg: ILGlobals) = ilg.typ_Int32
 
-let mkTagFieldId ilg cuspec = "_tag", mkTagFieldType ilg cuspec
+let mkTagFieldId ilg = "_tag", mkTagFieldType ilg
 
 let altOfUnionSpec (cuspec: IlxUnionSpec) cidx =
-    try
-        cuspec.Alternative cidx
-    with _ ->
-        failwith ("alternative " + string cidx + " not found")
+    let alts = cuspec.AlternativesArray
+
+    if cidx < 0 || cidx >= alts.Length then
+        failwith $"alternative {cidx} not found (union has {alts.Length} cases)"
+    else
+        alts[cidx]
 
 /// Resolved identity of a union case within a union spec.
 [<Struct>]
@@ -418,4 +421,3 @@ let resolveCaseWith (layout: UnionLayout) (baseTy: ILType) (cuspec: IlxUnionSpec
         CaseType = tyForAltIdxWith layout baseTy cuspec alt cidx
         CaseName = alt.Name
     }
-

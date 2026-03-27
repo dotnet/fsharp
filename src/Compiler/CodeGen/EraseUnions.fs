@@ -14,6 +14,14 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
 
+/// DynamicallyAccessedMemberTypes flags for [DynamicDependency] on case ctors
+[<Literal>]
+let private DynamicDependencyPublicMembers = 0x660
+
+/// DynamicallyAccessedMemberTypes flags for [DynamicDependency] on base ctor
+[<Literal>]
+let private DynamicDependencyAllCtorsAndPublicMembers = 0x7E0
+
 //---------------------------------------------------
 // Generate the union classes
 
@@ -119,7 +127,7 @@ let private emitDebugProxyType (ctx: TypeDefContext) (altTy: ILType) (fields: Il
             [ mkILParamNamed ("obj", altTy) ],
             mkMethodBody (false, [], 3, debugProxyCode, None, imports)
         ))
-            .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
+            .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g DynamicDependencyPublicMembers baseTy ])
         |> ctx.stamping.stampMethodAsGenerated
 
     let debugProxyGetterMeths =
@@ -485,7 +493,7 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
                     match ctx.layout with
                     | HasTagField ->
                         yield mkLdcInt32 num
-                        yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, [ mkTagFieldType g.ilg cuspec ]))
+                        yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, [ mkTagFieldType g.ilg ]))
                     | NoTagField -> yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, []))
                 ]
 
@@ -503,7 +511,7 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
 
             let basicCtorMeth =
                 (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports))
-                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
+                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g DynamicDependencyPublicMembers baseTy ])
                 |> ctx.stamping.stampMethodAsGenerated
 
             let attrs =
@@ -695,7 +703,9 @@ let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (strin
                                 cud.DebugPoint,
                                 cud.DebugImports
                             ))
-                                .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
+                                .With(
+                                    customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g DynamicDependencyPublicMembers baseTy ]
+                                )
                             |> ctx.stamping.stampMethodAsGenerated
                         ]
 
@@ -733,14 +743,12 @@ let private emitRootConstructors (ctx: TypeDefContext) rootCaseFields tagFieldsI
         cud.UnionCases
         |> Array.forall (fun alt -> caseFieldsOnRoot ctx.layout alt cud.UnionCases)
 
-    let hasFieldsOrTagButNoMethods =
-        not (
-            List.isEmpty rootCaseFields
-            && List.isEmpty tagFieldsInObject
-            && not (List.isEmpty rootCaseMethods)
-        )
+    let onlyMethodsOnRoot =
+        List.isEmpty rootCaseFields
+        && List.isEmpty tagFieldsInObject
+        && not (List.isEmpty rootCaseMethods)
 
-    if td.IsStruct || allCasesFoldToRoot || not hasFieldsOrTagButNoMethods then
+    if td.IsStruct || allCasesFoldToRoot || onlyMethodsOnRoot then
         []
     else
         let baseTySpec =
@@ -759,7 +767,13 @@ let private emitRootConstructors (ctx: TypeDefContext) rootCaseFields tagFieldsI
                 cud.DebugPoint,
                 cud.DebugImports
             ))
-                .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x7E0 baseTy ])
+                .With(
+                    customAttrs =
+                        mkILCustomAttrs
+                            [
+                                GetDynamicDependencyAttribute g DynamicDependencyAllCtorsAndPublicMembers baseTy
+                            ]
+                )
             |> ctx.stamping.stampMethodAsGenerated
         ]
 
@@ -768,7 +782,6 @@ let private emitConstFieldInitializers (ctx: TypeDefContext) (altNullaryFields: 
     let g = ctx.g
     let cud = ctx.cud
     let baseTy = ctx.baseTy
-    let cuspec = ctx.cuspec
 
     fun (cd: ILTypeDef) ->
         if List.isEmpty altNullaryFields then
@@ -785,7 +798,7 @@ let private emitConstFieldInitializers (ctx: TypeDefContext) (altNullaryFields: 
                         | HasTagField ->
                             if r.InRootClass then
                                 yield mkLdcInt32 r.CaseIndex
-                                yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, [ mkTagFieldType g.ilg cuspec ]))
+                                yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, [ mkTagFieldType g.ilg ]))
                             else
                                 yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, []))
 
@@ -802,7 +815,7 @@ let private emitTagInfrastructure (ctx: TypeDefContext) =
     let baseTy = ctx.baseTy
     let cuspec = ctx.cuspec
 
-    let tagFieldType = mkTagFieldType g.ilg cuspec
+    let tagFieldType = mkTagFieldType g.ilg
 
     let tagEnumFields =
         cud.UnionCases
@@ -1017,12 +1030,12 @@ let mkClassUnionDef
 
     let results =
         cud.UnionCases
-        |> List.ofArray
-        |> List.mapi (fun i alt -> processAlternative ctx i alt)
+        |> Array.mapi (fun i alt -> processAlternative ctx i alt)
+        |> Array.toList
 
     let tagFieldsInObject =
         match ctx.layout with
-        | HasTagField -> [ let n, t = mkTagFieldId g.ilg cuspec in n, t, [] ]
+        | HasTagField -> [ let n, t = mkTagFieldId g.ilg in n, t, [] ]
         | NoTagField -> []
 
     let rootCaseFields, rootCaseMethods, rootCaseProperties =
