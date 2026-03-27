@@ -1413,14 +1413,10 @@ let private processAlternative (ctx: TypeDefContext) (num: int) (alt: IlxUnionCa
 
             (makerMeths @ testerMeths), (makerProps @ testerProps)
 
-        | NoHelpers when
-            not alt.IsNullary
-            && (match ctx.layout with
-                | ValueTypeLayout -> true
-                | ReferenceTypeLayout -> false)
-            ->
-            [ emitMakerMethod ctx num alt ], []
-        | NoHelpers -> [], []
+        | NoHelpers ->
+            match ctx.layout with
+            | ValueTypeLayout when not alt.IsNullary -> [ emitMakerMethod ctx num alt ], []
+            | _ -> [], []
 
     let typeDefs, debugTypeDefs, nullaryFields =
         match ctx.layout, num with
