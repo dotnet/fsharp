@@ -332,6 +332,8 @@ let classifyCaseStorage (layout: UnionLayout) (cuspec: IlxUnionSpec) (cidx: int)
                 | ReferenceTypeLayout -> CaseStorage.Singleton
             else
                 CaseStorage.OnRoot
+        elif needsSingletonField layout alt cidx then
+            CaseStorage.Singleton
         else
             CaseStorage.InNestedType(tyForAltIdx cuspec alt cidx)
 
@@ -434,8 +436,6 @@ let GetILTypeForAlternative cuspec alt =
 
 let mkTagFieldType (ilg: ILGlobals) _cuspec = ilg.typ_Int32
 
-let mkTagFieldFormalType (ilg: ILGlobals) _cuspec = ilg.typ_Int32
-
 let mkTagFieldId ilg cuspec = "_tag", mkTagFieldType ilg cuspec
 
 let altOfUnionSpec (cuspec: IlxUnionSpec) cidx =
@@ -443,6 +443,26 @@ let altOfUnionSpec (cuspec: IlxUnionSpec) cidx =
         cuspec.Alternative cidx
     with _ ->
         failwith ("alternative " + string cidx + " not found")
+
+/// Resolved identity of a union case within a union spec.
+type CaseIdentity =
+    {
+        Index: int
+        Case: IlxUnionCase
+        CaseType: ILType
+        CaseName: string
+    }
+
+/// Resolve a case by index, computing its type and name.
+let resolveCase (cuspec: IlxUnionSpec) (cidx: int) =
+    let alt = altOfUnionSpec cuspec cidx
+
+    {
+        Index = cidx
+        Case = alt
+        CaseType = tyForAltIdx cuspec alt cidx
+        CaseName = alt.Name
+    }
 
 // Nullary cases on types with helpers do not reveal their underlying type even when
 // using runtime type discrimination, because the underlying type is never needed from
@@ -510,8 +530,8 @@ let mkGetTagFromHelpers ilg (cuspec: IlxUnionSpec) =
 
     match classifyFromSpec cuspec with
     | UnionLayout.SmallRefWithNullAsTrueValue _ ->
-        mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "Get" + tagPropertyName, [ baseTy ], mkTagFieldFormalType ilg cuspec))
-    | _ -> mkNormalCall (mkILNonGenericInstanceMethSpecInTy (baseTy, "get_" + tagPropertyName, [], mkTagFieldFormalType ilg cuspec))
+        mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "Get" + tagPropertyName, [ baseTy ], mkTagFieldType ilg cuspec))
+    | _ -> mkNormalCall (mkILNonGenericInstanceMethSpecInTy (baseTy, "get_" + tagPropertyName, [], mkTagFieldType ilg cuspec))
 
 let mkGetTag ilg (cuspec: IlxUnionSpec) =
     match cuspec.HasHelpers with
@@ -531,53 +551,33 @@ let mkTagDiscriminateThen ilg cuspec cidx after =
     [ mkGetTag ilg cuspec; mkLdcInt32 cidx ] @ mkCeqThen after
 
 let private emitRawConstruction ilg cuspec (layout: UnionLayout) cidx =
-    let alt = altOfUnionSpec cuspec cidx
-    let altTy = tyForAltIdx cuspec alt cidx
-    let altName = alt.Name
+    let ci = resolveCase cuspec cidx
+    let storage = classifyCaseStorage layout cuspec cidx ci.Case
 
-    match layout, cidx with
-    | CaseIsNull ->
+    match storage with
+    | CaseStorage.Null ->
         // Null-represented case: just load null
         [ AI_ldnull ]
-    | _ ->
-        match layout with
-        // MaintainPossiblyUniqueConstantFieldForAlternative: ref type, not null, nullary
-        // → load the singleton static field
-        | UnionLayout.SingleCaseRef _
-        | UnionLayout.SmallRef _
-        | UnionLayout.SmallRefWithNullAsTrueValue _
-        | UnionLayout.TaggedRef _
-        | UnionLayout.TaggedRefAllNullary _
-        | UnionLayout.FSharpList _ when alt.IsNullary ->
-            let baseTy = baseTyOfUnionSpec cuspec
-            [ I_ldsfld(Nonvolatile, mkConstFieldSpec altName baseTy) ]
-        // RepresentAlternativeAsFreshInstancesOfRootClass: list cons folds to root
-        | UnionLayout.FSharpList _ ->
-            let baseTy = baseTyOfUnionSpec cuspec
-            let ctorFieldTys = alt.FieldTypes |> Array.toList
-            [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
-        | UnionLayout.SmallRefWithNullAsTrueValue _ when caseFieldsOnRoot layout alt cuspec.AlternativesArray ->
-            let baseTy = baseTyOfUnionSpec cuspec
-            let ctorFieldTys = alt.FieldTypes |> Array.toList
-            [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
-        // Struct + all nullary: create via root ctor with tag
-        | UnionLayout.TaggedStructAllNullary _ ->
-            let baseTy = baseTyOfUnionSpec cuspec
+    | CaseStorage.Singleton ->
+        // Nullary ref type: load the singleton static field
+        let baseTy = baseTyOfUnionSpec cuspec
+        [ I_ldsfld(Nonvolatile, mkConstFieldSpec ci.CaseName baseTy) ]
+    | CaseStorage.OnRoot ->
+        let baseTy = baseTyOfUnionSpec cuspec
+
+        if ci.Case.IsNullary then
+            // Struct + nullary: create via root ctor with tag
             let tagField = [ mkTagFieldType ilg cuspec ]
             [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
-        // Struct + nullary case in mixed struct: create via root ctor with tag
-        | UnionLayout.TaggedStruct _ when alt.IsNullary ->
-            let baseTy = baseTyOfUnionSpec cuspec
-            let tagField = [ mkTagFieldType ilg cuspec ]
-            [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
-        // Default: use nested type ctor (or root ctor for single-case/small unions)
-        | UnionLayout.SingleCaseRef _
-        | UnionLayout.SingleCaseStruct _
-        | UnionLayout.SmallRef _
-        | UnionLayout.SmallRefWithNullAsTrueValue _
-        | UnionLayout.TaggedRef _
-        | UnionLayout.TaggedRefAllNullary _
-        | UnionLayout.TaggedStruct _ -> [ mkNormalNewobj (mkILCtorMethSpecForTy (altTy, Array.toList alt.FieldTypes)) ]
+        else
+            // Non-nullary fields on root: create via root ctor with fields
+            let ctorFieldTys = ci.Case.FieldTypes |> Array.toList
+            [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, ctorFieldTys)) ]
+    | CaseStorage.InNestedType _ ->
+        // Case lives in a nested subtype
+        [
+            mkNormalNewobj (mkILCtorMethSpecForTy (ci.CaseType, Array.toList ci.Case.FieldTypes))
+        ]
 
 let emitRawNewData ilg cuspec cidx =
     emitRawConstruction ilg cuspec (classifyFromSpec cuspec) cidx
@@ -638,9 +638,7 @@ let mkNewData ilg (cuspec, cidx) =
             | _ -> emitRawConstruction ilg cuspec layout cidx
 
 let private emitIsCase ilg access cuspec (layout: UnionLayout) cidx =
-    let alt = altOfUnionSpec cuspec cidx
-    let altTy = tyForAltIdx cuspec alt cidx
-    let altName = alt.Name
+    let ci = resolveCase cuspec cidx
 
     match layout, cidx with
     | CaseIsNull ->
@@ -648,13 +646,13 @@ let private emitIsCase ilg access cuspec (layout: UnionLayout) cidx =
         [ AI_ldnull; AI_ceq ]
     | _ ->
         match layout with
-        | UnionLayout.SmallRefWithNullAsTrueValue _ when caseFieldsOnRoot layout alt cuspec.AlternativesArray ->
+        | UnionLayout.SmallRefWithNullAsTrueValue _ when caseFieldsOnRoot layout ci.Case cuspec.AlternativesArray ->
             // Single non-nullary with all null siblings: test via non-null
             [ AI_ldnull; AI_cgt_un ]
         | UnionLayout.SingleCaseRef _
         | UnionLayout.SingleCaseStruct _ -> [ mkLdcInt32 1 ]
         | UnionLayout.SmallRef _
-        | UnionLayout.SmallRefWithNullAsTrueValue _ -> mkRuntimeTypeDiscriminate ilg access cuspec alt altName altTy
+        | UnionLayout.SmallRefWithNullAsTrueValue _ -> mkRuntimeTypeDiscriminate ilg access cuspec ci.Case ci.CaseName ci.CaseType
         | UnionLayout.TaggedRef _
         | UnionLayout.TaggedRefAllNullary _
         | UnionLayout.TaggedStruct _
@@ -707,9 +705,7 @@ let genWith g : ILCode =
 let private emitBranchOnCase ilg sense access cuspec (layout: UnionLayout) cidx tg =
     let neg = (if sense then BI_brfalse else BI_brtrue)
     let pos = (if sense then BI_brtrue else BI_brfalse)
-    let alt = altOfUnionSpec cuspec cidx
-    let altTy = tyForAltIdx cuspec alt cidx
-    let altName = alt.Name
+    let ci = resolveCase cuspec cidx
 
     match layout, cidx with
     | CaseIsNull ->
@@ -717,13 +713,14 @@ let private emitBranchOnCase ilg sense access cuspec (layout: UnionLayout) cidx 
         [ I_brcmp(neg, tg) ]
     | _ ->
         match layout with
-        | UnionLayout.SmallRefWithNullAsTrueValue _ when caseFieldsOnRoot layout alt cuspec.AlternativesArray ->
+        | UnionLayout.SmallRefWithNullAsTrueValue _ when caseFieldsOnRoot layout ci.Case cuspec.AlternativesArray ->
             // Single non-nullary with all null siblings: branch on non-null
             [ I_brcmp(pos, tg) ]
         | UnionLayout.SingleCaseRef _
         | UnionLayout.SingleCaseStruct _ -> []
         | UnionLayout.SmallRef _
-        | UnionLayout.SmallRefWithNullAsTrueValue _ -> mkRuntimeTypeDiscriminateThen ilg access cuspec alt altName altTy (I_brcmp(pos, tg))
+        | UnionLayout.SmallRefWithNullAsTrueValue _ ->
+            mkRuntimeTypeDiscriminateThen ilg access cuspec ci.Case ci.CaseName ci.CaseType (I_brcmp(pos, tg))
         | UnionLayout.TaggedRef _
         | UnionLayout.TaggedRefAllNullary _
         | UnionLayout.TaggedStruct _
@@ -816,8 +813,8 @@ let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionSpec) =
     emitLdDataTagPrim ilg None cg (access, cuspec)
 
 let private emitCastToCase ilg (cg: ICodeGen<'Mark>) canfail access cuspec (layout: UnionLayout) cidx =
-    let alt = altOfUnionSpec cuspec cidx
-    let storage = classifyCaseStorage layout cuspec cidx alt
+    let ci = resolveCase cuspec cidx
+    let storage = classifyCaseStorage layout cuspec cidx ci.Case
 
     match storage with
     | CaseStorage.Null ->
@@ -1485,10 +1482,7 @@ let private processAlternative (ctx: TypeDefContext) (num: int) (alt: IlxUnionCa
         match classifyCaseStorage ctx.layout ctx.cuspec num alt with
         | CaseStorage.Null -> [], [], []
         | CaseStorage.OnRoot -> [], [], []
-        | CaseStorage.Singleton ->
-            let nullaryFields = emitNullaryConstField ctx num alt
-            let typeDefs, debugTypeDefs = emitNestedAlternativeType ctx num alt
-            typeDefs, debugTypeDefs, nullaryFields
+        | CaseStorage.Singleton
         | CaseStorage.InNestedType _ ->
             let nullaryFields = emitNullaryConstField ctx num alt
             let typeDefs, debugTypeDefs = emitNestedAlternativeType ctx num alt
@@ -1652,7 +1646,7 @@ let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (strin
     |> (fun (a, b, c) -> List.concat a, List.concat b, List.concat c)
 
 /// Compute the root class default constructor (when needed).
-let private emitRootConstructors (ctx: TypeDefContext) selfFields tagFieldsInObject selfMeths =
+let private emitRootConstructors (ctx: TypeDefContext) rootCaseFields tagFieldsInObject rootCaseMethods =
     let g = ctx.g
     let td = ctx.td
     let cud = ctx.cud
@@ -1668,9 +1662,9 @@ let private emitRootConstructors (ctx: TypeDefContext) selfFields tagFieldsInObj
 
     let hasFieldsOrTagButNoMethods =
         not (
-            List.isEmpty selfFields
+            List.isEmpty rootCaseFields
             && List.isEmpty tagFieldsInObject
-            && not (List.isEmpty selfMeths)
+            && not (List.isEmpty rootCaseMethods)
         )
 
     if td.IsStruct || allCasesFoldToRoot || not hasFieldsOrTagButNoMethods then
@@ -1791,13 +1785,13 @@ let private emitTagInfrastructure (ctx: TypeDefContext) =
 
     tagMeths, tagProps, tagEnumFields
 
-/// Compute instance fields from selfFields and tagFieldsInObject.
-let private computeSelfAndTagFields (ctx: TypeDefContext) selfFields (tagFieldsInObject: (string * ILType * ILAttribute list) list) =
+/// Compute instance fields from rootCaseFields and tagFieldsInObject.
+let private computeRootInstanceFields (ctx: TypeDefContext) rootCaseFields (tagFieldsInObject: (string * ILType * ILAttribute list) list) =
     let isStruct = ctx.td.IsStruct
     let isTotallyImmutable = (ctx.cud.HasHelpers <> SpecialFSharpListHelpers)
 
     [
-        for fldName, fldTy, attrs in (selfFields @ tagFieldsInObject) do
+        for fldName, fldTy, attrs in (rootCaseFields @ tagFieldsInObject) do
             let fdef =
                 let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Assembly)
 
@@ -1847,12 +1841,12 @@ let private assembleUnionTypeDef
     (ctx: TypeDefContext)
     (results: AlternativeDefResult list)
     ctorMeths
-    selfMeths
-    selfAndTagFields
+    rootCaseMethods
+    rootAndTagFields
     tagMeths
     tagProps
     tagEnumFields
-    selfProps
+    rootCaseProperties
     =
     let g = ctx.g
     let td = ctx.td
@@ -1890,18 +1884,18 @@ let private assembleUnionTypeDef
                     mkILMethods (
                         ctorMeths
                         @ baseMethsFromAlt
-                        @ selfMeths
+                        @ rootCaseMethods
                         @ tagMeths
                         @ altUniqObjMeths
                         @ existingMeths
                     ),
                 fields =
                     mkILFields (
-                        selfAndTagFields
+                        rootAndTagFields
                         @ List.map (fun r -> r.Field) altNullaryFields
                         @ td.Fields.AsList()
                     ),
-                properties = mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps),
+                properties = mkILProperties (tagProps @ basePropsFromAlt @ rootCaseProperties @ existingProps),
                 customAttrs = rootTypeNullableAttrs g td cud
             )
         |> addConstFieldInit
@@ -1957,9 +1951,15 @@ let mkClassUnionDef
         | HasTagField -> [ let n, t = mkTagFieldId g.ilg cuspec in n, t, [] ]
         | NoTagField -> []
 
-    let selfFields, selfMeths, selfProps = emitRootClassFields ctx tagFieldsInObject
-    let selfAndTagFields = computeSelfAndTagFields ctx selfFields tagFieldsInObject
-    let ctorMeths = emitRootConstructors ctx selfFields tagFieldsInObject selfMeths
+    let rootCaseFields, rootCaseMethods, rootCaseProperties =
+        emitRootClassFields ctx tagFieldsInObject
+
+    let rootAndTagFields =
+        computeRootInstanceFields ctx rootCaseFields tagFieldsInObject
+
+    let ctorMeths =
+        emitRootConstructors ctx rootCaseFields tagFieldsInObject rootCaseMethods
+
     let tagMeths, tagProps, tagEnumFields = emitTagInfrastructure ctx
 
-    assembleUnionTypeDef ctx results ctorMeths selfMeths selfAndTagFields tagMeths tagProps tagEnumFields selfProps
+    assembleUnionTypeDef ctx results ctorMeths rootCaseMethods rootAndTagFields tagMeths tagProps tagEnumFields rootCaseProperties
