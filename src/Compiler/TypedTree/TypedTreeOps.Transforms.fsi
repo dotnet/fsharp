@@ -137,18 +137,7 @@ module internal TypeEncoding =
 
     val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
 
-    val mkNullTest: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr
-
-    val mkNonNullTest: TcGlobals -> range -> Expr -> Expr
-
     val mkIsInstConditional: TcGlobals -> range -> TType -> Expr -> Val -> Expr -> Expr -> Expr
-
-    val mkNonNullCond: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
-
-    /// Build an if-then statement
-    val mkIfThen: TcGlobals -> range -> Expr -> Expr -> Expr
-
-    val mkUnionCaseTest: TcGlobals -> Expr * UnionCaseRef * TypeInst * range -> Expr
 
     val canUseUnboxFast: TcGlobals -> range -> TType -> bool
 

@@ -154,12 +154,6 @@ module internal Makers =
 
     val destInt32: Expr -> int32 option
 
-    val mkIEventType: TcGlobals -> TType -> TType -> TType
-
-    val mkIObservableType: TcGlobals -> TType -> TType
-
-    val mkIObserverType: TcGlobals -> TType -> TType
-
     val mkRefCellContentsRef: TcGlobals -> RecdFieldRef
 
     val mkSequential: range -> Expr -> Expr -> Expr
@@ -383,10 +377,6 @@ module internal Makers =
 
     val TryEliminateDesugaredConstants: TcGlobals -> range -> Const -> Expr option
 
-    val mkSeqTy: TcGlobals -> TType -> TType
-
-    val mkIEnumeratorTy: TcGlobals -> TType -> TType
-
     val mkCallSeqCollect: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr
 
     val mkCallSeqUsing: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr
@@ -486,32 +476,16 @@ module internal Makers =
 
     val destIDelegateEventType: TcGlobals -> TType -> TType
 
-    val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
+    val mkNullTest: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr
 
-    val mkCompilationMappingAttrWithSeqNum: TcGlobals -> int -> int -> ILAttribute
+    val mkNonNullTest: TcGlobals -> range -> Expr -> Expr
 
-    val mkCompilationMappingAttrWithVariantNumAndSeqNum: TcGlobals -> int -> int -> int -> ILAttribute
+    val mkNonNullCond: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
-    val mkCompilationArgumentCountsAttr: TcGlobals -> int list -> ILAttribute
+    /// Build an if-then statement
+    val mkIfThen: TcGlobals -> range -> Expr -> Expr -> Expr
 
-    val mkCompilationSourceNameAttr: TcGlobals -> string -> ILAttribute
-
-    val mkCompilationMappingAttrForQuotationResource: TcGlobals -> string * ILTypeRef list -> ILAttribute
-
-#if !NO_TYPEPROVIDERS
-    /// returns Some(assemblyName) for success
-    val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> (string | null) option
-#endif
-
-    val IsSignatureDataVersionAttr: ILAttribute -> bool
-
-    val TryFindAutoOpenAttr: ILAttribute -> string option
-
-    val TryFindInternalsVisibleToAttr: ILAttribute -> string option
-
-    val IsMatchingSignatureDataVersionAttr: ILVersionInfo -> ILAttribute -> bool
-
-    val mkSignatureDataVersionAttr: TcGlobals -> ILVersionInfo -> ILAttribute
+    val mkUnionCaseTest: TcGlobals -> Expr * UnionCaseRef * TypeInst * range -> Expr
 
 [<AutoOpen>]
 module internal ExprHelpers =

@@ -251,6 +251,12 @@ module internal TypeConstruction =
 
     val (+->): Typars -> TType -> TType
 
+    /// Build a function type
+    val mkFunTy: TcGlobals -> TType -> TType -> TType
+
+    /// Build a curried function type
+    val mkIteratedFunTy: TcGlobals -> TTypes -> TType -> TType
+
     /// Build a nativeptr type
     val mkNativePtrTy: TcGlobals -> TType -> TType
 
@@ -436,6 +442,31 @@ module internal TypeConstruction =
     val convertToTypeWithMetadataIfPossible: TcGlobals -> TType -> TType
 
     val stripMeasuresFromTy: TcGlobals -> TType -> TType
+
+    val mkAnyTupledTy: TcGlobals -> TupInfo -> TType list -> TType
+
+    val mkAnyAnonRecdTy: TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
+
+    val mkRefTupledTy: TcGlobals -> TType list -> TType
+
+    val mkRefTupledVarsTy: TcGlobals -> Val list -> TType
+
+    val mkMethodTy: TcGlobals -> TType list list -> TType -> TType
+
+    /// Build a single-dimensional array type
+    val mkArrayType: TcGlobals -> TType -> TType
+
+    val mkByteArrayTy: TcGlobals -> TType
+
+    val mkIEventType: TcGlobals -> TType -> TType -> TType
+
+    val mkIObservableType: TcGlobals -> TType -> TType
+
+    val mkIObserverType: TcGlobals -> TType -> TType
+
+    val mkSeqTy: TcGlobals -> TType -> TType
+
+    val mkIEnumeratorTy: TcGlobals -> TType -> TType
 
 [<AutoOpen>]
 module internal TypeEquivalence =

@@ -286,21 +286,6 @@ module internal ExprShapeQueries =
 
     val mkRawQuotedExprTy: TcGlobals -> TType
 
-    val mkAnyTupledTy: TcGlobals -> TupInfo -> TType list -> TType
-
-    val mkAnyAnonRecdTy: TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
-
-    val mkRefTupledTy: TcGlobals -> TType list -> TType
-
-    val mkRefTupledVarsTy: TcGlobals -> Val list -> TType
-
-    val mkMethodTy: TcGlobals -> TType list list -> TType -> TType
-
-    /// Build a single-dimensional array type
-    val mkArrayType: TcGlobals -> TType -> TType
-
-    val mkByteArrayTy: TcGlobals -> TType
-
     val GenWitnessArgTys: TcGlobals -> TraitWitnessInfo -> TType list list
 
     val GenWitnessTys: TcGlobals -> TraitWitnessInfos -> TType list

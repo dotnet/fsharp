@@ -1103,6 +1103,156 @@ module internal AttributeHelpers =
         | Expr.App(Expr.Val(vref, _, _), _, _, _, _) when valRefEq g vref g.seq_vref -> ValueSome()
         | _ -> ValueNone
 
+    //----------------------------------------------------------------------------
+    // CompilationMappingAttribute, SourceConstructFlags
+    //----------------------------------------------------------------------------
+
+    let tnameCompilationSourceNameAttr = Core + ".CompilationSourceNameAttribute"
+
+    let tnameCompilationArgumentCountsAttr =
+        Core + ".CompilationArgumentCountsAttribute"
+
+    let tnameCompilationMappingAttr = Core + ".CompilationMappingAttribute"
+    let tnameSourceConstructFlags = Core + ".SourceConstructFlags"
+
+    let tref_CompilationArgumentCountsAttr (g: TcGlobals) =
+        mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationArgumentCountsAttr)
+
+    let tref_CompilationMappingAttr (g: TcGlobals) =
+        mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationMappingAttr)
+
+    let tref_CompilationSourceNameAttr (g: TcGlobals) =
+        mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationSourceNameAttr)
+
+    let tref_SourceConstructFlags (g: TcGlobals) =
+        mkILTyRef (g.fslibCcu.ILScopeRef, tnameSourceConstructFlags)
+
+    let mkCompilationMappingAttrPrim (g: TcGlobals) k nums =
+        mkILCustomAttribute (
+            tref_CompilationMappingAttr g,
+            ((mkILNonGenericValueTy (tref_SourceConstructFlags g))
+             :: (nums |> List.map (fun _ -> g.ilg.typ_Int32))),
+            ((k :: nums) |> List.map ILAttribElem.Int32),
+            []
+        )
+
+    let mkCompilationMappingAttr g kind = mkCompilationMappingAttrPrim g kind []
+
+    let mkCompilationMappingAttrWithSeqNum g kind seqNum =
+        mkCompilationMappingAttrPrim g kind [ seqNum ]
+
+    let mkCompilationMappingAttrWithVariantNumAndSeqNum g kind varNum seqNum =
+        mkCompilationMappingAttrPrim g kind [ varNum; seqNum ]
+
+    let mkCompilationArgumentCountsAttr (g: TcGlobals) nums =
+        mkILCustomAttribute (
+            tref_CompilationArgumentCountsAttr g,
+            [ mkILArr1DTy g.ilg.typ_Int32 ],
+            [ ILAttribElem.Array(g.ilg.typ_Int32, List.map ILAttribElem.Int32 nums) ],
+            []
+        )
+
+    let mkCompilationSourceNameAttr (g: TcGlobals) n =
+        mkILCustomAttribute (tref_CompilationSourceNameAttr g, [ g.ilg.typ_String ], [ ILAttribElem.String(Some n) ], [])
+
+    let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILTypeRef list) =
+        mkILCustomAttribute (
+            tref_CompilationMappingAttr g,
+            [ g.ilg.typ_String; mkILArr1DTy g.ilg.typ_Type ],
+            [
+                ILAttribElem.String(Some nm)
+                ILAttribElem.Array(g.ilg.typ_Type, [ for ty in tys -> ILAttribElem.TypeRef(Some ty) ])
+            ],
+            []
+        )
+
+    //----------------------------------------------------------------------------
+    // Decode extensible typing attributes
+    //----------------------------------------------------------------------------
+
+#if !NO_TYPEPROVIDERS
+
+    let isTypeProviderAssemblyAttr (cattr: ILAttribute) =
+        cattr.Method.DeclaringType.BasicQualifiedName = !!typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>
+            .FullName
+
+    let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : (string | null) option =
+        if isTypeProviderAssemblyAttr cattr then
+            let params_, _args = decodeILAttribData cattr
+
+            match params_ with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
+            | ILAttribElem.String(Some assemblyName) :: _ -> Some assemblyName
+            | ILAttribElem.String None :: _ -> Some null
+            | [] -> Some null
+            | _ -> None
+        else
+            None
+
+#endif
+
+    //----------------------------------------------------------------------------
+    // FSharpInterfaceDataVersionAttribute
+    //----------------------------------------------------------------------------
+
+    let tname_SignatureDataVersionAttr = Core + ".FSharpInterfaceDataVersionAttribute"
+
+    let tref_SignatureDataVersionAttr fsharpCoreAssemblyScopeRef =
+        mkILTyRef (fsharpCoreAssemblyScopeRef, tname_SignatureDataVersionAttr)
+
+    let mkSignatureDataVersionAttr (g: TcGlobals) (version: ILVersionInfo) =
+        mkILCustomAttribute (
+            tref_SignatureDataVersionAttr g.ilg.fsharpCoreAssemblyScopeRef,
+            [ g.ilg.typ_Int32; g.ilg.typ_Int32; g.ilg.typ_Int32 ],
+            [
+                ILAttribElem.Int32(int32 version.Major)
+                ILAttribElem.Int32(int32 version.Minor)
+                ILAttribElem.Int32(int32 version.Build)
+            ],
+            []
+        )
+
+    let IsSignatureDataVersionAttr cattr =
+        isILAttribByName ([], tname_SignatureDataVersionAttr) cattr
+
+    let TryFindAutoOpenAttr (cattr: ILAttribute) =
+        if
+            classifyILAttrib cattr &&& WellKnownILAttributes.AutoOpenAttribute
+            <> WellKnownILAttributes.None
+        then
+            match decodeILAttribData cattr with
+            | [ ILAttribElem.String s ], _ -> s
+            | [], _ -> None
+            | _ ->
+                warning (Failure(FSComp.SR.tastUnexpectedDecodeOfAutoOpenAttribute ()))
+                None
+        else
+            None
+
+    let TryFindInternalsVisibleToAttr (cattr: ILAttribute) =
+        if
+            classifyILAttrib cattr &&& WellKnownILAttributes.InternalsVisibleToAttribute
+            <> WellKnownILAttributes.None
+        then
+            match decodeILAttribData cattr with
+            | [ ILAttribElem.String s ], _ -> s
+            | [], _ -> None
+            | _ ->
+                warning (Failure(FSComp.SR.tastUnexpectedDecodeOfInternalsVisibleToAttribute ()))
+                None
+        else
+            None
+
+    let IsMatchingSignatureDataVersionAttr (version: ILVersionInfo) cattr =
+        IsSignatureDataVersionAttr cattr
+        && match decodeILAttribData cattr with
+           | [ ILAttribElem.Int32 u1; ILAttribElem.Int32 u2; ILAttribElem.Int32 u3 ], _ ->
+               (version.Major = uint16 u1)
+               && (version.Minor = uint16 u2)
+               && (version.Build = uint16 u3)
+           | _ ->
+               warning (Failure(FSComp.SR.tastUnexpectedDecodeOfInterfaceDataVersionAttribute ()))
+               false
+
 
 [<AutoOpen>]
 module internal ByrefAndSpanHelpers =

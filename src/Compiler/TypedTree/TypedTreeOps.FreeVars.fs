@@ -37,6 +37,74 @@ open FSharp.Compiler.TypeProviders
 [<AutoOpen>]
 module internal FreeTypeVars =
 
+    //---------------------------------------------------------------------------
+    // Find all type variables in a type, apart from those that have had
+    // an equation assigned by type inference.
+    //---------------------------------------------------------------------------
+
+    let emptyFreeLocals = Zset.empty valOrder
+
+    let unionFreeLocals s1 s2 =
+        if s1 === emptyFreeLocals then s2
+        elif s2 === emptyFreeLocals then s1
+        else Zset.union s1 s2
+
+    let emptyFreeRecdFields = Zset.empty recdFieldRefOrder
+
+    let unionFreeRecdFields s1 s2 =
+        if s1 === emptyFreeRecdFields then s2
+        elif s2 === emptyFreeRecdFields then s1
+        else Zset.union s1 s2
+
+    let emptyFreeUnionCases = Zset.empty unionCaseRefOrder
+
+    let unionFreeUnionCases s1 s2 =
+        if s1 === emptyFreeUnionCases then s2
+        elif s2 === emptyFreeUnionCases then s1
+        else Zset.union s1 s2
+
+    let emptyFreeTycons = Zset.empty tyconOrder
+
+    let unionFreeTycons s1 s2 =
+        if s1 === emptyFreeTycons then s2
+        elif s2 === emptyFreeTycons then s1
+        else Zset.union s1 s2
+
+    let typarOrder =
+        { new IComparer<Typar> with
+            member x.Compare(v1: Typar, v2: Typar) = compareBy v1 v2 _.Stamp
+        }
+
+    let emptyFreeTypars = Zset.empty typarOrder
+
+    let unionFreeTypars s1 s2 =
+        if s1 === emptyFreeTypars then s2
+        elif s2 === emptyFreeTypars then s1
+        else Zset.union s1 s2
+
+    let emptyFreeTyvars =
+        {
+            FreeTycons = emptyFreeTycons
+            // The summary of values used as trait solutions
+            FreeTraitSolutions = emptyFreeLocals
+            FreeTypars = emptyFreeTypars
+        }
+
+    let isEmptyFreeTyvars ftyvs =
+        Zset.isEmpty ftyvs.FreeTypars && Zset.isEmpty ftyvs.FreeTycons
+
+    let unionFreeTyvars fvs1 fvs2 =
+        if fvs1 === emptyFreeTyvars then
+            fvs2
+        else if fvs2 === emptyFreeTyvars then
+            fvs1
+        else
+            {
+                FreeTycons = unionFreeTycons fvs1.FreeTycons fvs2.FreeTycons
+                FreeTraitSolutions = unionFreeLocals fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions
+                FreeTypars = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars
+            }
+
     type FreeVarOptions =
         {
             canCache: bool

@@ -246,6 +246,33 @@ module internal AttributeHelpers =
     [<return: Struct>]
     val (|SizeOfExpr|_|): TcGlobals -> Expr -> TType voption
 
+    val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
+
+    val mkCompilationMappingAttrWithSeqNum: TcGlobals -> int -> int -> ILAttribute
+
+    val mkCompilationMappingAttrWithVariantNumAndSeqNum: TcGlobals -> int -> int -> int -> ILAttribute
+
+    val mkCompilationArgumentCountsAttr: TcGlobals -> int list -> ILAttribute
+
+    val mkCompilationSourceNameAttr: TcGlobals -> string -> ILAttribute
+
+    val mkCompilationMappingAttrForQuotationResource: TcGlobals -> string * ILTypeRef list -> ILAttribute
+
+#if !NO_TYPEPROVIDERS
+    /// returns Some(assemblyName) for success
+    val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> (string | null) option
+#endif
+
+    val IsSignatureDataVersionAttr: ILAttribute -> bool
+
+    val TryFindAutoOpenAttr: ILAttribute -> string option
+
+    val TryFindInternalsVisibleToAttr: ILAttribute -> string option
+
+    val IsMatchingSignatureDataVersionAttr: ILVersionInfo -> ILAttribute -> bool
+
+    val mkSignatureDataVersionAttr: TcGlobals -> ILVersionInfo -> ILAttribute
+
 
 [<AutoOpen>]
 module internal ByrefAndSpanHelpers =

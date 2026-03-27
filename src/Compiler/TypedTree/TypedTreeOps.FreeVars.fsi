@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.TypedTreeOps
 
+open System.Collections.Generic
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
@@ -15,6 +16,35 @@ open FSharp.Compiler.TcGlobals
 
 [<AutoOpen>]
 module internal FreeTypeVars =
+
+    val emptyFreeLocals: FreeLocals
+
+    val unionFreeLocals: FreeLocals -> FreeLocals -> FreeLocals
+
+    val emptyFreeRecdFields: Zset<RecdFieldRef>
+
+    val unionFreeRecdFields: Zset<RecdFieldRef> -> Zset<RecdFieldRef> -> Zset<RecdFieldRef>
+
+    val emptyFreeUnionCases: Zset<UnionCaseRef>
+
+    val unionFreeUnionCases: Zset<UnionCaseRef> -> Zset<UnionCaseRef> -> Zset<UnionCaseRef>
+
+    val emptyFreeTycons: FreeTycons
+
+    val unionFreeTycons: FreeTycons -> FreeTycons -> FreeTycons
+
+    /// An ordering for type parameters, based on stamp
+    val typarOrder: IComparer<Typar>
+
+    val emptyFreeTypars: FreeTypars
+
+    val unionFreeTypars: FreeTypars -> FreeTypars -> FreeTypars
+
+    val emptyFreeTyvars: FreeTyvars
+
+    val isEmptyFreeTyvars: FreeTyvars -> bool
+
+    val unionFreeTyvars: FreeTyvars -> FreeTyvars -> FreeTyvars
 
     /// Represents the options to activate when collecting free variables
     type FreeVarOptions =

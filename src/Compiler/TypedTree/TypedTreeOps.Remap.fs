@@ -737,6 +737,15 @@ module internal TypeConstruction =
 
     let (+->) d r = mkForallTyIfNeeded d r
 
+    //---------------------------------------------------------------------------
+    // Make some common types
+    //---------------------------------------------------------------------------
+
+    let mkFunTy (g: TcGlobals) domainTy rangeTy =
+        TType_fun(domainTy, rangeTy, g.knownWithoutNull)
+
+    let mkIteratedFunTy g dl r = List.foldBack (mkFunTy g) dl r
+
     let mkNativePtrTy (g: TcGlobals) ty =
         assert g.nativeptr_tcr.CanDeref // this should always be available, but check anyway
         TType_app(g.nativeptr_tcr, [ ty ], g.knownWithoutNull)
@@ -1336,6 +1345,40 @@ module internal TypeConstruction =
             let tinstR = tinst |> List.filter (isMeasureTy g >> not)
             TType_app(tcref, tinstR, nullness)
         | _ -> ty
+
+    let mkAnyTupledTy (g: TcGlobals) tupInfo tys =
+        match tys with
+        | [] -> g.unit_ty
+        | [ h ] -> h
+        | _ -> TType_tuple(tupInfo, tys)
+
+    let mkAnyAnonRecdTy (_g: TcGlobals) anonInfo tys = TType_anon(anonInfo, tys)
+
+    let mkRefTupledTy g tys = mkAnyTupledTy g tupInfoRef tys
+
+    let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
+
+    let mkMethodTy g argTys retTy =
+        mkIteratedFunTy g (List.map (mkRefTupledTy g) argTys) retTy
+
+    let mkArrayType (g: TcGlobals) ty =
+        TType_app(g.array_tcr_nice, [ ty ], g.knownWithoutNull)
+
+    let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
+
+    let mkIEventType (g: TcGlobals) ty1 ty2 =
+        TType_app(g.fslib_IEvent2_tcr, [ ty1; ty2 ], g.knownWithoutNull)
+
+    let mkIObservableType (g: TcGlobals) ty1 =
+        TType_app(g.tcref_IObservable, [ ty1 ], g.knownWithoutNull)
+
+    let mkIObserverType (g: TcGlobals) ty1 =
+        TType_app(g.tcref_IObserver, [ ty1 ], g.knownWithoutNull)
+
+    let mkSeqTy (g: TcGlobals) ty = mkWoNullAppTy g.seq_tcr [ ty ]
+
+    let mkIEnumeratorTy (g: TcGlobals) ty =
+        mkWoNullAppTy g.tcref_System_Collections_Generic_IEnumerator [ ty ]
 
 [<AutoOpen>]
 module internal TypeEquivalence =

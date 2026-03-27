@@ -29,12 +29,6 @@ module internal ExprConstruction =
 
     val unionCaseRefOrder: IComparer<UnionCaseRef>
 
-    /// Build a function type
-    val mkFunTy: TcGlobals -> TType -> TType -> TType
-
-    /// Build a curried function type
-    val mkIteratedFunTy: TcGlobals -> TTypes -> TType -> TType
-
     val mkLambdaTy: TcGlobals -> Typars -> TTypes -> TType -> TType
 
     val mkLambdaArgTy: range -> TTypes -> TType
@@ -620,34 +614,6 @@ module internal TypeTesters =
 
     val ValRefIsExplicitImpl: TcGlobals -> ValRef -> bool
 
-    val emptyFreeLocals: FreeLocals
-
-    val unionFreeLocals: FreeLocals -> FreeLocals -> FreeLocals
-
-    val emptyFreeRecdFields: Zset<RecdFieldRef>
-
-    val unionFreeRecdFields: Zset<RecdFieldRef> -> Zset<RecdFieldRef> -> Zset<RecdFieldRef>
-
-    val emptyFreeUnionCases: Zset<UnionCaseRef>
-
-    val unionFreeUnionCases: Zset<UnionCaseRef> -> Zset<UnionCaseRef> -> Zset<UnionCaseRef>
-
-    val emptyFreeTycons: FreeTycons
-
-    val unionFreeTycons: FreeTycons -> FreeTycons -> FreeTycons
-
-    /// An ordering for type parameters, based on stamp
-    val typarOrder: IComparer<Typar>
-
-    val emptyFreeTypars: FreeTypars
-
-    val unionFreeTypars: FreeTypars -> FreeTypars -> FreeTypars
-
-    val emptyFreeTyvars: FreeTyvars
-
-    val isEmptyFreeTyvars: FreeTyvars -> bool
-
-    val unionFreeTyvars: FreeTyvars -> FreeTyvars -> FreeTyvars
 
 [<AutoOpen>]
 module internal CommonContainers =

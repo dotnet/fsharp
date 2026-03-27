@@ -2491,26 +2491,6 @@ module internal ExprShapeQueries =
     let mkRawQuotedExprTy (g: TcGlobals) =
         TType_app(g.raw_expr_tcr, [], g.knownWithoutNull)
 
-    let mkAnyTupledTy (g: TcGlobals) tupInfo tys =
-        match tys with
-        | [] -> g.unit_ty
-        | [ h ] -> h
-        | _ -> TType_tuple(tupInfo, tys)
-
-    let mkAnyAnonRecdTy (_g: TcGlobals) anonInfo tys = TType_anon(anonInfo, tys)
-
-    let mkRefTupledTy g tys = mkAnyTupledTy g tupInfoRef tys
-
-    let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
-
-    let mkMethodTy g argTys retTy =
-        mkIteratedFunTy g (List.map (mkRefTupledTy g) argTys) retTy
-
-    let mkArrayType (g: TcGlobals) ty =
-        TType_app(g.array_tcr_nice, [ ty ], g.knownWithoutNull)
-
-    let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
-
     //---------------------------------------------------------------------------
     // Witnesses
     //---------------------------------------------------------------------------
