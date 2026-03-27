@@ -1590,14 +1590,17 @@ let private emitRootConstructors (ctx: TypeDefContext) selfFields tagFieldsInObj
     let cud = ctx.cud
     let baseTy = ctx.baseTy
 
-    if
-        (List.isEmpty selfFields
-         && List.isEmpty tagFieldsInObject
-         && not (List.isEmpty selfMeths))
-        || td.IsStruct
-        || cud.UnionCases
-           |> Array.forall (fun alt -> altFoldsAsRootInstance ctx.layout alt cud.UnionCases)
-    then
+    // The root-class base ctor (taking only tag fields) is needed when:
+    // - There are nested subtypes that call super(tag) — i.e. not all cases fold to root
+    // - It's not a struct (structs use static maker methods)
+    // - There aren't already instance fields from folded cases covering the ctor need
+    let allCasesFoldToRoot =
+        cud.UnionCases |> Array.forall (fun alt -> altFoldsAsRootInstance ctx.layout alt cud.UnionCases)
+
+    let hasFieldsOrTagButNoMethods =
+        not (List.isEmpty selfFields && List.isEmpty tagFieldsInObject && not (List.isEmpty selfMeths))
+
+    if td.IsStruct || allCasesFoldToRoot || not hasFieldsOrTagButNoMethods then
         []
     else
         let baseTySpec =
