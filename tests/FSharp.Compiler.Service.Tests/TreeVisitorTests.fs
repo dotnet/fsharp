@@ -271,3 +271,4 @@ let f x =
     match SyntaxTraversal.Traverse(mkPos 4 7, parseTree, visitor) with
     | Some(SynPat.Named _) -> ()
     | other -> failwith $"defaultTraverse did not walk into nested SynPat, got: %A{other}"
+
