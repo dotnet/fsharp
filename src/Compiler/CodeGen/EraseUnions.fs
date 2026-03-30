@@ -108,7 +108,7 @@ let private DynamicDependencyAllCtorsAndPublicMembers = 0x7E0
 //---------------------------------------------------
 // Generate the union classes
 
-let mkMethodsAndPropertiesForFields (ctx: TypeDefContext) (ilTy: ILType) (fields: IlxUnionCaseField[]) =
+let private mkMethodsAndPropertiesForFields (ctx: TypeDefContext) (ilTy: ILType) (fields: IlxUnionCaseField[]) =
     let g = ctx.g
     let cud = ctx.cud
     let access = cud.UnionCasesAccessibility

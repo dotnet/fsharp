@@ -44,15 +44,13 @@ let mkSetTagToField ilg _cuspec baseTy =
     mkNormalStfld (refToFieldInTy baseTy (mkTagFieldId ilg))
 
 let adjustFieldNameForTypeDef hasHelpers nm =
-    match hasHelpers, nm with
-    | SpecialFSharpListHelpers, "Head" -> "HeadOrDefault"
-    | SpecialFSharpListHelpers, "Tail" -> "TailOrNull"
+    match hasHelpers with
+    | SpecialFSharpListHelpers -> adjustFieldNameForList nm
     | _ -> nm
 
 let adjustFieldName access nm =
-    match access, nm with
-    | DataAccess.ViaListHelpers, "Head" -> "HeadOrDefault"
-    | DataAccess.ViaListHelpers, "Tail" -> "TailOrNull"
+    match access with
+    | DataAccess.ViaListHelpers -> adjustFieldNameForList nm
     | _ -> nm
 
 let mkLdData (access, cuspec, cidx, fidx) =

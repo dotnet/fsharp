@@ -295,6 +295,13 @@ let mkTesterName nm = "Is" + nm
 
 let tagPropertyName = "Tag"
 
+/// Adjust field names for F# list type (Head→HeadOrDefault, Tail→TailOrNull).
+let adjustFieldNameForList nm =
+    match nm with
+    | "Head" -> "HeadOrDefault"
+    | "Tail" -> "TailOrNull"
+    | _ -> nm
+
 let mkUnionCaseFieldId (fdef: IlxUnionCaseField) =
     // Use the lower case name of a field or constructor as the field/parameter name if it differs from the uppercase name
     fdef.LowerName, fdef.Type
