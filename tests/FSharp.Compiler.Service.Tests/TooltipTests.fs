@@ -568,3 +568,37 @@ let f (x{caret}: #seq<int list>) = ()
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo "val x: #seq<int list>"
+
+// https://github.com/dotnet/fsharp/issues/13194
+[<Fact>]
+let ``Tooltip works for member whose name contains a single quote`` () =
+    Checker.getTooltip """
+module Foo
+
+/// This is a doc for normalize prime
+let normalize' x = x + 1
+
+let y = normaliz{caret}e' 5
+"""
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo "val normalize': x: int -> int"
+
+// https://github.com/dotnet/fsharp/issues/13194
+[<Fact>]
+let ``Sig file XML doc fallback works for member whose name contains a single quote`` () =
+    let sigSource =
+        """
+module Foo
+
+/// Normalize with a prime
+val normalize': int -> int
+"""
+
+    let implSource =
+        """
+module Foo
+
+let normaliz{caret}e' x = x + 1
+"""
+
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Normalize with a prime"

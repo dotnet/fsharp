@@ -728,3 +728,17 @@ match A 1 with
 type T() =
     override {caret}
 """
+
+// https://github.com/dotnet/fsharp/issues/13194
+[<Fact>]
+let ``Completion works for member whose name contains a single quote`` () =
+    let info =
+        Checker.getCompletionInfo
+            """
+/// Doc for normalize prime
+let normalize' x = x + 1
+
+normaliz{caret}
+"""
+
+    assertHasItemWithNames [ "normalize'" ] info
