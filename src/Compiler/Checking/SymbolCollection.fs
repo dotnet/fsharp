@@ -497,24 +497,27 @@ let runEnterPhase
             // using the existing GraphChecking.FileContentMapping infrastructure
             let fileInProject : FileInProject = { Idx = idx; FileName = fileName; ParsedInput = parsedInput }
             let fileContentEntries = FileContentMapping.mkFileContent fileInProject
-            let identRefs =
-                fileContentEntries
-                |> List.collect (fun entry ->
-                    let rec collectRefs entry =
-                        match entry with
-                        | FileContentEntry.PrefixedIdentifier path ->
-                            // Convert string list to Ident list for storage
-                            [ path |> List.map (fun s -> Ident(s, range0)) ]
-                        | FileContentEntry.OpenStatement path ->
-                            [ path |> List.map (fun s -> Ident(s, range0)) ]
-                        | FileContentEntry.TopLevelNamespace(_, nested)
-                        | FileContentEntry.NestedModule(_, nested) ->
-                            nested |> List.collect collectRefs
-                        | _ -> []
-                    collectRefs entry)
+            // Separate open statements from identifier references.
+            // Opens always create dependencies; identifier refs skip shared prefixes.
+            let mutable extraOpens = []
+            let mutable identRefs = []
+            let rec collectRefs entry =
+                match entry with
+                | FileContentEntry.OpenStatement path ->
+                    let idents = path |> List.map (fun s -> Ident(s, range0))
+                    extraOpens <- idents :: extraOpens
+                | FileContentEntry.PrefixedIdentifier path ->
+                    let idents = path |> List.map (fun s -> Ident(s, range0))
+                    identRefs <- idents :: identRefs
+                | FileContentEntry.TopLevelNamespace(_, nested)
+                | FileContentEntry.NestedModule(_, nested) ->
+                    for n in nested do collectRefs n
+                | _ -> ()
+            for entry in fileContentEntries do
+                collectRefs entry
             { fd with
-                Opens = fd.Opens @ (identRefs |> List.filter (fun ids -> ids.Length > 0))
-                IdentifierRefs = identRefs })
+                Opens = fd.Opens @ (List.rev extraOpens |> List.filter (fun ids -> ids.Length > 0))
+                IdentifierRefs = List.rev identRefs |> List.filter (fun ids -> ids.Length > 0) })
 
     // Step 2: Build stubs for each file
     let stubs =
@@ -580,8 +583,45 @@ let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set
 
     (exportMap, sharedPrefixes)
 
-/// Resolve a file's imports (Opens) against the export map to find dependencies.
-/// Skips shared namespace prefixes to avoid false cycles between files in the same namespace.
+/// Add a dependency on a name, optionally skipping shared prefixes.
+let private addDepFromExportMap
+    (exportMap: Map<string, Set<int>>)
+    (sharedPrefixes: Set<string>)
+    (skipShared: bool)
+    (selfIndex: int)
+    (deps: byref<Set<int>>)
+    (name: string) =
+    if skipShared && Set.contains name sharedPrefixes then ()
+    else
+        match Map.tryFind name exportMap with
+        | Some fileIndices ->
+            for idx in fileIndices do
+                if idx <> selfIndex then
+                    deps <- Set.add idx deps
+        | None -> ()
+
+/// Resolve a path (list of idents) against the export map.
+/// If prefixesToo is true, also tries all prefixes of the path.
+let private resolvePathDeps
+    (exportMap: Map<string, Set<int>>)
+    (sharedPrefixes: Set<string>)
+    (skipShared: bool)
+    (prefixesToo: bool)
+    (selfIndex: int)
+    (deps: byref<Set<int>>)
+    (path: LongIdent) =
+    let fullPath = path |> List.map (fun id -> id.idText) |> String.concat "."
+    addDepFromExportMap exportMap sharedPrefixes skipShared selfIndex &deps fullPath
+    if prefixesToo then
+        let segments = path |> List.map (fun id -> id.idText)
+        let mutable prefix = ""
+        for seg in segments do
+            prefix <- if prefix = "" then seg else prefix + "." + seg
+            addDepFromExportMap exportMap sharedPrefixes skipShared selfIndex &deps prefix
+
+/// Resolve a file's imports against the export map to find dependencies.
+/// Opens always create dependencies (they're explicit imports).
+/// IdentifierRefs skip shared namespace prefixes to avoid false cycles.
 let private resolveFileDependencies
     (exportMap: Map<string, Set<int>>)
     (sharedPrefixes: Set<string>)
@@ -590,28 +630,14 @@ let private resolveFileDependencies
 
     let mutable deps = Set.empty<int>
 
-    let addDep (name: string) =
-        // Skip shared namespace prefixes — they create false cycles
-        // Only create dependencies on names uniquely owned by another file
-        if not (Set.contains name sharedPrefixes) then
-            match Map.tryFind name exportMap with
-            | Some fileIndices ->
-                for idx in fileIndices do
-                    if idx <> fd.FileIndex then
-                        deps <- Set.add idx deps
-            | None -> ()
-
+    // Opens: match full path only (no prefix expansion), never skip shared.
+    // "open SrtpTest.Types" depends on whoever defines "SrtpTest.Types" exactly.
     for openPath in fd.Opens do
-        // Try the full open path (most specific — usually a unique module name)
-        let fullPath = openPath |> List.map (fun id -> id.idText) |> String.concat "."
-        addDep fullPath
+        resolvePathDeps exportMap sharedPrefixes false false fd.FileIndex &deps openPath
 
-        // Also try each prefix, but shared prefixes will be skipped
-        let segments = openPath |> List.map (fun id -> id.idText)
-        let mutable prefix = ""
-        for seg in segments do
-            prefix <- if prefix = "" then seg else prefix + "." + seg
-            addDep prefix
+    // Identifier refs: try prefixes, skip shared prefixes to avoid false cycles.
+    for identRef in fd.IdentifierRefs do
+        resolvePathDeps exportMap sharedPrefixes true true fd.FileIndex &deps identRef
 
     deps
 
@@ -668,6 +694,49 @@ let private isAutoGeneratedFile (fd: FileDeclarations) =
     fn.Contains("AssemblyInfo") || fn.Contains("AssemblyAttributes") ||
     fn.Contains("buildproperties")
 
+/// Check if a filename is a signature file (.fsi)
+let private isSigFile (fileName: string) =
+    fileName.EndsWith(".fsi")
+
+/// Find the .fsi/.fs pairs and build a map: impl file index → sig file index
+let private buildSigImplPairs (fileDecls: FileDeclarations array) : Map<int, int> =
+    let sigFiles =
+        fileDecls
+        |> Array.filter (fun fd -> isSigFile fd.FileName)
+        |> Array.map (fun fd -> (fd.FileName.Substring(0, fd.FileName.Length - 1), fd.FileIndex))
+        |> Map.ofArray
+
+    fileDecls
+    |> Array.choose (fun fd ->
+        if not (isSigFile fd.FileName) then
+            match Map.tryFind fd.FileName sigFiles with
+            | Some sigIdx -> Some (fd.FileIndex, sigIdx)
+            | None -> None
+        else
+            None)
+    |> Map.ofArray
+
+/// Enforce .fsi before .fs ordering in the final result.
+/// For each .fsi/.fs pair, ensure the .fsi immediately precedes its .fs.
+let private enforceSigBeforeImpl (fileDecls: FileDeclarations array) (order: int list) : int list =
+    let sigImplPairs = buildSigImplPairs fileDecls
+    // Reverse map: sig file index → impl file index
+    let implForSig = sigImplPairs |> Map.toSeq |> Seq.map (fun (impl, sig') -> (sig', impl)) |> Map.ofSeq
+
+    // Remove sig files from the order — we'll re-insert them before their impls
+    let sigIndices = sigImplPairs |> Map.toSeq |> Seq.map snd |> Set.ofSeq
+    let orderWithoutSigs = order |> List.filter (fun idx -> not (Set.contains idx sigIndices))
+
+    // Re-insert each sig file immediately before its impl file
+    orderWithoutSigs
+    |> List.collect (fun idx ->
+        match Map.tryFind idx implForSig |> Option.bind (fun _ -> None) with
+        | _ ->
+            // Check if this impl has a sig file
+            match Map.tryFind idx sigImplPairs with
+            | Some sigIdx -> [ sigIdx; idx ]  // sig before impl
+            | None -> [ idx ])
+
 /// Compute the dependency-ordered file indices from FileDeclarations.
 /// Returns file indices in topological order (dependencies before dependents).
 let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
@@ -675,10 +744,14 @@ let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
 
     // Build dependency map: fileIndex -> set of file indices it depends on
     // Auto-generated files get empty dependency sets to avoid false cycles
+    // Sig files (.fsi) depend on nothing extra — they'll be placed before their impl
     let deps =
         fileDecls
         |> Array.map (fun fd ->
             if isAutoGeneratedFile fd then
+                (fd.FileIndex, Set.empty)
+            elif isSigFile fd.FileName then
+                // Sig files get empty deps — they'll be inserted before their impl
                 (fd.FileIndex, Set.empty)
             else
                 (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes fd))
@@ -686,9 +759,17 @@ let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
 
     match topologicalSort fileDecls.Length deps with
     | Ok order ->
-        // Partition: auto-generated files first, then user files in dependency order.
-        // This ensures AssemblyInfo/AssemblyAttributes don't interfere with [<EntryPoint>] ordering.
+        // Partition: auto-generated files first, then user files in dependency order
         let autoGen, userFiles =
             order |> List.partition (fun idx -> isAutoGeneratedFile fileDecls.[idx])
-        (autoGen @ userFiles) |> List.toArray
-    | Error msg -> failwith msg
+        // Enforce .fsi before .fs pairing in user files
+        let userFilesWithSigs = enforceSigBeforeImpl fileDecls userFiles
+        (autoGen @ userFilesWithSigs) |> List.toArray
+    | Error msg ->
+        // Level A: cycles are errors. Report which files are involved.
+        let cycleFileNames =
+            msg // msg contains "among file indices: X, Y, Z"
+        // Fall back to original file order when cycles are detected.
+        // This allows compilation to proceed (it may fail later with normal F# ordering errors).
+        eprintfn "warning: %s. Falling back to original file order." cycleFileNames
+        [| 0 .. fileDecls.Length - 1 |]
