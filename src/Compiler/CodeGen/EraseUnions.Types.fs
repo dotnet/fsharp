@@ -43,10 +43,12 @@ open FSharp.Compiler.AbstractIL.ILX.Types
 type DataAccess =
     /// Use raw field loads/stores (intra-assembly access, or union has no helpers)
     | RawFields
-    /// Use helper methods (get_Tag, get_IsXxx, NewXxx) — inter-assembly with AllHelpers or SpecialFSharpOptionHelpers
+    /// Use helper methods (get_Tag, get_IsXxx, NewXxx) — inter-assembly with AllHelpers
     | ViaHelpers
     /// Use list-specific helper methods (HeadOrDefault, TailOrNull naming) — inter-assembly with SpecialFSharpListHelpers
     | ViaListHelpers
+    /// Use helper methods for field access, but raw discrimination for tag access — SpecialFSharpOptionHelpers
+    | ViaOptionHelpers
 
 /// Compute the access strategy from the per-call-site flag and per-union helpers setting.
 let computeDataAccess (avoidHelpers: bool) (cuspec: IlxUnionSpec) =
@@ -55,8 +57,8 @@ let computeDataAccess (avoidHelpers: bool) (cuspec: IlxUnionSpec) =
     else
         match cuspec.HasHelpers with
         | IlxUnionHasHelpers.NoHelpers -> DataAccess.RawFields
-        | IlxUnionHasHelpers.AllHelpers
-        | IlxUnionHasHelpers.SpecialFSharpOptionHelpers -> DataAccess.ViaHelpers
+        | IlxUnionHasHelpers.AllHelpers -> DataAccess.ViaHelpers
+        | IlxUnionHasHelpers.SpecialFSharpOptionHelpers -> DataAccess.ViaOptionHelpers
         | IlxUnionHasHelpers.SpecialFSharpListHelpers -> DataAccess.ViaListHelpers
 
 [<Literal>]

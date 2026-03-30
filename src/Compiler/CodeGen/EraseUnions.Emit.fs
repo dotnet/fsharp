@@ -286,7 +286,8 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (access, cuspec: IlxUnionS
     | DataAccess.ViaListHelpers ->
         ldOpt |> Option.iter cg.EmitInstr
         cg.EmitInstr(mkGetTagFromHelpers ilg cuspec)
-    | DataAccess.RawFields ->
+    | DataAccess.RawFields
+    | DataAccess.ViaOptionHelpers ->
 
         let layout = classifyFromSpec cuspec
         let alts = cuspec.AlternativesArray
