@@ -33,6 +33,7 @@ type public Fsc() as this =
     let mutable defineConstants: ITaskItem[] = [||]
     let mutable delaySign: bool = false
     let mutable deterministic: bool = false
+    let mutable fileOrderAuto: bool = false
     let mutable disabledWarnings: string | null = null
     let mutable documentationFile: string | null = null
     let mutable dotnetFscCompilerPath: string | null = null
@@ -354,6 +355,9 @@ type public Fsc() as this =
         if deterministic then
             builder.AppendSwitch("--deterministic+")
 
+        if fileOrderAuto then
+            builder.AppendSwitch("--file-order-auto+")
+
         builder.AppendOptionalSwitch("--parallelcompilation", parallelCompilation)
 
         // OtherFlags - must be second-to-last
@@ -413,6 +417,10 @@ type public Fsc() as this =
     member _.Deterministic
         with get () = deterministic
         and set (p) = deterministic <- p
+
+    member _.FileOrderAuto
+        with get () = fileOrderAuto
+        and set (p) = fileOrderAuto <- p
 
     member _.DelaySign
         with get () = delaySign

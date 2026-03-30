@@ -5770,8 +5770,8 @@ let MakeInitialEnv env =
 
 /// Check an entire implementation file
 /// Typecheck, then close the inference scope and then check the file meets its signature (if any)
-let CheckOneImplFile 
-       // checkForErrors: A function to help us stop reporting cascading errors 
+let CheckOneImplFile
+       // checkForErrors: A function to help us stop reporting cascading errors
        (g, amap,
         thisCcu,
         openDecls0,
@@ -5779,6 +5779,7 @@ let CheckOneImplFile
         conditionalDefines,
         tcSink,
         isInternalTestSpanStackReferring,
+        fileOrderAuto,
         env,
         rootSigOpt: ModuleOrNamespaceType option,
         synImplFile,
@@ -5800,7 +5801,7 @@ let CheckOneImplFile
                 tcSink,
                 LightweightTcValForUsingInBuildMethodCall g,
                 isInternalTestSpanStackReferring,
-                false, // fileOrderAuto — TODO: thread from TcConfig when wiring and deprecation warning
+                fileOrderAuto,
                 diagnosticOptions,
                 tcPat=TcPat,
                 tcSimplePats=TcSimplePats,
@@ -5932,7 +5933,7 @@ let CheckOneImplFile
 
 
 /// Check an entire signature file
-let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring, diagnosticOptions) tcEnv (sigFile: ParsedSigFileInput) =
+let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring, fileOrderAuto, diagnosticOptions) tcEnv (sigFile: ParsedSigFileInput) =
  cancellable {     
     use _ =
         Activity.start "CheckDeclarations.CheckOneSigFile"
@@ -5946,7 +5947,7 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
             tcSink,
             LightweightTcValForUsingInBuildMethodCall g,
             isInternalTestSpanStackReferring,
-            false, // fileOrderAuto — TODO: thread from TcConfig
+            fileOrderAuto,
             diagnosticOptions,
             tcPat=TcPat,
             tcSimplePats=TcSimplePats,

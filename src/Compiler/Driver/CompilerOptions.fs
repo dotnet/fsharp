@@ -1101,13 +1101,12 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 Some(FSComp.SR.optsRealsig (formatOptionSwitch tcConfigB.realsig))
             )
 
-            // TODO: Add proper FSComp.SR resource string for this option
             CompilerOption(
                 "file-order-auto",
                 tagNone,
                 OptionSwitch(SetFileOrderAutoSwitch tcConfigB),
                 None,
-                Some("Automatically determine file compilation order from dependency analysis " + formatOptionSwitch tcConfigB.fileOrderAuto)
+                Some(FSComp.SR.optsFileOrderAuto (formatOptionSwitch tcConfigB.fileOrderAuto))
             )
 
             CompilerOption("pathmap", tagPathMap, OptionStringList(AddPathMapping tcConfigB), None, Some(FSComp.SR.optsPathMap ()))
