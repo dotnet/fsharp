@@ -1286,6 +1286,19 @@ type T() =
             )
 
         Assert.False hasPropertySymbols
+        
+    [<Fact>]
+    let ``CLIEvent is recognized as event`` () =
+        let symbolUse = Checker.getSymbolUse """
+type T() =
+    [<CLIEvent>]
+    member this.Ev{caret}ent = Event<int>().Publish
+"""
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.True mfv.IsEvent
+            Assert.StartsWith("E:", mfv.XmlDocSig)
+        | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
 
     [<Fact>]
     let ``CLIEvent 01 - Synthetic range`` () =
@@ -1410,3 +1423,51 @@ let f (x: byref<int>) = x <- 42
                 $"Expected parameter TypeDefinition.IsByRef = true for byref<int>, got entity: %s{paramTy.TypeDefinition.DisplayName}"
             )
         | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue but got %A{symbol}"
+        
+module OperatorsWithDots =
+    // https://github.com/dotnet/fsharp/issues/14057
+    [<Fact>]
+    let ``Operator containing dot is resolved as single symbol`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+let ( -.- ) x y = x - y
+let result = 1 -.- 2
+"""
+
+        let symbolUse = findSymbolUseByName "op_MinusDotMinus" checkResults
+
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.Equal("(-.-)", mfv.DisplayName)
+
+            // Verify the operator is found at definition and usage sites
+            let allUses = checkResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+            Assert.True(allUses.Length >= 2, $"Expected at least 2 uses (def + use), got %d{allUses.Length}")
+        | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue but got %A{symbol}"
+
+    [<Fact>]
+    let ``Operator with dot has correct symbol range at usage site`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+let ( -.- ) x y = x - y
+let result = 1 -.- 2
+"""
+
+        let usageSymbols =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.filter (fun su ->
+                match su.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as mfv ->
+                    mfv.LogicalName = "op_MinusDotMinus" && su.Range.StartLine = 3
+                | _ -> false)
+            |> Seq.toArray
+
+        Assert.True(usageSymbols.Length >= 1, $"Expected usage of -.- on line 3, got %d{usageSymbols.Length}")
+
+        // Verify the range spans the full operator (3 chars: -.-), not just part after '.'
+        let range = usageSymbols.[0].Range
+        let rangeLength = range.EndColumn - range.StartColumn
+
+        Assert.Equal(3, rangeLength)
