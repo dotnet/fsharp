@@ -382,7 +382,7 @@ module internal TypedTreeCollections =
         static member OfList: (TyconRef * 'T) list -> TyconRefMultiMap<'T>
 
 [<AutoOpen>]
-module internal TypeQueries =
+module internal TypeTesters =
 
     /// Try to create a EntityRef suitable for accessing the given Entity from another assembly
     val tryRescopeEntity: CcuThunk -> Entity -> EntityRef voption

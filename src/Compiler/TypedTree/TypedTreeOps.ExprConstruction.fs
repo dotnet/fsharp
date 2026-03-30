@@ -583,7 +583,7 @@ module internal TypedTreeCollections =
             ||> List.foldBack (fun (x, y) acc -> acc.Add(x, y))
 
 [<AutoOpen>]
-module internal TypeQueries =
+module internal TypeTesters =
 
     //--------------------------------------------------------------------------
     // From Ref_private to Ref_nonlocal when exporting data.
