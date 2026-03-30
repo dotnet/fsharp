@@ -558,6 +558,7 @@ type TcConfigBuilder =
         mutable optSettings: OptimizationSettings
         mutable emitTailcalls: bool
         mutable deterministic: bool
+        mutable fileOrderAuto: bool
         mutable parallelParsing: bool
         mutable parallelIlxGen: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
@@ -799,6 +800,7 @@ type TcConfigBuilder =
             optSettings = OptimizationSettings.Defaults
             emitTailcalls = true
             deterministic = false
+            fileOrderAuto = false
             parallelParsing = true
             parallelIlxGen = true
             emitMetadataAssembly = MetadataAssemblyGeneration.None
@@ -1355,6 +1357,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.optSettings = data.optSettings
     member _.emitTailcalls = data.emitTailcalls
     member _.deterministic = data.deterministic
+    member _.fileOrderAuto = data.fileOrderAuto
     member _.parallelParsing = data.parallelParsing
     member _.parallelIlxGen = data.parallelIlxGen
     member _.emitMetadataAssembly = data.emitMetadataAssembly

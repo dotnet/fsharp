@@ -566,6 +566,9 @@ let SetTailcallSwitch (tcConfigB: TcConfigBuilder) switch =
 let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
+let SetFileOrderAutoSwitch (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.fileOrderAuto <- (switch = OptionSwitch.On)
+
 let SetRealsig (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.realsig <- (switch = OptionSwitch.On)
 
@@ -1096,6 +1099,15 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 OptionSwitch(SetRealsig tcConfigB),
                 None,
                 Some(FSComp.SR.optsRealsig (formatOptionSwitch tcConfigB.realsig))
+            )
+
+            // TODO: Add proper FSComp.SR resource string for this option
+            CompilerOption(
+                "file-order-auto",
+                tagNone,
+                OptionSwitch(SetFileOrderAutoSwitch tcConfigB),
+                None,
+                Some("Automatically determine file compilation order from dependency analysis " + formatOptionSwitch tcConfigB.fileOrderAuto)
             )
 
             CompilerOption("pathmap", tagPathMap, OptionStringList(AddPathMapping tcConfigB), None, Some(FSComp.SR.optsPathMap ()))

@@ -31,6 +31,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.SymbolCollection
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
@@ -148,6 +149,23 @@ let TypeCheck
 
         let tcInitialState =
             GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, tcEnv0, openDecls0)
+
+        // When --file-order-auto is enabled, run the symbol collection pre-pass
+        // to pre-populate TcEnv with all top-level declarations before type checking.
+        let tcInitialState =
+            if tcConfig.fileOrderAuto then
+                let amap = tcImports.GetImportMap()
+                let parsedInputs =
+                    inputs
+                    |> List.toArray
+                    |> Array.map (fun (input: Syntax.ParsedInput) -> (input.FileName, input))
+
+                let tcEnvPrepopulated, _fileDecls =
+                    SymbolCollection.runEnterPhase tcGlobals amap tcInitialState.TcEnvFromSignatures parsedInputs
+
+                tcInitialState.NextStateAfterIncrementalFragment tcEnvPrepopulated
+            else
+                tcInitialState
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 

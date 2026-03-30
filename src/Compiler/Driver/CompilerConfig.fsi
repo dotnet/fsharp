@@ -429,6 +429,8 @@ type TcConfigBuilder =
 
         mutable deterministic: bool
 
+        mutable fileOrderAuto: bool
+
         mutable parallelParsing: bool
 
         mutable parallelIlxGen: bool
@@ -761,6 +763,8 @@ type TcConfig =
     member emitTailcalls: bool
 
     member deterministic: bool
+
+    member fileOrderAuto: bool
 
     member parallelParsing: bool
 
