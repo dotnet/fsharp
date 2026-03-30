@@ -382,7 +382,7 @@ module internal CollectionTypes =
         static member OfList: (TyconRef * 'T) list -> TyconRefMultiMap<'T>
 
 [<AutoOpen>]
-module internal TypeTesters =
+module internal TypeQueries =
 
     /// Try to create a EntityRef suitable for accessing the given Entity from another assembly
     val tryRescopeEntity: CcuThunk -> Entity -> EntityRef voption
@@ -647,6 +647,10 @@ module internal TypeTesters =
 
     /// Determine if a value is a method implementing an interface dispatch slot using a private method impl
     val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
+
+    val useGenuineField: Tycon -> RecdField -> bool
+
+    val ComputeFieldName: Tycon -> RecdField -> string
 
 [<AutoOpen>]
 module internal CommonContainers =

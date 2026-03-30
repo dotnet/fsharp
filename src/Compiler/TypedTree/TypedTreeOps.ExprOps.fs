@@ -1691,7 +1691,7 @@ module internal Makers =
         mkCond DebugPointAtBinding.NoneAtInvisible m g.unit_ty e1 e2 (mkUnit g m)
 
 [<AutoOpen>]
-module internal ExprHelpers =
+module internal ExprTransforms =
 
     //--------------------------------------------------------------------------
     // tupled lambda --> method/function with a given valReprInfo specification.

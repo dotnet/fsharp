@@ -2439,7 +2439,7 @@ module internal ExprRemapping =
         remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e
 
 [<AutoOpen>]
-module internal ExprShapeQueries =
+module internal ExprAnalysis =
 
     //--------------------------------------------------------------------------
     // Replace Marks - adjust debugging marks when a lambda gets
@@ -2590,18 +2590,6 @@ module internal ExprShapeQueries =
             errorR (InternalError(sprintf "isExnFieldMutable, exnc = %s, n = %d" ecref.LogicalName n, ecref.Range))
 
         (recdFieldOfExnDefRefByIdx ecref n).IsMutable
-
-    let useGenuineField (tycon: Tycon) (f: RecdField) =
-        Option.isSome f.LiteralValue
-        || tycon.IsEnumTycon
-        || f.rfield_secret
-        || (not f.IsStatic && f.rfield_mutable && not tycon.IsRecordTycon)
-
-    let ComputeFieldName tycon f =
-        if useGenuineField tycon f then
-            f.rfield_id.idText
-        else
-            CompilerGeneratedName f.rfield_id.idText
 
     //---------------------------------------------------------------------------
     // Witnesses

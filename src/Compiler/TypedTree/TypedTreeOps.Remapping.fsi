@@ -258,7 +258,7 @@ module internal ExprRemapping =
     val remapTyconExnInfo: RemapContext -> Remap -> ExceptionInfo -> ExceptionInfo
 
 [<AutoOpen>]
-module internal ExprShapeQueries =
+module internal ExprAnalysis =
 
     /// Adjust marks in expressions, replacing all marks by the given mark.
     /// Used when inlining.
@@ -273,10 +273,6 @@ module internal ExprShapeQueries =
     val isUnionCaseFieldMutable: TcGlobals -> UnionCaseRef -> int -> bool
 
     val isExnFieldMutable: TyconRef -> int -> bool
-
-    val useGenuineField: Tycon -> RecdField -> bool
-
-    val ComputeFieldName: Tycon -> RecdField -> string
 
     val GenWitnessArgTys: TcGlobals -> TraitWitnessInfo -> TType list list
 

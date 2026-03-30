@@ -583,7 +583,7 @@ module internal CollectionTypes =
             ||> List.foldBack (fun (x, y) acc -> acc.Add(x, y))
 
 [<AutoOpen>]
-module internal TypeTesters =
+module internal TypeQueries =
 
     //--------------------------------------------------------------------------
     // From Ref_private to Ref_nonlocal when exporting data.
@@ -1347,6 +1347,18 @@ module internal TypeTesters =
                     && typeEquiv g oty g.mk_IStructuralEquatable_ty)
 
              not isStructural))
+
+    let useGenuineField (tycon: Tycon) (f: RecdField) =
+        Option.isSome f.LiteralValue
+        || tycon.IsEnumTycon
+        || f.rfield_secret
+        || (not f.IsStatic && f.rfield_mutable && not tycon.IsRecordTycon)
+
+    let ComputeFieldName tycon f =
+        if useGenuineField tycon f then
+            f.rfield_id.idText
+        else
+            CompilerGeneratedName f.rfield_id.idText
 
 
 [<AutoOpen>]

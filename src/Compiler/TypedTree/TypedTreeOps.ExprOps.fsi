@@ -506,7 +506,7 @@ module internal Makers =
     val mkUnionCaseTest: TcGlobals -> Expr * UnionCaseRef * TypeInst * range -> Expr
 
 [<AutoOpen>]
-module internal ExprHelpers =
+module internal ExprTransforms =
 
     /// Given a lambda expression taking multiple variables, build a corresponding lambda taking a tuple
     val MultiLambdaToTupledLambda: TcGlobals -> Val list -> Expr -> Val * Expr
