@@ -200,7 +200,7 @@ module internal TypeRemapping =
     val mkTyconRefInst: TyconRef -> TypeInst -> TyparInstantiation
 
 [<AutoOpen>]
-module internal TypeConstruction =
+module internal MeasureOps =
 
     /// Equality for type definition references
     val tyconRefEq: TcGlobals -> TyconRef -> TyconRef -> bool
@@ -243,6 +243,9 @@ module internal TypeConstruction =
     val normalizeMeasure: TcGlobals -> Measure -> Measure
 
     val tryNormalizeMeasureInType: TcGlobals -> TType -> TType
+
+[<AutoOpen>]
+module internal TypeBuilders =
 
     val mkForallTy: Typars -> TType -> TType
 
@@ -299,6 +302,9 @@ module internal TypeConstruction =
     /// Convert from F# tuple types to .NET tuple types, but only the outermost level
     val mkOuterCompiledTupleTy: TcGlobals -> bool -> TTypes -> TType
 
+[<AutoOpen>]
+module internal TypeAbbreviations =
+
     val applyTyconAbbrev: TType -> Tycon -> TypeInst -> TType
 
     val reduceTyconAbbrev: Tycon -> TypeInst -> TType
@@ -308,6 +314,9 @@ module internal TypeConstruction =
     val reduceTyconMeasureableOrProvided: TcGlobals -> Tycon -> TypeInst -> TType
 
     val reduceTyconRefMeasureableOrProvided: TcGlobals -> TyconRef -> TypeInst -> TType
+
+[<AutoOpen>]
+module internal TypeDecomposition =
 
     val stripTyEqnsA: TcGlobals -> canShortcut: bool -> TType -> TType
 

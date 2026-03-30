@@ -505,7 +505,7 @@ module internal TypeRemapping =
     let mkTyconRefInst (tcref: TyconRef) tinst = mkTyconInst tcref.Deref tinst
 
 [<AutoOpen>]
-module internal TypeConstruction =
+module internal MeasureOps =
 
     //---------------------------------------------------------------------------
     // Basic equalities
@@ -727,6 +727,9 @@ module internal TypeConstruction =
             | _ -> ty
         | _ -> ty
 
+[<AutoOpen>]
+module internal TypeBuilders =
+
     //---------------------------------------------------------------------------
     // Some basic type builders
     //---------------------------------------------------------------------------
@@ -869,6 +872,9 @@ module internal TypeConstruction =
                 TType_app(tcref, tysA @ [ marker ], g.knownWithoutNull)
             | _ -> TType_app(tcref, tysA @ [ TType_tuple(mkTupInfo isStruct, tysB) ], g.knownWithoutNull)
 
+[<AutoOpen>]
+module internal TypeAbbreviations =
+
     //---------------------------------------------------------------------------
     // Remove inference equations and abbreviations from types
     //---------------------------------------------------------------------------
@@ -907,6 +913,9 @@ module internal TypeConstruction =
 
     let reduceTyconRefMeasureableOrProvided (g: TcGlobals) (tcref: TyconRef) tyargs =
         reduceTyconMeasureableOrProvided g tcref.Deref tyargs
+
+[<AutoOpen>]
+module internal TypeDecomposition =
 
     let rec stripTyEqnsA g canShortcut ty =
         let ty = stripTyparEqnsAux KnownWithoutNull canShortcut ty
