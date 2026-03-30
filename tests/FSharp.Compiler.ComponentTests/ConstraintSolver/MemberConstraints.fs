@@ -126,9 +126,12 @@ type DuCaseName<'T> =
     static member inline Invoke(value: 'a) =
         let inline call (other: ^M, value: ^I) = ((^M or ^I) : (static member ToCaseName: ^I -> string) value)
         call (Unchecked.defaultof<DuCaseName<_>>, value)
+            """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
+
     // https://github.com/dotnet/fsharp/issues/9382
-    
-    
     [<Fact>]
     let ``Issue 9382 - SRTP stress test with matrix inverse should compile`` () =
         FSharp
