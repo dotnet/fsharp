@@ -24,6 +24,28 @@ module ``Test Compiler Directives`` =
             |> shouldFail
             |> withSingleDiagnostic (Warning 213, Line 2, Col 1, Line 2, Col 10, "'' is not a valid assembly name")
 
+    // https://github.com/dotnet/fsharp/issues/3841
+    [<Fact>]
+    let ``Hash directive inside nested module produces indentation error`` () =
+        Fsx
+            """
+let x = 42
+
+module Nested =
+    let foo = 123
+
+#r "SomeAssembly"
+
+    let bar = 1
+
+let y = x
+            """
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 58, Line 11, Col 1, Line 11, Col 4, "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (9:5). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.")
+
 module ``Test compiler directives in FSI`` =
     [<Fact>]
     let ``r# "" is invalid`` () =

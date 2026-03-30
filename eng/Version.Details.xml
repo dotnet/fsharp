@@ -2,21 +2,21 @@
 <Dependencies>
   <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="542fea6988c173c64859bab06c9d2d100034843c" BarId="305563" />
   <ProductDependencies>
-    <Dependency Name="Microsoft.Build" Version="18.6.0-preview-26173-02">
+    <Dependency Name="Microsoft.Build" Version="18.6.0-preview-26177-02">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6c499a72be37b21dbc32e8b03685aeec3092f599</Sha>
+      <Sha>db5eca3d0f2c02edc7caf5ceb64ee01547e360b5</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="18.6.0-preview-26173-02">
+    <Dependency Name="Microsoft.Build.Framework" Version="18.6.0-preview-26177-02">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6c499a72be37b21dbc32e8b03685aeec3092f599</Sha>
+      <Sha>db5eca3d0f2c02edc7caf5ceb64ee01547e360b5</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.6.0-preview-26173-02">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.6.0-preview-26177-02">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6c499a72be37b21dbc32e8b03685aeec3092f599</Sha>
+      <Sha>db5eca3d0f2c02edc7caf5ceb64ee01547e360b5</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.6.0-preview-26173-02">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.6.0-preview-26177-02">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6c499a72be37b21dbc32e8b03685aeec3092f599</Sha>
+      <Sha>db5eca3d0f2c02edc7caf5ceb64ee01547e360b5</Sha>
     </Dependency>
     <Dependency Name="Microsoft.CodeAnalysis" Version="5.6.0-2.26173.11">
       <Uri>https://github.com/dotnet/roslyn</Uri>
@@ -76,9 +76,9 @@
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="10.0.0-beta.26168.1">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="10.0.0-beta.26177.7">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>3907f62e877e105b6196b1bd9c309203d6362a0a</Sha>
+      <Sha>62dc2defffeadabf6761a9ed7e142692107330c0</Sha>
     </Dependency>
     <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.26153.1">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
