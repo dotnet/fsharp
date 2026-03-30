@@ -1,5 +1,5 @@
 {
-  "c": 16100,
+  "c": 16464,
   "lr": "2026-03-30",
   "ms": 19439,
   "woc": 0,
@@ -21,7 +21,10 @@
     "19456": "2026-03-29",
     "15070": "2026-03-29",
     "15987": "2026-03-30",
-    "16056": "2026-03-30"
+    "16056": "2026-03-30",
+    "16034": "2026-03-30",
+    "15339": "2026-03-30",
+    "16464": "2026-03-30"
   },
-  "notes": "Pre-2023 Bug scan COMPLETE. Second pass done. Monthly summary: #19439. Continue 2023 bug scan from ~#16100. Pre-2023 scan COMPLETE. Key confirmed-present bugs: #462, #527, #995, #1255, #3448, #3705, #3783, #3845, #3998, #4601, #5263, #6116, #6110, #7114, #4654, #5795, #16189, #16034, #16344, #16292, #16546, #16856, #17407, #17899, #18041, #18416, #9994, #10282, #12379, #7536, #8137, #12929, #19445, #18849, #19224. Fixed in 8.0+: #16007. Fixed in 10.0: #15070, #18402. Fixed in 11.0: #18841, #19456, #15987 (SRTP+FSharpPlus regression), #16056 (DeclarationLocation auto-property). Still present in 11.0: #15992 (static abstracts in interface), #15843 (UoM Format drops <_> and <1>), #16099 (MembersFunctionsAndValues no auto-property in interface impl). Note: #14454 label AI-thinks-issue-fixed was WRONG - T-Gro confirmed still broken. #15419, #15557, #15558, #16455, #16482, #17107, #17190 still present."
+  "notes": "Pre-2023 Bug scan COMPLETE. Second pass done. Monthly summary: #19439. Continue 2023 bug scan from ~#16464. Pre-2023 scan COMPLETE. Key confirmed-present bugs: #462, #527, #995, #1255, #3448, #3705, #3783, #3845, #3998, #4601, #5263, #6116, #6110, #7114, #4654, #5795, #16189, #16034, #16344, #16292, #16546, #16856, #17407, #17899, #18041, #18416, #9994, #10282, #12379, #7536, #8137, #12929, #19445, #18849, #19224. Fixed: #16007, #15070, #18402, #18841, #19456, #15987, #16056. Still present in F# 10.0: #16034 (indexed prop setter named arg internal error), #15339 (sig gen missing Struct+NoComparison), #16464 (INumber<T> multiple additions FS0670), #15992, #15843, #16099, #15419, #15557, #15558, #16455, #16482, #17107, #17190, #16254, #16292, #16344, #16546, #16856, #17407, #17899, #18041, #18416. Note: #14454 label AI-thinks-issue-fixed was WRONG - T-Gro confirmed still broken."
 }
