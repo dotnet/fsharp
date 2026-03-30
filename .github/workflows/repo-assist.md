@@ -69,6 +69,7 @@ tools:
   web-fetch:
   github:
     toolsets: [all]
+    min-integrity: none
   bash: true
   repo-memory: true
 
