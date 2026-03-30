@@ -150,9 +150,11 @@ let TypeCheck
         let tcInitialState =
             GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, tcEnv0, openDecls0)
 
-        // When --file-order-auto is enabled, run the symbol collection pre-pass
-        // to pre-populate TcEnv with all top-level declarations before type checking.
-        let tcInitialState =
+        // When --file-order-auto is enabled:
+        // 1. Run symbol collection pre-pass to gather declarations from all files
+        // 2. Compute dependency graph and topological sort
+        // 3. Reorder inputs so dependencies come before dependents
+        let tcInitialState, inputs =
             if tcConfig.fileOrderAuto then
                 let amap = tcImports.GetImportMap()
                 let parsedInputs =
@@ -160,12 +162,20 @@ let TypeCheck
                     |> List.toArray
                     |> Array.map (fun (input: Syntax.ParsedInput) -> (input.FileName, input))
 
-                let tcEnvPrepopulated, _fileDecls =
+                let tcEnvPrepopulated, fileDecls =
                     SymbolCollection.runEnterPhase tcGlobals amap tcInitialState.TcEnvFromSignatures parsedInputs
 
-                tcInitialState.NextStateAfterIncrementalFragment tcEnvPrepopulated
+                // Compute dependency order from collected declarations
+                let order = SymbolCollection.computeDependencyOrder fileDecls
+
+                // Reorder inputs according to the dependency graph
+                let inputsArray = inputs |> List.toArray
+                let reorderedInputs = order |> Array.map (fun idx -> inputsArray.[idx]) |> Array.toList
+
+                let tcState = tcInitialState.NextStateAfterIncrementalFragment tcEnvPrepopulated
+                (tcState, reorderedInputs)
             else
-                tcInitialState
+                (tcInitialState, inputs)
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 

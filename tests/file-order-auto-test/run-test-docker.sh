@@ -1,20 +1,12 @@
 #!/bin/bash
-# End-to-end test for Track 01 (symbol collection pre-pass)
+# End-to-end tests for order-independent compilation (Track 01 + Track 02)
 # Run this inside the Docker container after a successful build.
 #
-# Track 01 provides the SYMBOL COLLECTION pre-pass. It does NOT reorder files.
-# File reordering is Track 02 (auto dependency graph).
-#
-# What Track 01 does:
-#   - Collects all top-level declarations from all files
-#   - Pre-populates TcEnv with module/type stubs
-#   - Provides FileDeclarations data for Track 02 to build a dependency graph
-#
-# What we test here:
+# Tests:
 #   1. Standard compiler rejects wrong file order (baseline)
-#   2. Correct file order still works with --file-order-auto+ (no regression)
-#   3. Custom compiler doesn't crash with --file-order-auto+ on wrong-ordered files
-#      (it won't resolve values, but it shouldn't crash — Track 02 will fix ordering)
+#   2. Custom compiler + --file-order-auto+ with WRONG file order → should SUCCEED (Track 02)
+#   3. Correct file order + --file-order-auto+ → no regression
+#   4. Correct file order, no flag → default behavior preserved
 
 set -u
 
@@ -22,7 +14,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TEST_DIR="$REPO_ROOT/tests/file-order-auto-test"
 CUSTOM_FSC="$REPO_ROOT/artifacts/bin/fsc/Debug/net10.0/fsc.dll"
 
-echo "=== Track 01: Symbol Collection Pre-Pass Tests ==="
+echo "=== Order-Independent Compilation Tests ==="
 echo ""
 
 if [ ! -f "$CUSTOM_FSC" ]; then
@@ -47,8 +39,23 @@ else
 fi
 echo ""
 
-# --- Test 2: Correct file order with custom compiler + flag should SUCCEED ---
-echo "--- Test 2: Correct file order + custom compiler + --file-order-auto+ → expect PASS ---"
+# --- Test 2: THE BIG ONE — Wrong file order + custom compiler + flag should SUCCEED ---
+echo "--- Test 2: WRONG file order + custom compiler + --file-order-auto+ → expect PASS ---"
+dotnet build FileOrderAutoTest.fsproj -v:quiet \
+    -p:DotnetFscCompilerPath="$CUSTOM_FSC" \
+    -p:OtherFlags="--file-order-auto+" \
+    2>&1 | tail -5
+if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    echo "  PASS: Auto file ordering resolved wrong file order!"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: Auto file ordering did not resolve wrong file order."
+    FAIL=$((FAIL + 1))
+fi
+echo ""
+
+# --- Test 3: Correct file order with custom compiler + flag should SUCCEED ---
+echo "--- Test 3: Correct file order + custom compiler + --file-order-auto+ → expect PASS ---"
 cat > FileOrderAutoTest_CorrectOrder.fsproj <<'PROJ'
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -77,8 +84,8 @@ else
 fi
 echo ""
 
-# --- Test 3: Correct file order WITHOUT flag should also SUCCEED ---
-echo "--- Test 3: Correct file order + custom compiler, NO flag → expect PASS ---"
+# --- Test 4: Correct file order WITHOUT flag should also SUCCEED ---
+echo "--- Test 4: Correct file order + custom compiler, NO flag → expect PASS ---"
 dotnet build FileOrderAutoTest_CorrectOrder.fsproj -v:quiet \
     -p:DotnetFscCompilerPath="$CUSTOM_FSC" \
     2>&1 | tail -3

@@ -18,6 +18,7 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.Import
 open FSharp.Compiler.Xml
+open FSharp.Compiler.GraphChecking
 
 /// What we know about a type declaration from syntax alone
 type TypeDeclStub =
@@ -491,7 +492,29 @@ let runEnterPhase
     let fileDecls =
         parsedInputs
         |> Array.Parallel.mapi (fun idx (fileName, parsedInput) ->
-            collectFileDeclarations idx fileName parsedInput)
+            let fd = collectFileDeclarations idx fileName parsedInput
+            // Enrich with identifier references from the full AST walk
+            // using the existing GraphChecking.FileContentMapping infrastructure
+            let fileInProject : FileInProject = { Idx = idx; FileName = fileName; ParsedInput = parsedInput }
+            let fileContentEntries = FileContentMapping.mkFileContent fileInProject
+            let identRefs =
+                fileContentEntries
+                |> List.collect (fun entry ->
+                    let rec collectRefs entry =
+                        match entry with
+                        | FileContentEntry.PrefixedIdentifier path ->
+                            // Convert string list to Ident list for storage
+                            [ path |> List.map (fun s -> Ident(s, range0)) ]
+                        | FileContentEntry.OpenStatement path ->
+                            [ path |> List.map (fun s -> Ident(s, range0)) ]
+                        | FileContentEntry.TopLevelNamespace(_, nested)
+                        | FileContentEntry.NestedModule(_, nested) ->
+                            nested |> List.collect collectRefs
+                        | _ -> []
+                    collectRefs entry)
+            { fd with
+                Opens = fd.Opens @ (identRefs |> List.filter (fun ids -> ids.Length > 0))
+                IdentifierRefs = identRefs })
 
     // Step 2: Build stubs for each file
     let stubs =
@@ -505,3 +528,145 @@ let runEnterPhase
             AddLocalRootModuleOrNamespace g amap range0 env moduleTy)
 
     (tcEnv, fileDecls)
+
+// ---------------------------------------------------------------
+// Dependency graph and topological sort (Track 02)
+// ---------------------------------------------------------------
+
+/// Build an export map: for each module/namespace name, which file index defines it.
+/// A name may be defined by multiple files (e.g., namespaces spanning files).
+let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set<int>> =
+    let mutable exportMap = Map.empty<string, Set<int>>
+
+    let addExport (name: string) (fileIdx: int) =
+        let existing = exportMap |> Map.tryFind name |> Option.defaultValue Set.empty
+        exportMap <- Map.add name (Set.add fileIdx existing) exportMap
+
+    for fd in fileDecls do
+        for topMod in fd.TopLevelModules do
+            // Register the module/namespace name
+            let qualName = topMod.QualifiedName |> List.map (fun id -> id.idText) |> String.concat "."
+            addExport qualName fd.FileIndex
+
+            // Also register just the last segment (the module name without namespace prefix)
+            addExport topMod.Name.idText fd.FileIndex
+
+            // Register each segment prefix for namespace resolution
+            // e.g., "A.B.C" registers "A", "A.B", "A.B.C"
+            let segments = topMod.QualifiedName |> List.map (fun id -> id.idText)
+            let mutable prefix = ""
+            for seg in segments do
+                prefix <- if prefix = "" then seg else prefix + "." + seg
+                addExport prefix fd.FileIndex
+
+            // Register type names qualified by module
+            for ty in topMod.Types do
+                let tyQualName = qualName + "." + ty.Name.idText
+                addExport tyQualName fd.FileIndex
+
+            // Register nested module names
+            let rec registerNested (parentName: string) (m: ModuleDeclStub) =
+                let nestedName = parentName + "." + m.Name.idText
+                addExport nestedName fd.FileIndex
+                addExport m.Name.idText fd.FileIndex
+                for ty in m.Types do
+                    addExport (nestedName + "." + ty.Name.idText) fd.FileIndex
+                for nested in m.NestedModules do
+                    registerNested nestedName nested
+
+            for nested in topMod.NestedModules do
+                registerNested qualName nested
+
+    exportMap
+
+/// Resolve a file's imports (Opens) against the export map to find dependencies.
+let private resolveFileDependencies
+    (exportMap: Map<string, Set<int>>)
+    (fd: FileDeclarations)
+    : Set<int> =
+
+    let mutable deps = Set.empty<int>
+
+    for openPath in fd.Opens do
+        // Try the full open path
+        let fullPath = openPath |> List.map (fun id -> id.idText) |> String.concat "."
+        match Map.tryFind fullPath exportMap with
+        | Some fileIndices ->
+            for idx in fileIndices do
+                if idx <> fd.FileIndex then
+                    deps <- Set.add idx deps
+        | None -> ()
+
+        // Also try each prefix of the open path
+        let segments = openPath |> List.map (fun id -> id.idText)
+        let mutable prefix = ""
+        for seg in segments do
+            prefix <- if prefix = "" then seg else prefix + "." + seg
+            match Map.tryFind prefix exportMap with
+            | Some fileIndices ->
+                for idx in fileIndices do
+                    if idx <> fd.FileIndex then
+                        deps <- Set.add idx deps
+            | None -> ()
+
+    deps
+
+/// Topological sort using Kahn's algorithm with deterministic tie-breaking.
+/// Returns file indices in dependency order (dependencies first).
+/// Raises an error string if cycles are detected.
+let private topologicalSort (fileCount: int) (deps: Map<int, Set<int>>) : Result<int list, string> =
+    // Compute in-degree for each node
+    let inDegree = Array.create fileCount 0
+    let adjacency = Array.init fileCount (fun _ -> ResizeArray<int>())
+
+    for KeyValue(fileIdx, fileDeps) in deps do
+        for dep in fileDeps do
+            adjacency.[dep].Add(fileIdx) // dep -> fileIdx (dep must come before fileIdx)
+            inDegree.[fileIdx] <- inDegree.[fileIdx] + 1
+
+    // Start with nodes that have no dependencies (in-degree 0)
+    // Use a sorted set for deterministic ordering (by file index, which is stable)
+    let queue = System.Collections.Generic.SortedSet<int>()
+    for i in 0 .. fileCount - 1 do
+        if inDegree.[i] = 0 then
+            queue.Add(i) |> ignore
+
+    let result = ResizeArray<int>(fileCount)
+
+    while queue.Count > 0 do
+        let node = Seq.head queue
+        queue.Remove(node) |> ignore
+        result.Add(node)
+
+        for dependent in adjacency.[node] do
+            inDegree.[dependent] <- inDegree.[dependent] - 1
+            if inDegree.[dependent] = 0 then
+                queue.Add(dependent) |> ignore
+
+    if result.Count < fileCount then
+        // Cycle detected — find the nodes involved
+        let cycleNodes =
+            [| for i in 0 .. fileCount - 1 do
+                if inDegree.[i] > 0 then yield i |]
+        let cycleDesc =
+            cycleNodes
+            |> Array.map string
+            |> String.concat ", "
+        Error (sprintf "Circular file dependencies detected among file indices: %s" cycleDesc)
+    else
+        Ok (result |> Seq.toList)
+
+/// Compute the dependency-ordered file indices from FileDeclarations.
+/// Returns file indices in topological order (dependencies before dependents).
+let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
+    let exportMap = buildExportMap fileDecls
+
+    // Build dependency map: fileIndex -> set of file indices it depends on
+    let deps =
+        fileDecls
+        |> Array.map (fun fd -> (fd.FileIndex, resolveFileDependencies exportMap fd))
+        |> Map.ofArray
+
+    match topologicalSort fileDecls.Length deps with
+    | Ok order -> order |> List.toArray
+    | Error msg -> failwith msg

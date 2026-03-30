@@ -61,9 +61,17 @@ val buildFileStub: _g: TcGlobals -> fileDecls: FileDeclarations -> QualifiedName
 /// Run the full enter phase: collect declarations from all files, build stubs,
 /// and fold them into the given TcEnv via AddLocalRootModuleOrNamespace.
 /// Returns the pre-populated TcEnv ready for type checking.
+/// Run the full enter phase: collect declarations from all files, build stubs,
+/// and fold them into the given TcEnv via AddLocalRootModuleOrNamespace.
+/// Returns the pre-populated TcEnv ready for type checking.
 val runEnterPhase:
     g: TcGlobals ->
     amap: Import.ImportMap ->
     tcEnv: CheckBasics.TcEnv ->
     parsedInputs: (string * ParsedInput) array ->
     CheckBasics.TcEnv * FileDeclarations array
+
+/// Compute the dependency-ordered file indices from FileDeclarations.
+/// Returns file indices in topological order (dependencies before dependents).
+/// Raises an error if cycles are detected (Level A: cycles are errors).
+val computeDependencyOrder: fileDecls: FileDeclarations array -> int array
