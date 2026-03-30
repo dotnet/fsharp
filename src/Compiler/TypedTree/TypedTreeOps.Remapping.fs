@@ -724,6 +724,43 @@ module internal SignatureOps =
                         seqEntity.entity_flags.IsStructRecordOrUnionType
                     )))
 
+    /// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
+    /// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
+    /// This will match anything that does not have any types or bindings.
+    [<return: Struct>]
+    let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
+        match moduleOrNamespaceContents with
+        | TMDefs(defs = defs) ->
+            let mdDefsLength =
+                defs
+                |> List.count (function
+                    | ModuleOrNamespaceContents.TMDefRec _
+                    | ModuleOrNamespaceContents.TMDefs _ -> true
+                    | _ -> false)
+
+            let emptyModuleOrNamespaces =
+                defs
+                |> List.choose (function
+                    | ModuleOrNamespaceContents.TMDefRec _ as defRec
+                    | ModuleOrNamespaceContents.TMDefs(defs = [ ModuleOrNamespaceContents.TMDefRec _ as defRec ]) ->
+                        match defRec with
+                        | TMDefRec(bindings = [ ModuleOrNamespaceBinding.Module(mspec, ModuleOrNamespaceContents.TMDefs(defs = defs)) ]) ->
+                            defs
+                            |> List.forall (function
+                                | ModuleOrNamespaceContents.TMDefOpens _
+                                | ModuleOrNamespaceContents.TMDefDo _
+                                | ModuleOrNamespaceContents.TMDefRec(isRec = true; tycons = []; bindings = []) -> true
+                                | _ -> false)
+                            |> fun isEmpty -> if isEmpty then Some mspec else None
+                        | _ -> None
+                    | _ -> None)
+
+            if mdDefsLength = emptyModuleOrNamespaces.Length then
+                ValueSome emptyModuleOrNamespaces
+            else
+                ValueNone
+        | _ -> ValueNone
+
 [<AutoOpen>]
 module internal ExprFreeVars =
 

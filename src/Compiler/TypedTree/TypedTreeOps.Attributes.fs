@@ -1353,6 +1353,42 @@ module internal AttributeHelpers =
     let ValRefIsCompiledAsInstanceMember g (vref: ValRef) =
         ValSpecIsCompiledAsInstance g vref.Deref
 
+    let tryFindExtensionAttribute (g: TcGlobals) (attribs: Attrib list) : Attrib option =
+        tryFindEntityAttribByFlag g WellKnownEntityAttributes.ExtensionAttribute attribs
+
+    let tryAddExtensionAttributeIfNotAlreadyPresentForModule
+        (g: TcGlobals)
+        (tryFindExtensionAttributeIn: (Attrib list -> Attrib option) -> Attrib option)
+        (moduleEntity: Entity)
+        : Entity =
+        if Option.isSome (tryFindExtensionAttribute g moduleEntity.Attribs) then
+            moduleEntity
+        else
+            match tryFindExtensionAttributeIn (tryFindExtensionAttribute g) with
+            | None -> moduleEntity
+            | Some extensionAttrib ->
+                { moduleEntity with
+                    entity_attribs = moduleEntity.EntityAttribs.Add(extensionAttrib, WellKnownEntityAttributes.ExtensionAttribute)
+                }
+
+    let tryAddExtensionAttributeIfNotAlreadyPresentForType
+        (g: TcGlobals)
+        (tryFindExtensionAttributeIn: (Attrib list -> Attrib option) -> Attrib option)
+        (moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref)
+        (typeEntity: Entity)
+        : Entity =
+        if Option.isSome (tryFindExtensionAttribute g typeEntity.Attribs) then
+            typeEntity
+        else
+            match tryFindExtensionAttributeIn (tryFindExtensionAttribute g) with
+            | None -> typeEntity
+            | Some extensionAttrib ->
+                moduleOrNamespaceTypeAccumulator.Value.AllEntitiesByLogicalMangledName.TryFind(typeEntity.LogicalName)
+                |> Option.iter (fun e ->
+                    e.entity_attribs <- e.EntityAttribs.Add(extensionAttrib, WellKnownEntityAttributes.ExtensionAttribute))
+
+                typeEntity
+
 [<AutoOpen>]
 module internal ByrefAndSpanHelpers =
 

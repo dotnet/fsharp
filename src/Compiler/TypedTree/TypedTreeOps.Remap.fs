@@ -1676,4 +1676,20 @@ module internal TypeEquivalence =
     let measureEquiv g m1 m2 =
         measureAEquiv g TypeEquivEnv.EmptyIgnoreNulls m1 m2
 
+    /// An immutable mapping from witnesses to some data.
+    ///
+    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
+    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
+
+    /// Create an empty immutable mapping from witnesses to some data
+    let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
+        ImmutableDictionary.Create(
+            { new IEqualityComparer<_> with
+                member _.Equals(a, b) =
+                    nullSafeEquality a b (fun a b -> traitKeysAEquiv g TypeEquivEnv.EmptyIgnoreNulls a b)
+
+                member _.GetHashCode(a) = hash a.MemberName
+            }
+        )
+
 

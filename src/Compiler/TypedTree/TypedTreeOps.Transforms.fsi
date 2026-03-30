@@ -181,19 +181,10 @@ module internal Rewriting =
     val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace
 
 [<AutoOpen>]
-module internal LoopAndConstantOptimization =
+module internal TupleCompilation =
 
     val mkFastForLoop:
         TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * Val * Expr * bool * Expr * Expr -> Expr
-
-    val IsSimpleSyntacticConstantExpr: TcGlobals -> Expr -> bool
-
-    [<return: Struct>]
-    val (|ConstToILFieldInit|_|): Const -> ILFieldInit voption
-
-    val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
-
-    val EvaledAttribExprEquality: TcGlobals -> Expr -> Expr -> bool
 
     val mkCompiledTuple: TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
 
@@ -273,6 +264,18 @@ module internal LoopAndConstantOptimization =
     val (|IfUseResumableStateMachinesExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption
 
 [<AutoOpen>]
+module internal ConstantEvaluation =
+
+    val IsSimpleSyntacticConstantExpr: TcGlobals -> Expr -> bool
+
+    [<return: Struct>]
+    val (|ConstToILFieldInit|_|): Const -> ILFieldInit voption
+
+    val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
+
+    val EvaledAttribExprEquality: TcGlobals -> Expr -> Expr -> bool
+
+[<AutoOpen>]
 module internal ResumableCodePatterns =
 
     /// Recognise a 'match __resumableEntry() with ...' expression
@@ -338,43 +341,4 @@ module internal SeqExprPatterns =
     /// Detect a 'seq { ... }' expression
     [<return: Struct>]
     val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) voption
-
-[<AutoOpen>]
-module internal ExtensionAndMiscHelpers =
-
-    /// An immutable mapping from witnesses to some data.
-    ///
-    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
-    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
-
-    /// Create an empty immutable mapping from witnesses to some data
-    val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
-
-    /// Determine if a value is a method implementing an interface dispatch slot using a private method impl
-    val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
-
-    /// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
-    /// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
-    /// This will match anything that does not have any types or bindings.
-    [<return: Struct>]
-    val (|EmptyModuleOrNamespaces|_|):
-        moduleOrNamespaceContents: ModuleOrNamespaceContents -> ModuleOrNamespace list voption
-
-    val tryFindExtensionAttribute: g: TcGlobals -> attribs: Attrib list -> Attrib option
-
-    /// Add an System.Runtime.CompilerServices.ExtensionAttribute to the module Entity if found via predicate and not already present.
-    val tryAddExtensionAttributeIfNotAlreadyPresentForModule:
-        g: TcGlobals ->
-        tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
-        moduleEntity: Entity ->
-            Entity
-
-    /// Add an System.Runtime.CompilerServices.ExtensionAttribute to the type Entity if found via predicate and not already present.
-    val tryAddExtensionAttributeIfNotAlreadyPresentForType:
-        g: TcGlobals ->
-        tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
-        moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref ->
-        typeEntity: Entity ->
-            Entity
-
 

@@ -493,7 +493,7 @@ module internal FreeTypeVars =
         accFreeInTypesLeftToRight g false true emptyFreeTyparsLeftToRight ty |> List.rev
 
 [<AutoOpen>]
-module internal Display =
+module internal MemberRepresentation =
 
     //--------------------------------------------------------------------------
     // Values representing member functions on F# types

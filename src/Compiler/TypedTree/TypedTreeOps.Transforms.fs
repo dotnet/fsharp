@@ -1091,430 +1091,11 @@ module internal Rewriting =
         member tcref.HasMember g nm argTys = tcref.Deref.HasMember g nm argTys
 
 [<AutoOpen>]
-module internal LoopAndConstantOptimization =
+module internal TupleCompilation =
 
     let mkFastForLoop g (spFor, spTo, m, idv: Val, start, dir, finish, body) =
         let dir = if dir then FSharpForLoopUp else FSharpForLoopDown
         mkIntegerForLoop g (spFor, spTo, idv, start, dir, finish, body, m)
-
-    /// Accessing a binding of the form "let x = 1" or "let x = e" for any "e" satisfying the predicate
-    /// below does not cause an initialization trigger, i.e. does not get compiled as a static field.
-    let IsSimpleSyntacticConstantExpr g inputExpr =
-        let rec checkExpr (vrefs: Set<Stamp>) x =
-            match stripExpr x with
-            | Expr.Op(TOp.Coerce, _, [ arg ], _) -> checkExpr vrefs arg
-            | UnopExpr g (vref, arg) when
-                (valRefEq g vref g.unchecked_unary_minus_vref
-                 || valRefEq g vref g.unchecked_unary_plus_vref
-                 || valRefEq g vref g.unchecked_unary_not_vref
-                 || valRefEq g vref g.bitwise_unary_not_vref
-                 || valRefEq g vref g.enum_vref)
-                ->
-                checkExpr vrefs arg
-            // compare, =, <>, +, -, <, >, <=, >=, <<<, >>>, &&&, |||, ^^^
-            | BinopExpr g (vref, arg1, arg2) when
-                (valRefEq g vref g.equals_operator_vref
-                 || valRefEq g vref g.compare_operator_vref
-                 || valRefEq g vref g.unchecked_addition_vref
-                 || valRefEq g vref g.less_than_operator_vref
-                 || valRefEq g vref g.less_than_or_equals_operator_vref
-                 || valRefEq g vref g.greater_than_operator_vref
-                 || valRefEq g vref g.greater_than_or_equals_operator_vref
-                 || valRefEq g vref g.not_equals_operator_vref
-                 || valRefEq g vref g.unchecked_addition_vref
-                 || valRefEq g vref g.unchecked_multiply_vref
-                 || valRefEq g vref g.unchecked_subtraction_vref
-                 ||
-                 // Note: division and modulus can raise exceptions, so are not included
-                 valRefEq g vref g.bitwise_shift_left_vref
-                 || valRefEq g vref g.bitwise_shift_right_vref
-                 || valRefEq g vref g.bitwise_xor_vref
-                 || valRefEq g vref g.bitwise_and_vref
-                 || valRefEq g vref g.bitwise_or_vref
-                 || valRefEq g vref g.exponentiation_vref)
-                && (not (typeEquiv g (tyOfExpr g arg1) g.string_ty)
-                    && not (typeEquiv g (tyOfExpr g arg1) g.decimal_ty))
-                ->
-                checkExpr vrefs arg1 && checkExpr vrefs arg2
-            | Expr.Val(vref, _, _) -> vref.Deref.IsCompiledAsStaticPropertyWithoutField || vrefs.Contains vref.Stamp
-            | Expr.Match(_, _, dtree, targets, _, _) ->
-                checkDecisionTree vrefs dtree
-                && targets |> Array.forall (checkDecisionTreeTarget vrefs)
-            | Expr.Let(b, e, _, _) -> checkExpr vrefs b.Expr && checkExpr (vrefs.Add b.Var.Stamp) e
-            | Expr.DebugPoint(_, b) -> checkExpr vrefs b
-            | Expr.TyChoose(_, b, _) -> checkExpr vrefs b
-            // Detect standard constants
-            | Expr.Const _
-            | Expr.Op(TOp.UnionCase _, _, [], _) // Nullary union cases
-            | UncheckedDefaultOfExpr g _
-            | SizeOfExpr g _
-            | TypeOfExpr g _ -> true
-            | NameOfExpr g _ when g.langVersion.SupportsFeature LanguageFeature.NameOf -> true
-            // All others are not simple constant expressions
-            | _ -> false
-
-        and checkDecisionTree vrefs x =
-            match x with
-            | TDSuccess(es, _n) -> es |> List.forall (checkExpr vrefs)
-            | TDSwitch(e, cases, dflt, _m) ->
-                checkExpr vrefs e
-                && cases |> List.forall (checkDecisionTreeCase vrefs)
-                && dflt |> Option.forall (checkDecisionTree vrefs)
-            | TDBind(bind, body) -> checkExpr vrefs bind.Expr && checkDecisionTree (vrefs.Add bind.Var.Stamp) body
-
-        and checkDecisionTreeCase vrefs (TCase(discrim, dtree)) =
-            (match discrim with
-             | DecisionTreeTest.Const _c -> true
-             | _ -> false)
-            && checkDecisionTree vrefs dtree
-
-        and checkDecisionTreeTarget vrefs (TTarget(vs, e, _)) =
-            let vrefs = ((vrefs, vs) ||> List.fold (fun s v -> s.Add v.Stamp))
-            checkExpr vrefs e
-
-        checkExpr Set.empty inputExpr
-
-    let EvalArithShiftOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64) (arg1: Expr) (arg2: Expr) =
-        // At compile-time we check arithmetic
-        let m = unionRanges arg1.Range arg2.Range
-
-        try
-            match arg1, arg2 with
-            | Expr.Const(Const.Int32 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.Int32(opInt32 x1 shift), m, ty)
-            | Expr.Const(Const.SByte x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.SByte(opInt8 x1 shift), m, ty)
-            | Expr.Const(Const.Int16 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.Int16(opInt16 x1 shift), m, ty)
-            | Expr.Const(Const.Int64 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.Int64(opInt64 x1 shift), m, ty)
-            | Expr.Const(Const.Byte x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.Byte(opUInt8 x1 shift), m, ty)
-            | Expr.Const(Const.UInt16 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.UInt16(opUInt16 x1 shift), m, ty)
-            | Expr.Const(Const.UInt32 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.UInt32(opUInt32 x1 shift), m, ty)
-            | Expr.Const(Const.UInt64 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.UInt64(opUInt64 x1 shift), m, ty)
-            | _ -> error (Error(FSComp.SR.tastNotAConstantExpression (), m))
-        with :? OverflowException ->
-            error (Error(FSComp.SR.tastConstantExpressionOverflow (), m))
-
-    let EvalArithUnOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble) (arg1: Expr) =
-        // At compile-time we check arithmetic
-        let m = arg1.Range
-
-        try
-            match arg1 with
-            | Expr.Const(Const.Int32 x1, _, ty) -> Expr.Const(Const.Int32(opInt32 x1), m, ty)
-            | Expr.Const(Const.SByte x1, _, ty) -> Expr.Const(Const.SByte(opInt8 x1), m, ty)
-            | Expr.Const(Const.Int16 x1, _, ty) -> Expr.Const(Const.Int16(opInt16 x1), m, ty)
-            | Expr.Const(Const.Int64 x1, _, ty) -> Expr.Const(Const.Int64(opInt64 x1), m, ty)
-            | Expr.Const(Const.Byte x1, _, ty) -> Expr.Const(Const.Byte(opUInt8 x1), m, ty)
-            | Expr.Const(Const.UInt16 x1, _, ty) -> Expr.Const(Const.UInt16(opUInt16 x1), m, ty)
-            | Expr.Const(Const.UInt32 x1, _, ty) -> Expr.Const(Const.UInt32(opUInt32 x1), m, ty)
-            | Expr.Const(Const.UInt64 x1, _, ty) -> Expr.Const(Const.UInt64(opUInt64 x1), m, ty)
-            | Expr.Const(Const.Single x1, _, ty) -> Expr.Const(Const.Single(opSingle x1), m, ty)
-            | Expr.Const(Const.Double x1, _, ty) -> Expr.Const(Const.Double(opDouble x1), m, ty)
-            | _ -> error (Error(FSComp.SR.tastNotAConstantExpression (), m))
-        with :? OverflowException ->
-            error (Error(FSComp.SR.tastConstantExpressionOverflow (), m))
-
-    let EvalArithBinOp
-        (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble, opDecimal)
-        (arg1: Expr)
-        (arg2: Expr)
-        =
-        // At compile-time we check arithmetic
-        let m = unionRanges arg1.Range arg2.Range
-
-        try
-            match arg1, arg2 with
-            | Expr.Const(Const.Int32 x1, _, ty), Expr.Const(Const.Int32 x2, _, _) -> Expr.Const(Const.Int32(opInt32 x1 x2), m, ty)
-            | Expr.Const(Const.SByte x1, _, ty), Expr.Const(Const.SByte x2, _, _) -> Expr.Const(Const.SByte(opInt8 x1 x2), m, ty)
-            | Expr.Const(Const.Int16 x1, _, ty), Expr.Const(Const.Int16 x2, _, _) -> Expr.Const(Const.Int16(opInt16 x1 x2), m, ty)
-            | Expr.Const(Const.Int64 x1, _, ty), Expr.Const(Const.Int64 x2, _, _) -> Expr.Const(Const.Int64(opInt64 x1 x2), m, ty)
-            | Expr.Const(Const.Byte x1, _, ty), Expr.Const(Const.Byte x2, _, _) -> Expr.Const(Const.Byte(opUInt8 x1 x2), m, ty)
-            | Expr.Const(Const.UInt16 x1, _, ty), Expr.Const(Const.UInt16 x2, _, _) -> Expr.Const(Const.UInt16(opUInt16 x1 x2), m, ty)
-            | Expr.Const(Const.UInt32 x1, _, ty), Expr.Const(Const.UInt32 x2, _, _) -> Expr.Const(Const.UInt32(opUInt32 x1 x2), m, ty)
-            | Expr.Const(Const.UInt64 x1, _, ty), Expr.Const(Const.UInt64 x2, _, _) -> Expr.Const(Const.UInt64(opUInt64 x1 x2), m, ty)
-            | Expr.Const(Const.Single x1, _, ty), Expr.Const(Const.Single x2, _, _) -> Expr.Const(Const.Single(opSingle x1 x2), m, ty)
-            | Expr.Const(Const.Double x1, _, ty), Expr.Const(Const.Double x2, _, _) -> Expr.Const(Const.Double(opDouble x1 x2), m, ty)
-            | Expr.Const(Const.Decimal x1, _, ty), Expr.Const(Const.Decimal x2, _, _) -> Expr.Const(Const.Decimal(opDecimal x1 x2), m, ty)
-            | _ -> error (Error(FSComp.SR.tastNotAConstantExpression (), m))
-        with :? OverflowException ->
-            error (Error(FSComp.SR.tastConstantExpressionOverflow (), m))
-
-    // See also PostTypeCheckSemanticChecks.CheckAttribArgExpr, which must match this precisely
-    let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
-        let ignore (_x: 'a) = Unchecked.defaultof<'a>
-        let ignore2 (_x: 'a) (_y: 'a) = Unchecked.defaultof<'a>
-
-        let inline checkFeature () =
-            if suppressLangFeatureCheck = SuppressLanguageFeatureCheck.No then
-                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ArithmeticInLiterals x.Range
-
-        match x with
-
-        // Detect standard constants
-        | Expr.Const(c, m, _) ->
-            match c with
-            | Const.Bool _
-            | Const.Int32 _
-            | Const.SByte _
-            | Const.Int16 _
-            | Const.Int32 _
-            | Const.Int64 _
-            | Const.Byte _
-            | Const.UInt16 _
-            | Const.UInt32 _
-            | Const.UInt64 _
-            | Const.Double _
-            | Const.Single _
-            | Const.Char _
-            | Const.Zero
-            | Const.String _
-            | Const.Decimal _ -> x
-            | Const.IntPtr _
-            | Const.UIntPtr _
-            | Const.Unit ->
-                errorR (Error(FSComp.SR.tastNotAConstantExpression (), m))
-                x
-
-        | TypeOfExpr g _ -> x
-        | TypeDefOfExpr g _ -> x
-        | Expr.Op(TOp.Coerce, _, [ arg ], _) -> EvalAttribArgExpr suppressLangFeatureCheck g arg
-        | EnumExpr g arg1 -> EvalAttribArgExpr suppressLangFeatureCheck g arg1
-        // Detect bitwise or of attribute flags
-        | AttribBitwiseOrExpr g (arg1, arg2) ->
-            let v1 = EvalAttribArgExpr suppressLangFeatureCheck g arg1
-
-            match v1 with
-            | IntegerConstExpr ->
-                EvalArithBinOp
-                    ((|||), (|||), (|||), (|||), (|||), (|||), (|||), (|||), ignore2, ignore2, ignore2)
-                    v1
-                    (EvalAttribArgExpr suppressLangFeatureCheck g arg2)
-            | _ ->
-                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
-                x
-        | SpecificBinopExpr g g.unchecked_addition_vref (arg1, arg2) ->
-            let v1, v2 =
-                EvalAttribArgExpr suppressLangFeatureCheck g arg1, EvalAttribArgExpr suppressLangFeatureCheck g arg2
-
-            match v1, v2 with
-            | Expr.Const(Const.String x1, m, ty), Expr.Const(Const.String x2, _, _) -> Expr.Const(Const.String(x1 + x2), m, ty)
-            | Expr.Const(Const.Char x1, m, ty), Expr.Const(Const.Char x2, _, _) ->
-                checkFeature ()
-                Expr.Const(Const.Char(x1 + x2), m, ty)
-            | _ ->
-                checkFeature ()
-
-                EvalArithBinOp
-                    (Checked.(+),
-                     Checked.(+),
-                     Checked.(+),
-                     Checked.(+),
-                     Checked.(+),
-                     Checked.(+),
-                     Checked.(+),
-                     Checked.(+),
-                     Checked.(+),
-                     Checked.(+),
-                     Checked.(+))
-                    v1
-                    v2
-        | SpecificBinopExpr g g.unchecked_subtraction_vref (arg1, arg2) ->
-            checkFeature ()
-
-            let v1, v2 =
-                EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1, EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2
-
-            match v1, v2 with
-            | Expr.Const(Const.Char x1, m, ty), Expr.Const(Const.Char x2, _, _) -> Expr.Const(Const.Char(x1 - x2), m, ty)
-            | _ ->
-                EvalArithBinOp
-                    (Checked.(-),
-                     Checked.(-),
-                     Checked.(-),
-                     Checked.(-),
-                     Checked.(-),
-                     Checked.(-),
-                     Checked.(-),
-                     Checked.(-),
-                     Checked.(-),
-                     Checked.(-),
-                     Checked.(-))
-                    v1
-                    v2
-        | SpecificBinopExpr g g.unchecked_multiply_vref (arg1, arg2) ->
-            checkFeature ()
-
-            EvalArithBinOp
-                (Checked.(*),
-                 Checked.(*),
-                 Checked.(*),
-                 Checked.(*),
-                 Checked.(*),
-                 Checked.(*),
-                 Checked.(*),
-                 Checked.(*),
-                 Checked.(*),
-                 Checked.(*),
-                 Checked.(*))
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
-        | SpecificBinopExpr g g.unchecked_division_vref (arg1, arg2) ->
-            checkFeature ()
-
-            EvalArithBinOp
-                ((/), (/), (/), (/), (/), (/), (/), (/), (/), (/), (/))
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
-        | SpecificBinopExpr g g.unchecked_modulus_vref (arg1, arg2) ->
-            checkFeature ()
-
-            EvalArithBinOp
-                ((%), (%), (%), (%), (%), (%), (%), (%), (%), (%), (%))
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
-        | SpecificBinopExpr g g.bitwise_shift_left_vref (arg1, arg2) ->
-            checkFeature ()
-
-            EvalArithShiftOp
-                ((<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<))
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
-        | SpecificBinopExpr g g.bitwise_shift_right_vref (arg1, arg2) ->
-            checkFeature ()
-
-            EvalArithShiftOp
-                ((>>>), (>>>), (>>>), (>>>), (>>>), (>>>), (>>>), (>>>))
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
-        | SpecificBinopExpr g g.bitwise_and_vref (arg1, arg2) ->
-            checkFeature ()
-            let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
-
-            match v1 with
-            | IntegerConstExpr ->
-                EvalArithBinOp
-                    ((&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), ignore2, ignore2, ignore2)
-                    v1
-                    (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
-            | _ ->
-                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
-                x
-        | SpecificBinopExpr g g.bitwise_xor_vref (arg1, arg2) ->
-            checkFeature ()
-            let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
-
-            match v1 with
-            | IntegerConstExpr ->
-                EvalArithBinOp
-                    ((^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), ignore2, ignore2, ignore2)
-                    v1
-                    (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
-            | _ ->
-                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
-                x
-        | SpecificBinopExpr g g.exponentiation_vref (arg1, arg2) ->
-            checkFeature ()
-            let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
-
-            match v1 with
-            | FloatConstExpr ->
-                EvalArithBinOp
-                    (ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ( ** ), ( ** ), ignore2)
-                    v1
-                    (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
-            | _ ->
-                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
-                x
-        | SpecificUnopExpr g g.bitwise_unary_not_vref arg1 ->
-            checkFeature ()
-            let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
-
-            match v1 with
-            | IntegerConstExpr ->
-                EvalArithUnOp
-                    ((~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), ignore, ignore)
-                    (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
-            | _ ->
-                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
-                x
-        | SpecificUnopExpr g g.unchecked_unary_minus_vref arg1 ->
-            checkFeature ()
-            let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
-
-            match v1 with
-            | SignedConstExpr ->
-                EvalArithUnOp
-                    (Checked.(~-), Checked.(~-), Checked.(~-), Checked.(~-), ignore, ignore, ignore, ignore, Checked.(~-), Checked.(~-))
-                    v1
-            | _ ->
-                errorR (Error(FSComp.SR.tastNotAConstantExpression (), v1.Range))
-                x
-        | SpecificUnopExpr g g.unchecked_unary_plus_vref arg1 ->
-            checkFeature ()
-
-            EvalArithUnOp
-                ((~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+))
-                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
-        | SpecificUnopExpr g g.unchecked_unary_not_vref arg1 ->
-            checkFeature ()
-
-            match EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1 with
-            | Expr.Const(Const.Bool value, m, ty) -> Expr.Const(Const.Bool(not value), m, ty)
-            | expr ->
-                errorR (Error(FSComp.SR.tastNotAConstantExpression (), expr.Range))
-                x
-        // Detect logical operations on booleans, which are represented as a match expression
-        | Expr.Match(
-            decision = TDSwitch(input = input; cases = [ TCase(DecisionTreeTest.Const(Const.Bool test), TDSuccess([], targetNum)) ])
-            targets = [| TTarget(_, t0, _); TTarget(_, t1, _) |]) ->
-            checkFeature ()
-
-            match EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g (stripDebugPoints input) with
-            | Expr.Const(Const.Bool value, _, _) ->
-                let pass, fail = if targetNum = 0 then t0, t1 else t1, t0
-
-                if value = test then
-                    EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g (stripDebugPoints pass)
-                else
-                    EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g (stripDebugPoints fail)
-            | _ ->
-                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
-                x
-        | _ ->
-            errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
-            x
-
-    and EvaledAttribExprEquality g e1 e2 =
-        match e1, e2 with
-        | Expr.Const(c1, _, _), Expr.Const(c2, _, _) -> c1 = c2
-        | TypeOfExpr g ty1, TypeOfExpr g ty2 -> typeEquiv g ty1 ty2
-        | TypeDefOfExpr g ty1, TypeDefOfExpr g ty2 -> typeEquiv g ty1 ty2
-        | _ -> false
-
-    [<return: Struct>]
-    let (|ConstToILFieldInit|_|) c =
-        match c with
-        | Const.SByte n -> ValueSome(ILFieldInit.Int8 n)
-        | Const.Int16 n -> ValueSome(ILFieldInit.Int16 n)
-        | Const.Int32 n -> ValueSome(ILFieldInit.Int32 n)
-        | Const.Int64 n -> ValueSome(ILFieldInit.Int64 n)
-        | Const.Byte n -> ValueSome(ILFieldInit.UInt8 n)
-        | Const.UInt16 n -> ValueSome(ILFieldInit.UInt16 n)
-        | Const.UInt32 n -> ValueSome(ILFieldInit.UInt32 n)
-        | Const.UInt64 n -> ValueSome(ILFieldInit.UInt64 n)
-        | Const.Bool n -> ValueSome(ILFieldInit.Bool n)
-        | Const.Char n -> ValueSome(ILFieldInit.Char(uint16 n))
-        | Const.Single n -> ValueSome(ILFieldInit.Single n)
-        | Const.Double n -> ValueSome(ILFieldInit.Double n)
-        | Const.String s -> ValueSome(ILFieldInit.String s)
-        | Const.Zero -> ValueSome ILFieldInit.Null
-        | _ -> ValueNone
-
-    let EvalLiteralExprOrAttribArg g x =
-        match x with
-        | Expr.Op(TOp.Coerce, _, [ Expr.Op(TOp.Array, [ elemTy ], args, m) ], _)
-        | Expr.Op(TOp.Array, [ elemTy ], args, m) ->
-            let args = args |> List.map (EvalAttribArgExpr SuppressLanguageFeatureCheck.No g)
-            Expr.Op(TOp.Array, [ elemTy ], args, m)
-        | _ -> EvalAttribArgExpr SuppressLanguageFeatureCheck.No g x
 
     // Take into account the fact that some "instance" members are compiled as static
     // members when using CompilationRepresentation.Static, or any non-virtual instance members
@@ -2723,6 +2304,428 @@ module internal LoopAndConstantOptimization =
         | _ -> ValueNone
 
 [<AutoOpen>]
+module internal ConstantEvaluation =
+
+    /// Accessing a binding of the form "let x = 1" or "let x = e" for any "e" satisfying the predicate
+    /// below does not cause an initialization trigger, i.e. does not get compiled as a static field.
+    let IsSimpleSyntacticConstantExpr g inputExpr =
+        let rec checkExpr (vrefs: Set<Stamp>) x =
+            match stripExpr x with
+            | Expr.Op(TOp.Coerce, _, [ arg ], _) -> checkExpr vrefs arg
+            | UnopExpr g (vref, arg) when
+                (valRefEq g vref g.unchecked_unary_minus_vref
+                 || valRefEq g vref g.unchecked_unary_plus_vref
+                 || valRefEq g vref g.unchecked_unary_not_vref
+                 || valRefEq g vref g.bitwise_unary_not_vref
+                 || valRefEq g vref g.enum_vref)
+                ->
+                checkExpr vrefs arg
+            // compare, =, <>, +, -, <, >, <=, >=, <<<, >>>, &&&, |||, ^^^
+            | BinopExpr g (vref, arg1, arg2) when
+                (valRefEq g vref g.equals_operator_vref
+                 || valRefEq g vref g.compare_operator_vref
+                 || valRefEq g vref g.unchecked_addition_vref
+                 || valRefEq g vref g.less_than_operator_vref
+                 || valRefEq g vref g.less_than_or_equals_operator_vref
+                 || valRefEq g vref g.greater_than_operator_vref
+                 || valRefEq g vref g.greater_than_or_equals_operator_vref
+                 || valRefEq g vref g.not_equals_operator_vref
+                 || valRefEq g vref g.unchecked_addition_vref
+                 || valRefEq g vref g.unchecked_multiply_vref
+                 || valRefEq g vref g.unchecked_subtraction_vref
+                 ||
+                 // Note: division and modulus can raise exceptions, so are not included
+                 valRefEq g vref g.bitwise_shift_left_vref
+                 || valRefEq g vref g.bitwise_shift_right_vref
+                 || valRefEq g vref g.bitwise_xor_vref
+                 || valRefEq g vref g.bitwise_and_vref
+                 || valRefEq g vref g.bitwise_or_vref
+                 || valRefEq g vref g.exponentiation_vref)
+                && (not (typeEquiv g (tyOfExpr g arg1) g.string_ty)
+                    && not (typeEquiv g (tyOfExpr g arg1) g.decimal_ty))
+                ->
+                checkExpr vrefs arg1 && checkExpr vrefs arg2
+            | Expr.Val(vref, _, _) -> vref.Deref.IsCompiledAsStaticPropertyWithoutField || vrefs.Contains vref.Stamp
+            | Expr.Match(_, _, dtree, targets, _, _) ->
+                checkDecisionTree vrefs dtree
+                && targets |> Array.forall (checkDecisionTreeTarget vrefs)
+            | Expr.Let(b, e, _, _) -> checkExpr vrefs b.Expr && checkExpr (vrefs.Add b.Var.Stamp) e
+            | Expr.DebugPoint(_, b) -> checkExpr vrefs b
+            | Expr.TyChoose(_, b, _) -> checkExpr vrefs b
+            // Detect standard constants
+            | Expr.Const _
+            | Expr.Op(TOp.UnionCase _, _, [], _) // Nullary union cases
+            | UncheckedDefaultOfExpr g _
+            | SizeOfExpr g _
+            | TypeOfExpr g _ -> true
+            | NameOfExpr g _ when g.langVersion.SupportsFeature LanguageFeature.NameOf -> true
+            // All others are not simple constant expressions
+            | _ -> false
+
+        and checkDecisionTree vrefs x =
+            match x with
+            | TDSuccess(es, _n) -> es |> List.forall (checkExpr vrefs)
+            | TDSwitch(e, cases, dflt, _m) ->
+                checkExpr vrefs e
+                && cases |> List.forall (checkDecisionTreeCase vrefs)
+                && dflt |> Option.forall (checkDecisionTree vrefs)
+            | TDBind(bind, body) -> checkExpr vrefs bind.Expr && checkDecisionTree (vrefs.Add bind.Var.Stamp) body
+
+        and checkDecisionTreeCase vrefs (TCase(discrim, dtree)) =
+            (match discrim with
+             | DecisionTreeTest.Const _c -> true
+             | _ -> false)
+            && checkDecisionTree vrefs dtree
+
+        and checkDecisionTreeTarget vrefs (TTarget(vs, e, _)) =
+            let vrefs = ((vrefs, vs) ||> List.fold (fun s v -> s.Add v.Stamp))
+            checkExpr vrefs e
+
+        checkExpr Set.empty inputExpr
+
+    let EvalArithShiftOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64) (arg1: Expr) (arg2: Expr) =
+        // At compile-time we check arithmetic
+        let m = unionRanges arg1.Range arg2.Range
+
+        try
+            match arg1, arg2 with
+            | Expr.Const(Const.Int32 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.Int32(opInt32 x1 shift), m, ty)
+            | Expr.Const(Const.SByte x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.SByte(opInt8 x1 shift), m, ty)
+            | Expr.Const(Const.Int16 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.Int16(opInt16 x1 shift), m, ty)
+            | Expr.Const(Const.Int64 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.Int64(opInt64 x1 shift), m, ty)
+            | Expr.Const(Const.Byte x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.Byte(opUInt8 x1 shift), m, ty)
+            | Expr.Const(Const.UInt16 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.UInt16(opUInt16 x1 shift), m, ty)
+            | Expr.Const(Const.UInt32 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.UInt32(opUInt32 x1 shift), m, ty)
+            | Expr.Const(Const.UInt64 x1, _, ty), Expr.Const(Const.Int32 shift, _, _) -> Expr.Const(Const.UInt64(opUInt64 x1 shift), m, ty)
+            | _ -> error (Error(FSComp.SR.tastNotAConstantExpression (), m))
+        with :? OverflowException ->
+            error (Error(FSComp.SR.tastConstantExpressionOverflow (), m))
+
+    let EvalArithUnOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble) (arg1: Expr) =
+        // At compile-time we check arithmetic
+        let m = arg1.Range
+
+        try
+            match arg1 with
+            | Expr.Const(Const.Int32 x1, _, ty) -> Expr.Const(Const.Int32(opInt32 x1), m, ty)
+            | Expr.Const(Const.SByte x1, _, ty) -> Expr.Const(Const.SByte(opInt8 x1), m, ty)
+            | Expr.Const(Const.Int16 x1, _, ty) -> Expr.Const(Const.Int16(opInt16 x1), m, ty)
+            | Expr.Const(Const.Int64 x1, _, ty) -> Expr.Const(Const.Int64(opInt64 x1), m, ty)
+            | Expr.Const(Const.Byte x1, _, ty) -> Expr.Const(Const.Byte(opUInt8 x1), m, ty)
+            | Expr.Const(Const.UInt16 x1, _, ty) -> Expr.Const(Const.UInt16(opUInt16 x1), m, ty)
+            | Expr.Const(Const.UInt32 x1, _, ty) -> Expr.Const(Const.UInt32(opUInt32 x1), m, ty)
+            | Expr.Const(Const.UInt64 x1, _, ty) -> Expr.Const(Const.UInt64(opUInt64 x1), m, ty)
+            | Expr.Const(Const.Single x1, _, ty) -> Expr.Const(Const.Single(opSingle x1), m, ty)
+            | Expr.Const(Const.Double x1, _, ty) -> Expr.Const(Const.Double(opDouble x1), m, ty)
+            | _ -> error (Error(FSComp.SR.tastNotAConstantExpression (), m))
+        with :? OverflowException ->
+            error (Error(FSComp.SR.tastConstantExpressionOverflow (), m))
+
+    let EvalArithBinOp
+        (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble, opDecimal)
+        (arg1: Expr)
+        (arg2: Expr)
+        =
+        // At compile-time we check arithmetic
+        let m = unionRanges arg1.Range arg2.Range
+
+        try
+            match arg1, arg2 with
+            | Expr.Const(Const.Int32 x1, _, ty), Expr.Const(Const.Int32 x2, _, _) -> Expr.Const(Const.Int32(opInt32 x1 x2), m, ty)
+            | Expr.Const(Const.SByte x1, _, ty), Expr.Const(Const.SByte x2, _, _) -> Expr.Const(Const.SByte(opInt8 x1 x2), m, ty)
+            | Expr.Const(Const.Int16 x1, _, ty), Expr.Const(Const.Int16 x2, _, _) -> Expr.Const(Const.Int16(opInt16 x1 x2), m, ty)
+            | Expr.Const(Const.Int64 x1, _, ty), Expr.Const(Const.Int64 x2, _, _) -> Expr.Const(Const.Int64(opInt64 x1 x2), m, ty)
+            | Expr.Const(Const.Byte x1, _, ty), Expr.Const(Const.Byte x2, _, _) -> Expr.Const(Const.Byte(opUInt8 x1 x2), m, ty)
+            | Expr.Const(Const.UInt16 x1, _, ty), Expr.Const(Const.UInt16 x2, _, _) -> Expr.Const(Const.UInt16(opUInt16 x1 x2), m, ty)
+            | Expr.Const(Const.UInt32 x1, _, ty), Expr.Const(Const.UInt32 x2, _, _) -> Expr.Const(Const.UInt32(opUInt32 x1 x2), m, ty)
+            | Expr.Const(Const.UInt64 x1, _, ty), Expr.Const(Const.UInt64 x2, _, _) -> Expr.Const(Const.UInt64(opUInt64 x1 x2), m, ty)
+            | Expr.Const(Const.Single x1, _, ty), Expr.Const(Const.Single x2, _, _) -> Expr.Const(Const.Single(opSingle x1 x2), m, ty)
+            | Expr.Const(Const.Double x1, _, ty), Expr.Const(Const.Double x2, _, _) -> Expr.Const(Const.Double(opDouble x1 x2), m, ty)
+            | Expr.Const(Const.Decimal x1, _, ty), Expr.Const(Const.Decimal x2, _, _) -> Expr.Const(Const.Decimal(opDecimal x1 x2), m, ty)
+            | _ -> error (Error(FSComp.SR.tastNotAConstantExpression (), m))
+        with :? OverflowException ->
+            error (Error(FSComp.SR.tastConstantExpressionOverflow (), m))
+
+    // See also PostTypeCheckSemanticChecks.CheckAttribArgExpr, which must match this precisely
+    let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
+        let ignore (_x: 'a) = Unchecked.defaultof<'a>
+        let ignore2 (_x: 'a) (_y: 'a) = Unchecked.defaultof<'a>
+
+        let inline checkFeature () =
+            if suppressLangFeatureCheck = SuppressLanguageFeatureCheck.No then
+                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ArithmeticInLiterals x.Range
+
+        match x with
+
+        // Detect standard constants
+        | Expr.Const(c, m, _) ->
+            match c with
+            | Const.Bool _
+            | Const.Int32 _
+            | Const.SByte _
+            | Const.Int16 _
+            | Const.Int32 _
+            | Const.Int64 _
+            | Const.Byte _
+            | Const.UInt16 _
+            | Const.UInt32 _
+            | Const.UInt64 _
+            | Const.Double _
+            | Const.Single _
+            | Const.Char _
+            | Const.Zero
+            | Const.String _
+            | Const.Decimal _ -> x
+            | Const.IntPtr _
+            | Const.UIntPtr _
+            | Const.Unit ->
+                errorR (Error(FSComp.SR.tastNotAConstantExpression (), m))
+                x
+
+        | TypeOfExpr g _ -> x
+        | TypeDefOfExpr g _ -> x
+        | Expr.Op(TOp.Coerce, _, [ arg ], _) -> EvalAttribArgExpr suppressLangFeatureCheck g arg
+        | EnumExpr g arg1 -> EvalAttribArgExpr suppressLangFeatureCheck g arg1
+        // Detect bitwise or of attribute flags
+        | AttribBitwiseOrExpr g (arg1, arg2) ->
+            let v1 = EvalAttribArgExpr suppressLangFeatureCheck g arg1
+
+            match v1 with
+            | IntegerConstExpr ->
+                EvalArithBinOp
+                    ((|||), (|||), (|||), (|||), (|||), (|||), (|||), (|||), ignore2, ignore2, ignore2)
+                    v1
+                    (EvalAttribArgExpr suppressLangFeatureCheck g arg2)
+            | _ ->
+                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
+                x
+        | SpecificBinopExpr g g.unchecked_addition_vref (arg1, arg2) ->
+            let v1, v2 =
+                EvalAttribArgExpr suppressLangFeatureCheck g arg1, EvalAttribArgExpr suppressLangFeatureCheck g arg2
+
+            match v1, v2 with
+            | Expr.Const(Const.String x1, m, ty), Expr.Const(Const.String x2, _, _) -> Expr.Const(Const.String(x1 + x2), m, ty)
+            | Expr.Const(Const.Char x1, m, ty), Expr.Const(Const.Char x2, _, _) ->
+                checkFeature ()
+                Expr.Const(Const.Char(x1 + x2), m, ty)
+            | _ ->
+                checkFeature ()
+
+                EvalArithBinOp
+                    (Checked.(+),
+                     Checked.(+),
+                     Checked.(+),
+                     Checked.(+),
+                     Checked.(+),
+                     Checked.(+),
+                     Checked.(+),
+                     Checked.(+),
+                     Checked.(+),
+                     Checked.(+),
+                     Checked.(+))
+                    v1
+                    v2
+        | SpecificBinopExpr g g.unchecked_subtraction_vref (arg1, arg2) ->
+            checkFeature ()
+
+            let v1, v2 =
+                EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1, EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2
+
+            match v1, v2 with
+            | Expr.Const(Const.Char x1, m, ty), Expr.Const(Const.Char x2, _, _) -> Expr.Const(Const.Char(x1 - x2), m, ty)
+            | _ ->
+                EvalArithBinOp
+                    (Checked.(-),
+                     Checked.(-),
+                     Checked.(-),
+                     Checked.(-),
+                     Checked.(-),
+                     Checked.(-),
+                     Checked.(-),
+                     Checked.(-),
+                     Checked.(-),
+                     Checked.(-),
+                     Checked.(-))
+                    v1
+                    v2
+        | SpecificBinopExpr g g.unchecked_multiply_vref (arg1, arg2) ->
+            checkFeature ()
+
+            EvalArithBinOp
+                (Checked.(*),
+                 Checked.(*),
+                 Checked.(*),
+                 Checked.(*),
+                 Checked.(*),
+                 Checked.(*),
+                 Checked.(*),
+                 Checked.(*),
+                 Checked.(*),
+                 Checked.(*),
+                 Checked.(*))
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | SpecificBinopExpr g g.unchecked_division_vref (arg1, arg2) ->
+            checkFeature ()
+
+            EvalArithBinOp
+                ((/), (/), (/), (/), (/), (/), (/), (/), (/), (/), (/))
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | SpecificBinopExpr g g.unchecked_modulus_vref (arg1, arg2) ->
+            checkFeature ()
+
+            EvalArithBinOp
+                ((%), (%), (%), (%), (%), (%), (%), (%), (%), (%), (%))
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | SpecificBinopExpr g g.bitwise_shift_left_vref (arg1, arg2) ->
+            checkFeature ()
+
+            EvalArithShiftOp
+                ((<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<))
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | SpecificBinopExpr g g.bitwise_shift_right_vref (arg1, arg2) ->
+            checkFeature ()
+
+            EvalArithShiftOp
+                ((>>>), (>>>), (>>>), (>>>), (>>>), (>>>), (>>>), (>>>))
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | SpecificBinopExpr g g.bitwise_and_vref (arg1, arg2) ->
+            checkFeature ()
+            let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+
+            match v1 with
+            | IntegerConstExpr ->
+                EvalArithBinOp
+                    ((&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), ignore2, ignore2, ignore2)
+                    v1
+                    (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+            | _ ->
+                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
+                x
+        | SpecificBinopExpr g g.bitwise_xor_vref (arg1, arg2) ->
+            checkFeature ()
+            let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+
+            match v1 with
+            | IntegerConstExpr ->
+                EvalArithBinOp
+                    ((^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), ignore2, ignore2, ignore2)
+                    v1
+                    (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+            | _ ->
+                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
+                x
+        | SpecificBinopExpr g g.exponentiation_vref (arg1, arg2) ->
+            checkFeature ()
+            let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+
+            match v1 with
+            | FloatConstExpr ->
+                EvalArithBinOp
+                    (ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ( ** ), ( ** ), ignore2)
+                    v1
+                    (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+            | _ ->
+                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
+                x
+        | SpecificUnopExpr g g.bitwise_unary_not_vref arg1 ->
+            checkFeature ()
+            let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+
+            match v1 with
+            | IntegerConstExpr ->
+                EvalArithUnOp
+                    ((~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), ignore, ignore)
+                    (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
+            | _ ->
+                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
+                x
+        | SpecificUnopExpr g g.unchecked_unary_minus_vref arg1 ->
+            checkFeature ()
+            let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+
+            match v1 with
+            | SignedConstExpr ->
+                EvalArithUnOp
+                    (Checked.(~-), Checked.(~-), Checked.(~-), Checked.(~-), ignore, ignore, ignore, ignore, Checked.(~-), Checked.(~-))
+                    v1
+            | _ ->
+                errorR (Error(FSComp.SR.tastNotAConstantExpression (), v1.Range))
+                x
+        | SpecificUnopExpr g g.unchecked_unary_plus_vref arg1 ->
+            checkFeature ()
+
+            EvalArithUnOp
+                ((~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+))
+                (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
+        | SpecificUnopExpr g g.unchecked_unary_not_vref arg1 ->
+            checkFeature ()
+
+            match EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1 with
+            | Expr.Const(Const.Bool value, m, ty) -> Expr.Const(Const.Bool(not value), m, ty)
+            | expr ->
+                errorR (Error(FSComp.SR.tastNotAConstantExpression (), expr.Range))
+                x
+        // Detect logical operations on booleans, which are represented as a match expression
+        | Expr.Match(
+            decision = TDSwitch(input = input; cases = [ TCase(DecisionTreeTest.Const(Const.Bool test), TDSuccess([], targetNum)) ])
+            targets = [| TTarget(_, t0, _); TTarget(_, t1, _) |]) ->
+            checkFeature ()
+
+            match EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g (stripDebugPoints input) with
+            | Expr.Const(Const.Bool value, _, _) ->
+                let pass, fail = if targetNum = 0 then t0, t1 else t1, t0
+
+                if value = test then
+                    EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g (stripDebugPoints pass)
+                else
+                    EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g (stripDebugPoints fail)
+            | _ ->
+                errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
+                x
+        | _ ->
+            errorR (Error(FSComp.SR.tastNotAConstantExpression (), x.Range))
+            x
+
+    and EvaledAttribExprEquality g e1 e2 =
+        match e1, e2 with
+        | Expr.Const(c1, _, _), Expr.Const(c2, _, _) -> c1 = c2
+        | TypeOfExpr g ty1, TypeOfExpr g ty2 -> typeEquiv g ty1 ty2
+        | TypeDefOfExpr g ty1, TypeDefOfExpr g ty2 -> typeEquiv g ty1 ty2
+        | _ -> false
+
+    [<return: Struct>]
+    let (|ConstToILFieldInit|_|) c =
+        match c with
+        | Const.SByte n -> ValueSome(ILFieldInit.Int8 n)
+        | Const.Int16 n -> ValueSome(ILFieldInit.Int16 n)
+        | Const.Int32 n -> ValueSome(ILFieldInit.Int32 n)
+        | Const.Int64 n -> ValueSome(ILFieldInit.Int64 n)
+        | Const.Byte n -> ValueSome(ILFieldInit.UInt8 n)
+        | Const.UInt16 n -> ValueSome(ILFieldInit.UInt16 n)
+        | Const.UInt32 n -> ValueSome(ILFieldInit.UInt32 n)
+        | Const.UInt64 n -> ValueSome(ILFieldInit.UInt64 n)
+        | Const.Bool n -> ValueSome(ILFieldInit.Bool n)
+        | Const.Char n -> ValueSome(ILFieldInit.Char(uint16 n))
+        | Const.Single n -> ValueSome(ILFieldInit.Single n)
+        | Const.Double n -> ValueSome(ILFieldInit.Double n)
+        | Const.String s -> ValueSome(ILFieldInit.String s)
+        | Const.Zero -> ValueSome ILFieldInit.Null
+        | _ -> ValueNone
+
+    let EvalLiteralExprOrAttribArg g x =
+        match x with
+        | Expr.Op(TOp.Coerce, _, [ Expr.Op(TOp.Array, [ elemTy ], args, m) ], _)
+        | Expr.Op(TOp.Array, [ elemTy ], args, m) ->
+            let args = args |> List.map (EvalAttribArgExpr SuppressLanguageFeatureCheck.No g)
+            Expr.Op(TOp.Array, [ elemTy ], args, m)
+        | _ -> EvalAttribArgExpr SuppressLanguageFeatureCheck.No g x
+
+[<AutoOpen>]
 module internal ResumableCodePatterns =
 
     [<return: Struct>]
@@ -3006,129 +3009,3 @@ module internal SeqExprPatterns =
         match expr with
         | ValApp g g.seq_empty_vref (_, [], m) -> ValueSome m
         | _ -> ValueNone
-
-[<AutoOpen>]
-module internal ExtensionAndMiscHelpers =
-
-    /// An immutable mapping from witnesses to some data.
-    ///
-    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
-    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
-
-    /// Create an empty immutable mapping from witnesses to some data
-    let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
-        ImmutableDictionary.Create(
-            { new IEqualityComparer<_> with
-                member _.Equals(a, b) =
-                    nullSafeEquality a b (fun a b -> traitKeysAEquiv g TypeEquivEnv.EmptyIgnoreNulls a b)
-
-                member _.GetHashCode(a) = hash a.MemberName
-            }
-        )
-
-    let ComputeUseMethodImpl g (v: Val) =
-        v.ImplementedSlotSigs
-        |> List.exists (fun slotsig ->
-            let oty = slotsig.DeclaringType
-            let otcref = tcrefOfAppTy g oty
-            let tcref = v.MemberApparentEntity
-
-            // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode
-            isInterfaceTy g oty
-            &&
-
-            (let isCompare =
-                tcref.GeneratedCompareToValues.IsSome
-                && (typeEquiv g oty g.mk_IComparable_ty
-                    || tyconRefEq g g.system_GenericIComparable_tcref otcref)
-
-             not isCompare)
-            &&
-
-            (let isGenericEquals =
-                tcref.GeneratedHashAndEqualsWithComparerValues.IsSome
-                && tyconRefEq g g.system_GenericIEquatable_tcref otcref
-
-             not isGenericEquals)
-            &&
-
-            (let isStructural =
-                (tcref.GeneratedCompareToWithComparerValues.IsSome
-                 && typeEquiv g oty g.mk_IStructuralComparable_ty)
-                || (tcref.GeneratedHashAndEqualsWithComparerValues.IsSome
-                    && typeEquiv g oty g.mk_IStructuralEquatable_ty)
-
-             not isStructural))
-
-    [<return: Struct>]
-    let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
-        match moduleOrNamespaceContents with
-        | TMDefs(defs = defs) ->
-            let mdDefsLength =
-                defs
-                |> List.count (function
-                    | ModuleOrNamespaceContents.TMDefRec _
-                    | ModuleOrNamespaceContents.TMDefs _ -> true
-                    | _ -> false)
-
-            let emptyModuleOrNamespaces =
-                defs
-                |> List.choose (function
-                    | ModuleOrNamespaceContents.TMDefRec _ as defRec
-                    | ModuleOrNamespaceContents.TMDefs(defs = [ ModuleOrNamespaceContents.TMDefRec _ as defRec ]) ->
-                        match defRec with
-                        | TMDefRec(bindings = [ ModuleOrNamespaceBinding.Module(mspec, ModuleOrNamespaceContents.TMDefs(defs = defs)) ]) ->
-                            defs
-                            |> List.forall (function
-                                | ModuleOrNamespaceContents.TMDefOpens _
-                                | ModuleOrNamespaceContents.TMDefDo _
-                                | ModuleOrNamespaceContents.TMDefRec(isRec = true; tycons = []; bindings = []) -> true
-                                | _ -> false)
-                            |> fun isEmpty -> if isEmpty then Some mspec else None
-                        | _ -> None
-                    | _ -> None)
-
-            if mdDefsLength = emptyModuleOrNamespaces.Length then
-                ValueSome emptyModuleOrNamespaces
-            else
-                ValueNone
-        | _ -> ValueNone
-
-    let tryFindExtensionAttribute (g: TcGlobals) (attribs: Attrib list) : Attrib option =
-        tryFindEntityAttribByFlag g WellKnownEntityAttributes.ExtensionAttribute attribs
-
-    let tryAddExtensionAttributeIfNotAlreadyPresentForModule
-        (g: TcGlobals)
-        (tryFindExtensionAttributeIn: (Attrib list -> Attrib option) -> Attrib option)
-        (moduleEntity: Entity)
-        : Entity =
-        if Option.isSome (tryFindExtensionAttribute g moduleEntity.Attribs) then
-            moduleEntity
-        else
-            match tryFindExtensionAttributeIn (tryFindExtensionAttribute g) with
-            | None -> moduleEntity
-            | Some extensionAttrib ->
-                { moduleEntity with
-                    entity_attribs = moduleEntity.EntityAttribs.Add(extensionAttrib, WellKnownEntityAttributes.ExtensionAttribute)
-                }
-
-    let tryAddExtensionAttributeIfNotAlreadyPresentForType
-        (g: TcGlobals)
-        (tryFindExtensionAttributeIn: (Attrib list -> Attrib option) -> Attrib option)
-        (moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref)
-        (typeEntity: Entity)
-        : Entity =
-        if Option.isSome (tryFindExtensionAttribute g typeEntity.Attribs) then
-            typeEntity
-        else
-            match tryFindExtensionAttributeIn (tryFindExtensionAttribute g) with
-            | None -> typeEntity
-            | Some extensionAttrib ->
-                moduleOrNamespaceTypeAccumulator.Value.AllEntitiesByLogicalMangledName.TryFind(typeEntity.LogicalName)
-                |> Option.iter (fun e ->
-                    e.entity_attribs <- e.EntityAttribs.Add(extensionAttrib, WellKnownEntityAttributes.ExtensionAttribute))
-
-                typeEntity
-
-
-

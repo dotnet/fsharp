@@ -559,4 +559,12 @@ module internal TypeEquivalence =
     /// Check the equivalence of two units-of-measure
     val measureEquiv: TcGlobals -> Measure -> Measure -> bool
 
+    /// An immutable mapping from witnesses to some data.
+    ///
+    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
+    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
+
+    /// Create an empty immutable mapping from witnesses to some data
+    val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
+
 

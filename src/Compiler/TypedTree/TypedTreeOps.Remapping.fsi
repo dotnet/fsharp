@@ -121,6 +121,13 @@ module internal SignatureOps =
     /// Updates the IsPrefixDisplay to false for the Microsoft.FSharp.Collections.seq`1 entity
     val updateSeqTypeIsPrefix: fsharpCoreMSpec: ModuleOrNamespace -> unit
 
+    /// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
+    /// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
+    /// This will match anything that does not have any types or bindings.
+    [<return: Struct>]
+    val (|EmptyModuleOrNamespaces|_|):
+        moduleOrNamespaceContents: ModuleOrNamespaceContents -> ModuleOrNamespace list voption
+
 [<AutoOpen>]
 module internal ExprFreeVars =
 

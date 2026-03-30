@@ -1314,6 +1314,40 @@ module internal TypeTesters =
         else
             isResumableCodeTy g ty
 
+    let ComputeUseMethodImpl g (v: Val) =
+        v.ImplementedSlotSigs
+        |> List.exists (fun slotsig ->
+            let oty = slotsig.DeclaringType
+            let otcref = tcrefOfAppTy g oty
+            let tcref = v.MemberApparentEntity
+
+            // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode
+            isInterfaceTy g oty
+            &&
+
+            (let isCompare =
+                tcref.GeneratedCompareToValues.IsSome
+                && (typeEquiv g oty g.mk_IComparable_ty
+                    || tyconRefEq g g.system_GenericIComparable_tcref otcref)
+
+             not isCompare)
+            &&
+
+            (let isGenericEquals =
+                tcref.GeneratedHashAndEqualsWithComparerValues.IsSome
+                && tyconRefEq g g.system_GenericIEquatable_tcref otcref
+
+             not isGenericEquals)
+            &&
+
+            (let isStructural =
+                (tcref.GeneratedCompareToWithComparerValues.IsSome
+                 && typeEquiv g oty g.mk_IStructuralComparable_ty)
+                || (tcref.GeneratedHashAndEqualsWithComparerValues.IsSome
+                    && typeEquiv g oty g.mk_IStructuralEquatable_ty)
+
+             not isStructural))
+
 
 [<AutoOpen>]
 module internal CommonContainers =

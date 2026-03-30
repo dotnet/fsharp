@@ -645,6 +645,9 @@ module internal TypeTesters =
     /// The delegate type ResumableCode, or any function returning this a delegate type
     val isReturnsResumableCodeTy: TcGlobals -> TType -> bool
 
+    /// Determine if a value is a method implementing an interface dispatch slot using a private method impl
+    val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
+
 [<AutoOpen>]
 module internal CommonContainers =
 

@@ -117,7 +117,7 @@ module internal FreeTypeVars =
     val freeInModuleTy: ModuleOrNamespaceType -> FreeTyvars
 
 [<AutoOpen>]
-module internal Display =
+module internal MemberRepresentation =
 
     val GetMemberTypeInFSharpForm:
         TcGlobals -> SynMemberFlags -> ValReprInfo -> TType -> range -> Typars * CurriedArgInfos * TType * ArgReprInfo
