@@ -273,15 +273,7 @@ module internal LoopAndConstantOptimization =
     val (|IfUseResumableStateMachinesExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption
 
 [<AutoOpen>]
-module internal AttribChecking =
-
-    /// An immutable mapping from witnesses to some data.
-    ///
-    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
-    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
-
-    /// Create an empty immutable mapping from witnesses to some data
-    val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
+module internal ResumableCodePatterns =
 
     /// Recognise a 'match __resumableEntry() with ...' expression
     [<return: Struct>]
@@ -308,8 +300,8 @@ module internal AttribChecking =
     val (|ResumableCodeInvoke|_|):
         g: TcGlobals -> expr: Expr -> (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) voption
 
-    /// Determine if a value is a method implementing an interface dispatch slot using a private method impl
-    val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
+[<AutoOpen>]
+module internal SeqExprPatterns =
 
     /// Detect the de-sugared form of a 'yield x' within a 'seq { ... }'
     [<return: Struct>]
@@ -347,6 +339,19 @@ module internal AttribChecking =
     [<return: Struct>]
     val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) voption
 
+[<AutoOpen>]
+module internal ExtensionAndMiscHelpers =
+
+    /// An immutable mapping from witnesses to some data.
+    ///
+    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
+    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
+
+    /// Create an empty immutable mapping from witnesses to some data
+    val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
+
+    /// Determine if a value is a method implementing an interface dispatch slot using a private method impl
+    val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
 
     /// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
     /// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
@@ -371,6 +376,5 @@ module internal AttribChecking =
         moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref ->
         typeEntity: Entity ->
             Entity
-
 
 

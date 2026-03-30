@@ -2723,23 +2723,7 @@ module internal LoopAndConstantOptimization =
         | _ -> ValueNone
 
 [<AutoOpen>]
-module internal AttribChecking =
-
-    /// An immutable mapping from witnesses to some data.
-    ///
-    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
-    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
-
-    /// Create an empty immutable mapping from witnesses to some data
-    let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
-        ImmutableDictionary.Create(
-            { new IEqualityComparer<_> with
-                member _.Equals(a, b) =
-                    nullSafeEquality a b (fun a b -> traitKeysAEquiv g TypeEquivEnv.EmptyIgnoreNulls a b)
-
-                member _.GetHashCode(a) = hash a.MemberName
-            }
-        )
+module internal ResumableCodePatterns =
 
     [<return: Struct>]
     let (|MatchTwoCasesExpr|_|) expr =
@@ -2900,39 +2884,8 @@ module internal AttribChecking =
             ValueSome(iref, f, args, m, (fun (f2, args2) -> Expr.App((iref, a, b, (f2 :: args2), m))))
         | _ -> ValueNone
 
-    let ComputeUseMethodImpl g (v: Val) =
-        v.ImplementedSlotSigs
-        |> List.exists (fun slotsig ->
-            let oty = slotsig.DeclaringType
-            let otcref = tcrefOfAppTy g oty
-            let tcref = v.MemberApparentEntity
-
-            // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode
-            isInterfaceTy g oty
-            &&
-
-            (let isCompare =
-                tcref.GeneratedCompareToValues.IsSome
-                && (typeEquiv g oty g.mk_IComparable_ty
-                    || tyconRefEq g g.system_GenericIComparable_tcref otcref)
-
-             not isCompare)
-            &&
-
-            (let isGenericEquals =
-                tcref.GeneratedHashAndEqualsWithComparerValues.IsSome
-                && tyconRefEq g g.system_GenericIEquatable_tcref otcref
-
-             not isGenericEquals)
-            &&
-
-            (let isStructural =
-                (tcref.GeneratedCompareToWithComparerValues.IsSome
-                 && typeEquiv g oty g.mk_IStructuralComparable_ty)
-                || (tcref.GeneratedHashAndEqualsWithComparerValues.IsSome
-                    && typeEquiv g oty g.mk_IStructuralEquatable_ty)
-
-             not isStructural))
+[<AutoOpen>]
+module internal SeqExprPatterns =
 
     [<return: Struct>]
     let (|Seq|_|) g expr =
@@ -3054,6 +3007,58 @@ module internal AttribChecking =
         | ValApp g g.seq_empty_vref (_, [], m) -> ValueSome m
         | _ -> ValueNone
 
+[<AutoOpen>]
+module internal ExtensionAndMiscHelpers =
+
+    /// An immutable mapping from witnesses to some data.
+    ///
+    /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
+    type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
+
+    /// Create an empty immutable mapping from witnesses to some data
+    let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
+        ImmutableDictionary.Create(
+            { new IEqualityComparer<_> with
+                member _.Equals(a, b) =
+                    nullSafeEquality a b (fun a b -> traitKeysAEquiv g TypeEquivEnv.EmptyIgnoreNulls a b)
+
+                member _.GetHashCode(a) = hash a.MemberName
+            }
+        )
+
+    let ComputeUseMethodImpl g (v: Val) =
+        v.ImplementedSlotSigs
+        |> List.exists (fun slotsig ->
+            let oty = slotsig.DeclaringType
+            let otcref = tcrefOfAppTy g oty
+            let tcref = v.MemberApparentEntity
+
+            // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode
+            isInterfaceTy g oty
+            &&
+
+            (let isCompare =
+                tcref.GeneratedCompareToValues.IsSome
+                && (typeEquiv g oty g.mk_IComparable_ty
+                    || tyconRefEq g g.system_GenericIComparable_tcref otcref)
+
+             not isCompare)
+            &&
+
+            (let isGenericEquals =
+                tcref.GeneratedHashAndEqualsWithComparerValues.IsSome
+                && tyconRefEq g g.system_GenericIEquatable_tcref otcref
+
+             not isGenericEquals)
+            &&
+
+            (let isStructural =
+                (tcref.GeneratedCompareToWithComparerValues.IsSome
+                 && typeEquiv g oty g.mk_IStructuralComparable_ty)
+                || (tcref.GeneratedHashAndEqualsWithComparerValues.IsSome
+                    && typeEquiv g oty g.mk_IStructuralEquatable_ty)
+
+             not isStructural))
 
     [<return: Struct>]
     let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
