@@ -13146,7 +13146,11 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, paramNames)
-        let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, false)
+        let isGeneratedEventVal =
+            CompileAsEvent g attrs
+            && (id.idText.StartsWithOrdinal("add_") || id.idText.StartsWithOrdinal("remove_"))
+
+        let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, isGeneratedEventVal)
 
         PublishArguments cenv env vspec synValSig allDeclaredTypars.Length
 
