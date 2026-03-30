@@ -219,3 +219,55 @@ let f x =
     match SyntaxTraversal.Traverse(mkPos 4 8, parseTree, visitor) with
     | Some(SynExpr.Const(SynConst.Int32 42, _)) -> ()
     | other -> failwith $"defaultTraverse did not walk into SynPat.QuoteExpr, got: %A{other}"
+
+// https://github.com/dotnet/fsharp/issues/13114
+[<Fact>]
+let ``Issue 13114 - defaultTraverse walks into SynPat.IsInst`` () =
+    let visitor =
+        { new SyntaxVisitorBase<_>() with
+            member x.VisitExpr(_, _, defaultTraverse, expr) = defaultTraverse expr
+
+            member x.VisitPat(_, defaultTraverse, pat) = defaultTraverse pat
+
+            member x.VisitType(_, _, ty) = Some ty }
+
+    let source =
+        """
+let f x =
+    match x with
+    | :? int -> ()
+    | _ -> ()
+"""
+
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
+
+    match SyntaxTraversal.Traverse(mkPos 4 9, parseTree, visitor) with
+    | Some(SynType.LongIdent _) -> ()
+    | other -> failwith $"defaultTraverse did not walk into SynPat.IsInst type, got: %A{other}"
+
+// https://github.com/dotnet/fsharp/issues/13114
+[<Fact>]
+let ``Issue 13114 - defaultTraverse walks into SynPat.FromParseError`` () =
+    let visitor =
+        { new SyntaxVisitorBase<_>() with
+            member x.VisitExpr(_, _, defaultTraverse, expr) = defaultTraverse expr
+
+            member x.VisitPat(_, defaultTraverse, pat) =
+                match pat with
+                | SynPat.Named _ -> Some pat
+                | _ -> defaultTraverse pat }
+
+    // SynPat.FromParseError wraps the inner pat when a parse error occurs;
+    // defaultTraverse should descend into the wrapped pattern.
+    let source =
+        """
+let f x =
+    match x with
+    | (a) -> a
+"""
+
+    let parseTree = parseSourceCode ("C:\\test.fs", source)
+
+    match SyntaxTraversal.Traverse(mkPos 4 7, parseTree, visitor) with
+    | Some(SynPat.Named _) -> ()
+    | other -> failwith $"defaultTraverse did not walk into nested SynPat, got: %A{other}"
