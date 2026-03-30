@@ -36,7 +36,7 @@ open FSharp.Compiler.TypeProviders
 #endif
 
 [<AutoOpen>]
-module internal TypeEncoding =
+module internal XmlDocSignatures =
 
     let commaEncs strs = String.concat "," strs
     let angleEnc str = "{" + str + "}"
@@ -227,6 +227,103 @@ module internal TypeEncoding =
 
     let XmlDocSigOfEntity (eref: EntityRef) =
         XmlDocSigOfTycon [ (buildAccessPath eref.CompilationPathOpt); eref.Deref.CompiledName ]
+
+    //---------------------------------------------------------------------------
+    // Active pattern name helpers
+    //---------------------------------------------------------------------------
+
+    let TryGetActivePatternInfo (vref: ValRef) =
+        // First is an optimization to prevent calls to string routines
+        let logicalName = vref.LogicalName
+
+        if logicalName.Length = 0 || logicalName[0] <> '|' then
+            None
+        else
+            ActivePatternInfoOfValName vref.DisplayNameCoreMangled vref.Range
+
+    type ActivePatternElemRef with
+        member x.LogicalName =
+            let (APElemRef(_, vref, n, _)) = x
+
+            match TryGetActivePatternInfo vref with
+            | None -> error (InternalError("not an active pattern name", vref.Range))
+            | Some apinfo ->
+                let nms = apinfo.ActiveTags
+
+                if n < 0 || n >= List.length nms then
+                    error (InternalError("name_of_apref: index out of range for active pattern reference", vref.Range))
+
+                List.item n nms
+
+        member x.DisplayNameCore = x.LogicalName
+
+        member x.DisplayName = x.LogicalName |> ConvertLogicalNameToDisplayName
+
+    let mkChoiceTyconRef (g: TcGlobals) m n =
+        match n with
+        | 0
+        | 1 -> error (InternalError("mkChoiceTyconRef", m))
+        | 2 -> g.choice2_tcr
+        | 3 -> g.choice3_tcr
+        | 4 -> g.choice4_tcr
+        | 5 -> g.choice5_tcr
+        | 6 -> g.choice6_tcr
+        | 7 -> g.choice7_tcr
+        | _ -> error (Error(FSComp.SR.tastActivePatternsLimitedToSeven (), m))
+
+    let mkChoiceTy (g: TcGlobals) m tinst =
+        match List.length tinst with
+        | 0 -> g.unit_ty
+        | 1 -> List.head tinst
+        | length -> mkWoNullAppTy (mkChoiceTyconRef g m length) tinst
+
+    let mkChoiceCaseRef g m n i =
+        mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice" + string (i + 1) + "Of" + string n)
+
+    type ActivePatternInfo with
+
+        member x.DisplayNameCoreByIdx idx = x.ActiveTags[idx]
+
+        member x.DisplayNameByIdx idx =
+            x.ActiveTags[idx] |> ConvertLogicalNameToDisplayName
+
+        member apinfo.ResultType g m retTys retKind =
+            let choicety = mkChoiceTy g m retTys
+
+            if apinfo.IsTotal then
+                choicety
+            else
+                match retKind with
+                | ActivePatternReturnKind.RefTypeWrapper -> mkOptionTy g choicety
+                | ActivePatternReturnKind.StructTypeWrapper -> mkValueOptionTy g choicety
+                | ActivePatternReturnKind.Boolean -> g.bool_ty
+
+        member apinfo.OverallType g m argTy retTys retKind =
+            mkFunTy g argTy (apinfo.ResultType g m retTys retKind)
+
+    //---------------------------------------------------------------------------
+    // Active pattern validation
+    //---------------------------------------------------------------------------
+
+    // check if an active pattern takes type parameters only bound by the return types,
+    // not by their argument types.
+    let doesActivePatternHaveFreeTypars g (v: ValRef) =
+        let vty = v.TauType
+        let vtps = v.Typars |> Zset.ofList typarOrder
+
+        if not (isFunTy g v.TauType) then
+            errorR (Error(FSComp.SR.activePatternIdentIsNotFunctionTyped (v.LogicalName), v.Range))
+
+        let argTys, resty = stripFunTy g vty
+
+        let argtps, restps =
+            (freeInTypes CollectTypars argTys).FreeTypars, (freeInType CollectTypars resty).FreeTypars
+        // Error if an active pattern is generic in type variables that only occur in the result Choice<_, ...>.
+        // Note: The test restricts to v.Typars since typars from the closure are considered fixed.
+        not (Zset.isEmpty (Zset.inter (Zset.diff restps argtps) vtps))
+
+[<AutoOpen>]
+module internal NullnessAnalysis =
 
     let inline HasConstraint ([<InlineIfLambda>] predicate) (tp: Typar) = tp.Constraints |> List.exists predicate
 
@@ -458,6 +555,27 @@ module internal TypeEncoding =
 
     let TypeHasDefaultValueNew g m ty = TypeHasDefaultValueAux true g m ty
 
+    let (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|) (ty, g) =
+        let sty = ty |> stripTyEqns g
+
+        if isTyparTy g sty then
+            if (nullnessOfTy g sty).TryEvaluate() = ValueSome NullnessInfo.WithNull then
+                NullableTypar
+            else
+                TyparTy
+        elif isStructTy g sty then
+            StructTy
+        elif TypeNullIsTrueValue g sty then
+            NullTrueValue
+        else
+            match (nullnessOfTy g sty).TryEvaluate() with
+            | ValueSome NullnessInfo.WithNull -> NullableRefType
+            | ValueSome NullnessInfo.WithoutNull -> WithoutNullRefType
+            | _ -> UnresolvedRefType
+
+[<AutoOpen>]
+module internal TypeTestsAndPatterns =
+
     /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
     /// a set of residual types that must also satisfy the constraint
     [<return: Struct>]
@@ -488,24 +606,6 @@ module internal TypeEncoding =
     [<return: Struct>]
     let (|SpecialNotEquatableHeadType|_|) g ty =
         if isFunTy g ty then ValueSome() else ValueNone
-
-    let (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|) (ty, g) =
-        let sty = ty |> stripTyEqns g
-
-        if isTyparTy g sty then
-            if (nullnessOfTy g sty).TryEvaluate() = ValueSome NullnessInfo.WithNull then
-                NullableTypar
-            else
-                TyparTy
-        elif isStructTy g sty then
-            StructTy
-        elif TypeNullIsTrueValue g sty then
-            NullTrueValue
-        else
-            match (nullnessOfTy g sty).TryEvaluate() with
-            | ValueSome NullnessInfo.WithNull -> NullableRefType
-            | ValueSome NullnessInfo.WithoutNull -> WithoutNullRefType
-            | _ -> UnresolvedRefType
 
     // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric'?
     let canUseTypeTestFast g ty =
@@ -614,100 +714,6 @@ module internal TypeEncoding =
 
             numEnclTypeArgs, virtualCall, isNewObj, isSuperInit, isSelfInit, takesInstanceArg, isPropGet, isPropSet
         | _ -> 0, false, false, false, false, false, false, false
-
-    //---------------------------------------------------------------------------
-    // Active pattern name helpers
-    //---------------------------------------------------------------------------
-
-    let TryGetActivePatternInfo (vref: ValRef) =
-        // First is an optimization to prevent calls to string routines
-        let logicalName = vref.LogicalName
-
-        if logicalName.Length = 0 || logicalName[0] <> '|' then
-            None
-        else
-            ActivePatternInfoOfValName vref.DisplayNameCoreMangled vref.Range
-
-    type ActivePatternElemRef with
-        member x.LogicalName =
-            let (APElemRef(_, vref, n, _)) = x
-
-            match TryGetActivePatternInfo vref with
-            | None -> error (InternalError("not an active pattern name", vref.Range))
-            | Some apinfo ->
-                let nms = apinfo.ActiveTags
-
-                if n < 0 || n >= List.length nms then
-                    error (InternalError("name_of_apref: index out of range for active pattern reference", vref.Range))
-
-                List.item n nms
-
-        member x.DisplayNameCore = x.LogicalName
-
-        member x.DisplayName = x.LogicalName |> ConvertLogicalNameToDisplayName
-
-    let mkChoiceTyconRef (g: TcGlobals) m n =
-        match n with
-        | 0
-        | 1 -> error (InternalError("mkChoiceTyconRef", m))
-        | 2 -> g.choice2_tcr
-        | 3 -> g.choice3_tcr
-        | 4 -> g.choice4_tcr
-        | 5 -> g.choice5_tcr
-        | 6 -> g.choice6_tcr
-        | 7 -> g.choice7_tcr
-        | _ -> error (Error(FSComp.SR.tastActivePatternsLimitedToSeven (), m))
-
-    let mkChoiceTy (g: TcGlobals) m tinst =
-        match List.length tinst with
-        | 0 -> g.unit_ty
-        | 1 -> List.head tinst
-        | length -> mkWoNullAppTy (mkChoiceTyconRef g m length) tinst
-
-    let mkChoiceCaseRef g m n i =
-        mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice" + string (i + 1) + "Of" + string n)
-
-    type ActivePatternInfo with
-
-        member x.DisplayNameCoreByIdx idx = x.ActiveTags[idx]
-
-        member x.DisplayNameByIdx idx =
-            x.ActiveTags[idx] |> ConvertLogicalNameToDisplayName
-
-        member apinfo.ResultType g m retTys retKind =
-            let choicety = mkChoiceTy g m retTys
-
-            if apinfo.IsTotal then
-                choicety
-            else
-                match retKind with
-                | ActivePatternReturnKind.RefTypeWrapper -> mkOptionTy g choicety
-                | ActivePatternReturnKind.StructTypeWrapper -> mkValueOptionTy g choicety
-                | ActivePatternReturnKind.Boolean -> g.bool_ty
-
-        member apinfo.OverallType g m argTy retTys retKind =
-            mkFunTy g argTy (apinfo.ResultType g m retTys retKind)
-
-    //---------------------------------------------------------------------------
-    // Active pattern validation
-    //---------------------------------------------------------------------------
-
-    // check if an active pattern takes type parameters only bound by the return types,
-    // not by their argument types.
-    let doesActivePatternHaveFreeTypars g (v: ValRef) =
-        let vty = v.TauType
-        let vtps = v.Typars |> Zset.ofList typarOrder
-
-        if not (isFunTy g v.TauType) then
-            errorR (Error(FSComp.SR.activePatternIdentIsNotFunctionTyped (v.LogicalName), v.Range))
-
-        let argTys, resty = stripFunTy g vty
-
-        let argtps, restps =
-            (freeInTypes CollectTypars argTys).FreeTypars, (freeInType CollectTypars resty).FreeTypars
-        // Error if an active pattern is generic in type variables that only occur in the result Choice<_, ...>.
-        // Note: The test restricts to v.Typars since typars from the closure are considered fixed.
-        not (Zset.isEmpty (Zset.inter (Zset.diff restps argtps) vtps))
 
 [<AutoOpen>]
 module internal Rewriting =

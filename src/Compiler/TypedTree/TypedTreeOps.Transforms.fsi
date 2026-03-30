@@ -16,7 +16,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 
 [<AutoOpen>]
-module internal TypeEncoding =
+module internal XmlDocSignatures =
 
     /// XmlDoc signature helpers
     val commaEncs: string seq -> string
@@ -74,14 +74,14 @@ module internal TypeEncoding =
 
     val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
 
+[<AutoOpen>]
+module internal NullnessAnalysis =
+
     val nullnessOfTy: TcGlobals -> TType -> Nullness
 
     val changeWithNullReqTyToVariable: TcGlobals -> reqTy: TType -> TType
 
     val reqTyForArgumentNullnessInference: TcGlobals -> actualTy: TType -> reqTy: TType -> TType
-
-    /// Determine if a type is a ComInterop type
-    val isComInteropTy: TcGlobals -> TType -> bool
 
     val IsNonNullableStructTyparTy: TcGlobals -> TType -> bool
 
@@ -117,6 +117,15 @@ module internal TypeEncoding =
 
     val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
 
+    val (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|):
+        TType * TcGlobals -> Choice<unit, unit, unit, unit, unit, unit, unit>
+
+[<AutoOpen>]
+module internal TypeTestsAndPatterns =
+
+    /// Determine if a type is a ComInterop type
+    val isComInteropTy: TcGlobals -> TType -> bool
+
     val mkIsInstConditional: TcGlobals -> range -> TType -> Expr -> Val -> Expr -> Expr -> Expr
 
     val canUseUnboxFast: TcGlobals -> range -> TType -> bool
@@ -133,9 +142,6 @@ module internal TypeEncoding =
 
     [<return: Struct>]
     val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit voption
-
-    val (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|):
-        TType * TcGlobals -> Choice<unit, unit, unit, unit, unit, unit, unit>
 
     val GetMemberCallInfo: TcGlobals -> ValRef * ValUseFlag -> int * bool * bool * bool * bool * bool * bool * bool
 
